@@ -1092,3 +1092,27 @@ test('the board stays locked while the draw is, until the Storyteller PIN', asyn
 	await expect(locked).toHaveCount(0);
 	await expect(page.getByTestId('seat')).toHaveCount(5);
 });
+
+// Trevor, 2026-10-19: the setup check folds into one Verification section, and a chosen
+// character whose token stays out of the bag (the Drunk) is tagged by its check.
+test('Verification folds the setup check away, and the Drunk is tagged not in bag', async ({
+	page
+}) => {
+	await selectionFor(page, 7);
+	const check = page.getByTestId('setup-check');
+	const verification = check.getByRole('button', { name: 'Verification' });
+	await expect(check.getByRole('button', { name: 'Warnings' })).toBeVisible();
+	await verification.tap();
+	await expect(check.getByRole('button', { name: 'Warnings' })).toBeHidden();
+	await verification.tap();
+	await expect(check.getByRole('button', { name: 'Jinxes' })).toBeVisible();
+
+	const row = (id: string) =>
+		page.locator('.choice', { has: page.locator(`.main[data-character-id="${id}"]`) });
+	await page.locator('.main[data-character-id="drunk"]').tap();
+	await page.locator('.main[data-character-id="empath"]').tap();
+	await expect(row('drunk').getByTestId('not-in-bag')).toHaveText('Not in bag');
+	await expect(row('empath').getByTestId('not-in-bag')).toHaveCount(0);
+	await page.locator('.main[data-character-id="drunk"]').tap();
+	await expect(row('drunk').getByTestId('not-in-bag')).toHaveCount(0);
+});
