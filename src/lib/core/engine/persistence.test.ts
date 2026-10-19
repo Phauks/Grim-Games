@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { newGame, run, testContext } from '#lib/core/model/fixtures.test-support.ts';
+import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 import { dispatch, openSession, redo, undo } from './log.ts';
 import {
 	MIGRATIONS,
@@ -223,6 +224,32 @@ describe('version 4 saves', () => {
 		expect(summariseSavedGame(saved).scriptName).toBe('Newer Brewing');
 		const undone = { ...saved, log: { ...saved.log, cursor: saved.log.cursor - 1 } };
 		expect(summariseSavedGame(undone).scriptName).toBe('Older Brewing');
+	});
+});
+
+describe('version 8 saves', () => {
+	// Before reminders took text: the log loads unchanged, and a note set afterwards is saved.
+	it('migrate with the log unchanged and then keep a reminder note', () => {
+		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
+		const placed = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[0],
+			reminder: { characterId: GENERIC_REMINDER_ID, label: '' }
+		});
+		const v8 = { ...JSON.parse(JSON.stringify(toSavedGame(placed, 1))), schemaVersion: 8 };
+		const loaded = migrateSavedGame(v8);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		expect(loaded.log).toEqual(v8.log);
+		const opened = openSession(loaded.log);
+		const reminder = opened.game.seats[seats[0]].reminders[0];
+		expect(reminder).not.toHaveProperty('note');
+		const noted = run(opened, ctx, {
+			type: 'SetReminderNote',
+			reminderId: reminder.reminderId,
+			note: 'Chose Sam'
+		});
+		const again = migrateSavedGame(JSON.parse(JSON.stringify(toSavedGame(noted, 2))));
+		expect(openSession(again.log).game.seats[seats[0]].reminders[0].note).toBe('Chose Sam');
 	});
 });
 

@@ -11,6 +11,8 @@ import type {
 	PutDocRequest,
 	SessionInfo,
 	StartResponse,
+	SyncRequest,
+	SyncResponse,
 	UserResponse
 } from './account-protocol.ts';
 
@@ -104,6 +106,8 @@ export const accountApi = {
 	deleteAccount: () => call<{ ok: true }>('/api/account', 'DELETE'),
 	listDocs: <T>(kind: DocKind) =>
 		call<{ docs: ProfileDoc<T>[] }>(`/api/account/docs/${kind}`).then((r) => r.docs),
+	/** Pushes queued changes and pulls what changed since `since`, in one request. */
+	sync: (request: SyncRequest) => call<SyncResponse>('/api/account/sync', 'POST', request),
 	putDoc: <T>(kind: DocKind, id: string, request: PutDocRequest) =>
 		call<ProfileDoc<T>>(`/api/account/docs/${kind}/${encodeURIComponent(id)}`, 'PUT', request)
 };

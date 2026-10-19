@@ -65,6 +65,9 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	await expect(dialog.locator('pre')).toBeHidden();
 	await dialog.getByRole('button', { name: 'Mode file', exact: true }).tap();
 	await expect(dialog.locator('pre')).toContainText('"id": "whale-buffet"');
+	// JSON is coloured by kind of piece (Trevor, 2026-10-19).
+	await expect(dialog.locator('pre .key', { hasText: '"id"' })).toBeVisible();
+	await expect(dialog.locator('pre .string', { hasText: '"whale-buffet"' })).toBeVisible();
 	// Download sits beside Copy and saves the file under the mode's name.
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),

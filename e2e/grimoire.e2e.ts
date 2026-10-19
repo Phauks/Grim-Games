@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 
@@ -815,7 +816,8 @@ test('every reminder on a crowded seat is shown and can be dragged off', async (
 	await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0, { timeout: 15000 });
 
 	// Each one is on the board and on top where it sits, so a finger can take any of them.
-	const tokens = page.getByTestId('board-reminder');
+	// (The bank, under the board, keeps its generic ∞ reminder.)
+	const tokens = page.locator('[data-testid="board-reminder"]:not([data-tray] *)');
 	await expect(tokens).toHaveCount(7);
 	for (let i = 0; i < 7; i++) {
 		const box = (await tokens.nth(i).boundingBox())!;
@@ -1806,6 +1808,57 @@ test('History shows stats from ended games', async ({ page }) => {
 	// The old address still works.
 	await page.goto('/previous-games');
 	await expect(page).toHaveURL(/\/history$/);
+});
+
+test('a finished game exports as a recap file and a grimoire image', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: /^Notes:/ }).tap();
+	const notes = page.getByRole('dialog', { name: 'Notes for Seat 1' });
+	await notes.getByRole('textbox', { name: 'Notes' }).tap();
+	await page.keyboard.type('Secret word: lantern');
+	await notes.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+	await menu(page, 'End game');
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('game-over')).toBeVisible();
+
+	// Trevor, 2026-10-19: the history log, the final grimoire and the Storyteller's notes.
+	await menu(page, 'Export game');
+	const dialog = page.getByRole('dialog', { name: 'Export game' });
+	const read = async (button: string) => {
+		const download = page.waitForEvent('download');
+		await dialog.getByRole('button', { name: button, exact: true }).tap();
+		const file = await download;
+		const path = `test-results/export-${test.info().project.name}-${file.suggestedFilename()}`;
+		await file.saveAs(path);
+		return { name: file.suggestedFilename(), text: readFileSync(path, 'utf8') };
+	};
+	const recap = await read('Download');
+	expect(recap.name).toMatch(/^trouble-brewing-.*\.html$/);
+	expect(recap.text).toContain('Evil won');
+	expect(recap.text).toContain('Imp');
+	expect(recap.text).toContain('Secret word: lantern');
+	expect(recap.text).toMatch(/<img src="data:image\/png;base64,/);
+	// Each part can be left out: private notes stay off a copy for others.
+	await dialog.getByText('Storyteller notes', { exact: true }).tap();
+	expect((await read('Download')).text).not.toContain('Secret word: lantern');
+	const image = await read('Image');
+	expect(image.name).toBe('trouble-brewing.png');
+	await page.keyboard.press('Escape');
+
+	// The same from History.
+	await page.goto('/history');
+	await page.getByRole('button', { name: /^Export Trouble Brewing ended/ }).tap();
+	await expect(page.getByRole('dialog', { name: 'Export game' })).toBeVisible();
 });
 
 /** Whether an element is fully inside the window. */
@@ -3329,6 +3382,35 @@ test("a placed reminder's ⋯ duplicates it beside the original, marked as uncom
 	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(1);
 	// A new token: the bank keeps its Poisoned (Trevor, 2026-10-18).
 	await expect(inBank).toHaveCount(1);
+});
+
+test('the generic ∞ reminder is always in the bank and can carry a few words', async ({ page }) => {
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	// Last in the bank, whatever is in play (Trevor, 2026-10-18).
+	await expect(bank.locator('> li').last().getByTestId('board-reminder')).toHaveAttribute(
+		'aria-label',
+		'Generic reminder'
+	);
+	await bank.getByRole('button', { name: 'Generic reminder' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Put ∞ on' })
+		.getByRole('button', { name: /Seat 1 None/ })
+		.tap();
+	await expect(seatLabelled(page, 'Seat 1: no name, no character, 1 reminder')).toBeAttached();
+	// Placing one never uses it up.
+	await expect(bank.getByRole('button', { name: 'Generic reminder' })).toHaveCount(1);
+
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Actions for ∞' }).tap();
+	const text = page.getByTestId('reminder-note');
+	await text.fill('Chose Sam');
+	await text.press('Enter');
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+	await expect(
+		page.locator('[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]')
+	).toHaveCount(1);
 });
 
 // Closing a step opened from the walk-through must not crash the dialog (Grimoire board,

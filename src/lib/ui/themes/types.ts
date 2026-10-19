@@ -43,7 +43,12 @@ export const SEMANTIC_TOKENS = [
 	'--button',
 	'--on-button',
 	'--backdrop',
-	'--shadow'
+	'--shadow',
+	'--code-key',
+	'--code-string',
+	'--code-number',
+	'--code-literal',
+	'--code-punctuation'
 ] as const;
 
 export type SemanticToken = (typeof SEMANTIC_TOKENS)[number];
@@ -74,7 +79,21 @@ export const TEXT_PAIRS: readonly [text: SemanticToken, background: SemanticToke
 	['--on-reminder', '--reminder-face'],
 	['--on-sheet', '--sheet'],
 	['--on-sheet-muted', '--sheet'],
-	['--on-button', '--button']
+	['--on-button', '--button'],
+	// Coloured JSON in file views (FileView), on pages and in dialogs.
+	...(
+		[
+			'--code-key',
+			'--code-string',
+			'--code-number',
+			'--code-literal',
+			'--code-punctuation'
+		] as const
+	).flatMap((text) =>
+		(['--surface', '--surface-raised'] as const).map(
+			(bg) => [text, bg] as [SemanticToken, SemanticToken]
+		)
+	)
 ];
 
 export type CssVariable = `--${string}`;

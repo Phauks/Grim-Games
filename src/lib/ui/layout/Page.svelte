@@ -25,7 +25,7 @@
 		 * scrolls under it.
 		 */
 		sideFlow?: boolean;
-		/** The content lays out in --measure wide columns, as many as fit (Account). */
+		/** The content lays out in two columns on a wide computer window (Account). */
 		columns?: boolean;
 		children: Snippet;
 	}
@@ -139,8 +139,17 @@
 	.content > :global(*) {
 		min-width: 0;
 	}
-	.content.columns {
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--measure)), 1fr));
+	/*
+	 * Two columns once the window has room for both beside an open sidebar (14u), so opening
+	 * or closing the sidebar never moves sections between one and two columns (Trevor,
+	 * 2026-10-18: Account looked different after toggling it). Decided by the window, not
+	 * by the room the sidebar leaves. Each section starts at the top of its row.
+	 */
+	@media (min-width: 94rem) {
+		.content.columns {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-items: start;
+		}
 	}
 	.split {
 		display: grid;

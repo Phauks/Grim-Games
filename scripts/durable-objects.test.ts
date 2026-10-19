@@ -77,3 +77,34 @@ describe('wrangler.jsonc keeps every Durable Object and its data', () => {
 		);
 	});
 });
+
+// The shared accounts Worker holds every account (wrangler.accounts.jsonc, Trevor 2026-10-18).
+const ACCOUNTS_KEPT = {
+	bindings: {
+		ACCOUNT_USERS: 'AccountUser',
+		ACCOUNT_EMAILS: 'AccountEmail',
+		ACCOUNT_NAMES: 'AccountName'
+	} as Record<string, string>,
+	migrationTags: ['v1']
+};
+
+const accountsText = readFileSync(new URL('../wrangler.accounts.jsonc', import.meta.url), 'utf8');
+const accountsParsed = ts.parseConfigFileTextToJson('wrangler.accounts.jsonc', accountsText);
+const accountsConfig = accountsParsed.config as Config;
+
+describe('wrangler.accounts.jsonc keeps every account object and its data', () => {
+	it('parses', () => {
+		expect(accountsParsed.error).toBeUndefined();
+	});
+
+	it('keeps every binding on its class, and binds nothing else', () => {
+		expect(bindingMap(accountsConfig.durable_objects?.bindings)).toEqual(ACCOUNTS_KEPT.bindings);
+	});
+
+	it('keeps every migration tag and never deletes a class', () => {
+		const migrations = accountsConfig.migrations ?? [];
+		const tags = migrations.map((m) => m.tag);
+		expect(tags.slice(0, ACCOUNTS_KEPT.migrationTags.length)).toEqual(ACCOUNTS_KEPT.migrationTags);
+		expect(migrations.filter((m) => 'deleted_classes' in m)).toEqual([]);
+	});
+});

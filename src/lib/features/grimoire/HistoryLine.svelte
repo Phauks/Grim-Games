@@ -3,6 +3,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import type { HistoryPart } from './history.ts';
+	import { tokenLabel } from './reminders.ts';
 
 	/** One History entry as words and badges: History, and an ended game's board. */
 	interface Props {
@@ -24,7 +25,7 @@
 			character={characters.get(part.characterId)}
 			inline
 		/>{:else}<span class="chip"
-			><ReminderToken label={part.label} character={characters.get(part.characterId)} /></span
+			><ReminderToken label={tokenLabel(part)} character={characters.get(part.characterId)} /></span
 		>{/if}{/each}
 
 <style>

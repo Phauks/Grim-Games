@@ -13,8 +13,11 @@ import {
 	parseReminderKey,
 	reminderCopiesLeft,
 	reminderGroups,
-	reminderKey
+	reminderKey,
+	isGeneric,
+	tokenLabel
 } from './reminders.ts';
+import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -269,5 +272,32 @@ describe('extraReminders', () => {
 			ids.push(g.seats[seatId].reminders.at(-1)!.reminderId);
 		}
 		expect([...extraReminders(g, characters)]).toEqual([ids[1]]);
+	});
+});
+
+describe('the generic reminder', () => {
+	// Trevor (2026-10-18): a plain ∞ reminder, as many as needed, with optional text.
+	it('is never counted or marked as an extra copy, and shows its text or ∞', () => {
+		let g = game();
+		for (const seatId of g.seating.slice(0, 3)) {
+			const result = dispatch(
+				{ log: { entries: [], cursor: 0 }, game: g },
+				{ type: 'AddReminder', seatId, reminder: { characterId: GENERIC_REMINDER_ID, label: '' } },
+				ctx
+			);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		}
+		expect(extraReminders(g, characters).size).toBe(0);
+		expect(
+			reminderCopiesLeft(g, characters).has(
+				reminderKey({ characterId: GENERIC_REMINDER_ID, label: '' })
+			)
+		).toBe(false);
+		const [placed] = g.seats[g.seating[0]].reminders;
+		expect(isGeneric(placed)).toBe(true);
+		expect(tokenLabel(placed)).toBe('∞');
+		expect(tokenLabel({ ...placed, note: 'Chose Sam' })).toBe('Chose Sam');
+		expect(tokenLabel({ characterId: 'poisoner', label: 'Poisoned' } as never)).toBe('Poisoned');
 	});
 });
