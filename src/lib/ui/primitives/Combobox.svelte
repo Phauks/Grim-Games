@@ -36,6 +36,8 @@
 		/** Shown in the list when nothing matches. */
 		empty: string;
 		item?: Snippet<[Option]>;
+		/** Shown in place but not usable, so nothing moves when it becomes usable. */
+		disabled?: boolean;
 		testid?: string;
 	}
 
@@ -49,6 +51,7 @@
 		placeholder = '',
 		empty,
 		item,
+		disabled = false,
 		testid
 	}: Props = $props();
 
@@ -122,12 +125,13 @@
 	positioning={{ strategy: 'fixed', sameWidth: true, fitViewport: true, gutter: 4 }}
 	lazyMount
 	unmountOnExit
+	{disabled}
 	data-testid={testid}
 >
 	<Combobox.Label class={hideLabel ? 'visually-hidden' : undefined}>{label}</Combobox.Label>
 	<Combobox.Control>
 		<span class="search"><Icon name="search" /></span>
-		<ClearableField bind:value={text} onclear={() => (open = true)}>
+		<ClearableField bind:value={text} {disabled} onclear={() => (open = true)}>
 			<Combobox.Input {placeholder} />
 		</ClearableField>
 		<Combobox.Trigger aria-label={label}><Icon name="forward" /></Combobox.Trigger>
