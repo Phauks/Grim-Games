@@ -32,11 +32,21 @@
 		 * while none of theirs is in play, and open when one comes into play (Trevor, 2026-10-18).
 		 */
 		inPlay?: readonly string[];
+		/** False leaves the Jinxes section out (a printed sheet without them). */
+		showJinxes?: boolean;
 		/** Overrides the reader's density setting (printing picks whatever fits one page). */
 		density?: SheetDensity;
 	}
 
-	let { characters, jinxes, players, flat = false, inPlay, density: fixed }: Props = $props();
+	let {
+		characters,
+		jinxes,
+		players,
+		flat = false,
+		inPlay,
+		showJinxes = true,
+		density: fixed
+	}: Props = $props();
 	const playing = $derived(inPlay && new Set(inPlay));
 	const noJinxInPlay = $derived(
 		!!playing && !jinxes.some((j) => j.characters.every((id) => playing.has(id)))
@@ -148,14 +158,14 @@
 			<p class="none" data-testid="no-jinxes">{t('common.none')}</p>
 		{/if}
 	{/snippet}
-	{@render section(
-		t('player.jinxes'),
-		'play:jinxes',
-		jinxList,
-		undefined,
-		noJinxInPlay,
-		jinxes.length
-	)}
+	{#if showJinxes}{@render section(
+			t('player.jinxes'),
+			'play:jinxes',
+			jinxList,
+			undefined,
+			noJinxInPlay,
+			jinxes.length
+		)}{/if}
 
 	{#if !flat}
 		{#snippet breakdown()}<PlayerCounts

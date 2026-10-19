@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from './Button.svelte';
+	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 
 	/**
 	 * The buttons of every modal where the Storyteller makes a decision (Trevor, 2026-10-17:
@@ -24,6 +25,9 @@
 		submit?: boolean;
 		/** Other tools for the decision (e.g. "Paste from clipboard"), at the bottom left. */
 		start?: Snippet;
+		/** Confirm's own words and icon when the action has a name, e.g. Print. */
+		confirmLabel?: string;
+		confirmIcon?: IconSlot;
 	}
 
 	let {
@@ -32,7 +36,9 @@
 		disabled = false,
 		danger = false,
 		submit = false,
-		start
+		start,
+		confirmLabel,
+		confirmIcon = 'check'
 	}: Props = $props();
 </script>
 
@@ -44,10 +50,11 @@
 	{#if onConfirm || submit}
 		<Button
 			variant={danger ? 'danger' : 'accent'}
-			icon="check"
+			icon={confirmIcon}
 			type={submit ? 'submit' : 'button'}
 			{disabled}
-			onclick={submit ? undefined : () => onConfirm?.()}>{t('common.confirm')}</Button
+			onclick={submit ? undefined : () => onConfirm?.()}
+			>{confirmLabel ?? t('common.confirm')}</Button
 		>
 	{/if}
 </div>
