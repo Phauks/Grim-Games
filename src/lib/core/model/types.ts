@@ -275,4 +275,9 @@ export interface Game {
 	today: DayLog;
 	/** Earlier day logs, oldest first, closed by "New day". */
 	pastDays: DayLog[];
+	/**
+	 * Who runs the game, shown to players (Trevor, 2026-10-19). Optional: absent when the
+	 * Storyteller gave none, and in games saved before version 10.
+	 */
+	storytellerName?: string;
 }

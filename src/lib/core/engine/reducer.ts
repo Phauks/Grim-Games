@@ -389,6 +389,10 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				looseReminders: [...(lifted.game.looseReminders ?? []), lifted.reminder]
 			};
 		}
+		case 'StorytellerNameSet':
+			return event.name === undefined
+				? omit(game, 'storytellerName')
+				: { ...game, storytellerName: event.name };
 		case 'ReminderNoteSet':
 			return withReminder(game, event.reminderId, (r) =>
 				event.note === undefined ? omit(r, 'note') : { ...r, note: event.note }

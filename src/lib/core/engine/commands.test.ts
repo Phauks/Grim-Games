@@ -1190,3 +1190,29 @@ describe('day-reminder overrides', () => {
 		);
 	});
 });
+
+describe('the Storyteller’s name', () => {
+	// Trevor (2026-10-19): typed on New game, shown wherever the game is shown.
+	it('starts with the game, outlives undo, changes and clears', () => {
+		const ctx = testContext();
+		const created = createGame(
+			{ type: 'CreateGame', script: testScript, playerCount: 5, storytellerName: '  Sam  ' },
+			ctx
+		);
+		if (!created.ok) throw new Error(created.error.message);
+		expect(created.session.game.storytellerName).toBe('Sam');
+		const renamed = run(created.session, ctx, { type: 'SetStorytellerName', name: 'Kim' });
+		expect(renamed.game.storytellerName).toBe('Kim');
+		expect(undo(renamed).game.storytellerName).toBe('Sam');
+		expect(warned(renamed, ctx, { type: 'SetStorytellerName', name: 'Kim ' })).toContain(
+			'no-change'
+		);
+		const cleared = run(renamed, ctx, { type: 'SetStorytellerName', name: ' ' });
+		expect(cleared.game).not.toHaveProperty('storytellerName');
+	});
+
+	it('is absent when none was typed', () => {
+		const { session } = newGame(names);
+		expect(session.game).not.toHaveProperty('storytellerName');
+	});
+});

@@ -64,17 +64,24 @@ export class OpenGame {
 		this.#store = store;
 	}
 
-	/** Starts and saves a new game with `playerCount` empty seats. */
+	/**
+	 * Starts and saves a new game with `playerCount` empty seats, run by `storytellerName`
+	 * when given.
+	 */
 	static async create(
 		data: Pick<GameData, 'characters'>,
 		script: Script,
 		playerCount: number,
 		store: GameStore = gameStore(),
-		ctx?: EngineContext
+		ctx?: EngineContext,
+		storytellerName?: string
 	): Promise<OpenGame> {
 		const characters = characterLookup(data, script);
 		const context = ctx ?? systemContext(characters);
-		const created = createGame({ type: 'CreateGame', script, playerCount }, context);
+		const created = createGame(
+			{ type: 'CreateGame', script, playerCount, ...(storytellerName ? { storytellerName } : {}) },
+			context
+		);
 		if (!created.ok) throw new Error(created.error.message);
 		const game = new OpenGame(created.session, characters, store, context);
 		await game.save();

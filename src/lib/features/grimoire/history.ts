@@ -105,6 +105,10 @@ function describeEvent(
 			return [text('Added '), seatName(after, event.seatId)];
 		case 'SeatRemoved':
 			return [text('Removed '), seatPart(before, event.seatId)];
+		case 'StorytellerNameSet':
+			return event.name
+				? [text(`Storyteller named ${event.name}`)]
+				: [text('Cleared the Storyteller’s name')];
 		case 'SeatRenamed':
 			return event.playerName
 				? [seatName(before, event.seatId), text(` renamed ${event.playerName}`)]

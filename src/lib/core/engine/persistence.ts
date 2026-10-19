@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 9;
+export const SAVED_GAME_VERSION = 10;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -141,6 +141,13 @@ const migrateV7toV8: Migration = (doc) => ({ ...doc, schemaVersion: 8 });
  */
 const migrateV8toV9: Migration = (doc) => ({ ...doc, schemaVersion: 9 });
 
+/**
+ * Version 10 (2026-10-19) added the Storyteller's name (`Game.storytellerName`, the
+ * `StorytellerNameSet` event). The log needs no change: an older game has no name. The bump
+ * makes older builds refuse a version 10 save instead of failing on the unknown event.
+ */
+const migrateV9toV10: Migration = (doc) => ({ ...doc, schemaVersion: 10 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -150,7 +157,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	5: migrateV5toV6,
 	6: migrateV6toV7,
 	7: migrateV7toV8,
-	8: migrateV8toV9
+	8: migrateV8toV9,
+	9: migrateV9toV10
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
