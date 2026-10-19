@@ -4219,8 +4219,12 @@ test('the corner script name opens the game’s info, in a Standard game too', a
 	await openGameInfo(page);
 	await expect(row('script')).toHaveText('Trouble Brewing');
 	await expect(row('storyteller')).toHaveText('Trev');
-	// Trevor, 2026-10-19: "In Game info, include player count as well".
-	await expect(row('players')).toHaveText(String(await page.getByTestId('seat').count()));
+	// Trevor, 2026-10-19: "In Game info, include player count as well", then how the
+	// characters split by type: the standard split until characters are assigned.
+	const seats = await page.getByTestId('seat').count();
+	await expect(row('players')).toHaveText(
+		new RegExp(`^${seats} \\(\\d+ Townsfolk, \\d+ Outsiders?, \\d+ Minions?, 1 Demon\\)$`)
+	);
 	await expect(row('mode')).toHaveText('Standard');
 	await expect(row('rules')).toHaveText('None');
 	await expect(row('version')).toHaveText('None');

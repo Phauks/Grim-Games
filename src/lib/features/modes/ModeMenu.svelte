@@ -31,6 +31,8 @@
 	import SpectersSheet from './SpectersSheet.svelte';
 	import { townGroupOf } from './town-groups.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
+	import { contextCharacters } from '#lib/features/characters/character-context.ts';
+	import { playersLine } from './players-line.ts';
 
 	/**
 	 * The game's info and a game mode's own actions, on the board's corner script name (Trevor,
@@ -71,6 +73,8 @@
 	/** The mode as it plays, with its rules; undefined for a Standard game with none. */
 	const mode = $derived(base || rules.length ? withRules(base ?? STANDARD, rules) : undefined);
 	let inspected = $state<GameMode | SpecialRule>();
+	// The board's character lookup, to count the characters in play by type.
+	const characters = contextCharacters();
 	const none = $derived(t('common.none'));
 	const info = $derived([
 		{ key: 'script', label: t('modes.info.script'), value: game.script.meta?.name },
@@ -81,7 +85,7 @@
 			value: scriptVersion(undefined, game.script.meta)
 		},
 		{ key: 'storyteller', label: t('modes.info.storyteller'), value: game.storytellerName },
-		{ key: 'players', label: t('modes.info.players'), value: String(game.seating.length) },
+		{ key: 'players', label: t('modes.info.players'), value: playersLine(game, characters?.()) },
 		{ key: 'mode', label: t('modes.label'), value: (base ?? STANDARD).name },
 		{
 			key: 'rules',
