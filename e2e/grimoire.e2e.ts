@@ -1064,16 +1064,26 @@ test('the cause of death offers only characters that could have killed the playe
 	await expect(sheet.getByRole('button', { name: 'Status: Dead: Slayer' })).toBeVisible();
 	await closeSheet(page);
 
-	// Dead (Trevor, 2026-10-16): the token dimmed with a skull badge, which carries the ghost
-	// vote. Tapping the badge on the board spends it and gives it back, without opening the
-	// seat (Trevor, 2026-10-19).
+	// Dead (Trevor, 2026-10-16): the token dimmed with a badge, which carries the ghost vote.
+	// Tapping the badge on the board spends it and gives it back, without opening the seat
+	// (Trevor, 2026-10-19). A solid ghost while the vote is there; once used, a grey outline
+	// ghost, or struck through when Settings says so (Trevor, 2026-10-19).
 	const imp = seatLabelled(page, 'Seat 3:');
 	const skull = imp.getByTestId('dead-mark');
 	await expect(skull).toBeVisible();
 	await expect(skull).toHaveAttribute('data-vote', 'unused');
+	await expect(skull.locator('[data-icon="ph:ghost-fill"]')).toBeAttached();
 	await skull.tap();
 	await expect(skull).toHaveAttribute('data-vote', 'used');
+	await expect(skull.locator('[data-icon="ph:ghost"]')).toBeAttached();
+	await expect(skull).toHaveAttribute('data-used-look', 'hollow');
 	await expect(imp).toHaveAttribute('aria-label', /dead, ghost vote used/);
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await menu(page, 'Board');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings.getByText('Strike through used ghost votes', { exact: true }).tap();
+	await expect(skull).toHaveAttribute('data-used-look', 'struck');
+	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await skull.tap();
 	await expect(skull).toHaveAttribute('data-vote', 'unused');

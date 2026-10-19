@@ -6,6 +6,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
+	import { boardLooks } from './board-looks.svelte.ts';
 	import type { NamePlace } from './name-placement.ts';
 
 	interface Props {
@@ -33,7 +34,7 @@
 		nightNumbers?: { first?: number; other?: number };
 		/** `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat). */
 		onTap: (part?: 'note') => void;
-		/** A tap on a dead player's skull badge: marks their ghost vote used, or gives it back. */
+		/** A tap on a dead player's badge: marks their ghost vote used, or gives it back. */
 		onGhostVote?: () => void;
 	}
 
@@ -91,7 +92,7 @@
 		if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) < TAP_SLOP) {
 			swallowNextClick(event.currentTarget);
 			const target = event.target instanceof Element ? event.target : null;
-			// The skull badge is the ghost vote's own switch (Trevor, 2026-10-19).
+			// The dead badge is the ghost vote's own switch (Trevor, 2026-10-19).
 			if (target?.closest('[data-testid="dead-mark"]') && onGhostVote) onGhostVote();
 			else onTap(target?.closest('.mark.note') ? 'note' : undefined);
 		}
@@ -145,6 +146,7 @@
 		face={character ? face : undefined}
 		{marks}
 		vote={seat.dead ? (seat.ghostVoteUsed ? 'used' : 'unused') : undefined}
+		usedVote={boardLooks.current.usedGhostVote}
 	/>
 </button>
 

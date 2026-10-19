@@ -211,7 +211,8 @@ test('the board looks and background are in Board, saved with the board', async 
 		rulesGrouped: false,
 		nameSize: 1,
 		nameOffset: 0.1,
-		reminders: 'seat'
+		reminders: 'seat',
+		usedGhostVote: 'hollow'
 	});
 
 	await page.reload();

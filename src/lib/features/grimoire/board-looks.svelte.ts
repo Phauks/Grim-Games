@@ -8,7 +8,8 @@
  *   whether they are grouped as one stack (Trevor, 2026-10-17: two choices);
  * - the script's logo faint in the middle of the board, and how faint (Trevor, 2026-10-18);
  * - how big each seat's player name badge is, and how far below the token it sits;
- * - whether reminders are held by their seat or stay where they are dropped.
+ * - whether reminders are held by their seat or stay where they are dropped;
+ * - how a dead player's used ghost vote looks on their badge.
  */
 export interface BoardLooks {
 	vignette: boolean;
@@ -33,6 +34,11 @@ export interface BoardLooks {
 	 * 2026-10-17, "nonsticky"): a reminder stays where it is dropped; it still belongs to a seat.
 	 */
 	reminders: 'seat' | 'free';
+	/**
+	 * A used ghost vote: a grey outline ghost ('hollow'), or the ghost struck through in red
+	 * ('struck') (Trevor, 2026-10-19: both looks, picked in Settings).
+	 */
+	usedGhostVote: 'hollow' | 'struck';
 }
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
@@ -52,7 +58,8 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	rulesGrouped: false,
 	nameSize: 1,
 	nameOffset: 0,
-	reminders: 'seat'
+	reminders: 'seat',
+	usedGhostVote: 'hollow'
 };
 const KEY = 'grim.boardLooks';
 
@@ -81,7 +88,8 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		nameOffset: Number.isFinite(nameOffset)
 			? Math.min(NAME_OFFSET.max, Math.max(NAME_OFFSET.min, nameOffset))
 			: DEFAULT_BOARD_LOOKS.nameOffset,
-		reminders: value.reminders === 'free' ? 'free' : 'seat'
+		reminders: value.reminders === 'free' ? 'free' : 'seat',
+		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow'
 	};
 }
 
