@@ -56,6 +56,7 @@ export const resets = {
 				'timerSound',
 				'timerMode',
 				'timerVibrate',
+				'timerKeepAwake',
 				'timerPerPlayer'
 			),
 			assistance: assistanceWith([

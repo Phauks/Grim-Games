@@ -60,6 +60,8 @@ export const day = {
 	'day.timerPerPlayerLess': 'Fewer seconds per living player',
 	'day.timerPerPlayerMore': 'More seconds per living player',
 	'day.timerVibrateUnavailable': 'This device can’t vibrate.',
+	'day.timerKeepAwake': 'Keep screen on',
+	'day.timerKeepAwakeUnavailable': 'This browser can’t keep the screen on.',
 	'day.timerOpen': 'Day timer, {clock}; open its controls',
 	'day.timerModeDown': 'Timer',
 	'day.timerModeUp': 'Stopwatch',
