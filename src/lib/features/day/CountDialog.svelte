@@ -105,9 +105,25 @@
 		padding: var(--space-1) var(--space-2) var(--space-1) 0;
 		vertical-align: middle;
 	}
-	tbody tr + tr,
-	tfoot tr {
+	tbody tr + tr {
 		border-top: 1px solid var(--border);
+	}
+	/* Column names read as headings and the total as a sum (Trevor, 2026-10-19): headings in
+	   the heading colour over a heavier rule, the total bold under a double rule. */
+	.count thead th {
+		padding-bottom: var(--space-2);
+		border-bottom: 2px solid var(--heading); /* px-ok: a rule's thickness */
+		color: var(--heading);
+		font-weight: bold;
+	}
+	tfoot tr {
+		border-top: 3px double var(--on-surface); /* px-ok: a rule's thickness */
+	}
+	.count tfoot th,
+	.count tfoot td {
+		padding-top: var(--space-2);
+		color: var(--on-surface);
+		font-weight: bold;
 	}
 	/* A seat listed but not adding one (dead, or its ghost vote spent) reads quieter. */
 	tr[data-seat]:not([data-counts]) td {
