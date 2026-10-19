@@ -67,7 +67,8 @@ test("each card's + adds it to cards shown together, which can be reordered", as
 	// A madness card of the Storyteller's own that asks for a character.
 	await page.getByRole('button', { name: 'New info token' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You are **mad** that you are');
-	await page.getByRole('button', { name: 'More characters' }).tap();
+	await page.getByRole('combobox', { name: 'Characters to show' }).tap();
+	await page.getByRole('option', { name: 'Exactly', exact: true }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	// No mode switch: a tap shows a card, its + adds it (Trevor, 2026-10-16).

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import {
 		INK_COLORS,
 		INK_TOKENS,
@@ -27,6 +28,11 @@
 	let underline = $state(false);
 	/** The colour at the caret; undefined is the card's own text colour. */
 	let ink = $state<InkColor>();
+	/** The colours sit in a popover, so the field and its tools fit one row (Trevor, 2026-10-18). */
+	let choosingInk = $state(false);
+	let inkButton = $state<HTMLButtonElement>();
+	/** The selection when the colours opened: the popover takes focus, this brings it back. */
+	let savedRange: Range | undefined;
 	/** The value this field last wrote, so its own edits never re-render it under the caret. */
 	let written: string | undefined;
 
@@ -165,9 +171,25 @@
 	}
 
 	/** Colours the selection (or what is typed next); undefined goes back to the text colour. */
+	function openInks() {
+		const selection = document.getSelection();
+		savedRange =
+			selection?.rangeCount && field?.contains(selection.anchorNode)
+				? selection.getRangeAt(0).cloneRange()
+				: undefined;
+		choosingInk = true;
+	}
+
 	function colour(color: InkColor | undefined) {
 		if (!field) return;
+		choosingInk = false;
 		field.focus();
+		if (savedRange) {
+			const selection = document.getSelection();
+			selection?.removeAllRanges();
+			selection?.addRange(savedRange);
+			savedRange = undefined;
+		}
 		const value = color
 			? ([...resolvedInks()].find(([, c]) => c === color)?.[0] ?? '')
 			: getComputedStyle(field).color;
@@ -180,60 +202,8 @@
 
 <svelte:document onselectionchange={syncButtons} />
 
+<!-- One row: the words, then their tools; the tools wrap under the words when narrow. -->
 <div class="rich">
-	<div class="tools" role="toolbar" aria-label={t('info-tokens.formatting')}>
-		<!-- Weight and slant, then colour: separate groups, each doing only what it says. -->
-		<div class="group" role="group" aria-label={t('info-tokens.style')}>
-			<button
-				type="button"
-				class="tool"
-				aria-label={t('info-tokens.bold')}
-				aria-pressed={bold}
-				onpointerdown={(e) => e.preventDefault()}
-				onclick={() => format('bold')}><strong>B</strong></button
-			>
-			<button
-				type="button"
-				class="tool"
-				aria-label={t('info-tokens.italic')}
-				aria-pressed={italic}
-				onpointerdown={(e) => e.preventDefault()}
-				onclick={() => format('italic')}><em>I</em></button
-			>
-			<button
-				type="button"
-				class="tool"
-				aria-label={t('info-tokens.underline')}
-				aria-pressed={underline}
-				onpointerdown={(e) => e.preventDefault()}
-				onclick={() => format('underline')}><u>U</u></button
-			>
-		</div>
-		<div class="group" role="group" aria-label={t('info-tokens.colour')}>
-			<button
-				type="button"
-				class="tool swatch"
-				aria-label={t('info-tokens.colourNone')}
-				aria-pressed={ink === undefined}
-				onpointerdown={(e) => e.preventDefault()}
-				onclick={() => colour(undefined)}><span class="letter">A</span></button
-			>
-			{#each INK_COLORS as color (color)}
-				<button
-					type="button"
-					class="tool swatch"
-					aria-label={t(`info-tokens.colours.${color}`)}
-					aria-pressed={ink === color}
-					onpointerdown={(e) => e.preventDefault()}
-					onclick={() => colour(color)}
-					><span class="letter" style:color={INK_TOKENS[color]}>A</span><span
-						class="bar"
-						style:background={INK_TOKENS[color]}
-					></span></button
-				>
-			{/each}
-		</div>
-	</div>
 	<div
 		bind:this={field}
 		class="field"
@@ -257,20 +227,95 @@
 			document.execCommand('insertText', false, text);
 		}}
 	></div>
+	<div class="tools" role="toolbar" aria-label={t('info-tokens.formatting')}>
+		<button
+			type="button"
+			class="tool"
+			aria-label={t('info-tokens.bold')}
+			aria-pressed={bold}
+			onpointerdown={(e) => e.preventDefault()}
+			onclick={() => format('bold')}><strong>B</strong></button
+		>
+		<button
+			type="button"
+			class="tool"
+			aria-label={t('info-tokens.italic')}
+			aria-pressed={italic}
+			onpointerdown={(e) => e.preventDefault()}
+			onclick={() => format('italic')}><em>I</em></button
+		>
+		<button
+			type="button"
+			class="tool"
+			aria-label={t('info-tokens.underline')}
+			aria-pressed={underline}
+			onpointerdown={(e) => e.preventDefault()}
+			onclick={() => format('underline')}><u>U</u></button
+		>
+		<!-- The colour at the caret, under its letter; tapping it offers the others. -->
+		<button
+			bind:this={inkButton}
+			type="button"
+			class="tool swatch"
+			aria-label={t('info-tokens.colour')}
+			aria-haspopup="dialog"
+			aria-expanded={choosingInk}
+			onpointerdown={(e) => e.preventDefault()}
+			onclick={openInks}
+			><span class="letter" style:color={ink ? INK_TOKENS[ink] : undefined}>A</span><span
+				class="bar"
+				style:background={ink ? INK_TOKENS[ink] : 'currentColor'}
+			></span></button
+		>
+	</div>
 </div>
 
+<Popover bind:open={choosingInk} title={t('info-tokens.colour')} anchor={inkButton}>
+	<div class="inks" role="group" aria-label={t('info-tokens.colour')}>
+		<button
+			type="button"
+			class="tool swatch"
+			aria-label={t('info-tokens.colourNone')}
+			aria-pressed={ink === undefined}
+			onclick={() => colour(undefined)}><span class="letter">A</span></button
+		>
+		{#each INK_COLORS as color (color)}
+			<button
+				type="button"
+				class="tool swatch"
+				aria-label={t(`info-tokens.colours.${color}`)}
+				aria-pressed={ink === color}
+				onclick={() => colour(color)}
+				><span class="letter" style:color={INK_TOKENS[color]}>A</span><span
+					class="bar"
+					style:background={INK_TOKENS[color]}
+				></span></button
+			>
+		{/each}
+	</div>
+</Popover>
+
 <style>
+	/* One box: the words and their tools share its border and its row. */
 	.rich {
-		display: grid;
-		gap: var(--space-1);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface);
+	}
+	.rich:focus-within {
+		outline: 2px solid var(--focus);
+		outline-offset: -2px;
 	}
 	.tools {
 		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2) var(--space-3);
+		margin-inline-start: auto;
 	}
-	.group {
+	.inks {
 		display: flex;
+		flex-wrap: wrap;
 		gap: var(--space-1);
 	}
 	.swatch {
@@ -280,9 +325,9 @@
 	/* The colour under the letter, so a colour reads even where it is close to the background. */
 	.bar {
 		position: absolute;
-		inset-inline: 20%;
+		inset-inline: 25%;
 		bottom: 15%;
-		height: 12%;
+		height: 10%;
 		border-radius: var(--radius-sm);
 	}
 	.tool {
@@ -290,24 +335,29 @@
 		place-items: center;
 		width: var(--tap-target);
 		height: var(--tap-target);
-		border: 1px solid var(--border);
+		border: 0;
 		border-radius: var(--radius-md);
-		background: var(--surface);
+		background: none;
 		color: inherit;
 		font-family: var(--font-heading);
 		font-size: 1.1rem;
 		cursor: pointer;
+	}
+	.inks .tool {
+		border: 1px solid var(--border);
+	}
+	.tool:hover {
+		background: var(--surface-hover);
 	}
 	.tool[aria-pressed='true'] {
 		background: var(--choice-selected-background);
 		box-shadow: inset 0 0 0 2px var(--focus);
 	}
 	.field {
-		min-height: calc(2 * var(--tap-target));
+		flex: 1 1 10rem;
+		min-width: 0;
+		min-height: var(--tap-target);
 		padding: var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface);
 		color: inherit;
 		font-family: var(--font-heading);
 		font-size: 1.1rem;
@@ -316,8 +366,7 @@
 		white-space: pre-wrap;
 	}
 	.field:focus-visible {
-		outline: 2px solid var(--focus);
-		outline-offset: -2px;
+		outline: none;
 	}
 	/* Bold is weight, never colour (Trevor, 2026-10-16); browsers write b or strong. */
 	.field :global(strong),
