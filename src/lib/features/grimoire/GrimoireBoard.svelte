@@ -97,6 +97,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
+	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import EndGameFields from './EndGameFields.svelte';
@@ -894,7 +895,8 @@
 				pendingLeave = leave;
 				exitOpen = true;
 			},
-			(url) => url.pathname.startsWith(`/grimoire/${gameId}`)
+			// This board's screens, and the other boards and pages of its mode.
+			(url) => url.pathname.startsWith(`/grimoire/${gameId}`) || withinModeSession(gameId, url)
 		);
 		releaseGuard = release;
 		return release;

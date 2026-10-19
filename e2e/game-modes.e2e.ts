@@ -385,12 +385,10 @@ test('Two games at once: one setup for both bags, then one token for both games'
 		'page'
 	);
 	await menu.getByRole('button', { name: 'Town 2 · Bad Moon Rising' }).tap();
-	// Leaving the board asks first, as the app's navigation does; the game stays saved.
-	await page
-		.getByRole('alertdialog', { name: 'Leave the game?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	// Moving between the mode's boards isn't leaving the game, so it never asks (Trevor,
+	// 2026-10-19); leaving for anywhere else still does (grimoire.e2e.ts).
 	await expect(page).not.toHaveURL(board);
+	await expect(page.getByRole('alertdialog', { name: 'Leave the game?' })).toHaveCount(0);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await expect(page.getByTestId('script-title')).toContainText('Bad Moon Rising');
 	await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
@@ -399,11 +397,8 @@ test('Two games at once: one setup for both bags, then one token for both games'
 		.getByRole('dialog', { name: 'Game mode' })
 		.getByRole('button', { name: 'Towns' })
 		.tap();
-	// Leaving asks unless it was just confirmed (shell.ts keeps a short pass).
-	const ask = page.getByRole('alertdialog', { name: 'Leave the game?' });
-	await Promise.race([page.waitForURL(towns), ask.waitFor()]);
-	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page).toHaveURL(towns);
+	await expect(page.getByRole('alertdialog', { name: 'Leave the game?' })).toHaveCount(0);
 });
 
 test('Two Towns and a Boomdandy starts two towns with their own scripts', async ({ page }) => {
