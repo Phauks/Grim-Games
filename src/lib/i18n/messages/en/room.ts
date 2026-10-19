@@ -81,6 +81,9 @@ export const room = {
 	'room.readScript': 'Read the script',
 	// The view-only grimoire link (Specters)
 	'room.watch.title': 'Watch the grimoire',
+	'room.tabs': 'Share',
+	'room.tab.players': 'Players',
+	'room.tab.watch': 'View grimoire',
 	'room.watch.toggle': 'View-only grimoire link',
 	'room.watch.hint':
 		'Spectators with this link see the whole grimoire live, after promising not to spoil the game. Each new link stops the last one.',
