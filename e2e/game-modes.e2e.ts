@@ -827,18 +827,24 @@ test('New game shows each script’s author and version under its name', async (
 		);
 	});
 	await page.goto('/new');
-	// In the script search's list (Trevor, 2026-10-19), on Standard and in a mode alike.
+	const custom = page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Custom', { exact: true });
+	// Under the picker once chosen, on a line that was already there (Trevor, 2026-10-19):
+	// Custom chooses the most recent custom script.
+	const line = page.getByTestId('chosen-script');
+	const before = await line.boundingBox();
+	await custom.tap();
+	await expect(page.getByTestId('script-byline')).toHaveText('by Test Author · v2.1');
+	expect((await line.boundingBox())?.height).toBe(before?.height);
+	// In the script search's list too, on Standard and in a mode alike.
 	const option = page.getByRole('option').filter({ hasText: 'Byline Test' });
 	await page.getByRole('combobox', { name: 'Find a script' }).tap();
 	await expect(option).toContainText('by Test Author');
 	await expect(option).toContainText('2.1');
-	// And under the picker once chosen, on a line that was already there (Trevor, 2026-10-19).
-	const line = page.getByTestId('chosen-script');
-	const before = await line.boundingBox();
-	await option.tap();
-	await expect(page.getByTestId('script-byline')).toHaveText('by Test Author · v2.1');
-	expect((await line.boundingBox())?.height).toBe(before?.height);
+	await page.keyboard.press('Escape');
 	await chooseMode(page, 'Flesh and Bone');
+	await custom.tap();
 	await page.getByRole('combobox', { name: 'Find a script' }).tap();
 	await expect(option).toContainText('by Test Author');
 });
@@ -849,15 +855,22 @@ test('any script beyond the base three is found by typing, or picked in the Libr
 	// Trevor, 2026-10-19: easy to reach with 50 scripts.
 	await page.goto('/new');
 	const script = page.getByRole('radiogroup', { name: 'Script' });
-	await expect(script.getByRole('radio')).toHaveCount(3);
+	// The base three and Custom; the search and Library are Custom's, disabled in place until
+	// it is chosen (Trevor, 2026-10-19).
+	await expect(script.getByRole('radio')).toHaveCount(4);
 	const search = page.getByRole('combobox', { name: 'Find a script' });
+	const library = page.getByRole('button', { name: 'Choose from the Library' });
+	await expect(search).toBeDisabled();
+	await expect(library).toBeDisabled();
+	await script.getByText('Custom', { exact: true }).tap();
 	await search.tap();
 	await search.fill('no such script');
 	await expect(page.getByRole('listbox')).toContainText('None');
 	await page.getByRole('option', { name: 'Find more scripts online' }).tap();
 	await expect(page).toHaveURL(/\/scripts$/);
 	await page.goto('/new');
-	await page.getByRole('button', { name: 'Choose from the Library' }).tap();
+	await script.getByText('Custom', { exact: true }).tap();
+	await library.tap();
 	await expect(page.getByRole('dialog', { name: 'Choose from the Library' })).toBeVisible();
 });
 

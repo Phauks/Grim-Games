@@ -9,6 +9,7 @@ export const modes = {
 	'modes.label': 'Game mode',
 	'modes.script': 'Script',
 	'modes.scriptSearch.label': 'Find a script',
+	'modes.scriptSearch.custom': 'Custom',
 	'modes.scriptSearch.placeholder': 'Find a script',
 	'modes.scriptSearch.recent': 'Recent',
 	'modes.scriptSearch.library': 'Library',
