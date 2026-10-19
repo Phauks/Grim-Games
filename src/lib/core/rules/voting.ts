@@ -7,7 +7,7 @@
  * out.
  */
 import { alignmentOf, registersAsDead } from '#lib/core/model/selectors.ts';
-import type { Game } from '#lib/core/model/types.ts';
+import type { Game, SeatId } from '#lib/core/model/types.ts';
 
 export interface BlockThreshold {
 	/** Living players (Travellers included). */
@@ -51,4 +51,28 @@ export function livingByTeam(game: Game): LivingByTeam {
 export function ghostVotesLeft(game: Game): number {
 	return game.seating.filter((s) => registersAsDead(game, s) && !game.seats[s].ghostVoteUsed)
 		.length;
+}
+
+/** A day count the Storyteller can open to see how it was worked out (Trevor, 2026-10-19). */
+export type DayCount = 'alive' | 'good' | 'evil' | 'ghostVotes';
+
+/**
+ * The seats behind a day count, in seat order: every seat for `alive` (dead ones included,
+ * so "7/8" shows who is missing), the living on a team for `good` and `evil`, and everyone
+ * who registers as dead for `ghostVotes` (spent votes included). Each count above is the
+ * number of these seats that `counts` says yes to.
+ */
+export function seatsBehind(game: Game, count: DayCount): SeatId[] {
+	return game.seating.filter((s) => {
+		if (count === 'alive') return true;
+		if (count === 'ghostVotes') return registersAsDead(game, s);
+		return !game.seats[s].dead && alignmentOf(game, s) === count;
+	});
+}
+
+/** Whether a seat from `seatsBehind` adds one to the count. */
+export function counts(game: Game, count: DayCount, seatId: SeatId): boolean {
+	if (count === 'alive') return !game.seats[seatId].dead;
+	if (count === 'ghostVotes') return !game.seats[seatId].ghostVoteUsed;
+	return true;
 }

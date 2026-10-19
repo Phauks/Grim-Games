@@ -75,14 +75,14 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	// All five counts on one line (Trevor, 2026-10-17).
 	const tops = await page
 		.getByTestId('day-toolbar')
-		.locator('[role="note"]')
+		.locator('.counts > .badge')
 		.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
 	expect(tops).toHaveLength(5);
 	expect(new Set(tops).size).toBe(1);
 	// The living show no ghost vote mark.
 	await expect(seat(page, 'Seat 2').getByTestId('ghost-mark')).toBeHidden();
 	// Every section folds away with its caret.
-	const players = day.getByRole('button', { name: 'Players' });
+	const players = day.getByRole('button', { name: 'Players', exact: true });
 	await players.tap();
 	await expect(seat(page, 'Seat 1')).toBeHidden();
 	await players.tap();
@@ -135,6 +135,36 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await seat(page, 'Seat 2').tap();
 	await dead.getByRole('button', { name: 'Give ghost vote back' }).tap();
 	await expect(page.getByTestId('ghost-votes')).toHaveText('1');
+
+	// Each count opens how it was worked out, as a table (Trevor, 2026-10-19).
+	const table = page.getByTestId('count-table');
+	const closeCount = async () => {
+		await page.getByRole('dialog').last().getByRole('button', { name: 'Close' }).tap();
+		await expect(table).toBeHidden();
+	};
+	await page.getByTestId('alive-count').tap();
+	await expect(page.getByRole('dialog', { name: /^7 of 8 players alive/ })).toBeVisible();
+	await expect(table.locator('tbody tr')).toHaveCount(8);
+	await expect(table.locator('tr[data-seat]:not([data-counts])')).toHaveText(/Seat 2.*Dead/);
+	await expect(table.locator('tfoot')).toHaveText(/Total\s*7/);
+	await page.screenshot({ path: `test-results/day-count-${test.info().project.name}.png` });
+	await closeCount();
+	await page.getByTestId('ghost-votes').tap();
+	await expect(table.locator('tbody tr')).toHaveCount(1);
+	await expect(table.locator('tbody tr')).toHaveText(/Seat 2.*Unused/);
+	await closeCount();
+	await page.getByTestId('votes-needed').tap();
+	await expect(table).toHaveText(/Living players\s*7\s*Half, rounded up\s*4/);
+	await closeCount();
+	// No characters yet, so the teams list nobody.
+	await page.getByTestId('alive-evil').tap();
+	await expect(table.locator('tbody')).toHaveText('None');
+	await closeCount();
+	// The team counts are filled in their colour, the number on top (Trevor, 2026-10-19).
+	for (const id of ['alive-good', 'alive-evil']) {
+		const fill = await page.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
+		expect(fill, id).not.toBe('rgba(0, 0, 0, 0)');
+	}
 
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
