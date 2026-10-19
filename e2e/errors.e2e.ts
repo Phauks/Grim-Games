@@ -98,12 +98,18 @@ test('an unknown address shows the Fool and ways out, without reporting an error
 	await expect(notFound.getByRole('img', { name: 'Fool' })).toBeVisible();
 	await expect(notFound).toContainText("The first time you visit this page, it doesn't exist.");
 	await expect(page.getByTestId('error-notice')).toBeHidden();
-	for (const name of ['Back', 'Library', 'Report an issue', 'Home']) {
+	for (const name of ['Library', 'Report an issue', 'Home']) {
 		const box = await main
-			.getByRole(name === 'Back' || name === 'Report an issue' ? 'button' : 'link', { name })
+			.getByRole(name === 'Report an issue' ? 'button' : 'link', { name })
 			.boundingBox();
 		expect(box!.height).toBeGreaterThanOrEqual(44);
 	}
+	// Compact: the Fool, the joke and the ways out fit on one screen, with no sideways scroll.
+	const homeBox = await main.getByRole('link', { name: 'Home' }).boundingBox();
+	expect(homeBox!.y + homeBox!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+		true
+	);
 
 	// Report an issue opens the Report form, already titled; the address goes with it.
 	await main.getByRole('button', { name: 'Report an issue' }).tap();
@@ -112,7 +118,7 @@ test('an unknown address shows the Fool and ways out, without reporting an error
 	await expect(form).toContainText('/no-such-page');
 	await form.getByRole('button', { name: 'Cancel' }).tap();
 
-	await main.getByRole('button', { name: 'Back' }).tap();
+	await main.getByRole('link', { name: 'Library' }).tap();
 	await expect(page).toHaveURL(/\/library$/);
 	await page.goto('/no-such-page');
 	await page.getByRole('link', { name: 'Home' }).tap();

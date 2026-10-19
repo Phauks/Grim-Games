@@ -24,7 +24,6 @@ export const errors = {
 	'errors.tryAgain': 'Try again',
 	'errors.pageNotFound': 'Page not found',
 	'errors.notFoundJoke': "The first time you visit this page, it doesn't exist.",
-	'errors.back': 'Back',
 	'errors.pageFailedDetail': 'This page could not open.',
 	'errors.home': 'Home',
 	'errors.diag.title': 'Diagnostics',
