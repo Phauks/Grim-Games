@@ -1,11 +1,11 @@
-// The shared accounts Worker (worker/accounts-service.ts): one set of accounts for production
-// and every preview of the app (Trevor, 2026-10-18). The app reaches it only through its
-// `ACCOUNTS` service binding, so it has no workers.dev or preview address of its own.
+// The shared data Worker (worker/data-service.ts): accounts and share codes for production
+// and every preview of the app (Trevor, 2026-10-19). The app reaches it only through its
+// `DATA` service binding, so it has no workers.dev or preview address of its own.
 // Workers Builds deploys it as its own Worker, with this file as its config.
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "grim-games-accounts",
-	"main": "worker/accounts-service.ts",
+	"name": "grim-games-data",
+	"main": "worker/data-service.ts",
 	"compatibility_date": "2026-10-01",
 	"workers_dev": false,
 	"preview_urls": false,
@@ -18,10 +18,14 @@
 		"bindings": [
 			{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
 			{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
-			{ "name": "ACCOUNT_NAMES", "class_name": "AccountName" }
+			{ "name": "ACCOUNT_NAMES", "class_name": "AccountName" },
+			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" }
 		]
 	},
 	"migrations": [
-		{ "tag": "v1", "new_sqlite_classes": ["AccountUser", "AccountEmail", "AccountName"] }
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["AccountUser", "AccountEmail", "AccountName", "SharedScript"]
+		}
 	]
 }
