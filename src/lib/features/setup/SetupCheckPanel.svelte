@@ -34,97 +34,109 @@
 	its header and shows None when empty. It warns; it never blocks.
 -->
 <section class="check" aria-label={t('setup.check')} data-testid="setup-check">
-	<div class="body">
-		<Collapsible
-			title={t('setup.check.warnings')}
-			level={3}
-			storageKey="setup-check:warnings"
-			empty={warningCount === 0}
-		>
-			{#snippet aside()}<CountBadge
-					count={warningCount}
-					warn={warningCount > 0}
-					testid="warning-count"
-				/>{/snippet}
-			{#if warningCount}
-				<ul class="warn">
-					{#each warnings as warning, i (i)}<li><GlossaryText text={warning} /></li>{/each}
-					{#if uncurated.length}
-						<li data-testid="custom-reminders">
-							{t('setup.check.customReminders')}
-							<span class="badges">
-								{#each uncurated as id (id)}<CharacterBadge
-										characterId={id}
-										character={lookup(id)}
-									/>{/each}
-							</span>
-						</li>
-					{/if}
-				</ul>
-			{:else}<p>{t('common.none')}</p>{/if}
-		</Collapsible>
+	<!-- One section, Verification, that folds away when not in use (Trevor, 2026-10-19). -->
+	<Collapsible
+		title={t('setup.check.verification')}
+		level={3}
+		storageKey="setup-check:verification"
+	>
+		{#snippet aside()}<CountBadge
+				count={warningCount}
+				warn={warningCount > 0}
+				testid="verification-count"
+			/>{/snippet}
+		<div class="body">
+			<Collapsible
+				title={t('setup.check.warnings')}
+				level={4}
+				storageKey="setup-check:warnings"
+				empty={warningCount === 0}
+			>
+				{#snippet aside()}<CountBadge
+						count={warningCount}
+						warn={warningCount > 0}
+						testid="warning-count"
+					/>{/snippet}
+				{#if warningCount}
+					<ul class="warn">
+						{#each warnings as warning, i (i)}<li><GlossaryText text={warning} /></li>{/each}
+						{#if uncurated.length}
+							<li data-testid="custom-reminders">
+								{t('setup.check.customReminders')}
+								<span class="badges">
+									{#each uncurated as id (id)}<CharacterBadge
+											characterId={id}
+											character={lookup(id)}
+										/>{/each}
+								</span>
+							</li>
+						{/if}
+					</ul>
+				{:else}<p>{t('common.none')}</p>{/if}
+			</Collapsible>
 
-		<Collapsible
-			title={t('setup.check.shownInstead')}
-			level={3}
-			storageKey="setup-check:shown-instead"
-			empty={plan.standIns.length === 0}
-		>
-			{#if plan.standIns.length}
-				<ul class="stand-ins">
-					{#each plan.standIns as standIn (standIn.characterId)}
-						<li data-testid="stand-in-{standIn.characterId}">
-							<CharacterBadge characterId={standIn.characterId} />
-							<span>{t('setup.check.isShown')}</span>
-							{#if standIn.options.length}
-								<Button
-									variant="quiet"
-									aria-label={t('setup.check.shownTo', { name: name(standIn.characterId) })}
-									onclick={() => onStandIn(standIn.characterId)}
-									>{standIn.shows ? name(standIn.shows) : t('setup.check.choose')}</Button
-								>
-							{:else}<span>{t('common.none')}</span>{/if}
-						</li>
-					{/each}
-				</ul>
-			{:else}<p>{t('common.none')}</p>{/if}
-		</Collapsible>
+			<Collapsible
+				title={t('setup.check.shownInstead')}
+				level={4}
+				storageKey="setup-check:shown-instead"
+				empty={plan.standIns.length === 0}
+			>
+				{#if plan.standIns.length}
+					<ul class="stand-ins">
+						{#each plan.standIns as standIn (standIn.characterId)}
+							<li data-testid="stand-in-{standIn.characterId}">
+								<CharacterBadge characterId={standIn.characterId} />
+								<span>{t('setup.check.isShown')}</span>
+								{#if standIn.options.length}
+									<Button
+										variant="quiet"
+										aria-label={t('setup.check.shownTo', { name: name(standIn.characterId) })}
+										onclick={() => onStandIn(standIn.characterId)}
+										>{standIn.shows ? name(standIn.shows) : t('setup.check.choose')}</Button
+									>
+								{:else}<span>{t('common.none')}</span>{/if}
+							</li>
+						{/each}
+					</ul>
+				{:else}<p>{t('common.none')}</p>{/if}
+			</Collapsible>
 
-		<Collapsible
-			title={t('setup.check.setupChanges')}
-			level={3}
-			storageKey="setup-check:setup-changes"
-			empty={analysis.modifiers.length + analysis.notes.length === 0}
-		>
-			{#if analysis.modifiers.length || analysis.notes.length}
-				<ul>
-					{#each analysis.modifiers as modifier (modifier.id)}
-						<li><GlossaryText text={modifier.explanation} /></li>
-					{/each}
-					{#each analysis.notes as note, i (i)}<li><GlossaryText text={note} /></li>{/each}
-				</ul>
-			{:else}<p>{t('common.none')}</p>{/if}
-		</Collapsible>
+			<Collapsible
+				title={t('setup.check.setupChanges')}
+				level={4}
+				storageKey="setup-check:setup-changes"
+				empty={analysis.modifiers.length + analysis.notes.length === 0}
+			>
+				{#if analysis.modifiers.length || analysis.notes.length}
+					<ul>
+						{#each analysis.modifiers as modifier (modifier.id)}
+							<li><GlossaryText text={modifier.explanation} /></li>
+						{/each}
+						{#each analysis.notes as note, i (i)}<li><GlossaryText text={note} /></li>{/each}
+					</ul>
+				{:else}<p>{t('common.none')}</p>{/if}
+			</Collapsible>
 
-		<Collapsible
-			title={t('setup.check.jinxes')}
-			level={3}
-			storageKey="setup-check:jinxes"
-			empty={jinxes.length === 0}
-		>
-			{#if jinxes.length}
-				<ul>
-					{#each jinxes as jinx (jinx.characters.join('+'))}
-						<li>
-							<CharacterBadge characterId={jinx.characters[0]} inline />
-							{t('setup.check.and')}
-							<CharacterBadge characterId={jinx.characters[1]} inline />: {jinx.reason}
-						</li>
-					{/each}
-				</ul>
-			{:else}<p>{t('common.none')}</p>{/if}
-		</Collapsible>
-	</div>
+			<Collapsible
+				title={t('setup.check.jinxes')}
+				level={4}
+				storageKey="setup-check:jinxes"
+				empty={jinxes.length === 0}
+			>
+				{#if jinxes.length}
+					<ul>
+						{#each jinxes as jinx (jinx.characters.join('+'))}
+							<li>
+								<CharacterBadge characterId={jinx.characters[0]} inline />
+								{t('setup.check.and')}
+								<CharacterBadge characterId={jinx.characters[1]} inline />: {jinx.reason}
+							</li>
+						{/each}
+					</ul>
+				{:else}<p>{t('common.none')}</p>{/if}
+			</Collapsible>
+		</div>
+	</Collapsible>
 </section>
 
 <style>

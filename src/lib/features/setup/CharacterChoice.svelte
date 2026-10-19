@@ -6,6 +6,7 @@
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { isBagDisabled } from '#lib/core/rules/bag-characters.ts';
 
 	interface Props {
 		character: Character;
@@ -39,6 +40,8 @@
 		onAddCopy
 	}: Props = $props();
 	const selected = $derived(copies > 0);
+	/** In play, but its own token stays out of the bag (Drunk, Marionette, Lil' Monsta). */
+	const outOfBag = $derived(selected && isBagDisabled(character));
 	const uid = $props.id();
 	// The character's page opens from its icon (Trevor, 2026-10-18); made on first use.
 	let infoUsed = $state(false);
@@ -73,13 +76,14 @@
 		class="main"
 		aria-pressed={selected}
 		aria-label={copies > 1 ? `${character.name}, ${copies} copies` : character.name}
-		aria-describedby={bluff ? `${uid}-bluff` : undefined}
+		aria-describedby={bluff ? `${uid}-bluff` : outOfBag ? `${uid}-out` : undefined}
 		data-character-id={character.id}
 		onclick={onToggle}
 	>
 		{#if bluff}<span id="{uid}-bluff" class="visually-hidden"
 				>{selected ? t('setup.bluffInPlay') : t('setup.bluff')}</span
 			>{/if}
+		{#if outOfBag}<span id="{uid}-out" class="visually-hidden">{t('setup.notInBagLong')}</span>{/if}
 		<span class="text">
 			<span class="title">
 				<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
@@ -98,7 +102,9 @@
 			<span class="check"
 				>{#if bluff}<span class="bluff" data-testid="bluff-tag"
 						>{#if selected}<Icon name="warning" />{/if}{t('setup.bluffShort')}</span
-					>{:else if selected}<Icon name="check" />{/if}</span
+					>{:else if selected}{#if outOfBag}<span class="out" data-testid="not-in-bag"
+							>{t('setup.notInBag')}</span
+						>{/if}<Icon name="check" />{/if}</span
 			>
 		</span>
 	</button>
@@ -273,6 +279,18 @@
 	}
 	.jinx {
 		color: var(--accent);
+	}
+	/* Selected, but its token stays out of the bag (Trevor, 2026-10-19): a tag by the check. */
+	.out {
+		margin-inline-end: 0.3em;
+		padding: 0 0.4em;
+		border-radius: var(--radius-full);
+		background: var(--surface);
+		color: var(--on-surface-muted);
+		font-family: var(--font-control);
+		font-size: 0.7rem;
+		font-weight: 600;
+		white-space: nowrap;
 	}
 	.add {
 		display: grid;
