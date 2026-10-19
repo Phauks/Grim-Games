@@ -3,10 +3,9 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { historyItems, itemCharacters, type HistoryItem } from './history.ts';
+	import { historyItems, itemSeats, type HistoryItem } from './history.ts';
 	import HistoryLine from './HistoryLine.svelte';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { SeatId } from '#lib/core/model/index.ts';
 
 	interface Props {
 		open: boolean;
@@ -23,20 +22,38 @@
 	const items = $derived(
 		open ? historyItems(grimoire.open.session.log.entries, cursor, characters) : []
 	);
-	// ── Filter by character (Trevor, 2026-10-16): any of those chosen, in a fixed row ──
-	let chosenIds = $state<CharacterId[]>([]);
+	// ── Filter by player (Trevor, 2026-10-19; by character before, 2026-10-16): any of those
+	// chosen, in a fixed row. A seat stays one player when its character changes, and two
+	// seats with the same character stay two. ──
+	let chosenSeats = $state<SeatId[]>([]);
 	$effect(() => {
-		if (!open) chosenIds = [];
+		if (!open) chosenSeats = [];
 	});
-	/** Every character History names, in the order they first appear. */
-	const named = $derived([...new Set([...items].reverse().flatMap(itemCharacters))]);
+	/** Every seat History names: in seating order, then seats since removed. */
+	const named = $derived.by(() => {
+		const all = new Set(items.flatMap(itemSeats));
+		const seated = grimoire.game.seating.filter((id) => all.has(id));
+		return [...seated, ...[...all].filter((id) => !seated.includes(id))];
+	});
+	/** A seat's name now, or the newest name History has for a removed seat. */
+	function seatLabel(seatId: SeatId): string {
+		const game = grimoire.game;
+		const number = game.seating.indexOf(seatId) + 1;
+		if (number > 0) return game.seats[seatId]?.playerName ?? `Seat ${number}`;
+		for (const item of items)
+			for (const part of item.parts)
+				if (part.kind === 'seat' && part.seatId === seatId) return part.name;
+		return 'A seat';
+	}
 	const shown = $derived(
-		chosenIds.length === 0
+		chosenSeats.length === 0
 			? items
-			: items.filter((item) => itemCharacters(item).some((id) => chosenIds.includes(id)))
+			: items.filter((item) => itemSeats(item).some((id) => chosenSeats.includes(id)))
 	);
-	function toggleFilter(id: CharacterId) {
-		chosenIds = chosenIds.includes(id) ? chosenIds.filter((c) => c !== id) : [...chosenIds, id];
+	function toggleFilter(id: SeatId) {
+		chosenSeats = chosenSeats.includes(id)
+			? chosenSeats.filter((c) => c !== id)
+			: [...chosenSeats, id];
 	}
 	const time = new Intl.DateTimeFormat(undefined, { timeStyle: 'short' });
 
@@ -65,22 +82,16 @@
 		<button
 			type="button"
 			class="all"
-			aria-pressed={chosenIds.length === 0}
-			onclick={() => (chosenIds = [])}>All</button
+			aria-pressed={chosenSeats.length === 0}
+			onclick={() => (chosenSeats = [])}>All</button
 		>
 		{#each named as id (id)}
-			{@const character = characters.get(id)}
-			{#if character}
-				<button
-					type="button"
-					class="who"
-					aria-label={character.name}
-					aria-pressed={chosenIds.includes(id)}
-					onclick={() => toggleFilter(id)}
-				>
-					<CharacterToken {character} size={36} />
-				</button>
-			{/if}
+			<button
+				type="button"
+				class="who"
+				aria-pressed={chosenSeats.includes(id)}
+				onclick={() => toggleFilter(id)}><span>{seatLabel(id)}</span></button
+			>
 		{/each}
 	</div>
 	<ol class="history">
@@ -159,7 +170,13 @@
 		cursor: pointer;
 	}
 	.filter .who {
-		padding: 0;
+		max-width: 12em;
+	}
+	.who span {
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.filter button[aria-pressed='true'] {
 		border-color: var(--accent);

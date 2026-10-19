@@ -783,10 +783,13 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
 		/Drunk moved from\s+Sailor.* to Seat 3/
 	);
-	// Filtered by a character (Trevor, 2026-10-16): only entries naming the Sailor.
+	// Filtered by player (Trevor, 2026-10-19): only entries naming Seat 1, the Sailor's seat;
+	// the Drunk reminder's own character is no filter.
 	const history = page.getByRole('dialog', { name: 'History' });
 	const filter = history.getByRole('group', { name: 'Show changes for' });
-	await filter.getByRole('button', { name: 'Sailor' }).tap();
+	await expect(filter.getByRole('button', { name: 'Sailor' })).toHaveCount(0);
+	await expect(filter.getByRole('button', { name: 'Seat 3' })).toBeVisible();
+	await filter.getByRole('button', { name: 'Seat 1', exact: true }).tap();
 	await expect(filter.getByRole('button', { name: 'All' })).toHaveAttribute(
 		'aria-pressed',
 		'false'
