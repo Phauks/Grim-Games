@@ -9,9 +9,11 @@
 	import { liveDayTimer as timer } from './day-timer.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { canVibrate, playTimerSound, vibrateTimer } from './timer-sound.ts';
+	import TimerPerPlayerRow from './TimerPerPlayerRow.svelte';
 
 	/**
-	 * The day timer (Trevor, 2026-10-17): 30 seconds per living player, started by hand,
+	 * The day timer (Trevor, 2026-10-17): 30 seconds per living player (a setting since
+	 * 2026-10-19), started by hand,
 	 * counting down or up (a setting). At the target the device vibrates, plays the chosen
 	 * sound and the clock flashes. `full` has every control (the day view); `compact` is the
 	 * clock with Start/Pause, for the board. Tapping its clock opens the full timer and its
@@ -135,6 +137,7 @@
 				onChange={chooseSound}
 			/>
 			{@render vibrate()}
+			<TimerPerPlayerRow />
 		</div>
 	</BottomSheet>
 {:else}
@@ -149,6 +152,7 @@
 				onChange={chooseSound}
 			/>
 			{@render vibrate()}
+			<TimerPerPlayerRow />
 		</div>
 	</BottomSheet>
 {/if}

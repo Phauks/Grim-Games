@@ -5,8 +5,11 @@
  * a tab in the background.
  */
 
-/** Trevor's rule of thumb: 30 seconds of discussion per living player. */
+/** Trevor's rule of thumb: 30 seconds of discussion per living player, the default. */
 export const DAY_SECONDS_PER_ALIVE = 30;
+/** The setting's range (Trevor, 2026-10-19: "amount of time ... based upon player count"). */
+export const DAY_SECONDS_PER_ALIVE_MIN = 5;
+export const DAY_SECONDS_PER_ALIVE_MAX = 300;
 /**
  * Counting down shows the time left and stops at 0:00; counting up shows the time used
  * from 0:00 and keeps going past the target (Trevor, 2026-10-17: "count up or down").
@@ -26,10 +29,10 @@ export interface DayTimer {
 	startedAt?: number;
 }
 
-/** A new timer: 30 seconds per living player (at least one step). */
-export function dayTimer(alive: number): DayTimer {
+/** A new timer: by default 30 seconds per living player (at least one step). */
+export function dayTimer(alive: number, secondsPerAlive = DAY_SECONDS_PER_ALIVE): DayTimer {
 	return {
-		durationMs: Math.max(DAY_TIMER_STEP_MS, alive * DAY_SECONDS_PER_ALIVE * 1000),
+		durationMs: Math.max(DAY_TIMER_STEP_MS, alive * secondsPerAlive * 1000),
 		elapsedMs: 0
 	};
 }

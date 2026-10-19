@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
 	import { canVibrate, playTimerSound, vibrateTimer } from '#lib/features/day/timer-sound.ts';
+	import TimerPerPlayerRow from '#lib/features/day/TimerPerPlayerRow.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { TIMER_SOUNDS } from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
@@ -87,6 +88,7 @@
 	defaultValue="down"
 	onChange={(timerMode) => preferences.update({ timerMode })}
 />
+<TimerPerPlayerRow />
 
 <style>
 	h3 {

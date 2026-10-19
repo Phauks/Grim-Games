@@ -234,6 +234,11 @@ test('the day timer sound and mode are in Storyteller settings', async ({ page }
 	const again = await openSettings(page, 'Storyteller');
 	await expect(again.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
 	await expect(again.getByRole('combobox', { name: 'Day timer' })).toContainText('Stopwatch');
+	// The time per living player too (Trevor, 2026-10-19), typed or stepped.
+	const seconds = again.getByTestId('timer-per-player');
+	await expect(seconds).toHaveValue('30');
+	await again.getByRole('button', { name: 'More seconds per living player' }).tap();
+	await expect(seconds).toHaveValue('31');
 });
 
 test('text size changes text only: icons, spacing and buttons keep their size', async ({
