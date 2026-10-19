@@ -3328,6 +3328,8 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 	page
 }) => {
 	// Trevor (2026-10-18, phone screenshot): the corner ran into Seat 4's name.
+	// Four games in one test: give it the time, and let each corner settle before measuring.
+	test.slow();
 	const overlaps = (a: Box, b: Box) =>
 		a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 	type Box = { x: number; y: number; width: number; height: number };
@@ -3370,19 +3372,23 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		);
 		await page.reload();
 		const corner = page.getByTestId('script-title');
-		await expect(corner).toBeVisible();
+		await expect(corner).toBeVisible({ timeout: 15_000 });
 		await expect(page.getByTestId('game-mode')).toHaveText('Trouble Brewing');
 		await expect(corner).not.toContainText(/Trouble.*Trouble/);
-		const box = (await corner.boundingBox())!;
-		for (const seat of await page.getByTestId('seat').all()) {
-			// The token itself: its slot has a --u of room either side.
-			const slot = (await seat.boundingBox())!;
-			const token = { ...slot, x: slot.x + (slot.width - slot.height) / 2, width: slot.height };
-			expect(overlaps(box, token)).toBe(false);
-		}
-		for (const name of await page.getByText(/^Seat \d+$/).all()) {
-			expect(overlaps(box, (await name.boundingBox())!)).toBe(false);
-		}
+		const clashes = async () => {
+			const box = (await corner.boundingBox())!;
+			let count = 0;
+			for (const seat of await page.getByTestId('seat').all()) {
+				// The token itself: its slot has a --u of room either side.
+				const slot = (await seat.boundingBox())!;
+				const token = { ...slot, x: slot.x + (slot.width - slot.height) / 2, width: slot.height };
+				if (overlaps(box, token)) count++;
+			}
+			for (const name of await page.getByText(/^Seat \d+$/).all())
+				if (overlaps(box, (await name.boundingBox())!)) count++;
+			return count;
+		};
+		await expect.poll(clashes).toBe(0);
 	}
 });
 
