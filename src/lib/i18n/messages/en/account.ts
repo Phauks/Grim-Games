@@ -82,6 +82,7 @@ export const account = {
 	'account.devices.location': 'Location',
 	'account.devices.signedIn': 'Signed in',
 	'account.devices.lastUsedColumn': 'Last used',
+	'account.devices.signOut': 'Sign out',
 	'account.devices.signOutDevice': 'Sign out {device}',
 	'account.devices.signOutOthers': 'Sign out other devices',
 

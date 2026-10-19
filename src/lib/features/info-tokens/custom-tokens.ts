@@ -77,7 +77,7 @@ function parseValue(raw: unknown): InfoTokenValue | undefined {
 /** What a stored card asks for, dropping anything it can't be; undefined for nothing. */
 export function parseAsks(raw: unknown): InfoTokenAsks | undefined {
 	if (typeof raw !== 'object' || raw === null) return undefined;
-	const { characters, value, exactly, notInPlay } = raw as Record<string, unknown>;
+	const { characters, value, exactly, fewest, notInPlay } = raw as Record<string, unknown>;
 	const count =
 		isInteger(characters) && characters > 0
 			? Math.min(characters, MAX_ASKED_CHARACTERS)
@@ -88,6 +88,10 @@ export function parseAsks(raw: unknown): InfoTokenAsks | undefined {
 		...(count !== undefined ? { characters: count } : {}),
 		// Both only mean something with characters to choose.
 		...(count !== undefined && exactly === true ? { exactly: true } : {}),
+		// A range's lowest: only between 1 and the most, and never with "exactly".
+		...(count !== undefined && exactly !== true && isInteger(fewest) && fewest > 1 && fewest < count
+			? { fewest }
+			: {}),
 		...(count !== undefined && notInPlay === true ? { notInPlay: true } : {}),
 		...(parsed !== undefined ? { value: parsed } : {})
 	};

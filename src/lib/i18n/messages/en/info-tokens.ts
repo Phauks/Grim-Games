@@ -18,10 +18,7 @@ export const infoTokens = {
 		one: 'Asks for {count} character',
 		other: 'Asks for {count} characters'
 	},
-	'info-tokens.asks.characters': {
-		one: 'Asks for {count} character',
-		other: 'Asks for 1 to {count} characters'
-	},
+	'info-tokens.asks.charactersRange': 'Asks for {from} to {count} characters',
 	'info-tokens.input': 'Fill in',
 	'info-tokens.inputs.none': 'Nothing',
 	'info-tokens.inputs.text': 'Words',
@@ -34,7 +31,14 @@ export const infoTokens = {
 	'info-tokens.choiceRemove': 'Remove answer {number}',
 	'info-tokens.choiceAdd': 'Add answer',
 	'info-tokens.askCharacters': 'Characters to show',
-	'info-tokens.exactly': 'Always this many',
+	'info-tokens.characterCount.none': 'None',
+	'info-tokens.characterCount.exact': 'Exactly',
+	'info-tokens.characterCount.range': 'Range',
+	'info-tokens.howMany': 'How many',
+	'info-tokens.from': 'From',
+	'info-tokens.to': 'To',
+	'info-tokens.fewerFrom': 'Lower From',
+	'info-tokens.moreFrom': 'Higher From',
 	'info-tokens.notInPlay': 'Only characters not in play',
 	'info-tokens.answerOnly': 'Show only the answer',
 	'info-tokens.fewer': 'Fewer characters',

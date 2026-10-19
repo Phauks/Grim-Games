@@ -32,7 +32,7 @@ the shared one (a prop, a snippet) instead of copying it.
 | A modal or full-screen panel                               | `ui/primitives/Dialog.svelte`; `full` and `max` scroll their content under the header (`scroll={false}` for content that pans itself)              | `e2e/dialog-scroll.e2e.ts`              |
 | Choosing a saved script, character or collection           | `features/library/LibraryBrowser.svelte` with `kind` and `onpick` (the Library's file manager; `PreviewToggle.svelte` is its Preview button)       | review                                  |
 | A confirmation                                             | `ui/primitives/ConfirmDialog.svelte`                                                                                                               | `grim/confirm-dialog`                   |
-| Delete, remove, clear                                      | `ui/primitives/DeleteButton.svelte`                                                                                                                | `grim/delete-button`                    |
+| Delete, remove, clear (not Account settings¹)              | `ui/primitives/DeleteButton.svelte`                                                                                                                | `grim/delete-button`                    |
 | A close or dismiss X                                       | `ui/primitives/IconButton.svelte` with `icon="close"`; the primitives' own X is `data-part="close-trigger"`, round with the shared tint (base.css) | `grim/close-button`, `e2e/mouse.e2e.ts` |
 | A pill button or on/off chip                               | `ui/primitives/Chip.svelte` (`pressed`, `marked`)                                                                                                  | review                                  |
 | A number with − and +                                      | `ui/primitives/Stepper.svelte` (`typeable` lets the number be typed; `oncommit` on Enter)                                                          | review                                  |
@@ -62,6 +62,8 @@ the shared one (a prop, a snippet) instead of copying it.
 | Saving a file to the device                                | `ui/download.ts` (`downloadJson`, `downloadFile`, `fileNameFor`)                                                                                   | review                                  |
 | Pixel sizes                                                | `var(--u)` and tokens                                                                                                                              | `npm run lint:px`                       |
 | Colours                                                    | theme tokens; mixes and washes (lines, tints, glows) are tokens in `ui/tokens/components.css`; a sheet's colours come from the sheet scope there   | `npm run lint:colors`                   |
+
+¹ Account settings (`features/account/AccountPage.svelte`) is exempt from `grim/delete-button` (Trevor, 2026-10-18): Sign out is a text button, and Delete account a labelled red button.
 
 ## Lists that only shrink
 

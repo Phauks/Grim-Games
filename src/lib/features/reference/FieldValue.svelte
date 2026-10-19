@@ -18,6 +18,9 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
+	import { iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -45,6 +48,10 @@
 	}
 
 	let { field, entry, onExplain, tokenSize = 56, plainName = false }: Props = $props();
+	// The token opens the character's details, as its badge does (Trevor, 2026-10-19). The
+	// dialog is only created on first tap: the page shows hundreds of tokens.
+	let detailsOpen = $state(false);
+	let detailsUsed = $state(false);
 	// Jinxes start folded: they vary most in size (Trevor, 2026-10-16). Built only when opened.
 	let jinxesOpen = $state(false);
 
@@ -152,13 +159,31 @@
 
 <span class="value" data-field={field}>
 	{#if field === 'token'}
-		<CharacterToken
-			{character}
-			size={tokenSize}
-			nightNumbers={preferences.current.tokenAppearance.nightNumbers && officialData.current
-				? sheetNumbersFor(officialData.current.nightSheet, character.id)
-				: undefined}
-		/>
+		<button
+			type="button"
+			class="token-button"
+			aria-label={t('reference.aboutCharacter', { name: character.name })}
+			aria-haspopup="dialog"
+			onpointerdown={() => prefetchWikiPage(character)}
+			onfocus={() => prefetchWikiPage(character)}
+			onclick={() => {
+				detailsUsed = true;
+				detailsOpen = true;
+			}}
+		>
+			<CharacterToken
+				{character}
+				size={tokenSize}
+				nightNumbers={preferences.current.tokenAppearance.nightNumbers && officialData.current
+					? sheetNumbersFor(officialData.current.nightSheet, character.id)
+					: undefined}
+			/>
+		</button>
+		{#if detailsUsed}<CharacterDialog
+				bind:open={detailsOpen}
+				{character}
+				icon={iconUrl(character)}
+			/>{/if}
 	{:else if field === 'name' && plainName}
 		<!-- eslint-disable-next-line grim/names-as-badges -- Reference table cells are plain information (Trevor, 2026-10-16) -->
 		<span class="block">{character.name}</span>{@render links()}
@@ -299,6 +324,19 @@
 <style>
 	.value {
 		min-width: 0;
+	}
+	/* The token itself is the button: no frame of its own, and at least a tap target. */
+	.token-button {
+		display: inline-grid;
+		place-items: center;
+		min-width: var(--tap-target);
+		min-height: var(--tap-target);
+		padding: 0;
+		border: 0;
+		border-radius: var(--radius-full);
+		background: none;
+		color: inherit;
+		cursor: pointer;
 	}
 	.small {
 		font-size: 0.8rem;

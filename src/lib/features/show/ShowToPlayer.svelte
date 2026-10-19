@@ -214,6 +214,11 @@
 		color: var(--on-surface);
 		overscroll-behavior: none;
 	}
+	/* The page under it stops scrolling while it is open, so the page's scrollbar never
+	   shows beside the player's view (Trevor, 2026-10-18). Wherever it opens from. */
+	:global(html:has(dialog.show[open])) {
+		overflow: hidden;
+	}
 	.show::backdrop {
 		background: var(--surface, Canvas);
 	}

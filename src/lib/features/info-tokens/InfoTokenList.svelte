@@ -74,6 +74,7 @@
 	}
 
 	type InputKind = 'none' | InfoTokenValue['kind'];
+	type CharacterCount = 'none' | 'exact' | 'range';
 
 	let {
 		onchoose,
@@ -219,8 +220,12 @@
 		min: string;
 		max: string;
 		choices: string[];
+		/** How many characters it shows: none, an exact count, or a range (Trevor, 2026-10-18). */
+		count: CharacterCount;
+		/** The exact count, or a range's most. */
 		characters: number;
-		exactly: boolean;
+		/** A range's least. */
+		fewest: number;
 		notInPlay: boolean;
 		answerOnly: boolean;
 	}>(blankEditor());
@@ -241,8 +246,9 @@
 			min: '',
 			max: '',
 			choices: ['', ''],
-			characters: 0,
-			exactly: false,
+			count: 'none' as CharacterCount,
+			characters: 1,
+			fewest: 1,
 			notInPlay: false,
 			answerOnly: false
 		};
@@ -259,8 +265,9 @@
 			min: value?.kind === 'number' && value.min !== undefined ? String(value.min) : '',
 			max: value?.kind === 'number' && value.max !== undefined ? String(value.max) : '',
 			choices: value?.kind === 'choices' ? [...value.options] : ['', ''],
-			characters: token?.asks?.characters ?? 0,
-			exactly: token?.asks?.exactly === true,
+			count: countOf(token?.asks),
+			characters: token?.asks?.characters ?? 1,
+			fewest: token?.asks?.fewest ?? 1,
 			notInPlay: token?.asks?.notInPlay === true,
 			answerOnly: token?.answerOnly === true
 		};
@@ -284,6 +291,25 @@
 		editOpen = false;
 	}
 
+	/** A whole number as typed: digits, with a minus sign only in front. */
+	const wholeNumber = (text: string) =>
+		(text.trimStart().startsWith('-') ? '-' : '') + text.replace(/\D/g, '');
+
+	function countOf(asks: InfoTokenAsks | undefined): CharacterCount {
+		if (!asks?.characters) return 'none';
+		const from = asks.exactly ? asks.characters : (asks.fewest ?? 1);
+		return from < asks.characters ? 'range' : 'exact';
+	}
+
+	/** A range needs room for two numbers; switching keeps what was set where it can. */
+	function setCount(count: CharacterCount) {
+		editing.count = count;
+		if (count === 'range') {
+			editing.characters = Math.max(editing.characters, 2);
+			editing.fewest = Math.min(editing.fewest, editing.characters - 1);
+		}
+	}
+
 	/** What the editor's fields ask for; the store drops what can't be asked (one answer). */
 	function editorAsks(fields: typeof editing): InfoTokenAsks {
 		const whole = (text: string) => (/^-?\d+$/.test(text.trim()) ? Number(text) : undefined);
@@ -295,10 +321,13 @@
 					: fields.input === 'choices'
 						? { kind: 'choices', options: cleanChoices(fields.choices) }
 						: undefined;
+		const shows = fields.count !== 'none';
+		const range = fields.count === 'range' && fields.fewest < fields.characters;
 		return {
-			characters: fields.characters || undefined,
-			exactly: fields.exactly || undefined,
-			notInPlay: fields.notInPlay || undefined,
+			characters: shows ? fields.characters : undefined,
+			exactly: shows && !range ? true : undefined,
+			fewest: range && fields.fewest > 1 ? fields.fewest : undefined,
+			notInPlay: (shows && fields.notInPlay) || undefined,
 			value
 		};
 	}
@@ -595,8 +624,18 @@
 				/>
 				{#if editing.input === 'number'}
 					<div class="range">
-						<TextField label={t('info-tokens.min')} inputmode="numeric" bind:value={editing.min} />
-						<TextField label={t('info-tokens.max')} inputmode="numeric" bind:value={editing.max} />
+						<TextField
+							label={t('info-tokens.min')}
+							inputmode="numeric"
+							filter={wholeNumber}
+							bind:value={editing.min}
+						/>
+						<TextField
+							label={t('info-tokens.max')}
+							inputmode="numeric"
+							filter={wholeNumber}
+							bind:value={editing.max}
+						/>
 					</div>
 				{:else if editing.input === 'choices'}
 					<TextListField
@@ -616,28 +655,54 @@
 					disabled={editing.input === 'none'}
 					onChange={(checked) => (editing.answerOnly = checked)}
 				/>
-				<div class="count-field">
-					<span class="count-label">{t('info-tokens.askCharacters')}</span>
-					<Stepper
-						bind:value={editing.characters}
-						label={t('info-tokens.askCharacters')}
-						lessLabel={t('info-tokens.fewer')}
-						moreLabel={t('info-tokens.more')}
-						min={0}
-						max={MAX_ASKED_CHARACTERS}
-					/>
-				</div>
-				<!-- As "These characters are not in play": always that many, chosen from those not in play. -->
-				<Toggle
-					label={t('info-tokens.exactly')}
-					checked={editing.exactly && editing.characters > 0}
-					disabled={editing.characters === 0}
-					onChange={(checked) => (editing.exactly = checked)}
+				<!-- None, exact or a range, then its numbers, always in place (no reflow). -->
+				<Select
+					label={t('info-tokens.askCharacters')}
+					value={editing.count}
+					options={(['none', 'exact', 'range'] as const).map((value) => ({
+						value,
+						label: t(`info-tokens.characterCount.${value}`)
+					}))}
+					onChange={setCount}
 				/>
+				<div class="count-field">
+					{#if editing.count === 'range'}
+						<span class="count-label">{t('info-tokens.from')}</span>
+						<Stepper
+							bind:value={editing.fewest}
+							label={t('info-tokens.from')}
+							lessLabel={t('info-tokens.fewerFrom')}
+							moreLabel={t('info-tokens.moreFrom')}
+							min={1}
+							max={editing.characters - 1}
+						/>
+						<span class="count-label">{t('info-tokens.to')}</span>
+						<Stepper
+							bind:value={editing.characters}
+							label={t('info-tokens.to')}
+							lessLabel={t('info-tokens.fewer')}
+							moreLabel={t('info-tokens.more')}
+							min={editing.fewest + 1}
+							max={MAX_ASKED_CHARACTERS}
+						/>
+					{:else}
+						<span class="count-label">{t('info-tokens.howMany')}</span>
+						<Stepper
+							bind:value={editing.characters}
+							label={t('info-tokens.howMany')}
+							lessLabel={t('info-tokens.fewer')}
+							moreLabel={t('info-tokens.more')}
+							min={1}
+							max={MAX_ASKED_CHARACTERS}
+							disabled={editing.count === 'none'}
+						/>
+					{/if}
+				</div>
+				<!-- As "These characters are not in play": chosen from those not in play. -->
 				<Toggle
 					label={t('info-tokens.notInPlay')}
-					checked={editing.notInPlay && editing.characters > 0}
-					disabled={editing.characters === 0}
+					checked={editing.notInPlay && editing.count !== 'none'}
+					disabled={editing.count === 'none'}
 					onChange={(checked) => (editing.notInPlay = checked)}
 				/>
 				{#if characters.length > 0}
@@ -767,11 +832,11 @@
 		background: var(--surface, Canvas);
 		color: var(--on-surface);
 	}
+	/* The card fills the box, so if it must scroll its scrollbar is at the box's edge, not
+	   beside the centred text (Trevor, 2026-10-18). */
 	.preview-card {
 		height: 100%;
 		display: grid;
-		place-items: center;
-		padding: var(--space-2);
 	}
 	.range {
 		display: grid;
@@ -782,8 +847,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
+		gap: var(--space-2) var(--space-3);
 	}
 	.count-label {
 		font-weight: 600;
