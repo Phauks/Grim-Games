@@ -833,7 +833,12 @@ test('New game shows each script’s author and version under its name', async (
 	await page.getByRole('combobox', { name: 'Find a script' }).tap();
 	await expect(option).toContainText('by Test Author');
 	await expect(option).toContainText('2.1');
-	await page.keyboard.press('Escape');
+	// And under the picker once chosen, on a line that was already there (Trevor, 2026-10-19).
+	const line = page.getByTestId('chosen-script');
+	const before = await line.boundingBox();
+	await option.tap();
+	await expect(page.getByTestId('script-byline')).toHaveText('by Test Author · v2.1');
+	expect((await line.boundingBox())?.height).toBe(before?.height);
 	await chooseMode(page, 'Flesh and Bone');
 	await page.getByRole('combobox', { name: 'Find a script' }).tap();
 	await expect(option).toContainText('by Test Author');
