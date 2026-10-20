@@ -1,10 +1,9 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import Chip from '#lib/ui/primitives/Chip.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -29,6 +28,11 @@
 		 * and the toggle, 2026-10-19).
 		 */
 		notInPlay?: boolean;
+		/**
+		 * The toggle starts on (Trevor, 2026-10-20: the Demon's bluffs). Off for a set that may
+		 * hold characters in play, such as the Lunatic's.
+		 */
+		hideInPlayFirst?: boolean;
 	}
 
 	let {
@@ -38,10 +42,12 @@
 		label,
 		inPlay,
 		warnInPlay = false,
-		notInPlay = false
+		notInPlay = false,
+		hideInPlayFirst = true
 	}: Props = $props();
 
-	let hideInPlay = $state(false);
+	// Read once: the Storyteller's own choice is kept while the picker is open.
+	let hideInPlay = $state(untrack(() => hideInPlayFirst));
 	/** Good characters only; with the toggle on, none in play unless already chosen. */
 	const choices = $derived(
 		notInPlay
@@ -73,6 +79,11 @@
 		else if (!full) selected = [...selected, id];
 	}
 
+	/** The place's button removes its character. */
+	const removeLabel = (character: Character, blocked: boolean | undefined) =>
+		// eslint-disable-next-line grim/names-as-badges -- the button's spoken name, never shown; the row shows the token
+		t(blocked ? 'show.removeInPlay' : 'show.remove', { name: character.name });
+
 	/** Warned, never locked (Trevor's rule: the Storyteller can override anything). */
 	function marker(character: Character): string | undefined {
 		return inPlay?.has(character.id) ? t('show.inPlay') : undefined;
@@ -80,9 +91,8 @@
 </script>
 
 <!--
-	The chosen characters on one line; tapping one removes it (Trevor, 2026-10-18), one tap-target
-	high whatever is chosen, so choosing never moves anything; long names shorten to fit.
-	Then the shared searchable character list.
+	A place for each character that can be chosen, drawn like the list's rows; tapping one
+	removes it (Trevor, 2026-10-18). Then the shared searchable character list.
 -->
 <div class="picker">
 	<!-- Pinned while the list scrolls, so what is chosen stays in view (Trevor, 2026-10-18). -->
@@ -99,27 +109,23 @@
 				>
 			</div>
 		{/if}
+		<!-- One place per character that can be chosen, kept while empty (Trevor, 2026-10-20). -->
 		<ul class="slots" aria-label={t('show.chosen')}>
-			{#each selected as id (id)}
-				{@const character = byId.get(id)}
+			{#each Array.from({ length: max }, (_, i) => selected[i]) as id, i (i)}
+				{@const character = id ? byId.get(id) : undefined}
 				{#if character}
 					{@const blocked = warnInPlay && inPlay?.has(character.id)}
-					<li>
-						<Chip
-							class="pick"
-							data-blocked={blocked ? '' : undefined}
-							aria-label={t(blocked ? 'show.removeInPlay' : 'show.remove', {
-								name: character.name
-							})}
+					<li data-blocked={blocked ? '' : undefined}>
+						<CharacterRow
+							{character}
+							note={blocked ? t('show.inPlay') : undefined}
+							label={removeLabel(character, blocked)}
 							onclick={() => toggle(character.id)}
-						>
-							<CharacterBadge characterId={character.id} {character} interactive={false} />
-							{#if blocked}<Icon name="warning" />{/if}
-						</Chip>
+						/>
 					</li>
+				{:else}
+					<li class="empty" aria-hidden="true"></li>
 				{/if}
-			{:else}
-				<li class="empty">{t('common.none')}</li>
 			{/each}
 		</ul>
 	</div>
@@ -165,52 +171,42 @@
 	.ink :global(.icon-button) {
 		color: inherit;
 	}
-	/* Wraps onto more lines rather than running off a phone (Trevor, 2026-10-19). */
+	/* The picker's own rows, in its columns. Every place is one row high whatever is in it: the
+	   name and the start of the ability on a line each, so choosing never moves the list (Trevor, 2026-10-20). */
 	.slots {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
+		--slot-height: calc(2 * var(--space-1) + 1.5rem + 1.3 * 0.8rem);
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
 		gap: var(--space-1);
-		min-height: var(--tap-target);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
-	/* A name too long for a whole line shortens. */
 	.slots li {
 		display: flex;
-		flex: 0 1 auto;
 		min-width: 0;
-		max-width: 100%;
+		height: var(--slot-height);
 	}
-	/* The badge is the button; the name shortens rather than wrapping. */
-	.slots :global(.pick) {
-		gap: 0;
-		min-width: 0;
-		max-width: 100%;
-		padding: 0;
-		border-color: transparent;
+	.slots :global(.row) {
+		height: 100%;
+		overflow: hidden;
 	}
-	.slots :global(.pick .badge) {
-		flex: 0 1 auto;
-		min-width: 0;
+	.slots :global(.name) {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		line-height: 1.5rem;
 	}
-	.slots :global(.pick .icon) {
-		flex: none;
-	}
-	.slots :global(.pick .name) {
+	.slots :global(.ability) {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.slots :global(.pick[data-blocked]) {
-		gap: var(--space-1);
-		padding-right: var(--space-2);
-		border: 2px solid var(--accent);
-		color: var(--accent);
+	.slots li[data-blocked] :global(.row) {
+		box-shadow: inset 0 0 0 2px var(--accent);
 	}
 	.empty {
-		padding-left: var(--space-3);
-		color: var(--on-surface-muted);
+		border: 1px dashed var(--border);
+		border-radius: var(--radius-md);
 	}
 </style>

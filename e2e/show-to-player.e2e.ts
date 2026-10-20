@@ -174,6 +174,9 @@ test("characters in play are marked for the Demon's bluffs, but the Drunk's Town
 	await page.goto('/spikes/bluffs');
 	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
 	await page.getByRole('button', { name: 'Choose' }).tap();
+	// Hidden at first (Trevor, 2026-10-20), then shown with the toggle.
+	await expect(choice(page, 'Empath')).toHaveCount(0);
+	await page.getByText('Not in play only', { exact: true }).tap();
 	// Marked, never locked: the Storyteller can override anything (Trevor).
 	await expect(choice(page, 'Empath')).toBeEnabled();
 	await expect(choice(page, 'Empath')).toContainText('In play');
@@ -191,6 +194,8 @@ test("in a Lunatic game the second set is the Lunatic's and may include characte
 	await page.getByRole('button', { name: 'Demon bluffs (Lunatic game)' }).tap();
 	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
 	await page.getByRole('button', { name: 'Add a set' }).tap();
+	// The Lunatic's set lists characters in play from the start.
+	await expect(page.getByRole('checkbox', { name: 'Not in play only' })).not.toBeChecked();
 	await expect(choice(page, 'Sailor')).toBeEnabled();
 	await expect(choice(page, 'Sailor')).toContainText('In play');
 	await choice(page, 'Sailor').tap();
