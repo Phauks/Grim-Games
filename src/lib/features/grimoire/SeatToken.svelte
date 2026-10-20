@@ -7,7 +7,6 @@
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import type { NamePlace } from './name-placement.ts';
 
 	interface Props {
 		seat: Seat;
@@ -28,8 +27,6 @@
 		role?: 'source' | 'target' | 'both';
 		/** Faded while a reminder that doesn't fit this seat is dragged (it can still go here). */
 		misfit?: boolean;
-		/** Which side of the token the name goes, so nothing covers it. */
-		namePlace?: NamePlace;
 		/** Night order numbers for the leaf badges, when that setting is on. */
 		nightNumbers?: { first?: number; other?: number };
 		/** `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat). */
@@ -47,7 +44,6 @@
 		dropTarget = false,
 		role,
 		misfit = false,
-		namePlace = 'below',
 		nightNumbers,
 		onTap,
 		onGhostVote
@@ -142,7 +138,6 @@
 		dead={seat.dead}
 		{name}
 		{number}
-		{namePlace}
 		face={character ? face : undefined}
 		{marks}
 		vote={seat.dead ? (seat.ghostVoteUsed ? 'used' : 'unused') : undefined}
