@@ -50,7 +50,16 @@ export interface ReminderInstance extends Reminder {
 	 * symbol's icon id or an emoji. None shows a blank token.
 	 */
 	symbol?: string;
+	/**
+	 * The colour of the generic reminder's symbol (Trevor, 2026-10-20). None is the reminder's
+	 * own ink. An emoji keeps its own colours.
+	 */
+	symbolColour?: SymbolColour;
 }
+
+/** Colours a generic reminder's symbol can take, each one of the theme's own colours. */
+export const SYMBOL_COLOURS = ['blue', 'red', 'purple', 'gold', 'green'] as const;
+export type SymbolColour = (typeof SYMBOL_COLOURS)[number];
 
 /**
  * The generic ∞ reminder's `characterId` (Trevor, 2026-10-18: one plain reminder, as many as

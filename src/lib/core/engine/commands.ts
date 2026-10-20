@@ -15,6 +15,7 @@ import type {
 	ReminderId,
 	SeatId,
 	SeatOverride,
+	SymbolColour,
 	TileId
 } from '#lib/core/model/index.ts';
 
@@ -96,6 +97,8 @@ export type Command =
 	| { type: 'SetReminderNote'; reminderId: ReminderId; note?: string }
 	/** The generic reminder's middle symbol; none, or blank, clears it. */
 	| { type: 'SetReminderSymbol'; reminderId: ReminderId; symbol?: string }
+	/** The colour of the generic reminder's symbol; none clears it. */
+	| { type: 'SetReminderSymbolColour'; reminderId: ReminderId; colour?: SymbolColour }
 	/**
 	 * Places several reminders at once, such as the suggested setup reminders
 	 * (`setupReminders`, `placeableSetupReminders`). Each becomes a normal reminder that can

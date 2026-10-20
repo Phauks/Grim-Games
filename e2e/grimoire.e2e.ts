@@ -4180,8 +4180,12 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await text.fill('Chose Sam');
 	await text.press('Enter');
 	// Its own symbol (Trevor, 2026-10-19: chosen per token); none by default.
-	await page.getByRole('combobox', { name: 'Symbol' }).tap();
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
 	await page.getByRole('option', { name: 'Owl', exact: true }).tap();
+	// Its symbol's colour (Trevor, 2026-10-20: per token): kept in place, but an emoji keeps
+	// its own colours, so it waits for an icon symbol.
+	const colour = page.getByRole('combobox', { name: 'Symbol colour' });
+	await expect(colour).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
 	const placed = page.locator(
@@ -4209,6 +4213,35 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	});
 	expect(colours.rim).not.toBe(colours.face);
 	expect(colours.band).toContain(colours.rim);
+
+	// An icon symbol takes a colour from the theme's own, and Default gives it back its ink.
+	await openSeat(page, 1);
+	await page.getByRole('button', { name: 'Actions for Chose Sam' }).tap();
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	const icon = placed.locator('[data-symbol^="ph:"]');
+	await expect(icon).toBeAttached();
+	const ink = await icon.evaluate((el) => getComputedStyle(el).color);
+	await expect(colour).toBeEnabled();
+	await colour.tap();
+	await page.getByRole('option', { name: 'Red', exact: true }).tap();
+	const evil = await page.evaluate(() => {
+		const probe = document.createElement('span');
+		probe.style.color = 'var(--evil)';
+		document.body.append(probe);
+		const value = getComputedStyle(probe).color;
+		probe.remove();
+		return value;
+	});
+	await expect(icon).toHaveCSS('color', evil);
+	await colour.tap();
+	await page.getByRole('option', { name: 'Default', exact: true }).tap();
+	await expect(icon).toHaveCSS('color', ink);
+	// None takes the symbol off again.
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'None', exact: true }).tap();
+	await expect(placed.locator('[data-symbol]')).toHaveCount(0);
+	await expect(colour).toBeDisabled();
 });
 
 // Closing a step opened from the walk-through must not crash the dialog (Grimoire board,
