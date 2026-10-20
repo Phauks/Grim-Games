@@ -36,8 +36,8 @@ describe('changesSince', () => {
 describe('noteFor', () => {
 	it('shows a merged PR as its number and title', () => {
 		expect(
-			noteFor('m1', 'Merge pull request #278 from Phauks/claude/x\n\nA Traveller is marked\n')
-		).toEqual({ sha: 'm1', subject: 'A Traveller is marked', pr: 278 });
+			noteFor('m1', 'Merge pull request #42 from Phauks/claude/x\n\nA Traveller is marked\n')
+		).toEqual({ sha: 'm1', subject: 'A Traveller is marked', pr: 42 });
 	});
 
 	it('keeps the merge subject when the PR merge has no title', () => {
