@@ -419,6 +419,19 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await watchTab();
+	// It counts who is watching, and New link replaces the link in one step, letting the
+	// viewer go (Trevor, 2026-10-20). The room bar's dot shows it is connected.
+	await expect(page.getByTestId('connection-dot')).toBeVisible();
+	await expect(watch.getByTestId('watchers')).toHaveText('Watching now: 1');
+	await watch.getByRole('button', { name: 'New link' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Make a new link?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');
+	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
+	expect(await url.inputValue()).not.toBe(link);
+	await expect(watch.getByTestId('watchers')).toHaveText('Watching now: 0');
 	await flip();
 	await expect(url).toHaveValue('');
 	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');

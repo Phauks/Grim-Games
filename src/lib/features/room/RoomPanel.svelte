@@ -28,6 +28,7 @@
 	$effect(() => host.attach(game));
 
 	let closeOpen = $state(false);
+	let refreshOpen = $state(false);
 	const shareTabs = $derived([
 		{ value: 'players' as const, label: t('room.tab.players') },
 		{ value: 'watch' as const, label: t('room.tab.watch') }
@@ -135,6 +136,28 @@
 {/snippet}
 
 <!-- Players' phones and the view-only grimoire each in their own tab (Trevor, 2026-10-19). -->
+<!-- The room itself, above both tabs (Trevor, 2026-10-20): open or close it, and a dot for
+     how it is connected; words only when something is wrong. -->
+<div class="room-bar">
+	{#if host.code}
+		<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
+			{t('room.close')}
+		</Button>
+	{:else}
+		<Button variant="accent" icon="players" onclick={() => host.open()} disabled={host.opening}>
+			{t('room.open')}
+		</Button>
+	{/if}
+	<p class="status connection" role="status" data-status={host.status}>
+		{#if host.code}<span
+				class="dot"
+				class:live={connected}
+				data-testid="connection-dot"
+				aria-hidden="true"
+			></span>{/if}<span class:visually-hidden={connected}>{statusText}</span>
+	</p>
+</div>
+
 <Tabs label={t('room.tabs')} tabs={shareTabs} bind:value={tab}>
 	{#snippet panel(which)}
 		{#if which === 'players'}{@render players()}{:else}{@render watching()}{/if}
@@ -166,7 +189,23 @@
 				qrCenter={logo || scriptName ? scriptCenter : undefined}
 				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 				qrCaption={t('room.watch.qrCaption')}
-			/>
+			>
+				{#snippet actions()}
+					<!-- A new link in one step, not off and on (Trevor, 2026-10-20). -->
+					<Button
+						variant="quiet"
+						icon="refresh"
+						disabled={!watchLink}
+						onclick={() => (refreshOpen = true)}
+					>
+						{t('room.watch.refresh')}
+					</Button>
+				{/snippet}
+			</SharePanel>
+			<!-- Who is watching now (Trevor, 2026-10-20), always in its place. -->
+			<p class="status" data-testid="watchers">
+				{t('room.watch.watchers', { count: watchLink ? host.watchers : 0 })}
+			</p>
 			<p class="status" role="status">{host.grimoireTooLarge ? t('room.watch.tooLarge') : ''}</p>
 		</section>
 	</div>
@@ -185,25 +224,7 @@
 				text={message || undefined}
 				qrCenter={logo || scriptName ? scriptCenter : undefined}
 				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
-			>
-				{#snippet actions()}
-					{#if host.code}
-						<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
-							{t('room.close')}
-						</Button>
-					{:else}
-						<Button
-							variant="accent"
-							icon="players"
-							onclick={() => host.open()}
-							disabled={host.opening}
-						>
-							{t('room.open')}
-						</Button>
-					{/if}
-				{/snippet}
-			</SharePanel>
-			<p class="status" role="status" data-status={host.status}>{statusText}</p>
+			/>
 		</section>
 
 		<section aria-labelledby="requests-label">
@@ -296,6 +317,15 @@
 	</p>
 </ConfirmDialog>
 
+<ConfirmDialog
+	bind:open={refreshOpen}
+	title={t('room.watch.refreshTitle')}
+	danger
+	onConfirm={() => void host.refreshViewers()}
+>
+	<p class="dialog-text">{t('room.watch.refreshText')}</p>
+</ConfirmDialog>
+
 <style>
 	.dialog-text {
 		margin: 0;
@@ -312,6 +342,30 @@
 		gap: var(--space-2);
 		align-content: start;
 		min-width: 0;
+	}
+	.room-bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+		margin-bottom: var(--space-2);
+	}
+	.connection {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	/* Hollow while connecting or offline, filled once connected. */
+	.dot {
+		flex: none;
+		width: 0.75em;
+		height: 0.75em;
+		border: 0.15em solid var(--on-surface-muted);
+		border-radius: 50%;
+	}
+	.dot.live {
+		border-color: var(--good);
+		background: var(--good);
 	}
 	.watch {
 		display: grid;

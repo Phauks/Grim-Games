@@ -181,6 +181,8 @@ export type ServerMessage =
 	| PlayerView
 	| ScriptView
 	| GrimoireView
+	/** To the Storyteller: how many are watching through the view-only link right now. */
+	| { type: 'watchers'; count: number }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 

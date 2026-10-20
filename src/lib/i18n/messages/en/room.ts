@@ -91,6 +91,11 @@ export const room = {
 	'room.watch.qrLabel': 'QR code to watch the grimoire',
 	'room.watch.qrCaption': 'Spoilers',
 	'room.watch.off': 'Off',
+	'room.watch.refresh': 'New link',
+	'room.watch.refreshTitle': 'Make a new link?',
+	'room.watch.refreshText':
+		'The current link stops working, and anyone watching with it is disconnected.',
+	'room.watch.watchers': 'Watching now: {count}',
 	'room.watch.shareText': 'Watch the grimoire. Never show it to a player.',
 	'room.watch.shareGameText': 'Watch the grimoire: {game}. Never show it to a player.',
 	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',
