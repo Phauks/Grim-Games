@@ -37,7 +37,7 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByRole('heading', { level: 1 })).toHaveText(/^Room \d{3} \d{3}$/);
+	await expect(phone.getByRole('heading', { name: /^Room \d{3} \d{3}$/ })).toBeVisible();
 	await expect(phone.getByRole('listitem')).toHaveCount(8);
 	await phone.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await phone.getByText('Seat 3', { exact: true }).tap();
@@ -97,13 +97,16 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('room-script')).toHaveText('Script: Trouble Brewing');
+	// The link opens the player view on its Room tab, and the room's script becomes its script
+	// (Trevor, 2026-10-19: no separate room page, then "Read the script").
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	await expect(phone.getByRole('tab', { name: 'Room' })).toHaveAttribute('aria-selected', 'true');
 	await expect(phone.getByTestId('join-status')).toHaveText(
 		'Choose your seat and type your name, then ask the Storyteller.'
 	);
-	await phone.getByRole('button', { name: 'Read the script' }).tap();
-	await expect(phone).toHaveURL(/\/play$/);
-	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+	await expect(phone.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
+	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
 	await phoneContext.close();
 });
 
@@ -199,7 +202,7 @@ test('a typed code shows the game it opens before the phone joins', async ({
 	);
 	await join.tap();
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
-	await expect(phone.getByRole('heading', { level: 1 })).toHaveText(/^Room \d{3} \d{3}$/);
+	await expect(phone.getByRole('heading', { name: /^Room \d{3} \d{3}$/ })).toBeVisible();
 	await expect(phone.getByTestId('room-storyteller')).toHaveText('Storyteller: Sam');
 	// The player's script names the Storyteller too (Trevor, 2026-10-19).
 	await phone.goto('/play');
@@ -466,8 +469,7 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('room-script')).toHaveText('Script: Trouble Brewing');
-	await phone.goto('/play');
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	const seats = phone.getByTestId('grim-seat');
 	await expect(seats).toHaveCount(8);

@@ -8,9 +8,16 @@
 		title: string;
 		/** What is left behind, stated plainly. */
 		body: string;
+		/** URLs that are still this screen, so going there doesn't ask (setLeaveGuard). */
+		within?: (url: URL) => boolean;
+		/**
+		 * Closing or reloading the tab gets the browser's own prompt. Off where nothing is lost
+		 * that way, because everything is already saved on the device.
+		 */
+		unload?: boolean;
 	}
 
-	let { when, title, body }: Props = $props();
+	let { when, title, body, within, unload = true }: Props = $props();
 
 	let open = $state(false);
 	/** The way out the Storyteller asked for, run on Confirm. */
@@ -23,12 +30,12 @@
 		return setLeaveGuard((leave) => {
 			pending = leave;
 			open = true;
-		});
+		}, within);
 	});
 
 	// Closing or reloading the tab gets the browser's own prompt.
 	function beforeunload(event: BeforeUnloadEvent) {
-		if (when) event.preventDefault();
+		if (when && unload) event.preventDefault();
 	}
 
 	function leave() {

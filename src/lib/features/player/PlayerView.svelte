@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
 		editionScript,
@@ -40,13 +41,28 @@
 	import PlayerRoom from './PlayerRoom.svelte';
 	import { roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
+	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
+	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
+
+	interface Props {
+		/**
+		 * Opened from Join game or a room's link (Trevor, 2026-10-19: joining should land in the
+		 * player view, not a page of its own): the Room tab opens on that room, or the code form.
+		 */
+		join?: { code?: string };
+	}
+
+	let { join }: Props = $props();
+	/** On Join game, a typed code opens that room's own link. */
+	const openRoom = (code: string) => void goto(resolve('/join/[code]', { code }));
 
 	let data = $state<GameData>();
 	let notebook = $state<NotebookState>();
 	let error = $state<string>();
-	let tab = $state('script');
+	// svelte-ignore state_referenced_locally
+	let tab = $state(join ? 'room' : 'script');
 
 	onMount(async () => {
 		try {
@@ -171,7 +187,9 @@
 <svelte:window onhashchange={() => data && void openSharedLink()} />
 
 <!-- Print and Share stay on the title's line at every width (Trevor, 2026-10-19). -->
-<Page title={script?.name ?? t('player.title')} iconActions>
+<Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions>
+	<!-- No app header here, as on the board (Trevor, 2026-10-19): the sidebar is one tap away. -->
+	{#snippet start()}<NavMenuButton />{/snippet}
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. -->
 	{#snippet actions()}
@@ -189,6 +207,9 @@
 
 	{#if error}
 		<p role="alert">{t('player.loadFailed', { error })}</p>
+	{:else if join && choosing}
+		<!-- No script yet: the room sends its own once the phone is in, and the tabs follow. -->
+		<PlayerRoom initialCode={join.code ?? null} onCode={openRoom} />
 	{:else if choosing}
 		<!-- Only when no script is loaded; no Change script once there is one (Trevor). -->
 		<PageSection title={t('player.chooseScript')}>
@@ -225,12 +246,26 @@
 					/>
 				{/if}
 			{/snippet}
-			{#snippet room()}<PlayerRoom {script} {version} />{/snippet}
+			{#snippet room()}<PlayerRoom
+					{script}
+					{version}
+					initialCode={join ? (join.code ?? null) : undefined}
+					onCode={join ? openRoom : undefined}
+				/>{/snippet}
 		</PlayerScriptTabs>
 	{/if}
 </Page>
 
 <!-- Overlays go beside the Page, not inside it. -->
+<!-- Leaving the script asks first (Trevor, 2026-10-19), but a room's link, a typed code and a
+     reload stay here: everything is already saved on the device. -->
+<LeaveGuard
+	when={!!script}
+	title={t('player.leaveTitle')}
+	body={t('player.leaveBody')}
+	within={(url) => url.pathname === resolve('/play') || url.pathname.startsWith(resolve('/join'))}
+	unload={false}
+/>
 <ScriptCheckDialog
 	bind:open={checkOpen}
 	result={checking}

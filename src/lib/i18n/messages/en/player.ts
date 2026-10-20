@@ -12,6 +12,8 @@ export const player = {
 	'player.tab.notes': 'Notes',
 	'player.tab.room': 'Room',
 	'player.shareRoom': 'Share room',
+	'player.leaveTitle': 'Leave the script?',
+	'player.leaveBody': 'Your notes, scratch pads and guesses stay on this device.',
 	'player.grim.you': 'you',
 	'player.grim.dead': 'dead',
 	'player.grim.voteUnused': 'ghost vote not used',

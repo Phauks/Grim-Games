@@ -17,6 +17,11 @@
 		 * at every width (Trevor, 2026-10-19: the bag's cog and Share beside "Draw").
 		 */
 		iconActions?: boolean;
+		/**
+		 * Before the heading, on its line and outside it: the menu button on a screen without
+		 * the app header (Player view, Trevor 2026-10-19), as the board has.
+		 */
+		start?: Snippet;
 		/** One muted line under the title (an author, a date, the script in play). */
 		subtitle?: Snippet;
 		/** One row under the title for search, filters and view switches. */
@@ -44,6 +49,7 @@
 		width = 'page',
 		actions,
 		iconActions = false,
+		start,
 		subtitle,
 		toolbar,
 		side,
@@ -62,9 +68,18 @@
 <main class="page" data-width={width}>
 	<header class="head" class:visually-hidden={hideTitle}>
 		<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
-			<h1>
-				{#if lead}{@render lead()}{/if}{title}
-			</h1>
+			{#if start}
+				<div class="start">
+					{@render start()}
+					<h1>
+						{#if lead}{@render lead()}{/if}{title}
+					</h1>
+				</div>
+			{:else}
+				<h1>
+					{#if lead}{@render lead()}{/if}{title}
+				</h1>
+			{/if}
 			{#if actions}<div class="actions">{@render actions()}</div>{/if}
 		</div>
 		{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
@@ -114,6 +129,12 @@
 		min-width: 0;
 		margin: 0;
 		font-size: var(--page-title-size);
+	}
+	.start {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-width: 0;
 	}
 	.actions {
 		display: flex;
