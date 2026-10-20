@@ -416,6 +416,21 @@
 				onChange={(n) => setupSelection.setPlayers(n)}
 				maxPlayers={script ? scriptMaxPlayers(script.characters) : undefined}
 			/>
+			<!-- Under the Setup sheet: both are the technical side of the setup (Trevor, 2026-10-20). -->
+			{#if ready}
+				<SetupCheckPanel
+					{analysis}
+					{plan}
+					{jinxes}
+					{warnings}
+					{lookup}
+					{uncurated}
+					onStandIn={(id) => {
+						askingFor = id;
+						standInOpen = true;
+					}}
+				/>
+			{/if}
 			<div class="counts">
 				<CountsBar {analysis} {travellers} {travellerLimits} />
 				<div class="find">
@@ -443,20 +458,6 @@
 					</div>
 				</div>
 			</div>
-			{#if ready}
-				<SetupCheckPanel
-					{analysis}
-					{plan}
-					{jinxes}
-					{warnings}
-					{lookup}
-					{uncurated}
-					onStandIn={(id) => {
-						askingFor = id;
-						standInOpen = true;
-					}}
-				/>
-			{/if}
 		</ErrorBoundary>
 	{/snippet}
 

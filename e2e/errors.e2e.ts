@@ -214,7 +214,7 @@ test('Diagnostics gathers build, device and problems on the device, without game
 	await expect(
 		page.getByRole('dialog', { name: 'Settings' }).getByRole('link', { name: /^[0-9a-f]{7,}$/ })
 	).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\/commit\//);
-	await expect(panel.locator('dt:text-is("Gathered") + dd')).toHaveText(/\d{1,2}:\d{2}:\d{2}/);
+	await expect(panel.locator('dt:text-is("Timestamp") + dd')).toHaveText(/\d{1,2}:\d{2}:\d{2}/);
 	await expect(panel.getByRole('link', { name: 'Manage data' })).toHaveCount(0);
 
 	// Copy and Download are icons beside the Advanced heading, with no Refresh (Trevor, 2026-10-19).

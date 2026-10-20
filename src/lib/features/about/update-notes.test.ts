@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { changesSince, compareUrl, parseBuildNotes, parseCompare } from './update-notes.ts';
+import {
+	changesSince,
+	compareUrl,
+	noteFor,
+	parseBuildNotes,
+	parseCompare
+} from './update-notes.ts';
 
 const notes = {
 	commit: 'c3',
@@ -27,7 +33,38 @@ describe('changesSince', () => {
 	});
 });
 
+describe('noteFor', () => {
+	it('shows a merged PR as its number and title', () => {
+		expect(
+			noteFor('m1', 'Merge pull request #42 from Phauks/claude/x\n\nA Traveller is marked\n')
+		).toEqual({ sha: 'm1', subject: 'A Traveller is marked', pr: 42 });
+	});
+
+	it('keeps the merge subject when the PR merge has no title', () => {
+		expect(noteFor('m1', 'Merge pull request #5 from a/b')).toEqual({
+			sha: 'm1',
+			subject: 'Merge pull request #5 from a/b',
+			pr: 5
+		});
+	});
+
+	it('drops merges of one branch into another', () => {
+		expect(noteFor('m1', "Merge remote-tracking branch 'origin/beta' into claude/x")).toBeNull();
+		expect(noteFor('m1', "Merge branch 'beta' into claude/x")).toBeNull();
+	});
+
+	it('keeps any other commit by its subject', () => {
+		expect(noteFor('c1', 'Fix the bars\n\nBody')).toEqual({ sha: 'c1', subject: 'Fix the bars' });
+	});
+});
+
 describe('parseBuildNotes', () => {
+	it('keeps a PR number', () => {
+		expect(
+			parseBuildNotes({ commit: 'm1', commits: [{ sha: 'm1', subject: 'Title', pr: 7 }] })
+		).toEqual({ commit: 'm1', commits: [{ sha: 'm1', subject: 'Title', pr: 7 }] });
+	});
+
 	it('keeps well-formed commits and drops the rest', () => {
 		expect(
 			parseBuildNotes({
@@ -45,13 +82,17 @@ describe('parseBuildNotes', () => {
 });
 
 describe('parseCompare', () => {
-	const commit = (sha: string, message: string) => ({ sha, commit: { message } });
+	const commit = (sha: string, message: string, ...parents: string[]) => ({
+		sha,
+		commit: { message },
+		parents: parents.map((p) => ({ sha: p }))
+	});
 
 	it('lists GitHub compare commits newest first, with only the subject line', () => {
 		expect(
 			parseCompare({
 				total_commits: 2,
-				commits: [commit('c1', 'First\n\nBody'), commit('c2', 'Second')]
+				commits: [commit('c1', 'First\n\nBody', 'c0'), commit('c2', 'Second', 'c1')]
 			})
 		).toEqual({
 			commits: [
@@ -60,6 +101,24 @@ describe('parseCompare', () => {
 			],
 			complete: true
 		});
+	});
+
+	it("lists each merged PR once by its title, not the PR's own commits or base merges", () => {
+		expect(
+			parseCompare({
+				total_commits: 5,
+				commits: [
+					commit('p1', 'Work on the bars', 'b0'),
+					commit('b1', 'Merge pull request #9 from a/other\n\nOther change', 'b0', 'o1'),
+					commit('p2', "Merge remote-tracking branch 'origin/beta' into a/bars", 'p1', 'b1'),
+					commit('p3', 'More bars', 'p2'),
+					commit('b2', 'Merge pull request #10 from a/bars\n\nThe bars match', 'b1', 'p3')
+				]
+			})?.commits
+		).toEqual([
+			{ sha: 'b2', subject: 'The bars match', pr: 10 },
+			{ sha: 'b1', subject: 'Other change', pr: 9 }
+		]);
 	});
 
 	it('marks the list incomplete when GitHub left commits out', () => {

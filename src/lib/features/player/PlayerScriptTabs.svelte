@@ -27,6 +27,8 @@
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play, with their players. */
 		travellers?: readonly TravellerInPlay[];
+		/** The town as the table knows it, from the live room (/play only). */
+		grim?: Snippet;
 		/** The player's own Notes tab (/play only). */
 		notes?: Snippet;
 		/** The live room this phone is in, or joining one (/play only). */
@@ -39,6 +41,7 @@
 		players,
 		inPlay,
 		travellers,
+		grim,
 		notes,
 		room,
 		tab = $bindable('script')
@@ -60,6 +63,7 @@
 	const tabs = $derived([
 		{ value: 'script', label: t('player.tab.script') },
 		{ value: 'night', label: t('player.tab.night') },
+		...(grim ? [{ value: 'grim', label: t('player.tab.grim') }] : []),
 		...(notes ? [{ value: 'notes', label: t('player.tab.notes') }] : []),
 		...(room ? [{ value: 'room', label: t('player.tab.room') }] : [])
 	]);
@@ -76,6 +80,8 @@
 					{#if data}<PlayerNightOrder {nights} />{:else}<p class="muted">
 							{t('player.loading')}
 						</p>{/if}
+				{:else if value === 'grim' && grim}
+					{@render grim()}
 				{:else if value === 'notes' && notes}
 					{@render notes()}
 				{:else if value === 'room' && room}

@@ -384,7 +384,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 		await expect(reveal.getByTestId('reveal-face')).toHaveCount(2);
 		await expect(reveal).toContainText('Town 1');
 		await expect(reveal).toContainText('Town 2');
-		if (n === 1) await reveal.getByLabel('Name').fill('Ana');
+		if (n === 1) await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
 		await page.getByRole('button', { name: 'Confirm' }).tap();
 		await expect(reveal).toBeHidden();
 	}

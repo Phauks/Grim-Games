@@ -28,7 +28,7 @@ static/data/       synced TPI data and icons (generated; see Data)
 | Command                                          | What it does                                                                                                      |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                                    | Vite dev server (no Worker)                                                                                       |
-| `npm run preview`                                | Build, then run the full Worker locally with `wrangler dev` on port 8787                                          |
+| `npm run preview`                                | Build, then run the app and shared data Workers locally with `wrangler dev` on port 8787                          |
 | `npm run check`                                  | svelte-check for the app, tsc for the Worker                                                                      |
 | `npm run lint`                                   | Prettier + ESLint (including module-boundary rules) + hex-colour check + rules coverage                           |
 | `npm run icons`                                  | Regenerate the bundled icon modules after editing the icon catalogue                                              |

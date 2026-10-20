@@ -55,9 +55,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('the player view is a reading page, with no Storyteller controls', async ({ page }) => {
-	// Script, night order, notes and the live room only (Trevor, 2026-10-16: "nothing close
-	// to ... controls"; 2026-10-19: a Room tab to move between).
-	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Notes', 'Room']);
+	// Script, night order, the town, notes and the live room only (Trevor, 2026-10-16:
+	// "nothing close to ... controls"; 2026-10-19: a Room tab to move between, and a Grim tab
+	// of what the town knows).
+	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes', 'Room']);
 	await expect(page.getByTestId('seat-ring')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });

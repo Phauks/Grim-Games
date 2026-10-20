@@ -223,7 +223,6 @@
 			box: nameBox(centres[i], place, size, widths[i], lineHeight)
 		}));
 	});
-	const namePlaces = $derived(nameBoxes.map((n) => n.place));
 	/**
 	 * The script's name in the corner keeps clear of every seat and name (Trevor, 2026-10-18),
 	 * cut short with an ellipsis where it would reach one (always the lower left).
@@ -1578,7 +1577,6 @@
 						trayHints.target === seat.seatId}
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
-					namePlace={namePlaces[i] ?? 'below'}
 					onTap={(part) =>
 						!arranging &&
 						(watching

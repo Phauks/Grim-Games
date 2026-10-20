@@ -1,10 +1,14 @@
 <script lang="ts">
-	// The commits a waiting build brings: in the update card and in About (Trevor, 2026-10-19).
+	// What a waiting build brings: in the update card and in About (Trevor, 2026-10-19). A
+	// merged PR shows as its number and title and opens the PR (Trevor, 2026-10-20).
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { REPOSITORY_URL } from './report-issue.ts';
-	import type { Changes } from './update-notes.ts';
+	import type { BuildCommit, Changes } from './update-notes.ts';
 
 	let { changes }: { changes: Changes } = $props();
+
+	const link = (commit: BuildCommit) =>
+		commit.pr ? `${REPOSITORY_URL}/pull/${commit.pr}` : `${REPOSITORY_URL}/commit/${commit.sha}`;
 </script>
 
 <div class="list" data-testid="update-changes">
@@ -14,8 +18,8 @@
 				<li>
 					<!-- External GitHub link, not an app route. -->
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-					<a href="{REPOSITORY_URL}/commit/{commit.sha}" target="_blank" rel="noopener">
-						<span class="sha">{commit.sha.slice(0, 7)}</span>
+					<a href={link(commit)} target="_blank" rel="noopener">
+						<span class="sha">{commit.pr ? `#${commit.pr}` : commit.sha.slice(0, 7)}</span>
 						<span>{commit.subject}</span>
 					</a>
 				</li>

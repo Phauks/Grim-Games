@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"preview": "npm run build && wrangler dev",
+		"preview": "npm run build && wrangler dev -c wrangler.jsonc -c wrangler.data.jsonc",
 		"prepare": "svelte-kit sync || echo \"\" && git config core.hooksPath .githooks || echo \"\"",
 		"cf-typegen": "wrangler types worker/worker-configuration.d.ts --include-env=false",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.service-worker.json --noEmit && npm run check:worker",

@@ -89,6 +89,10 @@
 	// they keep showing the code on screen instead of sending email.
 	"send_email": [{ "name": "EMAIL" }],
 	"vars": { "ENVIRONMENT": "production", "EMAIL_FROM": "sign-in@grimbinder.com" },
+	// Accounts, share codes and reports live in the shared data Worker (wrangler.data.jsonc,
+	// worker/shared-data.ts), so production and every preview see the same ones. A preview's
+	// binding reaches that Worker's production deployment.
+	"services": [{ "binding": "DATA", "service": "grim-games-data" }],
 	// Worker Previews: Workers Builds runs `npx wrangler preview` for non-production branches,
 	// giving each branch/PR its own URL on this same Worker, with its own Durable Object
 	// namespace and storage. Previews don't inherit vars or bindings, so they're repeated here.
@@ -97,6 +101,7 @@
 		// other previews show the code on screen.
 		"vars": { "ENVIRONMENT": "preview", "EMAIL_FROM": "sign-in@grimbinder.com" },
 		"send_email": [{ "name": "EMAIL" }],
+		"services": [{ "binding": "DATA", "service": "grim-games-data" }],
 		"durable_objects": {
 			"bindings": [
 				{ "name": "ROOMS", "class_name": "Room" },

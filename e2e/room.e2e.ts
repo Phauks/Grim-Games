@@ -419,6 +419,19 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await watchTab();
+	// It counts who is watching, and New link replaces the link in one step, letting the
+	// viewer go (Trevor, 2026-10-20). The room bar's dot shows it is connected.
+	await expect(page.getByTestId('connection-dot')).toBeVisible();
+	await expect(watch.getByTestId('watchers')).toHaveText('Watching now: 1');
+	await watch.getByRole('button', { name: 'New link' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Make a new link?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');
+	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
+	expect(await url.inputValue()).not.toBe(link);
+	await expect(watch.getByTestId('watchers')).toHaveText('Watching now: 0');
 	await flip();
 	await expect(url).toHaveValue('');
 	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');
@@ -435,4 +448,60 @@ test('a view-only link cut short says so and connects to nothing', async ({ page
 		'This link is incomplete. Ask the Storyteller for it again.'
 	);
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});
+
+test("the players' Grim shows what the town knows, and each player's own guesses", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-19): "only publicly known information, such as who is alive, who is
+	// dead, who has dead votes", and "players can tap a player and put what they think they are".
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('room-script')).toHaveText('Script: Trouble Brewing');
+	await phone.goto('/play');
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seats = phone.getByTestId('grim-seat');
+	await expect(seats).toHaveCount(8);
+	await expect(seats.first()).toHaveAttribute('aria-label', 'Seat 1: Seat 1');
+
+	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: /^Status of/ })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await expect(seats.first()).toHaveAttribute(
+		'aria-label',
+		'Seat 1: Seat 1, dead, ghost vote not used'
+	);
+	await sheet.getByRole('button', { name: 'Ghost vote' }).tap();
+	await expect(seats.first()).toHaveAttribute(
+		'aria-label',
+		'Seat 1: Seat 1, dead, ghost vote used'
+	);
+	await expect(seats.first().getByTestId('dead-mark')).toHaveAttribute('data-vote', 'used');
+
+	// A guess is the player's own, on this phone only, and stays after a reload.
+	await seats.nth(1).tap();
+	await phone
+		.getByRole('dialog', { name: 'Seat 2 · Seat 2' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
+	await expect(seats.nth(1)).toHaveAttribute('data-guess', 'true');
+	await phone.reload();
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
+	await phoneContext.close();
 });

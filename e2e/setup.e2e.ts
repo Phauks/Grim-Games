@@ -464,6 +464,33 @@ test('with Require a name, the token stays hidden until a name is typed', async 
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 });
 
+test('the player picks their name from names used before, instead of typing', async ({ page }) => {
+	// Trevor, 2026-10-19: on the pass-the-phone draw, "select your name from a list".
+	await selectionFor(page, 5);
+	await page.evaluate(() =>
+		localStorage.setItem('grim-games:player-names:v1', JSON.stringify(['Ana', 'Ben']))
+	);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	const reveal = page.getByTestId('reveal');
+	await reveal.getByRole('button', { name: 'Pick your name' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
+	await expect(sheet.getByRole('button')).toHaveText(['Ana', 'Ben']);
+	await sheet.getByRole('button', { name: 'Ben' }).tap();
+	await expect(sheet).toBeHidden();
+	await expect(reveal.getByRole('textbox', { name: 'Name' })).toHaveValue('Ben');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+
+	// Ben has a seat now, so the next player is offered Ana only.
+	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
+	await reveal.getByRole('button', { name: 'Pick your name' }).tap();
+	await expect(sheet.getByRole('button')).toHaveText(['Ana']);
+	await sheet.getByRole('button', { name: 'Ana' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByRole('button', { name: 'Tile 2, drawn' })).toBeDisabled();
+});
+
 test('type groups and the setup sheet close from their header and stay closed', async ({
 	page
 }) => {
@@ -1144,6 +1171,11 @@ test('Verification folds the setup check away, and the Drunk is tagged not in ba
 	await page.locator('.main[data-character-id="empath"]').tap();
 	await expect(row('drunk').getByTestId('not-in-bag')).toHaveText('Not in bag');
 	await expect(row('empath').getByTestId('not-in-bag')).toHaveCount(0);
+	// Every part has its count, and Verification's is their total (Trevor, 2026-10-20).
+	const parts = ['warning-count', 'shown-instead-count', 'setup-change-count', 'jinx-count'];
+	let sum = 0;
+	for (const id of parts) sum += Number(await check.getByTestId(id).textContent());
+	await expect(check.getByTestId('verification-count')).toHaveText(String(sum));
 	await page.locator('.main[data-character-id="drunk"]').tap();
 	await expect(row('drunk').getByTestId('not-in-bag')).toHaveCount(0);
 });

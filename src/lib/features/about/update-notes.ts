@@ -15,6 +15,26 @@ export const BUILD_NOTES_PATH = '/build-notes.json';
 export interface BuildCommit {
 	sha: string;
 	subject: string;
+	/** The pull request this merge commit landed; `subject` is then the PR's title. */
+	pr?: number;
+}
+
+/**
+ * One line of the list for a commit on the branch's own history, or null for a commit that
+ * says nothing new (Trevor, 2026-10-20: the list was full of merge lines). A PR lands as
+ * "Merge pull request #N from …" with the PR's title as its body, so it shows as that title.
+ * Merging the base branch into a working branch ("Merge remote-tracking branch …",
+ * "Merge branch …") repeats changes listed elsewhere, so it is dropped.
+ */
+export function noteFor(sha: string, message: string): BuildCommit | null {
+	const [subject = '', ...body] = message.split('\n');
+	const pr = /^Merge pull request #(\d+) /.exec(subject);
+	if (pr) {
+		const title = body.find((line) => line.trim())?.trim();
+		return { sha, subject: title ?? subject, pr: Number(pr[1]) };
+	}
+	if (/^Merge (remote-tracking )?branch /.test(subject)) return null;
+	return { sha, subject };
 }
 
 export interface BuildNotes {
@@ -37,12 +57,16 @@ export function parseBuildNotes(input: unknown): BuildNotes | null {
 	if (typeof commit !== 'string' || !Array.isArray(commits)) return null;
 	return {
 		commit,
-		commits: commits.filter(
-			(c): c is BuildCommit =>
-				!!c &&
-				typeof (c as BuildCommit).sha === 'string' &&
-				typeof (c as BuildCommit).subject === 'string'
-		)
+		commits: commits
+			.filter(
+				(c): c is BuildCommit =>
+					!!c &&
+					typeof (c as BuildCommit).sha === 'string' &&
+					typeof (c as BuildCommit).subject === 'string'
+			)
+			.map(({ sha, subject, pr }) =>
+				typeof pr === 'number' ? { sha, subject, pr } : { sha, subject }
+			)
 	};
 }
 
@@ -52,22 +76,33 @@ export function compareUrl(running: string, next: string): string {
 }
 
 /**
- * Reads a compare response: `commits` oldest first (at most 250 per page) and
- * `total_commits`. Returns the commits newest first, marked incomplete when GitHub left
- * some out.
+ * Reads a compare response: `commits` oldest first (at most 250 per page), each with its
+ * `parents`, and `total_commits`. Follows first parents back from the newest commit, so the
+ * list is the branch's own history (one line per merged PR) rather than every commit inside
+ * each PR. Returns it newest first, marked incomplete when GitHub left some out.
  */
 export function parseCompare(input: unknown): Changes | null {
 	if (!input || typeof input !== 'object') return null;
 	const { commits, total_commits: total } = input as Record<string, unknown>;
 	if (!Array.isArray(commits) || typeof total !== 'number') return null;
-	const list: BuildCommit[] = [];
+	const bySha = new Map<string, { message: string; parent?: string }>();
 	for (const entry of commits) {
 		const sha = (entry as { sha?: unknown })?.sha;
 		const message = (entry as { commit?: { message?: unknown } })?.commit?.message;
 		if (typeof sha !== 'string' || typeof message !== 'string') return null;
-		list.push({ sha, subject: message.split('\n')[0] });
+		const parents = (entry as { parents?: { sha?: unknown }[] }).parents;
+		const parent = Array.isArray(parents) ? parents[0]?.sha : undefined;
+		bySha.set(sha, { message, parent: typeof parent === 'string' ? parent : undefined });
 	}
-	return { commits: list.reverse(), complete: total <= list.length };
+	const list: BuildCommit[] = [];
+	let sha = (commits.at(-1) as { sha?: string } | undefined)?.sha;
+	for (let entry = sha && bySha.get(sha); sha && entry; entry = sha && bySha.get(sha)) {
+		const note = noteFor(sha, entry.message);
+		if (note) list.push(note);
+		bySha.delete(sha);
+		sha = entry.parent;
+	}
+	return { commits: list, complete: total <= commits.length };
 }
 
 /** The commits in `notes` that came after `running`, newest first. */

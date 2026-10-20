@@ -185,6 +185,7 @@ export const setup = {
 	'setup.draw.everySeatHint': 'Add a seat on the grimoire to draw for it.',
 
 	'setup.reveal.name': 'Name',
+	'setup.reveal.pickName': 'Pick your name',
 	'setup.reveal.locked': 'Enter your name to see your character',
 	'setup.reveal.alignment': 'Alignment',
 	'setup.reveal.good': 'Good',

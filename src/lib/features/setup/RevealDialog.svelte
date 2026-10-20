@@ -9,6 +9,9 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
+	import { pastNames, suggestNames } from '#lib/features/grimoire/device-notes.ts';
 
 	interface Props {
 		open: boolean;
@@ -24,6 +27,8 @@
 		/** "Seat 3", the seat the draw goes to. */
 		seatLabel: string;
 		playerName: string;
+		/** Names already on other seats, left out of the names to pick from. */
+		taken?: readonly string[];
 		/**
 		 * One token for two games (Two games at once, Trevor 2026-10-18): the other game's
 		 * character, shown beside `shows`, with a label for each game.
@@ -44,6 +49,7 @@
 		needsAlignment,
 		seatLabel,
 		playerName,
+		taken = [],
 		pair,
 		holdToReveal = false,
 		onConfirm
@@ -58,6 +64,10 @@
 	);
 
 	let name = $state('');
+	// Names used before on this device, to pick instead of typing (Trevor, 2026-10-19).
+	let past = $state<string[]>([]);
+	const names = $derived(suggestNames(past, '', taken, past.length));
+	let picking = $state(false);
 	let alignment = $state<Alignment | ''>('');
 	/** False while the player still has to type their name to see the token. */
 	let revealed = $state(true);
@@ -67,6 +77,8 @@
 	$effect(() => {
 		if (open) {
 			name = playerName;
+			past = pastNames.read();
+			picking = false;
 			alignment = '';
 			revealed = !preferences.current.requireName || playerName.trim() !== '';
 			held = false;
@@ -85,6 +97,7 @@
 	}
 
 	function confirm() {
+		pastNames.remember(name);
 		onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) });
 	}
 
@@ -111,8 +124,15 @@
 	<div class="reveal" data-testid="reveal">
 		<p class="seat">{seatLabel}</p>
 		<!-- Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap. -->
+		<!-- The names button is always here, disabled when there are none: nothing moves. -->
 		<div class="player">
 			<TextField label={t('setup.reveal.name')} bind:value={name} placeholder={t('common.none')} />
+			<IconButton
+				icon="players"
+				label={t('setup.reveal.pickName')}
+				disabled={names.length === 0}
+				onclick={() => (picking = true)}
+			/>
 		</div>
 		<!-- Hidden until a name is entered when that's required; the space stays reserved. -->
 		<div class="faces" class:pair={!!pair}>
@@ -199,6 +219,22 @@
 	{/snippet}
 </Dialog>
 
+<BottomSheet bind:open={picking} title={t('setup.reveal.pickName')}>
+	<ul class="names">
+		{#each names as option (option)}
+			<li>
+				<button
+					type="button"
+					onclick={() => {
+						name = option;
+						picking = false;
+					}}>{option}</button
+				>
+			</li>
+		{/each}
+	</ul>
+</BottomSheet>
+
 <style>
 	.reveal {
 		display: grid;
@@ -283,7 +319,32 @@
 		font-family: var(--font-ability);
 	}
 	.player {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: end;
+		gap: var(--space-2);
 		width: min(100%, 20rem);
+		text-align: start;
+	}
+	.names {
+		display: grid;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.names li + li {
+		border-top: 1px solid var(--border);
+	}
+	/* A whole-row tap, in the player font as on a seat. */
+	.names button {
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: var(--space-2);
+		border: 0;
+		background: none;
+		color: inherit;
+		font-family: var(--font-player);
+		font-size: 1.1rem;
 		text-align: start;
 	}
 	/* A player's name is in the player font, as on their seat. */
