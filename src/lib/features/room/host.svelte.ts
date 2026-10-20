@@ -72,6 +72,8 @@ export class RoomHost {
 	viewerKey = $state<string>();
 	/** True when the grimoire is too large to send to viewers. */
 	grimoireTooLarge = $state(false);
+	/** How many are watching through the view-only link now (Trevor, 2026-10-20). */
+	watchers = $state(0);
 	#viewerKeyHash: string | undefined;
 	#grimoire: SharedGrimoire | undefined;
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
@@ -153,6 +155,18 @@ export class RoomHost {
 			this.#viewerKeyHash = undefined;
 			this.#socket?.send({ type: 'viewers', keyHash: null });
 		}
+	}
+
+	/**
+	 * A new view-only link in one step (Trevor, 2026-10-20): the old one stops working and
+	 * anyone watching with it is let go.
+	 */
+	async refreshViewers(): Promise<void> {
+		const stored = readStored<StoredRoom>(STORAGE_KEY);
+		if (!stored || !this.viewerKey) return;
+		const key = randomKey();
+		writeStored(STORAGE_KEY, { ...stored, viewerKey: key });
+		await this.#useViewerKey(key);
 	}
 
 	async #useViewerKey(key: string): Promise<void> {
@@ -254,6 +268,8 @@ export class RoomHost {
 			this.members = message.members;
 			this.requests = message.requests;
 			this.vote = message.vote;
+		} else if (message.type === 'watchers') {
+			this.watchers = message.count;
 		} else if (message.type === 'refused' && message.reason === 'too-old') {
 			// The room is still this device's: keep it for after the update.
 		} else if (message.type === 'refused' || message.type === 'closed') {
@@ -294,6 +310,7 @@ export class RoomHost {
 	#forget(): void {
 		this.#socket?.stop();
 		this.#socket = undefined;
+		this.watchers = 0;
 		this.code = undefined;
 		this.members = [];
 		this.requests = [];
