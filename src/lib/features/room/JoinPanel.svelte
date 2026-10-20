@@ -9,7 +9,8 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { forgetRoom, RoomPlayer } from './player.svelte.ts';
+	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
+	import { releaseRoom, useRoom } from './room-connection.ts';
 	import { followRoomScript } from './room-script.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { recentRooms, rememberRoom } from './recent-rooms.ts';
@@ -48,10 +49,10 @@
 
 	$effect(() => {
 		if (!valid) return;
-		const p = new RoomPlayer(valid);
+		const p = useRoom(valid);
 		player = p;
-		name = p.savedName;
-		return () => p.stop();
+		name = p.view?.me.name ?? p.savedName;
+		return () => releaseRoom(p);
 	});
 
 	// The game's script becomes this phone's current script, for /play.
