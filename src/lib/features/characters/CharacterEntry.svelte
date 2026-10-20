@@ -14,17 +14,19 @@
 		playerName?: string;
 		/** The bar's words when there is no character (a player with none yet). */
 		label?: string;
+		/** Controls on the bar's own line, after the badge (the day's Used button). */
+		end?: Snippet;
 		children: Snippet;
 	}
 
-	let { characterId, alignment, playerName, label, children }: Props = $props();
+	let { characterId, alignment, playerName, label, end, children }: Props = $props();
 </script>
 
 <div class="entry">
 	<span class="bar"
 		>{#if characterId}<CharacterBadge {characterId} {alignment} {playerName} inline />{:else}<span
 				class="plain">{label}</span
-			>{/if}</span
+			>{/if}{#if end}{@render end()}{/if}</span
 	>
 	<div class="body">{@render children()}</div>
 </div>
@@ -34,13 +36,21 @@
 		padding: var(--space-2) 0;
 		border-bottom: var(--card-border);
 	}
+	/* The controls wrap under the badge only when the line is too narrow (largest text). */
 	.bar {
-		display: block;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: center;
 		margin-bottom: var(--space-1);
 	}
 	.bar :global(.badge) {
 		display: flex;
-		width: 100%;
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.bar > :global(:not(.badge)) {
+		flex: none;
 	}
 	.plain {
 		display: block;
