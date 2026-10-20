@@ -53,12 +53,12 @@ export function boardNightSteps(
 		overrides: game.nightOrderOverrides
 	});
 	// What the game says for each step (suggested answers, impairments), a step for each
-	// gained ability, and a step to choose any Traveller's alignment still unset. No Dawn step:
-	// the board's End night button ends the night (Trevor, 2026-10-18).
+	// gained ability, and a step to choose any Traveller's alignment still unset. Dawn is the
+	// last step (Trevor, 2026-10-20); the board's End night button still ends the night.
 	// A player whose character changed since dawn wakes before Dawn to learn it; changes only
 	// count after the first New day, so only other nights have them.
 	const woken = night === 'other' ? withCharacterChangeSteps(steps, changes, characters) : steps;
-	return duskToDawn(withNightInfo(woken, game, characters, night)).filter((s) => s.id !== 'dawn');
+	return duskToDawn(withNightInfo(woken, game, characters, night));
 }
 
 /**

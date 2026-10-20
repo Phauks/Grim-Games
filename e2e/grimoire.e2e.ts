@@ -939,8 +939,8 @@ test('the night order is walked through from the bank, and End night starts the 
 	const strip = await walkTo(page, 'Empath');
 	await expect(strip).toContainText('Sam');
 
-	// No Dawn step: End night at the end of the reminder bank ends the night and starts Day 1
-	// (Trevor, 2026-10-18), once Dusk has started it.
+	// End night at the end of the reminder bank ends the night and starts Day 1 (Trevor,
+	// 2026-10-18), once Dusk has started it.
 	// The day timer is on the board from the start (Trevor, 2026-10-17).
 	const boardTimer = page.locator('.board-timer').getByTestId('day-timer');
 	await expect(boardTimer).toBeVisible();
@@ -4294,8 +4294,9 @@ test('the corner’s Game info closes when a seat opens', async ({ page }) => {
 	await expect(info).toBeHidden();
 });
 
-test('Next on the last night step lights up End night', async ({ page }) => {
+test('Dawn is the last night step, and Next on it lights up End night', async ({ page }) => {
 	// Trevor (2026-10-19): Next past the end points at End night; it never ends the night.
+	// Dawn is always the last step (Trevor, 2026-10-20).
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -4308,10 +4309,13 @@ test('Next on the last night step lights up End night', async ({ page }) => {
 	const strip = page.getByTestId('night-strip');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++) await next.tap();
+	await expect(strip.locator('.step .name strong')).toHaveText('Dawn');
 	const end = bankNight(page, 'End night');
 	await expect(end).not.toHaveAttribute('data-hint');
 	await next.tap();
 	await expect(next).toBeEnabled();
+	// Ticking Dawn here doesn't start the day: End night does, after asking.
+	await expect(page.getByRole('dialog', { name: 'Day 1' })).toHaveCount(0);
 	await expect(end).toHaveAttribute('data-hint', '');
 	await expect(strip).toBeVisible();
 	// It fades after a moment, and lights up again on the next tap.
@@ -4509,6 +4513,9 @@ test('a player whose character changed since dawn is woken that night to learn i
 	const strip = await walkTo(page, 'Dusk');
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
+	// Just before Dawn, the last step.
+	await expect(strip.locator('.step .name strong')).toHaveText('Dawn');
+	await strip.getByRole('button', { name: 'Previous step' }).tap();
 	await expect(strip.locator('.step .name strong')).toHaveText('Imp');
 	await expect(strip).toContainText('Sam');
 	await expect(strip).toContainText('Wake this player.');
