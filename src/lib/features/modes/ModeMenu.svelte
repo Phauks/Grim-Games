@@ -32,7 +32,7 @@
 	import { townGroupOf } from './town-groups.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { contextCharacters } from '#lib/features/characters/character-context.ts';
-	import { playersLine } from './players-line.ts';
+	import { playersLine, ruleCharactersLine } from './players-line.ts';
 
 	/**
 	 * The game's info and a game mode's own actions, on the board's corner script name (Trevor,
@@ -85,7 +85,13 @@
 			value: scriptVersion(undefined, game.script.meta)
 		},
 		{ key: 'storyteller', label: t('modes.info.storyteller'), value: game.storytellerName },
-		{ key: 'players', label: t('modes.info.players'), value: playersLine(game, characters?.()) },
+		{
+			key: 'players',
+			label: t('modes.info.players'),
+			value: playersLine(game, characters?.()),
+			// Not players, so on a line of their own (Trevor, 2026-10-20).
+			extra: ruleCharactersLine(game, characters?.())
+		},
 		{ key: 'mode', label: t('modes.label'), value: (base ?? STANDARD).name },
 		{
 			key: 'rules',
@@ -154,7 +160,12 @@
 			{#each info as row (row.key)}
 				<tr data-field={row.key}>
 					<th scope="row">{row.label}</th>
-					<td>{row.value?.trim() || none}</td>
+					<td>
+						{row.value?.trim() || none}{#if 'extra' in row && row.extra}<span
+								class="extra"
+								data-testid="info-extra">{row.extra}</span
+							>{/if}
+					</td>
 				</tr>
 			{/each}
 		</tbody>
@@ -267,6 +278,9 @@
 {#if specters && mode}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
 
 <style>
+	.extra {
+		display: block;
+	}
 	/* The name keeps its size and place; only the caret is added, inside the same line. */
 	.name {
 		position: relative;

@@ -213,7 +213,11 @@
 					onclick: () => (host.code ? askRefresh('room') : void host.open())
 				}}
 			/>
-			<!-- Under the code, how the room is doing and who is in it (Trevor, 2026-10-20). -->
+		</section>
+
+		<section aria-labelledby="requests-label">
+			<!-- How the room is doing and who is in it, under its own header (Trevor, 2026-10-20). -->
+			<h2 id="status-label">{t('room.status')}</h2>
 			<p class="status connection" role="status" data-status={host.status}>
 				{#if host.code}<span
 						class="dot"
@@ -222,9 +226,6 @@
 						aria-hidden="true"
 					></span>{/if}<span>{statusText}</span>
 			</p>
-		</section>
-
-		<section aria-labelledby="requests-label">
 			<h2 id="requests-label">{t('room.requests')}</h2>
 			{#if host.requests.length === 0}
 				<p class="none">{t('common.none')}</p>
@@ -335,6 +336,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+		margin-bottom: var(--space-4);
 	}
 	/* Hollow while connecting or offline, filled once connected. */
 	.dot {

@@ -16,6 +16,7 @@ export const room = {
 	'room.linkCopied': 'Link copied',
 	'room.copyFailed': 'Could not copy the link',
 	'room.copyFailedHint': 'Use the QR code instead.',
+	'room.status': 'Status',
 	'room.connected': 'Connected',
 	'room.watching': '{count} watching',
 	'room.connecting': 'Connecting…',
