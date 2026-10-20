@@ -54,8 +54,8 @@
 	const slot = $derived(slots.find((s) => s.tileId === revealing));
 
 	// ── The locked pass-the-phone draw (Trevor, 2026-10-19) ──
-	// While locked, leaving the draw asks for the Storyteller's PIN, the reveal shows the
-	// token only while it's held, and the screen stays on.
+	// While locked, leaving the draw asks for the Storyteller's PIN and the screen stays on.
+	// Hold to see character is its own Bag draw setting (Trevor, 2026-10-20).
 	const locked = $derived(game ? drawLock.isLocked(game.gameId) : false);
 	// Locked, the title is the script, logo and name, in place of "Draw" (Trevor, 2026-10-19).
 	onMount(() => void loadOfficialData());
@@ -211,7 +211,7 @@
 			needsAlignment={lookup.get(tile.grimoire)?.type === 'traveller'}
 			seatLabel={label(tile.drawnBySeat)}
 			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
-			holdToReveal={locked}
+			holdToReveal={preferences.current.holdToReveal}
 			onConfirm={confirm}
 		/>
 	{/if}

@@ -52,6 +52,7 @@ export const resets = {
 			...pick(
 				'tileFace',
 				'requireName',
+				'holdToReveal',
 				'ownWording',
 				'timerSound',
 				'timerMode',
@@ -59,10 +60,6 @@ export const resets = {
 				'timerKeepAwake',
 				'timerPerPlayer'
 			),
-			assistance: assistanceWith([
-				...STORYTELLER_GROUPS.night,
-				...STORYTELLER_GROUPS.setup,
-				...STORYTELLER_GROUPS.day
-			])
+			assistance: assistanceWith([...STORYTELLER_GROUPS.night, ...STORYTELLER_GROUPS.day])
 		})
 } satisfies Record<string, () => void>;

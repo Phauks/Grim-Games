@@ -401,12 +401,12 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 
 	// The same setting from the draw itself (Trevor, 2026-10-17), which shows the choice made
 	// in Settings. Symbols, colours, or Random mixing everything, named in words.
-	await page.getByRole('button', { name: 'Setup and bag draw' }).tap();
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
 	const here = page.getByTestId('bag-settings');
 	await expect(here.getByRole('combobox', { name: 'Bag tile labels' })).toContainText('Letters');
 	await page.keyboard.press('Escape');
 	async function choose(option: string) {
-		await page.getByRole('button', { name: 'Setup and bag draw' }).tap();
+		await page.getByRole('button', { name: 'Bag draw' }).tap();
 		await page.getByTestId('bag-settings').getByRole('combobox', { name: 'Bag tile labels' }).tap();
 		await page.getByRole('option', { name: option }).tap();
 		await page.keyboard.press('Escape');
@@ -1009,7 +1009,7 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	page
 }) => {
 	await lockedDraw(page);
-	await expect(page.getByRole('button', { name: 'Setup and bag draw' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Bag draw' })).toHaveCount(0);
 	// Locked: the script's logo and name in place of "Draw", and no Characters or Grimoire.
 	const title = page.getByRole('heading', { level: 1 });
 	await expect(title).toHaveText('Trouble Brewing');
@@ -1020,15 +1020,11 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
 	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
+	// Hold to see character is off by default, locked or not (Trevor, 2026-10-20).
 	await page.getByRole('button', { name: /^Tile 1/ }).tap();
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
-	const hold = reveal.getByTestId('reveal-hold');
-	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
-	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
-	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
+	await expect(reveal.getByTestId('reveal-hold')).toHaveCount(0);
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
-	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
-	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
 	await reveal.getByRole('button', { name: 'Confirm' }).tap();
 
 	// A reload is still locked.
@@ -1146,4 +1142,26 @@ test('Verification folds the setup check away, and the Drunk is tagged not in ba
 	await expect(row('empath').getByTestId('not-in-bag')).toHaveCount(0);
 	await page.locator('.main[data-character-id="drunk"]').tap();
 	await expect(row('drunk').getByTestId('not-in-bag')).toHaveCount(0);
+});
+
+test('Hold to see character, a Bag draw setting, shows the token only while held', async ({
+	page
+}) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await page.getByTestId('bag-settings').getByText('Hold to see character', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('button', { name: /^Tile 1/ }).tap();
+	const reveal = page.getByRole('dialog', { name: /^Tile/ });
+	const hold = reveal.getByTestId('reveal-hold');
+	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
+	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
+	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeEnabled();
 });
