@@ -70,12 +70,20 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
 	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex"]')).toBeVisible();
 
-	// Closing the room sends the phone back to the code form.
+	// Under the code: connected, with who is in the room (Trevor, 2026-10-20).
 	await page.goto(`${board}/room`);
-	await page.getByRole('button', { name: 'Close room' }).tap();
-	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByRole('button', { name: 'Open a room' })).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toHaveText(
+		'Connected · 1 player · 0 watching'
+	);
+	// New code deletes the old room, sending the phone back to the code form.
+	await page.getByRole('button', { name: 'New code' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Make a new code?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
 	await expect(phone.getByRole('alert')).toHaveText('This room is closed, or the code is wrong.');
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	await expect(page.getByTestId('share-code')).not.toHaveText(code.replace(/^(\d{3})/, '$1 '));
 	// A closed room leaves the list.
 	await phone.goto('/join');
 	await expect(phone.getByTestId('recent-rooms')).toHaveCount(0);
@@ -418,10 +426,14 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	// Turning it off takes the grimoire away at once; turning it on again makes a new link.
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	// The players' tab says one is watching, by a dot that shows it is connected.
+	await expect(page.getByTestId('connection-dot')).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toHaveText(
+		'Connected · 0 players · 1 watching'
+	);
 	await watchTab();
 	// It counts who is watching, and New link replaces the link in one step, letting the
-	// viewer go (Trevor, 2026-10-20). The room bar's dot shows it is connected.
-	await expect(page.getByTestId('connection-dot')).toBeVisible();
+	// viewer go (Trevor, 2026-10-20).
 	await expect(watch.getByTestId('watchers')).toHaveText('Watching now: 1');
 	await watch.getByRole('button', { name: 'New link' }).tap();
 	await page

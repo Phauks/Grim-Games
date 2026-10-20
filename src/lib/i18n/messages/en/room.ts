@@ -5,7 +5,6 @@ export const room = {
 	// Storyteller's page
 	'room.title': "Players' phones",
 	'room.back': 'Grimoire',
-	'room.open': 'Open a room',
 	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',
 	'room.joinCode': 'Join code',
@@ -17,8 +16,8 @@ export const room = {
 	'room.linkCopied': 'Link copied',
 	'room.copyFailed': 'Could not copy the link',
 	'room.copyFailedHint': 'Use the QR code instead.',
-	'room.close': 'Close room',
 	'room.connected': 'Connected',
+	'room.watching': '{count} watching',
 	'room.connecting': 'Connecting…',
 	'room.offline': 'Offline: reconnecting. The game carries on here.',
 	'room.tooOld': `This room needs a newer version of ${APP_NAME}. Refresh to update, then try again.`,
@@ -35,10 +34,10 @@ export const room = {
 	'room.decline': 'Decline',
 	'room.playersInRoom': 'Players in the room',
 	'room.unseat': 'Unseat',
-	'room.closeTitle': 'Close the room?',
-	'room.closeText':
-		"Everyone's phone leaves the room and its code stops working. The grimoire is not changed.",
-	'room.keepOpen': 'Keep it open',
+	'room.refresh': 'New code',
+	'room.refreshTitle': 'Make a new code?',
+	'room.refreshText':
+		"Everyone's phone leaves the room and the old code stops working. The grimoire is not changed.",
 	// Players' join pages
 	'room.joinTitle': 'Join game',
 	'room.roomTitle': 'Room {code}',
