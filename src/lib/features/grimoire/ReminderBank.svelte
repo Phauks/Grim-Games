@@ -2,7 +2,7 @@
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
-	import { deadCharacters, prepTextSegments, setupReminders } from '#lib/core/rules/index.ts';
+	import { deadCharacters, prepTextSegments } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -24,13 +24,7 @@
 	} from './reminders.ts';
 	import { GENERIC_REMINDER_ID, scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
-	import {
-		pendingTray,
-		trayItems,
-		withoutOffSeat,
-		traySeats,
-		type TrayItem
-	} from './setup-tray.ts';
+	import { pendingSetup, traySeats, type TrayItem } from './setup-tray.ts';
 
 	/**
 	 * The reminder bank (Trevor, 2026-10-16), always docked under the board. During setup it
@@ -139,10 +133,7 @@
 		return i < 0 ? scriptOrder.length : i;
 	};
 	const setupItems = $derived(
-		withoutOffSeat(
-			pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed),
-			[...(game.looseReminders ?? []), ...Object.values(game.ruleReminders ?? {}).flat()]
-		).sort(
+		pendingSetup(game, characters, grimoire.trayDismissed).sort(
 			(a, b) =>
 				at(a.suggestion.characterId) - at(b.suggestion.characterId) ||
 				byLabel(a.suggestion.label, b.suggestion.label)
