@@ -1,13 +1,7 @@
 <script lang="ts">
-	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { recentDeaths } from '#lib/core/engine/index.ts';
-	import {
-		registersAsDead,
-		type DeathCause,
-		type Game,
-		type SeatId
-	} from '#lib/core/model/index.ts';
+	import type { DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 	import {
 		afterDawn,
 		blockThreshold,
@@ -20,10 +14,8 @@
 		preventedDeaths,
 		type PreventedBecause,
 		type Night,
-		validDeathCauses,
 		daySentence,
-		type DayCount,
-		type ValidDeathCause
+		type DayCount
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -36,8 +28,6 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
-	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
@@ -75,47 +65,6 @@
 	 */
 	const demonVotedButton = $derived(hasFlowergirl && assistance.demonVotedButton);
 	const demonVoted = $derived(g.today.demonVoted === true);
-
-	// ── Players: tap one to mark a death (with its cause) or bring them back ──
-	// Nominations happen off the grimoire, so they are not tracked here (Trevor, 2026-10-16).
-	let causeOpen = $state(false);
-	let causeSeat = $state<SeatId | undefined>();
-
-	function tapSeat(seatId: SeatId) {
-		causeSeat = seatId;
-		causeOpen = true;
-	}
-
-	/**
-	 * Every death has a cause (Trevor, 2026-10-16). An execution or exile is logged as one,
-	 * so the Undertaker and the one-execution reminder see it.
-	 */
-	function markDead(cause: DeathCause) {
-		const seatId = causeSeat;
-		causeOpen = false;
-		if (!seatId) return;
-		if (cause === 'execution') game.run({ type: 'Execute', seatId });
-		else if (cause === 'exile') game.run({ type: 'Exile', seatId });
-		else game.run({ type: 'SetDead', seatId, dead: true, cause });
-	}
-
-	function markAlive() {
-		if (causeSeat) game.run({ type: 'SetDead', seatId: causeSeat, dead: false });
-		causeOpen = false;
-	}
-
-	const causeSeatDead = $derived(causeSeat ? g.seats[causeSeat]?.dead === true : false);
-	const causeGhostVoteUsed = $derived(
-		causeSeat ? g.seats[causeSeat]?.ghostVoteUsed === true : false
-	);
-
-	/** Marks the tapped dead player's ghost vote used, or gives it back (Trevor, 2026-10-18). */
-	function toggleCauseGhostVote() {
-		const seatId = causeSeat;
-		causeOpen = false;
-		if (!seatId) return;
-		game.run({ type: causeGhostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote', seatId });
-	}
 
 	// ── Confirming a change: what it is now, and what it will be ──
 	// TPI's reminder token text (game data, not interface text).
@@ -192,45 +141,6 @@
 			(r) => r.characterId === characterId && r.label === NO_ABILITY
 		);
 		if (token) game.run({ type: 'RemoveReminder', reminderId: token.reminderId });
-	}
-
-	/** Only the causes that could be true for this player (core `validDeathCauses`). */
-	const causes = $derived(causeSeat ? validDeathCauses(g, causeSeat, game.characters) : []);
-
-	function causeLabel(cause: DeathCause): string {
-		switch (cause) {
-			case 'execution':
-				return t('day.causeExecuted');
-			case 'exile':
-				return t('day.causeExiled');
-			case 'demon':
-				return t('day.causeDemon');
-			case 'other':
-				return t('day.causeOther');
-			default:
-				// The killing character, as a badge (causeSlots).
-				return slot('cause');
-		}
-	}
-
-	/** Why a cause is offered with a caution, in a few words. */
-	/** `text` may hold the `character` slot, for `characterId`. */
-	function causeCaution(
-		option: ValidDeathCause
-	): { text: string; characterId?: CharacterId } | undefined {
-		const flag = option.flags[0];
-		if (!flag) return undefined;
-		switch (flag.code) {
-			case 'registers':
-				return {
-					text: t('day.cautionRegisters', { character: slot('character') }),
-					characterId: flag.source.characterId
-				};
-			case 'impaired':
-				return { text: t('day.cautionImpaired') };
-			case 'unknown':
-				return { text: t('day.cautionUnknown') };
-		}
 	}
 
 	// ── Pre-day reminders ──
@@ -385,14 +295,45 @@
 			return character && text && seatId ? [{ character, text, seatId, night }] : [];
 		});
 	});
+
+	// ── A player's day button, on their ability row ──
+	/** Used for a once-per-game day ability, Guesses for the Juggler. */
+	const hasDayButton = (characterId: CharacterId | undefined) =>
+		characterId !== undefined && (isOnceOnlyDayAbility(characterId) || characterId === 'juggler');
+	/** The first pre-day reminder row headed by each seat's own character carries its button. */
+	const buttonRows = $derived.by(() => {
+		const rows: Record<string, SeatId> = {};
+		const taken: SeatId[] = [];
+		for (const group of reminders.groups) {
+			for (const reminder of group.reminders) {
+				const head = reminder.segments[0];
+				const seatId = head?.kind === 'character' ? head.ref.seatId : undefined;
+				if (!seatId || taken.includes(seatId)) continue;
+				if (g.seats[seatId]?.characterId !== reminder.characterId) continue;
+				if (!hasDayButton(reminder.characterId)) continue;
+				rows[reminder.key] = seatId;
+				taken.push(seatId);
+			}
+		}
+		return rows;
+	});
+	/** Seats with a day button but no reminder row today, listed on their own under Abilities. */
+	const unlisted = $derived(
+		assistance.preDayReminders
+			? seats.filter(
+					(s) => hasDayButton(s.characterId) && !Object.values(buttonRows).includes(s.seatId)
+				)
+			: []
+	);
 </script>
 
 <!--
-	A player's day buttons sit in their own tile under Players, beside their character and
-	name (Trevor, 2026-10-19, option B): Used for a once-per-game day ability, and Guesses for
-	the Juggler, whose guesses feed his night answer. Day notes are gone (Trevor, 2026-10-19).
+	A player's day button sits on their ability row, on the same line as their character and
+	name (Trevor, 2026-10-19, option B; the Players section is gone, Trevor 2026-10-20): Used
+	for a once-per-game day ability, and Guesses for the Juggler, whose guesses feed his night
+	answer.
 -->
-{#snippet tileActions(characterId: CharacterId | undefined, seatId: SeatId)}
+{#snippet dayButton(characterId: CharacterId | undefined, seatId: SeatId)}
 	<!-- eslint-disable grim/names-as-badges -- accessible names (aria-label) only -->
 	{@const who = t('day.who', {
 		character: game.characterName(characterId),
@@ -497,7 +438,11 @@
 		</div>
 	</div>
 
-	<Collapsible title={t('day.announcements')} storageKey="day.announcements">
+	<Collapsible
+		title={t('day.announcements')}
+		storageKey="day.announcements"
+		count={died.length + announcers.length}
+	>
 		{#snippet aside()}
 			<Button
 				variant="quiet"
@@ -553,60 +498,16 @@
 		</ul>
 	</Collapsible>
 
-	<Collapsible title={t('day.players')} storageKey="day.players" count={seats.length}>
-		<div class="seats">
-			{#each seats as seat (seat.seatId)}
-				{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
-				{@const icon = character && iconUrl(character, seat.alignment)}
-				{@const ghost = registersAsDead(g, seat.seatId) && !seat.ghostVoteUsed}
-				<div class="tile" data-team={seat.alignment ?? 'neutral'} data-dead={seat.dead}>
-					<button
-						type="button"
-						class="seat"
-						aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
-						data-dead={seat.dead}
-						onclick={() => tapSeat(seat.seatId)}
-					>
-						<!-- Icon two lines tall, character name above, player name below (Trevor). -->
-						<span class="seat-icon" aria-hidden="true"
-							><span class="face"
-								>{#if icon}<img
-										src={icon}
-										alt=""
-										width="40"
-										height="40"
-										{@attach iconFallback(character && fallbackIconUrl(character, seat.alignment))}
-									/>{/if}</span
-							><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span><span
-								class="ghost-mark"
-								data-testid="ghost-mark"
-								data-shown={ghost}
-								title={t('day.hasGhostVote')}><Icon name="ghostVote" /></span
-							></span
-						>
-						<span class="seat-text">
-							<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
-							<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
-								>{character?.name ?? t('day.noCharacter')}</span
-							>
-							<!-- eslint-enable grim/names-as-badges -->
-							<span class="seat-player">{game.seatName(seat.seatId)}</span>
-						</span>
-					</button>
-					{@render tileActions(seat.characterId, seat.seatId)}
-				</div>
-			{/each}
+	<!-- The Flowergirl's switch, when it isn't in the toolbar. -->
+	{#if hasFlowergirl && !assistance.demonVotedButton}
+		<div class="demon-voted">
+			<Toggle
+				label={t('day.demonVoted')}
+				checked={g.today.demonVoted === true}
+				onChange={(checked) => game.run({ type: 'SetDemonVoted', voted: checked })}
+			/>
 		</div>
-		{#if hasFlowergirl && !assistance.demonVotedButton}
-			<div class="demon-voted">
-				<Toggle
-					label={t('day.demonVoted')}
-					checked={g.today.demonVoted === true}
-					onChange={(checked) => game.run({ type: 'SetDemonVoted', voted: checked })}
-				/>
-			</div>
-		{/if}
-	</Collapsible>
+	{/if}
 
 	{#if assistance.preDayReminders}
 		<!-- Each group is its own section; no "Today" wrapper (Trevor, 2026-10-17). -->
@@ -631,6 +532,11 @@
 								alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
 								playerName={head?.ref.playerName}
 							>
+								{#snippet end()}{@const seatId =
+										buttonRows[reminder.key]}{#if seatId}{@render dayButton(
+											reminder.characterId,
+											seatId
+										)}{/if}{/snippet}
 								<!-- The ability first, beside the name; the state under it (Trevor, 2026-10-18). -->
 								{@render ability(reminder.characterId)}
 								<span class="sentence" data-testid="day-state">
@@ -662,21 +568,22 @@
 				</ul>
 			</Collapsible>
 		{/each}
-	{:else}
-		<Collapsible title={t('day.abilities')} storageKey="day.abilities">
+	{/if}
+	{#if !assistance.preDayReminders || unlisted.length > 0}
+		{@const listed = assistance.preDayReminders ? unlisted : seats.filter((s) => s.characterId)}
+		<Collapsible title={t('day.abilities')} storageKey="day.abilities" count={listed.length}>
 			<ul class="reminders">
-				{#each seats as seat (seat.seatId)}
-					{#if seat.characterId}
-						<li data-character={seat.characterId}>
-							<CharacterEntry
-								characterId={seat.characterId}
-								alignment={seat.alignment}
-								playerName={seat.playerName}
-							>
-								{@render ability(seat.characterId)}
-							</CharacterEntry>
-						</li>
-					{/if}
+				{#each listed as seat (seat.seatId)}
+					<li data-character={seat.characterId}>
+						<CharacterEntry
+							characterId={seat.characterId}
+							alignment={seat.alignment}
+							playerName={seat.playerName}
+						>
+							{#snippet end()}{@render dayButton(seat.characterId, seat.seatId)}{/snippet}
+							{@render ability(seat.characterId)}
+						</CharacterEntry>
+					</li>
 				{/each}
 			</ul>
 		</Collapsible>
@@ -740,41 +647,6 @@
 	</ul>
 </BottomSheet>
 
-<BottomSheet
-	bind:open={causeOpen}
-	title={causeSeatDead
-		? t('day.deadPlayerTitle', { name: game.seatName(causeSeat) })
-		: t('day.howDied', { name: game.seatName(causeSeat) })}
->
-	<div class="causes">
-		{#if causeSeatDead}
-			<Button onclick={markAlive}>{t('day.markAlive')}</Button>
-			<!-- The ghost vote, one tap away (Trevor, 2026-10-18). -->
-			<Button icon="ghostVote" onclick={toggleCauseGhostVote}
-				>{causeGhostVoteUsed ? t('day.restoreGhostVote') : t('day.spendGhostVote')}</Button
-			>
-		{:else}
-			{#each causes as option (option.cause)}
-				{@const caution = causeCaution(option)}
-				<Button onclick={() => markDead(option.cause)}>
-					<Sentence text={causeLabel(option.cause)}
-						>{#snippet fill()}{@render badge(option.cause, false)}{/snippet}</Sentence
-					>{#if option.gained}<span class="gained">({@render badge(option.gained, false)})</span
-						>{/if}{#if caution}<span class="caution"
-							>(<Sentence text={caution.text}
-								>{#snippet fill()}{@render badge(caution.characterId, false)}{/snippet}</Sentence
-							>)</span
-						>{/if}
-				</Button>
-			{/each}
-		{/if}
-		<!-- Set apart and tinted, so it is never mistaken for a cause (Trevor, 2026-10-16). -->
-		<div class="cancel">
-			<ModalActions onCancel={() => (causeOpen = false)} />
-		</div>
-	</div>
-</BottomSheet>
-
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
 {#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge
 			characterId={id}
@@ -825,114 +697,6 @@
 		padding-block: var(--space-1);
 		background: var(--dialog-background, var(--surface));
 	}
-	.seats {
-		display: grid;
-		/* Always at least two columns, so a tile with a day button can take two of them. */
-		grid-template-columns: repeat(
-			auto-fill,
-			minmax(min(calc(50% - var(--space-1) / 2), calc(10 * var(--u))), 1fr)
-		);
-		gap: var(--space-1);
-		touch-action: manipulation;
-	}
-	/* The tile: the player button, and their day button beside it on the same line. */
-	.tile {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: center;
-		gap: var(--space-1);
-		min-width: 0;
-		padding-right: var(--space-1);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-	}
-	/* A day button needs room beside the names: the tile takes two columns. */
-	.tile:has(:global(.chip)) {
-		grid-column: span 2;
-	}
-	.seat {
-		display: grid;
-		position: relative;
-		grid-template-columns: auto minmax(0, 1fr);
-		min-width: 0;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: var(--space-1);
-		border: none;
-		border-radius: var(--radius-md);
-		background: transparent;
-		color: var(--on-surface);
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-	}
-	.seat-icon {
-		position: relative;
-		display: inline-grid;
-		width: calc(2.25 * var(--u) * var(--character-icon-scale, 1));
-		height: calc(2.25 * var(--u) * var(--character-icon-scale, 1));
-	}
-	.face {
-		display: grid;
-		place-items: center;
-		border-radius: 50%;
-		background: var(--token-face, var(--on-surface));
-		overflow: hidden;
-	}
-	.face img {
-		width: 88%;
-		height: 88%;
-	}
-	.seat-text {
-		display: grid;
-		min-width: 0;
-	}
-	.seat-character {
-		/* Breaks mid-word only when the word is wider than the tile (largest text sizes). */
-		overflow-wrap: anywhere;
-		hyphens: auto;
-		font-family: var(--font-character);
-		font-weight: var(--font-character-weight, 600);
-	}
-	/* Alignment as the rim colour, so names keep full contrast. */
-	.tile[data-team='good'] {
-		border-left: 4px solid var(--good);
-	}
-	.tile[data-team='evil'] {
-		border-left: 4px solid var(--evil);
-	}
-	.seat-player {
-		overflow-wrap: anywhere;
-		font-family: var(--font-player);
-	}
-	/*
-	 * Dead, as on the board (Trevor, 2026-10-16): the icon dimmed with its colour kept, and
-	 * a skull badge on its lower-left rim. Names keep full contrast (dimming text is harder
-	 * to read). Always laid out, shown only when dead, so nothing shifts.
-	 */
-	.seat[data-dead='true'] .face {
-		filter: brightness(0.55);
-	}
-	.skull {
-		position: absolute;
-		left: -10%;
-		bottom: -6%;
-		display: grid;
-		place-items: center;
-		width: 45%;
-		height: 45%;
-		border: calc(0.125 * var(--u)) solid var(--on-surface);
-		border-radius: 50%;
-		background: var(--dialog-background);
-		color: var(--on-surface);
-		visibility: hidden;
-		--icon-size: calc(0.6 * var(--u) * var(--character-icon-scale, 1));
-	}
-	.seat[data-dead='true'] .skull {
-		visibility: visible;
-	}
 	.demon-voted {
 		min-width: calc(12 * var(--u));
 	}
@@ -957,24 +721,6 @@
 		top: calc(var(--toolbar-height, 0px) - 1px); /* px-ok: hairline overlap */
 		z-index: 1;
 		background: var(--dialog-background, var(--surface));
-	}
-	/* The ghost vote still to use, on the icon's upper rim, as the board shows it. */
-	.ghost-mark {
-		position: absolute;
-		right: -10%;
-		top: -6%;
-		display: grid;
-		place-items: center;
-		width: 45%;
-		height: 45%;
-		border-radius: 50%;
-		background: var(--dialog-background);
-		color: var(--on-surface);
-		visibility: hidden;
-		--icon-size: calc(0.6 * var(--u) * var(--character-icon-scale, 1));
-	}
-	.ghost-mark[data-shown='true'] {
-		visibility: visible;
 	}
 	.glued {
 		display: inline-flex;
@@ -1050,21 +796,6 @@
 	.badge.votes {
 		font-family: var(--font-control);
 	}
-	.causes {
-		display: grid;
-		gap: var(--space-2);
-	}
-	.cancel {
-		display: grid;
-		margin-top: var(--space-2);
-		padding-top: var(--space-3);
-		border-top: 1px solid var(--border);
-	}
-	.cancel :global(.button) {
-		/* A cool tint, unlike the parchment cause buttons. */
-		background: var(--good-wash);
-		border: 1px solid var(--good);
-	}
 	/* The words to say, then the Storyteller's own detail under them in italics. */
 	.death {
 		display: grid;
@@ -1092,12 +823,6 @@
 		min-width: calc(4 * var(--u));
 		margin-right: var(--space-2);
 		font-weight: 700;
-	}
-	.gained,
-	.caution {
-		margin-left: var(--space-1);
-		color: var(--on-surface-muted);
-		font-weight: normal;
 	}
 	.prevented,
 	.because {

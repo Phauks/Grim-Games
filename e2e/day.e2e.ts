@@ -4,7 +4,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function loaded(page: Page) {
 	await page.goto('/spikes/day');
-	await expect(page.getByRole('button', { name: 'Seat: Ana' })).toBeVisible();
+	await expect(page.getByTestId('day-toolbar')).toBeVisible();
 }
 
 async function sampleGame(page: Page, name: 'Sects & Violets' | 'Trouble Brewing' | 'Assorted') {
@@ -106,28 +106,36 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	);
 });
 
-test("day notes are gone; a player's day button sits in their tile", async ({ page }) => {
-	// Trevor, 2026-10-19: no notes in the day view, and the buttons beside each player (B).
+test("day notes are gone; a player's day button sits in their ability row", async ({ page }) => {
+	// Trevor, 2026-10-19: no notes in the day view, and the buttons beside each player (B);
+	// the Players section is gone and the button sits on the ability row (Trevor, 2026-10-20).
 	await loaded(page);
 	await sampleGame(page, 'Trouble Brewing');
 	await expect(page.getByRole('button', { name: /^Note: / })).toHaveCount(0);
-	const tile = page
-		.locator('.tile')
-		.filter({ has: page.getByRole('button', { name: 'Seat: Ben' }) });
-	await expect(tile.getByRole('button', { name: 'Used: Slayer (Ben)' })).toBeVisible();
-	const player = await place(tile.getByRole('button', { name: 'Seat: Ben' }));
-	const used = await place(tile.getByRole('button', { name: 'Used: Slayer (Ben)' }));
-	// On the same line as the character and player name.
-	expect(Math.abs(used.y + used.height / 2 - (player.y + player.height / 2))).toBeLessThan(4);
-	await page
-		.locator('.seats')
-		.screenshot({ path: `test-results/day-tiles-${test.info().project.name}.png` });
+	await expect(page.getByRole('heading', { name: 'Players' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: /^Seat: / })).toHaveCount(0);
+	const button = page.getByRole('button', { name: 'Used: Slayer (Ben)' });
+	await expect(button).toHaveCount(1);
+	const row = page.locator('li[data-character="slayer"]').filter({ has: button });
+	await expect(row).toHaveCount(1);
+	const badge = row.locator('.bar > .badge');
+	await expect(badge).toContainText('Slayer');
+	await expect(badge).toContainText('Ben');
+	const character = await place(badge);
+	const used = await place(button);
+	// On the same line as the character and player name, after them.
+	expect(Math.abs(used.y + used.height / 2 - (character.y + character.height / 2))).toBeLessThan(4);
+	expect(used.x).toBeGreaterThanOrEqual(character.x + character.width - 1);
+	await row.screenshot({ path: `test-results/day-used-row-${test.info().project.name}.png` });
 });
 
 test("the Juggler's note keeps a guess for each player", async ({ page }) => {
 	await loaded(page);
 	await sampleGame(page, 'Sects & Violets');
-	// His guesses have their own button in his tile (Trevor, 2026-10-19).
+	// His guesses have their own button on his row (Trevor, 2026-10-19).
+	await expect(
+		page.locator('li[data-character="juggler"]').getByRole('button', { name: /^Guesses: Juggler/ })
+	).toHaveCount(1);
 	await page.getByRole('button', { name: /^Guesses: Juggler/ }).tap();
 	const sheet = page.getByRole('dialog', { name: /^Note: Juggler/ });
 	const guess = sheet.getByRole('combobox', { name: 'Guess for Ana' });
@@ -157,9 +165,17 @@ test('with help switched off the night is a checklist with no worked-out answers
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(settings).toBeHidden();
 
-	// Pre-day reminders are off, but Used, notes and the players stay.
+	// Pre-day reminders are off, but Abilities lists every player with a character, with
+	// their day button on their row (Trevor, 2026-10-20).
 	await expect(page.getByRole('heading', { name: 'Abilities' })).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Seat: Eve' })).toBeVisible();
+	const abilities = page
+		.locator('.collapsible')
+		.filter({ has: page.getByRole('heading', { name: 'Abilities' }) });
+	await expect(abilities.locator('> .body li')).toHaveCount(8);
+	await expect(abilities).toContainText('Eve');
+	await expect(
+		abilities.locator('li[data-character="juggler"]').getByRole('button', { name: /^Guesses: / })
+	).toBeVisible();
 
 	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	const checklist = page.getByTestId('night-checklist');
@@ -174,6 +190,16 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 }) => {
 	await loaded(page);
 	await sampleGame(page, 'Assorted');
+	// Ana starts the day alive.
+	const anaRow = page
+		.getByTestId('count-table')
+		.locator('tr[data-seat]')
+		.filter({ hasText: 'Ana' });
+	await page.getByTestId('alive-count').tap();
+	await expect(anaRow).toHaveCount(1);
+	await expect(anaRow).not.toContainText('Dead');
+	await page.getByRole('dialog').last().getByRole('button', { name: 'Close' }).tap();
+	await expect(anaRow).toBeHidden();
 	// The Preacher (Gus) chose the Poisoner (Dev): one line, naming the Preacher.
 	const poisoner = page.locator('li[data-character="poisoner"]');
 	await expect(poisoner).toHaveCount(1);
@@ -216,8 +242,7 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 	await expect(choice).toBeHidden();
 
 	await page.getByRole('button', { name: 'Back to day' }).tap();
-	await expect(page.getByRole('button', { name: 'Seat: Ana' })).toHaveAttribute(
-		'data-dead',
-		'true'
-	);
+	// Ana is counted dead in the day view's living players.
+	await page.getByTestId('alive-count').tap();
+	await expect(anaRow).toContainText('Dead');
 });

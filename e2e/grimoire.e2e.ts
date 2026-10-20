@@ -1852,14 +1852,18 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
+	// The day opens after End night; the execution is marked on the board (Trevor, 2026-10-20).
 	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Seat: Seat 2' }).tap();
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+	const executed = await openSeat(page, 2);
+	await executed.getByRole('button', { name: 'Status: Alive' }).tap();
 	await page
-		.getByRole('dialog', { name: 'How did Seat 2 die?' })
+		.getByRole('dialog', { name: 'Status of Seat 2' })
 		.getByRole('button', { name: 'Executed' })
 		.tap();
 	await keepPlaying(page);
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
 
 	const suggested = (await openStep(page, 'Undertaker')).getByTestId('night-suggested');
 	await expect(suggested.locator('[data-character-id="imp"]').first()).toBeVisible();
@@ -1914,13 +1918,12 @@ test('a met game end condition offers End game, listing every outcome', async ({
 			.tap();
 		await closeSheet(page);
 	}
+	// Executions are marked on the board (Trevor, 2026-10-20).
 	const execute = async (seat: number) => {
-		const day = page.getByRole('dialog', { name: 'Day' });
-		if (!(await day.isVisible()))
-			await page.getByRole('button', { name: 'Day', exact: true }).tap();
-		await day.getByRole('button', { name: `Seat: Seat ${seat}` }).tap();
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
 		await page
-			.getByRole('dialog', { name: `How did Seat ${seat} die?` })
+			.getByRole('dialog', { name: `Status of Seat ${seat}` })
 			.getByRole('button', { name: 'Executed' })
 			.tap();
 	};
@@ -1936,6 +1939,7 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	// A recommendation: Cancel keeps playing, and the same condition doesn't ask again.
 	await prompt.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(prompt).toBeHidden();
+	await closeSheet(page);
 	// The Demon dies too: both outcomes are listed and the Storyteller picks the winner.
 	await execute(2);
 	await expect(prompt.locator('[data-rule]')).toHaveCount(2);
@@ -1964,15 +1968,14 @@ test("the Demon executed with a living Mastermind doesn't offer End game", async
 			.tap();
 		await closeSheet(page);
 	}
-	const day = page.getByRole('dialog', { name: 'Day' });
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await day.getByRole('button', { name: 'Seat: Seat 1' }).tap();
-	await page
-		.getByRole('dialog', { name: 'How did Seat 1 die?' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	// The execution is marked on the board (Trevor, 2026-10-20).
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	const status = page.getByRole('dialog', { name: 'Status of Seat 1' });
+	await status.getByRole('button', { name: 'Executed' }).tap();
 	// The Mastermind plays one more day (https://wiki.bloodontheclocktower.com/Mastermind).
-	await expect(page.getByRole('dialog', { name: 'How did Seat 1 die?' })).toBeHidden();
+	await expect(status).toBeHidden();
+	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
 	await expect(page.getByRole('alertdialog', { name: 'End game?' })).toHaveCount(0);
 });
 
