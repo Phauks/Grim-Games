@@ -5,6 +5,7 @@ import { characterLookup } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	bankOwners,
+	isSeatsReminder,
 	bankReminders,
 	byLabel,
 	canAddCopy,
@@ -349,5 +350,27 @@ describe('bankOwners', () => {
 		if (!result.ok) throw new Error(result.error.message);
 		g = result.session.game;
 		expect(g.seats[g.seating[2]].reminders[0]).not.toHaveProperty('ownerSeatId');
+	});
+});
+
+describe('isSeatsReminder', () => {
+	// Trevor (2026-10-19): holding a character token lights the reminders assigned to it.
+	it("is the owner's alone when the reminder has one, else every seat with the character", () => {
+		let g = game();
+		const run = (command: Parameters<typeof dispatch>[1]) => {
+			const result = dispatch({ log: { entries: [], cursor: 0 }, game: g }, command, ctx);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		};
+		const [one, two, other] = g.seating;
+		run({ type: 'AssignCharacter', seatId: one, characterId: 'imp' });
+		run({ type: 'AssignCharacter', seatId: two, characterId: 'imp' });
+		run({ type: 'AssignCharacter', seatId: other, characterId: 'poisoner' });
+		const dead = { characterId: 'imp', label: 'Dead' } as const;
+		expect(isSeatsReminder(g, { ...dead, ownerSeatId: two }, two, characters)).toBe(true);
+		expect(isSeatsReminder(g, { ...dead, ownerSeatId: two }, one, characters)).toBe(false);
+		expect(isSeatsReminder(g, dead, one, characters)).toBe(true);
+		expect(isSeatsReminder(g, dead, two, characters)).toBe(true);
+		expect(isSeatsReminder(g, dead, other, characters)).toBe(false);
 	});
 });
