@@ -26,6 +26,9 @@
 
 	const name = (id: CharacterId) => lookup(id)?.name ?? id;
 	const warningCount = $derived(warnings.length + (uncurated.length ? 1 : 0));
+	const changeCount = $derived(analysis.modifiers.length + analysis.notes.length);
+	// Verification counts everything inside it (Trevor, 2026-10-20).
+	const total = $derived(warningCount + plan.standIns.length + changeCount + jinxes.length);
 </script>
 
 <!--
@@ -41,7 +44,7 @@
 		storageKey="setup-check:verification"
 	>
 		{#snippet aside()}<CountBadge
-				count={warningCount}
+				count={total}
 				warn={warningCount > 0}
 				testid="verification-count"
 			/>{/snippet}
@@ -81,6 +84,10 @@
 				storageKey="setup-check:shown-instead"
 				empty={plan.standIns.length === 0}
 			>
+				{#snippet aside()}<CountBadge
+						count={plan.standIns.length}
+						testid="shown-instead-count"
+					/>{/snippet}
 				{#if plan.standIns.length}
 					<ul class="stand-ins">
 						{#each plan.standIns as standIn (standIn.characterId)}
@@ -105,9 +112,10 @@
 				title={t('setup.check.setupChanges')}
 				level={4}
 				storageKey="setup-check:setup-changes"
-				empty={analysis.modifiers.length + analysis.notes.length === 0}
+				empty={changeCount === 0}
 			>
-				{#if analysis.modifiers.length || analysis.notes.length}
+				{#snippet aside()}<CountBadge count={changeCount} testid="setup-change-count" />{/snippet}
+				{#if changeCount}
 					<ul>
 						{#each analysis.modifiers as modifier (modifier.id)}
 							<li><GlossaryText text={modifier.explanation} /></li>
@@ -123,6 +131,7 @@
 				storageKey="setup-check:jinxes"
 				empty={jinxes.length === 0}
 			>
+				{#snippet aside()}<CountBadge count={jinxes.length} testid="jinx-count" />{/snippet}
 				{#if jinxes.length}
 					<ul>
 						{#each jinxes as jinx (jinx.characters.join('+'))}

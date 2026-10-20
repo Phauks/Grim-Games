@@ -1144,6 +1144,11 @@ test('Verification folds the setup check away, and the Drunk is tagged not in ba
 	await page.locator('.main[data-character-id="empath"]').tap();
 	await expect(row('drunk').getByTestId('not-in-bag')).toHaveText('Not in bag');
 	await expect(row('empath').getByTestId('not-in-bag')).toHaveCount(0);
+	// Every part has its count, and Verification's is their total (Trevor, 2026-10-20).
+	const parts = ['warning-count', 'shown-instead-count', 'setup-change-count', 'jinx-count'];
+	let sum = 0;
+	for (const id of parts) sum += Number(await check.getByTestId(id).textContent());
+	await expect(check.getByTestId('verification-count')).toHaveText(String(sum));
 	await page.locator('.main[data-character-id="drunk"]').tap();
 	await expect(row('drunk').getByTestId('not-in-bag')).toHaveCount(0);
 });
