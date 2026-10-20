@@ -4758,3 +4758,54 @@ test('the walk-through shows the character, then its player below, with the coun
 	expect(count.x + count.width).toBeGreaterThan(more.x - 20);
 	expect(count.y).toBeLessThan(more.y + more.height);
 });
+
+test("putting a dead character's reminder on the board asks first", async ({ page }) => {
+	// Trevor (2026-10-20): a dead Witch curses no one
+	// (https://wiki.bloodontheclocktower.com/Witch), so placing her Cursed asks; the
+	// Sweetheart's Drunk goes down once she dies
+	// (https://wiki.bloodontheclocktower.com/Sweetheart), so it never asks.
+	await startGame(page, 'Sects & Violets');
+	for (const [number, name] of [
+		[1, 'Witch'],
+		[3, 'Sweetheart']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+		await page
+			.getByRole('dialog', { name: `Status of Seat ${number}` })
+			.getByRole('button', { name: 'Executed' })
+			.tap();
+		await closeSheet(page);
+	}
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	const put = async (label: string) => {
+		await bank.getByRole('button', { name: `${label} reminder` }).tap();
+		await page
+			.getByRole('dialog', { name: `Put ${label} on` })
+			.getByRole('button', { name: /None Seat 2/ })
+			.tap();
+	};
+	const onBoard = (label: string) => page.locator(`.chip-slot [aria-label="${label} reminder"]`);
+	const ask = page.getByRole('alertdialog', { name: /^Place/ });
+
+	// Cancel takes it back off; Confirm keeps it.
+	await put('Cursed');
+	await expect(ask).toContainText('is dead.');
+	await expect(
+		ask.getByText("Ask before a dead character's reminder", { exact: true })
+	).toBeVisible();
+	await ask.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(onBoard('Cursed')).toHaveCount(0);
+	await put('Cursed');
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(onBoard('Cursed')).toHaveCount(1);
+
+	await put('Drunk');
+	await expect(onBoard('Drunk')).toHaveCount(1);
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});

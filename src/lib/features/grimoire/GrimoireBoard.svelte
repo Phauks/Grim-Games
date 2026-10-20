@@ -46,6 +46,7 @@
 		dayNumber,
 		livingByTeam,
 		promptApplies,
+		reminderOwnerDead,
 		reminderPrompt,
 		type ReminderPrompt,
 		setupComplete,
@@ -1026,28 +1027,72 @@
 	let promptSeen: Set<string> | undefined;
 	let promptAsk = $state<{ seatId: SeatId; prompt: ReminderPrompt }>();
 	let promptAskOpen = $state(false);
+	/** Where each reminder on a seat was at the last look, so a cancelled move goes back. */
+	let lastSeat: Record<ReminderId, SeatId> = {};
+	/**
+	 * A reminder of a character whose player is dead asks first (Trevor, 2026-10-20); Cancel
+	 * takes it back off, or back where it was moved from. Any other question waits for it.
+	 */
+	let deadAsk = $state<{ reminder: ReminderInstance; seatId: SeatId; from?: SeatId }>();
+	let deadAskOpen = $state(false);
+	let afterDeadAsk: { seatId: SeatId; prompt: ReminderPrompt } | undefined;
 	$effect(() => {
 		const fresh: { seatId: SeatId; prompt: ReminderPrompt }[] = [];
+		const freshDead: { reminder: ReminderInstance; seatId: SeatId; from?: SeatId }[] = [];
 		const now: string[] = [];
+		const where: Record<ReminderId, SeatId> = {};
 		for (const seatId of game.seating) {
 			const seat = game.seats[seatId];
 			for (const reminder of seat.reminders) {
-				const prompt = reminderPrompt(reminder.label);
-				if (!prompt) continue;
 				const key = `${reminder.reminderId}@${seatId}`;
 				now.push(key);
-				if (promptSeen && !promptSeen.has(key) && promptApplies(prompt, !!seat.dead))
-					fresh.push({ seatId, prompt });
+				where[reminder.reminderId] = seatId;
+				if (!promptSeen || promptSeen.has(key)) continue;
+				if (reminderOwnerDead(game, reminder))
+					freshDead.push({ reminder, seatId, from: lastSeat[reminder.reminderId] });
+				const prompt = reminderPrompt(reminder.label);
+				if (prompt && promptApplies(prompt, !!seat.dead)) fresh.push({ seatId, prompt });
 			}
 		}
 		promptSeen = new Set(now);
+		lastSeat = where;
 		if (grimoire.open.viewOnly) return;
 		const assistance = untrack(() => preferences.current.assistance);
 		const ask = fresh.find(({ prompt }) => assistance[PROMPTS[prompt].setting]);
+		if (assistance.deadReminderAsk && freshDead.length > 0) {
+			deadAsk = freshDead[0];
+			afterDeadAsk = ask;
+			deadAskOpen = true;
+			return;
+		}
 		if (!ask) return;
 		promptAsk = ask;
 		promptAskOpen = true;
 	});
+	function keepDeadReminder() {
+		const next = afterDeadAsk;
+		afterDeadAsk = undefined;
+		if (!next) return;
+		promptAsk = next;
+		promptAskOpen = true;
+	}
+	function undoDeadReminder() {
+		afterDeadAsk = undefined;
+		if (!deadAsk) return;
+		const { reminder, from } = deadAsk;
+		if (from) {
+			// Back where it was is not a new placing: it doesn't ask again.
+			promptSeen = new Set([...(promptSeen ?? []), `${reminder.reminderId}@${from}`]);
+			grimoire.run({ type: 'MoveReminder', reminderId: reminder.reminderId, toSeatId: from });
+		} else grimoire.run({ type: 'RemoveReminder', reminderId: reminder.reminderId });
+	}
+	/** The dead seat a reminder belongs to, for the question's words. */
+	function deadOwner(reminder: ReminderInstance): SeatId | undefined {
+		if (reminder.ownerSeatId && game.seats[reminder.ownerSeatId]) return reminder.ownerSeatId;
+		return game.seating.find(
+			(id) => game.seats[id].characterId === reminder.characterId && game.seats[id].dead
+		);
+	}
 	function endNight() {
 		if (!grimoire.endNight()) return;
 		walk = undefined;
@@ -1999,6 +2044,46 @@
 			onChange={(on) =>
 				preferences.update({
 					assistance: { ...preferences.current.assistance, [ui.setting]: on }
+				})}
+		/>
+	</ConfirmDialog>
+{/if}
+
+{#if deadAsk}
+	{@const { reminder } = deadAsk}
+	{@const ownerId = deadOwner(reminder)}
+	{@const owner = ownerId ? game.seats[ownerId] : undefined}
+	<ConfirmDialog
+		bind:open={deadAskOpen}
+		title="Place reminder?"
+		onConfirm={keepDeadReminder}
+		onCancel={undoDeadReminder}
+	>
+		{#snippet heading()}
+			Place <ReminderToken
+				label={tokenLabel(reminder)}
+				character={characters.get(reminder.characterId)}
+				alignment={placingAlignment(game, reminder, characters)}
+			/>?
+		{/snippet}
+		<p class="dead-owner">
+			<CharacterBadge
+				characterId={reminder.characterId}
+				character={characters.get(reminder.characterId)}
+				alignment={owner?.alignment}
+				playerName={ownerId
+					? (owner?.playerName ?? `Seat ${game.seating.indexOf(ownerId) + 1}`)
+					: undefined}
+				inline
+			/> is dead.
+		</p>
+		<SettingToggle
+			label={ASSIST_LABELS.deadReminderAsk.label}
+			description={ASSIST_LABELS.deadReminderAsk.description}
+			checked={preferences.current.assistance.deadReminderAsk}
+			onChange={(on) =>
+				preferences.update({
+					assistance: { ...preferences.current.assistance, deadReminderAsk: on }
 				})}
 		/>
 	</ConfirmDialog>

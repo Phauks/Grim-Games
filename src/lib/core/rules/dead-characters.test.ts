@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Game } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { actsWhenDead, deadCharacters } from './dead-characters.ts';
+import { actsWhenDead, deadCharacters, reminderOwnerDead } from './dead-characters.ts';
 
 const data = committedGameData();
 
@@ -73,5 +73,31 @@ describe('deadCharacters', () => {
 				])
 			)
 		).toEqual(new Set(['poisoner']));
+	});
+});
+
+describe('reminderOwnerDead', () => {
+	// Trevor (2026-10-20): placing a reminder of a character that is already dead asks first.
+	// A dead Poisoner poisons no one (https://wiki.bloodontheclocktower.com/Poisoner); the
+	// Sweetheart's Drunk goes down once she dies (https://wiki.bloodontheclocktower.com/Sweetheart).
+	const g = game([
+		['poisoner', true],
+		['sweetheart', true],
+		['imp', true],
+		['imp', false]
+	]);
+	const [poisoner, , deadImp, liveImp] = Object.keys(g.seats);
+
+	it("asks for a dead character's reminder, never one that acts when dead", () => {
+		expect(reminderOwnerDead(g, { characterId: 'poisoner' })).toBe(true);
+		expect(reminderOwnerDead(g, { characterId: 'sweetheart' })).toBe(false);
+		expect(reminderOwnerDead(g, { characterId: 'monk' })).toBe(false);
+		expect(reminderOwnerDead(g, { characterId: 'poisoner', ownerSeatId: poisoner })).toBe(true);
+	});
+
+	it("follows the copy's owner when two players share the character", () => {
+		expect(reminderOwnerDead(g, { characterId: 'imp' })).toBe(false);
+		expect(reminderOwnerDead(g, { characterId: 'imp', ownerSeatId: deadImp })).toBe(true);
+		expect(reminderOwnerDead(g, { characterId: 'imp', ownerSeatId: liveImp })).toBe(false);
 	});
 });
