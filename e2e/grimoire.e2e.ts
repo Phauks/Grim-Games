@@ -1619,10 +1619,14 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(guide).toContainText('Seat 1');
 	await expect(guide).toContainText('Not placed');
 	await guide.getByRole('button', { name: 'Place' }).tap();
-	await page
+	// Each row: the seat's number, its character once (the in-line badge), then the player
+	// (Trevor, 2026-10-20).
+	const row = page
 		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Seat 2 Empath/ })
-		.tap();
+		.getByRole('button', { name: /Empath Seat 2/ });
+	await expect(row).toHaveText(/^2\s*Empath\s*Seat 2$/);
+	await expect(row.locator('img')).toHaveCount(1);
+	await row.tap();
 	await expect(guide).toContainText('On Seat 2');
 	// It can go back to the reminder bank from here (Trevor, 2026-10-17), then be placed again.
 	await guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' }).tap();
@@ -1633,7 +1637,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await guide.getByRole('button', { name: 'Place' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Seat 2 Empath/ })
+		.getByRole('button', { name: /Empath Seat 2/ })
 		.tap();
 	await expect(guide).toContainText('On Seat 2');
 
@@ -2599,7 +2603,7 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 		await place.first().tap();
 		await page
 			.getByRole('dialog', { name: 'Put Abnormal on' })
-			.getByRole('button', { name: new RegExp(`^${seat} Seat ${seat} `) })
+			.getByRole('button', { name: new RegExp(`^${seat} .*Seat ${seat}$`) })
 			.tap();
 	}
 	await expect(place).toHaveCount(3);
@@ -3983,7 +3987,7 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await bank.getByRole('button', { name: 'Generic reminder' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Put ∞ on' })
-		.getByRole('button', { name: /Seat 1 None/ })
+		.getByRole('button', { name: /None Seat 1/ })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 1: no name, no character, 1 reminder')).toBeAttached();
 	// Placing one never uses it up.
@@ -4386,7 +4390,7 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 	await guide.getByRole('button', { name: 'Place' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Seat 2 Empath/ })
+		.getByRole('button', { name: /Empath Seat 2/ })
 		.tap();
 	await guide.getByRole('button', { name: 'Close' }).tap();
 
@@ -4630,7 +4634,7 @@ test('two copies of a character each have their own reminders, in their own colo
 	await dead.nth(1).tap();
 	await page
 		.getByRole('dialog', { name: 'Put Dead on' })
-		.getByRole('button', { name: /Seat 2 None/ })
+		.getByRole('button', { name: /None Seat 2/ })
 		.tap();
 	// A Dead reminder asks whether to mark the player dead; not this time.
 	await page
@@ -4682,7 +4686,7 @@ test("holding a seat's token lights its character's reminders and dims the rest"
 	await dead.nth(1).tap();
 	await page
 		.getByRole('dialog', { name: 'Put Dead on' })
-		.getByRole('button', { name: /Seat 2 None/ })
+		.getByRole('button', { name: /None Seat 2/ })
 		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' })
