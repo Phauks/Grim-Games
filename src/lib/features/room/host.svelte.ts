@@ -178,6 +178,17 @@ export class RoomHost {
 		this.#sendGrimoire();
 	}
 
+	/**
+	 * A new code (Trevor, 2026-10-20): the old room is deleted, its phones and viewers let go,
+	 * and a new one opened. A view-only link that was on is on again, with a new key.
+	 */
+	async refreshRoom(): Promise<void> {
+		const watching = !!this.viewerKey;
+		this.close();
+		await this.open();
+		if (watching && this.code) await this.setViewers(true);
+	}
+
 	/** Deletes the room for everyone in it. */
 	close(): void {
 		this.#socket?.send({ type: 'close' });

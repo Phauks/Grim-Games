@@ -27,8 +27,13 @@
 	const host = roomHost();
 	$effect(() => host.attach(game));
 
-	let closeOpen = $state(false);
+	/** New code or New link asks first; which one stays set while the dialog closes. */
 	let refreshOpen = $state(false);
+	let refreshKind = $state<'room' | 'watch'>('room');
+	function askRefresh(kind: 'room' | 'watch') {
+		refreshKind = kind;
+		refreshOpen = true;
+	}
 	const shareTabs = $derived([
 		{ value: 'players' as const, label: t('room.tab.players') },
 		{ value: 'watch' as const, label: t('room.tab.watch') }
@@ -75,7 +80,11 @@
 			: host.refusedReason === 'too-old'
 				? t('room.tooOld')
 				: host.status === 'open'
-					? t('room.connected')
+					? [
+							t('room.connected'),
+							t('common.players', { count: seated.length }),
+							t('room.watching', { count: host.watchers })
+						].join(' · ')
 					: host.status === 'connecting'
 						? t('room.connecting')
 						: t('room.offline')
@@ -99,7 +108,7 @@
 	}
 
 	// The panel exists to show the code, so it opens a room straight away (if hovering or
-	// pressing the button that opened it hasn't already). After Close room it stays closed.
+	// pressing the button that opened it hasn't already).
 	host.prepare();
 
 	// Shared and copied text carries the code as well as the link, so it can be typed at /join
@@ -136,28 +145,6 @@
 {/snippet}
 
 <!-- Players' phones and the view-only grimoire each in their own tab (Trevor, 2026-10-19). -->
-<!-- The room itself, above both tabs (Trevor, 2026-10-20): open or close it, and a dot for
-     how it is connected; words only when something is wrong. -->
-<div class="room-bar">
-	{#if host.code}
-		<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
-			{t('room.close')}
-		</Button>
-	{:else}
-		<Button variant="accent" icon="players" onclick={() => host.open()} disabled={host.opening}>
-			{t('room.open')}
-		</Button>
-	{/if}
-	<p class="status connection" role="status" data-status={host.status}>
-		{#if host.code}<span
-				class="dot"
-				class:live={connected}
-				data-testid="connection-dot"
-				aria-hidden="true"
-			></span>{/if}<span class:visually-hidden={connected}>{statusText}</span>
-	</p>
-</div>
-
 <Tabs label={t('room.tabs')} tabs={shareTabs} bind:value={tab}>
 	{#snippet panel(which)}
 		{#if which === 'players'}{@render players()}{:else}{@render watching()}{/if}
@@ -196,7 +183,7 @@
 						variant="quiet"
 						icon="refresh"
 						disabled={!watchLink}
-						onclick={() => (refreshOpen = true)}
+						onclick={() => askRefresh('watch')}
 					>
 						{t('room.watch.refresh')}
 					</Button>
@@ -224,7 +211,29 @@
 				text={message || undefined}
 				qrCenter={logo || scriptName ? scriptCenter : undefined}
 				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
-			/>
+			>
+				{#snippet actions()}
+					<!-- No Open or Close room (Trevor, 2026-10-20): a room is just there while the
+					     game is, and a new code replaces it, deleting the old room. -->
+					<Button
+						variant="quiet"
+						icon="refresh"
+						disabled={host.opening}
+						onclick={() => (host.code ? askRefresh('room') : void host.open())}
+					>
+						{t('room.refresh')}
+					</Button>
+				{/snippet}
+			</SharePanel>
+			<!-- Under the code, how the room is doing and who is in it (Trevor, 2026-10-20). -->
+			<p class="status connection" role="status" data-status={host.status}>
+				{#if host.code}<span
+						class="dot"
+						class:live={connected}
+						data-testid="connection-dot"
+						aria-hidden="true"
+					></span>{/if}<span>{statusText}</span>
+			</p>
 		</section>
 
 		<section aria-labelledby="requests-label">
@@ -307,23 +316,14 @@
 {/snippet}
 
 <ConfirmDialog
-	bind:open={closeOpen}
-	title={t('room.closeTitle')}
+	bind:open={refreshOpen}
+	title={refreshKind === 'room' ? t('room.refreshTitle') : t('room.watch.refreshTitle')}
 	danger
-	onConfirm={() => host.close()}
+	onConfirm={() => void (refreshKind === 'room' ? host.refreshRoom() : host.refreshViewers())}
 >
 	<p class="dialog-text">
-		{t('room.closeText')}
+		{refreshKind === 'room' ? t('room.refreshText') : t('room.watch.refreshText')}
 	</p>
-</ConfirmDialog>
-
-<ConfirmDialog
-	bind:open={refreshOpen}
-	title={t('room.watch.refreshTitle')}
-	danger
-	onConfirm={() => void host.refreshViewers()}
->
-	<p class="dialog-text">{t('room.watch.refreshText')}</p>
 </ConfirmDialog>
 
 <style>
@@ -342,13 +342,6 @@
 		gap: var(--space-2);
 		align-content: start;
 		min-width: 0;
-	}
-	.room-bar {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2) var(--space-3);
-		margin-bottom: var(--space-2);
 	}
 	.connection {
 		display: flex;
