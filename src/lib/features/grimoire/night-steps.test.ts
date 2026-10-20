@@ -40,13 +40,13 @@ describe('stepHolders', () => {
 describe('boardNightSteps', () => {
 	// Dusk opens every night (Trevor, 2026-10-16;
 	// https://wiki.bloodontheclocktower.com/Night_Order), a Traveller's alignment step after it.
-	// No Dawn step: the board's End night ends the night (Trevor, 2026-10-18).
-	it('starts with Dusk and has no Dawn, on the first and other nights', () => {
+	// Dawn closes every night (Trevor, 2026-10-20), before TPI's after-Dawn announcements.
+	it('starts with Dusk and ends with Dawn, on the first and other nights', () => {
 		const g = game(['poisoner', 'imp', 'empath', 'thief']);
 		for (const night of ['first', 'other'] as const) {
 			const steps = boardNightSteps(g, characters, night, data).filter((s) => !s.afterDawn);
 			expect(steps[0].id).toBe('dusk');
-			expect(steps.map((s) => s.id)).not.toContain('dawn');
+			expect(steps.at(-1)?.id).toBe('dawn');
 			expect(steps.map((s) => s.id)).toContain('traveller-alignment');
 		}
 	});
@@ -79,7 +79,7 @@ describe('character change steps', () => {
 		const other = boardNightSteps(g, characters, 'other', data, changes);
 		const step = other.find((s) => s.changed);
 		expect(step?.id).toBe(`changed@${g.seating[0]}`);
-		expect(other.filter((s) => !s.afterDawn).at(-1)).toBe(step);
+		expect(other.filter((s) => !s.afterDawn).at(-2)).toBe(step);
 		expect(stepHolders(g, step!, characters)).toEqual([g.seating[0]]);
 		const first = boardNightSteps(g, characters, 'first', data, changes);
 		expect(first.some((s) => s.changed)).toBe(false);

@@ -350,7 +350,7 @@
 			variant="accent"
 			icon="check"
 			onclick={() => {
-				if (step && !done) grimoire.toggleNightStep(night, step);
+				if (step && !done) grimoire.toggleNightStep(night, step, { startDay: false });
 				open = false;
 			}}>Done</Button
 		>

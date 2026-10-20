@@ -59,7 +59,7 @@
 
 	const last = $derived(index >= steps.length - 1);
 	function next() {
-		if (step && !ticked) grimoire.toggleNightStep(night, step);
+		if (step && !ticked) grimoire.toggleNightStep(night, step, { startDay: false });
 		if (!last) onIndex(index + 1);
 		// Nothing after it: show where the night ends (Trevor, 2026-10-19).
 		else onPastEnd?.();
