@@ -1535,7 +1535,10 @@ test('the board background can be an image from the device, kept after a reload'
 		page
 			.getByTestId('seat')
 			.first()
-			.evaluate((el) => el.querySelector('.name')?.getBoundingClientRect().width ?? 0);
+			.evaluate(
+				(el) =>
+					el.querySelector('[data-testid="token-player-name"]')?.getBoundingClientRect().width ?? 0
+			);
 	const bigger = await nameWidth();
 	await nameSize.fill('0.6');
 	await expect.poll(nameWidth).toBeLessThan(bigger);
