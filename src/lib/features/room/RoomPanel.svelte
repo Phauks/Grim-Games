@@ -176,19 +176,13 @@
 				qrCenter={logo || scriptName ? scriptCenter : undefined}
 				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 				qrCaption={t('room.watch.qrCaption')}
-			>
-				{#snippet actions()}
-					<!-- A new link in one step, not off and on (Trevor, 2026-10-20). -->
-					<Button
-						variant="quiet"
-						icon="refresh"
-						disabled={!watchLink}
-						onclick={() => askRefresh('watch')}
-					>
-						{t('room.watch.refresh')}
-					</Button>
-				{/snippet}
-			</SharePanel>
+				refresh={{
+					label: t('room.watch.refresh'),
+					disabled: !watchLink,
+					// A new link in one step, not off and on (Trevor, 2026-10-20).
+					onclick: () => askRefresh('watch')
+				}}
+			/>
 			<!-- Who is watching now (Trevor, 2026-10-20), always in its place. -->
 			<p class="status" data-testid="watchers">
 				{t('room.watch.watchers', { count: watchLink ? host.watchers : 0 })}
@@ -211,20 +205,14 @@
 				text={message || undefined}
 				qrCenter={logo || scriptName ? scriptCenter : undefined}
 				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
-			>
-				{#snippet actions()}
-					<!-- No Open or Close room (Trevor, 2026-10-20): a room is just there while the
-					     game is, and a new code replaces it, deleting the old room. -->
-					<Button
-						variant="quiet"
-						icon="refresh"
-						disabled={host.opening}
-						onclick={() => (host.code ? askRefresh('room') : void host.open())}
-					>
-						{t('room.refresh')}
-					</Button>
-				{/snippet}
-			</SharePanel>
+				refresh={{
+					label: t('room.refresh'),
+					disabled: host.opening,
+					// No Open or Close room (Trevor, 2026-10-20): a room is just there while the
+					// game is, and a new code replaces it, deleting the old room.
+					onclick: () => (host.code ? askRefresh('room') : void host.open())
+				}}
+			/>
 			<!-- Under the code, how the room is doing and who is in it (Trevor, 2026-10-20). -->
 			<p class="status connection" role="status" data-status={host.status}>
 				{#if host.code}<span
