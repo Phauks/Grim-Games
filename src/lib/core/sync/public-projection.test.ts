@@ -75,12 +75,12 @@ describe('publicProjection', () => {
 			seats: [
 				{ seatId: seats[1], seatNumber: 1, playerName: 'Ben', dead: false },
 				{ seatId: seats[0], seatNumber: 2, playerName: 'Ana', dead: false },
-				// The Zombuul's first death looks like a death to the town.
-				{ seatId: seats[2], seatNumber: 3, playerName: 'Cat', dead: true },
-				{ seatId: seats[3], seatNumber: 4, playerName: 'Dev', dead: true },
+				// The Zombuul's first death looks like a death to the town, ghost vote and all.
+				{ seatId: seats[2], seatNumber: 3, playerName: 'Cat', dead: true, ghostVote: 'unused' },
+				{ seatId: seats[3], seatNumber: 4, playerName: 'Dev', dead: true, ghostVote: 'used' },
 				// A Storyteller override is private, so it does not show as a death.
 				{ seatId: seats[4], seatNumber: 5, playerName: 'Eve', dead: false }
-			].map((s) => (s.seatId === seats[1] ? { ...s, dead: true } : s)),
+			].map((s) => (s.seatId === seats[1] ? { ...s, dead: true, ghostVote: 'unused' } : s)),
 			today: { nominations: [{ nominator: seats[0], nominee: seats[1] }], executions: [seats[1]] }
 		});
 	});
@@ -130,6 +130,7 @@ describe('publicProjection', () => {
 		expect([...keys].sort()).toEqual(
 			[
 				'dead',
+				'ghostVote',
 				'playerName',
 				'seatId',
 				'seatNumber',

@@ -25,14 +25,17 @@ export interface PublicSeat {
 	 */
 	dead: boolean;
 	/**
+	 * A dead player's ghost vote, spent in front of everyone (Trevor, 2026-10-19: the players'
+	 * Grim shows "who has dead votes"). Only on seats that show as dead.
+	 */
+	ghostVote?: 'unused' | 'used';
+	/**
 	 * A Traveller's character: Travellers tell the town who they are
 	 * (https://wiki.bloodontheclocktower.com/Travellers), so the players' script can show it
 	 * in play (Trevor, 2026-10-19). Never set for any other character, nor when the game's
 	 * mode keeps Travellers secret (Stowed Away).
 	 */
 	traveller?: CharacterId;
-	// No ghost votes: the Storyteller doesn't track them (Trevor, 2026-10-16); players keep
-	// their own on their phones.
 }
 
 /**
@@ -84,6 +87,8 @@ export function publicProjection(
 				dead: appearsDead(seat)
 			};
 			if (seat.playerName !== undefined) view.playerName = seat.playerName;
+			// Every seat that looks dead shows a vote the same way, so a Zombuul looks no different.
+			if (view.dead) view.ghostVote = seat.ghostVoteUsed ? 'used' : 'unused';
 			if (seat.characterId && publicTraveller?.(seat.characterId))
 				view.traveller = seat.characterId;
 			return view;
