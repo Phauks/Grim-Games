@@ -36,15 +36,17 @@
 		padding: var(--space-2) 0;
 		border-bottom: var(--card-border);
 	}
+	/* The controls wrap under the badge only when the line is too narrow (largest text). */
 	.bar {
 		display: flex;
+		flex-wrap: wrap;
 		gap: var(--space-2);
 		align-items: center;
 		margin-bottom: var(--space-1);
 	}
 	.bar :global(.badge) {
 		display: flex;
-		flex: 1;
+		flex: 1 1 auto;
 		min-width: 0;
 	}
 	.bar > :global(:not(.badge)) {
