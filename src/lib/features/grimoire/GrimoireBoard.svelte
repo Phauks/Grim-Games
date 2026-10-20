@@ -2128,8 +2128,8 @@
 	onInfoTokens={(token) => {
 		// A card the step's text names opens over the step, which stays open under it.
 		if (token && infoSheet) return infoSheet.openWith(token);
-		// Closing the info sheet returns to this night step (Trevor, 2026-10-16).
-		infoReturn = () => (guideOpen = true);
+		// The sheet opens over the step, which stays open under it (Trevor, 2026-10-20).
+		infoReturn = undefined;
 		infoOpen = true;
 	}}
 	onChooseBluffs={() => (bluffsOpen = true)}

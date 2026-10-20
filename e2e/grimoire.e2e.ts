@@ -1601,7 +1601,7 @@ test('a night step is filled in with help, and the night can be walked through',
 		await closeSheet(page);
 	}
 
-	// Tap a step: TPI's text, its reminder placed on a chosen seat, then Done ticks it.
+	// Tap a step: TPI's text, its reminder placed on a chosen seat, then its X closes it.
 	const guide = await openStep(page, 'Poisoner');
 	await expect(guide).toContainText('Seat 1');
 	await expect(guide).toContainText('Not placed');
@@ -1624,21 +1624,29 @@ test('a night step is filled in with help, and the night can be walked through',
 		.tap();
 	await expect(guide).toContainText('On Seat 2');
 
-	// Show to player and Info tokens come back to the step (Trevor, 2026-10-16).
-	await guide.getByRole('button', { name: 'Show to player' }).tap();
+	// Info tokens and Show to player (an eye) sit beside the X, with no Done (Trevor,
+	// 2026-10-20), and open over the step, which stays open under them.
+	await expect(guide.getByRole('button', { name: 'Done' })).toHaveCount(0);
+	const head = guide.locator('.head-actions');
+	await expect(head.getByRole('button', { name: 'Info tokens' })).toBeVisible();
+	await expect(head.getByRole('button', { name: 'Show to player' })).toBeVisible();
+	await head.getByRole('button', { name: 'Show to player' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
-	await shown.getByRole('button', { name: 'Close' }).tap();
+	await shown.locator('.close button').tap();
 	await expect(guide).toBeVisible();
-	await guide.getByRole('button', { name: 'Info tokens' }).tap();
-	await page.getByRole('button', { name: 'This is the Demon', exact: true }).tap();
-	await shown.getByRole('button', { name: 'Close' }).tap();
+	await head.getByRole('button', { name: 'Info tokens' }).tap();
 	const info = page.getByRole('dialog', { name: 'Info tokens' });
+	await expect(info).toBeVisible();
+	// The step is still open under the sheet.
+	await expect(page.locator('[role="group"][aria-label="Night step"]')).toBeAttached();
+	await page.getByRole('button', { name: 'This is the Demon', exact: true }).tap();
+	await shown.locator('.close button').tap();
 	await expect(info).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(info).toBeHidden();
 	await expect(guide).toBeVisible();
 
-	await guide.getByRole('button', { name: 'Done' }).tap();
+	await guide.getByRole('button', { name: 'Close' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Empath, 1 reminder')).toBeAttached();
 
 	// Walk through: one step at a time under the board, with Previous and Next.
@@ -2579,8 +2587,8 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 	await expect(place).toHaveCount(3);
 	await expect(guide).toContainText('On Seat 2');
 	await expect(guide).toContainText('On Seat 3');
-	// Done stays in reach however long the step is.
-	await guide.getByRole('button', { name: 'Done' }).tap();
+	// The X stays in reach however long the step is.
+	await guide.getByRole('button', { name: 'Close' }).tap();
 	await expect(guide).toBeHidden();
 });
 
@@ -4358,7 +4366,7 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 		.getByRole('dialog', { name: 'Put Poisoned on' })
 		.getByRole('button', { name: /Seat 2 Empath/ })
 		.tap();
-	await guide.getByRole('button', { name: 'Done' }).tap();
+	await guide.getByRole('button', { name: 'Close' }).tap();
 
 	const strip = await walkTo(page, 'Poisoner');
 	await expect(strip.getByTestId('step-asleep')).toHaveCount(0);
