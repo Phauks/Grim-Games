@@ -4701,3 +4701,30 @@ test("holding a seat's token lights its character's reminders and dims the rest"
 	await expect(lit).toHaveCount(0);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
 });
+
+test('the walk-through shows the character, then its player below, with the count at the top right', async ({
+	page
+}) => {
+	// Trevor (2026-10-20): the player's name on the second line; the count always right-aligned
+	// in the top row, before ⋯ and X, never wrapped under the name.
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await nameSeat(sheet, 'Samantha Longname-Example');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Samantha Longname-Example' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await closeSheet(page);
+	const strip = await walkTo(page, 'Fortune Teller');
+	await expect(strip.locator('.body > .name')).not.toContainText('Samantha');
+	const who = strip.locator('.who');
+	await expect(who).toHaveText('Samantha Longname-Example');
+	const name = (await strip.locator('.body > .name strong').boundingBox())!;
+	expect((await who.boundingBox())!.y).toBeGreaterThanOrEqual(name.y + name.height - 1);
+	const count = (await strip.locator('.count').boundingBox())!;
+	const more = (await strip.getByRole('button', { name: 'Character reminders' }).boundingBox())!;
+	expect(count.x + count.width).toBeLessThanOrEqual(more.x + 1);
+	expect(count.x + count.width).toBeGreaterThan(more.x - 20);
+	expect(count.y).toBeLessThan(more.y + more.height);
+});
