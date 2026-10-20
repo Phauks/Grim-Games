@@ -44,7 +44,7 @@ export const errors = {
 	'errors.diag.branch': 'Branch',
 	'errors.diag.channel': 'Channel',
 	'errors.diag.builtAt': 'Built',
-	'errors.diag.gatheredAt': 'Gathered',
+	'errors.diag.gatheredAt': 'Timestamp',
 	'errors.diag.app': 'App updates',
 	'errors.diag.offlineWorker': 'Offline worker',
 	'errors.diag.workerRunning': 'Running',
