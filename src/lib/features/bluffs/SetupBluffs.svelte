@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import BluffsSheet, { type BluffDispatch } from './BluffsSheet.svelte';
 	import { DEMON_SET } from './bluffs.ts';
@@ -58,14 +58,7 @@
 		<!-- Each bluff like a character in the list above: token, name and ability. -->
 		<ul class="rows">
 			{#each bluffs as character (character.id)}
-				<li data-character-id={character.id}>
-					<CharacterToken {character} alignment={defaultAlignment(character.type)} size={36} />
-					<span class="text">
-						<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token, as in the character list -->
-						<span class="name">{character.name}</span>
-						<span class="ability">{character.ability}</span>
-					</span>
-				</li>
+				<li><CharacterRow {character} /></li>
 			{:else}
 				<li class="none">{t('common.none')}</li>
 			{/each}
@@ -98,33 +91,6 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.rows li:not(.none) {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-md);
-		background: var(--choice-background);
-		color: var(--choice-color);
-		box-shadow: inset 0 0 0 1px var(--border);
-	}
-	.text {
-		display: grid;
-		flex: 1;
-		min-width: 0;
-	}
-	.name {
-		font-family: var(--font-character);
-		font-weight: var(--font-character-weight);
-		overflow-wrap: anywhere;
-	}
-	.ability {
-		font-family: var(--font-ability);
-		font-size: 0.8rem;
-		line-height: 1.3;
-		opacity: 0.9;
 	}
 	.none {
 		color: var(--on-surface-muted);

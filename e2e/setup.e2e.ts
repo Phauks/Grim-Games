@@ -883,17 +883,35 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
 	const choices = page.getByRole('group', { name: 'Bluff characters' });
-	// The characters chosen for the bag are marked as in play.
+	// Characters in play are hidden at first (Trevor, 2026-10-20); shown, they are marked.
+	await expect(choices.getByRole('button', { name: /^Empath/ })).toHaveCount(0);
+	await page.getByText('Not in play only', { exact: true }).tap();
 	await expect(choices.getByRole('button', { name: /^Empath/ })).toContainText('In play');
-	for (const name of ['Fortune Teller', 'Soldier', 'Ravenkeeper'])
+	// Three empty places wait at the top, so choosing never pushes the list (Trevor, 2026-10-20).
+	const chosen = page.getByRole('list', { name: 'Chosen' });
+	await expect(chosen.getByRole('listitem', { includeHidden: true })).toHaveCount(3);
+	// The places' height, as the list may scroll to bring a choice into view.
+	const placesHeight = async () => (await chosen.boundingBox())!.height;
+	const before = await placesHeight();
+	for (const name of ['Fortune Teller', 'Soldier', 'Ravenkeeper']) {
 		await choices.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
-	// The chosen names wrap rather than running off a phone (Trevor, 2026-10-19).
+		expect(await placesHeight()).toBeCloseTo(before, 0);
+	}
+	// Each chosen like a row of the list: token, name and ability, within the screen.
+	await expect(chosen.getByRole('button', { name: 'Remove Soldier' })).toContainText(
+		'You are safe from the Demon.'
+	);
 	const width = page.viewportSize()!.width;
-	for (const chip of await page.getByRole('list', { name: 'Chosen' }).getByRole('listitem').all())
-		expect((await chip.boundingBox())!.x + (await chip.boundingBox())!.width).toBeLessThanOrEqual(
+	for (const place of await chosen.getByRole('listitem').all())
+		expect((await place.boundingBox())!.x + (await place.boundingBox())!.width).toBeLessThanOrEqual(
 			width
 		);
+	await chosen.getByRole('button', { name: 'Remove Soldier' }).tap();
+	expect(await placesHeight()).toBeCloseTo(before, 0);
+	await choices.getByRole('button', { name: /^Soldier/ }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
+	// The set lists each bluff as the script does, its ability under its name (Trevor, 2026-10-20).
+	await expect(page.getByTestId('bluff-set').first()).toContainText('You are safe from the Demon.');
 	await page.keyboard.press('Escape');
 	// Each bluff like a character in the list: name and ability (Trevor, 2026-10-19).
 	for (const name of ['Fortune Teller', 'Soldier', 'Ravenkeeper'])
@@ -952,13 +970,16 @@ test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 0/3' })).toBeVisible();
-	// Trevor, 2026-10-19: good characters only, and a toggle hides those in play.
+	// Trevor, 2026-10-19: good characters only, and a toggle, on at first (2026-10-20), hides
+	// those in play.
 	const choices = page.getByRole('group', { name: 'Bluff characters' });
 	await expect(choices.getByRole('button', { name: /^Poisoner/ })).toHaveCount(0);
+	await expect(choices.getByRole('button', { name: /^Empath/ })).toHaveCount(0);
+	await expect(choices.getByRole('button', { name: /^Chef/ })).toBeVisible();
+	await page.getByText('Not in play only', { exact: true }).tap();
 	await expect(choices.getByRole('button', { name: /^Empath/ })).toBeVisible();
 	await page.getByText('Not in play only', { exact: true }).tap();
 	await expect(choices.getByRole('button', { name: /^Empath/ })).toHaveCount(0);
-	await expect(choices.getByRole('button', { name: /^Chef/ })).toBeVisible();
 	await page.getByRole('button', { name: 'Random', exact: true }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 3/3' })).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();

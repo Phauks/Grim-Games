@@ -3530,6 +3530,8 @@ test('a Demon bluff in play can still be chosen, after a confirm', async ({ page
 	await closeSheet(page);
 	await menu(page, 'Demon bluffs');
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
+	// Hidden at first (Trevor, 2026-10-20); the toggle shows it.
+	await page.getByText('Not in play only', { exact: true }).tap();
 	// Marked as in play, never locked (the Storyteller can override anything).
 	await page
 		.getByRole('group', { name: 'Bluff characters' })
