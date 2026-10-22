@@ -4,6 +4,7 @@ import {
 	cancelRequest,
 	castVote,
 	closeVote,
+	gameOver,
 	hostView,
 	isScript,
 	isSharedGrimoire,
@@ -15,6 +16,7 @@ import {
 	parseClientMessage,
 	playerView,
 	publish,
+	reopenGame,
 	request,
 	resolve,
 	roomPreview,
@@ -233,6 +235,12 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			case 'close-vote':
 				room = closeVote(room);
+				break;
+			case 'game-over':
+				room = gameOver(room, message.gameId, message.winner, message.reason);
+				break;
+			case 'reopen-game':
+				room = reopenGame(room, message.gameId);
 				break;
 			case 'close':
 				this.broadcastClosed('Room closed');
