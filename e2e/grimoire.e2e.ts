@@ -1402,6 +1402,64 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
 });
 
+test("every button in the More menu has an edge, and End game is red with the buttons' text", async ({
+	page
+}) => {
+	// Trevor, 2026-10-22: End game's red text was hard to read, and buttons matched the
+	// surface behind them. Edges reach 3:1 (WCAG 1.4.11); the label keeps the buttons' colour.
+	await startGame(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const grimoireMenu = page.getByRole('dialog', { name: 'Grimoire' });
+	const end = grimoireMenu.getByRole('button', { name: 'End game' });
+	const other = grimoireMenu.getByRole('button', { name: 'Board', exact: true });
+	await expect(end).toBeVisible();
+	const look = (button: Locator) =>
+		button.evaluate((el) => {
+			const rgb = (css: string) => (css.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+			const lum = (css: string) => {
+				const [r, g, b] = rgb(css).map((v) => {
+					const c = v / 255;
+					return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+				});
+				return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+			};
+			const ratio = (a: string, b: string) => {
+				const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+				return (hi + 0.05) / (lo + 0.05);
+			};
+			const style = getComputedStyle(el);
+			// The dialog panel behind the button.
+			let panel = el.parentElement;
+			while (panel && getComputedStyle(panel).backgroundColor === 'rgba(0, 0, 0, 0)')
+				panel = panel.parentElement;
+			const surface = panel ? getComputedStyle(panel).backgroundColor : 'rgb(0, 0, 0)';
+			const edge = style.boxShadow.match(/rgba?\([^)]*\)/)?.[0] ?? style.backgroundColor;
+			return {
+				fill: style.backgroundColor,
+				text: style.color,
+				edge: ratio(edge, surface),
+				label: ratio(
+					style.color,
+					style.backgroundColor === 'rgba(0, 0, 0, 0)' ? surface : style.backgroundColor
+				)
+			};
+		});
+	const ended = await look(end);
+	const board = await look(other);
+	const [r, g, b] = (ended.fill.match(/\d+/g) ?? []).map(Number);
+	expect(r).toBeGreaterThan(g * 2);
+	expect(r).toBeGreaterThan(b * 2);
+	expect(ended.text).toBe(board.text);
+	expect(ended.label).toBeGreaterThanOrEqual(4.5);
+	for (const button of [ended, board]) expect(button.edge).toBeGreaterThanOrEqual(3);
+	await end.scrollIntoViewIfNeeded();
+	await grimoireMenu.screenshot({ path: `test-results/more-menu-${test.info().project.name}.png` });
+	await end.tap();
+	await page
+		.getByRole('alertdialog', { name: 'End game?' })
+		.screenshot({ path: `test-results/end-game-${test.info().project.name}.png` });
+});
+
 test('the game toolbar opens the app menu; leaving the game asks first and keeps it', async ({
 	page
 }) => {
