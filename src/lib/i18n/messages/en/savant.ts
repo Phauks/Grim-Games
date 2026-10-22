@@ -1,0 +1,24 @@
+/** The Savant information sheet (src/lib/features/savant). */
+export const savant = {
+	'savant.title': 'Savant information',
+	'savant.titleSeat': 'Savant information · {seat}',
+	'savant.mode': 'Statements',
+	'savant.modeOneEach': 'One true, one false',
+	'savant.modeBothTrue': 'Both true',
+	'savant.modeBothFalse': 'Both false',
+	'savant.drunk': '{character} is drunk: any mix is allowed.',
+	'savant.poisoned': '{character} is poisoned: any mix is allowed.',
+	'savant.noAbility': '{character} has no ability: any mix is allowed.',
+	'savant.vortox': 'A working {character} is in play: both must be false.',
+	'savant.statement': 'Statement {number}',
+	'savant.lock': 'Keep statement {number}',
+	'savant.another': 'Another statement {number}',
+	'savant.true': 'True',
+	'savant.false': 'False',
+	'savant.dependsOn': 'Depends on {seats}',
+	'savant.checkTrue': 'You check: true',
+	'savant.checkFalse': 'You check: false',
+	'savant.use': 'Use these',
+	'savant.noteTrue': 'True: {statement}',
+	'savant.noteFalse': 'False: {statement}'
+} as const;
