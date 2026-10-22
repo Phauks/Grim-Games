@@ -108,6 +108,7 @@
 	import { publicProjection } from '#lib/core/sync/public-projection.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
@@ -968,12 +969,22 @@
 	 * starts on the board, where it is on.
 	 */
 	function endDay(): void {
+		dayOpen = false;
 		if (liveDayTimer.running) liveDayTimer.toggle();
 		grimoire.beginNight();
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
 		if (preferences.current.assistance.nightWalkthrough) walkNight(true);
+	}
+	/**
+	 * Execution ends the day (Trevor, 2026-10-22): the player chosen is executed first, unless
+	 * that execution is already logged, so the rules checked at dusk see it.
+	 */
+	function executeAndEndDay(seatId: SeatId | undefined): void {
+		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
+		if (seatId && !logged) grimoire.run({ type: 'Execute', seatId });
+		endDay();
 	}
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
@@ -1047,9 +1058,10 @@
 				disabled: !canRun,
 				onclick: startGame
 			};
+		// Execution in place of End day (Trevor, 2026-10-22): ending a day asks who was executed.
 		return {
-			label: 'End day',
-			text: 'End day',
+			label: t('day.execution'),
+			text: t('day.execution'),
 			icon: 'night' as const,
 			disabled: !!ended || grimoire.open.viewOnly || arranging || !!placing,
 			onclick: () => {
@@ -2175,8 +2187,8 @@
 	/>
 </ConfirmDialog>
 
-<!-- The same question as the day view's End day. -->
-<ConfirmDialog bind:open={endDayOpen} title={t('day.endDayConfirm')} onConfirm={endDay} />
+<!-- The same question as the day view's Execution. -->
+<ExecutionDialog bind:open={endDayOpen} {game} onConfirm={executeAndEndDay} />
 
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">
@@ -2267,7 +2279,7 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={endDay} />
+<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={() => (endDayOpen = true)} />
 
 <GuidedStep
 	bind:open={guideOpen}
