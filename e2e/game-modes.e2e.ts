@@ -1143,3 +1143,44 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 		'No character, killed by the Demon'
 	);
 });
+
+test('+1 adds exactly one character from off the script', async ({ page }) => {
+	// Trevor (2026-10-22): the chosen script plus exactly one off-script character in play.
+	await page.goto('/new');
+	await chooseRules(page, '+1');
+	const panel = modesPanel(page);
+	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
+	const extras = page.getByTestId('extras').locator('li');
+	await expect(extras).toHaveCount(4);
+	// The roll fills one row; the table is told there is one, so no range is offered.
+	const filled = extras.getByRole('button', { name: /^Roll again instead of / });
+	await expect(filled).toHaveCount(1);
+	await expect(page.getByTestId('extras-range')).toHaveCount(0);
+	const next = page.getByRole('button', { name: 'Choose characters' });
+	await expect(next).toBeEnabled();
+	// A second one is too many.
+	for (const [i, type] of ['Townsfolk', 'Outsider', 'Minion', 'Demon'].entries()) {
+		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
+		if (await clear.isEnabled()) await clear.tap();
+	}
+	await expect(next).toBeDisabled();
+	await extras.nth(1).getByRole('button', { name: 'Choose a hidden Outsider' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
+	await picker.getByRole('searchbox').fill('Goon');
+	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
+	await expect(next).toBeEnabled();
+	await extras.nth(2).getByRole('button', { name: 'Choose a hidden Minion' }).tap();
+	const minions = page.getByRole('dialog', { name: 'Choose a hidden Minion' });
+	await minions.getByRole('searchbox').fill('Witch');
+	await minions.getByRole('button', { name: /^Witch\b/ }).tap();
+	await expect(next).toBeDisabled();
+	await extras.nth(2).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
+	await noSidewaysScroll(page);
+
+	await next.tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await expect(page.locator('.choice[data-off-script]')).toHaveCount(1);
+	await expect(page.locator('.choice[data-off-script]')).toContainText('Goon');
+});

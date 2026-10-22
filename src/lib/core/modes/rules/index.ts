@@ -2,6 +2,7 @@
 import type { SpecialRule } from '../types.ts';
 import { INFINITE_POSSIBILITIES } from './infinite-possibilities.ts';
 import { I_SEE_DEAD_PEOPLE } from './i-see-dead-people.ts';
+import { PLUS_ONE } from './plus-one.ts';
 import { SEAT_7 } from './seat-7.ts';
 import { SPECTERS } from './specters.ts';
 import { STOWED_AWAY } from './stowed-away.ts';
@@ -9,6 +10,7 @@ import { STOWED_AWAY } from './stowed-away.ts';
 export { INFINITE_POSSIBILITIES, SPECTERS };
 
 export const SPECIAL_RULES: readonly SpecialRule[] = [
+	PLUS_ONE,
 	INFINITE_POSSIBILITIES,
 	I_SEE_DEAD_PEOPLE,
 	SPECTERS,
