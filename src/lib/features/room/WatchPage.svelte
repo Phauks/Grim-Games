@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { migrateSavedGame, SavedGameError } from '#lib/core/engine/index.ts';
 	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
@@ -88,12 +89,17 @@
 		!room || key === undefined
 			? t('room.watch.badLink')
 			: viewer?.refusedReason === 'not-viewer'
-				? t('room.watch.turnedOff')
-				: viewer?.refusedReason === 'too-old'
-					? t('room.tooOld')
-					: viewer?.status === 'refused' || viewer?.status === 'closed'
-						? t('room.closedOrWrong')
-						: problem
+				? // Opened from Join game with a typed password, rather than the link.
+					page.state.password
+					? t('room.watch.wrongPassword')
+					: t('room.watch.turnedOff')
+				: viewer?.refusedReason === 'too-many-tries'
+					? t('room.watch.tooManyTries')
+					: viewer?.refusedReason === 'too-old'
+						? t('room.tooOld')
+						: viewer?.status === 'refused' || viewer?.status === 'closed'
+							? t('room.closedOrWrong')
+							: problem
 	);
 	// A link turned off, or a room closed, takes the grimoire away at once.
 	const showBoard = $derived(

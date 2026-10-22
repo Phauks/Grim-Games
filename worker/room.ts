@@ -23,6 +23,9 @@ import {
 	setViewers,
 	supportsProtocol,
 	unseat,
+	viewerFailed,
+	viewersLocked,
+	type ViewerFails,
 	type GrimoireView,
 	type RoomState,
 	type ScriptView,
@@ -134,7 +137,16 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			if (message.role === 'viewer') {
+				// A Grim view password can be short: wrong keys are counted, and too many in a
+				// while stop every viewer from joining until it passes.
+				const fails = await this.ctx.storage.get<ViewerFails>('viewer-fails');
+				if (viewersLocked(fails, Date.now())) {
+					send(ws, { type: 'refused', reason: 'too-many-tries' });
+					ws.close(4429, 'Too many tries');
+					return;
+				}
 				if (hash !== room.viewerKeyHash) {
+					await this.ctx.storage.put('viewer-fails', viewerFailed(fails, Date.now()));
 					send(ws, { type: 'refused', reason: 'not-viewer' });
 					ws.close(4403, 'Link turned off');
 					return;
@@ -194,8 +206,11 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			case 'viewers': {
-				const next = setViewers(room, message.keyHash);
-				if (next.viewerKeyHash === room.viewerKeyHash) return;
+				const next = setViewers(room, message.keyHash, message.password);
+				if (next.viewerKeyHash === room.viewerKeyHash) {
+					if (next.viewerPassword !== room.viewerPassword) await this.save(next);
+					return;
+				}
 				// A link turned off (or replaced) stops working now, and its grimoire is deleted.
 				await this.ctx.storage.delete('grimoire');
 				for (const socket of this.ctx.getWebSockets()) {
