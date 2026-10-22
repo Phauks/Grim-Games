@@ -8,7 +8,8 @@ import {
 	loadScript,
 	OFFICIAL_EDITIONS,
 	type GameData,
-	type LoadedScript
+	type LoadedScript,
+	type Script
 } from '#lib/core/data/index.ts';
 import type { SourceLink } from '#lib/core/modes/index.ts';
 import { fetchLinkTarget } from '#lib/features/scripts/fetch-script.ts';
@@ -22,7 +23,8 @@ import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts'
 import {
 	reloadSavedScript,
 	sameScript,
-	type SavedScript
+	type SavedScript,
+	type ScriptSource
 } from '#lib/features/scripts/saved-scripts.ts';
 import { scriptVersion } from '#lib/features/player/player-script.ts';
 
@@ -36,6 +38,10 @@ export interface ScriptChoiceOption {
 	version?: string;
 	/** The heading it is listed under in the script search. */
 	group?: 'recent' | 'library';
+	/** Where the saved script came from; undefined for the base three. */
+	source?: ScriptSource;
+	/** The saved script in TPI's format; undefined for the base three. */
+	json?: unknown[];
 }
 
 function savedMeta(saved: Pick<SavedScript, 'json'>) {
@@ -64,7 +70,9 @@ function savedOption(saved: SavedScript, value: ScriptChoice): ScriptChoiceOptio
 		value,
 		label: saved.name,
 		...(author ? { author } : {}),
-		...(version ? { version } : {})
+		...(version ? { version } : {}),
+		source: saved.source,
+		json: saved.json
 	};
 }
 
@@ -100,10 +108,40 @@ export function searchableScripts(): ScriptChoiceOption[] {
 					label: entry.script.name,
 					...(author ? { author } : {}),
 					...(version ? { version } : {}),
-					group: 'library' as const
+					group: 'library' as const,
+					source: entry.script.source,
+					json: entry.script.json
 				};
 			})
 	];
+}
+
+/** The character ids a script in TPI's format lists, in order. */
+function jsonIds(json: readonly unknown[]): string[] {
+	return json.flatMap((e) => {
+		const id = typeof e === 'string' ? e : (e as { id?: unknown } | null)?.id;
+		return typeof id === 'string' && id !== '_meta' ? [id] : [];
+	});
+}
+
+/**
+ * The saved script a game's script was started from (Trevor, backlog L14: Game info links
+ * the script to its source page): one of the recent or Library scripts with its name and
+ * author, preferring the one with its version, then the one with its characters. Undefined
+ * when none matches.
+ */
+export function savedChoiceFor(script: Script): ScriptChoiceOption | undefined {
+	const name = script.meta?.name?.trim();
+	if (!name) return undefined;
+	const author = script.meta?.author?.trim() || undefined;
+	const version = script.meta?.version?.trim() || undefined;
+	const named = searchableScripts().filter((o) => o.label === name && o.author === author);
+	const ids = script.entries.map((e) => (e.kind === 'official' ? e.id : e.character.id)).join(',');
+	return (
+		(version && named.find((o) => o.version === version)) ||
+		named.find((o) => o.json && jsonIds(o.json).join(',') === ids) ||
+		named[0]
+	);
 }
 
 export function loadScriptChoice(choice: ScriptChoice, data: GameData): LoadedScript {
