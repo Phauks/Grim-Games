@@ -171,7 +171,7 @@
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
-		const dead = deadCharacters(game);
+		const dead = deadCharacters(game, characters);
 		const rest = bankReminders(
 			game,
 			characters,

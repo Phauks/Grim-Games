@@ -1,3 +1,6 @@
 {
-	"reminderPrompts": { "Died Today": "markDead" }
+	"reminderPrompts": {
+		"Died Today": "markDead"
+	},
+	"actsWhenDead": true
 }
