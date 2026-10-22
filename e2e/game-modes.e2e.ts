@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
 
@@ -977,6 +978,48 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 		/\/script\/7\/2\.2/
 	);
 	await expect(info.locator('[data-field="version"] td')).toHaveText('2.2');
+	// Its source can be passed on, and its file saved (Trevor, 2026-10-22, plan G3).
+	await expect(info.getByTestId('share-source')).toBeEnabled();
+	const download = page.waitForEvent('download');
+	await page.getByTestId('game-info-download').tap();
+	const file = await download;
+	expect(file.suggestedFilename()).toBe('many-versions.json');
+	const json = JSON.parse(await readFile((await file.path())!, 'utf8')) as unknown[];
+	expect(json).toContainEqual(expect.objectContaining({ id: '_meta', name: 'Many Versions' }));
+	expect(json).toContain('chef');
+});
+
+test('Game info opens a special rule in full when tapped, and a script with no source cannot be shared', async ({
+	page
+}) => {
+	// Trevor, 2026-10-22 (plan G5): "allow clicking game mode or special rules in game info to
+	// see exact detalis of that game mode".
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await chooseRules(page, 'Stowed Away');
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const more = page.getByRole('dialog', { name: 'Grimoire' });
+	const entry = more.getByRole('button', { name: 'Game info' });
+	if (await entry.count()) await entry.tap();
+	else {
+		await page.keyboard.press('Escape');
+		await expect(more).toBeHidden();
+		await page.getByTestId('mode-menu').tap();
+	}
+	const info = page.getByTestId('game-info');
+	// Standard is no mode to open; the rule's name opens its About, parts and rule file.
+	await expect(info.locator('[data-field="mode"] button')).toHaveCount(0);
+	// A built-in script has no source page: Share stays in its place, off, saying why.
+	const share = info.getByTestId('share-source');
+	await expect(share).toBeDisabled();
+	await expect(share).toHaveAttribute('title', 'This script has no source page to share');
+	await info.getByRole('button', { name: 'Inspect Stowed Away' }).tap();
+	const inspect = page.getByRole('dialog', { name: 'Stowed Away' });
+	await expect(inspect.getByTestId('mode-about')).toBeVisible();
+	await expect(inspect.getByRole('button', { name: 'Rule file', exact: true })).toBeVisible();
+	await noSidewaysScroll(page);
 });
 
 test('a custom script without a version shows N/A as its version', async ({ page }) => {

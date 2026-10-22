@@ -2,7 +2,7 @@
  * The roadmap, kept in the repository so it ticks itself off: an item is done once a merged
  * change names its ID in brackets in its title, such as "Savant info generator (L2)", or is
  * one of the PRs listed with it. The IDs are the backlog plan's (D1, R1-R7, B1-B6, S1-S6,
- * P1-P2, L1-L28, A1, O1). Add new items here with their ID; never tick them by hand.
+ * P1-P2, L1-L28, G1-G5, A1, O1). Add new items here with their ID; never tick them by hand.
  */
 import type { BuildCommit } from './update-notes.ts';
 import type { Change } from './changelog.ts';
@@ -39,6 +39,11 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				prs: [323]
 			},
 			{ id: 'L18b', title: 'The view-only grimoire uses the full width on desktop' },
+			{
+				id: 'G4',
+				title: 'Share is one screen: the join code, then the view-only link',
+				prs: [365]
+			},
 			{ id: 'R3', title: 'Watcher count beside the script name on the board' },
 			{ id: 'R7', title: "Player view tabs that don't fit move into a ⋯ menu", prs: [318] },
 			{
@@ -47,6 +52,15 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			},
 			{ id: 'R6', title: 'Player avatars on seat tokens, from our own set' },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
+		]
+	},
+	{
+		title: 'New game and Game info',
+		items: [
+			{ id: 'G1', title: 'New game shows a spinner while a script version loads' },
+			{ id: 'G2', title: 'New game previews the script as it will play, beside the settings' },
+			{ id: 'G3', title: "Game info downloads the script's file and shares its source" },
+			{ id: 'G5', title: 'Game info opens the game mode or a special rule in full when tapped' }
 		]
 	},
 	{
