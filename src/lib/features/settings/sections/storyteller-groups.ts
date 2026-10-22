@@ -12,6 +12,7 @@ export const STORYTELLER_GROUPS = {
 		'reviveReminderAsk',
 		'deadReminderAsk',
 		'demonVotedButton',
+		'savantInfo',
 		'gameEndPrompts'
 	],
 	board: ['stackReminders', 'scriptTitle']

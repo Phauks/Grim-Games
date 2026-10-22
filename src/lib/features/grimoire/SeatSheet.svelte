@@ -44,6 +44,8 @@
 	import { boardLooks } from './board-looks.svelte.ts';
 	import { isGeneric, tokenLabel } from './reminders.ts';
 	import ReminderNoteField from './ReminderNoteField.svelte';
+	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 
 	interface Props {
 		open: boolean;
@@ -341,6 +343,11 @@
 	}
 	let removeOpen = $state(false);
 	let showOpen = $state(false);
+	let savantOpen = $state(false);
+	/** The Savant's information generator (L2), for a Savant seat while its switch is on. */
+	const savant = $derived(
+		seat?.characterId === 'savant' && preferences.current.assistance.savantInfo
+	);
 	let remindersOpen = $state(false);
 </script>
 
@@ -555,6 +562,8 @@
 </BottomSheet>
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
+
+<SavantSheet bind:open={savantOpen} {grimoire} {seatId} />
 
 <ReminderPicker
 	bind:open={remindersOpen}
@@ -880,6 +889,11 @@
 		{#if apprentice}
 			<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (gainOpen = true))}>
 				Gained ability…
+			</Button>
+		{/if}
+		{#if savant}
+			<Button variant="quiet" icon="random" onclick={() => fromMenu(() => (savantOpen = true))}>
+				Savant information…
 			</Button>
 		{/if}
 		<Button

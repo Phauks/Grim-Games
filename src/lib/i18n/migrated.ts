@@ -23,6 +23,7 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/info-tokens/',
 	'src/lib/features/bluffs/',
 	'src/lib/features/day/',
+	'src/lib/features/savant/',
 	'src/lib/features/account/',
 	'src/routes/account/',
 	'src/lib/features/scripts/',
