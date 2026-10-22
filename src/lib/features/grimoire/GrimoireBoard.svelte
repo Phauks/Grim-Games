@@ -5,7 +5,7 @@
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { gameModeNames } from './game-mode-name.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { boardNightSteps, seatName, stepHolders, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -58,6 +58,7 @@
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { nextScriptOrderTarget, seatHasAbility } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -287,13 +288,22 @@
 		const { entries, cursor } = grimoire.open.session.log;
 		return diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
 	});
+	/** The game's special rules, kept whole with the game (game-mode-store.ts). */
+	const gameRules = $derived(readGameMode(game.gameId)?.rules ?? []);
+	/**
+	 * Who has an ability under a special rule, when one changes it (The Phantom Detectives:
+	 * the dead keep theirs, living Townsfolk have none).
+	 */
+	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
 	function wakes(step: NightStep): boolean {
 		const holders = stepHolders(game, step, characters);
 		const id = step.character?.id;
 		return (
 			holders.length === 0 ||
 			holders.some(
-				(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && diedTonight.has(s))
+				(s) =>
+					seatHasAbility(abilitiesRule, game, s, characters) ||
+					(id !== undefined && id in ON_DEATH && diedTonight.has(s))
 			)
 		);
 	}
@@ -302,8 +312,14 @@
 		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
 		const counts = wakes;
 		return {
-			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data, today), counts),
-			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data, today), counts)
+			first: stepNightNumbers(
+				boardNightSteps(game, characters, 'first', data, today, gameRules),
+				counts
+			),
+			other: stepNightNumbers(
+				boardNightSteps(game, characters, 'other', data, today, gameRules),
+				counts
+			)
 		};
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
@@ -826,7 +842,7 @@
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
 		return walk && data
-			? boardNightSteps(game, characters, walk.night, data, today).filter(wakes)
+			? boardNightSteps(game, characters, walk.night, data, today, gameRules).filter(wakes)
 			: [];
 	});
 	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
@@ -834,7 +850,7 @@
 		const data = officialData.current;
 		if (!guided || !data) return [];
 		const open = guided.step.id;
-		return boardNightSteps(game, characters, guided.night, data, today).filter(
+		return boardNightSteps(game, characters, guided.night, data, today, gameRules).filter(
 			(s) => s.id === open || wakes(s)
 		);
 	});
@@ -845,7 +861,9 @@
 		if (!guidedPending || !data) return;
 		const { night, stepId } = guidedPending;
 		guidedPending = undefined;
-		const step = boardNightSteps(game, characters, night, data, today).find((s) => s.id === stepId);
+		const step = boardNightSteps(game, characters, night, data, today, gameRules).find(
+			(s) => s.id === stepId
+		);
 		if (step) {
 			guided = { step, night };
 			guideOpen = true;
@@ -886,6 +904,17 @@
 			(rule) => rule.parts.seats?.kind === 'storyteller-seat' && rule.parts.seats.count > 0
 		)?.name
 	);
+	/**
+	 * Trained Killer (https://beardytas.com/garden-of-djinn/trained-killer/): on a Demon's step
+	 * after the first night, the next living in-play character in script order.
+	 */
+	const attackRule = $derived(gameRules.find((r) => r.parts.demonAttacks)?.name);
+	const walkAttack = $derived.by(() => {
+		if (!attackRule || !walkStep || walk?.night !== 'other') return undefined;
+		if (walkStep.character?.type !== 'demon') return undefined;
+		const target = nextScriptOrderTarget(game, characters);
+		return target === undefined ? undefined : seatName(game, target);
+	});
 	const walkEmptySeat = $derived(
 		!!emptySeatRule &&
 			!!walkStep &&
@@ -915,7 +944,7 @@
 		if (!data) return;
 		grimoire.beginNight();
 		const night = tonight(game);
-		const steps = boardNightSteps(game, characters, night, data, today).filter(wakes);
+		const steps = boardNightSteps(game, characters, night, data, today, gameRules).filter(wakes);
 		const next = fromDusk ? 0 : steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
 	}
@@ -1808,6 +1837,7 @@
 				onPastEnd={() => endHint++}
 				asleepBy={walkAsleep ? poisonedSleepRule : undefined}
 				emptySeatBy={walkEmptySeat ? emptySeatRule : undefined}
+				attack={walkAttack && attackRule ? { seat: walkAttack, by: attackRule } : undefined}
 				onOpen={(step) => {
 					if (!walk) return;
 					guided = { step, night: walk.night };

@@ -21,7 +21,7 @@ import {
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 10;
+export const GAME_MODE_REVISION = 11;
 
 export interface GuideField {
 	name: string;
@@ -770,7 +770,13 @@ export const RULE_GUIDE_PARTS: GuidePart[] = [
 						type: 'text',
 						required: true,
 						about: 'Which nights.',
-						values: ['each-night', 'each-night-except-first']
+						values: ['each-night', 'each-night-except-first', 'one-night']
+					},
+					{
+						name: 'night',
+						type: 'whole number',
+						required: false,
+						about: 'For one-night: which night (1 is the first night).'
 					},
 					{ name: 'characters', type: IDS, required: false, about: 'Who wakes.' },
 					{
@@ -779,8 +785,63 @@ export const RULE_GUIDE_PARTS: GuidePart[] = [
 						required: false,
 						about: 'Every character of these types wakes.',
 						values: SEATED
+					},
+					{
+						name: 'dead',
+						type: 'true or false',
+						required: false,
+						about: 'Every dead player wakes, together. The app adds this step to that night.'
+					},
+					{
+						name: 'minutes',
+						type: 'whole number',
+						required: false,
+						about: 'How long they wake for.'
 					}
 				]
+			}
+		]
+	},
+	{
+		part: 'abilities',
+		list: false,
+		about: 'Who has an ability, alive or dead.',
+		fields: [],
+		kinds: [
+			{
+				kind: 'dead-keep',
+				about:
+					'Dead players keep their abilities. Run Night Order wakes whoever has one under the rule.',
+				fields: [
+					{
+						name: 'deadLose',
+						type: 'list of character types',
+						required: true,
+						about: 'Dead players of these types lose their abilities as usual.',
+						values: SEATED
+					},
+					{
+						name: 'livingLose',
+						type: 'list of character types',
+						required: true,
+						about: 'Living players of these types have no ability until they die.',
+						values: SEATED
+					}
+				]
+			}
+		]
+	},
+	{
+		part: 'demonAttacks',
+		list: false,
+		about: 'Who the Demon attacks each night.',
+		fields: [],
+		kinds: [
+			{
+				kind: 'script-order',
+				about:
+					'The next living in-play character in script order, after the last one the Demon killed. The walk-through names it on the Demon’s step.',
+				fields: []
 			}
 		]
 	}
