@@ -195,6 +195,13 @@ function randomMarks(size: number, seed: string): TileMark[] {
 /** The marks for a bag of `size` tiles, tile 1 first. */
 export function tileMarks(size: number, face: TileFace, seed: string): TileMark[] {
 	if (face === 'random') return randomMarks(size, seed);
+	// None (Trevor, 2026-10-22): blank faces; the number still names a tile for screen readers.
+	if (face === 'none')
+		return Array.from({ length: size }, (_, i) => ({
+			kind: 'text',
+			text: '',
+			name: String(i + 1)
+		}));
 	return Array.from({ length: size }, (_, i) => {
 		const n = i + 1;
 		if (face === 'letters') return text(tileLetters(n));
