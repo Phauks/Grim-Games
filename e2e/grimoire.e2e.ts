@@ -3808,6 +3808,8 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
 	await run.tap();
 	await expect(strip.locator('.count')).toHaveText(/^2 of/);
+	// The count is a badge, not loose text (Trevor, 2026-10-20).
+	await expect(strip.locator('.count .count-badge')).toHaveText(/^2 of \d+$/);
 	await end.tap();
 	await page
 		.getByRole('alertdialog', { name: 'End the night?' })
@@ -3823,6 +3825,9 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(strip).toBeVisible();
+	// The night starts on Dusk, though End day has ticked it (Trevor, 2026-10-20).
+	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
+	await expect(strip.locator('.count')).toHaveText(/^1 of/);
 
 	// With "Open the day after End night" off, set in the confirm itself, the Storyteller stays
 	// on the grimoire (Trevor, 2026-10-18).
@@ -4765,6 +4770,14 @@ test('the walk-through shows the character, then its player below, with the coun
 	await closeSheet(page);
 	const strip = await walkTo(page, 'Fortune Teller');
 	await expect(strip.locator('.body > .name')).not.toContainText('Samantha');
+	// What to do comes before any information, such as suggestions (Trevor, 2026-10-20).
+	const order = await strip.locator('.body').evaluate((body) => {
+		const kids = [...body.children];
+		const at = (selector: string) => kids.findIndex((kid) => kid.matches(selector));
+		return { text: at('.text'), info: at('[data-testid^="night-"]') };
+	});
+	expect(order.text).toBeGreaterThan(-1);
+	if (order.info > -1) expect(order.text).toBeLessThan(order.info);
 	const who = strip.locator('.who');
 	await expect(who).toHaveText('Samantha Longname-Example');
 	const name = (await strip.locator('.body > .name strong').boundingBox())!;

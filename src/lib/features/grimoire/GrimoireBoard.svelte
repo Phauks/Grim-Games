@@ -904,12 +904,16 @@
 			game.seating.some((id) => game.seats[id].characterId !== undefined)
 	);
 	function runNight(): void {
+		walkNight(false);
+	}
+	/** From Dusk when the night starts (Trevor, 2026-10-20), else at the first step not done. */
+	function walkNight(fromDusk: boolean): void {
 		const data = officialData.current;
 		if (!data) return;
 		grimoire.beginNight();
 		const night = tonight(game);
 		const steps = boardNightSteps(game, characters, night, data, today).filter(wakes);
-		const next = steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
+		const next = fromDusk ? 0 : steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
 	}
 	/**
@@ -937,7 +941,7 @@
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
-		if (preferences.current.assistance.nightWalkthrough) runNight();
+		if (preferences.current.assistance.nightWalkthrough) walkNight(true);
 	}
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
