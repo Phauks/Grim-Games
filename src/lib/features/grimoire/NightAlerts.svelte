@@ -51,7 +51,6 @@
 	{#if id}<CharacterBadge
 			characterId={id}
 			character={characters.get(id)}
-			inline
 			interactive={!compact}
 		/>{/if}
 {/snippet}

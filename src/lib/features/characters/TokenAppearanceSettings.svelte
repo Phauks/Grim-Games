@@ -37,11 +37,9 @@
 		characterFont?: Snippet;
 		/** The Reminder tokens font, first in the reminder token's box. */
 		reminderFont?: Snippet;
-		/** Character icons in lists, pickers and the day, after the name sizes in the in-text box. */
-		characterIconSize?: Snippet;
 	}
 
-	let { value, theme, onChange, characterFont, reminderFont, characterIconSize }: Props = $props();
+	let { value, theme, onChange, characterFont, reminderFont }: Props = $props();
 
 	onMount(() => void loadOfficialData());
 	// A character with every marking, so each leaf setting shows (Trevor, 2026-10-19: "a setup,
@@ -207,17 +205,13 @@
      for in-line reminder tokens"). -->
 <SettingGroup title={t('characters.group.inText')} testid="in-text-preview">
 	{#snippet preview()}
-		<!-- A list badge first, for Character icon size (lists, pickers and the day), then a
-		     line of text with a name and a reminder (Trevor, 2026-10-19). -->
+		<!-- A line of text with a name and a reminder. The badge is the one design used
+		     everywhere, in lists too (Trevor, 2026-10-20). -->
 		<div class="preview in-text">
-			{#if sample}<span class="list-sample" data-testid="list-badge-sample"
-					><CharacterBadge characterId={sample.id} character={sample} interactive={false} /></span
-				>{/if}
 			<p class="line">
 				{#if sample}<CharacterBadge
 						characterId={sample.id}
 						character={sample}
-						inline
 						interactive={false}
 					/>
 					{t('characters.inTextPlaces')}
@@ -254,7 +248,6 @@
 		defaultValue={1}
 		onChange={(inlineNameBadgeScale) => onChange({ ...value, inlineNameBadgeScale })}
 	/>
-	{@render characterIconSize?.()}
 	<SettingSlider
 		label={t('characters.inlineReminderSize')}
 		description={t('characters.inlineReminderSizeHelp')}

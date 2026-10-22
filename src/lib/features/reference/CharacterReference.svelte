@@ -45,7 +45,6 @@
 			>{#snippet fill()}{#if details?.character}<CharacterBadge
 						characterId={details.character.id}
 						character={details.character}
-						inline
 					/>{/if}{/snippet}</Sentence
 		>
 	{/snippet}

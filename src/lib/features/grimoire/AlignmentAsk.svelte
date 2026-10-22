@@ -77,7 +77,6 @@
 				<CharacterBadge
 					characterId={ask.characterId}
 					character={grimoire.open.characters.get(ask.characterId)}
-					inline
 				/>
 			</dd>
 			<dt>Current alignment</dt>
@@ -107,7 +106,6 @@
 				{#if demonSeat.characterId}<CharacterBadge
 						characterId={demonSeat.characterId}
 						character={grimoire.open.characters.get(demonSeat.characterId)}
-						inline
 					/>{:else}None{/if}
 			</dd>
 			<dt>New character</dt>
@@ -115,7 +113,6 @@
 				<CharacterBadge
 					characterId={demon.characterId}
 					character={grimoire.open.characters.get(demon.characterId)}
-					inline
 				/>
 			</dd>
 			<dt>Alignment</dt>

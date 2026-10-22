@@ -468,7 +468,6 @@
 							>{#snippet fill(name)}{#if name === 'character'}{#if seat.characterId}<CharacterBadge
 											characterId={seat.characterId}
 											alignment={seat.alignment}
-											inline
 										/>{:else}{t('day.announce.noCharacter')}{/if}{:else}{@render badge(
 										death.cause
 									)}{/if}{/snippet}</Sentence
@@ -651,7 +650,6 @@
 {#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge
 			characterId={id}
 			character={game.characters.get(id)}
-			inline
 			{interactive}
 		/>{/if}{/snippet}
 {#snippet pendingSlot(name: string)}{#if name === 'reminder'}<ReminderToken

@@ -53,7 +53,7 @@
 {#snippet reasonLabel(option: { value: EndReason; label: string })}
 	{@const id = endReasonCharacter(option.value)}
 	{#if id}
-		<CharacterBadge characterId={id} character={characters.get(id)} inline />
+		<CharacterBadge characterId={id} character={characters.get(id)} />
 	{:else}
 		{option.label}
 	{/if}

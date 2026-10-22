@@ -3,8 +3,8 @@ import { expect, test } from '@playwright/test';
 test('tapping a character badge shows its ability and a wiki link', async ({ page }) => {
 	await page.goto('/spikes/badges');
 	// CSS locator: the page behind an open dialog is aria-hidden, so role queries can't see it.
-	// Not `.inline`: the dialog's live wiki page has inline Witch badges of its own.
-	const badge = page.locator('button.badge:not(.inline)', { hasText: 'Witch' });
+	// By the player's name: the dialog's live wiki page has Witch badges of its own.
+	const badge = page.locator('button.badge', { hasText: /Witch.*Sam/ });
 	await expect(badge).toContainText('Sam');
 	await expect(badge.locator('img')).toBeVisible();
 	// Measure only once the icon and fonts have loaded: a late font swap or image resizes the
@@ -163,7 +163,6 @@ test('the Jinxes section lists every TPI jinx under the other character', async 
 	// the jinx indented under it (Trevor, 2026-10-16).
 	const bar = jinxes.locator('.entry .bar').first().locator('.badge');
 	await expect(bar).toHaveAttribute('data-character-id', 'boffin');
-	await expect(bar).toHaveClass(/inline/);
 	const barBox = (await bar.boundingBox())!;
 	const sectionBox = (await jinxes.locator('.entry').first().boundingBox())!;
 	expect(barBox.width).toBeGreaterThan(sectionBox.width - 2);

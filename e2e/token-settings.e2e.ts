@@ -537,16 +537,3 @@ test('the character name and reminder fonts are set beside their token previews'
 	await expect(dialog.getByRole('combobox', { name: 'Character names' })).toHaveCount(0);
 	await expect(dialog.getByRole('combobox', { name: 'Reminder tokens' })).toHaveCount(0);
 });
-
-test('character icon size shows on the list badge in the names in text preview', async ({
-	page
-}) => {
-	// Trevor (2026-10-19): Character icon size sat in this box without changing anything in it.
-	await page.goto('/');
-	const dialog = await openTokens(page);
-	const icon = dialog.getByTestId('list-badge-sample').locator('.icon');
-	const width = () => icon.evaluate((el) => el.getBoundingClientRect().width);
-	const before = await width();
-	await dialog.getByRole('slider', { name: 'Character icon size' }).fill('1.5');
-	await expect.poll(width).toBeGreaterThan(before);
-});

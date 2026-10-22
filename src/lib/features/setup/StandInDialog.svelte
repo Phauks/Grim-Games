@@ -37,7 +37,6 @@
 {#snippet fill()}{#if character}<CharacterBadge
 			characterId={character.id}
 			{character}
-			inline
 		/>{/if}{/snippet}
 
 <Dialog

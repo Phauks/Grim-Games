@@ -199,7 +199,7 @@
 	{:else if field === 'alignment'}
 		{entry.alignmentNote}
 	{:else if field === 'setup'}
-		{#if entry.setup}<CharacterBadge characterId={character.id} {character} inline />: <GlossaryText
+		{#if entry.setup}<CharacterBadge characterId={character.id} {character} />: <GlossaryText
 				text={entry.setup.summary}
 			/>{#if entry.setup.notes.length}<span class="small block"
 					><GlossaryText text={entry.setup.notes.join(' ')} /></span
@@ -268,7 +268,6 @@
 						<span
 							>{#each step as s, j (j)}{#if s.kind === 'character'}<CharacterBadge
 										characterId={s.id}
-										inline
 									/>{:else if s.kind === 'reminder'}<ReminderToken
 										label={s.label}
 										type={character.type}

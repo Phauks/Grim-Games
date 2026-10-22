@@ -1989,7 +1989,6 @@
 					character={characters.get(askedId)}
 					alignment={asked.alignment}
 					playerName={name}
-					inline
 				/>{:else}{name}{/if}{ui.after}
 		{/snippet}
 		<SettingToggle
@@ -2188,7 +2187,7 @@
 				<li class="rule-detail">
 					{@render ruleToken(character)}
 					<div>
-						<CharacterBadge characterId={id} {character} inline />
+						<CharacterBadge characterId={id} {character} />
 						<p>{character.ability}</p>
 						{@render heldList(id)}
 					</div>
@@ -2222,7 +2221,7 @@
 		<dl class="change">
 			<dt>Now</dt>
 			<dd>
-				<CharacterBadge characterId={ruleShown} character={ruleShownCharacter} inline /> in play
+				<CharacterBadge characterId={ruleShown} character={ruleShownCharacter} /> in play
 			</dd>
 			<dt>Becomes</dt>
 			<dd>Not in play</dd>

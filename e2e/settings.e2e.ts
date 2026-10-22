@@ -311,25 +311,6 @@ test('interface icon size changes interface icons only, not text or character ic
 	expect(await page.evaluate(() => getComputedStyle(document.body).fontSize)).toBe(text);
 });
 
-test('character icon size is its own slider and leaves interface icons alone', async ({ page }) => {
-	await page.goto('/');
-	const settingsIcon = page
-		.getByRole('banner')
-		.getByRole('button', { name: 'Settings' })
-		.locator('.icon');
-	const before = await settingsIcon.boundingBox();
-
-	// With the characters in Tokens, not with the interface icons (Trevor, 2026-10-19).
-	const dialog = await openSettings(page, 'Tokens');
-	await slide(page, 'Character icon size', 1.25);
-	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
-	expect(await rootStyle(page, '--icon-scale')).toBe('1');
-	await dialog.getByRole('button', { name: 'Close', exact: true }).tap();
-	expect((await settingsIcon.boundingBox())!.width).toBeCloseTo(before!.width, 0);
-	await page.reload();
-	await expect.poll(() => rootStyle(page, '--character-icon-scale')).toBe('1.25');
-});
-
 test('the rules term switch is with theme and text, not Storyteller settings', async ({ page }) => {
 	await page.goto('/');
 	const help = await openSettings(page, 'Storyteller');

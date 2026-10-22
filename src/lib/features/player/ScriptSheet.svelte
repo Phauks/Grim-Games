@@ -85,7 +85,7 @@
 	{@const who = playersOf(c.id)}
 	<li class="character" data-character={c.id}>
 		<span class="name">
-			<CharacterBadge characterId={c.id} character={c} inline={density !== 'normal'} />
+			<CharacterBadge characterId={c.id} character={c} />
 			{#if own}
 				{@const partners = own.map((j) => byId.get(partner(j, c.id))).filter((x) => !!x)}
 				<button
