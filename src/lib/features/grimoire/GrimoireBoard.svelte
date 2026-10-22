@@ -820,8 +820,8 @@
 		!ended &&
 			!grimoire.open.viewOnly &&
 			!setUp &&
-			!arranging &&
-			!placing &&
+			// Arranging or placing a token keeps Set up, disabled (Trevor, 2026-10-22: arranging
+			// turned it into Start game).
 			(Object.keys(game.bag?.tiles ?? {}).length > 0 ||
 				!game.seating.some((id) => game.seats[id].characterId !== undefined))
 	);
@@ -1047,7 +1047,7 @@
 				label: 'Set up',
 				text: 'Set up',
 				icon: 'bag' as const,
-				disabled: false,
+				disabled: arranging || !!placing,
 				onclick: openSetup
 			};
 		if (game.pastDays.length === 0)
