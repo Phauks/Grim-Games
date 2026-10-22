@@ -1,13 +1,13 @@
 <script lang="ts">
 	import {
 		clearBackground,
-		readBackground,
 		saveBackground,
 		shrinkImage,
 		PRESETS,
 		type BackgroundChoice,
 		type PresetId
 	} from '#lib/features/grimoire/backgrounds.ts';
+	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
@@ -17,20 +17,18 @@
 	 * too). Same store as the board's Background dialog, where a single game can also have its
 	 * own; a game's own choice still wins there.
 	 */
-	let current = $state<BackgroundChoice | undefined>();
+	const current = $derived(defaultBackground.current);
 	let error = $state('');
 	let input = $state<HTMLInputElement>();
 
-	$effect(() => {
-		void readBackground('default').then((choice) => (current = choice));
-	});
+	$effect(() => void defaultBackground.load());
 
 	async function choose(choice: BackgroundChoice | undefined) {
 		error = '';
 		try {
 			if (choice) await saveBackground('default', choice);
 			else await clearBackground('default');
-			current = choice;
+			defaultBackground.set(choice);
 		} catch {
 			error = t('settings.backgroundSaveError');
 		}
