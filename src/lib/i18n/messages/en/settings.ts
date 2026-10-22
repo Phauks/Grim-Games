@@ -116,6 +116,7 @@ export const settings = {
 		'Every setting in this section goes back to its default. Games, scripts and other settings stay as they are.',
 	'settings.resetConfirm': 'Reset',
 	'settings.confirm': 'Confirm',
+	'settings.installApp': 'Install app',
 	'settings.homeScreen': 'Add to Home Screen',
 	'settings.homeScreenHelp': `Safari deletes everything ${APP_NAME} saves on this device, games included, after 7 days of using Safari without opening ${APP_NAME}. Opened from the Home Screen, it is kept.`,
 	'settings.homeScreenSteps': `Tap Share, then Add to Home Screen, and open ${APP_NAME} from there.`,

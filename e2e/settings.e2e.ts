@@ -334,8 +334,9 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	const nav = dialog.getByRole('navigation', { name: 'Settings sections' });
-	// Trevor, 2026-10-17: every Storyteller-only setting is in Storyteller settings.
-	await expect(nav.getByRole('button')).toHaveText([
+	// Trevor, 2026-10-17: every Storyteller-only setting is in Storyteller settings. (Install
+	// app, where offered, sits below the list.)
+	await expect(nav.getByRole('list').getByRole('button')).toHaveText([
 		'Theme',
 		'Text',
 		'Icons',
@@ -525,4 +526,65 @@ test('a pinch never zooms the app unless Pinch to zoom is on', async ({ page }) 
 	await dialog.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(dialog).toBeHidden();
 	expect(await pinch()).toBeGreaterThan(1.5);
+});
+
+// Trevor (2026-10-20): an Install app button at the very bottom of Settings, so installing
+// needs no know-how. The phone project is an iPhone (Safari: written steps); the tablet is
+// Android (Chrome: the browser's own prompt).
+test('Install app at the bottom of Settings uses the browser prompt, or the iPhone steps', async ({
+	page
+}, testInfo) => {
+	await page.goto('/');
+	await expect(page.getByRole('banner').getByRole('button', { name: 'Settings' })).toBeVisible();
+	if (testInfo.project.name !== 'phone') {
+		// What Chrome sends when the app can be installed, once the app is listening for it.
+		await expect
+			.poll(() =>
+				page.evaluate(() => {
+					const event = Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
+						prompt: async () => {
+							(window as { __prompted?: number }).__prompted = 1;
+						},
+						userChoice: Promise.resolve({ outcome: 'accepted' })
+					});
+					dispatchEvent(event);
+					return event.defaultPrevented;
+				})
+			)
+			.toBe(true);
+	}
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const nav = page
+		.getByRole('dialog', { name: 'Settings' })
+		.getByRole('navigation', { name: 'Settings sections' });
+	const install = nav.getByRole('button', { name: 'Install app' });
+	// Last in the list, below every section.
+	const lastSection = await nav.getByRole('listitem').last().boundingBox();
+	const button = await install.boundingBox();
+	expect(button!.y).toBeGreaterThan(lastSection!.y + lastSection!.height - 1);
+	expect(button!.height).toBeGreaterThanOrEqual(43.9);
+	await install.tap();
+	if (testInfo.project.name === 'phone') {
+		const steps = page.getByRole('dialog', { name: 'Add to Home Screen' });
+		await expect(steps.getByTestId('install-steps')).toContainText(
+			'Tap Share, then Add to Home Screen'
+		);
+	} else {
+		await expect
+			.poll(() => page.evaluate(() => (window as { __prompted?: number }).__prompted))
+			.toBe(1);
+		// Installed: no button.
+		await expect(install).toHaveCount(0);
+	}
+});
+
+test('opened as an installed app, Settings has no Install app button', async ({ page }) => {
+	await page.addInitScript(() =>
+		Object.defineProperty(navigator, 'standalone', { value: true, configurable: true })
+	);
+	await page.goto('/');
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const nav = page.getByRole('navigation', { name: 'Settings sections' });
+	await expect(nav.getByRole('button', { name: 'About' })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'Install app' })).toHaveCount(0);
 });

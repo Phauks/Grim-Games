@@ -12,6 +12,7 @@
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { keepData } from '#lib/features/settings/data/keep-data.ts';
+	import { installApp } from '#lib/features/settings/install-app.svelte.ts';
 	import AppHeader from '#lib/features/shell/AppHeader.svelte';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
 	import NavDrawer from '#lib/features/shell/NavDrawer.svelte';
@@ -46,6 +47,9 @@
 	// Asks the browser, silently, not to clear saved games and settings to free up space
 	// (Storage plan, Trevor 2026-10-18; always on, no setting, 2026-10-19).
 	$effect(() => keepData());
+
+	// Holds the browser's install prompt for Settings' Install app button, which loads later.
+	$effect(() => installApp.listen());
 
 	// Settings is the largest part of the app most visits never open, so it isn't loaded
 	// before the first paint: the browser fetches it when idle, or when Settings first opens
