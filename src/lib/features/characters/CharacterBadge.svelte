@@ -45,9 +45,11 @@
 		character: given,
 		interactive: tappable = true
 	}: Props = $props();
-	// Inside this character's own details, its badge would only open them again.
+	// Inside this character's own details, its badge would only open them again: it brings
+	// those details back into view instead (Trevor, 2026-10-20).
 	const shown = shownCharacter();
-	const interactive = $derived(tappable && shown?.() !== characterId);
+	const own = $derived(shown?.id() === characterId);
+	const interactive = $derived(tappable && !own);
 	let open = $state(false);
 	// The dialog is only created on first tap: pages like /reference show hundreds of badges.
 	let used = $state(false);
@@ -105,6 +107,14 @@
 			used = true;
 			open = true;
 		}}>{@render face()}</button
+	>{:else if tappable && own}<button
+		type="button"
+		class="badge"
+		class:inline
+		data-team={team}
+		data-character-id={characterId}
+		data-own=""
+		onclick={() => shown?.focus()}>{@render face()}</button
 	>{:else}<span class="badge still" class:inline data-team={team} data-character-id={characterId}
 		>{@render face()}</span
 	>{/if}{#if character && interactive}

@@ -298,6 +298,10 @@
 		causeOpen = false;
 		if (!seat || !seatId) return;
 		if (seat.dead) grimoire.run({ type: 'SetDeathCause', seatId, cause });
+		// An execution or exile is also today's day log entry (the Undertaker, game end, stats),
+		// as the day's Players section logged it before it went (Trevor, 2026-10-20).
+		else if (cause === 'execution') grimoire.run({ type: 'Execute', seatId });
+		else if (cause === 'exile') grimoire.run({ type: 'Exile', seatId });
 		else grimoire.run({ type: 'SetDead', seatId, dead: true, cause });
 	}
 
@@ -516,9 +520,8 @@
 
 			<div class="row reminders-head">
 				<h3>Reminders</h3>
-				<Button variant="quiet" icon="add" onclick={() => (remindersOpen = true)}>
-					Add reminder
-				</Button>
+				<!-- A + only (Trevor, 2026-10-19). -->
+				<IconButton icon="add" label="Add reminder" onclick={() => (remindersOpen = true)} />
 			</div>
 			{#if seat.reminders.length === 0}
 				<p class="none">None</p>

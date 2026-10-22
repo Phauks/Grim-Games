@@ -27,8 +27,13 @@
 		 * people who can't open the link.
 		 */
 		text?: string;
-		/** The caller's own buttons after Copy and Share (e.g. Close room). */
+		/** The caller's own buttons after Copy and Share. */
 		actions?: Snippet;
+		/**
+		 * A refresh icon beside Copy that replaces the link (Trevor, 2026-10-20), named by
+		 * `label` for screen readers and tooltips.
+		 */
+		refresh?: { label: string; onclick: () => void; disabled?: boolean };
 		/** Drawn in the middle of the QR code, e.g. the script's logo (see `QrCode`). */
 		qrCenter?: Snippet;
 		qrCenterShape?: 'square' | 'wide';
@@ -44,6 +49,7 @@
 		code,
 		text,
 		actions,
+		refresh,
 		qrCenter,
 		qrCenterShape,
 		qrCaption
@@ -141,6 +147,14 @@
 				onclick={copy}
 				disabled={!url}
 			/>
+			{#if refresh}
+				<IconButton
+					icon="refresh"
+					label={refresh.label}
+					onclick={refresh.onclick}
+					disabled={refresh.disabled}
+				/>
+			{/if}
 			{#if canShare}
 				<IconButton icon="share" label={t('share.share')} onclick={share} disabled={!url} />
 			{/if}

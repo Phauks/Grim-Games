@@ -384,7 +384,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 		await expect(reveal.getByTestId('reveal-face')).toHaveCount(2);
 		await expect(reveal).toContainText('Town 1');
 		await expect(reveal).toContainText('Town 2');
-		if (n === 1) await reveal.getByLabel('Name').fill('Ana');
+		if (n === 1) await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
 		await page.getByRole('button', { name: 'Confirm' }).tap();
 		await expect(reveal).toBeHidden();
 	}
@@ -1125,12 +1125,17 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 	await chooseRules(page, 'I See Dead People');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await page.getByRole('button', { name: 'Seat: Seat 1' }).tap();
+	// The death is marked on the board (Trevor, 2026-10-20), then read in the day view.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
 	await page
-		.getByRole('dialog', { name: 'How did Seat 1 die?' })
-		.getByRole('button', { name: 'Killed by the Demon' })
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'The Demon', exact: true })
 		.tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	const announcements = page.getByTestId('announcements');
 	await expect(announcements.getByTestId('dont-announce')).toHaveText('Don’t announce');
 	await expect(announcements.getByTestId('spoken')).toHaveCount(0);

@@ -59,7 +59,7 @@
 
 	const last = $derived(index >= steps.length - 1);
 	function next() {
-		if (step && !ticked) grimoire.toggleNightStep(night, step);
+		if (step && !ticked) grimoire.toggleNightStep(night, step, { startDay: false });
 		if (!last) onIndex(index + 1);
 		// Nothing after it: show where the night ends (Trevor, 2026-10-19).
 		else onPastEnd?.();
@@ -89,13 +89,15 @@
 		</span>
 		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
 			<span class="body">
+				<!-- The character on the first line, its player on the second, and the count at the
+				     right of the top row, before ⋯ and X (Trevor, 2026-10-20). -->
 				<span class="name">
 					<strong>{stepName(step)}</strong>
-					{#each holders as seatId (seatId)}<span class="who">
-							· {seatName(game, seatId)}</span
-						>{/each}
 					<span class="count">{index + 1} of {steps.length}</span>
 				</span>
+				{#if holders.length > 0}<span class="who"
+						>{holders.map((seatId) => seatName(game, seatId)).join(', ')}</span
+					>{/if}
 				<!-- Inside the strip's fixed height, which scrolls, so nothing outside moves. -->
 				{#if asleepBy}<span class="asleep" data-testid="step-asleep"
 						>Poisoned: doesn’t wake ({asleepBy})</span
@@ -171,9 +173,9 @@
 		z-index: 1;
 		display: flex;
 	}
-	/* Clear of the buttons in the corner. */
+	/* Clear of the count and the buttons in the corner. */
 	.name {
-		padding-inline-end: calc(2 * var(--tap-target));
+		padding-inline-end: calc(2 * var(--tap-target) + 4.5rem);
 	}
 	.step {
 		flex: 1;
@@ -220,16 +222,32 @@
 	.body::-webkit-scrollbar {
 		display: none;
 	}
+	.name,
+	.who {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 	.name {
 		font-family: var(--font-character);
+	}
+	.who {
+		font-family: var(--font-player);
 	}
 	.who,
 	.count {
 		color: var(--on-surface-muted);
 	}
+	/* Always at the right of the top row, never under the name. */
 	.count {
-		margin-inline-start: var(--space-2);
+		position: absolute;
+		top: var(--space-1);
+		right: calc(2 * var(--tap-target));
+		display: grid;
+		align-items: center;
+		height: var(--tap-target);
 		font-size: 0.8rem;
+		white-space: nowrap;
 	}
 	.asleep {
 		color: var(--evil);

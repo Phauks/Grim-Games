@@ -17,7 +17,6 @@ export interface NavItem {
 		| '/library'
 		| '/build-script'
 		| '/build-character'
-		| '/play'
 		| '/reference'
 		| '/info-tokens'
 		| '/account'
@@ -28,7 +27,7 @@ export interface NavItem {
 
 /** A labelled group of destinations (Trevor, 2026-10-16: games, then pre-game preparation). */
 export interface NavSection {
-	id: 'games' | 'prepare' | 'players' | 'you';
+	id: 'games' | 'prepare' | 'you';
 	label: MessageKey;
 	items: readonly NavItem[];
 }
@@ -75,12 +74,9 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 			{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' },
 			{ id: 'reference', path: '/reference', label: 'shell.navReference', icon: 'reference' }
 		]
-	},
-	{
-		id: 'players',
-		label: 'shell.navSectionPlayers',
-		items: [{ id: 'play', path: '/play', label: 'shell.navPlayerView', icon: 'players' }]
 	}
+	// No Player view (Trevor, 2026-10-19): the Storyteller has the board's Script, and a player
+	// gets there from a room's join code or a shared script link.
 ];
 
 export const NAV_ITEMS: readonly NavItem[] = [

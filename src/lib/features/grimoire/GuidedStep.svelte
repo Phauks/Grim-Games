@@ -153,7 +153,6 @@
 	const shownCharacter = $derived(
 		shownId ? characters.get(shownId) : (step?.character ?? undefined)
 	);
-	const done = $derived(step ? grimoire.isNightStepDone(night, step) : false);
 
 	/**
 	 * A step that gives a number offers the "Your number is" info token (Trevor, 2026-10-18),
@@ -185,8 +184,21 @@
 				onclick={() => go(1)}
 			/>
 		{/if}
+		<!-- Beside the X, which closes the step: no Done (Trevor, 2026-10-20). Both open over
+		     the step, which stays open under them. -->
+		<IconButton icon="info" label="Info tokens" onclick={() => onInfoTokens()} />
+		<IconButton
+			icon="showToPlayer"
+			label="Show to player"
+			disabled={!step?.character}
+			onclick={() => {
+				shownCard = undefined;
+				shownId = undefined;
+				showOpen = true;
+			}}
+		/>
 	{/snippet}
-	<!-- The step scrolls on its own, so Done and the other actions always stay in reach. -->
+	<!-- The step scrolls on its own under its header. -->
 	<div
 		class="scroll"
 		role="group"
@@ -327,34 +339,6 @@
 			{/if}
 		{/if}
 	</div>
-	{#snippet actions()}
-		<Button
-			variant="quiet"
-			icon="info"
-			onclick={() => {
-				open = false;
-				onInfoTokens();
-			}}>Info tokens</Button
-		>
-		<Button
-			variant="quiet"
-			disabled={!step?.character}
-			onclick={() => {
-				open = false;
-				shownCard = undefined;
-				shownId = undefined;
-				showOpen = true;
-			}}>Show to player</Button
-		>
-		<Button
-			variant="accent"
-			icon="check"
-			onclick={() => {
-				if (step && !done) grimoire.toggleNightStep(night, step);
-				open = false;
-			}}>Done</Button
-		>
-	{/snippet}
 </Dialog>
 
 <SeatChooser

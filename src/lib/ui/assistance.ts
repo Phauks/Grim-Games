@@ -13,6 +13,7 @@ export const ASSIST_KEYS = [
 	'deathCause',
 	'deathReminderAsk',
 	'reviveReminderAsk',
+	'deadReminderAsk',
 	'demonVotedButton',
 	'gameEndPrompts',
 	'dayAfterNight',
@@ -62,6 +63,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	reviveReminderAsk: {
 		label: 'Ask to revive',
 		description: 'When an Alive reminder goes on a dead player, offer to bring them back.'
+	},
+	deadReminderAsk: {
+		label: "Ask before a dead character's reminder",
+		description:
+			'When a reminder goes on the board for a character whose player is dead, confirm it first.'
 	},
 	demonVotedButton: {
 		label: 'Demon voted button',

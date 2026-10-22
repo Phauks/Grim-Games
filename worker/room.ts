@@ -128,6 +128,7 @@ export class Room extends DurableObject<RoomEnv> {
 				}
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
 				send(ws, hostView(room));
+				send(ws, { type: 'watchers', count: this.watchers() });
 				return;
 			}
 			if (message.role === 'viewer') {
@@ -139,6 +140,7 @@ export class Room extends DurableObject<RoomEnv> {
 				ws.serializeAttachment({ role: 'viewer' } satisfies Attachment);
 				const grimoire = await this.ctx.storage.get<GrimoireView>('grimoire');
 				if (grimoire) send(ws, grimoire);
+				this.tellWatchers();
 				return;
 			}
 			const memberId = hash.slice(0, 24);
@@ -200,6 +202,7 @@ export class Room extends DurableObject<RoomEnv> {
 					send(socket, { type: 'refused', reason: 'not-viewer' });
 					socket.close(4403, 'Link turned off');
 				}
+				this.tellWatchers();
 				room = next;
 				break;
 			}
@@ -239,6 +242,32 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 		}
 		await this.save(room);
+	}
+
+	/** A viewer leaving changes the Storyteller's count of who is watching. */
+	async webSocketClose(ws: WebSocket): Promise<void> {
+		const who = ws.deserializeAttachment() as Attachment | null;
+		if (who?.role === 'viewer') this.tellWatchers(ws);
+	}
+
+	/** Viewers still connected, leaving out one that is going. */
+	private watchers(going?: WebSocket): number {
+		let count = 0;
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'viewer' && socket !== going && socket.readyState === WebSocket.OPEN)
+				count++;
+		}
+		return count;
+	}
+
+	/** Sends the Storyteller's device how many are watching. */
+	private tellWatchers(going?: WebSocket): void {
+		const text = JSON.stringify({ type: 'watchers', count: this.watchers(going) });
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'host') socket.send(text);
+		}
 	}
 
 	/** Stores the room and sends every device its updated view. */

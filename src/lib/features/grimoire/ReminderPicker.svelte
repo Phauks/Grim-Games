@@ -147,13 +147,10 @@
 	 */
 	const misfit = (reminder: Reminder) =>
 		seatId !== undefined && seatMisses(grimoire.game, reminder, seatId, characters).length > 0;
-
-	const placed = $derived(seatId ? (grimoire.game.seats[seatId]?.reminders.length ?? 0) : 0);
 </script>
 
 <Dialog bind:open title={`Reminders for ${title}`} size="full">
 	<div class="head">
-		<p class="count" aria-live="polite">On this seat: {placed}</p>
 		<!-- A fixed-height row, so the list below never moves. -->
 		<div class="recent" role="group" aria-label="On this seat">
 			{#each onThisSeat as reminder (reminder.reminderId)}
@@ -234,11 +231,6 @@
 		gap: var(--space-1);
 		padding-bottom: var(--space-2);
 		border-bottom: 1px solid var(--border);
-	}
-	.count {
-		margin: 0;
-		font-size: 0.85rem;
-		opacity: 0.8;
 	}
 	.recent {
 		display: flex;
@@ -349,10 +341,6 @@
 	}
 	.chip:hover {
 		filter: brightness(1.15);
-	}
-	.chip > :global(.reminder) {
-		padding: 0.45em 0.7em 0.45em 0.45em;
-		font-size: 1rem;
 	}
 	.recent {
 		height: calc(3.25 * var(--u));

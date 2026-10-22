@@ -29,8 +29,10 @@ describe('navigation', () => {
 		expect(new Set(paths).size).toBe(paths.length);
 	});
 
-	it('groups games first, then preparation, then players (Trevor, 2026-10-16)', () => {
-		expect(NAV_SECTIONS.map((section) => section.id)).toEqual(['games', 'prepare', 'players']);
+	it('groups games first, then preparation (Trevor, 2026-10-16)', () => {
+		expect(NAV_SECTIONS.map((section) => section.id)).toEqual(['games', 'prepare']);
+		// Player view is reached from a join code, not the menu (Trevor, 2026-10-19).
+		expect(NAV_ITEMS.some((item) => item.id === 'play')).toBe(false);
 		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual([
 			'new',
 			'games',

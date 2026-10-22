@@ -27,7 +27,13 @@
 	const host = roomHost();
 	$effect(() => host.attach(game));
 
-	let closeOpen = $state(false);
+	/** New code or New link asks first; which one stays set while the dialog closes. */
+	let refreshOpen = $state(false);
+	let refreshKind = $state<'room' | 'watch'>('room');
+	function askRefresh(kind: 'room' | 'watch') {
+		refreshKind = kind;
+		refreshOpen = true;
+	}
 	const shareTabs = $derived([
 		{ value: 'players' as const, label: t('room.tab.players') },
 		{ value: 'watch' as const, label: t('room.tab.watch') }
@@ -74,7 +80,11 @@
 			: host.refusedReason === 'too-old'
 				? t('room.tooOld')
 				: host.status === 'open'
-					? t('room.connected')
+					? [
+							t('room.connected'),
+							t('common.players', { count: seated.length }),
+							t('room.watching', { count: host.watchers })
+						].join(' · ')
 					: host.status === 'connecting'
 						? t('room.connecting')
 						: t('room.offline')
@@ -98,7 +108,7 @@
 	}
 
 	// The panel exists to show the code, so it opens a room straight away (if hovering or
-	// pressing the button that opened it hasn't already). After Close room it stays closed.
+	// pressing the button that opened it hasn't already).
 	host.prepare();
 
 	// Shared and copied text carries the code as well as the link, so it can be typed at /join
@@ -166,7 +176,17 @@
 				qrCenter={logo || scriptName ? scriptCenter : undefined}
 				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 				qrCaption={t('room.watch.qrCaption')}
+				refresh={{
+					label: t('room.watch.refresh'),
+					disabled: !watchLink,
+					// A new link in one step, not off and on (Trevor, 2026-10-20).
+					onclick: () => askRefresh('watch')
+				}}
 			/>
+			<!-- Who is watching now (Trevor, 2026-10-20), always in its place. -->
+			<p class="status" data-testid="watchers">
+				{t('room.watch.watchers', { count: watchLink ? host.watchers : 0 })}
+			</p>
 			<p class="status" role="status">{host.grimoireTooLarge ? t('room.watch.tooLarge') : ''}</p>
 		</section>
 	</div>
@@ -185,28 +205,27 @@
 				text={message || undefined}
 				qrCenter={logo || scriptName ? scriptCenter : undefined}
 				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
-			>
-				{#snippet actions()}
-					{#if host.code}
-						<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
-							{t('room.close')}
-						</Button>
-					{:else}
-						<Button
-							variant="accent"
-							icon="players"
-							onclick={() => host.open()}
-							disabled={host.opening}
-						>
-							{t('room.open')}
-						</Button>
-					{/if}
-				{/snippet}
-			</SharePanel>
-			<p class="status" role="status" data-status={host.status}>{statusText}</p>
+				refresh={{
+					label: t('room.refresh'),
+					disabled: host.opening,
+					// No Open or Close room (Trevor, 2026-10-20): a room is just there while the
+					// game is, and a new code replaces it, deleting the old room.
+					onclick: () => (host.code ? askRefresh('room') : void host.open())
+				}}
+			/>
 		</section>
 
 		<section aria-labelledby="requests-label">
+			<!-- How the room is doing and who is in it, under its own header (Trevor, 2026-10-20). -->
+			<h2 id="status-label">{t('room.status')}</h2>
+			<p class="status connection" role="status" data-status={host.status}>
+				{#if host.code}<span
+						class="dot"
+						class:live={connected}
+						data-testid="connection-dot"
+						aria-hidden="true"
+					></span>{/if}<span>{statusText}</span>
+			</p>
 			<h2 id="requests-label">{t('room.requests')}</h2>
 			{#if host.requests.length === 0}
 				<p class="none">{t('common.none')}</p>
@@ -286,13 +305,13 @@
 {/snippet}
 
 <ConfirmDialog
-	bind:open={closeOpen}
-	title={t('room.closeTitle')}
+	bind:open={refreshOpen}
+	title={refreshKind === 'room' ? t('room.refreshTitle') : t('room.watch.refreshTitle')}
 	danger
-	onConfirm={() => host.close()}
+	onConfirm={() => void (refreshKind === 'room' ? host.refreshRoom() : host.refreshViewers())}
 >
 	<p class="dialog-text">
-		{t('room.closeText')}
+		{refreshKind === 'room' ? t('room.refreshText') : t('room.watch.refreshText')}
 	</p>
 </ConfirmDialog>
 
@@ -312,6 +331,24 @@
 		gap: var(--space-2);
 		align-content: start;
 		min-width: 0;
+	}
+	.connection {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-4);
+	}
+	/* Hollow while connecting or offline, filled once connected. */
+	.dot {
+		flex: none;
+		width: 0.75em;
+		height: 0.75em;
+		border: 0.15em solid var(--on-surface-muted);
+		border-radius: 50%;
+	}
+	.dot.live {
+		border-color: var(--good);
+		background: var(--good);
 	}
 	.watch {
 		display: grid;

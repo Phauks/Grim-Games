@@ -7,7 +7,6 @@
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import type { NamePlace } from './name-placement.ts';
 
 	interface Props {
 		seat: Seat;
@@ -28,14 +27,17 @@
 		role?: 'source' | 'target' | 'both';
 		/** Faded while a reminder that doesn't fit this seat is dragged (it can still go here). */
 		misfit?: boolean;
-		/** Which side of the token the name goes, so nothing covers it. */
-		namePlace?: NamePlace;
 		/** Night order numbers for the leaf badges, when that setting is on. */
 		nightNumbers?: { first?: number; other?: number };
 		/** `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat). */
 		onTap: (part?: 'note') => void;
 		/** A tap on a dead player's badge: marks their ghost vote used, or gives it back. */
 		onGhostVote?: () => void;
+		/**
+		 * Held down (Trevor, 2026-10-19): true once the press has lasted, false when it lets go.
+		 * A hold is never a tap, so it opens nothing.
+		 */
+		onHold?: (holding: boolean) => void;
 	}
 
 	let {
@@ -47,10 +49,10 @@
 		dropTarget = false,
 		role,
 		misfit = false,
-		namePlace = 'below',
 		nightNumbers,
 		onTap,
-		onGhostVote
+		onGhostVote,
+		onHold
 	}: Props = $props();
 
 	// The player's alignment is not the one their character type starts with (a good Minion,
@@ -88,7 +90,37 @@
 	let down: { x: number; y: number } | null = null;
 	const TAP_SLOP = 10;
 
+	/** How long a press lasts before it is a hold. */
+	const HOLD_MS = 500;
+	let holdTimer: ReturnType<typeof setTimeout> | undefined;
+	let held = false;
+	function pointerdown(event: PointerEvent) {
+		down = { x: event.clientX, y: event.clientY };
+		clearTimeout(holdTimer);
+		if (onHold)
+			holdTimer = setTimeout(() => {
+				held = true;
+				onHold(true);
+			}, HOLD_MS);
+	}
+	function pointermove(event: PointerEvent) {
+		if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= TAP_SLOP)
+			clearTimeout(holdTimer);
+	}
+	/** Ends a hold, if there was one; true when there was. */
+	function letGo(): boolean {
+		clearTimeout(holdTimer);
+		if (!held) return false;
+		held = false;
+		onHold?.(false);
+		return true;
+	}
 	function pointerup(event: PointerEvent) {
+		if (letGo()) {
+			swallowNextClick(event.currentTarget);
+			down = null;
+			return;
+		}
 		if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) < TAP_SLOP) {
 			swallowNextClick(event.currentTarget);
 			const target = event.target instanceof Element ? event.target : null;
@@ -132,9 +164,14 @@
 	data-testid="seat"
 	aria-label={label}
 	style:--size="{size}px"
-	onpointerdown={(event) => (down = { x: event.clientX, y: event.clientY })}
+	onpointerdown={pointerdown}
+	onpointermove={pointermove}
 	onpointerup={pointerup}
-	onpointercancel={() => (down = null)}
+	onpointercancel={() => {
+		letGo();
+		down = null;
+	}}
+	oncontextmenu={(event) => onHold && event.preventDefault()}
 	onclick={(event) => event.detail === 0 && onTap()}
 >
 	<SeatDisc
@@ -142,7 +179,6 @@
 		dead={seat.dead}
 		{name}
 		{number}
-		{namePlace}
 		face={character ? face : undefined}
 		{marks}
 		vote={seat.dead ? (seat.ghostVoteUsed ? 'used' : 'unused') : undefined}
@@ -151,6 +187,11 @@
 </button>
 
 <style>
+	/* Holding it lights its reminders: no callout or text selection under the finger. */
+	.seat {
+		-webkit-touch-callout: none;
+		user-select: none;
+	}
 	.seat[data-role] :global(.disc) {
 		border-radius: 50%;
 	}

@@ -10,6 +10,7 @@ export const STORYTELLER_GROUPS = {
 		'deathCause',
 		'deathReminderAsk',
 		'reviveReminderAsk',
+		'deadReminderAsk',
 		'demonVotedButton',
 		'gameEndPrompts'
 	],

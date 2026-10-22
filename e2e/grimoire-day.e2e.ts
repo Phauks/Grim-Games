@@ -4,15 +4,16 @@ import { pickScript } from './new-game.ts';
 // The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
 
-async function startGame(page: Page) {
+async function startGame(page: Page, players = 8) {
 	await page.goto('/new');
 	await page
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
+	for (let i = 8; i < players; i++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-	await expect(page.getByTestId('seat')).toHaveCount(8);
+	await expect(page.getByTestId('seat')).toHaveCount(players);
 	return new URL(page.url()).pathname;
 }
 
@@ -39,7 +40,72 @@ async function addThief(page: Page) {
 	).toBeAttached();
 }
 
-const seat = (page: Page, name: string) => page.getByRole('button', { name: `Seat: ${name}` });
+/** The day sheet, Day before the first night and Day N after it. */
+const daySheet = (page: Page) => page.getByRole('dialog', { name: /^Day( \d+)?$/ });
+
+async function openDay(page: Page) {
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await expect(daySheet(page)).toBeVisible();
+	return daySheet(page);
+}
+
+/** Closes the day sheet, so the board behind it can be used (Trevor, 2026-10-20). */
+async function closeDay(page: Page) {
+	await daySheet(page).getByRole('button', { name: 'Close' }).tap();
+	await expect(daySheet(page)).toBeHidden();
+}
+
+const seatSheet = (page: Page) => page.locator('[data-scope="drawer"][data-part="content"]');
+
+/** Opens a seat on the board: deaths, causes and ghost votes are marked there. */
+async function openSeat(page: Page, number: number) {
+	await page.getByRole('button', { name: new RegExp(`^Seat ${number}:`) }).tap();
+	await expect(seatSheet(page).getByRole('button', { name: 'Edit player name' })).toBeVisible();
+	return seatSheet(page);
+}
+
+async function closeSeat(page: Page) {
+	await page.keyboard.press('Escape');
+	await expect(seatSheet(page)).toBeHidden();
+}
+
+/** The Status dialog of a living seat on the board, listing the causes that fit. */
+async function openStatus(page: Page, number: number) {
+	const sheet = await openSeat(page, number);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	const status = page.getByRole('dialog', { name: `Status of Seat ${number}` });
+	await expect(status).toBeVisible();
+	return status;
+}
+
+/** Marks a seat dead on the board, with its cause. */
+async function markDead(page: Page, number: number, cause: string) {
+	const status = await openStatus(page, number);
+	await status.getByRole('button', { name: cause, exact: true }).tap();
+	await expect(status).toBeHidden();
+	await closeSeat(page);
+}
+
+/** Toggles a dead seat's ghost vote on the board. */
+async function toggleGhostVote(page: Page, number: number) {
+	const sheet = await openSeat(page, number);
+	await sheet.getByRole('button', { name: 'Ghost vote' }).tap();
+	await closeSeat(page);
+}
+
+async function chooseCharacter(page: Page, number: number, name: string) {
+	const sheet = await openSeat(page, number);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: `Character for Seat ${number}` })
+		.getByRole('button', { name: new RegExp(`^${name}(, Recommended)?$`) })
+		.tap();
+	await closeSeat(page);
+}
+
+/** A seat on the board by the start of its label, while a sheet hides the board. */
+const boardSeat = (page: Page, start: string) =>
+	page.locator(`[data-testid="seat"][aria-label^="${start}"]`);
 
 test('the day screen marks an execution, survives a reload and shows votes needed', async ({
 	page
@@ -81,22 +147,17 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 		.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
 	expect(tops).toHaveLength(5);
 	expect(new Set(tops).size).toBe(1);
-	// The living show no ghost vote mark.
-	await expect(seat(page, 'Seat 2').getByTestId('ghost-mark')).toBeHidden();
-	// Every section folds away with its caret.
-	const players = day.getByRole('button', { name: 'Players', exact: true });
-	await players.tap();
-	await expect(seat(page, 'Seat 1')).toBeHidden();
-	await players.tap();
-	await expect(seat(page, 'Seat 1')).toBeVisible();
-
-	// A section's header stays just under the toolbar while its content scrolls (Trevor).
-	await seat(page, 'Seat 8').evaluate((el) => el.scrollIntoView({ block: 'start' }));
-	await expect(players).toBeInViewport();
-	const toolbarBox = (await page.getByTestId('day-toolbar').boundingBox())!;
-	expect((await players.boundingBox())!.y).toBeGreaterThanOrEqual(
-		toolbarBox.y + toolbarBox.height - 1
-	);
+	// No Players section (Trevor, 2026-10-20): the board marks deaths, causes and ghost votes.
+	await expect(day.getByRole('heading', { name: 'Players' })).toHaveCount(0);
+	await expect(day.getByRole('button', { name: /^Seat: / })).toHaveCount(0);
+	// The Announcements header folds with its caret; closed, it says how many it holds.
+	const announcementsHead = day.getByRole('button', { name: 'Announcements', exact: true });
+	await announcementsHead.tap();
+	await expect(page.getByTestId('announcements')).toBeHidden();
+	await expect(announcementsHead.getByTestId('section-count')).toHaveText('0');
+	await announcementsHead.tap();
+	await expect(page.getByTestId('announcements')).toBeVisible();
+	await expect(announcementsHead.getByTestId('section-count')).toHaveCount(0);
 
 	// No nomination tracking, log, Undo or History here (Trevor, 2026-10-16).
 	await expect(page.getByRole('radiogroup', { name: 'Tapping a player' })).toHaveCount(0);
@@ -104,38 +165,22 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'History' })).toHaveCount(0);
 
-	// Tapping a player asks how they died; no Now/After line (Trevor, 2026-10-17).
-	await seat(page, 'Seat 2').tap();
-	const sheet = page.getByRole('dialog', { name: 'How did Seat 2 die?' });
-	await expect(sheet).not.toContainText('Now:');
-	await expect(sheet.getByRole('button', { name: 'Dead, no cause' })).toHaveCount(0);
-	await sheet.getByRole('button', { name: 'Executed' }).tap();
-	await expect(sheet).toBeHidden();
-	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
-	// Each player shows their character (none yet) and name; the death is listed to announce.
-	await expect(seat(page, 'Seat 2')).toContainText('No character');
-	// Death shows as the board does (dimmed icon, skull badge), never as dimmed text (Trevor).
-	await expect(seat(page, 'Seat 2').getByTestId('dead-mark')).toBeVisible();
-	await expect(seat(page, 'Seat 1').getByTestId('dead-mark')).toBeHidden();
-	const colour = (name: string) =>
-		seat(page, name)
-			.locator('.seat-player')
-			.evaluate((el) => getComputedStyle(el).color);
-	expect(await colour('Seat 2')).toBe(await colour('Seat 1'));
+	// An execution is marked on the board; the day view follows it.
+	await closeDay(page);
+	await markDead(page, 2, 'Executed');
+	await openDay(page);
 	// A day death is not an announcement: those are the night's, for dawn (Trevor, 2026-10-18).
 	await expect(page.getByTestId('announcements')).toHaveText('None');
 	await expect(page.getByTestId('alive-count')).toHaveText('7/8');
 	await expect(page.getByTestId('ghost-votes')).toHaveText('1');
-	// A small mark while the ghost vote is unused; tapping the dead player offers it (Trevor).
-	await expect(seat(page, 'Seat 2').getByTestId('ghost-mark')).toBeVisible();
-	await seat(page, 'Seat 2').tap();
-	const dead = page.getByRole('dialog', { name: 'Seat 2 is dead' });
-	await dead.getByRole('button', { name: 'Mark ghost vote used' }).tap();
-	await expect(dead).toBeHidden();
+	// The ghost vote used on the board, then given back, is counted here.
+	await closeDay(page);
+	await toggleGhostVote(page, 2);
+	await openDay(page);
 	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
-	await expect(seat(page, 'Seat 2').getByTestId('ghost-mark')).toBeHidden();
-	await seat(page, 'Seat 2').tap();
-	await dead.getByRole('button', { name: 'Give ghost vote back' }).tap();
+	await closeDay(page);
+	await toggleGhostVote(page, 2);
+	await openDay(page);
 	await expect(page.getByTestId('ghost-votes')).toHaveText('1');
 
 	// Each count opens how it was worked out, as a table (Trevor, 2026-10-19).
@@ -174,8 +219,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	}
 
 	await page.reload();
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
+	await openDay(page);
+	await expect(page.getByTestId('alive-count')).toHaveText('7/8');
 	// 7 of 8 alive: 4 votes put a player on the block.
 	const votes = page.getByTestId('votes-needed');
 	await expect(votes).toHaveText('4');
@@ -184,20 +229,85 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 		'4 votes put the first nominee on the block (7 alive)'
 	);
 
-	// A dead player can be marked alive again.
-	await seat(page, 'Seat 2').tap();
-	const revive = page.getByRole('dialog', { name: 'Seat 2 is dead' });
-	await expect(revive.getByRole('button', { name: 'Mark alive' })).toBeVisible();
-	await expect(revive).not.toContainText('Now:');
-	await revive.getByRole('button', { name: 'Cancel' }).tap();
-	await expect(revive).toBeHidden();
-
 	// Closing the sheet shows the board behind it, already updated.
-	await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Close' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Day' })).toBeHidden();
+	await closeDay(page);
 	await expect(
 		page.getByRole('button', { name: /^Seat 2: no name, no character, dead/ })
 	).toBeAttached();
+});
+
+test("the day's sections fold with their caret and their headers stick under the toolbar", async ({
+	page
+}) => {
+	await startGame(page, 12);
+	// Characters whose pre-day reminders fill the day with sections to scroll.
+	for (const [number, name] of [
+		[1, 'Undertaker'],
+		[2, 'Slayer'],
+		[3, 'Mayor'],
+		[4, 'Virgin'],
+		[5, 'Butler'],
+		[6, 'Saint'],
+		[7, 'Scarlet Woman'],
+		[8, 'Imp']
+	] as const) {
+		await chooseCharacter(page, number, name);
+	}
+	// And deaths in the night to announce.
+	for (const number of [9, 10, 11, 12]) await markDead(page, number, 'The Demon');
+	const day = await openDay(page);
+	await expect(page.getByTestId('announcements').getByTestId('spoken')).toHaveCount(4);
+	const toolbar = page.getByTestId('day-toolbar');
+	const sections = day.locator('.panel > .collapsible');
+	expect(await sections.count()).toBeGreaterThan(2);
+	// No Players section (Trevor, 2026-10-20); the Slayer's Used sits on the Slayer's own row.
+	await expect(day.getByRole('heading', { name: 'Players' })).toHaveCount(0);
+	await expect(
+		day.locator('li[data-character="slayer"]').getByRole('button', { name: /^Used: Slayer/ })
+	).toBeVisible();
+
+	// Each section folds away with its caret, its count shown while closed.
+	for (let i = 0; i < (await sections.count()); i++) {
+		const toggle = sections.nth(i).locator('> .head').getByRole('button').first();
+		const body = sections.nth(i).locator('> .body');
+		await toggle.tap();
+		await expect(body).toBeHidden();
+		await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+		await expect(toggle.getByTestId('section-count')).toBeVisible();
+		await toggle.tap();
+		await expect(body).toBeVisible();
+	}
+	// Closed, Announcements counts what it lists: the four deaths.
+	const announcementsHead = day.getByRole('button', { name: 'Announcements', exact: true });
+	await announcementsHead.tap();
+	await expect(announcementsHead.getByTestId('section-count')).toHaveText('4');
+	await announcementsHead.tap();
+
+	// A section's header stays just under the toolbar while its content scrolls (Trevor).
+	const scroller = toolbar.locator('xpath=../..');
+	// Announcements, scrolled until its top has passed under the toolbar.
+	const section = day.locator('.panel > .collapsible', {
+		has: page.getByTestId('announcements')
+	});
+	const head = section.locator('> .head');
+	const toolbarBottom = async () => {
+		const box = (await toolbar.boundingBox())!;
+		return box.y + box.height;
+	};
+	await scroller.evaluate((el) => el.scrollTo(0, 0));
+	const sectionTop = (await section.boundingBox())!.y;
+	const by = sectionTop - (await toolbarBottom()) + 40;
+	await scroller.evaluate((el, by) => el.scrollBy(0, by), by);
+	expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+	// The section's own top is now behind the toolbar.
+	expect((await section.boundingBox())!.y).toBeLessThan(await toolbarBottom());
+	await expect(toolbar).toBeInViewport();
+	await expect(head).toBeInViewport();
+	const toolbarBox = (await toolbar.boundingBox())!;
+	const headBox = (await head.boundingBox())!;
+	// Tucked just under the toolbar, its content scrolled up behind it.
+	expect(headBox.y).toBeGreaterThanOrEqual(toolbarBox.y + toolbarBox.height - 1);
+	expect(headBox.y).toBeLessThan(toolbarBox.y + toolbarBox.height + 1);
 });
 
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {
@@ -208,25 +318,41 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 	await expect(page).toHaveURL(board);
 	await expect(page.getByRole('dialog', { name: 'Day' })).toBeVisible();
 
-	await seat(page, 'Seat 9').tap();
-	const thief = page.getByRole('dialog', { name: 'How did Seat 9 die?' });
-	await expect(thief.getByRole('button')).toHaveText(['Exiled', 'Killed by the Demon', 'Cancel']);
+	await expect(page.getByTestId('alive-count')).toHaveText('9/9');
+	// Deaths are marked on the board's Status dialog (Trevor, 2026-10-20).
+	await closeDay(page);
+	const thief = await openStatus(page, 9);
+	// A Traveller is exiled, not executed.
+	await expect(thief.locator('button.cause')).toHaveText(['Alive', 'Exiled', 'The Demon']);
+	await expect(thief.getByRole('button', { name: 'Cancel' })).toBeVisible();
 	await thief.getByRole('button', { name: 'Exiled' }).tap();
-	await expect(seat(page, 'Seat 9')).toHaveAttribute('data-dead', 'true');
+	await closeSeat(page);
+	await expect(boardSeat(page, 'Seat 9: no name, Thief')).toHaveAccessibleName(/dead/);
 
-	// No characters are in play, so no character is offered; Cancel is set apart.
-	await seat(page, 'Seat 3').tap();
-	const causes = page.getByRole('dialog', { name: 'How did Seat 3 die?' });
-	await expect(causes.getByRole('button')).toHaveText([
-		'Executed',
-		'Killed by the Demon',
-		'Cancel'
-	]);
-	await causes.getByRole('button', { name: 'Killed by the Demon' }).tap();
+	// No characters are in play, so no character is offered.
+	const causes = await openStatus(page, 3);
+	await expect(causes.locator('button.cause')).toHaveText(['Alive', 'Executed', 'The Demon']);
+	await causes.getByRole('button', { name: 'The Demon', exact: true }).tap();
 	await expect(causes).toBeHidden();
-	await expect(seat(page, 'Seat 3')).toHaveAttribute('data-dead', 'true');
+	await closeSeat(page);
+
+	const day = await openDay(page);
 	// 7 of 9 alive (the Thief exiled, Seat 3 dead): 4 votes.
+	await expect(page.getByTestId('alive-count')).toHaveText('7/9');
 	await expect(page.getByTestId('votes-needed')).toHaveAttribute('aria-label', /\(7 alive\)$/);
+	// The Demon's kill is announced; the exile, a day death, is not.
+	const announcements = page.getByTestId('announcements');
+	await expect(announcements.getByTestId('spoken')).toHaveText([
+		'The player in seat 3 died in the night.'
+	]);
+	await expect(announcements.getByTestId('storyteller-only')).toHaveText(
+		'No character, killed by the Demon'
+	);
+	// Closed, the Announcements header counts what it lists.
+	const head = day.getByRole('button', { name: 'Announcements', exact: true });
+	await head.tap();
+	await expect(head.getByTestId('section-count')).toHaveText('1');
+	await head.tap();
 });
 
 // Trevor, 2026-10-17: a day timer, usually 30 seconds per living player.
@@ -249,11 +375,9 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	await expect(clock).toHaveText('4:00');
 	await expect(timer.getByRole('button', { name: 'Reset timer' })).toBeDisabled();
 	// A death before it starts follows the living players.
-	await seat(page, 'Seat 2').tap();
-	await page
-		.getByRole('dialog', { name: 'How did Seat 2 die?' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await closeDay(page);
+	await markDead(page, 2, 'Executed');
+	await openDay(page);
 	await expect(clock).toHaveText('3:30');
 	// Changed by hand, before or while it runs.
 	await timer.getByRole('button', { name: '30 seconds less' }).tap();
@@ -287,7 +411,7 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	await expect(clock).toHaveText('3:30');
 	await expect(timer).not.toHaveAttribute('data-done', '');
 	// It stays in view while the day scrolls.
-	await page.getByRole('button', { name: 'Seat: Seat 8' }).scrollIntoViewIfNeeded();
+	await page.getByTestId('announcements').scrollIntoViewIfNeeded();
 	await expect(timer).toBeInViewport();
 	// Pinned right under the header: nothing scrolled shows above it (Trevor, 2026-10-17).
 	const above = await page.getByTestId('day-toolbar').evaluate((toolbar) => {
@@ -387,13 +511,8 @@ test('the day view names a homebrew character by its script name', async ({ page
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
-	await seat(page, 'Seat 1').tap();
-	await page
-		.getByRole('dialog', { name: 'How did Seat 1 die?' })
-		.getByRole('button', { name: 'Killed by the Demon' })
-		.tap();
+	await markDead(page, 1, 'The Demon');
+	const day = await openDay(page);
 	const announcements = page.getByTestId('announcements');
 	// The words to say by seat, never the character; the character and cause only for the
 	// Storyteller, in italics (Trevor, 2026-10-19).

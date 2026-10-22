@@ -5,7 +5,6 @@ export const room = {
 	// Storyteller's page
 	'room.title': "Players' phones",
 	'room.back': 'Grimoire',
-	'room.open': 'Open a room',
 	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',
 	'room.joinCode': 'Join code',
@@ -17,8 +16,9 @@ export const room = {
 	'room.linkCopied': 'Link copied',
 	'room.copyFailed': 'Could not copy the link',
 	'room.copyFailedHint': 'Use the QR code instead.',
-	'room.close': 'Close room',
+	'room.status': 'Status',
 	'room.connected': 'Connected',
+	'room.watching': '{count} watching',
 	'room.connecting': 'Connecting…',
 	'room.offline': 'Offline: reconnecting. The game carries on here.',
 	'room.tooOld': `This room needs a newer version of ${APP_NAME}. Refresh to update, then try again.`,
@@ -35,10 +35,10 @@ export const room = {
 	'room.decline': 'Decline',
 	'room.playersInRoom': 'Players in the room',
 	'room.unseat': 'Unseat',
-	'room.closeTitle': 'Close the room?',
-	'room.closeText':
-		"Everyone's phone leaves the room and its code stops working. The grimoire is not changed.",
-	'room.keepOpen': 'Keep it open',
+	'room.refresh': 'New code',
+	'room.refreshTitle': 'Make a new code?',
+	'room.refreshText':
+		"Everyone's phone leaves the room and the old code stops working. The grimoire is not changed.",
 	// Players' join pages
 	'room.joinTitle': 'Join game',
 	'room.roomTitle': 'Room {code}',
@@ -78,8 +78,6 @@ export const room = {
 	'room.table': 'Table',
 	'room.dead': 'Dead',
 	'room.vote.title': 'Spectators’ vote',
-	'room.scriptLine': 'Script: {name}',
-	'room.readScript': 'Read the script',
 	// The view-only grimoire link (Specters)
 	'room.watch.title': 'Watch the grimoire',
 	'room.tabs': 'Share',
@@ -91,6 +89,11 @@ export const room = {
 	'room.watch.qrLabel': 'QR code to watch the grimoire',
 	'room.watch.qrCaption': 'Spoilers',
 	'room.watch.off': 'Off',
+	'room.watch.refresh': 'New link',
+	'room.watch.refreshTitle': 'Make a new link?',
+	'room.watch.refreshText':
+		'The current link stops working, and anyone watching with it is disconnected.',
+	'room.watch.watchers': 'Watching now: {count}',
 	'room.watch.shareText': 'Watch the grimoire. Never show it to a player.',
 	'room.watch.shareGameText': 'Watch the grimoire: {game}. Never show it to a player.',
 	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',

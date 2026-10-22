@@ -196,6 +196,7 @@
 								/>
 							{/if}
 						</div>
+						<!-- Each bluff as the script lists it: its name, its ability under it (Trevor, 2026-10-20). -->
 						<ol class="rows">
 							{#each Array.from({ length: BLUFFS_PER_SET }, (_, i) => ids[i]) as id, i (i)}
 								{@const character = id ? characters.get(id) : undefined}
@@ -212,6 +213,7 @@
 										<span class="flag"
 											>{#if playing}<Icon name="warning" /> {t('bluffs.inPlayReplace')}{/if}</span
 										>
+										<p class="ability">{character.ability}</p>
 									{:else}
 										<span class="none">{t('common.none')}</span>
 									{/if}
@@ -255,6 +257,7 @@
 				label={t('bluffs.characters')}
 				{inPlay}
 				warnInPlay={blocks(editing)}
+				hideInPlayFirst={blocks(editing)}
 				notInPlay
 			/>
 			<ModalActions onCancel={() => (editing = undefined)} onConfirm={() => save()} />
@@ -390,10 +393,19 @@
 	}
 	.rows li {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--space-2);
+		gap: calc(0.125 * var(--u)) var(--space-2);
 		min-width: 0;
 		min-height: calc(2.5 * var(--u));
+	}
+	/* The script's ability text, on its own line under the name. */
+	.ability {
+		flex-basis: 100%;
+		margin: 0;
+		padding-left: var(--space-1);
+		font-family: var(--font-ability);
+		line-height: 1.35;
 	}
 	.rows li[data-in-play] {
 		color: var(--accent);

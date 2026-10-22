@@ -87,9 +87,10 @@ export class Grimoire {
 
 	/**
 	 * Ticks or unticks a night step. Ticking Dawn ends the night and starts a new day
-	 * (Trevor, 2026-10-16), once a night; History's Restore undoes it.
+	 * (Trevor, 2026-10-16), once a night; History's Restore undoes it. The board's
+	 * walk-through ticks Dawn without it (`startDay: false`): its End night starts the day.
 	 */
-	toggleNightStep(night: Night, step: { id: string }): void {
+	toggleNightStep(night: Night, step: { id: string }, { startDay = true } = {}): void {
 		if (this.open.viewOnly) {
 			toast('Not done', this.open.readOnlyMessage);
 			return;
@@ -102,7 +103,7 @@ export class Grimoire {
 			day: this.nightDay,
 			done: [...this.nightDone]
 		});
-		if (ticking && step.id === 'dawn' && this.nightDay === this.game.pastDays.length)
+		if (startDay && ticking && step.id === 'dawn' && this.nightDay === this.game.pastDays.length)
 			this.run({ type: 'NewDay' });
 	}
 

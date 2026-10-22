@@ -4,6 +4,8 @@
 		label: string;
 		/** Listed only beside the text on wide screens (e.g. Summary, which a phone opens on). */
 		wideOnly?: boolean;
+		/** How many things the item holds (a character's jinxes, tips), shown beside it. */
+		count?: number;
 	}
 </script>
 
@@ -13,6 +15,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { rise } from '#lib/ui/motion.ts';
 	import BackButton from '#lib/ui/primitives/BackButton.svelte';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 
 	interface Props {
 		/** The contents list's accessible name. */
@@ -97,7 +100,11 @@
 								type="button"
 								aria-current={current === item.id ? 'page' : undefined}
 								onclick={() => select(item.id)}
-								><span>{item.label}</span><span class="chevron"><Icon name="forward" /></span
+								><span class="label">{item.label}</span><span class="end"
+									>{#if item.count !== undefined}<CountBadge
+											count={item.count}
+											testid="contents-count"
+										/>{/if}<span class="chevron"><Icon name="forward" /></span></span
 								></button
 							>
 						</li>
@@ -197,6 +204,15 @@
 		padding: var(--space-2);
 		color: var(--on-surface-muted);
 	}
+	.label {
+		min-width: 0;
+	}
+	.end {
+		display: inline-flex;
+		flex: none;
+		align-items: center;
+		gap: var(--space-1);
+	}
 	.chevron {
 		display: inline-flex;
 		color: var(--on-surface-muted);
@@ -223,12 +239,10 @@
 		.wide-only {
 			display: block;
 		}
-		.nav ul {
-			border-top: 0;
-		}
-		.nav button {
-			border-bottom: 0;
-			border-radius: 0 var(--radius-md) var(--radius-md) 0;
+		/* A line between the list and the text, and between entries, as on a phone (Trevor,
+		   2026-10-20). */
+		.layout:has(.nav) .nav {
+			border-inline-end: var(--card-border);
 		}
 		.chevron,
 		.view > :global(.back) {

@@ -20,6 +20,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { prefetchWikiPage } from './wiki-page.svelte.ts';
 	import CharacterSearchBox from './CharacterSearchBox.svelte';
+	import CharacterRow from './CharacterRow.svelte';
 	import CharacterToken from './CharacterToken.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { PICKER_TYPES, searchGroups, type CharacterGroup } from './character-search.ts';
@@ -171,31 +172,18 @@
 							<CharacterToken {character} alignment={defaultAlignment(character.type)} size={36} />
 						</button>
 					{/if}
-					<button
-						type="button"
-						class="row"
-						data-character-id={character.id}
-						aria-label={note ? `${character.name}, ${note}` : character.name}
-						aria-pressed={mode === 'multi' ? state.selected : undefined}
-						aria-current={mode === 'single' && state.selected ? 'true' : undefined}
+					<CharacterRow
+						{character}
+						token={!onInfo}
+						{note}
+						withNote={notes}
+						withCheck
+						checked={state.selected}
+						pressed={mode === 'multi' ? state.selected : undefined}
+						current={mode === 'single' && state.selected}
 						disabled={state.disabledReason !== undefined}
 						onclick={() => onSelect(character.id)}
-					>
-						{#if !onInfo}
-							<CharacterToken {character} alignment={defaultAlignment(character.type)} size={36} />
-						{/if}
-						<span class="text">
-							<span class="head">
-								<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
-								<span class="name">{character.name}</span>
-								{#if notes}<span class="note">{note ?? ''}</span>{/if}
-							</span>
-							<span class="ability">{character.ability}</span>
-						</span>
-						<span class="check" aria-hidden="true"
-							>{#if state.selected}<Icon name="check" />{/if}</span
-						>
-					</button>
+					/>
 				{/if}
 			</li>
 		{/each}
@@ -297,6 +285,7 @@
 		padding: 0;
 		list-style: none;
 	}
+	/* The None row, drawn like a character's (CharacterRow). */
 	.row {
 		display: flex;
 		align-items: flex-start;
@@ -316,18 +305,13 @@
 	}
 	/* Every surface's own colours: a sheet sets them to parchment (tokens/components.css). */
 	@media (hover: hover) {
-		.row:hover:not(:disabled):not([aria-pressed='true']):not([aria-current='true']) {
+		.row:hover:not([aria-current='true']) {
 			background: var(--surface-selected);
 		}
 	}
-	.row[aria-pressed='true'],
 	.row[aria-current='true'] {
 		background: var(--choice-selected-background);
 		box-shadow: inset 0 0 0 2px var(--focus);
-	}
-	.row:disabled {
-		opacity: 0.55;
-		cursor: default;
 	}
 	.text {
 		display: grid;
@@ -338,31 +322,6 @@
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
 		overflow-wrap: anywhere;
-	}
-	/* The name, then any note after it on the same line. */
-	.head {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-2);
-		min-width: 0;
-	}
-	.note {
-		flex: 0 1 auto;
-		min-width: 0;
-		margin-left: auto;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		font-size: 0.75rem;
-		font-weight: 600;
-		line-height: 1.2;
-		color: var(--accent);
-	}
-	.ability {
-		font-family: var(--font-ability);
-		font-size: 0.8rem;
-		line-height: 1.3;
-		opacity: 0.9;
 	}
 	.check {
 		display: grid;
@@ -375,7 +334,7 @@
 	.with-info {
 		position: relative;
 	}
-	.with-info .row {
+	.with-info :global(.row) {
 		padding-inline-start: calc(var(--space-2) + 2.25rem + var(--space-2));
 	}
 	.info {

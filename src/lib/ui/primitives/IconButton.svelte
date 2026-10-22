@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 
@@ -12,21 +12,58 @@
 		ref?: HTMLButtonElement;
 		/** Drawn instead of `icon`, e.g. the account's own profile icon. */
 		face?: Snippet;
+		/**
+		 * An outside page (the wiki) opened in a new tab: drawn as a link with the same look and
+		 * hover as every icon button, such as the dialog's X (Trevor, 2026-10-20).
+		 */
+		href?: string;
+		/** The link's `rel`; `noopener` unless given (e.g. `noopener noreferrer`). */
+		rel?: string;
+		/** Drawn with the quiet Button's edge, so it reads as something to tap (Trevor, 2026-10-20). */
+		outlined?: boolean;
 	}
 
-	let { icon, label, ref = $bindable(), face, ...rest }: Props = $props();
+	let {
+		icon,
+		label,
+		ref = $bindable(),
+		face,
+		href,
+		rel = 'noopener',
+		outlined = false,
+		...rest
+	}: Props = $props();
 </script>
 
-<button
-	bind:this={ref}
-	class="icon-button"
-	type="button"
-	aria-label={label}
-	title={label}
-	{...rest}
->
-	{#if face}{@render face()}{:else}<Icon name={icon} />{/if}
-</button>
+{#if href}
+	<!-- External pages only, not app routes. -->
+	<!-- eslint-disable svelte/no-navigation-without-resolve -->
+	<a
+		class="icon-button"
+		data-outlined={outlined || undefined}
+		{href}
+		target="_blank"
+		{rel}
+		aria-label={label}
+		title={label}
+		{...rest as HTMLAnchorAttributes}
+	>
+		{#if face}{@render face()}{:else}<Icon name={icon} />{/if}
+	</a>
+	<!-- eslint-enable svelte/no-navigation-without-resolve -->
+{:else}
+	<button
+		bind:this={ref}
+		class="icon-button"
+		data-outlined={outlined || undefined}
+		type="button"
+		aria-label={label}
+		title={label}
+		{...rest}
+	>
+		{#if face}{@render face()}{:else}<Icon name={icon} />{/if}
+	</button>
+{/if}
 
 <style>
 	.icon-button {
@@ -39,7 +76,13 @@
 		border-radius: var(--radius-full);
 		background: none;
 		color: var(--on-surface);
+		text-decoration: none;
 		cursor: pointer;
+	}
+	/* The quiet Button's edge and corners (Button.svelte). */
+	.icon-button[data-outlined] {
+		border-radius: var(--button-radius);
+		box-shadow: inset 0 0 0 1px var(--border);
 	}
 	.icon-button:active {
 		background: var(--surface-selected);

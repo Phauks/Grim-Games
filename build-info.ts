@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import type { BuildInfo } from './src/lib/build-info.ts';
+import { noteFor, type BuildCommit } from './src/lib/features/about/update-notes.ts';
 
 function git(args: string): string {
 	try {
@@ -34,15 +35,17 @@ export function readBuildInfo(env: NodeJS.ProcessEnv = process.env): BuildInfo {
 const NOTE_COMMITS = 100;
 
 /**
- * Recent commit subjects, newest first, for the update prompt's "What changed" list
- * (src/lib/features/about/update-notes.ts). Empty when git history is unavailable.
+ * Recent changes, newest first, for the update prompt's "What changed" list
+ * (src/lib/features/about/update-notes.ts): the branch's own history (`--first-parent`), so
+ * each merged PR is one line with its title. Empty when git history is unavailable.
  */
-export function readCommits(limit = NOTE_COMMITS): { sha: string; subject: string }[] {
-	return git(`log -n ${limit} --format=%H%x1f%s`)
-		.split('\n')
+export function readCommits(limit = NOTE_COMMITS): BuildCommit[] {
+	return git(`log --first-parent -n ${limit} --format=%H%x1f%B%x1e`)
+		.split('\x1e')
+		.map((record) => record.trim())
 		.filter(Boolean)
-		.map((line) => {
-			const [sha, subject = ''] = line.split('\x1f');
-			return { sha, subject };
+		.flatMap((record) => {
+			const [sha, message = ''] = record.split('\x1f');
+			return noteFor(sha, message) ?? [];
 		});
 }

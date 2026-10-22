@@ -170,9 +170,10 @@ test('the Jinxes section lists every TPI jinx under the other character', async 
 	await expect(jinxes.locator('.entry .body').first()).not.toHaveCSS('padding-inline-start', '0px');
 });
 
-test("a character's own badge inside its details does not open them again", async ({ page }) => {
+test("a character's own badge inside its details brings them back into view", async ({ page }) => {
 	// Tapping it opened a second copy over the first: a flash, and one more close (Trevor,
-	// 2026-10-19). Other characters' badges there still open theirs.
+	// 2026-10-19). It stays tappable and highlights the details instead (Trevor, 2026-10-20).
+	// Other characters' badges there still open theirs.
 	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
 		route.fulfill({
 			json: { parse: { text: '<h2>Summary</h2><p>The Alchemist is not the Boffin.</p>' } }
@@ -185,8 +186,64 @@ test("a character's own badge inside its details does not open them again", asyn
 	await expect(dialog).toContainText('is not the');
 	const own = dialog.locator('p .badge[data-character-id="alchemist"]').first();
 	await expect(own).toBeVisible();
-	await expect(own).not.toHaveRole('button');
+	await expect(own).toHaveRole('button');
+	await expect(own).not.toHaveAttribute('aria-haspopup');
+	await expect(own).toHaveCSS('cursor', 'pointer');
+	const summary = dialog.getByTestId('own-summary');
+	await expect(summary).not.toHaveAttribute('data-pulse');
 	await own.tap();
+	await expect(summary).toHaveAttribute('data-pulse', '');
 	await expect(page.getByRole('dialog', { name: 'Alchemist' })).toHaveCount(1);
-	await expect(dialog.locator('p .badge[data-character-id="boffin"]').first()).toHaveRole('button');
+	await expect(dialog.locator('p .badge[data-character-id="boffin"]').first()).toHaveAttribute(
+		'aria-haspopup',
+		'dialog'
+	);
+});
+
+test('the sections list counts tips, examples and jinxes, with lines between', async ({ page }) => {
+	// Trevor, 2026-10-20: a count per section, and lines between the list and the text and
+	// between entries, on a computer as on a phone.
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({
+			json: {
+				parse: {
+					text:
+						'<h2>Summary</h2><p>Sample.</p><h2>How to Run</h2><p>Sample step.</p>' +
+						'<h2>Examples</h2><div class="example"><p>One.</p></div>' +
+						'<div class="example"><p>Two.</p></div>' +
+						'<h2>Tips &amp; Tricks</h2><ul><li>One.</li><li>Two.</li></ul><ul><li>Three.</li></ul>'
+				}
+			}
+		})
+	);
+	await page.goto('/reference');
+	await page.getByRole('searchbox').fill('Alchemist');
+	await page.getByRole('button', { name: 'About the Alchemist' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Alchemist' });
+	const sections = dialog.getByRole('navigation', { name: 'More from the wiki' });
+	const count = (name: string) =>
+		sections.getByRole('button', { name }).getByTestId('contents-count');
+	await expect(count('Examples')).toHaveText('2');
+	await expect(count('Tips & Tricks')).toHaveText('3');
+	// As many as the Jinxes section lists.
+	const jinxes = Number(await count('Jinxes').textContent());
+	expect(jinxes).toBeGreaterThan(0);
+	// Plain text has nothing to count.
+	await expect(count('How to Run')).toHaveCount(0);
+	// A line under every entry; beside the text when the list sits on its left.
+	const entry = sections.getByRole('button', { name: 'Examples' });
+	await expect(entry).not.toHaveCSS('border-bottom-width', '0px');
+	const wide = (await dialog.boundingBox())!.width >= 40 * 16;
+	if (wide) await expect(sections).not.toHaveCSS('border-right-width', '0px');
+
+	// The wiki link is an icon button, like the X beside it.
+	const wiki = dialog.getByRole('link', { name: 'Open wiki' });
+	await expect(wiki).toHaveClass(/icon-button/);
+	await expect(wiki).toHaveAttribute('target', '_blank');
+	await expect(wiki).toHaveAttribute('rel', 'noopener');
+	const close = dialog.getByRole('button', { name: 'Close' });
+	expect((await wiki.boundingBox())!.height).toBeCloseTo((await close.boundingBox())!.height, 0);
+
+	await sections.getByRole('button', { name: 'Jinxes' }).tap();
+	await expect(dialog.getByTestId('jinx-section').locator('.entry')).toHaveCount(jinxes);
 });

@@ -190,22 +190,25 @@ test('"not in play" on the info tokens page uses the bluff picker, with its togg
 	await page.goto('/info-tokens');
 	await page.getByRole('button', { name: 'These characters are not in play', exact: true }).tap();
 	await expect(page.getByRole('combobox', { name: 'Characters' })).toHaveCount(0);
-	await expect(page.getByRole('checkbox', { name: 'Not in play only' })).not.toBeChecked();
+	// On from the start (Trevor, 2026-10-20).
+	await expect(page.getByRole('checkbox', { name: 'Not in play only' })).toBeChecked();
+	// Good characters only: no evil type is listed.
+	await expect(page.getByRole('heading', { name: 'Minions' })).toHaveCount(0);
+	await expect(page.getByRole('heading', { name: 'Demons' })).toHaveCount(0);
+	await expect(page.getByRole('heading', { name: 'Townsfolk' })).toBeVisible();
 	await page.getByRole('button', { name: 'Random', exact: true }).tap();
 	const chosen = page.getByRole('list', { name: 'Chosen' });
 	await expect(chosen.locator('[data-character-id]')).toHaveCount(3);
-	// Good characters only by default.
-	const ids = await chosen
-		.locator('[data-character-id]')
-		.evaluateAll((els) => els.map((el) => el.closest('[data-team]')?.getAttribute('data-team')));
-	expect(ids).toEqual(['good', 'good', 'good']);
 });
 
 test("the board sheet's quick card opens from its header, beside the X", async ({ page }) => {
 	await openSheet(page);
 	// Not in the list (Trevor, 2026-10-18).
 	await expect(page.getByRole('heading', { name: 'Quick card' })).toHaveCount(0);
-	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	const quick = page.getByRole('button', { name: 'Quick card', exact: true });
+	// Edged like the other buttons, so it reads as one to tap (Trevor, 2026-10-20).
+	expect(await quick.evaluate((el) => getComputedStyle(el).boxShadow)).toContain('inset');
+	await quick.tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You may not speak');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(shown(page).getByRole('heading')).toHaveText('You may not speak');

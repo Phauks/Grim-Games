@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 // Player view (09-player-script-view.md): a reading page with the script, night order and notes.
@@ -34,6 +35,15 @@ async function storedNotes(page: Page): Promise<{ title: string; hidden: boolean
 	);
 }
 
+/** Opens Settings from the menu: Player view has no app header, as the board has none. */
+async function openSettings(page: Page) {
+	await page.getByRole('button', { name: 'Menu', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: APP_NAME })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
+}
+
 /** Lets a sheet's opening animation end, so its size and place are final. */
 async function settled(locator: Locator) {
 	await locator.evaluate((el) =>
@@ -55,11 +65,44 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('the player view is a reading page, with no Storyteller controls', async ({ page }) => {
-	// Script, night order, notes and the live room only (Trevor, 2026-10-16: "nothing close
-	// to ... controls"; 2026-10-19: a Room tab to move between).
-	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Notes', 'Room']);
+	// Script, night order, the town, notes and the live room only (Trevor, 2026-10-16:
+	// "nothing close to ... controls"; 2026-10-19: a Room tab to move between, and a Grim tab
+	// of what the town knows).
+	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes', 'Room']);
 	await expect(page.getByTestId('seat-ring')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
+});
+
+test('the player view has no app header, and leaving it asks first', async ({ page }) => {
+	// Like the Storyteller's board (Trevor, 2026-10-19): the menu button opens the sidebar.
+	await expect(page.getByRole('banner')).toHaveCount(0);
+	await expect(page.getByRole('contentinfo')).toHaveCount(0);
+	const menu = page.getByRole('button', { name: 'Menu', exact: true });
+	const title = page.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
+	const [m, h] = [(await menu.boundingBox())!, (await title.boundingBox())!];
+	expect(Math.abs(m.y + m.height / 2 - (h.y + h.height / 2))).toBeLessThan(m.height / 2);
+	expect(m.x + m.width).toBeLessThanOrEqual(h.x);
+
+	await menu.tap();
+	const drawer = page.getByRole('dialog', { name: APP_NAME });
+	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Leave the script?' });
+	await expect(ask).toBeVisible();
+	await expect(ask).toContainText('Your notes, scratch pads and guesses stay on this device.');
+	await ask.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(page).toHaveURL(/\/play$/);
+
+	// Join game is still the player view, so it doesn't ask.
+	await menu.tap();
+	await drawer.getByRole('link', { name: 'Join game' }).tap();
+	await expect(page).toHaveURL(/\/join$/);
+	await expect(ask).toHaveCount(0);
+
+	await menu.tap();
+	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page).toHaveURL(/\/library$/);
+	await expect(page.getByRole('banner')).toBeVisible();
 });
 
 test('notes written on a seat by an older version are kept as titled notes', async ({ page }) => {
@@ -441,7 +484,7 @@ test('each note can hide its contents until it is opened', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(page.locator('[data-note]')).toHaveText(/^\s*Evil team\s*Hidden\s*$/);
 	// The old Settings switch is gone.
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettings(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -489,7 +532,7 @@ test('a jinxed character shows its partners beside its name, and tapping shows t
 
 test('the Script sheet can be made compact from Settings', async ({ page }) => {
 	await expect(page.locator('[data-density="normal"]')).toBeVisible();
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettings(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
