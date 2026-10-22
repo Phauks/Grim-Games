@@ -224,6 +224,10 @@ test('Stowed Away: up to 2 Travellers count in the bag, the rest for fewer playe
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);
