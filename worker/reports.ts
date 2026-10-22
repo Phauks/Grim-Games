@@ -41,7 +41,7 @@ async function reportList(
 ): Promise<ReportList> {
 	const names = new Map<string, string | undefined>();
 	const reports: Report[] = [];
-	for (const { userId, ...report } of await box.list(!reader.admin)) {
+	for (const { userId, ...report } of await box.list(!reader.admin, true)) {
 		if (userId !== undefined) {
 			if (!names.has(userId)) {
 				names.set(userId, (await userStub(env, userId).profile())?.username ?? undefined);

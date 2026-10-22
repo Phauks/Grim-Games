@@ -134,9 +134,11 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 
 	/**
 	 * Newest first, each with its sending account's id. `fromAccounts`: only those sent while
-	 * signed in (what a non-admin may read). Scripts are left out (`script`).
+	 * signed in (what a non-admin may read). Scripts are left out (`script`). `withScripts`:
+	 * include whether each has one and its name; an app from before scripts doesn't ask, as it
+	 * wouldn't keep them from other readers (the data Worker deploys from beta before main).
 	 */
-	async list(fromAccounts = false): Promise<(Report & { userId?: string })[]> {
+	async list(fromAccounts = false, withScripts = false): Promise<(Report & { userId?: string })[]> {
 		return this.sql
 			.exec<Row>(
 				`SELECT id, kind, title, body, details, contact, page, build, device, status, created_at,
@@ -154,10 +156,11 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 					createdAt: row.created_at
 				};
 				for (const key of REPORT_OPTIONAL_FIELDS) {
+					if (key === 'scriptName' && !withScripts) continue;
 					const value = row[key === 'scriptName' ? 'script_name' : key];
 					if (value !== null) report[key] = value;
 				}
-				if (row.has_script) report.hasScript = true;
+				if (withScripts && row.has_script) report.hasScript = true;
 				if (row.user_id !== null) report.userId = row.user_id;
 				return report;
 			});
