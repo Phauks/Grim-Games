@@ -88,6 +88,7 @@ export const day = {
 	'day.preventedNoReason': 'Nothing on the grimoire explains this.',
 	'day.announce.died': '{name}, in seat {seat}, died in the night.',
 	'day.announce.diedUnnamed': 'The player in seat {seat} died in the night.',
+	'day.announce.custom': 'Custom characters: not every announcement may be listed here.',
 	'day.announce.nobody': 'Nobody died in the night.',
 	'day.announce.dont': 'Don’t announce',
 	'day.announce.private': '{character}, {how}',
