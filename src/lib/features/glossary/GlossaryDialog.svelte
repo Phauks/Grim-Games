@@ -2,8 +2,8 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { GLOSSARY, glossaryEntryUrl, GLOSSARY_URL } from '#lib/core/rules/glossary.ts';
 	import ContentsLayout, { type ContentsItem } from '#lib/ui/layout/ContentsLayout.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import { glossaryDialog } from './glossary-dialog.svelte.ts';
 	import { glossaryKey } from './wiki-glossary.ts';
@@ -85,19 +85,8 @@
 		{/if}
 	</ContentsLayout>
 	{#snippet headActions()}
-		<!-- External wiki Glossary (the rules authority), not an app route. -->
-		<!-- eslint-disable svelte/no-navigation-without-resolve -->
-		<a
-			class="wiki"
-			href={wikiLink}
-			target="_blank"
-			rel="noopener"
-			aria-label={t('glossary.openWiki')}
-			title={t('glossary.openWiki')}
-		>
-			<Icon name="wiki" />
-		</a>
-		<!-- eslint-enable svelte/no-navigation-without-resolve -->
+		<!-- The wiki Glossary (the rules authority), in a new tab. -->
+		<IconButton icon="wiki" label={t('glossary.openWiki')} href={wikiLink} />
 	{/snippet}
 </Dialog>
 
@@ -111,17 +100,5 @@
 	}
 	.muted {
 		color: var(--on-surface-muted);
-	}
-	.wiki {
-		display: grid;
-		place-items: center;
-		min-width: var(--tap-target);
-		min-height: var(--tap-target);
-		border-radius: var(--radius-md);
-		color: inherit;
-		text-decoration: none;
-	}
-	.wiki:hover {
-		background: var(--surface-selected);
 	}
 </style>

@@ -519,9 +519,8 @@
 
 			<div class="row reminders-head">
 				<h3>Reminders</h3>
-				<Button variant="quiet" icon="add" onclick={() => (remindersOpen = true)}>
-					Add reminder
-				</Button>
+				<!-- A + only (Trevor, 2026-10-19). -->
+				<IconButton icon="add" label="Add reminder" onclick={() => (remindersOpen = true)} />
 			</div>
 			{#if seat.reminders.length === 0}
 				<p class="none">None</p>

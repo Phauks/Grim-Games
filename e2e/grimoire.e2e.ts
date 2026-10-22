@@ -587,10 +587,19 @@ test("reminders: add several from the picker, this seat's first, then move and r
 	const poisoner = picker.getByRole('group', { name: 'Poisoner' });
 	await poisoner.getByRole('button', { name: 'Poisoned' }).tap();
 	await picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first().tap();
-	await expect(picker.getByText('On this seat: 2')).toBeVisible();
-	// The top row is what is on this seat now (Trevor, 2026-10-17).
+	// The top row is what is on this seat now (Trevor, 2026-10-17); no count of them (Trevor,
+	// 2026-10-19).
 	const top = picker.getByRole('group', { name: 'On this seat' }).getByRole('button');
 	await expect(top).toHaveCount(2);
+	await expect(picker).not.toContainText('On this seat:');
+	// Reminders have two looks, the board's token and the in-line badge; the picker uses the
+	// badge as the seat sheet does, and Add reminder is a + alone (Trevor, 2026-10-19).
+	const fontSize = (el: Element) => getComputedStyle(el).fontSize;
+	expect(await top.first().getByTestId('reminder-token').evaluate(fontSize)).toBe(
+		await sheet.getByTestId('reminder-token').first().evaluate(fontSize)
+	);
+	// Under the picker, so out of the accessibility tree: found by its label.
+	await expect(sheet.locator('button[aria-label="Add reminder"]')).toHaveText('');
 	// Each token is placed once: the Poisoner has one "Poisoned", shown as on this seat.
 	await expect(poisoner.getByRole('button', { name: /Poisoned/ })).toHaveAttribute(
 		'aria-pressed',
@@ -604,12 +613,16 @@ test("reminders: add several from the picker, this seat's first, then move and r
 		.getByRole('alertdialog', { name: 'Confirm change?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(picker.getByText('On this seat: 1')).toBeVisible();
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		1
+	);
 	await expect(drunk).toHaveAttribute('aria-pressed', 'false');
 	// Taken off, it leaves the top row.
 	await expect(top).toHaveCount(1);
 	await drunk.tap();
-	await expect(picker.getByText('On this seat: 2')).toBeVisible();
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		2
+	);
 	// Only characters in play: no way to add the Washerwoman's reminders here.
 	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
 	await picker.getByRole('button', { name: 'Close' }).tap();
@@ -1606,10 +1619,14 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(guide).toContainText('Seat 1');
 	await expect(guide).toContainText('Not placed');
 	await guide.getByRole('button', { name: 'Place' }).tap();
-	await page
+	// Each row: the seat's number, its character once (the in-line badge), then the player
+	// (Trevor, 2026-10-20).
+	const row = page
 		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Seat 2 Empath/ })
-		.tap();
+		.getByRole('button', { name: /Empath Seat 2/ });
+	await expect(row).toHaveText(/^2\s*Empath\s*Seat 2$/);
+	await expect(row.locator('img')).toHaveCount(1);
+	await row.tap();
 	await expect(guide).toContainText('On Seat 2');
 	// It can go back to the reminder bank from here (Trevor, 2026-10-17), then be placed again.
 	await guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' }).tap();
@@ -1620,7 +1637,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await guide.getByRole('button', { name: 'Place' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Seat 2 Empath/ })
+		.getByRole('button', { name: /Empath Seat 2/ })
 		.tap();
 	await expect(guide).toContainText('On Seat 2');
 
@@ -2477,7 +2494,9 @@ test("a seat's reminder list shows who has each reminder and moves it here", asy
 	const poisoned = picker.getByRole('button', { name: 'Poisoned, on Ana: move here' });
 	await expect(poisoned.getByTestId('reminder-holder')).toHaveText('Ana');
 	await poisoned.tap();
-	await expect(picker.getByText('On this seat: 1')).toBeVisible();
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		1
+	);
 	await expect(
 		picker.getByRole('group', { name: 'Poisoner' }).getByRole('button').first()
 	).toHaveAttribute('aria-pressed', 'true');
@@ -2584,7 +2603,7 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 		await place.first().tap();
 		await page
 			.getByRole('dialog', { name: 'Put Abnormal on' })
-			.getByRole('button', { name: new RegExp(`^${seat} Seat ${seat} `) })
+			.getByRole('button', { name: new RegExp(`^${seat} .*Seat ${seat}$`) })
 			.tap();
 	}
 	await expect(place).toHaveCount(3);
@@ -3206,7 +3225,9 @@ test("a script's own character can have another copy of a reminder (Cleopatra)",
 	await cleo.getByRole('button', { name: 'Chosen' }).first().tap();
 	await expect(another).toBeEnabled();
 	await another.tap();
-	await expect(picker).toContainText('On this seat: 2');
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		2
+	);
 	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Cleo, 2 reminders')).toBeAttached();
@@ -3823,7 +3844,9 @@ test("the Investigator's own seat fits its Wrong; its Minion is marked and warns
 	await expect(minion).toHaveAttribute('data-misfit', '');
 	// Warn, never lock: it is still placed, with a note saying why.
 	await minion.tap();
-	await expect(picker.getByText('On this seat: 1')).toBeVisible();
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		1
+	);
 	await expect(page.getByText(/never goes on its character's own player/)).toBeVisible();
 });
 
@@ -3964,7 +3987,7 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await bank.getByRole('button', { name: 'Generic reminder' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Put ∞ on' })
-		.getByRole('button', { name: /Seat 1 None/ })
+		.getByRole('button', { name: /None Seat 1/ })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 1: no name, no character, 1 reminder')).toBeAttached();
 	// Placing one never uses it up.
@@ -4330,6 +4353,13 @@ test('Dawn is the last night step, and Next on it lights up End night', async ({
 	// Ticking Dawn here doesn't start the day: End night does, after asking.
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toHaveCount(0);
 	await expect(end).toHaveAttribute('data-hint', '');
+	// A ring on the cell's own edge, following its rounded corners (Trevor, 2026-10-20).
+	const ring = await end.evaluate((el) => {
+		const css = getComputedStyle(el);
+		return { shadow: css.boxShadow, outline: css.outlineStyle };
+	});
+	expect(ring.shadow).toContain('inset');
+	expect(ring.outline).toBe('none');
 	await expect(strip).toBeVisible();
 	// It fades after a moment, and lights up again on the next tap.
 	await expect(end).not.toHaveAttribute('data-hint', { timeout: 5000 });
@@ -4367,7 +4397,7 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 	await guide.getByRole('button', { name: 'Place' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Seat 2 Empath/ })
+		.getByRole('button', { name: /Empath Seat 2/ })
 		.tap();
 	await guide.getByRole('button', { name: 'Close' }).tap();
 
@@ -4611,7 +4641,7 @@ test('two copies of a character each have their own reminders, in their own colo
 	await dead.nth(1).tap();
 	await page
 		.getByRole('dialog', { name: 'Put Dead on' })
-		.getByRole('button', { name: /Seat 2 None/ })
+		.getByRole('button', { name: /None Seat 2/ })
 		.tap();
 	// A Dead reminder asks whether to mark the player dead; not this time.
 	await page
@@ -4663,7 +4693,7 @@ test("holding a seat's token lights its character's reminders and dims the rest"
 	await dead.nth(1).tap();
 	await page
 		.getByRole('dialog', { name: 'Put Dead on' })
-		.getByRole('button', { name: /Seat 2 None/ })
+		.getByRole('button', { name: /None Seat 2/ })
 		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' })

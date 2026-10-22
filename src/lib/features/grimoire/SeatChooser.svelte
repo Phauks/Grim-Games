@@ -2,7 +2,6 @@
 	import type { Snippet } from 'svelte';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
 	interface Props {
@@ -30,16 +29,10 @@
 			{#if seat.seatId !== exclude}
 				{@const character = seat.characterId ? characters.get(seat.characterId) : undefined}
 				<li>
+					<!-- Number, character, player (Trevor, 2026-10-20): the character once, as its
+					     in-line badge, and a line between rows. -->
 					<button type="button" onclick={() => onChoose(seat.seatId)}>
-						<span class="slot"
-							>{#if character}<CharacterToken
-									{character}
-									alignment={seat.alignment}
-									size={36}
-								/>{/if}</span
-						>
 						<span class="number">{number}</span>
-						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>
 						<span class="role"
 							>{#if character}<CharacterBadge
 									characterId={character.id}
@@ -48,6 +41,7 @@
 									interactive={false}
 								/>{:else}None{/if}</span
 						>
+						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>
 					</button>
 				</li>
 			{/if}
@@ -58,21 +52,19 @@
 <style>
 	ul {
 		display: grid;
-		gap: calc(0.125 * var(--u));
 		margin: var(--space-2) 0 0;
 		padding: 0;
 		list-style: none;
 	}
 	button {
 		display: grid;
-		grid-template-columns: calc(2.25 * var(--u)) 1.5em 1fr auto;
+		grid-template-columns: 1.5em minmax(0, 1fr) minmax(0, 1fr);
 		align-items: center;
 		gap: var(--space-2);
 		width: 100%;
 		min-height: var(--tap-target);
 		padding: calc(0.125 * var(--u)) var(--space-2);
 		border: 0;
-		border-radius: var(--radius-md);
 		background: none;
 		color: inherit;
 		font: inherit;
@@ -82,13 +74,19 @@
 	button:hover {
 		background: var(--surface-selected);
 	}
-	.slot {
-		width: calc(2.25 * var(--u));
-		height: calc(2.25 * var(--u));
+	li + li {
+		border-top: 1px solid var(--border); /* px-ok: a hairline between rows */
 	}
 	.number {
 		opacity: 0.7;
 		font-variant-numeric: tabular-nums;
+	}
+	.role,
+	.name {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.name {
 		font-family: var(--font-player);
