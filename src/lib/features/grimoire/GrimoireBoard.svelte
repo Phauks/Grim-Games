@@ -1077,7 +1077,7 @@
 				now.push(key);
 				where[reminder.reminderId] = seatId;
 				if (!promptSeen || promptSeen.has(key)) continue;
-				if (reminderOwnerDead(game, reminder))
+				if (reminderOwnerDead(game, reminder, characters))
 					freshDead.push({ reminder, seatId, from: lastSeat[reminder.reminderId] });
 				const prompt = reminderPrompt(reminder.label, reminder.characterId, characters);
 				if (prompt && promptApplies(prompt, !!seat.dead)) fresh.push({ seatId, prompt });
