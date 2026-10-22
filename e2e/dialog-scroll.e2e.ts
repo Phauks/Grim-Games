@@ -15,8 +15,8 @@ test("a full-screen dialog with no scroll area of its own (Players' phones) scro
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
-	await page.getByRole('button', { name: "Players' phones" }).tap();
-	const dialog = page.getByRole('dialog', { name: "Players' phones" });
+	await page.getByRole('button', { name: 'Share' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Share' });
 	await expect(dialog.getByTestId('share-code')).toBeVisible();
 
 	// Short enough that the room panel runs past the bottom of the dialog.

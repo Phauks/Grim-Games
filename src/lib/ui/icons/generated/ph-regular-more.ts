@@ -9,6 +9,7 @@ import ph_arrow_u_up_right from '~icons/ph/arrow-u-up-right';
 import ph_bag_simple from '~icons/ph/bag-simple';
 import ph_beer_bottle from '~icons/ph/beer-bottle';
 import ph_bell from '~icons/ph/bell';
+import ph_binoculars from '~icons/ph/binoculars';
 import ph_bird from '~icons/ph/bird';
 import ph_book_bookmark from '~icons/ph/book-bookmark';
 import ph_book_open from '~icons/ph/book-open';
@@ -108,6 +109,7 @@ const icons: IconMap = {
 	'ph:bag-simple': ph_bag_simple,
 	'ph:beer-bottle': ph_beer_bottle,
 	'ph:bell': ph_bell,
+	'ph:binoculars': ph_binoculars,
 	'ph:bird': ph_bird,
 	'ph:book-bookmark': ph_book_bookmark,
 	'ph:book-open': ph_book_open,

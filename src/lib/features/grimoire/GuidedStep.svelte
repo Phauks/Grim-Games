@@ -224,6 +224,16 @@
 					{/if}
 				</div>
 			</div>
+			<!-- What to do comes before any information (Trevor, 2026-10-20). -->
+			{#if step.reminder}
+				<p class="text">
+					{#if step.character}
+						<NightText text={step.reminder} character={step.character} {night} />
+					{:else}
+						{step.reminder}
+					{/if}
+				</p>
+			{/if}
 			<NightAlerts {grimoire} {step} withoutImpaired />
 			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
 				<TravellerAlignment
@@ -281,15 +291,6 @@
 						onChooseBluffs?.();
 					}}
 				/>
-			{/if}
-			{#if step.reminder}
-				<p class="text">
-					{#if step.character}
-						<NightText text={step.reminder} character={step.character} {night} />
-					{:else}
-						{step.reminder}
-					{/if}
-				</p>
 			{/if}
 			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). -->
 			{#if step.character}

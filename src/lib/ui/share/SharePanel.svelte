@@ -39,6 +39,11 @@
 		qrCenterShape?: 'square' | 'wide';
 		/** A short warning on the QR's bottom edge (`QrCode`'s `caption`). */
 		qrCaption?: string;
+		/**
+		 * Covers the QR and the link in place, e.g. while streaming (Trevor, 2026-10-21);
+		 * Copy and Share still work.
+		 */
+		hidden?: boolean;
 	}
 
 	let {
@@ -52,7 +57,8 @@
 		refresh,
 		qrCenter,
 		qrCenterShape,
-		qrCaption
+		qrCaption,
+		hidden = false
 	}: Props = $props();
 	const id = $props.id();
 	const urlId = `${id}-url`;
@@ -103,7 +109,8 @@
 <div class="share">
 	{#if code}
 		<div class="code-block">
-			<span class="code-label" id={codeId}>{code.label}</span>
+			<!-- The code and the link each under a header (Trevor, 2026-10-20). -->
+			<h2 class="header" id={codeId}>{code.label}</h2>
 			<div class="code-row">
 				<p class="code" aria-labelledby={codeId} data-testid="share-code">
 					{code.value ?? '··· ···'}
@@ -117,8 +124,9 @@
 			</div>
 		</div>
 	{/if}
-	<div class="qr">
+	<div class="qr" class:hidden={url && hidden}>
 		{#if url && fitsQrCode(url)}
+			<!-- Hidden keeps the QR's place, covered, so nothing moves. -->
 			<QrCode
 				value={url}
 				label={qrLabel}
@@ -126,18 +134,21 @@
 				centerShape={qrCenterShape}
 				caption={qrCaption}
 			/>
+			{#if hidden}<p class="placeholder cover" data-testid="share-hidden">
+					{t('share.hidden')}
+				</p>{/if}
 		{:else}
 			<p class="placeholder" aria-busy={!url}>{url ? t('share.tooLong') : pending}</p>
 		{/if}
 	</div>
 	<div class="link">
-		<label class="label" for={urlId}>{t('share.link')}</label>
+		<h2 class="header" id={urlId}>{t('share.link')}</h2>
 		<div class="link-row">
 			<input
-				id={urlId}
+				aria-labelledby={urlId}
 				type="text"
 				readonly
-				value={url ?? ''}
+				value={url && hidden ? t('share.hidden') : (url ?? '')}
 				placeholder={t('common.none')}
 				data-testid="share-url"
 			/>
@@ -174,10 +185,9 @@
 		display: grid;
 		gap: var(--space-1);
 	}
-	.code-label,
-	.label {
-		color: var(--on-surface-muted);
-		font-size: 0.9rem;
+	.header {
+		margin: 0;
+		font-size: 1.1rem;
 	}
 	/* The copy icon sits right after the code. */
 	.code-row {
@@ -193,7 +203,16 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.qr {
+		position: relative;
 		width: min(100%, calc(16 * var(--u)));
+	}
+	.qr.hidden > :global(:not(.cover)) {
+		visibility: hidden;
+	}
+	.cover {
+		position: absolute;
+		inset: 0;
+		background: var(--surface);
 	}
 	/* The QR's own square, held until the link exists. */
 	.placeholder {
@@ -214,7 +233,9 @@
 	}
 	.link-row {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto auto;
+		grid-template-columns: minmax(0, 1fr);
+		grid-auto-columns: auto;
+		grid-auto-flow: column;
 		align-items: center;
 		gap: var(--space-1);
 	}

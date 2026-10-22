@@ -135,6 +135,7 @@
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
+	import FoolAsk from './FoolAsk.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -148,6 +149,8 @@
 	}
 
 	let { grimoire, watching = false, watchedTimer }: Props = $props();
+	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
+	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
 	const game = $derived(grimoire.game);
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
@@ -903,12 +906,16 @@
 			game.seating.some((id) => game.seats[id].characterId !== undefined)
 	);
 	function runNight(): void {
+		walkNight(false);
+	}
+	/** From Dusk when the night starts (Trevor, 2026-10-20), else at the first step not done. */
+	function walkNight(fromDusk: boolean): void {
 		const data = officialData.current;
 		if (!data) return;
 		grimoire.beginNight();
 		const night = tonight(game);
 		const steps = boardNightSteps(game, characters, night, data, today).filter(wakes);
-		const next = steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
+		const next = fromDusk ? 0 : steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
 	}
 	/**
@@ -936,7 +943,7 @@
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
-		if (preferences.current.assistance.nightWalkthrough) runNight();
+		if (preferences.current.assistance.nightWalkthrough) walkNight(true);
 	}
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
@@ -1138,8 +1145,10 @@
 	/** Who wakes for the current walk-through step, marked on the board. */
 	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
-	// ── End game (Trevor, 2026-10-16): the game moves to History; its live room closes ──
+	// ── End game (Trevor, 2026-10-16): the game moves to History ──
 	// The Storyteller stays on the board, which says the game is over (Trevor, 2026-10-17).
+	// The live room stays open and tells its phones the game is over, so the table can see the
+	// finished grimoire and play again in the same room (plan R1, R4, R5).
 	let endOpen = $state(false);
 	let winner = $state<'good' | 'evil' | undefined>();
 	let endReason = $state<EndReason | undefined>();
@@ -1148,8 +1157,14 @@
 		endedGames.end(game.gameId, winner, endReason);
 		grimoire.open.setViewOnly(true);
 		endedRead += 1;
-		if (roomHost().code) roomHost().close();
 	}
+	$effect(() => {
+		const over = ended && {
+			...(ended.winner ? { winner: ended.winner } : {}),
+			...(ended.reason ? { reason: ended.reason } : {})
+		};
+		if (!watching) roomHost().setEnded(game.gameId, over || undefined);
+	});
 	// A finished game can be saved as a recap (Trevor, 2026-10-19), as it was when it ended.
 	let exportOpen = $state(false);
 	const exportGame = async () => {
@@ -1880,6 +1895,15 @@
 				bind:clientWidth={titleW}
 				bind:clientHeight={titleH}
 			>
+				<!-- Who watches the view-only grimoire, above the name (Trevor, 2026-10-22); held
+				     off the title's own height so the corner's measurements stay as they are. -->
+				{#if watcherCount > 0}<span
+						class="watchers"
+						role="status"
+						aria-label={t('room.watching', { count: watcherCount })}
+						data-testid="board-watchers"
+						><Icon name="watchers" /><span aria-hidden="true">{watcherCount}</span></span
+					>{/if}
 				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
 				<ModeMenu {game} onEdit={watching ? undefined : editGameInfo}
 					><span
@@ -2014,6 +2038,7 @@
 />
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
+<FoolAsk {grimoire} />
 <GameEndPrompt
 	{grimoire}
 	active={!ended && !grimoire.open.viewOnly}
@@ -2227,7 +2252,7 @@
 </Dialog>
 
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
-<Dialog bind:open={phonesOpen} title="Players' phones" size="full">
+<Dialog bind:open={phonesOpen} title={t('room.title')} size="full">
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
@@ -2652,6 +2677,17 @@
 		line-height: 1.15;
 		color: var(--heading);
 		pointer-events: none;
+	}
+	.watchers {
+		position: absolute;
+		left: 0;
+		bottom: 100%;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		font-family: var(--font-control);
+		font-size: 0.9rem;
+		color: var(--on-surface-muted);
 	}
 	.corner-title.no-room {
 		visibility: hidden;

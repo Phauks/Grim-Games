@@ -33,6 +33,8 @@ describe('tile marks', () => {
 		expect(names(3, 'numbers')).toEqual(['1', '2', '3']);
 		expect(names(3, 'letters')).toEqual(['A', 'B', 'C']);
 		expect(names(5, 'roman')).toEqual(['I', 'II', 'III', 'IV', 'V']);
+		expect(tileMarks(2, 'none', 'g').map((m) => m.kind === 'text' && m.text)).toEqual(['', '']);
+		expect(names(2, 'none')).toEqual(['1', '2']);
 		expect(names(2, 'symbols')).toEqual(['Star', 'Moon']);
 		expect(names(2, 'colours')).toEqual(['Red', 'Orange']);
 		expect(names(2, 'emoji')).toEqual(['Apple', 'Banana']);

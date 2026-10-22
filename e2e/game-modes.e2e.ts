@@ -669,7 +669,7 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 	await expect(page.getByTestId('count-minion')).toHaveText('0');
-	const offScript = page.locator('.choice[data-off-script]');
+	const offScript = page.locator('.row[data-dashed]');
 	await expect(offScript).toHaveCount(2);
 	await expect(offScript.first()).toContainText('Not on script');
 	await expect(offScript.first().locator('.main')).toHaveAttribute('aria-pressed', 'true');
@@ -1264,8 +1264,8 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 
 	await next.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	await expect(page.locator('.choice[data-off-script]')).toHaveCount(1);
-	await expect(page.locator('.choice[data-off-script]')).toContainText('Goon');
+	await expect(page.locator('.row[data-dashed]')).toHaveCount(1);
+	await expect(page.locator('.row[data-dashed]')).toContainText('Goon');
 });
 
 test('Binary Supernovae asks for one more Demon, and an executed Demon wins it for good', async ({
