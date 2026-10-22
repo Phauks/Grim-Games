@@ -155,6 +155,31 @@ test('the counts and search stick just below the header while the list scrolls',
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).not.toBeInViewport();
 });
 
+test('tapping a type count shows the setup sheet count and every change to it', async ({
+	page
+}) => {
+	// Trevor (2026-10-20): a small info popup, like definitions, with the base and each modifier.
+	await selectionFor(page, 8);
+	await select(page, 'Baron');
+	const before = await page.getByTestId('setup-counts').boundingBox();
+	await page.getByTestId('count-info-outsider').tap();
+	const info = page.getByTestId('count-info');
+	await expect(info).toBeVisible();
+	await expect(info).toContainText('Setup sheet, 8 players1');
+	await expect(info).toContainText(/Baron\s*: \+2 Outsiders/);
+	await expect(info).toContainText('Expected3');
+	await expect(info).toContainText('Chosen0');
+	// An overlay: the counts don't move.
+	expect(await page.getByTestId('setup-counts').boundingBox()).toEqual(before);
+	await page.keyboard.press('Escape');
+	await expect(info).toBeHidden();
+	// Townsfolk make room for the Outsiders, so the Baron explains them too.
+	await page.getByTestId('count-info-townsfolk').tap();
+	await expect(info).toContainText('Setup sheet, 8 players5');
+	await expect(info).toContainText(/Baron\s*: \+2 Outsiders/);
+	await expect(info).toContainText('Expected3');
+});
+
 test('selection counts against the setup sheet and explains the Drunk', async ({ page }) => {
 	await selectionFor(page, 6);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Drunk', 'Poisoner', 'Imp');
