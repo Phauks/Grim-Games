@@ -13,6 +13,8 @@ export interface GamePreview {
 	storyteller?: string;
 	seats?: number;
 	seated?: number;
+	/** The Storyteller set a Grim view password. */
+	grimView?: boolean;
 }
 
 /** `undefined` when no open room has the code. Throws when the Worker can't be reached. */
@@ -40,5 +42,6 @@ export function toGamePreview(preview: RoomPreview): GamePreview | undefined {
 		game.seats = preview.seats;
 		game.seated = preview.seated ?? 0;
 	}
+	if (preview.grimView) game.grimView = true;
 	return game;
 }

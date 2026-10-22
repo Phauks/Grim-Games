@@ -12,6 +12,7 @@
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import { gameLine } from '#lib/features/player/byline.ts';
@@ -27,6 +28,16 @@
 
 	const host = roomHost();
 	$effect(() => host.attach(game));
+
+	/**
+	 * Grim view (plan D1: "grim view by password or direct link"): a password the Storyteller
+	 * sets, so a phone with the room code and it watches too. Enter sets it; it is shown, as
+	 * the Storyteller reads it out.
+	 */
+	let password = $derived(host.viewerPassword ?? '');
+	function setPassword() {
+		if (password.trim() !== (host.viewerPassword ?? '')) void host.setViewerPassword(password);
+	}
 
 	/** New code or New link asks first; which one stays set while the dialog closes. */
 	let refreshOpen = $state(false);
@@ -184,6 +195,14 @@
 				checked={!!host.viewerKey}
 				disabled={!host.code}
 				onChange={(on) => void host.setViewers(on)}
+			/>
+			<TextField
+				label={t('room.watch.password')}
+				bind:value={password}
+				maxlength={64}
+				disabled={!host.viewerKey}
+				oncommit={setPassword}
+				testid="grim-view-password"
 			/>
 			<!-- Streaming: the QR and link can stay off screen (Trevor, 2026-10-21). -->
 			<SettingToggle

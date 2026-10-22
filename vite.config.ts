@@ -7,7 +7,7 @@ import type { Plugin } from 'vite';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { readBuildInfo, readCommits } from './build-info.ts';
+import { readBuildInfo, readCommits, readHistory } from './build-info.ts';
 import { chromiumPath } from './scripts/lib/chromium-path.ts';
 
 // Lets sandboxes with a preinstalled Chromium skip `playwright install`.
@@ -97,7 +97,9 @@ const rulesTests = ['src/lib/core/abilities/**/*.test.ts', 'src/lib/core/jinxes/
 
 export default defineConfig({
 	define: {
-		__BUILD_INFO__: JSON.stringify(buildInfo)
+		__BUILD_INFO__: JSON.stringify(buildInfo),
+		// Only the Changelog page reads it, so it lands in that page's code (changelog.ts).
+		__CHANGE_HISTORY__: JSON.stringify(readHistory(process.env, buildInfo.branch))
 	},
 	plugins: [
 		sveltekit({

@@ -1079,7 +1079,7 @@
 				if (!promptSeen || promptSeen.has(key)) continue;
 				if (reminderOwnerDead(game, reminder))
 					freshDead.push({ reminder, seatId, from: lastSeat[reminder.reminderId] });
-				const prompt = reminderPrompt(reminder.label);
+				const prompt = reminderPrompt(reminder.label, reminder.characterId, characters);
 				if (prompt && promptApplies(prompt, !!seat.dead)) fresh.push({ seatId, prompt });
 			}
 		}
@@ -1674,6 +1674,7 @@
 							reminderDrag.target === seat.seatId &&
 							reminderDrag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
+					dragFrom={reminderDrag !== undefined && reminderDrag.from === seat.seatId}
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
 					onTap={(part) =>

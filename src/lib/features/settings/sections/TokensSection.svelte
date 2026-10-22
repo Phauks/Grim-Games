@@ -14,6 +14,9 @@
 	{#snippet characterFont()}
 		<FontPreview roles={['character']} testid="character-font" />
 	{/snippet}
+	{#snippet playerFont()}
+		<FontPreview roles={['player']} testid="player-font" />
+	{/snippet}
 	{#snippet reminderFont()}
 		<FontPreview roles={['reminder']} testid="reminder-font" />
 	{/snippet}
