@@ -4353,6 +4353,13 @@ test('Dawn is the last night step, and Next on it lights up End night', async ({
 	// Ticking Dawn here doesn't start the day: End night does, after asking.
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toHaveCount(0);
 	await expect(end).toHaveAttribute('data-hint', '');
+	// A ring on the cell's own edge, following its rounded corners (Trevor, 2026-10-20).
+	const ring = await end.evaluate((el) => {
+		const css = getComputedStyle(el);
+		return { shadow: css.boxShadow, outline: css.outlineStyle };
+	});
+	expect(ring.shadow).toContain('inset');
+	expect(ring.outline).toBe('none');
 	await expect(strip).toBeVisible();
 	// It fades after a moment, and lights up again on the next tap.
 	await expect(end).not.toHaveAttribute('data-hint', { timeout: 5000 });
