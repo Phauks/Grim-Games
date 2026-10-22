@@ -11,6 +11,7 @@
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
 	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
+	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -1403,6 +1404,9 @@
 	);
 	/** The mode, then each special rule, a line each under the name (Trevor, 2026-10-19). */
 	const modeLines = $derived(modeInName ? modeNames.slice(1) : modeNames);
+	/** The join code under the script's name (a Board setting, on by default). */
+	const showRoomCode = $derived(!watching && preferences.current.assistance.roomCode);
+	const roomCode = $derived(roomHost().code);
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
@@ -1954,6 +1958,17 @@
 					>{:else}{#if game.script.meta?.author}<span class="author"
 							>by {game.script.meta.author}</span
 						>{/if}{/each}
+				<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
+				     place before a room opens, so nothing moves when its code arrives. -->
+				{#if showRoomCode}<button
+						type="button"
+						class="room-code"
+						data-testid="board-room-code"
+						onclick={() => (phonesOpen = true)}
+						>{t('room.joinCode')}
+						<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
+						></button
+					>{/if}
 			</p>
 		{/if}
 		{#if showTimer}
@@ -2711,6 +2726,35 @@
 	.corner-title .author {
 		font-size: 0.7rem;
 		color: var(--on-surface-muted);
+	}
+	.room-code {
+		position: relative;
+		display: block;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--on-surface-muted);
+		font: inherit;
+		font-size: 0.7rem;
+		text-align: inherit;
+		cursor: pointer;
+		/* The corner lets taps through to the board; its buttons take them. */
+		pointer-events: auto;
+	}
+	.room-code .code {
+		color: var(--on-surface);
+		font-family: var(--font-control);
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.08em;
+	}
+	/* A tap target bigger than the small corner text, without moving anything (ModeMenu). */
+	.room-code::before {
+		content: '';
+		position: absolute;
+		inset: 50% auto auto 50%;
+		min-width: max(100%, var(--tap-target));
+		min-height: max(100%, var(--tap-target));
+		transform: translate(-50%, -50%);
 	}
 	.change {
 		display: grid;
