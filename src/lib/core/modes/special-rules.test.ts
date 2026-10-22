@@ -54,6 +54,30 @@ describe('reading a special rule file', () => {
 		expect(found).toEqual([]);
 	});
 
+	// Trevor, 2026-10-22: +1's "Special information characters: None" read like a default. An
+	// empty list anywhere inside a part shows as "None" in Inspect, so a field with nothing in
+	// it is left out instead. These two empty lists mean something and stay.
+	it('leaves out every empty list inside a library rule or mode', () => {
+		const meant = [
+			// "Only" these characters' setup effects apply: none of them.
+			'sushi-buffet.setupModifiers.characters',
+			// The Storyteller picks each town's script on New game.
+			'two-games-at-once.pool.scripts'
+		];
+		const emptyLists = (value: unknown, path: string): string[] =>
+			Array.isArray(value)
+				? value.length === 0
+					? [path]
+					: value.flatMap((v, i) => emptyLists(v, `${path}[${i}]`))
+				: typeof value === 'object' && value !== null
+					? Object.entries(value).flatMap(([k, v]) => emptyLists(v, `${path}.${k}`))
+					: [];
+		const found = [...SPECIAL_RULES, ...GAME_MODES]
+			.flatMap((m) => emptyLists(m.parts, m.id))
+			.filter((path) => !meant.includes(path));
+		expect(found).toEqual([]);
+	});
+
 	it('refuses the parts only a game mode sets, saying why', () => {
 		const parsed = parseSpecialRule({
 			...rule('x', {}),
@@ -265,5 +289,19 @@ describe('Binary Supernovae', () => {
 
 	it('ends the game on an executed Demon', () => {
 		expect(supernovae.parts.winConditions?.kind).toBe('demon-executed');
+	});
+});
+
+// https://beardytas.com/garden-of-djinn/the-warrens/ and
+// https://beardytas.com/garden-of-djinn/the-djinns-bargain/: both happen on a nomination,
+// which the app doesn't record, so the Storyteller runs them from their instructions.
+describe.each(['warrens', 'djinns-bargain'])('%s', (id) => {
+	const found = SPECIAL_RULES.find((r) => r.id === id)!;
+
+	it('is a Storyteller instruction that changes no counts', () => {
+		expect(Object.keys(found.parts).sort()).toEqual(['ruleChanges', 'text']);
+		expect(found.parts.ruleChanges?.[0].instructions?.trim()).toBeTruthy();
+		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: found.parts.text });
+		expect(onBootlegger?.parts.countChanges).toBeUndefined();
 	});
 });

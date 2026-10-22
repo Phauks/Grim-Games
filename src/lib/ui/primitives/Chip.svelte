@@ -35,7 +35,8 @@
 		min-width: var(--tap-target);
 		min-height: var(--tap-target);
 		padding: 0 var(--space-3);
-		border: var(--card-border);
+		/* The buttons' edge, so a chip never blends into its surface (Trevor, 2026-10-22). */
+		border: 1px solid var(--button-edge);
 		border-radius: var(--radius-full);
 		background: transparent;
 		color: inherit;
@@ -44,7 +45,7 @@
 		cursor: pointer;
 	}
 	.chip[aria-pressed='true'] {
-		border-color: var(--accent);
+		border-color: var(--accent-edge);
 		background: var(--accent);
 		color: var(--on-accent);
 	}

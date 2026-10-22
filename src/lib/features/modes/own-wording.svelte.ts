@@ -17,7 +17,12 @@ export function showsOwnWording(mode: GameMode | SpecialRule): boolean {
 	);
 }
 
-/** A mode's or rule's description where it may show: approved, its own file's, or our own wording on. */
+/**
+ * A mode's or rule's description where it may show. A rule with its author's rule text shows
+ * that text, the words Storytellers know it by (Trevor, 2026-10-22: "just use the rules text").
+ * Otherwise the description: approved, its own file's, or our own wording on.
+ */
 export function shownAbout(mode: GameMode | SpecialRule): string | undefined {
+	if (mode.kind === 'special-rule' && mode.parts.text?.length) return mode.parts.text.join(' ');
 	return showsOwnWording(mode) || aboutApproved(mode.id, mode.about) ? mode.about : undefined;
 }

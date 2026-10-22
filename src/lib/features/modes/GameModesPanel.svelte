@@ -54,6 +54,8 @@
 		type ScriptChoice
 	} from './script-choices.svelte.ts';
 	import { campaigns } from './campaigns.ts';
+	import RulesRecap from './RulesRecap.svelte';
+	import { switched, type SwitchChoices } from './rule-switches.ts';
 	import { continueCampaign, rulesScript, startHref, startInMode, startTowns } from './start.ts';
 	import { townGroup } from './town-groups.ts';
 	import { townSetupHref } from './town-setup.ts';
@@ -70,7 +72,8 @@
 		 * New game's own Standard game: script, players and Start (Grimoire board thread), given
 		 * the special rules chosen.
 		 */
-		standard: Snippet<[readonly SpecialRule[]]>;
+		/** Standard's own screen, given the chosen rules and the Start game step that restates them. */
+		standard: Snippet<[readonly SpecialRule[], (go: () => void) => void]>;
 		/** The script Standard's own picker has chosen, for the preview. */
 		standardScript: ScriptChoice;
 		/** Standard's own player count, for the preview's Players breakdown. */
@@ -78,6 +81,14 @@
 	}
 
 	let { standard, standardScript, standardPlayers }: Props = $props();
+	/** Start game with special rules on restates them first (RulesRecap). */
+	let recap = $state<(() => void) | undefined>();
+	let recapOpen = $state(false);
+	function startAfterRecap(go: () => void) {
+		if (!rules.length) return go();
+		recap = go;
+		recapOpen = true;
+	}
 
 	onMount(() => void restoreScripts());
 
@@ -93,7 +104,11 @@
 	/** The special rules chosen, in order (Trevor, 2026-10-18: rules stack on a mode). */
 	let ruleIds = $state<string[]>([]);
 	let choosingRules = $state(false);
-	const rules = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
+	/** Rules whose own switch is on (rule-switches.ts), such as +1 naming its character. */
+	let switchChoices = $state<SwitchChoices>({});
+	const rules = $derived(
+		ruleIds.flatMap((id) => findRule(id) ?? []).map((r) => switched(r, switchChoices))
+	);
 	/** The mode as it plays, with the rules folded in. */
 	const played = $derived(withRules(mode, rules));
 	const pool = $derived(played.parts.pool);
@@ -367,7 +382,7 @@
 		</PageSection>
 
 		{#if isStandard}
-			{@render standard(rules)}
+			{@render standard(rules, startAfterRecap)}
 		{:else}
 			<div class="settings" data-testid="mode-settings">
 				<PageSection title={t('modes.settings')}>
@@ -484,11 +499,17 @@
 				/>
 			{/if}
 
-			<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>
+			<Button
+				variant="accent"
+				icon="grimoire"
+				disabled={starting}
+				onclick={() => startAfterRecap(start)}
+			>
 				{t('modes.start')}
 			</Button>
 		{/if}
 	</div>
+
 	<!-- Always open, never collapsed; it scrolls on its own beside the settings. -->
 	<aside class="preview" aria-label={t('modes.preview')} data-testid="script-preview">
 		<PageSection title={t('modes.preview')}>
@@ -506,11 +527,14 @@
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
+<RulesRecap bind:open={recapOpen} {rules} choices={switchChoices} onStart={() => recap?.()} />
 <SpecialRulesDialog
 	bind:open={choosingRules}
 	{mode}
 	{ruleIds}
 	onChange={(ids) => (ruleIds = ids)}
+	choices={switchChoices}
+	onSwitch={(c) => (switchChoices = c)}
 	onadd={() => (adding = true)}
 />
 <AddModeDialog

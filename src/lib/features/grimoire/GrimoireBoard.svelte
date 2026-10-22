@@ -820,8 +820,8 @@
 		!ended &&
 			!grimoire.open.viewOnly &&
 			!setUp &&
-			!arranging &&
-			!placing &&
+			// Arranging or placing a token keeps Set up, disabled (Trevor, 2026-10-22: arranging
+			// turned it into Start game).
 			(Object.keys(game.bag?.tiles ?? {}).length > 0 ||
 				!game.seating.some((id) => game.seats[id].characterId !== undefined))
 	);
@@ -1047,7 +1047,7 @@
 				label: 'Set up',
 				text: 'Set up',
 				icon: 'bag' as const,
-				disabled: false,
+				disabled: arranging || !!placing,
 				onclick: openSetup
 			};
 		if (game.pastDays.length === 0)
@@ -2044,7 +2044,7 @@
 				Reopen game
 			</Button>
 		{:else}
-			<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
+			<Button variant="danger" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
 				End game
 			</Button>
 		{/if}
@@ -2834,7 +2834,7 @@
 		border: 0;
 		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
 		   2026-10-19). */
-		border-top: 0.125rem solid var(--border);
+		border-top: 0.125rem solid var(--button-edge);
 	}
 	.rule-detail {
 		display: flex;

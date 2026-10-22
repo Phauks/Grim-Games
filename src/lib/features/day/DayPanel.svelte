@@ -210,6 +210,16 @@
 								: t('day.announce.killedBy', { killer: slot('cause') });
 		return t('day.announce.private', { character: slot('character'), how });
 	}
+	/**
+	 * A custom character is in play (Trevor, 2026-10-20: L28): the app doesn't know what it
+	 * announces, so Announcements says it may be missing some.
+	 */
+	const customInPlay = $derived(
+		g.seating.some((s) => {
+			const id = g.seats[s].characterId;
+			return g.script.entries.some((e) => e.kind === 'custom' && e.character.id === id);
+		})
+	);
 	/** A dawn has come (End night), so "Nobody died in the night" means something. */
 	const dawned = $derived(
 		game.log.entries
@@ -462,6 +472,9 @@
 				onclick={() => (preventedOpen = true)}>{prevented.length}</Button
 			>
 		{/snippet}
+		{#if customInPlay}
+			<p class="custom-note" data-testid="custom-announcements">{t('day.announce.custom')}</p>
+		{/if}
 		<ul class="reminders" data-testid="announcements">
 			{#each died as death (death.seatId)}
 				{@const seat = g.seats[death.seatId]}
@@ -859,6 +872,10 @@
 	/* Only the words are italic; a character's name stays upright (Trevor, 2026-10-19). */
 	.private :global(.badge) {
 		font-style: normal;
+	}
+	.custom-note {
+		margin: 0 0 var(--space-2);
+		color: var(--on-surface-muted);
 	}
 	.dont-announce {
 		justify-self: start;

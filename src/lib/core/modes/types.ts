@@ -142,8 +142,8 @@ export type DuplicatesRule = Cited &
 
 /** 7. Characters always in the game. */
 export interface ForcedRule extends Cited {
-	/** Always in play (dealt to a player). */
-	inPlay: CharacterId[];
+	/** Always in play (dealt to a player). Left out when none is (revision 12). */
+	inPlay?: CharacterId[];
 	/** Always on the script, in play or not. */
 	onScript?: CharacterId[];
 	/** Rule characters (Fabled, Loric) always in the game. */
@@ -154,7 +154,8 @@ export interface ForcedRule extends Cited {
 
 /** 8 and 9. Rules the Storyteller runs by hand: which characters, and where to read them. */
 export interface LinkedRule extends Cited {
-	characters: CharacterId[];
+	/** Left out when the rule concerns no particular character (revision 12). */
+	characters?: CharacterId[];
 }
 
 /**
