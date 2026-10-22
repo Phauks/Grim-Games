@@ -204,7 +204,6 @@
 					>{#snippet fill()}<CharacterBadge
 							characterId={why.characterId}
 							character={characters.get(why.characterId)}
-							inline
 						/>{/snippet}</Sentence
 				>{/if}
 		</p>
@@ -232,7 +231,6 @@
 									)}{:else if 'character' in part}<CharacterBadge
 										characterId={part.character}
 										character={characters.get(part.character)}
-										inline
 									/>{:else if 'type' in part}{TYPE_NAMES[part.type]}{:else}{part.number}{/if}{/each}
 						{:else}
 							{t('common.none')}
