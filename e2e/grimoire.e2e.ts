@@ -4873,7 +4873,7 @@ test('a Fool marked dead is offered to survive their first death', async ({ page
 		.getByRole('dialog', { name: 'Status of Seat 1' })
 		.getByRole('button', { name: 'The Demon' })
 		.tap();
-	const ask = page.getByRole('alertdialog', { name: 'Keep the Fool alive?' });
+	const ask = page.getByRole('alertdialog', { name: 'Use the Fool’s ability?' });
 	await expect(ask).toContainText('No Ability');
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(ask).toBeHidden();

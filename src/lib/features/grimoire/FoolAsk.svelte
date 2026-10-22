@@ -50,7 +50,7 @@
 
 <ConfirmDialog
 	bind:open
-	title="Keep the Fool alive?"
+	title="Use the Fool’s ability?"
 	onConfirm={keepAlive}
 	onCancel={() => (grimoire.foolAsk = undefined)}
 >
