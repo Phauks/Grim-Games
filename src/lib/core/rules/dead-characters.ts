@@ -1,51 +1,31 @@
+import type { CharacterRules } from '../data/character-rules.ts';
 import type { CharacterId } from '../data/index.ts';
+import { rulesOf } from '../data/rules/index.ts';
 import type { Game } from '../model/index.ts';
 
-/**
- * Characters whose ability still acts once their player is dead: it triggers on their death
- * ("When you die", "If you died today or tonight") or says it works "even if dead". Their
- * reminders stay with the living ones in the bank. Read from each ability's text in the
- * official character data; the tests cite each wiki page.
- */
-const ACTS_WHEN_DEAD: ReadonlySet<CharacterId> = new Set([
-	'atheist',
-	'banshee',
-	'barber',
-	'farmer',
-	'hatter',
-	'heretic',
-	'klutz',
-	'mayor',
-	'moonchild',
-	'plaguedoctor',
-	'politician',
-	'poppygrower',
-	'puzzlemaster',
-	'ravenkeeper',
-	'recluse',
-	'sage',
-	'saint',
-	'spy',
-	'sweetheart',
-	'zombuul'
-]);
+type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
-export function actsWhenDead(characterId: CharacterId): boolean {
-	return ACTS_WHEN_DEAD.has(characterId);
+/**
+ * Whether a character's ability still acts once its player is dead (`actsWhenDead` in its
+ * rules block: our `data/rules/<id>.json`, or a custom character's own `rules`). Their
+ * reminders stay with the living ones in the bank. The tests cite each wiki page.
+ */
+export function actsWhenDead(characterId: CharacterId, characters?: RulesLookup): boolean {
+	return rulesOf(characterId, characters)?.actsWhenDead === true;
 }
 
 /**
  * Characters in play whose every player is dead and whose ability ends with them: their
  * reminders still off the board go in the bank's dead players section (Trevor, 2026-10-19).
  */
-export function deadCharacters(game: Game): Set<CharacterId> {
+export function deadCharacters(game: Game, characters?: RulesLookup): Set<CharacterId> {
 	const alive = new Set<CharacterId>();
 	const dead = new Set<CharacterId>();
 	for (const seat of Object.values(game.seats)) {
 		if (!seat.characterId) continue;
 		(seat.dead ? dead : alive).add(seat.characterId);
 	}
-	for (const id of [...dead]) if (alive.has(id) || actsWhenDead(id)) dead.delete(id);
+	for (const id of [...dead]) if (alive.has(id) || actsWhenDead(id, characters)) dead.delete(id);
 	return dead;
 }
 
@@ -58,10 +38,11 @@ export function deadCharacters(game: Game): Set<CharacterId> {
  */
 export function reminderOwnerDead(
 	game: Game,
-	reminder: { characterId: CharacterId; ownerSeatId?: string }
+	reminder: { characterId: CharacterId; ownerSeatId?: string },
+	characters?: RulesLookup
 ): boolean {
-	if (actsWhenDead(reminder.characterId)) return false;
+	if (actsWhenDead(reminder.characterId, characters)) return false;
 	const owner = reminder.ownerSeatId ? game.seats[reminder.ownerSeatId] : undefined;
 	if (owner) return !!owner.dead;
-	return deadCharacters(game).has(reminder.characterId);
+	return deadCharacters(game, characters).has(reminder.characterId);
 }

@@ -127,6 +127,17 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
 	// The ghost is filled, like an unused ghost vote on the board (Trevor, 2026-10-19).
 	await expect(page.getByTestId('ghost-votes').locator('[data-icon$="-fill"]')).toHaveCount(1);
+	// Each count is filled in a colour of its own (Trevor, 2026-10-20: L21).
+	const fills = await page
+		.getByTestId('day-toolbar')
+		.locator('.counts > .badge')
+		.evaluateAll((els) =>
+			els.map((el) => {
+				const style = getComputedStyle(el);
+				return `${style.backgroundColor} ${style.backgroundImage}`;
+			})
+		);
+	expect(new Set(fills).size).toBe(5);
 	// Nothing at the sides is cut off by a box that clips its overflow (Trevor, 2026-10-18).
 	for (const id of ['alive-count', 'votes-needed']) {
 		const clipped = await page.getByTestId(id).evaluate((el) => {

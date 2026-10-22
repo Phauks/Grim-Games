@@ -46,6 +46,7 @@
 	import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
 	import { setupSelection } from './selection.svelte.ts';
 	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
+	import { requiredInBag } from './required.ts';
 	import { afterTownBag } from '#lib/features/modes/town-setup.ts';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import {
@@ -283,6 +284,17 @@
 				travellersInBag > 0 || ids.some((id) => lookup(id)?.type === 'traveller');
 	});
 
+	// A character the mode or a special rule requires stays chosen, locked, and tapping it
+	// says why (Trevor, 2026-10-22): put back if it was taken out before this, or by Clear.
+	const required = $derived(game ? requiredInBag(game.gameId) : new Map<CharacterId, string>());
+	$effect(() => {
+		for (const id of required.keys())
+			if ((s.selection[id] ?? 0) === 0) setupSelection.setCopies(id, 1);
+	});
+	function explainRequired(character: Character) {
+		toast(t('setup.required'), t('setup.requiredBy', { rule: required.get(character.id) ?? '' }));
+	}
+
 	function toggle(character: Character) {
 		if (isRuleCharacter(character.type)) {
 			send({
@@ -292,6 +304,7 @@
 			return;
 		}
 		const n = setupSelection.copies(character.id);
+		if (n === 1 && required.has(character.id)) return explainRequired(character);
 		setupSelection.setCopies(character.id, n === 0 ? 1 : n - 1);
 	}
 
@@ -364,7 +377,10 @@
 			players: s.players,
 			// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one,
 			// except for the characters the Storyteller locked (Trevor, 2026-10-19).
-			selection: setupSelection.lockedSelection(),
+			selection: {
+				...Object.fromEntries([...required.keys()].map((id) => [id, 1])),
+				...setupSelection.lockedSelection()
+			},
 			ruleCharacters: game?.ruleCharacters,
 			// A rule's Travellers come from the recommended ones: the script's and its edition's.
 			scriptCharacters: travellersInBag ? [...choices, ...editionTravellers] : choices,
@@ -502,10 +518,12 @@
 					offScript={offScriptIds.has(character.id)}
 					bluff={bluffIds.has(character.id)}
 					onToggle={() => toggle(character)}
-					locked={s.locked.includes(character.id)}
+					locked={s.locked.includes(character.id) || required.has(character.id)}
 					onLock={isRuleCharacter(character.type)
 						? undefined
-						: () => setupSelection.toggleLock(character.id)}
+						: required.has(character.id)
+							? () => explainRequired(character)
+							: () => setupSelection.toggleLock(character.id)}
 					onAddCopy={() =>
 						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
 				/>

@@ -17,7 +17,8 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
-	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
+	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
+	import BoardBackdrop from './BoardBackdrop.svelte';
 	import { boardBackground } from './board-background.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -150,6 +151,8 @@
 	}
 
 	let { grimoire, watching = false, watchedTimer }: Props = $props();
+	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
+	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
 	const game = $derived(grimoire.game);
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
@@ -1076,9 +1079,9 @@
 				now.push(key);
 				where[reminder.reminderId] = seatId;
 				if (!promptSeen || promptSeen.has(key)) continue;
-				if (reminderOwnerDead(game, reminder))
+				if (reminderOwnerDead(game, reminder, characters))
 					freshDead.push({ reminder, seatId, from: lastSeat[reminder.reminderId] });
-				const prompt = reminderPrompt(reminder.label);
+				const prompt = reminderPrompt(reminder.label, reminder.characterId, characters);
 				if (prompt && promptApplies(prompt, !!seat.dead)) fresh.push({ seatId, prompt });
 			}
 		}
@@ -1524,32 +1527,11 @@
 {/snippet}
 
 <div class="grimoire">
-	<!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
-	{#if backgroundUrl}
-		<div
-			class="backdrop"
-			data-testid="board-background"
-			style:background-image={`url("${backgroundUrl}")`}
-		></div>
-	{:else if background.kind === 'preset'}
-		<div
-			class="backdrop preset"
-			data-testid="board-background"
-			data-preset={background.id}
-			style:background={PRESETS[background.id].css}
-		></div>
-	{/if}
-	<!-- The vignette darkens the background towards the screen's edges, on every background
-	     (Trevor, 2026-10-17: its own switch and strength; 2026-10-18: noticeable, and over the
-	     whole screen like the background, not just the board). -->
-	{#if boardLooks.current.vignette}
-		<div
-			class="vignette"
-			data-testid="vignette"
-			style:--vignette={boardLooks.current.vignetteStrength}
-			aria-hidden="true"
-		></div>
-	{/if}
+	<BoardBackdrop
+		url={backgroundUrl}
+		preset={background.kind === 'preset' ? background.id : undefined}
+		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
+	/>
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
 		{#if arranging}
 			<span class="title arranging-title">Arrange seats</span>
@@ -1675,6 +1657,7 @@
 							reminderDrag.target === seat.seatId &&
 							reminderDrag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
+					dragFrom={reminderDrag !== undefined && reminderDrag.from === seat.seatId}
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
 					onTap={(part) =>
@@ -1896,6 +1879,15 @@
 				bind:clientWidth={titleW}
 				bind:clientHeight={titleH}
 			>
+				<!-- Who watches the view-only grimoire, above the name (Trevor, 2026-10-22); held
+				     off the title's own height so the corner's measurements stay as they are. -->
+				{#if watcherCount > 0}<span
+						class="watchers"
+						role="status"
+						aria-label={t('room.watching', { count: watcherCount })}
+						data-testid="board-watchers"
+						><Icon name="watchers" /><span aria-hidden="true">{watcherCount}</span></span
+					>{/if}
 				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
 				<ModeMenu {game} onEdit={watching ? undefined : editGameInfo}
 					><span
@@ -2409,7 +2401,7 @@
 	}
 	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
 	   on any image (Trevor, 2026-10-18). */
-	.grimoire:has(> .backdrop)
+	.grimoire:has(> :global(.backdrop))
 		.toolbar
 		:global(button:not([data-variant='accent']):not([data-variant='danger'])) {
 		background: var(--board-bar-background);
@@ -2564,22 +2556,6 @@
 		overscroll-behavior: contain;
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
-	.backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: -1;
-		background: center / cover no-repeat;
-		filter: brightness(0.45) saturate(0.85);
-		pointer-events: none;
-	}
-	/* Built-in backgrounds are drawn for the board already: only dimmed a little. */
-	.backdrop.preset {
-		filter: brightness(0.8);
-	}
-	/* Light parchment would wash out the seat names: dimmed like an image. */
-	.backdrop.preset[data-preset='parchment'] {
-		filter: brightness(0.5);
-	}
 	.game-over {
 		max-width: 100%;
 		min-height: var(--tap-target);
@@ -2613,23 +2589,6 @@
 		height: 42%;
 		translate: -50% -50%;
 		opacity: var(--logo-opacity);
-		pointer-events: none;
-	}
-	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
-	.vignette {
-		position: fixed;
-		inset: 0;
-		z-index: -1;
-		/* Clear in the middle, darkening to the strength at the corners. */
-		/* The two shades are darkness, not theme colours. */
-		--vignette-mid: rgb(0 0 0 / calc(var(--vignette) * 0.6)); /* colour-ok: shadow */
-		--vignette-edge: rgb(0 0 0 / var(--vignette)); /* colour-ok: shadow */
-		background: radial-gradient(
-			ellipse 75% 75% at center,
-			transparent 40%,
-			var(--vignette-mid) 75%,
-			var(--vignette-edge) 100%
-		);
 		pointer-events: none;
 	}
 	/* The game mode, apart from the script: small capitals in the accent colour. */
@@ -2669,6 +2628,17 @@
 		line-height: 1.15;
 		color: var(--heading);
 		pointer-events: none;
+	}
+	.watchers {
+		position: absolute;
+		left: 0;
+		bottom: 100%;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		font-family: var(--font-control);
+		font-size: 0.9rem;
+		color: var(--on-surface-muted);
 	}
 	.corner-title.no-room {
 		visibility: hidden;

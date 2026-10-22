@@ -24,6 +24,7 @@
 	} from './reminders.ts';
 	import { GENERIC_REMINDER_ID, scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
+	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import { pendingSetup, traySeats, type TrayItem } from './setup-tray.ts';
 
 	/**
@@ -171,13 +172,14 @@
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
-		const dead = deadCharacters(game);
+		const dead = deadCharacters(game, characters);
 		const rest = bankReminders(
 			game,
 			characters,
 			focus,
 			focusMode === 'front',
-			grimoire.copies
+			grimoire.copies,
+			grimoire.bankCopies
 		).flatMap(({ characterId, label, left, now }) => {
 			const key = `${characterId}:${label}`;
 			const n = left - (pending[key] ?? 0);
@@ -529,6 +531,19 @@
 				label={isGeneric(choosing) ? '∞' : choosing.label}
 				character={characters.get(choosing.characterId)}
 			/>{/if} on
+	{/snippet}
+	{#snippet headActions()}
+		<!-- Duplicate from the bank too; the copy stays in the bank (Trevor, 2026-10-20). -->
+		{#if choosing && !isGeneric(choosing)}
+			<ReminderMoreButton
+				{grimoire}
+				reminder={choosing}
+				onDone={() => {
+					chooserOpen = false;
+					choosing = undefined;
+				}}
+			/>
+		{/if}
 	{/snippet}
 </SeatChooser>
 

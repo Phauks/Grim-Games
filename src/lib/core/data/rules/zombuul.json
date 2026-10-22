@@ -1,0 +1,6 @@
+{
+	"reminderPrompts": {
+		"Died Today": "markDead"
+	},
+	"actsWhenDead": true
+}
