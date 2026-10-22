@@ -683,10 +683,7 @@
 				types={TYPES}
 				counts
 				marker={source === 'official' && !selectedOnly ? undefined : creatorOf}
-				pinTop="calc(var(--tap-target) + env(safe-area-inset-top) + {Math.max(
-					0,
-					bandHeight - 1
-				)}px)"
+				pinTop="calc(var(--app-top) + {Math.max(0, bandHeight - 1)}px)"
 				onInfo={(character) => {
 					info = character;
 					infoOpen = true;
@@ -784,15 +781,15 @@
 		grid-template-columns: minmax(0, 1fr) minmax(0, 7rem);
 		gap: var(--space-2);
 	}
-	/* The counts and search stay in view, just below the sticky app header, while the list scrolls. */
+	/* The counts and search stay in view, at the top of the screen, while the list scrolls. */
 	.counts {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		position: sticky;
-		top: calc(var(--tap-target) + env(safe-area-inset-top));
+		top: var(--app-top);
 		z-index: var(--z-raised);
-		/* Edge to edge on a phone, like the app header above it and setup's counts. */
+		/* Edge to edge on a phone, like setup's counts. */
 		margin-inline: calc(-1 * var(--page-gutter));
 		padding: var(--space-2) var(--page-gutter);
 		/* The page's own background, pinned to the window as the body's is, so it lines up. */

@@ -1,5 +1,5 @@
 /**
- * The app's name wherever people see it: the header, menu, page titles, messages and the
+ * The app's name wherever people see it: the sidebar, menu, page titles, messages and the
  * manifest (Trevor, 2026-10-18: "Grimbinder", to match grimbinder.com; not the final name).
  * Renaming the app is this one line, plus `static/manifest.webmanifest` and `src/app.html`,
  * which can't import it (app-name.test.ts fails until they match).

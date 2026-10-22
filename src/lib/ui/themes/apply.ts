@@ -82,7 +82,7 @@ export function applyAppearance(theme: Theme, prefs: Preferences, root = documen
 	root.dataset.textAlign = prefs.textAlign;
 	root.style.colorScheme = theme.colorScheme;
 	applyZoom(prefs.allowZoom, root);
-	// The phone's status bar (and an installed app's title bar) takes the header's colour.
+	// The phone's status bar (and an installed app's title bar) takes the surface colour.
 	const themeColor = root.ownerDocument.querySelector('meta[name="theme-color"]');
 	themeColor?.setAttribute('content', colorFor(theme, prefs.colors, '--surface'));
 	// Only the fonts in use are fetched; Settings loads the rest for its previews.

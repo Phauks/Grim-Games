@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, nameStoryteller } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { openMenu } from './shell.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -168,9 +169,9 @@ test('New game and Resume game are screens of their own', async ({ page }) => {
 	await page.getByRole('button', { name: 'More players' }).tap();
 	await expect(current).toHaveText('9');
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
-	// No Back button (Trevor, 2026-10-16): the app name in the header, or Home in the menu, goes home.
+	// No Back button (Trevor, 2026-10-16): Home in the menu goes home.
 	await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0);
-	await page.getByRole('banner').getByRole('link', { name: APP_NAME }).tap();
+	await (await openMenu(page)).getByRole('link', { name: 'Home' }).tap();
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
 

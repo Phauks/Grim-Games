@@ -779,13 +779,13 @@
 	:global(.sided tr.selected) .pick {
 		box-shadow: inset 0.25rem 0 0 var(--accent);
 	}
-	/* The sidebar and pane stay in view beside the list, just below the app header (not in a
+	/* The sidebar and pane stay in view beside the list, at the top of the screen (not in a
 	   picker's dialog, which scrolls itself). */
 	.manager:not(.picking) .side,
 	.pane {
 		position: sticky;
-		top: calc(var(--tap-target) + env(safe-area-inset-top) + var(--space-2));
-		max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+		top: calc(var(--app-top) + var(--space-2));
+		max-height: calc(100dvh - var(--app-top) - var(--space-4));
 		min-width: 0;
 	}
 	.side {
@@ -793,7 +793,7 @@
 	}
 	.pane {
 		display: grid;
-		height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+		height: calc(100dvh - var(--app-top) - var(--space-4));
 	}
 	.files {
 		display: grid;

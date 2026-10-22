@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
+import { menuButton, openSettingsDialog } from './shell.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
 
@@ -137,19 +138,18 @@ async function noSidewaysScroll(page: Page) {
 }
 
 // Trevor, 2026-10-17: the counts and search stay in view below the app header, never over it.
-test('the counts and search stick just below the header while the list scrolls', async ({
+test('the counts and search stick at the top of the screen while the list scrolls', async ({
 	page
 }) => {
 	await selectionFor(page, 5);
 	await page.mouse.wheel(0, 3000);
 	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-	const header = (await page.getByRole('banner').boundingBox())!;
 	const counts = page.getByTestId('setup-counts');
 	await expect(counts).toBeInViewport();
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
 	await expect(search).toBeInViewport();
 	for (const box of [await counts.boundingBox(), await search.boundingBox()]) {
-		expect(box!.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+		expect(box!.y).toBeGreaterThanOrEqual(-1);
 	}
 	// It really did scroll: the page heading is gone.
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).not.toBeInViewport();
@@ -463,7 +463,7 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 	expect(Math.abs(t!.y + t!.height / 2 - (f!.y + f!.height / 2))).toBeLessThan(2);
 
 	// A dropdown, not a switch (Trevor, 2026-10-16).
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
 	await page.getByRole('option', { name: 'Letters' }).tap();
@@ -521,7 +521,7 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 test('with Require a name, the token stays hidden until a name is typed', async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByText('Require a name before drawing', { exact: true }).tap();
 	await page.keyboard.press('Escape');
@@ -1169,8 +1169,8 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	await expect(title).toHaveText('Trouble Brewing');
 	await expect(title.getByTestId('script-logo')).toHaveCount(1);
 	await expect(page.locator('.setup-nav')).toHaveCount(0);
-	// No header, sidebar or footer to leave by while the phone is passed round.
-	await expect(page.getByRole('banner')).toHaveCount(0);
+	// No menu or footer to leave by while the phone is passed round.
+	await expect(menuButton(page)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
 	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
@@ -1202,8 +1202,9 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
-	// Unlocked: the header is back.
-	await expect(page.getByRole('banner')).toBeVisible();
+	// Unlocked: the menu and footer are back.
+	await expect(menuButton(page)).toBeVisible();
+	await expect(page.getByRole('contentinfo')).toBeVisible();
 	await noSidewaysScroll(page);
 });
 
@@ -1294,7 +1295,7 @@ test('the board stays locked while the draw is, until the Storyteller PIN', asyn
 	const locked = page.getByTestId('board-locked');
 	await expect(locked).toContainText('The grimoire is locked');
 	await expect(page.getByTestId('seat')).toHaveCount(0);
-	await expect(page.getByRole('banner')).toHaveCount(0);
+	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
 	// Back to the draw is always there; the PIN opens the board.
 	await expect(locked.getByRole('link', { name: 'Back to the draw' })).toBeVisible();
