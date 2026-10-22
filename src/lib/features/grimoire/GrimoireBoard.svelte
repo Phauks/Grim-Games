@@ -6,7 +6,7 @@
 	import { gameModeNames } from './game-mode-name.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
-	import { changedCharacters } from '#lib/core/engine/index.ts';
+	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
@@ -271,8 +271,11 @@
 	 * Whether a step wakes anyone tonight: a step for no player (Dusk, Dawn), or one with a
 	 * living player, or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
 	 */
-	/** Players whose character changed since dawn: tonight wakes them to learn it. */
-	const changed = $derived(changedCharacters(grimoire.open.session.log, game));
+	/** Since dawn: players whose character changed (woken tonight) and who died (Godfather). */
+	const today = $derived({
+		changes: changedCharacters(grimoire.open.session.log, game),
+		died: diedToday(grimoire.open.session.log, game)
+	});
 
 	const diedTonight = $derived.by(() => {
 		const { entries, cursor } = grimoire.open.session.log;
@@ -293,8 +296,8 @@
 		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
 		const counts = wakes;
 		return {
-			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data, changed), counts),
-			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data, changed), counts)
+			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data, today), counts),
+			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data, today), counts)
 		};
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
@@ -817,7 +820,7 @@
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
 		return walk && data
-			? boardNightSteps(game, characters, walk.night, data, changed).filter(wakes)
+			? boardNightSteps(game, characters, walk.night, data, today).filter(wakes)
 			: [];
 	});
 	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
@@ -825,7 +828,7 @@
 		const data = officialData.current;
 		if (!guided || !data) return [];
 		const open = guided.step.id;
-		return boardNightSteps(game, characters, guided.night, data, changed).filter(
+		return boardNightSteps(game, characters, guided.night, data, today).filter(
 			(s) => s.id === open || wakes(s)
 		);
 	});
@@ -836,9 +839,7 @@
 		if (!guidedPending || !data) return;
 		const { night, stepId } = guidedPending;
 		guidedPending = undefined;
-		const step = boardNightSteps(game, characters, night, data, changed).find(
-			(s) => s.id === stepId
-		);
+		const step = boardNightSteps(game, characters, night, data, today).find((s) => s.id === stepId);
 		if (step) {
 			guided = { step, night };
 			guideOpen = true;
@@ -904,7 +905,7 @@
 		if (!data) return;
 		grimoire.beginNight();
 		const night = tonight(game);
-		const steps = boardNightSteps(game, characters, night, data, changed).filter(wakes);
+		const steps = boardNightSteps(game, characters, night, data, today).filter(wakes);
 		const next = steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
 	}

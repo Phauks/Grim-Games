@@ -32,8 +32,14 @@ export function boardNightSteps(
 	characters: CharacterLookup,
 	night: Night,
 	data: GameData,
-	/** Seats whose character changed since dawn (`changedCharacters`): each wakes tonight. */
-	changes: readonly { seatId: SeatId; characterId: CharacterId }[] = []
+	/**
+	 * Since the most recent New day, from the log: seats whose character changed
+	 * (`changedCharacters`), each woken tonight, and who died (`diedToday`), for the Godfather.
+	 */
+	today: {
+		changes?: readonly { seatId: SeatId; characterId: CharacterId }[];
+		died?: readonly SeatId[];
+	} = {}
 ): NightStep[] {
 	// Players wake by the token they hold (a Drunk wakes as their Townsfolk).
 	const inPlay: Character[] = [];
@@ -57,8 +63,9 @@ export function boardNightSteps(
 	// last step (Trevor, 2026-10-20); the board's End night button still ends the night.
 	// A player whose character changed since dawn wakes before Dawn to learn it; changes only
 	// count after the first New day, so only other nights have them.
-	const woken = night === 'other' ? withCharacterChangeSteps(steps, changes, characters) : steps;
-	return duskToDawn(withNightInfo(woken, game, characters, night));
+	const woken =
+		night === 'other' ? withCharacterChangeSteps(steps, today.changes ?? [], characters) : steps;
+	return duskToDawn(withNightInfo(woken, game, characters, night, { died: today.died ?? [] }));
 }
 
 /**
