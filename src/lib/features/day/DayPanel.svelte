@@ -48,11 +48,13 @@
 		assistance: Assistance;
 		/** Shows a Night order button (the day spike); the grimoire has its own. */
 		onOpenNight?: () => void;
+		/** Opens the Savant information sheet for a seat (the grimoire's); none in the spike. */
+		onSavant?: (seatId: SeatId) => void;
 	}
 
 	// No Undo or History here (Trevor, 2026-10-16): each day action is one entry in the
 	// game's History, in the grimoire's menu.
-	let { game, assistance, onOpenNight }: Props = $props();
+	let { game, assistance, onOpenNight, onSavant }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
 
@@ -310,7 +312,14 @@
 	// ── A player's day button, on their ability row ──
 	/** Used for a once-per-game day ability, Guesses for the Juggler. */
 	const hasDayButton = (characterId: CharacterId | undefined) =>
-		characterId !== undefined && (isOnceOnlyDayAbility(characterId) || characterId === 'juggler');
+		characterId !== undefined &&
+		(isOnceOnlyDayAbility(characterId) || characterId === 'juggler' || savantButton(characterId));
+	/**
+	 * The Savant's information for today, recommended until it is set (Trevor, 2026-10-20: L5):
+	 * with "Suggest Savant information" on, where the grimoire can open its sheet.
+	 */
+	const savantButton = (characterId: CharacterId | undefined) =>
+		characterId === 'savant' && assistance.savantInfo && onSavant !== undefined;
 	/** The first pre-day reminder row headed by each seat's own character carries its button. */
 	const buttonRows = $derived.by(() => {
 		const rows: Record<string, SeatId> = {};
@@ -346,7 +355,7 @@
 -->
 <!-- The day's button at a row's end, centred like character selection's lock. -->
 {#snippet dayEnd(characterId: CharacterId | undefined, seatId: SeatId)}
-	{#if characterId && (isOnceOnlyDayAbility(characterId) || characterId === 'juggler')}
+	{#if hasDayButton(characterId)}
 		<span class="day-end">{@render dayButton(characterId, seatId)}</span>
 	{/if}
 {/snippet}
@@ -374,6 +383,18 @@
 			onclick={() => openNote({ characterId, seatId })}
 		>
 			{t('day.guesses')}
+		</Chip>
+	{:else if savantButton(characterId)}
+		{@const set = hasNote({ characterId: 'savant', seatId })}
+		<!-- Not set yet: recommended, in the accent colour. -->
+		<Chip
+			marked={set}
+			class={set ? undefined : 'recommend'}
+			data-testid="savant-info"
+			aria-label={t('day.savantInfoLabel', { who })}
+			onclick={() => onSavant?.(seatId)}
+		>
+			{t('day.savantInfo')}
 		</Chip>
 	{/if}
 {/snippet}
@@ -872,6 +893,11 @@
 	/* Only the words are italic; a character's name stays upright (Trevor, 2026-10-19). */
 	.private :global(.badge) {
 		font-style: normal;
+	}
+	.day-end :global(.recommend) {
+		border-color: var(--accent);
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 	.custom-note {
 		margin: 0 0 var(--space-2);
