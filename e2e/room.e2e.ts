@@ -463,12 +463,14 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	// Streaming (Trevor, 2026-10-21): the QR and link can be covered in place, and Copy
 	// still works.
 	await expect(qr).toBeVisible();
-	const before = (await watch.getByTestId('share-url').boundingBox())!;
+	// Measured from the tab's top, since tapping the switch may scroll the page.
+	const offset = async () => (await url.boundingBox())!.y - (await watch.boundingBox())!.y;
+	const before = await offset();
 	await watch.getByText('Hide the view-only link', { exact: true }).tap();
 	await expect(qr).toHaveCount(0);
 	await expect(watch.getByTestId('share-hidden')).toHaveText('Hidden');
 	await expect(url).toHaveValue('Hidden');
-	expect((await url.boundingBox())!.y).toBeCloseTo(before.y, 0);
+	expect(await offset()).toBeCloseTo(before, 0);
 	await expect(watch.getByRole('button', { name: 'Copy link' })).toBeEnabled();
 	await watch.getByText('Hide the view-only link', { exact: true }).tap();
 	await expect(qr).toBeVisible();

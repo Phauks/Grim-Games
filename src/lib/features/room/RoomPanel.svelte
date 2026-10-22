@@ -149,24 +149,10 @@
 </Tabs>
 
 {#snippet watching()}
-	<div class="layout">
-		<!-- Specters: spectators watch the whole grimoire (Trevor, 2026-10-18). Off until
-		     turned on; the link's QR and buttons stay in place while it is off. -->
-		<section class="watch" data-testid="watch-link">
-			<SettingToggle
-				label={t('room.watch.toggle')}
-				description={t('room.watch.hint')}
-				checked={!!host.viewerKey}
-				disabled={!host.code}
-				onChange={(on) => void host.setViewers(on)}
-			/>
-			<!-- Streaming: the QR and link can stay off screen (Trevor, 2026-10-21). -->
-			<SettingToggle
-				label={t('settings.hideWatchLink')}
-				description={t('settings.hideWatchLinkHelp')}
-				checked={preferences.current.hideWatchLink}
-				onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
-			/>
+	<!-- The same two columns as the players' tab on a wide screen (Trevor, 2026-10-21): the
+	     QR and link, then the switches and who is watching. -->
+	<div class="layout" data-testid="watch-link">
+		<section class="join">
 			<SharePanel
 				url={watchLink || undefined}
 				title={t('room.watch.title')}
@@ -187,6 +173,24 @@
 					// A new link in one step, not off and on (Trevor, 2026-10-20).
 					onclick: () => askRefresh('watch')
 				}}
+			/>
+		</section>
+		<!-- Specters: spectators watch the whole grimoire (Trevor, 2026-10-18). Off until
+		     turned on; the link's QR and buttons stay in place while it is off. -->
+		<section class="watch">
+			<SettingToggle
+				label={t('room.watch.toggle')}
+				description={t('room.watch.hint')}
+				checked={!!host.viewerKey}
+				disabled={!host.code}
+				onChange={(on) => void host.setViewers(on)}
+			/>
+			<!-- Streaming: the QR and link can stay off screen (Trevor, 2026-10-21). -->
+			<SettingToggle
+				label={t('settings.hideWatchLink')}
+				description={t('settings.hideWatchLinkHelp')}
+				checked={preferences.current.hideWatchLink}
+				onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
 			/>
 			<!-- Who is watching now (Trevor, 2026-10-20), always in its place. -->
 			<p class="status" data-testid="watchers">
