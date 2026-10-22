@@ -8,7 +8,7 @@ describe('assistance', () => {
 			// Stacking duplicate reminders is a display choice, off until asked for.
 			expect(DEFAULT_ASSISTANCE[key]).toBe(key !== 'stackReminders');
 		}
-		expect(ASSIST_LABELS.setupReminders.label).toBe('Suggest setup reminders');
+		expect(ASSIST_LABELS.nightGuide.label).toBe('Guide night steps');
 		expect(ASSIST_LABELS.explainTerms.label).toBe(
 			'Underline rules terms with glossary definitions'
 		);
@@ -24,7 +24,7 @@ describe('assistance', () => {
 
 	it('gives a switch added later its default, keeping the saved ones', () => {
 		const saved = { ...DEFAULT_ASSISTANCE, nightAnswers: false } as Record<string, boolean>;
-		delete saved.setupReminders;
+		delete saved.nightGuide;
 		expect(parseAssistance(saved)).toEqual({ ...DEFAULT_ASSISTANCE, nightAnswers: false });
 	});
 });

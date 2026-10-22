@@ -9,7 +9,6 @@ export const ASSIST_KEYS = [
 	'nightGuide',
 	'nightAnswers',
 	'infoSuggestions',
-	'setupReminders',
 	'preDayReminders',
 	'deathCause',
 	'deathReminderAsk',
@@ -18,7 +17,6 @@ export const ASSIST_KEYS = [
 	'demonVotedButton',
 	'gameEndPrompts',
 	'dayAfterNight',
-	'rulesWarnings',
 	'stackReminders',
 	'scriptTitle',
 	'explainTerms'
@@ -48,11 +46,6 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	infoSuggestions: {
 		label: 'Suggest information',
 		description: 'Washerwoman, Librarian, Investigator and similar steps list true options first.'
-	},
-	setupReminders: {
-		label: 'Suggest setup reminders',
-		description:
-			'Once characters are in the grimoire, offer the reminders to place before the first night.'
 	},
 	preDayReminders: {
 		label: 'Pre-day reminders',
@@ -89,10 +82,6 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	dayAfterNight: {
 		label: 'Open the day after End night',
 		description: 'Open Day View'
-	},
-	rulesWarnings: {
-		label: 'Setup and jinx warnings',
-		description: 'Point out a setup that breaks the rules or a jinx that applies.'
 	},
 	stackReminders: {
 		label: 'Stack duplicate reminders',
