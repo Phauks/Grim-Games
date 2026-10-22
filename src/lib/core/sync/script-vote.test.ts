@@ -1,0 +1,104 @@
+import { describe, expect, it } from 'vitest';
+import {
+	publish,
+	newRoom,
+	join,
+	openScriptVote,
+	castScriptBallot,
+	closeScriptVote,
+	hostView,
+	playerView,
+	setChoosing
+} from './room.ts';
+import { cleanBallot, newScriptVote, tallyScriptVote } from './script-vote.ts';
+import type { PublicGameState } from './public-projection.ts';
+
+// Trevor, 2026-10-20 (plan R1): the Storyteller offers 2–3 scripts; players vote by single
+// choice, multiple choice or ranking.
+
+const options = [
+	{ id: 'tb', name: 'Trouble Brewing' },
+	{ id: 'bmr', name: 'Bad Moon Rising' },
+	{ id: 'recent:x', name: '  Whale   Buffet ', author: 'Someone' }
+];
+
+const table: PublicGameState = { seats: [], today: { nominations: [], executions: [] } };
+
+function room() {
+	let r = publish(newRoom('hash'), 'g1', table);
+	for (const m of ['alex', 'bo', 'cy']) r = join(r, m)!;
+	return r;
+}
+
+describe('a vote on the next script', () => {
+	it('offers two or three scripts, each once, with tidy names', () => {
+		const vote = newScriptVote('v1', 'single', options)!;
+		expect(vote.options[2]).toEqual({ id: 'recent:x', name: 'Whale Buffet', author: 'Someone' });
+		expect(newScriptVote('v1', 'single', options.slice(0, 1))).toBeUndefined();
+		expect(newScriptVote('v1', 'single', [...options, { id: 'snv', name: 'S&V' }])).toBeUndefined();
+		expect(newScriptVote('v1', 'single', [options[0], options[0]])).toBeUndefined();
+		expect(newScriptVote('v1', 'plurality', options)).toBeUndefined();
+		expect(newScriptVote('', 'single', options)).toBeUndefined();
+	});
+
+	it('takes only a ballot that fits how players vote', () => {
+		const single = newScriptVote('v', 'single', options)!;
+		expect(cleanBallot(single, ['tb'])).toEqual(['tb']);
+		expect(cleanBallot(single, ['tb', 'bmr'])).toBeUndefined();
+		const multiple = newScriptVote('v', 'multiple', options)!;
+		expect(cleanBallot(multiple, ['tb', 'bmr'])).toEqual(['tb', 'bmr']);
+		expect(cleanBallot(multiple, [])).toBeUndefined();
+		expect(cleanBallot(multiple, ['tb', 'tb'])).toBeUndefined();
+		const ranked = newScriptVote('v', 'ranked', options)!;
+		expect(cleanBallot(ranked, ['bmr', 'tb', 'recent:x'])).toEqual(['bmr', 'tb', 'recent:x']);
+		expect(cleanBallot(ranked, ['bmr', 'tb'])).toBeUndefined();
+		expect(cleanBallot(ranked, ['bmr', 'tb', 'snv'])).toBeUndefined();
+	});
+
+	it('counts votes, or points by position for a ranking', () => {
+		const ranked = {
+			...newScriptVote('v', 'ranked', options)!,
+			ballots: {
+				alex: ['tb', 'bmr', 'recent:x'],
+				bo: ['bmr', 'tb', 'recent:x'],
+				gone: ['recent:x', 'tb', 'bmr']
+			}
+		};
+		// Someone who left the room no longer counts.
+		const tally = tallyScriptVote(ranked, ['alex', 'bo', 'cy']);
+		expect(tally.points).toEqual({ tb: 5, bmr: 5, 'recent:x': 2 });
+		expect(tally.voted).toBe(2);
+		expect(tally.members).toBe(3);
+	});
+
+	it('runs in the room: phones see it with their own ballot, the Storyteller the count', () => {
+		let r = openScriptVote(room(), 'v1', 'multiple', options);
+		r = castScriptBallot(r, 'alex', 'v1', ['tb', 'bmr']);
+		r = castScriptBallot(r, 'bo', 'v1', ['bmr']);
+		// A stale vote id or a stranger changes nothing.
+		expect(castScriptBallot(r, 'bo', 'v0', ['tb'])).toBe(r);
+		expect(castScriptBallot(r, 'zed', 'v1', ['tb'])).toBe(r);
+		expect(playerView(r, 'alex').scriptVote).toEqual({
+			voteId: 'v1',
+			kind: 'multiple',
+			options: newScriptVote('v1', 'multiple', options)!.options,
+			choices: ['tb', 'bmr']
+		});
+		expect(playerView(r, 'cy').scriptVote?.choices).toBeUndefined();
+		expect(hostView(r).scriptVote?.points).toEqual({ tb: 1, bmr: 2, 'recent:x': 0 });
+		// Ballots never reach other phones.
+		expect(JSON.stringify(playerView(r, 'cy'))).not.toContain('alex');
+		expect(closeScriptVote(r).scriptVote).toBeUndefined();
+	});
+
+	it('ends, with the Storyteller choosing, when the next game starts', () => {
+		let r = setChoosing(openScriptVote(room(), 'v1', 'single', options), true);
+		expect(playerView(r, 'alex').choosing).toBe(true);
+		expect(setChoosing(r, 'yes')).toBe(r);
+		r = publish(r, 'g2', table);
+		expect(r.choosing).toBeUndefined();
+		expect(r.scriptVote).toBeUndefined();
+		expect(playerView(setChoosing(room(), true), 'alex').choosing).toBe(true);
+		expect(setChoosing(setChoosing(room(), true), false).choosing).toBeUndefined();
+	});
+});

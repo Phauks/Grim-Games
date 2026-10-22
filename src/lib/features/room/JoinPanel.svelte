@@ -13,6 +13,8 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
+	import ScriptBallot from './ScriptBallot.svelte';
+	import VoteChoice from './VoteChoice.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 	import { followRoomScript } from './room-script.ts';
@@ -101,6 +103,7 @@
 	};
 	const summary = $derived.by(() => {
 		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
+		if (view.choosing) return t('room.choosing');
 		// The same words as the Storyteller's board once the game has ended.
 		if (view.ended)
 			return view.ended.winner === 'good'
@@ -436,18 +439,13 @@
 		{#each vote?.options ?? [] as option (option)}
 			{@const s = seats.find((x) => x.seatId === option)}
 			<li>
-				<button
-					type="button"
-					class="choice"
-					aria-pressed={vote?.choice === option}
+				<VoteChoice
+					mark={s?.seatNumber}
+					pressed={vote?.choice === option}
 					disabled={status !== 'open'}
 					onclick={() => player?.vote(option)}
+					>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</VoteChoice
 				>
-					<span class="number">{s?.seatNumber ?? ''}</span>
-					<span class="name"
-						>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</span
-					>
-				</button>
 			</li>
 		{/each}
 	</ul>
@@ -458,6 +456,7 @@
 		<SharedBoard shared={revealed?.grimoire} />
 	</div>
 </Dialog>
+{#if player}<ScriptBallot {player} />{/if}
 
 <style>
 	form {
@@ -705,25 +704,5 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.choice {
-		display: grid;
-		grid-template-columns: 2.5em 1fr;
-		align-items: center;
-		gap: var(--space-2);
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		touch-action: manipulation;
-	}
-	.choice[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--surface-selected);
 	}
 </style>
