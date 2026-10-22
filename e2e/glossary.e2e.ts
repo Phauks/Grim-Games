@@ -86,7 +86,7 @@ test('terms in the character dialog open above it', async ({ page }) => {
 	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
 	await page
 		.locator('li[data-character="slayer"]')
-		.getByRole('button', { name: /^Slayer/ })
+		.getByRole('button', { name: 'About the Slayer' })
 		.first()
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Slayer' });

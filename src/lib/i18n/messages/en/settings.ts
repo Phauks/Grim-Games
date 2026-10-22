@@ -80,6 +80,7 @@ export const settings = {
 	'settings.tileLabels.colours': 'Colours',
 	'settings.tileLabels.emoji': 'Emoji',
 	'settings.tileLabels.random': 'Random',
+	'settings.tileLabels.none': 'None',
 	'settings.background': 'Background for all games',
 	'settings.backgroundImage': 'Choose an image',
 	'settings.backgroundYourImage': 'Your image',

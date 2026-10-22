@@ -102,7 +102,8 @@ export const TILE_FACES = [
 	'symbols',
 	'colours',
 	'emoji',
-	'random'
+	'random',
+	'none'
 ] as const;
 export type TileFace = (typeof TILE_FACES)[number];
 
