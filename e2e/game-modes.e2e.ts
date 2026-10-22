@@ -494,6 +494,18 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(page).toHaveURL(/\/setup$/);
 	await expect(page.getByTestId('count-minion')).toHaveText('1');
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
+	// Required by the mode, so it can't be taken out; its lock is on and says why (Trevor,
+	// 2026-10-22).
+	const boomdandy = page.locator('.choice', {
+		has: page.locator('.main[data-character-id="boomdandy"]')
+	});
+	await boomdandy.locator('.main').tap();
+	await expect(boomdandy).toHaveAttribute('data-selected', '');
+	await expect(page.getByText('Must be in the bag')).toBeVisible();
+	await expect(boomdandy.getByTestId('lock-character')).toHaveAttribute('aria-pressed', 'true');
+	await page.getByRole('button', { name: 'Clear selection' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('count-minion')).toHaveText('1');
 	const first = page.url();
 	await pick(page, ['Washerwoman', 'Librarian', 'Investigator', 'Zombuul']);
 	await page.getByRole('button', { name: 'Build bag' }).tap();

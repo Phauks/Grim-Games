@@ -28,6 +28,8 @@ export const setup = {
 	'setup.random': 'Random selection',
 	'setup.randomNone': 'No valid selection fits this script and player count',
 	'setup.randomNoneLocked': 'No valid selection fits the locked characters',
+	'setup.required': 'Must be in the bag',
+	'setup.requiredBy': '{rule} requires this character in play.',
 	'setup.lockFor': 'Keep {name} when randomizing',
 	'setup.clearSelection': 'Clear selection',
 	'setup.buildBag': 'Build bag',
