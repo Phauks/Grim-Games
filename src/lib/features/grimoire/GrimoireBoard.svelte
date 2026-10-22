@@ -22,6 +22,7 @@
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { goto, pushState, replaceState } from '$app/navigation';
 	import { page } from '$app/state';
@@ -1961,6 +1962,10 @@
 				Navigation
 			</Button>
 		</span>
+		<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
+		<Button variant="quiet" icon="report" onclick={() => fromMenu(() => reportDialog.show())}>
+			{t('shell.reportIssue')}
+		</Button>
 		<hr class="menu-rule" />
 		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
 		{#if ended}
