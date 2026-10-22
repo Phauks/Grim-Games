@@ -4849,3 +4849,38 @@ test('Start game with setup reminders still to place asks first, listing them', 
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 });
+
+test('a Fool marked dead is offered to survive their first death', async ({ page }) => {
+	// Trevor (2026-10-22): the Fool's first death (https://wiki.bloodontheclocktower.com/Fool),
+	// never against the Assassin (https://wiki.bloodontheclocktower.com/Assassin).
+	await startGame(page, 'Bad Moon Rising');
+	for (const [number, name] of [
+		[1, 'Fool'],
+		[2, 'Assassin'],
+		[3, 'Zombuul']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Use the Fool’s ability?' });
+	await expect(ask).toContainText('No Ability');
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Fool, 1 reminder')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 1: no name, Fool, 1 reminder')).not.toHaveAttribute(
+		'aria-label',
+		/dead/
+	);
+});

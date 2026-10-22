@@ -1,5 +1,5 @@
 import type { Command } from '#lib/core/engine/index.ts';
-import { demonToBecome, type Night } from '#lib/core/rules/index.ts';
+import { demonToBecome, foolSurvives, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
@@ -197,6 +197,7 @@ export class Grimoire {
 		if (misfit) toast('Note', misfit);
 		this.askAlignment(command);
 		this.askDemon(command);
+		this.askFool(command);
 		return true;
 	}
 
@@ -217,6 +218,25 @@ export class Grimoire {
 	 * the board offers to change its character to that Demon (Trevor, 2026-10-19).
 	 */
 	demonAsk = $state.raw<{ seatId: SeatId; characterId: CharacterId } | undefined>();
+
+	/**
+	 * A Fool just marked dead whose ability is unused and works (not by the Assassin): the
+	 * board offers to keep them alive and spend the ability (`foolSurvives`; Trevor,
+	 * 2026-10-22).
+	 */
+	foolAsk = $state.raw<{ seatId: SeatId } | undefined>();
+
+	private askFool(command: Command): void {
+		const death =
+			command.type === 'SetDead' && command.dead
+				? { seatId: command.seatId, cause: command.cause }
+				: command.type === 'Execute'
+					? { seatId: command.seatId, cause: 'execution' as const }
+					: undefined;
+		if (!death || !this.open.game.seats[death.seatId]?.dead) return;
+		if (foolSurvives(this.open.game, death.seatId, death.cause, this.open.characters))
+			this.foolAsk = { seatId: death.seatId };
+	}
 
 	private askDemon(command: Command): void {
 		const placed = this.placed(command);
