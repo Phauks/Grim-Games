@@ -303,6 +303,7 @@
 				label={t('room.watch.password')}
 				bind:value={grimPassword}
 				maxlength={64}
+				type="password"
 				autocomplete="off"
 			/>
 			<ModalActions

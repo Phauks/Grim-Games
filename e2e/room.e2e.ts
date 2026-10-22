@@ -583,7 +583,9 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 	const watch = page.getByTestId('watch-link');
-	const password = watch.getByRole('textbox', { name: 'Grim view password' });
+	// A password field (Trevor, 2026-10-22): masked, with an eye button that shows it.
+	const password = watch.getByLabel('Grim view password', { exact: true });
+	await expect(password).toHaveAttribute('type', 'password');
 	// In its place, but off while the link is.
 	await expect(password).toBeDisabled();
 	await watch.getByText('View-only grimoire link', { exact: true }).tap();
@@ -602,6 +604,12 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	await expect(grimView).toBeDisabled();
 
 	await password.fill('lantern');
+	const eye = watch.getByRole('button', { name: 'Show password' });
+	await eye.tap();
+	await expect(password).toHaveAttribute('type', 'text');
+	await expect(eye).toHaveAttribute('aria-pressed', 'true');
+	await eye.tap();
+	await expect(password).toHaveAttribute('type', 'password');
 	await password.press('Enter');
 	// A password makes a new link; the old one stops.
 	await expect(url).not.toHaveValue(randomLink);
@@ -614,7 +622,10 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	// A wrong password says so.
 	await grimView.tap();
 	const ask = phone.getByRole('dialog', { name: 'Grim view' });
-	await ask.getByRole('textbox', { name: 'Grim view password' }).fill('candle');
+	const typed = ask.getByLabel('Grim view password', { exact: true });
+	await expect(typed).toHaveAttribute('type', 'password');
+	await expect(ask.getByRole('button', { name: 'Show password' })).toBeVisible();
+	await typed.fill('candle');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await phone
 		.getByRole('alertdialog', { name: 'Before you watch' })
@@ -628,7 +639,7 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	await phone.goto('/join');
 	await typeCode(phone, code);
 	await grimView.tap();
-	await ask.getByRole('textbox', { name: 'Grim view password' }).fill('lantern');
+	await ask.getByLabel('Grim view password', { exact: true }).fill('lantern');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(phone).toHaveURL(passwordLink.href);
 	await phone

@@ -115,6 +115,8 @@ export const ICON_SLOTS = {
 	lock: { label: 'Lock', choices: ['ph:lock-simple', 'ph:lock'] },
 	/** Hides what is written, e.g. a scratch pad's preview in the notes list. */
 	hide: { label: 'Hide', choices: ['ph:eye-slash', 'ph:eye-closed'] },
+	/** Shows what is masked, e.g. a password as it is typed. */
+	show: { label: 'Show', choices: ['ph:eye'] },
 	library: { label: 'Library', choices: ['ph:bookmarks-simple', 'ph:archive'] },
 	folder: { label: 'Folder', choices: ['ph:folder', 'ph:folder-simple'] },
 	tag: { label: 'Tag', choices: ['ph:tag', 'ph:tag-simple'] },
