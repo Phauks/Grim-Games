@@ -95,57 +95,65 @@
 	removes it (Trevor, 2026-10-18). Then the shared searchable character list.
 -->
 <div class="picker">
-	<!-- Pinned while the list scrolls, so what is chosen stays in view (Trevor, 2026-10-18). -->
-	<div class="pinned">
-		{#if notInPlay}
-			<div class="filter">
-				<Toggle
-					label={t('show.notInPlayOnly')}
-					checked={hideInPlay}
-					onChange={(checked) => (hideInPlay = checked)}
-				/>
-				<span class="ink"
-					><IconButton icon="random" label={t('show.random')} onclick={random} /></span
-				>
-			</div>
-		{/if}
-		<!-- One place per character that can be chosen, kept while empty (Trevor, 2026-10-20). -->
-		<ul class="slots" aria-label={t('show.chosen')}>
-			{#each Array.from({ length: max }, (_, i) => selected[i]) as id, i (i)}
-				{@const character = id ? byId.get(id) : undefined}
-				{#if character}
-					{@const blocked = warnInPlay && inPlay?.has(character.id)}
-					<li data-blocked={blocked ? '' : undefined}>
-						<CharacterRow
-							{character}
-							note={blocked ? t('show.inPlay') : undefined}
-							label={removeLabel(character, blocked)}
-							onclick={() => toggle(character.id)}
-						/>
-					</li>
-				{:else}
-					<li class="empty" aria-hidden="true"></li>
-				{/if}
-			{/each}
-		</ul>
-	</div>
+	<div class="columns">
+		<!--
+		Pinned while the list scrolls, so what is chosen stays in view (Trevor, 2026-10-18). With
+		room for two columns it sits on the left and the list on the right (Trevor, 2026-10-22).
+	-->
+		<div class="pinned">
+			{#if notInPlay}
+				<div class="filter">
+					<Toggle
+						label={t('show.notInPlayOnly')}
+						checked={hideInPlay}
+						onChange={(checked) => (hideInPlay = checked)}
+					/>
+					<span class="ink"
+						><IconButton icon="random" label={t('show.random')} onclick={random} /></span
+					>
+				</div>
+			{/if}
+			<!-- One place per character that can be chosen, kept while empty (Trevor, 2026-10-20). -->
+			<ul class="slots" aria-label={t('show.chosen')}>
+				{#each Array.from({ length: max }, (_, i) => selected[i]) as id, i (i)}
+					{@const character = id ? byId.get(id) : undefined}
+					{#if character}
+						{@const blocked = warnInPlay && inPlay?.has(character.id)}
+						<li data-blocked={blocked ? '' : undefined}>
+							<CharacterRow
+								{character}
+								note={blocked ? t('show.inPlay') : undefined}
+								label={removeLabel(character, blocked)}
+								onclick={() => toggle(character.id)}
+							/>
+						</li>
+					{:else}
+						<li class="empty" aria-hidden="true"></li>
+					{/if}
+				{/each}
+			</ul>
+		</div>
 
-	<div role="group" aria-label={label}>
-		<SharedPicker
-			characters={choices}
-			mode={max === 1 ? 'single' : 'multi'}
-			{selected}
-			onSelect={toggle}
-			max={max > 1 ? max : undefined}
-			marker={inPlay ? marker : undefined}
-			contained={false}
-		/>
+		<div role="group" aria-label={label}>
+			<SharedPicker
+				characters={choices}
+				mode={max === 1 ? 'single' : 'multi'}
+				{selected}
+				onSelect={toggle}
+				max={max > 1 ? max : undefined}
+				marker={inPlay ? marker : undefined}
+				contained={false}
+			/>
+		</div>
 	</div>
 </div>
 
 <style>
 	/* Lives in sheets, so it follows the sheet's colours rather than the page's. */
 	.picker {
+		container-type: inline-size;
+	}
+	.columns {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
@@ -208,5 +216,24 @@
 	.empty {
 		border: 1px dashed var(--border);
 		border-radius: var(--radius-md);
+	}
+	/* Tablets and wider: the chosen places down the left, the list on the right, each place
+	   tall enough for more of its ability (Trevor, 2026-10-22). */
+	@container (min-width: 36rem) {
+		.columns {
+			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+			align-items: start;
+		}
+		.slots {
+			--slot-height: calc(2 * var(--space-1) + 1.5rem + 3 * 1.3 * 0.8rem);
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.slots :global(.ability) {
+			display: -webkit-box;
+			white-space: normal;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 3;
+			line-clamp: 3;
+		}
 	}
 </style>
