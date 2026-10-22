@@ -2073,7 +2073,6 @@
 				playerName={ownerId
 					? (owner?.playerName ?? `Seat ${game.seating.indexOf(ownerId) + 1}`)
 					: undefined}
-				inline
 			/> is dead.
 		</p>
 		<SettingToggle
