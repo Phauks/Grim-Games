@@ -82,6 +82,17 @@ body:has(.app-body.bare)::before {
 		var(--page-background);
 }
 
+/* A bar pinned to the screen's bottom edge (the setup steps' Back and Next bar, SetupNav):
+   the page keeps the bar's room below everything, the footer included, so nothing is hidden
+   under it (Trevor, 2026-10-20: the Draw page's footer was cut off). */
+body:has(.pinned-bottom) {
+	--pinned-border: 1px; /* px-ok: the bar's top border */
+	padding-bottom: calc(
+		var(--space-4) + var(--tap-target) + 2 * var(--space-2) + var(--pinned-border) +
+			env(safe-area-inset-bottom)
+	);
+}
+
 h1,
 h2,
 h3 {

@@ -1053,6 +1053,18 @@ async function lockedDraw(page: Page) {
 	await lockDraw(page);
 }
 
+// Trevor (2026-10-20, Pixel): the footer was cut off under the Draw page's bottom bar.
+test('the page footer clears the bottom bar on the setup steps', async ({ page }) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+	const footer = await page.getByRole('contentinfo').boundingBox();
+	const bar = await page.locator('.setup-nav').boundingBox();
+	expect(footer && bar && footer.y + footer.height).toBeLessThanOrEqual(bar!.y + 1);
+});
+
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
 	page
 }) => {
