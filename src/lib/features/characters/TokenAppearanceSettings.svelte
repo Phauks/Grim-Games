@@ -57,6 +57,10 @@
 	// also long enough to show the reminder word settings.
 	const SAMPLE_ID = 'godfather';
 	const sample = $derived(officialData.current?.byId.get(SAMPLE_ID));
+	// Long words, so Reminder words width and Wrap long reminder words show (Trevor,
+	// 2026-10-22: every setting shows in its preview).
+	const REMINDER_SAMPLE_ID = 'devilsadvocate';
+	const reminderSample = $derived(officialData.current?.byId.get(REMINDER_SAMPLE_ID));
 	// The sample as the only character in play (Trevor, 2026-10-17: "a low number (1) (1),
 	// not absolute"): 1 on each night it wakes.
 	const sampleNumbers = $derived.by(() => {
@@ -114,7 +118,6 @@
 				>{/if}
 		</div>
 	{/snippet}
-	{@render characterFont?.()}
 	<SettingSlider
 		label={t('characters.tokenSize')}
 		description={t('characters.tokenSizeHelp')}
@@ -135,13 +138,15 @@
 		checked={value.nightNumbers}
 		onChange={(nightNumbers) => onChange({ ...value, nightNumbers })}
 	/>
-	<!-- Always shown, so switching the badges on or off never moves the settings below. -->
+	<!-- Always shown, so switching the badges on or off never moves the settings below;
+	     disabled while they are off. -->
 	<SettingSlider
 		label={t('characters.nightBadgeSize')}
 		description={t('characters.nightBadgeSizeHelp')}
 		value={value.nightBadgeScale}
 		{...TOKEN_SCALE}
 		defaultValue={1}
+		disabled={!value.nightNumbers}
 		onChange={(nightBadgeScale) => onChange({ ...value, nightBadgeScale })}
 	/>
 	<SettingToggle
@@ -192,18 +197,22 @@
 
 <SettingGroup title={t('characters.group.reminder')} testid="reminder-preview">
 	{#snippet preview()}
-		<!-- As it rests, then highlighted as a held seat's reminder (Trevor, 2026-10-20). -->
+		<!-- As it rests, then highlighted as a held seat's reminder (Trevor, 2026-10-20). Its
+		     player has turned good, so Owner's icon colour shows a difference (Trevor, 2026-10-22:
+		     every setting shows in its preview). -->
 		<div class="preview reminder-sample" style:--sample="{largestReminder}px">
-			{#if sample}<BoardReminder
-					label={sample.reminders[0] ?? t('characters.previewReminder')}
-					character={sample}
+			{#if reminderSample}<BoardReminder
+					label={reminderSample.reminders[0]}
+					character={reminderSample}
+					alignment="good"
 					size={reminderSize}
 					disabled
 					onTap={() => {}}
 				/><span class="lit" data-testid="lit-reminder-sample"
 					><BoardReminder
-						label={sample.reminders[0] ?? t('characters.previewReminder')}
-						character={sample}
+						label={reminderSample.reminders[0]}
+						character={reminderSample}
+						alignment="good"
 						size={reminderSize}
 						disabled
 						onTap={() => {}}
@@ -302,6 +311,9 @@
 			</p>
 		</div>
 	{/snippet}
+	<!-- Here, not under Character token: the names in this line always show the font, while
+	     names on tokens are a switch (Trevor, 2026-10-22: every setting shows in its preview). -->
+	{@render characterFont?.()}
 	<!-- Text, icon and badge sizes for each, none shared (Trevor, 2026-10-18). -->
 	<SettingSlider
 		label={t('characters.inlineNameTextSize')}
