@@ -129,8 +129,30 @@
 	.cell[data-ok] {
 		box-shadow: none;
 	}
+	.label {
+		font-size: 0.72rem;
+		opacity: 0.85;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 100%;
+	}
+	.value {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+	.chosen {
+		font-weight: 700;
+		font-size: 1.1rem;
+	}
+	.of {
+		margin-inline-start: 0.2em;
+		font-size: 0.8rem;
+		opacity: 0.8;
+	}
 	/* A type's cell opens its count's popup; it looks as the Travellers' does. */
 	button.cell {
+		min-width: 0;
 		border: 0;
 		color: inherit;
 		font: inherit;
