@@ -11,6 +11,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
+	import ReminderCount from './ReminderCount.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
@@ -495,9 +496,7 @@
 					? `${spacers[item.group]}px`
 					: undefined}
 			>
-				{#if item.count > 1}<span class="count" aria-label={`${item.count} copies`}
-						>×{item.count}</span
-					>{/if}
+				{#if item.count > 1}<ReminderCount count={item.count} />{/if}
 				<BoardReminder
 					label={item.label}
 					character={characters.get(item.characterId)}
@@ -816,20 +815,6 @@
 	}
 	.tray > li {
 		position: relative;
-	}
-	.count {
-		position: absolute;
-		top: 0;
-		right: 0;
-		z-index: 1;
-		min-width: 1.4em;
-		padding: 0 calc(0.1875 * var(--u));
-		border-radius: var(--radius-full);
-		background: var(--accent);
-		color: var(--on-accent);
-		font: 700 0.75rem / 1.4 var(--font-control);
-		text-align: center;
-		pointer-events: none;
 	}
 	/* Between the setup reminders and the rest, in All: a solid line (Trevor, 2026-10-16). */
 	.tray > li.divider {

@@ -1367,6 +1367,12 @@
 			get scriptImage() {
 				return scriptBackground;
 			},
+			get scriptLogo() {
+				return boardLogo || undefined;
+			},
+			get scriptName() {
+				return game.script.meta?.name;
+			},
 			get current() {
 				return background;
 			},
