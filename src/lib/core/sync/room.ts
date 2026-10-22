@@ -10,6 +10,15 @@
 import type { Alignment, Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
+import {
+	cleanBallot,
+	newScriptVote,
+	tallyScriptVote,
+	type ScriptVote,
+	type ScriptVoteKind,
+	type ScriptVoteOption,
+	type ScriptVoteTally
+} from './script-vote.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -58,6 +67,10 @@ export interface RoomState {
 	viewerPassword?: true;
 	/** The current game is over, as the Storyteller ended it; a new game clears it. */
 	ended?: GameOver;
+	/** The Storyteller is choosing the next script (plan R1); a new game clears it. */
+	choosing?: true;
+	/** The room's vote on the next script, while the Storyteller has it open. */
+	scriptVote?: ScriptVote;
 }
 
 /**
@@ -138,6 +151,8 @@ export type ClientMessage =
 	| { type: 'leave-seat' }
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
+	/** A player's ballot in the script vote; a new one replaces the last. */
+	| { type: 'script-ballot'; voteId: string; choices: string[] }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**
@@ -166,6 +181,11 @@ export type ClientMessage =
 	| { type: 'reveal'; gameId: string; grimoire: SharedGrimoire }
 	/** The Storyteller reopened the game `gameId`: it runs again (protocol 2). */
 	| { type: 'reopen-game'; gameId: string }
+	/** The Storyteller is (or no longer is) choosing the next script. */
+	| { type: 'choosing'; on: boolean }
+	/** Opens a vote on the next script, replacing any open one. */
+	| { type: 'open-script-vote'; voteId: string; kind: ScriptVoteKind; options: ScriptVoteOption[] }
+	| { type: 'close-script-vote' }
 	| { type: 'close' };
 
 /** What the Storyteller's device sees. */
@@ -175,6 +195,8 @@ export interface HostView {
 	requests: RoomRequest[];
 	/** The open vote's count of spectators' choices; absent when no vote is open. */
 	vote?: VoteTally;
+	/** The script vote's count, while one is open. */
+	scriptVote?: ScriptVoteTally;
 }
 
 export interface VoteTally {
@@ -200,6 +222,15 @@ export interface PlayerView {
 	vote?: { voteId: string; options: SeatId[]; ability?: string; choice?: SeatId };
 	/** The game on the table is over, with who won and how. */
 	ended?: Omit<GameOver, 'gameId'>;
+	/** The Storyteller is choosing the next script. */
+	choosing?: true;
+	/** The script vote, while one is open, with this phone's own ballot. */
+	scriptVote?: {
+		voteId: string;
+		kind: ScriptVoteKind;
+		options: ScriptVoteOption[];
+		choices?: string[];
+	};
 }
 
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
@@ -343,6 +374,12 @@ export function newRoom(hostKeyHash: string): RoomState {
 export function hostView(room: RoomState): HostView {
 	const view: HostView = { type: 'host-view', members: room.members, requests: room.requests };
 	if (room.vote) view.vote = tally(room, room.vote);
+	if (room.scriptVote) {
+		view.scriptVote = tallyScriptVote(
+			room.scriptVote,
+			room.members.map((m) => m.memberId)
+		);
+	}
 	return view;
 }
 
@@ -380,6 +417,12 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
 		view.ended = ended;
+	}
+	if (room.choosing) view.choosing = true;
+	if (room.scriptVote) {
+		const { voteId, kind, options, ballots } = room.scriptVote;
+		view.scriptVote = { voteId, kind, options };
+		if (ballots[memberId]) view.scriptVote.choices = ballots[memberId];
 	}
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
@@ -487,7 +530,7 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 	const seats = new Set(state.seats.map((s) => s.seatId));
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
-	const base = newGame ? withoutEnded(closeVote(room)) : room;
+	const base = newGame ? closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)) : room;
 	return {
 		...base,
 		gameId,
@@ -585,6 +628,49 @@ function withoutEnded(room: RoomState): RoomState {
 	const { ended: _over, ...rest } = room;
 	void _over;
 	return rest;
+}
+
+/** The Storyteller is choosing the next script, or has stopped; anything else is ignored. */
+export function setChoosing(room: RoomState, on: unknown): RoomState {
+	if (on === true) return room.choosing ? room : { ...room, choosing: true };
+	if (on !== false || !room.choosing) return room;
+	const { choosing: _off, ...rest } = room;
+	void _off;
+	return rest;
+}
+
+/** Opens a vote on the next script, replacing any open one; a malformed one changes nothing. */
+export function openScriptVote(
+	room: RoomState,
+	voteId: unknown,
+	kind: unknown,
+	options: unknown
+): RoomState {
+	const vote = newScriptVote(voteId, kind, options);
+	return vote ? { ...room, scriptVote: vote } : room;
+}
+
+export function closeScriptVote(room: RoomState): RoomState {
+	if (!room.scriptVote) return room;
+	const { scriptVote: _closed, ...rest } = room;
+	void _closed;
+	return rest;
+}
+
+/** A member's ballot in the open script vote; a stale or malformed one is ignored. */
+export function castScriptBallot(
+	room: RoomState,
+	memberId: string,
+	voteId: unknown,
+	choices: unknown
+): RoomState {
+	const vote = room.scriptVote;
+	if (!vote || voteId !== vote.voteId || !room.members.some((m) => m.memberId === memberId)) {
+		return room;
+	}
+	const ballot = cleanBallot(vote, choices);
+	if (!ballot) return room;
+	return { ...room, scriptVote: { ...vote, ballots: { ...vote.ballots, [memberId]: ballot } } };
 }
 
 /**

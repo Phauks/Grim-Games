@@ -212,7 +212,7 @@
 
 <Page title={dealTitle(gameId)}>
 	{#snippet actions()}
-		<Button variant="danger-quiet" icon="reset" onclick={() => (restarting = true)}>
+		<Button variant="danger" icon="reset" onclick={() => (restarting = true)}>
 			{t('modes.deal.restart')}
 		</Button>
 	{/snippet}

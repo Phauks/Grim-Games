@@ -10,13 +10,16 @@
 		/** Renders a link styled as a button; pass a path from `resolve()` in `$app/paths`. */
 		href?: ResolvedPathname;
 		/** `accent` is the one main action in a group (e.g. Refresh). */
-		/** `danger` and `danger-quiet` mark a destructive action in red (Trevor, 2026-10-16). */
+		/**
+		 * `danger` marks a destructive action: a red fill, with the text colour of every other
+		 * button (Trevor, 2026-10-16; 2026-10-22: red text on a dark menu was hard to read).
+		 */
 		/**
 		 * `field` opens a picker (Special rules, Restricted characters) and looks like the
 		 * drop-downs and chips beside it (Trevor, 2026-10-19: it "looks different from other
 		 * button on page").
 		 */
-		variant?: 'solid' | 'quiet' | 'accent' | 'danger' | 'danger-quiet' | 'field';
+		variant?: 'solid' | 'quiet' | 'accent' | 'danger' | 'field';
 		children: Snippet;
 	}
 
@@ -48,6 +51,8 @@
 		border-radius: var(--button-radius);
 		background: var(--button-background);
 		color: var(--button-color);
+		/* An edge on every surface, so no button blends into what's behind it. */
+		box-shadow: var(--button-ring);
 		font: var(--button-font);
 		letter-spacing: 0.04em;
 		text-decoration: none;
@@ -56,27 +61,22 @@
 	.button[data-variant='quiet'] {
 		background: transparent;
 		color: inherit;
-		box-shadow: inset 0 0 0 1px var(--border);
 	}
 	/* The drop-down trigger's look (Select.svelte), label at the start. */
 	.button[data-variant='field'] {
 		justify-content: flex-start;
 		padding: var(--space-1) var(--space-3);
-		border: var(--card-border);
+		border: var(--control-border);
 		border-radius: var(--card-radius);
 		background: var(--choice-background);
 		color: var(--choice-color);
+		box-shadow: none;
 		font-family: var(--font-control);
 		text-align: left;
 	}
 	.button[data-variant='danger'] {
-		background: var(--evil);
-		color: var(--on-evil);
-	}
-	.button[data-variant='danger-quiet'] {
-		background: transparent;
-		color: var(--evil);
-		box-shadow: inset 0 0 0 1px var(--evil);
+		background: var(--danger);
+		box-shadow: inset 0 0 0 1px var(--danger-edge);
 	}
 	.button:hover {
 		filter: brightness(1.15);
@@ -84,9 +84,9 @@
 	.button[data-variant='accent'] {
 		background: var(--accent);
 		color: var(--on-accent);
+		box-shadow: inset 0 0 0 1px var(--accent-edge);
 	}
-	.button[data-variant='quiet']:hover,
-	.button[data-variant='danger-quiet']:hover {
+	.button[data-variant='quiet']:hover {
 		filter: none;
 		/* A wash of the button's own text colour, so the label reads on any surface and in any
 		   theme (Trevor, 2026-10-18: a hovered Cancel was hard to read on a sheet). */
