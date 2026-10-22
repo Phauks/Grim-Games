@@ -1545,7 +1545,11 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
 	// One place only (Trevor, 2026-10-18): no choice of where.
 	await expect(dialog.getByRole('combobox', { name: 'Script name', exact: true })).toHaveCount(0);
-	// The player name badge size is an option (Trevor, 2026-10-17), live on the board.
+	// The player name badge size is an option (Trevor, 2026-10-17), live on the board. It is
+	// set in Tokens, with the character token (Trevor, 2026-10-20).
+	await expect(dialog.getByRole('slider', { name: 'Player name size' })).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await menu(page, 'Tokens');
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
 	await expect(nameSize).toHaveAttribute('aria-valuetext', '140%');
