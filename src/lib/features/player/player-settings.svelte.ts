@@ -23,6 +23,11 @@ export interface PlayerSettings {
 export const PRINT_COLUMNS = ['auto', 'one', 'two'] as const;
 export const PRINT_DENSITIES = ['auto', 'normal', 'compact', 'super'] as const;
 export const MAX_PRINT_COPIES = 20;
+/**
+ * What the back carries: both nights and the player counts, or the script's jinxes, Fabled
+ * and Loric (Ravenswood's info sheet, Trevor 2026-10-22), or nothing.
+ */
+export const PRINT_BACKS = ['night', 'info', 'none'] as const;
 
 export interface PrintSettings {
 	columns: (typeof PRINT_COLUMNS)[number];
@@ -30,8 +35,7 @@ export interface PrintSettings {
 	/** The night order as icons down both sides of the front. */
 	nightStrips: boolean;
 	jinxes: boolean;
-	/** The back: both nights with their text, and the player counts. */
-	back: boolean;
+	back: (typeof PRINT_BACKS)[number];
 	/** Character sheets (fronts) printed, one per player; the back once. */
 	copies: number;
 }
@@ -41,7 +45,7 @@ export const PRINT_DEFAULTS: PrintSettings = {
 	density: 'auto',
 	nightStrips: true,
 	jinxes: true,
-	back: true,
+	back: 'night',
 	copies: 1
 };
 
@@ -54,7 +58,13 @@ function readPrint(raw: unknown): PrintSettings {
 		density: PRINT_DENSITIES.find((d) => d === r.density) ?? PRINT_DEFAULTS.density,
 		nightStrips: flag(r.nightStrips, PRINT_DEFAULTS.nightStrips),
 		jinxes: flag(r.jinxes, PRINT_DEFAULTS.jinxes),
-		back: flag(r.back, PRINT_DEFAULTS.back),
+		// Before the info back, the back was a switch: on is the night order.
+		back:
+			typeof r.back === 'boolean'
+				? r.back
+					? 'night'
+					: 'none'
+				: (PRINT_BACKS.find((b) => b === r.back) ?? PRINT_DEFAULTS.back),
 		copies: Math.min(MAX_PRINT_COPIES, Math.max(1, copies))
 	};
 }
