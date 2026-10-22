@@ -33,6 +33,8 @@
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { contextCharacters } from '#lib/features/characters/character-context.ts';
 	import { playersLine, ruleCharactersLine } from './players-line.ts';
+	import { savedChoiceFor } from './script-choices.svelte.ts';
+	import { sourcePage } from '#lib/features/scripts/saved-scripts.ts';
 
 	/**
 	 * The game's info and a game mode's own actions, on the board's corner script name (Trevor,
@@ -76,13 +78,22 @@
 	// The board's character lookup, to count the characters in play by type.
 	const characters = contextCharacters();
 	const none = $derived(t('common.none'));
+	// The saved script the game started from: its name links its source page, and its version
+	// shows when the game's own script names none (Trevor, backlog L14).
+	const savedChoice = $derived(savedChoiceFor(game.script));
+	const scriptPage = $derived(savedChoice?.source ? sourcePage(savedChoice.source) : undefined);
 	const info = $derived([
-		{ key: 'script', label: t('modes.info.script'), value: game.script.meta?.name },
+		{
+			key: 'script',
+			label: t('modes.info.script'),
+			value: game.script.meta?.name,
+			href: scriptPage
+		},
 		{ key: 'author', label: t('modes.info.author'), value: game.script.meta?.author },
 		{
 			key: 'version',
 			label: t('modes.info.version'),
-			value: scriptVersion(undefined, game.script.meta)
+			value: scriptVersion(undefined, game.script.meta) ?? savedChoice?.version
 		},
 		{ key: 'storyteller', label: t('modes.info.storyteller'), value: game.storytellerName },
 		{
@@ -161,7 +172,9 @@
 				<tr data-field={row.key}>
 					<th scope="row">{row.label}</th>
 					<td>
-						{row.value?.trim() || none}{#if 'extra' in row && row.extra}<span
+						{#if 'href' in row && row.href && row.value?.trim()}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site's page -->
+							<a href={row.href} target="_blank" rel="noopener noreferrer">{row.value}</a
+							>{:else}{row.value?.trim() || none}{/if}{#if 'extra' in row && row.extra}<span
 								class="extra"
 								data-testid="info-extra">{row.extra}</span
 							>{/if}
