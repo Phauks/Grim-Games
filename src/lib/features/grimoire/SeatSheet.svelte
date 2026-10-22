@@ -44,6 +44,8 @@
 	import { boardLooks } from './board-looks.svelte.ts';
 	import { isGeneric, tokenLabel } from './reminders.ts';
 	import ReminderNoteField from './ReminderNoteField.svelte';
+	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 
 	interface Props {
 		open: boolean;
@@ -341,6 +343,11 @@
 	}
 	let removeOpen = $state(false);
 	let showOpen = $state(false);
+	let savantOpen = $state(false);
+	/** The Savant's information generator (L2), for a Savant seat while its switch is on. */
+	const savant = $derived(
+		seat?.characterId === 'savant' && preferences.current.assistance.savantInfo
+	);
 	let remindersOpen = $state(false);
 </script>
 
@@ -463,7 +470,6 @@
 						{/if}{part.text}{#if part.characterId}<CharacterBadge
 								characterId={part.characterId}
 								character={characters.get(part.characterId)}
-								inline
 							/>{/if}{part.after ?? ''}{/each}
 				</p>
 			</div>
@@ -556,6 +562,8 @@
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
+<SavantSheet bind:open={savantOpen} {grimoire} {seatId} />
+
 <ReminderPicker
 	bind:open={remindersOpen}
 	{grimoire}
@@ -607,16 +615,11 @@
 			<dd><strong>{seatLabel}</strong></dd>
 			<dt>Current role</dt>
 			<dd>
-				<CharacterBadge
-					characterId={seat.characterId}
-					{character}
-					alignment={seat.alignment}
-					inline
-				/>
+				<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />
 			</dd>
 			<dt>New role</dt>
 			<dd>
-				<CharacterBadge characterId={changeTo} character={characters.get(changeTo)} inline />
+				<CharacterBadge characterId={changeTo} character={characters.get(changeTo)} />
 			</dd>
 		</dl>
 		<p class="note">
@@ -648,13 +651,9 @@
 		{#each changes as change, i (i)}
 			<li>
 				{#if change.kind === 'character'}
-					<CharacterBadge
-						characterId={change.from}
-						character={characters.get(change.from)}
-						inline
-					/>
+					<CharacterBadge characterId={change.from} character={characters.get(change.from)} />
 					→
-					<CharacterBadge characterId={change.to} character={characters.get(change.to)} inline />
+					<CharacterBadge characterId={change.to} character={characters.get(change.to)} />
 				{:else}
 					{@render team(change.from)} → {@render team(change.to)}
 				{/if}
@@ -770,7 +769,6 @@
 							>(<CharacterBadge
 								characterId={gained}
 								character={characters.get(gained)}
-								inline
 								interactive={false}
 							/>)</span
 						>{/if}
@@ -821,11 +819,7 @@
 				{@const why = causeFlagText(flag, game, characters, title)}
 				<li>
 					{why.text}{#if why.by}
-						(<CharacterBadge
-							characterId={why.by}
-							character={characters.get(why.by)}
-							inline
-						/>).{/if}
+						(<CharacterBadge characterId={why.by} character={characters.get(why.by)} />).{/if}
 				</li>
 			{/each}
 		</ul>
@@ -853,7 +847,6 @@
 				character={characters.get(other.characterId)}
 				alignment={other.alignment}
 				playerName={other.playerName ?? `Seat ${n}`}
-				inline
 			/>
 		{:else}
 			<strong>{other.playerName ?? `Seat ${n}`}</strong>
@@ -865,12 +858,7 @@
 <Dialog bind:open={menuOpen} {title} description={`Seat ${number}`}>
 	{#snippet lead()}
 		{#if seat?.characterId}
-			<CharacterBadge
-				characterId={seat.characterId}
-				{character}
-				alignment={seat.alignment}
-				inline
-			/>
+			<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />
 		{/if}
 	{/snippet}
 	<div class="menu">
@@ -880,6 +868,11 @@
 		{#if apprentice}
 			<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (gainOpen = true))}>
 				Gained ability…
+			</Button>
+		{/if}
+		{#if savant}
+			<Button variant="quiet" icon="random" onclick={() => fromMenu(() => (savantOpen = true))}>
+				Savant information…
 			</Button>
 		{/if}
 		<Button

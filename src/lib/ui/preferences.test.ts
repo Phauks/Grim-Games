@@ -69,6 +69,7 @@ describe('parsePreferences', () => {
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',
 			requireName: true,
+			holdToReveal: true,
 			ownWording: true,
 			hideWatchLink: true,
 			timerSound: 'buzzer',

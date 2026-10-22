@@ -4,8 +4,8 @@
  * and words) is on any seat, however it got there, or once the Storyteller dismisses it.
  * Nothing is placed automatically.
  */
-import type { SetupReminder } from '#lib/core/rules/index.ts';
-import type { Reminder } from '#lib/core/model/index.ts';
+import { setupReminders, type SetupReminder } from '#lib/core/rules/index.ts';
+import type { CharacterLookup, Game, Reminder } from '#lib/core/model/index.ts';
 
 export interface TrayItem {
 	/** Stable while the suggestions do not change: character, words and which copy. */
@@ -51,6 +51,21 @@ export function withoutOffSeat(
 		if (i >= 0) out.splice(i, 1);
 	}
 	return out;
+}
+
+/**
+ * The setup reminders still to place, as the bank's Setup stretch lists them: suggested,
+ * not dismissed, and not already on the board (on a seat, loose, or held by a rule character).
+ */
+export function pendingSetup(
+	game: Game,
+	characters: CharacterLookup,
+	dismissed: readonly string[]
+): TrayItem[] {
+	return withoutOffSeat(pendingTray(trayItems(setupReminders(game, characters)), dismissed), [
+		...(game.looseReminders ?? []),
+		...Object.values(game.ruleReminders ?? {}).flat()
+	]);
 }
 
 /** The seats a suggestion fits, best first: the pre-filled seat, then the candidates. */

@@ -3,8 +3,8 @@ import { expect, test } from '@playwright/test';
 test('tapping a character badge shows its ability and a wiki link', async ({ page }) => {
 	await page.goto('/spikes/badges');
 	// CSS locator: the page behind an open dialog is aria-hidden, so role queries can't see it.
-	// Not `.inline`: the dialog's live wiki page has inline Witch badges of its own.
-	const badge = page.locator('button.badge:not(.inline)', { hasText: 'Witch' });
+	// By the player's name: the dialog's live wiki page has Witch badges of its own.
+	const badge = page.locator('button.badge', { hasText: /Witch.*Sam/ });
 	await expect(badge).toContainText('Sam');
 	await expect(badge.locator('img')).toBeVisible();
 	// Measure only once the icon and fonts have loaded: a late font swap or image resizes the
@@ -163,7 +163,6 @@ test('the Jinxes section lists every TPI jinx under the other character', async 
 	// the jinx indented under it (Trevor, 2026-10-16).
 	const bar = jinxes.locator('.entry .bar').first().locator('.badge');
 	await expect(bar).toHaveAttribute('data-character-id', 'boffin');
-	await expect(bar).toHaveClass(/inline/);
 	const barBox = (await bar.boundingBox())!;
 	const sectionBox = (await jinxes.locator('.entry').first().boundingBox())!;
 	expect(barBox.width).toBeGreaterThan(sectionBox.width - 2);
@@ -246,4 +245,21 @@ test('the sections list counts tips, examples and jinxes, with lines between', a
 
 	await sections.getByRole('button', { name: 'Jinxes' }).tap();
 	await expect(dialog.getByTestId('jinx-section').locator('.entry')).toHaveCount(jinxes);
+});
+
+test('a badge on its own line keeps the in-line height, with a 44px tap area', async ({ page }) => {
+	// One design everywhere (Trevor, 2026-10-20): the script sheet's normal density once drew a
+	// tall pill. The base button rule's 44px minimum must not stretch the badge either.
+	await page.goto('/play');
+	await page.getByRole('button', { name: 'Trouble Brewing' }).tap({ timeout: 15_000 });
+	const badge = page.locator('[data-character="chef"] .badge');
+	await expect(badge).toBeVisible();
+	const sizes = await badge.evaluate((el) => {
+		const fontSize = parseFloat(getComputedStyle(el).fontSize);
+		const tap = parseFloat(getComputedStyle(el, '::before').height);
+		return { height: el.getBoundingClientRect().height, fontSize, tap };
+	});
+	expect(sizes.height).toBeLessThan(sizes.fontSize * 1.5);
+	// The tap area is calc()ed from the badge height, so it can land a hair under 44px.
+	expect(sizes.tap).toBeGreaterThan(43.5);
 });

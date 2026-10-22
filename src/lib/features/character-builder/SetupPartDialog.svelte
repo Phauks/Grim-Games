@@ -153,7 +153,7 @@
 				>{t('character-builder.chooseLinked')}</Button
 			>
 			{#if linkedCharacter}
-				<CharacterBadge characterId={linkedCharacter.id} character={linkedCharacter} inline />
+				<CharacterBadge characterId={linkedCharacter.id} character={linkedCharacter} />
 			{:else}
 				<span class="muted">{t('common.none')}</span>
 			{/if}

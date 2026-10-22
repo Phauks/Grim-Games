@@ -94,7 +94,6 @@
 			>{#snippet fill()}{#if target}<CharacterBadge
 						characterId={target.characterId}
 						character={game.characters.get(target.characterId)}
-						inline
 					/>{/if}{/snippet}</Sentence
 		>
 	{/snippet}

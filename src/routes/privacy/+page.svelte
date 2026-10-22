@@ -6,6 +6,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { PRIVACY_VERSION } from '#lib/features/account/account-protocol.ts';
+	import OfficialNotice from '#lib/features/about/OfficialNotice.svelte';
 
 	const updated = new Date(`${PRIVACY_VERSION}T00:00:00Z`).toLocaleDateString('en-GB', {
 		day: 'numeric',
@@ -305,6 +306,7 @@
 			be asked through Report an issue.
 		</p>
 	</PageSection>
+	<OfficialNotice />
 </Page>
 
 <style>

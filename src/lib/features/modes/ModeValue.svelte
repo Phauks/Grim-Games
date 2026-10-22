@@ -44,7 +44,7 @@
 	{t('common.none')}
 {:else if CHARACTER_FIELDS.has(field) && Array.isArray(value)}
 	<span class="badges">
-		{#each value as id (id)}<CharacterBadge characterId={String(id)} inline />{/each}
+		{#each value as id (id)}<CharacterBadge characterId={String(id)} />{/each}
 	</span>
 {:else if Array.isArray(value) && value.every((v) => typeof v === 'number')}
 	{value.join(SEQUENCE_FIELDS.has(field) ? ' → ' : ', ')}
@@ -59,7 +59,7 @@
 	</ol>
 {:else if isRecord(value)}
 	{#if field === 'onlyFor' || ('characterId' in value && 'type' in value)}
-		<CharacterBadge characterId={String(value.characterId)} inline />
+		<CharacterBadge characterId={String(value.characterId)} />
 		{modeLabel('value', String(value.type))}
 	{:else}
 		<!-- One row per field, so a label and its value read together, as a table (Trevor,

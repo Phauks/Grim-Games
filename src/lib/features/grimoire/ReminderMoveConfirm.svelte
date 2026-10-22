@@ -136,7 +136,6 @@
 	{:else if 'characterId' in at}On <CharacterBadge
 			characterId={at.characterId}
 			character={characters.get(at.characterId)}
-			inline
 		/>
 	{:else if 'loose' in at}Loose on the board
 	{:else}{back ? 'Back in' : 'In'} the reminder bank{/if}
@@ -152,7 +151,7 @@
 		{@const owner = characters.get(pending.reminder.characterId)}
 		<!-- Which token, from which character, and both places (Trevor, 2026-10-16). -->
 		<p class="what">
-			<CharacterBadge characterId={pending.reminder.characterId} character={owner} inline />'s
+			<CharacterBadge characterId={pending.reminder.characterId} character={owner} />'s
 			<ReminderToken
 				label={tokenLabel(pending.reminder)}
 				character={owner}
@@ -171,7 +170,6 @@
 				<CharacterBadge
 					characterId={relocator.characterId}
 					character={characters.get(relocator.characterId)}
-					inline
 				/> is in play: {relocator.does}
 			</p>
 		{/each}

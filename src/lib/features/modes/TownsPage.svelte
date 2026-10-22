@@ -245,7 +245,6 @@
 						<CharacterBadge
 							characterId={seat.characterId as CharacterId}
 							alignment={seat.alignment}
-							inline
 							interactive={false}
 						/>
 					</button>

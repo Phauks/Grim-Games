@@ -19,22 +19,16 @@
 	The same bar at the bottom of every setup step (Trevor, 2026-10-16): Back on the left,
 	the step's main action on the right.
 -->
-<div class="space">
-	<nav class="setup-nav" aria-label={t('setup.nav')}>
-		<div class="bar">
-			<Button variant="quiet" icon="back" href={backHref}>{backLabel}</Button>
-			{@render next()}
-		</div>
-	</nav>
-</div>
+<nav class="setup-nav pinned-bottom" aria-label={t('setup.nav')}>
+	<div class="bar">
+		<Button variant="quiet" icon="back" href={backHref}>{backLabel}</Button>
+		{@render next()}
+	</div>
+</nav>
 
 <style>
-	/* Holds the bar's room at the end of the page so nothing ends up under it. */
-	.space {
-		min-height: calc(var(--tap-target) + 2 * var(--space-2) + env(safe-area-inset-bottom));
-		margin-top: var(--space-4);
-	}
-	/* Pinned to the screen's bottom edge, so it sits in the same place on every step. */
+	/* Pinned to the screen's bottom edge, so it sits in the same place on every step. Its room
+	   is kept below the whole page, footer included (`.pinned-bottom` in base.css). */
 	.setup-nav {
 		position: fixed;
 		right: 0;

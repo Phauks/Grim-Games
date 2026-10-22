@@ -19,9 +19,20 @@
 		href?: string;
 		/** The link's `rel`; `noopener` unless given (e.g. `noopener noreferrer`). */
 		rel?: string;
+		/** Drawn with the quiet Button's edge, so it reads as something to tap (Trevor, 2026-10-20). */
+		outlined?: boolean;
 	}
 
-	let { icon, label, ref = $bindable(), face, href, rel = 'noopener', ...rest }: Props = $props();
+	let {
+		icon,
+		label,
+		ref = $bindable(),
+		face,
+		href,
+		rel = 'noopener',
+		outlined = false,
+		...rest
+	}: Props = $props();
 </script>
 
 {#if href}
@@ -29,6 +40,7 @@
 	<!-- eslint-disable svelte/no-navigation-without-resolve -->
 	<a
 		class="icon-button"
+		data-outlined={outlined || undefined}
 		{href}
 		target="_blank"
 		{rel}
@@ -43,6 +55,7 @@
 	<button
 		bind:this={ref}
 		class="icon-button"
+		data-outlined={outlined || undefined}
 		type="button"
 		aria-label={label}
 		title={label}
@@ -65,6 +78,11 @@
 		color: var(--on-surface);
 		text-decoration: none;
 		cursor: pointer;
+	}
+	/* The quiet Button's edge and corners (Button.svelte). */
+	.icon-button[data-outlined] {
+		border-radius: var(--button-radius);
+		box-shadow: inset 0 0 0 1px var(--border);
 	}
 	.icon-button:active {
 		background: var(--surface-selected);

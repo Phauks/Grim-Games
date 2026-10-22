@@ -30,7 +30,7 @@ export const KINDS: Partial<Record<(typeof RULE_PARTS)[number] | ModePart, reado
 	duplicates: ['standard', 'allowed'],
 	bluffs: ['standard', 'none'],
 	daySteps: ['town-representative', 'spectator-vote'],
-	winConditions: ['standard', 'all-towns'],
+	winConditions: ['standard', 'demon-executed', 'all-towns'],
 	betweenGames: ['campaign'],
 	seats: ['storyteller-seat'],
 	deaths: ['private'],

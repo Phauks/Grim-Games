@@ -68,11 +68,10 @@
 			/>{:else}Reminder{/if}
 	{/snippet}
 	{#snippet subtitle()}
-		{#if source}From <CharacterBadge characterId={source.id} character={source} inline />{/if}
+		{#if source}From <CharacterBadge characterId={source.id} character={source} />{/if}
 		{#if holder && 'characterId' in holder}on <CharacterBadge
 				characterId={holder.characterId}
 				character={characters.get(holder.characterId)}
-				inline
 			/>{:else}loose on the board{/if}
 	{/snippet}
 	{#if reminder && isGeneric(reminder)}

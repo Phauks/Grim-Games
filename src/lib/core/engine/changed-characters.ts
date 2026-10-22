@@ -22,15 +22,32 @@ export interface CharacterChange {
 	characterId: CharacterId;
 }
 
-/** Seats that held a character at dawn and hold a different one now, in seating order. */
-export function changedCharacters(log: GameLog, game: Game): CharacterChange[] {
+/** The game at the most recent New day, or undefined before the first one. */
+function atDawn(log: GameLog): Game | undefined {
 	const applied = log.entries.slice(0, log.cursor);
 	const dawn = applied.findLastIndex((e) => e.events.some((ev) => ev.type === 'DayStarted'));
-	if (dawn < 0) return [];
-	const before = replay({ entries: applied, cursor: dawn + 1 });
+	return dawn < 0 ? undefined : replay({ entries: applied, cursor: dawn + 1 });
+}
+
+/** Seats that held a character at dawn and hold a different one now, in seating order. */
+export function changedCharacters(log: GameLog, game: Game): CharacterChange[] {
+	const before = atDawn(log);
+	if (!before) return [];
 	return game.seating.flatMap((seatId) => {
 		const from = before.seats[seatId]?.characterId;
 		const now = game.seats[seatId]?.characterId;
 		return from && now && from !== now ? [{ seatId, from, characterId: now }] : [];
 	});
+}
+
+/**
+ * Players alive at the most recent New day and dead now, in seating order: who "died today"
+ * for abilities such as the Godfather's (https://wiki.bloodontheclocktower.com/Godfather),
+ * however they died (executed, or killed by day by the Slayer, the Tinker...). Before any
+ * New day nothing is listed.
+ */
+export function diedToday(log: GameLog, game: Game): SeatId[] {
+	const before = atDawn(log);
+	if (!before) return [];
+	return game.seating.filter((s) => before.seats[s]?.dead === false && game.seats[s]?.dead);
 }

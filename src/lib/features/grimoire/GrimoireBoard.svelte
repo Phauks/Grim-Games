@@ -6,7 +6,7 @@
 	import { gameModeNames } from './game-mode-name.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
-	import { changedCharacters } from '#lib/core/engine/index.ts';
+	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
@@ -22,6 +22,7 @@
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { goto, pushState, replaceState } from '$app/navigation';
 	import { page } from '$app/state';
@@ -88,6 +89,7 @@
 	import { cornerRoom } from './corner-room.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
+	import { pendingSetup, type TrayItem } from './setup-tray.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -271,8 +273,11 @@
 	 * Whether a step wakes anyone tonight: a step for no player (Dusk, Dawn), or one with a
 	 * living player, or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
 	 */
-	/** Players whose character changed since dawn: tonight wakes them to learn it. */
-	const changed = $derived(changedCharacters(grimoire.open.session.log, game));
+	/** Since dawn: players whose character changed (woken tonight) and who died (Godfather). */
+	const today = $derived({
+		changes: changedCharacters(grimoire.open.session.log, game),
+		died: diedToday(grimoire.open.session.log, game)
+	});
 
 	const diedTonight = $derived.by(() => {
 		const { entries, cursor } = grimoire.open.session.log;
@@ -293,8 +298,8 @@
 		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
 		const counts = wakes;
 		return {
-			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data, changed), counts),
-			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data, changed), counts)
+			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data, today), counts),
+			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data, today), counts)
 		};
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
@@ -817,7 +822,7 @@
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
 		return walk && data
-			? boardNightSteps(game, characters, walk.night, data, changed).filter(wakes)
+			? boardNightSteps(game, characters, walk.night, data, today).filter(wakes)
 			: [];
 	});
 	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
@@ -825,7 +830,7 @@
 		const data = officialData.current;
 		if (!guided || !data) return [];
 		const open = guided.step.id;
-		return boardNightSteps(game, characters, guided.night, data, changed).filter(
+		return boardNightSteps(game, characters, guided.night, data, today).filter(
 			(s) => s.id === open || wakes(s)
 		);
 	});
@@ -836,9 +841,7 @@
 		if (!guidedPending || !data) return;
 		const { night, stepId } = guidedPending;
 		guidedPending = undefined;
-		const step = boardNightSteps(game, characters, night, data, changed).find(
-			(s) => s.id === stepId
-		);
+		const step = boardNightSteps(game, characters, night, data, today).find((s) => s.id === stepId);
 		if (step) {
 			guided = { step, night };
 			guideOpen = true;
@@ -904,7 +907,7 @@
 		if (!data) return;
 		grimoire.beginNight();
 		const night = tonight(game);
-		const steps = boardNightSteps(game, characters, night, data, changed).filter(wakes);
+		const steps = boardNightSteps(game, characters, night, data, today).filter(wakes);
 		const next = steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
 	}
@@ -934,6 +937,25 @@
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
 		if (preferences.current.assistance.nightWalkthrough) runNight();
+	}
+	/**
+	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
+	 * 2026-10-20), listing them; Confirm starts anyway (warn, never lock).
+	 */
+	let setupLeft = $state<TrayItem[]>([]);
+	let startAskOpen = $state(false);
+	function startGame() {
+		const left = pendingSetup(game, characters, grimoire.trayDismissed);
+		if (left.length > 0) {
+			setupLeft = left;
+			startAskOpen = true;
+			return;
+		}
+		beginGame();
+	}
+	function beginGame() {
+		if (preferences.current.assistance.nightWalkthrough) runNight();
+		else endDay();
 	}
 	/** Setup's next step: Characters, or the bag draw once they are chosen. */
 	function openSetup() {
@@ -986,7 +1008,7 @@
 				text: 'Start game',
 				icon: 'night' as const,
 				disabled: !canRun,
-				onclick: walkthrough ? runNight : endDay
+				onclick: startGame
 			};
 		return {
 			label: 'End day',
@@ -1961,6 +1983,10 @@
 				Navigation
 			</Button>
 		</span>
+		<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
+		<Button variant="quiet" icon="report" onclick={() => fromMenu(() => reportDialog.show())}>
+			{t('shell.reportIssue')}
+		</Button>
 		<hr class="menu-rule" />
 		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
 		{#if ended}
@@ -2034,7 +2060,6 @@
 					character={characters.get(askedId)}
 					alignment={asked.alignment}
 					playerName={name}
-					inline
 				/>{:else}{name}{/if}{ui.after}
 		{/snippet}
 		<SettingToggle
@@ -2074,7 +2099,6 @@
 				playerName={ownerId
 					? (owner?.playerName ?? `Seat ${game.seating.indexOf(ownerId) + 1}`)
 					: undefined}
-				inline
 			/> is dead.
 		</p>
 		<SettingToggle
@@ -2088,6 +2112,20 @@
 		/>
 	</ConfirmDialog>
 {/if}
+
+<ConfirmDialog bind:open={startAskOpen} title="Start the game?" onConfirm={beginGame}>
+	<p class="ask-note">Setup reminders not yet placed:</p>
+	<ul class="setup-left" data-testid="setup-left">
+		{#each setupLeft as { key, suggestion } (key)}
+			<li>
+				<ReminderToken
+					label={suggestion.label}
+					character={characters.get(suggestion.characterId)}
+				/>
+			</li>
+		{/each}
+	</ul>
+</ConfirmDialog>
 
 <ConfirmDialog bind:open={endNightOpen} title="End the night?" onConfirm={endNight}>
 	<SettingToggle
@@ -2273,7 +2311,7 @@
 				<li class="rule-detail">
 					{@render ruleToken(character)}
 					<div>
-						<CharacterBadge characterId={id} {character} inline />
+						<CharacterBadge characterId={id} {character} />
 						<p>{character.ability}</p>
 						{@render heldList(id)}
 					</div>
@@ -2307,7 +2345,7 @@
 		<dl class="change">
 			<dt>Now</dt>
 			<dd>
-				<CharacterBadge characterId={ruleShown} character={ruleShownCharacter} inline /> in play
+				<CharacterBadge characterId={ruleShown} character={ruleShownCharacter} /> in play
 			</dd>
 			<dt>Becomes</dt>
 			<dd>Not in play</dd>
@@ -2316,6 +2354,18 @@
 </ConfirmDialog>
 
 <style>
+	/* Start game's question: the setup reminders still to place (Trevor, 2026-10-20). */
+	.ask-note {
+		margin: 0;
+	}
+	.setup-left {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
 	.grimoire {
 		/* Its own layer, so the backdrop sits behind the toolbar and board, not the page. */
 		position: relative;

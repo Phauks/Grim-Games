@@ -24,6 +24,7 @@ import { history } from '#lib/i18n/messages/en/history.ts';
 import { scriptBuilder } from '#lib/i18n/messages/en/script-builder.ts';
 import { characterBuilder } from '#lib/i18n/messages/en/character-builder.ts';
 import { modes } from '#lib/i18n/messages/en/modes.ts';
+import { savant } from '#lib/i18n/messages/en/savant.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -59,5 +60,6 @@ export const en = {
 	...history,
 	...scriptBuilder,
 	...characterBuilder,
-	...modes
+	...modes,
+	...savant
 } as const satisfies Catalog;
