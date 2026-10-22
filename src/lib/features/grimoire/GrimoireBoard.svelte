@@ -52,7 +52,7 @@
 		type ReminderPrompt,
 		setupComplete,
 		diedSinceNewDay,
-		ON_DEATH,
+		onDeathTrigger,
 		abilityState,
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
@@ -292,7 +292,9 @@
 		return (
 			holders.length === 0 ||
 			holders.some(
-				(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && diedTonight.has(s))
+				(s) =>
+					!game.seats[s].dead ||
+					(id !== undefined && !!onDeathTrigger(id, characters) && diedTonight.has(s))
 			)
 		);
 	}

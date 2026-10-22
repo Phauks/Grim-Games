@@ -20,7 +20,9 @@
  * the reminders come from the tokens on the board, so the Storyteller stays in charge.
  * Day-only effects (the Pacifist, the Devil's Advocate) are not night alerts.
  */
+import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
+import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
@@ -78,18 +80,21 @@ export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = {
 	acrobat: other('Acrobat', 'self')
 };
 
-/** Abilities set off by their player's death, and which deaths count. */
-export const ON_DEATH: Readonly<Record<CharacterId, { by: KillBy | 'any'; wiki: string }>> = {
-	ravenkeeper: { by: 'any', wiki: W + 'Ravenkeeper' },
-	farmer: { by: 'any', wiki: W + 'Farmer' },
-	sage: { by: 'demon', wiki: W + 'Sage' },
-	banshee: { by: 'demon', wiki: W + 'Banshee' },
-	moonchild: { by: 'any', wiki: W + 'Moonchild' },
-	sweetheart: { by: 'any', wiki: W + 'Sweetheart' },
-	barber: { by: 'any', wiki: W + 'Barber' },
-	klutz: { by: 'any', wiki: W + 'Klutz' },
-	plaguedoctor: { by: 'any', wiki: W + 'Plague_Doctor' }
-};
+/**
+ * Whether `characterId`'s ability is set off by its player's death, and by which deaths
+ * (`onDeath` in its rules block: our `data/rules/<id>.json`, or a custom character's `rules`).
+ */
+export function onDeathTrigger(
+	characterId: CharacterId,
+	characters?: CharacterLookup
+): { by: KillBy | 'any' } | undefined {
+	return rulesOf(characterId, characters)?.onDeath;
+}
+
+/** The official characters whose ability is set off by their player's death. */
+export const ON_DEATH: Readonly<Record<CharacterId, { by: KillBy | 'any' }>> = Object.fromEntries(
+	[...OFFICIAL_RULES].flatMap(([id, rules]) => (rules.onDeath ? [[id, rules.onDeath]] : []))
+);
 
 export type NightAlertKind =
 	'impaired' | 'protected' | 'may-bounce' | 'survives-first-death' | 'on-death';
@@ -154,12 +159,14 @@ function sourceAlert(
 	seatId: SeatId,
 	source: AbilitySource,
 	characters: CharacterLookup,
-	wiki: string
+	wiki: string | undefined
 ): NightAlert {
 	const impairments = source.seatId
 		? abilityState(game, source.seatId, characters).impairments
 		: [];
-	return { kind, seatId, source, works: impairments.length === 0, impairments, wiki };
+	const alert: NightAlert = { kind, seatId, source, works: impairments.length === 0, impairments };
+	if (wiki) alert.wiki = wiki;
+	return alert;
 }
 
 function deathAlerts(
@@ -171,7 +178,7 @@ function deathAlerts(
 	const seat = game.seats[seatId];
 	const own = trueCharacter(game, seatId, characters);
 	const out: NightAlert[] = [];
-	const alert = (kind: NightAlertKind, source: AbilitySource, wiki: string) =>
+	const alert = (kind: NightAlertKind, source: AbilitySource, wiki: string | undefined) =>
 		out.push(sourceAlert(game, kind, seatId, source, characters, wiki));
 	const holder = (id: CharacterId) =>
 		game.seating.find((s) => trueCharacter(game, s, characters) === id);
@@ -212,9 +219,10 @@ function deathAlerts(
 		}
 	}
 
-	const trigger = own ? ON_DEATH[own] : undefined;
+	const trigger = own ? onDeathTrigger(own, characters) : undefined;
 	if (own && trigger && (trigger.by === 'any' || trigger.by === killer.by)) {
-		alert('on-death', { characterId: own, seatId }, trigger.wiki);
+		const character = characters.get(own);
+		alert('on-death', { characterId: own, seatId }, character && wikiUrl(character));
 	}
 	// The Grandmother dies if the Demon kills her grandchild.
 	const grandchild = seat.reminders.find(
