@@ -587,10 +587,19 @@ test("reminders: add several from the picker, this seat's first, then move and r
 	const poisoner = picker.getByRole('group', { name: 'Poisoner' });
 	await poisoner.getByRole('button', { name: 'Poisoned' }).tap();
 	await picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first().tap();
-	await expect(picker.getByText('On this seat: 2')).toBeVisible();
-	// The top row is what is on this seat now (Trevor, 2026-10-17).
+	// The top row is what is on this seat now (Trevor, 2026-10-17); no count of them (Trevor,
+	// 2026-10-19).
 	const top = picker.getByRole('group', { name: 'On this seat' }).getByRole('button');
 	await expect(top).toHaveCount(2);
+	await expect(picker).not.toContainText('On this seat:');
+	// Reminders have two looks, the board's token and the in-line badge; the picker uses the
+	// badge as the seat sheet does, and Add reminder is a + alone (Trevor, 2026-10-19).
+	const fontSize = (el: Element) => getComputedStyle(el).fontSize;
+	expect(await top.first().getByTestId('reminder-token').evaluate(fontSize)).toBe(
+		await sheet.getByTestId('reminder-token').first().evaluate(fontSize)
+	);
+	// Under the picker, so out of the accessibility tree: found by its label.
+	await expect(sheet.locator('button[aria-label="Add reminder"]')).toHaveText('');
 	// Each token is placed once: the Poisoner has one "Poisoned", shown as on this seat.
 	await expect(poisoner.getByRole('button', { name: /Poisoned/ })).toHaveAttribute(
 		'aria-pressed',
@@ -604,12 +613,16 @@ test("reminders: add several from the picker, this seat's first, then move and r
 		.getByRole('alertdialog', { name: 'Confirm change?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(picker.getByText('On this seat: 1')).toBeVisible();
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		1
+	);
 	await expect(drunk).toHaveAttribute('aria-pressed', 'false');
 	// Taken off, it leaves the top row.
 	await expect(top).toHaveCount(1);
 	await drunk.tap();
-	await expect(picker.getByText('On this seat: 2')).toBeVisible();
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		2
+	);
 	// Only characters in play: no way to add the Washerwoman's reminders here.
 	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
 	await picker.getByRole('button', { name: 'Close' }).tap();
@@ -2477,7 +2490,9 @@ test("a seat's reminder list shows who has each reminder and moves it here", asy
 	const poisoned = picker.getByRole('button', { name: 'Poisoned, on Ana: move here' });
 	await expect(poisoned.getByTestId('reminder-holder')).toHaveText('Ana');
 	await poisoned.tap();
-	await expect(picker.getByText('On this seat: 1')).toBeVisible();
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		1
+	);
 	await expect(
 		picker.getByRole('group', { name: 'Poisoner' }).getByRole('button').first()
 	).toHaveAttribute('aria-pressed', 'true');
@@ -3206,7 +3221,9 @@ test("a script's own character can have another copy of a reminder (Cleopatra)",
 	await cleo.getByRole('button', { name: 'Chosen' }).first().tap();
 	await expect(another).toBeEnabled();
 	await another.tap();
-	await expect(picker).toContainText('On this seat: 2');
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		2
+	);
 	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Cleo, 2 reminders')).toBeAttached();
@@ -3823,7 +3840,9 @@ test("the Investigator's own seat fits its Wrong; its Minion is marked and warns
 	await expect(minion).toHaveAttribute('data-misfit', '');
 	// Warn, never lock: it is still placed, with a note saying why.
 	await minion.tap();
-	await expect(picker.getByText('On this seat: 1')).toBeVisible();
+	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
+		1
+	);
 	await expect(page.getByText(/never goes on its character's own player/)).toBeVisible();
 });
 
