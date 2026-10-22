@@ -20,16 +20,24 @@ export function contextCharacters(): (() => CharacterLookup | undefined) | undef
 
 const SHOWN = Symbol('shown character');
 
+/** The character whose details (CharacterDialog) are open around a component. */
+export interface ShownCharacter {
+	id: () => CharacterId;
+	/** Draws the eye back to those details, instead of opening a second copy of them. */
+	focus: () => void;
+}
+
 /**
  * Marks everything below as being inside this character's own details (CharacterDialog): a
- * badge for the same character there is drawn but not tappable, since tapping it opened a
- * second copy of the dialog over the first (Trevor, 2026-10-19).
+ * badge for the same character there does not open a second copy of the dialog over the
+ * first (Trevor, 2026-10-19) but calls `focus`, which brings the details back into view
+ * (Trevor, 2026-10-20).
  */
-export function provideShownCharacter(id: () => CharacterId): void {
-	setContext(SHOWN, id);
+export function provideShownCharacter(shown: ShownCharacter): void {
+	setContext(SHOWN, shown);
 }
 
 /** The character whose details are open around this component, if any. */
-export function shownCharacter(): (() => CharacterId) | undefined {
+export function shownCharacter(): ShownCharacter | undefined {
 	return getContext(SHOWN);
 }

@@ -1,13 +1,14 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { wikiUrl, type Character } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { clearTermHandler } from '#lib/features/glossary/term-handler.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { jinxesFor } from '#lib/core/data/jinxes.ts';
 	import CharacterEntry from './CharacterEntry.svelte';
 	import { officialData } from './game-data.svelte.ts';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ContentsLayout, { type ContentsItem } from '#lib/ui/layout/ContentsLayout.svelte';
 	import CharacterSummary from './CharacterSummary.svelte';
 	import WikiBox from './WikiBox.svelte';
@@ -30,7 +31,20 @@
 	let { open = $bindable(false), character, icon: given, sourcePage }: Props = $props();
 	// Terms here open their popover, even when these details were opened from the Glossary.
 	clearTermHandler();
-	provideShownCharacter(() => character.id);
+	// Its own badge in the text draws the eye back to the summary at the top (Trevor, 2026-10-20).
+	let summaryEl = $state<HTMLElement>();
+	let pulse = $state(false);
+	provideShownCharacter({
+		id: () => character.id,
+		focus: async () => {
+			// Off for a frame first, so a second tap while it shows starts it again.
+			pulse = false;
+			await tick();
+			void summaryEl?.offsetWidth;
+			pulse = true;
+			summaryEl?.scrollIntoView({ block: 'nearest' });
+		}
+	});
 	const wiki = $derived(wikiUrl(character));
 	// The whole wiki page, fetched live when the dialog opens (wiki-page.svelte.ts).
 	const title = $derived(wiki ? wikiPageTitle(wiki) : undefined);
@@ -84,10 +98,24 @@
 				: /tips/i.test(section.heading)
 					? 'characters.tip'
 					: undefined;
+	/**
+	 * How many tips or examples a section holds, shown beside it in the list like the
+	 * Jinxes' count (Trevor, 2026-10-20); sections of plain text have none.
+	 */
+	function countOf(section: WikiSection): number | undefined {
+		if (isExamples(section)) return section.blocks.filter((b) => b.kind === 'example').length;
+		if (tipLabel(section))
+			return section.blocks.reduce((n, b) => n + (b.kind === 'list' ? b.items.length : 0), 0);
+		return undefined;
+	}
 	const items = $derived<ContentsItem[]>([
 		{ id: 'summary', label: t('characters.summary'), wideOnly: true },
-		{ id: 'jinxes', label: t('characters.jinxes') },
-		...others.map((section, i) => ({ id: String(i), label: label(section) }))
+		{ id: 'jinxes', label: t('characters.jinxes'), count: jinxes.length },
+		...others.map((section, i) => ({
+			id: String(i),
+			label: label(section),
+			count: countOf(section)
+		}))
 	]);
 	const current = $derived(
 		selected === undefined ? 'summary' : selected === 'jinxes' ? 'jinxes' : String(selected)
@@ -134,7 +162,17 @@
 <!-- eslint-disable-next-line grim/names-as-badges -- the character's own details; a badge here would reopen it -->
 <Dialog bind:open title={character.name} size="full">
 	<!-- Always shown, whichever section is open (Trevor, 2026-10-16). -->
-	<CharacterSummary {character} icon={given} />
+	<div
+		class="own"
+		bind:this={summaryEl}
+		data-testid="own-summary"
+		data-pulse={pulse ? '' : undefined}
+		onanimationend={(event) => {
+			if (event.target === event.currentTarget) pulse = false;
+		}}
+	>
+		<CharacterSummary {character} icon={given} />
+	</div>
 	<ContentsLayout
 		label={t('characters.moreFromWiki')}
 		{items}
@@ -183,41 +221,18 @@
 	</ContentsLayout>
 	{#snippet headActions()}
 		{#if wiki}
-			<!-- External wiki page (the rules authority), not an app route. -->
-			<!-- eslint-disable svelte/no-navigation-without-resolve -->
-			<a
-				class="wiki"
-				href={wiki}
-				target="_blank"
-				rel="noopener"
-				aria-label={t('characters.openWiki')}
-				title={t('characters.openWiki')}
-			>
-				<Icon name="wiki" />
-			</a>
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			<!-- The wiki page (the rules authority), in a new tab. -->
+			<IconButton icon="wiki" label={t('characters.openWiki')} href={wiki} />
 		{:else if sourcePage}
-			<!-- eslint-disable svelte/no-navigation-without-resolve -->
-			<a
-				class="wiki"
+			<IconButton
+				icon="wiki"
+				label={t('characters.openSourcePage')}
 				href={sourcePage}
-				target="_blank"
 				rel="noopener noreferrer"
-				aria-label={t('characters.openSourcePage')}
-				title={t('characters.openSourcePage')}
-			>
-				<Icon name="wiki" />
-			</a>
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			/>
 		{:else}
 			<!-- Homebrew: no wiki page. Shown disabled so the header is the same for every character. -->
-			<span
-				class="wiki"
-				role="img"
-				aria-label={t('characters.noWiki')}
-				title={t('characters.noWiki')}
-				data-disabled><Icon name="wiki" /></span
-			>
+			<IconButton icon="wiki" label={t('characters.noWiki')} disabled />
 		{/if}
 	{/snippet}
 </Dialog>
@@ -250,19 +265,23 @@
 	.muted {
 		color: var(--on-surface-muted);
 	}
-	.wiki {
-		display: grid;
-		place-items: center;
-		min-width: var(--tap-target);
-		min-height: var(--tap-target);
-		border-radius: var(--radius-md, calc(0.5 * var(--u)));
-		color: inherit;
-		text-decoration: none;
+	/* A colour flash, not movement, so it shows with reduced motion too. */
+	.own {
+		flex: none;
+		border-radius: var(--radius-md);
 	}
-	a.wiki:hover {
-		background: var(--surface-selected);
+	.own[data-pulse] {
+		animation: own-pulse 0.9s ease-out;
 	}
-	.wiki[data-disabled] {
-		opacity: 0.4;
+	@keyframes own-pulse {
+		0%,
+		30% {
+			background-color: var(--surface-selected);
+			box-shadow: 0 0 0 calc(0.15 * var(--u)) var(--accent);
+		}
+		100% {
+			background-color: transparent;
+			box-shadow: 0 0 0 calc(0.15 * var(--u)) transparent;
+		}
 	}
 </style>
