@@ -92,7 +92,7 @@ export const settings = {
 	'settings.scriptLogo': 'Script logo',
 	'settings.scriptLogoOpacity': 'Script logo opacity',
 	'settings.nameSize': 'Player name size',
-	'settings.nameOffset': 'Player name offset',
+	'settings.nameOffset': 'Player name distance',
 	'settings.strikeUsedGhostVote': 'Strike through used ghost votes',
 	'settings.rulesAt': 'Location',
 	'settings.rulesAt.middle': 'Middle',
