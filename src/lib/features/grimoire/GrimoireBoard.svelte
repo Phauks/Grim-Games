@@ -89,6 +89,7 @@
 	import { cornerRoom } from './corner-room.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
+	import { pendingSetup, type TrayItem } from './setup-tray.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -936,6 +937,25 @@
 			grimoire.toggleNightStep(night, { id: 'dusk' });
 		if (preferences.current.assistance.nightWalkthrough) runNight();
 	}
+	/**
+	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
+	 * 2026-10-20), listing them; Confirm starts anyway (warn, never lock).
+	 */
+	let setupLeft = $state<TrayItem[]>([]);
+	let startAskOpen = $state(false);
+	function startGame() {
+		const left = pendingSetup(game, characters, grimoire.trayDismissed);
+		if (left.length > 0) {
+			setupLeft = left;
+			startAskOpen = true;
+			return;
+		}
+		beginGame();
+	}
+	function beginGame() {
+		if (preferences.current.assistance.nightWalkthrough) runNight();
+		else endDay();
+	}
 	/** Setup's next step: Characters, or the bag draw once they are chosen. */
 	function openSetup() {
 		goto(
@@ -987,7 +1007,7 @@
 				text: 'Start game',
 				icon: 'night' as const,
 				disabled: !canRun,
-				onclick: walkthrough ? runNight : endDay
+				onclick: startGame
 			};
 		return {
 			label: 'End day',
@@ -2092,6 +2112,20 @@
 	</ConfirmDialog>
 {/if}
 
+<ConfirmDialog bind:open={startAskOpen} title="Start the game?" onConfirm={beginGame}>
+	<p class="ask-note">Setup reminders not yet placed:</p>
+	<ul class="setup-left" data-testid="setup-left">
+		{#each setupLeft as { key, suggestion } (key)}
+			<li>
+				<ReminderToken
+					label={suggestion.label}
+					character={characters.get(suggestion.characterId)}
+				/>
+			</li>
+		{/each}
+	</ul>
+</ConfirmDialog>
+
 <ConfirmDialog bind:open={endNightOpen} title="End the night?" onConfirm={endNight}>
 	<SettingToggle
 		label={ASSIST_LABELS.dayAfterNight.label}
@@ -2319,6 +2353,18 @@
 </ConfirmDialog>
 
 <style>
+	/* Start game's question: the setup reminders still to place (Trevor, 2026-10-20). */
+	.ask-note {
+		margin: 0;
+	}
+	.setup-left {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
 	.grimoire {
 		/* Its own layer, so the backdrop sits behind the toolbar and board, not the page. */
 		position: relative;

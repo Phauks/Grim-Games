@@ -104,6 +104,11 @@ async function walkTo(page: Page, title: string) {
 				.getByRole('alertdialog', { name: 'End the day?' })
 				.getByRole('button', { name: 'Confirm', exact: true })
 				.tap();
+		// Setup reminders still to place: Start game asks first (Trevor, 2026-10-20).
+		const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+		await expect(strip.or(ask)).toBeVisible();
+		if (await ask.isVisible())
+			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	}
 	const name = strip.locator('.step .name strong');
 	await expect(name).toBeVisible();
@@ -3780,8 +3785,16 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	}
 	await page.goto(board);
 	await expect(page.getByTestId('seat')).toHaveCount(7);
-	// Trevor (2026-10-19): Start game before the first night, in one tap.
-	await start.tap();
+	// The Fortune Teller's Red Herring isn't placed, so Start game asks first (Trevor, 2026-10-20).
+	const begin = async () => {
+		await start.tap();
+		await page
+			.getByRole('alertdialog', { name: 'Start the game?' })
+			.getByRole('button', { name: 'Confirm', exact: true })
+			.tap();
+	};
+	// Trevor (2026-10-19): Start game before the first night.
+	await begin();
 	const strip = page.getByTestId('night-strip');
 	await expect(strip).toBeVisible();
 	// While a night runs it is End night, in the same place (Trevor, 2026-10-18).
@@ -3789,7 +3802,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await expect(end).toBeEnabled();
 	// Stopped before anything is done, it is Start game again.
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
-	await start.tap();
+	await begin();
 	// Stopped mid-night, Run night picks the walk-through up again, past the steps done.
 	await strip.getByRole('button', { name: 'Next step' }).tap();
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
@@ -4812,4 +4825,27 @@ test("putting a dead character's reminder on the board asks first", async ({ pag
 	await put('Drunk');
 	await expect(onBoard('Drunk')).toHaveCount(1);
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});
+
+test('Start game with setup reminders still to place asks first, listing them', async ({
+	page
+}) => {
+	// Trevor (2026-10-20): a reminder, never a lock. The Fortune Teller's Red Herring is placed
+	// at setup (https://wiki.bloodontheclocktower.com/Fortune_Teller).
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await closeSheet(page);
+	await bankNight(page, 'Start game').tap();
+	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+	await expect(ask.getByTestId('setup-left')).toContainText('Red Herring');
+	await ask.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	await bankNight(page, 'Start game').tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
 });
