@@ -12,7 +12,17 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { foolSurvives } from '#lib/core/rules/fool.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+
+const CAST = ['fool', 'chef', 'poisoner', 'assassin', 'imp'];
+const spent = (s: string[]): Command => ({
+	type: 'AddReminder',
+	seatId: s[0],
+	reminder: { characterId: 'fool', label: 'No Ability' }
+});
 
 describe('Fool', () => {
 	const character = committedCharacter('fool');
@@ -44,8 +54,34 @@ describe('Fool', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Fool#Examples)', () => {
-		it.todo('Example 1: Survives first execution, dies on second');
-		it.todo('Example 2: Night attack survived, later executed by Judge');
+		it('Example 1: survives the first execution, then dies to the second', () => {
+			const { session, seats } = castGame(CAST);
+			expect(foolSurvives(session.game, seats[0], 'execution', characters)).toBe(true);
+			const after = castGame(CAST, spent);
+			expect(foolSurvives(after.session.game, after.seats[0], 'execution', characters)).toBe(false);
+		});
+
+		it('Example 2: survives a night kill, so a later execution kills them', () => {
+			const { session, seats } = castGame(CAST);
+			expect(foolSurvives(session.game, seats[0], 'demon', characters)).toBe(true);
+			const after = castGame(CAST, spent);
+			expect(foolSurvives(after.session.game, after.seats[0], 'execution', characters)).toBe(false);
+		});
 		it.todo('Example 3: Protected twice; ability saves once');
+	});
+
+	// https://wiki.bloodontheclocktower.com/Assassin: the Assassin's kill works even if the
+	// player could not die (Trevor, 2026-10-22: "the Assassin overrides everything"). A
+	// poisoned Fool has no ability (https://wiki.bloodontheclocktower.com/Poisoner).
+	it('dies to the Assassin, and when poisoned; only the Fool survives this way', () => {
+		const { session, seats } = castGame(CAST);
+		expect(foolSurvives(session.game, seats[0], 'assassin', characters)).toBe(false);
+		expect(foolSurvives(session.game, seats[1], 'demon', characters)).toBe(false);
+		const poisoned = castGame(CAST, (s) => ({
+			type: 'AddReminder',
+			seatId: s[0],
+			reminder: { characterId: 'poisoner', label: 'Poisoned' }
+		}));
+		expect(foolSurvives(poisoned.session.game, poisoned.seats[0], 'demon', characters)).toBe(false);
 	});
 });
