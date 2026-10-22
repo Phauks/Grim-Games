@@ -125,6 +125,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page).toHaveURL(board);
 	// Before anything happens there is nothing to announce (Trevor).
 	await expect(page.getByTestId('announcements')).toHaveText('None');
+	// Only official characters, so no note about custom ones (L28).
+	await expect(page.getByTestId('custom-announcements')).toHaveCount(0);
 	// Living players and each team's, beside the votes (Trevor, 2026-10-17).
 	// Living of all players, as 8/8 (Trevor, 2026-10-17).
 	await expect(page.getByTestId('alive-count')).toHaveText('8/8');
@@ -542,6 +544,10 @@ test('the day view names a homebrew character by its script name', async ({ page
 		/Spartacus.*, killed by the Demon/
 	);
 	await expect(announcements).toContainText('Spartacus');
+	// A custom character is in play, so some announcements may be missing (Trevor, L28).
+	await expect(day.getByTestId('custom-announcements')).toHaveText(
+		'Custom characters: not every announcement may be listed here.'
+	);
 	// The words are italic; the character's name stays upright (Trevor, 2026-10-19).
 	await expect(announcements.getByTestId('storyteller-only').locator('.badge')).toHaveCSS(
 		'font-style',
@@ -647,6 +653,14 @@ test('Execution names the player executed, who dies before tonight', async ({ pa
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 	await expect(boardSeat(page, 'Seat 3')).toHaveAccessibleName(/dead/);
 	await expect(boardSeat(page, 'Seat 2')).not.toHaveAccessibleName(/dead/);
+});
+
+test('an unnamed seat is named by its number in the day view', async ({ page }) => {
+	await startGame(page);
+	await chooseCharacter(page, 3, 'Slayer');
+	const day = await openDay(page);
+	// No name set, so the default "Seat N" (Trevor, 2026-10-22: L32).
+	await expect(day.locator('li[data-character="slayer"]').first()).toContainText('Seat 3');
 });
 
 test('holding the day timer or a new day resets it to the time per living player', async ({

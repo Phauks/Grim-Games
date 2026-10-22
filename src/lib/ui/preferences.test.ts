@@ -63,7 +63,11 @@ describe('parsePreferences', () => {
 				inlineNameBadgeScale: 2,
 				reminderLeaves: false,
 				setupFlower: true,
-				setupMovesName: false
+				setupMovesName: false,
+				reminderHighlight: false,
+				reminderHighlightLook: 'both',
+				reminderIcon: true,
+				reminderIconColour: 'plain'
 			},
 			colors: {},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },

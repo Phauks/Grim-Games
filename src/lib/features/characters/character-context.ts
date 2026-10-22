@@ -41,3 +41,8 @@ export function provideShownCharacter(shown: ShownCharacter): void {
 export function shownCharacter(): ShownCharacter | undefined {
 	return getContext(SHOWN);
 }
+
+/** Ends `provideShownCharacter` below this component (a dialog of other characters opened from it). */
+export function clearShownCharacter(): void {
+	setContext(SHOWN, undefined);
+}

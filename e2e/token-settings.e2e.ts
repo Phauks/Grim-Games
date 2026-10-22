@@ -84,7 +84,7 @@ test('border, reminder text and reminder text band are colours of their own', as
 	await dialog.getByLabel('Reminder text', { exact: true }).fill('#663322');
 	expect(await rootStyle(page, '--on-reminder')).toBe('#663322');
 	expect(await rootStyle(page, '--on-token')).not.toBe('#663322');
-	const label = dialog.getByTestId('reminder-preview').locator('.label');
+	const label = dialog.getByTestId('reminder-preview').locator('.label').first();
 	const face = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
 	await dialog.getByLabel('Reminder text band', { exact: true }).fill('#336622');
 	await expect
@@ -328,7 +328,7 @@ test('the preview draws the reminder as the board does, at the board size', asyn
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const preview = dialog.getByTestId('reminder-preview');
-	const reminder = preview.getByTestId('board-reminder');
+	const reminder = preview.getByTestId('board-reminder').first();
 	await expect(reminder).toHaveAttribute('aria-label', 'Died Today reminder');
 	await expect(preview.getByTestId('reminder-token')).toHaveCount(0);
 	const before = (await reminder.boundingBox())!.width;
@@ -457,6 +457,7 @@ test('reminder words can run wider or wrap instead of ending in "…"', async ({
 	const label = dialog
 		.getByTestId('reminder-preview')
 		.getByTestId('board-reminder')
+		.first()
 		.locator('.label');
 	await expect(label).toHaveText('Died Today');
 	const cut = () => label.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
@@ -522,6 +523,7 @@ test('the character name and reminder fonts are set beside their token previews'
 	const label = dialog
 		.getByTestId('reminder-preview')
 		.getByTestId('board-reminder')
+		.first()
 		.locator('.label');
 	const chip = dialog.getByTestId('in-text-preview').getByTestId('reminder-token');
 	const family = (el: typeof label) => el.evaluate((e) => getComputedStyle(e).fontFamily);
@@ -536,4 +538,42 @@ test('the character name and reminder fonts are set beside their token previews'
 	await expect(dialog.getByRole('combobox', { name: 'Headings' })).toBeVisible();
 	await expect(dialog.getByRole('combobox', { name: 'Character names' })).toHaveCount(0);
 	await expect(dialog.getByRole('combobox', { name: 'Reminder tokens' })).toHaveCount(0);
+});
+
+test('reminder highlight and owner icon can be switched and restyled', async ({ page }) => {
+	// Trevor (2026-10-20): settings for reminder glow effects (on/off and how they look) and
+	// for the reminder's source mark (the owning character's icon): on/off and colour.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const lit = dialog.getByTestId('lit-reminder-sample').locator('.reminder');
+	const style = (prop: 'outlineStyle' | 'filter') =>
+		lit.evaluate((el, p) => getComputedStyle(el)[p], prop);
+	await expect.poll(() => style('outlineStyle')).toBe('solid');
+	expect(await style('filter')).toBe('none');
+	await dialog.getByRole('combobox', { name: 'Highlight look', exact: true }).tap();
+	await page.getByRole('option', { name: 'Glow', exact: true }).tap();
+	await expect.poll(() => style('outlineStyle')).toBe('none');
+	expect(await style('filter')).toContain('drop-shadow');
+	await dialog.getByText('Highlight reminders', { exact: true }).tap();
+	await expect.poll(() => style('filter')).toBe('none');
+	await expect(
+		dialog.getByRole('combobox', { name: 'Highlight look', exact: true })
+	).toBeDisabled();
+
+	const icon = lit.locator('img');
+	await expect(icon).toBeVisible();
+	await dialog.getByRole('combobox', { name: "Owner's icon colour", exact: true }).tap();
+	await page.getByRole('option', { name: 'Plain', exact: true }).tap();
+	await expect(icon).toHaveAttribute('data-plain', 'true');
+	await dialog.getByText("Owner's icon on reminders", { exact: true }).tap();
+	await expect(icon).toHaveCount(0);
+	const saved = await page.evaluate(
+		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
+	);
+	expect(saved).toMatchObject({
+		reminderHighlight: false,
+		reminderHighlightLook: 'glow',
+		reminderIcon: false,
+		reminderIconColour: 'plain'
+	});
 });

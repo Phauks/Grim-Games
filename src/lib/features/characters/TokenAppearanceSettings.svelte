@@ -6,8 +6,11 @@
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { Theme } from '#lib/ui/themes/types.ts';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import {
 		MIN_CONTRAST,
+		REMINDER_HIGHLIGHT_LOOKS,
+		REMINDER_ICON_COLOURS,
 		REMINDER_LABEL_WIDTH,
 		TOKEN_COLOURS,
 		TOKEN_SCALE,
@@ -189,6 +192,7 @@
 
 <SettingGroup title={t('characters.group.reminder')} testid="reminder-preview">
 	{#snippet preview()}
+		<!-- As it rests, then highlighted as a held seat's reminder (Trevor, 2026-10-20). -->
 		<div class="preview reminder-sample" style:--sample="{largestReminder}px">
 			{#if sample}<BoardReminder
 					label={sample.reminders[0] ?? t('characters.previewReminder')}
@@ -196,7 +200,15 @@
 					size={reminderSize}
 					disabled
 					onTap={() => {}}
-				/>{/if}
+				/><span class="lit" data-testid="lit-reminder-sample"
+					><BoardReminder
+						label={sample.reminders[0] ?? t('characters.previewReminder')}
+						character={sample}
+						size={reminderSize}
+						disabled
+						onTap={() => {}}
+					/></span
+				>{/if}
 		</div>
 	{/snippet}
 	{@render reminderFont?.()}
@@ -222,6 +234,46 @@
 		checked={value.reminderLabelWrap}
 		onChange={(reminderLabelWrap) => onChange({ ...value, reminderLabelWrap })}
 	/>
+	<!-- Reminder glow and owner's icon (Trevor, 2026-10-20). The drop-downs stay in place,
+	     disabled while their switch is off, so nothing below moves. -->
+	<SettingToggle
+		label={t('characters.reminderHighlight')}
+		description={t('characters.reminderHighlightHelp')}
+		checked={value.reminderHighlight}
+		onChange={(reminderHighlight) => onChange({ ...value, reminderHighlight })}
+	/>
+	<SettingRow label={t('characters.reminderHighlightLook')}>
+		{#snippet control(labelId)}<Select
+				label={t('characters.reminderHighlightLook')}
+				labelledBy={labelId}
+				value={value.reminderHighlightLook}
+				disabled={!value.reminderHighlight}
+				options={REMINDER_HIGHLIGHT_LOOKS.map((look) => ({
+					value: look,
+					label: t(`characters.highlightLook.${look}`)
+				}))}
+				onChange={(reminderHighlightLook) => onChange({ ...value, reminderHighlightLook })}
+			/>{/snippet}
+	</SettingRow>
+	<SettingToggle
+		label={t('characters.reminderIcon')}
+		description={t('characters.reminderIconHelp')}
+		checked={value.reminderIcon}
+		onChange={(reminderIcon) => onChange({ ...value, reminderIcon })}
+	/>
+	<SettingRow label={t('characters.reminderIconColour')}>
+		{#snippet control(labelId)}<Select
+				label={t('characters.reminderIconColour')}
+				labelledBy={labelId}
+				value={value.reminderIconColour}
+				disabled={!value.reminderIcon}
+				options={REMINDER_ICON_COLOURS.map((colour) => ({
+					value: colour,
+					label: t(`characters.iconColour.${colour}`)
+				}))}
+				onChange={(reminderIconColour) => onChange({ ...value, reminderIconColour })}
+			/>{/snippet}
+	</SettingRow>
 	{@render colourRow('reminder')}
 	{@render colourRow('reminderLabel')}
 	{@render colourRow('reminderInk')}
@@ -355,6 +407,23 @@
 	}
 	.reminder-sample {
 		height: max(var(--sample), 3rem);
+	}
+	/* Wide, the box beside the settings is too narrow for both reminders side by side at their
+	   largest, so the highlighted one sits under the one at rest. */
+	@container (min-width: 26rem) {
+		.reminder-sample {
+			flex-direction: column;
+			height: max(calc(2 * var(--sample) + var(--space-4)), 6rem);
+		}
+	}
+	/* The board's highlight on a held seat's reminders (GrimoireBoard .chip-slot.lit). */
+	.lit {
+		display: contents;
+	}
+	.lit > :global(.reminder) {
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
+		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
 	}
 	/*
 	 * Narrow, the box sits above its settings, so it keeps room for every size at its largest

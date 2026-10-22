@@ -67,6 +67,12 @@ export const room = {
 	'room.gameOver': 'Game over',
 	'room.gameOverGood': 'Game over: Good won',
 	'room.gameOverEvil': 'Game over: Evil won',
+	'room.finalGrimoire': 'Final grimoire',
+	'room.shareGrim.button': 'Share grim',
+	'room.shareGrim.title': 'Share the grimoire?',
+	'room.shareGrim.body':
+		'Every player in the room sees the whole finished grimoire: every seat’s character and reminders.',
+	'room.shareGrim.failed': 'The grimoire could not be shared. Check the room is connected.',
 	'room.choose': 'Choose your seat and type your name, then ask the Storyteller.',
 	'room.seatLower': 'seat {number}',
 	'room.anySeatLower': 'any seat',

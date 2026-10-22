@@ -2,6 +2,7 @@
 import type { SpecialRule } from '../types.ts';
 import { BINARY_SUPERNOVAE } from './binary-supernovae.ts';
 import { COUNCIL_OF_THE_DEAD } from './council-of-the-dead.ts';
+import { DJINNS_BARGAIN } from './djinns-bargain.ts';
 import { PHANTOM_DETECTIVES } from './phantom-detectives.ts';
 import { TRAINED_KILLER } from './trained-killer.ts';
 import { INFINITE_POSSIBILITIES } from './infinite-possibilities.ts';
@@ -10,6 +11,7 @@ import { PLUS_ONE } from './plus-one.ts';
 import { SEAT_7 } from './seat-7.ts';
 import { SPECTERS } from './specters.ts';
 import { STOWED_AWAY } from './stowed-away.ts';
+import { WARRENS } from './warrens.ts';
 
 export { INFINITE_POSSIBILITIES, SPECTERS };
 
@@ -22,7 +24,9 @@ export const SPECIAL_RULES: readonly SpecialRule[] = [
 	SPECTERS,
 	STOWED_AWAY,
 	SEAT_7,
+	DJINNS_BARGAIN,
 	PHANTOM_DETECTIVES,
+	WARRENS,
 	TRAINED_KILLER
 ];
 

@@ -8,7 +8,8 @@ import {
 	demonBluffsInPlay,
 	lunaticInPlay,
 	randomBluffs,
-	showableBluffSets
+	showableBluffSets,
+	toggleDemonBluff
 } from './bluffs.ts';
 
 const data = committedGameData();
@@ -119,5 +120,15 @@ describe('random Demon bluffs', () => {
 		const choices = ['chef', 'empath', 'soldier', 'mayor'];
 		expect(randomBluffs(choices, new Set(), 3, () => 0)).toEqual(['chef', 'empath', 'soldier']);
 		expect(randomBluffs(choices, new Set(), 3, () => 0.99)).toEqual(['mayor', 'soldier', 'empath']);
+	});
+});
+
+describe('toggleDemonBluff', () => {
+	it('adds a character, takes it out again, and stops at three', () => {
+		expect(toggleDemonBluff([], 'soldier')).toEqual(['soldier']);
+		expect(toggleDemonBluff(['soldier', 'monk'], 'soldier')).toEqual(['monk']);
+		expect(toggleDemonBluff(['soldier', 'monk', 'chef'], 'mayor')).toBeUndefined();
+		// Taking one out of a full set still works.
+		expect(toggleDemonBluff(['soldier', 'monk', 'chef'], 'chef')).toEqual(['soldier', 'monk']);
 	});
 });

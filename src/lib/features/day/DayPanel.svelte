@@ -210,6 +210,16 @@
 								: t('day.announce.killedBy', { killer: slot('cause') });
 		return t('day.announce.private', { character: slot('character'), how });
 	}
+	/**
+	 * A custom character is in play (Trevor, 2026-10-20: L28): the app doesn't know what it
+	 * announces, so Announcements says it may be missing some.
+	 */
+	const customInPlay = $derived(
+		g.seating.some((s) => {
+			const id = g.seats[s].characterId;
+			return g.script.entries.some((e) => e.kind === 'custom' && e.character.id === id);
+		})
+	);
 	/** A dawn has come (End night), so "Nobody died in the night" means something. */
 	const dawned = $derived(
 		game.log.entries
@@ -462,6 +472,9 @@
 				onclick={() => (preventedOpen = true)}>{prevented.length}</Button
 			>
 		{/snippet}
+		{#if customInPlay}
+			<p class="custom-note" data-testid="custom-announcements">{t('day.announce.custom')}</p>
+		{/if}
 		<ul class="reminders" data-testid="announcements">
 			{#each died as death (death.seatId)}
 				{@const seat = g.seats[death.seatId]}
@@ -539,7 +552,7 @@
 								<CharacterRow
 									{character}
 									alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
-									note={head?.ref.playerName}
+									note={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
 									info
 								>
 									{#snippet end()}{@const seatId =
@@ -571,7 +584,9 @@
 													alignment={segment.ref.seatId
 														? g.seats[segment.ref.seatId]?.alignment
 														: undefined}
-													playerName={segment.ref.playerName}
+													playerName={segment.ref.seatId
+														? game.seatName(segment.ref.seatId)
+														: undefined}
 												/>{#if stop}.{/if}</span
 											>
 										{:else if segment.kind === 'value'}
@@ -600,7 +615,12 @@
 					<li data-character={seat.characterId}>
 						{#if character}
 							<!-- Drawn like character selection (Trevor, 2026-10-20: L12). -->
-							<CharacterRow {character} alignment={seat.alignment} note={seat.playerName} info>
+							<CharacterRow
+								{character}
+								alignment={seat.alignment}
+								note={game.seatName(seat.seatId)}
+								info
+							>
 								{#snippet end()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}
 							</CharacterRow>
 						{/if}
@@ -852,6 +872,10 @@
 	/* Only the words are italic; a character's name stays upright (Trevor, 2026-10-19). */
 	.private :global(.badge) {
 		font-style: normal;
+	}
+	.custom-note {
+		margin: 0 0 var(--space-2);
+		color: var(--on-surface-muted);
 	}
 	.dont-announce {
 		justify-self: start;

@@ -5,7 +5,7 @@
  */
 import type { Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
-import { ROOM_PROTOCOL, type PlayerView } from '#lib/core/sync/room.ts';
+import { ROOM_PROTOCOL, type PlayerView, type SharedGrimoire } from '#lib/core/sync/room.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
 import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
@@ -72,6 +72,8 @@ export class RoomPlayer {
 	view = $state.raw<PlayerView>();
 	/** The game's script, once the Storyteller's device has sent it. */
 	script = $state.raw<Script>();
+	/** The finished grimoire, once the Storyteller shares it after the game (plan R5). */
+	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
 	readonly code: string;
 	readonly #socket: RoomSocket;
 
@@ -85,6 +87,8 @@ export class RoomPlayer {
 			(m) => {
 				if (m.type === 'player-view') {
 					this.view = m;
+					// The game runs again, or a new one began: the finished grimoire goes.
+					if (!m.ended) this.revealed = undefined;
 					const storyteller = m.public?.storytellerName?.trim();
 					const travellers = travellersInPlay(m.public?.seats ?? []);
 					setTable(code, {
@@ -92,6 +96,9 @@ export class RoomPlayer {
 						...(travellers.length ? { travellers } : {})
 					});
 				} else if (m.type === 'script') this.script = m.script;
+				else if (m.type === 'reveal') {
+					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
+				}
 			}
 		);
 	}

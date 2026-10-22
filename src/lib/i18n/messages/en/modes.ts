@@ -24,6 +24,8 @@ export const modes = {
 	'modes.scriptSearch.custom': 'Custom',
 	'modes.scriptSearch.version': 'Script version',
 	'modes.scriptSearch.noVersion': 'N/A',
+	'modes.scriptSearch.openSource': "Open the script's source page",
+	'modes.scriptSearch.sourceNoPage': 'No source page ({source})',
 	'modes.scriptSearch.placeholder': 'Find a script',
 	'modes.scriptSearch.recent': 'Recent',
 	'modes.scriptSearch.library': 'Library',

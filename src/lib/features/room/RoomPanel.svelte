@@ -17,6 +17,7 @@
 	import { gameLine } from '#lib/features/player/byline.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
 
 	interface Props {
@@ -131,6 +132,18 @@
 				? t('room.shareGameText', { game: gameText, code: formatRoomCode(host.code) })
 				: t('room.shareText', { code: formatRoomCode(host.code) })
 	);
+
+	/*
+	 * Share grim (Trevor, 2026-10-20, plan R5): once the game is over, the whole finished
+	 * grimoire goes to the room's phones, once, after asking. In its place all game.
+	 */
+	let shareGrimOpen = $state(false);
+	const canShareGrim = $derived(
+		connected && host.endedGame === game.game.gameId && host.revealedGame !== game.game.gameId
+	);
+	function shareGrim() {
+		if (!host.reveal(game)) toast(t('room.shareGrim.failed'));
+	}
 
 	function approve(request: RoomRequest) {
 		const seatId = seatFor(request);
@@ -255,6 +268,11 @@
 					{connected ? t('room.watching', { count: host.watchers }) : ''}
 				</p>
 			</div>
+			<div class="share-grim">
+				<Button icon="share" disabled={!canShareGrim} onclick={() => (shareGrimOpen = true)}
+					>{t('room.shareGrim.button')}</Button
+				>
+			</div>
 			<h2 id="requests-label">{t('room.requests')}</h2>
 			{#if host.requests.length === 0}
 				<p class="none">{t('common.none')}</p>
@@ -344,6 +362,10 @@
 	</p>
 </ConfirmDialog>
 
+<ConfirmDialog bind:open={shareGrimOpen} title={t('room.shareGrim.title')} onConfirm={shareGrim}>
+	<p class="dialog-text">{t('room.shareGrim.body')}</p>
+</ConfirmDialog>
+
 <style>
 	.dialog-text {
 		margin: 0;
@@ -385,6 +407,9 @@
 		height: 0.75em;
 		border: 0.15em solid var(--on-surface-muted);
 		border-radius: 50%;
+	}
+	.share-grim {
+		margin-bottom: var(--space-4);
 	}
 	.dot.live {
 		border-color: var(--good);
