@@ -25,6 +25,10 @@ import {
 	setViewers,
 	supportsProtocol,
 	unseat,
+	viewerFailed,
+	viewersLocked,
+	MAX_VIEWER_FAILS,
+	VIEWER_FAIL_WINDOW_MS,
 	type RoomState
 } from './room.ts';
 
@@ -337,6 +341,31 @@ describe('the view-only grimoire link', () => {
 		expect(JSON.stringify(roomPreview(room))).not.toContain(hash);
 		expect(JSON.stringify(playerView(room, 'alex'))).not.toContain(hash);
 		expect(JSON.stringify(hostView(room))).not.toContain(hash);
+	});
+
+	it('says when its key is made from a Grim view password, and nothing else of it', () => {
+		const room = setViewers(roomWith('alex'), hash, true);
+		expect(room.viewerPassword).toBe(true);
+		expect(roomPreview(room).grimView).toBe(true);
+		// A link with no password, or no link at all, offers no Grim view.
+		expect(roomPreview(setViewers(room, hash)).grimView).toBeUndefined();
+		expect(setViewers(room, hash).viewerPassword).toBeUndefined();
+		expect(roomPreview(setViewers(room, null)).grimView).toBeUndefined();
+	});
+
+	it('slows guessing: too many wrong keys stop viewers for a while', () => {
+		let fails = viewerFailed(undefined, 0);
+		for (let i = 1; i < MAX_VIEWER_FAILS; i++) {
+			expect(viewersLocked(fails, 1)).toBe(false);
+			fails = viewerFailed(fails, 1);
+		}
+		expect(viewersLocked(fails, 1)).toBe(true);
+		expect(viewersLocked(fails, VIEWER_FAIL_WINDOW_MS)).toBe(false);
+		// The next window starts the count again.
+		expect(viewerFailed(fails, VIEWER_FAIL_WINDOW_MS)).toEqual({
+			count: 1,
+			since: VIEWER_FAIL_WINDOW_MS
+		});
 	});
 
 	it('relays a grimoire only when it carries a saved game', () => {

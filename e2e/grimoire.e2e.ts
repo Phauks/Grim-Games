@@ -800,6 +800,9 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		await expect(page.getByRole('status').filter({ hasText: 'Drunk, from Sailor' })).toContainText(
 			/Sailor\s*· Seat 1\s*on\s*Sailor\s*· Seat 1/
 		);
+		// The seat it comes from is marked unlike the others (Trevor, 2026-10-20).
+		await expect(page.locator('[data-testid="seat"][data-from]')).toHaveCount(1);
+		await expect(seatLabelled(page, 'Seat 1:')).toHaveAttribute('data-from', 'true');
 		await page.mouse.move(from.x, from.y, { steps: 2 });
 		await page.mouse.up();
 	}
@@ -1545,7 +1548,11 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
 	// One place only (Trevor, 2026-10-18): no choice of where.
 	await expect(dialog.getByRole('combobox', { name: 'Script name', exact: true })).toHaveCount(0);
-	// The player name badge size is an option (Trevor, 2026-10-17), live on the board.
+	// The player name badge size is an option (Trevor, 2026-10-17), live on the board. It is
+	// set in Tokens, with the character token (Trevor, 2026-10-20).
+	await expect(dialog.getByRole('slider', { name: 'Player name size' })).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await menu(page, 'Tokens');
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
 	await expect(nameSize).toHaveAttribute('aria-valuetext', '140%');
@@ -3939,9 +3946,7 @@ test('loose reminders belong to no seat, leave the bank, and are marked back in 
 	await expect(page.locator('[data-loose][data-unassigned]')).toHaveCount(1);
 });
 
-test("a placed reminder's ⋯ duplicates it beside the original, marked as uncommon", async ({
-	page
-}) => {
+test("a reminder's ⋯ duplicates it into the bank, from the board or the bank", async ({ page }) => {
 	// Two seats and a placed reminder take most of the default 30 s on a slow runner.
 	test.slow();
 	await startGame(page);
@@ -3976,12 +3981,25 @@ test("a placed reminder's ⋯ duplicates it beside the original, marked as uncom
 	await onSeat.getByRole('button', { name: 'Poisoned reminder' }).tap();
 	await page.getByRole('button', { name: 'More reminder actions' }).tap();
 	await page.getByRole('button', { name: 'Duplicate reminder' }).tap();
-	// Trevor (2026-10-18): allowed, but more than the game gives, so it says so and is marked.
+	// Trevor (2026-10-18): allowed, but more than the game gives, so it says so. The copy lands
+	// in the bank, not on the board (Trevor, 2026-10-20).
 	await expect(page.getByText(/More copies of this reminder than the game gives/)).toBeVisible();
-	await expect(onSeat).toHaveCount(2);
-	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(1);
-	// A new token: the bank keeps its Poisoned (Trevor, 2026-10-18).
-	await expect(inBank).toHaveCount(1);
+	await expect(onSeat).toHaveCount(1);
+	await expect(inBank).toHaveCount(2);
+	// From the bank too, in its "Put on" (Trevor, 2026-10-20).
+	await inBank.first().tap();
+	const put = page.getByRole('dialog', { name: 'Put Poisoned on' });
+	await put.getByRole('button', { name: 'More reminder actions' }).tap();
+	await page.getByRole('button', { name: 'Duplicate reminder' }).tap();
+	await expect(put).toBeHidden();
+	await expect(inBank).toHaveCount(3);
+	// Placed, an added copy is marked as more than the game gives.
+	for (let n = 0; n < 3; n++) {
+		await inBank.first().tap();
+		await put.getByRole('button', { name: /Seat 2$/ }).tap();
+	}
+	await expect(inBank).toHaveCount(0);
+	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(2);
 });
 
 test('the generic ∞ reminder is always in the bank and can carry a few words', async ({ page }) => {

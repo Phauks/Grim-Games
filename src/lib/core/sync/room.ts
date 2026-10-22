@@ -51,6 +51,11 @@ export interface RoomState {
 	 * link turned on. Turning it off (or on again, with a new key) stops every earlier link.
 	 */
 	viewerKeyHash?: string;
+	/**
+	 * The link's key is made from a password the Storyteller set (Grim view, plan D1), so a
+	 * phone with only the room code can watch by typing it.
+	 */
+	viewerPassword?: true;
 	/** The current game is over, as the Storyteller ended it; a new game clears it. */
 	ended?: GameOver;
 }
@@ -145,8 +150,11 @@ export type ClientMessage =
 	| { type: 'unseat'; memberId: string }
 	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }
 	| { type: 'close-vote' }
-	/** Turns the view-only grimoire link on with this key's hash, or off with `null`. */
-	| { type: 'viewers'; keyHash: string | null }
+	/**
+	 * Turns the view-only grimoire link on with this key's hash, or off with `null`.
+	 * `password`: the key is made from a password (`viewerPassword`).
+	 */
+	| { type: 'viewers'; keyHash: string | null; password?: boolean }
 	/** The grimoire for viewers; ignored while the link is off. */
 	| { type: 'grimoire'; grimoire: SharedGrimoire }
 	/** The game `gameId` is over (protocol 2). */
@@ -213,9 +221,35 @@ export type ServerMessage =
 
 /**
  * `too-old`: the app must update before it can use the room; the room itself is fine.
- * `not-viewer`: the view-only link is off, or was replaced by a newer one.
+ * `not-viewer`: the view-only link is off, or was replaced by a newer one, or the password
+ * was wrong. `too-many-tries`: too many wrong keys lately; watching waits a while.
  */
-export type RefusedReason = 'no-room' | 'not-host' | 'room-full' | 'too-old' | 'not-viewer';
+export type RefusedReason =
+	'no-room' | 'not-host' | 'room-full' | 'too-old' | 'not-viewer' | 'too-many-tries';
+
+/**
+ * Wrong view-only keys a room takes in `VIEWER_FAIL_WINDOW_MS` before it refuses viewers for
+ * the rest of that time: a password can be short, so guessing one must be slow.
+ */
+export const MAX_VIEWER_FAILS = 10;
+export const VIEWER_FAIL_WINDOW_MS = 10 * 60 * 1000;
+
+/** Wrong keys since `since` (milliseconds since the epoch). */
+export interface ViewerFails {
+	count: number;
+	since: number;
+}
+
+/** True while too many wrong keys have come in this window. */
+export function viewersLocked(fails: ViewerFails | undefined, now: number): boolean {
+	return !!fails && now - fails.since < VIEWER_FAIL_WINDOW_MS && fails.count >= MAX_VIEWER_FAILS;
+}
+
+/** Counts one more wrong key, starting a new window once the last has passed. */
+export function viewerFailed(fails: ViewerFails | undefined, now: number): ViewerFails {
+	if (!fails || now - fails.since >= VIEWER_FAIL_WINDOW_MS) return { count: 1, since: now };
+	return { count: fails.count + 1, since: fails.since };
+}
 
 /**
  * What a phone sees of a room before it joins, from `GET /api/room/<code>` (Trevor,
@@ -239,6 +273,8 @@ export interface RoomPreview {
 	seats?: number;
 	/** Seats someone in the room sits in. */
 	seated?: number;
+	/** The Storyteller set a Grim view password: the code and it open the grimoire. */
+	grimView?: true;
 }
 
 export function roomPreview(room: RoomState | undefined, script?: Script): RoomPreview {
@@ -253,6 +289,7 @@ export function roomPreview(room: RoomState | undefined, script?: Script): RoomP
 			official: script.entries.every((e) => e.kind === 'official')
 		};
 	}
+	if (room.viewerKeyHash && room.viewerPassword) preview.grimView = true;
 	if (room.public) {
 		if (room.public.storytellerName) preview.storyteller = room.public.storytellerName;
 		preview.seats = room.public.seats.length;
@@ -532,15 +569,21 @@ function withoutEnded(room: RoomState): RoomState {
 	return rest;
 }
 
-/** Turns the view-only link on (a SHA-256 hex hash) or off (`null`); anything else is ignored. */
-export function setViewers(room: RoomState, keyHash: unknown): RoomState {
-	if (keyHash === null) {
-		const { viewerKeyHash: _off, ...rest } = room;
-		void _off;
-		return rest;
-	}
+/**
+ * Turns the view-only link on (a SHA-256 hex hash) or off (`null`); anything else is ignored.
+ * `password` says the key was made from a Grim view password.
+ */
+export function setViewers(room: RoomState, keyHash: unknown, password?: unknown): RoomState {
+	const { viewerKeyHash: _off, viewerPassword: _password, ...rest } = room;
+	void _off;
+	void _password;
+	if (keyHash === null) return rest;
 	if (typeof keyHash !== 'string' || !/^[0-9a-f]{64}$/.test(keyHash)) return room;
-	return { ...room, viewerKeyHash: keyHash };
+	return {
+		...rest,
+		viewerKeyHash: keyHash,
+		...(password === true ? { viewerPassword: true } : {})
+	};
 }
 
 /** A light shape check of a grimoire for viewers: they check the saved game themselves. */

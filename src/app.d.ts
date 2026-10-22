@@ -12,6 +12,8 @@ declare global {
 		interface PageState {
 			/** The board's extra history entry, so Back asks before leaving a game. */
 			inGame?: boolean;
+			/** The grimoire was opened with a typed Grim view password, not the link. */
+			password?: boolean;
 		}
 		// interface Platform {}
 	}

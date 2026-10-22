@@ -75,6 +75,29 @@ the shared one (a prop, a snippet) instead of copying it.
 
 ¹ Account settings (`features/account/AccountPage.svelte`) is exempt from `grim/delete-button` (Trevor, 2026-10-18): Sign out is a text button, and Delete account a labelled red button.
 
+## Character rules as data
+
+Each character's rules live in one rules block (Trevor, 2026-10-22): `src/lib/core/data/rules/<id>.json`
+for official characters (TPI's `roles.json` stays untouched), or `rules` in a custom
+character's script entry. Both are read by `parseCharacterRules`
+(`src/lib/core/data/character-rules.ts`), and `rulesOf` returns a character's block. A new entry for
+a moved table goes in the character's file, never in a TypeScript table. Rules code names no
+character: a rule becomes a behaviour with parameters that any character can use.
+
+| Table                                                                                             | Rules key         | State         |
+| ------------------------------------------------------------------------------------------------- | ----------------- | ------------- |
+| Reminder prompts (`rules/reminder-prompts.ts`)                                                    | `reminderPrompts` | moved         |
+| Reminder targets (`reminder-targets.data.ts`)                                                     |                   | not yet moved |
+| Day reminders (`day-reminders.data.ts`)                                                           |                   | not yet moved |
+| Setup reminders and setup counts (`setup-reminders.data.ts`, `setup-modifiers.ts`)                |                   | not yet moved |
+| Death causes (`death-causes.data.ts`)                                                             |                   | not yet moved |
+| Reminder movement and placeholders (`reminder-movement.data.ts`, `reminder-placeholders.data.ts`) |                   | not yet moved |
+| Night text overrides (`night-text-overrides.data.ts`)                                             |                   | not yet moved |
+| Night killers, protection, on-death (`night-alerts.ts`, `ability.ts`, `night-deaths.ts`)          |                   | not yet moved |
+| Acts when dead (`dead-characters.ts`)                                                             |                   | not yet moved |
+| Night information and answers (`night-info.ts`)                                                   |                   | not yet moved |
+| Game end (`game-end.ts`, `end-reason.ts`, `becomes-demon.ts`)                                     |                   | not yet moved |
+
 ## Lists that only shrink
 
 Some lints start with a list of files written before the lint (for example
