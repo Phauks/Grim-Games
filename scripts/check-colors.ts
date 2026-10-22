@@ -17,8 +17,14 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const scanned = ['src'];
 // app.html's theme-color meta must be a literal colour (it is read before any CSS loads).
 const allowed = ['src/lib/ui/themes/', 'src/lib/assets/', 'src/app.html'];
-// Token files define the shared mixes; board backgrounds are pictures, not theme colours.
-const mixesAllowed = [...allowed, 'src/lib/ui/tokens/', 'src/lib/features/grimoire/backgrounds.ts'];
+// Token files define the shared mixes; board backgrounds and seat frames are pictures, not
+// theme colours.
+const mixesAllowed = [
+	...allowed,
+	'src/lib/ui/tokens/',
+	'src/lib/features/grimoire/backgrounds.ts',
+	'src/lib/core/frames/frames.ts'
+];
 const extensions = /\.(ts|js|svelte|css|html)$/;
 
 // `#abc`, `#aabbcc`, `#aabbccdd` not followed by more word characters, so `#lib/...`,

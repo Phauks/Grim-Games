@@ -4,7 +4,21 @@
 	import { playerSettings, SHEET_DENSITIES } from './player-settings.svelte.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
+
+	/** The frame choice that leaves it to the Storyteller's board. */
+	const STORYTELLER = 'storyteller';
 </script>
+
+<!-- The frame round this player's seat token, sent with their avatar (L4). -->
+<SettingFrame
+	label={t('player.frame')}
+	value={playerSettings.current.frame ?? STORYTELLER}
+	defaultValue={STORYTELLER}
+	lead={{ value: STORYTELLER, label: t('player.frameStoryteller') }}
+	onChange={(frame) => playerSettings.update({ frame: frame === STORYTELLER ? undefined : frame })}
+	testid="player-frame-setting"
+/>
 
 <SettingSelect
 	label={t('player.density')}

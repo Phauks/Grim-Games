@@ -153,7 +153,7 @@
 	}
 	nav button[aria-current='page'] {
 		background: var(--surface-selected);
-		box-shadow: inset 3px 0 0 var(--accent);
+		box-shadow: inset 3px 0 0 var(--accent-edge);
 	}
 	.label {
 		flex: 1;

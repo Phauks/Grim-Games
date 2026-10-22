@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
+	import { seatFrame } from '#lib/core/frames/index.ts';
 	import type { Seat } from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -187,6 +188,7 @@
 		{marks}
 		vote={seat.dead ? (seat.ghostVoteUsed ? 'used' : 'unused') : undefined}
 		usedVote={boardLooks.current.usedGhostVote}
+		frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
 	/>
 </button>
 

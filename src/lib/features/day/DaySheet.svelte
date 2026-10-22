@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { SeatId } from '#lib/core/model/index.ts';
 	import { dayNumber } from '#lib/core/rules/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -23,9 +24,11 @@
 		 * Execution button.
 		 */
 		onEndDay?: () => void;
+		/** Opens the Savant information sheet for a seat (L5). */
+		onSavant?: (seatId: SeatId) => void;
 	}
 
-	let { open = $bindable(), game, onEndDay }: Props = $props();
+	let { open = $bindable(), game, onEndDay, onSavant }: Props = $props();
 
 	const day = $derived(new LiveDay(game));
 	// Which day it is (Trevor): Day 1 starts when the first night ends.
@@ -40,7 +43,7 @@
 	scroll={false}
 >
 	<div class="body">
-		<DayPanel game={day} {assistance} />
+		<DayPanel game={day} {assistance} {onSavant} />
 	</div>
 	{#snippet actions()}
 		{#if onEndDay}

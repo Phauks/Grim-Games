@@ -19,6 +19,8 @@ export const day = {
 	'day.used': 'Used',
 	'day.usedLabel': 'Used: {who}',
 	'day.note': 'Note',
+	'day.savantInfo': 'Savant info',
+	'day.savantInfoLabel': 'Savant information for {who}',
 	'day.guesses': 'Guesses',
 	'day.guessesLabel': 'Guesses: {who}',
 	'day.markUsedTitle': 'Mark {who} as used?',

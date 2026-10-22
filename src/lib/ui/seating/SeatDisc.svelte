@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { FACE_RADIUS, type Frame } from '#lib/core/frames/index.ts';
 	import DeadBadge from './DeadBadge.svelte';
+	import FrameDrawing from './FrameDrawing.svelte';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 
 	/**
@@ -26,6 +28,11 @@
 		vote?: 'unused' | 'used';
 		/** How a used ghost vote looks: a grey outline ghost, or struck through (Trevor, 2026-10-19). */
 		usedVote?: 'hollow' | 'struck';
+		/**
+		 * A frame round the token (L4, Trevor 2026-10-22). It sits inside the token's own
+		 * footprint, the face shrinking a little, so nothing around the seat moves.
+		 */
+		frame?: Frame;
 	}
 
 	let {
@@ -36,15 +43,25 @@
 		face,
 		marks,
 		vote,
-		usedVote = 'hollow'
+		usedVote = 'hollow',
+		frame
 	}: Props = $props();
+
+	const framed = $derived(frame !== undefined && frame.drawing.length > 0);
 </script>
 
-<span class="seat-disc" data-dead={dead || undefined} style:--size="{size}px">
+<span
+	class="seat-disc"
+	data-dead={dead || undefined}
+	data-framed={framed || undefined}
+	style:--size="{size}px"
+	style:--face-scale={FACE_RADIUS / 50}
+>
 	<span class="disc">
 		<span class="face"
 			>{#if face}{@render face()}{:else}<span class="empty">{number}</span>{/if}</span
 		>
+		{#if frame && framed}<span class="frame-layer"><FrameDrawing {frame} /></span>{/if}
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
 		<!-- One name badge for every seat, named or empty (Trevor, 2026-10-19). -->
 		<PlayerNameMark {name} />
@@ -84,7 +101,17 @@
 		color: var(--on-surface-muted);
 		font: var(--seat-font);
 	}
+	/* Framed: the face shrinks into the frame, the disc keeps its size. */
+	.seat-disc[data-framed] .face {
+		scale: var(--face-scale);
+	}
+	.frame-layer {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
 	/* Dead (Trevor, 2026-10-16): the token dimmed, colour kept, plus a skull badge. */
+	.seat-disc[data-dead] .frame-layer,
 	.seat-disc[data-dead] .face {
 		filter: brightness(0.55);
 	}

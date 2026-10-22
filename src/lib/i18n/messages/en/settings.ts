@@ -97,6 +97,7 @@ export const settings = {
 	'settings.boardPreview': 'Background and seats',
 	'settings.nameOffset': 'Player name distance',
 	'settings.strikeUsedGhostVote': 'Strike through used ghost votes',
+	'settings.seatFrame': 'Seat frame',
 	'settings.rulesAt': 'Location',
 	'settings.rulesAt.middle': 'Middle',
 	'settings.rulesAt.edge': 'Corner',
