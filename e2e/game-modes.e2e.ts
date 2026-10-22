@@ -889,7 +889,9 @@ test('New game shows each script’s author under its name, and its versions in 
 	await expect(version).not.toContainText('v');
 	const before = await line.boundingBox();
 	await custom.tap();
-	await expect(page.getByTestId('script-byline')).toHaveText('by Test Author');
+	await expect(page.getByTestId('chosen-script').getByTestId('script-byline')).toHaveText(
+		'by Test Author'
+	);
 	await expect(version).toContainText('v2.1');
 	expect((await line.boundingBox())?.height).toBe(before?.height);
 	// In the script search's list too, on Standard and in a mode alike.
@@ -1301,4 +1303,26 @@ test('Binary Supernovae asks for one more Demon, and an executed Demon wins it f
 	const line = prompt.locator('[data-rule="demon-executed"]');
 	await expect(line).toContainText('Binary Supernovae');
 	await expect(line).toContainText('Good wins');
+});
+
+test('New game previews the script as it will play, beside the settings', async ({ page }) => {
+	// Trevor, 2026-10-22: always open, never collapsed, beside the settings on a computer and
+	// under them on a phone, with the game mode's and special rules' changes.
+	await page.goto('/new');
+	const preview = page.getByRole('complementary', { name: 'Script preview' });
+	await expect(preview.getByRole('heading', { name: 'Script preview' })).toBeVisible();
+	await expect(preview).toContainText('Washerwoman');
+	await expect(preview).not.toContainText('Seat 7 remains empty');
+	await modesPanel(page)
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Bad Moon Rising', { exact: true })
+		.tap();
+	await expect(preview).toContainText('Grandmother');
+	await expect(preview).not.toContainText('Washerwoman');
+	await chooseRules(page, 'The Ballad of Seat 7');
+	await expect(preview).toContainText('Seat 7 remains empty');
+	// A mode with two towns previews each town's script.
+	await chooseMode(page, 'Two games at once');
+	await expect(preview.getByRole('heading', { name: 'Town 2 script' })).toBeVisible();
+	await noSidewaysScroll(page);
 });
