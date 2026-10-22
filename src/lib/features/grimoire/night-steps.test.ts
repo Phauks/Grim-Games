@@ -76,12 +76,12 @@ describe('character change steps', () => {
 	it('wakes the new Imp before Dawn on other nights, marking that player', () => {
 		const g = game(['poisoner', 'imp', 'empath']);
 		const changes = [{ seatId: g.seating[0], characterId: 'imp' }];
-		const other = boardNightSteps(g, characters, 'other', data, changes);
+		const other = boardNightSteps(g, characters, 'other', data, { changes });
 		const step = other.find((s) => s.changed);
 		expect(step?.id).toBe(`changed@${g.seating[0]}`);
 		expect(other.filter((s) => !s.afterDawn).at(-2)).toBe(step);
 		expect(stepHolders(g, step!, characters)).toEqual([g.seating[0]]);
-		const first = boardNightSteps(g, characters, 'first', data, changes);
+		const first = boardNightSteps(g, characters, 'first', data, { changes });
 		expect(first.some((s) => s.changed)).toBe(false);
 	});
 });

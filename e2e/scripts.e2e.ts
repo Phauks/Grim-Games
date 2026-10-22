@@ -758,7 +758,7 @@ test('Play starts a new game with a found script, without saving it', async ({ p
 	await page.goto('/new');
 	await expect(script.getByRole('radio', { name: 'Trouble Brewing' })).toBeChecked();
 	await expect(search).toHaveValue('');
-	await expect(search).toBeDisabled();
+	await expect(script.getByRole('radio', { name: 'Custom' })).not.toBeChecked();
 	await script.getByText('Custom', { exact: true }).tap();
 	await search.tap();
 	await expect(page.getByRole('option').filter({ hasText: 'Big Town' })).toHaveCount(1);

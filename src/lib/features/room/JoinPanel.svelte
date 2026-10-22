@@ -97,6 +97,13 @@
 	};
 	const summary = $derived.by(() => {
 		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
+		// The same words as the Storyteller's board once the game has ended.
+		if (view.ended)
+			return view.ended.winner === 'good'
+				? t('room.gameOverGood')
+				: view.ended.winner === 'evil'
+					? t('room.gameOverEvil')
+					: t('room.gameOver');
 		if (view.request)
 			return t('room.waiting', { name: view.request.name, seat: seatName(view.request.seatId) });
 		if (mine) return t('room.seated', { seat: seatName(mine), name: view.me.name ?? '' });

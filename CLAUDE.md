@@ -10,6 +10,7 @@
 - Clean-room rewrite: never copy code from Pocket Grimoire (GPL-3.0) or other GPL projects.
 - Touch first: tap targets of at least 44px, Pointer Events, and every new flow gets a Playwright test on the phone and tablet projects.
 - No fixed pixel sizes in styles (Trevor, 2026-10-16): layout uses `var(--u)` and the tokens, text uses rem/em, space-filling uses % or viewport units. `npm run lint:px` enforces it; a px that must stay says why in a `/* px-ok: ... */` comment on the same line.
+- When a feature works differently, or not at all, on Android, iOS or desktop, add or update its row in the platform gaps list, `/mnt/project-files/platform-gaps.md` (Trevor, 2026-10-20): what was checked, or the doc it rests on, and any fallback the app shows.
 - Imports inside `src` use `#lib/...` with the `.ts` extension for TypeScript files.
 - Before pushing: `npm run verify` (check, lint, unit tests; the pre-push hook runs it) and the e2e tests you touched. Changes reach `beta` through a PR with green CI; turn on auto-merge so it lands when the checks pass.
 - Worker logs keep query strings (`redact_query_string: false` in wrangler.jsonc). Never put private game state, room secrets or scripts in a query string; use the path or the URL hash (the hash never reaches the server).

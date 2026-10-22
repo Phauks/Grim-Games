@@ -71,7 +71,6 @@
 							>{#if seat.characterId}<CharacterBadge
 									characterId={seat.characterId}
 									alignment={alignmentOf(game, seatId)}
-									inline
 								/>{:else}{t('common.none')}{/if}</td
 						>
 						{#if status}<td>{status(seatId)}</td>{/if}

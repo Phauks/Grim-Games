@@ -60,12 +60,13 @@ export const characters = {
 	'characters.inlineReminderBadgeSizeHelp':
 		'The badge round the words and icon of reminders in text. It never gets smaller than they are.',
 	'characters.inlineNameTextSize': 'Name text size',
-	'characters.inlineNameTextSizeHelp': 'Character names inside lines of text and lists.',
+	'characters.inlineNameTextSizeHelp':
+		'Character names everywhere: in text, lists, pickers and the day.',
 	'characters.inlineNameIconSize': 'Name icon size',
-	'characters.inlineNameIconSizeHelp': 'The character icon on names in text.',
+	'characters.inlineNameIconSizeHelp': 'The character icon on every character name.',
 	'characters.inlineNameBadgeSize': 'Name badge size',
 	'characters.inlineNameBadgeSizeHelp':
-		'The badge round the name and icon in text. It never gets smaller than they are.',
+		'The badge round every character name and its icon. It never gets smaller than they are.',
 	'characters.colour.face': 'Token face',
 	'characters.colour.faceHelp': 'The parchment of character tokens.',
 	'characters.colour.reminder': 'Reminder face',

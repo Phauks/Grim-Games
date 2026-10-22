@@ -22,6 +22,7 @@
 	import CountDialog from './CountDialog.svelte';
 	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
@@ -333,6 +334,13 @@
 	for a once-per-game day ability, and Guesses for the Juggler, whose guesses feed his night
 	answer.
 -->
+<!-- The day's button at a row's end, centred like character selection's lock. -->
+{#snippet dayEnd(characterId: CharacterId | undefined, seatId: SeatId)}
+	{#if characterId && (isOnceOnlyDayAbility(characterId) || characterId === 'juggler')}
+		<span class="day-end">{@render dayButton(characterId, seatId)}</span>
+	{/if}
+{/snippet}
+
 {#snippet dayButton(characterId: CharacterId | undefined, seatId: SeatId)}
 	<!-- eslint-disable grim/names-as-badges -- accessible names (aria-label) only -->
 	{@const who = t('day.who', {
@@ -468,7 +476,6 @@
 							>{#snippet fill(name)}{#if name === 'character'}{#if seat.characterId}<CharacterBadge
 											characterId={seat.characterId}
 											alignment={seat.alignment}
-											inline
 										/>{:else}{t('day.announce.noCharacter')}{/if}{:else}{@render badge(
 										death.cause
 									)}{/if}{/snippet}</Sentence
@@ -526,19 +533,34 @@
 						{@const explained = explainBlock(
 							line.segments.map((s) => (s.kind === 'text' ? s.text : ''))
 						)}
+						{@const character = head ? game.characters.get(head.ref.characterId) : undefined}
 						<li data-character={reminder.characterId}>
-							<CharacterEntry
-								characterId={head?.ref.characterId}
-								alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
-								playerName={head?.ref.playerName}
-							>
-								{#snippet end()}{@const seatId =
-										buttonRows[reminder.key]}{#if seatId}{@render dayButton(
-											reminder.characterId,
-											seatId
-										)}{/if}{/snippet}
-								<!-- The ability first, beside the name; the state under it (Trevor, 2026-10-18). -->
-								{@render ability(reminder.characterId)}
+							{#if character}
+								<CharacterRow
+									{character}
+									alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
+									note={head?.ref.playerName}
+									info
+								>
+									{#snippet end()}{@const seatId =
+											buttonRows[reminder.key]}{#if seatId}{@render dayEnd(
+												reminder.characterId,
+												seatId
+											)}{/if}{/snippet}
+									<!-- The ability first, beside the name; the state under it (Trevor, 2026-10-18). -->
+									{@render sentence()}
+								</CharacterRow>
+							{:else}
+								<CharacterEntry characterId={head?.ref.characterId}>
+									{#snippet end()}{@const seatId =
+											buttonRows[reminder.key]}{#if seatId}{@render dayButton(
+												reminder.characterId,
+												seatId
+											)}{/if}{/snippet}
+									{@render sentence()}
+								</CharacterEntry>
+							{/if}
+							{#snippet sentence()}
 								<span class="sentence" data-testid="day-state">
 									{#each line.segments as segment, i (i)}
 										{@const stop = line.stop && i === line.segments.length - 1}
@@ -562,7 +584,7 @@
 										{/if}
 									{/each}
 								</span>
-							</CharacterEntry>
+							{/snippet}
 						</li>
 					{/each}
 				</ul>
@@ -574,15 +596,14 @@
 		<Collapsible title={t('day.abilities')} storageKey="day.abilities" count={listed.length}>
 			<ul class="reminders">
 				{#each listed as seat (seat.seatId)}
+					{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
 					<li data-character={seat.characterId}>
-						<CharacterEntry
-							characterId={seat.characterId}
-							alignment={seat.alignment}
-							playerName={seat.playerName}
-						>
-							{#snippet end()}{@render dayButton(seat.characterId, seat.seatId)}{/snippet}
-							{@render ability(seat.characterId)}
-						</CharacterEntry>
+						{#if character}
+							<!-- Drawn like character selection (Trevor, 2026-10-20: L12). -->
+							<CharacterRow {character} alignment={seat.alignment} note={seat.playerName} info>
+								{#snippet end()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}
+							</CharacterRow>
+						{/if}
 					</li>
 				{/each}
 			</ul>
@@ -651,7 +672,6 @@
 {#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge
 			characterId={id}
 			character={game.characters.get(id)}
-			inline
 			{interactive}
 		/>{/if}{/snippet}
 {#snippet pendingSlot(name: string)}{#if name === 'reminder'}<ReminderToken
@@ -739,6 +759,14 @@
 		margin: 0;
 		font-family: var(--font-ability);
 		font-size: 0.9rem;
+	}
+	.day-end {
+		display: flex;
+		align-items: center;
+		padding-inline-end: var(--space-2);
+	}
+	.reminders :global(.row) {
+		margin-block: calc(var(--space-1) / 2);
 	}
 	/* The tick is always laid out, so pressing Used never changes the chip's width. */
 	.tick {

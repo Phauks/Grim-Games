@@ -45,7 +45,6 @@
 				title={t('reference.infoToken')}
 			/>{:else if s.kind === 'character'}<CharacterBadge
 				characterId={s.id}
-				inline
 			/>{:else if s.kind === 'dead'}<ReminderToken
 				label={t('reference.dead')}
 				type={character.type}

@@ -1,7 +1,8 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
+	import { loadScript, OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import LibraryBrowser, { type LibraryPick } from '#lib/features/library/LibraryBrowser.svelte';
@@ -10,6 +11,9 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { chooseScript, currentScript } from '#lib/features/scripts/current-script.svelte.ts';
 	import { reloadSavedScript } from '#lib/features/scripts/saved-scripts.ts';
+	import { botcVersions } from '#lib/features/scripts/botc-versions.svelte.ts';
+	import { compareVersions } from '#lib/features/scripts/botcscripts-api.ts';
+	import { fetchLinkTarget } from '#lib/features/scripts/fetch-script.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import Combobox from '#lib/ui/primitives/Combobox.svelte';
@@ -23,8 +27,8 @@
 	 * "Script picker"): the base three stay one tap away, every other script is found by
 	 * typing its name or author, and the Library button opens the Library to pick from.
 	 * Choosing one kind of script unselects the other. The search and the Library button are
-	 * for Custom, beside the base three, and stay disabled in place until it is chosen
-	 * (Trevor, 2026-10-19), so nothing moves. Under them, on a line kept in place, the
+	 * for Custom, beside the base three; tapping either chooses Custom (Trevor, backlog L6),
+	 * so they are never disabled. Under them, on a line kept in place, the
 	 * chosen script's versions are a drop-down (empty when it has none) beside its author
 	 * (Trevor, 2026-10-19).
 	 */
@@ -80,11 +84,29 @@
 	);
 	const chosen = $derived(others.find((o) => o.value === value));
 	const versioned = $derived(scriptVersions(others, chosen));
+	// Every version BotC Scripts publishes for a script saved from there, not only the saved
+	// ones (Trevor, backlog L14: "a script with multiple versions shows only the saved
+	// version"). A version not saved yet is loaded from BotC Scripts when picked.
+	const botc = $derived(chosen?.source?.kind === 'botcscripts' ? chosen.source : undefined);
+	$effect(() => {
+		const id = botc?.scriptId;
+		if (id !== undefined) untrack(() => void botcVersions.load(id));
+	});
+	const ONLINE = 'botc-version:';
+	const online = $derived(
+		botc
+			? (botcVersions.get(botc.scriptId)?.versions ?? []).filter(
+					(v) => !versioned.some((o) => o.version === v)
+				)
+			: []
+	);
 	const versions = $derived(
-		versioned.map((o) => ({
-			value: o.value,
-			label: t('player.version', { version: o.version ?? '' })
-		}))
+		[
+			...versioned.map((o) => ({ value: o.value, version: o.version ?? '' })),
+			...online.map((v) => ({ value: `${ONLINE}${v}`, version: v }))
+		]
+			.sort((a, b) => compareVersions(b.version, a.version))
+			.map((o) => ({ value: o.value, label: t('player.version', { version: o.version }) }))
 	);
 	// A copy of a listed version shows as that version.
 	const listedVersion = $derived(versioned.find((o) => o.version === chosen?.version)?.value);
@@ -95,6 +117,28 @@
 		noVersion ? [{ value: NO_VERSION, label: t('modes.scriptSearch.noVersion') }] : versions
 	);
 	const versionValue = $derived(noVersion ? NO_VERSION : listedVersion);
+	async function chooseVersion(next: string) {
+		if (next === NO_VERSION) return;
+		if (!next.startsWith(ONLINE) || !botc) return onChange(next);
+		const version = next.slice(ONLINE.length);
+		try {
+			const fetched = await fetchLinkTarget(
+				{ kind: 'botcscripts', ref: { kind: 'script', scriptId: botc.scriptId, version } },
+				''
+			);
+			const script = loadScript(JSON.parse(fetched.text), await loadOfficialData()).script;
+			if (!script) throw new Error(`version ${version} could not be loaded`);
+			await chooseScript(script, fetched.source);
+			const saved = currentScript.saved;
+			if (saved) onChange(`recent:${saved.scriptId}`);
+		} catch (e) {
+			reportError(e, { area: 'scripts' });
+		}
+	}
+	/** Tapping Custom's search or Library button chooses Custom first. */
+	function toCustom() {
+		if (!custom) choose(CUSTOM);
+	}
 	let browsing = $state(false);
 	let libraryBrowser = $state<LibraryBrowser>();
 
@@ -124,14 +168,13 @@
 		options={choices}
 		onChange={choose}
 	/>
-	<div class="search">
+	<div class="search" onpointerdown={toCustom} onfocusin={toCustom}>
 		<Combobox
 			label={t('modes.scriptSearch.label')}
 			hideLabel
 			value={options.some((o) => o.value === value) ? value : undefined}
 			{options}
 			{onChange}
-			disabled={!custom}
 			placeholder={t('modes.scriptSearch.placeholder')}
 			empty={t('modes.scriptSearch.none')}
 			action={() => ({
@@ -144,7 +187,6 @@
 		<IconButton
 			icon="library"
 			label={t('modes.scriptSearch.browse')}
-			disabled={!custom}
 			onclick={() => (browsing = true)}
 		/>
 	</div>
@@ -155,7 +197,7 @@
 				hideLabel
 				value={versionValue}
 				options={versionOptions}
-				onChange={(v) => v !== NO_VERSION && onChange(v)}
+				onChange={(v) => void chooseVersion(v)}
 				disabled={!custom || versions.length < 2}
 			/>
 		</span>

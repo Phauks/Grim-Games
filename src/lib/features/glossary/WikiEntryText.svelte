@@ -43,7 +43,6 @@
 				>{:else if target.kind === 'character'}<CharacterBadge
 					characterId={idOf(target.name)}
 					text={part.text}
-					inline
 				/>{:else}<a class="see" href={target.url} target="_blank" rel="noopener">{part.text}</a
 				>{/if}{/if}{/each}
 </blockquote>

@@ -136,6 +136,30 @@ test('the footer links to the privacy policy page', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Privacy policy', level: 1 })).toBeVisible();
 });
 
+// Trevor (2026-10-20): every notice that the app is not official links the official site.
+test("the 'not official' notice links the official site, in About and the privacy policy", async ({
+	page
+}) => {
+	const official = 'https://bloodontheclocktower.com';
+	await page.goto('/privacy');
+	await expect(
+		page.getByRole('main').getByRole('link', { name: 'Blood on the Clocktower', exact: true })
+	).toHaveAttribute('href', official);
+
+	await page.goto('/');
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'About' })
+		.tap();
+	const notice = settings.locator('.official-notice');
+	await expect(notice).toContainText('Not affiliated with The Pandemonium Institute.');
+	await expect(
+		notice.getByRole('link', { name: 'Blood on the Clocktower', exact: true })
+	).toHaveAttribute('href', official);
+});
+
 test('the footer never makes the page wider than the screen, even at the largest text size', async ({
 	page
 }) => {

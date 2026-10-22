@@ -59,6 +59,8 @@ export interface Preferences {
 	 * pass-the-phone draw and when drawing on their own phone (Trevor, 2026-10-16).
 	 */
 	requireName: boolean;
+	/** The drawn token shows only while it's held down (Trevor, 2026-10-20: a setting, off). */
+	holdToReveal: boolean;
 	/**
 	 * Show text in our own wording that Trevor hasn't approved yet, such as the game modes'
 	 * About descriptions; off by default, when only source text and links show (no authored
@@ -100,7 +102,8 @@ export const TILE_FACES = [
 	'symbols',
 	'colours',
 	'emoji',
-	'random'
+	'random',
+	'none'
 ] as const;
 export type TileFace = (typeof TILE_FACES)[number];
 
@@ -148,6 +151,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	assistance: DEFAULT_ASSISTANCE,
 	tileFace: 'numbers',
 	requireName: false,
+	holdToReveal: false,
 	ownWording: false,
 	hideWatchLink: false,
 	timerSound: 'bell',
@@ -191,6 +195,10 @@ export function parsePreferences(raw: unknown): Preferences {
 			: DEFAULT_PREFERENCES.tileFace,
 		requireName:
 			typeof input.requireName === 'boolean' ? input.requireName : DEFAULT_PREFERENCES.requireName,
+		holdToReveal:
+			typeof input.holdToReveal === 'boolean'
+				? input.holdToReveal
+				: DEFAULT_PREFERENCES.holdToReveal,
 		ownWording:
 			typeof input.ownWording === 'boolean' ? input.ownWording : DEFAULT_PREFERENCES.ownWording,
 		hideWatchLink:

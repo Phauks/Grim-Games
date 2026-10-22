@@ -21,7 +21,7 @@
 <span class="sentence">
 	{#each segments as segment, i (i)}
 		{#if segment.kind === 'character'}
-			<CharacterBadge characterId={segment.characterId} inline />
+			<CharacterBadge characterId={segment.characterId} />
 		{:else if segment.kind === 'target'}
 			<span class="target"
 				>{t('reference.playerWith')} <ReminderToken label={segment.token} {type} /></span

@@ -25,7 +25,6 @@ import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_corners_out from '~icons/ph/corners-out';
 import ph_cross from '~icons/ph/cross';
 import ph_crown from '~icons/ph/crown';
-import ph_device_mobile from '~icons/ph/device-mobile';
 import ph_diamond from '~icons/ph/diamond';
 import ph_dice_five from '~icons/ph/dice-five';
 import ph_door_open from '~icons/ph/door-open';
@@ -126,7 +125,6 @@ const icons: IconMap = {
 	'ph:corners-out': ph_corners_out,
 	'ph:cross': ph_cross,
 	'ph:crown': ph_crown,
-	'ph:device-mobile': ph_device_mobile,
 	'ph:diamond': ph_diamond,
 	'ph:dice-five': ph_dice_five,
 	'ph:door-open': ph_door_open,

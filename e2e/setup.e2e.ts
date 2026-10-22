@@ -401,12 +401,12 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 
 	// The same setting from the draw itself (Trevor, 2026-10-17), which shows the choice made
 	// in Settings. Symbols, colours, or Random mixing everything, named in words.
-	await page.getByRole('button', { name: 'Setup and bag draw' }).tap();
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
 	const here = page.getByTestId('bag-settings');
 	await expect(here.getByRole('combobox', { name: 'Bag tile labels' })).toContainText('Letters');
 	await page.keyboard.press('Escape');
 	async function choose(option: string) {
-		await page.getByRole('button', { name: 'Setup and bag draw' }).tap();
+		await page.getByRole('button', { name: 'Bag draw' }).tap();
 		await page.getByTestId('bag-settings').getByRole('combobox', { name: 'Bag tile labels' }).tap();
 		await page.getByRole('option', { name: option }).tap();
 		await page.keyboard.press('Escape');
@@ -415,6 +415,9 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 	// Roman numerals (Trevor, 2026-10-19).
 	await choose('Roman numerals');
 	await expect(page.getByRole('button', { name: 'Tile IV', exact: true })).toHaveText('IV');
+	// None: blank tiles (Trevor, 2026-10-22).
+	await choose('None');
+	await expect(page.getByRole('button', { name: 'Tile 1', exact: true })).toHaveText('');
 	await choose('Symbols');
 	await expect(page.getByRole('button', { name: 'Tile Star', exact: true })).toBeVisible();
 	await expect(bag.first().locator('[data-kind="symbol"] svg')).toBeVisible();
@@ -514,7 +517,7 @@ test('type groups and the setup sheet close from their header and stay closed', 
 test('a character picked by Random looks the same as one picked by hand', async ({ page }) => {
 	await selectionFor(page, 5);
 	await page.getByRole('button', { name: 'Random selection' }).tap();
-	const picked = page.locator('.choice[data-selected]');
+	const picked = page.locator('.row[data-chosen]');
 	await expect(picked.first()).toBeVisible();
 	const random = picked.first();
 	const randomName = await random.locator('.main').getAttribute('data-character-id');
@@ -522,7 +525,7 @@ test('a character picked by Random looks the same as one picked by hand', async 
 	await page.getByRole('button', { name: 'Clear selection' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await page.locator(`[data-character-id="${randomName}"]`).tap();
-	const manual = page.locator('.choice[data-selected]').first();
+	const manual = page.locator('.row[data-chosen]').first();
 	const ring = (l: typeof manual) =>
 		l.evaluate((el) => {
 			const after = getComputedStyle(el, '::after');
@@ -533,7 +536,7 @@ test('a character picked by Random looks the same as one picked by hand', async 
 	const byHand = await ring(manual);
 	await page.getByRole('button', { name: 'Random selection' }).tap();
 	await page.mouse.move(0, 0);
-	const byRandom = await ring(page.locator('.choice[data-selected]').first());
+	const byRandom = await ring(page.locator('.row[data-chosen]').first());
 	expect(byHand).toEqual(byRandom);
 	expect(byHand.ring).not.toBe('none');
 });
@@ -768,7 +771,7 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	await expect(check).toContainText(/Magician\s*and\s*Spy/);
 	// Each jinxed character shows its partner's icon where a star used to be (Trevor, 2026-10-19).
 	const partners = (id: string) =>
-		page.locator(`.choice:has([data-character-id="${id}"]) [data-testid="jinx-partners"]`);
+		page.locator(`.row:has([data-character-id="${id}"]) [data-testid="jinx-partners"]`);
 	await expect(partners('magician').locator('[data-partner]')).toHaveAttribute(
 		'data-partner',
 		'spy'
@@ -1053,11 +1056,23 @@ async function lockedDraw(page: Page) {
 	await lockDraw(page);
 }
 
+// Trevor (2026-10-20, Pixel): the footer was cut off under the Draw page's bottom bar.
+test('the page footer clears the bottom bar on the setup steps', async ({ page }) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+	const footer = await page.getByRole('contentinfo').boundingBox();
+	const bar = await page.locator('.setup-nav').boundingBox();
+	expect(footer && bar && footer.y + footer.height).toBeLessThanOrEqual(bar!.y + 1);
+});
+
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
 	page
 }) => {
 	await lockedDraw(page);
-	await expect(page.getByRole('button', { name: 'Setup and bag draw' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Bag draw' })).toHaveCount(0);
 	// Locked: the script's logo and name in place of "Draw", and no Characters or Grimoire.
 	const title = page.getByRole('heading', { level: 1 });
 	await expect(title).toHaveText('Trouble Brewing');
@@ -1068,15 +1083,11 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
 	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
+	// Hold to see character is off by default, locked or not (Trevor, 2026-10-20).
 	await page.getByRole('button', { name: /^Tile 1/ }).tap();
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
-	const hold = reveal.getByTestId('reveal-hold');
-	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
-	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
-	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
+	await expect(reveal.getByTestId('reveal-hold')).toHaveCount(0);
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
-	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
-	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
 	await reveal.getByRole('button', { name: 'Confirm' }).tap();
 
 	// A reload is still locked.
@@ -1127,10 +1138,10 @@ test('three wrong PINs make entry wait', async ({ page }) => {
 test('locked characters stay in play through Random and are remembered', async ({ page }) => {
 	await selectionFor(page, 9);
 	const choice = (id: string) => page.locator(`.main[data-character-id="${id}"]`);
-	const row = (id: string) => page.locator('.choice', { has: choice(id) });
+	const row = (id: string) => page.locator('.row', { has: choice(id) });
 	const lock = (id: string) => row(id).getByTestId('lock-character');
-	// Unselected: the lock is in place but can't be used.
-	await expect(lock('baron')).toBeDisabled();
+	// Unselected: the lock is in place, unlocked (tapping it chooses the character too).
+	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
 	for (const id of ['baron', 'drunk']) {
 		await choice(id).tap();
 		await lock(id).tap();
@@ -1139,7 +1150,7 @@ test('locked characters stay in play through Random and are remembered', async (
 	for (let i = 0; i < 5; i++) {
 		await page.getByRole('button', { name: 'Random selection' }).tap();
 		for (const id of ['baron', 'drunk']) {
-			await expect(row(id)).toHaveAttribute('data-selected', '');
+			await expect(row(id)).toHaveAttribute('data-chosen', '');
 			await expect(lock(id)).toHaveAttribute('aria-pressed', 'true');
 		}
 	}
@@ -1147,7 +1158,7 @@ test('locked characters stay in play through Random and are remembered', async (
 	await expect(lock('drunk')).toHaveAttribute('aria-pressed', 'true');
 	// Deselecting unlocks.
 	await choice('baron').tap();
-	await expect(lock('baron')).toBeDisabled();
+	await expect(choice('baron')).toHaveAttribute('aria-pressed', 'false');
 	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
 });
 
@@ -1187,7 +1198,7 @@ test('Verification folds the setup check away, and the Drunk is tagged not in ba
 	await expect(check.getByRole('button', { name: 'Jinxes' })).toBeVisible();
 
 	const row = (id: string) =>
-		page.locator('.choice', { has: page.locator(`.main[data-character-id="${id}"]`) });
+		page.locator('.row', { has: page.locator(`.main[data-character-id="${id}"]`) });
 	await page.locator('.main[data-character-id="drunk"]').tap();
 	await page.locator('.main[data-character-id="empath"]').tap();
 	await expect(row('drunk').getByTestId('not-in-bag')).toHaveText('Not in bag');
@@ -1199,4 +1210,53 @@ test('Verification folds the setup check away, and the Drunk is tagged not in ba
 	await expect(check.getByTestId('verification-count')).toHaveText(String(sum));
 	await page.locator('.main[data-character-id="drunk"]').tap();
 	await expect(row('drunk').getByTestId('not-in-bag')).toHaveCount(0);
+});
+
+test('Hold to see character, a Bag draw setting, shows the token only while held', async ({
+	page
+}) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await page.getByTestId('bag-settings').getByText('Hold to see character', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('button', { name: /^Tile 1/ }).tap();
+	const reveal = page.getByRole('dialog', { name: /^Tile/ });
+	const hold = reveal.getByTestId('reveal-hold');
+	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
+	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
+	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+});
+
+test('selecting a character moves nothing, and its lock picks it when not yet chosen', async ({
+	page
+}) => {
+	// Trevor (2026-10-20): selecting moved the ability text down; the lock did nothing until chosen.
+	await selectionFor(page, 8);
+	const main = (id: string) => page.locator(`.main[data-character-id="${id}"]`);
+	const row = (id: string) => page.locator('.row', { has: main(id) });
+	for (const id of ['washerwoman', 'drunk', 'imp']) {
+		// Measured within the row: the page above may grow as the selection changes.
+		const place = () =>
+			row(id).evaluate((r) => {
+				const a = r.querySelector('.ability')!.getBoundingClientRect();
+				const box = r.getBoundingClientRect();
+				return { top: a.top - box.top, height: a.height, width: a.width, row: box.height };
+			});
+		const before = await place();
+		await main(id).tap();
+		await expect(main(id)).toHaveAttribute('aria-pressed', 'true');
+		expect(await place()).toEqual(before);
+	}
+	const lock = row('baron').getByTestId('lock-character');
+	await expect(main('baron')).toHaveAttribute('aria-pressed', 'false');
+	await lock.tap();
+	await expect(main('baron')).toHaveAttribute('aria-pressed', 'true');
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
 });

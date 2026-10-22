@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { castGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import type { Command } from './commands.ts';
-import { changedCharacters } from './changed-characters.ts';
+import { changedCharacters, diedToday } from './changed-characters.ts';
 import { undo } from './log.ts';
 
 const TB = ['chef', 'empath', 'monk', 'mayor', 'poisoner', 'imp'];
@@ -41,5 +41,33 @@ describe('changedCharacters', () => {
 		const changed = run(session, ctx, become(2, 'mayor')(seats));
 		const undone = undo(changed);
 		expect(changedCharacters(undone.log, undone.game)).toEqual([]);
+	});
+});
+
+describe('diedToday', () => {
+	// https://wiki.bloodontheclocktower.com/Godfather: "if an Outsider died today".
+	it('lists players who died since the New day, however they died, and only them', () => {
+		const { session, ctx, seats } = castGame(
+			['chef', 'butler', 'saint', 'godfather', 'imp'],
+			(s) => ({ type: 'SetDead', seatId: s[0], dead: true, cause: 'demon' }),
+			{ type: 'NewDay' }
+		);
+		expect(diedToday(session.log, session.game)).toEqual([]);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'SetDead', seatId: seats[2], dead: true, cause: 'slayer' },
+			{ type: 'Execute', seatId: seats[1] }
+		);
+		expect(diedToday(s.log, s.game)).toEqual([seats[1], seats[2]]);
+	});
+
+	it('lists nothing before the first New day', () => {
+		const { session } = castGame(['chef', 'imp'], (s) => ({
+			type: 'SetDead',
+			seatId: s[0],
+			dead: true
+		}));
+		expect(diedToday(session.log, session.game)).toEqual([]);
 	});
 });

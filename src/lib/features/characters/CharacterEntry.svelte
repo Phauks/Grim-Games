@@ -24,7 +24,7 @@
 
 <div class="entry">
 	<span class="bar"
-		>{#if characterId}<CharacterBadge {characterId} {alignment} {playerName} inline />{:else}<span
+		>{#if characterId}<CharacterBadge {characterId} {alignment} {playerName} />{:else}<span
 				class="plain">{label}</span
 			>{/if}{#if end}{@render end()}{/if}</span
 	>

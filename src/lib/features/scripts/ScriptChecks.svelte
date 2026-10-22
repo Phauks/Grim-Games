@@ -41,7 +41,7 @@
 			<ul>
 				{#each facts.modifiers as modifier (modifier.id)}
 					<li>
-						<CharacterBadge characterId={modifier.id} character={byId.get(modifier.id)} inline />
+						<CharacterBadge characterId={modifier.id} character={byId.get(modifier.id)} />
 						<span>{modifier.summary}</span>
 					</li>
 				{/each}
@@ -57,13 +57,9 @@
 				{#each missing as requirement (requirement.id)}
 					<li>
 						<Icon name="warning" />
-						<CharacterBadge
-							characterId={requirement.id}
-							character={byId.get(requirement.id)}
-							inline
-						/>
+						<CharacterBadge characterId={requirement.id} character={byId.get(requirement.id)} />
 						<span>{t('scripts.checks.needs')}</span>
-						<CharacterBadge characterId={requirement.requires} inline />
+						<CharacterBadge characterId={requirement.requires} />
 						<span>{t('scripts.checks.notOnScript')}</span>
 					</li>
 				{/each}

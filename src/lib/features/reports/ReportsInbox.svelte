@@ -1,10 +1,10 @@
 <script lang="ts">
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 	import { onMount } from 'svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import { openAccount } from '#lib/features/shell/shell.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -29,29 +29,22 @@
 		type ReportStatus
 	} from './reports-protocol.ts';
 
-	// In-app reports, at /reports. Admins triage them: a signed-in admin account (Trevor,
-	// 2026-10-18), or the Worker secret REPORTS_ADMIN_KEY, typed once and kept on this device
-	// only. Any other signed-in account reads the reports sent from an account and filters them
-	// by who sent them (Trevor, 2026-10-19). The Worker decides what each may see.
+	// In-app reports, at /reports. Admin accounts triage them (Trevor, 2026-10-18; no admin key
+	// since 2026-10-22). Any other signed-in account reads the reports sent from an account and
+	// filters them by who sent them (Trevor, 2026-10-19). The Worker decides what each may see.
 
-	const KEY_STORAGE = 'grim-games:reports-admin-key';
-
-	let key = $state('');
 	/**
-	 * How this device reads reports: still checking, not allowed, a signed-in account that only
-	 * reads, an admin account, or the key.
+	 * How this device reads reports: still checking, signed out, a signed-in account that only
+	 * reads, or an admin account.
 	 */
-	let access = $state<'checking' | 'none' | 'reader' | 'account' | 'key'>('checking');
-	const allowed = $derived(access === 'account' || access === 'key');
+	let access = $state<'checking' | 'none' | 'reader' | 'account'>('checking');
+	const allowed = $derived(access === 'account');
 	const reading = $derived(allowed || access === 'reader');
 	let onlyMine = $state(false);
 	let adminsOpen = $state(false);
 	let admins = $state<Admin[]>();
 	let newAdmin = $state('');
 	let noAccount = $state(false);
-	let typed = $state('');
-	let keyForm = $state<HTMLFormElement>();
-	let wrongKey = $state(false);
 	let reports = $state<Report[]>();
 	let columnFilters = $state<Partial<Record<Column, ColumnFilter>>>({});
 	let openId = $state<number>();
@@ -119,23 +112,14 @@
 		}
 	]);
 
-	onMount(() => {
-		key = readStoredText(KEY_STORAGE) ?? '';
-		void load();
-	});
+	onMount(() => void load());
 
 	async function load() {
 		try {
-			let list = await listReports(key);
-			if (key && !list?.admin) {
-				// A wrong or retired key: the account may still open the inbox.
-				wrongKey = true;
-				forget();
-				list = await listReports('');
-			}
+			const list = await listReports();
 			const first = access === 'checking' || access === 'none';
 			reports = list?.reports;
-			access = list === undefined ? 'none' : !list.admin ? 'reader' : key ? 'key' : 'account';
+			access = list === undefined ? 'none' : list.admin ? 'account' : 'reader';
 			// Admins start on the reports still to triage (as before), readers on all of them.
 			if (first && allowed)
 				columnFilters = { status: { kind: 'pick', values: [t('reports.status.new')] } };
@@ -148,7 +132,7 @@
 	async function openAdmins() {
 		adminsOpen = true;
 		try {
-			admins = await listAdmins(key);
+			admins = await listAdmins();
 		} catch {
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
 		}
@@ -158,35 +142,17 @@
 		try {
 			noAccount = (await change()) === false;
 			if (!noAccount) newAdmin = '';
-			admins = await listAdmins(key);
+			admins = await listAdmins();
 		} catch {
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
 		}
-	}
-
-	function useKey(event: Event) {
-		event.preventDefault();
-		if (!typed.trim()) return;
-		key = typed.trim();
-		typed = '';
-		wrongKey = false;
-		// Storage blocked: the key lasts for this visit.
-		writeStoredText(KEY_STORAGE, key);
-		void load();
-	}
-
-	function forget() {
-		key = '';
-		reports = undefined;
-		access = 'none';
-		writeStoredText(KEY_STORAGE, undefined);
 	}
 
 	async function changeStatus(report: Report, status: ReportStatus) {
 		const before = report.status;
 		report.status = status;
 		try {
-			await setReportStatus(key, report.id, status);
+			await setReportStatus(report.id, status);
 		} catch {
 			report.status = before;
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
@@ -195,7 +161,7 @@
 
 	async function remove(report: Report) {
 		try {
-			await deleteReport(key, report.id);
+			await deleteReport(report.id);
 			reports = reports?.filter((r) => r.id !== report.id);
 			dialogOpen = false;
 		} catch {
@@ -221,28 +187,21 @@
 	{/snippet}
 	{#snippet toolbar()}
 		<!-- Yourself as the reporter in one tap (Trevor, 2026-10-19); the Reporter column filters
-		     by anyone. The key has no account, so it has no reports of its own. -->
+		     by anyone. -->
 		<Toggle
 			label={t('reports.onlyMine')}
 			checked={onlyMine}
-			disabled={access !== 'reader' && access !== 'account'}
+			disabled={!reading}
 			onChange={(on) => (onlyMine = on)}
 		/>
 	{/snippet}
 	{#if access === 'checking'}
 		<p class="none" aria-busy="true">{t('reports.checking')}</p>
 	{:else if access === 'none'}
-		<form class="key" bind:this={keyForm} onsubmit={useKey}>
-			<TextField
-				label={wrongKey ? t('reports.wrongKey') : t('reports.adminKey')}
-				bind:value={typed}
-				type="password"
-				oncommit={() => {
-					keyForm?.requestSubmit();
-					return false;
-				}}
-			/>
-		</form>
+		<!-- Signed out: reports are read with an account. -->
+		<div class="sign-in">
+			<Button onclick={openAccount}>{t('account.signIn.title')}</Button>
+		</div>
 	{:else}
 		<DataTable
 			label={t('reports.inbox')}
@@ -338,7 +297,7 @@
 				<span>{email}</span>
 				<DeleteButton
 					label={t('reports.removeAdmin', { email })}
-					onclick={() => changeAdmins(() => removeAdmin(key, id))}
+					onclick={() => changeAdmins(() => removeAdmin(id))}
 				/>
 			</li>
 		{:else}
@@ -352,7 +311,7 @@
 		bind:value={newAdmin}
 		oncommit={() => {
 			const email = newAdmin.trim();
-			if (email) void changeAdmins(() => addAdmin(key, email));
+			if (email) void changeAdmins(() => addAdmin(email));
 			return false;
 		}}
 	/>
@@ -367,6 +326,9 @@
 />
 
 <style>
+	.sign-in {
+		padding: var(--space-2);
+	}
 	.admins {
 		display: grid;
 		margin: 0 0 var(--space-3);

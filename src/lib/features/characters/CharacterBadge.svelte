@@ -20,8 +20,6 @@
 		alignment?: Alignment;
 		/** Shown after the role when the seat has a player name. */
 		playerName?: string;
-		/** Sized to sit inside a line of text; the tap area still reaches 44px. */
-		inline?: boolean;
 		/** The words as written ("Village Idiots"); defaults to the character's name. */
 		text?: CharacterName;
 		/**
@@ -40,7 +38,6 @@
 		characterId,
 		alignment,
 		playerName,
-		inline = false,
 		text,
 		character: given,
 		interactive: tappable = true
@@ -96,7 +93,6 @@
 {#if interactive}<button
 		type="button"
 		class="badge"
-		class:inline
 		data-team={team}
 		data-character-id={characterId}
 		aria-haspopup="dialog"
@@ -110,33 +106,56 @@
 	>{:else if tappable && own}<button
 		type="button"
 		class="badge"
-		class:inline
 		data-team={team}
 		data-character-id={characterId}
 		data-own=""
 		onclick={() => shown?.focus()}>{@render face()}</button
-	>{:else}<span class="badge still" class:inline data-team={team} data-character-id={characterId}
+	>{:else}<span class="badge still" data-team={team} data-character-id={characterId}
 		>{@render face()}</span
 	>{/if}{#if character && interactive}
 	{#if used}<CharacterDialog bind:open {character} {icon} />{/if}
 {/if}
 
 <style>
+	/*
+	 * One design everywhere (Trevor, 2026-10-20: "We should only have one character inline
+	 * design"): a pill sized to sit inside a line of text, so it never makes the line taller
+	 * (Trevor, 2026-10-16: names sat high and crowded the underlined word above). It grows with
+	 * Settings > Tokens' name badge, text and icon sizes, each its own setting (Trevor,
+	 * 2026-10-18), and the tap area still reaches 44px.
+	 */
 	.badge {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-1, calc(0.25 * var(--u)));
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3, calc(0.75 * var(--u))) 0 var(--space-1, calc(0.25 * var(--u)));
+		gap: 0.25em;
+		--badge-h: max(
+			calc(1.3em * var(--inline-name-badge, 1)),
+			calc(1.1em * var(--inline-name-icon, 1) + 0.2em),
+			calc(1.3em * var(--inline-name-text, 1))
+		);
+		height: var(--badge-h);
+		/* Overrides the 44px minimum every button gets; ::before keeps the tap area. */
+		min-height: 0;
+		max-width: 100%;
+		padding: 0 calc(0.5em * var(--inline-name-badge, 1)) 0 calc(0.1em * var(--inline-name-badge, 1));
 		border: 0;
 		border-radius: var(--radius-full);
 		font: inherit;
+		font-size: 0.92em;
 		font-weight: 600;
-		max-width: 100%;
+		line-height: 1;
+		/* Centred on the text's x-height, not sitting on the baseline (which lifts it). */
 		vertical-align: middle;
 		cursor: pointer;
 		background: var(--surface-raised);
 		color: var(--on-surface);
+	}
+	/* The tap area reaches the 44px minimum without making the line taller. */
+	.badge::before {
+		content: '';
+		position: absolute;
+		inset: calc((var(--badge-h) - var(--tap-target)) / 2) 0;
 	}
 	.badge.still {
 		cursor: inherit;
@@ -166,74 +185,33 @@
 	.icon {
 		display: inline-grid;
 		place-items: center;
-		/* Character icons follow the Character icon size setting (--character-icon-scale); tokens do not. */
-		width: calc(2 * var(--u) * var(--character-icon-scale, 1));
-		height: calc(2 * var(--u) * var(--character-icon-scale, 1));
+		width: calc(1.1em * var(--inline-name-icon, 1));
+		height: calc(1.1em * var(--inline-name-icon, 1));
 		flex: none;
 		border-radius: 50%;
 		background: var(--token-face, var(--on-surface));
 		overflow: hidden;
 	}
 	.icon img {
-		width: calc(1.75 * var(--u) * var(--character-icon-scale, 1));
-		height: calc(1.75 * var(--u) * var(--character-icon-scale, 1));
-	}
-	.name {
-		/* Only when the badge alone is wider than its line (tiny screen, largest text). */
-		min-width: 0;
-		overflow-wrap: anywhere;
-		font-family: var(--font-character);
-		font-weight: var(--font-character-weight);
+		width: calc(0.95em * var(--inline-name-icon, 1));
+		height: calc(0.95em * var(--inline-name-icon, 1));
 	}
 	/*
-	 * An inline badge has a fixed height in the line, so its name never wraps. In a cell
-	 * narrower than the name (History's Characters table on a phone) it ends in "…" inside
-	 * the pill rather than running past it over the next column.
+	 * The badge has a fixed height in the line, so its name never wraps. In a space narrower
+	 * than the name (History's Characters table on a phone) it ends in "…" inside the pill
+	 * rather than running past it.
 	 */
-	.badge.inline .name,
-	.badge.inline .player {
+	.name,
+	.player {
+		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.badge.inline {
-		position: relative;
-		gap: 0.25em;
-		min-height: 0;
-		/*
-		 * Fits inside the line box (Trevor, 2026-10-16: names sat high and crowded the
-		 * underlined word above), so it never makes the line taller; grows with Settings >
-		 * Tokens' Name badge size, and when a larger name or icon needs it. Name text, icon and
-		 * badge sizes are each their own setting (Trevor, 2026-10-18).
-		 */
-		--badge-h: max(
-			calc(1.3em * var(--inline-name-badge, 1)),
-			calc(1.1em * var(--inline-name-icon, 1) + 0.2em),
-			calc(1.3em * var(--inline-name-text, 1))
-		);
-		height: var(--badge-h);
-		padding: 0 calc(0.5em * var(--inline-name-badge, 1)) 0 calc(0.1em * var(--inline-name-badge, 1));
-		font-size: 0.92em;
-		line-height: 1;
-		/* Centred on the text's x-height, not sitting on the baseline (which lifts it). */
-		vertical-align: middle;
-	}
-	/* The tap area reaches the 44px minimum without making the line taller. */
-	.badge.inline::before {
-		content: '';
-		position: absolute;
-		inset: calc((var(--badge-h) - var(--tap-target)) / 2) 0;
-	}
-	.badge.inline .name {
+	.name {
+		font-family: var(--font-character);
+		font-weight: var(--font-character-weight);
 		font-size: calc(1em * var(--inline-name-text, 1));
-	}
-	.badge.inline .icon {
-		width: calc(1.1em * var(--inline-name-icon, 1));
-		height: calc(1.1em * var(--inline-name-icon, 1));
-	}
-	.badge.inline .icon img {
-		width: calc(0.95em * var(--inline-name-icon, 1));
-		height: calc(0.95em * var(--inline-name-icon, 1));
 	}
 	.player {
 		font-family: var(--font-player);

@@ -344,6 +344,7 @@ function answer(
 const ANSWER_WIKI: Readonly<Record<CharacterId, string>> = {
 	towncrier: `${W}Town_Crier`,
 	flowergirl: `${W}Flowergirl`,
+	godfather: `${W}Godfather`,
 	undertaker: `${W}Undertaker`,
 	juggler: `${W}Juggler`,
 	oracle: `${W}Oracle`,
@@ -454,6 +455,53 @@ export function undertakerAnswer(
 			relevant: executed ? [executed.seatId] : [],
 			facts: executed ? [fact(game, executed.seatId, characters)] : []
 		}
+	);
+}
+
+/**
+ * What happened today that the game alone does not hold, from the log (`diedToday` in the
+ * engine): who died since the most recent New day.
+ */
+export interface NightToday {
+	died: readonly SeatId[];
+}
+
+/**
+ * Godfather: whether an Outsider died today, so the Godfather wakes tonight to kill
+ * (https://wiki.bloodontheclocktower.com/Godfather). An Outsider is a player whose true
+ * character is an Outsider (a Drunk counts, as does a Recluse). Deaths come from today's
+ * deaths in the log (`today`), today's executions and exiles, and the Godfather's "Died
+ * Today" reminder on a dead Outsider, which is how the Storyteller marks it on the board.
+ */
+export function godfatherAnswer(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	today?: NightToday
+): NightAnswer {
+	const marked = game.seating.filter((s) =>
+		game.seats[s].reminders.some((r) => r.characterId === 'godfather' && r.label === 'Died Today')
+	);
+	const died = new Set([
+		...(today?.died ?? []),
+		...[...entriesOf(game, 'execution'), ...entriesOf(game, 'exile')]
+			.filter((e) => e.died)
+			.map((e) => e.seatId),
+		...marked
+	]);
+	const outsiders = game.seating.filter(
+		(s) => died.has(s) && getSeat(game, s)?.dead && typeOf(game, s, characters) === 'outsider'
+	);
+	return answer(
+		game,
+		seatId,
+		'godfather',
+		characters,
+		outsiders.length === 0
+			? { kind: 'none', reason: 'No Outsider died today' }
+			: { kind: 'yes-no', value: true },
+		outsiders,
+		{ relevant: outsiders, facts: outsiders.map((s) => fact(game, s, characters)) }
 	);
 }
 
@@ -605,8 +653,12 @@ export function mathematicianAnswer(
 
 /** The characters with answers worked out here. */
 export const NIGHT_ANSWERS: Readonly<
-	Record<CharacterId, (game: Game, seatId: SeatId, characters: CharacterLookup) => NightAnswer>
+	Record<
+		CharacterId,
+		(game: Game, seatId: SeatId, characters: CharacterLookup, today?: NightToday) => NightAnswer
+	>
 > = {
+	godfather: godfatherAnswer,
 	towncrier: townCrierAnswer,
 	flowergirl: flowergirlAnswer,
 	undertaker: undertakerAnswer,
@@ -1234,14 +1286,15 @@ export function nightStepInfo(
 	game: Game,
 	character: Pick<Character, 'id'>,
 	characters: CharacterLookup,
-	seats: readonly SeatId[] = game.seating.filter((s) => game.seats[s].characterId === character.id)
+	seats: readonly SeatId[] = game.seating.filter((s) => game.seats[s].characterId === character.id),
+	today?: NightToday
 ): NightStepInfo | undefined {
 	if (seats.length === 0) return undefined;
 	const answerFor = Object.hasOwn(NIGHT_ANSWERS, character.id)
 		? NIGHT_ANSWERS[character.id]
 		: undefined;
 	if (answerFor) {
-		return { kind: 'answer', answers: seats.map((s) => answerFor(game, s, characters)) };
+		return { kind: 'answer', answers: seats.map((s) => answerFor(game, s, characters, today)) };
 	}
 	const checks = seats.flatMap((s) => deathCheck(game, s, character.id, characters) ?? []);
 	if (checks.length > 0) return { kind: 'death', checks };
@@ -1261,7 +1314,8 @@ export function withNightInfo<T extends NightStep>(
 	steps: readonly T[],
 	game: Game,
 	characters: CharacterLookup,
-	night?: Night
+	night?: Night,
+	today?: NightToday
 ): (T | NightStep)[] {
 	const all = withTravellerAlignmentStep(
 		night ? withGainedSteps(steps, game, characters, night) : steps,
@@ -1276,7 +1330,7 @@ export function withNightInfo<T extends NightStep>(
 			? [gained.seatId]
 			: game.seating.filter((s) => game.seats[s].characterId === step.character!.id);
 		const as = gained ? (characters.get(gained.characterId) ?? step.character) : step.character;
-		const found = nightStepInfo(game, as, characters, seats);
+		const found = nightStepInfo(game, as, characters, seats, today);
 		// Ability deaths happen on other nights (the Grandmother wakes on the first night to learn).
 		const info = found?.kind === 'death' && night === 'first' ? undefined : found;
 		const impaired = seats
