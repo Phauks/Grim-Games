@@ -413,6 +413,42 @@ describe('Heretic (https://wiki.bloodontheclocktower.com/Heretic)', () => {
 	});
 });
 
+describe('Binary Supernovae (https://beardytas.com/garden-of-djinn/binary-supernovae/)', () => {
+	// Two Demons; good wins as soon as one of them dies by execution.
+	const TWO = ['washerwoman', 'chef', 'empath', 'monk', 'poisoner', 'imp', 'imp'];
+	const rule = { demonExecutedBy: 'Binary Supernovae' };
+
+	it('one Demon executed: good wins, though the other lives', () => {
+		const { ends: e, seats } = ends(TWO, [execute(5)], rule);
+		expect(e).toMatchObject([
+			{
+				rule: 'demon-executed',
+				winner: 'good',
+				seats: [seats[5]],
+				ruleName: 'Binary Supernovae',
+				holds: []
+			}
+		]);
+	});
+
+	it('a Demon killed another way: the game goes on', () => {
+		expect(ends(TWO, [dead(5)], rule).ends).toEqual([]);
+	});
+
+	it('a living Mastermind may keep it going, as the rule page allows', () => {
+		const cast = ['washerwoman', 'chef', 'empath', 'monk', 'mastermind', 'imp', 'imp'];
+		const e = ends(cast, [execute(5)], rule).ends;
+		expect(e.find((x) => x.rule === 'demon-executed')?.holds).toMatchObject([
+			{ rule: 'mastermind' }
+		]);
+		expect(promptable(e).some((x) => x.rule === 'demon-executed')).toBe(false);
+	});
+
+	it('without the rule, one executed Demon of two ends nothing', () => {
+		expect(ends(TWO, [execute(5)]).ends).toEqual([]);
+	});
+});
+
 describe('suggestedWinner', () => {
 	it('is undefined when the ends disagree', () => {
 		const cast = ['washerwoman', 'saint', 'empath', 'monk', 'poisoner', 'imp'];

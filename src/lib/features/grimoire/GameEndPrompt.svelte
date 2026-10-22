@@ -15,6 +15,7 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { dismissedGameEnds } from './device-notes.ts';
@@ -54,7 +55,12 @@
 			grimoire.isNightStepDone(tonight(game), { id: 'dusk' })
 	);
 	const on = $derived(active && preferences.current.assistance.gameEndPrompts);
-	const ends = $derived(on ? gameEnds(game, characters, { dayEnded }) : []);
+	// A special rule under which an executed Demon wins it for good (Binary Supernovae).
+	const demonExecutedBy = $derived(
+		readGameMode(game.gameId)?.rules.find((r) => r.parts.winConditions?.kind === 'demon-executed')
+			?.name
+	);
+	const ends = $derived(on ? gameEnds(game, characters, { dayEnded, demonExecutedBy }) : []);
 
 	// Dismissed per condition and what holds it off, so a hold ending asks again.
 	const dismissKey = (e: GameEnd) => `${e.key}|${e.holds.map((h) => h.rule).join(',')}`;
@@ -160,6 +166,7 @@
 					{#if !OWN_WORDING}
 						{#each end.seats as id (id)}{@render seat(id)}{/each}
 						{#if end.characterId}{@render ability(end.characterId)}{/if}
+						{#if end.ruleName}<span class="rule">{end.ruleName}</span>{/if}
 					{:else if end.rule === 'demon-dead'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead.
 					{:else if end.rule === 'two-alive'}
@@ -179,6 +186,8 @@
 						{@render seat(end.seats[0])} alive after day 5.
 					{:else if end.rule === 'fearmonger'}
 						{@render seat(end.seats[1])} nominated and executed {@render seat(end.seats[0])}.
+					{:else if end.rule === 'demon-executed'}
+						{#each end.seats as id (id)}{@render seat(id)}{/each} executed ({end.ruleName}).
 					{:else if end.rule === 'summoner'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead with no Demon.
 					{:else if end.seats.length > 0}
@@ -231,6 +240,9 @@
 	}
 	.ability {
 		font-family: var(--font-ability);
+	}
+	.rule {
+		font-weight: 600;
 	}
 	.team {
 		display: inline-block;
