@@ -9,6 +9,9 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 	import { followRoomScript } from './room-script.ts';
@@ -97,6 +100,13 @@
 	};
 	const summary = $derived.by(() => {
 		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
+		// The same words as the Storyteller's board once the game has ended.
+		if (view.ended)
+			return view.ended.winner === 'good'
+				? t('room.gameOverGood')
+				: view.ended.winner === 'evil'
+					? t('room.gameOverEvil')
+					: t('room.gameOver');
 		if (view.request)
 			return t('room.waiting', { name: view.request.name, seat: seatName(view.request.seatId) });
 		if (mine) return t('room.seated', { seat: seatName(mine), name: view.me.name ?? '' });
@@ -181,6 +191,27 @@
 		openRoom(lookup.code);
 	}
 
+	/*
+	 * Grim view (plan D1, Trevor 2026-10-22: "grim view by password or direct link. drop
+	 * spectate"): the room code and the Storyteller's password open the view-only grimoire.
+	 * Players without a seat (Specters) join as players.
+	 */
+	let grimViewOpen = $state(false);
+	let grimPassword = $state('');
+	async function grimView(event: SubmitEvent) {
+		event.preventDefault();
+		const password = grimPassword.trim();
+		if (!lookup || !password) return;
+		const key = await viewerKeyFromPassword(lookup.code, password);
+		grimViewOpen = false;
+		grimPassword = '';
+		// The key goes in the hash, which never reaches the server; the path is resolved.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		await goto(`${resolve('/watch/[code]', { code: lookup.code })}#${key}`, {
+			state: { password: true }
+		});
+	}
+
 	function ask(event: SubmitEvent) {
 		event.preventDefault();
 		const n = name.trim();
@@ -237,10 +268,31 @@
 				{/if}
 			</div>
 		</section>
-		<Button type="submit" variant="accent" disabled={!canJoin}>
-			{t('room.join')}
-		</Button>
+		<div class="entry">
+			<Button type="submit" variant="accent" disabled={!canJoin}>
+				{t('room.join')}
+			</Button>
+			<!-- Always here; disabled until the room has a Grim view password, so nothing moves. -->
+			<Button disabled={!found?.grimView} onclick={() => (grimViewOpen = true)}
+				>{t('room.grimView')}</Button
+			>
+		</div>
 	</form>
+	<Dialog bind:open={grimViewOpen} title={t('room.grimView')}>
+		<form class="grim-view" onsubmit={grimView}>
+			<TextField
+				label={t('room.watch.password')}
+				bind:value={grimPassword}
+				maxlength={64}
+				autocomplete="off"
+			/>
+			<ModalActions
+				onCancel={() => (grimViewOpen = false)}
+				disabled={!grimPassword.trim()}
+				submit
+			/>
+		</form>
+	</Dialog>
 	{#if recent.length > 0}
 		<PageSection title={t('room.yourGames')}>
 			<ul class="recent" data-testid="recent-rooms">
@@ -443,6 +495,16 @@
 	.game-status {
 		margin: 0;
 		color: var(--on-surface-muted);
+	}
+	.entry {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--space-2);
+	}
+	.grim-view {
+		display: grid;
+		gap: var(--space-4);
 	}
 	.code-form :global(.button) {
 		min-width: calc(10 * var(--u));

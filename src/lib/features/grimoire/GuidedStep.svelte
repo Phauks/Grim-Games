@@ -96,7 +96,7 @@
 	 * The character's own reminder tokens, one row per copy the game has (the Mathematician's
 	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
 	 */
-	const total = $derived(reminderCopies(game, characters, grimoire.copies));
+	const total = $derived(reminderCopies(game, characters, grimoire.copies, grimoire.bankCopies));
 	const rows = $derived.by(() => {
 		const character = step?.character;
 		if (!character) return [];
@@ -224,6 +224,16 @@
 					{/if}
 				</div>
 			</div>
+			<!-- What to do comes before any information (Trevor, 2026-10-20). -->
+			{#if step.reminder}
+				<p class="text">
+					{#if step.character}
+						<NightText text={step.reminder} character={step.character} {night} />
+					{:else}
+						{step.reminder}
+					{/if}
+				</p>
+			{/if}
 			<NightAlerts {grimoire} {step} withoutImpaired />
 			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
 				<TravellerAlignment
@@ -282,15 +292,6 @@
 					}}
 				/>
 			{/if}
-			{#if step.reminder}
-				<p class="text">
-					{#if step.character}
-						<NightText text={step.reminder} character={step.character} {night} />
-					{:else}
-						{step.reminder}
-					{/if}
-				</p>
-			{/if}
 			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). -->
 			{#if step.character}
 				<!-- Over the open step, which stays open under the sheet, as with onShow above. -->
@@ -320,7 +321,6 @@
 										characterId={held.characterId}
 										character={characters.get(held.characterId)}
 										alignment={held.alignment}
-										inline
 									/>{/if}</span
 							>
 							<Button variant="quiet" onclick={() => choose(label, at)}

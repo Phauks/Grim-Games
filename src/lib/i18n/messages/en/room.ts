@@ -1,9 +1,9 @@
 import { APP_NAME } from '#lib/core/app-name.ts';
 
-/** Live rooms: the Storyteller's "Players' phones" page and the players' join pages. */
+/** Live rooms: the Storyteller's Share page and the players' join pages. */
 export const room = {
 	// Storyteller's page
-	'room.title': "Players' phones",
+	'room.title': 'Share',
 	'room.back': 'Grimoire',
 	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',
@@ -46,7 +46,8 @@ export const room = {
 	'room.notACode': 'That is not a room code. Codes are six digits.',
 	'room.closedOrWrong': 'This room is closed, or the code is wrong.',
 	'room.codeLabel': 'Room code from the Storyteller',
-	'room.join': 'Join',
+	'room.join': 'Join as player',
+	'room.grimView': 'Grim view',
 	'room.gameToJoin': 'Game to join',
 	'room.lookingUp': 'Looking for the game…',
 	'room.noGame': 'No open game has this code.',
@@ -63,6 +64,9 @@ export const room = {
 	'room.waiting': 'Waiting for the Storyteller: {name}, {seat}.',
 	'room.seated': 'You are in {seat} as {name}.',
 	'room.unseated': 'You are in the room as {name}, without a seat yet.',
+	'room.gameOver': 'Game over',
+	'room.gameOverGood': 'Game over: Good won',
+	'room.gameOverEvil': 'Game over: Evil won',
 	'room.choose': 'Choose your seat and type your name, then ask the Storyteller.',
 	'room.seatLower': 'seat {number}',
 	'room.anySeatLower': 'any seat',
@@ -86,6 +90,7 @@ export const room = {
 	'room.watch.toggle': 'View-only grimoire link',
 	'room.watch.hint':
 		'Spectators with this link see the whole grimoire live, after promising not to spoil the game. Each new link stops the last one.',
+	'room.watch.password': 'Grim view password',
 	'room.watch.qrLabel': 'QR code to watch the grimoire',
 	'room.watch.qrCaption': 'Spoilers',
 	'room.watch.off': 'Off',
@@ -105,6 +110,8 @@ export const room = {
 	'room.watch.pledgeIntegrity': 'You won’t do anything that spoils the game for its players.',
 	'room.watch.waiting': 'Waiting for the Storyteller’s grimoire…',
 	'room.watch.turnedOff': 'The Storyteller has turned this link off.',
+	'room.watch.wrongPassword': 'Wrong password, or the Storyteller has turned Grim view off.',
+	'room.watch.tooManyTries': 'Too many wrong tries. Wait a few minutes, then try again.',
 	'room.watch.badLink': 'This link is incomplete. Ask the Storyteller for it again.',
 	'room.watch.home': 'Home'
 } as const;

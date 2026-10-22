@@ -34,7 +34,7 @@
 	{#each ids as id (id)}
 		{@const character = from.get(sameId(id))}
 		{#if character}
-			<CharacterBadge characterId={character.id} {character} inline />
+			<CharacterBadge characterId={character.id} {character} />
 		{:else}
 			<span>{id}</span>
 		{/if}

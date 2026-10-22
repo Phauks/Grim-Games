@@ -6,6 +6,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { PRIVACY_VERSION } from '#lib/features/account/account-protocol.ts';
+	import OfficialNotice from '#lib/features/about/OfficialNotice.svelte';
 
 	const updated = new Date(`${PRIVACY_VERSION}T00:00:00Z`).toLocaleDateString('en-GB', {
 		day: 'numeric',
@@ -134,13 +135,13 @@
 			</li>
 		</ul>
 	</PageSection>
-	<PageSection title="Live rooms (Players' phones)">
+	<PageSection title="Live rooms (Share)">
 		<p>
-			When the Storyteller opens Players' phones, the app opens a room on our server under a
-			six-digit code. The room holds what everyone at the table can already see: each seat's number
-			and player name, who looks dead, today's nominations and executions, and the script. It never
-			holds characters, reminders, notes or anything else in the grimoire, unless the Storyteller
-			turns on its view-only grimoire link.
+			When the Storyteller opens Share, the app opens a room on our server under a six-digit code.
+			The room holds what everyone at the table can already see: each seat's number and player name,
+			who looks dead, today's nominations and executions, and the script. It never holds characters,
+			reminders, notes or anything else in the grimoire, unless the Storyteller turns on its
+			view-only grimoire link.
 		</p>
 		<p>
 			The view-only link lets spectators watch the whole grimoire live: the game and its history,
@@ -305,6 +306,7 @@
 			be asked through Report an issue.
 		</p>
 	</PageSection>
+	<OfficialNotice />
 </Page>
 
 <style>

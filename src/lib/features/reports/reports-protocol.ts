@@ -12,8 +12,8 @@
  *   POST   /api/reports/admins       { email }                    -> 204, 404 no such account
  *   DELETE /api/reports/admins       { id }                       -> 204
  *
- * Triage and the admin list need a signed-in admin account (Trevor, 2026-10-18) or the Worker
- * secret REPORTS_ADMIN_KEY as a Bearer token; otherwise they answer 404. Any signed-in account
+ * Triage and the admin list need a signed-in admin account (Trevor, 2026-10-18; no admin key
+ * since 2026-10-22); otherwise they answer 404. Any signed-in account
  * reads the reports sent from an account (Trevor, 2026-10-19: filter by user, and set yourself
  * as the user easily); what a report was sent with stays with its sender and the admins.
  */

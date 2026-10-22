@@ -9,6 +9,8 @@
 		title: string;
 		/** Replaces the title's text, e.g. "Put [reminder] on" with the reminder's token. */
 		heading?: Snippet;
+		/** Beside the X, e.g. a bank token's ⋯ (Trevor, 2026-10-20). */
+		headActions?: Snippet;
 		game: Game;
 		characters: CharacterLookup;
 		/** Left out of the list (the seat the choice starts from). */
@@ -16,14 +18,23 @@
 		onChoose: (seatId: SeatId) => void;
 	}
 
-	let { open = $bindable(), title, heading, game, characters, exclude, onChoose }: Props = $props();
+	let {
+		open = $bindable(),
+		title,
+		heading,
+		headActions,
+		game,
+		characters,
+		exclude,
+		onChoose
+	}: Props = $props();
 
 	const seats = $derived(
 		game.seating.map((seatId, i) => ({ seat: game.seats[seatId], number: i + 1 }))
 	);
 </script>
 
-<Dialog bind:open {title} {heading}>
+<Dialog bind:open {title} {heading} {headActions}>
 	<ul>
 		{#each seats as { seat, number } (seat.seatId)}
 			{#if seat.seatId !== exclude}
@@ -38,7 +49,6 @@
 									characterId={character.id}
 									{character}
 									alignment={seat.alignment}
-									inline
 									interactive={false}
 								/>{:else}None{/if}</span
 						>

@@ -2,7 +2,7 @@
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
-	import { deadCharacters, prepTextSegments, setupReminders } from '#lib/core/rules/index.ts';
+	import { deadCharacters, prepTextSegments } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -24,13 +24,8 @@
 	} from './reminders.ts';
 	import { GENERIC_REMINDER_ID, scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
-	import {
-		pendingTray,
-		trayItems,
-		withoutOffSeat,
-		traySeats,
-		type TrayItem
-	} from './setup-tray.ts';
+	import ReminderMoreButton from './ReminderMoreButton.svelte';
+	import { pendingSetup, traySeats, type TrayItem } from './setup-tray.ts';
 
 	/**
 	 * The reminder bank (Trevor, 2026-10-16), always docked under the board. During setup it
@@ -139,10 +134,7 @@
 		return i < 0 ? scriptOrder.length : i;
 	};
 	const setupItems = $derived(
-		withoutOffSeat(
-			pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed),
-			[...(game.looseReminders ?? []), ...Object.values(game.ruleReminders ?? {}).flat()]
-		).sort(
+		pendingSetup(game, characters, grimoire.trayDismissed).sort(
 			(a, b) =>
 				at(a.suggestion.characterId) - at(b.suggestion.characterId) ||
 				byLabel(a.suggestion.label, b.suggestion.label)
@@ -180,13 +172,14 @@
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
-		const dead = deadCharacters(game);
+		const dead = deadCharacters(game, characters);
 		const rest = bankReminders(
 			game,
 			characters,
 			focus,
 			focusMode === 'front',
-			grimoire.copies
+			grimoire.copies,
+			grimoire.bankCopies
 		).flatMap(({ characterId, label, left, now }) => {
 			const key = `${characterId}:${label}`;
 			const n = left - (pending[key] ?? 0);
@@ -539,6 +532,19 @@
 				character={characters.get(choosing.characterId)}
 			/>{/if} on
 	{/snippet}
+	{#snippet headActions()}
+		<!-- Duplicate from the bank too; the copy stays in the bank (Trevor, 2026-10-20). -->
+		{#if choosing && !isGeneric(choosing)}
+			<ReminderMoreButton
+				{grimoire}
+				reminder={choosing}
+				onDone={() => {
+					chooserOpen = false;
+					choosing = undefined;
+				}}
+			/>
+		{/if}
+	{/snippet}
 </SeatChooser>
 
 <Dialog bind:open={shownOpen} title="Setup reminder">
@@ -552,7 +558,6 @@
 		{#if shown}<CharacterBadge
 				characterId={shown.suggestion.characterId}
 				character={characters.get(shown.suggestion.characterId)}
-				inline
 			/>{/if}
 	{/snippet}
 	{#if shown}
@@ -565,7 +570,6 @@
 					/>{:else if part.kind === 'character'}<CharacterBadge
 						characterId={part.id}
 						character={characters.get(part.id)}
-						inline
 					/>{:else}{part.text}{/if}{/each}
 		</p>
 		<!-- Loose mode gives nothing to a seat: it is dragged onto the board. -->
@@ -586,7 +590,6 @@
 								character={characters.get(id)}
 								alignment={game.seats[seatId].alignment}
 								playerName={seatName(seatId)}
-								inline
 							/>
 						{:else}
 							{seatName(seatId)}

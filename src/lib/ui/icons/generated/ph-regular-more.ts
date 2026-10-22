@@ -9,6 +9,7 @@ import ph_arrow_u_up_right from '~icons/ph/arrow-u-up-right';
 import ph_bag_simple from '~icons/ph/bag-simple';
 import ph_beer_bottle from '~icons/ph/beer-bottle';
 import ph_bell from '~icons/ph/bell';
+import ph_binoculars from '~icons/ph/binoculars';
 import ph_bird from '~icons/ph/bird';
 import ph_book_bookmark from '~icons/ph/book-bookmark';
 import ph_book_open from '~icons/ph/book-open';
@@ -24,7 +25,6 @@ import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_corners_out from '~icons/ph/corners-out';
 import ph_cross from '~icons/ph/cross';
 import ph_crown from '~icons/ph/crown';
-import ph_device_mobile from '~icons/ph/device-mobile';
 import ph_diamond from '~icons/ph/diamond';
 import ph_dice_five from '~icons/ph/dice-five';
 import ph_door_open from '~icons/ph/door-open';
@@ -109,6 +109,7 @@ const icons: IconMap = {
 	'ph:bag-simple': ph_bag_simple,
 	'ph:beer-bottle': ph_beer_bottle,
 	'ph:bell': ph_bell,
+	'ph:binoculars': ph_binoculars,
 	'ph:bird': ph_bird,
 	'ph:book-bookmark': ph_book_bookmark,
 	'ph:book-open': ph_book_open,
@@ -124,7 +125,6 @@ const icons: IconMap = {
 	'ph:corners-out': ph_corners_out,
 	'ph:cross': ph_cross,
 	'ph:crown': ph_crown,
-	'ph:device-mobile': ph_device_mobile,
 	'ph:diamond': ph_diamond,
 	'ph:dice-five': ph_dice_five,
 	'ph:door-open': ph_door_open,

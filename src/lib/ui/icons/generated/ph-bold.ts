@@ -18,6 +18,7 @@ import ph_bag_simple_bold from '~icons/ph/bag-simple-bold';
 import ph_beer_bottle_bold from '~icons/ph/beer-bottle-bold';
 import ph_beer_stein_bold from '~icons/ph/beer-stein-bold';
 import ph_bell_bold from '~icons/ph/bell-bold';
+import ph_binoculars_bold from '~icons/ph/binoculars-bold';
 import ph_bird_bold from '~icons/ph/bird-bold';
 import ph_book_bookmark_bold from '~icons/ph/book-bookmark-bold';
 import ph_book_open_bold from '~icons/ph/book-open-bold';
@@ -213,6 +214,7 @@ const icons: IconMap = {
 	'ph:beer-bottle-bold': ph_beer_bottle_bold,
 	'ph:beer-stein-bold': ph_beer_stein_bold,
 	'ph:bell-bold': ph_bell_bold,
+	'ph:binoculars-bold': ph_binoculars_bold,
 	'ph:bird-bold': ph_bird_bold,
 	'ph:book-bookmark-bold': ph_book_bookmark_bold,
 	'ph:book-open-bold': ph_book_open_bold,

@@ -37,5 +37,4 @@
 		/>{:else}{#each mentions(part.text) as m, j (j)}{#if m.kind === 'character'}<CharacterBadge
 					characterId={m.characterId}
 					text={m.text}
-					inline
 				/>{:else}{m.text}{/if}{/each}{/if}{/each}

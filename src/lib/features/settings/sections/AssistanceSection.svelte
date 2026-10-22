@@ -29,7 +29,6 @@
 {#each STORYTELLER_GROUPS.night as key (key)}{@render toggle(key)}{/each}
 
 <h3>{t('settings.groupSetup')}</h3>
-{#each STORYTELLER_GROUPS.setup as key (key)}{@render toggle(key)}{/each}
 <!-- What face-down bag tiles show (Trevor, 2026-10-16: a dropdown, not a switch). -->
 <SettingSelect
 	label={t('settings.tileLabels')}
@@ -43,6 +42,12 @@
 	description={t('settings.requireNameHelp')}
 	checked={preferences.current.requireName}
 	onChange={(requireName) => preferences.update({ requireName })}
+/>
+<SettingToggle
+	label={t('settings.holdToReveal')}
+	description={t('settings.holdToRevealHelp')}
+	checked={preferences.current.holdToReveal}
+	onChange={(holdToReveal) => preferences.update({ holdToReveal })}
 />
 <SettingToggle
 	label={t('settings.ownWording')}
@@ -92,6 +97,15 @@
 	onChange={(timerMode) => preferences.update({ timerMode })}
 />
 <TimerPerPlayerRow />
+
+<h3>{t('settings.groupShare')}</h3>
+<!-- Also on Share's View grimoire tab, where it is used. -->
+<SettingToggle
+	label={t('settings.hideWatchLink')}
+	description={t('settings.hideWatchLinkHelp')}
+	checked={preferences.current.hideWatchLink}
+	onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
+/>
 
 <style>
 	h3 {

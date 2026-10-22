@@ -42,7 +42,6 @@
 			character={characters.get(characterId)}
 			alignment={alignmentOf(game, seatId)}
 			playerName={playerName(seatId)}
-			inline
 		/>{:else}<strong>{playerName(seatId)}</strong>{/if}
 {/snippet}
 
@@ -67,7 +66,6 @@
 							)}{:else}<CharacterBadge
 								characterId={impairment.source.characterId}
 								character={characters.get(impairment.source.characterId)}
-								inline
 							/>{/if}
 					{/if}
 				</span>

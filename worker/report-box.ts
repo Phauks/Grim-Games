@@ -11,11 +11,26 @@ import {
 	type ReportDraft,
 	type ReportStatus
 } from '../src/lib/features/reports/reports-protocol.ts';
+import { normaliseEmail } from '../src/lib/features/account/account-protocol.ts';
 import { remote, type DataBinding } from './shared-data.ts';
 
 export interface ReportBoxEnv {
 	REPORTS: DurableObjectNamespace<ReportBox>;
 	DATA?: DataBinding;
+	/**
+	 * Comma-separated sign-in emails that are always admins (Trevor, 2026-10-22: "set it in
+	 * Cloudflare"). Set as a secret on the Worker holding the reports, `grim-games-data`, so it
+	 * stays out of this public repo and survives deploys. Admins it names can add others in the
+	 * app.
+	 */
+	ADMIN_EMAILS?: string;
+}
+
+/** Whether `email` is one of the comma-separated `list`. */
+export function listedAdmin(list: string | undefined, email: string | undefined): boolean {
+	const wanted = normaliseEmail(email);
+	if (!wanted || !list) return false;
+	return list.split(',').some((entry) => normaliseEmail(entry) === wanted);
 }
 
 /** The one ReportBox there is. */
@@ -152,7 +167,9 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 			.map((row) => row.user_id);
 	}
 
-	async isAdmin(userId: string): Promise<boolean> {
+	/** Added in the app by user id, or named by sign-in email in ADMIN_EMAILS. */
+	async isAdmin(userId: string, email?: string): Promise<boolean> {
+		if (listedAdmin(this.env.ADMIN_EMAILS, email)) return true;
 		return (
 			this.sql.exec('SELECT 1 FROM admin_users WHERE user_id = ?', userId).toArray().length > 0
 		);

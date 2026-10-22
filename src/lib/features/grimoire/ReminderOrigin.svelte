@@ -41,12 +41,10 @@
 			character={characters.get(characterId)}
 			alignment={alignmentOf(game, s)}
 			playerName={seatName(s)}
-			inline
 			{interactive}
 		/>{:else}<CharacterBadge
 			{characterId}
 			character={characters.get(characterId)}
-			inline
 			{interactive}
 		/>{/each}{#if on}{@const onId = game.seats[on]?.characterId}
 		on {#if onId}<CharacterBadge
@@ -54,7 +52,6 @@
 				character={characters.get(onId)}
 				alignment={alignmentOf(game, on)}
 				playerName={seatName(on)}
-				inline
 				{interactive}
 			/>{:else}<strong>{seatName(on)}</strong>{/if}{/if}</span
 >

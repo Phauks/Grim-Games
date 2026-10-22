@@ -291,7 +291,6 @@
 			>{#snippet fill(name)}{@const c = playing[Number(name.slice(1))]}<CharacterBadge
 					characterId={c.id}
 					character={c}
-					inline
 				/>{/snippet}</Sentence
 		>
 	</p>
@@ -317,7 +316,6 @@
 			>{#snippet fill(name)}{@const c = doomed[Number(name.slice(1))]}<CharacterBadge
 					characterId={c.id}
 					character={c}
-					inline
 				/>{/snippet}</Sentence
 		>
 	</p>

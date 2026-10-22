@@ -44,6 +44,13 @@
 			.catch(() => undefined);
 	});
 	const data = $derived(officialData.current);
+	const characters = $derived(data ? sheetCharacters(script, data) : []);
+	const jinxes = $derived(data ? playerJinxes(script, data) : []);
+	// With the info back, the rule characters move there and the front keeps the players' own.
+	const ruleCharacter = (c: { type: string }) => c.type === 'fabled' || c.type === 'loric';
+	const frontCharacters = $derived(
+		settings.back === 'info' ? characters.filter((c) => !ruleCharacter(c)) : characters
+	);
 	const nights = $derived(
 		data ? (['first', 'other'] as const).map((n) => playerNight(script, data, n, numeric)) : []
 	);
@@ -126,8 +133,8 @@
 						<ScriptByline author={script.meta.author} {version} />
 					</header>
 					<ScriptSheet
-						characters={sheetCharacters(script, data)}
-						jinxes={playerJinxes(script, data)}
+						characters={frontCharacters}
+						{jinxes}
 						showJinxes={settings.jinxes}
 						{density}
 						flat
@@ -145,8 +152,22 @@
 				{@render frontSide()}
 			</section>
 		{/each}
-		{#if settings.back}
-			<section class="page back" bind:this={back}>
+		{#if settings.back === 'info'}
+			<section class="page back" bind:this={back} data-back="info">
+				<div class="fit" style:zoom={backZoom}>
+					<header>
+						<h1>{script.name}</h1>
+					</header>
+					<ScriptSheet
+						characters={characters.filter(ruleCharacter)}
+						{jinxes}
+						density="normal"
+						flat
+					/>
+				</div>
+			</section>
+		{:else if settings.back === 'night'}
+			<section class="page back" bind:this={back} data-back="night">
 				<div class="fit" style:zoom={backZoom}>
 					<!-- Title and player counts share the top, so both nights fit below them. -->
 					<header class="back-head">

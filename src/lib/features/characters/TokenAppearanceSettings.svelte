@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
@@ -26,7 +26,12 @@
 	import { sheetNumbersFor } from './sheet-night-numbers.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
-	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import {
+		boardLooks,
+		DEFAULT_BOARD_LOOKS,
+		NAME_OFFSET,
+		NAME_SIZE
+	} from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 
 	interface Props {
@@ -37,11 +42,11 @@
 		characterFont?: Snippet;
 		/** The Reminder tokens font, first in the reminder token's box. */
 		reminderFont?: Snippet;
-		/** Character icons in lists, pickers and the day, after the name sizes in the in-text box. */
-		characterIconSize?: Snippet;
+		/** The Player names font, with the player name badge's other settings. */
+		playerFont?: Snippet;
 	}
 
-	let { value, theme, onChange, characterFont, reminderFont, characterIconSize }: Props = $props();
+	let { value, theme, onChange, characterFont, reminderFont, playerFont }: Props = $props();
 
 	onMount(() => void loadOfficialData());
 	// A character with every marking, so each leaf setting shows (Trevor, 2026-10-19: "a setup,
@@ -156,6 +161,26 @@
 		disabled={!value.setupFlower}
 		onChange={(setupMovesName) => onChange({ ...value, setupMovesName })}
 	/>
+	<!-- The player name badge under each seat's token (Trevor, 2026-10-20: "player name badges
+	     should have settings in tokens under character tokens"), shown on the preview's token. -->
+	{@render playerFont?.()}
+	<SettingSlider
+		label={t('settings.nameSize')}
+		value={boardLooks.current.nameSize}
+		{...NAME_SIZE}
+		defaultValue={DEFAULT_BOARD_LOOKS.nameSize}
+		format={(size) => intl.number(size, { style: 'percent' })}
+		onChange={(nameSize) => boardLooks.update({ nameSize })}
+	/>
+	<!-- Clear of the character's name on the token (Trevor, 2026-10-18). -->
+	<SettingSlider
+		label={t('settings.nameOffset')}
+		value={boardLooks.current.nameOffset}
+		{...NAME_OFFSET}
+		defaultValue={DEFAULT_BOARD_LOOKS.nameOffset}
+		format={(offset) => intl.number(offset, { style: 'percent' })}
+		onChange={(nameOffset) => boardLooks.update({ nameOffset })}
+	/>
 	{@render colourRow('face')}
 	{@render colourRow('rim')}
 	{@render colourRow('ink')}
@@ -207,17 +232,13 @@
      for in-line reminder tokens"). -->
 <SettingGroup title={t('characters.group.inText')} testid="in-text-preview">
 	{#snippet preview()}
-		<!-- A list badge first, for Character icon size (lists, pickers and the day), then a
-		     line of text with a name and a reminder (Trevor, 2026-10-19). -->
+		<!-- A line of text with a name and a reminder. The badge is the one design used
+		     everywhere, in lists too (Trevor, 2026-10-20). -->
 		<div class="preview in-text">
-			{#if sample}<span class="list-sample" data-testid="list-badge-sample"
-					><CharacterBadge characterId={sample.id} character={sample} interactive={false} /></span
-				>{/if}
 			<p class="line">
 				{#if sample}<CharacterBadge
 						characterId={sample.id}
 						character={sample}
-						inline
 						interactive={false}
 					/>
 					{t('characters.inTextPlaces')}
@@ -254,7 +275,6 @@
 		defaultValue={1}
 		onChange={(inlineNameBadgeScale) => onChange({ ...value, inlineNameBadgeScale })}
 	/>
-	{@render characterIconSize?.()}
 	<SettingSlider
 		label={t('characters.inlineReminderSize')}
 		description={t('characters.inlineReminderSizeHelp')}
@@ -326,6 +346,12 @@
 		height: max(calc(1.1 * var(--sample)), 4.4rem);
 		white-space: nowrap;
 		overflow: hidden;
+	}
+	/* Room under the largest token for the player name at its largest size and distance
+	   (Trevor, 2026-10-20), so neither slider moves the settings or hides the name. */
+	.token-sample {
+		align-items: flex-start;
+		height: max(calc(1.45 * var(--sample)), 4.4rem);
 	}
 	.reminder-sample {
 		height: max(var(--sample), 3rem);

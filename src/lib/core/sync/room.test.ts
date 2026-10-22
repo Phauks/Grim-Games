@@ -5,6 +5,7 @@ import {
 	cancelRequest,
 	castVote,
 	closeVote,
+	gameOver,
 	hostView,
 	isScript,
 	isSharedGrimoire,
@@ -16,6 +17,7 @@ import {
 	parseClientMessage,
 	playerView,
 	publish,
+	reopenGame,
 	request,
 	resolve,
 	ROOM_PROTOCOL,
@@ -23,6 +25,10 @@ import {
 	setViewers,
 	supportsProtocol,
 	unseat,
+	viewerFailed,
+	viewersLocked,
+	MAX_VIEWER_FAILS,
+	VIEWER_FAIL_WINDOW_MS,
 	type RoomState
 } from './room.ts';
 
@@ -149,6 +155,45 @@ describe('the live room', () => {
 		expect(supportsProtocol(MIN_ROOM_PROTOCOL - 1)).toBe(false);
 		expect(supportsProtocol('1')).toBe(false);
 		expect(supportsProtocol(1.5)).toBe(false);
+	});
+});
+
+describe('the end of a game', () => {
+	it('tells every phone the game is over, with who won and how', () => {
+		const room = gameOver(roomWith('alex'), 'g1', 'evil', 'two-alive');
+		expect(playerView(room, 'alex').ended).toEqual({ winner: 'evil', reason: 'two-alive' });
+		// The table stays as it was, for what comes after.
+		expect(playerView(room, 'alex').public).toEqual(table('a', 'b', 'c'));
+	});
+
+	it('keeps only what it can trust', () => {
+		const room = roomWith('alex');
+		expect(gameOver(room, 'g2', 'good')).toBe(room);
+		expect(gameOver(room, 7)).toBe(room);
+		expect(playerView(gameOver(room, 'g1', 'purple', 'demon-dead'), 'alex').ended).toEqual({});
+		// How it ended means nothing without a winner, and a reason is short.
+		expect(playerView(gameOver(room, 'g1', undefined, 'other'), 'alex').ended).toEqual({});
+		expect(playerView(gameOver(room, 'g1', 'good', 'x'.repeat(200)), 'alex').ended).toEqual({
+			winner: 'good'
+		});
+	});
+
+	it('ends when the game is reopened, or a new game starts', () => {
+		const over = gameOver(roomWith('alex'), 'g1', 'good');
+		expect(reopenGame(over, 'g2')).toBe(over);
+		expect(playerView(reopenGame(over, 'g1'), 'alex').ended).toBeUndefined();
+		// The same game published again is still over.
+		expect(playerView(publish(over, 'g1', table('a', 'b')), 'alex').ended).toEqual({
+			winner: 'good'
+		});
+		const next = publish(over, 'g2', table('a', 'b', 'c'));
+		expect(next.ended).toBeUndefined();
+		expect(playerView(next, 'alex').ended).toBeUndefined();
+	});
+
+	it('needs protocol 2, so an older app is told to update rather than miss the end', () => {
+		expect(ROOM_PROTOCOL).toBeGreaterThanOrEqual(2);
+		expect(supportsProtocol(1)).toBe(false);
 	});
 });
 
@@ -296,6 +341,31 @@ describe('the view-only grimoire link', () => {
 		expect(JSON.stringify(roomPreview(room))).not.toContain(hash);
 		expect(JSON.stringify(playerView(room, 'alex'))).not.toContain(hash);
 		expect(JSON.stringify(hostView(room))).not.toContain(hash);
+	});
+
+	it('says when its key is made from a Grim view password, and nothing else of it', () => {
+		const room = setViewers(roomWith('alex'), hash, true);
+		expect(room.viewerPassword).toBe(true);
+		expect(roomPreview(room).grimView).toBe(true);
+		// A link with no password, or no link at all, offers no Grim view.
+		expect(roomPreview(setViewers(room, hash)).grimView).toBeUndefined();
+		expect(setViewers(room, hash).viewerPassword).toBeUndefined();
+		expect(roomPreview(setViewers(room, null)).grimView).toBeUndefined();
+	});
+
+	it('slows guessing: too many wrong keys stop viewers for a while', () => {
+		let fails = viewerFailed(undefined, 0);
+		for (let i = 1; i < MAX_VIEWER_FAILS; i++) {
+			expect(viewersLocked(fails, 1)).toBe(false);
+			fails = viewerFailed(fails, 1);
+		}
+		expect(viewersLocked(fails, 1)).toBe(true);
+		expect(viewersLocked(fails, VIEWER_FAIL_WINDOW_MS)).toBe(false);
+		// The next window starts the count again.
+		expect(viewerFailed(fails, VIEWER_FAIL_WINDOW_MS)).toEqual({
+			count: 1,
+			since: VIEWER_FAIL_WINDOW_MS
+		});
 	});
 
 	it('relays a grimoire only when it carries a saved game', () => {

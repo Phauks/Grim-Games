@@ -44,6 +44,17 @@ async function openSettings(page: Page) {
 		.tap();
 }
 
+/** Opens a tab, from the ⋯ menu when it is not on the row (a phone has no room for all). */
+async function openTab(page: Page, name: string) {
+	const tab = page.getByRole('tab', { name, exact: true });
+	await expect(page.getByRole('tab').first()).toBeVisible();
+	if (!(await tab.count())) {
+		await page.getByRole('button', { name: 'More tabs' }).tap();
+		await page.getByRole('dialog', { name: 'More tabs' }).getByRole('button', { name }).tap();
+	}
+	await tab.tap();
+}
+
 /** Lets a sheet's opening animation end, so its size and place are final. */
 async function settled(locator: Locator) {
 	await locator.evaluate((el) =>
@@ -68,9 +79,49 @@ test('the player view is a reading page, with no Storyteller controls', async ({
 	// Script, night order, the town, notes and the live room only (Trevor, 2026-10-16:
 	// "nothing close to ... controls"; 2026-10-19: a Room tab to move between, and a Grim tab
 	// of what the town knows).
-	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes', 'Room']);
+	const onRow = await page.getByRole('tab').allTextContents();
+	const more = page.getByRole('button', { name: 'More tabs' });
+	if (await more.count()) {
+		await more.tap();
+		const menu = page.getByRole('dialog', { name: 'More tabs' });
+		onRow.push(
+			...(await menu.getByRole('button', { name: /^(?!Close$)/ }).allTextContents()).map((name) =>
+				name.trim()
+			)
+		);
+		await page.keyboard.press('Escape');
+	}
+	expect(onRow).toEqual(['Script', 'Night', 'Grim', 'Notes', 'Room']);
 	await expect(page.getByTestId('seat-ring')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
+});
+
+test('tabs that do not fit move into a ⋯ menu instead of wrapping', async ({ page }) => {
+	// Trevor, 2026-10-20: on his Pixel the tabs wrapped onto a second line; "triple dot drop
+	// down". A narrow screen stands in for a big text size.
+	await page.setViewportSize({ width: 260, height: 640 });
+	const tabs = page.getByRole('tablist');
+	const more = page.getByRole('button', { name: 'More tabs' });
+	await expect(more).toBeVisible();
+	const tops = await page
+		.getByRole('tab')
+		.evaluateAll((els) => [
+			...new Set(els.map((el) => Math.round(el.getBoundingClientRect().top)))
+		]);
+	expect(tops).toHaveLength(1);
+	expect(await tabs.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+	// Picking one from the menu opens it and keeps it on the row.
+	await more.tap();
+	await page.getByRole('dialog', { name: 'More tabs' }).getByRole('button', { name: 'Room' }).tap();
+	await expect(page.getByRole('tab', { name: 'Room' })).toHaveAttribute('aria-selected', 'true');
+	await expect(page.getByRole('tabpanel', { name: 'Room' })).toBeVisible();
+
+	// With room again, every tab is back on the row and the ⋯ button goes.
+	await page.setViewportSize({ width: 1000, height: 640 });
+	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes', 'Room']);
+	await expect(more).toHaveCount(0);
 });
 
 test('the player view has no app header, and leaving it asks first', async ({ page }) => {
@@ -677,12 +728,44 @@ test('Print our sheet opens its settings beside a live preview', async ({ page }
 	);
 });
 
+// Trevor, 2026-10-22: build Ravenswood's info sheet as a back, with the jinxes, Fabled and Loric.
+test('the printed back can carry the jinxes, Fabled and Loric instead', async ({ page }) => {
+	const shared = [{ id: '_meta', name: 'Info Back' }, 'chef', 'magician', 'spy', 'imp', 'djinn'];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	await expect(page.getByRole('heading', { name: 'Info Back', level: 1 })).toBeVisible();
+	await page.getByRole('button', { name: 'Print script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Print script' })
+		.getByRole('button', { name: 'Print our sheet' })
+		.tap();
+	const screen = page.getByRole('dialog', { name: 'Print our sheet' });
+	const preview = screen.getByTestId('print-preview');
+	const front = preview.locator('.front');
+	await expect(front.locator('[data-character="djinn"]')).toHaveCount(1);
+	await expect(preview.locator('[data-back="night"]')).toHaveCount(1);
+
+	await screen.getByRole('combobox', { name: 'Back' }).tap();
+	await page.getByRole('option', { name: 'Jinxes, Fabled and Loric' }).tap();
+	const back = preview.locator('[data-back="info"]');
+	await expect(back).toContainText('Fabled');
+	await expect(back.locator('[data-character="djinn"]')).toHaveCount(1);
+	await expect(back.locator('.jinx')).toHaveCount(1);
+	// The Fabled moves to the back; the players' characters stay on the front.
+	await expect(front.locator('[data-character="djinn"]')).toHaveCount(0);
+	await expect(front.locator('[data-character="spy"]')).toHaveCount(1);
+	await expect(preview.locator('[data-back="night"]')).toHaveCount(0);
+
+	await screen.getByRole('combobox', { name: 'Back' }).tap();
+	await page.getByRole('option', { name: 'None', exact: true }).tap();
+	await expect(preview.locator('.back')).toHaveCount(0);
+});
+
 test('the Room tab joins a live room in place, and the player moves between it and the script', async ({
 	page,
 	browser
 }, testInfo) => {
 	// Trevor, 2026-10-19: a tab on the player view for the room, to move between.
-	await page.getByRole('tab', { name: 'Room' }).tap();
+	await openTab(page, 'Room');
 	const room = page.getByRole('tabpanel', { name: 'Room' });
 	await expect(room.getByRole('heading', { name: 'Join game' })).toBeVisible();
 	// Nothing to share until the phone is in a room; the icon is there, so nothing moves.
@@ -707,7 +790,7 @@ test('the Room tab joins a live room in place, and the player moves between it a
 	await field.tap();
 	await field.pressSequentially(code);
 	await expect(room.getByTestId('room-preview')).toContainText('Trouble Brewing');
-	await room.getByRole('button', { name: 'Join', exact: true }).tap();
+	await room.getByRole('button', { name: 'Join as player' }).tap();
 	// Joined in place: still /play, now in the room.
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(room.getByRole('heading', { name: `Room ${shown}` })).toBeVisible();
@@ -724,7 +807,7 @@ test('the Room tab joins a live room in place, and the player moves between it a
 	// To the script and back: the room is as it was.
 	await page.getByRole('tab', { name: 'Script' }).tap();
 	await expect(page.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
-	await page.getByRole('tab', { name: 'Room' }).tap();
+	await openTab(page, 'Room');
 	await expect(room.getByTestId('join-status')).toHaveText(
 		'Waiting for the Storyteller: Alex, seat 2.'
 	);
@@ -744,7 +827,7 @@ test('the Room tab joins a live room in place, and the player moves between it a
 
 	// Coming back to /play opens the same room.
 	await page.reload();
-	await page.getByRole('tab', { name: 'Room' }).tap();
+	await openTab(page, 'Room');
 	await expect(room.getByRole('heading', { name: `Room ${shown}` })).toBeVisible();
 	await st.context().close();
 });

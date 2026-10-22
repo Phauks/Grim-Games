@@ -31,6 +31,7 @@ export const ICON_SLOTS = {
 	script: { label: 'Script', choices: ['ph:scroll', 'ph:book-open'] },
 	buildScript: { label: 'Script builder', choices: ['ph:hammer', 'ph:wrench'] },
 	buildCharacter: { label: 'Character builder', choices: ['ph:user-gear', 'ph:user-plus'] },
+	installApp: { label: 'Install app', choices: ['ph:device-mobile', 'ph:download-simple'] },
 	download: { label: 'Download', choices: ['ph:download-simple', 'ph:file-arrow-down'] },
 	open: { label: 'Open', choices: ['ph:folder-open', 'ph:folder'] },
 	notes: { label: 'Notes', choices: ['ph:note-pencil', 'ph:notepad', 'ph:feather'] },
@@ -123,6 +124,8 @@ export const ICON_SLOTS = {
 	openItem: { label: 'Open', choices: ['ph:arrow-square-out', 'ph:frame-corners'] },
 	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
+	/** Someone is watching the view-only grimoire (Trevor, 2026-10-20). */
+	watchers: { label: 'Watching', choices: ['ph:eye', 'ph:binoculars'] },
 	/** What an info token asks for when shown, on its tile (Trevor, 2026-10-18). */
 	asksText: { label: 'Asks for words', choices: ['ph:text-t', 'ph:textbox'] },
 	asksNumber: { label: 'Asks for a number', choices: ['ph:hash', 'ph:calculator'] },

@@ -193,7 +193,6 @@
 	.name {
 		max-width: 100%;
 		font-size: clamp(1.3rem, 5vw, 1.8rem);
-		--character-icon-scale: 1.4;
 	}
 	.ability {
 		margin: 0;
@@ -204,6 +203,5 @@
 	}
 	.content[data-compact] .name {
 		font-size: 1.1rem;
-		--character-icon-scale: 1;
 	}
 </style>

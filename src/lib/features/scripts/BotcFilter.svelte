@@ -92,7 +92,7 @@
 				</div>
 				<p class="badges" data-testid="filter-{list}">
 					{#each filters[list] as id (id)}
-						<CharacterBadge characterId={id as CharacterId} inline />
+						<CharacterBadge characterId={id as CharacterId} />
 					{:else}
 						<span class="muted">{t('common.none')}</span>
 					{/each}

@@ -94,7 +94,6 @@
 		><span class="pill">{seatName(game, seatId)}</span>{#if id}<CharacterBadge
 				characterId={id}
 				character={characters.get(id)}
-				inline
 			/>{/if}</span
 	>{/snippet}
 

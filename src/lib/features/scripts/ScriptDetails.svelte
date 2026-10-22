@@ -100,7 +100,7 @@
 					<p class="badges">
 						{#each group.characters as c (c.id)}
 							{#if c.official}
-								<CharacterBadge characterId={c.official.id} inline />
+								<CharacterBadge characterId={c.official.id} />
 							{:else}
 								<span class="homebrew">{c.name}</span>
 							{/if}
