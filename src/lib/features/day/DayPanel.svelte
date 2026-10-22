@@ -827,11 +827,12 @@
 		background: var(--evil) linear-gradient(to right, var(--good) 50%, var(--evil) 50%) border-box;
 		color: var(--on-good);
 	}
-	/* Ghost votes left look like an unused ghost vote on the board (DeadBadge.svelte). */
+	/* Ghost votes left in an unused ghost vote's colours (DeadBadge.svelte), inverted: a dark
+	   ghost on white (Trevor, 2026-10-22). */
 	.badge.ghost {
-		border-color: rgb(232 222 200); /* colour-ok: as DeadBadge's unused ghost vote */
-		background: rgb(16 12 20); /* colour-ok: as DeadBadge's unused ghost vote */
-		color: rgb(244 236 218); /* colour-ok: as DeadBadge's unused ghost vote */
+		border-color: rgb(232 222 200); /* colour-ok: DeadBadge's unused ghost vote, inverted */
+		background: rgb(244 236 218); /* colour-ok: DeadBadge's unused ghost vote, inverted */
+		color: rgb(16 12 20); /* colour-ok: DeadBadge's unused ghost vote, inverted */
 	}
 	/* Votes needed in gold; --heading on --surface is a theme contrast pair. */
 	.badge.votes {
