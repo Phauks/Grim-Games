@@ -1137,7 +1137,9 @@ test('Special rules sits under Game mode, and opening it closes the Game mode li
 	await noSidewaysScroll(page);
 });
 
-test('each special rule shows its description under its switch', async ({ page }) => {
+test('each special rule shows its description beside its switch, with a line between rules', async ({
+	page
+}) => {
 	// Trevor, 2026-10-19: descriptions when toggling, the rest behind Inspect. Only approved
 	// descriptions show (I See Dead People's was approved the same day).
 	await page.goto('/new');
@@ -1147,14 +1149,22 @@ test('each special rule shows its description under its switch', async ({ page }
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
 	const rows = dialog.getByTestId('special-rules').locator('li');
 	const specters = rows.filter({ hasText: 'Specters' });
-	await expect(specters.getByTestId('rule-description')).toHaveText(
+	await expect(specters.locator('.toggle-description')).toHaveText(
 		'Spectators share one ability and vote during the game on how it is used.'
 	);
+	// A rule with its author's rule text shows that text (Trevor, 2026-10-22).
 	await expect(
-		rows.filter({ hasText: 'I See Dead People' }).getByTestId('rule-description')
+		rows.filter({ hasText: 'I See Dead People' }).locator('.toggle-description')
 	).toHaveText(
-		'Characters die as normal, but the Storyteller doesn’t announce deaths. Dead players can still nominate, and poisoned players don’t wake.'
+		"Characters die as normal but the storyteller doesn't announce deaths. Dead players can nominate. Poisoned players don't wake up."
 	);
+	// Trevor (2026-10-22): no text beneath a switch; the switch stays on the name's line.
+	const text = (await specters.locator('.toggle-description').boundingBox())!;
+	const control = (await specters.locator('[data-part="control"]').first().boundingBox())!;
+	expect(text.x + text.width).toBeLessThanOrEqual(control.x);
+	const name = (await specters.getByText('Specters', { exact: true }).boundingBox())!;
+	expect(control.y).toBeLessThan(name.y + name.height);
+	await expect(rows.nth(1)).toHaveCSS('border-top-style', 'solid');
 	await noSidewaysScroll(page);
 });
 
@@ -1190,10 +1200,12 @@ test('special rules read plainly in Inspect, and Special rules looks like the co
 	await expect(seats.locator('tr[data-field="count"] th')).toHaveText('Seats');
 	await expect(seats.locator('tr[data-field="speaks"] td')).toHaveText('Once per game');
 	await close(seat7);
-	// Stowed Away is 0 to 2 Travellers in the bag; its rule text reads as sentences.
+	// Stowed Away is 0 to 2 Travellers in the bag; its rule text reads as sentences, as its
+	// description, and isn't listed again as a part (Trevor, 2026-10-22).
 	const stowed = await inspect('Stowed Away');
 	await expect(stowed.locator('tr[data-field="inBag"] td')).toHaveText('0–2');
-	await expect(stowed.locator('li[data-part="text"]')).not.toContainText('., ');
+	await expect(stowed.getByTestId('inspect-about')).not.toContainText('., ');
+	await expect(stowed.locator('li[data-part="text"]')).toHaveCount(0);
 	await close(stowed);
 	// Infinite Possibilities: one of each type, nothing restricted, and the Storyteller may
 	// tell the table how many.
@@ -1330,7 +1342,7 @@ test('Start game restates the special rules first, and Back returns to New game'
 	const items = recap.getByTestId('rules-recap').locator('li');
 	await expect(items).toHaveCount(2);
 	await expect(items.nth(1)).toContainText('Binary Supernovae');
-	await expect(items.nth(1)).toContainText('One extra Demon is in play.');
+	await expect(items.nth(1)).toContainText('If a Demon dies by execution, good wins.');
 	await expect(items.nth(0)).toContainText('Name the characters Off');
 	await noSidewaysScroll(page);
 	// Back keeps everything as chosen.

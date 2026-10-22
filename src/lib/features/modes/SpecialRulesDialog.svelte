@@ -89,6 +89,7 @@
 	<div class="row">
 		<Toggle
 			label={rule.name}
+			description={description(rule)}
 			checked={ruleIds.includes(rule.id)}
 			onChange={(on) => toggle(rule.id, on)}
 		/>
@@ -109,7 +110,6 @@
 			/>
 		{/if}
 	</div>
-	<p class="description" data-testid="rule-description">{description(rule)}</p>
 {/snippet}
 
 <Dialog bind:open title={t('modes.specialRulesTitle')} size="full">
@@ -204,12 +204,18 @@
 	}
 	ul[data-testid='special-rules'] {
 		display: grid;
-		gap: var(--space-2);
 	}
-	/* The switch takes the row; Inspect and Delete their own size beside it. */
+	/* A line between rules (Trevor, 2026-10-22: "better delineation between rules"). */
+	ul[data-testid='special-rules'] > li + li {
+		border-top: 1px solid var(--border);
+	}
+	ul[data-testid='special-rules'] > li {
+		padding-block: var(--space-1);
+	}
+	/* The switch takes the row, its description beside it; Inspect and Delete on the name line. */
 	.row {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		gap: var(--space-1);
 	}
 	.row > :global(:first-child) {

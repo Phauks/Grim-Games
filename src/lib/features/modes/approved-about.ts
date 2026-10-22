@@ -32,6 +32,9 @@ export const APPROVED_ABOUT: Readonly<Record<string, string>> = {
 		'The Demon doesn’t choose who to attack. Each night after the first, it attacks the next living in-play character in script order.',
 	'phantom-detectives':
 		'Townsfolk have no ability while alive and gain it when they die. Every other dead player keeps their ability, except the Demon.',
+	// Trevor's own wording, 2026-10-22.
+	'plus-one':
+		'1 Character not on the script is added to the bag. This character may or may not be announced.',
 	'council-of-the-dead':
 		'On night 4 the dead wake together for 2 minutes, then secretly vote for a living player, who receives a boon.'
 };

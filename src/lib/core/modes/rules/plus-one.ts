@@ -11,9 +11,9 @@ export const PLUS_ONE: SpecialRule = {
 	format: SPECIAL_RULE_FORMAT,
 	id: 'plus-one',
 	name: '+1',
-	// Our own draft (2026-10-22): shows once Trevor approves it (approved-about.ts).
+	// Trevor's own wording (2026-10-22).
 	about:
-		'Any script, plus one character from off the script in play. The table is told that one extra character is in play.',
+		'1 Character not on the script is added to the bag. This character may or may not be announced.',
 	aliases: ['Plus One'],
 	sources: [],
 	parts: {
