@@ -132,6 +132,12 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'S6', title: 'One "not official" notice, linking the official site', prs: [317] },
 			{ id: 'S1', title: 'Install app button at the bottom of Settings', prs: [320] },
 			{ id: 'S3', title: 'Player name options in Tokens settings', prs: [332] },
+			{
+				id: 'S7',
+				title: 'Reports: no Admins list or Only mine; admins set in Cloudflare',
+				prs: [351]
+			},
+			{ id: 'S10', title: 'A report sent from a script carries that script' },
 			{ id: 'B5', title: 'Reminder glow and source mark settings' },
 			{ id: 'L16', title: 'Glossary: every character of a script and character type', prs: [324] },
 			{ id: 'O1', title: 'New app logo' }
