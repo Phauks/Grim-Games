@@ -87,6 +87,8 @@ export const ROADMAP: readonly RoadmapArea[] = [
 		title: 'Characters and rules',
 		items: [
 			{ id: 'L1', title: 'The +1 special rule', prs: [314] },
+			{ id: 'L35', title: 'The Warrens special rule' },
+			{ id: 'L36', title: 'The Djinn’s Bargain special rule' },
 			{
 				id: 'L11',
 				title: 'Godfather: the night step knows whether an Outsider died today',
