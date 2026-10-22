@@ -23,10 +23,6 @@ export const reports = {
 	'reports.inbox': 'Reports',
 	'reports.pageTitle': `Reports · ${APP_NAME}`,
 	'reports.checking': 'Checking access…',
-	'reports.admins': 'Admins',
-	'reports.addAdmin': 'Add an admin by sign-in email',
-	'reports.noAccount': 'No account signs in with that email',
-	'reports.removeAdmin': 'Remove admin {email}',
 	'reports.status': 'Status',
 	'reports.status.new': 'New',
 	'reports.status.accepted': 'Accepted',
@@ -40,7 +36,6 @@ export const reports = {
 	'reports.reporter': 'Reporter',
 	'reports.noUsername': 'No username',
 	'reports.signedOut': 'Signed out',
-	'reports.onlyMine': 'Only mine',
 	'reports.hidden': 'Hidden',
 	'reports.loadFailed': 'Could not load reports'
 } as const;

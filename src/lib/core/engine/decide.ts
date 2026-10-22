@@ -984,7 +984,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				command.direction === 'clockwise'
 					? [seating[seating.length - 1], ...seating.slice(0, -1)]
 					: [...seating.slice(1), seating[0]];
-			return [{ type: 'SeatingReordered', seating: rotated }];
+			return [...seatNumberNames(game), { type: 'SeatingReordered', seating: rotated }];
 		}
 
 		case 'MoveSeat': {
@@ -1000,7 +1000,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			}
 			const seating = game.seating.filter((id) => id !== seat.seatId);
 			seating.splice(position, 0, seat.seatId);
-			return [{ type: 'SeatingReordered', seating }];
+			return [...seatNumberNames(game), { type: 'SeatingReordered', seating }];
 		}
 
 		case 'SetOverride': {
@@ -1466,4 +1466,17 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			];
 		}
 	}
+}
+
+/**
+ * Before players move round the circle, each unnamed seat takes the name it shows now, its
+ * seat number ("Seat 3"), so every name moves with its player and character (Trevor,
+ * 2026-10-22: "all names don't stay with the seat").
+ */
+function seatNumberNames(game: Game): GameEvent[] {
+	return game.seating.flatMap((seatId, i): GameEvent[] =>
+		game.seats[seatId].playerName === undefined
+			? [{ type: 'SeatRenamed', seatId, playerName: `Seat ${i + 1}` }]
+			: []
+	);
 }

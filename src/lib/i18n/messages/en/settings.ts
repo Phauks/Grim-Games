@@ -93,6 +93,8 @@ export const settings = {
 	'settings.scriptLogo': 'Script logo',
 	'settings.scriptLogoOpacity': 'Script logo opacity',
 	'settings.nameSize': 'Player name size',
+	'settings.previewDeadPlayer': 'Alex',
+	'settings.boardPreview': 'Background and seats',
 	'settings.nameOffset': 'Player name distance',
 	'settings.strikeUsedGhostVote': 'Strike through used ghost votes',
 	'settings.rulesAt': 'Location',

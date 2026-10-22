@@ -10,7 +10,7 @@
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
 import type { ReminderLabel } from './types.ts';
-import { describe, isObject, type Issues } from './validate.ts';
+import { describe, isObject, readBoolean, type Issues } from './validate.ts';
 
 /** The question placing a reminder asks: mark the living seat dead, or revive a dead one. */
 export const REMINDER_PROMPTS = ['markDead', 'revive'] as const;
@@ -19,10 +19,19 @@ export type ReminderPrompt = (typeof REMINDER_PROMPTS)[number];
 export interface CharacterRules {
 	/** Reminders whose placing is the moment to change the seat's state, by label. */
 	reminderPrompts?: Readonly<Record<ReminderLabel, ReminderPrompt>>;
+	/**
+	 * The ability still acts once its player is dead: it triggers on their death ("When you
+	 * die", "If you died today or tonight") or works "even if dead". Its reminders stay with
+	 * the living ones in the reminder bank.
+	 */
+	actsWhenDead?: boolean;
 }
 
 /** Every key a rules block may have; one more per migrated table. */
-export const RULE_KEYS = ['reminderPrompts'] as const satisfies readonly (keyof CharacterRules)[];
+export const RULE_KEYS = [
+	'reminderPrompts',
+	'actsWhenDead'
+] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
  * Reads a rules block, recording each problem in `issues` with its path. `reminders`, when
@@ -49,6 +58,8 @@ export function parseCharacterRules(
 		const prompts = readPrompts(raw.reminderPrompts, `${path}.reminderPrompts`, issues, reminders);
 		if (prompts) rules.reminderPrompts = prompts;
 	}
+	const actsWhenDead = readBoolean(raw, 'actsWhenDead', path, issues);
+	if (actsWhenDead !== undefined) rules.actsWhenDead = actsWhenDead;
 	return issues.list.length > before ? undefined : rules;
 }
 

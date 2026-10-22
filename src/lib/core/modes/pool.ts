@@ -177,6 +177,15 @@ export function runsPart(mode: { parts: CombinedParts }, part: ModePart | RulePa
 			return true;
 		case 'betweenGames':
 			return !p.betweenGames || p.betweenGames.kind === 'campaign';
+		case 'abilities':
+			// Run Night Order wakes whoever has an ability under the rule (GrimoireBoard `wakes`).
+			return !p.abilities || p.abilities.kind === 'dead-keep';
+		case 'demonAttacks':
+			// The walk-through names the next target on the Demon's step (NightStrip).
+			return !p.demonAttacks || p.demonAttacks.kind === 'script-order';
+		case 'nightSteps':
+			// A one-night step for the dead joins that night's order (night-steps.ts).
+			return (p.nightSteps ?? []).every((s) => s.when === 'one-night' && s.dead === true);
 		case 'winConditions':
 			return (
 				!p.winConditions ||

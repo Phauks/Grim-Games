@@ -71,12 +71,23 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
  */
 const bankNight = (
 	page: Page,
-	name: 'Set up' | 'Start game' | 'Run Night Order' | 'End night' | 'End day'
+	name: 'Set up' | 'Start game' | 'Run Night Order' | 'End night' | 'Execution'
 ) =>
 	page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
 		.getByRole('button', { name, exact: true });
+
+/**
+ * Ending the day asks who was executed (Trevor, 2026-10-22); No execution unless a player
+ * is named.
+ */
+async function chooseExecution(page: Page, choice = 'No execution') {
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: choice, exact: true }).tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+}
 
 /**
  * The walk-through under the board, on this step: the night order left the board (Trevor,
@@ -96,14 +107,10 @@ async function walkTo(page: Page, title: string) {
 		const start = page
 			.getByRole('list', { name: 'Reminder bank' })
 			.locator('..')
-			.getByRole('button', { name: /^(Start game|Run Night Order|End day)$/ });
-		const day = (await start.getAttribute('aria-label')) === 'End day';
+			.getByRole('button', { name: /^(Start game|Run Night Order|Execution)$/ });
+		const day = (await start.getAttribute('aria-label')) === 'Execution';
 		await start.tap();
-		if (day)
-			await page
-				.getByRole('alertdialog', { name: 'End the day?' })
-				.getByRole('button', { name: 'Confirm', exact: true })
-				.tap();
+		if (day) await chooseExecution(page);
 		// Setup reminders still to place: Start game asks first (Trevor, 2026-10-20).
 		const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
 		await expect(strip.or(ask)).toBeVisible();
@@ -695,7 +702,8 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 
 	// Rotating moves the players, not the places: the hand-placed spot stays put.
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
-	await expect(seatLabelled(page, 'Seat 1: no name')).toBeAttached();
+	// Seat 8's player is in seat 1 now, and keeps the name "Seat 8" (Trevor, 2026-10-22).
+	await expect(seatLabelled(page, 'Seat 1: Seat 8')).toBeAttached();
 	const turned = await centre(1);
 	expect(Math.abs(turned.x - to.x)).toBeLessThan(4);
 	expect(Math.abs(turned.y - to.y)).toBeLessThan(4);
@@ -970,10 +978,10 @@ test('the night order is walked through from the bank, and End night starts the 
 	await page.keyboard.press('Escape');
 	await expect(boardTimer).toBeVisible();
 	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
-	// Day has come: the button can't start another day; End day starts the next night
-	// (Trevor, 2026-10-19).
+	// Day has come: the button can't start another day; Execution, in place of End day,
+	// starts the next night (Trevor, 2026-10-19; 2026-10-22).
 	await expect(bankNight(page, 'End night')).toHaveCount(0);
-	await expect(bankNight(page, 'End day')).toBeEnabled();
+	await expect(bankNight(page, 'Execution')).toBeEnabled();
 });
 
 test('a night step offers the info tokens its text names', async ({ page }) => {
@@ -1363,6 +1371,8 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: Ana')).toBeAttached();
+	// Every name moves with its player, a seat number too (Trevor, 2026-10-22).
+	await expect(seatLabelled(page, 'Seat 3: Seat 2')).toBeAttached();
 	await toolbar.getByRole('button', { name: 'Rotate players anticlockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
 
@@ -3632,11 +3642,8 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	// Trevor (2026-10-18): "If character is dead do not show them in assisted night order."
 	// The Ravenkeeper still wakes on the night they die
 	// (https://wiki.bloodontheclocktower.com/Ravenkeeper).
-	await bankNight(page, 'End day').tap();
-	await page
-		.getByRole('alertdialog', { name: 'End the day?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	await bankNight(page, 'Execution').tap();
+	await chooseExecution(page);
 	const strip = page.getByTestId('night-strip');
 	const names: string[] = [];
 	for (let i = 0; i < 12; i++) {
@@ -3779,7 +3786,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	const start = button('Start game');
 	const run = button('Run Night Order');
 	const end = button('End night');
-	const endDay = button('End day');
+	const endDay = button('Execution');
 	await expect(button('Set up')).toBeEnabled();
 	await expect(start).toHaveCount(0);
 	await page.goto(`${new URL(board).pathname}/setup`);
@@ -3824,13 +3831,11 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 		.tap();
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
 	await page.keyboard.press('Escape');
-	// The day: End day, which asks, then starts the next night (Trevor, 2026-10-19).
+	// The day: Execution, which asks who was executed, then starts the next night (Trevor,
+	// 2026-10-19; 2026-10-22).
 	await expect(run).toHaveCount(0);
 	await endDay.tap();
-	await page
-		.getByRole('alertdialog', { name: 'End the day?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	await chooseExecution(page);
 	await expect(strip).toBeVisible();
 	// The night starts on Dusk, though End day has ticked it (Trevor, 2026-10-20).
 	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
@@ -4913,5 +4918,108 @@ test('a Fool marked dead is offered to survive their first death', async ({ page
 	await expect(seatLabelled(page, 'Seat 1: no name, Fool, 1 reminder')).not.toHaveAttribute(
 		'aria-label',
 		/dead/
+	);
+});
+
+/** A Trouble Brewing game with one special rule, these seats given these characters. */
+async function startWithRule(
+	page: Page,
+	rule: string,
+	cast: readonly (readonly [number, string])[]
+) {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: /^Special rules/ }).tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	await rules.getByText(rule, { exact: true }).tap();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	for (const [number, name] of cast) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+}
+
+/** From a night's walk-through, through the day, to the next night's Dusk. */
+async function nextNight(page: Page) {
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: /^Day \d+$/ });
+	await expect(day).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+	// The night's strip slides away before the next night can start.
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	await walkTo(page, 'Dusk');
+}
+
+/** Every step name in tonight's walk-through, from the current step on. */
+async function stepNames(page: Page): Promise<string[]> {
+	const strip = page.getByTestId('night-strip');
+	const names: string[] = [];
+	for (let i = 0; i < 30; i++) {
+		names.push((await strip.locator('.step .name strong').textContent()) ?? '');
+		if (await lastStep(strip)) break;
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	}
+	return names;
+}
+
+test('with The Phantom Detectives, living Townsfolk sleep and the dead keep waking', async ({
+	page
+}) => {
+	// https://schnauzerclub.neocities.org/scripts/thephantomdetectives (Trevor, 2026-10-22).
+	await startWithRule(page, 'The Phantom Detectives', [
+		[1, 'Washerwoman'],
+		[2, 'Poisoner'],
+		[3, 'Imp']
+	]);
+	await walkTo(page, 'Dusk');
+	const first = await stepNames(page);
+	expect(first).toContain('Poisoner');
+	expect(first).not.toContain('Washerwoman');
+	// Dead, the Poisoner keeps its ability and still wakes.
+	await nextNight(page);
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 2' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Poisoner');
+});
+
+test('with Trained Killer, the Demon’s step names the next character in script order', async ({
+	page
+}) => {
+	// https://beardytas.com/garden-of-djinn/trained-killer/ (Trevor, 2026-10-22).
+	await startWithRule(page, 'Trained Killer', [
+		[1, 'Imp'],
+		[2, 'Chef'],
+		[3, 'Washerwoman']
+	]);
+	await walkTo(page, 'Dusk');
+	await nextNight(page);
+	// The Chef is above the Washerwoman on Trouble Brewing's script (TPI's order).
+	const strip = await walkTo(page, 'Imp');
+	await expect(strip.getByTestId('step-attack')).toHaveText('Attacks Seat 2 (Trained Killer)');
+});
+
+test('with Council of the Dead, night 4 starts with the dead waking together', async ({ page }) => {
+	// https://beardytas.com/garden-of-djinn/council-of-the-dead/ (Trevor, 2026-10-22).
+	await startWithRule(page, 'Council of the Dead', [[1, 'Imp']]);
+	await walkTo(page, 'Dusk');
+	expect(await stepNames(page)).not.toContain('Council of the Dead');
+	for (let night = 2; night <= 4; night++) await nextNight(page);
+	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
+	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
+		'Council of the Dead'
 	);
 });

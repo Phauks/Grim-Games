@@ -1260,3 +1260,57 @@ test('selecting a character moves nothing, and its lock picks it when not yet ch
 	await expect(main('baron')).toHaveAttribute('aria-pressed', 'true');
 	await expect(lock).toHaveAttribute('aria-pressed', 'true');
 });
+
+// Trevor, backlog L25: a custom script can leave out how its own characters go in the bag
+// (Blood on Hope's Peak's Ultimate Imposter thinks it is another character, like the
+// Drunk). The ⋯ on Characters sets it for the game.
+test('the ⋯ sets how a custom script’s own character goes in the bag', async ({ page }) => {
+	await page.addInitScript(() => {
+		localStorage.setItem(
+			'grim-games:scripts:quick-play',
+			JSON.stringify({
+				schemaVersion: 1,
+				scriptId: 'quick-play',
+				name: 'Imposter Test',
+				json: [
+					{ id: '_meta', name: 'Imposter Test' },
+					'washerwoman',
+					'empath',
+					'monk',
+					'chef',
+					{
+						id: 'imposter',
+						name: 'Imposter',
+						team: 'outsider',
+						ability: 'You think you are a different character, but you are not.',
+						setup: true,
+						remindersGlobal: ['Is Imposter']
+					},
+					'poisoner',
+					'imp'
+				],
+				source: { kind: 'paste' },
+				addedAt: 1,
+				lastUsedAt: 1,
+				revision: 1
+			})
+		);
+	});
+	await selectionFor(page, 6, 'Imposter Test');
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Imposter', 'Poisoner', 'Imp');
+	const check = page.getByTestId('setup-check');
+	await expect(check).not.toContainText(/Imposter\s*: \+1 Townsfolk in the bag/);
+
+	await page.getByRole('button', { name: 'Script characters in the bag' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Script characters in the bag' });
+	const role = dialog.getByRole('combobox', { name: 'Imposter' });
+	await expect(role).toHaveText('Dealt as itself');
+	await noSidewaysScroll(page);
+	await role.tap();
+	await page.getByRole('option', { name: 'Thinks they are another character' }).tap();
+	await expect(role).toHaveText('Thinks they are another character');
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	// Now it is handled like the Drunk: one more Townsfolk in the bag instead of its own token.
+	await expect(check).toContainText(/Imposter\s*: \+1 Townsfolk in the bag/);
+});

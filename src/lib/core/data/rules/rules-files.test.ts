@@ -4,6 +4,7 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { parseCharacterRules } from '../character-rules.ts';
 import { parseCharacter } from '../parse.ts';
 import { Issues } from '../validate.ts';
+import { actsWhenDead } from '#lib/core/rules/dead-characters.ts';
 import { reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
 import { OFFICIAL_RULES, rulesOf } from './index.ts';
 
@@ -42,6 +43,9 @@ describe('parseCharacterRules', () => {
 
 	it('reports unknown rules, unknown prompts and reminders the character lacks', () => {
 		expect(parse({ kills: true }).issues).toEqual(['rules.kills: unknown rule']);
+		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
+			'rules.actsWhenDead: expected boolean, got string'
+		]);
 		expect(parse({ reminderPrompts: { Dead: 'explode' } }).issues).toEqual([
 			'rules.reminderPrompts.Dead: unknown prompt "explode"'
 		]);
@@ -90,5 +94,28 @@ describe('custom characters', () => {
 		expect(rulesOf('imp', new Map([['imp', {}]]))).toEqual({
 			reminderPrompts: { Dead: 'markDead' }
 		});
+	});
+
+	// A homebrew Outsider that acts on its death, as the Klutz does
+	// (https://wiki.bloodontheclocktower.com/Klutz): its reminders stay in the bank's living
+	// section once it dies.
+	it('can act when dead', () => {
+		const issues = new Issues();
+		const lantern = parseCharacter(
+			{
+				id: 'lanternbearer',
+				name: 'Lantern Bearer',
+				team: 'outsider',
+				ability: 'When you die, choose a player.',
+				rules: { actsWhenDead: true }
+			},
+			'[0]',
+			issues,
+			{ strict: false, scriptFields: true }
+		);
+		expect(issues.list).toEqual([]);
+		const characters = new Map([[lantern!.id, lantern!]]);
+		expect(actsWhenDead('lanternbearer', characters)).toBe(true);
+		expect(actsWhenDead('lanternbearer')).toBe(false);
 	});
 });

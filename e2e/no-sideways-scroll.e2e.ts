@@ -14,6 +14,7 @@ const STATIC_ROUTES = [
 	'/new',
 	'/games',
 	'/changelog',
+	'/roadmap',
 	'/privacy',
 	'/reference',
 	'/scripts',

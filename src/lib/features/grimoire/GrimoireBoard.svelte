@@ -5,7 +5,7 @@
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { gameModeNames } from './game-mode-name.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { boardNightSteps, seatName, stepHolders, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -16,7 +16,8 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
-	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
+	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
+	import BoardBackdrop from './BoardBackdrop.svelte';
 	import { boardBackground } from './board-background.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -57,6 +58,7 @@
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { nextScriptOrderTarget, seatHasAbility } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -106,6 +108,7 @@
 	import { publicProjection } from '#lib/core/sync/public-projection.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
@@ -286,13 +289,22 @@
 		const { entries, cursor } = grimoire.open.session.log;
 		return diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
 	});
+	/** The game's special rules, kept whole with the game (game-mode-store.ts). */
+	const gameRules = $derived(readGameMode(game.gameId)?.rules ?? []);
+	/**
+	 * Who has an ability under a special rule, when one changes it (The Phantom Detectives:
+	 * the dead keep theirs, living Townsfolk have none).
+	 */
+	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
 	function wakes(step: NightStep): boolean {
 		const holders = stepHolders(game, step, characters);
 		const id = step.character?.id;
 		return (
 			holders.length === 0 ||
 			holders.some(
-				(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && diedTonight.has(s))
+				(s) =>
+					seatHasAbility(abilitiesRule, game, s, characters) ||
+					(id !== undefined && id in ON_DEATH && diedTonight.has(s))
 			)
 		);
 	}
@@ -301,8 +313,14 @@
 		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
 		const counts = wakes;
 		return {
-			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data, today), counts),
-			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data, today), counts)
+			first: stepNightNumbers(
+				boardNightSteps(game, characters, 'first', data, today, gameRules),
+				counts
+			),
+			other: stepNightNumbers(
+				boardNightSteps(game, characters, 'other', data, today, gameRules),
+				counts
+			)
 		};
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
@@ -825,7 +843,7 @@
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
 		return walk && data
-			? boardNightSteps(game, characters, walk.night, data, today).filter(wakes)
+			? boardNightSteps(game, characters, walk.night, data, today, gameRules).filter(wakes)
 			: [];
 	});
 	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
@@ -833,7 +851,7 @@
 		const data = officialData.current;
 		if (!guided || !data) return [];
 		const open = guided.step.id;
-		return boardNightSteps(game, characters, guided.night, data, today).filter(
+		return boardNightSteps(game, characters, guided.night, data, today, gameRules).filter(
 			(s) => s.id === open || wakes(s)
 		);
 	});
@@ -844,7 +862,9 @@
 		if (!guidedPending || !data) return;
 		const { night, stepId } = guidedPending;
 		guidedPending = undefined;
-		const step = boardNightSteps(game, characters, night, data, today).find((s) => s.id === stepId);
+		const step = boardNightSteps(game, characters, night, data, today, gameRules).find(
+			(s) => s.id === stepId
+		);
 		if (step) {
 			guided = { step, night };
 			guideOpen = true;
@@ -885,6 +905,17 @@
 			(rule) => rule.parts.seats?.kind === 'storyteller-seat' && rule.parts.seats.count > 0
 		)?.name
 	);
+	/**
+	 * Trained Killer (https://beardytas.com/garden-of-djinn/trained-killer/): on a Demon's step
+	 * after the first night, the next living in-play character in script order.
+	 */
+	const attackRule = $derived(gameRules.find((r) => r.parts.demonAttacks)?.name);
+	const walkAttack = $derived.by(() => {
+		if (!attackRule || !walkStep || walk?.night !== 'other') return undefined;
+		if (walkStep.character?.type !== 'demon') return undefined;
+		const target = nextScriptOrderTarget(game, characters);
+		return target === undefined ? undefined : seatName(game, target);
+	});
 	const walkEmptySeat = $derived(
 		!!emptySeatRule &&
 			!!walkStep &&
@@ -914,7 +945,7 @@
 		if (!data) return;
 		grimoire.beginNight();
 		const night = tonight(game);
-		const steps = boardNightSteps(game, characters, night, data, today).filter(wakes);
+		const steps = boardNightSteps(game, characters, night, data, today, gameRules).filter(wakes);
 		const next = fromDusk ? 0 : steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
 	}
@@ -938,12 +969,22 @@
 	 * starts on the board, where it is on.
 	 */
 	function endDay(): void {
+		dayOpen = false;
 		if (liveDayTimer.running) liveDayTimer.toggle();
 		grimoire.beginNight();
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
 		if (preferences.current.assistance.nightWalkthrough) walkNight(true);
+	}
+	/**
+	 * Execution ends the day (Trevor, 2026-10-22): the player chosen is executed first, unless
+	 * that execution is already logged, so the rules checked at dusk see it.
+	 */
+	function executeAndEndDay(seatId: SeatId | undefined): void {
+		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
+		if (seatId && !logged) grimoire.run({ type: 'Execute', seatId });
+		endDay();
 	}
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
@@ -1017,9 +1058,10 @@
 				disabled: !canRun,
 				onclick: startGame
 			};
+		// Execution in place of End day (Trevor, 2026-10-22): ending a day asks who was executed.
 		return {
-			label: 'End day',
-			text: 'End day',
+			label: t('day.execution'),
+			text: t('day.execution'),
 			icon: 'night' as const,
 			disabled: !!ended || grimoire.open.viewOnly || arranging || !!placing,
 			onclick: () => {
@@ -1077,7 +1119,7 @@
 				now.push(key);
 				where[reminder.reminderId] = seatId;
 				if (!promptSeen || promptSeen.has(key)) continue;
-				if (reminderOwnerDead(game, reminder))
+				if (reminderOwnerDead(game, reminder, characters))
 					freshDead.push({ reminder, seatId, from: lastSeat[reminder.reminderId] });
 				const prompt = reminderPrompt(reminder.label, reminder.characterId, characters);
 				if (prompt && promptApplies(prompt, !!seat.dead)) fresh.push({ seatId, prompt });
@@ -1523,32 +1565,11 @@
 {/snippet}
 
 <div class="grimoire">
-	<!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
-	{#if backgroundUrl}
-		<div
-			class="backdrop"
-			data-testid="board-background"
-			style:background-image={`url("${backgroundUrl}")`}
-		></div>
-	{:else if background.kind === 'preset'}
-		<div
-			class="backdrop preset"
-			data-testid="board-background"
-			data-preset={background.id}
-			style:background={PRESETS[background.id].css}
-		></div>
-	{/if}
-	<!-- The vignette darkens the background towards the screen's edges, on every background
-	     (Trevor, 2026-10-17: its own switch and strength; 2026-10-18: noticeable, and over the
-	     whole screen like the background, not just the board). -->
-	{#if boardLooks.current.vignette}
-		<div
-			class="vignette"
-			data-testid="vignette"
-			style:--vignette={boardLooks.current.vignetteStrength}
-			aria-hidden="true"
-		></div>
-	{/if}
+	<BoardBackdrop
+		url={backgroundUrl}
+		preset={background.kind === 'preset' ? background.id : undefined}
+		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
+	/>
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
 		{#if arranging}
 			<span class="title arranging-title">Arrange seats</span>
@@ -1828,6 +1849,7 @@
 				onPastEnd={() => endHint++}
 				asleepBy={walkAsleep ? poisonedSleepRule : undefined}
 				emptySeatBy={walkEmptySeat ? emptySeatRule : undefined}
+				attack={walkAttack && attackRule ? { seat: walkAttack, by: attackRule } : undefined}
 				onOpen={(step) => {
 					if (!walk) return;
 					guided = { step, night: walk.night };
@@ -2165,8 +2187,8 @@
 	/>
 </ConfirmDialog>
 
-<!-- The same question as the day view's End day. -->
-<ConfirmDialog bind:open={endDayOpen} title={t('day.endDayConfirm')} onConfirm={endDay} />
+<!-- The same question as the day view's Execution. -->
+<ExecutionDialog bind:open={endDayOpen} {game} onConfirm={executeAndEndDay} />
 
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">
@@ -2257,7 +2279,7 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={endDay} />
+<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={() => (endDayOpen = true)} />
 
 <GuidedStep
 	bind:open={guideOpen}
@@ -2418,7 +2440,7 @@
 	}
 	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
 	   on any image (Trevor, 2026-10-18). */
-	.grimoire:has(> .backdrop)
+	.grimoire:has(> :global(.backdrop))
 		.toolbar
 		:global(button:not([data-variant='accent']):not([data-variant='danger'])) {
 		background: var(--board-bar-background);
@@ -2573,22 +2595,6 @@
 		overscroll-behavior: contain;
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
-	.backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: -1;
-		background: center / cover no-repeat;
-		filter: brightness(0.45) saturate(0.85);
-		pointer-events: none;
-	}
-	/* Built-in backgrounds are drawn for the board already: only dimmed a little. */
-	.backdrop.preset {
-		filter: brightness(0.8);
-	}
-	/* Light parchment would wash out the seat names: dimmed like an image. */
-	.backdrop.preset[data-preset='parchment'] {
-		filter: brightness(0.5);
-	}
 	.game-over {
 		max-width: 100%;
 		min-height: var(--tap-target);
@@ -2622,23 +2628,6 @@
 		height: 42%;
 		translate: -50% -50%;
 		opacity: var(--logo-opacity);
-		pointer-events: none;
-	}
-	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
-	.vignette {
-		position: fixed;
-		inset: 0;
-		z-index: -1;
-		/* Clear in the middle, darkening to the strength at the corners. */
-		/* The two shades are darkness, not theme colours. */
-		--vignette-mid: rgb(0 0 0 / calc(var(--vignette) * 0.6)); /* colour-ok: shadow */
-		--vignette-edge: rgb(0 0 0 / var(--vignette)); /* colour-ok: shadow */
-		background: radial-gradient(
-			ellipse 75% 75% at center,
-			transparent 40%,
-			var(--vignette-mid) 75%,
-			var(--vignette-edge) 100%
-		);
 		pointer-events: none;
 	}
 	/* The game mode, apart from the script: small capitals in the accent colour. */
