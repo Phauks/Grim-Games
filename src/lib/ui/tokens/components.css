@@ -10,6 +10,8 @@
 	--button-color: var(--on-button);
 	/* Every button's 1px edge, at 3:1 against any surface (Trevor, 2026-10-22). */
 	--button-ring: inset 0 0 0 1px var(--button-edge);
+	/* The same edge as a border, for drop-downs and pickers that look like fields. */
+	--control-border: 1px solid var(--button-edge);
 	--button-font: var(--font-control-weight) 0.95rem / 1.1 var(--font-control);
 	--button-radius: var(--radius-md);
 

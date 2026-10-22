@@ -185,7 +185,7 @@
 		width: 100%;
 		min-height: var(--tap-target);
 		padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
-		border: var(--card-border);
+		border: var(--control-border);
 		border-radius: var(--card-radius);
 		background: var(--choice-background);
 		color: var(--choice-color);
