@@ -376,7 +376,6 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
-	await page.getByRole('tab', { name: 'View grimoire' }).tap();
 	const watch = page.getByTestId('watch-link');
 	const password = watch.getByRole('textbox', { name: 'Grim view password' });
 	// In its place, but off while the link is.
@@ -443,9 +442,8 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
-	// Its own tab beside the players' (Trevor, 2026-10-19).
-	const watchTab = () => page.getByRole('tab', { name: 'View grimoire' }).tap();
-	await watchTab();
+	// On the same screen as the players' code, with no tabs (Trevor, 2026-10-22).
+	await expect(page.getByRole('tab')).toHaveCount(0);
 	const watch = page.getByTestId('watch-link');
 	const toggle = watch.getByRole('checkbox', { name: 'View-only grimoire link' });
 	// The switch is tapped by its label, as the whole row is one tap target.
@@ -557,10 +555,7 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await expect(page.getByTestId('connection-dot')).toBeVisible();
 	await expect(page.getByTestId('status-players')).toHaveText('0 players');
 	await expect(page.getByTestId('status-watching')).toHaveText('1 watching');
-	await watchTab();
-	// It counts who is watching, and New link replaces the link in one step, letting the
-	// viewer go (Trevor, 2026-10-20).
-	await expect(watch.getByTestId('watchers')).toHaveText('Watching now: 1');
+	// New link replaces the link in one step, letting the viewer go (Trevor, 2026-10-20).
 	await watch.getByRole('button', { name: 'New link' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Make a new link?' })
@@ -569,7 +564,7 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');
 	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
 	expect(await url.inputValue()).not.toBe(link);
-	await expect(watch.getByTestId('watchers')).toHaveText('Watching now: 0');
+	await expect(page.getByTestId('status-watching')).toHaveText('0 watching');
 	await flip();
 	await expect(url).toHaveValue('');
 	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');
@@ -581,7 +576,7 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	// Streaming (Trevor, 2026-10-21): the QR and link can be covered in place, and Copy
 	// still works.
 	await expect(qr).toBeVisible();
-	// Measured from the tab's top, since tapping the switch may scroll the page.
+	// Measured from the part's top, since tapping the switch may scroll the page.
 	const offset = async () => (await url.boundingBox())!.y - (await watch.boundingBox())!.y;
 	const before = await offset();
 	await watch.getByText('Hide the view-only link', { exact: true }).tap();
