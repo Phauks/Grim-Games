@@ -11,6 +11,7 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
+	import QrCentreSetting from '#lib/ui/share/QrCentreSetting.svelte';
 
 	const assistance = $derived(preferences.current.assistance);
 </script>
@@ -106,6 +107,7 @@
 	checked={preferences.current.hideWatchLink}
 	onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
 />
+<QrCentreSetting />
 
 <style>
 	h3 {

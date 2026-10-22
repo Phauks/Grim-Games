@@ -80,7 +80,8 @@ describe('parsePreferences', () => {
 			timerMode: 'up',
 			timerVibrate: false,
 			timerKeepAwake: false,
-			timerPerPlayer: 45
+			timerPerPlayer: 45,
+			qrCentre: 'picture'
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
 	});

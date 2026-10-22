@@ -66,7 +66,8 @@ export const resets = {
 				'timerMode',
 				'timerVibrate',
 				'timerKeepAwake',
-				'timerPerPlayer'
+				'timerPerPlayer',
+				'qrCentre'
 			),
 			assistance: assistanceWith([...STORYTELLER_GROUPS.night, ...STORYTELLER_GROUPS.day])
 		})
