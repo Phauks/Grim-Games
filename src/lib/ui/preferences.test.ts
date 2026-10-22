@@ -51,7 +51,7 @@ describe('parsePreferences', () => {
 				tokenScale: 1.25,
 				reminderScale: 0.75,
 				boardNames: true,
-				nightNumbers: true,
+				nightLeaves: 'numbers',
 				nightBadgeScale: 0.75,
 				reminderLabelWidth: 2,
 				reminderLabelWrap: true,

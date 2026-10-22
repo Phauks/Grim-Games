@@ -39,9 +39,12 @@ export const characters = {
 	'characters.boardNames': 'Show character names on tokens',
 	'characters.boardNamesHelp':
 		'Writes each character’s name on its token: on the grimoire board, in Show to player and in the seat sheet. Small icons in lists stay plain.',
-	'characters.nightNumbers': 'Show night order numbers on tokens',
-	'characters.nightNumbersHelp':
-		'Storyteller: a badge on the left leaf gives the first night order, on the right leaf other nights. Only characters are counted. On the grimoire, the characters in this game; on Reference, every character.',
+	'characters.nightLeaves': 'Night leaves',
+	'characters.nightLeavesHelp':
+		'A leaf on the left for a character who acts on the first night, on the right for other nights. With numbers, a badge on each gives the night order: on the grimoire, among the characters in this game; on Reference, among every character.',
+	'characters.nightLeaves.off': 'Off',
+	'characters.nightLeaves.leaves': 'Leaves',
+	'characters.nightLeaves.numbers': 'Leaves and numbers',
 	'characters.nightBadgeSize': 'Night order badge size',
 	'characters.nightBadgeSizeHelp': 'The night order badges on tokens.',
 	'characters.reminderLabelWidth': 'Reminder words width',

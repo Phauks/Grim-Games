@@ -312,7 +312,7 @@
 	}
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
-		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
+		if (!data || preferences.current.tokenAppearance.nightLeaves !== 'numbers') return undefined;
 		const counts = wakes;
 		return {
 			first: stepNightNumbers(

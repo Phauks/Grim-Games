@@ -96,10 +96,11 @@ export interface TokenAppearance {
 	/** The character's name curved along the bottom of grimoire tokens (Trevor, 2026-10-16). */
 	boardNames: boolean;
 	/**
-	 * Night order numbers in badges on the token's side leaves: first night on the left,
-	 * other nights on the right (Trevor, 2026-10-17).
+	 * The side leaves that mark a character who acts on the first night (left) and other
+	 * nights (right), and whether night order numbers sit on them in badges (Trevor,
+	 * 2026-10-17; 2026-10-22: one setting with the leaves).
 	 */
-	nightNumbers: boolean;
+	nightLeaves: NightLeaves;
 	/** Size of those badges, on the same 50% to 200% range. */
 	nightBadgeScale: number;
 	/** The widest a reminder's words run, on REMINDER_LABEL_WIDTH. */
@@ -140,6 +141,9 @@ export interface TokenAppearance {
 }
 
 /** A ring round the reminder, a glow, or both, as a picked seat (SeatToken). */
+/** Off, the leaves alone, or the leaves with night order numbers on them. */
+export const NIGHT_LEAVES = ['off', 'leaves', 'numbers'] as const;
+export type NightLeaves = (typeof NIGHT_LEAVES)[number];
 export const REMINDER_HIGHLIGHT_LOOKS = ['ring', 'glow', 'both'] as const;
 export type ReminderHighlightLook = (typeof REMINDER_HIGHLIGHT_LOOKS)[number];
 /**
@@ -157,7 +161,7 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	tokenScale: 1,
 	reminderScale: 1,
 	boardNames: false,
-	nightNumbers: false,
+	nightLeaves: 'leaves',
 	nightBadgeScale: 1,
 	reminderLabelWidth: 1.5,
 	reminderLabelWrap: false,
@@ -201,7 +205,12 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		// Earlier builds' `namePlacement` and `playerNamePlacement` are dropped: the character
 		// name always curves along the edge and the player name is always a badge.
 		boardNames: input.boardNames === true,
-		nightNumbers: input.nightNumbers === true,
+		// Earlier builds' `nightNumbers` switch: on became Leaves and numbers.
+		nightLeaves: oneOf(
+			NIGHT_LEAVES,
+			input.nightLeaves,
+			input.nightNumbers === true ? 'numbers' : 'leaves'
+		),
 		nightBadgeScale: parseScale(input.nightBadgeScale),
 		reminderLabelWidth: parseLabelWidth(input.reminderLabelWidth),
 		reminderLabelWrap: input.reminderLabelWrap === true,
