@@ -4,6 +4,8 @@
 declare global {
 	/** Injected by Vite at build time from build-info.ts. */
 	const __BUILD_INFO__: import('#lib/build-info.ts').BuildInfo;
+	/** Injected by Vite at build time from build-info.ts: every merged change, for the Changelog. */
+	const __CHANGE_HISTORY__: import('#lib/features/about/changelog.ts').ChangeHistory;
 
 	namespace App {
 		// interface Error {}
@@ -12,6 +14,8 @@ declare global {
 		interface PageState {
 			/** The board's extra history entry, so Back asks before leaving a game. */
 			inGame?: boolean;
+			/** The grimoire was opened with a typed Grim view password, not the link. */
+			password?: boolean;
 		}
 		// interface Platform {}
 	}

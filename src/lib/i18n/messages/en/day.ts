@@ -2,8 +2,12 @@
 export const day = {
 	'day.title': 'Day',
 	'day.titleNumber': 'Day {number}',
-	'day.endDay': 'End day',
 	'day.endDayConfirm': 'End the day?',
+	'day.execution': 'Execution',
+	'day.executionChoose': 'Choose',
+	'day.noExecution': 'No execution',
+	'day.nominatedToday': 'Nominated today',
+	'day.otherPlayers': 'Other players',
 	'day.nightOrder': 'Night order',
 	'day.demonVoted': 'Demon voted',
 	'day.abilities': 'Abilities',

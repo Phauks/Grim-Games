@@ -6,6 +6,8 @@
 	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import ReminderToken from './ReminderToken.svelte';
+	import CharacterGroupDialog from './CharacterGroupDialog.svelte';
+	import { groupSourceOf } from '#lib/core/data/index.ts';
 
 	/**
 	 * A character at a glance: icon, character type and where it comes from, its ability and
@@ -40,6 +42,11 @@
 				]
 			: []
 	);
+	// The type and source open every character of that type from that source (Trevor,
+	// 2026-10-20); a homebrew character's has no official group.
+	const typeLine = $derived(source === typeLabel ? typeLabel : `${typeLabel} · ${source}`);
+	let groupOpen = $state(false);
+	let groupUsed = $state(false);
 </script>
 
 <header class="character">
@@ -53,7 +60,23 @@
 			/>{/if}</span
 	>
 	<div>
-		<p class="type">{source === typeLabel ? typeLabel : `${typeLabel} · ${source}`}</p>
+		<p class="type">
+			{#if character.edition}<button
+					type="button"
+					class="group"
+					aria-haspopup="dialog"
+					title={t('characters.group', { type: typeLabel, source })}
+					onclick={() => {
+						groupUsed = true;
+						groupOpen = true;
+					}}>{typeLine}</button
+				>{:else}{typeLine}{/if}
+		</p>
+		{#if groupUsed}<CharacterGroupDialog
+				bind:open={groupOpen}
+				source={groupSourceOf(character)}
+				type={character.type}
+			/>{/if}
 		<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
 		<!-- Every reminder token, beside the ability on every section (Trevor, 2026-10-16). -->
 		{#if reminders.length}
@@ -90,6 +113,25 @@
 	.type {
 		margin: 0;
 		color: var(--on-surface-muted);
+	}
+	/* Reads as the same line of text, underlined; the tap area reaches 44px without making
+	   the line taller. */
+	.group {
+		position: relative;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		text-decoration: underline dotted;
+		text-underline-offset: 0.2em;
+		cursor: pointer;
+	}
+	.group::before {
+		content: '';
+		position: absolute;
+		inset: calc((1lh - var(--tap-target)) / 2) 0;
 	}
 	.ability {
 		margin: 0;

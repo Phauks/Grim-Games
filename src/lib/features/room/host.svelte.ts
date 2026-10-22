@@ -30,6 +30,7 @@ import {
 } from '#lib/features/grimoire/device-notes.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
+import { viewerKeyFromPassword } from './viewer.svelte.ts';
 
 const STORAGE_KEY = 'grim-games-room-host';
 
@@ -38,6 +39,8 @@ interface StoredRoom {
 	key: string;
 	/** The key in the view-only grimoire link, while it is on. */
 	viewerKey?: string;
+	/** The Grim view password that key was made from, if the Storyteller set one. */
+	viewerPassword?: string;
 }
 
 /** The board's own notes a viewer needs to draw the grimoire as this device does. */
@@ -70,6 +73,8 @@ export class RoomHost {
 	 * it on again makes a new link.
 	 */
 	viewerKey = $state<string>();
+	/** The Grim view password, while the link is on with one (plan D1). */
+	viewerPassword = $state<string>();
 	/** True when the grimoire is too large to send to viewers. */
 	grimoireTooLarge = $state(false);
 	/** How many are watching through the view-only link now (Trevor, 2026-10-20). */
@@ -90,6 +95,7 @@ export class RoomHost {
 	constructor() {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
 		if (stored?.code && stored.key) {
+			this.viewerPassword = stored.viewerKey ? stored.viewerPassword : undefined;
 			if (stored.viewerKey) void this.#useViewerKey(stored.viewerKey);
 			this.#connect(stored);
 		}
@@ -151,10 +157,12 @@ export class RoomHost {
 			writeStored(STORAGE_KEY, { ...stored, viewerKey: key });
 			await this.#useViewerKey(key);
 		} else {
-			const { viewerKey: _off, ...rest } = stored;
+			const { viewerKey: _off, viewerPassword: _password, ...rest } = stored;
 			void _off;
+			void _password;
 			writeStored(STORAGE_KEY, rest);
 			this.viewerKey = undefined;
+			this.viewerPassword = undefined;
 			this.#viewerKeyHash = undefined;
 			this.#socket?.send({ type: 'viewers', keyHash: null });
 		}
@@ -165,10 +173,27 @@ export class RoomHost {
 	 * anyone watching with it is let go.
 	 */
 	async refreshViewers(): Promise<void> {
+		await this.setViewerPassword('');
+	}
+
+	/**
+	 * Makes the link's key from a Grim view password (plan D1), so the room code and the
+	 * password open the grimoire too; '' goes back to a random key. Either way the old link
+	 * stops working and anyone watching with it is let go.
+	 */
+	async setViewerPassword(password: string): Promise<void> {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
 		if (!stored || !this.viewerKey) return;
-		const key = randomKey();
-		writeStored(STORAGE_KEY, { ...stored, viewerKey: key });
+		const clean = password.trim();
+		const key = clean ? await viewerKeyFromPassword(stored.code, clean) : randomKey();
+		const { viewerPassword: _old, ...rest } = stored;
+		void _old;
+		writeStored(STORAGE_KEY, {
+			...rest,
+			viewerKey: key,
+			...(clean ? { viewerPassword: clean } : {})
+		});
+		this.viewerPassword = clean || undefined;
 		await this.#useViewerKey(key);
 	}
 
@@ -177,7 +202,7 @@ export class RoomHost {
 		const hash = await sha256Hex(key);
 		if (this.viewerKey !== key) return;
 		this.#viewerKeyHash = hash;
-		this.#socket?.send({ type: 'viewers', keyHash: hash });
+		this.#sendViewers();
 		this.#sendGrimoire();
 	}
 
@@ -187,9 +212,14 @@ export class RoomHost {
 	 */
 	async refreshRoom(): Promise<void> {
 		const watching = !!this.viewerKey;
+		// The password stays; its key is made with the new code.
+		const password = this.viewerPassword;
 		this.close();
 		await this.open();
-		if (watching && this.code) await this.setViewers(true);
+		if (watching && this.code) {
+			await this.setViewers(true);
+			if (password) await this.setViewerPassword(password);
+		}
 	}
 
 	/** Deletes the room for everyone in it. */
@@ -266,12 +296,41 @@ export class RoomHost {
 		this.#socket?.send({ type: 'close-vote' });
 	}
 
+	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */
+	endedGame = $state<string>();
+	/** The game whose final grimoire the room's phones were sent (Share grim, R5). */
+	revealedGame = $state<string>();
+
+	/**
+	 * Share grim (R5): sends the whole grimoire to the room's phones once the game is over.
+	 * False when it is too large or the room is offline.
+	 */
+	reveal(game: OpenGame, notes?: BoardNotes): boolean {
+		const gameId = game.game.gameId;
+		const saved = toSavedGame(game.session, Date.now());
+		const message = {
+			type: 'reveal',
+			gameId,
+			grimoire: {
+				saved: saved as unknown as Record<string, unknown>,
+				...(notes ?? storedNotes(gameId))
+			}
+		} as const;
+		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;
+		if (!this.#socket?.send(message)) return false;
+		this.revealedGame = gameId;
+		return true;
+	}
+
 	/**
 	 * Tells the room the game is over (End game), or running again (`undefined`, Reopen). The
 	 * room stays open, so its phones see the end; kept and sent again after a reconnect.
 	 */
 	setEnded(gameId: GameId, ended: { winner?: 'good' | 'evil'; reason?: string } | undefined): void {
 		this.#ended = { gameId, ended };
+		this.endedGame = ended ? gameId : undefined;
+		// Reopen takes the shared grimoire back (the room drops it too).
+		if (!ended && this.revealedGame === gameId) this.revealedGame = undefined;
 		this.#sendEnded();
 	}
 
@@ -334,9 +393,18 @@ export class RoomHost {
 		// While a stored key's hash is still being worked out, say nothing about viewers.
 		if (!this.viewerKey) this.#socket?.send({ type: 'viewers', keyHash: null });
 		else if (this.#viewerKeyHash) {
-			this.#socket?.send({ type: 'viewers', keyHash: this.#viewerKeyHash });
+			this.#sendViewers();
 			this.#sendGrimoire();
 		}
+	}
+
+	#sendViewers(): void {
+		if (!this.#viewerKeyHash) return;
+		this.#socket?.send({
+			type: 'viewers',
+			keyHash: this.#viewerKeyHash,
+			...(this.viewerPassword ? { password: true } : {})
+		});
 	}
 
 	#forget(): void {
@@ -348,6 +416,8 @@ export class RoomHost {
 		this.requests = [];
 		this.vote = undefined;
 		this.viewerKey = undefined;
+		this.viewerPassword = undefined;
+		this.revealedGame = undefined;
 		this.#viewerKeyHash = undefined;
 		this.#grimoire = undefined;
 		clearTimeout(this.#grimoireTimer);

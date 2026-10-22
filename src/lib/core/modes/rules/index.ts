@@ -1,6 +1,9 @@
 /** The special rules the app ships, A–Z by name. */
 import type { SpecialRule } from '../types.ts';
 import { BINARY_SUPERNOVAE } from './binary-supernovae.ts';
+import { COUNCIL_OF_THE_DEAD } from './council-of-the-dead.ts';
+import { PHANTOM_DETECTIVES } from './phantom-detectives.ts';
+import { TRAINED_KILLER } from './trained-killer.ts';
 import { INFINITE_POSSIBILITIES } from './infinite-possibilities.ts';
 import { I_SEE_DEAD_PEOPLE } from './i-see-dead-people.ts';
 import { PLUS_ONE } from './plus-one.ts';
@@ -13,11 +16,14 @@ export { INFINITE_POSSIBILITIES, SPECTERS };
 export const SPECIAL_RULES: readonly SpecialRule[] = [
 	PLUS_ONE,
 	BINARY_SUPERNOVAE,
+	COUNCIL_OF_THE_DEAD,
 	INFINITE_POSSIBILITIES,
 	I_SEE_DEAD_PEOPLE,
 	SPECTERS,
 	STOWED_AWAY,
-	SEAT_7
+	SEAT_7,
+	PHANTOM_DETECTIVES,
+	TRAINED_KILLER
 ];
 
 /**

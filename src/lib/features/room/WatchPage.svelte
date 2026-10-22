@@ -2,24 +2,13 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { migrateSavedGame, SavedGameError } from '#lib/core/engine/index.ts';
 	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
-	import type { SharedGrimoire } from '#lib/core/sync/room.ts';
-	import { provideCharacters } from '#lib/features/characters/character-context.ts';
-	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { errorMessage } from '#lib/features/errors/app-error.ts';
-	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import { OpenGame } from '#lib/features/game/session.svelte.ts';
-	import { parseReminderCopyIds, parseReminderSpots } from '#lib/features/grimoire/device-notes.ts';
-	import { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
-	import { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
-	import { dayTimers } from '#lib/core/rules/index.ts';
-	import GrimoireBoard from '#lib/features/grimoire/GrimoireBoard.svelte';
-	import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { RoomViewer, viewerKeyFrom } from './viewer.svelte.ts';
+	import SharedBoard from './SharedBoard.svelte';
 
 	/**
 	 * The view-only grimoire link (Specters, Trevor 2026-10-18): the Storyteller's whole
@@ -36,76 +25,47 @@
 	let key = $state<string>();
 	let pledgeOpen = $state(false);
 	let viewer = $state.raw<RoomViewer>();
-	let board = $state.raw<Grimoire>();
+	let ready = $state(false);
 	let problem = $state<string>();
-	/** The Storyteller's day timer, which only shows here. */
-	const timer = new WatchedTimer();
 
 	onMount(() => {
 		key = viewerKeyFrom(location.hash);
 		pledgeOpen = !!room && !!key;
-		return () => {
-			viewer?.stop();
-			timer.stop();
-		};
+		return () => viewer?.stop();
 	});
-
-	provideCharacters(() => board?.open.characters);
 
 	function watch() {
 		if (room && key) viewer = new RoomViewer(room, key);
-	}
-
-	$effect(() => {
-		const shared = viewer?.grimoire;
-		if (shared) void show(shared);
-	});
-
-	async function show(shared: SharedGrimoire) {
-		try {
-			const saved = migrateSavedGame(shared.saved);
-			const data = await loadOfficialData();
-			if (viewer?.grimoire !== shared) return;
-			let next = board;
-			if (!next || next.game.gameId !== saved.gameId || !next.open.follow(saved)) {
-				next = new Grimoire(OpenGame.watch(data, saved));
-			}
-			next.layout = parseSeatLayout(shared.layout);
-			next.reminderSpots = parseReminderSpots(shared.reminderSpots);
-			next.copies = parseReminderCopyIds(shared.copies);
-			timer.set(dayTimers.parseSharedTimer(shared.timer));
-			board = next;
-			problem = undefined;
-		} catch (e) {
-			problem =
-				e instanceof SavedGameError && e.problem === 'too-new'
-					? t('common.gameTooNew')
-					: errorMessage(e);
-		}
 	}
 
 	const message = $derived(
 		!room || key === undefined
 			? t('room.watch.badLink')
 			: viewer?.refusedReason === 'not-viewer'
-				? t('room.watch.turnedOff')
-				: viewer?.refusedReason === 'too-old'
-					? t('room.tooOld')
-					: viewer?.status === 'refused' || viewer?.status === 'closed'
-						? t('room.closedOrWrong')
-						: problem
+				? // Opened from Join game with a typed password, rather than the link.
+					page.state.password
+					? t('room.watch.wrongPassword')
+					: t('room.watch.turnedOff')
+				: viewer?.refusedReason === 'too-many-tries'
+					? t('room.watch.tooManyTries')
+					: viewer?.refusedReason === 'too-old'
+						? t('room.tooOld')
+						: viewer?.status === 'refused' || viewer?.status === 'closed'
+							? t('room.closedOrWrong')
+							: problem
 	);
 	// A link turned off, or a room closed, takes the grimoire away at once.
 	const showBoard = $derived(
-		board && !message && viewer?.status !== 'refused' && viewer?.status !== 'closed'
+		!message && viewer?.status !== 'refused' && viewer?.status !== 'closed'
 	);
 </script>
 
-{#if showBoard && board}
-	<ErrorBoundary area="grimoire">
-		<GrimoireBoard grimoire={board} watching watchedTimer={timer.known ? timer : undefined} />
-	</ErrorBoundary>
-{:else}
+{#if showBoard}<SharedBoard
+		shared={viewer?.grimoire}
+		onReady={(r) => (ready = r)}
+		onProblem={(p) => (problem = p)}
+	/>{/if}
+{#if !(showBoard && ready)}
 	<main class="message" data-testid="watch-status">
 		<h1>{t('room.watch.title')}</h1>
 		<p role={message ? 'alert' : 'status'}>

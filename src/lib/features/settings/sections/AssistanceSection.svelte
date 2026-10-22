@@ -99,7 +99,7 @@
 <TimerPerPlayerRow />
 
 <h3>{t('settings.groupShare')}</h3>
-<!-- Also on Share's View grimoire tab, where it is used. -->
+<!-- Also on Share, beside the view-only link, where it is used. -->
 <SettingToggle
 	label={t('settings.hideWatchLink')}
 	description={t('settings.hideWatchLinkHelp')}

@@ -18,10 +18,10 @@ export interface ReportBoxEnv {
 	REPORTS: DurableObjectNamespace<ReportBox>;
 	DATA?: DataBinding;
 	/**
-	 * Comma-separated sign-in emails that are always admins (Trevor, 2026-10-22: "set it in
-	 * Cloudflare"). Set as a secret on the Worker holding the reports, `grim-games-data`, so it
-	 * stays out of this public repo and survives deploys. Admins it names can add others in the
-	 * app.
+	 * Comma-separated sign-in emails of the admins (Trevor, 2026-10-22: "set it in Cloudflare";
+	 * admin is inherent by user type, nothing to manage in the app). Set as a secret on the
+	 * Worker holding the reports, `grim-games-data`, so it stays out of this public repo and
+	 * survives deploys.
 	 */
 	ADMIN_EMAILS?: string;
 }
@@ -55,7 +55,7 @@ interface Row extends Record<string, SqlStorageValue> {
 }
 
 /**
- * Every report and the admin list, in one SQLite Durable Object (`idFromName('all')`).
+ * Every report, in one SQLite Durable Object (`idFromName('all')`).
  * Durable Objects rather than D1, like accounts and shared scripts. Kept apart from
  * reports.ts so the shared data Worker can hold it without the app's routes.
  */
@@ -65,6 +65,7 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 	constructor(ctx: DurableObjectState, env: ReportBoxEnv) {
 		super(ctx, env);
 		this.sql = ctx.storage.sql;
+		// admin_users held admins added in the app until 2026-10-22; no longer read, never dropped.
 		this.sql.exec(`
 			CREATE TABLE IF NOT EXISTS admin_users (
 				user_id TEXT PRIMARY KEY,
@@ -156,35 +157,9 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 		return this.sql.exec('DELETE FROM reports WHERE id = ?', id).rowsWritten > 0;
 	}
 
-	/**
-	 * Accounts that may read and triage reports, by internal user id: people can change their
-	 * email or username (Trevor, 2026-10-18), so neither may decide who is an admin.
-	 */
-	async admins(): Promise<string[]> {
-		return this.sql
-			.exec<{ user_id: string }>('SELECT user_id FROM admin_users ORDER BY added_at')
-			.toArray()
-			.map((row) => row.user_id);
-	}
-
-	/** Added in the app by user id, or named by sign-in email in ADMIN_EMAILS. */
-	async isAdmin(userId: string, email?: string): Promise<boolean> {
-		if (listedAdmin(this.env.ADMIN_EMAILS, email)) return true;
-		return (
-			this.sql.exec('SELECT 1 FROM admin_users WHERE user_id = ?', userId).toArray().length > 0
-		);
-	}
-
-	async addAdmin(userId: string, now: number): Promise<void> {
-		this.sql.exec(
-			'INSERT OR IGNORE INTO admin_users (user_id, added_at) VALUES (?, ?)',
-			userId,
-			now
-		);
-	}
-
-	async removeAdmin(userId: string): Promise<void> {
-		this.sql.exec('DELETE FROM admin_users WHERE user_id = ?', userId);
+	/** Whether the account signing in with `email` is in ADMIN_EMAILS. */
+	async isAdmin(email: string): Promise<boolean> {
+		return listedAdmin(this.env.ADMIN_EMAILS, email);
 	}
 }
 

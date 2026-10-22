@@ -96,7 +96,7 @@
 	 * The character's own reminder tokens, one row per copy the game has (the Mathematician's
 	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
 	 */
-	const total = $derived(reminderCopies(game, characters, grimoire.copies));
+	const total = $derived(reminderCopies(game, characters, grimoire.copies, grimoire.bankCopies));
 	const rows = $derived.by(() => {
 		const character = step?.character;
 		if (!character) return [];

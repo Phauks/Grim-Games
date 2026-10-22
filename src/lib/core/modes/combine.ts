@@ -38,7 +38,9 @@ const SINGLE = [
 	'participants',
 	'travellers',
 	'seats',
-	'deaths'
+	'deaths',
+	'abilities',
+	'demonAttacks'
 ] as const satisfies readonly (keyof CombinedParts)[];
 
 /** Parts that are lists: every file's items, in order. */
