@@ -182,6 +182,13 @@ export function warningText(warning: EngineWarning): string | undefined {
 			return 'The removed seat had a character.';
 		case 'ghost-vote-while-alive':
 			return 'That player is alive.';
+		// Nominations (https://wiki.bloodontheclocktower.com/Glossary, "Nomination").
+		case 'already-nominated':
+			return 'That player has already nominated today.';
+		case 'already-nominee':
+			return 'That player has already been nominated today.';
+		case 'dead-nominator':
+			return 'Dead players may not nominate.';
 		default:
 			return warning.message;
 	}

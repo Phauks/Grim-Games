@@ -5035,3 +5035,45 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 		'Council of the Dead'
 	);
 });
+
+test('with Track nominations on, a seat sheet records who nominated whom under the ghost vote', async ({
+	page
+}) => {
+	// Trevor (2026-10-22): "Make nomination tracking a setting. if enabled, just add beneath dead
+	// vote the same area there to track it."
+	await startGame(page);
+	await expect((await openSeat(page, 1)).getByTestId('sheet-nominated')).toHaveCount(0);
+	await closeSheet(page);
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page
+		.getByRole('dialog', { name: APP_NAME })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await settings.getByText('Track nominations', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+
+	let sheet = await openSeat(page, 1);
+	const nominated = sheet.getByTestId('sheet-nominated');
+	await expect(nominated).toHaveText('None');
+	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
+	await nominated.tap();
+	await page.getByRole('dialog', { name: 'Who did Seat 1 nominate?' }).getByText('Seat 3').tap();
+	await expect(nominated).toHaveText('Seat 3');
+	await closeSheet(page);
+	// The nominee's sheet shows it from the other side.
+	sheet = await openSeat(page, 3);
+	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('Seat 1');
+	// None clears it.
+	await sheet.getByTestId('sheet-nominated-by').tap();
+	await page
+		.getByRole('dialog', { name: 'Who nominated Seat 3?' })
+		.getByRole('button', { name: 'None', exact: true })
+		.tap();
+	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
+});
