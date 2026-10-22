@@ -42,3 +42,4 @@ export * from './becomes-demon.ts';
 export * from './character-changes.ts';
 export * from './end-reason.ts';
 export * from './ability-parts.ts';
+export * from './savant.ts';
