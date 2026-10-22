@@ -267,3 +267,17 @@ describe('Binary Supernovae', () => {
 		expect(supernovae.parts.winConditions?.kind).toBe('demon-executed');
 	});
 });
+
+// https://beardytas.com/garden-of-djinn/the-warrens/ and
+// https://beardytas.com/garden-of-djinn/the-djinns-bargain/: both happen on a nomination,
+// which the app doesn't record, so the Storyteller runs them from their instructions.
+describe.each(['warrens', 'djinns-bargain'])('%s', (id) => {
+	const found = SPECIAL_RULES.find((r) => r.id === id)!;
+
+	it('is a Storyteller instruction that changes no counts', () => {
+		expect(Object.keys(found.parts).sort()).toEqual(['ruleChanges', 'text']);
+		expect(found.parts.ruleChanges?.[0].instructions?.trim()).toBeTruthy();
+		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: found.parts.text });
+		expect(onBootlegger?.parts.countChanges).toBeUndefined();
+	});
+});
