@@ -1016,7 +1016,7 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	const url = page.url();
 	// Share sits in the toolbar, never hidden in the menu, and opens over the board.
 	await page.getByRole('button', { name: 'Share', exact: true }).tap();
-	const share = page.getByRole('dialog', { name: "Players' phones" });
+	const share = page.getByRole('dialog', { name: 'Share' });
 	await expect(share.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');
@@ -1545,7 +1545,11 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
 	// One place only (Trevor, 2026-10-18): no choice of where.
 	await expect(dialog.getByRole('combobox', { name: 'Script name', exact: true })).toHaveCount(0);
-	// The player name badge size is an option (Trevor, 2026-10-17), live on the board.
+	// The player name badge size is an option (Trevor, 2026-10-17), live on the board. It is
+	// set in Tokens, with the character token (Trevor, 2026-10-20).
+	await expect(dialog.getByRole('slider', { name: 'Player name size' })).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await menu(page, 'Tokens');
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
 	await expect(nameSize).toHaveAttribute('aria-valuetext', '140%');
@@ -3808,6 +3812,8 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
 	await run.tap();
 	await expect(strip.locator('.count')).toHaveText(/^2 of/);
+	// The count is a badge, not loose text (Trevor, 2026-10-20).
+	await expect(strip.locator('.count .count-badge')).toHaveText(/^2 of \d+$/);
 	await end.tap();
 	await page
 		.getByRole('alertdialog', { name: 'End the night?' })
@@ -3823,6 +3829,9 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(strip).toBeVisible();
+	// The night starts on Dusk, though End day has ticked it (Trevor, 2026-10-20).
+	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
+	await expect(strip.locator('.count')).toHaveText(/^1 of/);
 
 	// With "Open the day after End night" off, set in the confirm itself, the Storyteller stays
 	// on the grimoire (Trevor, 2026-10-18).
@@ -4765,6 +4774,14 @@ test('the walk-through shows the character, then its player below, with the coun
 	await closeSheet(page);
 	const strip = await walkTo(page, 'Fortune Teller');
 	await expect(strip.locator('.body > .name')).not.toContainText('Samantha');
+	// What to do comes before any information, such as suggestions (Trevor, 2026-10-20).
+	const order = await strip.locator('.body').evaluate((body) => {
+		const kids = [...body.children];
+		const at = (selector: string) => kids.findIndex((kid) => kid.matches(selector));
+		return { text: at('.text'), info: at('[data-testid^="night-"]') };
+	});
+	expect(order.text).toBeGreaterThan(-1);
+	if (order.info > -1) expect(order.text).toBeLessThan(order.info);
 	const who = strip.locator('.who');
 	await expect(who).toHaveText('Samantha Longname-Example');
 	const name = (await strip.locator('.body > .name strong').boundingBox())!;
@@ -4848,4 +4865,39 @@ test('Start game with setup reminders still to place asks first, listing them', 
 	await bankNight(page, 'Start game').tap();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('night-strip')).toBeVisible();
+});
+
+test('a Fool marked dead is offered to survive their first death', async ({ page }) => {
+	// Trevor (2026-10-22): the Fool's first death (https://wiki.bloodontheclocktower.com/Fool),
+	// never against the Assassin (https://wiki.bloodontheclocktower.com/Assassin).
+	await startGame(page, 'Bad Moon Rising');
+	for (const [number, name] of [
+		[1, 'Fool'],
+		[2, 'Assassin'],
+		[3, 'Zombuul']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Use the Fool’s ability?' });
+	await expect(ask).toContainText('No Ability');
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Fool, 1 reminder')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 1: no name, Fool, 1 reminder')).not.toHaveAttribute(
+		'aria-label',
+		/dead/
+	);
 });

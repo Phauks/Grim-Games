@@ -10,18 +10,11 @@
 	import { typeTone } from '#lib/core/data/character-type.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { tick, type Snippet } from 'svelte';
-	import {
-		defaultAlignment,
-		type Character,
-		type CharacterId,
-		type CharacterType
-	} from '#lib/core/data/index.ts';
+	import { type Character, type CharacterId, type CharacterType } from '#lib/core/data/index.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { prefetchWikiPage } from './wiki-page.svelte.ts';
 	import CharacterSearchBox from './CharacterSearchBox.svelte';
 	import CharacterRow from './CharacterRow.svelte';
-	import CharacterToken from './CharacterToken.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { PICKER_TYPES, searchGroups, type CharacterGroup } from './character-search.ts';
 
@@ -156,25 +149,13 @@
 				disabledReason: reasonFor(character, chosen.has(character.id))
 			}}
 			{@const note = state.disabledReason ?? marker?.(character)}
-			<li class:with-info={!!onInfo && !item}>
+			<li>
 				{#if item}
 					{@render item(character, state)}
 				{:else}
-					{#if onInfo}
-						<button
-							type="button"
-							class="info"
-							aria-haspopup="dialog"
-							aria-label={t('picker.characterInfo', { name: character.name })}
-							onpointerdown={() => prefetchWikiPage(character)}
-							onclick={() => onInfo(character)}
-						>
-							<CharacterToken {character} alignment={defaultAlignment(character.type)} size={36} />
-						</button>
-					{/if}
 					<CharacterRow
 						{character}
-						token={!onInfo}
+						info={onInfo}
 						{note}
 						withNote={notes}
 						withCheck
@@ -329,29 +310,6 @@
 		flex: none;
 		width: 1.25em;
 		align-self: center;
-	}
-	/* The token is its own button over the row's start, so the row looks the same. */
-	.with-info {
-		position: relative;
-	}
-	.with-info :global(.row) {
-		padding-inline-start: calc(var(--space-2) + 2.25rem + var(--space-2));
-	}
-	.info {
-		position: absolute;
-		inset-block: 0;
-		inset-inline-start: 0;
-		z-index: 1;
-		display: flex;
-		align-items: flex-start;
-		width: calc(var(--space-2) + 2.25rem + var(--space-1));
-		min-width: var(--tap-target);
-		padding: var(--space-1) 0 var(--space-1) var(--space-2);
-		border: 0;
-		border-radius: var(--radius-md) 0 0 var(--radius-md);
-		background: none;
-		cursor: pointer;
-		touch-action: manipulation;
 	}
 	.none {
 		margin: 0;

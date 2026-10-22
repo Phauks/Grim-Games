@@ -118,14 +118,16 @@ test("day notes are gone; a player's day button sits in their ability row", asyn
 	await expect(button).toHaveCount(1);
 	const row = page.locator('li[data-character="slayer"]').filter({ has: button });
 	await expect(row).toHaveCount(1);
-	const badge = row.locator('.bar > .badge');
-	await expect(badge).toContainText('Slayer');
-	await expect(badge).toContainText('Ben');
-	const character = await place(badge);
+	// Drawn like character selection (Trevor, 2026-10-20): the button at the row's end,
+	// after the name, the player and the ability.
+	await expect(row.locator('.head')).toContainText('Slayer');
+	await expect(row.locator('.head .note')).toHaveText('Ben');
+	const text = await place(row.locator('.main'));
 	const used = await place(button);
-	// On the same line as the character and player name, after them.
-	expect(Math.abs(used.y + used.height / 2 - (character.y + character.height / 2))).toBeLessThan(4);
-	expect(used.x).toBeGreaterThanOrEqual(character.x + character.width - 1);
+	const box = await place(row.locator('.row'));
+	expect(used.x).toBeGreaterThanOrEqual(text.x + text.width - 1);
+	expect(used.y).toBeGreaterThanOrEqual(box.y - 1);
+	expect(used.y + used.height).toBeLessThanOrEqual(box.y + box.height + 1);
 	await row.screenshot({ path: `test-results/day-used-row-${test.info().project.name}.png` });
 });
 

@@ -5,6 +5,7 @@
  * The one rename: TPI's files call the character type `team`; here it is `type`, because
  * alignment (good/evil) is the team (04-architecture.md §3).
  */
+import type { CharacterRules } from './character-rules.ts';
 
 /** Character types, in TPI's order (`script-schema.json` → `team.enum`). */
 export const CHARACTER_TYPES = [
@@ -129,6 +130,11 @@ export interface Character {
 	/** Only from custom scripts: numeric night positions (TPI's script format). */
 	firstNight?: number;
 	otherNight?: number;
+	/**
+	 * Only from custom scripts: the character's rules block (`character-rules.ts`). Official
+	 * characters' blocks are our overlay files, read with `rulesOf`.
+	 */
+	rules?: CharacterRules;
 }
 
 /** One jinx between two characters, in the order TPI lists them (`jinxes.json`). */

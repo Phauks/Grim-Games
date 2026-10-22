@@ -7,7 +7,6 @@
 		type LoadedScript
 	} from '#lib/core/data/index.ts';
 	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/index.ts';
-	import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
 	import type { SavedCharacter } from '#lib/features/character-builder/saved-characters.ts';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -30,6 +29,7 @@
 	import { libraryKey } from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 	import { removeScript } from './remove-script.ts';
+	import { addAsCollection, entryOf } from './add-as-kind.ts';
 
 	/**
 	 * Changes what kind of item something is (Trevor, 2026-10-18): a script, a character or a
@@ -131,16 +131,6 @@
 		}
 	}
 
-	/** A character as a script entry: an official one copied in full, so it can be edited. */
-	function entryOf(character: Character): HomebrewEntry {
-		const { type, special, ...rest } = character;
-		return {
-			...rest,
-			team: type,
-			...(special.length > 0 ? { special } : {})
-		} as unknown as HomebrewEntry;
-	}
-
 	/** The item's characters as they go on a script: official ones by id. */
 	function scriptEntries(): unknown[] {
 		if (item.kind === 'character') return [item.saved.entry];
@@ -166,20 +156,10 @@
 	}
 
 	function makeCollection(): string | undefined {
+		if (script) return addAsCollection(script, source.name);
 		const id = characterCollections.add(source.name);
 		if (!id) return undefined;
-		if (item.kind === 'character') {
-			characterCollections.toggle(id, savedRef(item.saved.savedId));
-		} else if (script) {
-			const homebrew = new Set(script.homebrew);
-			for (const c of script.characters) {
-				// A script's own characters are kept as Character builder characters.
-				const ref = homebrew.has(c.id)
-					? savedRef(savedCharacters.save(fieldsFromEntry(entryOf(c))))
-					: (c.id as string);
-				characterCollections.toggle(id, ref);
-			}
-		}
+		if (item.kind === 'character') characterCollections.toggle(id, savedRef(item.saved.savedId));
 		return collectionKey(id);
 	}
 

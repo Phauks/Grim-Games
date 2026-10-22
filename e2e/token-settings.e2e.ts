@@ -486,24 +486,24 @@ test('reminder words can run wider or wrap instead of ending in "…"', async ({
 	expect(await lines()).toBe(1);
 });
 
-test('the preview player name follows the Player name size', async ({ page }) => {
+test('the player name badge is set beside the character token preview', async ({ page }) => {
+	// Trevor (2026-10-20): "player name badges should have settings in tokens under character
+	// tokens. This should include the font, size, how far from the token".
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const name = dialog.getByTestId('token-preview').getByTestId('token-player-name');
-	const before = (await name.boundingBox())!.width;
-	// Player name size is a Board setting (Trevor, 2026-10-18: Board and Tokens split).
-	const go = async (section: string) => {
-		const back = dialog.getByRole('button', { name: 'All settings' });
-		if (await back.isVisible()) await back.tap();
-		await dialog
-			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: section, exact: true })
-			.tap();
-	};
-	await go('Board');
+	const box = async () => (await name.boundingBox())!;
+	const before = await box();
 	await dialog.getByRole('slider', { name: 'Player name size' }).fill('1.5');
-	await go('Tokens');
-	await expect.poll(async () => (await name.boundingBox())!.width).toBeGreaterThan(before * 1.3);
+	await expect.poll(async () => (await box()).width).toBeGreaterThan(before.width * 1.3);
+	const sized = await box();
+	await dialog.getByRole('slider', { name: 'Player name distance' }).fill('0.2');
+	await expect.poll(async () => (await box()).y).toBeGreaterThan(sized.y);
+	await expect(dialog.getByTestId('player-font')).toBeVisible();
+	const saved = await page.evaluate(() =>
+		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
+	);
+	expect(saved).toMatchObject({ nameSize: 1.5, nameOffset: 0.2 });
 });
 
 test('the character name and reminder fonts are set beside their token previews', async ({

@@ -194,8 +194,8 @@ test('the board looks and background are in Board, saved with the board', async 
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	await expect(strength).toBeEnabled();
 	await dialog.getByText('Vignette', { exact: true }).tap();
-	// The player name badge can sit lower, clear of the token's name (Trevor, 2026-10-18).
-	await slide(page, 'Player name offset', 0.1);
+	// The player name badge is set in Tokens now (Trevor, 2026-10-20).
+	await expect(dialog.getByRole('slider', { name: 'Player name distance' })).toHaveCount(0);
 	await dialog.getByRole('combobox', { name: 'Location', exact: true }).tap();
 	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
 
@@ -210,7 +210,7 @@ test('the board looks and background are in Board, saved with the board', async 
 		rulesAt: 'edge',
 		rulesGrouped: false,
 		nameSize: 1,
-		nameOffset: 0.1,
+		nameOffset: 0,
 		reminders: 'seat',
 		usedGhostVote: 'hollow'
 	});
@@ -350,7 +350,12 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	await expect(nav.getByRole('heading')).toHaveCount(0);
 	await nav.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await expect(dialog).not.toContainText('Applies to');
-	await expect(dialog.getByRole('heading', { level: 3 })).toHaveText(['Night', 'Bag draw', 'Day']);
+	await expect(dialog.getByRole('heading', { level: 3 })).toHaveText([
+		'Night',
+		'Bag draw',
+		'Day',
+		'Share'
+	]);
 });
 
 test('text alignment switches body text between left aligned and justified', async ({ page }) => {

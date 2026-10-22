@@ -135,6 +135,7 @@
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
+	import FoolAsk from './FoolAsk.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -903,12 +904,16 @@
 			game.seating.some((id) => game.seats[id].characterId !== undefined)
 	);
 	function runNight(): void {
+		walkNight(false);
+	}
+	/** From Dusk when the night starts (Trevor, 2026-10-20), else at the first step not done. */
+	function walkNight(fromDusk: boolean): void {
 		const data = officialData.current;
 		if (!data) return;
 		grimoire.beginNight();
 		const night = tonight(game);
 		const steps = boardNightSteps(game, characters, night, data, today).filter(wakes);
-		const next = steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
+		const next = fromDusk ? 0 : steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
 	}
 	/**
@@ -936,7 +941,7 @@
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
-		if (preferences.current.assistance.nightWalkthrough) runNight();
+		if (preferences.current.assistance.nightWalkthrough) walkNight(true);
 	}
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
@@ -1072,7 +1077,7 @@
 				if (!promptSeen || promptSeen.has(key)) continue;
 				if (reminderOwnerDead(game, reminder))
 					freshDead.push({ reminder, seatId, from: lastSeat[reminder.reminderId] });
-				const prompt = reminderPrompt(reminder.label);
+				const prompt = reminderPrompt(reminder.label, reminder.characterId, characters);
 				if (prompt && promptApplies(prompt, !!seat.dead)) fresh.push({ seatId, prompt });
 			}
 		}
@@ -2022,6 +2027,7 @@
 />
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
+<FoolAsk {grimoire} />
 <GameEndPrompt
 	{grimoire}
 	active={!ended && !grimoire.open.viewOnly}
@@ -2235,7 +2241,7 @@
 </Dialog>
 
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
-<Dialog bind:open={phonesOpen} title="Players' phones" size="full">
+<Dialog bind:open={phonesOpen} title={t('room.title')} size="full">
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
