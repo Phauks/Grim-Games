@@ -149,6 +149,8 @@
 	}
 
 	let { grimoire, watching = false, watchedTimer }: Props = $props();
+	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
+	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
 	const game = $derived(grimoire.game);
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
@@ -1894,6 +1896,15 @@
 				bind:clientWidth={titleW}
 				bind:clientHeight={titleH}
 			>
+				<!-- Who watches the view-only grimoire, above the name (Trevor, 2026-10-22); held
+				     off the title's own height so the corner's measurements stay as they are. -->
+				{#if watcherCount > 0}<span
+						class="watchers"
+						role="status"
+						aria-label={t('room.watching', { count: watcherCount })}
+						data-testid="board-watchers"
+						><Icon name="watchers" /><span aria-hidden="true">{watcherCount}</span></span
+					>{/if}
 				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
 				<ModeMenu {game} onEdit={watching ? undefined : editGameInfo}
 					><span
@@ -2667,6 +2678,17 @@
 		line-height: 1.15;
 		color: var(--heading);
 		pointer-events: none;
+	}
+	.watchers {
+		position: absolute;
+		left: 0;
+		bottom: 100%;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		font-family: var(--font-control);
+		font-size: 0.9rem;
+		color: var(--on-surface-muted);
 	}
 	.corner-title.no-room {
 		visibility: hidden;

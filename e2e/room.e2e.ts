@@ -499,6 +499,12 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 
 	// The Storyteller's changes show live.
 	await page.goto(board);
+	// The board shows an eye and how many watch, above the script name (Trevor, 2026-10-22),
+	// wherever the corner has room for the name; never on the viewer's own board.
+	const title = page.getByTestId('script-title');
+	if (await title.isVisible())
+		await expect(title.getByTestId('board-watchers')).toHaveAccessibleName('1 watching');
+	await expect(viewer.getByTestId('board-watchers')).toHaveCount(0);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
