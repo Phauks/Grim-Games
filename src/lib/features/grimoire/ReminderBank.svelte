@@ -125,6 +125,8 @@
 		now?: boolean;
 		/** Its stretch of the bank, each set off by a line. */
 		group: Group;
+		/** A copy beyond what the game gives, dashed as on the board (Trevor, 2026-10-22). */
+		extra?: boolean;
 	}
 
 	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list.
@@ -180,14 +182,14 @@
 			focusMode === 'front',
 			grimoire.copies,
 			grimoire.bankCopies
-		).flatMap(({ characterId, label, left, now }) => {
+		).flatMap(({ characterId, label, left, extra, now }) => {
 			const key = `${characterId}:${label}`;
 			const n = left - (pending[key] ?? 0);
 			if (n <= 0) return [];
 			const group: Group = dead.has(characterId) ? 'dead' : 'reminders';
 			// Each seat's own copies, when the character is on more than one (Trevor, 2026-10-19).
 			const owners = bankOwners(game, characters, { characterId, label }, n, grimoire.copies);
-			return owners.flatMap(({ ownerSeatId, count }) => {
+			const list: Item[] = owners.flatMap(({ ownerSeatId, count }) => {
 				const k = ownerSeatId === undefined ? key : `${key}:${ownerSeatId}`;
 				// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
 				if (stack)
@@ -202,6 +204,13 @@
 					group
 				}));
 			});
+			// The extras are the last copies placed, so the last in the bank.
+			let extras = Math.min(extra, n);
+			for (let j = list.length - 1; j >= 0 && extras > 0; j--) {
+				list[j].extra = true;
+				extras -= list[j].count;
+			}
+			return list;
 		});
 		// The generic ∞ reminder, as many as needed (Trevor, 2026-10-18), after the reminders.
 		const generic: Item = {
@@ -237,8 +246,27 @@
 	const dividers = $state<Partial<Record<Group, HTMLElement>>>({});
 	const captionW = $state<Partial<Record<Group, number>>>({});
 	let scrolled = $state(0);
-	const captions = $derived.by((): { group: Group; text: string; left: number }[] => {
+	/**
+	 * Measured after the bank is drawn (Trevor, 2026-10-22: the ∞ sat over the Reminders, not
+	 * its own token): a stretch's line moves once the spacers and token widths are known, so
+	 * the captions are placed again whenever those or the bank's size change.
+	 */
+	let captions = $state<{ group: Group; text: string; left: number }[]>([]);
+	let resized = $state(0);
+	$effect(() => {
+		if (!bankEl || !list) return;
+		const observer = new ResizeObserver(() => resized++);
+		observer.observe(bankEl);
+		observer.observe(list);
+		return () => observer.disconnect();
+	});
+	$effect(() => {
 		void items;
+		void spacers;
+		void resized;
+		captions = placeCaptions();
+	});
+	function placeCaptions(): { group: Group; text: string; left: number }[] {
 		const row = list;
 		if (!bankEl || !row) return [];
 		const width = bankEl.clientWidth || 1;
@@ -268,7 +296,7 @@
 			const next = placed[i + 1];
 			return !next || next.left >= c.left + pct(gap + (captionW[c.group] ?? 0));
 		});
-	});
+	}
 	/** The tray's gap, which is also each caption's inset from its line (both `--space-2`). */
 	const gap = $derived(list ? parseFloat(getComputedStyle(list).columnGap) || 0 : 0);
 	/** Each token's width in the bank, to size its stretch. */
@@ -458,6 +486,8 @@
 			<li
 				bind:offsetWidth={itemW[item.key]}
 				class:lifted={drag?.item.key === item.key && item.count === 1}
+				class:extra={item.extra}
+				data-extra={item.extra ? '' : undefined}
 				class:now={item.now || lit?.(item)}
 				class:dim={lit ? !lit(item) : dimRest && !item.now}
 				data-lit={lit?.(item) || undefined}
@@ -773,6 +803,12 @@
 	}
 	li.lifted {
 		opacity: 0.3;
+	}
+	/* A copy beyond what the game gives, as the board marks it (GrimoireBoard .chip-slot.extra). */
+	li.extra > :global(.reminder) {
+		outline: 0.15rem dashed var(--on-surface);
+		outline-offset: 0.15rem;
+		opacity: 0.75;
 	}
 	/* Highlight: everything but the step's reminders fades back. */
 	li.dim {
