@@ -31,6 +31,8 @@ export const setup = {
 	'setup.required': 'Must be in the bag',
 	'setup.requiredBy': '{rule} requires this character in play.',
 	'setup.lockFor': 'Lock {name}',
+	'setup.bluffFor': 'Demon bluff: {name}',
+	'setup.bluffsFull': '{count} bluffs chosen',
 	'setup.locked': 'Locked',
 	'setup.lockedHelp': 'Unlock this character to take it out.',
 	'setup.clearSelection': 'Clear selection',
