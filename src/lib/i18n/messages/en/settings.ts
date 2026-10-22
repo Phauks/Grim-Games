@@ -104,6 +104,10 @@ export const settings = {
 	'settings.groupRules': 'Fabled and Loric',
 	'settings.rulesGrouped.each': 'Individual',
 	'settings.rulesGrouped.grouped': 'Stacked',
+	'settings.groupShare': 'Share',
+	'settings.hideWatchLink': 'Hide the view-only link',
+	'settings.hideWatchLinkHelp':
+		'Covers the QR code and link on Share’s View grimoire tab, e.g. while streaming. Copy and Share still work.',
 	'settings.requireName': 'Require a name before drawing',
 	'settings.ownWording': 'Show our own wording',
 	'settings.ownWordingHelp':

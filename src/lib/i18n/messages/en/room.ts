@@ -1,9 +1,9 @@
 import { APP_NAME } from '#lib/core/app-name.ts';
 
-/** Live rooms: the Storyteller's "Players' phones" page and the players' join pages. */
+/** Live rooms: the Storyteller's Share page and the players' join pages. */
 export const room = {
 	// Storyteller's page
-	'room.title': "Players' phones",
+	'room.title': 'Share',
 	'room.back': 'Grimoire',
 	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',

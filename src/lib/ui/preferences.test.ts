@@ -70,6 +70,7 @@ describe('parsePreferences', () => {
 			tileFace: 'letters',
 			requireName: true,
 			ownWording: true,
+			hideWatchLink: true,
 			timerSound: 'buzzer',
 			timerMode: 'up',
 			timerVibrate: false,

@@ -1011,7 +1011,7 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	const url = page.url();
 	// Share sits in the toolbar, never hidden in the menu, and opens over the board.
 	await page.getByRole('button', { name: 'Share', exact: true }).tap();
-	const share = page.getByRole('dialog', { name: "Players' phones" });
+	const share = page.getByRole('dialog', { name: 'Share' });
 	await expect(share.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');

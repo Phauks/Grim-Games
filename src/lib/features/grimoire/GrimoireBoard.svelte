@@ -2189,7 +2189,7 @@
 </Dialog>
 
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
-<Dialog bind:open={phonesOpen} title="Players' phones" size="full">
+<Dialog bind:open={phonesOpen} title={t('room.title')} size="full">
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 

@@ -371,7 +371,8 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	await expect(dialog.getByRole('heading', { level: 3 })).toHaveText([
 		'Night',
 		'Setup and bag draw',
-		'Day'
+		'Day',
+		'Share'
 	]);
 });
 

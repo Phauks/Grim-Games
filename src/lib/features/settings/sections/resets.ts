@@ -53,6 +53,7 @@ export const resets = {
 				'tileFace',
 				'requireName',
 				'ownWording',
+				'hideWatchLink',
 				'timerSound',
 				'timerMode',
 				'timerVibrate',
