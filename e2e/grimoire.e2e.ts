@@ -5246,3 +5246,45 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 		.tap();
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
 });
+
+// Trevor (2026-10-22, plan D2): a crowded seat's reminders keep a thin line back to it, and
+// "+N" stacks are one Board setting, off by default.
+test('reminders keep a line back to their seat, and crowded seats can stack as +N', async ({
+	page
+}) => {
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	for (let n = 0; n < 4; n++) {
+		await bank.getByRole('button', { name: 'Generic reminder' }).tap();
+		await page
+			.getByRole('dialog', { name: 'Put ∞ on' })
+			.getByRole('button', { name: /None Seat 1/ })
+			.tap();
+	}
+	await expect(seatLabelled(page, 'Seat 1: no name, no character, 4 reminders')).toBeAttached();
+	const onSeat = page.locator('.chip-slot[data-seat="1"]');
+	await expect(onSeat).toHaveCount(4);
+	// One line per reminder, from the seat's rim.
+	await expect(page.locator('line[data-tether="1"]')).toHaveCount(4);
+	await expect(page.locator('line[data-tether="2"]')).toHaveCount(0);
+	await expect(page.locator('[data-stack]')).toHaveCount(0);
+
+	await menu(page, 'Board');
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	const stacks = dialog.getByRole('checkbox', { name: 'Stack crowded reminders' });
+	await expect(stacks).not.toBeChecked();
+	await dialog.getByText('Stack crowded reminders', { exact: true }).tap();
+	await expect(stacks).toBeChecked();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
+	// Two reminders and "+2", in three places with a line each.
+	await expect(onSeat).toHaveCount(3);
+	const more = page.locator('[data-stack]');
+	await expect(more).toHaveText('+2');
+	await expect(page.locator('line[data-tether="1"]')).toHaveCount(3);
+	// "+N" opens the seat, which lists them all.
+	await more.getByRole('button').tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await expect(sheet.getByRole('button', { name: 'Edit player name' })).toBeVisible();
+	await expect(sheet.getByRole('button', { name: /^Actions for/ })).toHaveCount(4);
+});

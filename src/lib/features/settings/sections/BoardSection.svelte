@@ -17,6 +17,7 @@
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
 	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
+	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 	/**
@@ -48,6 +49,12 @@
 	<SettingRow label={REMINDER_MODE_LABEL}>
 		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
 	</SettingRow>
+	<SettingToggle
+		label={t('settings.reminderStacks')}
+		description={t('settings.reminderStacksHelp')}
+		checked={boardLooks.current.reminderStacks}
+		onChange={(reminderStacks) => boardLooks.update({ reminderStacks })}
+	/>
 	<SettingRow label={STEP_FOCUS_LABEL}>
 		{#snippet control(labelId)}<StepFocusSetting labelledBy={labelId} />{/snippet}
 	</SettingRow>

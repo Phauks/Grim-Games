@@ -107,6 +107,9 @@ export const settings = {
 	'settings.rulesAt.middle': 'Middle',
 	'settings.rulesAt.edge': 'Corner',
 	'settings.rulesGrouped': 'Grouping',
+	'settings.reminderStacks': 'Stack crowded reminders',
+	'settings.reminderStacksHelp':
+		'A seat with more than three reminders shows two and a +N token that opens the seat.',
 	'settings.groupRules': 'Fabled and Loric',
 	'settings.rulesGrouped.each': 'Individual',
 	'settings.rulesGrouped.grouped': 'Stacked',

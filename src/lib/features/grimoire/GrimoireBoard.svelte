@@ -20,7 +20,7 @@
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BoardBackdrop from './BoardBackdrop.svelte';
 	import { boardBackground } from './board-background.svelte.ts';
-	import { boardLooks } from './board-looks.svelte.ts';
+	import { boardLooks, STACK_AT } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
@@ -218,6 +218,15 @@
 		x: (p.x / width) * 100,
 		y: (p.y / height) * 100
 	});
+	/** The point on a seat's rim facing `to`, in % of the board (where a tether starts). */
+	function rimToward(seat: SeatPoint, to: SeatPoint): SeatPoint {
+		const a = toPx(seat);
+		const b = toPx(to);
+		const d = Math.hypot(b.x - a.x, b.y - a.y);
+		if (d < 1) return seat;
+		const r = Math.min(size / 2, d);
+		return toPercent({ x: a.x + ((b.x - a.x) / d) * r, y: a.y + ((b.y - a.y) / d) * r });
+	}
 	/** Each seat's name, its box in px (the badge: 0.8rem text, padding and border). */
 	const nameBoxes = $derived.by(() => {
 		if (width <= 0 || height <= 0) return [];
@@ -364,13 +373,29 @@
 	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
+	/**
+	 * With stacks on (Board setting, off by default), a crowded seat shows its first reminders
+	 * and a "+N" token for the rest, which opens the seat (Trevor, 2026-10-22). Only while
+	 * reminders sit by their seat: a reminder left where it was dropped keeps its place.
+	 */
+	const stacking = $derived(
+		boardLooks.current.reminderStacks && boardLooks.current.reminders !== 'free'
+	);
+	function stackedAway(count: number): number {
+		return stacking && count > STACK_AT ? count - (STACK_AT - 1) : 0;
+	}
+	/** The reminder places a seat takes on the board, the "+N" token included. */
+	const places = (count: number) => (stackedAway(count) > 0 ? STACK_AT : count);
 	const fan = $derived.by(() => {
-		if (width <= 0 || height <= 0) return seats.map((s, i) => s.reminders.map(() => shown[i]));
+		if (width <= 0 || height <= 0)
+			return seats.map((s, i) =>
+				Array.from({ length: places(s.reminders.length) }, () => shown[i])
+			);
 		const fitted = fitReminders(
 			seats.map((s, i) => ({
 				seat: toPx(shown[i]),
 				middle: { x: width / 2, y: height / 2 },
-				count: s.reminders.length,
+				count: places(s.reminders.length),
 				size,
 				chip: Math.max(chip, tapPx),
 				avoid: avoidFor(i)
@@ -1732,11 +1757,54 @@
 			</div>
 		{/each}
 
+		<!--
+			A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to
+			their seat's line, with a line back when they have to sit further out), so whose a
+			reminder is reads at a glance on a crowded board. Under the tokens.
+		-->
+		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+			{#each seats as seat, i (seat.seatId)}
+				{#if !looseMode && reminderDrag === undefined}
+					{#each fan[i] ?? [] as p, k (k)}
+						{@const from = rimToward(shown[i], p)}
+						<line
+							x1={from.x}
+							y1={from.y}
+							x2={p.x}
+							y2={p.y}
+							data-tether={i + 1}
+							vector-effect="non-scaling-stroke"
+						/>
+					{/each}
+				{/if}
+			{/each}
+		</svg>
+
 		{#each seats as seat, i (seat.seatId)}
 			{@const count = seat.reminders.length}
+			{@const away = stackedAway(count)}
 			{#if count > 0}
 				{@const at = fan[i]}
-				{#each seat.reminders as reminder, k (reminder.reminderId)}
+				{#if away > 0}
+					{@const p = at[STACK_AT - 1]}
+					<div
+						class="chip-slot"
+						data-seat={i + 1}
+						data-stack
+						style:left="{p.x}%"
+						style:top="{p.y}%"
+					>
+						<BoardReminder
+							label=""
+							character={undefined}
+							more={away}
+							size={chip}
+							disabled={arranging}
+							onTap={() => (watching ? readCharacter(seat.characterId) : openSeat(seat.seatId))}
+						/>
+					</div>
+				{/if}
+				{#each away > 0 ? seat.reminders.slice(0, STACK_AT - 1) : seat.reminders as reminder, k (reminder.reminderId)}
 					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
 					{@const spot =
 						boardLooks.current.reminders === 'free'
@@ -2575,6 +2643,19 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		pointer-events: none;
+	}
+	.tethers {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+	}
+	.tethers line {
+		stroke: var(--on-surface);
+		stroke-opacity: 0.35;
+		stroke-width: 1.5;
 	}
 	.chip-slot {
 		position: absolute;

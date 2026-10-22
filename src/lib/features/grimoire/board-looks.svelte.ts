@@ -47,7 +47,15 @@ export interface BoardLooks {
 	 * players pick with their avatar, the Storyteller sets the board's default).
 	 */
 	defaultFrame: FrameId;
+	/**
+	 * A seat with more than `STACK_AT` reminders shows the first few and a "+N" token that opens
+	 * the seat (Trevor, 2026-10-22: a Board setting, off by default).
+	 */
+	reminderStacks: boolean;
 }
+
+/** How many reminder places a stacked seat uses: the first ones, then "+N" in the last. */
+export const STACK_AT = 3;
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
 export const NAME_SIZE = { min: 0.6, max: 1.6, step: 0.1 } as const;
@@ -68,7 +76,8 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	nameOffset: 0,
 	reminders: 'seat',
 	usedGhostVote: 'hollow',
-	defaultFrame: DEFAULT_FRAME
+	defaultFrame: DEFAULT_FRAME,
+	reminderStacks: false
 };
 const KEY = 'grim.boardLooks';
 
@@ -99,7 +108,8 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 			: DEFAULT_BOARD_LOOKS.nameOffset,
 		reminders: value.reminders === 'free' ? 'free' : 'seat',
 		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
-		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME
+		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME,
+		reminderStacks: value.reminderStacks === true
 	};
 }
 
