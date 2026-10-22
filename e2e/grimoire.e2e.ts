@@ -555,6 +555,11 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	// 2026-10-19: "a lot of the game flow comes from that button"), and nowhere else.
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(1);
 	await expect(bankNight(page, 'Start game')).toHaveCount(0);
+	// Arranging seats keeps Set up there, disabled until Done (Trevor, 2026-10-22).
+	await menu(page, 'Arrange seats');
+	await expect(bankNight(page, 'Set up')).toBeDisabled();
+	await expect(bankNight(page, 'Start game')).toHaveCount(0);
+	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
 	await bankNight(page, 'Set up').tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// The last setup step opens the board, whose bank starts with the setup reminders.
