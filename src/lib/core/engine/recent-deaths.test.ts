@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import type { Command } from './commands.ts';
-import { recentDeaths } from './recent-deaths.ts';
+import { recentDeaths, recentRevivals } from './recent-deaths.ts';
 
 const dead = (seatId: string, cause?: string): Command => ({
 	type: 'SetDead',
@@ -67,5 +67,44 @@ describe('recentDeaths', () => {
 		const { session, ctx, seats } = newGame(6);
 		const s = run(session, ctx, dead(seats[0], 'demon'), { type: 'Execute', seatId: seats[1] });
 		expect(recentDeaths(s.log, s.game)).toEqual([{ seatId: seats[0], cause: 'demon' }]);
+	});
+});
+
+describe('recentRevivals', () => {
+	const alive = (seatId: string): Command => ({ type: 'SetDead', seatId, dead: false });
+
+	it('lists players dead before the night and alive at dawn, in order', () => {
+		const { session, ctx, seats } = newGame(7);
+		const s = run(
+			session,
+			ctx,
+			dead(seats[0], 'demon'), // night 1
+			dead(seats[1], 'demon'),
+			{ type: 'NewDay' }, // day 1
+			{ type: 'Execute', seatId: seats[2] },
+			alive(seats[1]), // night 2: the Professor, say
+			alive(seats[0]),
+			{ type: 'NewDay' } // day 2
+		);
+		expect(recentRevivals(s.log, s.game)).toEqual([seats[1], seats[0]]);
+		// Still the night just ended's during the day; a revival in the day is not announced.
+		const later = run(s, ctx, alive(seats[2]));
+		expect(recentRevivals(later.log, later.game)).toEqual([seats[1], seats[0]]);
+	});
+
+	it('leaves out a player who died and came back the same night, or died again', () => {
+		const { session, ctx, seats } = newGame(7);
+		const s = run(
+			session,
+			ctx,
+			dead(seats[0], 'demon'),
+			{ type: 'NewDay' },
+			dead(seats[1], 'demon'), // night 2
+			alive(seats[1]),
+			alive(seats[0]),
+			dead(seats[0], 'demon'),
+			{ type: 'NewDay' }
+		);
+		expect(recentRevivals(s.log, s.game)).toEqual([]);
 	});
 });
