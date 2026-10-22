@@ -927,17 +927,22 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	await page.route('**/api/botcscripts/versions/7', (route) =>
 		route.fulfill({ json: { scriptId: 7, latest: '2.2', versions: ['2.2', '2.1', '2.0'] } })
 	);
-	await page.route('**/api/botcscripts/script/7/2.2', (route) =>
-		route.fulfill({
-			json: {
-				scriptId: 7,
-				versionId: 70,
-				name: 'Many Versions',
-				version: '2.2',
-				author: 'Test Author',
-				content: [{ id: '_meta', name: 'Many Versions', author: 'Test Author' }, 'chef', 'imp']
-			}
-		})
+	// The version arrives only when the test says, so its loading state can be seen.
+	let release = () => {};
+	const held = new Promise<void>((done) => (release = done));
+	await page.route('**/api/botcscripts/script/7/2.2', async (route) =>
+		held.then(() =>
+			route.fulfill({
+				json: {
+					scriptId: 7,
+					versionId: 70,
+					name: 'Many Versions',
+					version: '2.2',
+					author: 'Test Author',
+					content: [{ id: '_meta', name: 'Many Versions', author: 'Test Author' }, 'chef', 'imp']
+				}
+			})
+		)
 	);
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Custom', { exact: true }).tap();
@@ -946,7 +951,16 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	await version.tap();
 	await expect(page.getByRole('option')).toHaveText([/v2\.2/, /v2\.1/, /v2\.0/]);
 	await page.getByRole('option', { name: /v2\.2/ }).tap();
+	// While it loads, a spinner sits on the drop-down, which waits (Trevor, 2026-10-22).
+	const loading = page.getByTestId('version-loading');
+	await expect(loading).toBeVisible();
+	await expect(loading).toHaveAccessibleName('Loading this version…');
+	await expect(version).toBeDisabled();
+	const box = (await version.boundingBox())!;
+	release();
+	await expect(loading).toHaveCount(0);
 	await expect(version).toContainText('v2.2');
+	expect(await version.boundingBox()).toEqual(box);
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 
