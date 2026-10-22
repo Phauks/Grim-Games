@@ -6,6 +6,7 @@
 - Before building a control, layout or helper, check `docs/shared-components.md`: the same feature in two places is one shared component (Trevor). Extend the shared one rather than copy it; lint lists named `*_TODO` only shrink.
 - Use the game's own terminology (character type vs alignment, seat, reminder, Fabled/Loric as rule characters). Don't invent terms.
 - The BotC wiki is the rules authority. Tests for characters and jinxes cite the wiki page they encode; paraphrase, never copy wiki prose (it has no licence).
+- Character rules are data (Trevor, 2026-10-22): one rules block per character, in `src/lib/core/data/rules/<id>.json` for official characters or `rules` in a custom character's script entry. A new entry for a moved table goes in that file, never in a TypeScript table; rules code names no character. The moved and not-yet-moved tables are listed in `docs/shared-components.md`.
 - Exception (Trevor, 2026-10-15): the glossary popover shows the wiki Glossary's exact wording, fetched live from the wiki API and cached on the device only (`src/lib/features/glossary/wiki-glossary.svelte.ts`). The same holds for a character's whole wiki page in the character dialog (`src/lib/features/characters/wiki-page.svelte.ts`, Trevor 2026-10-16). Never bundle either in the repo. Revisit before any public launch.
 - Clean-room rewrite: never copy code from Pocket Grimoire (GPL-3.0) or other GPL projects.
 - Touch first: tap targets of at least 44px, Pointer Events, and every new flow gets a Playwright test on the phone and tablet projects.
