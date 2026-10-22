@@ -140,6 +140,78 @@ test('End game keeps the room open and tells its phones the game is over', async
 	await phoneContext.close();
 });
 
+test('after End game the Storyteller shares the finished grimoire with the room', async ({
+	page,
+	browser
+}, testInfo) => {
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	const status = phone.getByTestId('join-status');
+	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	// In its place all game, so nothing moves when it can be used (no reflow).
+	const finalButton = phone.getByRole('button', { name: 'Final grimoire' });
+	await expect(finalButton).toBeDisabled();
+	// Only once the game is over.
+	await expect(page.getByRole('button', { name: 'Share grim' })).toBeDisabled();
+
+	await page.goto(board);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game' })
+		.tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(status).toHaveText('Game over: Evil won');
+
+	// The Share sheet offers Share grim once the game is over, and asks first.
+	const seats = await page.getByTestId('seat').count();
+	await page.getByRole('button', { name: 'Share', exact: true }).tap();
+	const share = page
+		.getByRole('dialog', { name: 'Share', exact: true })
+		.getByRole('button', { name: 'Share grim' });
+	await share.tap();
+	await page
+		.getByRole('alertdialog', { name: 'Share the grimoire?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(share).toBeDisabled();
+	// The phone opens it as it arrives: the whole board, every seat.
+	const final = phone.getByRole('dialog', { name: 'Final grimoire' });
+	await expect(final.getByTestId('final-grimoire').getByTestId('seat')).toHaveCount(seats);
+	await final.getByRole('button', { name: 'Close' }).tap();
+	await expect(finalButton).toBeEnabled();
+	// A phone coming back still has it.
+	await phone.reload();
+	await expect(phone.getByRole('dialog', { name: 'Final grimoire' })).toBeVisible();
+	await phone
+		.getByRole('dialog', { name: 'Final grimoire' })
+		.getByRole('button', { name: 'Close' })
+		.tap();
+
+	// Reopening the game makes the grimoire private again.
+	await page
+		.getByRole('dialog', { name: 'Share', exact: true })
+		.getByRole('button', { name: 'Close' })
+		.tap();
+	await page.getByTestId('game-over').tap();
+	await page
+		.getByRole('alertdialog', { name: 'Reopen game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	await expect(finalButton).toBeDisabled();
+	await phoneContext.close();
+});
+
 test('a phone that joins gets the game script before anyone has a seat', async ({
 	page,
 	browser

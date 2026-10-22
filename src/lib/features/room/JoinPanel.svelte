@@ -12,6 +12,7 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
+	import SharedBoard from './SharedBoard.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 	import { followRoomScript } from './room-script.ts';
@@ -192,6 +193,20 @@
 	}
 
 	/*
+	 * Share grim (Trevor, 2026-10-20, plan R5): the finished grimoire the Storyteller shared
+	 * opens over the page once when it arrives, and again from its button.
+	 */
+	const revealed = $derived(player?.revealed);
+	let finalOpen = $state(false);
+	let seenReveal: string | undefined;
+	$effect(() => {
+		const id = revealed?.gameId;
+		if (id && id !== seenReveal) finalOpen = true;
+		if (!id) finalOpen = false;
+		seenReveal = id;
+	});
+
+	/*
 	 * Grim view (plan D1, Trevor 2026-10-22: "grim view by password or direct link. drop
 	 * spectate"): the room code and the Storyteller's password open the view-only grimoire.
 	 * Players without a seat (Specters) join as players.
@@ -330,6 +345,10 @@
 {:else}
 	<PageSection title={t('room.you')}>
 		<p class="summary" role="status" data-testid="join-status">{summary}</p>
+		<!-- Share grim (plan R5): in its place all game, usable once the Storyteller shares it. -->
+		<Button icon="grimoire" disabled={!revealed} onclick={() => (finalOpen = true)}
+			>{t('room.finalGrimoire')}</Button
+		>
 		<form onsubmit={ask}>
 			<label for="player-name">{t('room.yourName')}</label>
 			<ClearableField bind:value={name}>
@@ -434,6 +453,12 @@
 	</ul>
 </Dialog>
 
+<Dialog bind:open={finalOpen} title={t('room.finalGrimoire')} size="max" scroll={false}>
+	<div class="final" data-testid="final-grimoire">
+		<SharedBoard shared={revealed?.grimoire} />
+	</div>
+</Dialog>
+
 <style>
 	form {
 		display: grid;
@@ -501,6 +526,11 @@
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: var(--space-2);
+	}
+	.final {
+		position: relative;
+		height: 100%;
+		min-height: 0;
 	}
 	.grim-view {
 		display: grid;
