@@ -78,6 +78,9 @@ export class RoomHost {
 	#grimoire: SharedGrimoire | undefined;
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
+	#ended:
+		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
+		| undefined;
 	#socket = $state.raw<RoomSocket>();
 	#game: OpenGame | undefined;
 	#stopWatching: (() => void) | undefined;
@@ -263,6 +266,23 @@ export class RoomHost {
 		this.#socket?.send({ type: 'close-vote' });
 	}
 
+	/**
+	 * Tells the room the game is over (End game), or running again (`undefined`, Reopen). The
+	 * room stays open, so its phones see the end; kept and sent again after a reconnect.
+	 */
+	setEnded(gameId: GameId, ended: { winner?: 'good' | 'evil'; reason?: string } | undefined): void {
+		this.#ended = { gameId, ended };
+		this.#sendEnded();
+	}
+
+	#sendEnded(): void {
+		if (!this.#ended || this.#ended.gameId !== this.#published?.gameId) return;
+		const { gameId, ended } = this.#ended;
+		this.#socket?.send(
+			ended ? { type: 'game-over', gameId, ...ended } : { type: 'reopen-game', gameId }
+		);
+	}
+
 	#connect(room: StoredRoom): void {
 		this.#socket?.stop();
 		this.code = room.code;
@@ -309,6 +329,7 @@ export class RoomHost {
 
 	#resend(): void {
 		if (this.#published) this.#socket?.send({ type: 'publish', ...this.#published });
+		this.#sendEnded();
 		if (this.#script) this.#socket?.send({ type: 'script', script: this.#script });
 		// While a stored key's hash is still being worked out, say nothing about viewers.
 		if (!this.viewerKey) this.#socket?.send({ type: 'viewers', keyHash: null });
