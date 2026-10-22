@@ -15,5 +15,5 @@ export const STORYTELLER_GROUPS = {
 		'savantInfo',
 		'gameEndPrompts'
 	],
-	board: ['stackReminders', 'scriptTitle']
+	board: ['stackReminders', 'scriptTitle', 'roomCode']
 } as const satisfies Record<string, readonly AssistKey[]>;
