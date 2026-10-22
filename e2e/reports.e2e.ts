@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 async function signIn(page: Page, email: string) {
@@ -8,16 +8,29 @@ async function signIn(page: Page, email: string) {
 	const code = (await page.getByTestId('preview-code').locator('strong').textContent()) ?? '';
 	await page.getByLabel(`Code sent to ${email}`).fill(code);
 	await page.getByRole('button', { name: 'Sign in' }).tap();
-	// A new account accepts the privacy policy first.
+	// A new account accepts the privacy policy first; a local server reused between runs
+	// already has the admin accounts.
 	const privacy = page.getByRole('alertdialog', { name: 'Privacy policy' });
-	await privacy.getByText('I accept the Privacy policy', { exact: true }).tap();
-	await privacy.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByTestId('account-email')).toHaveText(email);
+	const signedIn = page.getByTestId('account-email');
+	await expect(privacy.or(signedIn).first()).toBeVisible();
+	if (await privacy.isVisible()) {
+		await privacy.getByText('I accept the Privacy policy', { exact: true }).tap();
+		await privacy.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	await expect(signedIn).toHaveText(email);
+}
+
+/**
+ * An admin from the start, named in ADMIN_EMAILS like Trevor in Cloudflare (playwright.config.ts).
+ * One per test and project, since tests run in parallel and a new code replaces the last.
+ */
+function listedAdmin(testInfo: TestInfo, n: 1 | 2): string {
+	return `${testInfo.project.name}-admin-${n}@example.com`;
 }
 
 test('a report sent from the footer reaches the inbox, where it can be triaged and deleted', async ({
 	page
-}) => {
+}, testInfo) => {
 	const title = `Enhancement ${Date.now()}`;
 	await page.goto('/');
 	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
@@ -38,17 +51,16 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await expect(form.getByTestId('report-sent')).toHaveText(/^Sent as report #\d+\.$/);
 	await form.getByRole('button', { name: 'Close' }).last().tap();
 
-	// The inbox needs the admin key, kept on this device.
+	// Signed out, the inbox only offers to sign in; there is no admin key (Trevor, 2026-10-22).
 	await page.goto('/reports');
-	// Refresh is there before the key, disabled, so nothing moves; Admins is only for admins.
+	// Refresh is there before signing in, disabled, so nothing moves; Admins is only for admins.
 	await expect(page.getByRole('button', { name: 'Refresh' })).toBeDisabled();
 	await expect(page.getByRole('button', { name: 'Admins' })).toBeHidden();
-	const key = page.getByLabel('Admin key');
-	await key.fill('wrong');
-	await key.press('Enter');
-	await expect(page.getByLabel('Wrong key')).toBeVisible();
-	await page.getByLabel('Wrong key').fill('e2e-admin-key');
-	await page.getByLabel('Wrong key').press('Enter');
+	await expect(page.getByLabel('Admin key')).toHaveCount(0);
+	await page.getByRole('main').getByRole('button', { name: 'Sign in' }).tap();
+	await expect(page).toHaveURL(/\/account$/);
+	await signIn(page, listedAdmin(testInfo, 1));
+	await page.goto('/reports');
 
 	// One table: every column filters (Trevor, 2026-10-18); a tap anywhere on a row opens it.
 	const table = page.getByTestId('reports');
@@ -72,7 +84,7 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await status.getByRole('button', { name: 'Close' }).tap();
 	await expect(row).toBeVisible();
 
-	// The key is remembered; delete confirms first.
+	// Still an admin after a reload; delete confirms first.
 	await page.reload();
 	await table.getByRole('button', { name: 'Filter Status (set)' }).tap();
 	await status.getByLabel('New').uncheck();
@@ -83,22 +95,22 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await expect(row).toBeHidden();
 });
 
-test('reading reports without the key is refused', async ({ request }) => {
+test('reading reports signed out is refused', async ({ request }) => {
 	expect((await request.get('/api/reports')).status()).toBe(404);
 	const bad = await request.post('/api/reports', { data: { kind: 'spam', title: 'x', body: 'y' } });
 	expect(bad.status()).toBe(400);
 });
 
-test('an admin account opens the inbox without the key; the key holder names admins', async ({
+test('an admin named in ADMIN_EMAILS adds and removes other admins', async ({
 	page,
 	browser
-}) => {
+}, testInfo) => {
 	const email = `admin-${Date.now()}@example.com`;
-	// The key holder adds the first admin from the Admins list. Only an existing account can
-	// be named: admins are stored by account id, so the email can change later.
+	// The listed admin adds another from the Admins list. Only an existing account can be
+	// named: admins are stored by account id, so the email can change later.
+	await signIn(page, listedAdmin(testInfo, 2));
+	await expect(page.getByTestId('account-type')).toHaveText('Admin');
 	await page.goto('/reports');
-	await page.getByLabel('Admin key').fill('e2e-admin-key');
-	await page.getByLabel('Admin key').press('Enter');
 	await page.getByRole('button', { name: 'Admins' }).tap();
 	const admins = page.getByRole('dialog', { name: 'Admins' });
 	await admins.getByLabel('Add an admin by sign-in email').fill(email);
@@ -123,10 +135,9 @@ test('an admin account opens the inbox without the key; the key holder names adm
 	await phone.getByRole('dialog', { name: APP_NAME }).getByRole('link', { name: 'Reports' }).tap();
 	await expect(phone).toHaveURL(/\/reports$/);
 
-	// Now their account opens the inbox with no key prompt.
+	// Now their account triages reports too.
 	await phone.goto('/reports');
 	await expect(phone.getByTestId('reports')).toBeVisible();
-	await expect(phone.getByLabel('Admin key')).toBeHidden();
 	await expect(phone.getByRole('button', { name: 'Admins' })).toBeVisible();
 
 	// Removing the admin closes the inbox to that account again.

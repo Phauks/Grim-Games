@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { nameStoryteller } from './new-game.ts';
 
-// Players' phones in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
+// Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
 // seat and name, the Storyteller approves, and the seat is named in the grimoire.
 
 /** Types a room code into Join game's code boxes. */
@@ -79,9 +79,9 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 
 	// Under the code: connected, with who is in the room (Trevor, 2026-10-20).
 	await page.goto(`${board}/room`);
-	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toHaveText(
-		'Connected · 1 player · 0 watching'
-	);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toHaveText('Connected');
+	await expect(page.getByTestId('status-players')).toHaveText('1 player');
+	await expect(page.getByTestId('status-watching')).toHaveText('0 watching');
 	// New code deletes the old room, sending the phone back to the code form.
 	await page.getByRole('button', { name: 'New code' }).tap();
 	await page
@@ -549,9 +549,8 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	// The players' tab says one is watching, by a dot that shows it is connected.
 	await expect(page.getByTestId('connection-dot')).toBeVisible();
-	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toHaveText(
-		'Connected · 0 players · 1 watching'
-	);
+	await expect(page.getByTestId('status-players')).toHaveText('0 players');
+	await expect(page.getByTestId('status-watching')).toHaveText('1 watching');
 	await watchTab();
 	// It counts who is watching, and New link replaces the link in one step, letting the
 	// viewer go (Trevor, 2026-10-20).
@@ -572,6 +571,20 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await flip();
 	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
 	expect(await url.inputValue()).not.toBe(link);
+
+	// Streaming (Trevor, 2026-10-21): the QR and link can be covered in place, and Copy
+	// still works.
+	await expect(qr).toBeVisible();
+	const before = (await watch.getByTestId('share-url').boundingBox())!;
+	await watch.getByText('Hide the view-only link', { exact: true }).tap();
+	await expect(qr).toHaveCount(0);
+	await expect(watch.getByTestId('share-hidden')).toHaveText('Hidden');
+	await expect(url).toHaveValue('Hidden');
+	expect((await url.boundingBox())!.y).toBeCloseTo(before.y, 0);
+	await expect(watch.getByRole('button', { name: 'Copy link' })).toBeEnabled();
+	await watch.getByText('Hide the view-only link', { exact: true }).tap();
+	await expect(qr).toBeVisible();
+	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
 	await viewerContext.close();
 });
 
