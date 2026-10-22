@@ -11,12 +11,13 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import Tabs from '#lib/ui/primitives/Tabs.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import { gameLine } from '#lib/features/player/byline.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
 
 	interface Props {
@@ -28,6 +29,16 @@
 	const host = roomHost();
 	$effect(() => host.attach(game));
 
+	/**
+	 * Grim view (plan D1: "grim view by password or direct link"): a password the Storyteller
+	 * sets, so a phone with the room code and it watches too. Enter sets it; it is shown, as
+	 * the Storyteller reads it out.
+	 */
+	let password = $derived(host.viewerPassword ?? '');
+	function setPassword() {
+		if (password.trim() !== (host.viewerPassword ?? '')) void host.setViewerPassword(password);
+	}
+
 	/** New code or New link asks first; which one stays set while the dialog closes. */
 	let refreshOpen = $state(false);
 	let refreshKind = $state<'room' | 'watch'>('room');
@@ -35,11 +46,6 @@
 		refreshKind = kind;
 		refreshOpen = true;
 	}
-	const shareTabs = $derived([
-		{ value: 'players' as const, label: t('room.tab.players') },
-		{ value: 'watch' as const, label: t('room.tab.watch') }
-	]);
-	let tab = $state<'players' | 'watch'>('players');
 	/** The seat chosen for each request, when the Storyteller picks a different one. */
 	let chosen = $state<Record<string, SeatId | ''>>({});
 
@@ -127,6 +133,18 @@
 				: t('room.shareText', { code: formatRoomCode(host.code) })
 	);
 
+	/*
+	 * Share grim (Trevor, 2026-10-20, plan R5): once the game is over, the whole finished
+	 * grimoire goes to the room's phones, once, after asking. In its place all game.
+	 */
+	let shareGrimOpen = $state(false);
+	const canShareGrim = $derived(
+		connected && host.endedGame === game.game.gameId && host.revealedGame !== game.game.gameId
+	);
+	function shareGrim() {
+		if (!host.reveal(game)) toast(t('room.shareGrim.failed'));
+	}
+
 	function approve(request: RoomRequest) {
 		const seatId = seatFor(request);
 		host.approve(request, seatId || undefined);
@@ -141,17 +159,18 @@
 	<ScriptQrCenter {logo} name={scriptName} bind:failed={logoFailed} />
 {/snippet}
 
-<!-- The players' join code and the view-only grimoire each in their own tab (Trevor, 2026-10-19). -->
-<Tabs label={t('room.tabs')} tabs={shareTabs} bind:value={tab}>
-	{#snippet panel(which)}
-		{#if which === 'players'}{@render players()}{:else}{@render watching()}{/if}
-	{/snippet}
-</Tabs>
+<!-- One screen, no tabs (Trevor, 2026-10-22: "combine tabs, we show on the qr code that this
+     is the spoiler version"): the players' code first, then the view-only grimoire below it in
+     the same two columns. -->
+<div class="screen">
+	{@render players()}
+	{@render watching()}
+</div>
 
 {#snippet watching()}
-	<!-- The same two columns as the players' tab on a wide screen (Trevor, 2026-10-21): the
-	     QR and link, then the switches and who is watching. -->
-	<div class="layout" data-testid="watch-link">
+	<!-- The same two columns as the players' part on a wide screen (Trevor, 2026-10-21): the
+	     QR and link, then the switches. Status above counts who is watching. -->
+	<div class="layout watch-part" data-testid="watch-link">
 		<section class="join">
 			<SharePanel
 				url={watchLink || undefined}
@@ -177,13 +196,22 @@
 		</section>
 		<!-- Specters: spectators watch the whole grimoire (Trevor, 2026-10-18). Off until
 		     turned on; the link's QR and buttons stay in place while it is off. -->
-		<section class="watch">
+		<section class="watch" aria-labelledby="watch-label">
+			<h2 id="watch-label">{t('room.watch.heading')}</h2>
 			<SettingToggle
 				label={t('room.watch.toggle')}
 				description={t('room.watch.hint')}
 				checked={!!host.viewerKey}
 				disabled={!host.code}
 				onChange={(on) => void host.setViewers(on)}
+			/>
+			<TextField
+				label={t('room.watch.password')}
+				bind:value={password}
+				maxlength={64}
+				disabled={!host.viewerKey}
+				oncommit={setPassword}
+				testid="grim-view-password"
 			/>
 			<!-- Streaming: the QR and link can stay off screen (Trevor, 2026-10-21). -->
 			<SettingToggle
@@ -192,10 +220,6 @@
 				checked={preferences.current.hideWatchLink}
 				onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
 			/>
-			<!-- Who is watching now (Trevor, 2026-10-20), always in its place. -->
-			<p class="status" data-testid="watchers">
-				{t('room.watch.watchers', { count: watchLink ? host.watchers : 0 })}
-			</p>
 			<p class="status" role="status">{host.grimoireTooLarge ? t('room.watch.tooLarge') : ''}</p>
 		</section>
 	</div>
@@ -243,6 +267,11 @@
 				<p class="status" data-testid="status-watching">
 					{connected ? t('room.watching', { count: host.watchers }) : ''}
 				</p>
+			</div>
+			<div class="share-grim">
+				<Button icon="share" disabled={!canShareGrim} onclick={() => (shareGrimOpen = true)}
+					>{t('room.shareGrim.button')}</Button
+				>
 			</div>
 			<h2 id="requests-label">{t('room.requests')}</h2>
 			{#if host.requests.length === 0}
@@ -333,9 +362,22 @@
 	</p>
 </ConfirmDialog>
 
+<ConfirmDialog bind:open={shareGrimOpen} title={t('room.shareGrim.title')} onConfirm={shareGrim}>
+	<p class="dialog-text">{t('room.shareGrim.body')}</p>
+</ConfirmDialog>
+
 <style>
 	.dialog-text {
 		margin: 0;
+	}
+	.screen {
+		display: grid;
+		gap: var(--space-5);
+	}
+	/* The view-only part sits under a rule, so the spoiler QR reads as its own thing. */
+	.watch-part {
+		padding-top: var(--space-5);
+		border-top: 1px solid var(--border);
 	}
 	h2 {
 		margin: 0 0 var(--space-2);
@@ -365,6 +407,9 @@
 		height: 0.75em;
 		border: 0.15em solid var(--on-surface-muted);
 		border-radius: 50%;
+	}
+	.share-grim {
+		margin-bottom: var(--space-4);
 	}
 	.dot.live {
 		border-color: var(--good);

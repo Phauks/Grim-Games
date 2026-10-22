@@ -395,7 +395,7 @@
 			<!-- Each one opens how it was worked out (Trevor, 2026-10-19). -->
 			<button
 				type="button"
-				class="badge"
+				class="badge alive"
 				data-testid="alive-count"
 				aria-label={aliveLabel}
 				title={aliveLabel}
@@ -423,7 +423,7 @@
 			>
 			<button
 				type="button"
-				class="badge"
+				class="badge ghost"
 				data-testid="ghost-votes"
 				aria-label={ghostLabel}
 				title={ghostLabel}
@@ -539,7 +539,7 @@
 								<CharacterRow
 									{character}
 									alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
-									note={head?.ref.playerName}
+									note={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
 									info
 								>
 									{#snippet end()}{@const seatId =
@@ -571,7 +571,9 @@
 													alignment={segment.ref.seatId
 														? g.seats[segment.ref.seatId]?.alignment
 														: undefined}
-													playerName={segment.ref.playerName}
+													playerName={segment.ref.seatId
+														? game.seatName(segment.ref.seatId)
+														: undefined}
 												/>{#if stop}.{/if}</span
 											>
 										{:else if segment.kind === 'value'}
@@ -600,7 +602,12 @@
 					<li data-character={seat.characterId}>
 						{#if character}
 							<!-- Drawn like character selection (Trevor, 2026-10-20: L12). -->
-							<CharacterRow {character} alignment={seat.alignment} note={seat.playerName} info>
+							<CharacterRow
+								{character}
+								alignment={seat.alignment}
+								note={game.seatName(seat.seatId)}
+								info
+							>
 								{#snippet end()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}
 							</CharacterRow>
 						{/if}
@@ -802,8 +809,7 @@
 		white-space: nowrap;
 	}
 	/* Every count is filled, the number on top (Trevor, 2026-10-19): the team counts in their
-	   team's colour, the others in the selected-surface colour. --on-good reads on both teams
-	   (badge-colours.test.ts); --on-surface on --surface-selected is a theme contrast pair. */
+	   team's colour. --on-good reads on both teams (badge-colours.test.ts). */
 	.badge {
 		border-color: var(--surface-selected);
 		background: var(--surface-selected);
@@ -821,7 +827,25 @@
 		background: var(--evil);
 		color: var(--on-good);
 	}
+	/* Each count in its own colour (Trevor, 2026-10-20: L21). The living are both teams, so
+	   half blue, half red; --on-good reads on both halves. */
+	.badge.alive {
+		border-color: transparent;
+		background: var(--evil) linear-gradient(to right, var(--good) 50%, var(--evil) 50%) border-box;
+		color: var(--on-good);
+	}
+	/* Ghost votes left in an unused ghost vote's colours (DeadBadge.svelte), inverted: a dark
+	   ghost on white (Trevor, 2026-10-22). */
+	.badge.ghost {
+		border-color: rgb(232 222 200); /* colour-ok: DeadBadge's unused ghost vote, inverted */
+		background: rgb(244 236 218); /* colour-ok: DeadBadge's unused ghost vote, inverted */
+		color: rgb(16 12 20); /* colour-ok: DeadBadge's unused ghost vote, inverted */
+	}
+	/* Votes needed in gold; --heading on --surface is a theme contrast pair. */
 	.badge.votes {
+		border-color: var(--heading);
+		background: var(--heading);
+		color: var(--surface);
 		font-family: var(--font-control);
 	}
 	/* The words to say, then the Storyteller's own detail under them in italics. */

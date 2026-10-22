@@ -24,6 +24,7 @@
 	} from './reminders.ts';
 	import { GENERIC_REMINDER_ID, scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
+	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import { pendingSetup, traySeats, type TrayItem } from './setup-tray.ts';
 
 	/**
@@ -171,13 +172,14 @@
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
-		const dead = deadCharacters(game);
+		const dead = deadCharacters(game, characters);
 		const rest = bankReminders(
 			game,
 			characters,
 			focus,
 			focusMode === 'front',
-			grimoire.copies
+			grimoire.copies,
+			grimoire.bankCopies
 		).flatMap(({ characterId, label, left, now }) => {
 			const key = `${characterId}:${label}`;
 			const n = left - (pending[key] ?? 0);
@@ -530,6 +532,19 @@
 				character={characters.get(choosing.characterId)}
 			/>{/if} on
 	{/snippet}
+	{#snippet headActions()}
+		<!-- Duplicate from the bank too; the copy stays in the bank (Trevor, 2026-10-20). -->
+		{#if choosing && !isGeneric(choosing)}
+			<ReminderMoreButton
+				{grimoire}
+				reminder={choosing}
+				onDone={() => {
+					chooserOpen = false;
+					choosing = undefined;
+				}}
+			/>
+		{/if}
+	{/snippet}
 </SeatChooser>
 
 <Dialog bind:open={shownOpen} title="Setup reminder">
@@ -738,8 +753,10 @@
 	}
 	/* The walked-through step's reminders, at the front: a ring that hugs the round token. */
 	li.now > :global(.reminder) {
-		outline: 0.2rem solid var(--accent);
+		/* A ring, glow or both, as set in Settings > Tokens (Trevor, 2026-10-20). */
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
 	}
 	.tray > li {
 		flex: none;

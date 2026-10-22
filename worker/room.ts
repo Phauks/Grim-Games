@@ -1,6 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import {
+	canReveal,
 	cancelRequest,
 	castVote,
 	closeVote,
@@ -23,7 +24,11 @@ import {
 	setViewers,
 	supportsProtocol,
 	unseat,
+	viewerFailed,
+	viewersLocked,
+	type ViewerFails,
 	type GrimoireView,
+	type RevealView,
 	type RoomState,
 	type ScriptView,
 	type ServerMessage
@@ -104,8 +109,9 @@ export class Room extends DurableObject<RoomEnv> {
 		if (typeof raw !== 'string' || raw.length > limit) return;
 		const message = parseClientMessage(raw);
 		if (!message) return;
-		// Only the grimoire may be that large; a script keeps its own limit.
-		if (raw.length > MAX_SCRIPT_BYTES && message.type !== 'grimoire') return;
+		// Only a grimoire may be that large; a script keeps its own limit.
+		if (raw.length > MAX_SCRIPT_BYTES && message.type !== 'grimoire' && message.type !== 'reveal')
+			return;
 		let room = await this.load();
 		if (!room) {
 			send(ws, { type: 'refused', reason: 'no-room' });
@@ -134,7 +140,16 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			if (message.role === 'viewer') {
+				// A Grim view password can be short: wrong keys are counted, and too many in a
+				// while stop every viewer from joining until it passes.
+				const fails = await this.ctx.storage.get<ViewerFails>('viewer-fails');
+				if (viewersLocked(fails, Date.now())) {
+					send(ws, { type: 'refused', reason: 'too-many-tries' });
+					ws.close(4429, 'Too many tries');
+					return;
+				}
 				if (hash !== room.viewerKeyHash) {
+					await this.ctx.storage.put('viewer-fails', viewerFailed(fails, Date.now()));
 					send(ws, { type: 'refused', reason: 'not-viewer' });
 					ws.close(4403, 'Link turned off');
 					return;
@@ -157,6 +172,9 @@ export class Room extends DurableObject<RoomEnv> {
 			else send(ws, playerView(room, memberId));
 			const script = await this.ctx.storage.get<ScriptView>('script');
 			if (script) send(ws, script);
+			// A phone joining after the Storyteller shared the finished grimoire gets it too.
+			const reveal = await this.ctx.storage.get<RevealView>('reveal');
+			if (reveal && canReveal(room, reveal.gameId)) send(ws, reveal);
 			return;
 		}
 		if (!who || who.role === 'viewer') return;
@@ -180,7 +198,23 @@ export class Room extends DurableObject<RoomEnv> {
 			case 'publish':
 				if (typeof message.gameId !== 'string' || !Array.isArray(message.state?.seats)) return;
 				room = publish(room, message.gameId, message.state);
+				await this.dropReveal(room);
 				break;
+			case 'reveal': {
+				if (!canReveal(room, message.gameId) || !isSharedGrimoire(message.grimoire)) return;
+				const view: RevealView = {
+					type: 'reveal',
+					gameId: message.gameId,
+					grimoire: message.grimoire
+				};
+				await this.ctx.storage.put('reveal', view);
+				const text = JSON.stringify(view);
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'player') socket.send(text);
+				}
+				return;
+			}
 			case 'script': {
 				// Kept apart from the room, so the table's frequent changes don't resend it.
 				if (!isScript(message.script)) return;
@@ -194,8 +228,11 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			case 'viewers': {
-				const next = setViewers(room, message.keyHash);
-				if (next.viewerKeyHash === room.viewerKeyHash) return;
+				const next = setViewers(room, message.keyHash, message.password);
+				if (next.viewerKeyHash === room.viewerKeyHash) {
+					if (next.viewerPassword !== room.viewerPassword) await this.save(next);
+					return;
+				}
 				// A link turned off (or replaced) stops working now, and its grimoire is deleted.
 				await this.ctx.storage.delete('grimoire');
 				for (const socket of this.ctx.getWebSockets()) {
@@ -241,6 +278,7 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			case 'reopen-game':
 				room = reopenGame(room, message.gameId);
+				await this.dropReveal(room);
 				break;
 			case 'close':
 				this.broadcastClosed('Room closed');
@@ -250,6 +288,12 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 		}
 		await this.save(room);
+	}
+
+	/** The shared finished grimoire goes once its game runs again or another one starts. */
+	private async dropReveal(room: RoomState): Promise<void> {
+		const reveal = await this.ctx.storage.get<RevealView>('reveal');
+		if (reveal && !canReveal(room, reveal.gameId)) await this.ctx.storage.delete('reveal');
 	}
 
 	/** A viewer leaving changes the Storyteller's count of who is watching. */

@@ -3,6 +3,7 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
 	cancelRequest,
+	canReveal,
 	castVote,
 	closeVote,
 	gameOver,
@@ -25,6 +26,10 @@ import {
 	setViewers,
 	supportsProtocol,
 	unseat,
+	viewerFailed,
+	viewersLocked,
+	MAX_VIEWER_FAILS,
+	VIEWER_FAIL_WINDOW_MS,
 	type RoomState
 } from './room.ts';
 
@@ -187,6 +192,18 @@ describe('the end of a game', () => {
 		expect(playerView(next, 'alex').ended).toBeUndefined();
 	});
 
+	it('lets the Storyteller share the finished grimoire only for the game that ended', () => {
+		const room = roomWith('alex');
+		expect(canReveal(room, 'g1')).toBe(false);
+		const over = gameOver(room, 'g1', 'good');
+		expect(canReveal(over, 'g1')).toBe(true);
+		expect(canReveal(over, 'g2')).toBe(false);
+		expect(canReveal(over, 7)).toBe(false);
+		// Reopened, or a new game: the grimoire is private again.
+		expect(canReveal(reopenGame(over, 'g1'), 'g1')).toBe(false);
+		expect(canReveal(publish(over, 'g2', table('a')), 'g1')).toBe(false);
+	});
+
 	it('needs protocol 2, so an older app is told to update rather than miss the end', () => {
 		expect(ROOM_PROTOCOL).toBeGreaterThanOrEqual(2);
 		expect(supportsProtocol(1)).toBe(false);
@@ -337,6 +354,31 @@ describe('the view-only grimoire link', () => {
 		expect(JSON.stringify(roomPreview(room))).not.toContain(hash);
 		expect(JSON.stringify(playerView(room, 'alex'))).not.toContain(hash);
 		expect(JSON.stringify(hostView(room))).not.toContain(hash);
+	});
+
+	it('says when its key is made from a Grim view password, and nothing else of it', () => {
+		const room = setViewers(roomWith('alex'), hash, true);
+		expect(room.viewerPassword).toBe(true);
+		expect(roomPreview(room).grimView).toBe(true);
+		// A link with no password, or no link at all, offers no Grim view.
+		expect(roomPreview(setViewers(room, hash)).grimView).toBeUndefined();
+		expect(setViewers(room, hash).viewerPassword).toBeUndefined();
+		expect(roomPreview(setViewers(room, null)).grimView).toBeUndefined();
+	});
+
+	it('slows guessing: too many wrong keys stop viewers for a while', () => {
+		let fails = viewerFailed(undefined, 0);
+		for (let i = 1; i < MAX_VIEWER_FAILS; i++) {
+			expect(viewersLocked(fails, 1)).toBe(false);
+			fails = viewerFailed(fails, 1);
+		}
+		expect(viewersLocked(fails, 1)).toBe(true);
+		expect(viewersLocked(fails, VIEWER_FAIL_WINDOW_MS)).toBe(false);
+		// The next window starts the count again.
+		expect(viewerFailed(fails, VIEWER_FAIL_WINDOW_MS)).toEqual({
+			count: 1,
+			since: VIEWER_FAIL_WINDOW_MS
+		});
 	});
 
 	it('relays a grimoire only when it carries a saved game', () => {

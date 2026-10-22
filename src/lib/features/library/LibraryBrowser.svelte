@@ -48,6 +48,8 @@
 	import ScriptPane, { type ScriptRow } from './ScriptPane.svelte';
 	import { dragToFolder, type DragSource } from './drag-to-folder.ts';
 	import { characterCollections } from './library-collections.svelte.ts';
+	import { emptyCollections } from './library-collections.ts';
+	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
 	import {
 		characterKey,
 		collectionKey,
@@ -427,6 +429,30 @@
 	/** A selected folder row in the list as it stands (not one left behind in another folder). */
 	const selectedFolder = $derived(rows.find((r) => r.key === selectedKey)?.folderId);
 
+	// ---- Download (Trevor, 2026-10-22: "add a download button to the library") ----
+
+	/** The selected row's file: a script in TPI's format, a character, or a collection. */
+	const download = $derived.by(() => {
+		const row = rows.find((r) => r.key === selectedKey);
+		if (!row || row.kind === 'folder') return undefined;
+		let json: unknown;
+		if (row.kind === 'script') json = scripts.find((s) => s.key === row.key)?.shareable.json;
+		else if (row.kind === 'character') {
+			json = characters.find(({ saved }) => characterKey(saved.savedId) === row.key)?.saved.entry;
+		} else {
+			const collection = characterCollections.list.find((c) => collectionKey(c.id) === row.key);
+			json = collection && { ...emptyCollections(), collections: [collection] };
+		}
+		return json === undefined ? undefined : { json, fileName: fileNameFor(row.name, row.kind) };
+	});
+	/** Whether the selected row can be saved as a file (the page's Download button). */
+	export function canDownload() {
+		return !!download;
+	}
+	export function downloadSelected() {
+		if (download) downloadJson(download.fileName, download.json);
+	}
+
 	function tapRow(row: Row, event: MouseEvent) {
 		const now = event.timeStamp;
 		const double = lastTap?.key === row.key && now - lastTap.at < DOUBLE_MS;
@@ -492,18 +518,20 @@
 	 * A script just added opens straight away, so its folder and tags can be set. Added while a
 	 * folder is open, it goes in that folder, as a file saved there would.
 	 */
-	export function openAdded() {
+	export function openAdded(key?: string) {
+		if (key) return openNew(key);
 		let newest: (typeof scripts)[number] | undefined;
 		for (const row of scripts) {
 			const used = row.listing.saved?.lastUsedAt ?? -1;
 			if (used > (newest?.listing.saved?.lastUsedAt ?? -1)) newest = row;
 		}
-		if (!newest) return;
-		if (folder && !libraryLabels.for(newest.key).folder) {
-			libraryLabels.setFolder(newest.key, folder);
-		}
-		openKey = newest.key;
-		selectedKey = newest.key;
+		if (newest) openNew(newest.key);
+	}
+
+	function openNew(key: string) {
+		if (folder && !libraryLabels.for(key).folder) libraryLabels.setFolder(key, folder);
+		openKey = key;
+		selectedKey = key;
 	}
 
 	// ---- New folder, new collection ----

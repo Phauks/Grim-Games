@@ -36,6 +36,8 @@
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{/if}
 		<span class="sep" aria-hidden="true">·</span>
+		<a class="page" href={resolve('/roadmap')}>{t('shell.roadmap')}</a>
+		<span class="sep" aria-hidden="true">·</span>
 		<a class="page" href={resolve('/changelog')}>{t('shell.changelog')}</a>
 		<span class="sep" aria-hidden="true">·</span>
 		<a class="page" href={resolve('/privacy')}>{t('shell.privacy')}</a>

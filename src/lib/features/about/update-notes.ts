@@ -17,6 +17,11 @@ export interface BuildCommit {
 	subject: string;
 	/** The pull request this merge commit landed; `subject` is then the PR's title. */
 	pr?: number;
+	/**
+	 * For a line standing for several commits made straight on the branch (the Changelog's early
+	 * history): how many. `sha` is then the newest of them.
+	 */
+	commits?: number;
 }
 
 /**

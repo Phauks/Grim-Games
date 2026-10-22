@@ -34,7 +34,9 @@ export const KINDS: Partial<Record<(typeof RULE_PARTS)[number] | ModePart, reado
 	betweenGames: ['campaign'],
 	seats: ['storyteller-seat'],
 	deaths: ['private'],
-	nightSteps: ['wake']
+	nightSteps: ['wake'],
+	abilities: ['dead-keep'],
+	demonAttacks: ['script-order']
 };
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

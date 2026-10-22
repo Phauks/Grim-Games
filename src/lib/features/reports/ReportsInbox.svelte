@@ -3,31 +3,17 @@
 	import { onMount } from 'svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { openAccount } from '#lib/features/shell/shell.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import type { ColumnFilter } from '#lib/ui/table/column-filter.ts';
-	import {
-		addAdmin,
-		deleteReport,
-		listAdmins,
-		removeAdmin,
-		listReports,
-		setReportStatus
-	} from './reports-api.ts';
-	import {
-		REPORT_STATUSES,
-		type Admin,
-		type Report,
-		type ReportStatus
-	} from './reports-protocol.ts';
+	import { deleteReport, listReports, setReportStatus } from './reports-api.ts';
+	import { REPORT_STATUSES, type Report, type ReportStatus } from './reports-protocol.ts';
 
 	// In-app reports, at /reports. Admin accounts triage them (Trevor, 2026-10-18; no admin key
 	// since 2026-10-22). Any other signed-in account reads the reports sent from an account and
@@ -40,18 +26,12 @@
 	let access = $state<'checking' | 'none' | 'reader' | 'account'>('checking');
 	const allowed = $derived(access === 'account');
 	const reading = $derived(allowed || access === 'reader');
-	let onlyMine = $state(false);
-	let adminsOpen = $state(false);
-	let admins = $state<Admin[]>();
-	let newAdmin = $state('');
-	let noAccount = $state(false);
 	let reports = $state<Report[]>();
 	let columnFilters = $state<Partial<Record<Column, ColumnFilter>>>({});
 	let openId = $state<number>();
 	let dialogOpen = $state(false);
 	let confirmDelete = $state(false);
 
-	const shown = $derived((reports ?? []).filter((r) => !onlyMine || r.mine));
 	const current = $derived(reports?.find((r) => r.id === openId));
 	const time = $derived(
 		new Intl.DateTimeFormat(locale.current, { dateStyle: 'medium', timeStyle: 'short' })
@@ -129,25 +109,6 @@
 		}
 	}
 
-	async function openAdmins() {
-		adminsOpen = true;
-		try {
-			admins = await listAdmins();
-		} catch {
-			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
-		}
-	}
-
-	async function changeAdmins(change: () => Promise<boolean | void>) {
-		try {
-			noAccount = (await change()) === false;
-			if (!noAccount) newAdmin = '';
-			admins = await listAdmins();
-		} catch {
-			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
-		}
-	}
-
 	async function changeStatus(report: Report, status: ReportStatus) {
 		const before = report.status;
 		report.status = status;
@@ -170,29 +131,16 @@
 	}
 </script>
 
-<!-- Refresh and Only mine are always there, disabled until they apply, so nothing moves when the
-     list appears. Admins is only for admins (Trevor, 2026-10-19); it sits left of Refresh so
-     Refresh stays put when it appears. -->
+<!-- Refresh is always there, disabled until it applies, so nothing moves when the list appears.
+     Who is an admin is set in Cloudflare and nothing to manage here; the Reporter column filters
+     to yourself (Trevor, 2026-10-22). -->
 <Page title={t('reports.inbox')}>
 	{#snippet actions()}
-		{#if allowed}
-			<Button variant="quiet" onclick={openAdmins}>{t('reports.admins')}</Button>
-		{/if}
 		<IconButton
 			icon="refresh"
 			label={t('errors.diag.refresh')}
 			disabled={!reading}
 			onclick={load}
-		/>
-	{/snippet}
-	{#snippet toolbar()}
-		<!-- Yourself as the reporter in one tap (Trevor, 2026-10-19); the Reporter column filters
-		     by anyone. -->
-		<Toggle
-			label={t('reports.onlyMine')}
-			checked={onlyMine}
-			disabled={!reading}
-			onChange={(on) => (onlyMine = on)}
 		/>
 	{/snippet}
 	{#if access === 'checking'}
@@ -206,7 +154,7 @@
 		<DataTable
 			label={t('reports.inbox')}
 			{columns}
-			rows={shown}
+			rows={reports ?? []}
 			key={(r) => String(r.id)}
 			bind:columnFilters
 			narrow="hide"
@@ -290,33 +238,6 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={adminsOpen} title={t('reports.admins')}>
-	<ul class="admins" data-testid="admins">
-		{#each admins ?? [] as { id, email } (id)}
-			<li>
-				<span>{email}</span>
-				<DeleteButton
-					label={t('reports.removeAdmin', { email })}
-					onclick={() => changeAdmins(() => removeAdmin(id))}
-				/>
-			</li>
-		{:else}
-			<li class="none">{t('common.none')}</li>
-		{/each}
-	</ul>
-	<TextField
-		label={noAccount ? t('reports.noAccount') : t('reports.addAdmin')}
-		type="email"
-		autocomplete="off"
-		bind:value={newAdmin}
-		oncommit={() => {
-			const email = newAdmin.trim();
-			if (email) void changeAdmins(() => addAdmin(email));
-			return false;
-		}}
-	/>
-</Dialog>
-
 <ConfirmDialog
 	bind:open={confirmDelete}
 	title={current ? t('reports.deleteTitle', { id: current.id }) : ''}
@@ -328,19 +249,6 @@
 <style>
 	.sign-in {
 		padding: var(--space-2);
-	}
-	.admins {
-		display: grid;
-		margin: 0 0 var(--space-3);
-		padding: 0;
-		list-style: none;
-	}
-	.admins li {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-		overflow-wrap: anywhere;
 	}
 	.open {
 		width: 100%;

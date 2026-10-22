@@ -334,7 +334,9 @@ export const RULE_ONLY_PARTS = [
 	'travellers',
 	'seats',
 	'deaths',
-	'nightSteps'
+	'nightSteps',
+	'abilities',
+	'demonAttacks'
 ] as const;
 export type RuleOnlyPart = (typeof RULE_ONLY_PARTS)[number];
 
@@ -362,12 +364,33 @@ export interface DeathsRule extends Cited {
 	kind: 'private';
 }
 
-/** A step added to each night, for these characters or character types. */
+/** A step added to each night, or to one night, for these characters, types or the dead. */
 export interface NightStep extends Cited {
 	kind: 'wake';
-	when: 'each-night' | 'each-night-except-first';
+	when: 'each-night' | 'each-night-except-first' | 'one-night';
+	/** The night, for `one-night` (1 is the first night). */
+	night?: number;
 	characters?: CharacterId[];
 	types?: SeatedType[];
+	/** Every dead player wakes, together (Council of the Dead). */
+	dead?: boolean;
+	/** How long they wake for, in minutes. */
+	minutes?: number;
+}
+
+/** Who has an ability, alive or dead (The Phantom Detectives). */
+export interface AbilitiesRule extends Cited {
+	kind: 'dead-keep';
+	/** Dead players keep their abilities, except these types. */
+	deadLose: SeatedType[];
+	/** Living players of these types have no ability until they die. */
+	livingLose: SeatedType[];
+}
+
+/** Who the Demon attacks each night (Trained Killer). */
+export interface DemonAttacksRule extends Cited {
+	/** The next living in-play character in script order, after the last one it killed. */
+	kind: 'script-order';
 }
 
 export interface RuleOnlyParts {
@@ -379,6 +402,8 @@ export interface RuleOnlyParts {
 	seats?: SeatsRule;
 	deaths?: DeathsRule;
 	nightSteps?: NightStep[];
+	abilities?: AbilitiesRule;
+	demonAttacks?: DemonAttacksRule;
 }
 
 /** A special rule's pool can only add to the script. */

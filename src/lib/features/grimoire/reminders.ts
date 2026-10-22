@@ -94,15 +94,19 @@ export const byLabel = (a: string, b: string): number =>
  * How many of each reminder token the game has. A token can be on the board once, unless
  * the game gives more: a label listed more than once in TPI's data, or its character in
  * play more than once (two seats, or a seat and its true character). An extra copy the
- * Storyteller added (`canAddCopy`) counts while it is on the board. Keyed by `reminderKey`;
+ * Storyteller added (`canAddCopy`) counts while it is on the board, and so does one added to the
+ * bank (`bank`). Keyed by `reminderKey`;
  * a reminder not in the map has one copy.
  */
 export function reminderCopies(
 	game: Game,
 	characters: CharacterLookup,
-	copies: ReadonlySet<ReminderId> = NO_COPIES
+	copies: ReadonlySet<ReminderId> = NO_COPIES,
+	bank: ReadonlyMap<string, number> = NO_BANK
 ): Map<string, number> {
 	const total = listedCopies(game, characters);
+	// Copies the Storyteller added to the bank (Duplicate reminder, Trevor 2026-10-20).
+	for (const [key, n] of bank) total.set(key, (total.get(key) ?? 1) + n);
 	const placed = new Map<string, number>();
 	for (const r of counted(game, copies))
 		placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
@@ -180,9 +184,10 @@ export function canAddCopy(character: Character | undefined): boolean {
 export function reminderCopiesLeft(
 	game: Game,
 	characters: CharacterLookup,
-	copies: ReadonlySet<ReminderId> = NO_COPIES
+	copies: ReadonlySet<ReminderId> = NO_COPIES,
+	bank: ReadonlyMap<string, number> = NO_BANK
 ): Map<string, number> {
-	const left = reminderCopies(game, characters, copies);
+	const left = reminderCopies(game, characters, copies, bank);
 	for (const r of counted(game, copies)) {
 		const key = reminderKey(r);
 		left.set(key, (left.get(key) ?? 1) - 1);
@@ -191,6 +196,7 @@ export function reminderCopiesLeft(
 }
 
 const NO_COPIES: ReadonlySet<ReminderId> = new Set();
+const NO_BANK: ReadonlyMap<string, number> = new Map();
 
 /** The generic ∞ reminder (core's GENERIC_REMINDER_ID): any number, belonging to no one. */
 export const isGeneric = (reminder: Pick<Reminder, 'characterId'>): boolean =>
@@ -293,9 +299,10 @@ export function bankReminders(
 	characters: CharacterLookup,
 	focus?: StepReminders,
 	front = true,
-	copies: ReadonlySet<ReminderId> = NO_COPIES
+	copies: ReadonlySet<ReminderId> = NO_COPIES,
+	bank: ReadonlyMap<string, number> = NO_BANK
 ): BankReminder[] {
-	const left = reminderCopiesLeft(game, characters, copies);
+	const left = reminderCopiesLeft(game, characters, copies, bank);
 	const out: BankReminder[] = [];
 	for (const { character, labels } of reminderGroups(game, characters)) {
 		for (const label of labels) {

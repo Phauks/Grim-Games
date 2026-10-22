@@ -7,6 +7,7 @@ export * from './wiki.ts';
 export * from './night-order-numeric.ts';
 export * from './script.ts';
 export * from './script-logo.ts';
+export * from './script-kind.ts';
 export * from './sort-order.ts';
 export {
 	CHARACTER_ID_PATTERN,
@@ -19,3 +20,4 @@ export {
 } from './parse.ts';
 export { DataError } from './validate.ts';
 export * from './info-tokens.ts';
+export * from './character-groups.ts';

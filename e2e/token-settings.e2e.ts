@@ -84,7 +84,7 @@ test('border, reminder text and reminder text band are colours of their own', as
 	await dialog.getByLabel('Reminder text', { exact: true }).fill('#663322');
 	expect(await rootStyle(page, '--on-reminder')).toBe('#663322');
 	expect(await rootStyle(page, '--on-token')).not.toBe('#663322');
-	const label = dialog.getByTestId('reminder-preview').locator('.label');
+	const label = dialog.getByTestId('reminder-preview').locator('.label').first();
 	const face = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
 	await dialog.getByLabel('Reminder text band', { exact: true }).fill('#336622');
 	await expect
@@ -328,7 +328,7 @@ test('the preview draws the reminder as the board does, at the board size', asyn
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const preview = dialog.getByTestId('reminder-preview');
-	const reminder = preview.getByTestId('board-reminder');
+	const reminder = preview.getByTestId('board-reminder').first();
 	await expect(reminder).toHaveAttribute('aria-label', 'Died Today reminder');
 	await expect(preview.getByTestId('reminder-token')).toHaveCount(0);
 	const before = (await reminder.boundingBox())!.width;
@@ -457,6 +457,7 @@ test('reminder words can run wider or wrap instead of ending in "…"', async ({
 	const label = dialog
 		.getByTestId('reminder-preview')
 		.getByTestId('board-reminder')
+		.first()
 		.locator('.label');
 	await expect(label).toHaveText('Died Today');
 	const cut = () => label.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
@@ -486,24 +487,24 @@ test('reminder words can run wider or wrap instead of ending in "…"', async ({
 	expect(await lines()).toBe(1);
 });
 
-test('the preview player name follows the Player name size', async ({ page }) => {
+test('the player name badge is set beside the character token preview', async ({ page }) => {
+	// Trevor (2026-10-20): "player name badges should have settings in tokens under character
+	// tokens. This should include the font, size, how far from the token".
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const name = dialog.getByTestId('token-preview').getByTestId('token-player-name');
-	const before = (await name.boundingBox())!.width;
-	// Player name size is a Board setting (Trevor, 2026-10-18: Board and Tokens split).
-	const go = async (section: string) => {
-		const back = dialog.getByRole('button', { name: 'All settings' });
-		if (await back.isVisible()) await back.tap();
-		await dialog
-			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: section, exact: true })
-			.tap();
-	};
-	await go('Board');
+	const box = async () => (await name.boundingBox())!;
+	const before = await box();
 	await dialog.getByRole('slider', { name: 'Player name size' }).fill('1.5');
-	await go('Tokens');
-	await expect.poll(async () => (await name.boundingBox())!.width).toBeGreaterThan(before * 1.3);
+	await expect.poll(async () => (await box()).width).toBeGreaterThan(before.width * 1.3);
+	const sized = await box();
+	await dialog.getByRole('slider', { name: 'Player name distance' }).fill('0.2');
+	await expect.poll(async () => (await box()).y).toBeGreaterThan(sized.y);
+	await expect(dialog.getByTestId('player-font')).toBeVisible();
+	const saved = await page.evaluate(() =>
+		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
+	);
+	expect(saved).toMatchObject({ nameSize: 1.5, nameOffset: 0.2 });
 });
 
 test('the character name and reminder fonts are set beside their token previews', async ({
@@ -522,6 +523,7 @@ test('the character name and reminder fonts are set beside their token previews'
 	const label = dialog
 		.getByTestId('reminder-preview')
 		.getByTestId('board-reminder')
+		.first()
 		.locator('.label');
 	const chip = dialog.getByTestId('in-text-preview').getByTestId('reminder-token');
 	const family = (el: typeof label) => el.evaluate((e) => getComputedStyle(e).fontFamily);
@@ -536,4 +538,42 @@ test('the character name and reminder fonts are set beside their token previews'
 	await expect(dialog.getByRole('combobox', { name: 'Headings' })).toBeVisible();
 	await expect(dialog.getByRole('combobox', { name: 'Character names' })).toHaveCount(0);
 	await expect(dialog.getByRole('combobox', { name: 'Reminder tokens' })).toHaveCount(0);
+});
+
+test('reminder highlight and owner icon can be switched and restyled', async ({ page }) => {
+	// Trevor (2026-10-20): settings for reminder glow effects (on/off and how they look) and
+	// for the reminder's source mark (the owning character's icon): on/off and colour.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const lit = dialog.getByTestId('lit-reminder-sample').locator('.reminder');
+	const style = (prop: 'outlineStyle' | 'filter') =>
+		lit.evaluate((el, p) => getComputedStyle(el)[p], prop);
+	await expect.poll(() => style('outlineStyle')).toBe('solid');
+	expect(await style('filter')).toBe('none');
+	await dialog.getByRole('combobox', { name: 'Highlight look', exact: true }).tap();
+	await page.getByRole('option', { name: 'Glow', exact: true }).tap();
+	await expect.poll(() => style('outlineStyle')).toBe('none');
+	expect(await style('filter')).toContain('drop-shadow');
+	await dialog.getByText('Highlight reminders', { exact: true }).tap();
+	await expect.poll(() => style('filter')).toBe('none');
+	await expect(
+		dialog.getByRole('combobox', { name: 'Highlight look', exact: true })
+	).toBeDisabled();
+
+	const icon = lit.locator('img');
+	await expect(icon).toBeVisible();
+	await dialog.getByRole('combobox', { name: "Owner's icon colour", exact: true }).tap();
+	await page.getByRole('option', { name: 'Plain', exact: true }).tap();
+	await expect(icon).toHaveAttribute('data-plain', 'true');
+	await dialog.getByText("Owner's icon on reminders", { exact: true }).tap();
+	await expect(icon).toHaveCount(0);
+	const saved = await page.evaluate(
+		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
+	);
+	expect(saved).toMatchObject({
+		reminderHighlight: false,
+		reminderHighlightLook: 'glow',
+		reminderIcon: false,
+		reminderIconColour: 'plain'
+	});
 });

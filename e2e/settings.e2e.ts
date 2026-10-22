@@ -194,8 +194,8 @@ test('the board looks and background are in Board, saved with the board', async 
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	await expect(strength).toBeEnabled();
 	await dialog.getByText('Vignette', { exact: true }).tap();
-	// The player name badge can sit lower, clear of the token's name (Trevor, 2026-10-18).
-	await slide(page, 'Player name offset', 0.1);
+	// The player name badge is set in Tokens now (Trevor, 2026-10-20).
+	await expect(dialog.getByRole('slider', { name: 'Player name distance' })).toHaveCount(0);
 	await dialog.getByRole('combobox', { name: 'Location', exact: true }).tap();
 	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
 
@@ -210,7 +210,7 @@ test('the board looks and background are in Board, saved with the board', async 
 		rulesAt: 'edge',
 		rulesGrouped: false,
 		nameSize: 1,
-		nameOffset: 0.1,
+		nameOffset: 0,
 		reminders: 'seat',
 		usedGhostVote: 'hollow'
 	});
@@ -592,4 +592,27 @@ test('opened as an installed app, Settings has no Install app button', async ({ 
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
 	await expect(nav.getByRole('button', { name: 'About' })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'Install app' })).toHaveCount(0);
+});
+
+test('Board settings show their looks in a live preview', async ({ page }) => {
+	// Trevor (2026-10-20): "Should we have a preview area for the board as well? Since you
+	// can't really see changes until you leave".
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Board');
+	const preview = dialog.getByTestId('board-preview');
+	await expect(preview.getByTestId('token-player-name')).toHaveCount(2);
+	await expect(preview.getByTestId('preview-background')).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Green felt' }).tap();
+	await expect(preview.getByTestId('preview-background')).toHaveAttribute('data-preset', 'felt');
+	const vignette = preview.getByTestId('preview-vignette');
+	await expect(vignette).toBeAttached();
+	await slide(page, 'Vignette strength', 0.3);
+	await expect(vignette).toHaveAttribute('style', /--vignette: 0\.3/);
+	await dialog.getByText('Vignette', { exact: true }).tap();
+	await expect(vignette).toHaveCount(0);
+	// The dead player's used ghost vote follows its look.
+	const dead = preview.getByTestId('dead-mark');
+	await expect(dead).toHaveAttribute('data-used-look', 'hollow');
+	await dialog.getByText('Strike through used ghost votes', { exact: true }).tap();
+	await expect(dead).toHaveAttribute('data-used-look', 'struck');
 });

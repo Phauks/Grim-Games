@@ -19,8 +19,15 @@
 			onclick={() => browser?.newCollection()}
 		/>
 		<PreviewToggle {browser} />
+		<!-- Saves the selected item as a file; rests until one is selected (no reflow). -->
+		<IconButton
+			icon="download"
+			label={t('library.download')}
+			disabled={!browser?.canDownload()}
+			onclick={() => browser?.downloadSelected()}
+		/>
 		<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
-		<AddScript onsaved={() => browser?.openAdded()} />
+		<AddScript onsaved={() => browser?.openAdded()} onadded={(key) => browser?.openAdded(key)} />
 	{/snippet}
 
 	<LibraryBrowser bind:this={browser} />

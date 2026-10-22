@@ -728,6 +728,38 @@ test('Print our sheet opens its settings beside a live preview', async ({ page }
 	);
 });
 
+// Trevor, 2026-10-22: build Ravenswood's info sheet as a back, with the jinxes, Fabled and Loric.
+test('the printed back can carry the jinxes, Fabled and Loric instead', async ({ page }) => {
+	const shared = [{ id: '_meta', name: 'Info Back' }, 'chef', 'magician', 'spy', 'imp', 'djinn'];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	await expect(page.getByRole('heading', { name: 'Info Back', level: 1 })).toBeVisible();
+	await page.getByRole('button', { name: 'Print script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Print script' })
+		.getByRole('button', { name: 'Print our sheet' })
+		.tap();
+	const screen = page.getByRole('dialog', { name: 'Print our sheet' });
+	const preview = screen.getByTestId('print-preview');
+	const front = preview.locator('.front');
+	await expect(front.locator('[data-character="djinn"]')).toHaveCount(1);
+	await expect(preview.locator('[data-back="night"]')).toHaveCount(1);
+
+	await screen.getByRole('combobox', { name: 'Back' }).tap();
+	await page.getByRole('option', { name: 'Jinxes, Fabled and Loric' }).tap();
+	const back = preview.locator('[data-back="info"]');
+	await expect(back).toContainText('Fabled');
+	await expect(back.locator('[data-character="djinn"]')).toHaveCount(1);
+	await expect(back.locator('.jinx')).toHaveCount(1);
+	// The Fabled moves to the back; the players' characters stay on the front.
+	await expect(front.locator('[data-character="djinn"]')).toHaveCount(0);
+	await expect(front.locator('[data-character="spy"]')).toHaveCount(1);
+	await expect(preview.locator('[data-back="night"]')).toHaveCount(0);
+
+	await screen.getByRole('combobox', { name: 'Back' }).tap();
+	await page.getByRole('option', { name: 'None', exact: true }).tap();
+	await expect(preview.locator('.back')).toHaveCount(0);
+});
+
 test('the Room tab joins a live room in place, and the player moves between it and the script', async ({
 	page,
 	browser
@@ -758,7 +790,7 @@ test('the Room tab joins a live room in place, and the player moves between it a
 	await field.tap();
 	await field.pressSequentially(code);
 	await expect(room.getByTestId('room-preview')).toContainText('Trouble Brewing');
-	await room.getByRole('button', { name: 'Join', exact: true }).tap();
+	await room.getByRole('button', { name: 'Join as player' }).tap();
 	// Joined in place: still /play, now in the room.
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(room.getByRole('heading', { name: `Room ${shown}` })).toBeVisible();

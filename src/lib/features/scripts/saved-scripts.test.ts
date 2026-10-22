@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadScriptText, scriptToJson } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
+	almanacPage,
 	describeSource,
 	migrateSavedScript,
 	reloadSavedScript,
@@ -64,5 +65,22 @@ describe('saved scripts', () => {
 			'BotC Scripts 1.2.0'
 		);
 		expect(describeSource({ kind: 'file', fileName: 'my.json' })).toBe('my.json');
+	});
+});
+
+describe('almanacPage', () => {
+	it('is the almanac the script names, else a Bloodstar script’s almanac.html', () => {
+		const own = 'https://example.com/my-script/almanac';
+		expect(almanacPage({ almanac: own }, { kind: 'paste' })).toBe(own);
+		expect(almanacPage({ almanac: 'not a link' }, { kind: 'paste' })).toBeUndefined();
+		const bloodstar = 'https://bloodstar.clocktica.com/p/someone/my-edition/almanac.html';
+		expect(
+			almanacPage(undefined, {
+				kind: 'link',
+				url: 'https://bloodstar.clocktica.com/p/someone/my-edition/script.json',
+				page: bloodstar
+			})
+		).toBe(bloodstar);
+		expect(almanacPage({}, { kind: 'botcscripts', scriptId: 1, version: '1' })).toBeUndefined();
 	});
 });

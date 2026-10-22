@@ -28,6 +28,11 @@ describe('pickOptions', () => {
 		expect(pickOptions([10, 9, null])).toEqual(['', '9', '10']);
 		expect(pickOptions([['x', 'y'], ['y'], []])).toEqual(['', 'x', 'y']);
 	});
+
+	it('keeps a ticked value no row has any more, so it can be unticked', () => {
+		expect(pickOptions(['Accepted'], ['New'])).toEqual(['Accepted', 'New']);
+		expect(pickOptions(['a'], ['a'])).toEqual(['a']);
+	});
 });
 
 describe('matchesFilter', () => {

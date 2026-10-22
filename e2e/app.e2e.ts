@@ -77,6 +77,7 @@ test('the commit is a link; About is in Settings, not the footer', async ({ page
 	expect(await commit.getAttribute('href')).toMatch(/\/commit\/[0-9a-f]{40}$/);
 	// Trevor (2026-10-18): "remove about from footer, access from settings only".
 	await expect(page.getByRole('contentinfo').getByRole('button', { name: 'About' })).toHaveCount(0);
+	await expect(build.getByRole('link', { name: 'Roadmap' })).toBeVisible();
 	await expect(build.getByRole('link', { name: 'Changelog' })).toBeVisible();
 	await expect(build.getByRole('link', { name: 'Privacy' })).toBeVisible();
 	await expect(build.getByRole('button', { name: 'Report an issue' })).toBeVisible();
@@ -117,16 +118,32 @@ test('the footer sits at the bottom of the screen on a short page', async ({ pag
 	expect(Math.round(box!.y + box!.height)).toBe(Math.max(viewport, height));
 });
 
-test('the footer links to the changelog page, which is empty until 1.0', async ({ page }) => {
+test('the footer links to the changelog page, which lists merged changes by day', async ({
+	page
+}) => {
 	await page.goto('/');
 	await page.getByRole('contentinfo').getByRole('link', { name: 'Changelog' }).tap();
 	await expect(page).toHaveURL(/\/changelog$/);
 	await expect(page.getByRole('heading', { name: 'Changelog', level: 1 })).toBeVisible();
 	const main = page.getByRole('main');
 	await expect(main.getByRole('heading', { name: 'Unreleased', level: 2 })).toBeVisible();
-	for (const category of ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'])
-		await expect(main.getByRole('heading', { name: category, level: 3 })).toBeVisible();
-	await expect(main.getByText('None', { exact: true })).toHaveCount(6);
+	// Each change opens its PR or commit on GitHub, under the day it landed.
+	await expect(main.getByRole('heading', { level: 3 }).first()).toBeVisible();
+	const change = main.getByTestId('update-changes').getByRole('link').first();
+	await expect(change).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\//);
+});
+
+test('the footer links to the roadmap, which lists planned items by area', async ({ page }) => {
+	await page.goto('/');
+	await page.getByRole('contentinfo').getByRole('link', { name: 'Roadmap' }).tap();
+	await expect(page).toHaveURL(/\/roadmap$/);
+	await expect(page.getByRole('heading', { name: 'Roadmap', level: 1 })).toBeVisible();
+	const main = page.getByRole('main');
+	await expect(main.getByRole('heading', { name: 'Rooms and sharing', level: 2 })).toBeVisible();
+	await expect(main.getByTestId('roadmap-item').first()).toContainText('D1');
+	// Done items link the change that finished them; CI's one-commit history has none.
+	for (const done of await main.locator('[data-testid="roadmap-item"][data-done] a').all())
+		await expect(done).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\//);
 });
 
 test('the footer links to the privacy policy page', async ({ page }) => {

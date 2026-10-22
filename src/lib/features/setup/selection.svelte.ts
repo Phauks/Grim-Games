@@ -24,8 +24,8 @@ export interface SelectionState {
 	selection: Record<CharacterId, number>;
 	standIns: Record<CharacterId, CharacterId>;
 	/**
-	 * Selected characters Random keeps (Trevor, 2026-10-19: "if you randomize, they will
-	 * still be in play"). Only ever selected ones: deselecting unlocks.
+	 * Selected characters kept in play (Trevor, 2026-10-19: "if you randomize, they will
+	 * still be in play"; 2026-10-22: taps and Clear keep them too). Only ever selected ones.
 	 */
 	locked: CharacterId[];
 }
@@ -134,10 +134,12 @@ export const setupSelection = {
 			state.locked.filter((id) => state.selection[id]).map((id) => [id, state.selection[id]])
 		);
 	},
+	/** Takes out everything but the locked characters (Trevor, 2026-10-22: a lock holds). */
 	clear() {
-		state.selection = {};
-		state.standIns = {};
-		state.locked = [];
+		state.selection = this.lockedSelection();
+		for (const id of Object.keys(state.standIns)) {
+			if (!state.selection[id]) delete state.standIns[id];
+		}
 		save();
 	}
 };
