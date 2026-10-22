@@ -1188,3 +1188,40 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await expect(page.locator('.choice[data-off-script]')).toHaveCount(1);
 	await expect(page.locator('.choice[data-off-script]')).toContainText('Goon');
 });
+
+test('Binary Supernovae asks for one more Demon, and an executed Demon wins it for good', async ({
+	page
+}) => {
+	// Trevor (2026-10-22): https://beardytas.com/garden-of-djinn/binary-supernovae/ on any script.
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await chooseRules(page, 'Binary Supernovae');
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	await page.goto(`/grimoire/${gameId}/setup`);
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+	await expect(page.locator('[data-testid="setup-counts"] [data-type="demon"]')).toContainText(
+		'/ 2'
+	);
+	await noSidewaysScroll(page);
+
+	// On the board, a Demon executed ends it under the rule, even with another Demon alive.
+	await page.goto(`/grimoire/${gameId}`);
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	const line = prompt.locator('[data-rule="demon-executed"]');
+	await expect(line).toContainText('Binary Supernovae');
+	await expect(line).toContainText('Good wins');
+});
