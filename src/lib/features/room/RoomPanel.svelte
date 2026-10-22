@@ -11,7 +11,6 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
@@ -47,11 +46,6 @@
 		refreshKind = kind;
 		refreshOpen = true;
 	}
-	const shareTabs = $derived([
-		{ value: 'players' as const, label: t('room.tab.players') },
-		{ value: 'watch' as const, label: t('room.tab.watch') }
-	]);
-	let tab = $state<'players' | 'watch'>('players');
 	/** The seat chosen for each request, when the Storyteller picks a different one. */
 	let chosen = $state<Record<string, SeatId | ''>>({});
 
@@ -165,18 +159,45 @@
 	<ScriptQrCenter {logo} name={scriptName} bind:failed={logoFailed} />
 {/snippet}
 
-<!-- The players' join code and the view-only grimoire each in their own tab (Trevor, 2026-10-19). -->
-<Tabs label={t('room.tabs')} tabs={shareTabs} bind:value={tab}>
-	{#snippet panel(which)}
-		{#if which === 'players'}{@render players()}{:else}{@render watching()}{/if}
-	{/snippet}
-</Tabs>
+<!-- One screen, no tabs (Trevor, 2026-10-22: "combine tabs, we show on the qr code that this
+     is the spoiler version"): the players' code first, then the view-only grimoire below it in
+     the same two columns. -->
+<div class="screen">
+	{@render players()}
+	{@render watching()}
+</div>
 
 {#snippet watching()}
-	<div class="layout">
+	<!-- The same two columns as the players' part on a wide screen (Trevor, 2026-10-21): the
+	     QR and link, then the switches. Status above counts who is watching. -->
+	<div class="layout watch-part" data-testid="watch-link">
+		<section class="join">
+			<SharePanel
+				url={watchLink || undefined}
+				title={t('room.watch.title')}
+				qrLabel={t('room.watch.qrLabel')}
+				pending={t('room.watch.off')}
+				text={!watchLink
+					? undefined
+					: gameText
+						? t('room.watch.shareGameText', { game: gameText })
+						: t('room.watch.shareText')}
+				qrCenter={logo || scriptName ? scriptCenter : undefined}
+				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
+				qrCaption={t('room.watch.qrCaption')}
+				hidden={preferences.current.hideWatchLink}
+				refresh={{
+					label: t('room.watch.refresh'),
+					disabled: !watchLink,
+					// A new link in one step, not off and on (Trevor, 2026-10-20).
+					onclick: () => askRefresh('watch')
+				}}
+			/>
+		</section>
 		<!-- Specters: spectators watch the whole grimoire (Trevor, 2026-10-18). Off until
 		     turned on; the link's QR and buttons stay in place while it is off. -->
-		<section class="watch" data-testid="watch-link">
+		<section class="watch" aria-labelledby="watch-label">
+			<h2 id="watch-label">{t('room.watch.heading')}</h2>
 			<SettingToggle
 				label={t('room.watch.toggle')}
 				description={t('room.watch.hint')}
@@ -199,31 +220,6 @@
 				checked={preferences.current.hideWatchLink}
 				onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
 			/>
-			<SharePanel
-				url={watchLink || undefined}
-				title={t('room.watch.title')}
-				qrLabel={t('room.watch.qrLabel')}
-				pending={t('room.watch.off')}
-				text={!watchLink
-					? undefined
-					: gameText
-						? t('room.watch.shareGameText', { game: gameText })
-						: t('room.watch.shareText')}
-				qrCenter={logo || scriptName ? scriptCenter : undefined}
-				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
-				qrCaption={t('room.watch.qrCaption')}
-				hidden={preferences.current.hideWatchLink}
-				refresh={{
-					label: t('room.watch.refresh'),
-					disabled: !watchLink,
-					// A new link in one step, not off and on (Trevor, 2026-10-20).
-					onclick: () => askRefresh('watch')
-				}}
-			/>
-			<!-- Who is watching now (Trevor, 2026-10-20), always in its place. -->
-			<p class="status" data-testid="watchers">
-				{t('room.watch.watchers', { count: watchLink ? host.watchers : 0 })}
-			</p>
 			<p class="status" role="status">{host.grimoireTooLarge ? t('room.watch.tooLarge') : ''}</p>
 		</section>
 	</div>
@@ -373,6 +369,15 @@
 <style>
 	.dialog-text {
 		margin: 0;
+	}
+	.screen {
+		display: grid;
+		gap: var(--space-5);
+	}
+	/* The view-only part sits under a rule, so the spoiler QR reads as its own thing. */
+	.watch-part {
+		padding-top: var(--space-5);
+		border-top: 1px solid var(--border);
 	}
 	h2 {
 		margin: 0 0 var(--space-2);

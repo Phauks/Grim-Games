@@ -90,9 +90,7 @@ export const room = {
 	'room.vote.title': 'Spectators’ vote',
 	// The view-only grimoire link (Specters)
 	'room.watch.title': 'Watch the grimoire',
-	'room.tabs': 'Share',
-	'room.tab.players': 'Players',
-	'room.tab.watch': 'View grimoire',
+	'room.watch.heading': 'View grimoire',
 	'room.watch.toggle': 'View-only grimoire link',
 	'room.watch.hint':
 		'Spectators with this link see the whole grimoire live, after promising not to spoil the game. Each new link stops the last one.',
@@ -104,7 +102,6 @@ export const room = {
 	'room.watch.refreshTitle': 'Make a new link?',
 	'room.watch.refreshText':
 		'The current link stops working, and anyone watching with it is disconnected.',
-	'room.watch.watchers': 'Watching now: {count}',
 	'room.watch.shareText': 'Watch the grimoire. Never show it to a player.',
 	'room.watch.shareGameText': 'Watch the grimoire: {game}. Never show it to a player.',
 	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',
