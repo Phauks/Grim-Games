@@ -296,12 +296,41 @@ export class RoomHost {
 		this.#socket?.send({ type: 'close-vote' });
 	}
 
+	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */
+	endedGame = $state<string>();
+	/** The game whose final grimoire the room's phones were sent (Share grim, R5). */
+	revealedGame = $state<string>();
+
+	/**
+	 * Share grim (R5): sends the whole grimoire to the room's phones once the game is over.
+	 * False when it is too large or the room is offline.
+	 */
+	reveal(game: OpenGame, notes?: BoardNotes): boolean {
+		const gameId = game.game.gameId;
+		const saved = toSavedGame(game.session, Date.now());
+		const message = {
+			type: 'reveal',
+			gameId,
+			grimoire: {
+				saved: saved as unknown as Record<string, unknown>,
+				...(notes ?? storedNotes(gameId))
+			}
+		} as const;
+		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;
+		if (!this.#socket?.send(message)) return false;
+		this.revealedGame = gameId;
+		return true;
+	}
+
 	/**
 	 * Tells the room the game is over (End game), or running again (`undefined`, Reopen). The
 	 * room stays open, so its phones see the end; kept and sent again after a reconnect.
 	 */
 	setEnded(gameId: GameId, ended: { winner?: 'good' | 'evil'; reason?: string } | undefined): void {
 		this.#ended = { gameId, ended };
+		this.endedGame = ended ? gameId : undefined;
+		// Reopen takes the shared grimoire back (the room drops it too).
+		if (!ended && this.revealedGame === gameId) this.revealedGame = undefined;
 		this.#sendEnded();
 	}
 
@@ -388,6 +417,7 @@ export class RoomHost {
 		this.vote = undefined;
 		this.viewerKey = undefined;
 		this.viewerPassword = undefined;
+		this.revealedGame = undefined;
 		this.#viewerKeyHash = undefined;
 		this.#grimoire = undefined;
 		clearTimeout(this.#grimoireTimer);

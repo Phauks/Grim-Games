@@ -3,6 +3,7 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
 	cancelRequest,
+	canReveal,
 	castVote,
 	closeVote,
 	gameOver,
@@ -189,6 +190,18 @@ describe('the end of a game', () => {
 		const next = publish(over, 'g2', table('a', 'b', 'c'));
 		expect(next.ended).toBeUndefined();
 		expect(playerView(next, 'alex').ended).toBeUndefined();
+	});
+
+	it('lets the Storyteller share the finished grimoire only for the game that ended', () => {
+		const room = roomWith('alex');
+		expect(canReveal(room, 'g1')).toBe(false);
+		const over = gameOver(room, 'g1', 'good');
+		expect(canReveal(over, 'g1')).toBe(true);
+		expect(canReveal(over, 'g2')).toBe(false);
+		expect(canReveal(over, 7)).toBe(false);
+		// Reopened, or a new game: the grimoire is private again.
+		expect(canReveal(reopenGame(over, 'g1'), 'g1')).toBe(false);
+		expect(canReveal(publish(over, 'g2', table('a')), 'g1')).toBe(false);
 	});
 
 	it('needs protocol 2, so an older app is told to update rather than miss the end', () => {

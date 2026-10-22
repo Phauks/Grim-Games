@@ -159,6 +159,11 @@ export type ClientMessage =
 	| { type: 'grimoire'; grimoire: SharedGrimoire }
 	/** The game `gameId` is over (protocol 2). */
 	| { type: 'game-over'; gameId: string; winner?: Alignment; reason?: string }
+	/**
+	 * The finished grimoire for every player (Share grim, Trevor 2026-10-20, plan R5): only
+	 * once the game `gameId` is over, and kept until it is reopened or a new game starts.
+	 */
+	| { type: 'reveal'; gameId: string; grimoire: SharedGrimoire }
 	/** The Storyteller reopened the game `gameId`: it runs again (protocol 2). */
 	| { type: 'reopen-game'; gameId: string }
 	| { type: 'close' };
@@ -209,8 +214,16 @@ export interface GrimoireView {
 	grimoire: SharedGrimoire;
 }
 
+/** The finished grimoire, sent to every player once the Storyteller shares it (plan R5). */
+export interface RevealView {
+	type: 'reveal';
+	gameId: string;
+	grimoire: SharedGrimoire;
+}
+
 export type ServerMessage =
 	| HostView
+	| RevealView
 	| PlayerView
 	| ScriptView
 	| GrimoireView
@@ -555,6 +568,11 @@ export function gameOver(
 		}
 	}
 	return { ...room, ended };
+}
+
+/** Whether the finished grimoire of `gameId` may go to the players: only once it is over. */
+export function canReveal(room: RoomState, gameId: unknown): boolean {
+	return typeof gameId === 'string' && room.gameId === gameId && room.ended?.gameId === gameId;
 }
 
 /** The game `gameId` runs again; nothing changes if it was not the one that ended. */
