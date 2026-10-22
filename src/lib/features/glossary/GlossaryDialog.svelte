@@ -11,12 +11,15 @@
 	import { glossaryTermFor, wikiGlossary } from './wiki-glossary.svelte.ts';
 	import WikiEntryText from './WikiEntryText.svelte';
 	import { clearTermHandler } from './term-handler.ts';
+	import { currentScript, restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
+	import { almanacPage } from '#lib/features/scripts/saved-scripts.ts';
 
 	// The wiki's text is fetched live when the dialog opens (and cached on the device only).
 	let loading = $state(false);
 	$effect(() => {
 		if (!glossaryDialog.open) return;
 		loading = true;
+		void restoreScripts();
 		void wikiGlossary.load().finally(() => (loading = false));
 	});
 	// Terms in an entry open their popup over it, as anywhere else (Trevor, 2026-10-16).
@@ -41,6 +44,9 @@
 	const entry = $derived(key ? wikiGlossary.entries.get(key) : undefined);
 	const name = $derived(entry?.name ?? all.find((item) => item.id === key)?.label);
 	const wikiLink = $derived(name ? glossaryEntryUrl(name) : GLOSSARY_URL);
+	// The current script's almanac, beside the wiki (Trevor, backlog P1); shown disabled when
+	// it has none, so the header never moves.
+	const almanac = $derived(almanacPage(currentScript.current?.meta, currentScript.saved?.source));
 </script>
 
 <!--
@@ -86,6 +92,12 @@
 	</ContentsLayout>
 	{#snippet headActions()}
 		<!-- The wiki Glossary (the rules authority), in a new tab. -->
+		<IconButton
+			icon="script"
+			label={t('glossary.openAlmanac')}
+			href={almanac}
+			disabled={!almanac}
+		/>
 		<IconButton icon="wiki" label={t('glossary.openWiki')} href={wikiLink} />
 	{/snippet}
 </Dialog>

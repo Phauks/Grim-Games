@@ -151,6 +151,23 @@ export function sourcePage(source: ScriptSource): string | undefined {
 	}
 }
 
+/**
+ * The script's almanac page (Trevor, backlog P1: an almanac link in the Glossary): the one
+ * its own `_meta` names, else a Bloodstar script's, which sits beside its `script.json` as
+ * `almanac.html`. Undefined when it has none.
+ */
+export function almanacPage(
+	meta: { almanac?: string } | undefined,
+	source: ScriptSource | undefined
+): string | undefined {
+	const own = meta?.almanac?.trim();
+	if (own && isSpecificPage(own)) return own;
+	const page = source?.kind === 'link' ? source.page : undefined;
+	return page?.startsWith(`${BLOODSTAR_ORIGIN}/`) && page.endsWith('/almanac.html')
+		? page
+		: undefined;
+}
+
 /** An http(s) address that points somewhere on a site, not only at the site itself. */
 export function isSpecificPage(url: string): boolean {
 	let parsed: URL;
