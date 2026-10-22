@@ -110,11 +110,14 @@ export const settings = {
 		'Covers the QR code and link on Share’s View grimoire tab, e.g. while streaming. Copy and Share still work.',
 	'settings.requireName': 'Require a name before drawing',
 	'settings.holdToReveal': 'Hold to see character',
+	'settings.slotMachine': 'Slot machine reveal',
 	'settings.ownWording': 'Show our own wording',
 	'settings.ownWordingHelp':
 		'Game mode descriptions written for this app. Off, a mode shows its source link instead.',
 	'settings.requireNameHelp': 'A player types their name before they can see the token they drew.',
 	'settings.holdToRevealHelp': 'The drawn character shows only while the player holds it down.',
+	'settings.slotMachineHelp':
+		"The drawn token spins through the script's characters before it stops on the player's.",
 	'settings.iconStyle': 'Icon style',
 	'settings.iconStyleHelp': 'Phosphor icons in six weights.',
 	'settings.resetSection': 'Reset {section}',

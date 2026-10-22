@@ -63,6 +63,15 @@
 		game && officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
 	const logo = $derived(script && scriptLogo(script));
+	/**
+	 * The slot machine reveal's reel: every character a player can be dealt on the script,
+	 * taken ones too, so it gives nothing away (Trevor, 2026-10-22).
+	 */
+	const reel = $derived(
+		(script?.characters ?? []).filter((c) =>
+			(['townsfolk', 'outsider', 'minion', 'demon'] as const).some((type) => type === c.type)
+		)
+	);
 	const title = $derived((locked && script?.meta.name) || t('setup.draw'));
 	let pinOpen = $state(false);
 	let pinMode = $state<'set' | 'unlock'>('set');
@@ -223,6 +232,7 @@
 			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
 			taken={takenNames(tile.drawnBySeat)}
 			holdToReveal={preferences.current.holdToReveal}
+			reel={preferences.current.slotMachine ? reel : []}
 			onConfirm={confirm}
 		/>
 	{/if}

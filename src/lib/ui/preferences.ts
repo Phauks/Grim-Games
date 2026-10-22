@@ -62,6 +62,12 @@ export interface Preferences {
 	/** The drawn token shows only while it's held down (Trevor, 2026-10-20: a setting, off). */
 	holdToReveal: boolean;
 	/**
+	 * The drawn token spins like a slot machine through the script's characters before it
+	 * stops on the player's (Trevor, 2026-10-22: a Bag draw setting, off). Purely visual: the
+	 * character was decided when the tile was drawn.
+	 */
+	slotMachine: boolean;
+	/**
 	 * Show text in our own wording that Trevor hasn't approved yet, such as the game modes'
 	 * About descriptions; off by default, when only source text and links show (no authored
 	 * content, Trevor 2026-10-15).
@@ -152,6 +158,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	tileFace: 'numbers',
 	requireName: false,
 	holdToReveal: false,
+	slotMachine: false,
 	ownWording: false,
 	hideWatchLink: false,
 	timerSound: 'bell',
@@ -199,6 +206,8 @@ export function parsePreferences(raw: unknown): Preferences {
 			typeof input.holdToReveal === 'boolean'
 				? input.holdToReveal
 				: DEFAULT_PREFERENCES.holdToReveal,
+		slotMachine:
+			typeof input.slotMachine === 'boolean' ? input.slotMachine : DEFAULT_PREFERENCES.slotMachine,
 		ownWording:
 			typeof input.ownWording === 'boolean' ? input.ownWording : DEFAULT_PREFERENCES.ownWording,
 		hideWatchLink:

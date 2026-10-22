@@ -60,6 +60,7 @@ export const resets = {
 				'tileFace',
 				'requireName',
 				'holdToReveal',
+				'slotMachine',
 				'ownWording',
 				'hideWatchLink',
 				'timerSound',
