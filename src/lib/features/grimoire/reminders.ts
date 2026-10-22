@@ -251,6 +251,11 @@ export interface BankReminder {
 	label: string;
 	/** Copies not yet on the board. */
 	left: number;
+	/**
+	 * How many of those are beyond the copies the game gives (a Duplicate): placed last, and
+	 * marked as unusual in the bank as on the board (Trevor, 2026-10-22).
+	 */
+	extra: number;
 	/** Used by the night step being walked through: first in the bank, and marked. */
 	now: boolean;
 }
@@ -303,12 +308,19 @@ export function bankReminders(
 	bank: ReadonlyMap<string, number> = NO_BANK
 ): BankReminder[] {
 	const left = reminderCopiesLeft(game, characters, copies, bank);
+	const total = reminderCopies(game, characters, copies, bank);
+	const listed = listedCopies(game, characters);
 	const out: BankReminder[] = [];
 	for (const { character, labels } of reminderGroups(game, characters)) {
 		for (const label of labels) {
-			const n = left.get(reminderKey({ characterId: character.id, label })) ?? 1;
+			const key = reminderKey({ characterId: character.id, label });
+			const n = left.get(key) ?? 1;
 			const now = focus?.characterId === character.id && focus.labels.includes(label);
-			if (n > 0) out.push({ characterId: character.id, label, left: n, now });
+			// The copies the game still gives go first; the rest of the bank's are extras.
+			const placed = (total.get(key) ?? 1) - n;
+			const given = Math.max(0, (listed.get(key) ?? 1) - placed);
+			const extra = Math.max(0, n - given);
+			if (n > 0) out.push({ characterId: character.id, label, left: n, extra, now });
 		}
 	}
 	return front ? [...out.filter((r) => r.now), ...out.filter((r) => !r.now)] : out;

@@ -109,6 +109,7 @@
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
+	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
@@ -833,6 +834,9 @@
 	const saved = untrack(() => grimoire.nightView);
 	/** The day sheet; the old /day route lands here with `#day` to open it. */
 	let dayOpen = $state(false);
+	/** The Savant sheet, from the day view's Savant info button (L5). */
+	let savantSeat = $state<SeatId | undefined>();
+	let savantOpen = $state(false);
 	// ── Assisted night order (Trevor, 2026-10-16) ──
 	let guided = $state<{ step: NightStep; night: Night } | undefined>();
 	let guideOpen = $state(false);
@@ -1362,6 +1366,12 @@
 			},
 			get scriptImage() {
 				return scriptBackground;
+			},
+			get scriptLogo() {
+				return boardLogo || undefined;
+			},
+			get scriptName() {
+				return game.script.meta?.name;
 			},
 			get current() {
 				return background;
@@ -2279,7 +2289,16 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={() => (endDayOpen = true)} />
+<DaySheet
+	bind:open={dayOpen}
+	game={grimoire.open}
+	onEndDay={() => (endDayOpen = true)}
+	onSavant={(seatId) => {
+		savantSeat = seatId;
+		savantOpen = true;
+	}}
+/>
+<SavantSheet bind:open={savantOpen} {grimoire} seatId={savantSeat} />
 
 <GuidedStep
 	bind:open={guideOpen}

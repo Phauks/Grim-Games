@@ -17,6 +17,7 @@ export const ASSIST_KEYS = [
 	'demonVotedButton',
 	'gameEndPrompts',
 	'savantInfo',
+	'trackNominations',
 	'dayAfterNight',
 	'stackReminders',
 	'scriptTitle',
@@ -80,6 +81,10 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		description:
 			"One true and one false statement for the Savant, worked out from the grimoire, in the Savant seat's ⋯ menu."
 	},
+	trackNominations: {
+		label: 'Track nominations',
+		description: "Under a seat's ghost vote, who the player nominated today and who nominated them."
+	},
 	gameEndPrompts: {
 		label: 'Game end prompts',
 		description:
@@ -108,10 +113,12 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 
 /**
  * New Storytellers get every kind of help; each switch turns one off. Stacking reminders is
- * a way of showing them, not help, so it starts off (Trevor, 2026-10-16).
+ * a way of showing them, not help, so it starts off (Trevor, 2026-10-16). Tracking nominations
+ * is extra record-keeping, so it starts off too (Trevor, 2026-10-22: "make nomination tracking a
+ * setting").
  */
 export const DEFAULT_ASSISTANCE: Assistance = Object.fromEntries(
-	ASSIST_KEYS.map((key) => [key, key !== 'stackReminders'])
+	ASSIST_KEYS.map((key) => [key, key !== 'stackReminders' && key !== 'trackNominations'])
 ) as Assistance;
 
 /** Saved switches, with any missing or invalid ones taking their default. */
