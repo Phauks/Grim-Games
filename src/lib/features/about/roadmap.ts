@@ -75,18 +75,26 @@ export const ROADMAP: readonly RoadmapArea[] = [
 	{
 		title: 'Day',
 		items: [
-			{ id: 'L12', title: 'Day character rows look like character selection' },
-			{ id: 'L21', title: 'Day badges coloured at the top, in ghost colour order' },
-			{ id: 'L13', title: 'Execution button; "no execution" is a choice each day' },
+			{ id: 'L12', title: 'Day character rows look like character selection', prs: [337] },
+			{ id: 'L21', title: 'Day badges coloured at the top, in ghost colour order', prs: [344] },
+			{ id: 'L13', title: 'Execution button; "no execution" is a choice each day', prs: [355] },
 			{ id: 'L9', title: 'Announcements include revived players' },
 			{ id: 'L28', title: 'Custom characters noted in Announcements' },
-			{ id: 'L5', title: 'Savant reminder when no Savant information is set for the next day' }
+			{ id: 'L5', title: 'Savant reminder when no Savant information is set for the next day' },
+			{
+				id: 'L32',
+				title: 'An unnamed seat shows "Seat N" where its name is asked for',
+				prs: [364]
+			},
+			{ id: 'L33', title: 'Day ghost votes count: a dark ghost on white', prs: [355] }
 		]
 	},
 	{
 		title: 'Characters and rules',
 		items: [
 			{ id: 'L1', title: 'The +1 special rule', prs: [314] },
+			{ id: 'L35', title: 'The Warrens special rule' },
+			{ id: 'L36', title: 'The Djinn’s Bargain special rule' },
 			{
 				id: 'L11',
 				title: 'Godfather: the night step knows whether an Outsider died today',

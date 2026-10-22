@@ -8,6 +8,7 @@ export const glossary = {
 	'glossary.search': 'Search the Glossary',
 	'glossary.searchPlaceholder': 'Search',
 	'glossary.openWiki': 'Open the Glossary on the wiki',
+	'glossary.openAlmanac': 'Open the script’s almanac',
 	'glossary.loading': 'Loading the wiki Glossary…',
 	'glossary.failed':
 		"The wiki Glossary can't be loaded right now. Open it with the wiki button at the top."

@@ -45,6 +45,11 @@
 		 * spins through these characters, then stops on the player's. Purely visual.
 		 */
 		reel?: readonly Character[];
+		/**
+		 * Closing the reveal once the character was seen confirms it (Trevor, 2026-10-22: no
+		 * "held" after a player has seen their character, so nobody else can take it back).
+		 */
+		confirmOnClose?: boolean;
 		onConfirm: (details: { playerName: string; alignment?: Alignment }) => void;
 	}
 
@@ -59,6 +64,7 @@
 		pair,
 		holdToReveal = false,
 		reel = [],
+		confirmOnClose = false,
 		onConfirm
 	}: Props = $props();
 	const faces = $derived(
@@ -127,6 +133,12 @@
 	});
 	/** The character itself shows once the reel has stopped. */
 	const visible = $derived(shown && !spinning);
+	/** The character has been seen in this reveal (not just the spinning reel). */
+	let shownOnce = false;
+	$effect(() => {
+		if (!open) return;
+		if (visible) shownOnce = true;
+	});
 	const canConfirm = $derived(revealed && (!holdToReveal || seen) && !spinning);
 	function hold(on: boolean) {
 		held = on;
@@ -137,10 +149,25 @@
 		if (document.visibilityState !== 'visible') held = false;
 	}
 
+	/** Set once this reveal is confirmed, so closing it doesn't confirm it again. */
+	let confirmed = false;
 	function confirm() {
+		confirmed = true;
 		pastNames.remember(name);
 		onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) });
 	}
+	// Closed with X, Escape or a tap outside: confirmed if the character was seen.
+	let wasOpen = false;
+	$effect(() => {
+		if (open) {
+			wasOpen = true;
+			confirmed = false;
+			if (!untrack(() => visible)) shownOnce = false;
+		} else if (wasOpen) {
+			wasOpen = false;
+			if (confirmOnClose && !confirmed && shownOnce) confirm();
+		}
+	});
 
 	// On a computer, Enter (outside a field or button) does the main action: Reveal, then Confirm.
 	function onWindowKey(event: KeyboardEvent) {
@@ -159,7 +186,8 @@
 
 <!--
 	The player's own reveal. A drawn tile is never put back (Trevor, 2026-10-15): closing the
-	reveal keeps it in the player's hand (the draw is saved) until it is confirmed.
+	reveal before the character was seen keeps it in the player's hand (the draw is saved);
+	with confirmOnClose, closing it after confirms it (Trevor, 2026-10-22).
 -->
 <Dialog bind:open title={t('setup.draw.tile', { number })} size="full">
 	<div class="reveal" data-testid="reveal">

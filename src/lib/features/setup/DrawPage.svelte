@@ -233,6 +233,7 @@
 			taken={takenNames(tile.drawnBySeat)}
 			holdToReveal={preferences.current.holdToReveal}
 			reel={preferences.current.slotMachine ? reel : []}
+			confirmOnClose
 			onConfirm={confirm}
 		/>
 	{/if}

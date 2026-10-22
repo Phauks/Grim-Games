@@ -88,15 +88,18 @@
 <section>
 	<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
 	<GameModesPanel>
-		{#snippet standard(rules)}
+		{#snippet standard(rules, begin)}
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
 			<PageSection title="Script">
 				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
 			</PageSection>
 			<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
 			<PlayerCountSheet {players} onChange={(n) => (players = n)} {maxPlayers} />
-			<Button variant="accent" icon="grimoire" disabled={starting} onclick={() => start(rules)}
-				>Start game</Button
+			<Button
+				variant="accent"
+				icon="grimoire"
+				disabled={starting}
+				onclick={() => begin(() => start(rules))}>Start game</Button
 			>
 		{/snippet}
 	</GameModesPanel>
