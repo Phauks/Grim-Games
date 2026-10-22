@@ -9,7 +9,6 @@ export const ASSIST_KEYS = [
 	'nightGuide',
 	'nightAnswers',
 	'infoSuggestions',
-	'setupReminders',
 	'preDayReminders',
 	'deathCause',
 	'deathReminderAsk',
@@ -17,8 +16,8 @@ export const ASSIST_KEYS = [
 	'deadReminderAsk',
 	'demonVotedButton',
 	'gameEndPrompts',
+	'savantInfo',
 	'dayAfterNight',
-	'rulesWarnings',
 	'stackReminders',
 	'scriptTitle',
 	'explainTerms'
@@ -49,11 +48,6 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Suggest information',
 		description: 'Washerwoman, Librarian, Investigator and similar steps list true options first.'
 	},
-	setupReminders: {
-		label: 'Suggest setup reminders',
-		description:
-			'Once characters are in the grimoire, offer the reminders to place before the first night.'
-	},
 	preDayReminders: {
 		label: 'Pre-day reminders',
 		description: 'After the night, list what to watch for today, like an unused Slayer shot.'
@@ -81,6 +75,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		description:
 			'While a Flowergirl is in play, a Demon voted button at the top of the day, for her night answer.'
 	},
+	savantInfo: {
+		label: 'Suggest Savant information',
+		description:
+			"One true and one false statement for the Savant, worked out from the grimoire, in the Savant seat's ⋯ menu."
+	},
 	gameEndPrompts: {
 		label: 'Game end prompts',
 		description:
@@ -89,10 +88,6 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	dayAfterNight: {
 		label: 'Open the day after End night',
 		description: 'Open Day View'
-	},
-	rulesWarnings: {
-		label: 'Setup and jinx warnings',
-		description: 'Point out a setup that breaks the rules or a jinx that applies.'
 	},
 	stackReminders: {
 		label: 'Stack duplicate reminders',

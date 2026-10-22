@@ -21,7 +21,7 @@ import {
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 9;
+export const GAME_MODE_REVISION = 10;
 
 export interface GuideField {
 	name: string;
@@ -475,6 +475,11 @@ export const GUIDE_PARTS: GuidePart[] = [
 		fields: [],
 		kinds: [
 			{ kind: 'standard', about: 'As usual.', fields: [] },
+			{
+				kind: 'demon-executed',
+				about: 'As usual, and good also wins as soon as any Demon dies by execution.',
+				fields: []
+			},
 			{
 				kind: 'all-towns',
 				about: 'A team wins by winning every town.',

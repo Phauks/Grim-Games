@@ -190,6 +190,8 @@ export type DayStep = Cited &
 export type WinRule = Cited &
 	(
 		| { kind: 'standard' }
+		/** Good also wins as soon as any Demon dies by execution (Binary Supernovae). */
+		| { kind: 'demon-executed' }
 		/**
 		 * A team wins by winning every town. When towns split after `afterDay` days, `winner`
 		 * wins if `together` are in one town, else the other team does.

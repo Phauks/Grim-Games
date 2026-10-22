@@ -178,7 +178,12 @@ export function runsPart(mode: { parts: CombinedParts }, part: ModePart | RulePa
 		case 'betweenGames':
 			return !p.betweenGames || p.betweenGames.kind === 'campaign';
 		case 'winConditions':
-			return !p.winConditions || p.winConditions.kind === 'standard';
+			return (
+				!p.winConditions ||
+				p.winConditions.kind === 'standard' ||
+				// The game end prompt checks for an executed Demon (core/rules/game-end.ts).
+				p.winConditions.kind === 'demon-executed'
+			);
 		default:
 			return p[part as keyof CombinedParts] === undefined;
 	}
