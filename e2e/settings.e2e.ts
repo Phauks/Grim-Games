@@ -212,7 +212,8 @@ test('the board looks and background are in Board, saved with the board', async 
 		nameSize: 1,
 		nameOffset: 0,
 		reminders: 'seat',
-		usedGhostVote: 'hollow'
+		usedGhostVote: 'hollow',
+		defaultFrame: 'none'
 	});
 
 	await page.reload();

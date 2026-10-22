@@ -660,6 +660,8 @@
 		border-start-end-radius: calc(var(--radius-md) - 1px);
 		border-end-end-radius: calc(var(--radius-md) - 1px);
 		background: var(--accent);
+		/* The buttons' edge, so it never blends into the bank (Trevor, 2026-10-22). */
+		box-shadow: inset 0 0 0 1px var(--accent-edge);
 		color: var(--on-accent);
 		font: 600 0.8rem var(--font-control);
 		cursor: pointer;

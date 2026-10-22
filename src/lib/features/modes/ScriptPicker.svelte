@@ -10,7 +10,11 @@
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { chooseScript, currentScript } from '#lib/features/scripts/current-script.svelte.ts';
-	import { reloadSavedScript } from '#lib/features/scripts/saved-scripts.ts';
+	import {
+		describeSource,
+		reloadSavedScript,
+		sourcePage
+	} from '#lib/features/scripts/saved-scripts.ts';
 	import { botcVersions } from '#lib/features/scripts/botc-versions.svelte.ts';
 	import { compareVersions } from '#lib/features/scripts/botcscripts-api.ts';
 	import { fetchLinkTarget } from '#lib/features/scripts/fetch-script.ts';
@@ -135,6 +139,17 @@
 			reportError(e, { area: 'scripts' });
 		}
 	}
+	// The chosen script's source page opens from here (Trevor, 2026-10-22). Kept in place,
+	// disabled, when there is none; then its label names the source, such as the file name.
+	const shownSource = $derived(custom ? chosen?.source : undefined);
+	const sourceHref = $derived(shownSource && sourcePage(shownSource));
+	const sourceLabel = $derived(
+		sourceHref
+			? t('modes.scriptSearch.openSource')
+			: shownSource
+				? t('modes.scriptSearch.sourceNoPage', { source: describeSource(shownSource) })
+				: t('modes.scriptSearch.openSource')
+	);
 	/** Tapping Custom's search or Library button chooses Custom first. */
 	function toCustom() {
 		if (!custom) choose(CUSTOM);
@@ -202,6 +217,18 @@
 			/>
 		</span>
 		<ScriptByline author={chosen?.author} inline />
+		<span class="source">
+			{#if sourceHref}
+				<IconButton
+					icon="openInNewTab"
+					label={sourceLabel}
+					href={sourceHref}
+					rel="noopener noreferrer"
+				/>
+			{:else}
+				<IconButton icon="openInNewTab" label={sourceLabel} disabled />
+			{/if}
+		</span>
 	</div>
 </div>
 
@@ -243,6 +270,9 @@
 	.version {
 		flex: 0 0 auto;
 		width: calc(9 * var(--u));
+	}
+	.source {
+		margin-inline-start: auto;
 	}
 	.library {
 		display: grid;

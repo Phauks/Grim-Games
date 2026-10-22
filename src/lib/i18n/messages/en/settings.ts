@@ -99,6 +99,7 @@ export const settings = {
 	'settings.previewBank': 'Reminder bank',
 	'settings.nameOffset': 'Player name distance',
 	'settings.strikeUsedGhostVote': 'Strike through used ghost votes',
+	'settings.seatFrame': 'Seat frame',
 	'settings.rulesAt': 'Location',
 	'settings.rulesAt.middle': 'Middle',
 	'settings.rulesAt.edge': 'Corner',
