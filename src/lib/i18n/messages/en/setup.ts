@@ -13,6 +13,10 @@ export const setup = {
 
 	'setup.characters': 'Characters',
 	'setup.script': 'Script',
+	'setup.scriptCharacters': 'Script characters in the bag',
+	'setup.bagRole.dealt': 'Dealt as itself',
+	'setup.bagRole.replaces': 'Thinks they are another character',
+	'setup.bagRole.not-dealt': 'Not dealt',
 	'setup.players': 'Players',
 	'setup.tooManyPlayers': 'Too many players for this script',
 	'setup.tooManyPlayersFor': 'This script is made for at most {max} players.',
