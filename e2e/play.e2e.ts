@@ -758,7 +758,7 @@ test('the Room tab joins a live room in place, and the player moves between it a
 	await field.tap();
 	await field.pressSequentially(code);
 	await expect(room.getByTestId('room-preview')).toContainText('Trouble Brewing');
-	await room.getByRole('button', { name: 'Join', exact: true }).tap();
+	await room.getByRole('button', { name: 'Join as player' }).tap();
 	// Joined in place: still /play, now in the room.
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(room.getByRole('heading', { name: `Room ${shown}` })).toBeVisible();
