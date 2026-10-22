@@ -2512,15 +2512,13 @@
 		outline: 0.15rem dashed var(--on-surface);
 		outline-offset: 0.15rem;
 	}
-	/* The walked-through step's reminders already on the board: the bank's ring. */
-	.chip-slot.now > :global(.reminder) {
-		outline: 0.2rem solid var(--accent);
-		outline-offset: 0.15rem;
-	}
-	/* A held seat's reminders (Trevor, 2026-10-19): the step ring; the rest fade. */
+	/* The walked-through step's reminders already on the board, and a held seat's (Trevor,
+	   2026-10-19; the rest fade): the bank's highlight, a ring, glow or both (Settings > Tokens). */
+	.chip-slot.now > :global(.reminder),
 	.chip-slot.lit > :global(.reminder) {
-		outline: 0.2rem solid var(--accent);
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
 	}
 	.slot.dim,
 	.chip-slot.dim {
