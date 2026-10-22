@@ -1264,6 +1264,32 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await expect(page.locator('.row[data-dashed]')).toContainText('Goon');
 });
 
+test('+1 has a switch for naming its character, shown in its instructions', async ({ page }) => {
+	// Trevor (2026-10-22): "add setting for +1", with his two instructions.
+	await page.goto('/new');
+	await modesPanel(page)
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const named = dialog.getByRole('checkbox', { name: 'Name the character', includeHidden: true });
+	// Always there, so nothing moves; usable once +1 is on.
+	await expect(named).toBeDisabled();
+	await dialog.getByText('+1', { exact: true }).tap();
+	await expect(named).toBeEnabled();
+	const inspectPlusOne = async (text: string) => {
+		await dialog.getByRole('button', { name: 'Inspect +1' }).tap();
+		const inspect = page.getByRole('dialog', { name: '+1' });
+		await expect(inspect).toContainText(text);
+		await inspect.getByRole('button', { name: 'Close' }).tap();
+		await expect(inspect).toBeHidden();
+	};
+	await inspectPlusOne('Tell the table that one character from off the script is in play.');
+	await dialog.getByText('Name the character', { exact: true }).tap();
+	await expect(named).toBeChecked();
+	await inspectPlusOne('Tell the table which character from off the script is in play.');
+	await noSidewaysScroll(page);
+});
+
 test('Binary Supernovae asks for one more Demon, and an executed Demon wins it for good', async ({
 	page
 }) => {

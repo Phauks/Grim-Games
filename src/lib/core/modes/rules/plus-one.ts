@@ -26,7 +26,6 @@ export const PLUS_ONE: SpecialRule = {
 		},
 		information: [
 			{
-				characters: [],
 				instructions: 'Tell the table that one character from off the script is in play.'
 			}
 		]

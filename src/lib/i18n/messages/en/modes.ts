@@ -181,6 +181,7 @@ export const modes = {
 	'modes.specialRulesTitle': 'Special rules',
 	'modes.inspectRule': 'Inspect {name}',
 	'modes.deleteRule': 'Delete {name}',
+	'modes.plusOneNamed': 'Name the character',
 	'modes.deleteRuleConfirm': 'Delete {name}?',
 	'modes.conflicts': 'Conflicts',
 	'modes.conflict': '{first} and {second} both set {part}',

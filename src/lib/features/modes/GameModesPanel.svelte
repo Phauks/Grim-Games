@@ -41,6 +41,7 @@
 	import SpecialRulesDialog from './SpecialRulesDialog.svelte';
 	import { loadLinkedScript, loadScriptChoice, scriptChoices } from './script-choices.svelte.ts';
 	import { campaigns } from './campaigns.ts';
+	import { switched } from './rule-switches.ts';
 	import { continueCampaign, startHref, startInMode, startTowns } from './start.ts';
 	import { townGroup } from './town-groups.ts';
 	import { townSetupHref } from './town-setup.ts';
@@ -76,7 +77,11 @@
 	/** The special rules chosen, in order (Trevor, 2026-10-18: rules stack on a mode). */
 	let ruleIds = $state<string[]>([]);
 	let choosingRules = $state(false);
-	const rules = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
+	/** Rules whose own switch is on (rule-switches.ts), such as +1 naming its character. */
+	let switchedOn = $state<string[]>([]);
+	const rules = $derived(
+		ruleIds.flatMap((id) => findRule(id) ?? []).map((r) => switched(r, switchedOn))
+	);
 	/** The mode as it plays, with the rules folded in. */
 	const played = $derived(withRules(mode, rules));
 	const pool = $derived(played.parts.pool);
@@ -436,6 +441,8 @@
 	{mode}
 	{ruleIds}
 	onChange={(ids) => (ruleIds = ids)}
+	{switchedOn}
+	onSwitch={(ids) => (switchedOn = ids)}
 	onadd={() => (adding = true)}
 />
 <AddModeDialog

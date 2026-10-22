@@ -13,7 +13,7 @@ export const COUNCIL_OF_THE_DEAD: SpecialRule = {
 	format: SPECIAL_RULE_FORMAT,
 	id: 'council-of-the-dead',
 	name: 'Council of the Dead',
-	// Our own draft (2026-10-22): shows once Trevor approves it (approved-about.ts).
+	// Our own wording, approved 2026-10-22 with its instructions (approved-about.ts).
 	about:
 		'On night 4 the dead wake together for 2 minutes, then secretly vote for a living player, who receives a boon.',
 	sources: [{ title: 'Council of the Dead (Beardy on the Clocktower)', url: PAGE }],

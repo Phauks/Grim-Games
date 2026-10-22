@@ -14,7 +14,7 @@ export const TRAINED_KILLER: SpecialRule = {
 	format: SPECIAL_RULE_FORMAT,
 	id: 'trained-killer',
 	name: 'Trained Killer',
-	// Our own draft (2026-10-22): shows once Trevor approves it (approved-about.ts).
+	// Our own wording, approved 2026-10-22 with its instructions (approved-about.ts).
 	about:
 		'The Demon doesn’t choose who to attack. Each night after the first, it attacks the next living in-play character in script order.',
 	sources: [{ title: 'Trained Killer (Beardy on the Clocktower)', url: PAGE }],

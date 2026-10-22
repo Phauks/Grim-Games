@@ -1,4 +1,5 @@
 import type { CombinedParts } from '#lib/core/modes/index.ts';
+import { PLUS_ONE_NAMED } from './rule-switches.ts';
 
 /**
  * Built-in mode and special rule descriptions Trevor has approved (2026-10-18: "You write game mode
@@ -23,7 +24,16 @@ export const APPROVED_ABOUT: Readonly<Record<string, string>> = {
 	'stowed-away':
 		'Up to 2 Travellers may be in the bag, with the other counts set for that many fewer players. No one is told who the Travellers are, and exiling one counts as an execution.',
 	'i-see-dead-people':
-		'Characters die as normal, but the Storyteller doesn’t announce deaths. Dead players can still nominate, and poisoned players don’t wake.'
+		'Characters die as normal, but the Storyteller doesn’t announce deaths. Dead players can still nominate, and poisoned players don’t wake.',
+	// Approved 2026-10-22 ("other special rules are approved"), after he read the rule files.
+	'binary-supernovae':
+		'One extra Demon is in play. Good wins as soon as any Demon dies by execution; a Demon killed any other way doesn’t end the game.',
+	'trained-killer':
+		'The Demon doesn’t choose who to attack. Each night after the first, it attacks the next living in-play character in script order.',
+	'phantom-detectives':
+		'Townsfolk have no ability while alive and gain it when they die. Every other dead player keeps their ability, except the Demon.',
+	'council-of-the-dead':
+		'On night 4 the dead wake together for 2 minutes, then secretly vote for a living player, who receives a boon.'
 };
 
 /** Whether a built-in mode's description is the text Trevor approved. */
@@ -38,7 +48,7 @@ export function aboutApproved(modeId: string, about: string | undefined): boolea
  * project files) and sent them back the same day, rewording some. The two lines he took out
  * (Whale Buffet's information, Infinite Possibilities' rule change) stay hidden.
  */
-export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string>> = {
+export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly string[]>> = {
 	'flesh-and-bone:parts.forced':
 		'Put the Flesh and Bone Fabled in play. It is homebrew, so its ability is on its own page, not in the app.',
 	'flesh-and-bone:parts.ruleChanges[0]':
@@ -68,8 +78,30 @@ export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string>> = {
 	'stowed-away:parts.travellers':
 		'Put up to 2 Travellers in the bag, and set the player count for that many fewer players. Don’t announce who the Travellers are. Exiling a Traveller counts as an execution.',
 	'seat-7:parts.seats':
-		'One seat is dealt a character as usual, but no one plays it. Make its choices arbitrarily. Once per game you may speak for it.'
+		'One seat is dealt a character as usual, but no one plays it. Make its choices arbitrarily. Once per game you may speak for it.',
+	// Approved 2026-10-22 ("other special rules are approved"), after he read the rule files.
+	'binary-supernovae:parts.winConditions':
+		'Good wins as soon as any Demon dies by execution, unless an ability such as the Mastermind’s keeps the game going. A Demon killed by an ability doesn’t end it.',
+	'binary-supernovae:parts.ruleChanges[0]':
+		'The Summoner removes only 1 Demon at setup, so 1 Demon starts in play. Before the game, say whether the Summoner may make a second copy of that Demon.',
+	'trained-killer:parts.demonAttacks':
+		'Each night after the first, the Demon attacks the next living in-play character in script order, carrying on from the last one it killed. You decide whether a survivor is attacked again or passed over.',
+	'phantom-detectives:parts.abilities':
+		'Living Townsfolk don’t wake and have no ability; setup effects still happen. A Townsfolk who dies gains its ability and wakes at its usual place. Other dead players keep waking, except a dead Demon.',
+	'council-of-the-dead:parts.nightSteps[0]':
+		'At the start of night 4, wake the dead together for 2 minutes. Then each secretly votes for a living player. If no player has a majority, you choose. Give the chosen player a helpful effect of your choice.',
+	// Trevor's own two wordings (2026-10-22), one per setting of +1's switch (rule-switches.ts).
+	'plus-one:parts.information[0]': [
+		'Tell the table that one character from off the script is in play.',
+		PLUS_ONE_NAMED
+	]
 };
+
+/** Whether a built-in instruction is text Trevor approved for that part. */
+export function instructionApproved(key: string, text: unknown): boolean {
+	const approved = APPROVED_INSTRUCTIONS[key];
+	return typeof approved === 'string' ? approved === text : !!approved?.includes(text as string);
+}
 
 /**
  * A mode's parts as Inspect shows them: Storyteller instructions Trevor hasn't approved are
@@ -84,7 +116,7 @@ export function shownParts(
 	const shown = (path: string, item: unknown): unknown => {
 		if (typeof item !== 'object' || item === null || !('instructions' in item)) return item;
 		const { instructions, ...rest } = item as { instructions: unknown };
-		return APPROVED_INSTRUCTIONS[`${modeId}:${path}`] === instructions ? item : rest;
+		return instructionApproved(`${modeId}:${path}`, instructions) ? item : rest;
 	};
 	return Object.fromEntries(
 		Object.entries(parts).map(([part, value]) => [

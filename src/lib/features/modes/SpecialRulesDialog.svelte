@@ -15,6 +15,7 @@
 	import { modeLabel } from './labels.ts';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import { shownAbout } from './own-wording.svelte.ts';
+	import { RULE_SWITCHES, switched } from './rule-switches.ts';
 
 	/**
 	 * New game's special rules (Trevor, 2026-10-18: rules stack on a game mode, modes don't
@@ -30,11 +31,22 @@
 		/** The chosen rules' ids, in the order chosen. */
 		ruleIds: readonly string[];
 		onChange: (ids: string[]) => void;
+		/** The ids of the rules whose own switch is on (rule-switches.ts). */
+		switchedOn: readonly string[];
+		onSwitch: (ids: string[]) => void;
 		/** Add mode, which also takes a rule file. */
 		onadd: () => void;
 	}
 
-	let { open = $bindable(), mode, ruleIds, onChange, onadd }: Props = $props();
+	let {
+		open = $bindable(),
+		mode,
+		ruleIds,
+		onChange,
+		switchedOn,
+		onSwitch,
+		onadd
+	}: Props = $props();
 
 	const rules = $derived(allRules());
 	const chosen = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
@@ -76,7 +88,7 @@
 							icon="info"
 							label={t('modes.inspectRule', { name: rule.name })}
 							onclick={() => {
-								inspecting = rule;
+								inspecting = switched(rule, switchedOn);
 								inspectOpen = true;
 							}}
 						/>
@@ -93,6 +105,22 @@
 					<p class="description" data-testid="rule-description">
 						{shownAbout(rule) ?? rule.parts.text?.join(' ') ?? t('common.none')}
 					</p>
+					{#if RULE_SWITCHES[rule.id]}
+						<!-- Always there, so nothing moves; usable while its rule is on. -->
+						<div class="switch">
+							<Toggle
+								label={t(RULE_SWITCHES[rule.id].label)}
+								checked={switchedOn.includes(rule.id)}
+								disabled={!ruleIds.includes(rule.id)}
+								onChange={(on) =>
+									onSwitch(
+										on
+											? [...switchedOn.filter((x) => x !== rule.id), rule.id]
+											: switchedOn.filter((x) => x !== rule.id)
+									)}
+							/>
+						</div>
+					{/if}
 				</li>
 			{/each}
 		</ul>
@@ -149,6 +177,10 @@
 	.row > :global(:first-child) {
 		flex: 1;
 		min-width: 0;
+	}
+	/* A rule's own switch, indented under its description. */
+	.switch {
+		padding-left: var(--space-4);
 	}
 	/* The description under its switch, quieter, always there so nothing moves. */
 	.description {
