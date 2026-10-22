@@ -74,3 +74,30 @@ test('the Savant seat offers one true and one false statement, one kept while th
 	await savant.getByRole('button', { name: 'Use these' }).tap();
 	await expect(savant).toBeHidden();
 });
+
+test('the day view recommends Savant information until it is set for today', async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Sects & Violets');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page.getByTestId('seat')).toHaveCount(8);
+	for (const [i, name] of CAST.entries()) {
+		const sheet = await openSeat(page, i + 1);
+		await sheet.getByRole('button', { name: 'Choose' }).tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${i + 1}` });
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await expect(picker).toBeHidden();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	// Not set yet: the button stands out (Trevor, 2026-10-20: L5).
+	const info = page.getByTestId('savant-info');
+	await expect(info).toHaveCount(1);
+	await expect(info).toHaveClass(/recommend/);
+	await info.tap();
+	const savant = page.getByRole('dialog', { name: /^Savant information/ });
+	await savant.getByRole('button', { name: 'Use these' }).tap();
+	await expect(savant).toBeHidden();
+	// Set for today: marked, no longer recommended.
+	await expect(info).toHaveAttribute('data-marked', 'true');
+	await expect(info).not.toHaveClass(/recommend/);
+});

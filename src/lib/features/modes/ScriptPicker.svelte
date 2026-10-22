@@ -9,6 +9,7 @@
 	import PreviewToggle from '#lib/features/library/PreviewToggle.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Spinner from '#lib/ui/primitives/Spinner.svelte';
 	import { chooseScript, currentScript } from '#lib/features/scripts/current-script.svelte.ts';
 	import {
 		describeSource,
@@ -121,10 +122,13 @@
 		noVersion ? [{ value: NO_VERSION, label: t('modes.scriptSearch.noVersion') }] : versions
 	);
 	const versionValue = $derived(noVersion ? NO_VERSION : listedVersion);
+	/** A version from BotC Scripts is being fetched: the drop-down waits, with a spinner. */
+	let loadingVersion = $state(false);
 	async function chooseVersion(next: string) {
 		if (next === NO_VERSION) return;
 		if (!next.startsWith(ONLINE) || !botc) return onChange(next);
 		const version = next.slice(ONLINE.length);
+		loadingVersion = true;
 		try {
 			const fetched = await fetchLinkTarget(
 				{ kind: 'botcscripts', ref: { kind: 'script', scriptId: botc.scriptId, version } },
@@ -137,6 +141,8 @@
 			if (saved) onChange(`recent:${saved.scriptId}`);
 		} catch (e) {
 			reportError(e, { area: 'scripts' });
+		} finally {
+			loadingVersion = false;
 		}
 	}
 	// The chosen script's source page opens from here (Trevor, 2026-10-22). Kept in place,
@@ -213,8 +219,12 @@
 				value={versionValue}
 				options={versionOptions}
 				onChange={(v) => void chooseVersion(v)}
-				disabled={!custom || versions.length < 2}
+				disabled={!custom || versions.length < 2 || loadingVersion}
 			/>
+			<!-- Over the drop-down's own caret, so nothing moves while it loads. -->
+			{#if loadingVersion}<span class="version-loading"
+					><Spinner label={t('modes.scriptSearch.loadingVersion')} testid="version-loading" /></span
+				>{/if}
 		</span>
 		<ScriptByline author={chosen?.author} inline />
 		<span class="source">
@@ -268,8 +278,20 @@
 		min-width: 0;
 	}
 	.version {
+		position: relative;
 		flex: 0 0 auto;
 		width: calc(9 * var(--u));
+	}
+	.version-loading {
+		position: absolute;
+		inset-block: 0;
+		right: var(--space-2);
+		display: grid;
+		place-items: center;
+		padding-inline: var(--space-1);
+		background: var(--choice-background);
+		font-size: 1.25rem;
+		pointer-events: none;
 	}
 	.source {
 		margin-inline-start: auto;

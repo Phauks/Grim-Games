@@ -16,7 +16,7 @@
 		type SourcePrint
 	} from '#lib/features/player/PrintScriptButton.svelte';
 	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Spinner from '#lib/ui/primitives/Spinner.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -305,7 +305,7 @@
 		<!-- Never blank while a script or version loads (Trevor, 2026-10-17); it holds the
 		     sheet's place, which only grows downward when the abilities arrive. -->
 		<p class="loading" role="status" aria-busy="true" data-testid="script-loading">
-			<span class="spin"><Icon name="loading" /></span>
+			<span class="spin"><Spinner /></span>
 			<span>{t('scripts.details.loading')}</span>
 		</p>
 	{/if}
@@ -366,16 +366,5 @@
 	.spin {
 		display: inline-grid;
 		font-size: 1.5rem;
-		animation: spin 1s linear infinite;
-	}
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.spin {
-			animation-duration: 3s;
-		}
 	}
 </style>

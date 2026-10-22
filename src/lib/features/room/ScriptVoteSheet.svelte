@@ -75,7 +75,7 @@
 				</li>
 			{/each}
 		</ul>
-		<Button variant="quiet" onclick={() => host.closeScriptVote()}
+		<Button variant="danger" onclick={() => host.closeScriptVote()}
 			>{t('room.scriptVote.close')}</Button
 		>
 	{:else}
