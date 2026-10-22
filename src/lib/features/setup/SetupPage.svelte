@@ -9,7 +9,7 @@
 		type CharacterId,
 		type CharacterType
 	} from '#lib/core/data/index.ts';
-	import type { Command } from '#lib/core/engine/index.ts';
+	import { BLUFFS_PER_SET, type Command } from '#lib/core/engine/index.ts';
 	import {
 		analyseSelection,
 		canDuplicate,
@@ -37,7 +37,7 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
-	import { DEMON_SET } from '#lib/features/bluffs/bluffs.ts';
+	import { DEMON_SET, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupNav from './SetupNav.svelte';
@@ -181,6 +181,22 @@
 	const offScriptIds = $derived(new Set([...offScript, ...offScriptRules].map((c) => c.id)));
 	/** The Demon's bluffs, chosen below the list, are tagged in it (Trevor, 2026-10-18). */
 	const bluffIds = $derived(new Set(game?.bluffs[DEMON_SET] ?? []));
+	/**
+	 * A Demon bluff from the character's own row (Trevor, 2026-10-22), for the good characters
+	 * a bluff can be (https://wiki.bloodontheclocktower.com/Demon): not Travellers.
+	 */
+	function canBluff(character: Character): boolean {
+		return character.type === 'townsfolk' || character.type === 'outsider';
+	}
+	function bluffBlocked(character: Character): string | undefined {
+		if (!ready) return '';
+		if (bluffIds.has(character.id) || bluffIds.size < BLUFFS_PER_SET) return undefined;
+		return t('setup.bluffsFull', { count: BLUFFS_PER_SET });
+	}
+	function toggleBluff(character: Character) {
+		const next = toggleDemonBluff([...bluffIds], character.id);
+		if (next) send({ type: 'SetBluffs', set: DEMON_SET, characterIds: next });
+	}
 	const listedIds = $derived(
 		new Set([...scriptOrder, ...[...editionTravellers, ...scriptRules].map((c) => c.id)])
 	);
@@ -533,6 +549,8 @@
 						: required.has(character.id)
 							? () => explainRequired(character)
 							: () => setupSelection.toggleLock(character.id)}
+					onBluff={canBluff(character) ? () => toggleBluff(character) : undefined}
+					bluffBlocked={canBluff(character) ? bluffBlocked(character) : undefined}
 					onAddCopy={() =>
 						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
 				/>

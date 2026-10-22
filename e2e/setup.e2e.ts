@@ -945,6 +945,30 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	await expect(page.getByTestId('setup-bluffs')).toHaveCount(0);
 });
 
+test('each good character row sets or clears a Demon bluff, up to three', async ({ page }) => {
+	// Trevor (2026-10-22): a bluff from the character's own row, beside its lock.
+	await selectionFor(page, 8);
+	const row = (id: string) =>
+		page.locator('.row', { has: page.locator(`.main[data-character-id="${id}"]`) });
+	const bluffButton = (id: string) => row(id).getByTestId('bluff-character');
+	const bluffs = page.getByTestId('setup-bluffs');
+	await expect(bluffButton('soldier')).toHaveAccessibleName('Demon bluff: Soldier');
+	await bluffButton('soldier').tap();
+	await expect(bluffButton('soldier')).toHaveAttribute('aria-pressed', 'true');
+	await expect(row('soldier').getByTestId('bluff-tag')).toBeVisible();
+	await expect(bluffs).toContainText('Soldier');
+	await bluffButton('soldier').tap();
+	await expect(row('soldier').getByTestId('bluff-tag')).toHaveCount(0);
+	await expect(bluffs).not.toContainText('Soldier');
+	// Minions and Demons have none.
+	await expect(bluffButton('imp')).toHaveCount(0);
+	for (const id of ['soldier', 'monk', 'saint']) await bluffButton(id).tap();
+	await expect(bluffButton('chef')).toBeDisabled();
+	await expect(bluffButton('chef')).toHaveAttribute('title', '3 bluffs chosen');
+	// One of the three can still come out.
+	await expect(bluffButton('monk')).toBeEnabled();
+});
+
 // Trevor, 2026-10-19: the bag's cog and Share sit on the Draw heading's line, at the right.
 test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 	await selectionFor(page, 5);
