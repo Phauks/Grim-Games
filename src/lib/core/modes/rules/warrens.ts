@@ -24,7 +24,6 @@ export const WARRENS: SpecialRule = {
 		],
 		ruleChanges: [
 			{
-				characters: [],
 				instructions:
 					'While 5 or more players are alive, when an evil player nominates another living evil player, and neither is a Traveller, swap their character tokens straight away. Each learns their new character when they next wake at night.'
 			}
