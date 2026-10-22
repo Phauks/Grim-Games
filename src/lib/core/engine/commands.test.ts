@@ -198,6 +198,24 @@ describe('seats', () => {
 		expect(undo(clockwise).game.seating).toEqual(seats);
 	});
 
+	// Trevor (2026-10-22): every name moves with its player, a seat-number name too.
+	it('gives unnamed seats the seat number they showed before moving them', () => {
+		const fresh = newGame(5);
+		const { ctx, seats } = fresh;
+		const session = run(fresh.session, ctx, {
+			type: 'RenameSeat',
+			seatId: seats[0],
+			playerName: 'Ana'
+		});
+		const s = run(session, ctx, { type: 'RotateSeats', direction: 'clockwise' });
+		expect(s.game.seats[seats[0]].playerName).toBe('Ana');
+		expect(s.game.seats[seats[1]].playerName).toBe('Seat 2');
+		expect(s.game.seating.indexOf(seats[1])).toBe(2);
+		const moved = run(session, ctx, { type: 'MoveSeat', seatId: seats[4], position: 0 });
+		expect(moved.game.seats[seats[4]].playerName).toBe('Seat 5');
+		expect(undo(s).game.seats[seats[1]].playerName).toBeUndefined();
+	});
+
 	it('moves one player to another place, the others closing up', () => {
 		const { session, ctx, seats } = newGame(names);
 		const s = run(session, ctx, { type: 'MoveSeat', seatId: seats[0], position: 3 });

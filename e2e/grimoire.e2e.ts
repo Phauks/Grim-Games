@@ -695,7 +695,8 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 
 	// Rotating moves the players, not the places: the hand-placed spot stays put.
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
-	await expect(seatLabelled(page, 'Seat 1: no name')).toBeAttached();
+	// Seat 8's player is in seat 1 now, and keeps the name "Seat 8" (Trevor, 2026-10-22).
+	await expect(seatLabelled(page, 'Seat 1: Seat 8')).toBeAttached();
 	const turned = await centre(1);
 	expect(Math.abs(turned.x - to.x)).toBeLessThan(4);
 	expect(Math.abs(turned.y - to.y)).toBeLessThan(4);
@@ -1363,6 +1364,8 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: Ana')).toBeAttached();
+	// Every name moves with its player, a seat number too (Trevor, 2026-10-22).
+	await expect(seatLabelled(page, 'Seat 3: Seat 2')).toBeAttached();
 	await toolbar.getByRole('button', { name: 'Rotate players anticlockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
 
