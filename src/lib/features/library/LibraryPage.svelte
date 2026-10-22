@@ -20,7 +20,7 @@
 		/>
 		<PreviewToggle {browser} />
 		<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
-		<AddScript onsaved={() => browser?.openAdded()} />
+		<AddScript onsaved={() => browser?.openAdded()} onadded={(key) => browser?.openAdded(key)} />
 	{/snippet}
 
 	<LibraryBrowser bind:this={browser} />

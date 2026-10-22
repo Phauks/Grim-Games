@@ -117,6 +117,12 @@ export const scripts = {
 
 	// Script check
 	'scripts.check.title': 'Script check',
+	'scripts.kind.title': 'Add to the Library',
+	'scripts.kind.label': 'Add as',
+	'scripts.kind.reason.single-character': 'A single character, not a list.',
+	'scripts.kind.reason.one-homebrew': 'One homebrew character and no script details.',
+	'scripts.kind.reason.only-homebrew': 'No script details and only homebrew characters.',
+	'scripts.kind.reason.script': 'Script details or official characters.',
 	'scripts.check.summary': '{name}: {count} characters.',
 	'scripts.check.nothing': 'Nothing on this script could be loaded.',
 	'scripts.check.notLoaded': 'Not loaded',
