@@ -938,23 +938,27 @@ test('any script beyond the base three is found by typing, or picked in the Libr
 	// Trevor, 2026-10-19: easy to reach with 50 scripts.
 	await page.goto('/new');
 	const script = page.getByRole('radiogroup', { name: 'Script' });
-	// The base three and Custom; the search and Library are Custom's, disabled in place until
-	// it is chosen (Trevor, 2026-10-19).
+	// The base three and Custom; the search and Library are Custom's, and tapping either
+	// chooses Custom (Trevor, backlog L6).
 	await expect(script.getByRole('radio')).toHaveCount(4);
+	const custom = script.getByRole('radio', { name: 'Custom' });
 	const search = page.getByRole('combobox', { name: 'Find a script' });
 	const library = page.getByRole('button', { name: 'Choose from the Library' });
-	await expect(search).toBeDisabled();
-	await expect(library).toBeDisabled();
-	await script.getByText('Custom', { exact: true }).tap();
+	await expect(custom).not.toBeChecked();
 	await search.tap();
+	await expect(custom).toBeChecked();
 	await search.fill('no such script');
 	await expect(page.getByRole('listbox')).toContainText('None');
 	await page.getByRole('option', { name: 'Find more scripts online' }).tap();
 	await expect(page).toHaveURL(/\/scripts$/);
 	await page.goto('/new');
-	await script.getByText('Custom', { exact: true }).tap();
+	await expect(custom).not.toBeChecked();
 	await library.tap();
-	await expect(page.getByRole('dialog', { name: 'Choose from the Library' })).toBeVisible();
+	const browser = page.getByRole('dialog', { name: 'Choose from the Library' });
+	await expect(browser).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(browser).toBeHidden();
+	await expect(custom).toBeChecked();
 });
 
 test('special rules stack on a mode: two at once, a conflict warns, and the game starts anyway', async ({
