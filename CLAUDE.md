@@ -13,6 +13,7 @@
 - No fixed pixel sizes in styles (Trevor, 2026-10-16): layout uses `var(--u)` and the tokens, text uses rem/em, space-filling uses % or viewport units. `npm run lint:px` enforces it; a px that must stay says why in a `/* px-ok: ... */` comment on the same line.
 - When a feature works differently, or not at all, on Android, iOS or desktop, add or update its row in the platform gaps list, `/mnt/project-files/platform-gaps.md` (Trevor, 2026-10-20): what was checked, or the doc it rests on, and any fallback the app shows.
 - Imports inside `src` use `#lib/...` with the `.ts` extension for TypeScript files.
+- The Roadmap page ticks itself off: a PR title names the roadmap IDs it finishes in brackets, such as "Savant info generator (L2)", and new roadmap items go in `src/lib/features/about/roadmap.ts` with their ID. The Changelog lists every merged PR by title, so titles are written for people using the app.
 - Before pushing: `npm run verify` (check, lint, unit tests; the pre-push hook runs it) and the e2e tests you touched. Changes reach `beta` through a PR with green CI; turn on auto-merge so it lands when the checks pass.
 - Worker logs keep query strings (`redact_query_string: false` in wrangler.jsonc). Never put private game state, room secrets or scripts in a query string; use the path or the URL hash (the hash never reaches the server).
 - All work goes on the `beta` branch (Trevor, 2026-10-15); it deploys as the `beta` Worker Preview. `main` is production and only receives releases from `beta`.

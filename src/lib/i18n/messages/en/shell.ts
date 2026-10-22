@@ -62,5 +62,10 @@ export const shell = {
 	'shell.whatChangedCount': 'What changed ({count})',
 	'shell.olderChanges': 'Older changes not listed.',
 	'shell.changelogTitle': `Changelog · ${APP_NAME}`,
-	'shell.unreleased': 'Unreleased'
+	'shell.unreleased': 'Unreleased',
+	'shell.roadmap': 'Roadmap',
+	'shell.roadmapTitle': `Roadmap · ${APP_NAME}`,
+	'shell.roadmapProgress': '{done} of {total} done',
+	'shell.roadmapDone': 'Done',
+	'shell.roadmapPlanned': 'Planned'
 } as const;
