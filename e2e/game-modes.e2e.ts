@@ -496,11 +496,11 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
 	// Required by the mode, so it can't be taken out; its lock is on and says why (Trevor,
 	// 2026-10-22).
-	const boomdandy = page.locator('.choice', {
+	const boomdandy = page.locator('.row', {
 		has: page.locator('.main[data-character-id="boomdandy"]')
 	});
 	await boomdandy.locator('.main').tap();
-	await expect(boomdandy).toHaveAttribute('data-selected', '');
+	await expect(boomdandy.locator('.main')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByText('Must be in the bag')).toBeVisible();
 	await expect(boomdandy.getByTestId('lock-character')).toHaveAttribute('aria-pressed', 'true');
 	await page.getByRole('button', { name: 'Clear selection' }).tap();
