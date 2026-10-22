@@ -904,6 +904,69 @@ test('New game shows each script’s author under its name, and its versions in 
 	await expect(option).toContainText('by Test Author');
 });
 
+test('a BotC Scripts script offers every version it has, and Game info links its page', async ({
+	page
+}) => {
+	// Trevor, backlog L14: "a script with multiple versions shows only the saved version",
+	// and the script name in Game info links to its source page.
+	await page.addInitScript(() => {
+		localStorage.setItem(
+			'grim-games:scripts:quick-play',
+			JSON.stringify({
+				schemaVersion: 1,
+				scriptId: 'quick-play',
+				name: 'Many Versions',
+				json: [{ id: '_meta', name: 'Many Versions', author: 'Test Author' }, 'washerwoman', 'imp'],
+				source: { kind: 'botcscripts', scriptId: 7, version: '2.1' },
+				addedAt: 1,
+				lastUsedAt: 1,
+				revision: 1
+			})
+		);
+	});
+	await page.route('**/api/botcscripts/versions/7', (route) =>
+		route.fulfill({ json: { scriptId: 7, latest: '2.2', versions: ['2.2', '2.1', '2.0'] } })
+	);
+	await page.route('**/api/botcscripts/script/7/2.2', (route) =>
+		route.fulfill({
+			json: {
+				scriptId: 7,
+				versionId: 70,
+				name: 'Many Versions',
+				version: '2.2',
+				author: 'Test Author',
+				content: [{ id: '_meta', name: 'Many Versions', author: 'Test Author' }, 'chef', 'imp']
+			}
+		})
+	);
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Custom', { exact: true }).tap();
+	const version = page.getByRole('combobox', { name: 'Script version' });
+	await expect(version).toContainText('v2.1');
+	await version.tap();
+	await expect(page.getByRole('option')).toHaveText([/v2\.2/, /v2\.1/, /v2\.0/]);
+	await page.getByRole('option', { name: /v2\.2/ }).tap();
+	await expect(version).toContainText('v2.2');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const more = page.getByRole('dialog', { name: 'Grimoire' });
+	const entry = more.getByRole('button', { name: 'Game info' });
+	if (await entry.count()) await entry.tap();
+	else {
+		await page.keyboard.press('Escape');
+		await expect(more).toBeHidden();
+		await page.getByTestId('mode-menu').tap();
+	}
+	const info = page.getByTestId('game-info');
+	await expect(info.getByRole('link', { name: 'Many Versions' })).toHaveAttribute(
+		'href',
+		/\/script\/7\/2\.2/
+	);
+	await expect(info.locator('[data-field="version"] td')).toHaveText('2.2');
+});
+
 test('a custom script without a version shows N/A as its version', async ({ page }) => {
 	// Trevor, 2026-10-19: N/A in the version drop-down, not an empty one.
 	await page.addInitScript(() => {
@@ -1187,4 +1250,41 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.locator('.choice[data-off-script]')).toHaveCount(1);
 	await expect(page.locator('.choice[data-off-script]')).toContainText('Goon');
+});
+
+test('Binary Supernovae asks for one more Demon, and an executed Demon wins it for good', async ({
+	page
+}) => {
+	// Trevor (2026-10-22): https://beardytas.com/garden-of-djinn/binary-supernovae/ on any script.
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await chooseRules(page, 'Binary Supernovae');
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	await page.goto(`/grimoire/${gameId}/setup`);
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+	await expect(page.locator('[data-testid="setup-counts"] [data-type="demon"]')).toContainText(
+		'/ 2'
+	);
+	await noSidewaysScroll(page);
+
+	// On the board, a Demon executed ends it under the rule, even with another Demon alive.
+	await page.goto(`/grimoire/${gameId}`);
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	const line = prompt.locator('[data-rule="demon-executed"]');
+	await expect(line).toContainText('Binary Supernovae');
+	await expect(line).toContainText('Good wins');
 });

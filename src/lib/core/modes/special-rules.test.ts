@@ -250,3 +250,20 @@ describe('+1', () => {
 		expect(conflicts).toEqual([{ ids: ['plus-one', 'infinite-possibilities'], part: 'pool' }]);
 	});
 });
+
+// https://beardytas.com/garden-of-djinn/binary-supernovae/: one more Demon; an executed
+// Demon wins it for good (game-end.test.ts).
+describe('Binary Supernovae', () => {
+	const supernovae = SPECIAL_RULES.find((r) => r.id === 'binary-supernovae')!;
+
+	it("adds a Demon through its line's bracket, as the game's Bootlegger reads it", () => {
+		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: supernovae.parts.text });
+		expect(onBootlegger?.parts.countChanges).toEqual([
+			{ kind: 'delta', type: 'demon', values: [1] }
+		]);
+	});
+
+	it('ends the game on an executed Demon', () => {
+		expect(supernovae.parts.winConditions?.kind).toBe('demon-executed');
+	});
+});

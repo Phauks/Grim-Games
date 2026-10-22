@@ -16,6 +16,7 @@ export const ASSIST_KEYS = [
 	'deadReminderAsk',
 	'demonVotedButton',
 	'gameEndPrompts',
+	'savantInfo',
 	'dayAfterNight',
 	'stackReminders',
 	'scriptTitle',
@@ -73,6 +74,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Demon voted button',
 		description:
 			'While a Flowergirl is in play, a Demon voted button at the top of the day, for her night answer.'
+	},
+	savantInfo: {
+		label: 'Suggest Savant information',
+		description:
+			"One true and one false statement for the Savant, worked out from the grimoire, in the Savant seat's ⋯ menu."
 	},
 	gameEndPrompts: {
 		label: 'Game end prompts',
