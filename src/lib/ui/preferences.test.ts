@@ -75,6 +75,7 @@ describe('parsePreferences', () => {
 			requireName: true,
 			holdToReveal: true,
 			slotMachine: true,
+			tileOrderRandom: true,
 			ownWording: true,
 			hideWatchLink: true,
 			timerSound: 'buzzer',

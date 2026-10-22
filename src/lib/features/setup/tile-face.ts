@@ -184,16 +184,42 @@ function randomMarks(size: number, seed: string): TileMark[] {
 	for (let n = 1; n <= TILE_SYMBOLS.length; n++) pool.push(symbol(n));
 	for (let n = 1; n <= TILE_COLOURS.length; n++) pool.push(colour(n));
 	for (let n = 1; n <= TILE_EMOJI.length; n++) pool.push(emoji(n));
-	const random = seeded(seed);
-	for (let i = pool.length - 1; i > 0; i--) {
-		const j = Math.floor(random() * (i + 1));
-		[pool[i], pool[j]] = [pool[j], pool[i]];
-	}
-	return pool.slice(0, size);
+	return shuffle(pool, seed).slice(0, size);
 }
 
-/** The marks for a bag of `size` tiles, tile 1 first. */
-export function tileMarks(size: number, face: TileFace, seed: string): TileMark[] {
+function shuffle<T>(list: T[], seed: string): T[] {
+	const random = seeded(seed);
+	for (let i = list.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[list[i], list[j]] = [list[j], list[i]];
+	}
+	return list;
+}
+
+/** How many marks a kind has before it repeats; numbers, letters and numerals never do. */
+function kindSize(face: TileFace): number {
+	if (face === 'symbols') return TILE_SYMBOLS.length;
+	if (face === 'colours') return TILE_COLOURS.length;
+	if (face === 'emoji') return TILE_EMOJI.length;
+	return 0;
+}
+
+function mark(face: TileFace, n: number): TileMark {
+	if (face === 'letters') return text(tileLetters(n));
+	if (face === 'roman') return text(tileRoman(n));
+	if (face === 'symbols') return symbol(n);
+	if (face === 'colours') return colour(n);
+	if (face === 'emoji') return emoji(n);
+	return text(String(n));
+}
+
+/**
+ * The marks for a bag of `size` tiles, tile 1 first. `mixed` (Random label order, Trevor
+ * 2026-10-20) shuffles them with `seed`: numbers 1 to `size` in another order, and symbols,
+ * colours and emoji drawn from the whole kind, so colours are not always the first few of
+ * the rainbow.
+ */
+export function tileMarks(size: number, face: TileFace, seed: string, mixed = false): TileMark[] {
 	if (face === 'random') return randomMarks(size, seed);
 	// None (Trevor, 2026-10-22): blank faces; the number still names a tile for screen readers.
 	if (face === 'none')
@@ -202,13 +228,8 @@ export function tileMarks(size: number, face: TileFace, seed: string): TileMark[
 			text: '',
 			name: String(i + 1)
 		}));
-	return Array.from({ length: size }, (_, i) => {
-		const n = i + 1;
-		if (face === 'letters') return text(tileLetters(n));
-		if (face === 'roman') return text(tileRoman(n));
-		if (face === 'symbols') return symbol(n);
-		if (face === 'colours') return colour(n);
-		if (face === 'emoji') return emoji(n);
-		return text(String(n));
-	});
+	const pool = Array.from({ length: mixed ? Math.max(size, kindSize(face)) : size }, (_, i) =>
+		mark(face, i + 1)
+	);
+	return mixed ? shuffle(pool, `${seed}:order`).slice(0, size) : pool;
 }

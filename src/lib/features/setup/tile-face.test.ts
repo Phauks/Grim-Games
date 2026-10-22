@@ -53,4 +53,19 @@ describe('tile marks', () => {
 		expect(names(20, 'random', 'game-1')).toEqual(marks.map((m) => m.name));
 		expect(names(20, 'random', 'game-2')).not.toEqual(marks.map((m) => m.name));
 	});
+
+	it('Random label order mixes a kind, keeps every tile different, and stays put per seed', () => {
+		const numbers = tileMarks(8, 'numbers', 'game-1', true).map((m) => m.name);
+		expect([...numbers].sort((a, b) => Number(a) - Number(b))).toEqual(names(8, 'numbers'));
+		expect(numbers).not.toEqual(names(8, 'numbers'));
+		expect(tileMarks(8, 'numbers', 'game-1', true).map((m) => m.name)).toEqual(numbers);
+		// Colours come from the whole list, not only the first eight of the rainbow.
+		const seeds = ['a', 'b', 'c', 'd', 'e'];
+		const used = new Set(
+			seeds.flatMap((seed) => tileMarks(8, 'colours', seed, true).map((m) => m.name))
+		);
+		expect(used.size).toBeGreaterThan(8);
+		const colours = tileMarks(8, 'colours', 'game-1', true).map((m) => m.name);
+		expect(new Set(colours).size).toBe(8);
+	});
 });
