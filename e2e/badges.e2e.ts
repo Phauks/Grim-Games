@@ -247,6 +247,45 @@ test('the sections list counts tips, examples and jinxes, with lines between', a
 	await expect(dialog.getByTestId('jinx-section').locator('.entry')).toHaveCount(jinxes);
 });
 
+test("a character's type and source open every character of that group", async ({ page }) => {
+	// Trevor, 2026-10-20: a page of all the characters of one source script or the Carousel
+	// and one character type.
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({ json: { parse: { text: '<h2>Summary</h2><p>Sample.</p>' } } })
+	);
+	await page.goto('/reference');
+	await page.getByRole('searchbox').fill('Witch');
+	await page.getByRole('button', { name: 'About the Witch' }).tap();
+	const witch = page.getByRole('dialog', { name: 'Witch' });
+	const line = witch.getByRole('button', { name: 'Minion · Sects & Violets' });
+	await expect(line).toHaveAttribute('title', 'Every Minion from Sects & Violets');
+	await line.tap();
+
+	await expect(page.getByRole('dialog', { name: 'Sects & Violets Minions' })).toBeVisible();
+	// The title follows the choices below.
+	const group = page.getByRole('dialog').filter({ has: page.getByTestId('character-group') });
+	const entries = group.getByTestId('character-group').locator('.entry');
+	await expect(entries).toHaveCount(4);
+	await expect(entries.locator('.badge[data-character-id="witch"]')).toHaveCount(1);
+	// Each with its ability.
+	await expect(
+		entries.locator('.badge[data-character-id="witch"]').locator('xpath=../..')
+	).toContainText('if they nominate tomorrow');
+
+	// The type and source can be changed here.
+	await group.getByRole('combobox', { name: 'Character type' }).tap();
+	await page.getByRole('option', { name: 'Demon', exact: true }).tap();
+	await expect(page.getByRole('dialog', { name: 'Sects & Violets Demons' })).toBeVisible();
+	await expect(entries).toHaveCount(4);
+	await group.getByRole('combobox', { name: 'Source' }).tap();
+	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
+	await expect(entries.locator('.bar .badge')).toHaveAttribute('data-character-id', 'imp');
+
+	// A character there opens its own details, over the list.
+	await entries.locator('.bar .badge').tap();
+	await expect(page.getByRole('dialog', { name: 'Imp' })).toBeVisible();
+});
+
 test('a badge on its own line keeps the in-line height, with a 44px tap area', async ({ page }) => {
 	// One design everywhere (Trevor, 2026-10-20): the script sheet's normal density once drew a
 	// tall pill. The base button rule's 44px minimum must not stretch the badge either.

@@ -128,7 +128,29 @@ export interface TokenAppearance {
 	setupFlower: boolean;
 	/** Whether the setup flower shortens the name on the token to stay clear of it (off, Trevor 2026-10-19). */
 	setupMovesName: boolean;
+	/**
+	 * The highlight on reminders that belong to a held seat or the night's step (Trevor,
+	 * 2026-10-20: "reminder glow effects, on/off and how they look").
+	 */
+	reminderHighlight: boolean;
+	reminderHighlightLook: ReminderHighlightLook;
+	/** The owning character's icon on reminder tokens (Trevor, 2026-10-20: on/off and colour). */
+	reminderIcon: boolean;
+	reminderIconColour: ReminderIconColour;
 }
+
+/** A ring round the reminder, a glow, or both, as a picked seat (SeatToken). */
+export const REMINDER_HIGHLIGHT_LOOKS = ['ring', 'glow', 'both'] as const;
+export type ReminderHighlightLook = (typeof REMINDER_HIGHLIGHT_LOOKS)[number];
+/**
+ * The icon in the alignment of the player who put the token down (red for a turned-evil good
+ * player, Trevor 2026-10-16), in the character's usual alignment, or plain (unaligned).
+ */
+export const REMINDER_ICON_COLOURS = ['player', 'character', 'plain'] as const;
+export type ReminderIconColour = (typeof REMINDER_ICON_COLOURS)[number];
+
+const oneOf = <T extends string>(choices: readonly T[], raw: unknown, fallback: T): T =>
+	choices.includes(raw as T) ? (raw as T) : fallback;
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	colours: {},
@@ -147,7 +169,11 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	inlineNameBadgeScale: 1,
 	reminderLeaves: true,
 	setupFlower: false,
-	setupMovesName: false
+	setupMovesName: false,
+	reminderHighlight: true,
+	reminderHighlightLook: 'ring',
+	reminderIcon: true,
+	reminderIconColour: 'player'
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -189,7 +215,11 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		// owner's icon (Trevor, 2026-10-18).
 		reminderLeaves: input.reminderLeaves !== false,
 		setupFlower: input.setupFlower === true,
-		setupMovesName: input.setupMovesName === true
+		setupMovesName: input.setupMovesName === true,
+		reminderHighlight: input.reminderHighlight !== false,
+		reminderHighlightLook: oneOf(REMINDER_HIGHLIGHT_LOOKS, input.reminderHighlightLook, 'ring'),
+		reminderIcon: input.reminderIcon !== false,
+		reminderIconColour: oneOf(REMINDER_ICON_COLOURS, input.reminderIconColour, 'player')
 	};
 }
 
@@ -198,10 +228,14 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
  * `--reminder-scale`, `--night-badge-scale`) and reminder words (`--reminder-label-width`,
  * `--reminder-label-wrap`, a white-space value, and `--reminder-label-min`, so wrapped
  * words never get cut), names and reminders in text (`--inline-reminder-scale`, the words, `--inline-reminder-icon`,
- * `--inline-reminder-badge`, `--inline-name-text`, `--inline-name-icon`, `--inline-name-badge`)
- * always, and each changed colour.
+ * `--inline-reminder-badge`, `--inline-name-text`, `--inline-name-icon`, `--inline-name-badge`),
+ * the lit reminders' highlight (`--reminder-lit-ring`, `--reminder-lit-glow`) always, and each
+ * changed colour.
  */
 export function tokenVariables(appearance: TokenAppearance): Record<CssVariable, string> {
+	const look = appearance.reminderHighlight ? appearance.reminderHighlightLook : undefined;
+	const ring = look === 'ring' || look === 'both';
+	const glow = look === 'glow' || look === 'both';
 	const variables: Record<CssVariable, string> = {
 		'--token-scale': String(appearance.tokenScale),
 		'--reminder-scale': String(appearance.reminderScale),
@@ -214,7 +248,10 @@ export function tokenVariables(appearance: TokenAppearance): Record<CssVariable,
 		'--inline-reminder-badge': String(appearance.inlineReminderBadgeScale),
 		'--inline-name-text': String(appearance.inlineNameTextScale),
 		'--inline-name-icon': String(appearance.inlineNameIconScale),
-		'--inline-name-badge': String(appearance.inlineNameBadgeScale)
+		'--inline-name-badge': String(appearance.inlineNameBadgeScale),
+		// The highlight on lit reminders: a ring (outline) and a glow (drop-shadow), each or none.
+		'--reminder-lit-ring': ring ? '0.2rem solid var(--accent)' : 'none',
+		'--reminder-lit-glow': glow ? 'drop-shadow(0 0 0.35rem var(--accent))' : 'none'
 	};
 	for (const { key, variables: names } of TOKEN_COLOURS) {
 		const value = appearance.colours[key];

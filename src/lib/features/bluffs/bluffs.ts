@@ -1,4 +1,5 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
+import { BLUFFS_PER_SET } from '#lib/core/engine/index.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { trueCharacter, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
 
@@ -9,6 +10,19 @@ import { trueCharacter, type CharacterLookup, type Game } from '#lib/core/model/
  */
 export const DEMON_SET = 0;
 export const LUNATIC_SET = 1;
+
+/**
+ * The Demon's bluffs with `id` added or taken out, for the bluff button on each of setup's
+ * character rows (Trevor, 2026-10-22). Undefined when adding would pass `max`.
+ */
+export function toggleDemonBluff(
+	current: readonly CharacterId[],
+	id: CharacterId,
+	max = BLUFFS_PER_SET
+): CharacterId[] | undefined {
+	if (current.includes(id)) return current.filter((x) => x !== id);
+	return current.length < max ? [...current, id] : undefined;
+}
 
 /**
  * The characters really in play: each seat's true character, so the Townsfolk a Drunk or
