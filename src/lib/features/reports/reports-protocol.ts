@@ -8,27 +8,13 @@
  *   PATCH  /api/reports/<id>         (admin) { status }           -> 204
  *   DELETE /api/reports/<id>         (admin)                      -> 204
  *
- *   GET    /api/reports/admins                                    -> 200 { admins: Admin[] }
- *   POST   /api/reports/admins       { email }                    -> 204, 404 no such account
- *   DELETE /api/reports/admins       { id }                       -> 204
- *
- * Triage and the admin list need a signed-in admin account (Trevor, 2026-10-18; no admin key
- * since 2026-10-22); otherwise they answer 404. Any signed-in account
- * reads the reports sent from an account (Trevor, 2026-10-19: filter by user, and set yourself
- * as the user easily); what a report was sent with stays with its sender and the admins.
+ * Triage needs a signed-in admin, one whose sign-in email is in the ADMIN_EMAILS secret
+ * (Trevor, 2026-10-22: no admin key, admin is inherent by user type); otherwise it answers 404.
+ * Any signed-in account reads the reports sent from an account and filters them by Reporter
+ * (Trevor, 2026-10-19 and 2026-10-22); what a report was sent with stays with its sender and the
+ * admins.
  */
 export const REPORTS_API = '/api/reports';
-export const REPORTS_ADMINS_API = '/api/reports/admins';
-
-/** An account that may read reports: stored by user id, shown by its current email. */
-export interface Admin {
-	id: string;
-	email: string;
-}
-
-export interface AdminList {
-	admins: Admin[];
-}
 
 /** The same kinds as `.github/ISSUE_TEMPLATE/`. */
 export const REPORT_KINDS = ['bug', 'enhancement', 'rules', 'data', 'question'] as const;

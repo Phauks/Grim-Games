@@ -521,7 +521,7 @@
 		<FilterOptions
 			legend={column.label}
 			hideLegend
-			options={pickOptions(values).map((v) => ({ value: v, label: v === EMPTY ? empty : v }))}
+			options={pickOptions(values, ticked).map((v) => ({ value: v, label: v === EMPTY ? empty : v }))}
 			values={ticked}
 			ontoggle={(v, on) =>
 				setFilter(column.id, {

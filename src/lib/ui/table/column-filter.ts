@@ -40,8 +40,12 @@ export function filterKindOf(values: readonly FilterValue[]): FilterKind {
 }
 
 /** Each different value once, empty ("None") first, then in reading or number order. */
-export function pickOptions(values: readonly FilterValue[]): string[] {
-	const distinct = [...new Set(values.flatMap(items))];
+export function pickOptions(
+	values: readonly FilterValue[],
+	ticked: readonly string[] = []
+): string[] {
+	// A ticked value stays offered though no row has it now, so it can still be unticked.
+	const distinct = [...new Set([...values.flatMap(items), ...ticked])];
 	const numeric = values.some((v) => typeof v === 'number');
 	return distinct.sort((a, b) => {
 		if (a === EMPTY || b === EMPTY) return a === EMPTY ? -1 : 1;
