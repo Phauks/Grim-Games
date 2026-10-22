@@ -135,6 +135,7 @@
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
+	import FoolAsk from './FoolAsk.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -2014,6 +2015,7 @@
 />
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
+<FoolAsk {grimoire} />
 <GameEndPrompt
 	{grimoire}
 	active={!ended && !grimoire.open.viewOnly}
