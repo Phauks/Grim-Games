@@ -1930,12 +1930,12 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	// Whoever it names shows with their character (Trevor, 2026-10-17).
 	await expect(suggested.locator('.because')).toContainText('Seat 2');
 	await expect(suggested.locator('.because [data-character-id="imp"]').first()).toBeVisible();
-	// The logic behind it: the executed player and their true character.
-	await suggested.getByRole('button', { name: 'Why' }).tap();
-	const why = page.getByRole('dialog', { name: 'Why' });
-	await expect(why.getByTestId('why-facts')).toContainText('Seat 2');
-	await expect(why.getByTestId('why-facts').locator('[data-character-id="imp"]')).toBeVisible();
-	await why.getByRole('button', { name: 'Close' }).tap();
+	// The logic behind it, beside it with no Why button (Trevor, 2026-10-22): the executed
+	// player and their true character.
+	await expect(suggested.getByRole('button', { name: 'Why' })).toHaveCount(0);
+	const why = suggested.getByTestId('why-facts');
+	await expect(why).toContainText('Seat 2');
+	await expect(why.locator('[data-character-id="imp"]')).toBeVisible();
 	await suggested.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('Imp');
 });
@@ -3492,9 +3492,10 @@ test('an information step suggests every valid number, and no sets of players', 
 	await expect(rows).toHaveCount(1);
 	await expect(rows.first().locator('.main')).toHaveText('0');
 	await chef.getByRole('button', { name: 'Close' }).tap();
-	// The walk-through's one line counts them instead of naming one.
+	// The walk-through's one line names them in brackets, not a count that reads as the number
+	// to give (Trevor, 2026-10-22).
 	const strip = await walkTo(page, 'Chef');
-	await expect(strip.getByTestId('night-suggested')).toHaveText(/Valid Information: 1 valid/);
+	await expect(strip.getByTestId('night-suggested')).toHaveText('Valid Information: (0)');
 });
 
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({
