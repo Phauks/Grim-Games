@@ -1,36 +1,72 @@
 import type { SpecialRule } from '#lib/core/modes/index.ts';
 
 /**
- * A built-in rule's own switch on New game, under the rule's description in the Special rules
- * dialog (Trevor, 2026-10-22: "add setting for +1"). On, it changes the copy of the rule the
- * game keeps; the rule file itself never changes.
+ * A built-in rule's own switches on New game, under the rule in the Special rules dialog
+ * (Trevor, 2026-10-22: "add setting for +1"; then the same settings for A Script of Infinite
+ * Possibilities). A switch changes the copy of the rule the game keeps; the rule file itself
+ * never changes.
  */
 export interface RuleSwitch {
+	id: string;
 	/** i18n key of the switch's label. */
-	label: 'modes.plusOneNamed';
-	apply: (rule: SpecialRule) => SpecialRule;
+	label: 'modes.switch.named';
+	/** How the rule file plays without the switch being touched. */
+	default: boolean;
+	apply: (rule: SpecialRule, on: boolean) => SpecialRule;
 }
+
+/** The Storyteller's switch choices, by `ruleId:switchId`; a missing one is its default. */
+export type SwitchChoices = Readonly<Record<string, boolean>>;
 
 /** +1's two instructions, both Trevor's wording (2026-10-22); the first is the rule's own. */
 export const PLUS_ONE_NAMED = 'Tell the table which character from off the script is in play.';
+/** Our draft for Infinite Possibilities' named setting; hidden until approved. */
+export const INFINITE_NAMED = 'Tell the table which characters from off the script are in play.';
 
-export const RULE_SWITCHES: Readonly<Record<string, RuleSwitch>> = {
-	'plus-one': {
-		label: 'modes.plusOneNamed',
-		apply: (rule) => ({
-			...rule,
-			parts: {
-				...rule.parts,
-				information: (rule.parts.information ?? []).map((item, i) =>
-					i === 0 ? { ...item, instructions: PLUS_ONE_NAMED } : item
-				)
-			}
-		})
+/**
+ * +1 and Infinite Possibilities are the same part underneath (hidden characters from off the
+ * script, `script-plus-hidden`), so they share these switches (Trevor, 2026-10-22: "internally
+ * they are very similar"; they stay two rules).
+ */
+const EXTRAS: readonly RuleSwitch[] = [
+	{
+		id: 'named',
+		label: 'modes.switch.named',
+		default: false,
+		apply: (rule, on) => {
+			if (!on) return rule;
+			const text = rule.id === 'plus-one' ? PLUS_ONE_NAMED : INFINITE_NAMED;
+			const [first, ...rest] = rule.parts.information ?? [];
+			const pool = rule.parts.pool;
+			return {
+				...rule,
+				parts: {
+					...rule.parts,
+					// Naming them says more than a range, so no range is offered.
+					...(pool?.kind === 'script-plus-hidden'
+						? { pool: { ...pool, announceRange: false } }
+						: {}),
+					information: [{ ...first, instructions: text }, ...rest]
+				}
+			};
+		}
 	}
+];
+
+export const RULE_SWITCHES: Readonly<Record<string, readonly RuleSwitch[]>> = {
+	'plus-one': EXTRAS,
+	'infinite-possibilities': EXTRAS
 };
 
-/** The rule as the game plays it, with its switch applied when on. */
-export function switched(rule: SpecialRule, on: readonly string[]): SpecialRule {
-	const sw = RULE_SWITCHES[rule.id];
-	return sw && on.includes(rule.id) ? sw.apply(rule) : rule;
+/** Whether a rule's switch is on. */
+export function switchOn(choices: SwitchChoices, ruleId: string, sw: RuleSwitch): boolean {
+	return choices[`${ruleId}:${sw.id}`] ?? sw.default;
+}
+
+/** The rule as the game plays it, with its switches applied. */
+export function switched(rule: SpecialRule, choices: SwitchChoices): SpecialRule {
+	return (RULE_SWITCHES[rule.id] ?? []).reduce(
+		(r, sw) => sw.apply(r, switchOn(choices, rule.id, sw)),
+		rule
+	);
 }

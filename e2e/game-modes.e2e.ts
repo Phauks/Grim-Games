@@ -26,9 +26,11 @@ async function chooseRules(page: Page, ...names: string[]) {
 		.getByRole('button', { name: /^Special rules/ })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	// The list, not the conflicts at the top, which repeat a rule's switch.
+	const list = dialog.getByTestId('special-rules');
 	for (const name of names) {
-		await dialog.getByText(name, { exact: true }).tap();
-		await expect(dialog.getByRole('checkbox', { name, includeHidden: true })).toBeChecked();
+		await list.getByText(name, { exact: true }).tap();
+		await expect(list.getByRole('checkbox', { name, includeHidden: true })).toBeChecked();
 	}
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
@@ -1049,11 +1051,35 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 		.getByRole('button', { name: /^Special rules/ })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
-	await expect(dialog.getByTestId('rule-conflicts')).toContainText(
-		'Whale Buffet and A Script of Infinite Possibilities both set Character pool'
+	// Conflicts come first, in plain words, with each side's description, Inspect and switch
+	// (Trevor, 2026-10-22).
+	const conflicts = dialog.getByTestId('rule-conflicts');
+	await expect(conflicts).toContainText(
+		'Both change “Character pool” in different ways, so only one can apply.'
 	);
+	await expect(conflicts).toContainText('Game mode: Whale Buffet');
+	await expect(conflicts.getByRole('button', { name: 'Inspect Whale Buffet' })).toBeVisible();
+	const infinite = conflicts.getByRole('checkbox', {
+		name: 'A Script of Infinite Possibilities',
+		includeHidden: true
+	});
+	await expect(infinite).toBeChecked();
+	const conflictsBox = await conflicts.boundingBox();
+	const listBox = await dialog.getByTestId('special-rules').boundingBox();
+	expect(conflictsBox!.y).toBeLessThan(listBox!.y);
+	// Turning a side off there settles it.
+	await conflicts.getByText('A Script of Infinite Possibilities', { exact: true }).tap();
+	await expect(conflicts).toHaveText('None');
+	await dialog
+		.getByTestId('special-rules')
+		.getByText('A Script of Infinite Possibilities', { exact: true })
+		.tap();
+	await expect(conflicts).toContainText('Game mode: Whale Buffet');
 	// Inspect shows a rule's own parts and its rule file.
-	await dialog.getByRole('button', { name: 'Inspect A Script of Infinite Possibilities' }).tap();
+	await dialog
+		.getByTestId('special-rules')
+		.getByRole('button', { name: 'Inspect A Script of Infinite Possibilities' })
+		.tap();
 	const inspect = page.getByRole('dialog', { name: 'A Script of Infinite Possibilities' });
 	await expect(inspect.locator('li[data-part="pool"]')).toHaveAttribute('data-status', 'runs');
 	await expect(inspect.getByRole('button', { name: 'Rule file', exact: true })).toBeVisible();
@@ -1264,6 +1290,24 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await expect(page.locator('.row[data-dashed]')).toContainText('Goon');
 });
 
+test('Special rules has a search box', async ({ page }) => {
+	// Trevor (2026-10-22): "add search bar for special rules, since it may grow large over time".
+	await page.goto('/new');
+	await modesPanel(page)
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const list = dialog.getByTestId('special-rules');
+	await dialog.getByRole('searchbox', { name: 'Search special rules' }).fill('supernova');
+	await expect(list.locator('li')).toHaveCount(1);
+	await expect(list).toContainText('Binary Supernovae');
+	await dialog.getByRole('searchbox', { name: 'Search special rules' }).fill('zzzz');
+	await expect(list).toHaveText('None');
+	await dialog.getByRole('button', { name: 'Clear' }).tap();
+	await expect(list.getByText('+1', { exact: true })).toBeVisible();
+	await noSidewaysScroll(page);
+});
+
 test('+1 has a switch for naming its character, shown in its instructions', async ({ page }) => {
 	// Trevor (2026-10-22): "add setting for +1", with his two instructions.
 	await page.goto('/new');
@@ -1271,10 +1315,14 @@ test('+1 has a switch for naming its character, shown in its instructions', asyn
 		.getByRole('button', { name: /^Special rules/ })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
-	const named = dialog.getByRole('checkbox', { name: 'Name the character', includeHidden: true });
+	const plusOne = dialog
+		.getByTestId('special-rules')
+		.locator('li')
+		.filter({ has: page.getByText('+1', { exact: true }) });
+	const named = plusOne.getByRole('checkbox', { name: 'Name the characters', includeHidden: true });
 	// Always there, so nothing moves; usable once +1 is on.
 	await expect(named).toBeDisabled();
-	await dialog.getByText('+1', { exact: true }).tap();
+	await plusOne.getByText('+1', { exact: true }).tap();
 	await expect(named).toBeEnabled();
 	const inspectPlusOne = async (text: string) => {
 		await dialog.getByRole('button', { name: 'Inspect +1' }).tap();
@@ -1284,7 +1332,7 @@ test('+1 has a switch for naming its character, shown in its instructions', asyn
 		await expect(inspect).toBeHidden();
 	};
 	await inspectPlusOne('Tell the table that one character from off the script is in play.');
-	await dialog.getByText('Name the character', { exact: true }).tap();
+	await plusOne.getByText('Name the characters', { exact: true }).tap();
 	await expect(named).toBeChecked();
 	await inspectPlusOne('Tell the table which character from off the script is in play.');
 	await noSidewaysScroll(page);

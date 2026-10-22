@@ -54,7 +54,10 @@ describe('approved Storyteller instructions', () => {
 			const mode = builtIn.find((m) => m.id === id);
 			// A rule with a switch has a text for each setting of it.
 			const versions = mode
-				? [mode, ...(RULE_SWITCHES[mode.id] ? [RULE_SWITCHES[mode.id].apply(mode as never)] : [])]
+				? [
+						mode,
+						...(RULE_SWITCHES[mode.id] ?? []).map((sw) => sw.apply(mode as never, !sw.default))
+					]
 				: [];
 			const texts = versions.map((m) => {
 				const value: unknown = m.parts[part as never];
