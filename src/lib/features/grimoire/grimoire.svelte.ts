@@ -7,6 +7,7 @@ import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { reminderFitWarning, warningText } from './board.ts';
+import { reminderKey } from './reminders.ts';
 import {
 	DEFAULT_SEAT_LAYOUT,
 	type SeatLayout,
@@ -14,6 +15,7 @@ import {
 } from '#lib/ui/seating/seat-layout.ts';
 import type { Reminder, ReminderId } from '#lib/core/model/index.ts';
 import {
+	bankCopies,
 	forgetUpsideDownMarks,
 	nightViews,
 	pastNames,
@@ -36,6 +38,7 @@ export class Grimoire {
 		this.layout = seatLayouts.read(open.game.gameId);
 		this.reminderSpots = reminderSpots.read(open.game.gameId);
 		this.copies = reminderCopyIds.read(open.game.gameId);
+		this.bankCopies = bankCopies.read(open.game.gameId);
 		this.nightView = nightViews.read(open.game.gameId);
 		this.nightDone = this.nightView.done;
 		this.nightDay = this.nightView.day ?? open.game.pastDays.length;
@@ -165,6 +168,23 @@ export class Grimoire {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		this.copies = new Set([...this.copies, reminderId]);
 		reminderCopyIds.write(this.game.gameId, this.copies);
+	}
+
+	/**
+	 * Copies added to the reminder bank by key (device-only, `bankCopies`): a Duplicate
+	 * reminder lands in the bank (Trevor, 2026-10-20). Replaced, never changed in place.
+	 */
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	bankCopies = $state.raw<ReadonlyMap<string, number>>(new Map());
+
+	/** Adds one more copy of a reminder to the bank. */
+	addBankCopy(reminder: Reminder): void {
+		const key = reminderKey(reminder);
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const next = new Map(this.bankCopies);
+		next.set(key, (next.get(key) ?? 0) + 1);
+		this.bankCopies = next;
+		bankCopies.write(this.game.gameId, next);
 	}
 
 	setReminderSpot(reminderId: ReminderId, at: SeatPoint): void {

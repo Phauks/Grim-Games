@@ -19,6 +19,8 @@
 		orphan: boolean;
 		/** Highlighted while a reminder is dragged over it. */
 		dropTarget?: boolean;
+		/** The seat a dragged reminder is being moved from (Trevor, 2026-10-20): a dashed ring. */
+		dragFrom?: boolean;
 		/**
 		 * While a reminder is picked up, chosen or its night step walked (Trevor, 2026-10-18):
 		 * the seat whose character it belongs to (`source`), a seat it may go on (`target`), or
@@ -47,6 +49,7 @@
 		size,
 		orphan,
 		dropTarget = false,
+		dragFrom = false,
 		role,
 		misfit = false,
 		nightNumbers,
@@ -159,6 +162,7 @@
 	class="seat"
 	data-dead={seat.dead || undefined}
 	data-drop={dropTarget || undefined}
+	data-from={dragFrom || undefined}
 	data-role={role}
 	data-misfit={misfit || undefined}
 	data-testid="seat"
@@ -214,6 +218,12 @@
 	}
 	.seat[data-misfit] :global(.disc) {
 		opacity: 0.4;
+	}
+	/* Where the dragged reminder came from, unlike every other seat (Trevor, 2026-10-20). */
+	.seat[data-from] :global(.disc) {
+		outline: calc(0.15 * var(--u)) dashed var(--on-surface);
+		outline-offset: calc(0.25 * var(--u));
+		border-radius: 50%;
 	}
 	.seat[data-drop] :global(.disc) {
 		outline: 3px solid var(--focus);

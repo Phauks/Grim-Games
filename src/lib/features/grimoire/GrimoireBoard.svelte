@@ -1672,6 +1672,7 @@
 							reminderDrag.target === seat.seatId &&
 							reminderDrag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
+					dragFrom={reminderDrag !== undefined && reminderDrag.from === seat.seatId}
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
 					onTap={(part) =>
