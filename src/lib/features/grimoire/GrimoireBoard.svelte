@@ -2044,7 +2044,7 @@
 				Reopen game
 			</Button>
 		{:else}
-			<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
+			<Button variant="danger" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
 				End game
 			</Button>
 		{/if}
@@ -2834,7 +2834,7 @@
 		border: 0;
 		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
 		   2026-10-19). */
-		border-top: 0.125rem solid var(--border);
+		border-top: 0.125rem solid var(--button-edge);
 	}
 	.rule-detail {
 		display: flex;

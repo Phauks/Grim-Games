@@ -116,7 +116,7 @@
 	a[aria-current='page'] {
 		background: var(--surface-raised);
 		color: var(--heading);
-		box-shadow: inset 3px 0 0 var(--accent);
+		box-shadow: inset 3px 0 0 var(--accent-edge);
 	}
 	@media (hover: hover) and (pointer: fine) {
 		a:not([aria-current='page']):hover,

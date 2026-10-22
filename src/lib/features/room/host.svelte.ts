@@ -21,6 +21,11 @@ import {
 	type SharedGrimoire,
 	type VoteTally
 } from '#lib/core/sync/room.ts';
+import type {
+	ScriptVoteKind,
+	ScriptVoteOption,
+	ScriptVoteTally
+} from '#lib/core/sync/script-vote.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import {
@@ -63,6 +68,8 @@ export class RoomHost {
 	requests = $state.raw<RoomRequest[]>([]);
 	/** The spectators' open vote and its count (Specters), if one is open. */
 	vote = $state.raw<VoteTally>();
+	/** The room's vote on the next script and its count (plan R1), if one is open. */
+	scriptVote = $state.raw<ScriptVoteTally>();
 	/** True when opening a room failed, e.g. offline. */
 	problem = $state(false);
 	/** True while a room is being opened. */
@@ -83,6 +90,7 @@ export class RoomHost {
 	#grimoire: SharedGrimoire | undefined;
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
+	#choosing = false;
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -323,6 +331,34 @@ export class RoomHost {
 	}
 
 	/**
+	 * Phones show the Storyteller is choosing the next script while New game is open, once
+	 * the game on the table is over (or before there is one), never in the middle of one.
+	 */
+	setChoosing(on: boolean): void {
+		const between =
+			!this.#published || (this.#ended?.gameId === this.#published.gameId && !!this.#ended.ended);
+		if (on && !between) return;
+		this.#choosing = on;
+		this.#socket?.send({ type: 'choosing', on });
+	}
+
+	/** Opens a vote on the next script, replacing any open one. False when offline. */
+	openScriptVote(kind: ScriptVoteKind, options: ScriptVoteOption[]): boolean {
+		return (
+			this.#socket?.send({
+				type: 'open-script-vote',
+				voteId: crypto.randomUUID(),
+				kind,
+				options
+			}) ?? false
+		);
+	}
+
+	closeScriptVote(): void {
+		this.#socket?.send({ type: 'close-script-vote' });
+	}
+
+	/**
 	 * Tells the room the game is over (End game), or running again (`undefined`, Reopen). The
 	 * room stays open, so its phones see the end; kept and sent again after a reconnect.
 	 */
@@ -358,6 +394,7 @@ export class RoomHost {
 			this.members = message.members;
 			this.requests = message.requests;
 			this.vote = message.vote;
+			this.scriptVote = message.scriptVote;
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
 		} else if (message.type === 'refused' && message.reason === 'too-old') {
@@ -389,6 +426,7 @@ export class RoomHost {
 	#resend(): void {
 		if (this.#published) this.#socket?.send({ type: 'publish', ...this.#published });
 		this.#sendEnded();
+		if (this.#choosing) this.#socket?.send({ type: 'choosing', on: true });
 		if (this.#script) this.#socket?.send({ type: 'script', script: this.#script });
 		// While a stored key's hash is still being worked out, say nothing about viewers.
 		if (!this.viewerKey) this.#socket?.send({ type: 'viewers', keyHash: null });
@@ -415,6 +453,7 @@ export class RoomHost {
 		this.members = [];
 		this.requests = [];
 		this.vote = undefined;
+		this.scriptVote = undefined;
 		this.viewerKey = undefined;
 		this.viewerPassword = undefined;
 		this.revealedGame = undefined;
