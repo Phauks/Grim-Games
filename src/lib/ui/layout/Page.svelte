@@ -138,6 +138,10 @@
 		min-width: 0;
 		margin: 0;
 		font-size: var(--page-title-size);
+		/* The narrowest phone at the largest text, with the hamburger beside it: a long title
+		   breaks (hyphenated where the browser can) rather than push the page sideways. */
+		overflow-wrap: anywhere;
+		hyphens: auto;
 	}
 	.start {
 		display: flex;

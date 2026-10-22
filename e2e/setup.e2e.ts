@@ -1051,7 +1051,9 @@ test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 		const middle = box.y + box.height / 2;
 		expect(middle).toBeGreaterThan(title.y);
 		expect(middle).toBeLessThan(title.y + title.height);
-		expect(box.x).toBeGreaterThan(title.x);
+		// The hamburger comes before the title (no app header); the cog and Share after it.
+		if ((await button.getAttribute('aria-label')) === 'Menu') expect(box.x).toBeLessThan(title.x);
+		else expect(box.x).toBeGreaterThan(title.x);
 	}
 	await noSidewaysScroll(page);
 });
