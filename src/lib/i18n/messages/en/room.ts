@@ -1,9 +1,9 @@
 import { APP_NAME } from '#lib/core/app-name.ts';
 
-/** Live rooms: the Storyteller's "Players' phones" page and the players' join pages. */
+/** Live rooms: the Storyteller's Share page and the players' join pages. */
 export const room = {
 	// Storyteller's page
-	'room.title': "Players' phones",
+	'room.title': 'Share',
 	'room.back': 'Grimoire',
 	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',
@@ -63,6 +63,9 @@ export const room = {
 	'room.waiting': 'Waiting for the Storyteller: {name}, {seat}.',
 	'room.seated': 'You are in {seat} as {name}.',
 	'room.unseated': 'You are in the room as {name}, without a seat yet.',
+	'room.gameOver': 'Game over',
+	'room.gameOverGood': 'Game over: Good won',
+	'room.gameOverEvil': 'Game over: Evil won',
 	'room.choose': 'Choose your seat and type your name, then ask the Storyteller.',
 	'room.seatLower': 'seat {number}',
 	'room.anySeatLower': 'any seat',

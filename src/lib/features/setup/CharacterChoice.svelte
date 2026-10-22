@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
-	import { prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { isBagDisabled } from '#lib/core/rules/bag-characters.ts';
 
@@ -44,254 +42,119 @@
 	/** In play, but its own token stays out of the bag (Drunk, Marionette, Lil' Monsta). */
 	const outOfBag = $derived(selected && isBagDisabled(character));
 	const uid = $props.id();
-	// The character's page opens from its icon (Trevor, 2026-10-18); made on first use.
-	let infoUsed = $state(false);
-	let infoOpen = $state(false);
+	/** The lock chooses an unselected character as well as locking it (Trevor, 2026-10-20). */
+	function lock() {
+		if (!selected) onToggle();
+		onLock?.();
+	}
+	// The accessible name; the row shows the name itself beside its token.
+	// eslint-disable-next-line grim/names-as-badges -- accessible name (aria-label) only
+	const label = $derived(copies > 1 ? `${character.name}, ${copies} copies` : character.name);
 </script>
 
 <!--
-	One selectable character. Tapping its icon opens its character page; tapping the rest
-	toggles it (or removes one copy when there are several); the + button adds a copy. Every mark has a fixed slot, so selecting never moves anything.
+	One selectable character, drawn by the shared CharacterRow. Tapping its icon opens its
+	character page; tapping the rest toggles it (or removes one copy when there are several);
+	the + button adds a copy. Every mark has a fixed slot, so selecting never moves anything.
 -->
-<div
-	class="choice"
-	data-selected={selected ? '' : undefined}
-	data-off-script={offScript ? '' : undefined}
-	data-type={character.type}
+<CharacterRow
+	{character}
+	tokenSize={44}
+	info
+	pressed={selected}
+	dashed={offScript}
+	{label}
+	describedby={bluff ? `${uid}-bluff` : outOfBag ? `${uid}-out` : undefined}
+	onclick={onToggle}
 >
-	<button
-		type="button"
-		class="info"
-		aria-haspopup="dialog"
-		aria-label={t('setup.characterInfo', { name: character.name })}
-		onpointerdown={() => prefetchWikiPage(character)}
-		onclick={() => {
-			infoUsed = true;
-			infoOpen = true;
-		}}
-	>
-		<CharacterToken {character} alignment={defaultAlignment(character.type)} size={44} />
-	</button>
-	<button
-		type="button"
-		class="main"
-		aria-pressed={selected}
-		aria-label={copies > 1 ? `${character.name}, ${copies} copies` : character.name}
-		aria-describedby={bluff ? `${uid}-bluff` : outOfBag ? `${uid}-out` : undefined}
-		data-character-id={character.id}
-		onclick={onToggle}
-	>
+	{#snippet hidden()}
 		{#if bluff}<span id="{uid}-bluff" class="visually-hidden"
 				>{selected ? t('setup.bluffInPlay') : t('setup.bluff')}</span
 			>{/if}
 		{#if outOfBag}<span id="{uid}-out" class="visually-hidden">{t('setup.notInBagLong')}</span>{/if}
-		<span class="text">
-			<span class="title">
-				<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
-				<span class="name">{character.name}</span>
-				{#if offScript}<span class="tag">{t('setup.offScript')}</span>{/if}
-			</span>
-			<span class="ability">{character.ability}</span>
-		</span>
-		<span class="marks" aria-hidden="true">
-			<span
-				class="jinx"
-				data-testid="jinx-partners"
-				title={jinxedWith.length
-					? t('setup.jinxedWith', { names: jinxedWith.map((p) => p.name).join(', ') })
-					: undefined}
-				>{#each jinxedWith as p (p.id)}{@const src = iconUrl(
-						p,
-						defaultAlignment(p.type)
-					)}{#if src}<img
-							{src}
-							alt=""
-							data-partner={p.id}
-							{@attach iconFallback(fallbackIconUrl(p))}
-						/>{:else}<span class="dot" data-partner={p.id}></span>{/if}{/each}</span
-			>
-			<span class="copies">{copies > 1 ? `×${copies}` : ''}</span>
-			<!--
-				A Demon bluff shows a red badge where the check goes (Trevor, 2026-10-18); one also
-				chosen for the bag adds a warning, not a lock.
-			-->
-			<span class="check"
-				>{#if bluff}<span class="bluff" data-testid="bluff-tag"
-						>{#if selected}<Icon name="warning" />{/if}{t('setup.bluffShort')}</span
-					>{:else if selected}{#if outOfBag}<span class="out" data-testid="not-in-bag"
-							>{t('setup.notInBag')}</span
-						>{/if}<Icon name="check" />{/if}</span
-			>
-		</span>
-	</button>
-	<!-- Always in place, disabled until selected, so selecting moves nothing. -->
-	{#if onLock}
-		<button
-			type="button"
-			class="lock"
-			aria-pressed={selected && locked}
-			aria-label={t('setup.lockFor', { name: character.name })}
-			title={t('setup.lockFor', { name: character.name })}
-			disabled={!selected}
-			data-testid="lock-character"
-			onclick={onLock}><Icon name="lock" /></button
+	{/snippet}
+	{#snippet afterName()}
+		{#if offScript}<span class="tag">{t('setup.offScript')}</span>{/if}
+	{/snippet}
+	{#snippet marks()}
+		<span
+			class="jinx"
+			data-testid="jinx-partners"
+			title={jinxedWith.length
+				? t('setup.jinxedWith', { names: jinxedWith.map((p) => p.name).join(', ') })
+				: undefined}
+			>{#each jinxedWith as p (p.id)}{@const src = iconUrl(
+					p,
+					defaultAlignment(p.type)
+				)}{#if src}<img
+						{src}
+						alt=""
+						data-partner={p.id}
+						{@attach iconFallback(fallbackIconUrl(p))}
+					/>{:else}<span class="dot" data-partner={p.id}></span>{/if}{/each}</span
 		>
-	{/if}
-	{#if duplicates}
-		<button
-			type="button"
-			class="add"
-			aria-label={t('setup.addAnotherOf', { name: character.name })}
-			title={t('setup.addAnother')}
-			onclick={onAddCopy}><Icon name="add" /></button
+		<span class="copies">{copies > 1 ? `×${copies}` : ''}</span>
+		<!--
+			A Demon bluff shows a red badge where the check goes (Trevor, 2026-10-18); one also
+			chosen for the bag adds a warning, not a lock. The tags overhang to the left of the
+			check's fixed slot rather than widening it, so the name never wraps on choosing.
+		-->
+		<span class="check"
+			>{#if bluff}<span class="bluff" data-testid="bluff-tag"
+					>{#if selected}<Icon name="warning" />{/if}{t('setup.bluffShort')}</span
+				>{:else if selected}{#if outOfBag}<span class="out" data-testid="not-in-bag"
+						>{t('setup.notInBag')}</span
+					>{/if}<Icon name="check" />{/if}</span
 		>
-	{/if}
-</div>
-{#if infoUsed}<CharacterDialog
-		bind:open={infoOpen}
-		{character}
-		icon={iconUrl(character, defaultAlignment(character.type))}
-	/>{/if}
+	{/snippet}
+	{#snippet end()}
+		<!-- Always in place and usable: on an unselected character it chooses it too. -->
+		{#if onLock}
+			<button
+				type="button"
+				class="lock"
+				aria-pressed={selected && locked}
+				aria-label={t('setup.lockFor', { name: character.name })}
+				title={t('setup.lockFor', { name: character.name })}
+				data-testid="lock-character"
+				onclick={lock}><Icon name="lock" /></button
+			>
+		{/if}
+		{#if duplicates}
+			<button
+				type="button"
+				class="add"
+				aria-label={t('setup.addAnotherOf', { name: character.name })}
+				title={t('setup.addAnother')}
+				onclick={onAddCopy}><Icon name="add" /></button
+			>
+		{/if}
+	{/snippet}
+</CharacterRow>
 
 <style>
-	.choice {
-		display: flex;
-		align-items: stretch;
-		border-radius: var(--radius-md);
-		background: var(--choice-background);
-		color: var(--choice-color);
-		box-shadow: inset 0 0 0 1px var(--border);
-	}
-	/*
-	 * Selected looks the same however it was chosen (tap, Random, reload): the ring is drawn
-	 * above the row, so a hover or a phone's sticky tap highlight can't paint over it, and it
-	 * is not red, which reads as an error (Trevor, 2026-10-16).
-	 */
-	.choice {
-		position: relative;
-	}
-	/* Not on the script: a dashed edge and a tag beside the name. */
-	.choice[data-off-script] {
-		box-shadow: none;
-		outline: 2px dashed var(--border);
-		outline-offset: -2px;
-	}
-	/* The name, then the off-script tag on the same line when it fits. */
-	.title {
-		grid-column: 1;
-		grid-row: 1;
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0 var(--space-2);
-		min-width: 0;
-	}
-	.tag {
+	.tag,
+	.bluff,
+	.out {
 		padding: 0 0.4em;
 		border-radius: var(--radius-full);
-		background: var(--surface);
-		color: var(--on-surface-muted);
 		font-family: var(--font-control);
 		font-size: 0.7rem;
 		font-weight: 600;
-		vertical-align: middle;
+		line-height: 1.4;
+		white-space: nowrap;
+	}
+	.tag,
+	.out {
+		background: var(--surface);
+		color: var(--on-surface-muted);
 	}
 	.bluff {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.2em;
-		padding: 0 0.4em;
-		border-radius: var(--radius-full);
 		background: var(--evil);
 		color: var(--on-evil);
-		font-family: var(--font-control);
-		font-size: 0.7rem;
-		font-weight: 600;
-		white-space: nowrap;
-	}
-	.choice[data-selected] {
-		background: var(--choice-selected-background);
-	}
-	.choice[data-selected]::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		box-shadow: inset 0 0 0 2px var(--focus);
-		pointer-events: none;
-	}
-	/*
-	 * Token | name | marks on the first line; the ability runs under the name and the marks,
-	 * so the marks' reserved slot doesn't narrow the ability text (Trevor: it broke early).
-	 */
-	.main {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		flex: 1;
-		align-items: start;
-		column-gap: var(--space-2);
-		min-width: 0;
-		min-height: var(--tap-target);
-		padding: var(--space-1) var(--space-2);
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-		touch-action: manipulation;
-	}
-	@media (hover: hover) {
-		.main:hover {
-			background: var(--surface-selected);
-			border-radius: var(--radius-md);
-		}
-	}
-	/* The icon is its own tap target: the character's page, never a toggle. */
-	.info {
-		display: grid;
-		place-items: start center;
-		flex: none;
-		min-width: var(--tap-target);
-		padding: var(--space-1) 0 var(--space-1) var(--space-2);
-		border: 0;
-		border-radius: var(--radius-md);
-		background: none;
-		color: inherit;
-		cursor: pointer;
-		touch-action: manipulation;
-	}
-	@media (hover: hover) {
-		.info:hover {
-			background: var(--surface-selected);
-		}
-	}
-	.text {
-		display: contents;
-	}
-	.name {
-		min-width: 0;
-		font-family: var(--font-character);
-		font-weight: var(--font-character-weight);
-		overflow-wrap: anywhere;
-	}
-	.ability {
-		grid-column: 1 / 3;
-		grid-row: 2;
-		font-family: var(--font-ability);
-		font-size: 0.8rem;
-		line-height: 1.3;
-		opacity: 0.9;
-	}
-	.marks {
-		grid-column: 2;
-		grid-row: 1;
-		display: grid;
-		grid-template-columns: 2em 2em minmax(1.25em, auto);
-		align-items: center;
-		justify-items: center;
-		flex: none;
-		font-weight: 700;
 	}
 	/* A fixed slot: a second partner overlaps the first, so nothing beside it moves. */
 	.jinx {
@@ -310,55 +173,53 @@
 	.jinx > * + * {
 		margin-inline-start: -0.8em;
 	}
-	/* Selected, but its token stays out of the bag (Trevor, 2026-10-19): a tag by the check. */
-	.out {
-		margin-inline-end: 0.3em;
-		padding: 0 0.4em;
-		border-radius: var(--radius-full);
-		background: var(--surface);
-		color: var(--on-surface-muted);
-		font-family: var(--font-control);
-		font-size: 0.7rem;
-		font-weight: 600;
-		white-space: nowrap;
+	.copies {
+		width: 2em;
+		text-align: center;
 	}
+	/*
+	 * The check's slot is one icon wide; a "Not in bag" or bluff tag hangs off its left over
+	 * the empty copies slot instead of widening it.
+	 */
+	.check {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 1.25em;
+	}
+	.check > :global(svg) {
+		width: 1.1em;
+		height: 1.1em;
+	}
+	.bluff,
+	.out {
+		position: absolute;
+		inset-inline-end: 0;
+	}
+	.out {
+		inset-inline-end: 1.4em;
+	}
+	.lock,
 	.add {
 		display: grid;
 		place-items: center;
-		flex: none;
 		width: var(--tap-target);
-		border: 0;
-		border-inline-start: 1px solid var(--border);
-		background: none;
-		color: inherit;
 		cursor: pointer;
 	}
-	.add:hover {
-		background: var(--surface-selected);
+	.add {
+		border-inline-start: 1px solid var(--border);
 	}
 	.lock {
-		display: grid;
-		place-items: center;
-		flex: none;
-		width: var(--tap-target);
-		border: 0;
-		background: none;
 		color: var(--on-surface-muted);
-		cursor: pointer;
 		opacity: 0.45;
-		touch-action: manipulation;
 	}
 	.lock[aria-pressed='true'] {
 		color: var(--focus);
 		opacity: 1;
 	}
-	.lock:disabled {
-		opacity: 0.15;
-		cursor: default;
-	}
+	/* The row's hover covers the lock; the lock only brightens (Trevor: one hover). */
 	@media (hover: hover) {
-		.lock:not(:disabled):hover {
-			background: var(--surface-selected);
+		.lock:hover {
 			opacity: 1;
 		}
 	}

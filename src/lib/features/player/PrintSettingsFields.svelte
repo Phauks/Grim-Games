@@ -6,6 +6,7 @@
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import {
 		MAX_PRINT_COPIES,
+		PRINT_BACKS,
 		PRINT_COLUMNS,
 		PRINT_DEFAULTS,
 		PRINT_DENSITIES,
@@ -67,9 +68,11 @@
 		checked={print.jinxes}
 		onChange={(jinxes) => set({ jinxes })}
 	/>
-	<SettingToggle
+	<SettingSelect
 		label={t('player.printBack')}
-		checked={print.back}
+		value={print.back}
+		options={PRINT_BACKS.map((value) => ({ value, label: t(`player.printBack.${value}`) }))}
+		defaultValue={PRINT_DEFAULTS.back}
 		onChange={(back) => set({ back })}
 	/>
 </div>

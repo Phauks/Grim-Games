@@ -492,18 +492,20 @@
 	 * A script just added opens straight away, so its folder and tags can be set. Added while a
 	 * folder is open, it goes in that folder, as a file saved there would.
 	 */
-	export function openAdded() {
+	export function openAdded(key?: string) {
+		if (key) return openNew(key);
 		let newest: (typeof scripts)[number] | undefined;
 		for (const row of scripts) {
 			const used = row.listing.saved?.lastUsedAt ?? -1;
 			if (used > (newest?.listing.saved?.lastUsedAt ?? -1)) newest = row;
 		}
-		if (!newest) return;
-		if (folder && !libraryLabels.for(newest.key).folder) {
-			libraryLabels.setFolder(newest.key, folder);
-		}
-		openKey = newest.key;
-		selectedKey = newest.key;
+		if (newest) openNew(newest.key);
+	}
+
+	function openNew(key: string) {
+		if (folder && !libraryLabels.for(key).folder) libraryLabels.setFolder(key, folder);
+		openKey = key;
+		selectedKey = key;
 	}
 
 	// ---- New folder, new collection ----
