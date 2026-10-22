@@ -122,15 +122,15 @@
 
 {#snippet rules()}
 	{#if boardLooks.current.rulesGrouped}
-		<span class="rules-stack" data-testid="preview-rules-stack">
+		<span class="preview-rules-stack" data-testid="preview-rules-stack">
 			{#each RULES as id (id)}
 				{@const rule = character(id)}
 				{#if rule}<CharacterToken character={rule} size={rulesSize} />{/if}
 			{/each}
-			<span class="stack-count" aria-hidden="true">{RULES.length}</span>
+			<span class="preview-stack-count" aria-hidden="true">{RULES.length}</span>
 		</span>
 	{:else}
-		<ul class="rules" data-testid="preview-rules">
+		<ul class="preview-rules" data-testid="preview-rules">
 			{#each RULES as id (id)}
 				{@const rule = character(id)}
 				{#if rule}<li><CharacterToken character={rule} size={rulesSize} /></li>{/if}
@@ -157,7 +157,9 @@
 	{#if boardLooks.current.logo}
 		<ScriptLogo src={logo} class="preview-logo" --logo-opacity={boardLooks.current.logoOpacity} />
 	{/if}
-	{#if boardLooks.current.rulesAt === 'edge'}<div class="rules-edge">{@render rules()}</div>{/if}
+	{#if boardLooks.current.rulesAt === 'edge'}<div class="preview-rules-edge">
+			{@render rules()}
+		</div>{/if}
 
 	<div class="seats">
 		{#each SEATS as seat, i (seat.id)}
@@ -180,12 +182,12 @@
 			</div>
 		{/each}
 	</div>
-	<div class="middle">
+	<div class="preview-middle">
 		{#if boardLooks.current.rulesAt === 'middle'}{@render rules()}{/if}
 	</div>
 
 	{#if preferences.current.assistance.scriptTitle}
-		<p class="corner-title" data-testid="preview-script-title">{scriptName}</p>
+		<p class="preview-title" data-testid="preview-script-title">{scriptName}</p>
 	{/if}
 	<ul class="bank" aria-label={t('settings.previewBank')} data-testid="preview-bank">
 		{#each bank as item (item.key)}
@@ -240,32 +242,32 @@
 		left: 115%;
 		top: 70%;
 	}
-	.middle {
+	.preview-middle {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
-	.rules-edge {
+	.preview-rules-edge {
 		position: absolute;
 		top: var(--space-1);
 		left: var(--space-1);
 		z-index: 2;
 	}
-	.rules {
+	.preview-rules {
 		display: flex;
 		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
-	.rules-stack {
+	.preview-rules-stack {
 		position: relative;
 		display: flex;
 	}
-	.rules-stack > :global(*:not(:first-child):not(.stack-count)) {
+	.preview-rules-stack > :global(*:not(:first-child):not(.preview-stack-count)) {
 		margin-inline-start: -60%;
 	}
-	.stack-count {
+	.preview-stack-count {
 		position: absolute;
 		right: 0;
 		bottom: 0;
@@ -277,7 +279,7 @@
 		font: 700 0.75rem / 1.4 var(--font-control);
 		text-align: center;
 	}
-	.corner-title {
+	.preview-title {
 		position: absolute;
 		left: var(--space-1);
 		bottom: calc(1.9 * var(--chip));

@@ -664,9 +664,9 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	await expect(seatReminder).toHaveClass(/loose/);
 
 	// The Fabled and Loric: in the middle or the corner, each or stacked.
-	await expect(preview.locator('.middle').getByTestId('preview-rules')).toBeVisible();
+	await expect(preview.locator('.preview-middle').getByTestId('preview-rules')).toBeVisible();
 	await choose('Location', 'Corner');
-	await expect(preview.locator('.rules-edge').getByTestId('preview-rules')).toBeVisible();
+	await expect(preview.locator('.preview-rules-edge').getByTestId('preview-rules')).toBeVisible();
 	await choose('Grouping', 'Stacked');
 	await expect(preview.getByTestId('preview-rules-stack')).toBeVisible();
 	await preview.screenshot({ path: test.info().outputPath('board-preview.png') });
