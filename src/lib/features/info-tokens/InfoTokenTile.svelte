@@ -74,7 +74,6 @@
 				{#each owners.slice(0, 2) as owner (owner.id)}<CharacterBadge
 						characterId={owner.id}
 						character={owner}
-						inline
 						interactive={false}
 					/>{/each}{#if owners.length > 2}<span class="more">+{owners.length - 2}</span>{/if}
 			</span>

@@ -163,7 +163,6 @@
 		><span class="pill">{name(seatId)}</span>{#if characterId}<CharacterBadge
 				{characterId}
 				character={characters.get(characterId)}
-				inline
 			/>{/if}</span
 	>{/snippet}
 
@@ -174,7 +173,6 @@
 {#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
 			characterId={v.value}
 			character={characters.get(v.value)}
-			inline
 		/>{:else}{valueText(v)}{/if}{/snippet}
 
 {#snippet flagBody(flag: Flag)}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n
@@ -187,7 +185,6 @@
 			)}{:else}<CharacterBadge
 				characterId={i.source.characterId}
 				character={characters.get(i.source.characterId)}
-				inline
 			/>{/if}{/each}{#each flag.allowed ?? [] as v, n (n)}{n ? ' / ' : ' '}{@render value(
 			v
 		)}{/each}{/snippet}
@@ -199,7 +196,7 @@
 					>{@render player(a.seatId)}:</span
 				>{/if}
 			{#if a.kind === 'character'}
-				<CharacterBadge characterId={a.value} character={characters.get(a.value)} inline />
+				<CharacterBadge characterId={a.value} character={characters.get(a.value)} />
 			{:else}
 				<strong>{valueText(a)}</strong>
 			{/if}
@@ -228,7 +225,6 @@
 			>Valid Information: {#if line.characterId}<CharacterBadge
 					characterId={line.characterId}
 					character={characters.get(line.characterId)}
-					inline
 					interactive={false}
 				/>{/if}{line.text}</span
 		>{/if}
@@ -256,7 +252,6 @@
 										{#each v.characterIds ?? [] as id, n (id)}{n ? ' / ' : ''}<CharacterBadge
 												characterId={id}
 												character={characters.get(id)}
-												inline
 											/>{/each}
 										{#if v.target}<span class="pill">{name(v.target)}</span>
 											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
@@ -320,7 +315,6 @@
 								>Guess: <CharacterBadge
 									characterId={f.guess.characterId}
 									character={characters.get(f.guess.characterId)}
-									inline
 								/>
 								{f.guess.correct ? 'Right' : 'Wrong'}</span
 							>{/if}

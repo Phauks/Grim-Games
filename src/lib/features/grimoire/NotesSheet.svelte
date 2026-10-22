@@ -123,7 +123,6 @@
 			characterId={seat.characterId}
 			character={characters.get(seat.characterId)}
 			alignment={seat.alignment}
-			inline
 		/>
 	{:else}
 		None

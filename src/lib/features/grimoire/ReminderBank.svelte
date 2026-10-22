@@ -552,7 +552,6 @@
 		{#if shown}<CharacterBadge
 				characterId={shown.suggestion.characterId}
 				character={characters.get(shown.suggestion.characterId)}
-				inline
 			/>{/if}
 	{/snippet}
 	{#if shown}
@@ -565,7 +564,6 @@
 					/>{:else if part.kind === 'character'}<CharacterBadge
 						characterId={part.id}
 						character={characters.get(part.id)}
-						inline
 					/>{:else}{part.text}{/if}{/each}
 		</p>
 		<!-- Loose mode gives nothing to a seat: it is dragged onto the board. -->
@@ -586,7 +584,6 @@
 								character={characters.get(id)}
 								alignment={game.seats[seatId].alignment}
 								playerName={seatName(seatId)}
-								inline
 							/>
 						{:else}
 							{seatName(seatId)}

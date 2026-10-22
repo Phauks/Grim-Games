@@ -320,7 +320,6 @@
 										characterId={held.characterId}
 										character={characters.get(held.characterId)}
 										alignment={held.alignment}
-										inline
 									/>{/if}</span
 							>
 							<Button variant="quiet" onclick={() => choose(label, at)}

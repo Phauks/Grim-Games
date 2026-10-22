@@ -49,7 +49,7 @@
 
 <ConfirmDialog bind:open title="Choose the new Imp" onConfirm={confirm}>
 	{#if imp}<p class="ability">
-			<CharacterBadge characterId="imp" character={imp} inline />
+			<CharacterBadge characterId="imp" character={imp} />
 			<GlossaryText text={imp.ability} names={[imp.name]} />
 		</p>{/if}
 	{#if pass}
@@ -66,7 +66,6 @@
 						character={characters.get(s.characterId)}
 						alignment={s.alignment}
 						playerName={option.label}
-						inline
 					/>{:else}{option.label}{/if}
 			{/snippet}
 		</ChoiceGroup>

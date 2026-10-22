@@ -109,13 +109,12 @@
 			character={characters.get(shownAs)}
 			alignment={s.alignment}
 			playerName={s.playerName ?? `Seat ${game.seating.indexOf(id) + 1}`}
-			inline
 		/>
 	{/if}
 {/snippet}
 
 {#snippet character(id: CharacterId)}
-	<CharacterBadge characterId={id} character={characters.get(id)} inline />
+	<CharacterBadge characterId={id} character={characters.get(id)} />
 {/snippet}
 
 {#snippet ability(id: CharacterId)}

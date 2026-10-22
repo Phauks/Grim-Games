@@ -524,13 +524,11 @@
 									<CharacterBadge
 										characterId={jinx.characters[0]}
 										character={onScript.get(jinx.characters[0])}
-										inline
 									/>
 									{t('script-builder.and')}
 									<CharacterBadge
 										characterId={jinx.characters[1]}
 										character={onScript.get(jinx.characters[1])}
-										inline
 									/>: {jinx.reason}
 								</li>
 							{/each}
@@ -548,11 +546,7 @@
 						<ul>
 							{#each facts.modifiers as modifier (modifier.id)}
 								<li>
-									<CharacterBadge
-										characterId={modifier.id}
-										character={onScript.get(modifier.id)}
-										inline
-									/>
+									<CharacterBadge characterId={modifier.id} character={onScript.get(modifier.id)} />
 									{modifier.summary}
 								</li>
 							{/each}
@@ -573,9 +567,9 @@
 						<ul>
 							{#each missingNeeds as need (need.id)}
 								<li>
-									<CharacterBadge characterId={need.id} character={onScript.get(need.id)} inline />
+									<CharacterBadge characterId={need.id} character={onScript.get(need.id)} />
 									{t('script-builder.needsChar')}
-									<CharacterBadge characterId={need.requires} inline />
+									<CharacterBadge characterId={need.requires} />
 									<Button variant="quiet" onclick={() => draft.toggle(need.requires)}
 										>{t('script-builder.add')}</Button
 									>
@@ -600,7 +594,7 @@
 								{@const credit = d.credits[character.id]}
 								{@const saved = savedFor(character.id)}
 								<li>
-									<CharacterBadge characterId={character.id} {character} inline />
+									<CharacterBadge characterId={character.id} {character} />
 									<span class="creator">{credit?.creator || t('common.none')}</span>
 									{#if saved}
 										<IconButton

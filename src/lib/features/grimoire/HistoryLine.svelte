@@ -19,11 +19,9 @@
 				character={characters.get(part.characterId)}
 				alignment={part.alignment}
 				playerName={part.name}
-				inline
 			/>{:else}<strong>{part.name}</strong>{/if}{:else if part.kind === 'character'}<CharacterBadge
 			characterId={part.characterId}
 			character={characters.get(part.characterId)}
-			inline
 		/>{:else}<span class="chip"
 			><ReminderToken label={tokenLabel(part)} character={characters.get(part.characterId)} /></span
 		>{/if}{/each}

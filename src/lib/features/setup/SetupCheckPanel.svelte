@@ -136,9 +136,9 @@
 					<ul>
 						{#each jinxes as jinx (jinx.characters.join('+'))}
 							<li>
-								<CharacterBadge characterId={jinx.characters[0]} inline />
+								<CharacterBadge characterId={jinx.characters[0]} />
 								{t('setup.check.and')}
-								<CharacterBadge characterId={jinx.characters[1]} inline />: {jinx.reason}
+								<CharacterBadge characterId={jinx.characters[1]} />: {jinx.reason}
 							</li>
 						{/each}
 					</ul>

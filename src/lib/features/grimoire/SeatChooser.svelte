@@ -38,7 +38,6 @@
 									characterId={character.id}
 									{character}
 									alignment={seat.alignment}
-									inline
 									interactive={false}
 								/>{:else}None{/if}</span
 						>

@@ -664,7 +664,6 @@
 						<CharacterBadge
 							characterId={row.character.id}
 							character={row.character}
-							inline
 							interactive={false}
 						/>
 					{:else}

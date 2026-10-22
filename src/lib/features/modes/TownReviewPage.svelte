@@ -98,7 +98,7 @@
 							<span class="muted">{TYPE_LABELS[g.type]}</span>
 							<ul class="characters">
 								{#each g.characters as c, j (c.id + j)}
-									<li><CharacterBadge characterId={c.id} character={c} inline /></li>
+									<li><CharacterBadge characterId={c.id} character={c} /></li>
 								{/each}
 							</ul>
 						</div>
