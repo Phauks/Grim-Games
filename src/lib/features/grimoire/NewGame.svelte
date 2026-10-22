@@ -22,8 +22,13 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import {
 		loadScriptChoice,
+		scriptChoices,
+		searchableScripts,
 		type ScriptChoice
 	} from '#lib/features/modes/script-choices.svelte.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import ScriptVoteSheet from '#lib/features/room/ScriptVoteSheet.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
 	onMount(() => {
@@ -31,6 +36,18 @@
 		void loadOfficialData();
 		// Play on the Search page opens New game with that script chosen.
 		if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
+		// The room's phones see the Storyteller choosing the next script (plan R1).
+		const host = roomHost();
+		if (host.code) host.setChoosing(true);
+		return () => {
+			if (host.code) host.setChoosing(false);
+		};
+	});
+	// ── The room's vote on the next script (plan R1) ──
+	let voteOpen = $state(false);
+	const voteChoices = $derived.by(() => {
+		const all = [...scriptChoices(), ...searchableScripts()];
+		return all.filter((c, i) => all.findIndex((d) => d.value === c.value) === i);
 	});
 	// ── New game ──
 	/** An official edition, `recent:<scriptId>` or `profile:<id>` (script-choices.svelte.ts). */
@@ -91,6 +108,15 @@
 		{#snippet standard(rules)}
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
 			<PageSection title="Script">
+				{#snippet aside()}
+					<!-- Always here, so nothing moves; usable once this device has a room. -->
+					<Button
+						variant="quiet"
+						icon="vote"
+						disabled={!roomHost().code}
+						onclick={() => (voteOpen = true)}>{t('room.scriptVote.button')}</Button
+					>
+				{/snippet}
 				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
 			</PageSection>
 			<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
@@ -101,6 +127,8 @@
 		{/snippet}
 	</GameModesPanel>
 </section>
+
+<ScriptVoteSheet bind:open={voteOpen} choices={voteChoices} onPick={(id) => (edition = id)} />
 
 <style>
 	section {

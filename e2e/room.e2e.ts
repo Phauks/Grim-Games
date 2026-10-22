@@ -212,6 +212,73 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await phoneContext.close();
 });
 
+test('after a game the room votes on the next script, and the next game opens in it', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-20 (plan R1): the same room for the next game, a script vote by single
+	// choice, multiple choice or ranking, and "Storyteller is choosing a script" meanwhile.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	const status = phone.getByTestId('join-status');
+	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+
+	await page.goto(board);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game' })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'End game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(status).toHaveText('Game over');
+
+	await page.goto('/new');
+	await expect(status).toHaveText('The Storyteller is choosing a script.');
+	await page.getByRole('button', { name: 'Room vote' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Vote on the next script' });
+	await sheet.getByRole('combobox', { name: 'Scripts (2 or 3)' }).tap();
+	await page.getByRole('option', { name: 'Trouble Brewing' }).tap();
+	await page.getByRole('option', { name: 'Bad Moon Rising' }).tap();
+	await page.keyboard.press('Escape');
+	await sheet.getByRole('combobox', { name: 'How players vote' }).tap();
+	await page.getByRole('option', { name: 'Ranked' }).tap();
+	await sheet.getByRole('button', { name: 'Open vote' }).tap();
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 0 of 1');
+
+	// The phone ranks them; the Storyteller sees points by place.
+	const ballot = phone.getByRole('dialog', { name: 'Vote on the next script' });
+	await expect(ballot.getByText('Tap the scripts in order, your favourite first.')).toBeVisible();
+	await ballot.getByRole('button', { name: /Bad Moon Rising/ }).tap();
+	await ballot.getByRole('button', { name: /Trouble Brewing/ }).tap();
+	await expect(ballot.getByRole('button', { name: /Bad Moon Rising/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
+	const results = sheet.getByTestId('script-vote-results').getByRole('listitem');
+	await expect(results.filter({ hasText: 'Bad Moon Rising' })).toContainText('Points: 2');
+	await expect(results.filter({ hasText: 'Trouble Brewing' })).toContainText('Points: 1');
+
+	// Playing the winner closes the vote and chooses it on New game.
+	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
+	await expect(ballot).toHaveCount(0);
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	// The same room carries the next game: its script, and seats to ask for again.
+	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
+	await phoneContext.close();
+});
+
 test('a phone that joins gets the game script before anyone has a seat', async ({
 	page,
 	browser
