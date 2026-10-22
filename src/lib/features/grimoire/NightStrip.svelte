@@ -7,6 +7,7 @@
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import StepFocusSetting from './StepFocusSetting.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName, stepHolders, stepName } from './night-steps.ts';
@@ -93,7 +94,7 @@
 				     right of the top row, before ⋯ and X (Trevor, 2026-10-20). -->
 				<span class="name">
 					<strong>{stepName(step)}</strong>
-					<span class="count">{index + 1} of {steps.length}</span>
+					<span class="count"><CountBadge count={index + 1} total={steps.length} /></span>
 				</span>
 				{#if holders.length > 0}<span class="who"
 						>{holders.map((seatId) => seatName(game, seatId)).join(', ')}</span
@@ -105,8 +106,7 @@
 				{#if emptySeatBy}<span class="empty-seat" data-testid="step-empty-seat"
 						>No player: make its choices ({emptySeatBy})</span
 					>{/if}
-				<NightAlerts {grimoire} {step} compact />
-				<NightSuggested {grimoire} {step} compact />
+				<!-- What to do comes before any information (Trevor, 2026-10-20). -->
 				<span class="text">
 					{#if step.reminder}
 						{#if step.character}
@@ -116,6 +116,8 @@
 						{/if}
 					{/if}
 				</span>
+				<NightAlerts {grimoire} {step} compact />
+				<NightSuggested {grimoire} {step} compact />
 			</span>
 		</button>
 	{:else}

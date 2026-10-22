@@ -1,6 +1,7 @@
 /** The one share screen (ui/share/SharePanel). */
 export const share = {
 	'share.link': 'Link',
+	'share.hidden': 'Hidden',
 	'share.copy': 'Copy link',
 	'share.copyCode': 'Copy code',
 	'share.copyCodeFailed': 'Could not copy the code',

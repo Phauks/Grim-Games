@@ -71,6 +71,7 @@ describe('parsePreferences', () => {
 			requireName: true,
 			holdToReveal: true,
 			ownWording: true,
+			hideWatchLink: true,
 			timerSound: 'buzzer',
 			timerMode: 'up',
 			timerVibrate: false,

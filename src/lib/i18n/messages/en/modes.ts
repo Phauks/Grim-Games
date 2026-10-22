@@ -125,7 +125,7 @@ export const modes = {
 	'modes.specters.abilityText': 'Ability',
 	'modes.specters.pickCharacter': 'Choose a character',
 	'modes.specters.vote': 'Spectators’ vote',
-	'modes.specters.noRoom': 'Open Players’ phones so spectators can join',
+	'modes.specters.noRoom': 'Open Share so spectators can join',
 	'modes.specters.spectators': '{voted}/{count} spectators voted',
 	'modes.specters.open': 'Open vote',
 	'modes.specters.reopen': 'Start again',

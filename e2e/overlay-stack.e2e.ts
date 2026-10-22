@@ -14,7 +14,7 @@ test('the Glossary opened from character details shows above them, and closes ba
 	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
 	await page
 		.locator('li[data-character="slayer"]')
-		.getByRole('button', { name: /^Slayer/ })
+		.getByRole('button', { name: 'About the Slayer' })
 		.first()
 		.tap();
 	const details = page.getByRole('dialog', { name: 'Slayer' });

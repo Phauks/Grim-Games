@@ -16,6 +16,7 @@
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import { gameLine } from '#lib/features/player/byline.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { roomHost } from './host.svelte.ts';
 
 	interface Props {
@@ -80,11 +81,7 @@
 			: host.refusedReason === 'too-old'
 				? t('room.tooOld')
 				: host.status === 'open'
-					? [
-							t('room.connected'),
-							t('common.players', { count: seated.length }),
-							t('room.watching', { count: host.watchers })
-						].join(' · ')
+					? t('room.connected')
 					: host.status === 'connecting'
 						? t('room.connecting')
 						: t('room.offline')
@@ -137,14 +134,14 @@
 </script>
 
 <!--
-	Players' phones: the room code and QR, requests from phones to approve, and who is in
+	Share: the room code and QR, requests from phones to approve, and who is in
 	the room. Approving a seat names it on the board (a normal, undoable change).
 -->
 {#snippet scriptCenter()}
 	<ScriptQrCenter {logo} name={scriptName} bind:failed={logoFailed} />
 {/snippet}
 
-<!-- Players' phones and the view-only grimoire each in their own tab (Trevor, 2026-10-19). -->
+<!-- The players' join code and the view-only grimoire each in their own tab (Trevor, 2026-10-19). -->
 <Tabs label={t('room.tabs')} tabs={shareTabs} bind:value={tab}>
 	{#snippet panel(which)}
 		{#if which === 'players'}{@render players()}{:else}{@render watching()}{/if}
@@ -152,17 +149,10 @@
 </Tabs>
 
 {#snippet watching()}
-	<div class="layout">
-		<!-- Specters: spectators watch the whole grimoire (Trevor, 2026-10-18). Off until
-		     turned on; the link's QR and buttons stay in place while it is off. -->
-		<section class="watch" data-testid="watch-link">
-			<SettingToggle
-				label={t('room.watch.toggle')}
-				description={t('room.watch.hint')}
-				checked={!!host.viewerKey}
-				disabled={!host.code}
-				onChange={(on) => void host.setViewers(on)}
-			/>
+	<!-- The same two columns as the players' tab on a wide screen (Trevor, 2026-10-21): the
+	     QR and link, then the switches and who is watching. -->
+	<div class="layout" data-testid="watch-link">
+		<section class="join">
 			<SharePanel
 				url={watchLink || undefined}
 				title={t('room.watch.title')}
@@ -176,12 +166,31 @@
 				qrCenter={logo || scriptName ? scriptCenter : undefined}
 				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 				qrCaption={t('room.watch.qrCaption')}
+				hidden={preferences.current.hideWatchLink}
 				refresh={{
 					label: t('room.watch.refresh'),
 					disabled: !watchLink,
 					// A new link in one step, not off and on (Trevor, 2026-10-20).
 					onclick: () => askRefresh('watch')
 				}}
+			/>
+		</section>
+		<!-- Specters: spectators watch the whole grimoire (Trevor, 2026-10-18). Off until
+		     turned on; the link's QR and buttons stay in place while it is off. -->
+		<section class="watch">
+			<SettingToggle
+				label={t('room.watch.toggle')}
+				description={t('room.watch.hint')}
+				checked={!!host.viewerKey}
+				disabled={!host.code}
+				onChange={(on) => void host.setViewers(on)}
+			/>
+			<!-- Streaming: the QR and link can stay off screen (Trevor, 2026-10-21). -->
+			<SettingToggle
+				label={t('settings.hideWatchLink')}
+				description={t('settings.hideWatchLinkHelp')}
+				checked={preferences.current.hideWatchLink}
+				onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
 			/>
 			<!-- Who is watching now (Trevor, 2026-10-20), always in its place. -->
 			<p class="status" data-testid="watchers">
@@ -218,14 +227,23 @@
 		<section aria-labelledby="requests-label">
 			<!-- How the room is doing and who is in it, under its own header (Trevor, 2026-10-20). -->
 			<h2 id="status-label">{t('room.status')}</h2>
-			<p class="status connection" role="status" data-status={host.status}>
-				{#if host.code}<span
-						class="dot"
-						class:live={connected}
-						data-testid="connection-dot"
-						aria-hidden="true"
-					></span>{/if}<span>{statusText}</span>
-			</p>
+			<!-- One line per thing it reports (Trevor, 2026-10-20), each always in its place. -->
+			<div class="status-lines">
+				<p class="status connection" role="status" data-status={host.status}>
+					{#if host.code}<span
+							class="dot"
+							class:live={connected}
+							data-testid="connection-dot"
+							aria-hidden="true"
+						></span>{/if}<span>{statusText}</span>
+				</p>
+				<p class="status" data-testid="status-players">
+					{connected ? t('common.players', { count: seated.length }) : ''}
+				</p>
+				<p class="status" data-testid="status-watching">
+					{connected ? t('room.watching', { count: host.watchers }) : ''}
+				</p>
+			</div>
 			<h2 id="requests-label">{t('room.requests')}</h2>
 			{#if host.requests.length === 0}
 				<p class="none">{t('common.none')}</p>
@@ -332,11 +350,13 @@
 		align-content: start;
 		min-width: 0;
 	}
+	.status-lines {
+		margin-bottom: var(--space-4);
+	}
 	.connection {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		margin-bottom: var(--space-4);
 	}
 	/* Hollow while connecting or offline, filled once connected. */
 	.dot {

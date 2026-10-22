@@ -54,6 +54,7 @@ export const resets = {
 				'requireName',
 				'holdToReveal',
 				'ownWording',
+				'hideWatchLink',
 				'timerSound',
 				'timerMode',
 				'timerVibrate',
