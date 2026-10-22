@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -110,6 +111,8 @@
 	}
 
 	const script = $derived(data ? currentScript.current : undefined);
+	// A report sent from here carries the script (Trevor, 2026-10-22).
+	offerScriptToReports(() => script);
 	/** No script yet: the Scripts page no longer lists the base three, so offer them here. */
 	const choosing = $derived(!!data && !currentScript.current);
 	function chooseEdition(id: string) {

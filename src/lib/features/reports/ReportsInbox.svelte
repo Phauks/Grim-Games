@@ -12,7 +12,9 @@
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import type { ColumnFilter } from '#lib/ui/table/column-filter.ts';
-	import { deleteReport, listReports, setReportStatus } from './reports-api.ts';
+	import JsonDialog from '#lib/ui/builder/JsonDialog.svelte';
+	import { fileNameFor } from '#lib/ui/download.ts';
+	import { deleteReport, fetchReportScript, listReports, setReportStatus } from './reports-api.ts';
 	import { REPORT_STATUSES, type Report, type ReportStatus } from './reports-protocol.ts';
 
 	// In-app reports, at /reports. Admin accounts triage them (Trevor, 2026-10-18; no admin key
@@ -31,6 +33,9 @@
 	let openId = $state<number>();
 	let dialogOpen = $state(false);
 	let confirmDelete = $state(false);
+	/** The open report's script, fetched when asked for: the list leaves scripts out. */
+	let scriptJson = $state.raw<unknown[]>();
+	let scriptOpen = $state(false);
 
 	const current = $derived(reports?.find((r) => r.id === openId));
 	const time = $derived(
@@ -116,6 +121,16 @@
 			await setReportStatus(report.id, status);
 		} catch {
 			report.status = before;
+			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
+		}
+	}
+
+	async function openScript(report: Report) {
+		try {
+			scriptJson = await fetchReportScript(report.id);
+			if (scriptJson) scriptOpen = true;
+			else toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
+		} catch {
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
 		}
 	}
@@ -222,6 +237,19 @@
 				<dd>{hidden ? t('reports.hidden') : (current.build ?? t('common.none'))}</dd>
 				<dt>{t('reports.device')}</dt>
 				<dd>{hidden ? t('reports.hidden') : (current.device ?? t('common.none'))}</dd>
+				<!-- The script it was sent from (Trevor, 2026-10-22), opened as its JSON. -->
+				<dt>{t('reports.script')}</dt>
+				<dd>
+					{#if hidden}
+						{t('reports.hidden')}
+					{:else if current.hasScript}
+						<Button variant="quiet" icon="script" onclick={() => openScript(current)}>
+							{current.scriptName || t('reports.script')}
+						</Button>
+					{:else}
+						{t('common.none')}
+					{/if}
+				</dd>
 			</dl>
 			{#if current.details}
 				<h3>{t('reports.details')}</h3>
@@ -237,6 +265,16 @@
 		/>
 	{/snippet}
 </Dialog>
+
+{#if scriptJson}
+	<JsonDialog
+		bind:open={scriptOpen}
+		title={current?.scriptName || t('reports.script')}
+		json={scriptJson}
+		fileName={fileNameFor(current?.scriptName ?? '', 'script')}
+		downloadLabel={t('script-builder.download')}
+	/>
+{/if}
 
 <ConfirmDialog
 	bind:open={confirmDelete}
@@ -282,6 +320,7 @@
 	dl {
 		display: grid;
 		grid-template-columns: max-content 1fr;
+		align-items: center;
 		gap: var(--space-1) var(--space-3);
 		margin: 0;
 		font-size: 0.85rem;

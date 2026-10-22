@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { buildInfo } from '#lib/build-info.ts';
 	import { describeBuild } from '#lib/features/about/report-issue.ts';
@@ -12,6 +13,7 @@
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { reportDialog } from './report-dialog.svelte.ts';
+	import { reportScript, type ReportScript } from './report-script.svelte.ts';
 	import { sendReport } from './reports-api.ts';
 	import { REPORT_KINDS, REPORT_LIMITS, type ReportKind } from './reports-protocol.ts';
 
@@ -26,6 +28,9 @@
 	let sending = $state(false);
 	let sentId = $state<number>();
 	let page = $state('');
+	/** The script on screen when the form opened (Trevor, 2026-10-22), sent unless turned off. */
+	let script = $state.raw<ReportScript>();
+	let includeScript = $state(true);
 
 	$effect(() => {
 		void reportDialog.opened;
@@ -37,6 +42,8 @@
 		sending = false;
 		sentId = undefined;
 		page = scrubUrls(location.pathname);
+		script = untrack(reportScript);
+		includeScript = true;
 	});
 
 	const details = $derived(reportDialog.start.details);
@@ -63,6 +70,7 @@
 				body,
 				...(contact.trim() ? { contact } : {}),
 				...(details && includeDetails ? { details } : {}),
+				...(script && includeScript ? { script: script.json, scriptName: script.name } : {}),
 				page,
 				build,
 				device: navigator.userAgent
@@ -102,6 +110,13 @@
 				maxlength={REPORT_LIMITS.contact}
 				oncommit={sendOnEnter}
 			/>
+			{#if script}
+				<Toggle
+					label={t('reports.includeScript')}
+					checked={includeScript}
+					onChange={(v) => (includeScript = v)}
+				/>
+			{/if}
 			{#if details}
 				<Toggle
 					label={t('reports.includeDetails')}
@@ -117,6 +132,12 @@
 					<dd>{build}</dd>
 					<dt>{t('reports.device')}</dt>
 					<dd>{navigator.userAgent}</dd>
+					{#if script}
+						<dt>{t('reports.script')}</dt>
+						<dd class:excluded={!includeScript} data-testid="report-script">
+							{script.name || t('common.none')}
+						</dd>
+					{/if}
 				</dl>
 				{#if details}
 					<pre class="details" class:excluded={!includeDetails}>{details}</pre>
@@ -167,7 +188,8 @@
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}
-	.details.excluded {
+	.details.excluded,
+	.sent-with .excluded {
 		opacity: 0.4;
 		text-decoration: line-through;
 	}

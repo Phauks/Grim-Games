@@ -2,6 +2,7 @@ import {
 	isReportStatus,
 	parseReportDraft,
 	parseReportIdPath,
+	parseReportScriptPath,
 	REPORT_OPTIONAL_FIELDS,
 	REPORTS_API,
 	type CreatedReport,
@@ -53,6 +54,7 @@ async function reportList(
 		// Their own reports' details only where sign-in can be trusted (not on other previews).
 		if (!reader.admin && !(report.mine && reader.ownTrusted)) {
 			for (const key of REPORT_OPTIONAL_FIELDS) delete report[key];
+			delete report.hasScript;
 		}
 		reports.push(report);
 	}
@@ -102,6 +104,19 @@ export async function handleReports(
 	const auth = await getUser(request, env);
 	if (!auth) return text('Not found', 404);
 	const admin = await isAdmin(env, url, auth.user.email);
+	const scriptId = parseReportScriptPath(url.pathname);
+	if (scriptId !== undefined && request.method === 'GET') {
+		// Like the rest of what it was sent with: for the admins and its sender. A data Worker
+		// from before scripts has no `script` method; then there is none to show.
+		const found = await box.script(scriptId).catch(() => undefined);
+		const allowed =
+			found && (admin || (found.userId === auth.userId && adminSignInTrusted(env, url)));
+		return allowed
+			? new Response(found.script, {
+					headers: { ...noStore, 'Content-Type': 'application/json' }
+				})
+			: text('Not found', 404);
+	}
 	if (!admin && url.pathname === REPORTS_API && request.method === 'GET') {
 		const ownTrusted = adminSignInTrusted(env, url);
 		return Response.json(await reportList(env, box, { userId: auth.userId, admin, ownTrusted }), {

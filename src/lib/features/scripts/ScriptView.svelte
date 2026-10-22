@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -171,6 +172,8 @@
 			}
 		}
 	});
+	// A report sent from here carries the script shown (Trevor, 2026-10-22).
+	offerScriptToReports(() => preview);
 
 	const previewPending = $derived.by(() => {
 		const l = shownListing;
