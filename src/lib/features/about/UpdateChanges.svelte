@@ -20,7 +20,7 @@
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 					<a href={link(commit)} target="_blank" rel="noopener">
 						<span class="sha">{commit.pr ? `#${commit.pr}` : commit.sha.slice(0, 7)}</span>
-						<span>{commit.subject}</span>
+						<span class="subject">{commit.subject}</span>
 					</a>
 				</li>
 			{/each}
@@ -42,7 +42,7 @@
 	/* The whole row is the link, so each commit is one comfortable tap. */
 	a {
 		display: grid;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: auto minmax(0, 1fr);
 		align-items: center;
 		gap: var(--space-2);
 		min-height: var(--tap-target);
@@ -52,6 +52,10 @@
 	.sha {
 		text-decoration: underline;
 		font-variant-numeric: tabular-nums;
+	}
+	/* A title with a long unbroken word (a commit hash) wraps instead of widening the page. */
+	.subject {
+		overflow-wrap: anywhere;
 	}
 	.more {
 		margin: var(--space-1) 0 0;

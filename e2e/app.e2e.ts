@@ -117,16 +117,19 @@ test('the footer sits at the bottom of the screen on a short page', async ({ pag
 	expect(Math.round(box!.y + box!.height)).toBe(Math.max(viewport, height));
 });
 
-test('the footer links to the changelog page, which is empty until 1.0', async ({ page }) => {
+test('the footer links to the changelog page, which lists merged changes by day', async ({
+	page
+}) => {
 	await page.goto('/');
 	await page.getByRole('contentinfo').getByRole('link', { name: 'Changelog' }).tap();
 	await expect(page).toHaveURL(/\/changelog$/);
 	await expect(page.getByRole('heading', { name: 'Changelog', level: 1 })).toBeVisible();
 	const main = page.getByRole('main');
 	await expect(main.getByRole('heading', { name: 'Unreleased', level: 2 })).toBeVisible();
-	for (const category of ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'])
-		await expect(main.getByRole('heading', { name: category, level: 3 })).toBeVisible();
-	await expect(main.getByText('None', { exact: true })).toHaveCount(6);
+	// Each change opens its PR or commit on GitHub, under the day it landed.
+	await expect(main.getByRole('heading', { level: 3 }).first()).toBeVisible();
+	const change = main.getByTestId('update-changes').getByRole('link').first();
+	await expect(change).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\//);
 });
 
 test('the footer links to the privacy policy page', async ({ page }) => {

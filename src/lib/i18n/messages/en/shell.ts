@@ -62,11 +62,5 @@ export const shell = {
 	'shell.whatChangedCount': 'What changed ({count})',
 	'shell.olderChanges': 'Older changes not listed.',
 	'shell.changelogTitle': `Changelog · ${APP_NAME}`,
-	'shell.unreleased': 'Unreleased',
-	'shell.changeAdded': 'Added',
-	'shell.changeChanged': 'Changed',
-	'shell.changeDeprecated': 'Deprecated',
-	'shell.changeRemoved': 'Removed',
-	'shell.changeFixed': 'Fixed',
-	'shell.changeSecurity': 'Security'
+	'shell.unreleased': 'Unreleased'
 } as const;
