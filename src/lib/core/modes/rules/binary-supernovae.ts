@@ -15,7 +15,7 @@ export const BINARY_SUPERNOVAE: SpecialRule = {
 	format: SPECIAL_RULE_FORMAT,
 	id: 'binary-supernovae',
 	name: 'Binary Supernovae',
-	// Our own draft (2026-10-22): shows once Trevor approves it (approved-about.ts).
+	// Our own wording, approved 2026-10-22 with its instructions (approved-about.ts).
 	about:
 		'One extra Demon is in play. Good wins as soon as any Demon dies by execution; a Demon killed any other way doesn’t end the game.',
 	sources: [{ title: 'Binary Supernovae (Beardy on the Clocktower)', url: PAGE }],

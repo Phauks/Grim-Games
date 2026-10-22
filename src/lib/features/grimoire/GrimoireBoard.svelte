@@ -11,6 +11,7 @@
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
 	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
+	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -109,6 +110,7 @@
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
+	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
@@ -820,8 +822,8 @@
 		!ended &&
 			!grimoire.open.viewOnly &&
 			!setUp &&
-			!arranging &&
-			!placing &&
+			// Arranging or placing a token keeps Set up, disabled (Trevor, 2026-10-22: arranging
+			// turned it into Start game).
 			(Object.keys(game.bag?.tiles ?? {}).length > 0 ||
 				!game.seating.some((id) => game.seats[id].characterId !== undefined))
 	);
@@ -833,6 +835,9 @@
 	const saved = untrack(() => grimoire.nightView);
 	/** The day sheet; the old /day route lands here with `#day` to open it. */
 	let dayOpen = $state(false);
+	/** The Savant sheet, from the day view's Savant info button (L5). */
+	let savantSeat = $state<SeatId | undefined>();
+	let savantOpen = $state(false);
 	// ── Assisted night order (Trevor, 2026-10-16) ──
 	let guided = $state<{ step: NightStep; night: Night } | undefined>();
 	let guideOpen = $state(false);
@@ -1047,7 +1052,7 @@
 				label: 'Set up',
 				text: 'Set up',
 				icon: 'bag' as const,
-				disabled: false,
+				disabled: arranging || !!placing,
 				onclick: openSetup
 			};
 		if (game.pastDays.length === 0)
@@ -1363,6 +1368,12 @@
 			get scriptImage() {
 				return scriptBackground;
 			},
+			get scriptLogo() {
+				return boardLogo || undefined;
+			},
+			get scriptName() {
+				return game.script.meta?.name;
+			},
 			get current() {
 				return background;
 			},
@@ -1393,6 +1404,9 @@
 	);
 	/** The mode, then each special rule, a line each under the name (Trevor, 2026-10-19). */
 	const modeLines = $derived(modeInName ? modeNames.slice(1) : modeNames);
+	/** The join code under the script's name (a Board setting, on by default). */
+	const showRoomCode = $derived(!watching && preferences.current.assistance.roomCode);
+	const roomCode = $derived(roomHost().code);
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
@@ -1944,6 +1958,17 @@
 					>{:else}{#if game.script.meta?.author}<span class="author"
 							>by {game.script.meta.author}</span
 						>{/if}{/each}
+				<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
+				     place before a room opens, so nothing moves when its code arrives. -->
+				{#if showRoomCode}<button
+						type="button"
+						class="room-code"
+						data-testid="board-room-code"
+						onclick={() => (phonesOpen = true)}
+						>{t('room.joinCode')}
+						<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
+						></button
+					>{/if}
 			</p>
 		{/if}
 		{#if showTimer}
@@ -2044,7 +2069,7 @@
 				Reopen game
 			</Button>
 		{:else}
-			<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
+			<Button variant="danger" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
 				End game
 			</Button>
 		{/if}
@@ -2279,7 +2304,16 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={() => (endDayOpen = true)} />
+<DaySheet
+	bind:open={dayOpen}
+	game={grimoire.open}
+	onEndDay={() => (endDayOpen = true)}
+	onSavant={(seatId) => {
+		savantSeat = seatId;
+		savantOpen = true;
+	}}
+/>
+<SavantSheet bind:open={savantOpen} {grimoire} seatId={savantSeat} />
 
 <GuidedStep
 	bind:open={guideOpen}
@@ -2693,6 +2727,35 @@
 		font-size: 0.7rem;
 		color: var(--on-surface-muted);
 	}
+	.room-code {
+		position: relative;
+		display: block;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--on-surface-muted);
+		font: inherit;
+		font-size: 0.7rem;
+		text-align: inherit;
+		cursor: pointer;
+		/* The corner lets taps through to the board; its buttons take them. */
+		pointer-events: auto;
+	}
+	.room-code .code {
+		color: var(--on-surface);
+		font-family: var(--font-control);
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.08em;
+	}
+	/* A tap target bigger than the small corner text, without moving anything (ModeMenu). */
+	.room-code::before {
+		content: '';
+		position: absolute;
+		inset: 50% auto auto 50%;
+		min-width: max(100%, var(--tap-target));
+		min-height: max(100%, var(--tap-target));
+		transform: translate(-50%, -50%);
+	}
 	.change {
 		display: grid;
 		grid-template-columns: auto 1fr;
@@ -2834,7 +2897,7 @@
 		border: 0;
 		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
 		   2026-10-19). */
-		border-top: 0.125rem solid var(--border);
+		border-top: 0.125rem solid var(--button-edge);
 	}
 	.rule-detail {
 		display: flex;

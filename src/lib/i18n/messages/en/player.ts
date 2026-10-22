@@ -50,6 +50,8 @@ export const player = {
 	'player.delete': 'Delete',
 
 	'player.density': 'Script sheet layout',
+	'player.frame': 'Your frame',
+	'player.frameStoryteller': "Storyteller's choice",
 	'player.densityDetail':
 		"How tightly the Script sheet is laid out for you, on screen and in print. Applies to the player view and the Storyteller's copy of the script.",
 	'player.density.normal': 'Normal',

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ICON_SETS, ICON_SLOTS, isIconChoice, type IconSlot } from '#lib/ui/icons/catalogue.ts';
 import { contrastRatio, resolveToken } from './contrast.ts';
 import { THEMES } from './registry.ts';
-import { SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
+import { EDGE_PAIRS, SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
 
 describe('contrast helpers', () => {
 	it('match the WCAG reference values', () => {
@@ -21,6 +21,11 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('theme %s', (_,
 	it.each(TEXT_PAIRS)('%s on %s reaches WCAG AA (4.5:1)', (text, background) => {
 		const ratio = contrastRatio(resolveToken(text, table), resolveToken(background, table));
 		expect(ratio).toBeGreaterThanOrEqual(4.5);
+	});
+
+	it.each(EDGE_PAIRS)('%s against %s reaches 3:1 (non-text contrast)', (edge, background) => {
+		const ratio = contrastRatio(resolveToken(edge, table), resolveToken(background, table));
+		expect(ratio).toBeGreaterThanOrEqual(3);
 	});
 
 	it('maps icon slots only to bundled catalogue choices', () => {

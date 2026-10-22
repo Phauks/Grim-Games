@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160">
+  <!-- Our own stand-in for a script's logo in the Board settings preview: a shield and banner. -->
+  <path d="M100 8 L160 26 V70 C160 106 134 128 100 142 C66 128 40 106 40 70 V26 Z" fill="#5b2a2a" stroke="#d9b45a" stroke-width="6"/>
+  <path d="M100 38 L109 62 H134 L114 77 L121 101 L100 86 L79 101 L86 77 L66 62 H91 Z" fill="#d9b45a"/>
+  <path d="M14 108 H186 L176 124 L186 140 H14 L24 124 Z" fill="#2e3a4a" stroke="#d9b45a" stroke-width="4"/>
+</svg>

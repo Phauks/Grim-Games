@@ -34,26 +34,26 @@
 			board={boardBackground.context}
 		/>{:else}<DefaultBackgroundRow />{/if}
 	<BoardLooksRows />
-</SettingGroup>
-{#each STORYTELLER_GROUPS.board as key (key)}
-	<SettingToggle
-		label={ASSIST_LABELS[key].label}
-		description={ASSIST_LABELS[key].description}
-		checked={assistance[key]}
-		onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
-	/>
-{/each}
-<!-- The board thread's own control, with its Confirm (Trevor, 2026-10-17). -->
-<!-- Name left, drop-down right, as every setting row (Trevor, 2026-10-18). -->
-<SettingRow label={REMINDER_MODE_LABEL}>
-	{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
-</SettingRow>
-<SettingRow label={STEP_FOCUS_LABEL}>
-	{#snippet control(labelId)}<StepFocusSetting labelledBy={labelId} />{/snippet}
-</SettingRow>
+	{#each STORYTELLER_GROUPS.board as key (key)}
+		<SettingToggle
+			label={ASSIST_LABELS[key].label}
+			description={ASSIST_LABELS[key].description}
+			checked={assistance[key]}
+			onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
+		/>
+	{/each}
+	<!-- The board thread's own control, with its Confirm (Trevor, 2026-10-17). -->
+	<!-- Name left, drop-down right, as every setting row (Trevor, 2026-10-18). -->
+	<SettingRow label={REMINDER_MODE_LABEL}>
+		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
+	</SettingRow>
+	<SettingRow label={STEP_FOCUS_LABEL}>
+		{#snippet control(labelId)}<StepFocusSetting labelledBy={labelId} />{/snippet}
+	</SettingRow>
 
-<h3>{t('settings.groupRules')}</h3>
-<RulesLooksRows />
+	<h3>{t('settings.groupRules')}</h3>
+	<RulesLooksRows />
+</SettingGroup>
 
 <style>
 	h3 {
