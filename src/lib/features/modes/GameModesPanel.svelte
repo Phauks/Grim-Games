@@ -496,7 +496,8 @@
 				{#if previews.length > 1}<h3 class="town">
 						{t('modes.townScript', { number: i + 1 })}
 					</h3>{/if}
-				<ScriptCopy script={loaded} players={previewPlayers} />
+				<!-- New game already shows the player counts beside the settings. -->
+				<ScriptCopy script={loaded} players={previewPlayers} showBreakdown={false} />
 			{:else}
 				<p class="muted" aria-busy="true">{t('scripts.details.loading')}</p>
 			{/each}

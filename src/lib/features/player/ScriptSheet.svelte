@@ -37,6 +37,8 @@
 		travellers?: readonly TravellerInPlay[];
 		/** False leaves the Jinxes section out (a printed sheet without them). */
 		showJinxes?: boolean;
+		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
+		showBreakdown?: boolean;
 		/** Overrides the reader's density setting (printing picks whatever fits one page). */
 		density?: SheetDensity;
 	}
@@ -49,6 +51,7 @@
 		inPlay,
 		travellers,
 		showJinxes = true,
+		showBreakdown = true,
 		density: fixed
 	}: Props = $props();
 	const playing = $derived(
@@ -183,7 +186,7 @@
 			jinxes.length
 		)}{/if}
 
-	{#if !flat}
+	{#if !flat && showBreakdown}
 		{#snippet breakdown()}<PlayerCounts
 				{players}
 				maxPlayers={scriptMaxPlayers(characters)}
