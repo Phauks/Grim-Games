@@ -753,8 +753,10 @@
 	}
 	/* The walked-through step's reminders, at the front: a ring that hugs the round token. */
 	li.now > :global(.reminder) {
-		outline: 0.2rem solid var(--accent);
+		/* A ring, glow or both, as set in Settings > Tokens (Trevor, 2026-10-20). */
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
 	}
 	.tray > li {
 		flex: none;
