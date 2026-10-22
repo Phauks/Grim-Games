@@ -406,6 +406,9 @@ test('reminder tokens show their copies and whether setup places them; the table
 		'Poisoned×2Placed at setup · Goes on: Townsfolk, nearest each side'
 	]);
 	await expect(tokens.first().locator('img')).toHaveAttribute('src', /nodashii/);
+	// Stacked rows are told apart by a line between them, not spacing alone (Trevor).
+	await expect(rowsOf('nodashii').first()).toHaveCSS('border-top-width', '0px');
+	await expect(rowsOf('nodashii').nth(1)).not.toHaveCSS('border-top-width', '0px');
 
 	await search.fill('Washerwoman');
 	await expect(rowsOf('washerwoman')).toHaveText([
