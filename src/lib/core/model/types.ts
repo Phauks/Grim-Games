@@ -13,6 +13,7 @@ import type { Alignment, CharacterId, ReminderLabel, Script } from '#lib/core/da
 // the rules that apply them, and stored on the game.
 import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
 import type { NightStepOverride } from '#lib/core/rules/night-order.ts';
+import type { FrameId } from '#lib/core/frames/index.ts';
 
 export type GameId = string;
 export type SeatId = string;
@@ -117,6 +118,11 @@ export interface Seat {
 	 * Mezepheles' word or the Amnesiac's ability. Never in the public projection.
 	 */
 	note?: string;
+	/**
+	 * The frame the player picked for their token on their own phone (L4), carried with their
+	 * avatar. Undefined shows the board's default frame. Purely decorative.
+	 */
+	frame?: FrameId;
 	reminders: ReminderInstance[];
 }
 

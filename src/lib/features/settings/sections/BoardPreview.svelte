@@ -11,6 +11,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
+	import { seatFrame } from '#lib/core/frames/index.ts';
 
 	/**
 	 * Two seats on the board's background (Trevor, 2026-10-20: "you can't really see changes
@@ -65,6 +66,7 @@
 			dead={seat.dead}
 			vote={seat.dead ? 'used' : undefined}
 			usedVote={boardLooks.current.usedGhostVote}
+			frame={seatFrame(undefined, boardLooks.current.defaultFrame)}
 		>
 			{#snippet face()}{#if character}<CharacterToken {character} {size} />{/if}{/snippet}
 		</SeatDisc>
