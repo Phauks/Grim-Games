@@ -34,6 +34,7 @@ export const library = {
 	'library.characterCount': { one: '{count} character', other: '{count} characters' },
 	'library.pane': 'Open item',
 	'library.preview': 'Preview',
+	'library.download': 'Download',
 	'library.openWindow': 'Open in a window',
 	'library.pick': 'Choose',
 	'library.paneEmpty': 'None',
