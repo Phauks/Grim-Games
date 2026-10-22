@@ -503,9 +503,8 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(boomdandy.locator('.main')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByText('Must be in the bag')).toBeVisible();
 	await expect(boomdandy.getByTestId('lock-character')).toHaveAttribute('aria-pressed', 'true');
-	await page.getByRole('button', { name: 'Clear selection' }).tap();
-	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByTestId('count-minion')).toHaveText('1');
+	// Clear never takes it out, so with only it chosen there is nothing to clear.
+	await expect(page.getByRole('button', { name: 'Clear selection' })).toBeDisabled();
 	const first = page.url();
 	await pick(page, ['Washerwoman', 'Librarian', 'Investigator', 'Zombuul']);
 	await page.getByRole('button', { name: 'Build bag' }).tap();
