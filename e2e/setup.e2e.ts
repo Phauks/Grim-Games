@@ -578,19 +578,14 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 
-	// A drawn tile is never put back: closing the reveal keeps it in seat 2's hand, even
-	// across a reload.
+	// Once seen, closing the reveal finishes the draw: no "held" tile anyone could open again
+	// (Trevor, 2026-10-22).
 	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
 	await expect(reveal).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(reveal).toBeHidden();
-	await page.reload();
-	const held = page.getByRole('button', { name: 'Tile 2, held by Seat 2' });
-	await expect(held).toBeVisible();
-	await held.tap();
-	await expect(page.getByRole('button', { name: 'Put back' })).toHaveCount(0);
-	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 2, drawn' })).toBeDisabled();
+	await expect(page.getByText('Held')).toHaveCount(0);
 
 	// The rest are drawn one by one; Enter in the name field closes the keyboard, not the reveal.
 	for (let n = 3; n <= 5; n++) {
@@ -1258,12 +1253,18 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
 	const hold = reveal.getByTestId('reveal-hold');
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	// Closed before the character was seen, the tile stays held for that seat.
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Tile 1, held by Seat 1' }).tap();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
 	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+	// Seen, closing it finishes the draw (Trevor, 2026-10-22: no "held" once seen).
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 });
 
 test('selecting a character moves nothing, and its lock picks it when not yet chosen', async ({
