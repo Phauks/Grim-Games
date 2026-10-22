@@ -229,6 +229,15 @@
 		flex-wrap: wrap;
 		gap: var(--space-1);
 	}
+	/*
+	 * A badge above its ability keeps the row it had as a tall pill: its 44px tap area then
+	 * stays clear of the rules terms' tap areas on the line below, and nothing moves.
+	 */
+	.pair,
+	[data-density='normal'] .name {
+		min-height: var(--tap-target);
+		align-items: center;
+	}
 	.ability {
 		margin: 0;
 		padding-left: var(--space-1);

@@ -126,6 +126,8 @@
 			calc(1.3em * var(--inline-name-text, 1))
 		);
 		height: var(--badge-h);
+		/* Overrides the 44px minimum every button gets; ::before keeps the tap area. */
+		min-height: 0;
 		max-width: 100%;
 		padding: 0 calc(0.5em * var(--inline-name-badge, 1)) 0 calc(0.1em * var(--inline-name-badge, 1));
 		border: 0;

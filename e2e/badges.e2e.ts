@@ -189,3 +189,20 @@ test("a character's own badge inside its details does not open them again", asyn
 	await expect(page.getByRole('dialog', { name: 'Alchemist' })).toHaveCount(1);
 	await expect(dialog.locator('p .badge[data-character-id="boffin"]').first()).toHaveRole('button');
 });
+
+test('a badge on its own line keeps the in-line height, with a 44px tap area', async ({ page }) => {
+	// One design everywhere (Trevor, 2026-10-20): the script sheet's normal density once drew a
+	// tall pill. The base button rule's 44px minimum must not stretch the badge either.
+	await page.goto('/play');
+	await page.getByRole('button', { name: 'Trouble Brewing' }).tap({ timeout: 15_000 });
+	const badge = page.locator('[data-character="chef"] .badge');
+	await expect(badge).toBeVisible();
+	const sizes = await badge.evaluate((el) => {
+		const fontSize = parseFloat(getComputedStyle(el).fontSize);
+		const tap = parseFloat(getComputedStyle(el, '::before').height);
+		return { height: el.getBoundingClientRect().height, fontSize, tap };
+	});
+	expect(sizes.height).toBeLessThan(sizes.fontSize * 1.5);
+	// The tap area is calc()ed from the badge height, so it can land a hair under 44px.
+	expect(sizes.tap).toBeGreaterThan(43.5);
+});
