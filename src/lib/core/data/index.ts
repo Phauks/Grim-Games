@@ -19,3 +19,4 @@ export {
 } from './parse.ts';
 export { DataError } from './validate.ts';
 export * from './info-tokens.ts';
+export * from './character-groups.ts';
