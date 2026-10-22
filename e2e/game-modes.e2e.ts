@@ -1029,6 +1029,10 @@ test('Game info opens a special rule in full when tapped, and a script with no s
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'Stowed Away');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const more = page.getByRole('dialog', { name: 'Grimoire' });
