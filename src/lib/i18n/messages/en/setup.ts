@@ -30,7 +30,9 @@ export const setup = {
 	'setup.randomNoneLocked': 'No valid selection fits the locked characters',
 	'setup.required': 'Must be in the bag',
 	'setup.requiredBy': '{rule} requires this character in play.',
-	'setup.lockFor': 'Keep {name} when randomizing',
+	'setup.lockFor': 'Lock {name}',
+	'setup.locked': 'Locked',
+	'setup.lockedHelp': 'Unlock this character to take it out.',
 	'setup.clearSelection': 'Clear selection',
 	'setup.buildBag': 'Build bag',
 	'setup.continueDraw': 'Continue draw',
@@ -43,6 +45,10 @@ export const setup = {
 	'setup.clear.body': {
 		one: 'Now: {count} character chosen. After: none.',
 		other: 'Now: {count} characters chosen. After: none.'
+	},
+	'setup.clear.bodyLocked': {
+		one: 'Takes out {count} character. Locked characters stay.',
+		other: 'Takes out {count} characters. Locked characters stay.'
 	},
 	'setup.clear.keep': 'Keep',
 	'setup.clear.confirm': 'Clear',

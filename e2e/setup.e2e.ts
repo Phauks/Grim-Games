@@ -1156,11 +1156,43 @@ test('locked characters stay in play through Random and are remembered', async (
 	}
 	await page.reload();
 	await expect(lock('drunk')).toHaveAttribute('aria-pressed', 'true');
-	// Deselecting unlocks.
+	// A lock holds against taps and Clear too (Trevor, 2026-10-22); unlocking lets it go.
+	await choice('baron').tap();
+	await expect(choice('baron')).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.getByText('Unlock this character to take it out.')).toBeVisible();
+	await page.getByRole('button', { name: 'Clear selection' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	for (const id of ['baron', 'drunk']) await expect(row(id)).toHaveAttribute('data-chosen', '');
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
+	await lock('baron').tap();
+	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
 	await choice('baron').tap();
 	await expect(choice('baron')).toHaveAttribute('aria-pressed', 'false');
-	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
 });
+
+for (const width of [undefined, 1400]) {
+	test(`the counts stay above the characters, each type's heading pinned under them${width ? ' on a computer window' : ''}`, async ({
+		page
+	}) => {
+		// Trevor (2026-10-22): a computer window works as phones do.
+		if (width) await page.setViewportSize({ width, height: 900 });
+		await selectionFor(page, 8);
+		const band = page.getByTestId('selection-band');
+		const heading = page.locator('.collapsible > .head', { hasText: 'Townsfolk' });
+		// Scroll the heading's group past the band's bottom edge.
+		await heading.evaluate((h) => window.scrollBy(0, h.getBoundingClientRect().top + 200));
+		await page.evaluate(() => new Promise(requestAnimationFrame));
+		const [b, h] = await Promise.all([band.boundingBox(), heading.boundingBox()]);
+		// The band is in view, and the heading sits just under it.
+		expect(b!.y).toBeGreaterThanOrEqual(0);
+		expect(h!.y).toBeGreaterThanOrEqual(b!.y + b!.height - 2);
+		expect(h!.y).toBeLessThan(b!.y + b!.height + 20);
+		// Search and its tools sit over the characters, not in the side column.
+		const search = await page.getByRole('searchbox').boundingBox();
+		const list = await page.locator('.main[data-character-id="imp"]').boundingBox();
+		expect(search!.x + search!.width).toBeGreaterThan(list!.x);
+	});
+}
 
 test('the board stays locked while the draw is, until the Storyteller PIN', async ({ page }) => {
 	// Trevor (2026-10-19): with the phone passed round, opening the game's grimoire (by its
