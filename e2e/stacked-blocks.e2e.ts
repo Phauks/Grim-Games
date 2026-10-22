@@ -25,13 +25,7 @@ const ROUTES = [
  * Lists that run together today, by screen and "parent > block", each for its owner to fix.
  * Shrink only: one that now passes must come off, and a new one fails.
  */
-const STACKED_TODO: readonly string[] = [
-	// Special rules: each toggle's name over its description, rule after rule (World Cup).
-	'special rules: ul. > li.',
-	// A character's setup reminders and reminder tokens in Reference (Reference).
-	'/reference: ul.list > li.',
-	'/reference: span.tokens > span.token-row'
-];
+const STACKED_TODO: readonly string[] = [];
 
 /** "screen: parent > block", whatever text that list shows. */
 const key = (found: string) => found.replace(/ \(gap.*$/, '');
