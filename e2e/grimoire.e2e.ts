@@ -1193,6 +1193,45 @@ test('the bank fades at an end with more tokens past it, and its captions stay i
 	expect(await inside()).toBe(true);
 });
 
+// Trevor (2026-10-22, screenshot): with setup reminders and reminders in the bank, the ∞ sat
+// over the Reminders stretch instead of over its own token.
+test('the ∞ caption sits over the generic token, wherever the stretches before it end', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Librarian'],
+		[3, 'Monk'],
+		[4, 'Fortune Teller'],
+		[5, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const tray = page.getByRole('list', { name: 'Reminder bank' });
+	const caption = page.getByTestId('bank-generic');
+	const cell = tray.getByRole('button', { name: 'Generic reminder' });
+	await expect
+		.poll(async () => {
+			const token = (await cell.boundingBox())!;
+			// Off the row's end (a phone), the caption waits until it is scrolled into view.
+			if ((await caption.count()) === 0) {
+				const row = (await tray.boundingBox())!;
+				return token.x > row.x + row.width / 2;
+			}
+			const mark = (await caption.boundingBox())!;
+			// From the stretch's line, as the other captions are, so over the token's start.
+			return mark.x < token.x + token.width / 2 && mark.x + mark.width > token.x - token.width / 2;
+		})
+		.toBe(true);
+});
+
 test('a dead player whose ability has ended moves their reminders to the end of the bank', async ({
 	page
 }) => {
@@ -4060,6 +4099,10 @@ test("a reminder's ⋯ duplicates it into the bank, from the board or the bank",
 	await expect(page.getByText(/More copies of this reminder than the game gives/)).toBeVisible();
 	await expect(onSeat).toHaveCount(1);
 	await expect(inBank).toHaveCount(2);
+	// The copy is marked in the bank as it is on the board (Trevor, 2026-10-22).
+	const bankExtras = page.locator('[aria-label="Reminder bank"] li[data-extra]');
+	await expect(bankExtras).toHaveCount(1);
+	await expect(bankExtras.getByRole('button', { name: 'Poisoned reminder' })).toHaveCount(1);
 	// From the bank too, in its "Put on" (Trevor, 2026-10-20).
 	await inBank.first().tap();
 	const put = page.getByRole('dialog', { name: 'Put Poisoned on' });
@@ -4067,6 +4110,7 @@ test("a reminder's ⋯ duplicates it into the bank, from the board or the bank",
 	await page.getByRole('button', { name: 'Duplicate reminder' }).tap();
 	await expect(put).toBeHidden();
 	await expect(inBank).toHaveCount(3);
+	await expect(bankExtras).toHaveCount(2);
 	// Placed, an added copy is marked as more than the game gives.
 	for (let n = 0; n < 3; n++) {
 		await inBank.first().tap();
