@@ -631,6 +631,10 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	await expect(page.getByRole('heading', { name: 'Hidden characters', level: 1 })).toBeVisible();
 	const extras = page.getByTestId('extras').locator('li');
@@ -699,6 +703,10 @@ test('with no hidden character, Infinite Possibilities can’t go on to the setu
 	await page.goto('/new');
 	await chooseRules(page, 'A Script of Infinite Possibilities');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/extras$/);
 	const extras = page.getByTestId('extras').locator('li');
 	await expect(extras).toHaveCount(4);
@@ -808,6 +816,10 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 
@@ -1088,6 +1100,10 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 	await noSidewaysScroll(page);
 
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	// The game is named for its mode and rules wherever it is listed.
 	await page.goto('/games');
@@ -1198,6 +1214,10 @@ test('each special rule takes its own line under the script name in the board co
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'Stowed Away', 'I See Dead People');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const corner = page.getByTestId('script-title');
 	const lines = corner.getByTestId('game-mode');
@@ -1229,6 +1249,10 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'I See Dead People');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	// The death is marked on the board (Trevor, 2026-10-20), then read in the day view.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
@@ -1256,6 +1280,10 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	const extras = page.getByTestId('extras').locator('li');
 	await expect(extras).toHaveCount(4);
@@ -1288,6 +1316,33 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.locator('.row[data-dashed]')).toHaveCount(1);
 	await expect(page.locator('.row[data-dashed]')).toContainText('Goon');
+});
+
+test('Start game restates the special rules first, and Back returns to New game', async ({
+	page
+}) => {
+	// Trevor (2026-10-22): a screen that restates the special rules, with a Back button.
+	await page.goto('/new');
+	await chooseRules(page, '+1', 'Binary Supernovae');
+	const panel = modesPanel(page);
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	const recap = page.getByRole('dialog', { name: 'Special rules in this game' });
+	const items = recap.getByTestId('rules-recap').locator('li');
+	await expect(items).toHaveCount(2);
+	await expect(items.nth(1)).toContainText('Binary Supernovae');
+	await expect(items.nth(1)).toContainText('One extra Demon is in play.');
+	await expect(items.nth(0)).toContainText('Name the characters Off');
+	await noSidewaysScroll(page);
+	// Back keeps everything as chosen.
+	await recap.getByRole('button', { name: 'Back' }).tap();
+	await expect(recap).toBeHidden();
+	await expect(page).toHaveURL(/\/new$/);
+	await expect(panel.getByRole('button', { name: /^Special rules/ })).toHaveText(
+		'Special rules (2)'
+	);
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await recap.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 });
 
 test('Special rules has a search box', async ({ page }) => {
@@ -1346,6 +1401,10 @@ test('Binary Supernovae asks for one more Demon, and an executed Demon wins it f
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'Binary Supernovae');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);

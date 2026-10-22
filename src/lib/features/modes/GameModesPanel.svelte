@@ -41,6 +41,7 @@
 	import SpecialRulesDialog from './SpecialRulesDialog.svelte';
 	import { loadLinkedScript, loadScriptChoice, scriptChoices } from './script-choices.svelte.ts';
 	import { campaigns } from './campaigns.ts';
+	import RulesRecap from './RulesRecap.svelte';
 	import { switched, type SwitchChoices } from './rule-switches.ts';
 	import { continueCampaign, startHref, startInMode, startTowns } from './start.ts';
 	import { townGroup } from './town-groups.ts';
@@ -58,10 +59,19 @@
 		 * New game's own Standard game: script, players and Start (Grimoire board thread), given
 		 * the special rules chosen.
 		 */
-		standard: Snippet<[readonly SpecialRule[]]>;
+		/** Standard's own screen, given the chosen rules and the Start game step that restates them. */
+		standard: Snippet<[readonly SpecialRule[], (go: () => void) => void]>;
 	}
 
 	let { standard }: Props = $props();
+	/** Start game with special rules on restates them first (RulesRecap). */
+	let recap = $state<(() => void) | undefined>();
+	let recapOpen = $state(false);
+	function startAfterRecap(go: () => void) {
+		if (!rules.length) return go();
+		recap = go;
+		recapOpen = true;
+	}
 
 	onMount(() => void restoreScripts());
 
@@ -312,7 +322,7 @@
 	</PageSection>
 
 	{#if isStandard}
-		{@render standard(rules)}
+		{@render standard(rules, startAfterRecap)}
 	{:else}
 		<div class="settings" data-testid="mode-settings">
 			<PageSection title={t('modes.settings')}>
@@ -429,13 +439,19 @@
 			/>
 		{/if}
 
-		<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>
+		<Button
+			variant="accent"
+			icon="grimoire"
+			disabled={starting}
+			onclick={() => startAfterRecap(start)}
+		>
 			{t('modes.start')}
 		</Button>
 	{/if}
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
+<RulesRecap bind:open={recapOpen} {rules} choices={switchChoices} onStart={() => recap?.()} />
 <SpecialRulesDialog
 	bind:open={choosingRules}
 	{mode}

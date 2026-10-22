@@ -182,6 +182,10 @@ export const modes = {
 	'modes.inspectRule': 'Inspect {name}',
 	'modes.deleteRule': 'Delete {name}',
 	'modes.switch.named': 'Name the characters',
+	'modes.recap.title': 'Special rules in this game',
+	'modes.recap.back': 'Back',
+	'modes.recap.on': 'On',
+	'modes.recap.off': 'Off',
 	'modes.deleteRuleConfirm': 'Delete {name}?',
 	'modes.conflicts': 'Conflicts',
 	'modes.conflict':
