@@ -74,6 +74,7 @@ describe('parsePreferences', () => {
 			tileFace: 'letters',
 			requireName: true,
 			holdToReveal: true,
+			slotMachine: true,
 			ownWording: true,
 			hideWatchLink: true,
 			timerSound: 'buzzer',

@@ -42,6 +42,12 @@
 			checked={preferences.current.holdToReveal}
 			onChange={(holdToReveal) => preferences.update({ holdToReveal })}
 		/>
+		<SettingToggle
+			label={t('settings.slotMachine')}
+			description={t('settings.slotMachineHelp')}
+			checked={preferences.current.slotMachine}
+			onChange={(slotMachine) => preferences.update({ slotMachine })}
+		/>
 	</div>
 </Dialog>
 

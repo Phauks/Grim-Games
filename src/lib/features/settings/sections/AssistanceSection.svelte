@@ -50,6 +50,12 @@
 	onChange={(holdToReveal) => preferences.update({ holdToReveal })}
 />
 <SettingToggle
+	label={t('settings.slotMachine')}
+	description={t('settings.slotMachineHelp')}
+	checked={preferences.current.slotMachine}
+	onChange={(slotMachine) => preferences.update({ slotMachine })}
+/>
+<SettingToggle
 	label={t('settings.ownWording')}
 	description={t('settings.ownWordingHelp')}
 	checked={preferences.current.ownWording}
