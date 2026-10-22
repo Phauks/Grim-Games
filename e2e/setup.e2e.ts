@@ -249,6 +249,10 @@ test('Stowed Away: up to 2 Travellers count in the bag, the rest for fewer playe
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);
@@ -603,19 +607,14 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 
-	// A drawn tile is never put back: closing the reveal keeps it in seat 2's hand, even
-	// across a reload.
+	// Once seen, closing the reveal finishes the draw: no "held" tile anyone could open again
+	// (Trevor, 2026-10-22).
 	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
 	await expect(reveal).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(reveal).toBeHidden();
-	await page.reload();
-	const held = page.getByRole('button', { name: 'Tile 2, held by Seat 2' });
-	await expect(held).toBeVisible();
-	await held.tap();
-	await expect(page.getByRole('button', { name: 'Put back' })).toHaveCount(0);
-	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 2, drawn' })).toBeDisabled();
+	await expect(page.getByText('Held')).toHaveCount(0);
 
 	// The rest are drawn one by one; Enter in the name field closes the keyboard, not the reveal.
 	for (let n = 3; n <= 5; n++) {
@@ -970,6 +969,30 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	await expect(page.getByTestId('setup-bluffs')).toHaveCount(0);
 });
 
+test('each good character row sets or clears a Demon bluff, up to three', async ({ page }) => {
+	// Trevor (2026-10-22): a bluff from the character's own row, beside its lock.
+	await selectionFor(page, 8);
+	const row = (id: string) =>
+		page.locator('.row', { has: page.locator(`.main[data-character-id="${id}"]`) });
+	const bluffButton = (id: string) => row(id).getByTestId('bluff-character');
+	const bluffs = page.getByTestId('setup-bluffs');
+	await expect(bluffButton('soldier')).toHaveAccessibleName('Demon bluff: Soldier');
+	await bluffButton('soldier').tap();
+	await expect(bluffButton('soldier')).toHaveAttribute('aria-pressed', 'true');
+	await expect(row('soldier').getByTestId('bluff-tag')).toBeVisible();
+	await expect(bluffs).toContainText('Soldier');
+	await bluffButton('soldier').tap();
+	await expect(row('soldier').getByTestId('bluff-tag')).toHaveCount(0);
+	await expect(bluffs).not.toContainText('Soldier');
+	// Minions and Demons have none.
+	await expect(bluffButton('imp')).toHaveCount(0);
+	for (const id of ['soldier', 'monk', 'saint']) await bluffButton(id).tap();
+	await expect(bluffButton('chef')).toBeDisabled();
+	await expect(bluffButton('chef')).toHaveAttribute('title', '3 bluffs chosen');
+	// One of the three can still come out.
+	await expect(bluffButton('monk')).toBeEnabled();
+});
+
 // Trevor, 2026-10-19: the bag's cog and Share sit on the Draw heading's line, at the right.
 test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 	await selectionFor(page, 5);
@@ -1283,12 +1306,18 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
 	const hold = reveal.getByTestId('reveal-hold');
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	// Closed before the character was seen, the tile stays held for that seat.
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Tile 1, held by Seat 1' }).tap();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
 	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+	// Seen, closing it finishes the draw (Trevor, 2026-10-22: no "held" once seen).
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 });
 
 test('selecting a character moves nothing, and its lock picks it when not yet chosen', async ({

@@ -39,6 +39,8 @@ export const setup = {
 	'setup.countInfo.expected': 'Expected',
 	'setup.countInfo.chosen': 'Chosen',
 	'setup.lockFor': 'Lock {name}',
+	'setup.bluffFor': 'Demon bluff: {name}',
+	'setup.bluffsFull': '{count} bluffs chosen',
 	'setup.locked': 'Locked',
 	'setup.lockedHelp': 'Unlock this character to take it out.',
 	'setup.clearSelection': 'Clear selection',

@@ -285,3 +285,43 @@ test('the Glossary keeps its text and boxes clear of the scrollbar', async ({ pa
 	expect(await room('nav input')).toBeGreaterThanOrEqual(6);
 	expect(await room('nav li button')).toBeGreaterThanOrEqual(6);
 });
+
+test('the Glossary links the current script’s almanac when it has one', async ({ page }) => {
+	// Trevor, backlog P1: an almanac link in the Glossary, from the script's own `_meta`.
+	await mockWiki(page);
+	const openGlossary = async () => {
+		const card = await poisonerCard(page);
+		await card.getByRole('button', { name: 'poisoned: explain rules term' }).tap();
+		await page
+			.getByRole('dialog', { name: 'Poisoned' })
+			.getByRole('button', { name: 'Open Glossary' })
+			.tap();
+		return page.getByRole('dialog', { name: 'Glossary' });
+	};
+	// Without one, the button is there but unusable, so the header never moves.
+	let glossary = await openGlossary();
+	await expect(glossary.getByRole('button', { name: 'Open the script’s almanac' })).toBeDisabled();
+
+	await page.goto('/library');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'almanac.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(
+			JSON.stringify([
+				{ id: '_meta', name: 'Almanac Test', almanac: 'https://example.com/almanac-test' },
+				'washerwoman',
+				'imp'
+			])
+		)
+	});
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Almanac Test' })
+			.or(page.getByRole('region', { name: 'Almanac Test' }))
+	).toBeVisible();
+	glossary = await openGlossary();
+	await expect(glossary.getByRole('link', { name: 'Open the script’s almanac' })).toHaveAttribute(
+		'href',
+		'https://example.com/almanac-test'
+	);
+});

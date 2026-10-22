@@ -109,7 +109,7 @@
 	}
 	.tools :global(.icon-button) {
 		background: var(--surface-raised);
-		box-shadow: inset 0 0 0 1px var(--border);
+		box-shadow: var(--button-ring);
 	}
 	@media (hover: hover) {
 		.tools :global(.icon-button:hover:not(:disabled)) {

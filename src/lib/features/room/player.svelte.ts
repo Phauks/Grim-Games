@@ -137,6 +137,12 @@ export class RoomPlayer {
 		return voteId ? this.#socket.send({ type: 'vote', voteId, choice }) : false;
 	}
 
+	/** This phone's ballot in the script vote (plan R1); a new one replaces the last. */
+	scriptBallot(choices: string[]): boolean {
+		const voteId = this.view?.scriptVote?.voteId;
+		return voteId ? this.#socket.send({ type: 'script-ballot', voteId, choices }) : false;
+	}
+
 	stop(): void {
 		this.#socket.stop();
 	}

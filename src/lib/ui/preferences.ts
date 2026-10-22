@@ -68,7 +68,7 @@ export interface Preferences {
 	 */
 	ownWording: boolean;
 	/**
-	 * Share's View grimoire tab hides its QR code and link, e.g. while streaming (Trevor,
+	 * Share's view-only grimoire part hides its QR code and link, e.g. while streaming (Trevor,
 	 * 2026-10-21); Copy and Share still work.
 	 */
 	hideWatchLink: boolean;

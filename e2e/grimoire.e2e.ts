@@ -555,6 +555,11 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	// 2026-10-19: "a lot of the game flow comes from that button"), and nowhere else.
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(1);
 	await expect(bankNight(page, 'Start game')).toHaveCount(0);
+	// Arranging seats keeps Set up there, disabled until Done (Trevor, 2026-10-22).
+	await menu(page, 'Arrange seats');
+	await expect(bankNight(page, 'Set up')).toBeDisabled();
+	await expect(bankNight(page, 'Start game')).toHaveCount(0);
+	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
 	await bankNight(page, 'Set up').tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// The last setup step opens the board, whose bank starts with the setup reminders.
@@ -1032,11 +1037,11 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');
 	// The link is the room's: phones that join get the script, names and deaths only. The
-	// view-only grimoire link has its own tab (Trevor, 2026-10-19), off.
-	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
-	await share.getByRole('tab', { name: 'View grimoire' }).tap();
-	await expect(share.getByTestId('watch-link').getByTestId('share-url')).toHaveValue('');
-	await expect(share.getByTestId('share-code')).toBeHidden();
+	// view-only grimoire link sits below it on the same screen (Trevor, 2026-10-22), off.
+	const watch = share.getByTestId('watch-link');
+	await expect(share.getByTestId('share-url').first()).toHaveValue(new RegExp(`/join/${code}$`));
+	await expect(watch.getByTestId('share-url')).toHaveValue('');
+	await expect(watch.getByTestId('share-code')).toHaveCount(0);
 	expect(page.url()).toBe(url);
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	await expect(share).toBeHidden();
@@ -1400,6 +1405,64 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await page.keyboard.press('Escape');
 	await openSeat(page, 4);
 	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
+});
+
+test("every button in the More menu has an edge, and End game is red with the buttons' text", async ({
+	page
+}) => {
+	// Trevor, 2026-10-22: End game's red text was hard to read, and buttons matched the
+	// surface behind them. Edges reach 3:1 (WCAG 1.4.11); the label keeps the buttons' colour.
+	await startGame(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const grimoireMenu = page.getByRole('dialog', { name: 'Grimoire' });
+	const end = grimoireMenu.getByRole('button', { name: 'End game' });
+	const other = grimoireMenu.getByRole('button', { name: 'Board', exact: true });
+	await expect(end).toBeVisible();
+	const look = (button: Locator) =>
+		button.evaluate((el) => {
+			const rgb = (css: string) => (css.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+			const lum = (css: string) => {
+				const [r, g, b] = rgb(css).map((v) => {
+					const c = v / 255;
+					return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+				});
+				return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+			};
+			const ratio = (a: string, b: string) => {
+				const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+				return (hi + 0.05) / (lo + 0.05);
+			};
+			const style = getComputedStyle(el);
+			// The dialog panel behind the button.
+			let panel = el.parentElement;
+			while (panel && getComputedStyle(panel).backgroundColor === 'rgba(0, 0, 0, 0)')
+				panel = panel.parentElement;
+			const surface = panel ? getComputedStyle(panel).backgroundColor : 'rgb(0, 0, 0)';
+			const edge = style.boxShadow.match(/rgba?\([^)]*\)/)?.[0] ?? style.backgroundColor;
+			return {
+				fill: style.backgroundColor,
+				text: style.color,
+				edge: ratio(edge, surface),
+				label: ratio(
+					style.color,
+					style.backgroundColor === 'rgba(0, 0, 0, 0)' ? surface : style.backgroundColor
+				)
+			};
+		});
+	const ended = await look(end);
+	const board = await look(other);
+	const [r, g, b] = (ended.fill.match(/\d+/g) ?? []).map(Number);
+	expect(r).toBeGreaterThan(g * 2);
+	expect(r).toBeGreaterThan(b * 2);
+	expect(ended.text).toBe(board.text);
+	expect(ended.label).toBeGreaterThanOrEqual(4.5);
+	for (const button of [ended, board]) expect(button.edge).toBeGreaterThanOrEqual(3);
+	await end.scrollIntoViewIfNeeded();
+	await grimoireMenu.screenshot({ path: `test-results/more-menu-${test.info().project.name}.png` });
+	await end.tap();
+	await page
+		.getByRole('alertdialog', { name: 'End game?' })
+		.screenshot({ path: `test-results/end-game-${test.info().project.name}.png` });
 });
 
 test('the game toolbar opens the app menu; leaving the game asks first and keeps it', async ({
@@ -1925,12 +1988,12 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	// Whoever it names shows with their character (Trevor, 2026-10-17).
 	await expect(suggested.locator('.because')).toContainText('Seat 2');
 	await expect(suggested.locator('.because [data-character-id="imp"]').first()).toBeVisible();
-	// The logic behind it: the executed player and their true character.
-	await suggested.getByRole('button', { name: 'Why' }).tap();
-	const why = page.getByRole('dialog', { name: 'Why' });
-	await expect(why.getByTestId('why-facts')).toContainText('Seat 2');
-	await expect(why.getByTestId('why-facts').locator('[data-character-id="imp"]')).toBeVisible();
-	await why.getByRole('button', { name: 'Close' }).tap();
+	// The logic behind it, beside it with no Why button (Trevor, 2026-10-22): the executed
+	// player and their true character.
+	await expect(suggested.getByRole('button', { name: 'Why' })).toHaveCount(0);
+	const why = suggested.getByTestId('why-facts');
+	await expect(why).toContainText('Seat 2');
+	await expect(why.locator('[data-character-id="imp"]')).toBeVisible();
 	await suggested.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('Imp');
 });
@@ -3487,9 +3550,10 @@ test('an information step suggests every valid number, and no sets of players', 
 	await expect(rows).toHaveCount(1);
 	await expect(rows.first().locator('.main')).toHaveText('0');
 	await chef.getByRole('button', { name: 'Close' }).tap();
-	// The walk-through's one line counts them instead of naming one.
+	// The walk-through's one line names them in brackets, not a count that reads as the number
+	// to give (Trevor, 2026-10-22).
 	const strip = await walkTo(page, 'Chef');
-	await expect(strip.getByTestId('night-suggested')).toHaveText(/Valid Information: 1 valid/);
+	await expect(strip.getByTestId('night-suggested')).toHaveText('Valid Information: (0)');
 });
 
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({
@@ -4425,6 +4489,10 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	for (const [number, name] of [
 		[1, 'Poisoner'],
@@ -4465,6 +4533,10 @@ test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', as
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	for (const [number, name] of [
 		[6, 'Washerwoman'],
@@ -4935,6 +5007,10 @@ async function startWithRule(
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	for (const [number, name] of cast) {
 		const sheet = await openSeat(page, number);
