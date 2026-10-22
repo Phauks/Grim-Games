@@ -958,6 +958,10 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	await expect(page.getByRole('option')).toHaveText([/v2\.2/, /v2\.1/, /v2\.0/]);
 	await page.getByRole('option', { name: /v2\.2/ }).tap();
 	await expect(version).toContainText('v2.2');
+	// The chosen script's source page opens from New game too (Trevor, 2026-10-22).
+	await expect(
+		page.getByTestId('chosen-script').getByRole('link', { name: "Open the script's source page" })
+	).toHaveAttribute('href', /\/script\/7\/2\.2/);
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 
@@ -1004,6 +1008,10 @@ test('a custom script without a version shows N/A as its version', async ({ page
 	);
 	await expect(version).toHaveText('N/A');
 	await expect(version).toBeDisabled();
+	// A file has no page: the source button stays in place, disabled, naming the file.
+	await expect(
+		page.getByRole('button', { name: 'No source page (no-version.json)' })
+	).toBeDisabled();
 });
 
 test('any script beyond the base three is found by typing, or picked in the Library', async ({
