@@ -18,6 +18,7 @@ import ph_bag_simple_light from '~icons/ph/bag-simple-light';
 import ph_beer_bottle_light from '~icons/ph/beer-bottle-light';
 import ph_beer_stein_light from '~icons/ph/beer-stein-light';
 import ph_bell_light from '~icons/ph/bell-light';
+import ph_binoculars_light from '~icons/ph/binoculars-light';
 import ph_bird_light from '~icons/ph/bird-light';
 import ph_book_bookmark_light from '~icons/ph/book-bookmark-light';
 import ph_book_open_light from '~icons/ph/book-open-light';
@@ -213,6 +214,7 @@ const icons: IconMap = {
 	'ph:beer-bottle-light': ph_beer_bottle_light,
 	'ph:beer-stein-light': ph_beer_stein_light,
 	'ph:bell-light': ph_bell_light,
+	'ph:binoculars-light': ph_binoculars_light,
 	'ph:bird-light': ph_bird_light,
 	'ph:book-bookmark-light': ph_book_bookmark_light,
 	'ph:book-open-light': ph_book_open_light,

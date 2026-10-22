@@ -18,6 +18,7 @@ import ph_bag_simple_thin from '~icons/ph/bag-simple-thin';
 import ph_beer_bottle_thin from '~icons/ph/beer-bottle-thin';
 import ph_beer_stein_thin from '~icons/ph/beer-stein-thin';
 import ph_bell_thin from '~icons/ph/bell-thin';
+import ph_binoculars_thin from '~icons/ph/binoculars-thin';
 import ph_bird_thin from '~icons/ph/bird-thin';
 import ph_book_bookmark_thin from '~icons/ph/book-bookmark-thin';
 import ph_book_open_thin from '~icons/ph/book-open-thin';
@@ -213,6 +214,7 @@ const icons: IconMap = {
 	'ph:beer-bottle-thin': ph_beer_bottle_thin,
 	'ph:beer-stein-thin': ph_beer_stein_thin,
 	'ph:bell-thin': ph_bell_thin,
+	'ph:binoculars-thin': ph_binoculars_thin,
 	'ph:bird-thin': ph_bird_thin,
 	'ph:book-bookmark-thin': ph_book_bookmark_thin,
 	'ph:book-open-thin': ph_book_open_thin,
