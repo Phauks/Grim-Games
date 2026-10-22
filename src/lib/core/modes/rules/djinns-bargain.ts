@@ -25,7 +25,6 @@ export const DJINNS_BARGAIN: SpecialRule = {
 		],
 		ruleChanges: [
 			{
-				characters: [],
 				instructions:
 					'A player may say, as they nominate, that they choose to die. Don’t ask them; once the nomination is made, the chance has passed. If they do, they die at once, and you announce it. Until dusk the next day, the nominee’s ability works twice: each time it takes effect, resolve it twice, one choice at a time. A once per game ability that was already used stays used. While only 3 players are alive, no one may choose to die this way.'
 			}
