@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import { REPOSITORY_URL, shortCommit } from '#lib/features/about/report-issue.ts';
+	import OfficialNotice from '#lib/features/about/OfficialNotice.svelte';
 	import UpdateChanges from '#lib/features/about/UpdateChanges.svelte';
 	import { updateCheck } from '#lib/features/about/update-check.svelte.ts';
 	import DiagnosticsPanel from '#lib/features/errors/DiagnosticsPanel.svelte';
@@ -131,7 +132,7 @@
 <div class="report">
 	<Button onclick={() => void report()}><Icon name="report" />{t('errors.diag.report')}</Button>
 </div>
-<p class="small">{t('shell.aboutNotice')}</p>
+<OfficialNotice />
 <!-- Diagnostics, closed beneath About (Trevor, 2026-10-18); the version and commit show once,
      above, though the copied diagnostics still carry them. /diagnostics opens it. -->
 <PageSection
@@ -184,9 +185,5 @@
 	}
 	.report {
 		margin-top: var(--space-3);
-	}
-	.small {
-		font-size: 0.85rem;
-		color: var(--on-surface-muted);
 	}
 </style>
