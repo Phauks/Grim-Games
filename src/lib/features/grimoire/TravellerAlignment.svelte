@@ -36,7 +36,6 @@
 					characterId={id}
 					character={characters.get(id)}
 					playerName={seatName(game, seatId)}
-					inline
 				/>
 			{:else}
 				<strong>{seatName(game, seatId)}</strong>

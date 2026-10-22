@@ -443,7 +443,7 @@
 	>
 		{#snippet cell(c, column)}
 			{#if column.id === 'character'}
-				<CharacterBadge characterId={c.characterId} text={c.name} inline />
+				<CharacterBadge characterId={c.characterId} text={c.name} />
 			{:else if column.id === 'type'}
 				{TYPE_PLURALS[c.type]}
 			{:else if column.id === 'rate'}

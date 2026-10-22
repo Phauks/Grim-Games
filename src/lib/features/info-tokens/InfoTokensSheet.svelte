@@ -178,6 +178,7 @@
 		<IconButton
 			icon="quickCard"
 			label={t('info-tokens.quick')}
+			outlined
 			disabled={view.kind !== 'list'}
 			onclick={() => list?.openQuick()}
 		/>

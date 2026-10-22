@@ -47,7 +47,9 @@ const W = 'https://wiki.bloodontheclocktower.com/';
  * - `fearmonger`: the Fearmonger nominated and executed its chosen player;
  * - `summoner`: there is no Demon and the Summoner is dead, so none can be summoned;
  * - `mastermind`: on the Mastermind's extra day, a player was executed (their team loses)
- *   or nobody was (good wins).
+ *   or nobody was (good wins);
+ * - `demon-executed`: a special rule says good wins when a Demon dies by execution (Binary
+ *   Supernovae), and one has (`seats`: the executed Demons; `ruleName`: the rule).
  */
 export type GameEndRule =
 	| 'demon-dead'
@@ -60,7 +62,8 @@ export type GameEndRule =
 	| 'leviathan-day-5'
 	| 'fearmonger'
 	| 'summoner'
-	| 'mastermind';
+	| 'mastermind'
+	| 'demon-executed';
 
 /**
  * Why the game may go on:
@@ -99,11 +102,18 @@ export interface GameEnd {
 	flippedBy?: AbilitySource;
 	/** What may keep the game going; empty when nothing does. */
 	holds: GameHold[];
+	/** The special rule whose end it is, by name, for an end no character gives. */
+	ruleName?: string;
 }
 
 export interface GameEndOptions {
 	/** Today is over: Dusk has been ticked for tonight's night order. */
 	dayEnded?: boolean;
+	/**
+	 * The name of a special rule under which good wins as soon as a Demon dies by execution
+	 * (Binary Supernovae, https://beardytas.com/garden-of-djinn/binary-supernovae/).
+	 */
+	demonExecutedBy?: string;
 }
 
 const other = (team: Alignment): Alignment => (team === 'good' ? 'evil' : 'good');
@@ -541,6 +551,38 @@ function heretic(game: Game, characters: CharacterLookup): AbilitySource | undef
 	return seatId === undefined ? undefined : { characterId: 'heretic', seatId };
 }
 
+/** A Demon died by execution, under a rule that makes that a win for good. */
+function demonExecuted(game: Game, characters: CharacterLookup, ruleName: string): GameEnd[] {
+	// Dead by execution, as for the Saint.
+	const seats = demonSeats(game, characters).filter(
+		(id) => game.seats[id].dead && game.seats[id].deathCause === 'execution'
+	);
+	if (seats.length === 0) return [];
+	// The rule's page lets an ability such as the Mastermind's keep the game going.
+	const holds: GameHold[] = seatsOf(game, 'mastermind', characters)
+		.filter((mind) => aliveForEnd(game, mind, characters))
+		.flatMap((mind) => [
+			{
+				rule: 'mastermind' as const,
+				characterId: 'mastermind',
+				seats: [mind],
+				wiki: `${W}Mastermind`
+			},
+			...impaired(game, mind, 'mastermind', characters)
+		]);
+	return [
+		{
+			key: `demon-executed:${seats.join(',')}`,
+			rule: 'demon-executed',
+			winner: 'good',
+			seats,
+			wiki: `${W}Glossary`,
+			holds,
+			ruleName
+		}
+	];
+}
+
 /**
  * Every game end condition met now, most decisive first. Empty until a seat has a
  * character. A met `demon-dead` with `holds` is listed so the Storyteller sees why the game
@@ -553,7 +595,9 @@ export function gameEnds(
 ): GameEnd[] {
 	if (game.seating.every((id) => game.seats[id].characterId === undefined)) return [];
 
-	const out: GameEnd[] = [];
+	const out: GameEnd[] = options.demonExecutedBy
+		? demonExecuted(game, characters, options.demonExecutedBy)
+		: [];
 	const demon = demonDead(game, characters);
 	for (const end of demon) {
 		const mind = mastermind(game, characters, options, end);

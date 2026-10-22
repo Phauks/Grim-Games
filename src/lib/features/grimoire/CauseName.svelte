@@ -19,6 +19,5 @@
 {#if characterId}<CharacterBadge
 		{characterId}
 		character={characters.get(characterId)}
-		inline
 		{interactive}
 	/>{:else}{causeLabel(cause, characters, traveller)}{/if}
