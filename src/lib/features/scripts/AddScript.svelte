@@ -2,10 +2,16 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
+		guessScriptKind,
+		loadScript,
 		loadScriptText,
+		type KindGuess,
 		type LoadedScript,
+		type ScriptKind,
 		type ScriptLoadResult
 	} from '#lib/core/data/index.ts';
+	import { addAsCharacters, addAsCollection } from '#lib/features/library/add-as-kind.ts';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -37,6 +43,8 @@
 	interface Props {
 		/** Called once a script is saved. */
 		onsaved?: (script: LoadedScript) => void;
+		/** Called with the Library key of characters or a collection added instead of a script. */
+		onadded?: (key: string) => void;
 		/**
 		 * Given, the checked script is handed over here instead of being saved: the page uses
 		 * it itself (the Script builder starts from it, Trevor 2026-10-18).
@@ -50,7 +58,7 @@
 		button?: boolean;
 	}
 
-	let { onsaved, onloaded, busy = $bindable(false), button = true }: Props = $props();
+	let { onsaved, onadded, onloaded, busy = $bindable(false), button = true }: Props = $props();
 
 	let addOpen = $state(false);
 	let checkOpen = $state(false);
@@ -78,8 +86,69 @@
 		onsaved?.(script);
 	}
 
-	/** Parses fetched text, then saves it or asks the Storyteller to check it first. */
+	/**
+	 * What the JSON holds, guessed (backlog L23). A guess other than a script is shown with its
+	 * reason before anything is added, with a drop-down to change it; a script goes on as before.
+	 */
+	let kindOpen = $state(false);
+	let kindOf = $state.raw<{ guess: KindGuess; fetched: FetchedScript; json: unknown }>();
+	let kind = $state<ScriptKind>('script');
+	const kindOptions = $derived(
+		(['script', 'character', 'collection'] as const).map((k) => ({
+			value: k,
+			label: t(`library.kindName.${k}`)
+		}))
+	);
+
+	/** Sources that only publish scripts: their own label wins over the guess. */
+	function scriptOnly(source: ScriptSource): boolean {
+		return (
+			source.kind !== 'paste' && source.kind !== 'file' && !(source.kind === 'link' && !source.page)
+		);
+	}
+
+	function parsed(text: string): unknown {
+		try {
+			return JSON.parse(relaxJson(text.replace(/^\uFEFF/, '').trim()));
+		} catch {
+			return undefined;
+		}
+	}
+
 	async function settle(fetched: FetchedScript) {
+		if (!onloaded) {
+			const json = parsed(fetched.text);
+			const guess = guessScriptKind(json, scriptOnly(fetched.source));
+			if (guess.kind !== 'script') {
+				addOpen = false;
+				kindOf = { guess, fetched, json };
+				kind = guess.kind;
+				kindOpen = true;
+				return;
+			}
+		}
+		await settleScript(fetched);
+	}
+
+	/** Adds what the kind confirmation settled on. */
+	async function confirmKind() {
+		const chosen = kindOf;
+		if (!chosen) return;
+		if (kind === 'script') return settleScript(chosen.fetched);
+		const json = Array.isArray(chosen.json) ? chosen.json : [chosen.json];
+		const script = loadScript(json, await loadOfficialData()).script;
+		if (!script) return;
+		const { source } = chosen.fetched;
+		const name =
+			script.meta.name ||
+			(source.kind === 'file' ? source.fileName.replace(/\.json$/i, '') : '') ||
+			t('library.kindName.collection');
+		const key = kind === 'character' ? addAsCharacters(script)[0] : addAsCollection(script, name);
+		if (key) onadded?.(key);
+	}
+
+	/** Parses fetched text, then saves it or asks the Storyteller to check it first. */
+	async function settleScript(fetched: FetchedScript) {
 		// Hand-edited JSON (comments, trailing commas) loads too.
 		const result = loadScriptText(relaxJson(fetched.text), await loadOfficialData());
 		addOpen = false;
@@ -284,6 +353,31 @@
 	{/snippet}
 </Dialog>
 
+<!-- The guessed kind, with why (Trevor, 2026-10-22: "show guess with a dropdown, show reason
+     for choice"). -->
+<Dialog bind:open={kindOpen} title={t('scripts.kind.title')}>
+	<div class="field">
+		<Select
+			label={t('scripts.kind.label')}
+			value={kind}
+			options={kindOptions}
+			onChange={(v) => (kind = v)}
+		/>
+		<p class="reason" data-testid="kind-reason">
+			{kindOf ? t(`scripts.kind.reason.${kindOf.guess.reason}`) : ''}
+		</p>
+	</div>
+	{#snippet actions()}
+		<ModalActions
+			onCancel={() => (kindOpen = false)}
+			onConfirm={() => {
+				kindOpen = false;
+				void confirmKind();
+			}}
+		/>
+	{/snippet}
+</Dialog>
+
 <ScriptCheckDialog
 	bind:open={checkOpen}
 	result={checking?.result}
@@ -332,6 +426,11 @@
 	}
 	.field {
 		margin: var(--space-3) 0 0;
+	}
+	.reason {
+		min-height: 1lh;
+		margin: var(--space-1) 0 0;
+		color: var(--on-sheet-muted);
 	}
 	.row {
 		display: flex;
