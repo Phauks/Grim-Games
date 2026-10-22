@@ -539,7 +539,7 @@
 								<CharacterRow
 									{character}
 									alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
-									note={head?.ref.playerName}
+									note={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
 									info
 								>
 									{#snippet end()}{@const seatId =
@@ -571,7 +571,9 @@
 													alignment={segment.ref.seatId
 														? g.seats[segment.ref.seatId]?.alignment
 														: undefined}
-													playerName={segment.ref.playerName}
+													playerName={segment.ref.seatId
+														? game.seatName(segment.ref.seatId)
+														: undefined}
 												/>{#if stop}.{/if}</span
 											>
 										{:else if segment.kind === 'value'}
@@ -600,7 +602,12 @@
 					<li data-character={seat.characterId}>
 						{#if character}
 							<!-- Drawn like character selection (Trevor, 2026-10-20: L12). -->
-							<CharacterRow {character} alignment={seat.alignment} note={seat.playerName} info>
+							<CharacterRow
+								{character}
+								alignment={seat.alignment}
+								note={game.seatName(seat.seatId)}
+								info
+							>
 								{#snippet end()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}
 							</CharacterRow>
 						{/if}

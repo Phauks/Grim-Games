@@ -649,6 +649,14 @@ test('Execution names the player executed, who dies before tonight', async ({ pa
 	await expect(boardSeat(page, 'Seat 2')).not.toHaveAccessibleName(/dead/);
 });
 
+test('an unnamed seat is named by its number in the day view', async ({ page }) => {
+	await startGame(page);
+	await chooseCharacter(page, 3, 'Slayer');
+	const day = await openDay(page);
+	// No name set, so the default "Seat N" (Trevor, 2026-10-22: L32).
+	await expect(day.locator('li[data-character="slayer"]').first()).toContainText('Seat 3');
+});
+
 test('holding the day timer or a new day resets it to the time per living player', async ({
 	page
 }) => {
