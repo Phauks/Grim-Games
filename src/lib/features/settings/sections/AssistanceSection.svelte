@@ -98,6 +98,15 @@
 />
 <TimerPerPlayerRow />
 
+<h3>{t('settings.groupShare')}</h3>
+<!-- Also on Share's View grimoire tab, where it is used. -->
+<SettingToggle
+	label={t('settings.hideWatchLink')}
+	description={t('settings.hideWatchLinkHelp')}
+	checked={preferences.current.hideWatchLink}
+	onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
+/>
+
 <style>
 	h3 {
 		margin: var(--space-5) 0 var(--space-1);

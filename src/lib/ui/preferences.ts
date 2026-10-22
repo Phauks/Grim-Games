@@ -67,6 +67,11 @@ export interface Preferences {
 	 * content, Trevor 2026-10-15).
 	 */
 	ownWording: boolean;
+	/**
+	 * Share's View grimoire tab hides its QR code and link, e.g. while streaming (Trevor,
+	 * 2026-10-21); Copy and Share still work.
+	 */
+	hideWatchLink: boolean;
 	/** The sound when the day timer runs out (Trevor, 2026-10-17). */
 	timerSound: TimerSound;
 	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
@@ -148,6 +153,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	requireName: false,
 	holdToReveal: false,
 	ownWording: false,
+	hideWatchLink: false,
 	timerSound: 'bell',
 	timerMode: 'down',
 	timerVibrate: true,
@@ -195,6 +201,10 @@ export function parsePreferences(raw: unknown): Preferences {
 				: DEFAULT_PREFERENCES.holdToReveal,
 		ownWording:
 			typeof input.ownWording === 'boolean' ? input.ownWording : DEFAULT_PREFERENCES.ownWording,
+		hideWatchLink:
+			typeof input.hideWatchLink === 'boolean'
+				? input.hideWatchLink
+				: DEFAULT_PREFERENCES.hideWatchLink,
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,

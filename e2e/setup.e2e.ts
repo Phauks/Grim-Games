@@ -727,8 +727,8 @@ test('a No Dashii game offers its two Poisoned tokens on the board after the dra
 // Trevor, 2026-10-16: share the join code from setup, before the draw.
 test("setup opens the players' join code and QR", async ({ page }) => {
 	await selectionFor(page, 5);
-	await page.getByRole('button', { name: "Players' phones" }).tap();
-	const dialog = page.getByRole('dialog', { name: "Players' phones" });
+	await page.getByRole('button', { name: 'Share' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Share' });
 	await expect(dialog.getByTestId('share-code')).toHaveText(/\d/);
 	await expect(dialog.getByRole('img', { name: /QR/i })).toBeVisible();
 });

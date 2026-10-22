@@ -350,7 +350,12 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	await expect(nav.getByRole('heading')).toHaveCount(0);
 	await nav.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await expect(dialog).not.toContainText('Applies to');
-	await expect(dialog.getByRole('heading', { level: 3 })).toHaveText(['Night', 'Bag draw', 'Day']);
+	await expect(dialog.getByRole('heading', { level: 3 })).toHaveText([
+		'Night',
+		'Bag draw',
+		'Day',
+		'Share'
+	]);
 });
 
 test('text alignment switches body text between left aligned and justified', async ({ page }) => {
