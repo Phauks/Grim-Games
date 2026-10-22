@@ -88,7 +88,15 @@ export interface Preferences {
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
 	timerPerPlayer: number;
+	/**
+	 * What goes in the middle of a share QR code (Trevor, 2026-10-20, plan R1): the script's
+	 * logo (or its name), the Storyteller's own picture, or nothing.
+	 */
+	qrCentre: QrCentre;
 }
+
+export const QR_CENTRES = ['script', 'picture', 'none'] as const;
+export type QrCentre = (typeof QR_CENTRES)[number];
 
 export const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
@@ -165,7 +173,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerMode: 'down',
 	timerVibrate: true,
 	timerKeepAwake: true,
-	timerPerPlayer: DAY_SECONDS_PER_ALIVE
+	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
+	qrCentre: 'script'
 };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
@@ -214,6 +223,9 @@ export function parsePreferences(raw: unknown): Preferences {
 			typeof input.hideWatchLink === 'boolean'
 				? input.hideWatchLink
 				: DEFAULT_PREFERENCES.hideWatchLink,
+		qrCentre: (QR_CENTRES as readonly unknown[]).includes(input.qrCentre)
+			? (input.qrCentre as QrCentre)
+			: DEFAULT_PREFERENCES.qrCentre,
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,
