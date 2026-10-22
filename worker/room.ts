@@ -3,7 +3,9 @@ import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.
 import {
 	canReveal,
 	cancelRequest,
+	castScriptBallot,
 	castVote,
+	closeScriptVote,
 	closeVote,
 	gameOver,
 	hostView,
@@ -13,6 +15,7 @@ import {
 	MAX_GRIMOIRE_BYTES,
 	MAX_SCRIPT_BYTES,
 	newRoom,
+	openScriptVote,
 	openVote,
 	parseClientMessage,
 	playerView,
@@ -21,6 +24,7 @@ import {
 	request,
 	resolve,
 	roomPreview,
+	setChoosing,
 	setViewers,
 	supportsProtocol,
 	unseat,
@@ -189,6 +193,8 @@ export class Room extends DurableObject<RoomEnv> {
 				room = unseat(room, id);
 			} else if (message.type === 'vote') {
 				room = castVote(room, id, message.voteId, message.choice);
+			} else if (message.type === 'script-ballot') {
+				room = castScriptBallot(room, id, message.voteId, message.choices);
 			} else return;
 			await this.save(room);
 			return;
@@ -279,6 +285,15 @@ export class Room extends DurableObject<RoomEnv> {
 			case 'reopen-game':
 				room = reopenGame(room, message.gameId);
 				await this.dropReveal(room);
+				break;
+			case 'choosing':
+				room = setChoosing(room, message.on);
+				break;
+			case 'open-script-vote':
+				room = openScriptVote(room, message.voteId, message.kind, message.options);
+				break;
+			case 'close-script-vote':
+				room = closeScriptVote(room);
 				break;
 			case 'close':
 				this.broadcastClosed('Room closed');
