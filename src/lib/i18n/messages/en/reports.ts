@@ -22,8 +22,6 @@ export const reports = {
 	'reports.sendFailedDetail': 'Check the connection and try again.',
 	'reports.inbox': 'Reports',
 	'reports.pageTitle': `Reports · ${APP_NAME}`,
-	'reports.adminKey': 'Admin key',
-	'reports.wrongKey': 'Wrong key',
 	'reports.checking': 'Checking access…',
 	'reports.admins': 'Admins',
 	'reports.addAdmin': 'Add an admin by sign-in email',

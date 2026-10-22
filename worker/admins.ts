@@ -1,10 +1,11 @@
 /**
- * Who is an admin: an account in ReportBox's `admin_users`, named by an admin or the holder
- * of REPORTS_ADMIN_KEY (reports.ts). Kept apart from reports.ts so the account routes can
- * ask too (Trevor, 2026-10-18: Account settings shows User or Admin) without importing it.
+ * Who is an admin: a sign-in email in the ADMIN_EMAILS secret (report-box.ts), or an account
+ * an admin added in the Reports inbox. There is no admin key (Trevor, 2026-10-22). Kept apart
+ * from reports.ts so the account routes can ask too (Trevor, 2026-10-18: Account settings
+ * shows User or Admin) without importing it.
  */
 import { emailSender, type EmailEnv } from './account/email.ts';
-import { reportBox, type ReportBoxEnv } from './report-box.ts';
+import { listedAdmin, reportBox, type ReportBoxEnv } from './report-box.ts';
 
 export interface AdminsEnv extends EmailEnv, ReportBoxEnv {
 	/**
@@ -20,8 +21,17 @@ export function adminSignInTrusted(env: AdminsEnv, url: URL): boolean {
 	return emailSender(env, url).delivery === 'email' || env.ADMINS_TRUST_PREVIEW_SIGN_IN === 'on';
 }
 
-/** Whether `userId` is an admin on this site (false where sign-in can't be trusted). */
-export async function isAdmin(env: AdminsEnv, url: URL, userId: string): Promise<boolean> {
+/**
+ * Whether the signed-in account is an admin on this site (false where sign-in can't be
+ * trusted). ADMIN_EMAILS is read where the reports are kept; this Worker's own copy only
+ * matters without the shared data Worker (the local e2e server sets it).
+ */
+export async function isAdmin(
+	env: AdminsEnv,
+	url: URL,
+	account: { userId: string; email: string }
+): Promise<boolean> {
 	if (!adminSignInTrusted(env, url)) return false;
-	return reportBox(env).isAdmin(userId);
+	if (listedAdmin(env.ADMIN_EMAILS, account.email)) return true;
+	return reportBox(env).isAdmin(account.userId, account.email);
 }
