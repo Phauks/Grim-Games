@@ -21,7 +21,7 @@ import {
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 11;
+export const GAME_MODE_REVISION = 12;
 
 export interface GuideField {
 	name: string;
@@ -361,7 +361,7 @@ export const GUIDE_PARTS: GuidePart[] = [
 		about:
 			'Characters always in the game. Those in play are put in setup’s selection; the Storyteller can still take one out.',
 		fields: [
-			{ name: 'inPlay', type: IDS, required: true, about: 'Always dealt to a player. May be [].' },
+			{ name: 'inPlay', type: IDS, required: false, about: 'Always dealt to a player.' },
 			{
 				name: 'onScript',
 				type: IDS,
@@ -389,18 +389,14 @@ export const GUIDE_PARTS: GuidePart[] = [
 		list: true,
 		about:
 			'Characters whose rules the mode changes. The Storyteller runs them from the linked page.',
-		fields: [
-			{ name: 'characters', type: IDS, required: true, about: 'The characters. May be [].' }
-		],
+		fields: [{ name: 'characters', type: IDS, required: false, about: 'The characters, if any.' }],
 		kinds: []
 	},
 	{
 		part: 'information',
 		list: true,
 		about: 'Extra information the mode gives. The Storyteller runs it from the linked page.',
-		fields: [
-			{ name: 'characters', type: IDS, required: true, about: 'The characters. May be [].' }
-		],
+		fields: [{ name: 'characters', type: IDS, required: false, about: 'The characters, if any.' }],
 		kinds: []
 	},
 	{

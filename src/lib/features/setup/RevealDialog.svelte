@@ -9,6 +9,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { untrack } from 'svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import { pastNames, suggestNames } from '#lib/features/grimoire/device-notes.ts';
@@ -39,6 +40,11 @@
 		 * finger, mouse button or Space is held on it, so a neighbour can't glance at it.
 		 */
 		holdToReveal?: boolean;
+		/**
+		 * Closing the reveal once the character was seen confirms it (Trevor, 2026-10-22: no
+		 * "held" after a player has seen their character, so nobody else can take it back).
+		 */
+		confirmOnClose?: boolean;
 		onConfirm: (details: { playerName: string; alignment?: Alignment }) => void;
 	}
 
@@ -52,6 +58,7 @@
 		taken = [],
 		pair,
 		holdToReveal = false,
+		confirmOnClose = false,
 		onConfirm
 	}: Props = $props();
 	const faces = $derived(
@@ -96,10 +103,24 @@
 		if (document.visibilityState !== 'visible') held = false;
 	}
 
+	/** Set once this reveal is confirmed, so closing it doesn't confirm it again. */
+	let confirmed = false;
 	function confirm() {
+		confirmed = true;
 		pastNames.remember(name);
 		onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) });
 	}
+	// Closed with X, Escape or a tap outside: confirmed if the character was seen.
+	let wasOpen = false;
+	$effect(() => {
+		if (open) {
+			wasOpen = true;
+			confirmed = false;
+		} else if (wasOpen) {
+			wasOpen = false;
+			if (confirmOnClose && !confirmed && untrack(() => canConfirm)) confirm();
+		}
+	});
 
 	// On a computer, Enter (outside a field or button) does the main action: Reveal, then Confirm.
 	function onWindowKey(event: KeyboardEvent) {
@@ -118,7 +139,8 @@
 
 <!--
 	The player's own reveal. A drawn tile is never put back (Trevor, 2026-10-15): closing the
-	reveal keeps it in the player's hand (the draw is saved) until it is confirmed.
+	reveal before the character was seen keeps it in the player's hand (the draw is saved);
+	with confirmOnClose, closing it after confirms it (Trevor, 2026-10-22).
 -->
 <Dialog bind:open title={t('setup.draw.tile', { number })} size="full">
 	<div class="reveal" data-testid="reveal">

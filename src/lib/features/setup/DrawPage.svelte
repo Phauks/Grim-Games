@@ -223,6 +223,7 @@
 			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
 			taken={takenNames(tile.drawnBySeat)}
 			holdToReveal={preferences.current.holdToReveal}
+			confirmOnClose
 			onConfirm={confirm}
 		/>
 	{/if}

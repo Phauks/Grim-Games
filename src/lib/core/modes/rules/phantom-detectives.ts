@@ -14,7 +14,7 @@ export const PHANTOM_DETECTIVES: SpecialRule = {
 	id: 'phantom-detectives',
 	name: 'The Phantom Detectives',
 	aliases: ['Phantom Detectives'],
-	// Our own draft (2026-10-22): shows once Trevor approves it (approved-about.ts).
+	// Our own wording, approved 2026-10-22 with its instructions (approved-about.ts).
 	about:
 		'Townsfolk have no ability while alive and gain it when they die. Every other dead player keeps their ability, except the Demon.',
 	sources: [{ title: 'The Phantom Detectives (Schnauzer Club)', url: PAGE }],
