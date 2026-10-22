@@ -48,3 +48,20 @@ export function deadCharacters(game: Game): Set<CharacterId> {
 	for (const id of [...dead]) if (alive.has(id) || actsWhenDead(id)) dead.delete(id);
 	return dead;
 }
+
+/**
+ * Whether a reminder belongs to a character whose ability has ended with its player's death,
+ * so putting it on the board asks first (Trevor, 2026-10-20; warn, never lock). The seat that
+ * owns this copy decides when the reminder knows it; otherwise every player of the character
+ * must be dead. Characters that act once dead (`actsWhenDead`, the Sweetheart's Drunk) and
+ * reminders of characters on no seat (Fabled, a Drunk's "Is The Drunk") never ask.
+ */
+export function reminderOwnerDead(
+	game: Game,
+	reminder: { characterId: CharacterId; ownerSeatId?: string }
+): boolean {
+	if (actsWhenDead(reminder.characterId)) return false;
+	const owner = reminder.ownerSeatId ? game.seats[reminder.ownerSeatId] : undefined;
+	if (owner) return !!owner.dead;
+	return deadCharacters(game).has(reminder.characterId);
+}
