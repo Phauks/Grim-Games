@@ -53,8 +53,13 @@ export function changelogReleases(history: ChangeHistory): ChangelogRelease[] {
 			day = { date: change.date, changes: { commits: [], complete: true } };
 			release.days.push(day);
 		}
-		const { sha, subject, pr } = change;
-		day.changes.commits.push(pr === undefined ? { sha, subject } : { sha, subject, pr });
+		const { sha, subject, pr, commits } = change;
+		day.changes.commits.push({
+			sha,
+			subject,
+			...(pr === undefined ? {} : { pr }),
+			...(commits === undefined ? {} : { commits })
+		});
 		release.count++;
 	}
 	const last = releases.at(-1)?.days.at(-1);

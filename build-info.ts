@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import type { BuildInfo } from './src/lib/build-info.ts';
 import { noteFor, type BuildCommit } from './src/lib/features/about/update-notes.ts';
 import type { Change, ChangeHistory } from './src/lib/features/about/changelog.ts';
+import { groupDirectCommits } from './src/lib/features/about/direct-commits.ts';
 
 function git(args: string, timeout?: number): string {
 	try {
@@ -74,7 +75,7 @@ const RELEASE_TAG = /^v\d/;
 /**
  * Every change on the branch's own history, newest first, for the Changelog page
  * (src/lib/features/about/changelog.ts): each merged PR is one line with its title and the
- * day it merged. A change belongs to the oldest release tag (`v0.5.0`) that contains it;
+ * day it merged; commits made straight on the branch count as one line a day. A change belongs to the oldest release tag (`v0.5.0`) that contains it;
  * changes in no tag are unreleased. `complete` is false when the clone's history stops short.
  */
 export function readHistory(env: NodeJS.ProcessEnv = process.env, branch = 'HEAD'): ChangeHistory {
@@ -100,5 +101,5 @@ export function readHistory(env: NodeJS.ProcessEnv = process.env, branch = 'HEAD
 				}
 			];
 		});
-	return { complete: !isShallow(), changes };
+	return { complete: !isShallow(), changes: groupDirectCommits(changes) };
 }
