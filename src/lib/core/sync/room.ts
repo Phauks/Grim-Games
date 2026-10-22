@@ -8,6 +8,7 @@
  * then does the grimoire change, through its own commands.
  */
 import type { Alignment, Script } from '#lib/core/data/index.ts';
+import { hasFeedback, parseFeedback, type GameFeedback } from '#lib/core/feedback/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 
@@ -53,6 +54,26 @@ export interface RoomState {
 	viewerKeyHash?: string;
 	/** The current game is over, as the Storyteller ended it; a new game clears it. */
 	ended?: GameOver;
+	/** Players' feedback on the ended game, one per member; cleared with `ended`. */
+	feedback?: MemberFeedback[];
+}
+
+/**
+ * One member's feedback on the ended game (Trevor, 2026-10-20). `id` is made by the room and
+ * is not the member id, so the Storyteller can't match anonymous feedback to a member.
+ */
+export interface MemberFeedback {
+	id: string;
+	memberId: string;
+	feedback: GameFeedback;
+}
+
+/** Feedback as the Storyteller sees it: name and seat only when the player gave them. */
+export interface FeedbackView {
+	id: string;
+	feedback: GameFeedback;
+	name?: string;
+	seatId?: SeatId;
 }
 
 /**
@@ -133,6 +154,8 @@ export type ClientMessage =
 	| { type: 'leave-seat' }
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
+	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
+	| { type: 'feedback'; gameId: string; feedback: GameFeedback }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**
@@ -162,6 +185,8 @@ export interface HostView {
 	requests: RoomRequest[];
 	/** The open vote's count of spectators' choices; absent when no vote is open. */
 	vote?: VoteTally;
+	/** Players' feedback on the ended game, once any has come. */
+	feedback?: FeedbackView[];
 }
 
 export interface VoteTally {
@@ -187,6 +212,8 @@ export interface PlayerView {
 	vote?: { voteId: string; options: SeatId[]; ability?: string; choice?: SeatId };
 	/** The game on the table is over, with who won and how. */
 	ended?: Omit<GameOver, 'gameId'>;
+	/** The feedback this phone sent on the ended game. */
+	feedback?: GameFeedback;
 }
 
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
@@ -293,6 +320,7 @@ export function newRoom(hostKeyHash: string): RoomState {
 export function hostView(room: RoomState): HostView {
 	const view: HostView = { type: 'host-view', members: room.members, requests: room.requests };
 	if (room.vote) view.vote = tally(room, room.vote);
+	if (room.feedback?.length) view.feedback = room.feedback.map((f) => feedbackView(room, f));
 	return view;
 }
 
@@ -330,6 +358,8 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
 		view.ended = ended;
+		const mine = room.feedback?.find((f) => f.memberId === memberId);
+		if (mine) view.feedback = mine.feedback;
 	}
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
@@ -527,9 +557,43 @@ export function reopenGame(room: RoomState, gameId: unknown): RoomState {
 
 function withoutEnded(room: RoomState): RoomState {
 	if (!room.ended) return room;
-	const { ended: _over, ...rest } = room;
+	const { ended: _over, feedback: _feedback, ...rest } = room;
 	void _over;
+	void _feedback;
 	return rest;
+}
+
+/**
+ * A member's feedback on the ended game. Ignored unless `gameId` is the game that ended, the
+ * member is in the room and there is something in it; `newId` names a member's first one.
+ */
+export function receiveFeedback(
+	room: RoomState,
+	memberId: string,
+	gameId: unknown,
+	raw: unknown,
+	newId: string
+): RoomState {
+	if (!room.ended || room.ended.gameId !== gameId || room.gameId !== gameId) return room;
+	if (!room.members.some((m) => m.memberId === memberId)) return room;
+	const feedback = parseFeedback(raw);
+	if (!feedback || !hasFeedback(feedback)) return room;
+	const all = room.feedback ?? [];
+	const last = all.find((f) => f.memberId === memberId);
+	const entry: MemberFeedback = { id: last?.id ?? newId, memberId, feedback };
+	return {
+		...room,
+		feedback: last ? all.map((f) => (f === last ? entry : f)) : [...all, entry]
+	};
+}
+
+function feedbackView(room: RoomState, { id, memberId, feedback }: MemberFeedback): FeedbackView {
+	const view: FeedbackView = { id, feedback };
+	if (feedback.anonymous) return view;
+	const member = room.members.find((m) => m.memberId === memberId);
+	if (member?.name !== undefined) view.name = member.name;
+	if (member?.seatId !== undefined) view.seatId = member.seatId;
+	return view;
 }
 
 /** Turns the view-only link on (a SHA-256 hex hash) or off (`null`); anything else is ignored. */

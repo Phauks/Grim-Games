@@ -16,6 +16,7 @@ import {
 	parseClientMessage,
 	playerView,
 	publish,
+	receiveFeedback,
 	reopenGame,
 	request,
 	resolve,
@@ -171,6 +172,8 @@ export class Room extends DurableObject<RoomEnv> {
 				room = unseat(room, id);
 			} else if (message.type === 'vote') {
 				room = castVote(room, id, message.voteId, message.choice);
+			} else if (message.type === 'feedback') {
+				room = receiveFeedback(room, id, message.gameId, message.feedback, crypto.randomUUID());
 			} else return;
 			await this.save(room);
 			return;
