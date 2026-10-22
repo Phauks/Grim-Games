@@ -4849,3 +4849,106 @@ test('Start game with setup reminders still to place asks first, listing them', 
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 });
+
+/** A Trouble Brewing game with one special rule, these seats given these characters. */
+async function startWithRule(
+	page: Page,
+	rule: string,
+	cast: readonly (readonly [number, string])[]
+) {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: /^Special rules/ }).tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	await rules.getByText(rule, { exact: true }).tap();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	for (const [number, name] of cast) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+}
+
+/** From a night's walk-through, through the day, to the next night's Dusk. */
+async function nextNight(page: Page) {
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: /^Day \d+$/ });
+	await expect(day).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+	// The night's strip slides away before the next night can start.
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	await walkTo(page, 'Dusk');
+}
+
+/** Every step name in tonight's walk-through, from the current step on. */
+async function stepNames(page: Page): Promise<string[]> {
+	const strip = page.getByTestId('night-strip');
+	const names: string[] = [];
+	for (let i = 0; i < 30; i++) {
+		names.push((await strip.locator('.step .name strong').textContent()) ?? '');
+		if (await lastStep(strip)) break;
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	}
+	return names;
+}
+
+test('with The Phantom Detectives, living Townsfolk sleep and the dead keep waking', async ({
+	page
+}) => {
+	// https://schnauzerclub.neocities.org/scripts/thephantomdetectives (Trevor, 2026-10-22).
+	await startWithRule(page, 'The Phantom Detectives', [
+		[1, 'Washerwoman'],
+		[2, 'Poisoner'],
+		[3, 'Imp']
+	]);
+	await walkTo(page, 'Dusk');
+	const first = await stepNames(page);
+	expect(first).toContain('Poisoner');
+	expect(first).not.toContain('Washerwoman');
+	// Dead, the Poisoner keeps its ability and still wakes.
+	await nextNight(page);
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 2' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Poisoner');
+});
+
+test('with Trained Killer, the Demon’s step names the next character in script order', async ({
+	page
+}) => {
+	// https://beardytas.com/garden-of-djinn/trained-killer/ (Trevor, 2026-10-22).
+	await startWithRule(page, 'Trained Killer', [
+		[1, 'Imp'],
+		[2, 'Chef'],
+		[3, 'Washerwoman']
+	]);
+	await walkTo(page, 'Dusk');
+	await nextNight(page);
+	// The Chef is above the Washerwoman on Trouble Brewing's script (TPI's order).
+	const strip = await walkTo(page, 'Imp');
+	await expect(strip.getByTestId('step-attack')).toHaveText('Attacks Seat 2 (Trained Killer)');
+});
+
+test('with Council of the Dead, night 4 starts with the dead waking together', async ({ page }) => {
+	// https://beardytas.com/garden-of-djinn/council-of-the-dead/ (Trevor, 2026-10-22).
+	await startWithRule(page, 'Council of the Dead', [[1, 'Imp']]);
+	await walkTo(page, 'Dusk');
+	expect(await stepNames(page)).not.toContain('Council of the Dead');
+	for (let night = 2; night <= 4; night++) await nextNight(page);
+	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
+	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
+		'Council of the Dead'
+	);
+});
