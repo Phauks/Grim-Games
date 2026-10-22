@@ -190,6 +190,28 @@ test('one tap selects a row and a double tap opens it; a selected folder is rena
 	await expect(pane(page, 'Storm Front')).toBeVisible();
 });
 
+// Trevor (2026-10-22): "add a download button to the library next to the other buttons".
+test('Download saves the selected item as a file, and rests with nothing selected', async ({
+	page
+}) => {
+	await page.goto('/library');
+	const download = page.getByRole('button', { name: 'Download', exact: true });
+	await expect(download).toBeDisabled();
+	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
+	await newFolder(page, 'Club night');
+	// A folder is not a file to save.
+	await row(page, 'Club night').tap();
+	await expect(download).toBeDisabled();
+	await row(page).tap();
+	await expect(download).toBeEnabled();
+	const saving = page.waitForEvent('download');
+	await download.tap();
+	const file = await saving;
+	expect(file.suggestedFilename()).toBe('storm-front.json');
+	const text = await (await file.createReadStream()).toArray();
+	expect(JSON.parse(Buffer.concat(text).toString())).toEqual(homebrew);
+});
+
 test('tags live in the sidebar: add, filter by, delete; and a script can be removed', async ({
 	page
 }) => {
