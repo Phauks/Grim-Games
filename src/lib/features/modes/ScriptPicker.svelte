@@ -23,8 +23,8 @@
 	 * "Script picker"): the base three stay one tap away, every other script is found by
 	 * typing its name or author, and the Library button opens the Library to pick from.
 	 * Choosing one kind of script unselects the other. The search and the Library button are
-	 * for Custom, beside the base three, and stay disabled in place until it is chosen
-	 * (Trevor, 2026-10-19), so nothing moves. Under them, on a line kept in place, the
+	 * for Custom, beside the base three; tapping either chooses Custom (Trevor, backlog L6),
+	 * so they are never disabled. Under them, on a line kept in place, the
 	 * chosen script's versions are a drop-down (empty when it has none) beside its author
 	 * (Trevor, 2026-10-19).
 	 */
@@ -95,6 +95,10 @@
 		noVersion ? [{ value: NO_VERSION, label: t('modes.scriptSearch.noVersion') }] : versions
 	);
 	const versionValue = $derived(noVersion ? NO_VERSION : listedVersion);
+	/** Tapping Custom's search or Library button chooses Custom first. */
+	function toCustom() {
+		if (!custom) choose(CUSTOM);
+	}
 	let browsing = $state(false);
 	let libraryBrowser = $state<LibraryBrowser>();
 
@@ -124,14 +128,13 @@
 		options={choices}
 		onChange={choose}
 	/>
-	<div class="search">
+	<div class="search" onpointerdown={toCustom} onfocusin={toCustom}>
 		<Combobox
 			label={t('modes.scriptSearch.label')}
 			hideLabel
 			value={options.some((o) => o.value === value) ? value : undefined}
 			{options}
 			{onChange}
-			disabled={!custom}
 			placeholder={t('modes.scriptSearch.placeholder')}
 			empty={t('modes.scriptSearch.none')}
 			action={() => ({
@@ -144,7 +147,6 @@
 		<IconButton
 			icon="library"
 			label={t('modes.scriptSearch.browse')}
-			disabled={!custom}
 			onclick={() => (browsing = true)}
 		/>
 	</div>
