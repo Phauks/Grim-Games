@@ -1,27 +1,45 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
+	import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
+	import exampleLogo from '#lib/assets/example-script-logo.svg';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import type { BackgroundChoice } from '#lib/features/grimoire/backgrounds.ts';
 	import BoardBackdrop from '#lib/features/grimoire/BoardBackdrop.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
+	import ReminderCount from '#lib/features/grimoire/ReminderCount.svelte';
+	import { stepFocus } from '#lib/features/grimoire/step-focus.svelte.ts';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
 
 	/**
-	 * Two seats on the board's background (Trevor, 2026-10-20: "you can't really see changes
-	 * until you leave"): the open board's background, or the one for every game, with the
-	 * vignette and a dead player whose ghost vote is used.
+	 * A small board for every Board setting (Trevor, 2026-10-20: "you can't really see changes
+	 * until you leave"; 2026-10-22: "all preview settings should populate in the preview
+	 * area"): the background with its vignette and the script's logo, two seats (one dead with
+	 * a used ghost vote) and a reminder, a Fabled and a Loric, the script's name in the corner,
+	 * and a reminder bank with a duplicate reminder and the Washerwoman's step in focus. The
+	 * open board's own background, logo and name when Settings is opened from a board.
 	 */
 	onMount(() => void loadOfficialData());
 	const SEATS = [
 		{ id: 'godfather', name: t('characters.previewPlayer'), dead: false },
 		{ id: 'washerwoman', name: t('settings.previewDeadPlayer'), dead: true }
 	] as const;
+	const RULES = ['duchess', 'bootlegger'] as const;
+	/** The walked-through night step whose reminders the bank brings into focus. */
+	const STEP: CharacterId = 'washerwoman';
+
+	const characters = $derived(officialData.current?.byId);
+	const character = (id: string) => characters?.get(id);
+	const label = (id: string, i: number) => character(id)?.reminders[i];
+
 	const choice: BackgroundChoice = $derived(
 		boardBackground.context?.current ?? defaultBackground.current ?? { kind: 'none' }
 	);
@@ -34,21 +52,101 @@
 		}
 		url = choice.kind === 'script' ? boardBackground.context?.scriptImage : undefined;
 	});
+	const logo = $derived(boardBackground.context?.scriptLogo ?? exampleLogo);
+	const scriptName = $derived(boardBackground.context?.scriptName ?? t('settings.previewScript'));
+
+	interface BankItem {
+		key: string;
+		characterId: CharacterId;
+		reminder: number;
+		alignment: Alignment;
+		count: number;
+	}
+	/** The bank as ReminderBank builds it: duplicates stacked, the step's reminders in focus. */
+	const bank = $derived.by(() => {
+		const stack = preferences.current.assistance.stackReminders;
+		const duchess = (n: number): BankItem => ({
+			key: `duchess-${n}`,
+			characterId: 'duchess',
+			reminder: 0,
+			alignment: 'good',
+			count: stack ? 2 : 1
+		});
+		const items: BankItem[] = [
+			{ key: 'godfather', characterId: 'godfather', reminder: 0, alignment: 'evil', count: 1 },
+			...(stack ? [duchess(0)] : [duchess(0), duchess(1)]),
+			{ key: 'ww-0', characterId: STEP, reminder: 0, alignment: 'good', count: 1 },
+			{ key: 'ww-1', characterId: STEP, reminder: 1, alignment: 'good', count: 1 }
+		];
+		const mode = stepFocus.current.mode;
+		if (mode === 'only') return items.filter((i) => i.characterId === STEP);
+		if (mode === 'front')
+			return items.sort((a, b) => Number(b.characterId === STEP) - Number(a.characterId === STEP));
+		return items;
+	});
+	const dimRest = $derived(stepFocus.current.mode === 'highlight');
+
 	// The board's own token size at 100% (Character token size is set in Tokens), small
 	// enough for both seats to fit the box's width.
 	const viewport = $derived({ width: innerWidth.current ?? 0, height: innerHeight.current ?? 0 });
 	let width = $state(0);
+	// On a phone the box is at most 30% of the screen's height (SettingGroup): the seats,
+	// the middle and the bank (about 3.4 tokens tall with padding) fit inside it.
 	const size = $derived(
-		Math.min(96, boardTokenSize(1, viewport), width ? Math.floor(width / 2.8) : 96)
+		Math.min(
+			64,
+			boardTokenSize(1, viewport),
+			width ? Math.floor(width / 4.5) : 64,
+			viewport.height ? Math.floor((0.3 * viewport.height - 32) / 3.4) : 64
+		)
+	);
+	// The board's reminder size for this token: half of it, kept between 30 and 48px.
+	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5))));
+	const loose = $derived(boardLooks.current.reminders === 'free');
+	const rulesSize = $derived(
+		boardLooks.current.rulesAt === 'middle' ? Math.round(size * 0.6) : Math.round(size * 0.4)
 	);
 </script>
+
+{#snippet reminder(id: CharacterId, i: number, alignment: Alignment)}
+	{@const words = label(id, i)}
+	{#if words}<BoardReminder
+			label={words as ReminderLabel}
+			character={character(id)}
+			{alignment}
+			size={chip}
+			disabled
+			onTap={() => {}}
+		/>{/if}
+{/snippet}
+
+{#snippet rules()}
+	{#if boardLooks.current.rulesGrouped}
+		<span class="rules-stack" data-testid="preview-rules-stack">
+			{#each RULES as id (id)}
+				{@const rule = character(id)}
+				{#if rule}<CharacterToken character={rule} size={rulesSize} />{/if}
+			{/each}
+			<span class="stack-count" aria-hidden="true">{RULES.length}</span>
+		</span>
+	{:else}
+		<ul class="rules" data-testid="preview-rules">
+			{#each RULES as id (id)}
+				{@const rule = character(id)}
+				{#if rule}<li><CharacterToken character={rule} size={rulesSize} /></li>{/if}
+			{/each}
+		</ul>
+	{/if}
+{/snippet}
 
 <div
 	class="board-preview"
 	bind:clientWidth={width}
 	style:--size="{size}px"
+	style:--chip="{chip}px"
 	style:--name-scale={boardLooks.current.nameSize}
 	style:--name-offset={boardLooks.current.nameOffset}
+	data-rules-at={boardLooks.current.rulesAt}
 >
 	<BoardBackdrop
 		contained
@@ -56,34 +154,167 @@
 		preset={choice.kind === 'preset' ? choice.id : undefined}
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
 	/>
-	{#each SEATS as seat, i (seat.id)}
-		{@const character = officialData.current?.byId.get(seat.id)}
-		<SeatDisc
-			{size}
-			name={seat.name}
-			number={i + 1}
-			dead={seat.dead}
-			vote={seat.dead ? 'used' : undefined}
-			usedVote={boardLooks.current.usedGhostVote}
-		>
-			{#snippet face()}{#if character}<CharacterToken {character} {size} />{/if}{/snippet}
-		</SeatDisc>
-	{/each}
+	{#if boardLooks.current.logo}
+		<ScriptLogo src={logo} class="preview-logo" --logo-opacity={boardLooks.current.logoOpacity} />
+	{/if}
+	{#if boardLooks.current.rulesAt === 'edge'}<div class="rules-edge">{@render rules()}</div>{/if}
+
+	<div class="seats">
+		{#each SEATS as seat, i (seat.id)}
+			{@const token = character(seat.id)}
+			<div class="seat">
+				<SeatDisc
+					{size}
+					name={seat.name}
+					number={i + 1}
+					dead={seat.dead}
+					vote={seat.dead ? 'used' : undefined}
+					usedVote={boardLooks.current.usedGhostVote}
+				>
+					{#snippet face()}{#if token}<CharacterToken character={token} {size} />{/if}{/snippet}
+				</SeatDisc>
+				<!-- The Washerwoman's "Townsfolk" on Sam: beside the seat, or where it was dropped. -->
+				{#if i === 0}<span class="seat-reminder" class:loose data-testid="preview-seat-reminder"
+						>{@render reminder(STEP, 0, 'good')}</span
+					>{/if}
+			</div>
+		{/each}
+	</div>
+	<div class="middle">
+		{#if boardLooks.current.rulesAt === 'middle'}{@render rules()}{/if}
+	</div>
+
+	{#if preferences.current.assistance.scriptTitle}
+		<p class="corner-title" data-testid="preview-script-title">{scriptName}</p>
+	{/if}
+	<ul class="bank" aria-label={t('settings.previewBank')} data-testid="preview-bank">
+		{#each bank as item (item.key)}
+			{@const now = item.characterId === STEP}
+			<li class:now class:dim={dimRest && !now}>
+				{#if item.count > 1}<ReminderCount count={item.count} />{/if}
+				{@render reminder(item.characterId, item.reminder, item.alignment)}
+			</li>
+		{/each}
+	</ul>
 </div>
 
 <style>
-	/* Fixed height: the seats with their names at the largest Player name size and distance,
-	   so no setting moves the rows below. */
+	/* Fixed height: seats with their names at the largest Player name size and distance, the
+	   middle, and the bank, so no setting moves the rows below. */
 	.board-preview {
 		position: relative;
 		isolation: isolate;
-		display: flex;
-		align-items: flex-start;
-		justify-content: center;
-		gap: calc(2 * var(--u));
-		height: calc(1.6 * var(--size));
+		display: grid;
+		grid-template-rows: calc(1.5 * var(--size)) 1fr calc(1.9 * var(--chip));
+		height: calc(2.3 * var(--size) + 1.9 * var(--chip));
 		padding-top: calc(0.15 * var(--size));
 		overflow: hidden;
 		border-radius: var(--card-radius);
+	}
+	/* As on the board: centred, at most 42% of the box, under everything else. */
+	.board-preview :global(.preview-logo) {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 42%;
+		height: 42%;
+		translate: -50% -50%;
+		opacity: var(--logo-opacity);
+		pointer-events: none;
+	}
+	.seats {
+		display: flex;
+		justify-content: center;
+		gap: var(--space-2);
+	}
+	.seat {
+		position: relative;
+	}
+	/* Held by the seat: tucked against its token's right. Dropped: off on its own. */
+	.seat-reminder {
+		position: absolute;
+		left: 100%;
+		top: 0;
+	}
+	.seat-reminder.loose {
+		left: 115%;
+		top: 70%;
+	}
+	.middle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.rules-edge {
+		position: absolute;
+		top: var(--space-1);
+		left: var(--space-1);
+		z-index: 2;
+	}
+	.rules {
+		display: flex;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.rules-stack {
+		position: relative;
+		display: flex;
+	}
+	.rules-stack > :global(*:not(:first-child):not(.stack-count)) {
+		margin-inline-start: -60%;
+	}
+	.stack-count {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		min-width: 1.4em;
+		padding: 0 0.3em;
+		border-radius: var(--radius-full);
+		background: var(--accent);
+		color: var(--on-accent);
+		font: 700 0.75rem / 1.4 var(--font-control);
+		text-align: center;
+	}
+	.corner-title {
+		position: absolute;
+		left: var(--space-1);
+		bottom: calc(1.9 * var(--chip));
+		z-index: 1;
+		max-width: 40%;
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-family: var(--font-heading);
+		font-size: 0.9rem;
+		line-height: 1.15;
+		color: var(--heading);
+	}
+	.bank {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0 var(--space-1);
+		overflow: hidden;
+		list-style: none;
+		background: var(--card-background);
+	}
+	.bank > li {
+		position: relative;
+		flex: none;
+	}
+	.bank > li.now > :global(.reminder) {
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
+		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
+	}
+	.bank > li.dim {
+		opacity: 0.4;
 	}
 </style>
