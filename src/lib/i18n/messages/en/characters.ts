@@ -106,10 +106,6 @@ export const characters = {
 	'characters.highlightLook.ring': 'Ring',
 	'characters.highlightLook.glow': 'Glow',
 	'characters.highlightLook.both': 'Ring and glow',
-	'characters.reminderIconColour': "Owner's icon colour",
-	'characters.iconColour.player': "Player's alignment",
-	'characters.iconColour.character': "Character's alignment",
-	'characters.iconColour.plain': 'Plain',
 	'characters.setupMovesName': 'Setup notation moves name',
 	'characters.setupMovesNameHelp':
 		'Shortens the name on the token so it stays clear of the flower.',

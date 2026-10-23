@@ -1125,7 +1125,9 @@ test('the join code shows under the script name, a Board setting, and opens Shar
 	await expect(code).toHaveText(/^\d{3} \d{3}$/);
 	const shown = (await code.textContent())!;
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
-	await expect(corner).toHaveText(`Join code ${shown}`);
+	// Game time joins the code's line where a phone's corner has no line to spare for it.
+	const codeLine = new RegExp(`^Join code ${shown}(· Game time None)?$`);
+	await expect(corner).toHaveText(codeLine);
 	// A tap on it opens Share. The corner waits while a phone's seats leave it no room.
 	if (await page.getByTestId('script-title').isVisible()) {
 		await corner.tap();
@@ -1146,7 +1148,7 @@ test('the join code shows under the script name, a Board setting, and opens Shar
 	await share.getByText('Join code on the board', { exact: true }).tap();
 	await expect(onShare).toBeChecked();
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
-	await expect(corner).toHaveText(`Join code ${shown}`);
+	await expect(corner).toHaveText(codeLine);
 });
 
 // Trevor (2026-10-23): the Storyteller's name under the author, in the lower left corner.
@@ -3896,14 +3898,15 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Trevor (2026-10-18, 2026-10-19): game actions, the seats, the settings, then End game.
-	// Storyteller names who runs the game (Trevor, 2026-10-19).
-	await expect(menu.getByRole('separator')).toHaveCount(3);
+	// Storyteller names who runs the game (Trevor, 2026-10-19). A line between Tokens and
+	// Report an issue (Trevor, 2026-10-23).
+	await expect(menu.getByRole('separator')).toHaveCount(4);
 	const items = menu.locator('.menu > :is(button, hr), .menu > .menu-nav > button');
 	const names = await items.evaluateAll((els) =>
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes( Game info)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens (Navigation )?Report an issue \| End game$/
+		/^History Demon bluffs Notes( Game info)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens \| (Navigation )?Report an issue \| End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu

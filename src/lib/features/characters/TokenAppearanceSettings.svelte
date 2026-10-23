@@ -11,7 +11,6 @@
 		MIN_CONTRAST,
 		NIGHT_LEAVES,
 		REMINDER_HIGHLIGHT_LOOKS,
-		REMINDER_ICON_COLOURS,
 		REMINDER_LABEL_WIDTH,
 		TOKEN_COLOURS,
 		ICON_SCALE,
@@ -216,8 +215,8 @@
 <SettingGroup title={t('characters.group.reminder')} testid="reminder-preview">
 	{#snippet preview()}
 		<!-- As it rests, then highlighted as a held seat's reminder (Trevor, 2026-10-20). Its
-		     player has turned good, so Owner's icon colour shows a difference (Trevor, 2026-10-22:
-		     every setting shows in its preview). Then an ∞ token with an icon symbol. -->
+		     player has turned good, so its owner's icon is good's (Trevor, 2026-10-23). Then an ∞
+		     token with an icon symbol. -->
 		<div class="preview reminder-sample" style:--sample="{largestReminder}px">
 			{#if reminderSample}<BoardReminder
 					label={reminderSample.reminders[0]}
@@ -296,18 +295,6 @@
 					label: t(`characters.highlightLook.${look}`)
 				}))}
 				onChange={(reminderHighlightLook) => onChange({ ...value, reminderHighlightLook })}
-			/>{/snippet}
-	</SettingRow>
-	<SettingRow label={t('characters.reminderIconColour')}>
-		{#snippet control(labelId)}<Select
-				label={t('characters.reminderIconColour')}
-				labelledBy={labelId}
-				value={value.reminderIconColour}
-				options={REMINDER_ICON_COLOURS.map((colour) => ({
-					value: colour,
-					label: t(`characters.iconColour.${colour}`)
-				}))}
-				onChange={(reminderIconColour) => onChange({ ...value, reminderIconColour })}
 			/>{/snippet}
 	</SettingRow>
 	{@render colourRow('reminder')}

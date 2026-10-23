@@ -69,11 +69,9 @@
 		panX = false
 	}: Props = $props();
 
-	// Settings > Tokens: the owner's icon can be hidden or coloured differently (Trevor, 2026-10-20).
 	const appearance = $derived(preferences.current.tokenAppearance);
-	const src = $derived(
-		character ? reminderIconUrl(character, alignment, appearance.reminderIconColour) : undefined
-	);
+	// The owner's icon, always in the owner's alignment (Trevor, 2026-10-23).
+	const src = $derived(character ? reminderIconUrl(character, alignment) : undefined);
 	// Wrapped words as wide as their longest line (Trevor, 2026-10-23), measured again when
 	// anything that lays them out changes.
 	const fitWords = $derived(
@@ -237,7 +235,6 @@
 					>{symbol}</span
 				>{/if}{:else if src}<img
 				{src}
-				data-plain={appearance.reminderIconColour === 'plain' || undefined}
 				alt=""
 				draggable="false"
 				referrerpolicy="no-referrer"
@@ -249,10 +246,6 @@
 </button>
 
 <style>
-	/* Settings > Tokens' plain owner icon (Trevor, 2026-10-20). */
-	img[data-plain] {
-		filter: grayscale(1);
-	}
 	.reminder {
 		--rim: var(--reminder-face);
 		position: relative;

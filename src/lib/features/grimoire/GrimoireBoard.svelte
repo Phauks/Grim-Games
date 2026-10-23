@@ -1014,6 +1014,17 @@
 	/** When Start game was tapped, for Game time in the corner; read again when it is. */
 	let startedRead = $state(0);
 	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
+	/**
+	 * The night or day in play, for the corner (Trevor, 2026-10-23): Setup until Start game,
+	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day.
+	 */
+	const phase = $derived(
+		startedAt === undefined
+			? t('day.setup')
+			: game.pastDays.length === 0 || grimoire.nightRunning || grimoire.nightUnderway
+				? t('day.nightNumber', { number: game.pastDays.length + 1 })
+				: t('day.titleNumber', { number: game.pastDays.length })
+	);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -1543,6 +1554,7 @@
 			fitRoom={fitCorner}
 			{width}
 			{rootFont}
+			{phase}
 			{startedAt}
 			endedAt={ended?.endedAt}
 			onEdit={editGameInfo}

@@ -26,6 +26,8 @@
 		/** The board's width and the root font size, in px. */
 		width: number;
 		rootFont: number;
+		/** The night or day in play, or Setup before the game starts. */
+		phase: string;
 		/** When the game started and ended, for Game time. */
 		startedAt: number | undefined;
 		endedAt: number | undefined;
@@ -46,6 +48,7 @@
 		fitRoom,
 		width,
 		rootFont,
+		phase,
 		startedAt,
 		endedAt,
 		onEdit,
@@ -175,6 +178,11 @@
 		<!-- Who runs the game, under the author (Trevor, 2026-10-23); no line when unnamed. -->
 		{#if game.storytellerName?.trim()}<span class="author" data-testid="board-storyteller"
 				>{t('settings.storytellerLine', { name: game.storytellerName.trim() })}</span
+			>{/if}
+		<!-- The night or day in play (Trevor, 2026-10-23), there from setup on so nothing moves. -->
+		{#if preferences.current.assistance.boardPhase}<span
+				class="game-clock"
+				data-testid="board-phase">{phase}</span
 			>{/if}
 		<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
 		     place before a room opens, so nothing moves when its code arrives. -->

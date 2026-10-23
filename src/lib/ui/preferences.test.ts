@@ -72,7 +72,6 @@ describe('parsePreferences', () => {
 				setupMovesName: false,
 				reminderHighlight: false,
 				reminderHighlightLook: 'both',
-				reminderIconColour: 'plain',
 				tokenIconScale: 0.9,
 				reminderIconScale: 1.2
 			},

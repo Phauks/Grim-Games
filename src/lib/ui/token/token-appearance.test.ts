@@ -51,15 +51,17 @@ describe('token appearance', () => {
 		// The flower leaves the name in place unless asked (Trevor, 2026-10-19).
 		expect(parseTokenAppearance({}).setupMovesName).toBe(false);
 		expect(parseTokenAppearance({ setupMovesName: true }).setupMovesName).toBe(true);
-		// Reminder highlight and owner's icon (Trevor, 2026-10-20): on, ring, player's colour.
+		// Reminder highlight (Trevor, 2026-10-20): on, ring.
 		expect(parseTokenAppearance({})).toMatchObject({
 			reminderHighlight: true,
-			reminderHighlightLook: 'ring',
-			reminderIconColour: 'player'
+			reminderHighlightLook: 'ring'
 		});
-		expect(
-			parseTokenAppearance({ reminderHighlightLook: 'sparkle', reminderIconColour: 'gold' })
-		).toMatchObject({ reminderHighlightLook: 'ring', reminderIconColour: 'player' });
+		expect(parseTokenAppearance({ reminderHighlightLook: 'sparkle' })).toMatchObject({
+			reminderHighlightLook: 'ring'
+		});
+		// The owner's icon colour setting is dropped: always the owner's alignment (Trevor,
+		// 2026-10-23), so a saved one is forgotten.
+		expect(parseTokenAppearance({ reminderIconColour: 'plain' })).toEqual(parseTokenAppearance({}));
 		// The old global ∞ fill switch is dropped: each ∞ token has its own (Trevor, 2026-10-23).
 		expect(parseTokenAppearance({ genericIconFill: true })).toEqual(parseTokenAppearance({}));
 		// Character icon sizes (Trevor, 2026-10-23): kept on 50% to 125%, else 100%.
