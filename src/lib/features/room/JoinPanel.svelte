@@ -1,3 +1,14 @@
+<script lang="ts" module>
+	import type { SeatId as DraftSeat } from '#lib/core/model/index.ts';
+
+	/**
+	 * What the phone typed or chose in each room before asking. The panel is drawn again when the
+	 * room's script arrives (the page gains its tabs), and that must not lose it.
+	 */
+	const drafts: Record<string, { name: string; seat: DraftSeat | ''; placed?: DraftSeat | '' }> =
+		{};
+</script>
+
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
@@ -62,11 +73,18 @@
 
 	$effect(() => {
 		if (!valid) return;
-		const p = useRoom(valid);
+		// Only the code is tracked. Opening the room reads settings (the avatar, the frame), and a
+		// view arriving later must not wipe a name being typed.
+		const p = untrack(() => useRoom(valid));
 		player = p;
-		// Read once: a later view (a seat change, a new avatar) must not wipe a name being typed.
-		name = untrack(() => p.view?.me.name ?? p.savedName);
+		const draft = drafts[valid];
+		name = draft?.name ?? untrack(() => p.view?.me.name ?? p.savedName);
+		seat = draft?.seat ?? '';
+		lastPlaced = draft?.placed;
 		return () => releaseRoom(p);
+	});
+	$effect(() => {
+		if (valid) drafts[valid] = { name, seat, placed: lastPlaced };
 	});
 
 	// The player's avatar and frame go to the room as they pick them (plan R6).
@@ -109,8 +127,12 @@
 	const placed = $derived(
 		view ? (view.request ? (view.request.seatId ?? '') : (mine ?? '')) : undefined
 	);
+	/** The seat the room last gave or held, so only a change to it moves the choice. */
+	let lastPlaced: SeatId | '' | undefined;
 	$effect(() => {
-		if (placed !== undefined) seat = placed;
+		if (placed === undefined || placed === lastPlaced) return;
+		lastPlaced = placed;
+		seat = placed;
 	});
 	/** Asking again for the seat and name this phone already has changes nothing. */
 	const unchanged = $derived(

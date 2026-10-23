@@ -924,7 +924,13 @@ test("a player's avatar and frame go on their seat, and their guess shows over i
 	await expect(mine.getByTestId('avatar-face')).toHaveAttribute('data-avatar', 'rocket');
 	await mine.tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Alex' });
-	await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
+	// The switch above the picker pushes it down on a phone: scroll first, so the tap is not
+	// taken as part of the sheet's own scroll.
+	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });
+	await empath.scrollIntoViewIfNeeded();
+	await expect(empath).toBeInViewport();
+	await empath.tap();
+	await expect(sheet).toBeHidden();
 	await expect(mine).toHaveAttribute('aria-label', /your guess: Empath/);
 	await expect(mine.getByTestId('avatar-face')).toBeVisible();
 	await mine.tap();
