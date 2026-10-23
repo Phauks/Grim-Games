@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 /**
  * Every setting beside a Settings preview shows in that preview (Trevor, 2026-10-22: "all
@@ -28,7 +29,7 @@ const CONTROLS = [
 ].join(', ');
 
 async function openSection(page: Page, section: string) {
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })

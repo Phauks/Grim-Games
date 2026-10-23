@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Frames round seat tokens (L4, Trevor 2026-10-22): the Storyteller's Board default, and each
 // player's own pick in Settings > Player.
 
 async function openSettings(page: Page, section: string) {
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })

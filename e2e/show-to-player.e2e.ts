@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 test('an info token is shown full screen and only the close button hides it', async ({ page }) => {
 	await page.goto('/info-tokens');
@@ -38,7 +39,7 @@ test('a shown token fits the screen at any token size', async ({ page }) => {
 	// Trevor (2026-10-19): at 150% the Sweetheart ran off the phone. Token size is for the board
 	// only now, so the player's view fits the token to the screen at the largest size too.
 	await page.goto('/info-tokens');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })

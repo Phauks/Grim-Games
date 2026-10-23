@@ -7,7 +7,7 @@
 <!--
 	Home is left blank until near 1.0 (Trevor, 2026-10-16): New game, Resume game and History
 	are in the sidebar. It says so in Trevor's own words (2026-10-17). The title is for screen
-	readers only; the header already shows the app's name.
+	readers only; the sidebar and menu already show the app's name.
 -->
 <Page title={APP_NAME} hideTitle>
 	<p>{t('shell.homeBlank')}</p>

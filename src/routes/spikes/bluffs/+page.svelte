@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { APP_NAME } from '#lib/core/app-name.ts';
 	import BluffsDemo from '#lib/features/bluffs/BluffsDemo.svelte';
 </script>
@@ -6,6 +7,8 @@
 <svelte:head>
 	<title>Demon bluffs spike · {APP_NAME}</title>
 </svelte:head>
+
+<PageMenuButton />
 
 <main>
 	<h1>Demon bluffs (preview)</h1>

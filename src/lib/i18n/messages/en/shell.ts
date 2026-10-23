@@ -1,6 +1,6 @@
 import { APP_NAME } from '#lib/core/app-name.ts';
 
-/** App shell: header, footer, About, update prompt and the Changelog page. */
+/** App shell: sidebar, menu, footer, About, update prompt and the Changelog page. */
 export const shell = {
 	'shell.settings': 'Settings',
 	'shell.appName': APP_NAME,
