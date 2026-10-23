@@ -9,6 +9,7 @@
 	import BoardBackdrop from '#lib/features/grimoire/BoardBackdrop.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
 	import ReminderCount from '#lib/features/grimoire/ReminderCount.svelte';
@@ -105,6 +106,7 @@
 	);
 	// The board's reminder size for this token: half of it, kept between 30 and 48px.
 	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5))));
+	const storyteller = $derived(storytellerName.current.trim());
 	const loose = $derived(boardLooks.current.reminders === 'free');
 	const rulesSize = $derived(
 		boardLooks.current.rulesAt === 'middle' ? Math.round(size * 0.6) : Math.round(size * 0.4)
@@ -192,11 +194,20 @@
 
 	<p class="preview-title" data-testid="preview-script-title">
 		{scriptName}
+		<!-- Who runs the game, as on the board (Trevor, 2026-10-23): this device's name. -->
+		{#if storyteller}<span class="preview-room-code" data-testid="preview-storyteller"
+				>{t('settings.storytellerLine', { name: storyteller })}</span
+			>{/if}
 		<!-- The join code under the name, as on the board; a sample code here. -->
 		{#if preferences.current.assistance.roomCode}<span
 				class="preview-room-code"
 				data-testid="preview-room-code"
 				>{t('room.joinCode')} <span class="code">{SAMPLE_CODE}</span></span
+			>{/if}
+		{#if preferences.current.assistance.gameClock}<span
+				class="preview-room-code"
+				data-testid="preview-game-clock"
+				>{t('history.gameLength')} <span class="code">1:23:45</span></span
 			>{/if}
 	</p>
 	<ul class="bank" aria-label={t('settings.previewBank')} data-testid="preview-bank">
@@ -315,6 +326,9 @@
 		font-variant-numeric: tabular-nums;
 		letter-spacing: 0.08em;
 	}
+	/* The board's bank (ReminderBank .bank): its outline, corners and see-through bar, so the
+	   preview's bank reads as the board's (Trevor, 2026-10-23: "doesn't look like it has an
+	   outline"). e2e/settings.e2e.ts checks the two stay alike. */
 	.bank {
 		position: relative;
 		z-index: 1;
@@ -322,11 +336,13 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--space-1);
-		margin: 0;
+		margin: 0 var(--space-1) var(--space-1);
 		padding: 0 var(--space-1);
 		overflow: hidden;
 		list-style: none;
-		background: var(--card-background);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--board-bar-background);
 	}
 	.bank > li {
 		position: relative;

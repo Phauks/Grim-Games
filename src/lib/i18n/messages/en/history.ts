@@ -6,6 +6,7 @@ export const history = {
 	'history.pageTitle': `History · ${APP_NAME}`,
 	'history.summary': 'Summary',
 	'history.games': 'Games',
+	'history.gameLength': 'Game time',
 	'history.goodWins': 'Good won',
 	'history.evilWins': 'Evil won',
 	'history.alternateWins': 'Alternate wins',

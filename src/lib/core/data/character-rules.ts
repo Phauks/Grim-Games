@@ -29,6 +29,18 @@ export type ReminderPrompt = (typeof REMINDER_PROMPTS)[number];
 export const KILLED_BY = ['demon', 'other', 'any'] as const;
 export type KilledBy = (typeof KILLED_BY)[number];
 
+/** What being nominated sets off: the nominator is executed straight away. */
+export const NOMINATED_EFFECTS = ['execute-nominator'] as const;
+export type NominatedEffect = (typeof NOMINATED_EFFECTS)[number];
+
+/**
+ * What a player says in town that the day log keeps for their ability (Trevor, 2026-10-23:
+ * L56, "these all relate to specific announcements in town by players"): seat and character
+ * guesses, one statement that is true or false, or two statements.
+ */
+export const DAY_CLAIMS = ['guesses', 'statement', 'statements'] as const;
+export type DayClaim = (typeof DAY_CLAIMS)[number];
+
 export interface CharacterRules {
 	/** Reminders whose placing is the moment to change the seat's state, by label. */
 	reminderPrompts?: Readonly<Record<ReminderLabel, ReminderPrompt>>;
@@ -53,6 +65,11 @@ export interface CharacterRules {
 	 */
 	survivesFirstDeath?: { spentToken: ReminderLabel };
 	/**
+	 * The first time its player is nominated by a `by` character, `effect` happens (the
+	 * Virgin). Once used, the character's "No Ability" reminder marks it spent.
+	 */
+	onNominated?: { by: CharacterType; effect: NominatedEffect };
+	/**
 	 * The ability kills at night: the Demon's kill or another ability's (`by`), any player or
 	 * only its own (`targets: self`, the Gambler), and ignoring protection (the Assassin).
 	 */
@@ -63,6 +80,8 @@ export interface CharacterRules {
 	learns?: Learns;
 	/** A night answer worked out from the grimoire and today's log (the Town Crier). */
 	answers?: Answers;
+	/** The claim its player makes by day, logged from their day row and seat ⋯ menu (L56). */
+	dayClaim?: DayClaim;
 }
 
 /**
@@ -100,7 +119,8 @@ export interface Learns {
  * What an `answers` character learns, each worked out in `rules/night-info.ts`:
  * `minion-nominated` (Town Crier), `demon-voted` (Flowergirl), `executed-character`
  * (Undertaker), `outsider-died` (Godfather), `correct-guesses` (Juggler), `evil-dead`
- * (Oracle), `abnormal-abilities` (Mathematician). `token` is the character's reminder that
+ * (Oracle), `abnormal-abilities` (Mathematician), `statement-true` (Gossip, from the
+ * statement logged by day, L58). `token` is the character's reminder that
  * marks the answer on the board ("Died Today", "Abnormal").
  */
 export const ANSWER_QUESTIONS = [
@@ -110,7 +130,8 @@ export const ANSWER_QUESTIONS = [
 	'outsider-died',
 	'correct-guesses',
 	'evil-dead',
-	'abnormal-abilities'
+	'abnormal-abilities',
+	'statement-true'
 ] as const;
 export interface Answers {
 	question: (typeof ANSWER_QUESTIONS)[number];
@@ -142,7 +163,9 @@ export const RULE_KEYS = [
 	'kills',
 	'reminderTargets',
 	'learns',
-	'answers'
+	'answers',
+	'onNominated',
+	'dayClaim'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -247,6 +270,19 @@ export function parseCharacterRules(
 		const protects = readProtects(raw.protects, `${path}.protects`, issues, reminders);
 		if (protects) rules.protects = protects;
 	}
+	if (raw.onNominated !== undefined) {
+		const at = `${path}.onNominated`;
+		if (!isObject(raw.onNominated)) {
+			issues.add(at, `expected object, got ${describe(raw.onNominated)}`);
+		} else {
+			checkKeys(raw.onNominated, ['by', 'effect'], at, issues);
+			const by = readEnum(raw.onNominated, 'by', CHARACTER_TYPES, at, issues, true);
+			const effect = readEnum(raw.onNominated, 'effect', NOMINATED_EFFECTS, at, issues, true);
+			if (by && effect) rules.onNominated = { by, effect };
+		}
+	}
+	const dayClaim = readEnum(raw, 'dayClaim', DAY_CLAIMS, path, issues, false);
+	if (dayClaim) rules.dayClaim = dayClaim;
 	return issues.list.length > before ? undefined : rules;
 }
 

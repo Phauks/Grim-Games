@@ -113,6 +113,7 @@ import riot from './riot.json' with { type: 'json' };
 import sage from './sage.json' with { type: 'json' };
 import sailor from './sailor.json' with { type: 'json' };
 import saint from './saint.json' with { type: 'json' };
+import savant from './savant.json' with { type: 'json' };
 import scarletwoman from './scarletwoman.json' with { type: 'json' };
 import seamstress from './seamstress.json' with { type: 'json' };
 import shabaloth from './shabaloth.json' with { type: 'json' };
@@ -253,6 +254,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	sage,
 	sailor,
 	saint,
+	savant,
 	scarletwoman,
 	seamstress,
 	shabaloth,

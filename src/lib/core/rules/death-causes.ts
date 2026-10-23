@@ -94,6 +94,21 @@ export function gameDeathCauses(game: Game, characters: CharacterLookup): DeathC
 	]);
 }
 
+/**
+ * The cause a reminder gives the death it marks: its own character, when that character can
+ * cause a death in this game (Trevor, 2026-10-23: the Fang Gu's "Dead" on a player "should know
+ * the token caused the death"). Undefined for the ∞ reminder, a character whose ability never
+ * kills, or a homebrew one we know nothing about.
+ */
+export function reminderDeathCause(
+	game: Game,
+	characters: CharacterLookup,
+	characterId: CharacterId
+): CharacterId | undefined {
+	const option = gameDeathCauses(game, characters).find((o) => o.characterId === characterId);
+	return option && option.kind !== 'unknown' ? option.characterId : undefined;
+}
+
 // ── Valid causes for one player ─────────────────────────────────────────────
 
 /**

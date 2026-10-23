@@ -1097,6 +1097,84 @@ test('the join code shows under the script name, a Board setting, and opens Shar
 	await expect(corner).toHaveText(`Join code ${shown}`);
 });
 
+// Trevor (2026-10-23): the Storyteller's name under the author, in the lower left corner.
+test("the board's corner names the Storyteller under the author, when named", async ({ page }) => {
+	await startGame(page);
+	const corner = page.getByTestId('script-title');
+	await expect(corner).toContainText('by The Pandemonium Institute');
+	await expect(page.getByTestId('board-storyteller')).toHaveCount(0);
+	await nameStoryteller(page, 'Sam');
+	await expect(page.getByTestId('board-storyteller')).toHaveText('Storyteller: Sam');
+	// The Board preview shows it too.
+	await menu(page, 'Board');
+	await expect(
+		page.getByRole('dialog', { name: 'Settings' }).getByTestId('preview-storyteller')
+	).toHaveText('Storyteller: Sam');
+});
+
+// Trevor (2026-10-23): "when grim is not main screen, we should blur out for game integrity".
+test('the board is blurred behind every sheet and dialog over it', async ({ page }) => {
+	await startGame(page);
+	const blur = (scope: 'dialog' | 'drawer') =>
+		page
+			.locator(`[data-scope="${scope}"][data-part="backdrop"]`)
+			.last()
+			.evaluate((el) => getComputedStyle(el).backdropFilter);
+	await openSeat(page, 1);
+	expect(await blur('drawer')).toMatch(/^blur\(/);
+	await closeSheet(page);
+	await page.getByRole('button', { name: 'Share', exact: true }).tap();
+	expect(await blur('dialog')).toMatch(/^blur\(/);
+	await page
+		.getByRole('dialog', { name: 'Share' })
+		.getByRole('button', { name: 'Close', exact: true })
+		.tap();
+	// Away from the board, a dialog only dims what is behind it: the page is no longer marked.
+	await page.goto('/library');
+	await expect(page.locator('html[data-board-shown]')).toHaveCount(0);
+});
+
+// Trevor (2026-10-23): starting the night opens the walk-through strip under the board; the
+// seats close up to make room, but the tokens keep their size.
+test('tokens keep their size when the night walk-through opens', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	const token = page.getByTestId('seat').first();
+	const before = (await token.boundingBox())!.width;
+	// The script's logo behind the seats keeps its size too (Trevor, 2026-10-23).
+	const logo = page.locator('.board-logo');
+	await expect(logo).toBeVisible();
+	const logoBefore = (await logo.boundingBox())!;
+	await bankNight(page, 'Start game').tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect
+		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
+		.toBeLessThan(1);
+	const logoAfter = (await logo.boundingBox())!;
+	expect(Math.abs(logoAfter.width - logoBefore.width)).toBeLessThan(1);
+	expect(Math.abs(logoAfter.height - logoBefore.height)).toBeLessThan(1);
+});
+
+// Trevor (2026-10-23): "change board look to board preview", and its bank looks like the board's.
+test("the Board preview's bank has the board bank's outline and colour", async ({ page }) => {
+	await startGame(page);
+	const look = (el: Element) => {
+		const style = getComputedStyle(el);
+		return [style.borderTopWidth, style.borderTopColor, style.borderRadius, style.backgroundColor];
+	};
+	const board = await page.locator('[data-tray]').evaluate(look);
+	await menu(page, 'Board');
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await expect(dialog.getByRole('heading', { name: 'Board preview' })).toBeVisible();
+	expect(await dialog.getByTestId('preview-bank').evaluate(look)).toEqual(board);
+});
+
 // Trevor (2026-10-23): a full screen button on the board, for those who don't know how.
 test('the board can go full screen from its toolbar, and back', async ({ page }) => {
 	await startGame(page);
@@ -4884,6 +4962,13 @@ test('a Dead reminder put on a living player asks whether to mark them dead', as
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, no character, dead')).toBeAttached();
 	await page.keyboard.press('Escape');
+	// The reminder's own character is the cause (Trevor, 2026-10-23: "it should know the token
+	// caused the death").
+	await expect(
+		page
+			.locator('[data-scope="drawer"][data-part="content"]')
+			.getByRole('button', { name: /^Status: Dead: Imp/ })
+	).toBeVisible();
 	await closeSheet(page);
 
 	// Cancel leaves them alive; switched off, it never asks.
@@ -5419,18 +5504,28 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	await page.getByRole('dialog', { name: 'Who did Seat 1 nominate?' }).getByText('Seat 3').tap();
 	await expect(nominated).toHaveText('Seat 3');
 	await closeSheet(page);
-	// Trevor (2026-10-23, option A): the board marks both seats, a finger and a gavel in one
-	// pill whose two slots never change size.
+	// Trevor (2026-10-23): every living seat has the marks, greyed until they happen, side by
+	// side in one pill that never changes size.
 	const seats = page.getByTestId('seat');
 	const marks = page.getByTestId('nomination-marks');
-	await expect(marks).toHaveCount(2);
-	await expect(seats.nth(0).getByTestId('nominator-mark').locator('svg')).toHaveCount(1);
-	await expect(seats.nth(0).getByTestId('nominated-mark').locator('svg')).toHaveCount(0);
-	await expect(seats.nth(2).getByTestId('nominated-mark').locator('svg')).toHaveCount(1);
+	await expect(marks).toHaveCount(8);
+	const on = (seat: number, mark: string) =>
+		seats
+			.nth(seat - 1)
+			.getByTestId(mark)
+			.and(page.locator('[data-on]'));
+	await expect(on(1, 'nominator-mark')).toHaveCount(1);
+	await expect(on(1, 'nominated-mark')).toHaveCount(0);
+	await expect(on(3, 'nominated-mark')).toHaveCount(1);
+	await expect(on(2, 'nominator-mark')).toHaveCount(0);
+	const finger = await seats.nth(0).getByTestId('nominator-mark').boundingBox();
+	const gavel = await seats.nth(0).getByTestId('nominated-mark').boundingBox();
+	// Side by side, not stacked.
+	expect(Math.abs((finger?.y ?? 0) - (gavel?.y ?? 1))).toBeLessThan(1);
+	expect(gavel!.x).toBeGreaterThan(finger!.x);
 	const one = await seats.nth(0).getByTestId('nomination-marks').boundingBox();
-	const three = await seats.nth(2).getByTestId('nomination-marks').boundingBox();
-	expect(Math.abs((one?.height ?? 0) - (three?.height ?? 1))).toBeLessThan(1);
-	await expect(seats.nth(1).getByTestId('nomination-marks')).toHaveCount(0);
+	const two = await seats.nth(1).getByTestId('nomination-marks').boundingBox();
+	expect(Math.abs((one?.width ?? 0) - (two?.width ?? 1))).toBeLessThan(1);
 	// The nominee's sheet shows it from the other side.
 	sheet = await openSeat(page, 3);
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('Seat 1');
@@ -5442,7 +5537,59 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 		.tap();
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
 	await closeSheet(page);
-	await expect(marks).toHaveCount(0);
+	// The nomination is gone from both sides, so no mark is lit.
+	await expect(marks).toHaveCount(8);
+	await expect(page.locator('[data-testid="nomination-marks"] [data-on]')).toHaveCount(0);
+});
+
+// Trevor (2026-10-23): tapping a seat's nomination marks asks who that player nominated, and
+// tracking feeds nomination abilities: a Townsfolk who nominates the Virgin is executed
+// straight away (https://wiki.bloodontheclocktower.com/Virgin). The dead have no marks unless
+// they took part in a nomination today.
+test('tapping the nomination marks records a nomination, and the Virgin executes a Townsfolk', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Virgin'],
+		[2, 'Chef'],
+		[4, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await trackNominations(page);
+	const seats = page.getByTestId('seat');
+	await seats.nth(1).getByTestId('nomination-marks').tap();
+	await page
+		.getByRole('dialog', { name: 'Who did Seat 2 nominate?' })
+		.getByText('Seat 1', { exact: true })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Virgin: execute Seat 2?' });
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await expect(seatLabelled(page, 'Seat 2: no name, Chef, dead')).toBeAttached();
+	// The Virgin's ability is used: her "No Ability" reminder is placed.
+	await expect(seatLabelled(page, 'Seat 1: no name, Virgin, 1 reminder')).toBeAttached();
+	// Dead, but nominated today: the marks stay, the finger lit.
+	await expect(
+		seats.nth(1).getByTestId('nominator-mark').and(page.locator('[data-on]'))
+	).toHaveCount(1);
+	// A player who died without nominating has none.
+	const empath = await openSeat(page, 4);
+	await empath.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 4' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	await closeSheet(page);
+	await expect(seats.nth(3).getByTestId('nomination-marks')).toHaveCount(0);
+	await expect(page.getByTestId('nomination-marks')).toHaveCount(7);
 });
 
 // Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented
@@ -5532,6 +5679,8 @@ test('with The Warrens, an evil nomination of an evil player offers to swap thei
 	await closeSheet(page);
 	await nominate(page, 2, 1);
 	const ask = page.getByRole('alertdialog', { name: 'The Warrens: swap characters?' });
+	// The rule asking sits at the top (Trevor, 2026-10-23).
+	await expect(ask.getByTestId('rule-header')).toContainText('The Warrens');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await closeSheet(page);

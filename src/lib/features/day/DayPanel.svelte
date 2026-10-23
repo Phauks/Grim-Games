@@ -4,6 +4,7 @@
 	import {
 		blockThreshold,
 		dayReminders,
+		dayClaim,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
 		daySentence
@@ -193,11 +194,23 @@
 	const toolbarHeight = $derived(toolbarSize?.[0]?.blockSize ?? 0);
 
 	// ── A player's day button, on their ability row ──
-	/** Used for a once-per-game day ability, Guesses for the Juggler. */
+	/** The claim a character's player makes in town, from its rules block (L56). */
+	const claimOf = (characterId: CharacterId | undefined) =>
+		characterId === undefined ? undefined : dayClaim(characterId, game.characters);
+	/**
+	 * Used for a once-per-game day ability; for a player's claim in town, Guesses (the
+	 * Juggler) or Statement (the Gossip) while "Log player claims" is on.
+	 */
+	const noteClaim = (characterId: CharacterId | undefined) => {
+		const claim = claimOf(characterId);
+		return assistance.playerClaims && (claim === 'guesses' || claim === 'statement')
+			? claim
+			: undefined;
+	};
 	const hasDayButton = (characterId: CharacterId | undefined) =>
 		characterId !== undefined &&
 		(isOnceOnlyDayAbility(characterId) ||
-			characterId === 'juggler' ||
+			noteClaim(characterId) !== undefined ||
 			savantButton(characterId) ||
 			demonVotedButton(characterId));
 	/** The Flowergirl's Demon voted, on her row while its setting is on (L43). */
@@ -208,7 +221,7 @@
 	 * with "Suggest Savant information" on, where the grimoire can open its sheet.
 	 */
 	const savantButton = (characterId: CharacterId | undefined) =>
-		characterId === 'savant' && assistance.savantInfo && onSavant !== undefined;
+		claimOf(characterId) === 'statements' && assistance.savantInfo && onSavant !== undefined;
 	/** The first pre-day reminder row headed by each seat's own character carries its button. */
 	const buttonRows = $derived.by(() => {
 		const rows: Record<string, SeatId> = {};
@@ -265,13 +278,15 @@
 		>
 			<span class="tick" data-on={isUsed || undefined}><Icon name="check" /></span>{t('day.used')}
 		</Chip>
-	{:else if characterId === 'juggler'}
+	{:else if characterId && noteClaim(characterId)}
+		{@const claim = noteClaim(characterId)}
 		<Chip
 			marked={hasNote({ characterId, seatId })}
-			aria-label={t('day.guessesLabel', { who })}
+			data-testid="claim"
+			aria-label={t(claim === 'guesses' ? 'day.guessesLabel' : 'day.statementLabel', { who })}
 			onclick={() => openNote({ characterId, seatId })}
 		>
-			{t('day.guesses')}
+			{t(claim === 'guesses' ? 'day.guesses' : 'day.statement')}
 		</Chip>
 	{:else if demonVotedButton(characterId)}
 		<Chip
@@ -283,8 +298,8 @@
 				'day.demonVoted'
 			)}
 		</Chip>
-	{:else if savantButton(characterId)}
-		{@const set = hasNote({ characterId: 'savant', seatId })}
+	{:else if characterId && savantButton(characterId)}
+		{@const set = hasNote({ characterId, seatId })}
 		<!-- Not set yet: recommended, in the accent colour. -->
 		<Chip
 			marked={set}

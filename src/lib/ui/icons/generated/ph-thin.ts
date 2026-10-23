@@ -29,6 +29,7 @@ import ph_bookmarks_simple_thin from '~icons/ph/bookmarks-simple-thin';
 import ph_books_thin from '~icons/ph/books-thin';
 import ph_bug_thin from '~icons/ph/bug-thin';
 import ph_calculator_thin from '~icons/ph/calculator-thin';
+import ph_camera_thin from '~icons/ph/camera-thin';
 import ph_caret_circle_down_thin from '~icons/ph/caret-circle-down-thin';
 import ph_caret_down_thin from '~icons/ph/caret-down-thin';
 import ph_caret_left_thin from '~icons/ph/caret-left-thin';
@@ -143,6 +144,7 @@ import ph_push_pin_thin from '~icons/ph/push-pin-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
 import ph_scales_thin from '~icons/ph/scales-thin';
+import ph_scan_thin from '~icons/ph/scan-thin';
 import ph_scroll_thin from '~icons/ph/scroll-thin';
 import ph_shapes_thin from '~icons/ph/shapes-thin';
 import ph_share_network_thin from '~icons/ph/share-network-thin';
@@ -229,6 +231,7 @@ const icons: IconMap = {
 	'ph:books-thin': ph_books_thin,
 	'ph:bug-thin': ph_bug_thin,
 	'ph:calculator-thin': ph_calculator_thin,
+	'ph:camera-thin': ph_camera_thin,
 	'ph:caret-circle-down-thin': ph_caret_circle_down_thin,
 	'ph:caret-down-thin': ph_caret_down_thin,
 	'ph:caret-left-thin': ph_caret_left_thin,
@@ -343,6 +346,7 @@ const icons: IconMap = {
 	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
 	'ph:scales-thin': ph_scales_thin,
+	'ph:scan-thin': ph_scan_thin,
 	'ph:scroll-thin': ph_scroll_thin,
 	'ph:shapes-thin': ph_shapes_thin,
 	'ph:share-network-thin': ph_share_network_thin,

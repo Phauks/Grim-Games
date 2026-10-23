@@ -37,6 +37,8 @@
 		 * always need keyboard"). True only where typing is the sheet's whole point.
 		 */
 		focusFirstField?: boolean;
+		/** Room for two columns on a computer, where the sheet opens as a centred panel. */
+		wide?: boolean;
 	}
 
 	let {
@@ -53,7 +55,8 @@
 		titleEnd,
 		subtitle,
 		children,
-		focusFirstField = false
+		focusFirstField = false,
+		wide = false
 	}: Props = $props();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
@@ -83,7 +86,10 @@
 	<Portal>
 		<Drawer.Backdrop style={layerStyle(layer, 'backdrop')} />
 		<Drawer.Positioner style={layerStyle(layer, 'content')}>
-			<Drawer.Content style={height ? `height: ${height}` : undefined}>
+			<Drawer.Content
+				style={height ? `height: ${height}` : undefined}
+				data-wide={wide || undefined}
+			>
 				<Drawer.Grabber>
 					<Drawer.GrabberIndicator />
 				</Drawer.Grabber>
@@ -117,6 +123,13 @@
 </Drawer.Root>
 
 <style>
+	/* Over the grimoire board, the board behind is blurred as well as dimmed, so nothing on it
+	   can be read while it isn't the main screen (Trevor, 2026-10-23: "for game integrity").
+	   GrimoireBoard marks the page while it is shown (board-cover.ts). */
+	:global(:root[data-board-shown] [data-scope='drawer'][data-part='backdrop']) {
+		-webkit-backdrop-filter: blur(var(--u));
+		backdrop-filter: blur(var(--u));
+	}
 	/* Ark renders these parts inside a portal, so they are styled by their data attributes. */
 	:global([data-scope='drawer'][data-part='backdrop']) {
 		position: fixed;
@@ -259,6 +272,9 @@
 			padding: var(--space-4) var(--space-5) var(--space-5);
 			border: var(--card-border);
 			border-radius: var(--card-radius);
+		}
+		:global([data-scope='drawer'][data-part='content'][data-wide]) {
+			width: min(100%, calc(60 * var(--u)));
 		}
 		:global([data-scope='drawer'][data-part='content'][data-state='open']) {
 			animation: sheet-pop-in var(--duration-normal) var(--ease-out);

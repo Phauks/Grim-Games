@@ -30,9 +30,11 @@
 		initialCode?: string | null;
 		/** A typed code was entered; without it the tab switches rooms in place. */
 		onCode?: (code: string) => void;
+		/** The phone has a seat in the room, or has asked for one. */
+		onSeated?: () => void;
 	}
 
-	let { script, version, initialCode, onCode }: Props = $props();
+	let { script, version, initialCode, onCode, onSeated }: Props = $props();
 	// svelte-ignore state_referenced_locally
 	let code = $state(initialCode === undefined ? lastRoom() : (initialCode ?? undefined));
 	const logo = $derived(script && scriptLogo(script));
@@ -65,24 +67,26 @@
 </script>
 
 <div class="room">
-	<!-- The share icon is always here, disabled until the phone is in a room: nothing moves. -->
-	<div class="head">
-		<h2>
-			{code && joined ? roomTitle : t('room.joinTitle')}
-		</h2>
-		<IconButton
-			icon="share"
-			label={t('player.shareRoom')}
-			disabled={!link}
-			onclick={() => (sharing = true)}
-		/>
-	</div>
+	<!-- Only in a room: before that, the page's own title says Join game and its Share is the
+	     one share button (Trevor, 2026-10-23: not twice). -->
+	{#if code && joined}
+		<div class="head">
+			<h2>{roomTitle}</h2>
+			<IconButton
+				icon="share"
+				label={t('player.shareRoom')}
+				disabled={!link}
+				onclick={() => (sharing = true)}
+			/>
+		</div>
+	{/if}
 	{#key code}
 		<JoinPanel
 			{code}
 			onCode={(c) => (onCode ? onCode(c) : (code = c))}
 			onJoined={(j) => (joined = j)}
 			onStoryteller={(name) => (storyteller = name)}
+			{onSeated}
 		/>
 	{/key}
 </div>

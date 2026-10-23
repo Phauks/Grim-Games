@@ -161,7 +161,7 @@
 						{#each RULE_SWITCHES[rule.id] ?? [] as sw (sw.id)}
 							<div class="switch">
 								<Toggle
-									label={t(sw.label)}
+									label={t(sw.label(rule.id))}
 									checked={switchOn(choices, rule.id, sw)}
 									disabled={!ruleIds.includes(rule.id)}
 									onChange={(on) => onSwitch({ ...choices, [`${rule.id}:${sw.id}`]: on })}

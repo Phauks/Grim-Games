@@ -10,7 +10,7 @@ import { openSettingsDialog } from './shell.ts';
  * skipped; a file picker can't be driven here.
  */
 
-const SECTIONS = ['Board', 'Tokens'] as const;
+const SECTIONS = ['Board', 'Tokens', 'Storyteller'] as const;
 /**
  * Settings that show only while another one is on, and also work outside the preview (so
  * they aren't disabled): the switch they need, turned on before they are measured.
