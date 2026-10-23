@@ -534,7 +534,7 @@
 			surface="page"
 			contained={false}
 			types={TYPES}
-			pinTop="calc(var(--header-offset) + {Math.max(0, bandHeight - 1)}px)"
+			pinTop="calc(var(--app-top) + {Math.max(0, bandHeight - 1)}px)"
 			keepTypes={['traveller', 'fabled', 'loric']}
 			closedTypes={travellersChosenAtStart ? ['fabled', 'loric'] : ['traveller', 'fabled', 'loric']}
 			onSelect={(id) => {
@@ -689,10 +689,10 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		position: sticky;
-		/* Just below the app header, which is sticky too, or at the top in a game (no header). */
-		top: var(--header-offset);
+		/* At the top of the screen, as the sidebar is. */
+		top: var(--app-top);
 		z-index: var(--z-raised);
-		/* Edge to edge, like the app header above it, so nothing shows beside it (Trevor). */
+		/* Edge to edge, so nothing shows beside it. */
 		margin-inline: calc(-1 * var(--page-gutter));
 		padding: var(--space-2) var(--page-gutter);
 		/* The page's own background, pinned to the window as the body's is, so it lines up. */

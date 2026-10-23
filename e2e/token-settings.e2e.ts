@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Settings > Tokens (Trevor, 2026-10-16): character token and reminder sizes, token colours
 // with a contrast readout. Stored on the device and applied everywhere tokens show.
 
 async function openTokens(page: Page) {
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })

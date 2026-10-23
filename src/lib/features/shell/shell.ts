@@ -3,20 +3,20 @@ import { resolve } from '$app/paths';
 import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 
 /**
- * Route data that hides the app header and footer. A game in progress returns
+ * Route data that hides the sidebar and footer. A game in progress returns
  * `{ chrome: 'game' }` from its `+layout.ts`, so a stray tap on the app name or a footer link
  * can't leave the game (Trevor, 2026-10-16). That screen's own menu offers Settings, Account
  * and Exit game instead, using the functions below.
  */
 export type Chrome = 'app' | 'game';
 
-/** Whether the app header and footer show, given the current page's route data. */
+/** Whether the sidebar and footer show, given the current page's route data. */
 export function showsAppShell(data: Record<string, unknown> | null | undefined): boolean {
 	return data?.chrome !== 'game';
 }
 
 /**
- * A locked pass-the-phone draw (Trevor, 2026-10-19; draw-lock.svelte.ts) hides the header,
+ * A locked pass-the-phone draw (2026-10-19; draw-lock.svelte.ts) hides the
  * sidebar and footer on that game's screens, so the only way out is its PIN. Elsewhere they
  * show, and that game's board asks for the PIN.
  */

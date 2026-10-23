@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
+	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 
 	interface Props {
 		/** The page's one `<h1>`; every page has one, so screen readers can find it. */
@@ -18,8 +20,8 @@
 		 */
 		iconActions?: boolean;
 		/**
-		 * Before the heading, on its line and outside it: the menu button on a screen without
-		 * the app header (Player view, Trevor 2026-10-19), as the board has.
+		 * Before the heading, on its line and outside it, in place of the hamburger the app's
+		 * pages put there (Player view mounts its own, as the board has; 2026-10-19).
 		 */
 		start?: Snippet;
 		/** One muted line under the title (an author, a date, the script in play). */
@@ -28,7 +30,7 @@
 		toolbar?: Snippet;
 		/**
 		 * A column beside the content on a computer window (counts, players, the check),
-		 * sticky below the app header; above the content on phones and tablets.
+		 * sticky at the top of the screen; above the content on phones and tablets.
 		 */
 		side?: Snippet;
 		/**
@@ -57,7 +59,13 @@
 		columns = false,
 		children
 	}: Props = $props();
+
+	// Before the title: the page's own `start`, else the hamburger while no sidebar shows
+	// (phones, tablets, a closed sidebar), since there is no app header (2026-10-22).
+	const before = $derived(start ?? (navDrawer.pageButton ? menuButton : undefined));
 </script>
+
+{#snippet menuButton()}<NavMenuButton />{/snippet}
 
 <!--
 	The frame of every page reached from the sidebar (Trevor, 2026-10-17): one width and gutter,
@@ -66,11 +74,12 @@
 	No Back button: the sidebar navigates. Overlays (dialogs, sheets) go beside it, not inside.
 -->
 <main class="page" data-width={width}>
+	{#if hideTitle && before}<div class="start">{@render before()}</div>{/if}
 	<header class="head" class:visually-hidden={hideTitle}>
 		<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
-			{#if start}
+			{#if before && !hideTitle}
 				<div class="start">
-					{@render start()}
+					{@render before()}
 					<h1>
 						{#if lead}{@render lead()}{/if}{title}
 					</h1>
@@ -129,6 +138,10 @@
 		min-width: 0;
 		margin: 0;
 		font-size: var(--page-title-size);
+		/* The narrowest phone at the largest text, with the hamburger beside it: a long title
+		   breaks (hyphenated where the browser can) rather than push the page sideways. */
+		overflow-wrap: anywhere;
+		hyphens: auto;
 	}
 	.start {
 		display: flex;
@@ -220,9 +233,9 @@
 		}
 		.side {
 			position: sticky;
-			/* Just below the app header, which is sticky too. */
-			top: var(--header-offset);
-			max-height: calc(100dvh - var(--header-offset));
+			/* Just under the phone's status bar. */
+			top: calc(var(--app-top) + var(--space-2));
+			max-height: calc(100dvh - var(--app-top) - var(--space-4));
 			overflow-y: auto;
 			padding-bottom: var(--space-4);
 		}

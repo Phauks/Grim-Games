@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, nameStoryteller } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { openMenu } from './shell.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -168,9 +169,9 @@ test('New game and Resume game are screens of their own', async ({ page }) => {
 	await page.getByRole('button', { name: 'More players' }).tap();
 	await expect(current).toHaveText('9');
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
-	// No Back button (Trevor, 2026-10-16): the app name in the header, or Home in the menu, goes home.
+	// No Back button (Trevor, 2026-10-16): Home in the menu goes home.
 	await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0);
-	await page.getByRole('banner').getByRole('link', { name: APP_NAME }).tap();
+	await (await openMenu(page)).getByRole('link', { name: 'Home' }).tap();
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
 
@@ -5215,6 +5216,44 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	await startGame(page);
 	await expect((await openSeat(page, 1)).getByTestId('sheet-nominated')).toHaveCount(0);
 	await closeSheet(page);
+	await trackNominations(page);
+
+	let sheet = await openSeat(page, 1);
+	const nominated = sheet.getByTestId('sheet-nominated');
+	await expect(nominated).toHaveText('None');
+	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
+	await nominated.tap();
+	await page.getByRole('dialog', { name: 'Who did Seat 1 nominate?' }).getByText('Seat 3').tap();
+	await expect(nominated).toHaveText('Seat 3');
+	await closeSheet(page);
+	// Trevor (2026-10-23, option A): the board marks both seats, a finger and a gavel in one
+	// pill whose two slots never change size.
+	const seats = page.getByTestId('seat');
+	const marks = page.getByTestId('nomination-marks');
+	await expect(marks).toHaveCount(2);
+	await expect(seats.nth(0).getByTestId('nominator-mark').locator('svg')).toHaveCount(1);
+	await expect(seats.nth(0).getByTestId('nominated-mark').locator('svg')).toHaveCount(0);
+	await expect(seats.nth(2).getByTestId('nominated-mark').locator('svg')).toHaveCount(1);
+	const one = await seats.nth(0).getByTestId('nomination-marks').boundingBox();
+	const three = await seats.nth(2).getByTestId('nomination-marks').boundingBox();
+	expect(Math.abs((one?.height ?? 0) - (three?.height ?? 1))).toBeLessThan(1);
+	await expect(seats.nth(1).getByTestId('nomination-marks')).toHaveCount(0);
+	// The nominee's sheet shows it from the other side.
+	sheet = await openSeat(page, 3);
+	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('Seat 1');
+	// None clears it.
+	await sheet.getByTestId('sheet-nominated-by').tap();
+	await page
+		.getByRole('dialog', { name: 'Who nominated Seat 3?' })
+		.getByRole('button', { name: 'None', exact: true })
+		.tap();
+	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
+	await closeSheet(page);
+	await expect(marks).toHaveCount(0);
+});
+
+/** Turns on Settings > Storyteller > Track nominations. */
+async function trackNominations(page: Page) {
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await page
 		.getByRole('dialog', { name: APP_NAME })
@@ -5228,25 +5267,56 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	await settings.getByText('Track nominations', { exact: true }).tap();
 	await settings.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(settings).toBeHidden();
+}
 
-	let sheet = await openSeat(page, 1);
-	const nominated = sheet.getByTestId('sheet-nominated');
-	await expect(nominated).toHaveText('None');
-	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
-	await nominated.tap();
-	await page.getByRole('dialog', { name: 'Who did Seat 1 nominate?' }).getByText('Seat 3').tap();
-	await expect(nominated).toHaveText('Seat 3');
-	await closeSheet(page);
-	// The nominee's sheet shows it from the other side.
-	sheet = await openSeat(page, 3);
-	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('Seat 1');
-	// None clears it.
-	await sheet.getByTestId('sheet-nominated-by').tap();
+/** Records on `nominator`'s seat sheet that they nominated `nominee`. */
+async function nominate(page: Page, nominator: number, nominee: number) {
+	const sheet = await openSeat(page, nominator);
+	await sheet.getByTestId('sheet-nominated').tap();
 	await page
-		.getByRole('dialog', { name: 'Who nominated Seat 3?' })
-		.getByRole('button', { name: 'None', exact: true })
+		.getByRole('dialog', { name: `Who did Seat ${nominator} nominate?` })
+		.getByText(`Seat ${nominee}`, { exact: true })
 		.tap();
-	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
+}
+
+// https://beardytas.com/garden-of-djinn/the-warrens/: while 5 or more live, an evil player who
+// nominates a living evil player swaps characters with them (Trevor, 2026-10-23).
+test('with The Warrens, an evil nomination of an evil player offers to swap their characters', async ({
+	page
+}) => {
+	await startWithRule(page, 'The Warrens', [
+		[1, 'Imp'],
+		[2, 'Poisoner'],
+		[3, 'Chef']
+	]);
+	await trackNominations(page);
+	// A good nominee: nothing to swap.
+	await nominate(page, 2, 3);
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+	await closeSheet(page);
+	await nominate(page, 2, 1);
+	const ask = page.getByRole('alertdialog', { name: 'The Warrens: swap characters?' });
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Poisoner')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
+});
+
+// https://beardytas.com/garden-of-djinn/the-djinns-bargain/: a nominator may choose to die.
+test("with The Djinn's Bargain, a nomination asks whether the nominator chose to die", async ({
+	page
+}) => {
+	await startWithRule(page, 'The Djinn’s Bargain', [[1, 'Chef']]);
+	await trackNominations(page);
+	await nominate(page, 1, 2);
+	const ask = page.getByRole('alertdialog', {
+		name: 'The Djinn’s Bargain: did Seat 1 choose to die?'
+	});
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Chef, dead')).toBeAttached();
 });
 
 // Trevor (2026-10-22, plan D2): a crowded seat's reminders keep a thin line back to it, and

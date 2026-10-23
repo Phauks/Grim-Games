@@ -21,29 +21,9 @@ export interface RecentDeath {
 }
 
 export function recentDeaths(log: GameLog, game: Game): RecentDeath[] {
-	const entries = log.entries.slice(0, log.cursor);
-	const dayStarts = entries.flatMap((e, i) =>
-		e.events.some((ev) => ev.type === 'DayStarted') ? [i] : []
-	);
-	let from = 0;
-	let to = entries.length;
-	if (dayStarts.length > 0) {
-		const latest = dayStarts[dayStarts.length - 1];
-		const previous = dayStarts.length > 1 ? dayStarts[dayStarts.length - 2] : 0;
-		from = previous;
-		to = latest + 1;
-		for (let i = previous; i < latest; i++) {
-			const ended = entries[i].events.some(
-				(ev) =>
-					ev.type === 'DayEntryAdded' &&
-					(ev.entry.kind === 'execution' || ev.entry.kind === 'exile')
-			);
-			if (ended) from = i + 1;
-		}
-	}
-
+	const entries = lastNight(log);
 	const deaths = new Map<SeatId, RecentDeath>();
-	for (const entry of entries.slice(from, to)) {
+	for (const entry of entries) {
 		for (const event of entry.events) {
 			if (event.type === 'DeathSet') {
 				deaths.delete(event.seatId);
@@ -67,4 +47,48 @@ export function recentDeaths(log: GameLog, game: Game): RecentDeath[] {
 	return [...deaths.values()].filter(
 		(d) => game.seats[d.seatId]?.dead === true && d.cause !== 'execution' && d.cause !== 'exile'
 	);
+}
+
+/** The log entries of the night just ended, with the boundaries described above. */
+function lastNight(log: GameLog): GameLog['entries'] {
+	const entries = log.entries.slice(0, log.cursor);
+	const dayStarts = entries.flatMap((e, i) =>
+		e.events.some((ev) => ev.type === 'DayStarted') ? [i] : []
+	);
+	let from = 0;
+	let to = entries.length;
+	if (dayStarts.length > 0) {
+		const latest = dayStarts[dayStarts.length - 1];
+		const previous = dayStarts.length > 1 ? dayStarts[dayStarts.length - 2] : 0;
+		from = previous;
+		to = latest + 1;
+		for (let i = previous; i < latest; i++) {
+			const ended = entries[i].events.some(
+				(ev) =>
+					ev.type === 'DayEntryAdded' &&
+					(ev.entry.kind === 'execution' || ev.entry.kind === 'exile')
+			);
+			if (ended) from = i + 1;
+		}
+	}
+	return entries.slice(from, to);
+}
+
+/**
+ * Who came back to life in the night just ended (Trevor, 2026-10-20: "announcements must
+ * include people being revived"): players dead when it began and alive now, in the order
+ * they were revived. Someone who died and was revived the same night is in neither list.
+ */
+export function recentRevivals(log: GameLog, game: Game): SeatId[] {
+	const seen: SeatId[] = [];
+	const revived: SeatId[] = [];
+	for (const entry of lastNight(log)) {
+		for (const event of entry.events) {
+			if (event.type !== 'DeathSet' || seen.includes(event.seatId)) continue;
+			seen.push(event.seatId);
+			// The seat's first change this night brought it back, so it was dead before.
+			if (!event.dead) revived.push(event.seatId);
+		}
+	}
+	return revived.filter((seatId) => game.seats[seatId]?.dead === false);
 }

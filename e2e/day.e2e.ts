@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 // Spike: the day log and the night answers it feeds (/spikes/day), touch only.
 
@@ -155,7 +156,7 @@ test('with help switched off the night is a checklist with no worked-out answers
 	page
 }) => {
 	await loaded(page);
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })

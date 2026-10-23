@@ -293,13 +293,16 @@ describe('Binary Supernovae', () => {
 });
 
 // https://beardytas.com/garden-of-djinn/the-warrens/ and
-// https://beardytas.com/garden-of-djinn/the-djinns-bargain/: both happen on a nomination,
-// which the app doesn't record, so the Storyteller runs them from their instructions.
-describe.each(['warrens', 'djinns-bargain'])('%s', (id) => {
+// https://beardytas.com/garden-of-djinn/the-djinns-bargain/: both happen on a nomination;
+// the board offers them when one is recorded (rule-effects.test.ts).
+describe.each([
+	['warrens', [{ kind: 'evil-swap', minAlive: 5 }]],
+	['djinns-bargain', [{ kind: 'nominator-may-die' }]]
+])('%s', (id, nominations) => {
 	const found = SPECIAL_RULES.find((r) => r.id === id)!;
 
-	it('is a Storyteller instruction that changes no counts', () => {
-		expect(Object.keys(found.parts).sort()).toEqual(['ruleChanges', 'text']);
+	it('acts on a nomination and changes no counts', () => {
+		expect(found.parts.nominations).toEqual(nominations);
 		expect(found.parts.ruleChanges?.[0].instructions?.trim()).toBeTruthy();
 		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: found.parts.text });
 		expect(onBootlegger?.parts.countChanges).toBeUndefined();

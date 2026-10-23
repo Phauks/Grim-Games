@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -117,6 +118,8 @@
 	const script = $derived(
 		!data ? undefined : join ? roomScript(joining || undefined) : currentScript.current
 	);
+	// A report sent from here carries the script (Trevor, 2026-10-22).
+	offerScriptToReports(() => script);
 	/** No script yet: the Scripts page no longer lists the base three, so offer them here. */
 	const choosing = $derived(!!data && !script);
 	function chooseEdition(id: string) {
@@ -195,7 +198,7 @@
 
 <!-- Print and Share stay on the title's line at every width (Trevor, 2026-10-19). -->
 <Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions>
-	<!-- No app header here, as on the board (Trevor, 2026-10-19): the sidebar is one tap away. -->
+	<!-- No sidebar here, as on the board (2026-10-19): the menu is one tap away. -->
 	{#snippet start()}<NavMenuButton />{/snippet}
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. -->

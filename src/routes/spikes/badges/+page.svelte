@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { APP_NAME } from '#lib/core/app-name.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 </script>
@@ -6,6 +7,8 @@
 <svelte:head>
 	<title>Badges spike · {APP_NAME}</title>
 </svelte:head>
+
+<PageMenuButton />
 
 <main>
 	<h1>Pre-day reminders (preview)</h1>

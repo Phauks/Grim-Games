@@ -47,10 +47,12 @@ function short(alerts: NightAlert[], seats: string[]): string[] {
 describe('data', () => {
 	it('names only real characters, each citing its wiki page', () => {
 		const data = committedGameData();
-		for (const [id, entry] of [...Object.entries(NIGHT_KILLERS), ...Object.entries(ON_DEATH)]) {
+		for (const [id, entry] of Object.entries(NIGHT_KILLERS)) {
 			expect(data.byId.has(id), id).toBe(true);
 			expect(entry.wiki, id).toMatch(/^https:\/\/wiki\.bloodontheclocktower\.com\/\S+$/);
 		}
+		// On-death triggers come from the rules files; their alerts link the character's page.
+		for (const id of Object.keys(ON_DEATH)) expect(data.byId.has(id), id).toBe(true);
 	});
 
 	it('lists every Demon that kills at night (all but the Riot and the Leviathan)', () => {

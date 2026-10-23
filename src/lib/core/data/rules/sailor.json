@@ -1,0 +1,6 @@
+{
+	"protects": {
+		"who": "self",
+		"from": "any"
+	}
+}

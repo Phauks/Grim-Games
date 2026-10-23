@@ -54,6 +54,12 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'J1', title: "Join game shows nothing from the phone until the room's script arrives" },
 			{ id: 'J2', title: 'Scan a code on Join game, with the camera in the app' },
 			{ id: 'J3', title: 'Password fields are masked, with an eye button to show them' },
+			{
+				id: 'J4',
+				title: "The script vote shows the room's code and QR, so players can join to vote"
+			},
+			{ id: 'J5', title: 'The Storyteller can set a time limit on the script vote' },
+			{ id: 'J6', title: "The script vote finds scripts with New game's own script controls" },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
 		]
 	},
@@ -148,7 +154,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'L38', title: 'Character setup keeps the game’s screen, with no sidebar or header' },
 			{ id: 'L39', title: 'Show only selected and Random selection take in the Demon bluffs' },
 			{ id: 'L40', title: 'A warning when a Demon bluff is also chosen to be in play' },
-			{ id: 'B6', title: 'Slot-machine character draw, with Whale Buffet reels' }
+			{ id: 'B6', title: 'Slot-machine character draw, with Sushi Buffet reels' }
 		]
 	},
 	{
@@ -160,6 +166,12 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'S6', title: 'One "not official" notice, linking the official site', prs: [317] },
 			{ id: 'S1', title: 'Install app button at the bottom of Settings', prs: [320] },
 			{ id: 'S3', title: 'Player name options in Tokens settings', prs: [332] },
+			{
+				id: 'S7',
+				title: 'Reports: no Admins list or Only mine; admins set in Cloudflare',
+				prs: [351]
+			},
+			{ id: 'S10', title: 'A report sent from a script carries that script' },
 			{
 				id: 'S11',
 				title: 'Buttons stand out from what is behind them; End game is a red button'

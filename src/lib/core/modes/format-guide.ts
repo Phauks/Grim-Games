@@ -21,7 +21,7 @@ import {
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 12;
+export const GAME_MODE_REVISION = 13;
 
 export interface GuideField {
 	name: string;
@@ -837,6 +837,34 @@ export const RULE_GUIDE_PARTS: GuidePart[] = [
 				kind: 'script-order',
 				about:
 					'The next living in-play character in script order, after the last one the Demon killed. The walk-through names it on the Demon’s step.',
+				fields: []
+			}
+		]
+	},
+	{
+		part: 'nominations',
+		list: true,
+		about:
+			'What a nomination sets off. When a nomination is recorded, the board offers it to the Storyteller.',
+		fields: [
+			{
+				name: 'minAlive',
+				type: 'whole number',
+				required: false,
+				about: 'Only while at least this many players are alive.'
+			}
+		],
+		kinds: [
+			{
+				kind: 'evil-swap',
+				about:
+					'An evil player who nominates a living evil player swaps characters with them. Travellers are left out.',
+				fields: []
+			},
+			{
+				kind: 'nominator-may-die',
+				about:
+					'The nominator may choose to die; the nominee’s ability then works twice until the next dusk.',
 				fields: []
 			}
 		]

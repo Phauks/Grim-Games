@@ -11,6 +11,7 @@ import { GENERIC_REMINDER_ID, type SymbolColour } from '#lib/core/model/index.ts
 import type { Command } from './commands.ts';
 import { decide } from './decide.ts';
 import { createGame, dispatch, redo, undo, type GameSession } from './log.ts';
+import { applyEvent } from './reducer.ts';
 import type { EngineContext } from './context.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -157,20 +158,27 @@ describe('seats', () => {
 		const s = run(session, ctx, {
 			type: 'SetSeatLook',
 			seatId: seats[1],
-			avatar: 'cat',
+			avatar: 'initials',
 			frame: 'ring'
 		});
-		expect(s.game.seats[seats[1]]).toMatchObject({ avatar: 'cat', frame: 'ring' });
+		expect(s.game.seats[seats[1]]).toMatchObject({ avatar: 'initials', frame: 'ring' });
 		const same = dispatch(
 			s,
-			{ type: 'SetSeatLook', seatId: seats[1], avatar: 'cat', frame: 'ring' },
+			{ type: 'SetSeatLook', seatId: seats[1], avatar: 'initials', frame: 'ring' },
 			ctx
 		);
 		expect(same.ok && codes(same)).toEqual(['no-change']);
-		const cleared = run(s, ctx, { type: 'SetSeatLook', seatId: seats[1], avatar: 'cat' });
-		expect(cleared.game.seats[seats[1]].avatar).toBe('cat');
+		const cleared = run(s, ctx, { type: 'SetSeatLook', seatId: seats[1], avatar: 'initials' });
+		expect(cleared.game.seats[seats[1]].avatar).toBe('initials');
 		expect('frame' in cleared.game.seats[seats[1]]).toBe(false);
 		expect(refused(s, ctx, { type: 'SetSeatLook', seatId: 'nobody' })).toBe('unknown-seat');
+		// A picture from the earlier icon set, saved by that beta build, is dropped on replay.
+		const replayed = applyEvent(s.game, {
+			type: 'SeatLookSet',
+			seatId: seats[1],
+			avatar: 'cat' as never
+		});
+		expect('avatar' in replayed.seats[seats[1]]).toBe(false);
 	});
 
 	it("keeps the Storyteller's general game notes, trimmed, undoable and clearable", () => {

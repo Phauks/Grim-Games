@@ -5,6 +5,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { account } from '#lib/features/account/account.svelte.ts';
+	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
 	import {
 		ACCOUNT_ITEM,
 		HOME_ITEM,
@@ -16,13 +17,11 @@
 	import { openSettings } from './shell.ts';
 
 	interface Props {
-		/** Adds "You" (Account and Settings), for places without the header's buttons (drawer). */
-		withAccount?: boolean;
 		/** Called after a choice, e.g. to close the drawer. */
 		onChoose?: () => void;
 	}
 
-	let { withAccount = false, onChoose }: Props = $props();
+	let { onChoose }: Props = $props();
 
 	const label = (key: MessageKey): string => (t as (key: MessageKey) => string)(key);
 	const listId = $props.id();
@@ -35,7 +34,16 @@
 			aria-current={isCurrent(item, page.url.pathname) ? 'page' : undefined}
 			onclick={() => onChoose?.()}
 		>
-			<Icon name={item.icon} />
+			{#if item === ACCOUNT_ITEM}
+				<!-- The signed-in account's profile icon, as the header's button had (2026-10-22). -->
+				<span class="profile" data-signed-in={account.status === 'signed-in'}
+					><ProfileIcon
+						icon={account.status === 'signed-in' ? account.user?.icon : undefined}
+					/></span
+				>
+			{:else}
+				<Icon name={item.icon} />
+			{/if}
 			<span>{label(item.label)}</span>
 		</a>
 	</li>
@@ -54,24 +62,23 @@
 		<h3 id="{listId}-admin">{t('shell.navSectionAdmin')}</h3>
 		<ul aria-labelledby="{listId}-admin">{@render link(REPORTS_ITEM)}</ul>
 	{/if}
-	{#if withAccount}
-		<h3 id="{listId}-you">{t('shell.navSectionYou')}</h3>
-		<ul aria-labelledby="{listId}-you">
-			{@render link(ACCOUNT_ITEM)}
-			<li>
-				<button
-					type="button"
-					onclick={() => {
-						onChoose?.();
-						openSettings();
-					}}
-				>
-					<Icon name="settings" />
-					<span>{t('shell.settings')}</span>
-				</button>
-			</li>
-		</ul>
-	{/if}
+	<!-- Account and Settings, last in the sidebar and the drawer alike (2026-10-22). -->
+	<h3 id="{listId}-you">{t('shell.navSectionYou')}</h3>
+	<ul aria-labelledby="{listId}-you">
+		{@render link(ACCOUNT_ITEM)}
+		<li>
+			<button
+				type="button"
+				onclick={() => {
+					onChoose?.();
+					openSettings();
+				}}
+			>
+				<Icon name="settings" />
+				<span>{t('shell.settings')}</span>
+			</button>
+		</li>
+	</ul>
 </div>
 
 <style>
@@ -90,6 +97,12 @@
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--on-surface-muted);
+	}
+	.profile {
+		display: grid;
+		flex: none;
+		width: var(--icon-size);
+		height: var(--icon-size);
 	}
 	h3:first-child {
 		margin-top: 0;

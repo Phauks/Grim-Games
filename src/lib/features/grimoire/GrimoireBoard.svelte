@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { EndReason, Night, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
@@ -54,12 +55,18 @@
 		type ReminderPrompt,
 		setupComplete,
 		diedSinceNewDay,
-		ON_DEATH,
+		onDeathTrigger,
 		abilityState,
-		stepNightNumbers
+		stepNightNumbers,
+		todaysNominations
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
-	import { nextScriptOrderTarget, seatHasAbility } from '#lib/core/modes/index.ts';
+	import {
+		nextScriptOrderTarget,
+		nominationPrompts,
+		seatHasAbility,
+		type NominationPrompt
+	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -141,6 +148,7 @@
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FoolAsk from './FoolAsk.svelte';
+	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -189,6 +197,15 @@
 	// sizes the board only (Trevor, 2026-10-19): tokens elsewhere keep their own size.
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
+	// Who nominated and who was nominated today, for the marks on the seats (Track nominations).
+	const nominated = $derived.by(() => {
+		if (!preferences.current.assistance.trackNominations) return undefined;
+		const today = todaysNominations(game);
+		return {
+			made: new Set(today.map((n) => n.nominator)),
+			received: new Set(today.map((n) => n.nominee))
+		};
+	});
 	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
 	// The Token size preview in Settings draws at this board's size.
 	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
@@ -315,7 +332,7 @@
 			holders.some(
 				(s) =>
 					seatHasAbility(abilitiesRule, game, s, characters) ||
-					(id !== undefined && id in ON_DEATH && diedTonight.has(s))
+					(id !== undefined && !!onDeathTrigger(id, characters) && diedTonight.has(s))
 			)
 		);
 	}
@@ -940,6 +957,8 @@
 	 * after the first night, the next living in-play character in script order.
 	 */
 	const attackRule = $derived(gameRules.find((r) => r.parts.demonAttacks)?.name);
+	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
+	let nominationAsks = $state<NominationPrompt[]>([]);
 	const walkAttack = $derived.by(() => {
 		if (!attackRule || !walkStep || walk?.night !== 'other') return undefined;
 		if (walkStep.character?.type !== 'demon') return undefined;
@@ -1292,6 +1311,8 @@
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
+	// A report sent from the board carries the game's script, never the game (Trevor, 2026-10-22).
+	offerScriptToReports(() => loadedScript);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
@@ -1730,6 +1751,10 @@
 							}
 						: undefined}
 					orphan={isOrphan(seat, game.script, characters)}
+					nominations={nominated && {
+						made: nominated.made.has(seat.seatId),
+						received: nominated.received.has(seat.seatId)
+					}}
 					dropTarget={reorderTarget === seat.seatId ||
 						(reminderDrag !== undefined &&
 							reminderDrag.target === seat.seatId &&
@@ -2161,6 +2186,7 @@
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FoolAsk {grimoire} />
+<NominationAsk {grimoire} bind:asks={nominationAsks} />
 <GameEndPrompt
 	{grimoire}
 	active={!ended && !grimoire.open.viewOnly}
@@ -2329,6 +2355,8 @@
 		onDraw(id);
 	}}
 	onNotes={(id) => notesSheet?.edit(id)}
+	onNominated={(nomination) =>
+		(nominationAsks = nominationPrompts(grimoire.game, nomination, gameRules, characters))}
 />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
@@ -2528,7 +2556,7 @@
 		isolation: isolate;
 		display: flex;
 		flex-direction: column;
-		/* Fills the screen: a game hides the app header and footer (route data). */
+		/* Fills the screen: a game hides the sidebar and footer (route data). */
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}

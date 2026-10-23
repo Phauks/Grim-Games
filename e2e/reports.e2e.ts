@@ -1,5 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { pickScript } from './new-game.ts';
+import { menuButton } from './shell.ts';
 
 async function signIn(page: Page, email: string) {
 	await page.goto('/account');
@@ -109,7 +111,7 @@ test('an account in ADMIN_EMAILS is an admin, with nothing to manage on Reports'
 	await signIn(page, listedAdmin(testInfo, 2));
 	await expect(page.getByTestId('account-type')).toHaveText('Admin');
 	// Admins have Reports in the menu (Trevor, 2026-10-18).
-	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await menuButton(page).tap();
 	await page.getByRole('dialog', { name: APP_NAME }).getByRole('link', { name: 'Reports' }).tap();
 	await expect(page).toHaveURL(/\/reports$/);
 	await expect(page.getByTestId('reports')).toBeVisible();
@@ -142,7 +144,7 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	const reader = await other.newPage();
 	await signIn(reader, `reader-${Date.now()}@example.com`);
 	await expect(reader.getByTestId('account-type')).toHaveText('User');
-	await reader.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await menuButton(reader).tap();
 	const menu = reader.getByRole('dialog', { name: APP_NAME });
 	await expect(menu.getByRole('link', { name: 'Library' })).toBeVisible();
 	await expect(menu.getByRole('link', { name: 'Reports' })).toHaveCount(0);
@@ -185,4 +187,41 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	await expect(page.getByRole('dialog', { name: new RegExp(title) })).toContainText(
 		'sender on Discord'
 	);
+});
+
+test('a report sent from the board carries its script, for its sender and the admins to open', async ({
+	page
+}) => {
+	// Trevor, 2026-10-22: "if submitting report from a script, we should include the script".
+	const title = `From a script ${Date.now()}`;
+	await signIn(page, `scripted-${Date.now()}@example.com`);
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page.getByTestId('seat')).toHaveCount(8);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Report an issue' })
+		.tap();
+
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await form.getByRole('textbox', { name: 'Title' }).fill(title);
+	await form.getByRole('textbox', { name: 'Description' }).fill('The Chef counts wrong.');
+	await expect(form.getByLabel('Include the script')).toBeChecked();
+	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await expect(form.getByTestId('report-script')).toHaveText('Trouble Brewing');
+	await form.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(form.getByTestId('report-sent')).toBeVisible();
+	await form.getByRole('button', { name: 'Close' }).last().tap();
+
+	// Its sender opens the script from the report, as its JSON; the game itself never goes.
+	await page.goto('/reports');
+	const row = page.getByTestId('reports').locator('tr', { hasText: title });
+	await row.getByRole('button', { name: title }).tap();
+	const report = page.getByRole('dialog', { name: new RegExp(title) });
+	await report.getByRole('button', { name: 'Trouble Brewing' }).tap();
+	const json = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	await expect(json).toContainText('washerwoman');
+	await expect(json).not.toContainText('Seat');
 });

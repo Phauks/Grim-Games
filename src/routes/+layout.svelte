@@ -13,7 +13,6 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { keepData } from '#lib/features/settings/data/keep-data.ts';
 	import { installApp } from '#lib/features/settings/install-app.svelte.ts';
-	import AppHeader from '#lib/features/shell/AppHeader.svelte';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
 	import NavDrawer from '#lib/features/shell/NavDrawer.svelte';
 	import {
@@ -39,7 +38,7 @@
 		void locale.init();
 	});
 
-	// Who is signed in, checked once for every page, including games without the header.
+	// Who is signed in, checked once for every page, including games.
 	$effect(() => {
 		void startAccount();
 	});
@@ -94,7 +93,7 @@
 		leaveTo(() => void goto(to.href));
 	});
 
-	// A game in progress hides the header and footer (src/lib/features/shell/shell.ts), and so
+	// A game in progress hides the sidebar and footer (src/lib/features/shell/shell.ts), and so
 	// does a locked draw while the phone is passed round.
 	const shell = $derived(
 		showsAppShell(page.data) && !lockedDrawHidesShell(page.url.pathname, drawLock.lockedGame)
@@ -106,7 +105,6 @@
 	<title>{APP_NAME}</title>
 </svelte:head>
 
-{#if shell}<AppHeader />{/if}
 <!-- Grows to fill the screen so the footer sits at the bottom on short pages. -->
 <div class="app-body" class:bare={!shell}>
 	{#if shell}<AppNav />{/if}
@@ -128,13 +126,24 @@
 		min-width: 0;
 		/* Clear of a landscape phone's notch (viewport-fit=cover in app.html). */
 		padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
-		/* Where sticky page parts stop: just below the sticky app header. */
-		--header-offset: calc(var(--tap-target) + env(safe-area-inset-top));
 	}
-	/* No header or footer (a game): clear of the status and navigation bars here instead. */
+	/* Clear of the phone's status bar: there is no app header (2026-10-22). */
+	.app-body {
+		padding-top: var(--app-top);
+	}
+	/* No footer (a game): clear of the navigation bar here instead. */
 	.app-body.bare {
-		padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
-		--header-offset: env(safe-area-inset-top);
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+	/* The status bar's strip keeps the theme's colour while the page scrolls under it (an
+	   installed app on iPhone draws the page there; zero high elsewhere). */
+	.app-body::before {
+		content: '';
+		position: fixed;
+		inset: 0 0 auto;
+		z-index: var(--z-raised);
+		height: var(--app-top);
+		background: var(--surface);
 	}
 	.app-main {
 		flex: 1;

@@ -9,7 +9,7 @@ import type { SpecialRule } from '#lib/core/modes/index.ts';
 export interface RuleSwitch {
 	id: string;
 	/** i18n key of the switch's label. */
-	label: 'modes.switch.named';
+	label: 'modes.switch.named' | 'modes.switch.threeAlive';
 	/** How the rule file plays without the switch being touched. */
 	default: boolean;
 	apply: (rule: SpecialRule, on: boolean) => SpecialRule;
@@ -53,9 +53,45 @@ const EXTRAS: readonly RuleSwitch[] = [
 	}
 ];
 
+/** The Djinn's Bargain's 3-player limit, from the author's notes; our wording (approved). */
+export const DJINN_THREE_ALIVE =
+	'While only 3 players are alive, no one may choose to die this way.';
+
+/**
+ * The Djinn's Bargain's page (https://beardytas.com/garden-of-djinn/the-djinns-bargain/) bars
+ * the bargain while only 3 players live, a line its rule text leaves out (Trevor, 2026-10-23:
+ * "include the 3-player limit as a setting"). Off by default, as the rule text plays.
+ */
+const DJINN: readonly RuleSwitch[] = [
+	{
+		id: 'three-alive',
+		label: 'modes.switch.threeAlive',
+		default: false,
+		apply: (rule, on) => {
+			if (!on) return rule;
+			const [first, ...rest] = rule.parts.ruleChanges ?? [];
+			return {
+				...rule,
+				parts: {
+					...rule.parts,
+					// The prompt on a nomination is offered only while 4 or more live.
+					...(rule.parts.nominations
+						? { nominations: rule.parts.nominations.map((n) => ({ ...n, minAlive: 4 })) }
+						: {}),
+					ruleChanges: [
+						{ ...first, instructions: `${first?.instructions ?? ''} ${DJINN_THREE_ALIVE}`.trim() },
+						...rest
+					]
+				}
+			};
+		}
+	}
+];
+
 export const RULE_SWITCHES: Readonly<Record<string, readonly RuleSwitch[]>> = {
 	'plus-one': EXTRAS,
-	'infinite-possibilities': EXTRAS
+	'infinite-possibilities': EXTRAS,
+	'djinns-bargain': DJINN
 };
 
 /** Whether a rule's switch is on. */

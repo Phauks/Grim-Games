@@ -1,0 +1,7 @@
+{
+	"protects": {
+		"who": "marked",
+		"token": "Safe",
+		"from": "any"
+	}
+}

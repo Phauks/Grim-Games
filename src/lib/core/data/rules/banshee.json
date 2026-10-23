@@ -1,3 +1,6 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"onDeath": {
+		"by": "demon"
+	}
 }

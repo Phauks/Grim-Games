@@ -16,6 +16,12 @@ export interface ScriptVoteOption {
 	author?: string;
 }
 
+/**
+ * The time limits the Storyteller can set, in minutes (Trevor, 2026-10-23: "storyteller can
+ * create time-limit for vote"). When it runs out the room takes no more ballots.
+ */
+export const SCRIPT_VOTE_MINUTES = [1, 2, 3, 5, 10] as const;
+
 export const MIN_SCRIPT_VOTE_OPTIONS = 2;
 export const MAX_SCRIPT_VOTE_OPTIONS = 3;
 const MAX_ID = 200;
@@ -27,6 +33,8 @@ export interface ScriptVote {
 	options: ScriptVoteOption[];
 	/** Each player's ballot, by member id: their choices, in order for a ranked vote. */
 	ballots: Record<string, string[]>;
+	/** When the time limit runs out (epoch ms, the room's clock); no limit when absent. */
+	endsAt?: number;
 }
 
 /** What the Storyteller's device sees of the vote: points per option, and who voted. */
@@ -41,16 +49,22 @@ export interface ScriptVoteTally {
 	points: Record<string, number>;
 	voted: number;
 	members: number;
+	endsAt?: number;
 }
 
 const text = (value: unknown) =>
 	typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT) : '';
 
-/** A vote from what the Storyteller sent; `undefined` when it isn't one. */
+/**
+ * A vote from what the Storyteller sent; `undefined` when it isn't one. `minutes` sets a time
+ * limit from `now` when it is one of SCRIPT_VOTE_MINUTES; anything else means no limit.
+ */
 export function newScriptVote(
 	voteId: unknown,
 	kind: unknown,
-	options: unknown
+	options: unknown,
+	minutes?: unknown,
+	now = 0
 ): ScriptVote | undefined {
 	if (typeof voteId !== 'string' || !voteId || voteId.length > MAX_ID) return undefined;
 	if (!SCRIPT_VOTE_KINDS.includes(kind as ScriptVoteKind) || !Array.isArray(options)) return;
@@ -66,7 +80,16 @@ export function newScriptVote(
 		clean.push({ id, name: shown, ...(by ? { author: by } : {}) });
 	}
 	if (clean.length < MIN_SCRIPT_VOTE_OPTIONS || clean.length > MAX_SCRIPT_VOTE_OPTIONS) return;
-	return { voteId, kind: kind as ScriptVoteKind, options: clean, ballots: {} };
+	const vote: ScriptVote = { voteId, kind: kind as ScriptVoteKind, options: clean, ballots: {} };
+	if (SCRIPT_VOTE_MINUTES.includes(minutes as (typeof SCRIPT_VOTE_MINUTES)[number])) {
+		vote.endsAt = now + (minutes as number) * 60_000;
+	}
+	return vote;
+}
+
+/** Whether the vote's time limit has run out at `now`. */
+export function scriptVoteEnded(vote: { endsAt?: number }, now: number): boolean {
+	return vote.endsAt !== undefined && now >= vote.endsAt;
 }
 
 /**
@@ -102,6 +125,7 @@ export function tallyScriptVote(vote: ScriptVote, memberIds: readonly string[]):
 		options: vote.options,
 		points,
 		voted,
-		members: members.size
+		members: members.size,
+		...(vote.endsAt !== undefined ? { endsAt: vote.endsAt } : {})
 	};
 }

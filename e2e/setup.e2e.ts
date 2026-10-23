@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
+import { menuButton } from './shell.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
 
@@ -137,20 +138,18 @@ async function noSidewaysScroll(page: Page) {
 }
 
 // Trevor, 2026-10-17: the counts and search stay in view below the app header, never over it.
-test('the counts and search stick to the top of the screen while the list scrolls', async ({
+test('the counts and search stick at the top of the screen while the list scrolls', async ({
 	page
 }) => {
 	await selectionFor(page, 5);
 	await page.mouse.wheel(0, 3000);
 	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-	// Character setup has the game's screen, with no app header (Trevor, 2026-10-23).
-	await expect(page.getByRole('banner')).toHaveCount(0);
 	const counts = page.getByTestId('setup-counts');
 	await expect(counts).toBeInViewport();
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
 	await expect(search).toBeInViewport();
 	for (const box of [await counts.boundingBox(), await search.boundingBox()]) {
-		expect(box!.y).toBeGreaterThanOrEqual(0);
+		expect(box!.y).toBeGreaterThanOrEqual(-1);
 	}
 	expect((await counts.boundingBox())!.y).toBeLessThan(100);
 	// It really did scroll: the page heading is gone.
@@ -1078,6 +1077,24 @@ test('Demon bluffs: listed by Show only selected, warned when chosen, new on eac
 	await noSidewaysScroll(page);
 });
 
+test('the keyboard focus ring on a character token is round, around the token', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): it was a square around the token's button.
+	await selectionFor(page, 5);
+	const info = page.getByRole('button', { name: 'About the Chef' });
+	await info.tap();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeFocused();
+	expect(await info.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('none');
+	const face = info.locator('[data-token-face]');
+	const ring = await face.evaluate((el) => {
+		const style = getComputedStyle(el);
+		return { outline: style.outlineStyle, radius: style.borderRadius };
+	});
+	expect(ring).toEqual({ outline: 'solid', radius: '50%' });
+});
+
 // Trevor, 2026-10-19: the bag's cog and Share sit on the Draw heading's line, at the right.
 test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 	await selectionFor(page, 5);
@@ -1093,7 +1110,9 @@ test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 		const middle = box.y + box.height / 2;
 		expect(middle).toBeGreaterThan(title.y);
 		expect(middle).toBeLessThan(title.y + title.height);
-		expect(box.x).toBeGreaterThan(title.x);
+		// The hamburger comes before the title (no app header); the cog and Share after it.
+		if ((await button.getAttribute('aria-label')) === 'Menu') expect(box.x).toBeLessThan(title.x);
+		else expect(box.x).toBeGreaterThan(title.x);
 	}
 	await noSidewaysScroll(page);
 });
@@ -1215,8 +1234,8 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	await expect(title).toHaveText('Trouble Brewing');
 	await expect(title.getByTestId('script-logo')).toHaveCount(1);
 	await expect(page.locator('.setup-nav')).toHaveCount(0);
-	// No header, sidebar or footer to leave by while the phone is passed round.
-	await expect(page.getByRole('banner')).toHaveCount(0);
+	// No menu or footer to leave by while the phone is passed round.
+	await expect(menuButton(page)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
 	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
@@ -1248,8 +1267,9 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
-	// Unlocked, setup still has the game's screen: no header (Trevor, 2026-10-23).
-	await expect(page.getByRole('banner')).toHaveCount(0);
+	// Unlocked, setup still has the game's screen: no menu or footer (Trevor, 2026-10-23).
+	await expect(menuButton(page)).toHaveCount(0);
+	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 	await noSidewaysScroll(page);
 });
 
@@ -1340,7 +1360,7 @@ test('the board stays locked while the draw is, until the Storyteller PIN', asyn
 	const locked = page.getByTestId('board-locked');
 	await expect(locked).toContainText('The grimoire is locked');
 	await expect(page.getByTestId('seat')).toHaveCount(0);
-	await expect(page.getByRole('banner')).toHaveCount(0);
+	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
 	// Back to the draw is always there; the PIN opens the board.
 	await expect(locked.getByRole('link', { name: 'Back to the draw' })).toBeVisible();

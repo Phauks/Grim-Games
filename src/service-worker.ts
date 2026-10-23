@@ -210,7 +210,11 @@ async function store(cache: Cache, path: string): Promise<Response | undefined> 
  */
 async function storeImage(cache: Cache, url: string): Promise<void> {
 	try {
-		const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
+		const response = await fetch(url, {
+			mode: 'cors',
+			credentials: 'omit',
+			referrerPolicy: 'no-referrer'
+		});
 		if (response.ok) await cache.put(url, response);
 	} catch {
 		// No CORS, or offline: the image still shows online, straight from its host.

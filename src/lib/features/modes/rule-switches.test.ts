@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseSpecialRule, specialRuleById } from '#lib/core/modes/index.ts';
-import { INFINITE_NAMED, PLUS_ONE_NAMED, switched } from './rule-switches.ts';
+import { DJINN_THREE_ALIVE, INFINITE_NAMED, PLUS_ONE_NAMED, switched } from './rule-switches.ts';
 
 describe('rule switches', () => {
 	const plusOne = specialRuleById('plus-one')!;
@@ -19,5 +19,18 @@ describe('rule switches', () => {
 		expect(many.parts.pool).toMatchObject({ announceRange: false, count: { min: 1, max: 4 } });
 		// The copy a game keeps is still a valid rule file.
 		expect(parseSpecialRule(many).ok).toBe(true);
+	});
+
+	// https://beardytas.com/garden-of-djinn/the-djinns-bargain/: the page's 3-player limit,
+	// which the rule text leaves out (Trevor, 2026-10-23: a setting).
+	it("add the Djinn's Bargain's 3-player limit to its instructions", () => {
+		const bargain = specialRuleById('djinns-bargain')!;
+		expect(switched(bargain, {})).toEqual(bargain);
+		const limited = switched(bargain, { 'djinns-bargain:three-alive': true });
+		expect(limited.parts.ruleChanges?.[0]?.instructions).toBe(
+			`${bargain.parts.ruleChanges?.[0]?.instructions} ${DJINN_THREE_ALIVE}`
+		);
+		expect(limited.parts.nominations).toEqual([{ kind: 'nominator-may-die', minAlive: 4 }]);
+		expect(parseSpecialRule(limited).ok).toBe(true);
 	});
 });

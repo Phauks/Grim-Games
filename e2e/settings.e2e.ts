@@ -1,9 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { menuButton, openMenu, openSettingsDialog } from './shell.ts';
 
-/** Opens settings from the header icon and goes to a section (drill-in on phones). */
+/** Opens settings from the menu and goes to a section (drill-in on phones). */
 async function openSettings(page: Page, section: string) {
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await expect(dialog).toBeVisible();
 	await dialog
@@ -51,15 +52,19 @@ async function resetButton(scope: Locator, name: string) {
 const rootStyle = (page: Page, name: string) =>
 	page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n), name);
 
-test('the grimoire theme and the app header are on every page', async ({ page }) => {
+test('the grimoire theme is on every page, and the menu ends with Account and Settings', async ({
+	page
+}) => {
 	await page.goto('/');
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'grimoire');
 	expect(await rootStyle(page, '--font-heading')).toContain('Cinzel');
-	const header = page.getByRole('banner');
-	await expect(header.getByRole('link', { name: APP_NAME })).toBeVisible();
-	await expect(header.getByRole('button', { name: 'Settings' })).toBeVisible();
+	// No app header (2026-10-22): the app's name heads the menu.
+	await expect(page.getByRole('banner')).toHaveCount(0);
+	const menu = await openMenu(page);
+	await expect(menu.getByRole('heading', { name: APP_NAME })).toBeVisible();
+	await expect(menu.getByRole('button', { name: 'Settings' })).toBeVisible();
 
-	await header.getByRole('button', { name: 'Account' }).tap();
+	await menu.getByRole('link', { name: 'Account' }).tap();
 	await expect(page).toHaveURL(/\/account$/);
 });
 
@@ -248,7 +253,7 @@ test('text size changes text only: icons, spacing and buttons keep their size', 
 	page
 }) => {
 	await page.goto('/spikes/icons');
-	const settingsButton = page.getByRole('banner').getByRole('button', { name: 'Settings' });
+	const settingsButton = menuButton(page);
 	const night = page.getByRole('img', { name: 'Night' });
 	const measure = async () => ({
 		button: await settingsButton.boundingBox(),
@@ -282,7 +287,7 @@ test('text size changes text only: icons, spacing and buttons keep their size', 
 
 test('there is one About: a settings section', async ({ page }) => {
 	await page.goto('/');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const nav = page
 		.getByRole('dialog', { name: 'Settings' })
 		.getByRole('navigation', { name: 'Settings sections' });
@@ -296,10 +301,7 @@ test('interface icon size changes interface icons only, not text or character ic
 	page
 }) => {
 	await page.goto('/');
-	const settingsIcon = page
-		.getByRole('banner')
-		.getByRole('button', { name: 'Settings' })
-		.locator('.icon');
+	const settingsIcon = menuButton(page).locator('.icon');
 	const before = await settingsIcon.boundingBox();
 	const text = await page.evaluate(() => getComputedStyle(document.body).fontSize);
 
@@ -333,7 +335,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	page
 }) => {
 	await page.goto('/');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	const nav = dialog.getByRole('navigation', { name: 'Settings sections' });
 	// Trevor, 2026-10-17: every Storyteller-only setting is in Storyteller settings. (Install
@@ -375,7 +377,7 @@ test('text alignment switches body text between left aligned and justified', asy
 	// Headings and buttons keep their own alignment; the choice survives a reload.
 	await page.reload();
 	expect(await align()).toBe('justify');
-	const button = page.getByRole('banner').getByRole('button', { name: 'Settings' });
+	const button = menuButton(page);
 	expect(await button.evaluate((el) => getComputedStyle(el).textAlign)).toBe('center');
 });
 
@@ -506,7 +508,7 @@ test('every theme colour is its own setting, warns on low contrast, and Reset Th
 // is off by default and a switch in Settings > Text turns it back on.
 test('a pinch never zooms the app unless Pinch to zoom is on', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByRole('banner')).toBeVisible();
+	await expect(menuButton(page)).toBeVisible();
 	// Chromium's emulated touch pinch never zooms, even when allowed, so this pinches the way a
 	// trackpad does, which obeys the same viewport limits as Android. iOS ignores those limits;
 	// there base.css's touch-action and the cancelled gesture events stop it (not testable here).
@@ -542,7 +544,7 @@ test('Install app at the bottom of Settings uses the browser prompt, or the iPho
 	page
 }, testInfo) => {
 	await page.goto('/');
-	await expect(page.getByRole('banner').getByRole('button', { name: 'Settings' })).toBeVisible();
+	await expect(menuButton(page)).toBeVisible();
 	if (testInfo.project.name !== 'phone') {
 		// What Chrome sends when the app can be installed, once the app is listening for it.
 		await expect
@@ -560,7 +562,7 @@ test('Install app at the bottom of Settings uses the browser prompt, or the iPho
 			)
 			.toBe(true);
 	}
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const nav = page
 		.getByRole('dialog', { name: 'Settings' })
 		.getByRole('navigation', { name: 'Settings sections' });
@@ -590,7 +592,7 @@ test('opened as an installed app, Settings has no Install app button', async ({ 
 		Object.defineProperty(navigator, 'standalone', { value: true, configurable: true })
 	);
 	await page.goto('/');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
 	await expect(nav.getByRole('button', { name: 'About' })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'Install app' })).toHaveCount(0);

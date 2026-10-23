@@ -12,8 +12,11 @@ import type { Command } from '#lib/core/engine/index.ts';
 import {
 	newGame,
 	run,
-	testCharacters as characters
+	testCharacters as characters,
+	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import { abilityState, protection, registrations, registrationWorlds } from './ability.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
@@ -216,5 +219,40 @@ describe('protection', () => {
 			override: { field: 'canDie', value: true }
 		}));
 		expect(protection(g, seats[0], characters, 'other')).toBeUndefined();
+	});
+
+	// A homebrew Townsfolk that marks a player safe from the Demon, as the Monk does: its
+	// rules block alone makes its token protect.
+	it('a custom character protects through its rules block', () => {
+		const issues = new Issues();
+		const warden = parseCharacter(
+			{
+				id: 'lampwarden',
+				name: 'Lamp Warden',
+				team: 'townsfolk',
+				ability: 'Each night*, choose a player: they are safe from the Demon tonight.',
+				reminders: ['Warded'],
+				rules: { protects: { who: 'marked', token: 'Warded', from: 'demon' } }
+			},
+			'[0]',
+			issues,
+			{ strict: false, scriptFields: true }
+		);
+		expect(issues.list).toEqual([]);
+		const all = new Map([...characters, [warden!.id, warden!]]);
+		const { session, ctx, seats } = newGame(3, { ctx: testContext({ characters: all }) });
+		const g = run(
+			session,
+			ctx,
+			...['lampwarden', 'chef', 'imp'].map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			})),
+			add(1, 'lampwarden', 'Warded')(seats)
+		).game;
+		expect(protection(g, seats[1], all, 'demon')).toMatchObject({ characterId: 'lampwarden' });
+		expect(protection(g, seats[1], all, 'other')).toBeUndefined();
+		expect(protection(g, seats[1], characters, 'demon')).toBeUndefined();
 	});
 });
