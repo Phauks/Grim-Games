@@ -1134,6 +1134,26 @@ test('the board is blurred behind every sheet and dialog over it', async ({ page
 	await expect(page.locator('html[data-board-shown]')).toHaveCount(0);
 });
 
+// Trevor (2026-10-23): starting the night opens the walk-through strip under the board; the
+// seats close up to make room, but the tokens keep their size.
+test('tokens keep their size when the night walk-through opens', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	const token = page.getByTestId('seat').first();
+	const before = (await token.boundingBox())!.width;
+	await bankNight(page, 'Start game').tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect
+		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
+		.toBeLessThan(1);
+});
+
 // Trevor (2026-10-23): a full screen button on the board, for those who don't know how.
 test('the board can go full screen from its toolbar, and back', async ({ page }) => {
 	await startGame(page);

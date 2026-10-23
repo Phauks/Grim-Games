@@ -215,7 +215,17 @@
 			received: new Set(today.map((n) => n.nominee))
 		};
 	});
-	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
+	/**
+	 * The walk-through strip under the board takes this much of its height (measured, as it
+	 * scales with text). Tokens are sized as if it weren't there, so starting the night only
+	 * draws the seats closer together and never shrinks them (Trevor, 2026-10-23).
+	 */
+	const STRIP_H = '7.5rem';
+	let stripReserve = $state(0);
+	const sizingHeight = $derived.by(() => (walk ? height + stripReserve : height));
+	const size = $derived(
+		seatTokenSize(game.seating, layout, { width, height: sizingHeight }, tokenScale)
+	);
 	// The Token size preview in Settings draws at this board's size.
 	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
@@ -1419,6 +1429,13 @@
 {/snippet}
 
 <div class="grimoire">
+	<!-- The strip's share of the board's height, to size tokens without it (sizingHeight). -->
+	<div
+		class="strip-measure"
+		aria-hidden="true"
+		style:--strip-h={STRIP_H}
+		bind:clientHeight={stripReserve}
+	></div>
 	<BoardBackdrop
 		url={backgroundUrl}
 		preset={background.kind === 'preset' ? background.id : undefined}
@@ -1513,7 +1530,7 @@
 		class:walking={walk !== undefined}
 		class:ended={!!ended}
 		style:--tray-h="{chip + 30}px"
-		style:--strip-h={walk ? '7.5rem' : undefined}
+		style:--strip-h={walk ? STRIP_H : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
 		style:--name-offset={boardLooks.current.nameOffset}
 		bind:this={board}
@@ -2405,6 +2422,13 @@
 		color: var(--heading);
 		white-space: nowrap;
 		text-overflow: ellipsis;
+	}
+	.strip-measure {
+		position: absolute;
+		visibility: hidden;
+		pointer-events: none;
+		/* What .board.walking adds to the bottom margin. */
+		height: calc(var(--strip-h) + var(--space-2));
 	}
 	.board {
 		position: relative;
