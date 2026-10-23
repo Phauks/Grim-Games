@@ -2,5 +2,12 @@
 	"actsWhenDead": true,
 	"onDeath": {
 		"by": "any"
+	},
+	"reminderTargets": {
+		"Haircuts Tonight": {
+			"seat": "self",
+			"life": "dead",
+			"note": "The Barber once they have died."
+		}
 	}
 }

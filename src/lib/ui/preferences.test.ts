@@ -35,6 +35,12 @@ describe('parsePreferences', () => {
 		).toEqual(DEFAULT_PREFERENCES);
 	});
 
+	it('reads an icon picked under a slot’s old name', () => {
+		expect(parsePreferences({ iconOverrides: { rename: 'ph:user-switch' } }).iconOverrides).toEqual(
+			{ edit: 'ph:user-switch' }
+		);
+	});
+
 	it('keeps valid choices', () => {
 		const valid = {
 			themeId: 'grimoire',
@@ -66,7 +72,6 @@ describe('parsePreferences', () => {
 				setupMovesName: false,
 				reminderHighlight: false,
 				reminderHighlightLook: 'both',
-				reminderIcon: true,
 				reminderIconColour: 'plain',
 				genericIconFill: true
 			},

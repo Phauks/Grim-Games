@@ -1,0 +1,12 @@
+{
+	"reminderTargets": {
+		"Protected": {
+			"seat": "any",
+			"note": "On each player the Angel protects, with their consent."
+		},
+		"Something Bad": {
+			"seat": "any",
+			"note": "On the player most responsible for a protected player's death."
+		}
+	}
+}

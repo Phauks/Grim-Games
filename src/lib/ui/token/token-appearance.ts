@@ -135,8 +135,10 @@ export interface TokenAppearance {
 	 */
 	reminderHighlight: boolean;
 	reminderHighlightLook: ReminderHighlightLook;
-	/** The owning character's icon on reminder tokens (Trevor, 2026-10-20: on/off and colour). */
-	reminderIcon: boolean;
+	/**
+	 * The colour of the owning character's icon on reminder tokens (Trevor, 2026-10-20). The
+	 * icon itself is always shown (Trevor, 2026-10-23: "do not allow to be disabled").
+	 */
 	reminderIconColour: ReminderIconColour;
 	/** ∞ tokens' icon symbols drawn filled instead of as outlines (Trevor, 2026-10-23); off by default. */
 	genericIconFill: boolean;
@@ -178,7 +180,6 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	setupMovesName: false,
 	reminderHighlight: true,
 	reminderHighlightLook: 'ring',
-	reminderIcon: true,
 	reminderIconColour: 'player',
 	genericIconFill: false
 };
@@ -230,7 +231,7 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		setupMovesName: input.setupMovesName === true,
 		reminderHighlight: input.reminderHighlight !== false,
 		reminderHighlightLook: oneOf(REMINDER_HIGHLIGHT_LOOKS, input.reminderHighlightLook, 'ring'),
-		reminderIcon: input.reminderIcon !== false,
+		// Earlier builds' `reminderIcon` switch is dropped: the owner's icon always shows.
 		reminderIconColour: oneOf(REMINDER_ICON_COLOURS, input.reminderIconColour, 'player'),
 		genericIconFill: input.genericIconFill === true
 	};

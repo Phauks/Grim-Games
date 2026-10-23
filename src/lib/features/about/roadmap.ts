@@ -159,6 +159,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'L51', title: 'Search: the list and the script details as one surface' },
 			{ id: 'L52', title: 'Search: open the shown script at its source' },
 			{ id: 'L53', title: 'The base three scripts link their wiki pages' },
+			{ id: 'L55', title: 'Library: New folder is made at once, named "New folder"' },
 			{ id: 'P2', title: 'Alternate art packs in Icons settings' }
 		]
 	},
@@ -191,6 +192,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			},
 			{ id: 'S12', title: 'Lists of information never run together without a line or gap' },
 			{ id: 'S17', title: 'Every colour follows the theme: no hard-coded colours' },
+			{ id: 'S19', title: 'One icon per meaning: every edit button is the pencil' },
 			{ id: 'B5', title: 'Reminder glow and source mark settings' },
 			{ id: 'L16', title: 'Glossary: every character of a script and character type', prs: [324] },
 			{ id: 'O1', title: 'New app logo' }

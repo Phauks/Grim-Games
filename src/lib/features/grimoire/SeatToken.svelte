@@ -176,7 +176,7 @@
 		>{/if}
 	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
 	{#if seat.note}<span class="mark note" data-testid="note-mark" title="Note"
-			><Icon name="pen" /></span
+			><Icon name="notes" /></span
 		>{/if}
 {/snippet}
 

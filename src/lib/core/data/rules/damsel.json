@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Guess Used": {
+			"seat": "self",
+			"note": "On the Damsel after a Minion's guess has been spent."
+		}
+	}
+}

@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"May Not Nominate": {
+			"seat": "self",
+			"note": "The Golem after they have nominated."
+		}
+	}
+}

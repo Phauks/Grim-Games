@@ -34,7 +34,7 @@ import {
 	type AbilitySource,
 	type Impairment
 } from './ability.ts';
-import { NIGHT_KILLERS } from './night-alerts.ts';
+import { nightKiller } from './night-alerts.ts';
 
 export type PreventedBecause =
 	| { kind: 'protected'; source: AbilitySource | 'override' }
@@ -65,7 +65,7 @@ export function preventedDeaths(game: Game, characters: CharacterLookup): Preven
 		const seat = game.seats[seatId];
 		if (seat.dead) continue;
 		for (const reminder of seat.reminders) {
-			const killer = NIGHT_KILLERS[reminder.characterId];
+			const killer = nightKiller(reminder.characterId, characters);
 			if (!killer || reminder.label !== 'Dead') continue;
 			if (
 				REGISTERS_AS_DEAD_REMINDERS.some(

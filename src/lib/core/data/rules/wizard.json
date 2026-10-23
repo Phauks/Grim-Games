@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"?": {
+			"seat": "any",
+			"note": "Tracks whatever a granted wish needs.",
+			"ambiguous": "The wiki's How to Run doesn't mention the ? reminder or where it goes."
+		}
+	}
+}

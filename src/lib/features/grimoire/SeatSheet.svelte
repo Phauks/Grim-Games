@@ -434,7 +434,7 @@
 	{#snippet titleEnd()}
 		<span class="ink"
 			><IconButton
-				icon="rename"
+				icon="edit"
 				label="Edit player name"
 				disabled={editingName}
 				onclick={editName}
@@ -547,8 +547,10 @@
 						usedLook={boardLooks.current.usedGhostVote}
 						testid="sheet-ghost-vote"
 					/>
-					<!-- As wide as its longest words, so toggling moves only the text (Trevor, 2026-10-19). -->
-					<span class="ghost-text" data-reserve="None while alive"
+					<!-- As wide as "Not used", so toggling moves only the text (Trevor, 2026-10-19). Not
+					     the longer "None while alive", which only shows while alive: reserving that
+					     left "Not used" off centre in its button (Trevor, 2026-10-23). -->
+					<span class="ghost-text" data-reserve="Not used"
 						>{seat.dead ? (seat.ghostVoteUsed ? 'Used' : 'Not used') : 'None while alive'}</span
 					>
 				</button>

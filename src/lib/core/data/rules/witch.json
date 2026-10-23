@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Cursed": {
+			"seat": "any",
+			"note": "Any player the Witch chooses, even themself or a dead player."
+		}
+	}
+}

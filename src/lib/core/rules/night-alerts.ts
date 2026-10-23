@@ -46,47 +46,35 @@ export interface NightKiller {
 	/** `self`: the ability can only kill its own player (the Gambler, the Acrobat). */
 	targets: 'any' | 'self';
 	/** The Assassin's kill ignores protection. */
-	ignoresProtection?: true;
-	wiki: string;
+	ignoresProtection: boolean;
 }
 
-const demon = (name: string): NightKiller => ({ by: 'demon', targets: 'any', wiki: W + name });
-const other = (name: string, targets: 'any' | 'self' = 'any'): NightKiller => ({
-	by: 'other',
-	targets,
-	wiki: W + name
-});
-
 /**
- * Night steps that can kill. Every Demon kills at night except the Riot and the Leviathan,
- * whose deaths happen by day.
+ * Whether `characterId`'s night step can kill, and how (`kills` in its rules block: our
+ * `data/rules/<id>.json`, or a custom character's `rules`). Every Demon kills at night except
+ * the Riot and the Leviathan, whose deaths happen by day.
  */
-export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = {
-	imp: demon('Imp'),
-	po: demon('Po'),
-	pukka: demon('Pukka'),
-	shabaloth: demon('Shabaloth'),
-	zombuul: demon('Zombuul'),
-	nodashii: demon('No_Dashii'),
-	vigormortis: demon('Vigormortis'),
-	fanggu: demon('Fang_Gu'),
-	vortox: demon('Vortox'),
-	legion: demon('Legion'),
-	lleech: demon('Lleech'),
-	ojo: demon('Ojo'),
-	kazali: demon('Kazali'),
-	yaggababble: demon('Yaggababble'),
-	alhadikhia: demon('Al-Hadikhia'),
-	lordoftyphon: demon('Lord_of_Typhon'),
-	lilmonsta: demon("Lil'_Monsta"),
-	assassin: { by: 'other', targets: 'any', ignoresProtection: true, wiki: W + 'Assassin' },
-	godfather: other('Godfather'),
-	gossip: other('Gossip'),
-	lycanthrope: other('Lycanthrope'),
-	harlot: other('Harlot'),
-	gambler: other('Gambler', 'self'),
-	acrobat: other('Acrobat', 'self')
-};
+export function nightKiller(
+	characterId: CharacterId,
+	characters?: CharacterLookup
+): NightKiller | undefined {
+	const kills = rulesOf(characterId, characters)?.kills;
+	return (
+		kills && {
+			by: kills.by,
+			targets: kills.targets ?? 'any',
+			ignoresProtection: kills.ignoresProtection ?? false
+		}
+	);
+}
+
+/** The official characters whose night step can kill. */
+export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = Object.fromEntries(
+	[...OFFICIAL_RULES.keys()].flatMap((id) => {
+		const killer = nightKiller(id);
+		return killer ? [[id, killer]] : [];
+	})
+);
 
 /**
  * Whether `characterId`'s ability is set off by its player's death, and by which deaths
@@ -152,7 +140,7 @@ export function nightStepAlerts(
 		});
 	}
 
-	const killer = NIGHT_KILLERS[characterId];
+	const killer = nightKiller(characterId, characters);
 	if (!killer) return out;
 	const subjects = (killer.targets === 'self' ? actors : game.seating).filter(
 		(s) => getSeat(game, s)?.dead === false

@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Fear": {
+			"seat": "any",
+			"note": "On the one player the Fearmonger currently has chosen."
+		}
+	}
+}

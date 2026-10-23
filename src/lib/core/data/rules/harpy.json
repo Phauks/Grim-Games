@@ -1,0 +1,13 @@
+{
+	"reminderTargets": {
+		"2nd": {
+			"seat": "any",
+			"note": "The second player the Harpy picks; may be dead or the Harpy."
+		},
+		"Mad": {
+			"seat": "any",
+			"note": "The first player the Harpy picks, who must be mad about the 2nd being evil.",
+			"ambiguous": "The wiki does not say whether the same player can be picked as both first and second."
+		}
+	}
+}

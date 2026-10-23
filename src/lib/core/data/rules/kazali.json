@@ -1,0 +1,11 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player the Kazali kills that night."
+		}
+	}
+}

@@ -1,0 +1,18 @@
+{
+	"reminderTargets": {
+		"Mad": {
+			"seat": "other",
+			"types": ["townsfolk"],
+			"note": "An in-play Townsfolk the Storyteller picks to show the Pixie.",
+			"ambiguous": "The wiki doesn't say whether the shown Townsfolk could be the Pixie itself."
+		},
+		"Has Ability": {
+			"seat": "other",
+			"types": ["townsfolk"],
+			"life": "dead",
+			"withLabel": "Mad",
+			"note": "Replaces Mad on that Townsfolk once they die, when the Pixie gains their ability.",
+			"ambiguous": "The wiki says to swap Mad for Has Ability but doesn't name whose token it sits by; the swap implies the dead Townsfolk."
+		}
+	}
+}

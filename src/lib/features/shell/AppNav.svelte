@@ -52,7 +52,7 @@
 			gap: var(--space-2);
 			height: calc(100dvh - var(--app-top));
 			overflow-y: auto;
-			padding: var(--space-2) var(--space-2) var(--space-4);
+			padding: var(--menu-inset) var(--menu-inset) var(--space-4);
 		}
 		/* The app's name beside the hamburger, where the header had them. */
 		.brand-row {

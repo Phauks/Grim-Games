@@ -54,7 +54,7 @@ export async function handleHomebrewWiki(url: URL): Promise<Response> {
 			getJson('/characters.json?fields=grid')
 		]);
 		if (!Array.isArray(script)) throw new UpstreamError('The collection is not a script.');
-		const answer: HomebrewCollectionAnswer = { script, credits: readCredits(grid, script) };
+		const answer: HomebrewCollectionAnswer = { script, credits: readCredits(grid, script, id) };
 		return cached(answer);
 	} catch (e) {
 		const message = e instanceof UpstreamError ? e.message : 'Could not reach the Homebrew Wiki.';

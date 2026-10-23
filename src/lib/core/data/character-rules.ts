@@ -9,6 +9,7 @@
  * TypeScript move here one per PR (the list is in docs/shared-components.md).
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
+import { readReminderTargets, type TargetRule } from './target-rules.ts';
 import type { ReminderLabel } from './types.ts';
 import {
 	checkKeys,
@@ -51,6 +52,21 @@ export interface CharacterRules {
 	 * marks the ability used (the Fool's "No Ability").
 	 */
 	survivesFirstDeath?: { spentToken: ReminderLabel };
+	/**
+	 * The ability kills at night: the Demon's kill or another ability's (`by`), any player or
+	 * only its own (`targets: self`, the Gambler), and ignoring protection (the Assassin).
+	 */
+	kills?: Kills;
+	/** Where each of its reminder tokens may go, by label (`target-rules.ts`). */
+	reminderTargets?: Readonly<Record<ReminderLabel, TargetRule>>;
+}
+
+export const KILLS_BY = ['demon', 'other'] as const;
+export const KILLS_TARGETS = ['any', 'self'] as const;
+export interface Kills {
+	by: (typeof KILLS_BY)[number];
+	targets?: (typeof KILLS_TARGETS)[number];
+	ignoresProtection?: boolean;
 }
 
 export const PROTECTS_WHO = ['self', 'marked'] as const;
@@ -66,7 +82,9 @@ export const RULE_KEYS = [
 	'onDeath',
 	'protects',
 	'redirectsKill',
-	'survivesFirstDeath'
+	'survivesFirstDeath',
+	'kills',
+	'reminderTargets'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -125,6 +143,31 @@ export function parseCharacterRules(
 			if (token !== undefined && !ownReminder(token, reminders)) {
 				issues.add(`${at}.spentToken`, 'not one of this character’s reminders');
 			} else if (token !== undefined) rules.survivesFirstDeath = { spentToken: token };
+		}
+	}
+	if (raw.reminderTargets !== undefined) {
+		const targets = readReminderTargets(
+			raw.reminderTargets,
+			`${path}.reminderTargets`,
+			issues,
+			reminders
+		);
+		if (targets) rules.reminderTargets = targets;
+	}
+	if (raw.kills !== undefined) {
+		const at = `${path}.kills`;
+		if (!isObject(raw.kills)) {
+			issues.add(at, `expected object, got ${describe(raw.kills)}`);
+		} else {
+			checkKeys(raw.kills, ['by', 'targets', 'ignoresProtection'], at, issues);
+			const by = readEnum(raw.kills, 'by', KILLS_BY, at, issues, true);
+			const targets = readEnum(raw.kills, 'targets', KILLS_TARGETS, at, issues, false);
+			const ignoresProtection = readBoolean(raw.kills, 'ignoresProtection', at, issues);
+			if (by) {
+				rules.kills = { by };
+				if (targets) rules.kills.targets = targets;
+				if (ignoresProtection !== undefined) rules.kills.ignoresProtection = ignoresProtection;
+			}
 		}
 	}
 	if (raw.protects !== undefined) {

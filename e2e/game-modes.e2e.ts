@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 /**
  * Game modes on New game (Trevor, 2026-10-17): choose a mode, inspect every part of it, and
@@ -1045,7 +1046,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	);
 	await expect(info.locator('[data-field="version"] td')).toHaveText('2.2');
 	// Its source can be passed on, and its file saved (Trevor, 2026-10-22, plan G3).
-	await expect(info.getByTestId('share-source')).toBeEnabled();
+	await expect(page.getByTestId('share-source')).toBeEnabled();
 	const download = page.waitForEvent('download');
 	await page.getByTestId('game-info-download').tap();
 	const file = await download;
@@ -1086,7 +1087,7 @@ test('Game info opens a special rule in full when tapped, and a base script shar
 		'href',
 		'https://wiki.bloodontheclocktower.com/Trouble_Brewing'
 	);
-	await expect(info.getByTestId('share-source')).toBeEnabled();
+	await expect(page.getByTestId('share-source')).toBeEnabled();
 	await info.getByRole('button', { name: 'Inspect Stowed Away' }).tap();
 	const inspect = page.getByRole('dialog', { name: 'Stowed Away' });
 	await expect(inspect.getByTestId('mode-about')).toBeVisible();
@@ -1575,4 +1576,39 @@ test('New game previews the script as it will play, beside the settings', async 
 	await chooseMode(page, 'Two games at once');
 	await expect(preview.getByRole('heading', { name: 'Town 2 script' })).toBeVisible();
 	await noSidewaysScroll(page);
+});
+
+test('the script preview turns light from its own switch, and Settings > Player shows the same switch', async ({
+	page
+}) => {
+	await page.goto('/new');
+	const copy = page.getByTestId('script-preview').getByTestId('script-copy');
+	await copy.getByText('Chef').first().waitFor();
+	const light = copy.getByRole('checkbox', { name: 'Light background' });
+	await expect(light).not.toBeChecked();
+	const size = async () => {
+		const box = await copy.boundingBox();
+		return box && { width: box.width, height: box.height };
+	};
+	const before = await size();
+	await copy.getByText('Light background').tap();
+	await expect(light).toBeChecked();
+	await expect(copy).toHaveCSS('background-color', 'rgb(251, 248, 241)');
+	// Nothing moves when it turns light (no layout reflow).
+	expect(await size()).toEqual(before);
+
+	// Remembered on this device, and the same setting in Settings > Player.
+	await page.reload();
+	await expect(light).toBeChecked();
+	await openSettingsDialog(page);
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Player' })
+		.tap();
+	const setting = dialog.getByRole('checkbox', { name: 'Light background' });
+	await expect(setting).toBeChecked();
+	await dialog.getByText('Light background', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(light).not.toBeChecked();
 });

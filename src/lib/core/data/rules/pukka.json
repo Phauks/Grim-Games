@@ -1,0 +1,16 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Poisoned": {
+			"seat": "any",
+			"note": "On the player the Pukka chose tonight."
+		},
+		"Dead": {
+			"seat": "any",
+			"withLabel": "Poisoned",
+			"note": "On last night's poisoned player when they die."
+		}
+	}
+}

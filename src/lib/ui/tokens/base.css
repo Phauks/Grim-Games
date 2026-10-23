@@ -18,6 +18,9 @@
 	 */
 	--page-max: calc(150 * var(--u));
 	--page-gutter: clamp(var(--space-4), 4vw, var(--space-7));
+	/* The hamburger's one spot on every screen (Trevor, 2026-10-23): this far in from the top
+	   left, below the status bar. The sidebar, the drawer, the game toolbar and Page use it. */
+	--menu-inset: var(--space-2);
 	--measure: calc(36 * var(--u));
 	/* One title size for every page and one for its sections (ui/layout/Page.svelte). */
 	--page-title-size: 1.6rem;

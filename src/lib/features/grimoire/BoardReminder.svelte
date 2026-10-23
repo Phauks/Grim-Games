@@ -5,6 +5,7 @@
 	import { fallbackIconUrl, reminderIconUrl } from '#lib/features/characters/icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
+	import { fitLines } from '#lib/ui/fit-lines.ts';
 	import IconGlyph from '#lib/ui/icons/IconGlyph.svelte';
 	import { ICON_SETS, withWeight } from '#lib/ui/icons/catalogue.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -68,9 +69,18 @@
 	// Settings > Tokens: the owner's icon can be hidden or coloured differently (Trevor, 2026-10-20).
 	const appearance = $derived(preferences.current.tokenAppearance);
 	const src = $derived(
-		character && appearance.reminderIcon
-			? reminderIconUrl(character, alignment, appearance.reminderIconColour)
-			: undefined
+		character ? reminderIconUrl(character, alignment, appearance.reminderIconColour) : undefined
+	);
+	// Wrapped words as wide as their longest line (Trevor, 2026-10-23), measured again when
+	// anything that lays them out changes.
+	const fitWords = $derived(
+		fitLines(
+			label,
+			size,
+			appearance.reminderLabelWidth,
+			appearance.reminderLabelWrap,
+			appearance.reminderScale
+		)
 	);
 	const set = $derived(resolveIconSet(preferences.current, preferences.theme));
 	const weight = $derived(ICON_SETS.find((s) => s.id === set)?.weight ?? 'regular');
@@ -231,7 +241,7 @@
 				{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
 			/>{/if}
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
-		{#if label}<span class="label">{label}</span>{/if}
+		{#if label}<span class="label" {@attach fitWords}>{label}</span>{/if}
 	{/if}
 </button>
 
