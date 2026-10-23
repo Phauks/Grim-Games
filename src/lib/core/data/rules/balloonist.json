@@ -17,5 +17,15 @@
 				"reason": "The player the Balloonist is shown on the first night"
 			}
 		]
+	},
+	"setupModifier": {
+		"summary": "+0 or +1 Outsider",
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "outsider",
+				"values": [0, 1]
+			}
+		]
 	}
 }

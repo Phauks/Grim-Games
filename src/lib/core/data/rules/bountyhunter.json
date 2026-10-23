@@ -24,5 +24,10 @@
 				"text": "Choose a Townsfolk player who is evil; turn their token upside down"
 			}
 		]
+	},
+	"setupModifier": {
+		"summary": "1 Townsfolk is evil",
+		"ops": [],
+		"notes": ["Turn one Townsfolk evil during setup."]
 	}
 }

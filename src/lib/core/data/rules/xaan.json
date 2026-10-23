@@ -39,5 +39,15 @@
 				}
 			}
 		]
+	},
+	"setupModifier": {
+		"summary": "X Outsiders",
+		"ops": [
+			{
+				"kind": "any",
+				"type": "outsider"
+			}
+		],
+		"notes": ["Choose any number of Outsiders; that number is X, the night the Xaan acts."]
 	}
 }

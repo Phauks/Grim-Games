@@ -37,5 +37,16 @@
 				"text": "Choose 3 not-in-play good characters as the Summoner’s bluffs"
 			}
 		]
+	},
+	"setupModifier": {
+		"summary": "No Demon",
+		"ops": [
+			{
+				"kind": "set",
+				"type": "demon",
+				"values": [0]
+			}
+		],
+		"notes": ["Put a Townsfolk in the bag instead of the Demon."]
 	}
 }

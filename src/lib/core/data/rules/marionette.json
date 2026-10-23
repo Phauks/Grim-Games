@@ -22,5 +22,13 @@
 				"reason": "The Marionette thinks they are good; this marks who really is the Marionette"
 			}
 		]
+	},
+	"setupModifier": {
+		"summary": "Neighbours the Demon",
+		"ops": [],
+		"notes": [
+			"Put a Townsfolk in the bag instead of the Marionette.",
+			"Seat the Marionette next to the Demon."
+		]
 	}
 }

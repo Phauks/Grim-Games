@@ -1,0 +1,12 @@
+{
+	"setupModifier": {
+		"summary": "+2 Outsiders",
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "outsider",
+				"values": [2]
+			}
+		]
+	}
+}

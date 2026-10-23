@@ -142,6 +142,13 @@ describe('parseCharacterRules', () => {
 			'rules.setupPrep.reminders[0].label: not one of this character’s reminders',
 			'rules.setupPrep.reminders[0].target.choose: unknown value "all"'
 		]);
+		expect(
+			parse({ setupModifier: { summary: '+1', ops: [{ kind: 'delta', type: 'traveller' }] } })
+				.issues
+		).toEqual(['rules.setupModifier.ops[0].type: unknown value "traveller"']);
+		expect(
+			parse({ setupModifier: { summary: '+1', ops: [{ kind: 'delta', type: 'outsider' }] } }).issues
+		).toEqual(['rules.setupModifier.ops[0].values: expected a list of whole numbers']);
 		expect(parse({ dayClaim: 'shout' }).issues).toEqual(['rules.dayClaim: unknown value "shout"']);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'

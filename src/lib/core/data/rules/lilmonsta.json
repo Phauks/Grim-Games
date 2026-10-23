@@ -15,5 +15,21 @@
 	},
 	"setupPrep": {
 		"none": "the Minions choose the babysitter on the first night"
+	},
+	"setupModifier": {
+		"summary": "+1 Minion",
+		"ops": [
+			{
+				"kind": "set",
+				"type": "demon",
+				"values": [0]
+			},
+			{
+				"kind": "delta",
+				"type": "minion",
+				"values": [1]
+			}
+		],
+		"notes": ["Lil’ Monsta is not dealt: an extra Minion goes in the bag instead."]
 	}
 }
