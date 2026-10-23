@@ -375,11 +375,6 @@ export const DAY_REMINDER_ENTRIES: readonly DayReminderEntry[] = [
 		reminders: [on('execution-death', 'has chosen', 'Fear')]
 	},
 	{
-		id: 'pithag',
-		wiki: `${W}Pit-Hag`,
-		reminders: [is('day-ability', 'may have changed characters')]
-	},
-	{
 		id: 'psychopath',
 		wiki: `${W}Psychopath`,
 		impairable: true,
@@ -750,6 +745,8 @@ export const NO_DAY_RELEVANCE: Readonly<Record<CharacterId, string>> = {
 	snitch: 'first-night bluffs',
 	// Minions
 	poisoner: 'night action',
+	// Trevor, 2026-10-23: acts only at night, so not a day ability.
+	pithag: 'night action',
 	spy: 'night action',
 	assassin: 'night action',
 	widow: 'first-night action',
