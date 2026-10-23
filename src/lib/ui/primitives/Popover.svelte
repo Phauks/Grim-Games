@@ -121,8 +121,10 @@
 		cursor: pointer;
 		--icon-size: 1.25rem;
 	}
+	/* The header's icons sit as far apart as the last one is from Close (Trevor, 2026-10-23). */
 	.head-actions {
 		display: flex;
+		gap: var(--space-2);
 		margin-left: auto;
 	}
 	.head {

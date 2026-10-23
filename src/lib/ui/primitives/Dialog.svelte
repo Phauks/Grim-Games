@@ -236,10 +236,12 @@
 		justify-content: space-between;
 		gap: var(--space-3);
 	}
+	/* The header's icons sit as far apart as the last one is from Close (Trevor, 2026-10-23). */
 	.head-actions {
 		flex: none;
 		display: flex;
 		align-items: center;
+		gap: var(--space-3);
 	}
 	.titled {
 		flex: 1;

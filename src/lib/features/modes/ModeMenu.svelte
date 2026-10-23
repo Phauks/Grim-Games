@@ -427,9 +427,11 @@
 		min-height: max(100%, var(--tap-target));
 		transform: translate(-50%, -50%);
 	}
-	/* Share sits after the script's name, always there so the row never changes height. */
+	/* Share sits after the script's name, always there; its tap target overhangs the line so
+	   the Script row is as tall as the others and its text lines up with its label. */
 	.share-source {
 		display: inline-block;
+		margin-block: calc((1lh - var(--tap-target)) / 2);
 		margin-inline-start: var(--space-1);
 		vertical-align: middle;
 	}
