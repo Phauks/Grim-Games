@@ -7,6 +7,10 @@
 	 * One entry headed by a character, laid out like a jinx (Trevor, 2026-10-16/17): the
 	 * text-size badge as a coloured bar across the entry, the information indented under it.
 	 * Jinxes, the day's announcements and its ability reminders all use it.
+	 *
+	 * With `footer` it is a card (Trevor, 2026-10-23, the day's character rows): the bar, the
+	 * ability under it, then a lower part joined to it holding what is known about the ability
+	 * and its button.
 	 */
 	interface Props {
 		characterId?: CharacterId;
@@ -16,19 +20,22 @@
 		label?: string;
 		/** Controls on the bar's own line, after the badge (the day's Used button). */
 		end?: Snippet;
+		/** The card's lower part, joined under the body (the day's state and its button). */
+		footer?: Snippet;
 		children: Snippet;
 	}
 
-	let { characterId, alignment, playerName, label, end, children }: Props = $props();
+	let { characterId, alignment, playerName, label, end, footer, children }: Props = $props();
 </script>
 
-<div class="entry">
+<div class="entry" data-card={footer ? '' : undefined}>
 	<span class="bar"
 		>{#if characterId}<CharacterBadge {characterId} {alignment} {playerName} />{:else}<span
 				class="plain">{label}</span
 			>{/if}{#if end}{@render end()}{/if}</span
 	>
 	<div class="body">{@render children()}</div>
+	{#if footer}<div class="footer">{@render footer()}</div>{/if}
 </div>
 
 <style>
@@ -61,5 +68,28 @@
 	}
 	.body {
 		padding-inline-start: var(--space-3);
+	}
+	/*
+	 * A card: the footer a raised strip joined to its bottom. Its list draws the box and the
+	 * dividers (Trevor, 2026-10-23: L44, rows with dividers, not boxes with gaps).
+	 */
+	.entry[data-card] {
+		padding: var(--space-2) var(--space-2) 0;
+		border-bottom: 0;
+	}
+	.entry[data-card] .body {
+		padding-inline: var(--space-2);
+		padding-bottom: var(--space-2);
+	}
+	.footer {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: var(--tap-target);
+		margin-inline: calc(-1 * var(--space-2));
+		padding: var(--space-1) var(--space-3);
+		border-top: var(--card-border);
+		/* A see-through tint of the text (the hover tint), so the list's edge still shows. */
+		background: var(--surface-hover);
 	}
 </style>
