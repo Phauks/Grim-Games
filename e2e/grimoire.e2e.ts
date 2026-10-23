@@ -307,7 +307,7 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 		.getByRole('dialog', { name: 'Alignment' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(sheet).toContainText(/Imp\s*Good · Seat 1/);
+	await expect(sheet).toContainText(/Imp\s*Demon · Good · Seat 1/);
 	await expect(impIcon).not.toHaveAttribute('src', evilSrc!);
 	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .disc > .face')).toHaveCSS(
 		'rotate',
@@ -337,8 +337,10 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await sheet.getByRole('button', { name: 'About the Imp' }).tap();
 	const details = page.getByRole('dialog', { name: 'Imp' });
 	await expect(details).toContainText('Demon');
+	// Opened from a seat, the details name the seat and its alignment too (plan L26).
+	await expect(details.getByTestId('character-seat')).toHaveText('Seat 1 · Evil');
 	await details.getByRole('button', { name: 'Close' }).tap();
-	await expect(sheet).toContainText(/Imp\s*Evil · Seat 1/);
+	await expect(sheet).toContainText(/Imp\s*Demon · Evil · Seat 1/);
 
 	// The … menu names the character first.
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
@@ -358,7 +360,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(confirm).toContainText('Reminders from the previous character will be removed.');
 	await expect(confirm).toContainText(/Removed\s*None/);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(sheet).toContainText(/Baron\s*Evil · Seat 1/);
+	await expect(sheet).toContainText(/Baron\s*Minion · Evil · Seat 1/);
 	// The seat keeps its changes, in a window of their own from the ⋯ menu (Trevor, 2026-10-18).
 	await seatMenu(page, sheet, 'Character history');
 	const changes = page.getByRole('dialog', { name: 'Character history for Seat 1' });
@@ -372,7 +374,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(alignment).toContainText('Evil');
 	await expect(alignment).toContainText('Becomes');
 	await alignment.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(sheet).toContainText(/Baron\s*Good · Seat 1/);
+	await expect(sheet).toContainText(/Baron\s*Minion · Good · Seat 1/);
 });
 
 test('history, add seat and remove', async ({ page }) => {
@@ -1429,7 +1431,7 @@ test("a seat's character can be searched by name or ability", async ({ page }) =
 	await expect(picker.getByRole('button', { name: 'Poisoner', exact: true })).toBeVisible();
 	await expect(picker.getByRole('button', { name: 'Washerwoman', exact: true })).toBeHidden();
 	await picker.getByRole('button', { name: 'Poisoner', exact: true }).tap();
-	await expect(sheet).toContainText(/Poisoner\s*Evil · Seat 1/);
+	await expect(sheet).toContainText(/Poisoner\s*Minion · Evil · Seat 1/);
 });
 
 test('players rotate one seat, or are dragged to a new place in the order', async ({ page }) => {
@@ -4304,7 +4306,7 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await picker.getByRole('button', { name: 'Close' }).tap();
-	await expect(sheet).toContainText(/Imp\s*Evil · Seat 1/);
+	await expect(sheet).toContainText(/Imp\s*Demon · Evil · Seat 1/);
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
 });
@@ -4849,7 +4851,7 @@ test('two copies of a character each have their own reminders, in their own colo
 				.getByRole('dialog', { name: 'Alignment' })
 				.getByRole('button', { name: 'Confirm' })
 				.tap();
-			await expect(sheet).toContainText(/Imp\s*Good · Seat 3/);
+			await expect(sheet).toContainText(/Imp\s*Demon · Good · Seat 3/);
 		}
 		await closeSheet(page);
 	}

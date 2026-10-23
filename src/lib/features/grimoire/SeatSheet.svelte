@@ -68,6 +68,10 @@
 	const title = $derived(seat ? (seat.playerName ?? `Seat ${number}`) : '');
 	/** "Seat 3 (Cat)", or "Seat 3" with no name. */
 	const seatLabel = $derived(seatId === undefined ? '' : seatLabelFor(game, seatId));
+	/** Custom tokens can look alike, so the type shows too (Trevor, 2026-10-22, plan L26). */
+	const typeText = $derived(
+		character ? character.type[0].toUpperCase() + character.type.slice(1) : ''
+	);
 	const alignmentText = $derived(
 		seat?.alignment === 'evil' ? 'Evil' : seat?.alignment === 'good' ? 'Good' : 'None'
 	);
@@ -380,8 +384,8 @@
 	{#snippet subtitle()}
 		<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token (lead) -->
 		{#if character}<span class="role">{character.name}</span>
-			<span class="meta">{alignmentText} · Seat {number}</span>{:else}<span class="meta"
-				>Seat {number}</span
+			<span class="meta">{typeText} · {alignmentText} · Seat {number}</span>{:else}<span
+				class="meta">Seat {number}</span
 			>{/if}
 	{/snippet}
 	{#snippet lead()}
@@ -657,7 +661,11 @@
 		: undefined}
 />
 
-{#if character}<CharacterDialog bind:open={detailsOpen} {character} />{/if}
+{#if character}<CharacterDialog
+		bind:open={detailsOpen}
+		{character}
+		seat={{ number, alignment: seat?.alignment }}
+	/>{/if}
 
 {#snippet team(alignment: Alignment | undefined)}
 	<strong class="team" data-team={alignment ?? 'neutral'}
