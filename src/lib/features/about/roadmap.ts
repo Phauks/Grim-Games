@@ -196,6 +196,9 @@ export const ROADMAP: readonly RoadmapArea[] = [
 		items: [
 			{ id: 'L15', title: 'Character selection polish: lock, hover areas, no reflow, count popup' },
 			{ id: 'L24', title: 'No "held" once a character has been seen' },
+			{ id: 'L38', title: 'Character setup keeps the game’s screen, with no sidebar or header' },
+			{ id: 'L39', title: 'Show only selected and Random selection take in the Demon bluffs' },
+			{ id: 'L40', title: 'A warning when a Demon bluff is also chosen to be in play' },
 			{ id: 'B6', title: 'Slot-machine character draw, with Sushi Buffet reels' }
 		]
 	},

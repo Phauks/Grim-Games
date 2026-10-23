@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { menuButton, openSettingsDialog } from './shell.ts';
+import { menuButton } from './shell.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
 
@@ -153,6 +153,7 @@ test('the counts and search stick at the top of the screen while the list scroll
 	for (const box of [await counts.boundingBox(), await search.boundingBox()]) {
 		expect(box!.y).toBeGreaterThanOrEqual(-1);
 	}
+	expect((await counts.boundingBox())!.y).toBeLessThan(100);
 	// It really did scroll: the page heading is gone.
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).not.toBeInViewport();
 });
@@ -465,7 +466,7 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 	expect(Math.abs(t!.y + t!.height / 2 - (f!.y + f!.height / 2))).toBeLessThan(2);
 
 	// A dropdown, not a switch (Trevor, 2026-10-16).
-	await openSettingsDialog(page);
+	await page.getByRole('button', { name: 'Settings', exact: true }).tap();
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
 	await page.getByRole('option', { name: 'Letters' }).tap();
@@ -523,7 +524,7 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 test('with Require a name, the token stays hidden until a name is typed', async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
-	await openSettingsDialog(page);
+	await page.getByRole('button', { name: 'Settings', exact: true }).tap();
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByText('Require a name before drawing', { exact: true }).tap();
 	await page.keyboard.press('Escape');
@@ -1037,6 +1038,46 @@ test('each good character row sets or clears a Demon bluff, up to three', async 
 	await expect(bluffButton('monk')).toBeEnabled();
 });
 
+test('Demon bluffs: listed by Show only selected, warned when chosen, new on each Random selection', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): Show only selected and Random take in the bluffs; a bluff also
+	// chosen to be in play is a warning, never a lock.
+	await selectionFor(page, 8);
+	// The bluff slots below have rows too: only the list's.
+	const row = (id: string) =>
+		page
+			.getByTestId('character-picker')
+			.locator('.row', { has: page.locator(`.main[data-character-id="${id}"]`) });
+	const bluffs = page.getByTestId('setup-bluffs');
+	const check = page.getByTestId('setup-check');
+	await row('soldier').getByTestId('bluff-character').tap();
+	await expect(bluffs).toContainText('Soldier');
+
+	const only = page.getByRole('button', { name: 'Show only selected' });
+	await only.tap();
+	await expect(choice(page, 'Soldier')).toBeVisible();
+	await expect(choice(page, 'Washerwoman')).toHaveCount(0);
+	await only.tap();
+
+	await expect(check).not.toContainText('Soldier is a Demon bluff');
+	await choice(page, 'Soldier').tap();
+	await expect(check).toContainText(/Soldier\s*is a Demon bluff and is also chosen to be in play/);
+	await expect(bluffs.locator('li[data-in-play]')).toContainText('Also in play');
+	// A warning only: the Soldier stays chosen and stays a bluff.
+	await expect(row('soldier').locator('.main')).toHaveAttribute('aria-pressed', 'true');
+	await choice(page, 'Soldier').tap();
+	await expect(bluffs.locator('li[data-in-play]')).toHaveCount(0);
+
+	for (let i = 0; i < 3; i++) {
+		await page.getByRole('button', { name: 'Random selection' }).tap();
+		await expect(bluffs.locator('li:not(.none)')).toHaveCount(3);
+		await expect(bluffs.locator('li[data-in-play]')).toHaveCount(0);
+		await expect(check).not.toContainText('is a Demon bluff');
+	}
+	await noSidewaysScroll(page);
+});
+
 test('the keyboard focus ring on a character token is round, around the token', async ({
 	page
 }) => {
@@ -1222,8 +1263,8 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
-	// Unlocked: the menu is back.
-	await expect(menuButton(page)).toBeVisible();
+	// Unlocked, setup still has the game's screen: no menu (Trevor, 2026-10-23).
+	await expect(menuButton(page)).toHaveCount(0);
 	await noSidewaysScroll(page);
 });
 
