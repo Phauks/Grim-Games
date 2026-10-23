@@ -5,14 +5,11 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import type { Character } from '#lib/core/data/types.ts';
-import {
-	bracketText,
-	CURATED_SETUP_IDS,
-	modifierFromText,
-	setupModifierFor
-} from './setup-modifiers.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { bracketText, modifierFromText, setupModifierFor } from './setup-modifiers.ts';
 
 const data = committedGameData();
+const CURATED_SETUP_IDS = [...OFFICIAL_RULES].flatMap(([id, r]) => (r.setupModifier ? [id] : []));
 const byName = (name: string) =>
 	data.characters.find((c) => c.name.toLowerCase() === name.trim().toLowerCase())?.id;
 
@@ -52,6 +49,29 @@ describe('curated table', () => {
 			expect(fromText.ops, id).toEqual(setupModifierFor(character)!.ops);
 			expect(fromText.notes, id).toEqual([]);
 		}
+	});
+});
+
+describe('custom characters', () => {
+	// A homebrew Minion that adds Outsiders, as the Baron does
+	// (https://wiki.bloodontheclocktower.com/Baron), with no bracket in its text.
+	it('change setup through their rules block', () => {
+		const warden: Character = {
+			...homebrew('There are extra Outsiders in play.'),
+			rules: {
+				setupModifier: {
+					summary: '+1 Outsider',
+					ops: [{ kind: 'delta', type: 'outsider', values: [1] }],
+					notes: ['Swap a Townsfolk for an Outsider.']
+				}
+			}
+		};
+		expect(setupModifierFor(warden)).toMatchObject({
+			summary: '+1 Outsider',
+			ops: [{ kind: 'delta', type: 'outsider', values: [1] }],
+			notes: ['Swap a Townsfolk for an Outsider.'],
+			source: 'table'
+		});
 	});
 });
 

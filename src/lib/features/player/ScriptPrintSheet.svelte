@@ -187,14 +187,14 @@
 <style>
 	/* Paper is light whatever the theme: dark text on white, colours kept for the teams. */
 	.print-sheet {
-		--surface: white;
-		--surface-selected: gainsboro;
-		--on-surface: black;
-		--on-surface-muted: dimgray;
-		--heading: black;
-		--border: silver;
-		background: white;
-		color: black;
+		--surface: var(--print-paper);
+		--surface-selected: var(--print-selected);
+		--on-surface: var(--print-ink);
+		--on-surface-muted: var(--print-muted);
+		--heading: var(--print-ink);
+		--border: var(--print-rule);
+		background: var(--print-paper);
+		color: var(--print-ink);
 		print-color-adjust: exact;
 		-webkit-print-color-adjust: exact;
 	}

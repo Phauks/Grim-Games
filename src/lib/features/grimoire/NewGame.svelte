@@ -28,6 +28,7 @@
 	} from '#lib/features/modes/script-choices.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import ScriptVoteSheet from '#lib/features/room/ScriptVoteSheet.svelte';
+	import { openedByBack, readDraft, saveDraft } from '#lib/features/modes/new-game-draft.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
@@ -36,6 +37,12 @@
 		void loadOfficialData();
 		// Play on the Search page opens New game with that script chosen.
 		if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
+		// Back from the start flow puts New game back as it was (Trevor, 2026-10-23).
+		else if (openedByBack()) {
+			const draft = readDraft();
+			if (draft.edition) edition = draft.edition as ScriptChoice;
+			if (draft.players) players = draft.players;
+		}
 		// The room's phones see the Storyteller choosing the next script (plan R1).
 		const host = roomHost();
 		if (host.code) host.setChoosing(true);
@@ -67,6 +74,7 @@
 
 	async function start(rules: readonly SpecialRule[]) {
 		starting = true;
+		saveDraft({ edition, players });
 		try {
 			const data = await loadOfficialData();
 			const loaded = loadScriptChoice(edition, data);
@@ -81,6 +89,7 @@
 					loaded,
 					create: (s) => OpenGame.create(data, s, players, undefined, undefined, storyteller)
 				});
+				saveDraft({ gameId: open.game.gameId });
 				await goto(startHref(STANDARD.id, rules, open.game.gameId));
 				return;
 			}
@@ -92,7 +101,9 @@
 				undefined,
 				storyteller
 			);
-			await goto(resolve('/grimoire/[gameId]', { gameId: open.game.gameId }));
+			saveDraft({ gameId: open.game.gameId });
+			// Every start goes on to Character selection, a plain game too (Trevor, 2026-10-23).
+			await goto(resolve('/grimoire/[gameId]/setup', { gameId: open.game.gameId }));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {

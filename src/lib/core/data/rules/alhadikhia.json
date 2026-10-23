@@ -1,0 +1,22 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"1": {
+			"seat": "any",
+			"note": "The first player the Al-Hadikhia chooses tonight."
+		},
+		"2": {
+			"seat": "any",
+			"note": "The second player chosen tonight."
+		},
+		"3": {
+			"seat": "any",
+			"note": "The third player chosen tonight."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

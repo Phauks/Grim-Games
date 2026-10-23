@@ -2,5 +2,15 @@
 	"protects": {
 		"who": "self",
 		"from": "any"
+	},
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "any",
+			"life": "alive",
+			"note": "Either the Sailor or the alive player they chose, at the Storyteller's call."
+		}
+	},
+	"setupPrep": {
+		"none": "its Drunk token marks the Sailor’s own night choice, placed when they choose"
 	}
 }

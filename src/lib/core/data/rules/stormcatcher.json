@@ -1,0 +1,23 @@
+{
+	"reminderTargets": {
+		"Stormcaught": {
+			"seat": "any",
+			"types": ["townsfolk", "outsider"],
+			"note": "The player with the named good character, if it is in play.",
+			"ambiguous": "The wiki calls this token SAFE; TPI's data names it Stormcaught."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Stormcaught",
+				"text": "Name a good character as stormcaught; if they are in play, put [Stormcaught] on that player",
+				"target": {
+					"choose": "good",
+					"choice": "the player with the named character, if in play"
+				},
+				"reason": "This player can only die by execution; evil learns who"
+			}
+		]
+	}
+}

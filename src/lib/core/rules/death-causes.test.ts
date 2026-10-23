@@ -13,6 +13,7 @@ import {
 	deathCauses,
 	gameDeathCauses,
 	NO_DEATH,
+	reminderDeathCause,
 	type DeathKind
 } from './death-causes.ts';
 
@@ -76,9 +77,11 @@ describe('kinds', () => {
 	});
 
 	// https://wiki.bloodontheclocktower.com/Pit-Hag: making a Demon makes tonight's deaths
-	// the Storyteller's choice, so the Pit-Hag can cause deaths.
-	it('the Pit-Hag can cause deaths', () => {
-		expect(kindOf('pithag')).toBe('kills');
+	// the Storyteller's choice; the Pit-Hag's ability itself kills no one (Trevor, 2026-10-23:
+	// "not a source of direct death").
+	it('the Pit-Hag is not a cause of death', () => {
+		expect(kindOf('pithag')).toBeUndefined();
+		expect(Object.hasOwn(NO_DEATH, 'pithag')).toBe(true);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Barber: only swaps characters.
@@ -197,5 +200,47 @@ describe('deathCauses', () => {
 		expect(ids).toContain('imp');
 		expect(ids.slice(-2)).toEqual(['gangster', 'angel']);
 		expect(ids).not.toContain('washerwoman');
+	});
+});
+
+describe('the Minions that can cause a death', () => {
+	// Each cites its wiki page in death-causes.data.ts; the Pit-Hag is not one (Trevor,
+	// 2026-10-23), nor is any Minion whose ability only informs, poisons or changes things.
+	it('are exactly these', () => {
+		const minions = Object.keys(DEATH_CAUSE_ENTRIES)
+			.filter((id) => characters.get(id)?.type === 'minion')
+			.sort();
+		expect(minions).toEqual([
+			'assassin',
+			'boffin',
+			'boomdandy',
+			'cerenovus',
+			'godfather',
+			'harpy',
+			'psychopath',
+			'vizier',
+			'witch',
+			'wizard'
+		]);
+	});
+});
+
+describe('the cause a reminder gives a death', () => {
+	// https://wiki.bloodontheclocktower.com/Fang_Gu: the Fang Gu kills; its "Dead" reminder
+	// on a player names it as the cause.
+	it("is the reminder's character when it can kill", () => {
+		const game = newGame(3, {
+			script: { entries: ['fanggu', 'pithag', 'chef'].map((id) => ({ kind: 'official', id })) }
+		}).session.game;
+		expect(reminderDeathCause(game, characters, 'fanggu')).toBe('fanggu');
+	});
+	// https://wiki.bloodontheclocktower.com/Pit-Hag and /Chef: neither ability kills.
+	it('is none for a character that never kills, or the ∞ reminder', () => {
+		const game = newGame(3, {
+			script: { entries: ['fanggu', 'pithag', 'chef'].map((id) => ({ kind: 'official', id })) }
+		}).session.game;
+		expect(reminderDeathCause(game, characters, 'pithag')).toBeUndefined();
+		expect(reminderDeathCause(game, characters, 'chef')).toBeUndefined();
+		expect(reminderDeathCause(game, characters, 'generic')).toBeUndefined();
 	});
 });

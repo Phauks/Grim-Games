@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // The screen stays on while the day timer runs, so a phone doesn't lock mid-day (Trevor,
 // 2026-10-19). The Screen Wake Lock API is stubbed to count what is held.
@@ -29,7 +30,7 @@ test('the day timer keeps the screen on while it runs, by a switch', async ({ pa
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
 	expect(await held()).toBe(0);

@@ -5,6 +5,7 @@
  * Storyteller overrides win over every rule in this file.
  */
 import type { Alignment, Character, CharacterId, CharacterType } from '#lib/core/data/index.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from './characters.ts';
 import type {
 	Game,
@@ -18,12 +19,16 @@ import type {
 } from './types.ts';
 
 /**
- * Reminders that make a living player register as dead. The Zombuul's first death: "you
- * live but register as dead" (https://wiki.bloodontheclocktower.com/Zombuul).
+ * Reminders that make a living player register as dead: the token an official character's
+ * `gameEnd.aliveWhileDead.untilToken` names. The Zombuul's first death: "you live but register
+ * as dead" (https://wiki.bloodontheclocktower.com/Zombuul).
  */
-export const REGISTERS_AS_DEAD_REMINDERS: readonly Reminder[] = [
-	{ characterId: 'zombuul', label: 'Dead' }
-];
+export const REGISTERS_AS_DEAD_REMINDERS: readonly Reminder[] = [...OFFICIAL_RULES].flatMap(
+	([characterId, rules]) => {
+		const label = rules.gameEnd?.aliveWhileDead?.untilToken;
+		return label ? [{ characterId, label }] : [];
+	}
+);
 
 /** The reminders a Fabled or Loric in play holds, in the order they were placed. */
 export function ruleReminders(game: Game, characterId: CharacterId): ReminderInstance[] {

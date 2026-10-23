@@ -3,5 +3,21 @@
 		"who": "marked",
 		"token": "Cannot Die",
 		"from": "any"
+	},
+	"reminderTargets": {
+		"Cannot Die": {
+			"seat": "other",
+			"alignment": "good",
+			"life": "alive",
+			"neighbour": {
+				"of": "self",
+				"alive": true,
+				"both": true
+			},
+			"note": "Each of the Tea Lady's two nearest living neighbours, only while both are good."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

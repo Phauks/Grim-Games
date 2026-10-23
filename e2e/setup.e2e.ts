@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
@@ -11,8 +11,8 @@ async function selectionFor(page: Page, players: number, script = 'Trouble Brewi
 	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	for (let n = 8; n < players; n++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-	await page.goto(`${new URL(page.url()).pathname}/setup`);
+	// A new game opens on character selection (G7).
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('player-count')).toHaveText(String(players));
 }
@@ -47,13 +47,15 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
 	const barButtons = async () => {
 		const [back, next] = await Promise.all([
-			bar.getByRole('link').first().boundingBox(),
+			bar.locator('a, button').first().boundingBox(),
 			bar.locator('a, button').last().boundingBox()
 		]);
 		expect(back!.x).toBeLessThan(next!.x);
 		return { back, next };
 	};
-	await expect(bar.getByRole('link', { name: 'Grimoire' })).toBeVisible();
+	// Before any character is dealt, Back goes to New game; the board is one tap away.
+	await expect(bar.getByRole('button', { name: 'New game' })).toBeVisible();
+	await expect(bar.getByTestId('setup-to-board')).toBeVisible();
 	await expect(bar.getByRole('button', { name: 'Build bag' })).toBeVisible();
 	const onCharacters = await barButtons();
 
@@ -703,8 +705,7 @@ test.describe('in a computer window', () => {
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
 		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
 		await page.getByRole('button', { name: 'Start game' }).click();
-		await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-		await page.goto(`${new URL(page.url()).pathname}/setup`);
+		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 
 		// The setup sheet is beside the characters; Build bag is in the bar at the bottom right.
 		const sheet = await page.getByTestId('setup-table').boundingBox();
@@ -830,7 +831,7 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	await pickScript(page, 'Jinx Check');
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 
 	const check = page.getByTestId('setup-check');
@@ -891,7 +892,7 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 	await page.goto('/new');
 	await pickScript(page, 'Custom Check');
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 
 	const check = page.getByTestId('setup-check');
@@ -1180,7 +1181,7 @@ test('a Teensyville script greys out player counts above 6 but still allows them
 	await expect(page.getByTestId('player-count')).toHaveText('8');
 	for (let n = 8; n > 6; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 	await expect(table.locator('thead th[data-too-many]')).toHaveCount(9);
 	await page.getByRole('button', { name: 'More players' }).tap();
@@ -1208,20 +1209,16 @@ async function lockedDraw(page: Page) {
 	await lockDraw(page);
 }
 
-// Trevor (2026-10-20, Pixel): the footer was cut off under the Draw page's bottom bar.
-test('the setup steps have no page footer, and the bottom bar sits on the screen edge', async ({
-	page
-}) => {
-	// Character setup has the game's screen (Trevor, 2026-10-23): no footer to clear.
+// Trevor (2026-10-20, Pixel): the page's end was cut off under the Draw page's bottom bar.
+test("the page's end clears the bottom bar on the setup steps", async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
 	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-	await expect(page.getByRole('contentinfo')).toHaveCount(0);
-	const bar = (await page.locator('.setup-nav').boundingBox())!;
-	const height = page.viewportSize()!.height;
-	expect(Math.abs(bar.y + bar.height - height)).toBeLessThanOrEqual(1);
+	const end = await page.locator('.app-body').boundingBox();
+	const bar = await page.locator('.setup-nav').boundingBox();
+	expect(end && bar && end.y + end.height).toBeLessThanOrEqual(bar!.y + 1);
 });
 
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
@@ -1234,10 +1231,9 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	await expect(title).toHaveText('Trouble Brewing');
 	await expect(title.getByTestId('script-logo')).toHaveCount(1);
 	await expect(page.locator('.setup-nav')).toHaveCount(0);
-	// No menu or footer to leave by while the phone is passed round.
+	// No menu to leave by while the phone is passed round.
 	await expect(menuButton(page)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
-	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
 	// Hold to see character is off by default, locked or not (Trevor, 2026-10-20).
 	await page.getByRole('button', { name: /^Tile 1/ }).tap();
@@ -1267,9 +1263,8 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
-	// Unlocked, setup still has the game's screen: no menu or footer (Trevor, 2026-10-23).
+	// Unlocked, setup still has the game's screen: no menu (Trevor, 2026-10-23).
 	await expect(menuButton(page)).toHaveCount(0);
-	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 	await noSidewaysScroll(page);
 });
 
@@ -1360,7 +1355,6 @@ test('the board stays locked while the draw is, until the Storyteller PIN', asyn
 	const locked = page.getByTestId('board-locked');
 	await expect(locked).toContainText('The grimoire is locked');
 	await expect(page.getByTestId('seat')).toHaveCount(0);
-	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
 	// Back to the draw is always there; the PIN opens the board.
 	await expect(locked.getByRole('link', { name: 'Back to the draw' })).toBeVisible();

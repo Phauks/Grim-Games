@@ -11,6 +11,7 @@ import ph_arrow_square_out_bold from '~icons/ph/arrow-square-out-bold';
 import ph_arrow_u_up_left_bold from '~icons/ph/arrow-u-up-left-bold';
 import ph_arrow_u_up_right_bold from '~icons/ph/arrow-u-up-right-bold';
 import ph_arrows_down_up_bold from '~icons/ph/arrows-down-up-bold';
+import ph_arrows_in_bold from '~icons/ph/arrows-in-bold';
 import ph_arrows_left_right_bold from '~icons/ph/arrows-left-right-bold';
 import ph_arrows_out_bold from '~icons/ph/arrows-out-bold';
 import ph_arrows_out_cardinal_bold from '~icons/ph/arrows-out-cardinal-bold';
@@ -28,6 +29,7 @@ import ph_bookmarks_simple_bold from '~icons/ph/bookmarks-simple-bold';
 import ph_books_bold from '~icons/ph/books-bold';
 import ph_bug_bold from '~icons/ph/bug-bold';
 import ph_calculator_bold from '~icons/ph/calculator-bold';
+import ph_camera_bold from '~icons/ph/camera-bold';
 import ph_caret_circle_down_bold from '~icons/ph/caret-circle-down-bold';
 import ph_caret_down_bold from '~icons/ph/caret-down-bold';
 import ph_caret_left_bold from '~icons/ph/caret-left-bold';
@@ -46,6 +48,7 @@ import ph_club_bold from '~icons/ph/club-bold';
 import ph_coin_bold from '~icons/ph/coin-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
+import ph_corners_in_bold from '~icons/ph/corners-in-bold';
 import ph_corners_out_bold from '~icons/ph/corners-out-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
 import ph_crown_bold from '~icons/ph/crown-bold';
@@ -141,6 +144,7 @@ import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
+import ph_scan_bold from '~icons/ph/scan-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
 import ph_share_network_bold from '~icons/ph/share-network-bold';
@@ -209,6 +213,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-left-bold': ph_arrow_u_up_left_bold,
 	'ph:arrow-u-up-right-bold': ph_arrow_u_up_right_bold,
 	'ph:arrows-down-up-bold': ph_arrows_down_up_bold,
+	'ph:arrows-in-bold': ph_arrows_in_bold,
 	'ph:arrows-left-right-bold': ph_arrows_left_right_bold,
 	'ph:arrows-out-bold': ph_arrows_out_bold,
 	'ph:arrows-out-cardinal-bold': ph_arrows_out_cardinal_bold,
@@ -226,6 +231,7 @@ const icons: IconMap = {
 	'ph:books-bold': ph_books_bold,
 	'ph:bug-bold': ph_bug_bold,
 	'ph:calculator-bold': ph_calculator_bold,
+	'ph:camera-bold': ph_camera_bold,
 	'ph:caret-circle-down-bold': ph_caret_circle_down_bold,
 	'ph:caret-down-bold': ph_caret_down_bold,
 	'ph:caret-left-bold': ph_caret_left_bold,
@@ -244,6 +250,7 @@ const icons: IconMap = {
 	'ph:coin-bold': ph_coin_bold,
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
+	'ph:corners-in-bold': ph_corners_in_bold,
 	'ph:corners-out-bold': ph_corners_out_bold,
 	'ph:cross-bold': ph_cross_bold,
 	'ph:crown-bold': ph_crown_bold,
@@ -339,6 +346,7 @@ const icons: IconMap = {
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
 	'ph:scales-bold': ph_scales_bold,
+	'ph:scan-bold': ph_scan_bold,
 	'ph:scroll-bold': ph_scroll_bold,
 	'ph:shapes-bold': ph_shapes_bold,
 	'ph:share-network-bold': ph_share_network_bold,

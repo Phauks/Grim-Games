@@ -1,0 +1,57 @@
+{
+	"reminderTargets": {
+		"Day 1": {
+			"seat": "self",
+			"note": "The Leviathan during day 1; it carries only one day token at a time."
+		},
+		"Day 2": {
+			"seat": "self",
+			"note": "The Leviathan during day 2; it carries only one day token at a time."
+		},
+		"Day 3": {
+			"seat": "self",
+			"note": "The Leviathan during day 3; it carries only one day token at a time."
+		},
+		"Day 4": {
+			"seat": "self",
+			"note": "The Leviathan during day 4; it carries only one day token at a time."
+		},
+		"Day 5": {
+			"seat": "self",
+			"note": "The Leviathan during day 5; it carries only one day token at a time."
+		},
+		"Good Player Executed": {
+			"seat": "other",
+			"alignment": "good",
+			"note": "The first good player who is executed."
+		}
+	},
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "executions-of-alignment",
+				"alignment": "good",
+				"count": 2,
+				"winner": "evil"
+			},
+			{
+				"kind": "survives-day",
+				"day": 5,
+				"winner": "evil"
+			}
+		]
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Day 1",
+				"text": "At the start of the first day, put [Day 1] on the Leviathan",
+				"target": {
+					"self": true
+				},
+				"reason": "Counts the days; evil wins after day 5",
+				"timing": "first-day"
+			}
+		]
+	}
+}

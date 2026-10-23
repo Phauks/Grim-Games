@@ -1,0 +1,7 @@
+{
+	"setupModifier": {
+		"summary": "Characters are hidden",
+		"ops": [],
+		"notes": ["Players do not see their character or alignment until they die."]
+	}
+}

@@ -1,0 +1,40 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "Any player the Vigormortis kills."
+		},
+		"Has Ability": {
+			"seat": "other",
+			"types": ["minion"],
+			"withLabel": "Dead",
+			"note": "A Minion the Vigormortis killed; it keeps its ability."
+		},
+		"Poisoned": {
+			"seat": "other",
+			"types": ["townsfolk"],
+			"neighbour": {
+				"of": "Has Ability",
+				"type": "townsfolk"
+			},
+			"note": "The nearest Townsfolk either way round from that dead Minion; it may be dead, and the Storyteller picks if both sides tie."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"setupModifier": {
+		"summary": "−1 Outsider",
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "outsider",
+				"values": [-1]
+			}
+		],
+		"notes": ["With no Outsiders to remove, nothing changes."]
+	}
+}

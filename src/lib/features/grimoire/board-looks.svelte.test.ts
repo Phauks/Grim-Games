@@ -17,6 +17,7 @@ describe('board looks', () => {
 				reminders: 'free',
 				usedGhostVote: 'struck',
 				defaultFrame: 'laurel',
+				// Every reminder is always on the board now (Trevor, 2026-10-23).
 				reminderStacks: true,
 				// The script's name is only in the lower left corner now (Trevor, 2026-10-18).
 				titleAt: 'corner'
@@ -32,8 +33,7 @@ describe('board looks', () => {
 			nameOffset: 0.3,
 			reminders: 'free',
 			usedGhostVote: 'struck',
-			defaultFrame: 'laurel',
-			reminderStacks: true
+			defaultFrame: 'laurel'
 		});
 		expect(
 			parseBoardLooks({

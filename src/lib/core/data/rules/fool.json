@@ -1,0 +1,14 @@
+{
+	"survivesFirstDeath": {
+		"spentToken": "No Ability"
+	},
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Fool once they have survived their first death."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

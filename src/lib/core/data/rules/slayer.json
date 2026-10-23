@@ -1,0 +1,11 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "The Slayer once they have used their shot."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

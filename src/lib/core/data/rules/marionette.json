@@ -1,0 +1,34 @@
+{
+	"reminderTargets": {
+		"Is The Marionette": {
+			"seat": "any",
+			"alignment": "good",
+			"neighbour": {
+				"of": "self",
+				"ofType": "demon",
+				"alignment": "good"
+			},
+			"note": "The nearest good player each side of the Demon, skipping evil players, who was dealt a good character token; placing it makes them evil. A player who may register as the Demon (the Recluse) counts as the Demon."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Is The Marionette",
+				"text": "Put [Is The Marionette] on the Marionette, a neighbour of the Demon; choose a good character they think they are",
+				"target": {
+					"self": true
+				},
+				"reason": "The Marionette thinks they are good; this marks who really is the Marionette"
+			}
+		]
+	},
+	"setupModifier": {
+		"summary": "Neighbours the Demon",
+		"ops": [],
+		"notes": [
+			"Put a Townsfolk in the bag instead of the Marionette.",
+			"Seat the Marionette next to the Demon."
+		]
+	}
+}

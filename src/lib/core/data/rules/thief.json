@@ -1,0 +1,11 @@
+{
+	"reminderTargets": {
+		"Negative Vote": {
+			"seat": "other",
+			"note": "The player the Thief chooses, never themself; dead players allowed."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	}
+}

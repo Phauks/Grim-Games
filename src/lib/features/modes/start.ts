@@ -105,7 +105,8 @@ export function startHref(
 		return resolve('/grimoire/[gameId]/deal', { gameId });
 	if (mode.parts.pool?.kind === 'script-plus-hidden')
 		return resolve('/grimoire/[gameId]/extras', { gameId });
-	return resolve('/grimoire/[gameId]', { gameId });
+	// Every other start goes on to Character selection, Standard too (Trevor, 2026-10-23).
+	return resolve('/grimoire/[gameId]/setup', { gameId });
 }
 
 interface TownsInput<G> {
@@ -197,4 +198,15 @@ export async function continueCampaign<
 		]
 	});
 	return open;
+}
+
+/**
+ * The start-flow step before Character selection (Trevor, 2026-10-23: one start flow, Back
+ * on every step): a mode's Extras where it hides characters, else New game.
+ */
+export function stepBeforeCharacters(gameId: GameId): 'extras' | 'new' {
+	const record = readGameMode(gameId);
+	if (!record) return 'new';
+	const mode = withRules(findMode(record.modeId) ?? STANDARD, record.rules);
+	return mode.parts.pool?.kind === 'script-plus-hidden' ? 'extras' : 'new';
 }

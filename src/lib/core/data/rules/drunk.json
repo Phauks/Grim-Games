@@ -1,0 +1,31 @@
+{
+	"reminderTargets": {
+		"Is The Drunk": {
+			"seat": "any",
+			"shown": ["townsfolk"],
+			"note": "Beside the Townsfolk token of the player who is really the Drunk."
+		}
+	},
+	"impairs": {
+		"self": {
+			"reason": "drunk"
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Is The Drunk",
+				"text": "Put [Is The Drunk] on the Drunk; choose a not-in-play Townsfolk they think they are",
+				"target": {
+					"self": true
+				},
+				"reason": "The Drunk is shown a Townsfolk; this marks who really is the Drunk"
+			}
+		]
+	},
+	"setupModifier": {
+		"summary": "Shown a Townsfolk",
+		"ops": [],
+		"notes": ["Put a Townsfolk in the bag instead of the Drunk."]
+	}
+}

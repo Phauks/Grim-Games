@@ -1,0 +1,19 @@
+{
+	"reminderTargets": {
+		"Is The Demon": {
+			"seat": "self",
+			"note": "The Scarlet Woman after she becomes the Demon."
+		}
+	},
+	"gameEnd": {
+		"holds": [
+			{
+				"kind": "becomes-demon",
+				"aliveAtLeast": 4
+			}
+		]
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

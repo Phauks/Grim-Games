@@ -1,0 +1,19 @@
+{
+	"reminderTargets": {
+		"Fear": {
+			"seat": "any",
+			"note": "On the one player the Fearmonger currently has chosen."
+		}
+	},
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "nominated-marked-executed",
+				"token": "Fear"
+			}
+		]
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	}
+}

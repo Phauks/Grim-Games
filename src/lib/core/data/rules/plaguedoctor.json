@@ -2,5 +2,16 @@
 	"actsWhenDead": true,
 	"onDeath": {
 		"by": "any"
+	},
+	"reminderTargets": {
+		"Storyteller Ability": {
+			"seat": "other",
+			"types": ["minion"],
+			"note": "On an in-play Minion whose ability the Storyteller gains, or on an out-of-play Minion token at the Grimoire side.",
+			"ambiguous": "The wiki allows either an in-play Minion or a Minion token placed off the seats, so it may be global instead."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

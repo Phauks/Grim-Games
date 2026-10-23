@@ -19,6 +19,10 @@ export const CHARACTER_TYPES = [
 ] as const;
 export type CharacterType = (typeof CHARACTER_TYPES)[number];
 
+/** The character types dealt from the bag. */
+export const SEATED_TYPES = ['townsfolk', 'outsider', 'minion', 'demon'] as const;
+export type SeatedType = (typeof SEATED_TYPES)[number];
+
 export const ALIGNMENTS = ['good', 'evil'] as const;
 export type Alignment = (typeof ALIGNMENTS)[number];
 

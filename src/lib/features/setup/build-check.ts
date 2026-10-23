@@ -1,6 +1,6 @@
 import { t } from '#lib/i18n/locale.svelte.ts';
 import type { Character, CharacterId } from '#lib/core/data/index.ts';
-import { NO_SETUP_REMINDERS, SETUP_REMINDER_ENTRIES } from '#lib/core/rules/index.ts';
+import { setupPrepOf } from '#lib/core/rules/index.ts';
 import type {
 	BagIssue,
 	ScriptRequirement,
@@ -79,20 +79,20 @@ export function setupWarningMessages(
 	});
 }
 
-const CURATED: ReadonlySet<CharacterId> = new Set([
-	...SETUP_REMINDER_ENTRIES.map((e) => e.id),
-	...Object.keys(NO_SETUP_REMINDERS)
-]);
-
 /**
  * Custom characters in play whose reminder tokens the app can't place before the game
- * (Trevor, 2026-10-17): setup reminders come from our curated list of official characters,
- * and script JSON says nothing about which reminders go out at setup. Only characters with
- * reminders are named; one without any has nothing to place.
+ * (Trevor, 2026-10-17): setup reminders come from a character's `setupPrep` rules (our
+ * overlay files, or a custom character's own `rules`), and plain script JSON says nothing
+ * about which reminders go out at setup. Only characters with reminders are named; one
+ * without any has nothing to place.
  */
 export function uncuratedReminderCharacters(inPlay: readonly Character[]): CharacterId[] {
+	const lookup = new Map(inPlay.map((c) => [c.id, c]));
 	const ids = inPlay
-		.filter((c) => !CURATED.has(c.id) && c.reminders.length + c.remindersGlobal.length > 0)
+		.filter(
+			(c) =>
+				setupPrepOf(c.id, lookup) === undefined && c.reminders.length + c.remindersGlobal.length > 0
+		)
 		.map((c) => c.id);
 	return [...new Set(ids)];
 }

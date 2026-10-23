@@ -41,9 +41,11 @@ async function answerSheet(page: Page, offered: string, add: boolean) {
 const row = (page: Page, name: string) =>
 	page.getByTestId('library-table').getByRole('button', { name: new RegExp(`^${name}`) });
 
+/** New folder makes "New folder" at once and selects it; Rename then names it. */
 async function newFolder(page: Page, name: string) {
-	await page.getByRole('button', { name: 'New folder' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'New folder' });
+	await page.getByRole('button', { name: 'New folder', exact: true }).tap();
+	await page.getByRole('button', { name: 'Rename New folder' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Rename' });
 	await dialog.getByRole('textbox', { name: 'Name' }).fill(name);
 	await dialog.getByRole('textbox', { name: 'Name' }).press('Enter');
 	await expect(row(page, name)).toBeVisible();

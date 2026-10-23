@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
-import { nameStoryteller } from './new-game.ts';
+import { nameStoryteller, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
@@ -21,7 +21,7 @@ async function startGame(page: Page, storyteller?: string) {
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	if (storyteller !== undefined) await nameStoryteller(page, storyteller);
 	return new URL(page.url()).pathname;
 }
@@ -54,6 +54,9 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await expect(phone.getByTestId('join-status')).toHaveText(
 		'Waiting for the Storyteller: Alex, seat 3.'
 	);
+	// Asking moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
+	// script"); the Room tab keeps the seat's state.
+	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 
 	const request = page.getByRole('listitem', { name: 'Alex asks for Seat 3' });
 	await request.getByRole('button', { name: 'Approve' }).tap();
@@ -63,14 +66,21 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await expect(phone.locator('ol li').nth(2)).toContainText('Alex');
 
 	// Coming back (Trevor, 2026-10-19: "it booted me out like I had not joined it yet"): Join
-	// game lists the room, and opening it shows the seat this phone already has.
-	await phone.goto('/join');
+	// game lists the room, and opening it shows the seat this phone already has. Resume game
+	// points there rather than listing it again (Trevor, 2026-10-23).
+	await phone.goto('/games');
+	await phone.getByRole('main').getByRole('link', { name: 'Join game' }).tap();
+	await expect(phone).toHaveURL(/\/join$/);
 	const recent = phone.getByTestId('recent-rooms').getByRole('button');
 	await expect(recent).toHaveCount(1);
 	await expect(recent).toContainText('Trouble Brewing');
 	await expect(recent).toContainText(`${code.slice(0, 3)} ${code.slice(3)}`);
+	// When this phone last opened it.
+	await expect(recent).toContainText(String(new Date().getFullYear()));
 	await recent.tap();
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
+	// A phone with a seat opens on the script.
+	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
 	await expect(phone.getByRole('radio', { name: /^Seat 3/ })).toBeChecked();
 	await expect(phone.getByRole('button', { name: 'Ask the Storyteller' })).toBeDisabled();
@@ -256,6 +266,15 @@ test('after a game the room votes on the next script, and the next game opens in
 		/^Script 2\s*None\s*$/,
 		/^Script 3\s*None\s*$/
 	]);
+	// The room's code from before the vote opens, so players can join first; on a tablet it
+	// is in a column of its own beside the scripts (Trevor, 2026-10-23).
+	const joinCode = sheet.getByTestId('share-code');
+	await expect(joinCode).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
+	if (testInfo.project.name === 'tablet') {
+		const slotsBox = (await sheet.getByTestId('script-vote-slots').boundingBox())!;
+		const codeBox = (await joinCode.boundingBox())!;
+		expect(codeBox.x).toBeGreaterThan(slotsBox.x + slotsBox.width);
+	}
 	await add.tap();
 	await expect(add).toBeDisabled();
 	await scripts.getByText('Bad Moon Rising', { exact: true }).tap();
@@ -277,7 +296,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
 	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 0 of 1');
 	await expect(sheet.getByTestId('script-vote-time')).toHaveText(/^Time left: [12]:\d\d$/);
-	// The room's code is on the vote, for players not in the room yet (Trevor, 2026-10-23).
+	// The room's code stays on the vote, for players not in the room yet (Trevor, 2026-10-23).
 	await expect(sheet.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
 
 	// The phone ranks them; the Storyteller sees points by place.
@@ -299,7 +318,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
 	await expect(ballot).toHaveCount(0);
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	// The same room carries the next game: its script, and seats to ask for again.
 	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
 	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
@@ -320,10 +339,18 @@ test('the Storyteller picks what goes in the middle of the QR code', async ({ pa
 	await page.getByRole('option', { name: 'None' }).tap();
 	await expect(qr.getByTestId('script-logo')).toHaveCount(0);
 
-	// Your picture asks for one; it shows in the middle, here and in every share.
-	const chooser = page.waitForEvent('filechooser');
+	// Picking Your picture opens nothing by itself (Trevor, 2026-10-23); Choose picture does.
+	let asked = false;
+	page.on('filechooser', () => (asked = true));
 	await centre.getByRole('combobox', { name: 'QR code centre' }).tap();
 	await page.getByRole('option', { name: 'Your picture' }).tap();
+	await expect(centre.getByRole('combobox', { name: 'QR code centre' })).toHaveText(/Your picture/);
+	expect(asked).toBe(false);
+	// The picture's shape waits, shown but off, until there is a picture.
+	const corners = centre.getByRole('combobox', { name: 'Picture corners' });
+	await expect(corners).toBeDisabled();
+	const chooser = page.waitForEvent('filechooser');
+	await centre.getByRole('button', { name: 'Choose picture' }).tap();
 	await (
 		await chooser
 	).setFiles({
@@ -334,12 +361,31 @@ test('the Storyteller picks what goes in the middle of the QR code', async ({ pa
 			'base64'
 		)
 	});
-	await expect(qr.locator('img.qr-picture')).toHaveAttribute('src', /^data:image\/png/);
+	const picture = qr.getByTestId('qr-picture');
+	await expect(picture.locator('img')).toHaveAttribute('src', /^data:image\/png/);
 	await expect(centre.getByRole('button', { name: 'Change picture' })).toBeEnabled();
+
+	// Its shape, and the code's own squares, change the QR beside them at once.
+	await expect(picture).toHaveAttribute('data-corners', 'rounded');
+	await corners.tap();
+	await page.getByRole('option', { name: 'Round', exact: true }).tap();
+	await expect(picture).toHaveAttribute('data-corners', 'circle');
+	await centre.getByText('Show the whole picture', { exact: true }).tap();
+	await expect(picture).toHaveAttribute('data-whole', 'true');
+	const pattern = qr.getByTestId('qr-pattern');
+	const squares = await pattern.getAttribute('d');
+	await centre.getByRole('combobox', { name: 'QR squares' }).tap();
+	await page.getByRole('option', { name: 'Dots' }).tap();
+	await expect(pattern).not.toHaveAttribute('d', squares!);
+	await expect(pattern).toHaveAttribute('d', /a0\.5,0\.5/);
 
 	// It stays on this device.
 	await page.reload();
-	await expect(qr.locator('img.qr-picture')).toHaveAttribute('src', /^data:image\/png/);
+	await expect(qr.getByTestId('qr-picture').locator('img')).toHaveAttribute(
+		'src',
+		/^data:image\/png/
+	);
+	await expect(qr.getByTestId('qr-picture')).toHaveAttribute('data-corners', 'circle');
 });
 
 test('a phone that joins gets the game script before anyone has a seat', async ({
@@ -896,6 +942,55 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	await phoneContext.close();
+});
+
+test("on a laptop the player's screen shows the script's logo, and the guess sheet scrolls", async ({
+	page,
+	browser
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'tablet', 'A laptop window, once');
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	// A laptop: a mouse or trackpad and a wide window.
+	const laptop = await browser.newContext({ viewport: { width: 1366, height: 600 } });
+	const phone = await laptop.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	// The script's logo before its name (Trevor, 2026-10-23).
+	await expect(phone.getByRole('heading', { level: 1 }).getByTestId('script-logo')).toHaveAttribute(
+		'data-logo',
+		/.+/
+	);
+
+	// A trackpad's two-finger scroll moves the guess sheet's characters (Trevor, 2026-10-23).
+	await phone.getByRole('tab', { name: 'Grim' }).click();
+	await phone.getByTestId('grim-seat').nth(1).click();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
+	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });
+	await expect(empath).toBeVisible();
+	// The sheet scrolls under a wheel or trackpad. Newer Chrome stopped the scroll at the
+	// character list, which had nothing to scroll but kept scrolls to itself (2026-10-23).
+	const scrolled = () =>
+		empath.evaluate((el) => {
+			let b = el.parentElement;
+			while (
+				b &&
+				!(b.scrollHeight > b.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(b).overflowY))
+			)
+				b = b.parentElement;
+			return b ? { top: b.scrollTop, max: b.scrollHeight - b.clientHeight } : undefined;
+		});
+	const start = (await scrolled())!;
+	expect(start).toEqual({ top: 0, max: expect.any(Number) });
+	expect(start.max).toBeGreaterThan(0);
+	const at = (await empath.boundingBox())!;
+	await phone.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
+	await phone.mouse.wheel(0, start.max + 200);
+	await expect.poll(async () => (await scrolled())!.top).toBeGreaterThanOrEqual(start.max - 1);
+	await laptop.close();
 });
 
 test("a player's initials and frame go on their seat, and their guess shows over them only if they choose", async ({

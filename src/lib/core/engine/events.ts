@@ -14,6 +14,7 @@ import type {
 	DayEntryId,
 	DeathCause,
 	GameId,
+	GenericToken,
 	OverrideField,
 	Reminder,
 	ReminderId,
@@ -57,6 +58,12 @@ export type GameEvent =
 	| { type: 'ReminderNoteSet'; reminderId: ReminderId; note?: string }
 	| { type: 'ReminderSymbolSet'; reminderId: ReminderId; symbol?: string }
 	| { type: 'ReminderSymbolColourSet'; reminderId: ReminderId; colour?: SymbolColour }
+	/** Without `fill`, the symbol goes back to an outline. */
+	| { type: 'ReminderSymbolFillSet'; reminderId: ReminderId; fill?: true }
+	| { type: 'GenericTokenAdded'; token: GenericToken }
+	/** Replaces the bank ∞ token with the same `tokenId`. */
+	| { type: 'GenericTokenSet'; token: GenericToken }
+	| { type: 'GenericTokenRemoved'; tokenId: string }
 	| { type: 'StorytellerNameSet'; name?: string }
 	| { type: 'SeatsSwapped'; seatA: SeatId; seatB: SeatId }
 	/** The whole seating order, the same seats in a new order (RotateSeats, MoveSeat). */

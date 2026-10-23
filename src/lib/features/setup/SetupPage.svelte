@@ -37,6 +37,8 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
+	import { backToNewGame, notBegun } from '#lib/features/modes/new-game-draft.ts';
+	import { stepBeforeCharacters } from '#lib/features/modes/start.ts';
 	import { DEMON_SET, randomBluffs, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
@@ -70,6 +72,10 @@
 	onMount(() => void loadOfficialData());
 
 	const game = $derived(port.game);
+	/** Where this step's Back goes: the start flow's step before until the game begins. */
+	const backStep = $derived(
+		game && notBegun(game) ? stepBeforeCharacters(game.gameId) : ('board' as const)
+	);
 	const data = $derived(officialData.current);
 	// The game's own script, so a homebrew character is found even if the Scripts page moved on.
 	const script = $derived(game && data ? fromScript(game.script, data).script : undefined);
@@ -595,18 +601,39 @@
 	</ErrorBoundary>
 
 	{#if game}
+		<!-- Back is the start flow's step before while nothing has happened yet (Trevor,
+		     2026-10-23), else the board. -->
 		<SetupNav
-			backHref={resolve('/grimoire/[gameId]', { gameId: game.gameId })}
-			backLabel={t('setup.grimoire')}
+			backHref={backStep === 'board'
+				? resolve('/grimoire/[gameId]', { gameId: game.gameId })
+				: backStep === 'extras'
+					? resolve('/grimoire/[gameId]/extras', { gameId: game.gameId })
+					: undefined}
+			onBack={backStep === 'new' ? () => void backToNewGame(game.gameId) : undefined}
+			backLabel={backStep === 'board'
+				? t('setup.grimoire')
+				: backStep === 'extras'
+					? t('modes.extras.title')
+					: t('setup.newGame')}
 		>
 			{#snippet next()}
-				<Button
-					variant="accent"
-					icon="bag"
-					disabled={!ready || plan.tiles.length === 0}
-					onclick={() => requestBuild()}
-					>{sameBag ? t('setup.continueDraw') : t('setup.buildBag')}</Button
-				>
+				<span class="next">
+					<!-- The board without a bag, for a Storyteller who hands tokens out on it; always
+					     here, so the bar never changes. -->
+					{#if backStep !== 'board'}<IconButton
+							icon="grimoire"
+							label={t('setup.grimoire')}
+							onclick={() => void goto(resolve('/grimoire/[gameId]', { gameId: game.gameId }))}
+							data-testid="setup-to-board"
+						/>{/if}
+					<Button
+						variant="accent"
+						icon="bag"
+						disabled={!ready || plan.tiles.length === 0}
+						onclick={() => requestBuild()}
+						>{sameBag ? t('setup.continueDraw') : t('setup.buildBag')}</Button
+					>
+				</span>
 			{/snippet}
 		</SetupNav>
 	{/if}
@@ -666,6 +693,11 @@
 </ConfirmDialog>
 
 <style>
+	.next {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
 	.script {
 		display: flex;
 		min-width: 0;

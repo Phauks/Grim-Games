@@ -1,0 +1,22 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player the Vortox kills that night."
+		}
+	},
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "day-without-execution",
+				"winner": "evil"
+			}
+		]
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Huntsman once they have used their ability."
+		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "If the Damsel is not in play, add her in place of a Townsfolk"
+			}
+		],
+		"none": "No Ability goes on only when the Huntsman uses their ability"
+	},
+	"setupModifier": {
+		"summary": "+the Damsel",
+		"ops": [],
+		"requires": "damsel",
+		"notes": ["If the Damsel is not already in play, swap a Townsfolk for the Damsel."]
+	}
+}

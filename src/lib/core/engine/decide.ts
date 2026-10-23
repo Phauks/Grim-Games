@@ -37,6 +37,7 @@ import {
 	type DayEntry,
 	type DeathCause,
 	type Game,
+	type GenericLook,
 	type Reminder,
 	type ReminderInstance,
 	type Seat,
@@ -62,6 +63,7 @@ export type ErrorCode =
 	| 'unknown-seat'
 	| 'unknown-character'
 	| 'unknown-reminder'
+	| 'unknown-token'
 	| 'unknown-override'
 	| 'not-seatable'
 	| 'not-rule-character'
@@ -306,6 +308,42 @@ function reminderFrom(game: Game, reminder: Reminder): Reminder {
 	return ownerSeatId !== undefined && Object.hasOwn(game.seats, ownerSeatId)
 		? { characterId, label, ownerSeatId }
 		: { characterId, label };
+}
+
+/**
+ * A bank ∞ token's look, tidied: trimmed text and symbol, nothing empty kept. Refuses a
+ * symbol that is too long or a colour that isn't one of the theme's.
+ */
+function genericLook(look: GenericLook | undefined): GenericLook {
+	const out: GenericLook = {};
+	const note = look?.note?.trim();
+	const symbol = look?.symbol?.trim();
+	if (note) out.note = note;
+	if (symbol) {
+		if (symbol.length > MAX_REMINDER_SYMBOL)
+			refuse('invalid-symbol', `a symbol is at most ${MAX_REMINDER_SYMBOL} characters`);
+		out.symbol = symbol;
+	}
+	if (look?.symbolColour !== undefined) {
+		if (!SYMBOL_COLOURS.includes(look.symbolColour))
+			refuse('invalid-colour', `no symbol colour ${look.symbolColour}`);
+		out.symbolColour = look.symbolColour;
+	}
+	if (look?.symbolFill === true) out.symbolFill = true;
+	return out;
+}
+
+/** The look a copy of a bank ∞ token starts with (plan B9); none without a token. */
+function tokenLook(game: Game, tokenId: string | undefined): GenericLook {
+	if (tokenId === undefined) return {};
+	const token = game.genericTokens?.find((t) => t.tokenId === tokenId);
+	if (!token) refuse('unknown-token', `no ∞ token ${tokenId}`);
+	const look: GenericLook = {};
+	if (token.note !== undefined) look.note = token.note;
+	if (token.symbol !== undefined) look.symbol = token.symbol;
+	if (token.symbolColour !== undefined) look.symbolColour = token.symbolColour;
+	if (token.symbolFill) look.symbolFill = true;
+	return look;
 }
 
 function checkReminder(game: Game, reminder: Reminder, ctx: EngineContext, warn: Warn): void {
@@ -835,6 +873,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 		case 'AddReminder': {
 			const seat = seatOf(game, command.seatId);
 			const reminder: Reminder = reminderFrom(game, command.reminder);
+			const look = tokenLook(game, command.tokenId);
 			checkReminder(game, reminder, ctx, warn);
 			const replaces = replacedBy(reminder, ctx.characters);
 			if (replaces && seat.alignment !== undefined) {
@@ -850,7 +889,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				{
 					type: 'ReminderAdded',
 					seatId: seat.seatId,
-					reminder: { reminderId: ctx.newId(), ...reminder }
+					reminder: { reminderId: ctx.newId(), ...reminder, ...look }
 				}
 			];
 		}
@@ -902,13 +941,14 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 		case 'AddRuleReminder': {
 			const holder = ruleHolderOf(game, ctx, command.characterId);
 			const reminder: Reminder = reminderFrom(game, command.reminder);
+			const look = tokenLook(game, command.tokenId);
 			checkReminder(game, reminder, ctx, warn);
 			warnIfNotRuleReminder(reminder, ctx, warn);
 			return [
 				{
 					type: 'RuleReminderAdded',
 					characterId: holder,
-					reminder: { reminderId: ctx.newId(), ...reminder }
+					reminder: { reminderId: ctx.newId(), ...reminder, ...look }
 				}
 			];
 		}
@@ -978,10 +1018,53 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [event];
 		}
 
+		case 'SetReminderSymbolFill': {
+			const from = reminderHolder(game, command.reminderId);
+			if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+			const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
+			if (command.fill === !!reminder.symbolFill) {
+				warn('no-change', 'the symbol is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'ReminderSymbolFillSet', reminderId: command.reminderId };
+			if (command.fill) event.fill = true;
+			return [event];
+		}
+
 		case 'PlaceLooseReminder': {
 			const reminder: Reminder = reminderFrom(game, command.reminder);
+			const look = tokenLook(game, command.tokenId);
 			checkReminder(game, reminder, ctx, warn);
-			return [{ type: 'LooseReminderPlaced', reminder: { reminderId: ctx.newId(), ...reminder } }];
+			return [
+				{ type: 'LooseReminderPlaced', reminder: { reminderId: ctx.newId(), ...reminder, ...look } }
+			];
+		}
+
+		case 'AddGenericToken':
+			return [
+				{ type: 'GenericTokenAdded', token: { tokenId: ctx.newId(), ...genericLook(command.look) } }
+			];
+
+		case 'SetGenericToken': {
+			const token = game.genericTokens?.find((t) => t.tokenId === command.tokenId);
+			if (!token) refuse('unknown-token', `no ∞ token ${command.tokenId}`);
+			const look = genericLook(command.look);
+			if (
+				look.note === token.note &&
+				look.symbol === token.symbol &&
+				look.symbolColour === token.symbolColour &&
+				look.symbolFill === token.symbolFill
+			) {
+				warn('no-change', 'the token is unchanged');
+				return [];
+			}
+			return [{ type: 'GenericTokenSet', token: { tokenId: token.tokenId, ...look } }];
+		}
+
+		case 'RemoveGenericToken': {
+			if (!game.genericTokens?.some((t) => t.tokenId === command.tokenId))
+				refuse('unknown-token', `no ∞ token ${command.tokenId}`);
+			return [{ type: 'GenericTokenRemoved', tokenId: command.tokenId }];
 		}
 
 		case 'LoosenReminder': {
@@ -1389,6 +1472,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			const entry: DayEntry = { kind: 'note', entryId: ctx.newId(), characterId, text };
 			if (command.seatId !== undefined) entry.seatId = seatOf(game, command.seatId).seatId;
 			if (guesses.length > 0) entry.guesses = guesses;
+			if (typeof command.holds === 'boolean') entry.holds = command.holds;
 			return [{ type: 'DayEntryAdded', entry }];
 		}
 
@@ -1402,7 +1486,9 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			}
 			const next: Extract<DayEntry, { kind: 'note' }> = { ...entry, text };
 			delete next.guesses;
+			delete next.holds;
 			if (guesses.length > 0) next.guesses = guesses;
+			if (typeof command.holds === 'boolean') next.holds = command.holds;
 			if (JSON.stringify(next) === JSON.stringify(entry)) {
 				warn('no-change', 'the note is unchanged');
 				return [];

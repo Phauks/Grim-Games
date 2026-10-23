@@ -1,0 +1,18 @@
+{
+	"reminderTargets": {
+		"Minions Not Nominated": {
+			"seat": "self",
+			"note": "On the Town Crier from dawn until a Minion nominates."
+		},
+		"Minion Nominated": {
+			"seat": "self",
+			"note": "On the Town Crier, replacing the other reminder, once a Minion nominates that day."
+		}
+	},
+	"answers": {
+		"question": "minion-nominated"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

@@ -35,8 +35,8 @@
 		display: none;
 	}
 	@media (min-width: 64rem) {
-		/* The column runs the page's whole length, so its dividing line meets the footer's
-		   wherever the page is scrolled (Trevor, 2026-10-16). */
+		/* The column runs the page's whole length, so its dividing line reaches the bottom
+		   wherever the page is scrolled (2026-10-16). */
 		.app-nav {
 			display: block;
 			flex: none;
@@ -52,7 +52,7 @@
 			gap: var(--space-2);
 			height: calc(100dvh - var(--app-top));
 			overflow-y: auto;
-			padding: var(--space-2) var(--space-2) var(--space-4);
+			padding: var(--menu-inset) var(--menu-inset) var(--space-4);
 		}
 		/* The app's name beside the hamburger, where the header had them. */
 		.brand-row {

@@ -1,0 +1,31 @@
+{
+	"reminderTargets": {
+		"Grandchild": {
+			"seat": "other",
+			"alignment": "good",
+			"note": "A good player other than the Grandmother, chosen at setup; any character type, since a Minion or Demon may be good."
+		},
+		"Dead": {
+			"seat": "self",
+			"note": "On the Grandmother when the Demon kills her Grandchild."
+		}
+	},
+	"deathCheck": {
+		"kind": "marked-killed-by-demon",
+		"token": "Grandchild"
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Grandchild",
+				"text": "Choose a good player: put [Grandchild] on them",
+				"target": {
+					"choose": "good",
+					"choice": "a good player",
+					"notSelf": true
+				},
+				"reason": "The Grandmother learns this player and their character"
+			}
+		]
+	}
+}

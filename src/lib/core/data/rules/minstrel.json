@@ -1,0 +1,19 @@
+{
+	"reminderTargets": {
+		"Everyone Is Drunk": {
+			"note": "On the Minstrel, from the Minion's execution until dusk the next day.",
+			"seat": "self"
+		}
+	},
+	"impairs": {
+		"tokens": {
+			"Everyone Is Drunk": {
+				"reason": "drunk",
+				"on": "others"
+			}
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

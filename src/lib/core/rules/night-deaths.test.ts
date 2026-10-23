@@ -12,8 +12,11 @@ import type { Command } from '#lib/core/engine/index.ts';
 import {
 	newGame,
 	run,
-	testCharacters as characters
+	testCharacters as characters,
+	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { deathCheck, deathVerdict } from './night-deaths.ts';
 import { withNightInfo } from './night-info.ts';
@@ -205,6 +208,71 @@ describe('Grandmother', () => {
 		expect(deathCheck(g, seats[0], 'grandmother', characters)?.verdict).toMatchObject({
 			kind: 'no-death',
 			abnormal: [{ reason: 'drunk' }]
+		});
+	});
+});
+
+describe('custom characters', () => {
+	function custom(
+		raw: Record<string, unknown>,
+		cast: string[],
+		...extra: ((s: string[]) => Command)[]
+	) {
+		const issues = new Issues();
+		const character = parseCharacter(raw, '[0]', issues, { strict: false, scriptFields: true });
+		expect(issues.list).toEqual([]);
+		const all = new Map([...characters, [character!.id, character!]]);
+		const { session, ctx, seats } = newGame(cast.length, { ctx: testContext({ characters: all }) });
+		const s = run(
+			session,
+			ctx,
+			...cast.map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			})),
+			...extra.map((f) => f(seats))
+		);
+		return { game: s.game, seats, all };
+	}
+
+	// A homebrew Townsfolk that guesses as the Gambler does
+	// (https://wiki.bloodontheclocktower.com/Gambler).
+	it('a wrong guess kills through their rules block', () => {
+		const punter = {
+			id: 'punter',
+			name: 'Punter',
+			team: 'townsfolk',
+			ability: 'Each night, guess a player’s character: if wrong, you die.',
+			reminders: ['Dead'],
+			rules: { deathCheck: { kind: 'wrong-guess' } }
+		};
+		const { game: g, seats, all } = custom(punter, ['punter', 'chef', 'imp']);
+		expect(deathCheck(g, seats[0], 'punter', all)).toMatchObject({ needs: 'player-character' });
+		expect(
+			deathVerdict(g, seats[0], 'punter', { seatId: seats[1], characterId: 'empath' }, all)
+		).toMatchObject({ kind: 'dies', seatIds: [seats[0]] });
+	});
+
+	// A homebrew Townsfolk tied to a marked player, as the Grandmother is
+	// (https://wiki.bloodontheclocktower.com/Grandmother).
+	it('dies with their marked player through their rules block', () => {
+		const guardian = {
+			id: 'guardian',
+			name: 'Guardian',
+			team: 'townsfolk',
+			ability: 'If the Demon kills your ward, you die too.',
+			reminders: ['Ward'],
+			rules: { deathCheck: { kind: 'marked-killed-by-demon', token: 'Ward' } }
+		};
+		const {
+			game: g,
+			seats,
+			all
+		} = custom(guardian, ['guardian', 'chef', 'imp'], add(1, 'guardian', 'Ward'), dead(1, 'imp'));
+		expect(deathCheck(g, seats[0], 'guardian', all)?.verdict).toMatchObject({
+			kind: 'dies',
+			seatIds: [seats[0]]
 		});
 	});
 });

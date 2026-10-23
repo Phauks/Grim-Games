@@ -1,6 +1,7 @@
 /**
- * Reminder targets. Every rule cites its character's wiki page in
- * `reminder-targets.data.ts`; the behaviour tests below cite the pages they encode.
+ * Reminder targets: the `reminderTargets` part of each character's rules file
+ * (`data/rules/<id>.json`), read from the character's wiki page; the behaviour tests below
+ * cite the pages they encode.
  */
 import { describe, expect, it } from 'vitest';
 import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
@@ -8,10 +9,10 @@ import type { Command } from '#lib/core/engine/commands.ts';
 import type { GameSession } from '#lib/core/engine/log.ts';
 import type { EngineContext } from '#lib/core/engine/context.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { Reminder } from '#lib/core/model/types.ts';
 import {
 	REMINDER_TARGETS,
+	reminderOffered,
 	reminderTargetMisses,
 	reminderTargets,
 	targetRule
@@ -68,11 +69,10 @@ describe('every official reminder token has a target rule', () => {
 	it.each(withReminders.map((c) => [c.id, c] as const))('%s', (_, character) => {
 		const entry = REMINDER_TARGETS[character.id];
 		expect(entry, `${character.id} has no target rules`).toBeDefined();
-		expect(entry.wiki).toBe(wikiUrl(character));
 		const labels = new Set([...character.reminders, ...character.remindersGlobal]);
 		expect(new Set(Object.keys(entry.labels))).toEqual(labels);
 		for (const [label, rule] of Object.entries(entry.labels)) {
-			expect(rule.note.length, `${character.id} ${label}`).toBeGreaterThan(0);
+			expect(rule.note?.length, `${character.id} ${label}`).toBeGreaterThan(0);
 			expect(rule.global === true || rule.seat !== undefined, `${character.id} ${label}`).toBe(
 				true
 			);
@@ -143,9 +143,10 @@ describe('reminder targets', () => {
 
 	// https://wiki.bloodontheclocktower.com/Washerwoman: one Townsfolk and one other player, who may
 	// be the Washerwoman herself (Trevor, 2026-10-18).
-	it('Washerwoman: Townsfolk on another Townsfolk; Wrong anywhere but that player', () => {
+	// The Washerwoman may be shown herself (Trevor, 2026-10-23).
+	it('Washerwoman: Townsfolk on any Townsfolk, herself too; Wrong anywhere but that player', () => {
 		const { session, seats, ctx } = grimoire(['washerwoman', 'chef', 'butler', 'imp'], []);
-		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([1]);
+		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([0, 1]);
 		const s = run(session, ctx, {
 			type: 'AddReminder',
 			seatId: seats[1],
@@ -203,7 +204,7 @@ describe('reminder targets', () => {
 			seatId,
 			reminder: { characterId: 'poisoner', label: 'Poisoned' }
 		});
-		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([1, 2]);
+		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([0, 1, 2]);
 		const s = run(session, ctx, poisoned(seats[0]), poisoned(seats[1]));
 		expect(fitting(s, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([0, 1, 2, 3]);
 		expect(fitting(s, { characterId: 'investigator', label: 'Minion' })).toEqual([0, 1, 2, 3]);
@@ -214,7 +215,7 @@ describe('reminder targets', () => {
 	it('Recluse and Spy fit the info tokens they may register for', () => {
 		const { session } = grimoire(['investigator', 'washerwoman', 'recluse', 'spy', 'imp']);
 		expect(fitting(session, { characterId: 'investigator', label: 'Minion' })).toEqual([2, 3]);
-		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([0, 3]);
+		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([0, 1, 3]);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Knight: a sober Knight's Know tokens are never on
@@ -237,10 +238,21 @@ describe('reminder targets', () => {
 	});
 
 	// https://wiki.bloodontheclocktower.com/Marionette: sits next to the Demon, and is evil.
-	it('Marionette: next to the Demon', () => {
-		const { session } = grimoire(['chef', 'marionette:empath+evil', 'imp', 'monk', 'saint']);
+	// Placing it makes a good player the Marionette, and evil: it fits the nearest good player
+	// each side of the Demon, passing over evil players (Trevor, 2026-10-23).
+	it('Marionette: the nearest good player each side of the Demon', () => {
+		const { session } = grimoire(['chef', 'empath', 'imp', 'scarletwoman', 'monk']);
 		expect(fitting(session, { characterId: 'marionette', label: 'Is The Marionette' })).toEqual([
-			1
+			1, 4
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Recluse: a Recluse may register as the Demon, so the
+	// good players beside it fit too (Trevor, 2026-10-23).
+	it('Marionette: beside a Recluse who may register as the Demon', () => {
+		const { session } = grimoire(['chef', 'recluse', 'monk', 'soldier', 'imp', 'saint']);
+		expect(fitting(session, { characterId: 'marionette', label: 'Is The Marionette' })).toEqual([
+			0, 2, 3, 5
 		]);
 	});
 
@@ -250,14 +262,28 @@ describe('reminder targets', () => {
 		expect(fitting(session, { characterId: 'undertaker', label: 'Died Today' })).toEqual([1]);
 	});
 
-	// https://wiki.bloodontheclocktower.com/Riot: the day tokens mark the game, not a player.
-	it('Riot: day tokens are never on a seat', () => {
+	// https://wiki.bloodontheclocktower.com/Riot: the day tokens go on the Riot itself, as every
+	// token with nowhere else to go does (Trevor, 2026-10-23).
+	it('Riot: day tokens go on the Riot', () => {
 		const { session, seats } = grimoire(['riot', 'chef']);
-		expect(fitting(session, { characterId: 'riot', label: 'Day 1' })).toEqual([]);
+		expect(fitting(session, { characterId: 'riot', label: 'Day 1' })).toEqual([0]);
 		expect(
 			reminderTargetMisses(
 				session.game,
 				{ characterId: 'riot', label: 'Day 1' },
+				seats[1],
+				characters
+			)
+		).toEqual(['not-self']);
+	});
+
+	// A Fabled's own tokens still mark the game: a Fabled has no seat.
+	it('Fabled tokens still mark the game', () => {
+		const { session, seats } = grimoire(['chef']);
+		expect(
+			reminderTargetMisses(
+				session.game,
+				{ characterId: 'deusexfiasco', label: 'Whoopsie' },
 				seats[0],
 				characters
 			)
@@ -275,5 +301,104 @@ describe('reminder targets', () => {
 		expect(fitting(session, { characterId: 'homebrew', label: 'Anything' })).toEqual([0, 1]);
 		expect(targetRule({ characterId: 'chef', label: 'Nope' })).toBeUndefined();
 		expect(fitting(session, { characterId: 'slayer', label: 'No Ability' })).toEqual([0, 1]);
+	});
+});
+
+// Trevor's corrections, 2026-10-23: one test per line of his list.
+describe('placement corrections (Trevor, 2026-10-23)', () => {
+	const know = (characterId: string, seatId: string): Command => ({
+		type: 'AddReminder',
+		seatId,
+		reminder: { characterId, label: 'Know' }
+	});
+
+	// https://wiki.bloodontheclocktower.com/Noble: three players, exactly one of them evil.
+	it('Noble: Know fits two good players and one evil player', () => {
+		const { session, seats, ctx } = grimoire(['noble', 'chef', 'monk', 'imp', 'poisoner']);
+		const two = run(session, ctx, know('noble', seats[1]), know('noble', seats[2]));
+		expect(fitting(two, { characterId: 'noble', label: 'Know' })).toEqual([3, 4]);
+		const three = run(two, ctx, know('noble', seats[3]));
+		expect(fitting(three, { characterId: 'noble', label: 'Know' })).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Steward: the good player may be the Steward.
+	it('Steward: may learn themself', () => {
+		const { session } = grimoire(['steward', 'chef', 'imp']);
+		expect(fitting(session, { characterId: 'steward', label: 'Know' })).toEqual([0, 1]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Bounty_Hunter: an evil Bounty Hunter may be the evil
+	// player it knows.
+	it('Bounty Hunter: may learn themself', () => {
+		const { session } = grimoire(['bountyhunter+evil', 'imp', 'chef']);
+		expect(fitting(session, { characterId: 'bountyhunter', label: 'Know' })).toEqual([0, 1]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Investigator: no self rule; the Investigator is no
+	// Minion, so it never fits anyway.
+	it('Investigator: Minion fits only Minions, with no rule about self', () => {
+		const { session } = grimoire(['investigator', 'poisoner', 'imp']);
+		expect(targetRule({ characterId: 'investigator', label: 'Minion' })?.seat).toBe('any');
+		expect(fitting(session, { characterId: 'investigator', label: 'Minion' })).toEqual([1]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Grandmother: any good player, of any type, since a
+	// Minion or Demon may be good.
+	it('Grandmother: Grandchild fits a good Minion', () => {
+		const { session } = grimoire(['grandmother', 'poisoner+good', 'imp']);
+		expect(fitting(session, { characterId: 'grandmother', label: 'Grandchild' })).toEqual([1]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Village_Idiot: the extra drunk one needs two or more.
+	it('Village Idiot: Drunk is offered only with 2 or more Village Idiots', () => {
+		const drunk = { characterId: 'villageidiot', label: 'Drunk' };
+		const one = grimoire(['villageidiot', 'chef', 'imp']);
+		expect(reminderOffered(one.session.game, drunk, characters)).toBe(false);
+		const two = grimoire(['villageidiot', 'villageidiot', 'imp']);
+		expect(reminderOffered(two.session.game, drunk, characters)).toBe(true);
+		expect(reminderOffered(one.session.game, { characterId: 'chef', label: 'x' }, characters)).toBe(
+			true
+		);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Undertaker: an executed Undertaker died today too,
+	// which the Cannibal may need.
+	it('Undertaker: Died Today fits the Undertaker', () => {
+		const { session } = grimoire(['undertaker!', 'chef']);
+		expect(fitting(session, { characterId: 'undertaker', label: 'Died Today' })).toEqual([0]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Professor: a dead Professor cannot act.
+	it('Professor: Alive never fits the Professor', () => {
+		const { session } = grimoire(['professor!', 'chef!', 'imp']);
+		expect(fitting(session, { characterId: 'professor', label: 'Alive' })).toEqual([1]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Minstrel
+	it('Minstrel: Everyone Is Drunk goes on the Minstrel', () => {
+		const { session } = grimoire(['minstrel', 'chef']);
+		expect(fitting(session, { characterId: 'minstrel', label: 'Everyone Is Drunk' })).toEqual([0]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Tea_Lady: only while both living neighbours are good.
+	it('Tea Lady: Cannot Die fits only while both living neighbours are good', () => {
+		const tea = { characterId: 'tealady', label: 'Cannot Die' };
+		expect(fitting(grimoire(['chef', 'tealady', 'monk', 'imp']).session, tea)).toEqual([0, 2]);
+		expect(fitting(grimoire(['chef', 'tealady', 'imp', 'monk']).session, tea)).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Mezepheles: a good Mezepheles may say the word.
+	it('Mezepheles: Turns Evil fits a good Mezepheles', () => {
+		const { session } = grimoire(['mezepheles+good', 'chef', 'imp']);
+		expect(fitting(session, { characterId: 'mezepheles', label: 'Turns Evil' })).toEqual([0, 1]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Xaan, /Fang_Gu: tokens with no target go on their own
+	// character.
+	it('Xaan nights and the Fang Gu’s Once go on their own character', () => {
+		const { session } = grimoire(['xaan', 'fanggu', 'chef']);
+		expect(fitting(session, { characterId: 'xaan', label: 'Night 1' })).toEqual([0]);
+		expect(fitting(session, { characterId: 'xaan', label: 'X' })).toEqual([0]);
+		expect(fitting(session, { characterId: 'fanggu', label: 'Once' })).toEqual([1]);
 	});
 });

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // Script logos (Trevor, 2026-10-18): TPI's edition logo for the base three, the author's
 // `_meta.logo` link for other scripts, faint behind the board and beside the name in Search.
@@ -16,7 +17,7 @@ async function startGame(page: Page) {
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 }
 
 const loaded = (page: Page, selector: string) =>

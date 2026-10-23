@@ -1,3 +1,9 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"registersAs": {
+		"self": {
+			"alignments": ["good"],
+			"types": ["townsfolk", "outsider"]
+		}
+	}
 }

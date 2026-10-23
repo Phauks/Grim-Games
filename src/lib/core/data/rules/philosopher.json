@@ -1,0 +1,17 @@
+{
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "other",
+			"types": ["townsfolk", "outsider"],
+			"alignment": "good",
+			"note": "The in-play player whose good character the Philosopher took; removed if the Philosopher dies."
+		},
+		"Is The Philosopher": {
+			"seat": "self",
+			"note": "The Philosopher's own seat after their token is swapped for the chosen character."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	}
+}

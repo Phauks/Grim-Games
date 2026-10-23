@@ -3,5 +3,19 @@
 		"who": "marked",
 		"token": "Safe",
 		"from": "any"
+	},
+	"reminderTargets": {
+		"Safe": {
+			"seat": "any",
+			"note": "Each of the two players the Innkeeper chooses."
+		},
+		"Drunk": {
+			"seat": "any",
+			"withLabel": "Safe",
+			"note": "One of the two players the Innkeeper protected."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

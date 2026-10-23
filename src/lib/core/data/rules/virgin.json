@@ -1,0 +1,15 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Virgin the first time they are nominated."
+		}
+	},
+	"onNominated": {
+		"by": "townsfolk",
+		"effect": "execute-nominator"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

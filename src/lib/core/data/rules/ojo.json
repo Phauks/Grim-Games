@@ -1,0 +1,14 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player holding the named character, or a player the Storyteller picks when it is not in play."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

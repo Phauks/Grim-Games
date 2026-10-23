@@ -1,7 +1,7 @@
 /**
  * Writes the setup preparation for every character as JSON, for review outside the app:
  * `[{ id, prep: [{ text, tokens, target? }] }]`, `prep` empty when there is none. Generated
- * from `src/lib/core/rules/setup-reminders.data.ts`, so edit that file, not the output.
+ * from the `setupPrep` key of each `src/lib/core/data/rules/<id>.json`, so edit those, not the output.
  *
  *   npm run export:setup-prep -- <output.json>
  */

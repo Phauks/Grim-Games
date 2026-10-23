@@ -1,0 +1,18 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"3 Attacks": {
+			"seat": "self",
+			"note": "On the Po after it chooses no one, until it takes three kills."
+		},
+		"Dead": {
+			"seat": "any",
+			"note": "Any player the Po attacks."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

@@ -16,14 +16,19 @@ export async function openMenu(page: Page) {
 	return drawer;
 }
 
-/** Opens Settings from the menu: the sidebar's when it shows, else the drawer's. */
-export async function openSettingsDialog(page: Page) {
+/** The menu: the sidebar when it shows, else the drawer, opened. */
+export async function theMenu(page: Page) {
 	// Once the page is up, so a sidebar still on its way isn't mistaken for none.
 	await expect(menuButton(page)).toBeVisible();
 	const sidebar = page.getByRole('navigation', { name: 'Menu', exact: true }).filter({
 		visible: true
 	});
-	const nav = (await sidebar.count()) ? sidebar : await openMenu(page);
+	return (await sidebar.count()) ? sidebar : openMenu(page);
+}
+
+/** Opens Settings from the menu. */
+export async function openSettingsDialog(page: Page) {
+	const nav = await theMenu(page);
 	const settings = nav.getByRole('button', { name: 'Settings', exact: true });
 	if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) await settings.tap();
 	else await settings.click();

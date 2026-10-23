@@ -1,8 +1,11 @@
 import type { Command } from '#lib/core/engine/index.ts';
-import { demonToBecome, foolSurvives, type Night } from '#lib/core/rules/index.ts';
+import { demonToBecome, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
-import type { CharacterId } from '#lib/core/data/index.ts';
+import { toScript, type CharacterId, type ReminderLabel } from '#lib/core/data/index.ts';
+import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { loadScriptChoice, type ScriptChoice } from '#lib/features/modes/script-choices.svelte.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -217,8 +220,26 @@ export class Grimoire {
 		if (misfit) toast('Note', misfit);
 		this.askAlignment(command);
 		this.askDemon(command);
-		this.askFool(command);
+		this.askFirstDeath(command);
 		return true;
+	}
+
+	/**
+	 * Swaps the game's script for one picked as on New game (Game info's pencil; Trevor,
+	 * 2026-10-23), keeping the seats, names and room. Characters the new script lacks stay
+	 * where they are, named together in one note (warn, never lock).
+	 */
+	async changeScript(choice: ScriptChoice): Promise<void> {
+		let script;
+		try {
+			script = toScript(loadScriptChoice(choice, await loadOfficialData()));
+		} catch (e) {
+			return void reportError(e, { area: 'grimoire' });
+		}
+		const result = this.open.run({ type: 'ChangeScript', script });
+		if (!result.ok) return void toast('Not done', result.error.message);
+		const missing = result.warnings.filter((w) => w.code === 'not-on-script');
+		if (missing.length) toast('Note', `${missing.map((w) => w.message).join('. ')}.`);
 	}
 
 	/** The seat and reminder an AddReminder or MoveReminder just put down. */
@@ -240,13 +261,15 @@ export class Grimoire {
 	demonAsk = $state.raw<{ seatId: SeatId; characterId: CharacterId } | undefined>();
 
 	/**
-	 * A Fool just marked dead whose ability is unused and works (not by the Assassin): the
-	 * board offers to keep them alive and spend the ability (`foolSurvives`; Trevor,
-	 * 2026-10-22).
+	 * A player just marked dead whose ability stops their first death, unused and working (the
+	 * Fool, not by the Assassin): the board offers to keep them alive and spend the ability
+	 * (`survivesFirstDeath`; Trevor, 2026-10-22).
 	 */
-	foolAsk = $state.raw<{ seatId: SeatId } | undefined>();
+	firstDeathAsk = $state.raw<
+		{ seatId: SeatId; characterId: CharacterId; spentToken: ReminderLabel } | undefined
+	>();
 
-	private askFool(command: Command): void {
+	private askFirstDeath(command: Command): void {
 		const death =
 			command.type === 'SetDead' && command.dead
 				? { seatId: command.seatId, cause: command.cause }
@@ -254,8 +277,18 @@ export class Grimoire {
 					? { seatId: command.seatId, cause: 'execution' as const }
 					: undefined;
 		if (!death || !this.open.game.seats[death.seatId]?.dead) return;
-		if (foolSurvives(this.open.game, death.seatId, death.cause, this.open.characters))
-			this.foolAsk = { seatId: death.seatId };
+		const saver = survivesFirstDeath(
+			this.open.game,
+			death.seatId,
+			death.cause,
+			this.open.characters
+		);
+		if (saver)
+			this.firstDeathAsk = {
+				seatId: death.seatId,
+				characterId: saver.source.characterId,
+				spentToken: saver.spentToken
+			};
 	}
 
 	private askDemon(command: Command): void {

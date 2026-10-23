@@ -16,6 +16,30 @@ const inked = (canvas: Locator) =>
 		return count;
 	});
 
+/** Pixels between the ink and each edge of the canvas, plus the canvas's size. */
+const inkMargins = (canvas: Locator) =>
+	canvas.evaluate((element) => {
+		const c = element as HTMLCanvasElement;
+		const data = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+		let [left, right, top, bottom] = [c.width, -1, c.height, -1];
+		for (let y = 0; y < c.height; y++)
+			for (let x = 0; x < c.width; x++)
+				if (data[(y * c.width + x) * 4 + 3] > 0) {
+					left = Math.min(left, x);
+					right = Math.max(right, x);
+					top = Math.min(top, y);
+					bottom = Math.max(bottom, y);
+				}
+		return {
+			left,
+			right: c.width - 1 - right,
+			top,
+			bottom: c.height - 1 - bottom,
+			width: c.width,
+			height: c.height
+		};
+	});
+
 const padRows = (page: Page) => page.locator('[data-pad]');
 
 async function ready(page: Page) {
@@ -240,34 +264,51 @@ test('a pad preview fits the drawing, centred in its box', async ({ page }) => {
 
 	const thumb = padRows(page).first().locator('canvas');
 	await expect.poll(() => inked(thumb)).toBeGreaterThan(0);
-	const extent = await thumb.evaluate((element) => {
-		const c = element as HTMLCanvasElement;
-		const data = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
-		let left = c.width;
-		let right = -1;
-		let top = c.height;
-		let bottom = -1;
-		for (let y = 0; y < c.height; y++)
-			for (let x = 0; x < c.width; x++)
-				if (data[(y * c.width + x) * 4 + 3] > 0) {
-					left = Math.min(left, x);
-					right = Math.max(right, x);
-					top = Math.min(top, y);
-					bottom = Math.max(bottom, y);
-				}
-		return {
-			left,
-			right: c.width - 1 - right,
-			top,
-			bottom: c.height - 1 - bottom,
-			height: c.height
-		};
-	});
+	const extent = await inkMargins(thumb);
 	// Centred both ways, and most of the preview's height: the preview is shaped like a phone's
 	// pad (Trevor, 2026-10-19), so the drawing is never stretched past the pad's own size.
 	expect(Math.abs(extent.left - extent.right)).toBeLessThanOrEqual(extent.height * 0.1);
 	expect(Math.abs(extent.top - extent.bottom)).toBeLessThanOrEqual(extent.height * 0.1);
 	expect(extent.top + extent.bottom).toBeLessThanOrEqual(extent.height * 0.4);
+});
+
+// On a wide screen the pad is wide, so its preview is too: a pad traced round its edges shows
+// as the whole preview, not a band in a tall box (Trevor, 2026-10-23). Opened again on a tall
+// screen, the drawing shrinks until it all shows.
+test('a wide pad has a wide preview, and still fits on a tall screen', async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 720 });
+	const { canvas } = await newPad(page);
+	const box = (await canvas.boundingBox())!;
+	const at = (x: number, y: number) => ({
+		x: box.x + box.width * x,
+		y: box.y + box.height * y
+	});
+	await touchDrag(page, at(0.05, 0.05), at(0.95, 0.05));
+	await touchDrag(page, at(0.95, 0.05), at(0.95, 0.95));
+	await touchDrag(page, at(0.95, 0.95), at(0.05, 0.95));
+	await touchDrag(page, at(0.05, 0.95), at(0.05, 0.05));
+	await expect.poll(() => inked(canvas)).toBeGreaterThan(0);
+	await page.keyboard.press('Escape');
+
+	const thumb = padRows(page).first().locator('canvas');
+	await expect.poll(() => inked(thumb)).toBeGreaterThan(0);
+	const preview = (await thumb.boundingBox())!;
+	expect(preview.width).toBeGreaterThan(preview.height);
+	// The outline fills the preview both ways.
+	const wide = await inkMargins(thumb);
+	expect(wide.left + wide.right).toBeLessThanOrEqual(wide.width * 0.15);
+	expect(wide.top + wide.bottom).toBeLessThanOrEqual(wide.height * 0.15);
+
+	await page.setViewportSize({ width: 390, height: 800 });
+	const again = await openPad(page);
+	await expect.poll(() => inked(again.canvas)).toBeGreaterThan(0);
+	// Every edge of the outline is on the pad, none cut off at the side.
+	const tall = await inkMargins(again.canvas);
+	expect(tall.left).toBeGreaterThan(0);
+	expect(tall.right).toBeGreaterThan(0);
+	expect(tall.top).toBeGreaterThan(0);
+	expect(tall.bottom).toBeGreaterThan(0);
+	expect(tall.left + tall.right).toBeLessThanOrEqual(tall.width * 0.2);
 });
 
 test('once a pen is used, a resting palm does not draw', async ({ page }) => {

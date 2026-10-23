@@ -1,3 +1,4 @@
+import { isMissingBuildFile, staleBuild } from '#lib/features/offline/stale-build.svelte.ts';
 import { readParsed, writeStored } from '#lib/ui/stored.ts';
 import {
 	describeThrown,
@@ -117,9 +118,12 @@ export function installGlobalErrorHandlers(): void {
 		// Failed <img>/<script> loads also fire `error` but without an Error; skip those.
 		if (!(event.error instanceof Error) && !event.message) return;
 		if (isBenignBrowserError(event.message)) return;
+		if (isMissingBuildFile(event.error ?? event.message)) return staleBuild.mark();
 		errorLog.report(event.error ?? event.message, { area: 'app', handled: false });
 	});
 	window.addEventListener('unhandledrejection', (event) => {
+		// A lazily loaded part of a build a newer one replaced (stale-build.svelte.ts).
+		if (isMissingBuildFile(event.reason)) return staleBuild.mark();
 		errorLog.report(event.reason, { area: 'app', handled: false });
 	});
 }

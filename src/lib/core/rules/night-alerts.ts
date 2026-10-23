@@ -7,8 +7,9 @@
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
- * - `may-bounce`: the Mayor, against the Demon, so another player might die instead;
- * - `survives-first-death`: the Fool, until their No Ability token is placed;
+ * - `may-bounce`: an ability that may move the kill elsewhere (the Mayor, against the Demon);
+ * - `survives-first-death`: an ability that stops its player's first death (the Fool), until
+ *   its spent token is placed;
  * - `on-death`: dying sets off an ability (the Ravenkeeper wakes, the Farmer passes on,
  *   the Grandmother dies with her grandchild...).
  *
@@ -26,7 +27,14 @@ import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { abilityState, protectors, type AbilitySource, type Impairment } from './ability.ts';
+import {
+	abilityState,
+	firstDeathSaver,
+	killRedirect,
+	protectors,
+	type AbilitySource,
+	type Impairment
+} from './ability.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -38,47 +46,35 @@ export interface NightKiller {
 	/** `self`: the ability can only kill its own player (the Gambler, the Acrobat). */
 	targets: 'any' | 'self';
 	/** The Assassin's kill ignores protection. */
-	ignoresProtection?: true;
-	wiki: string;
+	ignoresProtection: boolean;
 }
 
-const demon = (name: string): NightKiller => ({ by: 'demon', targets: 'any', wiki: W + name });
-const other = (name: string, targets: 'any' | 'self' = 'any'): NightKiller => ({
-	by: 'other',
-	targets,
-	wiki: W + name
-});
-
 /**
- * Night steps that can kill. Every Demon kills at night except the Riot and the Leviathan,
- * whose deaths happen by day.
+ * Whether `characterId`'s night step can kill, and how (`kills` in its rules block: our
+ * `data/rules/<id>.json`, or a custom character's `rules`). Every Demon kills at night except
+ * the Riot and the Leviathan, whose deaths happen by day.
  */
-export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = {
-	imp: demon('Imp'),
-	po: demon('Po'),
-	pukka: demon('Pukka'),
-	shabaloth: demon('Shabaloth'),
-	zombuul: demon('Zombuul'),
-	nodashii: demon('No_Dashii'),
-	vigormortis: demon('Vigormortis'),
-	fanggu: demon('Fang_Gu'),
-	vortox: demon('Vortox'),
-	legion: demon('Legion'),
-	lleech: demon('Lleech'),
-	ojo: demon('Ojo'),
-	kazali: demon('Kazali'),
-	yaggababble: demon('Yaggababble'),
-	alhadikhia: demon('Al-Hadikhia'),
-	lordoftyphon: demon('Lord_of_Typhon'),
-	lilmonsta: demon("Lil'_Monsta"),
-	assassin: { by: 'other', targets: 'any', ignoresProtection: true, wiki: W + 'Assassin' },
-	godfather: other('Godfather'),
-	gossip: other('Gossip'),
-	lycanthrope: other('Lycanthrope'),
-	harlot: other('Harlot'),
-	gambler: other('Gambler', 'self'),
-	acrobat: other('Acrobat', 'self')
-};
+export function nightKiller(
+	characterId: CharacterId,
+	characters?: CharacterLookup
+): NightKiller | undefined {
+	const kills = rulesOf(characterId, characters)?.kills;
+	return (
+		kills && {
+			by: kills.by,
+			targets: kills.targets ?? 'any',
+			ignoresProtection: kills.ignoresProtection ?? false
+		}
+	);
+}
+
+/** The official characters whose night step can kill. */
+export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = Object.fromEntries(
+	[...OFFICIAL_RULES.keys()].flatMap((id) => {
+		const killer = nightKiller(id);
+		return killer ? [[id, killer]] : [];
+	})
+);
 
 /**
  * Whether `characterId`'s ability is set off by its player's death, and by which deaths
@@ -144,7 +140,7 @@ export function nightStepAlerts(
 		});
 	}
 
-	const killer = NIGHT_KILLERS[characterId];
+	const killer = nightKiller(characterId, characters);
 	if (!killer) return out;
 	const subjects = (killer.targets === 'self' ? actors : game.seating).filter(
 		(s) => getSeat(game, s)?.dead === false
@@ -180,6 +176,10 @@ function deathAlerts(
 	const out: NightAlert[] = [];
 	const alert = (kind: NightAlertKind, source: AbilitySource, wiki: string | undefined) =>
 		out.push(sourceAlert(game, kind, seatId, source, characters, wiki));
+	const wikiOf = (source: AbilitySource) => {
+		const character = characters.get(source.characterId);
+		return character && wikiUrl(character);
+	};
 	const holder = (id: CharacterId) =>
 		game.seating.find((s) => trueCharacter(game, s, characters) === id);
 
@@ -189,18 +189,12 @@ function deathAlerts(
 			out.push({ kind: 'protected', seatId, source: 'override', works: true, impairments: [] });
 		}
 		for (const { source } of protectors(game, seatId, characters, killer.by)) {
-			const character = characters.get(source.characterId);
-			alert('protected', source, character && wikiUrl(character));
+			alert('protected', source, wikiOf(source));
 		}
-		if (own === 'mayor' && killer.by === 'demon') {
-			alert('may-bounce', { characterId: 'mayor', seatId }, W + 'Mayor');
-		}
-		const foolSpent = seat.reminders.some(
-			(r) => r.characterId === 'fool' && r.label === 'No Ability'
-		);
-		if (own === 'fool' && !foolSpent) {
-			alert('survives-first-death', { characterId: 'fool', seatId }, W + 'Fool');
-		}
+		const redirect = killRedirect(game, seatId, characters, killer.by);
+		if (redirect) alert('may-bounce', redirect, wikiOf(redirect));
+		const saver = firstDeathSaver(game, seatId, characters);
+		if (saver) alert('survives-first-death', saver.source, wikiOf(saver.source));
 	}
 
 	const trigger = own ? onDeathTrigger(own, characters) : undefined;

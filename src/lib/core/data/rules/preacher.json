@@ -1,0 +1,22 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "other",
+			"types": ["minion"],
+			"note": "A Minion the Preacher chooses, alive or dead."
+		}
+	},
+	"impairs": {
+		"tokens": {
+			"No Ability": {
+				"reason": "no-ability",
+				"on": "carrier",
+				"type": "minion",
+				"whileWorks": true
+			}
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	}
+}

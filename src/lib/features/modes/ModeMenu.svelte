@@ -11,7 +11,7 @@
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
-	import { fromScript, scriptToJson } from '#lib/core/data/index.ts';
+	import { editionWikiUrl, fromScript, scriptEdition, scriptToJson } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -84,7 +84,10 @@
 	// The saved script the game started from: its name links its source page, and its version
 	// shows when the game's own script names none (Trevor, backlog L14).
 	const savedChoice = $derived(savedChoiceFor(game.script));
-	const scriptPage = $derived(savedChoice?.source ? sourcePage(savedChoice.source) : undefined);
+	const scriptPage = $derived(
+		(savedChoice?.source && sourcePage(savedChoice.source)) ??
+			editionWikiUrl(scriptEdition(game.script)?.id)
+	);
 	const info = $derived([
 		{
 			key: 'script',
@@ -228,15 +231,6 @@
 							>{:else}{row.value?.trim() || none}{/if}{#if 'extra' in row && row.extra}<span
 								class="extra"
 								data-testid="info-extra">{row.extra}</span
-							>{/if}{#if row.key === 'script'}<span class="share-source"
-								><IconButton
-									icon="share"
-									label={t('modes.info.shareSource')}
-									title={scriptPage ? t('modes.info.shareSource') : t('modes.info.noSource')}
-									disabled={!scriptPage}
-									data-testid="share-source"
-									onclick={() => void shareSource()}
-								/></span
 							>{/if}
 					</td>
 				</tr>
@@ -310,6 +304,16 @@
 	</div>
 {/snippet}
 {#snippet edit()}
+	<!-- Share and download sit with Edit in the header, so the script's name has its line to
+	     itself (Trevor, 2026-10-23: the name sat oddly beside an inline button). -->
+	<IconButton
+		icon="share"
+		label={t('modes.info.shareSource')}
+		title={scriptPage ? t('modes.info.shareSource') : t('modes.info.noSource')}
+		disabled={!scriptPage}
+		data-testid="share-source"
+		onclick={() => void shareSource()}
+	/>
 	<IconButton
 		icon="download"
 		label={t('modes.info.download')}
@@ -317,7 +321,7 @@
 		onclick={() => void downloadScript()}
 	/>
 	{#if onEdit}<IconButton
-			icon="rename"
+			icon="edit"
 			label={t('modes.info.edit')}
 			data-testid="game-info-edit"
 			onclick={() => {
@@ -336,7 +340,10 @@
 {#if onEdit}
 	<GameInfoEditDialog
 		bind:open={editing}
-		initial={{ storytellerName: game.storytellerName ?? '' }}
+		initial={{
+			storytellerName: game.storytellerName ?? '',
+			script: scriptEdition(game.script)?.id ?? savedChoice?.value
+		}}
 		onsave={onEdit}
 	/>
 {/if}
@@ -426,12 +433,6 @@
 		min-width: max(100%, var(--tap-target));
 		min-height: max(100%, var(--tap-target));
 		transform: translate(-50%, -50%);
-	}
-	/* Share sits after the script's name, always there so the row never changes height. */
-	.share-source {
-		display: inline-block;
-		margin-inline-start: var(--space-1);
-		vertical-align: middle;
 	}
 	/* The Storyteller's row is a button: its name, tapped to rename them. */
 	.actions:empty {

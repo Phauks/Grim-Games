@@ -5,12 +5,12 @@
 	import { page } from '$app/state';
 	import favicon from '#lib/assets/favicon.svg';
 	import '#lib/ui/base.css';
-	import AppFooter from '#lib/features/about/AppFooter.svelte';
 	import UpdateBanner from '#lib/features/about/UpdateBanner.svelte';
 	import GlossaryPopover from '#lib/features/glossary/GlossaryPopover.svelte';
 	import { startAccount } from '#lib/features/account/start.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
+	import { loadAfresh, staleBuild } from '#lib/features/offline/stale-build.svelte.ts';
 	import { keepData } from '#lib/features/settings/data/keep-data.ts';
 	import { installApp } from '#lib/features/settings/install-app.svelte.ts';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
@@ -86,14 +86,21 @@
 	// A game in progress or a bag draw asks before any navigation leaves it (shell.ts).
 	beforeNavigate((navigation) => {
 		const to = navigation.to?.url ?? null;
-		if (!to || !mustAskBeforeLeaving(new URL(to.href), navigation.type, new URL(page.url.href)))
+		if (!to) return;
+		if (mustAskBeforeLeaving(new URL(to.href), navigation.type, new URL(page.url.href))) {
+			navigation.cancel();
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- an app URL SvelteKit resolved
+			leaveTo(() => void goto(to.href));
 			return;
-		navigation.cancel();
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- an app URL SvelteKit resolved
-		leaveTo(() => void goto(to.href));
+		}
+		// This build's files are gone (a newer build replaced them): the page loads afresh, on the
+		// build the service worker holds, instead of failing (stale-build.svelte.ts).
+		if (staleBuild.current && navigation.type !== 'leave' && loadAfresh(to.href)) {
+			navigation.cancel();
+		}
 	});
 
-	// A game in progress hides the sidebar and footer (src/lib/features/shell/shell.ts), and so
+	// A game in progress hides the sidebar (src/lib/features/shell/shell.ts), and so
 	// does a locked draw while the phone is passed round.
 	const shell = $derived(
 		showsAppShell(page.data) && !lockedDrawHidesShell(page.url.pathname, drawLock.lockedGame)
@@ -105,12 +112,10 @@
 	<title>{APP_NAME}</title>
 </svelte:head>
 
-<!-- Grows to fill the screen so the footer sits at the bottom on short pages. -->
 <div class="app-body" class:bare={!shell}>
 	{#if shell}<AppNav />{/if}
 	<div class="app-main">{@render children()}</div>
 </div>
-{#if shell}<AppFooter />{/if}
 
 <SettingsModal />
 <NavDrawer />
@@ -127,13 +132,10 @@
 		/* Clear of a landscape phone's notch (viewport-fit=cover in app.html). */
 		padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
 	}
-	/* Clear of the phone's status bar: there is no app header (2026-10-22). */
+	/* Clear of the phone's status and navigation bars: there is no app header (2026-10-22) or
+	   footer (2026-10-23). */
 	.app-body {
-		padding-top: var(--app-top);
-	}
-	/* No footer (a game): clear of the navigation bar here instead. */
-	.app-body.bare {
-		padding-bottom: env(safe-area-inset-bottom);
+		padding-block: var(--app-top) env(safe-area-inset-bottom);
 	}
 	/* The status bar's strip keeps the theme's colour while the page scrolls under it (an
 	   installed app on iPhone draws the page there; zero high elsewhere). */

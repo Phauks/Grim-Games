@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 /**
  * Game modes on New game (Trevor, 2026-10-17): choose a mode, inspect every part of it, and
@@ -76,7 +77,7 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 	await chooseMode(page, 'Standard');
 	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 });
 
 test('a mode’s own settings sit under Game mode settings, each with its description', async ({
@@ -669,7 +670,10 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 		.getByRole('button', { name: 'Start game' })
 		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
-	await expect(page.getByRole('heading', { name: 'Hidden characters', level: 1 })).toBeVisible();
+	// Named for the rules, since the characters may not stay hidden; the rule that opened the
+	// screen sits at its top (Trevor, 2026-10-23).
+	await expect(page.getByRole('heading', { name: 'Special rules', level: 1 })).toBeVisible();
+	await expect(page.getByTestId('rule-header')).toContainText('A Script of Infinite Possibilities');
 	const extras = page.getByTestId('extras').locator('li');
 	// Up to four, one of each type (Trevor, 2026-10-19).
 	await expect(extras).toHaveCount(4);
@@ -880,6 +884,9 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 		.getByRole('button', { name: 'Specters vote and ability' })
 		.tap();
 	const sheet = page.getByRole('dialog', { name: 'Specters vote and ability' });
+	// The rule behind the sheet sits at its top (Trevor, 2026-10-23).
+	await expect(sheet.getByTestId('rule-header')).toContainText('Specters');
+	await expect(sheet.getByRole('button', { name: 'Inspect Specters' })).toBeVisible();
 	await expect(sheet).toBeVisible();
 	await expect(page).toHaveURL(new RegExp(`/grimoire/${gameId}$`));
 	// The Storyteller sets the ability: the Wizard's by default, or their own words.
@@ -1027,7 +1034,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 		page.getByTestId('chosen-script').getByRole('link', { name: "Open the script's source page" })
 	).toHaveAttribute('href', /\/script\/7\/2\.2/);
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const more = page.getByRole('dialog', { name: 'Grimoire' });
@@ -1045,7 +1052,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	);
 	await expect(info.locator('[data-field="version"] td')).toHaveText('2.2');
 	// Its source can be passed on, and its file saved (Trevor, 2026-10-22, plan G3).
-	await expect(info.getByTestId('share-source')).toBeEnabled();
+	await expect(page.getByTestId('share-source')).toBeEnabled();
 	const download = page.waitForEvent('download');
 	await page.getByTestId('game-info-download').tap();
 	const file = await download;
@@ -1055,7 +1062,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	expect(json).toContain('chef');
 });
 
-test('Game info opens a special rule in full when tapped, and a script with no source cannot be shared', async ({
+test('Game info opens a special rule in full when tapped, and a base script shares its wiki page', async ({
 	page
 }) => {
 	// Trevor, 2026-10-22 (plan G5): "allow clicking game mode or special rules in game info to
@@ -1068,7 +1075,7 @@ test('Game info opens a special rule in full when tapped, and a script with no s
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const more = page.getByRole('dialog', { name: 'Grimoire' });
 	const entry = more.getByRole('button', { name: 'Game info' });
@@ -1081,15 +1088,26 @@ test('Game info opens a special rule in full when tapped, and a script with no s
 	const info = page.getByTestId('game-info');
 	// Standard is no mode to open; the rule's name opens its About, parts and rule file.
 	await expect(info.locator('[data-field="mode"] button')).toHaveCount(0);
-	// A built-in script has no source page: Share stays in its place, off, saying why.
-	const share = info.getByTestId('share-source');
-	await expect(share).toBeDisabled();
-	await expect(share).toHaveAttribute('title', 'This script has no source page to share');
+	// A base script's source page is its wiki page (Trevor, 2026-10-23), so Share is on.
+	await expect(info.getByRole('link', { name: 'Trouble Brewing' })).toHaveAttribute(
+		'href',
+		'https://wiki.bloodontheclocktower.com/Trouble_Brewing'
+	);
+	await expect(page.getByTestId('share-source')).toBeEnabled();
 	await info.getByRole('button', { name: 'Inspect Stowed Away' }).tap();
 	const inspect = page.getByRole('dialog', { name: 'Stowed Away' });
 	await expect(inspect.getByTestId('mode-about')).toBeVisible();
 	await expect(inspect.getByRole('button', { name: 'Rule file', exact: true })).toBeVisible();
 	await noSidewaysScroll(page);
+});
+
+test('a base script opens its wiki page from New game', async ({ page }) => {
+	// Trevor, 2026-10-23: the base three link the BotC wiki as their source.
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Bad Moon Rising').tap();
+	await expect(
+		page.getByTestId('chosen-script').getByRole('link', { name: "Open the script's source page" })
+	).toHaveAttribute('href', 'https://wiki.bloodontheclocktower.com/Bad_Moon_Rising');
 });
 
 test('a custom script without a version shows N/A as its version', async ({ page }) => {
@@ -1333,7 +1351,7 @@ test('each special rule takes its own line under the script name in the board co
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	const corner = page.getByTestId('script-title');
 	const lines = corner.getByTestId('game-mode');
 	await expect(corner).toBeVisible();
@@ -1363,7 +1381,7 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	// The death is marked on the board (Trevor, 2026-10-20), then read in the day view.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
@@ -1441,7 +1459,13 @@ test('Start game restates the special rules first, and Back returns to New game'
 	await expect(items).toHaveCount(2);
 	await expect(items.nth(1)).toContainText('Binary Supernovae');
 	await expect(items.nth(1)).toContainText('If a Demon dies by execution, good wins.');
-	await expect(items.nth(0)).toContainText('Name the characters Off');
+	// The rule's switches can still change here (Trevor, 2026-10-23).
+	const announce = items
+		.nth(0)
+		.getByRole('checkbox', { name: 'Storyteller announces character', includeHidden: true });
+	await expect(announce).not.toBeChecked();
+	await items.nth(0).getByText('Storyteller announces character', { exact: true }).tap();
+	await expect(announce).toBeChecked();
 	await noSidewaysScroll(page);
 	// Back keeps everything as chosen.
 	await recap.getByRole('button', { name: 'Back' }).tap();
@@ -1451,6 +1475,7 @@ test('Start game restates the special rules first, and Back returns to New game'
 		'Special rules (2)'
 	);
 	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(announce).toBeChecked();
 	await recap.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 });
@@ -1484,7 +1509,10 @@ test('+1 has a switch for naming its character, shown in its instructions', asyn
 		.getByTestId('special-rules')
 		.locator('li')
 		.filter({ has: page.getByText('+1', { exact: true }) });
-	const named = plusOne.getByRole('checkbox', { name: 'Name the characters', includeHidden: true });
+	const named = plusOne.getByRole('checkbox', {
+		name: 'Storyteller announces character',
+		includeHidden: true
+	});
 	// Always there, so nothing moves; usable once +1 is on.
 	await expect(named).toBeDisabled();
 	await plusOne.getByText('+1', { exact: true }).tap();
@@ -1497,7 +1525,7 @@ test('+1 has a switch for naming its character, shown in its instructions', asyn
 		await expect(inspect).toBeHidden();
 	};
 	await inspectPlusOne('Tell the table that one character from off the script is in play.');
-	await plusOne.getByText('Name the characters', { exact: true }).tap();
+	await plusOne.getByText('Storyteller announces character', { exact: true }).tap();
 	await expect(named).toBeChecked();
 	await inspectPlusOne('Tell the table which character from off the script is in play.');
 	await noSidewaysScroll(page);
@@ -1515,7 +1543,7 @@ test('Binary Supernovae asks for one more Demon, and an executed Demon wins it f
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
@@ -1564,4 +1592,39 @@ test('New game previews the script as it will play, beside the settings', async 
 	await chooseMode(page, 'Two games at once');
 	await expect(preview.getByRole('heading', { name: 'Town 2 script' })).toBeVisible();
 	await noSidewaysScroll(page);
+});
+
+test('the script preview turns light from its own switch, and Settings > Player shows the same switch', async ({
+	page
+}) => {
+	await page.goto('/new');
+	const copy = page.getByTestId('script-preview').getByTestId('script-copy');
+	await copy.getByText('Chef').first().waitFor();
+	const light = copy.getByRole('checkbox', { name: 'Light background' });
+	await expect(light).not.toBeChecked();
+	const size = async () => {
+		const box = await copy.boundingBox();
+		return box && { width: box.width, height: box.height };
+	};
+	const before = await size();
+	await copy.getByText('Light background').tap();
+	await expect(light).toBeChecked();
+	await expect(copy).toHaveCSS('background-color', 'rgb(251, 248, 241)');
+	// Nothing moves when it turns light (no layout reflow).
+	expect(await size()).toEqual(before);
+
+	// Remembered on this device, and the same setting in Settings > Player.
+	await page.reload();
+	await expect(light).toBeChecked();
+	await openSettingsDialog(page);
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Player' })
+		.tap();
+	const setting = dialog.getByRole('checkbox', { name: 'Light background' });
+	await expect(setting).toBeChecked();
+	await dialog.getByText('Light background', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(light).not.toBeChecked();
 });

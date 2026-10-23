@@ -1,0 +1,18 @@
+{
+	"kills": {
+		"by": "other",
+		"targets": "self"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "self",
+			"note": "On the Gambler after a wrong guess."
+		}
+	},
+	"deathCheck": {
+		"kind": "wrong-guess"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

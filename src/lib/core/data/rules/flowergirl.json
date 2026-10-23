@@ -1,0 +1,18 @@
+{
+	"reminderTargets": {
+		"Demon Not Voted": {
+			"seat": "self",
+			"note": "Kept on the Flowergirl from dawn until the Demon votes."
+		},
+		"Demon Voted": {
+			"seat": "self",
+			"note": "Replaces the other token on the Flowergirl once the Demon has voted today."
+		}
+	},
+	"answers": {
+		"question": "demon-voted"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

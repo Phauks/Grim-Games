@@ -5,6 +5,8 @@
 	import SavedGamesList from '#lib/features/grimoire/SavedGamesList.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import { resolve } from '$app/paths';
 
 	let list = $state<SavedGamesList>();
 	let count = $state(0);
@@ -26,6 +28,11 @@
 	<ErrorBoundary area="grimoire">
 		<SavedGamesList bind:this={list} onCount={(n) => (count = n)} />
 	</ErrorBoundary>
+	<!-- Games joined as a player are listed on Join game, once (Trevor, 2026-10-23). -->
+	<p class="playing">
+		Playing a game?
+		<Button href={resolve('/join')} variant="quiet" icon="join">Join game</Button>
+	</p>
 </Page>
 
 <!-- Finished games stay in History; this clears only the games still being played. -->
@@ -39,3 +46,14 @@
 		They are removed from this device and cannot be brought back. Finished games stay in History.
 	</p>
 </ConfirmDialog>
+
+<style>
+	.playing {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0;
+		color: var(--on-surface-muted);
+	}
+</style>

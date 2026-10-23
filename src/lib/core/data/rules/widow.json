@@ -1,0 +1,26 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "The one good player who learns a Widow is in play."
+		},
+		"Poisoned": {
+			"seat": "any",
+			"note": "Any player the Widow poisons, possibly the Widow itself."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Know",
+				"text": "Choose a good player who will learn a Widow is in play: put [Know] on them",
+				"target": {
+					"choose": "good",
+					"choice": "a good player"
+				},
+				"reason": "This good player learns a Widow is in play"
+			}
+		]
+	}
+}

@@ -63,6 +63,18 @@
 	--ghost-used: rgb(130 126 136); /* colour-ok: the badge looks the same on every theme */
 	--ghost-used-rim: rgb(90 86 96); /* colour-ok: the badge looks the same on every theme */
 	--ghost-used-wash: color-mix(in srgb, var(--ghost-used) 20%, transparent);
+	/* An unused ghost vote (DeadBadge): a light ghost on a night-dark badge, the same on every
+	   theme (Trevor, 2026-10-19). The day panel's ghost votes left invert it. */
+	--ghost-vote: rgb(244 236 218);
+	--ghost-vote-rim: rgb(232 222 200);
+	--ghost-vote-badge: rgb(16 12 20);
+
+	/* Printed paper is light whatever the theme: dark text on white (ScriptPrintSheet). */
+	--print-paper: white;
+	--print-selected: gainsboro;
+	--print-ink: black;
+	--print-muted: dimgray;
+	--print-rule: silver;
 
 	/* The chosen player count's column in the setup sheet table. */
 	--count-current: var(--heading);

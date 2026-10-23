@@ -1,0 +1,11 @@
+{
+	"reminderTargets": {
+		"Friend": {
+			"seat": "other",
+			"note": "The player the Ogre picked on their first night (optional token)."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	}
+}

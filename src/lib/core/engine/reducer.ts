@@ -401,6 +401,19 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				looseReminders: [...(lifted.game.looseReminders ?? []), lifted.reminder]
 			};
 		}
+		case 'GenericTokenAdded':
+			return { ...game, genericTokens: [...(game.genericTokens ?? []), { ...event.token }] };
+		case 'GenericTokenSet':
+			return {
+				...game,
+				genericTokens: (game.genericTokens ?? []).map((t) =>
+					t.tokenId === event.token.tokenId ? { ...event.token } : t
+				)
+			};
+		case 'GenericTokenRemoved': {
+			const genericTokens = (game.genericTokens ?? []).filter((t) => t.tokenId !== event.tokenId);
+			return genericTokens.length > 0 ? { ...game, genericTokens } : omit(game, 'genericTokens');
+		}
 		case 'StorytellerNameSet':
 			return event.name === undefined
 				? omit(game, 'storytellerName')
@@ -416,6 +429,10 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'ReminderSymbolColourSet':
 			return withReminder(game, event.reminderId, (r) =>
 				event.colour === undefined ? omit(r, 'symbolColour') : { ...r, symbolColour: event.colour }
+			);
+		case 'ReminderSymbolFillSet':
+			return withReminder(game, event.reminderId, (r) =>
+				event.fill ? { ...r, symbolFill: true } : omit(r, 'symbolFill')
 			);
 		case 'BluffsSet': {
 			const bluffs = game.bluffs.map((set) => [...set]);

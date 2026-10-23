@@ -1,0 +1,12 @@
+{
+	"reminderTargets": {
+		"Poisoned": {
+			"seat": "any",
+			"note": "Any player the Poisoner chooses.",
+			"ambiguous": "The wiki does not say whether the Poisoner can choose themselves or a dead player."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	}
+}

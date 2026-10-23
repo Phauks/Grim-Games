@@ -1,0 +1,23 @@
+{
+	"reminderTargets": {
+		"Amigo": {
+			"seat": "other",
+			"alignment": "same",
+			"note": "Another player who shares the Gnome's alignment."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Amigo",
+				"text": "Choose a player of the Gnome’s alignment as their amigo: put [Amigo] on them",
+				"target": {
+					"choose": "same-alignment",
+					"choice": "a player of the Gnome’s alignment",
+					"notSelf": true
+				},
+				"reason": "Everyone learns this player"
+			}
+		]
+	}
+}

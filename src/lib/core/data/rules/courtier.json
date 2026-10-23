@@ -1,0 +1,23 @@
+{
+	"reminderTargets": {
+		"Drunk 1": {
+			"seat": "any",
+			"note": "The player of the in-play character the Courtier named, on the first night of drunkenness."
+		},
+		"Drunk 2": {
+			"seat": "any",
+			"note": "Swapped onto the same drunk player on the second night."
+		},
+		"Drunk 3": {
+			"seat": "any",
+			"note": "Swapped onto the same drunk player on the third night."
+		},
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Courtier once the drunkenness has ended."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	}
+}

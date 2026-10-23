@@ -1,3 +1,14 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"redirectsKill": {
+		"from": "demon"
+	},
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "alive-at-dusk",
+				"alive": 3
+			}
+		]
+	}
 }

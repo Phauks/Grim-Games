@@ -2,7 +2,7 @@
  * The roadmap, kept in the repository so it ticks itself off: an item is done once a merged
  * change names its ID in brackets in its title, such as "Savant info generator (L2)", or is
  * one of the PRs listed with it. The IDs are the backlog plan's (D1, R1-R7, B1-B6, S1-S6,
- * P1-P2, L1-L28, G1-G5, A1, O1). Add new items here with their ID; never tick them by hand.
+ * P1-P2, L1-L28, G1-G9, A1, O1). Add new items here with their ID; never tick them by hand.
  */
 import type { BuildCommit } from './update-notes.ts';
 import type { Change } from './changelog.ts';
@@ -51,6 +51,11 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'Next game in the same room, with a script vote and a custom QR centre logo'
 			},
 			{ id: 'R6', title: 'Player avatars on seat tokens, from our own set' },
+			{
+				id: 'Q1',
+				title: "Shape your picture in the QR code's middle: whole or filled, zoom, corners"
+			},
+			{ id: 'Q2', title: "QR codes' squares and corner markers in other shapes, such as dots" },
 			{ id: 'J1', title: "Join game shows nothing from the phone until the room's script arrives" },
 			{ id: 'J2', title: 'Scan a code on Join game, with the camera in the app' },
 			{ id: 'J3', title: 'Password fields are masked, with an eye button to show them' },
@@ -60,6 +65,17 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			},
 			{ id: 'J5', title: 'The Storyteller can set a time limit on the script vote' },
 			{ id: 'J6', title: "The script vote finds scripts with New game's own script controls" },
+			{
+				id: 'J7',
+				title: "The script vote in two columns, with the room's code shown before it opens"
+			},
+			{ id: 'J8', title: 'Join game has one title and one Share, and a camera icon to scan' },
+			{ id: 'J10', title: "The script's logo beside its name on the player's screen" },
+			{ id: 'J11', title: 'Joining a game opens the script once you have asked for a seat' },
+			{ id: 'J12', title: "The player's Room tab folds into the script view" },
+			{ id: 'J13', title: "The player's grim looks exactly like the Storyteller's board" },
+			{ id: 'J14', title: "Resume game points players to Join game's list of their games" },
+			{ id: 'J15', title: 'Trackpad scrolling over the guess sheet on a laptop' },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
 		]
 	},
@@ -69,7 +85,14 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'G1', title: 'New game shows a spinner while a script version loads' },
 			{ id: 'G2', title: 'New game previews the script as it will play, beside the settings' },
 			{ id: 'G3', title: "Game info downloads the script's file and shares its source" },
-			{ id: 'G5', title: 'Game info opens the game mode or a special rule in full when tapped' }
+			{ id: 'G5', title: 'Game info opens the game mode or a special rule in full when tapped' },
+			{ id: 'G6', title: 'A light background switch on every script sheet, also in Settings' },
+			{ id: 'G7', title: 'One start flow for every game, with Back on every step' },
+			{ id: 'G8', title: 'Change the script from inside a game, keeping its players' },
+			{
+				id: 'G9',
+				title: 'Game info shows everything the board corner can, join code and Game time too'
+			}
 		]
 	},
 	{
@@ -109,7 +132,20 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'An unnamed seat shows "Seat N" where its name is asked for',
 				prs: [364]
 			},
-			{ id: 'L33', title: 'Day ghost votes count: a dark ghost on white', prs: [355] }
+			{ id: 'L33', title: 'Day ghost votes count: a dark ghost on white', prs: [355] },
+			{ id: 'L41', title: 'Savant information: Use these and Cancel always respond' },
+			{ id: 'L42', title: 'The Pit-Hag is no longer listed as a day ability' },
+			{ id: 'L43', title: 'The Flowergirl’s Demon voted sits in her own row' },
+			{ id: 'L44', title: 'Day rows split by dividers, not bordered cards' },
+			{ id: 'L45', title: 'Day view in two columns on wide screens' },
+			{ id: 'L46', title: 'End of night offers to set Savant information' },
+			{ id: 'L47', title: 'Savant information: type your own statements' },
+			{ id: 'L48', title: 'Savant information: no lock button' },
+			{ id: 'L49', title: 'Savant information: True or False, with the reason' },
+			{ id: 'L50', title: 'Savant information: a spoiler-free view to show' },
+			{ id: 'L56', title: 'Player claims in town: one way to log them' },
+			{ id: 'L57', title: 'Juggler claims: log the guesses' },
+			{ id: 'L58', title: 'Gossip claims: log the statement, true or false' }
 		]
 	},
 	{
@@ -141,8 +177,13 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'Tell a script from a character or a character collection when adding JSON',
 				prs: [329]
 			},
-			{ id: 'L25', title: 'Edit custom scripts in place from the ⋯ menu' },
-			{ id: 'P1', title: 'Almanac link in the Glossary' },
+			{ id: 'L25', title: 'Edit custom scripts in place from the ⋯ menu', prs: [345] },
+			{ id: 'P1', title: 'Almanac link in the Glossary', prs: [357] },
+			{ id: 'L37', title: "New game opens the chosen script's source page", prs: [368] },
+			{ id: 'L51', title: 'Search: the list and the script details as one surface' },
+			{ id: 'L52', title: 'Search: open the shown script at its source' },
+			{ id: 'L53', title: 'The base three scripts link their wiki pages' },
+			{ id: 'L55', title: 'Library: New folder is made at once, named "New folder"' },
 			{ id: 'P2', title: 'Alternate art packs in Icons settings' }
 		]
 	},
@@ -177,6 +218,8 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'Buttons stand out from what is behind them; End game is a red button'
 			},
 			{ id: 'S12', title: 'Lists of information never run together without a line or gap' },
+			{ id: 'S17', title: 'Every colour follows the theme: no hard-coded colours' },
+			{ id: 'S19', title: 'One icon per meaning: every edit button is the pencil' },
 			{ id: 'B5', title: 'Reminder glow and source mark settings' },
 			{ id: 'L16', title: 'Glossary: every character of a script and character type', prs: [324] },
 			{ id: 'O1', title: 'New app logo' }

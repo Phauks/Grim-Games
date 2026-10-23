@@ -1,0 +1,39 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"About To Die": {
+			"seat": "any",
+			"note": "The player secretly executed when a zero-vote test is forced."
+		},
+		"Dead": {
+			"seat": "any",
+			"note": "Any player who dies to Legion at night.",
+			"ambiguous": "The How to Run section never mentions the Dead token, so its placement is inferred from the ability."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"setupModifier": {
+		"summary": "Most players are Legion",
+		"ops": [
+			{
+				"kind": "set",
+				"type": "demon",
+				"values": "most"
+			},
+			{
+				"kind": "set",
+				"type": "minion",
+				"values": [0]
+			},
+			{
+				"kind": "any",
+				"type": "outsider"
+			}
+		],
+		"notes": ["More than half the players are Legion; the rest are good."]
+	}
+}

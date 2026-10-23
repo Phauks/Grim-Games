@@ -9,14 +9,26 @@
  * TypeScript move here one per PR (the list is in docs/shared-components.md).
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
-import type { ReminderLabel } from './types.ts';
+import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rules.ts';
+import { readSetupPrep, type SetupPrepRules } from './setup-prep-rules.ts';
+import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
+import { readReminderTargets, type TargetRule } from './target-rules.ts';
+import {
+	ALIGNMENTS,
+	CHARACTER_TYPES,
+	type Alignment,
+	type CharacterType,
+	type ReminderLabel
+} from './types.ts';
 import {
 	checkKeys,
 	describe,
 	isObject,
 	readBoolean,
 	readEnum,
+	readNumber,
 	readString,
+	readStringArray,
 	type Issues
 } from './validate.ts';
 
@@ -27,6 +39,38 @@ export type ReminderPrompt = (typeof REMINDER_PROMPTS)[number];
 /** Who did the killing: the Demon's kill, another ability's, or either. */
 export const KILLED_BY = ['demon', 'other', 'any'] as const;
 export type KilledBy = (typeof KILLED_BY)[number];
+
+/** What being nominated sets off: the nominator is executed straight away. */
+export const NOMINATED_EFFECTS = ['execute-nominator'] as const;
+export type NominatedEffect = (typeof NOMINATED_EFFECTS)[number];
+
+/**
+ * What a player says in town that the day log keeps for their ability (Trevor, 2026-10-23:
+ * L56, "these all relate to specific announcements in town by players"): seat and character
+ * guesses, one statement that is true or false, or two statements.
+ */
+export const DAY_CLAIMS = ['guesses', 'statement', 'statements'] as const;
+export type DayClaim = (typeof DAY_CLAIMS)[number];
+
+/**
+ * Night deaths the ability itself decides (`rules/night-deaths.ts`):
+ * - `wrong-guess`: the player guesses a player's character and dies if wrong (the Gambler);
+ * - `chose-impaired`: the player dies if their pick is drunk or poisoned (the Acrobat);
+ * - `chosen-good-dies`: a chosen good player dies and the Demon does not kill (the Lycanthrope);
+ * - `marked-killed-by-demon`: the player dies when the Demon kills whoever carries `token`
+ *   (the Grandmother's Grandchild).
+ */
+export const DEATH_CHECK_KINDS = [
+	'wrong-guess',
+	'chose-impaired',
+	'chosen-good-dies',
+	'marked-killed-by-demon'
+] as const;
+export type DeathCheckKind = (typeof DEATH_CHECK_KINDS)[number];
+export interface DeathCheckRule {
+	kind: DeathCheckKind;
+	token?: ReminderLabel;
+}
 
 export interface CharacterRules {
 	/** Reminders whose placing is the moment to change the seat's state, by label. */
@@ -44,6 +88,152 @@ export interface CharacterRules {
 	 * with its `token` (the Monk's "Safe"), against the Demon's kill only or any kill.
 	 */
 	protects?: Protects;
+	/** A kill on its player, by `from`, may land on another player instead (the Mayor). */
+	redirectsKill?: { from: (typeof PROTECTS_FROM)[number] };
+	/**
+	 * Its player's first death does not happen; placing `spentToken`, one of its reminders,
+	 * marks the ability used (the Fool's "No Ability").
+	 */
+	survivesFirstDeath?: { spentToken: ReminderLabel };
+	/**
+	 * The first time its player is nominated by a `by` character, `effect` happens (the
+	 * Virgin). Once used, the character's "No Ability" reminder marks it spent.
+	 */
+	onNominated?: { by: CharacterType; effect: NominatedEffect };
+	/**
+	 * The ability kills at night: the Demon's kill or another ability's (`by`), any player or
+	 * only its own (`targets: self`, the Gambler), and ignoring protection (the Assassin).
+	 */
+	kills?: Kills;
+	/** Where each of its reminder tokens may go, by label (`target-rules.ts`). */
+	reminderTargets?: Readonly<Record<ReminderLabel, TargetRule>>;
+	/** First-night information the Storyteller picks from the truthful options (the Chef). */
+	learns?: Learns;
+	/** A night answer worked out from the grimoire and today's log (the Town Crier). */
+	answers?: Answers;
+	/** The claim its player makes by day, logged from their day row and seat ⋯ menu (L56). */
+	dayClaim?: DayClaim;
+	/** How the ability leaves players drunk, poisoned or with no ability (`rules/ability.ts`). */
+	impairs?: Impairs;
+	/** Players who may register as another alignment or character type (`rules/ability.ts`). */
+	registersAs?: RegistersAs;
+	/** How the ability ends the game, keeps it going, or changes who wins (`rules/game-end.ts`). */
+	gameEnd?: GameEndRules;
+	/** A night death its own ability decides (`rules/night-deaths.ts`). */
+	deathCheck?: DeathCheckRule;
+	/** Tokens and steps to prepare before the first night (`rules/setup-reminders.ts`). */
+	setupPrep?: SetupPrepRules;
+	/** How its [bracketed] text changes which characters are dealt (`rules/setup-modifiers.ts`). */
+	setupModifier?: SetupModifierRules;
+}
+
+/** What a player may also register as, besides their true alignment and character type. */
+export interface Registers {
+	alignments?: readonly Alignment[];
+	types?: readonly CharacterType[];
+}
+
+/**
+ * Who may register as something else while this character's ability works: `self`, its own
+ * player, even if dead (the Spy as good and a Townsfolk or Outsider, the Recluse as evil and a
+ * Minion or Demon); `tokens`, the player carrying one of its reminders, by label, only while
+ * their alignment is `carrierAlignment` when given (the Lycanthrope's "Faux Paw" on a good
+ * player, as evil).
+ */
+export interface RegistersAs {
+	self?: Registers;
+	tokens?: Readonly<Record<ReminderLabel, Registers & { carrierAlignment?: Alignment }>>;
+}
+
+/** Why an ability does not work. `no-ability`: an effect such as the Preacher's. */
+export const IMPAIRMENT_REASONS = ['drunk', 'poisoned', 'no-ability'] as const;
+export type ImpairmentReason = (typeof IMPAIRMENT_REASONS)[number];
+
+/**
+ * Who a reminder token impairs: `carrier`, the player it sits on (only a `type` character,
+ * and with `whileWorks` only while this character's own ability works: the Preacher's "No
+ * Ability"), or `others`, every other player except Travellers while the token is on the
+ * board (the Minstrel's "Everyone Is Drunk").
+ */
+export const IMPAIRS_ON = ['carrier', 'others'] as const;
+export interface TokenImpairment {
+	reason: ImpairmentReason;
+	on: (typeof IMPAIRS_ON)[number];
+	type?: CharacterType;
+	whileWorks?: boolean;
+}
+
+/**
+ * How the ability impairs players. `self`: its own player always is (the Drunk), or once at
+ * most `aliveAtMost` players live (the Witch). `tokens`: what each of its reminders does, by
+ * label. A reminder with no entry here impairs its carrier when its label says "Poisoned" or
+ * "Drunk".
+ */
+export interface Impairs {
+	self?: { reason: ImpairmentReason; aliveAtMost?: number };
+	tokens?: Readonly<Record<ReminderLabel, TokenImpairment>>;
+}
+
+/**
+ * What a `learns` character is shown, each worked out in `rules/night-info.ts`:
+ * - `pair-of-type`: two players, one of them a `type` character, shown which (Washerwoman);
+ *   `noneWhenAbsent` lets it learn there are none (Librarian);
+ * - `evil-pairs`: pairs of evil neighbours (Chef);
+ * - `evil-alive-neighbours`: evil among the two alive neighbours (Empath);
+ * - `demon-minion-steps`: steps from the Demon to its nearest Minion (Clockmaker);
+ * - `demon-or-token`: yes if either of two chosen players is the Demon or carries `token`
+ *   (Fortune Teller's Red Herring);
+ * - `good-player`: one good player (Steward);
+ * - `one-evil-of-three`: three players, exactly one evil (Noble).
+ * `reminders` are the tokens to place: `target` on the shown character's player, `other` on the
+ * second player, `each` on every player tapped.
+ */
+export const LEARNS_MEASURES = [
+	'pair-of-type',
+	'evil-pairs',
+	'evil-alive-neighbours',
+	'demon-minion-steps',
+	'demon-or-token',
+	'good-player',
+	'one-evil-of-three'
+] as const;
+export interface Learns {
+	measure: (typeof LEARNS_MEASURES)[number];
+	type?: CharacterType;
+	token?: ReminderLabel;
+	noneWhenAbsent?: boolean;
+	reminders?: { target?: ReminderLabel; other?: ReminderLabel; each?: ReminderLabel };
+}
+
+/**
+ * What an `answers` character learns, each worked out in `rules/night-info.ts`:
+ * `minion-nominated` (Town Crier), `demon-voted` (Flowergirl), `executed-character`
+ * (Undertaker), `outsider-died` (Godfather), `correct-guesses` (Juggler), `evil-dead`
+ * (Oracle), `abnormal-abilities` (Mathematician), `statement-true` (Gossip, from the
+ * statement logged by day, L58). `token` is the character's reminder that
+ * marks the answer on the board ("Died Today", "Abnormal").
+ */
+export const ANSWER_QUESTIONS = [
+	'minion-nominated',
+	'demon-voted',
+	'executed-character',
+	'outsider-died',
+	'correct-guesses',
+	'evil-dead',
+	'abnormal-abilities',
+	'statement-true'
+] as const;
+export interface Answers {
+	question: (typeof ANSWER_QUESTIONS)[number];
+	token?: ReminderLabel;
+}
+
+export const KILLS_BY = ['demon', 'other'] as const;
+export const KILLS_TARGETS = ['any', 'self'] as const;
+export interface Kills {
+	by: (typeof KILLS_BY)[number];
+	targets?: (typeof KILLS_TARGETS)[number];
+	ignoresProtection?: boolean;
 }
 
 export const PROTECTS_WHO = ['self', 'marked'] as const;
@@ -57,7 +247,21 @@ export const RULE_KEYS = [
 	'reminderPrompts',
 	'actsWhenDead',
 	'onDeath',
-	'protects'
+	'protects',
+	'redirectsKill',
+	'survivesFirstDeath',
+	'kills',
+	'reminderTargets',
+	'learns',
+	'answers',
+	'onNominated',
+	'dayClaim',
+	'impairs',
+	'registersAs',
+	'gameEnd',
+	'deathCheck',
+	'setupPrep',
+	'setupModifier'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -96,11 +300,250 @@ export function parseCharacterRules(
 			if (by) rules.onDeath = { by };
 		}
 	}
+	if (raw.redirectsKill !== undefined) {
+		const at = `${path}.redirectsKill`;
+		if (!isObject(raw.redirectsKill)) {
+			issues.add(at, `expected object, got ${describe(raw.redirectsKill)}`);
+		} else {
+			checkKeys(raw.redirectsKill, ['from'], at, issues);
+			const from = readEnum(raw.redirectsKill, 'from', PROTECTS_FROM, at, issues, true);
+			if (from) rules.redirectsKill = { from };
+		}
+	}
+	if (raw.survivesFirstDeath !== undefined) {
+		const at = `${path}.survivesFirstDeath`;
+		if (!isObject(raw.survivesFirstDeath)) {
+			issues.add(at, `expected object, got ${describe(raw.survivesFirstDeath)}`);
+		} else {
+			checkKeys(raw.survivesFirstDeath, ['spentToken'], at, issues);
+			const token = readString(raw.survivesFirstDeath, 'spentToken', at, issues, true);
+			if (token !== undefined && !ownReminder(token, reminders)) {
+				issues.add(`${at}.spentToken`, 'not one of this character’s reminders');
+			} else if (token !== undefined) rules.survivesFirstDeath = { spentToken: token };
+		}
+	}
+	if (raw.learns !== undefined) {
+		const learns = readLearns(raw.learns, `${path}.learns`, issues, reminders);
+		if (learns) rules.learns = learns;
+	}
+	if (raw.answers !== undefined) {
+		const at = `${path}.answers`;
+		if (!isObject(raw.answers)) {
+			issues.add(at, `expected object, got ${describe(raw.answers)}`);
+		} else {
+			checkKeys(raw.answers, ['question', 'token'], at, issues);
+			const question = readEnum(raw.answers, 'question', ANSWER_QUESTIONS, at, issues, true);
+			const token = readToken(raw.answers, 'token', at, issues, reminders);
+			if (question) rules.answers = { question, ...(token ? { token } : {}) };
+		}
+	}
+	if (raw.reminderTargets !== undefined) {
+		const targets = readReminderTargets(
+			raw.reminderTargets,
+			`${path}.reminderTargets`,
+			issues,
+			reminders
+		);
+		if (targets) rules.reminderTargets = targets;
+	}
+	if (raw.kills !== undefined) {
+		const at = `${path}.kills`;
+		if (!isObject(raw.kills)) {
+			issues.add(at, `expected object, got ${describe(raw.kills)}`);
+		} else {
+			checkKeys(raw.kills, ['by', 'targets', 'ignoresProtection'], at, issues);
+			const by = readEnum(raw.kills, 'by', KILLS_BY, at, issues, true);
+			const targets = readEnum(raw.kills, 'targets', KILLS_TARGETS, at, issues, false);
+			const ignoresProtection = readBoolean(raw.kills, 'ignoresProtection', at, issues);
+			if (by) {
+				rules.kills = { by };
+				if (targets) rules.kills.targets = targets;
+				if (ignoresProtection !== undefined) rules.kills.ignoresProtection = ignoresProtection;
+			}
+		}
+	}
 	if (raw.protects !== undefined) {
 		const protects = readProtects(raw.protects, `${path}.protects`, issues, reminders);
 		if (protects) rules.protects = protects;
 	}
+	if (raw.onNominated !== undefined) {
+		const at = `${path}.onNominated`;
+		if (!isObject(raw.onNominated)) {
+			issues.add(at, `expected object, got ${describe(raw.onNominated)}`);
+		} else {
+			checkKeys(raw.onNominated, ['by', 'effect'], at, issues);
+			const by = readEnum(raw.onNominated, 'by', CHARACTER_TYPES, at, issues, true);
+			const effect = readEnum(raw.onNominated, 'effect', NOMINATED_EFFECTS, at, issues, true);
+			if (by && effect) rules.onNominated = { by, effect };
+		}
+	}
+	const dayClaim = readEnum(raw, 'dayClaim', DAY_CLAIMS, path, issues, false);
+	if (dayClaim) rules.dayClaim = dayClaim;
+	if (raw.impairs !== undefined) {
+		const impairs = readImpairs(raw.impairs, `${path}.impairs`, issues, reminders);
+		if (impairs) rules.impairs = impairs;
+	}
+	if (raw.registersAs !== undefined) {
+		const registersAs = readRegistersAs(raw.registersAs, `${path}.registersAs`, issues, reminders);
+		if (registersAs) rules.registersAs = registersAs;
+	}
+	if (raw.gameEnd !== undefined) {
+		const gameEnd = readGameEnd(raw.gameEnd, `${path}.gameEnd`, issues, reminders);
+		if (gameEnd) rules.gameEnd = gameEnd;
+	}
+	if (raw.deathCheck !== undefined) {
+		const at = `${path}.deathCheck`;
+		if (!isObject(raw.deathCheck)) {
+			issues.add(at, `expected object, got ${describe(raw.deathCheck)}`);
+		} else {
+			checkKeys(raw.deathCheck, ['kind', 'token'], at, issues);
+			const kind = readEnum(raw.deathCheck, 'kind', DEATH_CHECK_KINDS, at, issues, true);
+			const token = readToken(raw.deathCheck, 'token', at, issues, reminders);
+			if (kind === 'marked-killed-by-demon' && raw.deathCheck.token === undefined) {
+				issues.add(`${at}.token`, 'missing');
+			} else if (kind) rules.deathCheck = { kind, ...(token ? { token } : {}) };
+		}
+	}
+	if (raw.setupPrep !== undefined) {
+		const setupPrep = readSetupPrep(raw.setupPrep, `${path}.setupPrep`, issues, reminders);
+		if (setupPrep) rules.setupPrep = setupPrep;
+	}
+	if (raw.setupModifier !== undefined) {
+		const setupModifier = readSetupModifier(raw.setupModifier, `${path}.setupModifier`, issues);
+		if (setupModifier) rules.setupModifier = setupModifier;
+	}
 	return issues.list.length > before ? undefined : rules;
+}
+
+function readEnumList<T extends string>(
+	raw: Record<string, unknown>,
+	key: string,
+	values: readonly T[],
+	path: string,
+	issues: Issues
+): T[] | undefined {
+	const list = readStringArray(raw, key, path, issues);
+	if (!list) return undefined;
+	const bad = list.filter((v) => !(values as readonly string[]).includes(v));
+	for (const v of bad) issues.add(`${path}.${key}`, `unknown value ${JSON.stringify(v)}`);
+	return bad.length > 0 ? undefined : (list as T[]);
+}
+
+function readRegisters(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	extra: readonly string[] = []
+): (Registers & { carrierAlignment?: Alignment }) | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['alignments', 'types', ...extra], path, issues);
+	const out: Registers & { carrierAlignment?: Alignment } = {};
+	const alignments = readEnumList(raw, 'alignments', ALIGNMENTS, path, issues);
+	if (alignments) out.alignments = alignments;
+	const types = readEnumList(raw, 'types', CHARACTER_TYPES, path, issues);
+	if (types) out.types = types;
+	if (extra.includes('carrierAlignment')) {
+		const carrier = readEnum(raw, 'carrierAlignment', ALIGNMENTS, path, issues, false);
+		if (carrier) out.carrierAlignment = carrier;
+	}
+	return out;
+}
+
+function readRegistersAs(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): RegistersAs | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['self', 'tokens'], path, issues);
+	const out: RegistersAs = {};
+	if (raw.self !== undefined) {
+		const self = readRegisters(raw.self, `${path}.self`, issues);
+		if (self) out.self = self;
+	}
+	if (raw.tokens !== undefined) {
+		const at = `${path}.tokens`;
+		if (!isObject(raw.tokens)) {
+			issues.add(at, `expected object, got ${describe(raw.tokens)}`);
+		} else {
+			const tokens: Record<ReminderLabel, Registers & { carrierAlignment?: Alignment }> = {};
+			for (const [label, value] of Object.entries(raw.tokens)) {
+				if (!ownReminder(label, reminders)) {
+					issues.add(`${at}.${label}`, 'not one of this character’s reminders');
+					continue;
+				}
+				const rule = readRegisters(value, `${at}.${label}`, issues, ['carrierAlignment']);
+				if (rule) tokens[label] = rule;
+			}
+			out.tokens = tokens;
+		}
+	}
+	return out;
+}
+
+function readImpairs(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): Impairs | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['self', 'tokens'], path, issues);
+	const out: Impairs = {};
+	if (raw.self !== undefined) {
+		const at = `${path}.self`;
+		if (!isObject(raw.self)) {
+			issues.add(at, `expected object, got ${describe(raw.self)}`);
+		} else {
+			checkKeys(raw.self, ['reason', 'aliveAtMost'], at, issues);
+			const reason = readEnum(raw.self, 'reason', IMPAIRMENT_REASONS, at, issues, true);
+			const aliveAtMost = readNumber(raw.self, 'aliveAtMost', at, issues);
+			if (reason) out.self = { reason, ...(aliveAtMost !== undefined ? { aliveAtMost } : {}) };
+		}
+	}
+	if (raw.tokens !== undefined) {
+		const at = `${path}.tokens`;
+		if (!isObject(raw.tokens)) {
+			issues.add(at, `expected object, got ${describe(raw.tokens)}`);
+		} else {
+			const tokens: Record<ReminderLabel, TokenImpairment> = {};
+			for (const [label, value] of Object.entries(raw.tokens)) {
+				const here = `${at}.${label}`;
+				if (!ownReminder(label, reminders)) {
+					issues.add(here, 'not one of this character’s reminders');
+					continue;
+				}
+				if (!isObject(value)) {
+					issues.add(here, `expected object, got ${describe(value)}`);
+					continue;
+				}
+				checkKeys(value, ['reason', 'on', 'type', 'whileWorks'], here, issues);
+				const reason = readEnum(value, 'reason', IMPAIRMENT_REASONS, here, issues, true);
+				const on = readEnum(value, 'on', IMPAIRS_ON, here, issues, true);
+				const type = readEnum(value, 'type', CHARACTER_TYPES, here, issues, false);
+				const whileWorks = readBoolean(value, 'whileWorks', here, issues);
+				if (!reason || !on) continue;
+				tokens[label] = {
+					reason,
+					on,
+					...(type ? { type } : {}),
+					...(whileWorks !== undefined ? { whileWorks } : {})
+				};
+			}
+			out.tokens = tokens;
+		}
+	}
+	return out;
 }
 
 function readPrompts(
@@ -145,9 +588,70 @@ function readProtects(
 	}
 	const token = readString(raw, 'token', path, issues, true);
 	if (token === undefined) return undefined;
-	if (reminders && !reminders.some((r) => r.toLowerCase() === token.toLowerCase())) {
+	if (!ownReminder(token, reminders)) {
 		issues.add(`${path}.token`, 'not one of this character’s reminders');
 		return undefined;
 	}
 	return { who, token, from };
+}
+
+/** Whether `token` is one of the character's reminders; true when they are not given. */
+function ownReminder(token: string, reminders: readonly ReminderLabel[] | undefined): boolean {
+	return !reminders || reminders.some((r) => r.toLowerCase() === token.toLowerCase());
+}
+
+/** An optional reminder label field, which must be one of the character's reminders. */
+function readToken(
+	raw: Record<string, unknown>,
+	key: string,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): ReminderLabel | undefined {
+	const token = readString(raw, key, path, issues, false);
+	if (token === undefined) return undefined;
+	if (!ownReminder(token, reminders)) {
+		issues.add(`${path}.${key}`, 'not one of this character’s reminders');
+		return undefined;
+	}
+	return token;
+}
+
+function readLearns(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): Learns | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['measure', 'type', 'token', 'noneWhenAbsent', 'reminders'], path, issues);
+	const measure = readEnum(raw, 'measure', LEARNS_MEASURES, path, issues, true);
+	const type = readEnum(raw, 'type', CHARACTER_TYPES, path, issues, false);
+	const token = readToken(raw, 'token', path, issues, reminders);
+	const noneWhenAbsent = readBoolean(raw, 'noneWhenAbsent', path, issues);
+	if (!measure) return undefined;
+	if (measure === 'pair-of-type' && !type) issues.add(`${path}.type`, 'missing');
+	if (measure === 'demon-or-token' && !token) issues.add(`${path}.token`, 'missing');
+	const out: Learns = { measure };
+	if (type) out.type = type;
+	if (token) out.token = token;
+	if (noneWhenAbsent !== undefined) out.noneWhenAbsent = noneWhenAbsent;
+	if (raw.reminders !== undefined) {
+		const at = `${path}.reminders`;
+		if (!isObject(raw.reminders)) {
+			issues.add(at, `expected object, got ${describe(raw.reminders)}`);
+		} else {
+			checkKeys(raw.reminders, ['target', 'other', 'each'], at, issues);
+			const placed: NonNullable<Learns['reminders']> = {};
+			for (const key of ['target', 'other', 'each'] as const) {
+				const label = readToken(raw.reminders, key, at, issues, reminders);
+				if (label) placed[key] = label;
+			}
+			out.reminders = placed;
+		}
+	}
+	return out;
 }

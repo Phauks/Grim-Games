@@ -1,0 +1,47 @@
+{
+	"reminderTargets": {
+		"Minion": {
+			"info": true,
+			"seat": "any",
+			"types": ["minion"],
+			"note": "Goes on the Minion whose character the Investigator learns."
+		},
+		"Wrong": {
+			"info": true,
+			"seat": "any",
+			"notWithLabel": "Minion",
+			"note": "Goes on the second shown player, who is not that Minion."
+		}
+	},
+	"learns": {
+		"measure": "pair-of-type",
+		"type": "minion",
+		"reminders": {
+			"target": "Minion",
+			"other": "Wrong"
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Minion",
+				"text": "Choose a Minion to show the Investigator: put [Minion] on them",
+				"target": {
+					"choose": "minion",
+					"choice": "a Minion player",
+					"notSelf": true
+				},
+				"reason": "Marks the Minion the Investigator learns about"
+			},
+			{
+				"label": "Wrong",
+				"text": "Choose a player: put [Wrong] on them",
+				"target": {
+					"choose": "any",
+					"choice": "any player"
+				},
+				"reason": "Marks the second player the Investigator is shown"
+			}
+		]
+	}
+}

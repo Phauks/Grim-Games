@@ -31,7 +31,7 @@ import { isExclusiveJinx } from './jinxes.ts';
 import { nightOrder, type Night, type NightOrder } from './night-order.ts';
 import { nightTextOverride, type NightTextOverride } from './night-text.ts';
 import { setupModifierFor, type SetupModifier } from './setup-modifiers.ts';
-import { SETUP_REMINDER_ENTRIES } from './setup-reminders.data.ts';
+import { setupPrepOf } from './setup-reminders.ts';
 
 /**
  * A piece of a reminder sentence: a character badge, the player carrying a token, a value
@@ -111,7 +111,7 @@ export const REFERENCE_FILTER_LABELS: Record<ReferenceFilter, string> = {
 
 /**
  * One of a character's reminder tokens, as TPI lists them (`copies` of the same label are
- * one entry), and how many the setup reminders (`SETUP_REMINDER_ENTRIES`, the list the board's
+ * one entry), and how many the setup reminders (`setupPrep` rules, the list the board's
  * setup tray uses) place for one copy of the character: before the first night (`setup`) or
  * at the start of the first day (`firstDay`). Shown on Reference so the classification can be
  * checked (Trevor, 2026-10-17).
@@ -124,7 +124,9 @@ export interface ReferenceToken {
 	firstDay: number;
 }
 
-const SETUP_SPECS = new Map(SETUP_REMINDER_ENTRIES.map((e) => [e.id, e.reminders]));
+/** A character's setup tokens, from its own rules block or our overlay file. */
+const setupSpecs = (character: Character) =>
+	setupPrepOf(character.id, new Map([[character.id, character]]))?.reminders ?? [];
 
 /** A character's reminder tokens with their setup counts, in TPI's order. */
 export function referenceTokens(character: Character): ReferenceToken[] {
@@ -139,7 +141,7 @@ export function referenceTokens(character: Character): ReferenceToken[] {
 			else out.push({ label, global, copies: 1, setup: 0, firstDay: 0 });
 		}
 	}
-	for (const spec of SETUP_SPECS.get(character.id) ?? []) {
+	for (const spec of setupSpecs(character)) {
 		const token = out.find((t) => t.label === spec.label);
 		if (!token) continue;
 		if ((spec.timing ?? 'setup') === 'setup') token.setup += 1;
@@ -338,7 +340,7 @@ export function characterReference(data: GameData, numeric?: NumericNightOrder):
 			exclusive: isExclusiveJinx(j.reason)
 		}));
 		const tokens = referenceTokens(character);
-		for (const spec of SETUP_SPECS.get(character.id) ?? []) {
+		for (const spec of setupSpecs(character)) {
 			if (!tokens.some((t) => t.label === spec.label))
 				problems.push(`Setup places [${spec.label}], which is not one of TPI’s reminder tokens.`);
 		}

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SetupNav from '#lib/features/setup/SetupNav.svelte';
+	import { backToNewGame } from './new-game-draft.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -30,6 +32,8 @@
 	import { readGameMode } from './game-mode-store.ts';
 	import { gameModeOf } from './game-mode.ts';
 	import { readExtras, writeExtras } from './mode-extras.ts';
+	import RuleHeader from './RuleHeader.svelte';
+	import { spawnedBy } from './spawned-by.ts';
 
 	/**
 	 * The hidden extra characters of a mode like A Script of Infinite Possibilities, for the
@@ -51,6 +55,8 @@
 	const mode = $derived(gameModeOf(gameId) ?? STANDARD);
 	const restrictions = $derived(record?.restrictions ?? NO_RESTRICTIONS);
 	const pool = $derived(mode.parts.pool);
+	/** The mode or rules that hide characters, shown at the top. */
+	const spawning = $derived(spawnedBy(gameId, (p) => p.pool?.kind === 'script-plus-hidden'));
 	const announce = $derived(pool?.kind === 'script-plus-hidden' && pool.announceRange);
 	const scriptCharacters = $derived(
 		game.script.entries.flatMap((e): Character[] => {
@@ -159,7 +165,7 @@
 	 * Puts the extras into the setup selection, taking out any earlier roll first: the setup
 	 * screen only offers the script, so an off-script character selected there came from here.
 	 */
-	async function next() {
+	async function goNext() {
 		setupSelection.open(gameId, game.seating.length);
 		const onScript = new Set(scriptCharacters.map((c) => c.id));
 		const types = new Set<string>(ROW_TYPES);
@@ -180,6 +186,8 @@
 			{t('modes.extras.rollAll')}
 		</Button>
 	{/snippet}
+
+	<RuleHeader rules={spawning} />
 
 	<!-- One row per type, always drawn, so choosing or rolling never moves anything. -->
 	<ul class="extras" data-testid="extras">
@@ -242,16 +250,19 @@
 		</div>
 	{/if}
 
-	<div class="next">
-		<Button
-			variant="accent"
-			icon="forward"
-			disabled={official.length === 0 || extras.length < total.min || extras.length > total.max}
-			onclick={next}
-		>
-			{t('modes.extras.next')}
-		</Button>
-	</div>
+	<!-- The start flow's bar, Back to New game as it was (Trevor, 2026-10-23). -->
+	<SetupNav onBack={() => void backToNewGame(gameId)} backLabel={t('setup.newGame')}>
+		{#snippet next()}
+			<Button
+				variant="accent"
+				icon="forward"
+				disabled={official.length === 0 || extras.length < total.min || extras.length > total.max}
+				onclick={goNext}
+			>
+				{t('modes.extras.next')}
+			</Button>
+		{/snippet}
+	</SetupNav>
 </Page>
 
 <Dialog
@@ -299,9 +310,5 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2);
-	}
-	.next {
-		display: flex;
-		justify-content: flex-end;
 	}
 </style>

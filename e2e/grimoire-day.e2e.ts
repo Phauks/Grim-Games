@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 
 // The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
@@ -12,7 +12,7 @@ async function startGame(page: Page, players = 8) {
 		.tap();
 	for (let i = 8; i < players; i++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(players);
 	return new URL(page.url()).pathname;
 }
@@ -279,7 +279,7 @@ test("the day's sections fold with their caret and their headers stick under the
 	const day = await openDay(page);
 	await expect(page.getByTestId('announcements').getByTestId('spoken')).toHaveCount(4);
 	const toolbar = page.getByTestId('day-toolbar');
-	const sections = day.locator('.panel > .collapsible');
+	const sections = day.locator('.sections > .collapsible');
 	expect(await sections.count()).toBeGreaterThan(2);
 	// No Players section (Trevor, 2026-10-20); the Slayer's Used sits on the Slayer's own row.
 	await expect(day.getByRole('heading', { name: 'Players' })).toHaveCount(0);
@@ -307,7 +307,7 @@ test("the day's sections fold with their caret and their headers stick under the
 	// A section's header stays just under the toolbar while its content scrolls (Trevor).
 	const scroller = toolbar.locator('xpath=../..');
 	// Announcements, scrolled until its top has passed under the toolbar.
-	const section = day.locator('.panel > .collapsible', {
+	const section = day.locator('.sections > .collapsible', {
 		has: page.getByTestId('announcements')
 	});
 	const head = section.locator('> .head');
@@ -475,6 +475,12 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
 	await expect(clock).toHaveText('0:00');
 	expect((await timer.boundingBox())!.height).toBe(height);
+	// More and less change the time shown in both modes (Trevor, 2026-10-23).
+	await timer.getByRole('button', { name: '30 seconds more' }).tap();
+	await expect(clock).toHaveText('0:30');
+	await timer.getByRole('button', { name: '30 seconds less' }).tap();
+	await timer.getByRole('button', { name: '30 seconds less' }).tap();
+	await expect(clock).toHaveText('0:00');
 	await timer.getByRole('button', { name: 'Start timer' }).tap();
 	await page.clock.runFor(61_000);
 	await expect(clock).toHaveText('1:01');
@@ -521,7 +527,7 @@ test('the day view names a homebrew character by its script name', async ({ page
 	await page.goto('/new');
 	await pickScript(page, 'Homebrew Day');
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -580,11 +586,13 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 
 	// Tapping the clock switches timer and stopwatch; there is no drop-down for it (Trevor).
 	await expect(sheet.getByRole('combobox', { name: 'Mode' })).toHaveCount(0);
-	await timer.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
-	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
 	await sheet.getByRole('combobox', { name: 'Timer sound' }).tap();
 	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
 	await expect(sheet.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
+	await timer.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
+	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
+	// A stopwatch plays no sound, so its choice is greyed in place (Trevor, 2026-10-23).
+	await expect(sheet.getByRole('combobox', { name: 'Timer sound' })).toBeDisabled();
 	// Vibration is its own switch beside the sound (Trevor, 2026-10-18).
 	const vibrate = sheet.getByRole('checkbox', { name: 'Vibrate' });
 	await expect(vibrate).toBeChecked();
@@ -740,4 +748,18 @@ test('holding the day timer or a new day resets it to the time per living player
 	await expect(day.getByRole('button', { name: 'Start timer' })).toBeEnabled();
 	// After a night with no deaths, that is the announcement (Trevor, 2026-10-19).
 	await expect(day.getByTestId('announcements')).toHaveText('Nobody died in the night.');
+});
+
+test('a wide day view puts the toolbar beside the sections', async ({ page }) => {
+	await startGame(page);
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	// Two columns on a wide screen (Trevor, 2026-10-23: L45).
+	const toolbar = await page.getByTestId('day-toolbar').boundingBox();
+	const announcements = await page.getByTestId('announcements').boundingBox();
+	expect(announcements!.x).toBeGreaterThan(toolbar!.x + toolbar!.width - 1);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect
+		.poll(async () => (await page.getByTestId('announcements').boundingBox())!.y)
+		.toBeGreaterThan((await page.getByTestId('day-toolbar').boundingBox())!.y);
 });

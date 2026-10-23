@@ -5,6 +5,7 @@ import ph_arrow_clockwise from '~icons/ph/arrow-clockwise';
 import ph_arrow_counter_clockwise from '~icons/ph/arrow-counter-clockwise';
 import ph_arrow_square_out from '~icons/ph/arrow-square-out';
 import ph_arrows_down_up from '~icons/ph/arrows-down-up';
+import ph_arrows_in from '~icons/ph/arrows-in';
 import ph_arrows_left_right from '~icons/ph/arrows-left-right';
 import ph_arrows_out from '~icons/ph/arrows-out';
 import ph_arrows_out_cardinal from '~icons/ph/arrows-out-cardinal';
@@ -14,6 +15,7 @@ import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_bookmarks_simple from '~icons/ph/bookmarks-simple';
 import ph_books from '~icons/ph/books';
 import ph_bug from '~icons/ph/bug';
+import ph_camera from '~icons/ph/camera';
 import ph_caret_down from '~icons/ph/caret-down';
 import ph_caret_left from '~icons/ph/caret-left';
 import ph_caret_right from '~icons/ph/caret-right';
@@ -105,6 +107,7 @@ const icons: IconMap = {
 	'ph:arrow-counter-clockwise': ph_arrow_counter_clockwise,
 	'ph:arrow-square-out': ph_arrow_square_out,
 	'ph:arrows-down-up': ph_arrows_down_up,
+	'ph:arrows-in': ph_arrows_in,
 	'ph:arrows-left-right': ph_arrows_left_right,
 	'ph:arrows-out': ph_arrows_out,
 	'ph:arrows-out-cardinal': ph_arrows_out_cardinal,
@@ -114,6 +117,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple': ph_bookmarks_simple,
 	'ph:books': ph_books,
 	'ph:bug': ph_bug,
+	'ph:camera': ph_camera,
 	'ph:caret-down': ph_caret_down,
 	'ph:caret-left': ph_caret_left,
 	'ph:caret-right': ph_caret_right,

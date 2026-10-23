@@ -69,7 +69,12 @@ export const resets = {
 				'timerVibrate',
 				'timerKeepAwake',
 				'timerPerPlayer',
-				'qrCentre'
+				'qrCentre',
+				'qrPictureWhole',
+				'qrPictureZoom',
+				'qrPictureCorners',
+				'qrModules',
+				'qrFinders'
 			),
 			assistance: assistanceWith([...STORYTELLER_GROUPS.night, ...STORYTELLER_GROUPS.day])
 		})

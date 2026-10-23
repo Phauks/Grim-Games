@@ -1,0 +1,33 @@
+{
+	"reminderTargets": {
+		"1": {
+			"seat": "any",
+			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates.",
+			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
+		},
+		"2": {
+			"seat": "any",
+			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates.",
+			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
+		},
+		"3": {
+			"seat": "any",
+			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates.",
+			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
+		}
+	},
+	"setupPrep": {
+		"none": "the 1, 2, 3 tokens stand in for other Outsiders’ tokens when needed"
+	},
+	"setupModifier": {
+		"summary": "−0 or −1 Outsider",
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "outsider",
+				"values": [0, -1]
+			}
+		],
+		"notes": ["The Hermit counts as one of the Outsiders and may be the one removed."]
+	}
+}

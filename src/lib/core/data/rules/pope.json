@@ -1,0 +1,7 @@
+{
+	"setupModifier": {
+		"summary": "Duplicate good characters",
+		"ops": [],
+		"notes": ["Good characters may appear more than once, and may be bluffs too."]
+	}
+}

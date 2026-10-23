@@ -1,0 +1,36 @@
+{
+	"reminderTargets": {
+		"Day 1": {
+			"note": "On the Riot on day 1.",
+			"seat": "self"
+		},
+		"Day 2": {
+			"note": "On the Riot on day 2.",
+			"seat": "self"
+		},
+		"Day 3": {
+			"note": "On the Riot on day 3.",
+			"seat": "self"
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Day 1",
+				"text": "At the start of the first day, put [Day 1] on the Riot",
+				"target": {
+					"self": true
+				},
+				"reason": "Counts the days until day 3",
+				"timing": "first-day"
+			}
+		]
+	},
+	"setupModifier": {
+		"summary": "No setup change",
+		"ops": [],
+		"notes": [
+			"Deal Minions as usual: they become Riot on day 3. Older printings had a setup bracket."
+		]
+	}
+}

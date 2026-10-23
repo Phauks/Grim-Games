@@ -12,6 +12,7 @@ import type {
 	CharacterGuess,
 	DayEntryId,
 	DeathCause,
+	GenericLook,
 	OverrideField,
 	Reminder,
 	ReminderId,
@@ -83,21 +84,22 @@ export type Command =
 	| { type: 'SetDeathCause'; seatId: SeatId; cause?: DeathCause }
 	| { type: 'SpendGhostVote'; seatId: SeatId }
 	| { type: 'RestoreGhostVote'; seatId: SeatId }
-	| { type: 'AddReminder'; seatId: SeatId; reminder: Reminder }
+	/** `tokenId`: copied from one of the bank's ∞ tokens, so it starts with that token's look. */
+	| { type: 'AddReminder'; seatId: SeatId; reminder: Reminder; tokenId?: string }
 	| { type: 'MoveReminder'; reminderId: ReminderId; toSeatId: SeatId }
 	| { type: 'RemoveReminder'; reminderId: ReminderId }
 	/**
 	 * A reminder on a Fabled or Loric in play (Trevor, 2026-10-17). Any reminder may go there;
 	 * one that is not a Fabled's or Loric's own is allowed with a warning.
 	 */
-	| { type: 'AddRuleReminder'; characterId: CharacterId; reminder: Reminder }
+	| { type: 'AddRuleReminder'; characterId: CharacterId; reminder: Reminder; tokenId?: string }
 	/** Moves a reminder from a seat or a rule character onto a Fabled or Loric in play. */
 	| { type: 'MoveReminderToRuleCharacter'; reminderId: ReminderId; characterId: CharacterId }
 	/**
 	 * A reminder on the board that belongs to no seat (Trevor, 2026-10-17). `MoveReminder`
 	 * and `MoveReminderToRuleCharacter` give it a holder again; `RemoveReminder` takes it away.
 	 */
-	| { type: 'PlaceLooseReminder'; reminder: Reminder }
+	| { type: 'PlaceLooseReminder'; reminder: Reminder; tokenId?: string }
 	/** Takes a reminder off its seat or Fabled or Loric and leaves it loose on the board. */
 	| { type: 'LoosenReminder'; reminderId: ReminderId }
 	/** The Storyteller's text on a reminder; empty clears it. */
@@ -106,6 +108,13 @@ export type Command =
 	| { type: 'SetReminderSymbol'; reminderId: ReminderId; symbol?: string }
 	/** The colour of the generic reminder's symbol; none clears it. */
 	| { type: 'SetReminderSymbolColour'; reminderId: ReminderId; colour?: SymbolColour }
+	/** The generic reminder's icon symbol filled or as an outline. */
+	| { type: 'SetReminderSymbolFill'; reminderId: ReminderId; fill: boolean }
+	/** A new reusable ∞ token at the end of the bank's ones (plan B9). */
+	| { type: 'AddGenericToken'; look?: GenericLook }
+	/** Replaces a bank ∞ token's look; the copies already placed keep theirs. */
+	| { type: 'SetGenericToken'; tokenId: string; look: GenericLook }
+	| { type: 'RemoveGenericToken'; tokenId: string }
 	/**
 	 * Places several reminders at once, such as the suggested setup reminders
 	 * (`setupReminders`, `placeableSetupReminders`). Each becomes a normal reminder that can
@@ -183,16 +192,26 @@ export type Command =
 	 * token gets it placed on the seat; otherwise only the use is logged.
 	 */
 	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId }
-	/** A free-text note about a character (any length; may be empty with `guesses`). */
+	/**
+	 * A free-text note about a character (any length; may be empty with `guesses`). `holds`
+	 * marks a statement true or false (L58).
+	 */
 	| {
 			type: 'DayNote';
 			characterId: CharacterId;
 			seatId?: SeatId;
 			text: string;
 			guesses?: CharacterGuess[];
+			holds?: boolean;
 	  }
-	/** Replaces a note's text and guesses (no `guesses` clears them). */
-	| { type: 'EditDayNote'; entryId: DayEntryId; text: string; guesses?: CharacterGuess[] }
+	/** Replaces a note's text, guesses and truth (leaving one out clears it). */
+	| {
+			type: 'EditDayNote';
+			entryId: DayEntryId;
+			text: string;
+			guesses?: CharacterGuess[];
+			holds?: boolean;
+	  }
 	/**
 	 * Records what a waking character was shown (`seatId` is the waking player), placing
 	 * reminder tokens such as the Washerwoman's "Townsfolk" and "Wrong". A later record for

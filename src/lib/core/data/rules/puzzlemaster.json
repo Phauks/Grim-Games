@@ -1,3 +1,26 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "any",
+			"note": "On the one player made drunk at setup, usually a Townsfolk."
+		},
+		"Guess Used": {
+			"seat": "self",
+			"note": "On the Puzzlemaster once they have made their guess."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Drunk",
+				"text": "Choose who the Puzzlemaster makes drunk, usually a Townsfolk: put [Drunk] on them",
+				"target": {
+					"choose": "townsfolk",
+					"choice": "any player, usually a Townsfolk"
+				},
+				"reason": "The player the Puzzlemaster makes drunk"
+			}
+		]
+	}
 }

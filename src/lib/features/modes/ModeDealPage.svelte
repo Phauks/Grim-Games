@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SetupNav from '#lib/features/setup/SetupNav.svelte';
+	import { backToNewGame } from './new-game-draft.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -239,16 +241,30 @@
 
 	<BagTiles {slots} {marks} seatLabel={label} onpick={draw} />
 
-	<div class="footer">
-		{#if progress?.kind === 'choose' && assignment?.kind === 'choose-own' && assignment.reconsider}
-			<Button icon="undo" disabled={picks.length === 0 || held !== undefined} onclick={chooseAgain}>
-				{t('modes.deal.chooseAgain')}
-			</Button>
-		{/if}
-		<Button variant="accent" icon="check" disabled={!done} onclick={finish}>
-			{t('modes.deal.finish')}
-		</Button>
-	</div>
+	<!-- The start flow's bar (Trevor, 2026-10-23): Back to New game as it was, until a tile is
+	     drawn; Restart starts the deal over after that. -->
+	<SetupNav
+		onBack={() => void backToNewGame(gameId)}
+		backDisabled={picks.length > 0 || held !== undefined}
+		backLabel={t('setup.newGame')}
+	>
+		{#snippet next()}
+			<span class="footer">
+				{#if progress?.kind === 'choose' && assignment?.kind === 'choose-own' && assignment.reconsider}
+					<Button
+						icon="undo"
+						disabled={picks.length === 0 || held !== undefined}
+						onclick={chooseAgain}
+					>
+						{t('modes.deal.chooseAgain')}
+					</Button>
+				{/if}
+				<Button variant="accent" icon="check" disabled={!done} onclick={finish}>
+					{t('modes.deal.finish')}
+				</Button>
+			</span>
+		{/snippet}
+	</SetupNav>
 </Page>
 
 <!-- The seat's offer or dealt type, for the player who drew the tile only. -->
@@ -319,9 +335,7 @@
 <style>
 	.footer {
 		display: flex;
-		justify-content: flex-end;
 		gap: var(--space-2);
-		margin-top: var(--space-3);
 	}
 	/* A full dialog doesn't scroll itself: its content does. */
 	.choose {

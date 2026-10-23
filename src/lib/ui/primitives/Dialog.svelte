@@ -132,6 +132,13 @@
 </Dialog.Root>
 
 <style>
+	/* Over the grimoire board, the board behind is blurred as well as dimmed, so nothing on it
+	   can be read while it isn't the main screen (Trevor, 2026-10-23: "for game integrity").
+	   GrimoireBoard marks the page while it is shown (board-cover.ts). */
+	:global(:root[data-board-shown] [data-scope='dialog'][data-part='backdrop']) {
+		-webkit-backdrop-filter: blur(var(--u));
+		backdrop-filter: blur(var(--u));
+	}
 	:global([data-scope='dialog'][data-part='backdrop']) {
 		position: fixed;
 		inset: 0;
@@ -199,8 +206,9 @@
 		border: 0;
 		border-right: var(--card-border);
 		border-radius: 0;
-		padding-top: calc(var(--space-4) + env(safe-area-inset-top));
-		padding-left: calc(var(--space-4) + env(safe-area-inset-left));
+		/* Its hamburger in the spot every screen's is (--menu-inset), so it closes where it opened. */
+		padding-top: calc(var(--menu-inset) + env(safe-area-inset-top));
+		padding-left: calc(var(--menu-inset) + env(safe-area-inset-left));
 	}
 	:global([data-scope='dialog'][data-part='content'][data-size='side'][data-state='open']) {
 		animation: side-in var(--duration-normal) var(--ease-out);
@@ -240,6 +248,11 @@
 		flex: none;
 		display: flex;
 		align-items: center;
+	}
+	/* Close sits as close to the last icon as the icons sit to each other (Trevor, 2026-10-23:
+	   uneven gaps); the head's gap stays between the title and the icons. */
+	.head-actions + :global([data-part='close-trigger']) {
+		margin-left: calc(var(--space-3) * -1);
 	}
 	.titled {
 		flex: 1;

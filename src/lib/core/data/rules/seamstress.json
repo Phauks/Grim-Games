@@ -1,0 +1,11 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Seamstress once they have used their ability."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	}
+}

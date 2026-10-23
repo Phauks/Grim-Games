@@ -6,11 +6,8 @@ import { menuButton } from './shell.ts';
 const rowOf = (page: Page, id: string) =>
 	page.getByTestId('character-table').locator(`tr[data-character="${id}"]`);
 
-test('the menu opens the character reference; the footer no longer links it', async ({ page }) => {
+test('the menu opens the character reference', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Reference' })).toHaveCount(
-		0
-	);
 	await menuButton(page).tap();
 	await page
 		.getByRole('dialog', { name: APP_NAME })
@@ -413,7 +410,7 @@ test('reminder tokens show their copies and whether setup places them; the table
 
 	await search.fill('Washerwoman');
 	await expect(rowsOf('washerwoman')).toHaveText([
-		'TownsfolkPlaced at setup · Goes on: Townsfolk, not self',
+		'TownsfolkPlaced at setup · Goes on: Townsfolk',
 		'WrongPlaced at setup · Goes on: Players, not with Townsfolk'
 	]);
 

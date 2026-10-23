@@ -1,0 +1,16 @@
+{
+	"reminderTargets": {
+		"Has Ability": {
+			"seat": "any",
+			"life": "dead",
+			"note": "The dead player who regains their ability until dusk."
+		},
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Bone Collector once they have used their ability."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}

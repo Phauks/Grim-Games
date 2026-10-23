@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ScratchThumb from '#lib/ui/scratch/ScratchThumb.svelte';
+	import { padShape } from '#lib/ui/scratch/pad-shape.svelte.ts';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import type { PlayerNote } from './notebook.ts';
 
@@ -60,7 +61,7 @@
 			<Button icon="add" disabled={!pads} onclick={onAddScratch}>{t('scratch.newPad')}</Button>
 		</div>
 		{#if pads?.length}
-			<ul class="pads">
+			<ul class="pads" style:--pad-shape={padShape.ratio}>
 				{#each pads as pad (pad.key)}
 					<li>
 						<button type="button" class="row" data-pad={pad.key} onclick={() => onOpenScratch(pad)}>
@@ -148,8 +149,9 @@
 	.preview[data-hidden] {
 		font-style: italic;
 	}
-	/* Pads two to a row on a phone, each preview the shape of a phone's pad (Trevor,
-	   2026-10-19: "2x2 on mobile", so no paper shows that could never be written on). */
+	/* Pads two to a row on a phone, each preview the shape of this screen's pad: tall on a
+	   phone (Trevor, 2026-10-19: "2x2 on mobile"), wide on a desktop (Trevor, 2026-10-23), so
+	   no paper shows that could never be written on. */
 	.pads {
 		grid-template-columns: repeat(auto-fill, minmax(min(45%, calc(12 * var(--u))), 1fr));
 	}
@@ -157,7 +159,7 @@
 		position: relative;
 		display: grid;
 		place-items: center;
-		aspect-ratio: 3 / 4;
+		aspect-ratio: var(--pad-shape, 3 / 4);
 	}
 	/* Out of the flow, so the canvas's own size never stretches the row. */
 	.thumb :global(canvas) {

@@ -3,5 +3,14 @@
 		"who": "marked",
 		"token": "Safe",
 		"from": "demon"
+	},
+	"reminderTargets": {
+		"Safe": {
+			"seat": "other",
+			"note": "The player the Monk protects from the Demon tonight."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

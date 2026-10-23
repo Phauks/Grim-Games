@@ -1,0 +1,14 @@
+{
+	"reminderTargets": {
+		"Claimed": {
+			"seat": "self",
+			"note": "On the Goblin after they publicly claim Goblin when nominated."
+		}
+	},
+	"gameEnd": {
+		"decidedByStoryteller": true
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	}
+}
