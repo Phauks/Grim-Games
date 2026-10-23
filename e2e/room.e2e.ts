@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller } from './new-game.ts';
+import { menuButton } from './shell.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
 // seat and name, the Storyteller approves, and the seat is named in the grimoire.
@@ -504,7 +505,7 @@ test('Join game in the menu takes a typed code, with spaces, and says when no ga
 	page
 }) => {
 	await page.goto('/');
-	await page.getByRole('banner').getByRole('button', { name: 'Menu' }).tap();
+	await menuButton(page).tap();
 	await page.getByRole('link', { name: 'Join game' }).tap();
 	await expect(page).toHaveURL(/\/join$/);
 	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();

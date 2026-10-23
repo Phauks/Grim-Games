@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { APP_NAME } from '#lib/core/app-name.ts';
 	import { onMount } from 'svelte';
 	import { editionScript } from '#lib/core/data/index.ts';
@@ -25,6 +26,8 @@
 <svelte:head>
 	<title>Info tokens spike · {APP_NAME}</title>
 </svelte:head>
+
+<PageMenuButton />
 
 <main>
 	<h1>Info tokens sheet (preview)</h1>

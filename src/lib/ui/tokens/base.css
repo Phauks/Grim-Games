@@ -34,6 +34,8 @@
 	--radius-full: 999rem;
 
 	--tap-target: 44px; /* px-ok: the 44px touch minimum is in CSS pixels */
+	/* Where sticky pieces stop: just under the phone's status bar (there is no app header). */
+	--app-top: env(safe-area-inset-top);
 	--icon-size: calc(1.5 * var(--u));
 
 	--duration-fast: 120ms;

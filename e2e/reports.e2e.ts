@@ -1,6 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { pickScript } from './new-game.ts';
+import { menuButton } from './shell.ts';
 
 async function signIn(page: Page, email: string) {
 	await page.goto('/account');
@@ -110,7 +111,7 @@ test('an account in ADMIN_EMAILS is an admin, with nothing to manage on Reports'
 	await signIn(page, listedAdmin(testInfo, 2));
 	await expect(page.getByTestId('account-type')).toHaveText('Admin');
 	// Admins have Reports in the menu (Trevor, 2026-10-18).
-	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await menuButton(page).tap();
 	await page.getByRole('dialog', { name: APP_NAME }).getByRole('link', { name: 'Reports' }).tap();
 	await expect(page).toHaveURL(/\/reports$/);
 	await expect(page.getByTestId('reports')).toBeVisible();
@@ -143,7 +144,7 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	const reader = await other.newPage();
 	await signIn(reader, `reader-${Date.now()}@example.com`);
 	await expect(reader.getByTestId('account-type')).toHaveText('User');
-	await reader.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await menuButton(reader).tap();
 	const menu = reader.getByRole('dialog', { name: APP_NAME });
 	await expect(menu.getByRole('link', { name: 'Library' })).toBeVisible();
 	await expect(menu.getByRole('link', { name: 'Reports' })).toHaveCount(0);

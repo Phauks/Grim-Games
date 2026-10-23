@@ -124,9 +124,8 @@ test('tabs that do not fit move into a ⋯ menu instead of wrapping', async ({ p
 	await expect(more).toHaveCount(0);
 });
 
-test('the player view has no app header, and leaving it asks first', async ({ page }) => {
-	// Like the Storyteller's board (Trevor, 2026-10-19): the menu button opens the sidebar.
-	await expect(page.getByRole('banner')).toHaveCount(0);
+test('the player view has no sidebar or footer, and leaving it asks first', async ({ page }) => {
+	// Like the Storyteller's board (Trevor, 2026-10-19): the menu button opens the menu.
 	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 	const menu = page.getByRole('button', { name: 'Menu', exact: true });
 	const title = page.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
@@ -155,7 +154,7 @@ test('the player view has no app header, and leaving it asks first', async ({ pa
 	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
 	await expect(page).toHaveURL(/\/library$/);
 	await expect(ask).toHaveCount(0);
-	await expect(page.getByRole('banner')).toBeVisible();
+	await expect(page.getByRole('contentinfo')).toBeVisible();
 
 	// From the script itself it asks, and Confirm leaves.
 	await page.goto('/play');
@@ -163,6 +162,7 @@ test('the player view has no app header, and leaving it asks first', async ({ pa
 	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(/\/library$/);
+	await expect(page.getByRole('contentinfo')).toBeVisible();
 });
 
 test('notes written on a seat by an older version are kept as titled notes', async ({ page }) => {

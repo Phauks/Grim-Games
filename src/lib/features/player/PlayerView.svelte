@@ -198,7 +198,7 @@
 
 <!-- Print and Share stay on the title's line at every width (Trevor, 2026-10-19). -->
 <Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions>
-	<!-- No app header here, as on the board (Trevor, 2026-10-19): the sidebar is one tap away. -->
+	<!-- No sidebar here, as on the board (2026-10-19): the menu is one tap away. -->
 	{#snippet start()}<NavMenuButton />{/snippet}
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. -->

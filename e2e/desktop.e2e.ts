@@ -31,7 +31,9 @@ test.describe('on a computer (mouse, wide window)', () => {
 	test('buttons answer the mouse before they are clicked', async ({ page }) => {
 		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
 		await page.goto('/');
-		const settings = page.getByRole('banner').getByRole('button', { name: 'Settings' });
+		const settings = page
+			.getByRole('navigation', { name: 'Menu', exact: true })
+			.getByRole('button', { name: 'Settings' });
 		// The hover tint is layered over the button's own fill (base.css), so read both.
 		const background = () =>
 			settings.evaluate((el) => {
