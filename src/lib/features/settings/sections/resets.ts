@@ -58,6 +58,7 @@ export const resets = {
 		preferences.update({
 			...pick(
 				'tileFace',
+				'tileOrderRandom',
 				'requireName',
 				'holdToReveal',
 				'slotMachine',

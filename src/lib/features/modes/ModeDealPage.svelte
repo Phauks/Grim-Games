@@ -128,7 +128,14 @@
 			};
 		})
 	);
-	const marks = $derived(tileMarks(slots.length, preferences.current.tileFace, `deal:${gameId}`));
+	const marks = $derived(
+		tileMarks(
+			slots.length,
+			preferences.current.tileFace,
+			`deal:${gameId}`,
+			preferences.current.tileOrderRandom
+		)
+	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
 
 	function draw(slot: BagSlot) {

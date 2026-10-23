@@ -405,6 +405,49 @@ test('Show only selected lists just the chosen characters and still searches', a
 	await noSidewaysScroll(page);
 });
 
+test('Random label order mixes the bag tile labels, so colours are not always a rainbow', async ({
+	page
+}) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	const bag = page.getByRole('list', { name: 'Bag' }).getByRole('button');
+	const labels = async () =>
+		(await bag.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')))).sort();
+	const settings = page.getByTestId('bag-settings');
+	const order = settings.getByRole('checkbox', { name: 'Random label order' });
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await settings.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+	await page.getByRole('option', { name: 'Colours' }).tap();
+	await expect(order).not.toBeChecked();
+	await page.keyboard.press('Escape');
+	const rainbow = ['Tile Green', 'Tile Lime', 'Tile Orange', 'Tile Red', 'Tile Yellow'];
+	expect(await labels()).toEqual(rainbow);
+
+	// Colours come from the whole list, every tile still different, and they stay put.
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await settings.getByText('Random label order', { exact: true }).tap();
+	await expect(order).toBeChecked();
+	await page.keyboard.press('Escape');
+	await expect.poll(labels).not.toEqual(rainbow);
+	const mixed = await labels();
+	expect(new Set(mixed).size).toBe(5);
+	await page.reload();
+	await expect.poll(labels).toEqual(mixed);
+
+	// Numbers keep 1 to 5. Random already mixes everything, so the switch has nothing to do.
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await settings.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+	await page.getByRole('option', { name: 'Numbers' }).tap();
+	await page.keyboard.press('Escape');
+	await expect.poll(labels).toEqual(['Tile 1', 'Tile 2', 'Tile 3', 'Tile 4', 'Tile 5']);
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await settings.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+	await page.getByRole('option', { name: 'Random', exact: true }).tap();
+	await expect(order).toBeDisabled();
+});
+
 test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, centred on the token', async ({
 	page
 }) => {

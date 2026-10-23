@@ -31,6 +31,14 @@
 			onChange={(tileFace) => preferences.update({ tileFace })}
 		/>
 		<SettingToggle
+			label={t('settings.tileOrderRandom')}
+			description={t('settings.tileOrderRandomHelp')}
+			checked={preferences.current.tileOrderRandom}
+			disabled={preferences.current.tileFace === 'random' ||
+				preferences.current.tileFace === 'none'}
+			onChange={(tileOrderRandom) => preferences.update({ tileOrderRandom })}
+		/>
+		<SettingToggle
 			label={t('settings.requireName')}
 			description={t('settings.requireNameHelp')}
 			checked={preferences.current.requireName}

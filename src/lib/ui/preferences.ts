@@ -61,6 +61,8 @@ export interface Preferences {
 	requireName: boolean;
 	/** The drawn token shows only while it's held down (Trevor, 2026-10-20: a setting, off). */
 	holdToReveal: boolean;
+	/** Bag tile labels come in a random order (Trevor, 2026-10-20). */
+	tileOrderRandom: boolean;
 	/**
 	 * The drawn token spins like a slot machine through the script's characters before it
 	 * stops on the player's (Trevor, 2026-10-22: a Bag draw setting, off). Purely visual: the
@@ -167,6 +169,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	requireName: false,
 	holdToReveal: false,
 	slotMachine: false,
+	tileOrderRandom: false,
 	ownWording: false,
 	hideWatchLink: false,
 	timerSound: 'bell',
@@ -217,6 +220,10 @@ export function parsePreferences(raw: unknown): Preferences {
 				: DEFAULT_PREFERENCES.holdToReveal,
 		slotMachine:
 			typeof input.slotMachine === 'boolean' ? input.slotMachine : DEFAULT_PREFERENCES.slotMachine,
+		tileOrderRandom:
+			typeof input.tileOrderRandom === 'boolean'
+				? input.tileOrderRandom
+				: DEFAULT_PREFERENCES.tileOrderRandom,
 		ownWording:
 			typeof input.ownWording === 'boolean' ? input.ownWording : DEFAULT_PREFERENCES.ownWording,
 		hideWatchLink:

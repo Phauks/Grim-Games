@@ -81,6 +81,9 @@ export const settings = {
 	'settings.tileLabels.emoji': 'Emoji',
 	'settings.tileLabels.random': 'Random',
 	'settings.tileLabels.none': 'None',
+	'settings.tileOrderRandom': 'Random label order',
+	'settings.tileOrderRandomHelp':
+		'Tiles get their labels in a mixed order, so colours are not always a rainbow.',
 	'settings.background': 'Background for all games',
 	'settings.backgroundImage': 'Choose an image',
 	'settings.backgroundYourImage': 'Your image',

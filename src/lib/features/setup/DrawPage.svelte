@@ -45,7 +45,12 @@
 	// settings). Random is seeded by the game and bag, so it stays put across reloads.
 	const face = $derived(preferences.current.tileFace);
 	const marks = $derived(
-		tileMarks(slots.length, face, `${game?.gameId ?? ''}:${slots[0]?.tileId ?? ''}`)
+		tileMarks(
+			slots.length,
+			face,
+			`${game?.gameId ?? ''}:${slots[0]?.tileId ?? ''}`,
+			preferences.current.tileOrderRandom
+		)
 	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
 	let revealing = $state<TileId | undefined>(undefined);
