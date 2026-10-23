@@ -174,6 +174,10 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'Buttons stand out from what is behind them; End game is a red button'
 			},
 			{ id: 'S12', title: 'Lists of information never run together without a line or gap' },
+			{
+				id: 'S18',
+				title: 'Settings profiles: save your board and settings, and pick one for each game'
+			},
 			{ id: 'B5', title: 'Reminder glow and source mark settings' },
 			{ id: 'L16', title: 'Glossary: every character of a script and character type', prs: [324] },
 			{ id: 'O1', title: 'New app logo' }
