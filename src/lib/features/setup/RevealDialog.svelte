@@ -13,6 +13,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import { pastNames, suggestNames } from '#lib/features/grimoire/device-notes.ts';
+	import { reelsMove, spinReel } from './reel.ts';
 
 	interface Props {
 		open: boolean;
@@ -101,28 +102,15 @@
 	/** The reel's character while it spins; undefined once it has stopped on the player's. */
 	let spinning = $state<Character>();
 	let spun = false;
-	let timers: ReturnType<typeof setTimeout>[] = [];
+	let cancelReel = () => {};
 	function stopReel() {
-		for (const timer of timers) clearTimeout(timer);
-		timers = [];
+		cancelReel();
 		spinning = undefined;
 	}
-	/** Ticks that slow down like a reel, about two seconds in all. */
 	function spin() {
 		spun = true;
-		if (reel.length < 2 || pair || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		let at = 0;
-		let step = 50;
-		let i = Math.floor(Math.random() * reel.length);
-		spinning = reel[i];
-		while (at < 1800) {
-			at += step;
-			step *= 1.12;
-			i = (i + 1) % reel.length;
-			const next = reel[i];
-			timers.push(setTimeout(() => (spinning = next), at));
-		}
-		timers.push(setTimeout(stopReel, at + step));
+		if (reel.length < 2 || pair || !reelsMove()) return;
+		cancelReel = spinReel(reel, (character) => (spinning = character), stopReel);
 	}
 	const shown = $derived(revealed && (!holdToReveal || held));
 	$effect(() => {

@@ -34,6 +34,7 @@
 	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
 	import { readGameMode } from './game-mode-store.ts';
 	import { gameModeOf } from './game-mode.ts';
+	import OfferReels from './OfferReels.svelte';
 
 	/**
 	 * Characters for a mode that doesn't put characters in the bag, on the Storyteller's
@@ -65,6 +66,18 @@
 		})
 	);
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
+	/**
+	 * With the slot machine on (a Bag draw setting), reels run through every character a player
+	 * can get: Sushi Buffet's offers spin in 3, 2, 1, and Whale Buffet's choice is revealed as
+	 * any draw is (Trevor, 2026-10-23).
+	 */
+	const slotMachine = $derived(preferences.current.slotMachine);
+	const reel = $derived(
+		characters.filter((c) =>
+			(['townsfolk', 'outsider', 'minion', 'demon'] as const).some((type) => type === c.type)
+		)
+	);
+	let offerSpinning = $state(false);
 
 	function fresh(): DealProgress | undefined {
 		if (assignment?.kind === 'draft')
@@ -251,10 +264,19 @@
 				? t('modes.deal.dealtType', { type: TYPE_LABELS[dealtType] })
 				: t('modes.deal.offer')}
 		</p>
+		{#if slotMachine && progress?.kind === 'draft' && assignment?.kind === 'draft'}
+			<OfferReels
+				offer={options}
+				size={assignment.offers[0] ?? options.length}
+				{reel}
+				bind:spinning={offerSpinning}
+			/>
+		{/if}
 		{#if options.length === 0}
 			<p>{t('modes.deal.noOptions')}</p>
 		{:else}
-			<div class="list">
+			<!-- Kept back while the reels spin: they show the offer first. -->
+			<div class="list" class:spinning={offerSpinning} inert={offerSpinning}>
 				<SharedPicker
 					characters={options}
 					collapsibleKey="deal"
@@ -264,7 +286,7 @@
 			</div>
 		{/if}
 		{#if progress?.kind === 'draft'}
-			<Button icon="random" disabled={!canRefuse(progress.state)} onclick={refuse}>
+			<Button icon="random" disabled={!canRefuse(progress.state) || offerSpinning} onclick={refuse}>
 				{t('modes.deal.refuse')}
 			</Button>
 		{/if}
@@ -280,6 +302,7 @@
 		seatLabel={label(revealing.seatId)}
 		playerName={game.seats[revealing.seatId]?.playerName ?? ''}
 		onConfirm={confirmReveal}
+		reel={slotMachine && progress?.kind === 'choose' ? reel : []}
 	/>
 {/if}
 
@@ -314,6 +337,9 @@
 	}
 	.prompt {
 		font-weight: 600;
+	}
+	.list.spinning {
+		visibility: hidden;
 	}
 	.list {
 		display: flex;

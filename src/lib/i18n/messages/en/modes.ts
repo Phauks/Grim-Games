@@ -163,6 +163,7 @@ export const modes = {
 	'modes.deal.show': 'Show',
 	'modes.deal.offer': 'Keep one',
 	'modes.deal.refuse': 'Refuse offer',
+	'modes.deal.refused': 'Refused',
 	'modes.deal.dealtType': 'Choose a {type}',
 	'modes.deal.chooseAgain': 'Choose again',
 	'modes.deal.finish': 'Finish',
