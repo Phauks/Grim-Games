@@ -16,6 +16,7 @@
  * Everything here is a suggestion: the Storyteller can override any of it.
  */
 import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
@@ -372,10 +373,56 @@ export function registrationWorlds(
 
 // ── Protection ──────────────────────────────────────────────────────────────
 
+/** One ability that protects a player from a kill, and the reminder that says so if any. */
+export interface Protector {
+	source: AbilitySource;
+	/** Against the Demon's kill only, or any kill. */
+	from: 'demon' | 'any';
+}
+
+/**
+ * Every ability that would stop `seatId` dying to a kill `by` the Demon or another ability,
+ * in this order: its own (`protects.who: self`, the Sailor, the Soldier), then each reminder
+ * on the seat whose character's rules say it protects the player it marks (the Tea Lady's
+ * "Cannot Die", the Innkeeper's and Monk's "Safe"). From the rules blocks (`protects`), so a
+ * custom character can protect too. Whether each ability works is the caller's to check.
+ */
+export function protectors(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	by: 'demon' | 'other'
+): Protector[] {
+	const seat = getSeat(game, seatId);
+	if (!seat) return [];
+	const against = (from: 'demon' | 'any') => from === 'any' || by === 'demon';
+	const out: Protector[] = [];
+	const id = trueCharacter(game, seatId, characters);
+	const own = id ? rulesOf(id, characters)?.protects : undefined;
+	if (id && own?.who === 'self' && against(own.from)) {
+		out.push({ source: { characterId: id, seatId }, from: own.from });
+	}
+	for (const r of seat.reminders) {
+		const rule = rulesOf(r.characterId, characters)?.protects;
+		if (rule?.who !== 'marked' || rule.token.toLowerCase() !== r.label.toLowerCase()) continue;
+		if (!against(rule.from)) continue;
+		const from = seatOfCharacter(game, r.characterId, characters);
+		out.push({
+			source: {
+				characterId: r.characterId,
+				...(from ? { seatId: from } : {}),
+				reminderId: r.reminderId
+			},
+			from: rule.from
+		});
+	}
+	return out;
+}
+
 /**
  * Why a player cannot die tonight, when the grimoire says so: the Storyteller's "can die"
- * override, the Sailor's own ability, a Tea Lady's or Innkeeper's protection, or (against
- * the Demon only) the Soldier and the Monk. Each protecting ability must work.
+ * override, else the first working ability from `protectors` (the Sailor, the Tea Lady, the
+ * Innkeeper, and against the Demon only the Soldier and the Monk).
  * https://wiki.bloodontheclocktower.com/Sailor, /Tea_Lady, /Innkeeper, /Soldier, /Monk
  */
 export function protection(
@@ -388,23 +435,8 @@ export function protection(
 	if (!seat) return undefined;
 	const override = seat.overrides.find((o) => o.field === 'canDie');
 	if (override) return override.value ? undefined : 'override';
-	const id = trueCharacter(game, seatId, characters);
 	const works = (s: SeatId) => abilityState(game, s, characters).works;
-	if (id === 'sailor' && works(seatId)) return { characterId: 'sailor', seatId };
-	if (by === 'demon' && id === 'soldier' && works(seatId))
-		return { characterId: 'soldier', seatId };
-	const tokens: [CharacterId, string, 'demon' | 'any'][] = [
-		['tealady', 'Cannot Die', 'any'],
-		['innkeeper', 'Safe', 'any'],
-		['monk', 'Safe', 'demon']
-	];
-	for (const [source, label, against] of tokens) {
-		if (against === 'demon' && by !== 'demon') continue;
-		const token = seat.reminders.find((r) => r.characterId === source && r.label === label);
-		if (!token) continue;
-		const from = seatOfCharacter(game, source, characters);
-		if (from && !works(from)) continue;
-		return { characterId: source, ...(from ? { seatId: from } : {}), reminderId: token.reminderId };
-	}
-	return undefined;
+	return protectors(game, seatId, characters, by).find(
+		(p) => !p.source.seatId || works(p.source.seatId)
+	)?.source;
 }

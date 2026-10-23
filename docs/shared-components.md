@@ -98,7 +98,8 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Reminder movement and placeholders (`reminder-movement.data.ts`, `reminder-placeholders.data.ts`) |                   | not yet moved |
 | Night text overrides (`night-text-overrides.data.ts`)                                             |                   | not yet moved |
 | On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                  | `onDeath`         | moved         |
-| Night killers and protection (`night-alerts.ts`, `ability.ts`, `night-deaths.ts`)                 |                   | not yet moved |
+| Protection (`ability.ts`, `night-alerts.ts`)                                                      | `protects`        | moved         |
+| Night killers (`night-alerts.ts`, `night-deaths.ts`)                                              |                   | not yet moved |
 | Acts when dead (`dead-characters.ts`)                                                             | `actsWhenDead`    | moved         |
 | Night information and answers (`night-info.ts`)                                                   |                   | not yet moved |
 | Game end (`game-end.ts`, `end-reason.ts`, `becomes-demon.ts`)                                     |                   | not yet moved |

@@ -47,6 +47,15 @@ describe('parseCharacterRules', () => {
 		expect(parse({ onDeath: { by: 'night' } }).issues).toEqual([
 			'rules.onDeath.by: unknown value "night"'
 		]);
+		expect(parse({ protects: { who: 'marked', from: 'demon' } }).issues).toEqual([
+			'rules.protects.token: missing'
+		]);
+		expect(parse({ protects: { who: 'self', token: 'Dead', from: 'any' } }).issues).toEqual([
+			'rules.protects.token: only a marked player has a token'
+		]);
+		expect(parse({ protects: { who: 'marked', token: 'Safe', from: 'any' } }).issues).toEqual([
+			'rules.protects.token: not one of this character’s reminders'
+		]);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'
 		]);
