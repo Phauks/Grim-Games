@@ -1,7 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { pickScript } from './new-game.ts';
-import { menuButton } from './shell.ts';
+import { menuButton, theMenu } from './shell.ts';
 
 async function signIn(page: Page, email: string) {
 	await page.goto('/account');
@@ -30,12 +30,12 @@ function listedAdmin(testInfo: TestInfo, n: 1 | 2): string {
 	return `${testInfo.project.name}-admin-${n}@example.com`;
 }
 
-test('a report sent from the footer reaches the inbox, where it can be triaged and deleted', async ({
+test('a report sent from the menu reaches the inbox, where it can be triaged and deleted', async ({
 	page
 }, testInfo) => {
 	const title = `Enhancement ${Date.now()}`;
 	await page.goto('/');
-	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 	const form = page.getByRole('dialog', { name: 'Report' });
 
 	// Nothing is sent until Send, which waits for a title and a description.
@@ -130,7 +130,7 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	const title = `Signed in ${Date.now()}`;
 	await signIn(page, sender);
 	await page.goto('/');
-	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 	const form = page.getByRole('dialog', { name: 'Report' });
 	await form.getByRole('textbox', { name: 'Title' }).fill(title);
 	await form.getByRole('textbox', { name: 'Description' }).fill('The bag forgets the Drunk.');

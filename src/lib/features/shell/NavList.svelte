@@ -8,6 +8,8 @@
 	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
 	import {
 		ACCOUNT_ITEM,
+		APP_ITEMS,
+		REPORT_ISSUE_ICON,
 		HOME_ITEM,
 		isCurrent,
 		NAV_SECTIONS,
@@ -15,6 +17,8 @@
 		type NavItem
 	} from './nav.ts';
 	import { openSettings } from './shell.ts';
+	import BuildLine from '#lib/features/about/BuildLine.svelte';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 
 	interface Props {
 		/** Called after a choice, e.g. to close the drawer. */
@@ -79,6 +83,24 @@
 			</button>
 		</li>
 	</ul>
+	<!-- The app's own pages and Report an issue, where the footer had them (2026-10-23). -->
+	<h3 id="{listId}-app">{t('shell.navSectionApp')}</h3>
+	<ul aria-labelledby="{listId}-app">
+		{#each APP_ITEMS as item (item.id)}{@render link(item)}{/each}
+		<li>
+			<button
+				type="button"
+				onclick={() => {
+					onChoose?.();
+					reportDialog.show();
+				}}
+			>
+				<Icon name={REPORT_ISSUE_ICON} />
+				<span>{t('shell.reportIssue')}</span>
+			</button>
+		</li>
+	</ul>
+	<BuildLine />
 </div>
 
 <style>

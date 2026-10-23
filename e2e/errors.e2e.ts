@@ -191,10 +191,8 @@ test('Diagnostics gathers build, device and problems on the device, without game
 
 	await page.goto('/diagnostics');
 	const panel = page.getByTestId('diagnostics');
-	// About's Advanced part, which /diagnostics opens (Trevor, 2026-10-18).
-	await expect(
-		page.getByRole('dialog', { name: 'Settings' }).getByRole('heading', { name: 'Advanced' })
-	).toBeVisible();
+	// The About page's Advanced part, which /diagnostics opens (Trevor, 2026-10-18 and 2026-10-23).
+	await expect(page.getByRole('main').getByRole('heading', { name: 'Advanced' })).toBeVisible();
 	await expect(panel).toHaveAttribute('aria-busy', 'false');
 	for (const name of [
 		'Build',
@@ -212,26 +210,26 @@ test('Diagnostics gathers build, device and problems on the device, without game
 	await expect(panel.locator('dt:text-is("Version")')).toHaveCount(0);
 	await expect(panel.getByRole('link', { name: /^[0-9a-f]{7,}$/ })).toHaveCount(0);
 	await expect(
-		page.getByRole('dialog', { name: 'Settings' }).getByRole('link', { name: /^[0-9a-f]{7,}$/ })
+		page.getByRole('main').getByRole('link', { name: /^[0-9a-f]{7,}$/ })
 	).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\/commit\//);
 	await expect(panel.locator('dt:text-is("Timestamp") + dd')).toHaveText(/\d{1,2}:\d{2}:\d{2}/);
 	await expect(panel.getByRole('link', { name: 'Manage data' })).toHaveCount(0);
 
 	// Copy and Download are icons beside the Advanced heading, with no Refresh (Trevor, 2026-10-19).
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	const heading = settings.getByRole('heading', { name: 'Advanced' });
+	const about = page.getByRole('main');
+	const heading = about.getByRole('heading', { name: 'Advanced' });
 	const h = (await heading.boundingBox())!;
 	for (const name of ['Copy diagnostics', 'Download diagnostics']) {
-		const icon = (await settings.getByRole('button', { name, exact: true }).boundingBox())!;
+		const icon = (await about.getByRole('button', { name, exact: true }).boundingBox())!;
 		expect(icon.height).toBeGreaterThanOrEqual(44);
 		expect(Math.abs(icon.y + icon.height / 2 - (h.y + h.height / 2))).toBeLessThan(12);
 	}
-	await expect(settings.getByRole('button', { name: 'Refresh', exact: true })).toHaveCount(0);
+	await expect(about.getByRole('button', { name: 'Refresh', exact: true })).toHaveCount(0);
 	await expect(panel.getByRole('button', { name: /Copy|Download/ })).toHaveCount(0);
 
 	// Report an issue is in About's main part, above Advanced (Trevor, 2026-10-19).
 	await expect(panel.getByRole('button', { name: 'Report an issue' })).toHaveCount(0);
-	const report = settings.getByRole('button', { name: 'Report an issue' });
+	const report = about.getByRole('button', { name: 'Report an issue' });
 	expect((await report.boundingBox())!.y).toBeLessThan((await heading.boundingBox())!.y);
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	await report.tap();
@@ -242,7 +240,7 @@ test('Diagnostics gathers build, device and problems on the device, without game
 
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),
-		settings.getByRole('button', { name: 'Download diagnostics' }).tap()
+		about.getByRole('button', { name: 'Download diagnostics' }).tap()
 	]);
 	expect(download.suggestedFilename()).toMatch(
 		/^grim-games-diagnostics-\d{4}-\d{2}-\d{2}-\d{6}\.txt$/

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openSettingsDialog } from './shell.ts';
+import { theMenu } from './shell.ts';
 
 // Trevor (2026-10-16): the update prompt opens a list of what changed since the running build.
 
@@ -55,8 +55,8 @@ test('the update prompt lists the commits since the running build', async ({ pag
 	expect(await prompt.getByRole('link', { name: /^aaaaaaa/ }).getAttribute('href')).toMatch(
 		/\/commit\/a{40}$/
 	);
-	// The card grows upward from its corner; Refresh stays reachable on screen.
-	const after = await prompt.getByRole('button', { name: 'Refresh' }).boundingBox();
+	// The card grows upward from its corner; Update stays reachable on screen.
+	const after = await prompt.getByRole('button', { name: 'Update' }).boundingBox();
 	expect(after!.y + after!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
 
 	await toggle.tap();
@@ -68,11 +68,11 @@ test('with no notes to fetch, What changed stays disabled', async ({ page }) => 
 	await fakeWaitingUpdate(page);
 	await page.goto('/');
 	const prompt = page.getByTestId('update-banner');
-	await expect(prompt.getByRole('button', { name: 'Refresh' })).toBeVisible();
+	await expect(prompt.getByRole('button', { name: 'Update' })).toBeVisible();
 	await expect(prompt.getByRole('button', { name: 'What changed' })).toBeDisabled();
 });
 
-test('a tab left behind by Refresh in another tab offers to reload', async ({ page }) => {
+test('a tab left behind by Update in another tab offers to reload', async ({ page }) => {
 	// The new build activates for every tab; this one never asked, so it is still on the old build.
 	await page.addInitScript(() => {
 		const worker = { postMessage() {}, addEventListener() {} };
@@ -111,7 +111,7 @@ test('a tab left behind by Refresh in another tab offers to reload', async ({ pa
 	await expect(prompt).toBeVisible();
 
 	const reloaded = page.waitForEvent('load');
-	await prompt.getByRole('button', { name: 'Refresh' }).tap();
+	await prompt.getByRole('button', { name: 'Update' }).tap();
 	await reloaded;
 	await expect(prompt).toBeHidden();
 });
@@ -141,14 +141,11 @@ async function fakeServiceWorker(page: Page, waiting: boolean) {
 	}, waiting);
 }
 
+/** The About page, opened from the menu (its own page since 2026-10-23). */
 async function openAbout(page: Page) {
-	await openSettingsDialog(page);
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await dialog
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'About' })
-		.tap();
-	return dialog;
+	await (await theMenu(page)).getByRole('link', { name: 'About', exact: true }).tap();
+	await expect(page.getByRole('heading', { name: 'About', level: 1 })).toBeVisible();
+	return page.getByRole('main');
 }
 
 test('Check for updates in About says Up to date in place', async ({ page }) => {
@@ -328,7 +325,7 @@ test('About shows a download the app started by itself, without a check', async 
 });
 
 // Trevor (2026-10-19): "once update has been loaded from about, also add a refresh button there".
-test('About offers Refresh once a build is ready, and it moves onto the new build', async ({
+test('About offers Update once a build is ready, and it moves onto the new build', async ({
 	page
 }) => {
 	await page.addInitScript(() => {
@@ -391,12 +388,12 @@ test('About offers Refresh once a build is ready, and it moves onto the new buil
 	await expect(page.getByTestId('update-banner')).toHaveCount(0);
 });
 
-test('About offers Refresh when the update card already found a build', async ({ page }) => {
+test('About offers Update when the update card already found a build', async ({ page }) => {
 	await fakeServiceWorker(page, true);
 	await page.goto('/');
 	await expect(page.getByTestId('update-banner')).toBeVisible();
 	const dialog = await openAbout(page);
-	await expect(dialog.getByTestId('update-refresh')).toHaveText('Refresh');
+	await expect(dialog.getByTestId('update-refresh')).toHaveText('Update');
 });
 
 // Trevor (2026-10-19): "we should also proffer the changes there [About], just as we do on the

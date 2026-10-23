@@ -285,15 +285,16 @@ test('text size changes text only: icons, spacing and buttons keep their size', 
 	expect(after.button?.height).toBe(before.button?.height);
 });
 
-test('there is one About: a settings section', async ({ page }) => {
+// Trevor (2026-10-23): About has no settings, so it is its own page in the menu.
+test('About is not a settings section', async ({ page }) => {
 	await page.goto('/');
 	await openSettingsDialog(page);
 	const nav = page
 		.getByRole('dialog', { name: 'Settings' })
 		.getByRole('navigation', { name: 'Settings sections' });
 	await expect(nav.getByRole('button', { name: 'Theme', exact: true })).toBeVisible();
-	await expect(nav.getByRole('button', { name: 'About' })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'Data' })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'About' })).toHaveCount(0);
 	await expect(nav.getByRole('button', { name: 'Reset settings' })).toHaveCount(0);
 });
 
@@ -348,8 +349,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Tokens',
 		'Storyteller',
 		'Player',
-		'Data',
-		'About'
+		'Data'
 	]);
 	await expect(nav.getByRole('heading')).toHaveCount(0);
 	await nav.getByRole('button', { name: 'Storyteller', exact: true }).tap();
@@ -594,7 +594,7 @@ test('opened as an installed app, Settings has no Install app button', async ({ 
 	await page.goto('/');
 	await openSettingsDialog(page);
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
-	await expect(nav.getByRole('button', { name: 'About' })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'Data' })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'Install app' })).toHaveCount(0);
 });
 
