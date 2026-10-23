@@ -237,10 +237,15 @@ export interface Kills {
 }
 
 export const PROTECTS_WHO = ['self', 'marked'] as const;
-export const PROTECTS_FROM = ['demon', 'any'] as const;
+/**
+ * What a protection stops: the Demon's kill, any death, or only an execution (the Devil's
+ * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate).
+ */
+export const PROTECTS_FROM = ['demon', 'any', 'execution'] as const;
+/** `night`: it lasts only the night it is given ("can't die tonight"), so never stops an execution. */
 export type Protects =
-	| { who: 'self'; from: (typeof PROTECTS_FROM)[number] }
-	| { who: 'marked'; token: ReminderLabel; from: (typeof PROTECTS_FROM)[number] };
+	| { who: 'self'; from: (typeof PROTECTS_FROM)[number]; night?: true }
+	| { who: 'marked'; token: ReminderLabel; from: (typeof PROTECTS_FROM)[number]; night?: true };
 
 /** Every key a rules block may have; one more per migrated table. */
 export const RULE_KEYS = [
@@ -578,13 +583,14 @@ function readProtects(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['who', 'token', 'from'], path, issues);
+	checkKeys(raw, ['who', 'token', 'from', 'night'], path, issues);
 	const who = readEnum(raw, 'who', PROTECTS_WHO, path, issues, true);
 	const from = readEnum(raw, 'from', PROTECTS_FROM, path, issues, true);
+	const night = readBoolean(raw, 'night', path, issues) ? { night: true as const } : {};
 	if (!who || !from) return undefined;
 	if (who === 'self') {
 		if (raw.token !== undefined) issues.add(`${path}.token`, 'only a marked player has a token');
-		return { who, from };
+		return { who, from, ...night };
 	}
 	const token = readString(raw, 'token', path, issues, true);
 	if (token === undefined) return undefined;
@@ -592,7 +598,7 @@ function readProtects(
 		issues.add(`${path}.token`, 'not one of this character’s reminders');
 		return undefined;
 	}
-	return { who, token, from };
+	return { who, token, from, ...night };
 }
 
 /** Whether `token` is one of the character's reminders; true when they are not given. */

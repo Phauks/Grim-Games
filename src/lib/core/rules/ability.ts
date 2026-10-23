@@ -385,36 +385,42 @@ export function registrationWorlds(
 /** One ability that protects a player from a kill, and the reminder that says so if any. */
 export interface Protector {
 	source: AbilitySource;
-	/** Against the Demon's kill only, or any kill. */
-	from: 'demon' | 'any';
+	/** Against the Demon's kill only, any death, or an execution only. */
+	from: 'demon' | 'any' | 'execution';
 }
+
+/** What a death is from: the Demon's kill, another ability's, or the day's execution. */
+export type DeathBy = 'demon' | 'other' | 'execution';
 
 /**
  * Every ability that would stop `seatId` dying to a kill `by` the Demon or another ability,
  * in this order: its own (`protects.who: self`, the Sailor, the Soldier), then each reminder
  * on the seat whose character's rules say it protects the player it marks (the Tea Lady's
- * "Cannot Die", the Innkeeper's and Monk's "Safe"). From the rules blocks (`protects`), so a
- * custom character can protect too. Whether each ability works is the caller's to check.
+ * "Cannot Die", the Innkeeper's and Monk's "Safe", the Devil's Advocate's "Survives
+ * Execution"). From the rules blocks (`protects`), so a custom character can protect too. An
+ * execution is never stopped by a protection that lasts only the night (`night`). Whether
+ * each ability works is the caller's to check.
  */
 export function protectors(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup,
-	by: 'demon' | 'other'
+	by: DeathBy
 ): Protector[] {
 	const seat = getSeat(game, seatId);
 	if (!seat) return [];
-	const against = (from: 'demon' | 'any') => from === 'any' || by === 'demon';
+	const against = ({ from, night }: { from: Protector['from']; night?: true }) =>
+		(from === 'any' || from === by) && !(night && by === 'execution');
 	const out: Protector[] = [];
 	const id = trueCharacter(game, seatId, characters);
 	const own = id ? rulesOf(id, characters)?.protects : undefined;
-	if (id && own?.who === 'self' && against(own.from)) {
+	if (id && own?.who === 'self' && against(own)) {
 		out.push({ source: { characterId: id, seatId }, from: own.from });
 	}
 	for (const r of seat.reminders) {
 		const rule = rulesOf(r.characterId, characters)?.protects;
 		if (rule?.who !== 'marked' || rule.token.toLowerCase() !== r.label.toLowerCase()) continue;
-		if (!against(rule.from)) continue;
+		if (!against(rule)) continue;
 		const from = seatOfCharacter(game, r.characterId, characters);
 		out.push({
 			source: {
@@ -438,7 +444,7 @@ export function protection(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup,
-	by: 'demon' | 'other'
+	by: DeathBy
 ): AbilitySource | 'override' | undefined {
 	const seat = getSeat(game, seatId);
 	if (!seat) return undefined;

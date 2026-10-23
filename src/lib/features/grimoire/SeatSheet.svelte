@@ -63,9 +63,23 @@
 		onNotes?: (seatId: SeatId) => void;
 		/** A nomination was recorded or changed: special rules may act on it (NominationAsk). */
 		onNominated?: (nomination: { nominator: SeatId; nominee: SeatId }) => void;
+		/**
+		 * Executed from a living seat's status during the day: the same as the day's Execution
+		 * (Trevor, 2026-10-23), so the board asks and ends the day. False when it isn't the day
+		 * and the board left it to the seat, which logs the execution only.
+		 */
+		onExecute?: (seatId: SeatId) => boolean;
 	}
 
-	let { open = $bindable(), grimoire, seatId, onDraw, onNotes, onNominated }: Props = $props();
+	let {
+		open = $bindable(),
+		grimoire,
+		seatId,
+		onDraw,
+		onNotes,
+		onNominated,
+		onExecute
+	}: Props = $props();
 
 	const game = $derived(grimoire.game);
 	/** Characters a special rule put in play from off the script, not flagged (+1). */
@@ -317,8 +331,9 @@
 		if (seat.dead) grimoire.run({ type: 'SetDeathCause', seatId, cause });
 		// An execution or exile is also today's day log entry (the Undertaker, game end, stats),
 		// as the day's Players section logged it before it went (Trevor, 2026-10-20).
-		else if (cause === 'execution') grimoire.run({ type: 'Execute', seatId });
-		else if (cause === 'exile') grimoire.run({ type: 'Exile', seatId });
+		else if (cause === 'execution') {
+			if (!onExecute?.(seatId)) grimoire.run({ type: 'Execute', seatId });
+		} else if (cause === 'exile') grimoire.run({ type: 'Exile', seatId });
 		else grimoire.run({ type: 'SetDead', seatId, dead: true, cause });
 	}
 

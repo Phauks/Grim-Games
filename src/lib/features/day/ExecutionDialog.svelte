@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
+	import { protection } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -17,11 +18,13 @@
 		open: boolean;
 		game: Game;
 		characters: CharacterLookup;
+		/** Chosen to start with when nothing is logged yet (a seat's status chose Executed). */
+		chosen?: SeatId;
 		/** The player executed, or undefined for no execution; the dialog closes first. */
 		onConfirm: (seatId: SeatId | undefined) => void;
 	}
 
-	let { open = $bindable(), game, characters, onConfirm }: Props = $props();
+	let { open = $bindable(), game, characters, chosen, onConfirm }: Props = $props();
 
 	const NONE = 'none';
 	let choice = $state<string | undefined>();
@@ -30,7 +33,18 @@
 		game.today.entries.findLast((e) => e.kind === 'execution')?.seatId as SeatId | undefined
 	);
 	$effect(() => {
-		if (open) choice = executed;
+		if (open) choice = executed ?? chosen;
+	});
+
+	/**
+	 * Whether the player chosen is executed and does not die, and what saves them (Trevor,
+	 * 2026-10-23), worked out as the Execute command will: shown before Confirm.
+	 */
+	const saved = $derived.by(() => {
+		if (!choice || choice === NONE) return undefined;
+		const seat = game.seats[choice as SeatId];
+		if (!seat || seat.dead) return undefined;
+		return protection(game, seat.seatId, characters, 'execution');
 	});
 
 	const options = $derived.by(() => {
@@ -92,6 +106,20 @@
 			{#snippet item(option)}{@render candidate(option)}{/snippet}
 			{#snippet selected(option)}{@render candidate(option)}{/snippet}
 		</Select>
+		<!-- Its line is always there, so choosing never moves the buttons (no reflow). -->
+		<p class="saved" data-testid="execution-saved">
+			{#if saved && choice}
+				{t('day.logExecutedSurvived', {
+					name: seatLabel(game, choice as SeatId)
+				})}{#if saved !== 'override'}{@const by = characters.get(
+						saved.characterId
+					)}{#if by}<CharacterBadge
+							characterId={by.id}
+							character={by}
+							interactive={false}
+						/>{/if}{/if}
+			{/if}
+		</p>
 	</div>
 </ConfirmDialog>
 
@@ -113,6 +141,16 @@
 		color: var(--on-surface-muted);
 	}
 	.execution {
+		display: grid;
+		gap: var(--space-2);
 		padding-block: var(--space-2);
+	}
+	.saved {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-2);
+		min-height: 2lh;
+		margin: 0;
 	}
 </style>
