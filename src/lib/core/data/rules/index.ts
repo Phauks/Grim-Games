@@ -15,8 +15,10 @@ import gossip from './gossip.json' with { type: 'json' };
 import hatter from './hatter.json' with { type: 'json' };
 import heretic from './heretic.json' with { type: 'json' };
 import imp from './imp.json' with { type: 'json' };
+import innkeeper from './innkeeper.json' with { type: 'json' };
 import klutz from './klutz.json' with { type: 'json' };
 import mayor from './mayor.json' with { type: 'json' };
+import monk from './monk.json' with { type: 'json' };
 import moonchild from './moonchild.json' with { type: 'json' };
 import plaguedoctor from './plaguedoctor.json' with { type: 'json' };
 import politician from './politician.json' with { type: 'json' };
@@ -26,10 +28,13 @@ import puzzlemaster from './puzzlemaster.json' with { type: 'json' };
 import ravenkeeper from './ravenkeeper.json' with { type: 'json' };
 import recluse from './recluse.json' with { type: 'json' };
 import sage from './sage.json' with { type: 'json' };
+import sailor from './sailor.json' with { type: 'json' };
 import saint from './saint.json' with { type: 'json' };
 import shabaloth from './shabaloth.json' with { type: 'json' };
+import soldier from './soldier.json' with { type: 'json' };
 import spy from './spy.json' with { type: 'json' };
 import sweetheart from './sweetheart.json' with { type: 'json' };
+import tealady from './tealady.json' with { type: 'json' };
 import tinker from './tinker.json' with { type: 'json' };
 import undertaker from './undertaker.json' with { type: 'json' };
 import zombuul from './zombuul.json' with { type: 'json' };
@@ -44,8 +49,10 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	hatter,
 	heretic,
 	imp,
+	innkeeper,
 	klutz,
 	mayor,
+	monk,
 	moonchild,
 	plaguedoctor,
 	politician,
@@ -55,10 +62,13 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	ravenkeeper,
 	recluse,
 	sage,
+	sailor,
 	saint,
 	shabaloth,
+	soldier,
 	spy,
 	sweetheart,
+	tealady,
 	tinker,
 	undertaker,
 	zombuul
