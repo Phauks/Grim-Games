@@ -62,6 +62,7 @@
 			class="owner"
 			src={icon}
 			alt=""
+			referrerpolicy="no-referrer"
 			{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
 		/>{/if}<span class="words"
 		>{label ?? t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span

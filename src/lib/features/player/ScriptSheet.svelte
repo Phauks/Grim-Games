@@ -103,9 +103,12 @@
 				>
 					{#each partners as p (p.id)}
 						{@const src = iconUrl(p)}
-						{#if src}<img {src} alt="" {@attach iconFallback(fallbackIconUrl(p))} />{:else}<span
-								class="dot"
-							></span>{/if}
+						{#if src}<img
+								{src}
+								alt=""
+								referrerpolicy="no-referrer"
+								{@attach iconFallback(fallbackIconUrl(p))}
+							/>{:else}<span class="dot"></span>{/if}
 					{/each}
 				</button>
 			{/if}

@@ -224,6 +224,7 @@
 				data-plain={appearance.reminderIconColour === 'plain' || undefined}
 				alt=""
 				draggable="false"
+				referrerpolicy="no-referrer"
 				{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
 			/>{/if}
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
