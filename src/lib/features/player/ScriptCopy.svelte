@@ -6,7 +6,7 @@
 	import { playerJinxes, sheetCharacters } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import LightSheetSwitch from './LightSheetSwitch.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { LIGHT_SHEET_STYLE } from '#lib/ui/themes/print.ts';
 
@@ -29,6 +29,8 @@
 		travellers?: readonly TravellerInPlay[];
 		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
 		showBreakdown?: boolean;
+		/** False where the host's header has the light background switch (PlayerScriptActions). */
+		lightSwitch?: boolean;
 	}
 
 	let {
@@ -38,7 +40,8 @@
 		byline = true,
 		inPlay,
 		travellers,
-		showBreakdown = true
+		showBreakdown = true,
+		lightSwitch = true
 	}: Props = $props();
 
 	$effect(() => {
@@ -58,24 +61,18 @@
 	const jinxes = $derived(data ? playerJinxes(script, data) : []);
 </script>
 
-<!-- The light background switch sits at the top of every copy, wherever it shows, and in
-     Settings > Player (Trevor, 2026-10-23). -->
+<!-- The light background switch sits at the top of every copy, unless its host's header has
+     it, and in Settings > Player (Trevor, 2026-10-23). -->
 <div
 	class="copy"
 	class:light={playerSettings.current.lightSheet}
 	style={playerSettings.current.lightSheet ? LIGHT_SHEET_STYLE : undefined}
 	data-testid="script-copy"
 >
-	<div class="head">
-		{#if byline && data}<ScriptByline author={script.meta.author} {version} />{/if}
-		<span class="light-switch">
-			<Toggle
-				label={t('player.lightSheet')}
-				checked={playerSettings.current.lightSheet}
-				onChange={(lightSheet) => playerSettings.update({ lightSheet })}
-			/>
-		</span>
-	</div>
+	{#if byline || lightSwitch}<div class="head">
+			{#if byline && data}<ScriptByline author={script.meta.author} {version} />{/if}
+			{#if lightSwitch}<span class="light-switch"><LightSheetSwitch /></span>{/if}
+		</div>{/if}
 	{#if data}
 		<ScriptSheet {characters} {jinxes} {players} {inPlay} {travellers} {showBreakdown} />
 	{:else}

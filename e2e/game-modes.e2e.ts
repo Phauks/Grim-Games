@@ -1667,28 +1667,29 @@ test('New game previews the script as it will play, beside the settings', async 
 	await noSidewaysScroll(page);
 });
 
-test('the script preview turns light from its own switch, and Settings > Player shows the same switch', async ({
+test('the script preview turns light from its sun and moon switch, and Settings > Player shows the same switch', async ({
 	page
 }) => {
 	await page.goto('/new');
 	const copy = page.getByTestId('script-preview').getByTestId('script-copy');
 	await copy.getByText('Chef').first().waitFor();
-	const light = copy.getByRole('checkbox', { name: 'Light background' });
-	await expect(light).not.toBeChecked();
+	// A moon while dark, a sun once light (Trevor, 2026-10-23).
+	const light = copy.getByRole('button', { name: 'Light background' });
+	await expect(light).toHaveAttribute('aria-pressed', 'false');
 	const size = async () => {
 		const box = await copy.boundingBox();
 		return box && { width: box.width, height: box.height };
 	};
 	const before = await size();
-	await copy.getByText('Light background').tap();
-	await expect(light).toBeChecked();
+	await light.tap();
+	await expect(light).toHaveAttribute('aria-pressed', 'true');
 	await expect(copy).toHaveCSS('background-color', 'rgb(251, 248, 241)');
 	// Nothing moves when it turns light (no layout reflow).
 	expect(await size()).toEqual(before);
 
 	// Remembered on this device, and the same setting in Settings > Player.
 	await page.reload();
-	await expect(light).toBeChecked();
+	await expect(light).toHaveAttribute('aria-pressed', 'true');
 	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
@@ -1699,5 +1700,35 @@ test('the script preview turns light from its own switch, and Settings > Player 
 	await expect(setting).toBeChecked();
 	await dialog.getByText('Light background', { exact: true }).tap();
 	await page.keyboard.press('Escape');
-	await expect(light).not.toBeChecked();
+	await expect(light).toHaveAttribute('aria-pressed', 'false');
+});
+
+test('the Script sheet’s sun and moon sit beside Print and Share, and turn the night order light too', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	// One switch in the header; none in the copy itself.
+	const light = sheet.getByTestId('light-sheet');
+	await expect(light).toHaveCount(1);
+	await expect(sheet.getByTestId('script-copy').getByTestId('light-sheet')).toHaveCount(0);
+	await light.tap();
+	await expect(sheet.getByTestId('script-copy')).toHaveCSS(
+		'background-color',
+		'rgb(251, 248, 241)'
+	);
+	await sheet.getByRole('tab', { name: 'Night' }).tap();
+	await expect(sheet.getByTestId('night-sheet')).toHaveCSS(
+		'background-color',
+		'rgb(251, 248, 241)'
+	);
+	// Each character type starts under a line across the sheet.
+	await sheet.getByRole('tab', { name: 'Script' }).tap();
+	const sections = sheet.getByTestId('script-copy').locator('.sheet > section');
+	await expect(sections.nth(1)).not.toHaveCSS('border-top-width', '0px');
+	await expect(sections.first()).toHaveCSS('border-top-width', '0px');
 });
