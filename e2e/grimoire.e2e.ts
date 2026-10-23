@@ -5419,18 +5419,28 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	await page.getByRole('dialog', { name: 'Who did Seat 1 nominate?' }).getByText('Seat 3').tap();
 	await expect(nominated).toHaveText('Seat 3');
 	await closeSheet(page);
-	// Trevor (2026-10-23, option A): the board marks both seats, a finger and a gavel in one
-	// pill whose two slots never change size.
+	// Trevor (2026-10-23): every living seat has the marks, greyed until they happen, side by
+	// side in one pill that never changes size.
 	const seats = page.getByTestId('seat');
 	const marks = page.getByTestId('nomination-marks');
-	await expect(marks).toHaveCount(2);
-	await expect(seats.nth(0).getByTestId('nominator-mark').locator('svg')).toHaveCount(1);
-	await expect(seats.nth(0).getByTestId('nominated-mark').locator('svg')).toHaveCount(0);
-	await expect(seats.nth(2).getByTestId('nominated-mark').locator('svg')).toHaveCount(1);
+	await expect(marks).toHaveCount(8);
+	const on = (seat: number, mark: string) =>
+		seats
+			.nth(seat - 1)
+			.getByTestId(mark)
+			.and(page.locator('[data-on]'));
+	await expect(on(1, 'nominator-mark')).toHaveCount(1);
+	await expect(on(1, 'nominated-mark')).toHaveCount(0);
+	await expect(on(3, 'nominated-mark')).toHaveCount(1);
+	await expect(on(2, 'nominator-mark')).toHaveCount(0);
+	const finger = await seats.nth(0).getByTestId('nominator-mark').boundingBox();
+	const gavel = await seats.nth(0).getByTestId('nominated-mark').boundingBox();
+	// Side by side, not stacked.
+	expect(Math.abs((finger?.y ?? 0) - (gavel?.y ?? 1))).toBeLessThan(1);
+	expect(gavel!.x).toBeGreaterThan(finger!.x);
 	const one = await seats.nth(0).getByTestId('nomination-marks').boundingBox();
-	const three = await seats.nth(2).getByTestId('nomination-marks').boundingBox();
-	expect(Math.abs((one?.height ?? 0) - (three?.height ?? 1))).toBeLessThan(1);
-	await expect(seats.nth(1).getByTestId('nomination-marks')).toHaveCount(0);
+	const two = await seats.nth(1).getByTestId('nomination-marks').boundingBox();
+	expect(Math.abs((one?.width ?? 0) - (two?.width ?? 1))).toBeLessThan(1);
 	// The nominee's sheet shows it from the other side.
 	sheet = await openSeat(page, 3);
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('Seat 1');
@@ -5442,7 +5452,59 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 		.tap();
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
 	await closeSheet(page);
-	await expect(marks).toHaveCount(0);
+	// The nomination is gone from both sides, so no mark is lit.
+	await expect(marks).toHaveCount(8);
+	await expect(page.locator('[data-testid="nomination-marks"] [data-on]')).toHaveCount(0);
+});
+
+// Trevor (2026-10-23): tapping a seat's nomination marks asks who that player nominated, and
+// tracking feeds nomination abilities: a Townsfolk who nominates the Virgin is executed
+// straight away (https://wiki.bloodontheclocktower.com/Virgin). The dead have no marks unless
+// they took part in a nomination today.
+test('tapping the nomination marks records a nomination, and the Virgin executes a Townsfolk', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Virgin'],
+		[2, 'Chef'],
+		[4, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await trackNominations(page);
+	const seats = page.getByTestId('seat');
+	await seats.nth(1).getByTestId('nomination-marks').tap();
+	await page
+		.getByRole('dialog', { name: 'Who did Seat 2 nominate?' })
+		.getByText('Seat 1', { exact: true })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Virgin: execute Seat 2?' });
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await expect(seatLabelled(page, 'Seat 2: no name, Chef, dead')).toBeAttached();
+	// The Virgin's ability is used: her "No Ability" reminder is placed.
+	await expect(seatLabelled(page, 'Seat 1: no name, Virgin, 1 reminder')).toBeAttached();
+	// Dead, but nominated today: the marks stay, the finger lit.
+	await expect(
+		seats.nth(1).getByTestId('nominator-mark').and(page.locator('[data-on]'))
+	).toHaveCount(1);
+	// A player who died without nominating has none.
+	const empath = await openSeat(page, 4);
+	await empath.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 4' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	await closeSheet(page);
+	await expect(seats.nth(3).getByTestId('nomination-marks')).toHaveCount(0);
+	await expect(page.getByTestId('nomination-marks')).toHaveCount(7);
 });
 
 // Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented

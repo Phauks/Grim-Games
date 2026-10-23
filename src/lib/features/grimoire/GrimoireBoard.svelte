@@ -59,7 +59,9 @@
 		abilityState,
 		stepNightNumbers,
 		todaysNominations,
-		gameClock
+		characterNominationPrompts,
+		gameClock,
+		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import {
@@ -129,6 +131,9 @@
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
+	import SeatChooser from './SeatChooser.svelte';
+	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
+	import { recordNomination } from './record-nomination.ts';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
@@ -205,7 +210,18 @@
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	// Who nominated and who was nominated today, for the marks on the seats (Track nominations).
-	const nominated = $derived.by(() => {
+	/**
+	 * A seat's nomination marks (Trevor, 2026-10-23): on every living player, greyed until
+	 * they happen, as the ghost vote shows on the dead. Not on the dead, unless the player
+	 * was part of a nomination today (they nominated, then died, and the day goes on).
+	 */
+	function seatNominationMarks(seat: { seatId: SeatId; dead: boolean }) {
+		if (!nominatedToday) return undefined;
+		const made = nominatedToday.made.has(seat.seatId);
+		const received = nominatedToday.received.has(seat.seatId);
+		return !seat.dead || made || received ? { made, received } : undefined;
+	}
+	const nominatedToday = $derived.by(() => {
 		if (!preferences.current.assistance.trackNominations) return undefined;
 		const today = todaysNominations(game);
 		return {
@@ -696,7 +712,23 @@
 	 */
 	const attackRule = $derived(gameRules.find((r) => r.parts.demonAttacks)?.name);
 	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
-	let nominationAsks = $state<NominationPrompt[]>([]);
+	let nominationAsks = $state<(NominationPrompt | CharacterNominationPrompt)[]>([]);
+	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
+	function nominated(nomination: { nominator: SeatId; nominee: SeatId }) {
+		nominationAsks = [
+			...nominationPrompts(grimoire.game, nomination, gameRules, characters),
+			...characterNominationPrompts(grimoire.game, nomination, characters)
+		];
+	}
+	/** The seat whose nomination marks were tapped: who did they nominate? */
+	let nominatingFrom = $state<SeatId>();
+	function nominateFrom(nominee: SeatId | undefined) {
+		const seatId = nominatingFrom;
+		nominatingFrom = undefined;
+		if (seatId === undefined) return;
+		const pair = recordNomination(grimoire, seatId, 'made', nominee);
+		if (pair) nominated(pair);
+	}
 	const walkAttack = $derived.by(() => {
 		if (!attackRule || !walkStep || walk?.night !== 'other') return undefined;
 		if (walkStep.character?.type !== 'demon') return undefined;
@@ -1542,10 +1574,7 @@
 							}
 						: undefined}
 					orphan={isOrphan(seat, game.script, characters)}
-					nominations={nominated && {
-						made: nominated.made.has(seat.seatId),
-						received: nominated.received.has(seat.seatId)
-					}}
+					nominations={seatNominationMarks(seat)}
 					dropTarget={seatArr.reorderTarget === seat.seatId ||
 						(remDrag.drag !== undefined &&
 							remDrag.drag.target === seat.seatId &&
@@ -1560,7 +1589,9 @@
 							? readCharacter(seat.characterId)
 							: part === 'note'
 								? editNote(seat.seatId)
-								: openSeat(seat.seatId))}
+								: part === 'nominate'
+									? (nominatingFrom = seat.seatId)
+									: openSeat(seat.seatId))}
 					onHold={seatArr.arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
 					onGhostVote={() =>
 						!seatArr.arranging &&
@@ -2144,8 +2175,20 @@
 		onDraw(id);
 	}}
 	onNotes={(id) => notesSheet?.edit(id)}
-	onNominated={(nomination) =>
-		(nominationAsks = nominationPrompts(grimoire.game, nomination, gameRules, characters))}
+	onNominated={nominated}
+/>
+
+<!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
+<SeatChooser
+	open={nominatingFrom !== undefined}
+	title={nominatingFrom === undefined
+		? ''
+		: `Who did ${seatLabelFor(game, nominatingFrom)} nominate?`}
+	{game}
+	{characters}
+	exclude={nominatingFrom}
+	onNone={() => nominateFrom(undefined)}
+	onChoose={(nominee) => nominateFrom(nominee)}
 />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />

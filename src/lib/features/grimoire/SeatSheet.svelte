@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { recordNomination } from './record-nomination.ts';
 	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -328,21 +329,8 @@
 		const side = nominating;
 		nominating = undefined;
 		if (!side || seatId === undefined) return;
-		const entry = side === 'made' ? nominations.made : nominations.received;
-		if (!other) {
-			if (entry) grimoire.run({ type: 'RemoveDayEntry', entryId: entry.entryId });
-			return;
-		}
-		const pair =
-			side === 'made'
-				? { nominator: seatId, nominee: other }
-				: { nominator: other, nominee: seatId };
-		const done = grimoire.run(
-			entry
-				? { type: 'EditNomination', entryId: entry.entryId, ...pair }
-				: { type: 'Nominate', ...pair }
-		);
-		if (done) onNominated?.(pair);
+		const pair = recordNomination(grimoire, seatId, side, other);
+		if (pair) onNominated?.(pair);
 	}
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let menuOpen = $state(false);
@@ -1388,10 +1376,13 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
+	/* As wide as "Not used", the longer of a dead player's two, with the words centred in it
+	   (Trevor, 2026-10-23: "Not used" sat to one side, in room kept for "None while alive").
+	   Toggling still moves only the words. */
 	.ghost-text {
 		display: inline-grid;
-		justify-items: start;
-		text-align: start;
+		justify-items: center;
+		text-align: center;
 	}
 	.ghost-text::before {
 		content: attr(data-reserve);
