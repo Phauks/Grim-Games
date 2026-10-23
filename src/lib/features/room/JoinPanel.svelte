@@ -17,9 +17,9 @@
 	import { resolve } from '$app/paths';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { normaliseRoomCode, ROOM_CODE_LENGTH, scannedRoom } from '#lib/core/sync/room-code.ts';
-	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
@@ -37,13 +37,14 @@
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
+	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 
 	/**
-	 * Joining a live room on a phone: the code form (with the game it opens), then your name
-	 * and seat, the table, and the Specters vote. /play shows it
-	 * in its Room tab (Trevor, 2026-10-19), so a player moves between script and room.
+	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
+	 * over /play's tabs, which says where this phone sits and opens a sheet for its name, seat
+	 * and initials (plan J12: no Room tab), and the Specters vote.
 	 */
 	interface Props {
 		/** The room's code; undefined shows the code form. */
@@ -59,9 +60,14 @@
 		onStoryteller?: (name: string | undefined) => void;
 		/** Told when the phone has a seat here, or has asked for one, as it does or on its return. */
 		onSeated?: () => void;
+		/**
+		 * Whether the code form shows while the phone is not in a room (Join game); /play's
+		 * own row for the last room shows nothing then.
+		 */
+		entry?: boolean;
 	}
 
-	let { code, onCode, onJoined, onStoryteller, onSeated }: Props = $props();
+	let { code, onCode, onJoined, onStoryteller, onSeated, entry = true }: Props = $props();
 
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
@@ -225,14 +231,20 @@
 	 * opens over the page once when it arrives, and again from its button.
 	 */
 	const revealed = $derived(player?.revealed);
-	let finalOpen = $state(false);
 	let seenReveal: string | undefined;
 	$effect(() => {
 		const id = revealed?.gameId;
-		if (id && id !== seenReveal) finalOpen = true;
-		if (!id) finalOpen = false;
+		if (id && id !== seenReveal) finalGrimoire.open = true;
+		if (!id) finalGrimoire.open = false;
 		seenReveal = id;
 	});
+
+	/*
+	 * Name, seat and initials are one sheet away: the whole "You" row opens it (plan J12), so
+	 * the phone lands on the script (Trevor, 2026-10-23) with its next step in view. Asking
+	 * closes it.
+	 */
+	let editing = $state(false);
 
 	/*
 	 * Grim view (plan D1, Trevor 2026-10-22: "grim view by password or direct link. drop
@@ -283,10 +295,11 @@
 		const n = name.trim();
 		if (!n || !player) return;
 		player.ask(n, seat || undefined);
+		editing = false;
 	}
 </script>
 
-{#if !inRoom}
+{#if !inRoom && entry}
 	{#if code !== undefined}
 		<p class="problem" role="alert">
 			{!valid
@@ -366,13 +379,20 @@
 		</form>
 	</Dialog>
 	{#if code === undefined}<YourGames onOpen={openRoom} />{/if}
-{:else}
-	<PageSection title={t('room.you')}>
-		<p class="summary" role="status" data-testid="join-status">{summary}</p>
-		<!-- Share grim (plan R5): in its place all game, usable once the Storyteller shares it. -->
-		<Button icon="grimoire" disabled={!revealed} onclick={() => (finalOpen = true)}
-			>{t('room.finalGrimoire')}</Button
-		>
+{:else if inRoom}
+	<!-- One tap target, the whole row (Trevor: whole-row tap), with the pencil it opens by. -->
+	<button
+		type="button"
+		class="you"
+		data-testid="you-row"
+		aria-haspopup="dialog"
+		onclick={() => (editing = true)}
+	>
+		<span class="summary" role="status" data-testid="join-status">{summary}</span>
+		<Icon name="edit" />
+		<span class="visually-hidden">{t('room.editYou')}</span>
+	</button>
+	<Dialog bind:open={editing} title={t('room.you')}>
 		<form onsubmit={ask}>
 			<label for="player-name">{t('room.yourName')}</label>
 			<ClearableField bind:value={name}>
@@ -412,51 +432,33 @@
 					{/each}
 				</div>
 			</fieldset>
-			<div class="row">
-				<Button
-					type="submit"
-					variant="accent"
-					disabled={!name.trim() || unchanged || status !== 'open'}
-				>
-					{t('room.ask')}
-				</Button>
-				<Button
-					variant="quiet"
-					disabled={!view?.request || status !== 'open'}
-					onclick={() => player?.cancel()}
-				>
-					{t('room.cancelRequest')}
-				</Button>
-				<Button
-					variant="quiet"
-					disabled={!mine || status !== 'open'}
-					onclick={() => player?.leaveSeat()}
-				>
-					{t('room.leaveSeat')}
-				</Button>
-			</div>
+			<!-- Ask is the sheet's Confirm; withdrawing a request or leaving a seat sit at the
+			     bottom left, always there and usable when they apply, so nothing moves. -->
+			<ModalActions
+				onCancel={() => (editing = false)}
+				submit
+				disabled={!name.trim() || unchanged || status !== 'open'}
+				confirmLabel={t('room.ask')}
+			>
+				{#snippet start()}
+					<Button
+						variant="quiet"
+						disabled={!view?.request || status !== 'open'}
+						onclick={() => player?.cancel()}
+					>
+						{t('room.cancelRequest')}
+					</Button>
+					<Button
+						variant="quiet"
+						disabled={!mine || status !== 'open'}
+						onclick={() => player?.leaveSeat()}
+					>
+						{t('room.leaveSeat')}
+					</Button>
+				{/snippet}
+			</ModalActions>
 		</form>
-	</PageSection>
-	<PageSection title={t('room.table')}>
-		{#if seats.length === 0}
-			<p class="none">{t('common.none')}</p>
-		{:else}
-			<p class="storyteller" data-testid="room-storyteller">
-				{t('room.storytellerLine', { name: storyteller ?? t('common.none') })}
-			</p>
-			<ol class="table">
-				{#each seats as s (s.seatId)}
-					<li data-dead={s.dead || undefined} data-mine={s.seatId === mine || undefined}>
-						<span class="number">{s.seatNumber}</span>
-						<span class="name">{s.playerName ?? t('common.none')}</span>
-						<span class="state">
-							{s.dead ? t('room.dead') : ''}
-						</span>
-					</li>
-				{/each}
-			</ol>
-		{/if}
-	</PageSection>
+	</Dialog>
 {/if}
 
 <Dialog bind:open={voting} title={t('room.vote.title')}>
@@ -478,7 +480,7 @@
 	</ul>
 </Dialog>
 
-<Dialog bind:open={finalOpen} title={t('room.finalGrimoire')} size="max" scroll={false}>
+<Dialog bind:open={finalGrimoire.open} title={t('room.finalGrimoire')} size="max" scroll={false}>
 	<div class="final" data-testid="final-grimoire">
 		<SharedBoard shared={revealed?.grimoire} />
 	</div>
@@ -565,16 +567,43 @@
 	.code-form :global(.button) {
 		min-width: calc(10 * var(--u));
 	}
-	.problem,
-	.storyteller,
-	.none {
+	.problem {
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	/* Two lines reserved, so a longer status never moves the form. */
+	/* Where this phone sits, and the pencil for its sheet, in one row over the tabs. */
+	.you {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		box-sizing: border-box;
+		width: 100%;
+		min-height: var(--tap-target);
+		margin-bottom: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+	}
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	/* Two lines reserved, so a longer status never moves the tabs. */
 	.summary {
+		flex: 1;
+		min-width: 0;
 		min-height: 2.8em;
 		margin: 0;
+		align-content: center;
 	}
 	input:not([type='radio']) {
 		box-sizing: border-box;
@@ -631,46 +660,6 @@
 		color: var(--on-surface-muted);
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-	}
-	.table {
-		display: grid;
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.table li {
-		display: grid;
-		grid-template-columns: 2.5em 1fr auto;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-	}
-	.table li[data-mine] {
-		border-color: var(--accent);
-	}
-	/* Dead seats are greyed, no skull (09-player-script-view.md). */
-	.table li[data-dead] {
-		color: var(--on-surface-muted);
-	}
-	.number {
-		font-variant-numeric: tabular-nums;
-	}
-	.name {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.state {
-		color: var(--on-surface-muted);
 	}
 	.ability {
 		margin: 0 0 var(--space-2);

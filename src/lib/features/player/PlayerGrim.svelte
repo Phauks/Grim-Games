@@ -8,6 +8,8 @@
 	import { lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
@@ -99,6 +101,15 @@
 	/* eslint-enable grim/names-as-badges */
 </script>
 
+<!-- Share grim (plan R5): in its place all game, usable once the Storyteller shares it; the
+     board's own copy of this tab has no such button. -->
+{#if !town}
+	<div class="tools">
+		<Button icon="grimoire" disabled={!player?.revealed} onclick={() => (finalGrimoire.open = true)}
+			>{t('room.finalGrimoire')}</Button
+		>
+	</div>
+{/if}
 {#if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
@@ -158,6 +169,11 @@
 </BottomSheet>
 
 <style>
+	.tools {
+		display: flex;
+		justify-content: flex-end;
+		margin-bottom: var(--space-2);
+	}
 	.none {
 		margin: 0;
 		color: var(--on-surface-muted);

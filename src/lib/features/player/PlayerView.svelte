@@ -59,19 +59,8 @@
 
 	let data = $state<GameData>();
 	let error = $state<string>();
-	// svelte-ignore state_referenced_locally
-	let tab = $state(join ? 'room' : 'script');
-	/**
-	 * Joining opens on the room's name and seat form; once the phone has a seat, or has asked
-	 * for one, it moves to the script, once (Trevor, 2026-10-23: "when joining game, spawn on
-	 * script").
-	 */
-	let landed = false;
-	function seated() {
-		if (landed) return;
-		landed = true;
-		tab = 'script';
-	}
+	// Joining lands on the script (Trevor, 2026-10-23); the room is the row above the tabs.
+	let tab = $state('script');
 
 	onMount(async () => {
 		try {
@@ -200,9 +189,17 @@
 
 	{#if error}
 		<p role="alert">{t('player.loadFailed', { error })}</p>
-	{:else if join && choosing}
+	{:else}
+		<!-- One row for the room, over the tabs (plan J12, no Room tab): Join game's code form
+		     until the phone is in a room; on /play, the room it last joined while it is in it.
+		     Kept in place as the script arrives, so the room stays open. -->
+		<PlayerRoom
+			initialCode={join ? (join.code ?? null) : undefined}
+			onCode={join ? openRoom : undefined}
+		/>
+	{/if}
+	{#if error || (join && choosing)}
 		<!-- No script yet: the room sends its own once the phone is in, and the tabs follow. -->
-		<PlayerRoom initialCode={join.code ?? null} onCode={openRoom} />
 	{:else if choosing}
 		<!-- Only when no script is loaded; no Change script once there is one (Trevor). -->
 		<PageSection title={t('player.chooseScript')}>
@@ -226,13 +223,6 @@
 		<PlayerScriptTabs {script} travellers={roomTable.travellers} bind:tab>
 			{#snippet grim()}<PlayerGrim {script} />{/snippet}
 			{#snippet notes()}<PlayerNotes notesKey={key} />{/snippet}
-			{#snippet room()}<PlayerRoom
-					{script}
-					{version}
-					initialCode={join ? (join.code ?? null) : undefined}
-					onCode={join ? openRoom : undefined}
-					onSeated={join ? seated : undefined}
-				/>{/snippet}
 		</PlayerScriptTabs>
 	{/if}
 </Page>

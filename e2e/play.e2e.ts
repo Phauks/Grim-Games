@@ -77,9 +77,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('the player view is a reading page, with no Storyteller controls', async ({ page }) => {
-	// Script, night order, the town, notes and the live room only (Trevor, 2026-10-16:
-	// "nothing close to ... controls"; 2026-10-19: a Room tab to move between, and a Grim tab
-	// of what the town knows).
+	// Script, night order, the town and notes only (Trevor, 2026-10-16: "nothing close to ...
+	// controls"; 2026-10-19: a Grim tab of what the town knows). The live room is a row over
+	// the tabs, not a tab (plan J12).
 	const onRow = await page.getByRole('tab').allTextContents();
 	const more = page.getByRole('button', { name: 'More tabs' });
 	if (await more.count()) {
@@ -92,7 +92,7 @@ test('the player view is a reading page, with no Storyteller controls', async ({
 		);
 		await page.keyboard.press('Escape');
 	}
-	expect(onRow).toEqual(['Script', 'Night', 'Grim', 'Notes', 'Room']);
+	expect(onRow).toEqual(['Script', 'Night', 'Grim', 'Notes']);
 	await expect(page.getByTestId('seat-ring')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
@@ -115,13 +115,16 @@ test('tabs that do not fit move into a ⋯ menu instead of wrapping', async ({ p
 
 	// Picking one from the menu opens it and keeps it on the row.
 	await more.tap();
-	await page.getByRole('dialog', { name: 'More tabs' }).getByRole('button', { name: 'Room' }).tap();
-	await expect(page.getByRole('tab', { name: 'Room' })).toHaveAttribute('aria-selected', 'true');
-	await expect(page.getByRole('tabpanel', { name: 'Room' })).toBeVisible();
+	await page
+		.getByRole('dialog', { name: 'More tabs' })
+		.getByRole('button', { name: 'Notes' })
+		.tap();
+	await expect(page.getByRole('tab', { name: 'Notes' })).toHaveAttribute('aria-selected', 'true');
+	await expect(page.getByRole('tabpanel', { name: 'Notes' })).toBeVisible();
 
 	// With room again, every tab is back on the row and the ⋯ button goes.
 	await page.setViewportSize({ width: 1000, height: 640 });
-	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes', 'Room']);
+	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
 	await expect(more).toHaveCount(0);
 });
 
@@ -771,18 +774,13 @@ test('the printed back can carry the jinxes, Fabled and Loric instead', async ({
 	await expect(preview.locator('.back')).toHaveCount(0);
 });
 
-test('the Room tab joins a live room in place, and the player moves between it and the script', async ({
+test('the room this phone joined is one row over the tabs, and Share hands it on', async ({
 	page,
 	browser
 }, testInfo) => {
-	// Trevor, 2026-10-19: a tab on the player view for the room, to move between.
-	await openTab(page, 'Room');
-	const room = page.getByRole('tabpanel', { name: 'Room' });
-	// The code form, with no title or Share of its own until the phone is in a room (Trevor,
-	// 2026-10-23: Join game said it twice, with two share buttons).
-	await expect(room.getByRole('textbox', { name: 'Room code from the Storyteller' })).toBeVisible();
-	await expect(room.getByRole('heading', { name: 'Join game' })).toHaveCount(0);
-	await expect(room.getByRole('button', { name: 'Share room' })).toHaveCount(0);
+	// Plan J12 (Trevor, 2026-10-23): no Room tab. Before joining, /play has no room row.
+	await expect(page.getByRole('tab', { name: 'Room' })).toHaveCount(0);
+	await expect(page.getByTestId('you-row')).toHaveCount(0);
 
 	// The Storyteller opens a room on another device.
 	const st = await (await browser.newContext({ ...testInfo.project.use })).newPage();
@@ -799,38 +797,31 @@ test('the Room tab joins a live room in place, and the player moves between it a
 	const shown = (await st.getByTestId('share-code').textContent())!;
 	const code = shown.replace(/\s/g, '');
 
-	const field = room.getByRole('textbox', { name: 'Room code from the Storyteller' });
-	await field.tap();
-	await field.pressSequentially(code);
-	await expect(room.getByTestId('room-preview')).toContainText('Trouble Brewing');
-	await room.getByRole('button', { name: 'Join as player' }).tap();
-	// Joined in place: still /play, now in the room.
-	await expect(page).toHaveURL(/\/play$/);
-	await expect(room.getByRole('heading', { name: `Room ${shown}` })).toBeVisible();
-	await expect(room.getByTestId('join-status')).toHaveText(
+	// Joining lands on the script, with the room's row over the tabs; its sheet asks for a seat.
+	await page.goto(`/join/${code}`);
+	const row = page.getByTestId('you-row');
+	await expect(page.getByTestId('join-status')).toHaveText(
 		'Choose your seat and type your name, then ask the Storyteller.'
 	);
-	await room.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await room.getByText('Seat 2', { exact: true }).tap();
-	await room.getByRole('button', { name: 'Ask the Storyteller' }).tap();
-	await expect(room.getByTestId('join-status')).toHaveText(
+	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
+	await row.tap();
+	const sheet = page.getByRole('dialog', { name: 'You', exact: true });
+	await sheet.getByRole('textbox', { name: 'Your name' }).fill('Alex');
+	await sheet.getByText('Seat 2', { exact: true }).tap();
+	await sheet.getByRole('button', { name: 'Ask the Storyteller' }).tap();
+	await expect(sheet).toBeHidden();
+	await expect(page.getByTestId('join-status')).toHaveText(
 		'Waiting for the Storyteller: Alex, seat 2.'
 	);
 
-	// To the script and back: the room is as it was.
-	await page.getByRole('tab', { name: 'Script' }).tap();
-	await expect(page.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
-	await openTab(page, 'Room');
-	await expect(room.getByTestId('join-status')).toHaveText(
-		'Waiting for the Storyteller: Alex, seat 2.'
-	);
+	// The row stays over every tab.
+	await openTab(page, 'Notes');
+	await expect(row).toBeVisible();
 
-	// The room's own link and code, to pass on.
-	await room.getByRole('button', { name: 'Share room' }).tap();
-	// The same share screen as the script's (Trevor, 2026-10-19): byline and logo in the QR.
-	const share = page.getByRole('dialog', { name: `Share Room ${shown}` });
+	// Share script hands on the room's link and code (plan J20).
+	await page.getByRole('button', { name: 'Share script' }).tap();
+	const share = page.getByRole('dialog', { name: 'Share Trouble Brewing' });
 	await expect(share.getByTestId('share-code')).toHaveText(shown);
-	await expect(share).toContainText('by The Pandemonium Institute');
 	await expect(share.getByTestId('script-logo')).toHaveAttribute(
 		'data-logo',
 		'/data/logos/tb.webp'
@@ -838,9 +829,10 @@ test('the Room tab joins a live room in place, and the player moves between it a
 	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
 	await share.getByRole('button', { name: 'Close' }).tap();
 
-	// Coming back to /play opens the same room.
-	await page.reload();
-	await openTab(page, 'Room');
-	await expect(room.getByRole('heading', { name: `Room ${shown}` })).toBeVisible();
+	// /play itself shows the same room, while the phone is in it.
+	await page.goto('/play');
+	await expect(page.getByTestId('join-status')).toHaveText(
+		'Waiting for the Storyteller: Alex, seat 2.'
+	);
 	await st.context().close();
 });
