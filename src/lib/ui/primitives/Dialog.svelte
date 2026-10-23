@@ -241,6 +241,11 @@
 		display: flex;
 		align-items: center;
 	}
+	/* Close sits as close to the last icon as the icons sit to each other (Trevor, 2026-10-23:
+	   uneven gaps); the head's gap stays between the title and the icons. */
+	.head-actions + :global([data-part='close-trigger']) {
+		margin-left: calc(var(--space-3) * -1);
+	}
 	.titled {
 		flex: 1;
 		min-width: 0;
