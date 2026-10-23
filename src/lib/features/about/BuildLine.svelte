@@ -35,7 +35,7 @@
 		flex-wrap: wrap;
 		align-items: center;
 		column-gap: var(--space-1);
-		margin: var(--space-2) 0 0;
+		margin: 0;
 		padding: 0 var(--space-3);
 		font-size: 0.8rem;
 		color: var(--on-surface-muted);

@@ -2590,7 +2590,7 @@
 		   smallest phones so six buttons still fit at 320px. No dividing line: the dashed
 		   outline shows the board's edge while arranging. */
 		gap: min(var(--space-2), 1.5vw);
-		padding: var(--space-2) var(--space-2) 0;
+		padding: var(--menu-inset) var(--menu-inset) 0;
 	}
 	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
 	   on any image (Trevor, 2026-10-18). */

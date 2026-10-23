@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
+	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 
 	interface Props {
@@ -20,10 +20,11 @@
 		 */
 		iconActions?: boolean;
 		/**
-		 * Before the heading, on its line and outside it, in place of the hamburger the app's
-		 * pages put there (Player view mounts its own, as the board has; 2026-10-19).
+		 * The hamburger even with no sidebar on the page: Player view and Join game, which fill
+		 * the screen as a game does (2026-10-19). The app's pages show it whenever their sidebar
+		 * is not showing.
 		 */
-		start?: Snippet;
+		menu?: boolean;
 		/** One muted line under the title (an author, a date, the script in play). */
 		subtitle?: Snippet;
 		/** One row under the title for search, filters and view switches. */
@@ -51,7 +52,7 @@
 		width = 'page',
 		actions,
 		iconActions = false,
-		start,
+		menu = false,
 		subtitle,
 		toolbar,
 		side,
@@ -62,10 +63,8 @@
 
 	// Before the title: the page's own `start`, else the hamburger while no sidebar shows
 	// (phones, tablets, a closed sidebar), since there is no app header (2026-10-22).
-	const before = $derived(start ?? (navDrawer.pageButton ? menuButton : undefined));
+	const showMenu = $derived(menu || navDrawer.pageButton);
 </script>
-
-{#snippet menuButton()}<NavMenuButton />{/snippet}
 
 <!--
 	The frame of every page reached from the sidebar (Trevor, 2026-10-17): one width and gutter,
@@ -74,12 +73,12 @@
 	No Back button: the sidebar navigates. Overlays (dialogs, sheets) go beside it, not inside.
 -->
 <main class="page" data-width={width}>
-	{#if hideTitle && before}<div class="start">{@render before()}</div>{/if}
+	<PageMenuButton always={menu} />
 	<header class="head" class:visually-hidden={hideTitle}>
 		<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
-			{#if before && !hideTitle}
+			{#if showMenu && !hideTitle}
 				<div class="start">
-					{@render before()}
+					<span class="menu-room" aria-hidden="true"></span>
 					<h1>
 						{#if lead}{@render lead()}{/if}{title}
 					</h1>
@@ -111,7 +110,13 @@
 		gap: var(--space-4);
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-5) var(--page-gutter) var(--space-6);
+		/* The title row starts level with the hamburger and the sidebar's name row. */
+		padding: var(--menu-inset) var(--page-gutter) var(--space-6);
+	}
+	/* Keeps the title clear of the hamburger, one spacing step after it. */
+	.menu-room {
+		flex: none;
+		width: max(0rem, calc(var(--menu-inset) + var(--tap-target) - var(--page-gutter)));
 	}
 	.page[data-width='text'] {
 		max-width: calc(var(--measure) + 2 * var(--page-gutter));
@@ -136,6 +141,8 @@
 		align-items: center;
 		gap: var(--space-2);
 		min-width: 0;
+		/* As tall as the hamburger, so the two centre on one line. */
+		min-height: var(--tap-target);
 		margin: 0;
 		font-size: var(--page-title-size);
 		/* The narrowest phone at the largest text, with the hamburger beside it: a long title
