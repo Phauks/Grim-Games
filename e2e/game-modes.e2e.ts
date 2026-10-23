@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 /**
  * Game modes on New game (Trevor, 2026-10-17): choose a mode, inspect every part of it, and
@@ -1599,7 +1600,7 @@ test('the script preview turns light from its own switch, and Settings > Player 
 	// Remembered on this device, and the same setting in Settings > Player.
 	await page.reload();
 	await expect(light).toBeChecked();
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
