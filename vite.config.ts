@@ -8,6 +8,11 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { readBuildInfo, readCommits, readHistory } from './build-info.ts';
+import {
+	describeChunks,
+	PRECACHE_CHUNKS_PATH,
+	REBUILDABLE
+} from './src/lib/features/offline/chunk-renames.ts';
 import { chromiumPath } from './scripts/lib/chromium-path.ts';
 
 // Lets sandboxes with a preinstalled Chromium skip `playwright install`.
@@ -89,6 +94,20 @@ function precacheSizes(): Plugin {
 						.slice(0, 16);
 				}
 			fs.writeFileSync(path.join(options.dir, 'precache-hashes.json'), JSON.stringify(hashes));
+			// What the next build's service worker needs to rebuild a file that was only renamed
+			// from the copy this build stored (src/lib/features/offline/chunk-renames.ts).
+			const built = Object.keys(sizes).filter((file) => file.startsWith('/_app/immutable/'));
+			const texts: Record<string, string> = {};
+			for (const file of built)
+				if (REBUILDABLE.test(file))
+					texts[file] = fs.readFileSync(path.join(options.dir, file), 'utf8');
+			const chunks = describeChunks(texts, built, (text) =>
+				createHash('sha256').update(text).digest('hex').slice(0, 16)
+			);
+			fs.writeFileSync(
+				path.join(options.dir, PRECACHE_CHUNKS_PATH.slice(1)),
+				JSON.stringify(chunks)
+			);
 		}
 	};
 }

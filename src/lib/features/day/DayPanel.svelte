@@ -360,7 +360,7 @@
 									<CharacterRow
 										{character}
 										alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
-										note={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
+										playerName={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
 										info
 									>
 										{#snippet end()}{@const seatId =
@@ -428,7 +428,7 @@
 								<CharacterRow
 									{character}
 									alignment={seat.alignment}
-									note={game.seatName(seat.seatId)}
+									playerName={game.seatName(seat.seatId)}
 									info
 								>
 									{#snippet end()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}

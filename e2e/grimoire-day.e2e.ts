@@ -108,7 +108,8 @@ async function chooseCharacter(page: Page, number: number, name: string) {
 async function endTheDay(page: Page, choice = 'No execution') {
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: choice, exact: true }).tap();
+	// A player's option goes on to their character and alive or dead (Trevor, 2026-10-23).
+	await page.getByRole('option', { name: new RegExp(`^${choice}(\\s|$)`) }).tap();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 }
 
@@ -260,9 +261,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 test("the day's sections fold with their caret and their headers stick under the toolbar", async ({
 	page
 }) => {
-	// Twelve seats, eight characters and four deaths to set up before the day opens: past
-	// 30 seconds on a loaded CI runner.
-	test.slow();
+	// Twelve seats and their characters to set: about 25s locally, so room on a loaded runner.
+	test.setTimeout(90_000);
 	await startGame(page, 12);
 	// Characters whose pre-day reminders fill the day with sections to scroll.
 	for (const [number, name] of [
@@ -658,9 +658,20 @@ test('Execution ends the day and walks through tonight from Dusk', async ({ page
 
 test('Execution names the player executed, who dies before tonight', async ({ page }) => {
 	await startGame(page);
+	await chooseCharacter(page, 3, 'Slayer');
+	await markDead(page, 4, 'The Demon');
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Execution' }).tap();
-	await endTheDay(page, 'Seat 3');
+	// Each player as the seat chooser cites them: the character's badge, then alive or dead
+	// (Trevor, 2026-10-23).
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	const slayer = page.getByRole('option', { name: /^Seat 3\b/ });
+	await expect(slayer).toContainText('Slayer');
+	await expect(slayer).toContainText('Alive');
+	await expect(page.getByRole('option', { name: /^Seat 4\b/ })).toContainText('Dead');
+	await slayer.tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 	await expect(boardSeat(page, 'Seat 3')).toHaveAccessibleName(/dead/);
 	await expect(boardSeat(page, 'Seat 2')).not.toHaveAccessibleName(/dead/);

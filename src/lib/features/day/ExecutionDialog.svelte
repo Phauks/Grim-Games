@@ -1,8 +1,10 @@
 <script lang="ts">
-	import type { Game, SeatId } from '#lib/core/model/index.ts';
+	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 
 	/**
@@ -14,11 +16,12 @@
 	interface Props {
 		open: boolean;
 		game: Game;
+		characters: CharacterLookup;
 		/** The player executed, or undefined for no execution; the dialog closes first. */
 		onConfirm: (seatId: SeatId | undefined) => void;
 	}
 
-	let { open = $bindable(), game, onConfirm }: Props = $props();
+	let { open = $bindable(), game, characters, onConfirm }: Props = $props();
 
 	const NONE = 'none';
 	let choice = $state<string | undefined>();
@@ -51,6 +54,27 @@
 	});
 </script>
 
+<!-- Each player as the seat chooser cites them (Trevor, 2026-10-23): the seat, the character
+     as its badge, and whether they are alive or dead with the day counts' icons. -->
+{#snippet candidate(option: { value: string; label: string })}
+	{@const seat = option.value === NONE ? undefined : game.seats[option.value as SeatId]}
+	{#if seat}
+		{@const character = seat.characterId ? characters.get(seat.characterId) : undefined}
+		<span class="candidate"
+			><span class="who">{option.label}</span>{#if character}<CharacterBadge
+					characterId={character.id}
+					{character}
+					alignment={seat.alignment}
+					interactive={false}
+				/>{/if}<span class="state" data-dead={seat.dead || undefined}
+				><Icon name={seat.dead ? 'dead' : 'alive'} />{t(
+					seat.dead ? 'day.count.dead' : 'day.count.alive'
+				)}</span
+			></span
+		>
+	{:else}{option.label}{/if}
+{/snippet}
+
 <ConfirmDialog
 	bind:open
 	title={t('day.endDayConfirm')}
@@ -64,11 +88,30 @@
 			value={choice}
 			{options}
 			onChange={(value) => (choice = value)}
-		/>
+		>
+			{#snippet item(option)}{@render candidate(option)}{/snippet}
+			{#snippet selected(option)}{@render candidate(option)}{/snippet}
+		</Select>
 	</div>
 </ConfirmDialog>
 
 <style>
+	.candidate {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0 var(--space-2);
+		min-width: 0;
+	}
+	.who {
+		font-family: var(--font-player);
+	}
+	.state {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		color: var(--on-surface-muted);
+	}
 	.execution {
 		padding-block: var(--space-2);
 	}

@@ -1018,6 +1018,7 @@
 	function editGameInfo(changes: GameInfoChanges) {
 		if (changes.storytellerName !== (game.storytellerName ?? ''))
 			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
+		if (changes.script) void grimoire.changeScript(changes.script);
 	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
@@ -1711,7 +1712,12 @@
 </ConfirmDialog>
 
 <!-- The same question as the day view's Execution. -->
-<ExecutionDialog bind:open={endDayOpen} {game} onConfirm={executeAndEndDay} />
+<ExecutionDialog
+	bind:open={endDayOpen}
+	{game}
+	characters={grimoire.open.characters}
+	onConfirm={executeAndEndDay}
+/>
 
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">

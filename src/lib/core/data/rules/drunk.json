@@ -22,5 +22,10 @@
 				"reason": "The Drunk is shown a Townsfolk; this marks who really is the Drunk"
 			}
 		]
+	},
+	"setupModifier": {
+		"summary": "Shown a Townsfolk",
+		"ops": [],
+		"notes": ["Put a Townsfolk in the bag instead of the Drunk."]
 	}
 }

@@ -105,7 +105,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Reminder targets (`reminder-targets.ts`)                                                          | `reminderTargets`                     | moved         |
 | Day reminders (`day-reminders.data.ts`)                                                           |                                       | not yet moved |
 | Setup reminders and preparation notes (`setup-reminders.ts`)                                      | `setupPrep`                           | moved         |
-| Setup counts (`setup-modifiers.ts`)                                                               |                                       | not yet moved |
+| Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest)                    | `setupModifier`                       | moved         |
 | Death causes (`death-causes.data.ts`)                                                             |                                       | not yet moved |
 | Reminder movement and placeholders (`reminder-movement.data.ts`, `reminder-placeholders.data.ts`) |                                       | not yet moved |
 | Night text overrides (`night-text-overrides.data.ts`)                                             |                                       | not yet moved |

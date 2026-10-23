@@ -10,5 +10,23 @@
 	},
 	"setupPrep": {
 		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"setupModifier": {
+		"summary": "Chooses the Minions; −? to +? Outsiders",
+		"ops": [
+			{
+				"kind": "set",
+				"type": "minion",
+				"values": [0]
+			},
+			{
+				"kind": "any",
+				"type": "outsider"
+			}
+		],
+		"notes": [
+			"Deal no Minions: good characters take their place.",
+			"On the first night the Kazali turns players into the usual number of Minions."
+		]
 	}
 }

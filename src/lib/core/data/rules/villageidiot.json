@@ -22,5 +22,13 @@
 				}
 			}
 		]
+	},
+	"setupModifier": {
+		"summary": "+0 to +2 Village Idiots",
+		"ops": [],
+		"notes": [
+			"Up to 2 more Village Idiots replace Townsfolk.",
+			"If there are extras, choose one Village Idiot to be drunk."
+		]
 	}
 }

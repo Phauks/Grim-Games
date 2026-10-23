@@ -2,7 +2,7 @@
  * The roadmap, kept in the repository so it ticks itself off: an item is done once a merged
  * change names its ID in brackets in its title, such as "Savant info generator (L2)", or is
  * one of the PRs listed with it. The IDs are the backlog plan's (D1, R1-R7, B1-B6, S1-S6,
- * P1-P2, L1-L28, G1-G7, A1, O1). Add new items here with their ID; never tick them by hand.
+ * P1-P2, L1-L28, G1-G9, A1, O1). Add new items here with their ID; never tick them by hand.
  */
 import type { BuildCommit } from './update-notes.ts';
 import type { Change } from './changelog.ts';
@@ -87,7 +87,12 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'G3', title: "Game info downloads the script's file and shares its source" },
 			{ id: 'G5', title: 'Game info opens the game mode or a special rule in full when tapped' },
 			{ id: 'G6', title: 'A light background switch on every script sheet, also in Settings' },
-			{ id: 'G7', title: 'One start flow for every game, with Back on every step' }
+			{ id: 'G7', title: 'One start flow for every game, with Back on every step' },
+			{ id: 'G8', title: 'Change the script from inside a game, keeping its players' },
+			{
+				id: 'G9',
+				title: 'Game info shows everything the board corner can, join code and Game time too'
+			}
 		]
 	},
 	{
