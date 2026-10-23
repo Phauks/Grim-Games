@@ -34,5 +34,18 @@
 	"reminderMovement": {
 		"fixed": ["Doesn't Kill"],
 		"why": "Placed once, on the Demon, after the Princess’s nominee dies."
+	},
+	"reminderPlaceholders": {
+		"note": "The Demon kills no one tonight.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Doesn't Kill",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

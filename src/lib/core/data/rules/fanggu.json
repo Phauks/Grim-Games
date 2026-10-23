@@ -43,5 +43,26 @@
 	"reminderMovement": {
 		"fixed": ["Once"],
 		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"note": "A kill; the Fang Gu's jump happens once only.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Once",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

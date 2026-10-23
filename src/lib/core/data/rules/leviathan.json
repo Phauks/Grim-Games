@@ -94,5 +94,40 @@
 	"reminderMovement": {
 		"fixed": ["Good Player Executed"],
 		"why": "Marks this character’s own state, so it stays on its seat."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Day 1",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Day 2",
+						"action": "place"
+					},
+					{
+						"label": "Day 3",
+						"action": "place"
+					},
+					{
+						"label": "Day 4",
+						"action": "place"
+					},
+					{
+						"label": "Day 5",
+						"action": "place"
+					}
+				],
+				"either": true
+			}
+		]
 	}
 }

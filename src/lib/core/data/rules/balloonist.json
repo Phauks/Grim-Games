@@ -37,5 +37,28 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "Marks the player shown, so the next one has a different character type.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Know",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Know",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

@@ -40,5 +40,18 @@
 	"reminderMovement": {
 		"fixed": ["Drunk"],
 		"why": "The drunk Village Idiot is decided at setup."
+	},
+	"reminderPlaceholders": {
+		"note": "With more than one Village Idiot, one is drunk.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

@@ -110,7 +110,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest)                      | `setupModifier`                       | moved         |
 | Death causes (`death-causes.ts`: who can cause a death and whom)                                    | `deathCause`                          | moved         |
 | Reminder movement (`reminder-movement.ts`: tokens that stay put, and characters that relocate them) | `reminderMovement`                    | moved         |
-| Reminder placeholders (`reminder-placeholders.data.ts`)                                             |                                       | not yet moved |
+| Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means)             | `reminderPlaceholders`                | moved         |
 | Night text overrides (`night-text-overrides.data.ts`)                                               |                                       | not yet moved |
 | On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                    | `onDeath`                             | moved         |
 | Protection (`ability.ts`, `night-alerts.ts`)                                                        | `protects`                            | moved         |

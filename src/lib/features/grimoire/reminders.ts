@@ -6,7 +6,8 @@
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { gainedAbilities, reminderOffered, type Night } from '#lib/core/rules/index.ts';
 import { isBagDisabled, isNotDealt } from '#lib/core/rules/bag-characters.ts';
-import { REMINDER_PLACEHOLDERS } from '#lib/core/rules/reminder-placeholders.data.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { placeholderRulesOf } from '#lib/core/rules/night-text.ts';
 import {
 	GENERIC_REMINDER_ID,
 	charactersInPlay,
@@ -269,9 +270,9 @@ export interface StepReminders {
 /**
  * The reminders a character places at its step on `night` (Trevor, 2026-10-16: "only
  * highlight a token if it could be used that night"), from what each `:reminder:` in TPI's
- * night text means (`REMINDER_PLACEHOLDERS`). A step whose text handles no token places none:
+ * night text means (its `reminderPlaceholders` rule). A step whose text handles no token places none:
  * the Grandmother's Dead token is never used on the first night. A script's own character
- * has no such data, so all of its reminders count (`character`; Trevor, 2026-10-17, Fall of
+ * without that rule has no such data, so all of its reminders count (`character`; Trevor, 2026-10-17, Fall of
  * Rome's Merchant).
  */
 export function stepReminders(
@@ -279,15 +280,16 @@ export function stepReminders(
 	night: Night,
 	character?: Character
 ): StepReminders {
-	const known =
-		`${characterId}:first` in REMINDER_PLACEHOLDERS ||
-		`${characterId}:other` in REMINDER_PLACEHOLDERS;
+	const rules = character
+		? placeholderRulesOf(character)
+		: OFFICIAL_RULES.get(characterId)?.reminderPlaceholders;
+	const known = rules?.first !== undefined || rules?.other !== undefined;
 	if (!known && character)
 		return {
 			characterId,
 			labels: [...new Set([...character.reminders, ...character.remindersGlobal])]
 		};
-	const entries = REMINDER_PLACEHOLDERS[`${characterId}:${night}`] ?? [];
+	const entries = rules?.[night] ?? [];
 	const labels = entries.flatMap((e) =>
 		e.tokens.filter((t) => t.action === 'place').map((t) => t.label)
 	);

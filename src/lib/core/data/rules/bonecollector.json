@@ -22,5 +22,22 @@
 	"reminderMovement": {
 		"fixed": ["No Ability", "Has Ability"],
 		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"note": "The chosen dead player has their ability until dusk; the Bone Collector's is used.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Has Ability",
+						"action": "place"
+					},
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

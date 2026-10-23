@@ -74,5 +74,49 @@
 	},
 	"reminderMovement": {
 		"why": "A counter the Storyteller advances."
+	},
+	"reminderPlaceholders": {
+		"note": "The night counter, then X on the Xaan on night X.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Night 1",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "X",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Night 2",
+						"action": "place"
+					},
+					{
+						"label": "Night 3",
+						"action": "place"
+					}
+				],
+				"either": true
+			},
+			{
+				"tokens": [
+					{
+						"label": "X",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

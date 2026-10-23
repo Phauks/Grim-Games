@@ -33,5 +33,18 @@
 	"reminderMovement": {
 		"fixed": ["Drunk"],
 		"why": "One player becomes drunk once, when the Sweetheart dies."
+	},
+	"reminderPlaceholders": {
+		"note": "The Sweetheart's death makes one player drunk for the rest of the game.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

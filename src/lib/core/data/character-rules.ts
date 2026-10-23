@@ -13,6 +13,10 @@ import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rul
 import { readDayReminders, type DayReminderRules } from './day-reminder-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
+import {
+	readReminderPlaceholders,
+	type ReminderPlaceholderRules
+} from './reminder-placeholder-rules.ts';
 import { readSetupPrep, type SetupPrepRules } from './setup-prep-rules.ts';
 import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
@@ -134,6 +138,8 @@ export interface CharacterRules {
 	deathCause?: DeathCauseRule;
 	/** Which of its reminder tokens stay where they were placed (`rules/reminder-movement.ts`). */
 	reminderMovement?: ReminderMovementRules;
+	/** What each `:reminder:` in its night text means (`rules/night-text.ts`). */
+	reminderPlaceholders?: ReminderPlaceholderRules;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -273,7 +279,8 @@ export const RULE_KEYS = [
 	'setupModifier',
 	'dayReminders',
 	'deathCause',
-	'reminderMovement'
+	'reminderMovement',
+	'reminderPlaceholders'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -436,6 +443,11 @@ export function parseCharacterRules(
 		const at = `${path}.reminderMovement`;
 		const movement = readReminderMovement(raw.reminderMovement, at, issues, reminders);
 		if (movement) rules.reminderMovement = movement;
+	}
+	if (raw.reminderPlaceholders !== undefined) {
+		const at = `${path}.reminderPlaceholders`;
+		const placeholders = readReminderPlaceholders(raw.reminderPlaceholders, at, issues, reminders);
+		if (placeholders) rules.reminderPlaceholders = placeholders;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

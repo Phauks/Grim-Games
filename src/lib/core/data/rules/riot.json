@@ -56,5 +56,26 @@
 	},
 	"reminderMovement": {
 		"why": "A counter the Storyteller advances."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Day 1",
+						"action": "place"
+					},
+					{
+						"label": "Day 2",
+						"action": "place"
+					},
+					{
+						"label": "Day 3",
+						"action": "place"
+					}
+				],
+				"either": true
+			}
+		]
 	}
 }

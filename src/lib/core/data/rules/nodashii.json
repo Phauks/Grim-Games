@@ -47,5 +47,17 @@
 	},
 	"reminderMovement": {
 		"why": "Follows the No Dashii’s nearest Townsfolk neighbours."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

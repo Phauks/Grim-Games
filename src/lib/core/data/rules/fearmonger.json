@@ -43,5 +43,27 @@
 	},
 	"reminderMovement": {
 		"why": "The Fearmonger may choose a new player."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Fear",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Fear",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

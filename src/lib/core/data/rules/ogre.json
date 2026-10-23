@@ -17,5 +17,17 @@
 	"reminderMovement": {
 		"fixed": ["Friend"],
 		"why": "The Ogre’s friend is chosen once, on the first night."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Friend",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

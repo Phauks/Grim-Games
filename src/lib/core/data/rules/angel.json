@@ -50,5 +50,17 @@
 	"reminderMovement": {
 		"fixed": ["Protected", "Something Bad"],
 		"why": "The protected players are chosen at setup."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Protected",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

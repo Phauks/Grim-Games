@@ -40,5 +40,36 @@
 	},
 	"reminderMovement": {
 		"why": "The babysitter can change each night."
+	},
+	"reminderPlaceholders": {
+		"note": "The Minions choose who babysits Lil' Monsta; the Demon kills.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Is The Demon",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Is The Demon",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

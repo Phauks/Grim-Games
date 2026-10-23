@@ -32,5 +32,26 @@
 	"reminderMovement": {
 		"fixed": ["Poisoned", "Know"],
 		"why": "The Widow poisons once, on the first night, and one good player learns of her."
+	},
+	"reminderPlaceholders": {
+		"note": "The Widow poisons a player; one good player learns a Widow is in play.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Know",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

@@ -27,5 +27,18 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "Marks the chosen player; the Acrobat's death is only if they are drunk or poisoned.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Chosen",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }
