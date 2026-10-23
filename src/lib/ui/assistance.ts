@@ -21,6 +21,7 @@ export const ASSIST_KEYS = [
 	'dayAfterNight',
 	'stackReminders',
 	'roomCode',
+	'gameClock',
 	'explainTerms'
 ] as const;
 export type AssistKey = (typeof ASSIST_KEYS)[number];
@@ -102,6 +103,10 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	roomCode: {
 		label: 'Join code on the board',
 		description: "Show the room's join code under the script's name. Tap it to open Share."
+	},
+	gameClock: {
+		label: 'Game length on the board',
+		description: 'Show how long the game has run since the first night began, under the join code.'
 	},
 	// Shown in Settings › Rules terms, not Storyteller settings: players use it too (Trevor).
 	explainTerms: {

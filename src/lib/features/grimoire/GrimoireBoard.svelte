@@ -10,7 +10,7 @@
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames } from './device-notes.ts';
+	import { endedGames, gameStarts } from './device-notes.ts';
 	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
@@ -58,7 +58,8 @@
 		onDeathTrigger,
 		abilityState,
 		stepNightNumbers,
-		todaysNominations
+		todaysNominations,
+		gameClock
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import {
@@ -1053,6 +1054,8 @@
 		beginGame();
 	}
 	function beginGame() {
+		gameStarts.start(game.gameId);
+		startedRead += 1;
 		if (preferences.current.assistance.nightWalkthrough) runNight();
 		else endDay();
 	}
@@ -1476,6 +1479,25 @@
 	/** The join code under the script's name (a Board setting, on by default). */
 	const showRoomCode = $derived(!watching && preferences.current.assistance.roomCode);
 	const roomCode = $derived(roomHost().code);
+	/**
+	 * How long the game has run, from Start game to End game (Trevor, 2026-10-23), under the
+	 * join code; None until the first night begins. A Board setting, on by default.
+	 */
+	const showGameClock = $derived(!watching && preferences.current.assistance.gameClock);
+	let startedRead = $state(0);
+	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
+	let clockNow = $state(Date.now());
+	$effect(() => {
+		if (!showGameClock || startedAt === undefined || ended) return;
+		clockNow = Date.now();
+		const tick = setInterval(() => (clockNow = Date.now()), 1000);
+		return () => clearInterval(tick);
+	});
+	const gameLengthText = $derived(
+		startedAt === undefined
+			? t('common.none')
+			: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, ended?.endedAt))
+	);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -2080,6 +2102,12 @@
 							<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
 							></span
 						></button
+					>{/if}
+				<!-- The game's length (Trevor, 2026-10-23), kept in place before the first night so
+				     nothing moves when it starts. -->
+				{#if showGameClock}<span class="game-clock" data-testid="board-game-clock"
+						>{t('history.gameLength')}
+						<span class="code" role="timer">{gameLengthText}</span></span
 					>{/if}
 			</p>
 		{/if}
@@ -2880,7 +2908,17 @@
 		/* The corner lets taps through to the board; its buttons take them. */
 		pointer-events: auto;
 	}
-	.room-code .code {
+	/* Read only, in the join code's look, one line. */
+	.game-clock {
+		display: block;
+		overflow: hidden;
+		color: var(--on-surface-muted);
+		font-size: 0.7rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.room-code .code,
+	.game-clock .code {
 		color: var(--on-surface);
 		font-family: var(--font-control);
 		font-variant-numeric: tabular-nums;
