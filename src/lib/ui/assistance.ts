@@ -17,6 +17,7 @@ export const ASSIST_KEYS = [
 	'demonVotedButton',
 	'gameEndPrompts',
 	'savantInfo',
+	'playerClaims',
 	'trackNominations',
 	'dayAfterNight',
 	'stackReminders',
@@ -43,7 +44,7 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	nightAnswers: {
 		label: 'Work out night answers',
 		description:
-			'Town Crier, Flowergirl, Undertaker, Juggler and Oracle answers from the grimoire and day log.'
+			'Town Crier, Flowergirl, Undertaker, Juggler, Gossip and Oracle answers from the grimoire and day log.'
 	},
 	infoSuggestions: {
 		label: 'Suggest information',
@@ -80,6 +81,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Suggest Savant information',
 		description:
 			"One true and one false statement for the Savant, worked out from the grimoire, in the Savant seat's ⋯ menu."
+	},
+	playerClaims: {
+		label: 'Log player claims',
+		description:
+			"Guesses on the Juggler's row of the day and Statement on the Gossip's, also in their seat's ⋯ menu, for their night answers."
 	},
 	trackNominations: {
 		label: 'Track nominations',

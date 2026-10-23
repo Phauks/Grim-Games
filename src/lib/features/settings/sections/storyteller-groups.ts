@@ -13,6 +13,7 @@ export const STORYTELLER_GROUPS = {
 		'deadReminderAsk',
 		'demonVotedButton',
 		'savantInfo',
+		'playerClaims',
 		'trackNominations',
 		'gameEndPrompts'
 	],

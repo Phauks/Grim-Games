@@ -190,16 +190,26 @@ export type Command =
 	 * token gets it placed on the seat; otherwise only the use is logged.
 	 */
 	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId }
-	/** A free-text note about a character (any length; may be empty with `guesses`). */
+	/**
+	 * A free-text note about a character (any length; may be empty with `guesses`). `holds`
+	 * marks a statement true or false (L58).
+	 */
 	| {
 			type: 'DayNote';
 			characterId: CharacterId;
 			seatId?: SeatId;
 			text: string;
 			guesses?: CharacterGuess[];
+			holds?: boolean;
 	  }
-	/** Replaces a note's text and guesses (no `guesses` clears them). */
-	| { type: 'EditDayNote'; entryId: DayEntryId; text: string; guesses?: CharacterGuess[] }
+	/** Replaces a note's text, guesses and truth (leaving one out clears it). */
+	| {
+			type: 'EditDayNote';
+			entryId: DayEntryId;
+			text: string;
+			guesses?: CharacterGuess[];
+			holds?: boolean;
+	  }
 	/**
 	 * Records what a waking character was shown (`seatId` is the waking player), placing
 	 * reminder tokens such as the Washerwoman's "Townsfolk" and "Wrong". A later record for

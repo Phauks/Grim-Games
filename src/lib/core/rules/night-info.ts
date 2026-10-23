@@ -579,6 +579,42 @@ function correctGuesses(
 }
 
 /**
+ * Gossip: whether today's public statement was true, so a player dies tonight
+ * (https://wiki.bloodontheclocktower.com/Gossip). The truth is the Storyteller's call, marked
+ * on the statement in the day log (L58); the latest statement today counts.
+ */
+function statementTrue(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): NightAnswer {
+	const statement = entriesOf(game, 'note').findLast(
+		(n) =>
+			n.characterId === characterId &&
+			(n.seatId === undefined || n.seatId === seatId) &&
+			n.text.trim() !== ''
+	);
+	const out = answer(
+		game,
+		seatId,
+		characterId,
+		characters,
+		statement === undefined
+			? { kind: 'none', reason: 'No statement logged today' }
+			: statement.holds === undefined
+				? { kind: 'none', reason: 'Mark whether the statement was true' }
+				: { kind: 'yes-no', value: statement.holds },
+		[],
+		{ relevant: [] }
+	);
+	// The statement is not information, so the Vortox does not make it false.
+	delete out.mustBeFalse;
+	delete out.vortox;
+	return out;
+}
+
+/**
  * Oracle: how many dead players are evil (https://wiki.bloodontheclocktower.com/Oracle).
  * Dead as abilities see it, and the alignment the rules use (overrides win). A dead Recluse
  * might register as evil and a dead Spy as good: both work even if dead (`possible`).
@@ -697,7 +733,8 @@ const QUESTIONS: Readonly<Record<Answers['question'], AnswerFn>> = {
 	'outsider-died': outsiderDied,
 	'correct-guesses': correctGuesses,
 	'evil-dead': evilDead,
-	'abnormal-abilities': abnormalAbilities
+	'abnormal-abilities': abnormalAbilities,
+	'statement-true': statementTrue
 };
 
 /**
