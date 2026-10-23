@@ -118,6 +118,12 @@ Some lints start with a list of files written before the lint (for example
 `LOCAL_STORAGE_TODO` in `eslint.config.js`). Move a file onto the shared piece and take it off
 the list. Never add a file to one.
 
+`npm run lint:lines` (`scripts/check-lines.ts`) keeps every source file at 800 lines or fewer
+(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its
+`LARGE_FILE_TODO` holds the files that were longer when it began; split one into modules with a
+small surface and take it off the list. The plan for each is in the project's
+`refactor/large-files.md`.
+
 ## Still to share
 
 The open items, with owners, are in the project's component review
