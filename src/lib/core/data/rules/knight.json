@@ -30,5 +30,8 @@
 				"reason": "Second of the 2 players the Knight is shown"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "first-night info"
 	}
 }

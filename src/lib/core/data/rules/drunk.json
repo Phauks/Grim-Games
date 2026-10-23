@@ -27,5 +27,8 @@
 		"summary": "Shown a Townsfolk",
 		"ops": [],
 		"notes": ["Put a Townsfolk in the bag instead of the Drunk."]
+	},
+	"dayReminders": {
+		"none": "setup only"
 	}
 }

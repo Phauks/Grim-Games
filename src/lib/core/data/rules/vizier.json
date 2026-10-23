@@ -1,0 +1,29 @@
+{
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "announcement",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is known to all"
+					}
+				]
+			},
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	}
+}

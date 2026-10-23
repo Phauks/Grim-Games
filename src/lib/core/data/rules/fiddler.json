@@ -1,5 +1,23 @@
 {
 	"gameEnd": {
 		"decidedByStoryteller": true
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is in play"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
 	}
 }

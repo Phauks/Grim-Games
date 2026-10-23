@@ -18,5 +18,8 @@
 	},
 	"setupPrep": {
 		"none": "the Storyteller picks a player and one of two effects each night, then marks it"
+	},
+	"dayReminders": {
+		"none": "night action"
 	}
 }

@@ -18,5 +18,8 @@
 		"ops": [],
 		"requires": "damsel",
 		"notes": ["If the Damsel is not already in play, swap a Townsfolk for the Damsel."]
+	},
+	"dayReminders": {
+		"none": "night action; setup change"
 	}
 }

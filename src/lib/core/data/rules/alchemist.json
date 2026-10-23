@@ -16,5 +16,21 @@
 				"reason": "When their Minion ability is not in play, the Alchemist shows that Minion"
 			}
 		]
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has a Minion ability"
+					}
+				]
+			}
+		]
 	}
 }

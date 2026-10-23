@@ -36,5 +36,8 @@
 			}
 		],
 		"notes": ["With no Outsiders to remove, nothing changes."]
+	},
+	"dayReminders": {
+		"none": "night kills; setup change"
 	}
 }

@@ -10,5 +10,27 @@
 	},
 	"setupPrep": {
 		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has protected"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Survives Execution"
+				}
+			}
+		]
 	}
 }

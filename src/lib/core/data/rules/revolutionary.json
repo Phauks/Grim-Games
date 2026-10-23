@@ -26,5 +26,8 @@
 				"reason": "Marks the 2 Revolutionaries"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "registration only"
 	}
 }

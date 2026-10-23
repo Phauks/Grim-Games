@@ -30,5 +30,8 @@
 			"Put a Townsfolk in the bag instead of the Marionette.",
 			"Seat the Marionette next to the Demon."
 		]
+	},
+	"dayReminders": {
+		"none": "setup only"
 	}
 }

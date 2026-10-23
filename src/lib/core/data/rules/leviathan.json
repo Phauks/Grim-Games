@@ -53,5 +53,34 @@
 				"timing": "first-day"
 			}
 		]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "announcement",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is in play"
+					}
+				]
+			},
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has seen a good player executed"
+					}
+				],
+				"when": {
+					"reminder": "Good Player Executed"
+				}
+			}
+		]
 	}
 }

@@ -33,5 +33,20 @@
 				"values": [-1, 1]
 			}
 		]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
 	}
 }

@@ -43,5 +43,8 @@
 				"reason": "Marks the second player the Washerwoman is shown"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "first-night info"
 	}
 }

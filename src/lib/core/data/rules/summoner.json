@@ -48,5 +48,8 @@
 			}
 		],
 		"notes": ["Put a Townsfolk in the bag instead of the Demon."]
+	},
+	"dayReminders": {
+		"none": "night action; setup change"
 	}
 }

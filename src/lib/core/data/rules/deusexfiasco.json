@@ -12,5 +12,24 @@
 		"summary": "No setup change",
 		"ops": [],
 		"notes": ["Plan the mistake you will make and admit to."]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "announcement",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has not happened yet"
+					}
+				],
+				"when": {
+					"self": "any",
+					"noReminder": "Whoopsie"
+				}
+			}
+		]
 	}
 }

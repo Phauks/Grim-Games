@@ -22,5 +22,8 @@
 				"reason": "This good player registers as a Demon to the Fortune Teller"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "night info"
 	}
 }

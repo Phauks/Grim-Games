@@ -43,5 +43,8 @@
 				"reason": "Marks the second player the Investigator is shown"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "first-night info"
 	}
 }

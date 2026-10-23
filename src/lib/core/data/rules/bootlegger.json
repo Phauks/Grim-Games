@@ -14,5 +14,23 @@
 		"ops": [],
 		"notes": ["Explain the homebrew characters and rules before the game."],
 		"readsBrackets": true
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "announcement",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is in play"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
 	}
 }

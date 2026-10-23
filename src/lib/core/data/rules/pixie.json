@@ -28,5 +28,30 @@
 				"reason": "The Townsfolk the Pixie is shown and must be mad about"
 			}
 		]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "madness",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "must be mad as"
+					},
+					{
+						"target": true
+					},
+					{
+						"text": "to gain their ability when they die."
+					}
+				],
+				"when": {
+					"reminder": "Mad",
+					"targetAlive": true
+				}
+			}
+		]
 	}
 }

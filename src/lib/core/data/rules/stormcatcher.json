@@ -19,5 +19,27 @@
 				"reason": "This player can only die by execution; evil learns who"
 			}
 		]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "protects"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Stormcaught",
+					"self": "any"
+				}
+			}
+		]
 	}
 }

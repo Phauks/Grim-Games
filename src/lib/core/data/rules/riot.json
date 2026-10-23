@@ -32,5 +32,23 @@
 		"notes": [
 			"Deal Minions as usual: they become Riot on day 3. Older printings had a setup bracket."
 		]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is rioting"
+					}
+				],
+				"when": {
+					"reminder": "Day 3"
+				}
+			}
+		]
 	}
 }

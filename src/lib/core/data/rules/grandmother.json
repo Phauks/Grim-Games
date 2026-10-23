@@ -27,5 +27,8 @@
 				"reason": "The Grandmother learns this player and their character"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "night info and night death"
 	}
 }

@@ -49,5 +49,24 @@
 			}
 		],
 		"notes": ["Choose any number of Outsiders; that number is X, the night the Xaan acts."]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has poisoned the Townsfolk"
+					}
+				],
+				"when": {
+					"self": "any",
+					"reminder": "X"
+				}
+			}
+		]
 	}
 }

@@ -22,5 +22,24 @@
 				"reason": "The player the Puzzlemaster makes drunk"
 			}
 		]
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has an unused guess"
+					}
+				],
+				"when": {
+					"noReminder": "Guess Used"
+				}
+			}
+		]
 	}
 }

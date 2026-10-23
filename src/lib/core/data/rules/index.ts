@@ -21,15 +21,22 @@ import banshee from './banshee.json' with { type: 'json' };
 import barber from './barber.json' with { type: 'json' };
 import barista from './barista.json' with { type: 'json' };
 import baron from './baron.json' with { type: 'json' };
+import beggar from './beggar.json' with { type: 'json' };
+import bigwig from './bigwig.json' with { type: 'json' };
 import bishop from './bishop.json' with { type: 'json' };
+import boffin from './boffin.json' with { type: 'json' };
 import bonecollector from './bonecollector.json' with { type: 'json' };
+import boomdandy from './boomdandy.json' with { type: 'json' };
 import bootlegger from './bootlegger.json' with { type: 'json' };
 import bountyhunter from './bountyhunter.json' with { type: 'json' };
+import buddhist from './buddhist.json' with { type: 'json' };
 import bureaucrat from './bureaucrat.json' with { type: 'json' };
+import butcher from './butcher.json' with { type: 'json' };
 import butler from './butler.json' with { type: 'json' };
 import cacklejack from './cacklejack.json' with { type: 'json' };
 import cannibal from './cannibal.json' with { type: 'json' };
 import cerenovus from './cerenovus.json' with { type: 'json' };
+import chambermaid from './chambermaid.json' with { type: 'json' };
 import chef from './chef.json' with { type: 'json' };
 import choirboy from './choirboy.json' with { type: 'json' };
 import clockmaker from './clockmaker.json' with { type: 'json' };
@@ -37,7 +44,11 @@ import courtier from './courtier.json' with { type: 'json' };
 import cultleader from './cultleader.json' with { type: 'json' };
 import damsel from './damsel.json' with { type: 'json' };
 import deusexfiasco from './deusexfiasco.json' with { type: 'json' };
+import deviant from './deviant.json' with { type: 'json' };
 import devilsadvocate from './devilsadvocate.json' with { type: 'json' };
+import djinn from './djinn.json' with { type: 'json' };
+import doomsayer from './doomsayer.json' with { type: 'json' };
+import dreamer from './dreamer.json' with { type: 'json' };
 import drunk from './drunk.json' with { type: 'json' };
 import duchess from './duchess.json' with { type: 'json' };
 import empath from './empath.json' with { type: 'json' };
@@ -47,6 +58,7 @@ import exorcist from './exorcist.json' with { type: 'json' };
 import fanggu from './fanggu.json' with { type: 'json' };
 import farmer from './farmer.json' with { type: 'json' };
 import fearmonger from './fearmonger.json' with { type: 'json' };
+import ferryman from './ferryman.json' with { type: 'json' };
 import fibbin from './fibbin.json' with { type: 'json' };
 import fiddler from './fiddler.json' with { type: 'json' };
 import fisherman from './fisherman.json' with { type: 'json' };
@@ -54,7 +66,9 @@ import flowergirl from './flowergirl.json' with { type: 'json' };
 import fool from './fool.json' with { type: 'json' };
 import fortuneteller from './fortuneteller.json' with { type: 'json' };
 import gambler from './gambler.json' with { type: 'json' };
+import gangster from './gangster.json' with { type: 'json' };
 import gardener from './gardener.json' with { type: 'json' };
+import general from './general.json' with { type: 'json' };
 import gnome from './gnome.json' with { type: 'json' };
 import goblin from './goblin.json' with { type: 'json' };
 import godfather from './godfather.json' with { type: 'json' };
@@ -63,12 +77,15 @@ import golem from './golem.json' with { type: 'json' };
 import goon from './goon.json' with { type: 'json' };
 import gossip from './gossip.json' with { type: 'json' };
 import grandmother from './grandmother.json' with { type: 'json' };
+import gunslinger from './gunslinger.json' with { type: 'json' };
 import harlot from './harlot.json' with { type: 'json' };
 import harpy from './harpy.json' with { type: 'json' };
 import hatter from './hatter.json' with { type: 'json' };
 import hellslibrarian from './hellslibrarian.json' with { type: 'json' };
 import heretic from './heretic.json' with { type: 'json' };
 import hermit from './hermit.json' with { type: 'json' };
+import highpriestess from './highpriestess.json' with { type: 'json' };
+import hindu from './hindu.json' with { type: 'json' };
 import huntsman from './huntsman.json' with { type: 'json' };
 import imp from './imp.json' with { type: 'json' };
 import innkeeper from './innkeeper.json' with { type: 'json' };
@@ -76,7 +93,9 @@ import investigator from './investigator.json' with { type: 'json' };
 import judge from './judge.json' with { type: 'json' };
 import juggler from './juggler.json' with { type: 'json' };
 import kazali from './kazali.json' with { type: 'json' };
+import king from './king.json' with { type: 'json' };
 import klutz from './klutz.json' with { type: 'json' };
+import knaves from './knaves.json' with { type: 'json' };
 import knight from './knight.json' with { type: 'json' };
 import legion from './legion.json' with { type: 'json' };
 import leviathan from './leviathan.json' with { type: 'json' };
@@ -86,14 +105,17 @@ import lleech from './lleech.json' with { type: 'json' };
 import lordoftyphon from './lordoftyphon.json' with { type: 'json' };
 import lunatic from './lunatic.json' with { type: 'json' };
 import lycanthrope from './lycanthrope.json' with { type: 'json' };
+import magician from './magician.json' with { type: 'json' };
 import marionette from './marionette.json' with { type: 'json' };
 import mastermind from './mastermind.json' with { type: 'json' };
 import mathematician from './mathematician.json' with { type: 'json' };
+import matron from './matron.json' with { type: 'json' };
 import mayor from './mayor.json' with { type: 'json' };
 import mezepheles from './mezepheles.json' with { type: 'json' };
 import minstrel from './minstrel.json' with { type: 'json' };
 import monk from './monk.json' with { type: 'json' };
 import moonchild from './moonchild.json' with { type: 'json' };
+import mutant from './mutant.json' with { type: 'json' };
 import nightwatchman from './nightwatchman.json' with { type: 'json' };
 import noble from './noble.json' with { type: 'json' };
 import nodashii from './nodashii.json' with { type: 'json' };
@@ -101,7 +123,9 @@ import ogre from './ogre.json' with { type: 'json' };
 import ojo from './ojo.json' with { type: 'json' };
 import oracle from './oracle.json' with { type: 'json' };
 import organgrinder from './organgrinder.json' with { type: 'json' };
+import pacifist from './pacifist.json' with { type: 'json' };
 import philosopher from './philosopher.json' with { type: 'json' };
+import pithag from './pithag.json' with { type: 'json' };
 import pixie from './pixie.json' with { type: 'json' };
 import plaguedoctor from './plaguedoctor.json' with { type: 'json' };
 import po from './po.json' with { type: 'json' };
@@ -112,6 +136,7 @@ import poppygrower from './poppygrower.json' with { type: 'json' };
 import preacher from './preacher.json' with { type: 'json' };
 import princess from './princess.json' with { type: 'json' };
 import professor from './professor.json' with { type: 'json' };
+import psychopath from './psychopath.json' with { type: 'json' };
 import pukka from './pukka.json' with { type: 'json' };
 import puzzlemaster from './puzzlemaster.json' with { type: 'json' };
 import ravenkeeper from './ravenkeeper.json' with { type: 'json' };
@@ -122,12 +147,15 @@ import sage from './sage.json' with { type: 'json' };
 import sailor from './sailor.json' with { type: 'json' };
 import saint from './saint.json' with { type: 'json' };
 import savant from './savant.json' with { type: 'json' };
+import scapegoat from './scapegoat.json' with { type: 'json' };
 import scarletwoman from './scarletwoman.json' with { type: 'json' };
 import seamstress from './seamstress.json' with { type: 'json' };
 import sentinel from './sentinel.json' with { type: 'json' };
 import shabaloth from './shabaloth.json' with { type: 'json' };
+import shugenja from './shugenja.json' with { type: 'json' };
 import slayer from './slayer.json' with { type: 'json' };
 import snakecharmer from './snakecharmer.json' with { type: 'json' };
+import snitch from './snitch.json' with { type: 'json' };
 import soldier from './soldier.json' with { type: 'json' };
 import spiritofivory from './spiritofivory.json' with { type: 'json' };
 import spy from './spy.json' with { type: 'json' };
@@ -146,13 +174,17 @@ import ventriloquist from './ventriloquist.json' with { type: 'json' };
 import vigormortis from './vigormortis.json' with { type: 'json' };
 import villageidiot from './villageidiot.json' with { type: 'json' };
 import virgin from './virgin.json' with { type: 'json' };
+import vizier from './vizier.json' with { type: 'json' };
 import vortox from './vortox.json' with { type: 'json' };
+import voudon from './voudon.json' with { type: 'json' };
 import washerwoman from './washerwoman.json' with { type: 'json' };
 import widow from './widow.json' with { type: 'json' };
 import witch from './witch.json' with { type: 'json' };
 import wizard from './wizard.json' with { type: 'json' };
+import wraith from './wraith.json' with { type: 'json' };
 import xaan from './xaan.json' with { type: 'json' };
 import yaggababble from './yaggababble.json' with { type: 'json' };
+import zealot from './zealot.json' with { type: 'json' };
 import zenomancer from './zenomancer.json' with { type: 'json' };
 import zombuul from './zombuul.json' with { type: 'json' };
 
@@ -172,15 +204,22 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	barber,
 	barista,
 	baron,
+	beggar,
+	bigwig,
 	bishop,
+	boffin,
 	bonecollector,
+	boomdandy,
 	bootlegger,
 	bountyhunter,
+	buddhist,
 	bureaucrat,
+	butcher,
 	butler,
 	cacklejack,
 	cannibal,
 	cerenovus,
+	chambermaid,
 	chef,
 	choirboy,
 	clockmaker,
@@ -188,7 +227,11 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	cultleader,
 	damsel,
 	deusexfiasco,
+	deviant,
 	devilsadvocate,
+	djinn,
+	doomsayer,
+	dreamer,
 	drunk,
 	duchess,
 	empath,
@@ -198,6 +241,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	fanggu,
 	farmer,
 	fearmonger,
+	ferryman,
 	fibbin,
 	fiddler,
 	fisherman,
@@ -205,7 +249,9 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	fool,
 	fortuneteller,
 	gambler,
+	gangster,
 	gardener,
+	general,
 	gnome,
 	goblin,
 	godfather,
@@ -214,12 +260,15 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	goon,
 	gossip,
 	grandmother,
+	gunslinger,
 	harlot,
 	harpy,
 	hatter,
 	hellslibrarian,
 	heretic,
 	hermit,
+	highpriestess,
+	hindu,
 	huntsman,
 	imp,
 	innkeeper,
@@ -227,7 +276,9 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	judge,
 	juggler,
 	kazali,
+	king,
 	klutz,
+	knaves,
 	knight,
 	legion,
 	leviathan,
@@ -237,14 +288,17 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	lordoftyphon,
 	lunatic,
 	lycanthrope,
+	magician,
 	marionette,
 	mastermind,
 	mathematician,
+	matron,
 	mayor,
 	mezepheles,
 	minstrel,
 	monk,
 	moonchild,
+	mutant,
 	nightwatchman,
 	noble,
 	nodashii,
@@ -252,7 +306,9 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	ojo,
 	oracle,
 	organgrinder,
+	pacifist,
 	philosopher,
+	pithag,
 	pixie,
 	plaguedoctor,
 	po,
@@ -263,6 +319,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	preacher,
 	princess,
 	professor,
+	psychopath,
 	pukka,
 	puzzlemaster,
 	ravenkeeper,
@@ -273,12 +330,15 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	sailor,
 	saint,
 	savant,
+	scapegoat,
 	scarletwoman,
 	seamstress,
 	sentinel,
 	shabaloth,
+	shugenja,
 	slayer,
 	snakecharmer,
+	snitch,
 	soldier,
 	spiritofivory,
 	spy,
@@ -297,13 +357,17 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	vigormortis,
 	villageidiot,
 	virgin,
+	vizier,
 	vortox,
+	voudon,
 	washerwoman,
 	widow,
 	witch,
 	wizard,
+	wraith,
 	xaan,
 	yaggababble,
+	zealot,
 	zenomancer,
 	zombuul
 };

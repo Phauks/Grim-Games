@@ -5,5 +5,23 @@
 	},
 	"gameEnd": {
 		"decidedByStoryteller": true
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is dead"
+					}
+				],
+				"when": {
+					"self": "dead"
+				}
+			}
+		]
 	}
 }

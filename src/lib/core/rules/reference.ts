@@ -18,13 +18,8 @@ import {
 	type ReminderLabel
 } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
-import {
-	DAY_GROUP_TITLES,
-	DAY_REMINDER_ENTRIES,
-	NO_DAY_RELEVANCE,
-	type DayGroup
-} from './day-reminders.data.ts';
-import { detectDayReminders } from './day-reminders.ts';
+import { DAY_GROUP_TITLES, type DayGroup } from '#lib/core/data/day-reminder-rules.ts';
+import { dayRulesOf, detectDayReminders } from './day-reminders.ts';
 import { describeImpairable, describeWhen } from './describe.ts';
 import { MAX_DEALT_PLAYERS } from './distribution.ts';
 import { isExclusiveJinx } from './jinxes.ts';
@@ -39,7 +34,7 @@ import { setupPrepOf } from './setup-reminders.ts';
  */
 export type ReferenceSegment =
 	| { kind: 'character'; characterId: CharacterId }
-	| { kind: 'target'; token: string }
+	| { kind: 'target'; token: ReminderLabel }
 	| { kind: 'value'; placeholder: string }
 	| { kind: 'text'; text: string };
 
@@ -167,7 +162,7 @@ export interface ReferenceEntry {
 	dayReminders: ReferenceDayReminder[];
 	/** Where our night text departs from TPI's. */
 	differences: ReferenceDifference[];
-	/** Why the character has no pre-day reminders (`NO_DAY_RELEVANCE`). */
+	/** Why the character has no pre-day reminders (`dayReminders.none`). */
 	noDayReason?: string;
 	wiki?: string;
 	/** Consistency checks that failed: things to look at. */
@@ -251,17 +246,14 @@ const samePage = (a: string | undefined, b: string | undefined) => {
 	return a === undefined || b === undefined || norm(a) === norm(b);
 };
 
-const ENTRIES = new Map(DAY_REMINDER_ENTRIES.map((e) => [e.id, e]));
-
 function dayFor(character: Character, name: (id: CharacterId) => string, problems: string[]) {
-	const entry = ENTRIES.get(character.id);
-	const noDayReason = NO_DAY_RELEVANCE[character.id];
+	const rules = dayRulesOf(character.id, new Map([[character.id, character]]));
+	const entry = rules?.reminders?.length || rules?.impairable ? rules : undefined;
+	const noDayReason = rules?.none;
 	const reminders: ReferenceDayReminder[] = [];
-	if (entry && noDayReason !== undefined)
-		problems.push('Listed both with day reminders and as having none.');
 	if (entry) {
 		const tokens = new Set([...character.reminders, ...character.remindersGlobal]);
-		for (const spec of entry.reminders) {
+		for (const spec of entry.reminders ?? []) {
 			reminders.push({
 				group: spec.group,
 				groupTitle: DAY_GROUP_TITLES[spec.group],
@@ -284,7 +276,7 @@ function dayFor(character: Character, name: (id: CharacterId) => string, problem
 				problems.push('A day reminder names a player but no reminder token says which.');
 		}
 		if (entry.impairable) {
-			const group = entry.reminders[0]?.group ?? 'day-ability';
+			const group = entry.reminders?.[0]?.group ?? 'day-ability';
 			// The app shows "is poisoned" or "is drunk", whichever applies; one line here.
 			reminders.push({
 				group,
@@ -297,8 +289,6 @@ function dayFor(character: Character, name: (id: CharacterId) => string, problem
 				impairment: true
 			});
 		}
-		if (!samePage(entry.wiki, wikiUrl(character)))
-			problems.push(`Day-reminder wiki link (${entry.wiki}) is not the character’s wiki page.`);
 	} else if (noDayReason === undefined) {
 		problems.push('Not in the curated day-reminder list: reminders are guessed from the ability.');
 		for (const r of detectDayReminders(character)) {

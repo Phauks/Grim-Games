@@ -1,5 +1,8 @@
 {
 	"learns": {
 		"measure": "demon-minion-steps"
+	},
+	"dayReminders": {
+		"none": "first-night info"
 	}
 }

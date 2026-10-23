@@ -7,5 +7,27 @@
 	},
 	"setupPrep": {
 		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "madness",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has made mad"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Mad"
+				}
+			}
+		]
 	}
 }

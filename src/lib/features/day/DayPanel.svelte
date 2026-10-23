@@ -209,7 +209,7 @@
 	};
 	const hasDayButton = (characterId: CharacterId | undefined) =>
 		characterId !== undefined &&
-		(isOnceOnlyDayAbility(characterId) ||
+		(isOnceOnlyDayAbility(characterId, game.characters) ||
 			noteClaim(characterId) !== undefined ||
 			savantButton(characterId) ||
 			demonVotedButton(characterId));
@@ -269,7 +269,7 @@
 		seat: game.seatName(seatId)
 	})}
 	<!-- eslint-enable grim/names-as-badges -->
-	{#if characterId && isOnceOnlyDayAbility(characterId)}
+	{#if characterId && isOnceOnlyDayAbility(characterId, game.characters)}
 		{@const isUsed = used(seatId, characterId)}
 		<Chip
 			pressed={isUsed}

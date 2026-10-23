@@ -14,5 +14,21 @@
 			}
 		],
 		"none": "the ? tokens are optional notes on the Amnesiac’s ability"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may guess their ability"
+					}
+				]
+			}
+		]
 	}
 }

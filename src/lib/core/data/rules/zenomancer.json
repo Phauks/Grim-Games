@@ -13,5 +13,27 @@
 			}
 		],
 		"none": "goals can be handed out at any time; mark a player with Goal when they get one"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has set a goal for"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Goal",
+					"self": "any"
+				}
+			}
+		]
 	}
 }

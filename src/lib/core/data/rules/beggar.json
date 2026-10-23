@@ -1,0 +1,17 @@
+{
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "needs a vote token"
+					}
+				]
+			}
+		]
+	}
+}

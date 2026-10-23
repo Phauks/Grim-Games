@@ -3,5 +3,23 @@
 		"summary": "Characters are hidden",
 		"ops": [],
 		"notes": ["Players do not see their character or alignment until they die."]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is in play"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
 	}
 }

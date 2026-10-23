@@ -22,5 +22,23 @@
 			}
 		],
 		"notes": ["Take out every Minion and Demon; fill with any mix of Townsfolk and Outsiders."]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is in play: you can be nominated"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
 	}
 }

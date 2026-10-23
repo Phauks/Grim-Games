@@ -30,5 +30,8 @@
 			"Up to 2 more Village Idiots replace Townsfolk.",
 			"If there are extras, choose one Village Idiot to be drunk."
 		]
+	},
+	"dayReminders": {
+		"none": "night info; setup change"
 	}
 }
