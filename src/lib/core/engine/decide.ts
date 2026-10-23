@@ -637,6 +637,18 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [event];
 		}
 
+		case 'SetSeatLook': {
+			const seat = seatOf(game, command.seatId);
+			if (command.avatar === seat.avatar && command.frame === seat.frame) {
+				warn('no-change', 'the look is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'SeatLookSet', seatId: seat.seatId };
+			if (command.avatar !== undefined) event.avatar = command.avatar;
+			if (command.frame !== undefined) event.frame = command.frame;
+			return [event];
+		}
+
 		case 'SetGameNotes': {
 			const notes = command.notes?.trim() || undefined;
 			if (notes === game.notes) {

@@ -18,6 +18,7 @@ import {
 	openScriptVote,
 	openVote,
 	parseClientMessage,
+	setLook,
 	playerView,
 	publish,
 	reopenGame,
@@ -191,6 +192,10 @@ export class Room extends DurableObject<RoomEnv> {
 				room = cancelRequest(room, id);
 			} else if (message.type === 'leave-seat') {
 				room = unseat(room, id);
+			} else if (message.type === 'look') {
+				const next = setLook(room, id, message);
+				if (next === room) return;
+				room = next;
 			} else if (message.type === 'vote') {
 				room = castVote(room, id, message.voteId, message.choice);
 			} else if (message.type === 'script-ballot') {

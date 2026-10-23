@@ -5,7 +5,9 @@
  *
  * While a game is attached, its public projection is published on every change. Nothing a
  * phone sends changes the grimoire until the Storyteller approves it, and approving runs an
- * ordinary command, so it shows in History and can be rolled back.
+ * ordinary command, so it shows in History and can be rolled back. The one exception is a
+ * seated player's avatar and frame (plan R6), which are decorative and go on their seat as
+ * they pick them, also as an ordinary command.
  */
 import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import type { Script } from '#lib/core/data/index.ts';
@@ -391,6 +393,7 @@ export class RoomHost {
 
 	#receive(message: ServerMessage): void {
 		if (message.type === 'host-view') {
+			this.#applyLooks(this.members, message.members);
 			this.members = message.members;
 			this.requests = message.requests;
 			this.vote = message.vote;
@@ -402,6 +405,29 @@ export class RoomHost {
 		} else if (message.type === 'refused' || message.type === 'closed') {
 			// The room expired or this device no longer owns it.
 			this.#forget();
+		}
+	}
+
+	/**
+	 * Puts each seated player's avatar and frame on their seat (plan R6). They are decorative,
+	 * so they need no approval, but only a change is applied: a seat the Storyteller has since
+	 * changed back (by undoing) stays as it is until the player picks again or moves seat.
+	 */
+	#applyLooks(before: RoomMember[], after: RoomMember[]): void {
+		const game = this.#game;
+		if (!game) return;
+		const key = (m: RoomMember) => `${m.seatId}|${m.avatar ?? ''}|${m.frame ?? ''}`;
+		const was: Record<string, string> = Object.fromEntries(before.map((m) => [m.memberId, key(m)]));
+		for (const member of after) {
+			const seat = member.seatId && game.game.seats[member.seatId];
+			if (!seat || was[member.memberId] === key(member)) continue;
+			if (seat.avatar === member.avatar && seat.frame === member.frame) continue;
+			game.run({
+				type: 'SetSeatLook',
+				seatId: seat.seatId,
+				...(member.avatar ? { avatar: member.avatar } : {}),
+				...(member.frame ? { frame: member.frame } : {})
+			});
 		}
 	}
 

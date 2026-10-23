@@ -10,6 +10,7 @@ import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/u
 import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 import { travellersInPlay, type TravellerInPlay } from '#lib/features/player/travellers-in-play.ts';
+import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 
 const STORAGE_KEY = 'grim-games-room-player';
 
@@ -99,8 +100,24 @@ export class RoomPlayer {
 				else if (m.type === 'reveal') {
 					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
 				}
-			}
+			},
+			() => this.sendLook()
 		);
+	}
+
+	/**
+	 * Tells the room this phone's avatar and frame (plan R6) when they differ from what it
+	 * has: on every connect, and when the player picks again.
+	 */
+	sendLook(): void {
+		const { avatar, frame } = playerSettings.current;
+		const me = this.view?.me;
+		if (me && me.avatar === avatar && me.frame === frame) return;
+		this.#socket.send({
+			type: 'look',
+			...(avatar ? { avatar } : {}),
+			...(frame ? { frame } : {})
+		});
 	}
 
 	get status() {

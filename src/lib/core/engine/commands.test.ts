@@ -152,6 +152,27 @@ describe('seats', () => {
 		);
 	});
 
+	it("keeps the avatar and frame a seat's player picked, and clears them (plan R6)", () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(session, ctx, {
+			type: 'SetSeatLook',
+			seatId: seats[1],
+			avatar: 'cat',
+			frame: 'ring'
+		});
+		expect(s.game.seats[seats[1]]).toMatchObject({ avatar: 'cat', frame: 'ring' });
+		const same = dispatch(
+			s,
+			{ type: 'SetSeatLook', seatId: seats[1], avatar: 'cat', frame: 'ring' },
+			ctx
+		);
+		expect(same.ok && codes(same)).toEqual(['no-change']);
+		const cleared = run(s, ctx, { type: 'SetSeatLook', seatId: seats[1], avatar: 'cat' });
+		expect(cleared.game.seats[seats[1]].avatar).toBe('cat');
+		expect('frame' in cleared.game.seats[seats[1]]).toBe(false);
+		expect(refused(s, ctx, { type: 'SetSeatLook', seatId: 'nobody' })).toBe('unknown-seat');
+	});
+
 	it("keeps the Storyteller's general game notes, trimmed, undoable and clearable", () => {
 		const { session, ctx } = newGame(names);
 		const s = run(session, ctx, { type: 'SetGameNotes', notes: ' Ana asked about the Fang Gu\n' });

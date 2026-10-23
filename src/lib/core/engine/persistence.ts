@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 12;
+export const SAVED_GAME_VERSION = 13;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -162,6 +162,14 @@ const migrateV10toV11: Migration = (doc) => ({ ...doc, schemaVersion: 11 });
  */
 const migrateV11toV12: Migration = (doc) => ({ ...doc, schemaVersion: 12 });
 
+/**
+ * Version 13 (2026-10-23) added the avatar and frame a player picked on their phone
+ * (`Seat.avatar`, `Seat.frame`, the `SeatLookSet` event, plan R6). The log needs no change:
+ * an older seat has neither. The bump makes older builds refuse a version 13 save instead of
+ * failing on the unknown event.
+ */
+const migrateV12toV13: Migration = (doc) => ({ ...doc, schemaVersion: 13 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -174,7 +182,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	8: migrateV8toV9,
 	9: migrateV9toV10,
 	10: migrateV10toV11,
-	11: migrateV11toV12
+	11: migrateV11toV12,
+	12: migrateV12toV13
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {

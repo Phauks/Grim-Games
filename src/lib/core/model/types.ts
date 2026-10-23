@@ -14,6 +14,7 @@ import type { Alignment, CharacterId, ReminderLabel, Script } from '#lib/core/da
 import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
 import type { NightStepOverride } from '#lib/core/rules/night-order.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
 
 export type GameId = string;
 export type SeatId = string;
@@ -123,6 +124,11 @@ export interface Seat {
 	 * avatar. Undefined shows the board's default frame. Purely decorative.
 	 */
 	frame?: FrameId;
+	/**
+	 * The picture the player picked on their own phone (plan R6), shown on their seat token.
+	 * Undefined shows none. Purely decorative.
+	 */
+	avatar?: AvatarId;
 	reminders: ReminderInstance[];
 }
 

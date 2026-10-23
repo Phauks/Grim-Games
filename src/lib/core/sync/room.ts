@@ -8,6 +8,8 @@
  * then does the grimoire change, through its own commands.
  */
 import type { Alignment, Script } from '#lib/core/data/index.ts';
+import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
+import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
@@ -32,6 +34,12 @@ export interface RoomMember {
 	name?: string;
 	/** The seat the Storyteller approved, in the current game. */
 	seatId?: SeatId;
+	/**
+	 * The avatar and frame the player picked on their phone (plan R6, L4). Purely decorative,
+	 * so no approval: the Storyteller's device puts them on the member's seat.
+	 */
+	avatar?: AvatarId;
+	frame?: FrameId;
 }
 
 /** "Sit in this seat as this name", or just a name, waiting for the Storyteller. */
@@ -149,6 +157,8 @@ export type ClientMessage =
 	| { type: 'request'; name: string; seatId?: SeatId }
 	| { type: 'cancel-request' }
 	| { type: 'leave-seat' }
+	/** The player's avatar and frame (plan R6); a missing one clears it. */
+	| { type: 'look'; avatar?: string; frame?: string }
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
 	/** A player's ballot in the script vote; a new one replaces the last. */
@@ -483,7 +493,7 @@ function setMember(room: RoomState, memberId: string, change: Partial<RoomMember
 			if (m.memberId !== memberId) {
 				// One phone per seat: taking a seat moves anyone else out of it.
 				return change.seatId && m.seatId === change.seatId
-					? { memberId: m.memberId, ...nameOf(m) }
+					? { memberId: m.memberId, ...nameOf(m), ...lookOf(m) }
 					: m;
 			}
 			const updated: RoomMember = { ...m, ...change };
@@ -495,6 +505,31 @@ function setMember(room: RoomState, memberId: string, change: Partial<RoomMember
 
 function nameOf(m: RoomMember): Pick<RoomMember, 'name'> {
 	return m.name === undefined ? {} : { name: m.name };
+}
+
+function lookOf(m: RoomMember): Pick<RoomMember, 'avatar' | 'frame'> {
+	return {
+		...(m.avatar === undefined ? {} : { avatar: m.avatar }),
+		...(m.frame === undefined ? {} : { frame: m.frame })
+	};
+}
+
+/** A player's avatar and frame; unknown ones are dropped, as if none were picked. */
+export function setLook(
+	room: RoomState,
+	memberId: string,
+	raw: { avatar?: unknown; frame?: unknown }
+): RoomState {
+	const member = room.members.find((m) => m.memberId === memberId);
+	if (!member) return room;
+	const avatar = parseAvatarId(raw.avatar);
+	const frame = parseFrameId(raw.frame);
+	if (avatar === member.avatar && frame === member.frame) return room;
+	const { avatar: _a, frame: _f, ...rest } = member;
+	void _a;
+	void _f;
+	const updated: RoomMember = { ...rest, ...lookOf({ memberId, avatar, frame }) };
+	return { ...room, members: room.members.map((m) => (m.memberId === memberId ? updated : m)) };
 }
 
 /**
@@ -536,7 +571,9 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 		gameId,
 		public: state,
 		members: room.members.map((m) =>
-			keep(m.seatId) || m.seatId === undefined ? m : { memberId: m.memberId, ...nameOf(m) }
+			keep(m.seatId) || m.seatId === undefined
+				? m
+				: { memberId: m.memberId, ...nameOf(m), ...lookOf(m) }
 		),
 		requests: room.requests.map((r) => {
 			if (r.seatId === undefined || keep(r.seatId)) return r;
