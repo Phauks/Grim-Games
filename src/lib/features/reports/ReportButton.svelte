@@ -1,0 +1,26 @@
+<script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { reportDialog } from './report-dialog.svelte.ts';
+
+	/**
+	 * Report an issue beside a script's own actions (Trevor, 2026-10-23: "add report button to
+	 * those screens"), for screens whose script sits over the footer's link. The form opens as a
+	 * script or data report titled with the script's name; the script goes with it
+	 * (offerScriptToReports).
+	 */
+	interface Props {
+		/** The script's name, to start the title with; none leaves the title empty. */
+		name?: string;
+		disabled?: boolean;
+	}
+
+	let { name, disabled = false }: Props = $props();
+</script>
+
+<IconButton
+	icon="report"
+	label={t('shell.reportIssue')}
+	{disabled}
+	onclick={() => reportDialog.show({ kind: 'data', title: name ? `${name}: ` : undefined })}
+/>
