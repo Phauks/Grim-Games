@@ -4150,11 +4150,68 @@ test("a reminder's ⋯ duplicates it into the bank, from the board or the bank",
 	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(2);
 });
 
+test('"+ New token" makes a reusable ∞ token whose copies carry its look', async ({ page }) => {
+	// Plan B9 (Trevor, 2026-10-23: "Tokens only").
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	await bank.getByRole('button', { name: 'New token' }).tap();
+	const text = page.getByTestId('reminder-note');
+	await text.fill('Red herring');
+	await text.press('Enter');
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Symbol colour' }).tap();
+	await page.getByRole('option', { name: 'Red', exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(text).toBeHidden();
+	const token = bank.getByRole('button', { name: 'Generic reminder: Red herring' });
+	await expect(token.locator('[data-symbol^="ph:"]')).toBeAttached();
+	// "+ New token" stays last, after the plain ∞ and the new token.
+	await expect(bank.locator('> li').last().getByRole('button')).toHaveAccessibleName('New token');
+
+	// A copy goes on a seat with the token's look; the token stays in the bank.
+	await token.tap();
+	await page
+		.getByRole('dialog', { name: /^Put .* on$/ })
+		.getByRole('button', { name: /None Seat 1/ })
+		.tap();
+	const placed = page.locator(
+		'[data-testid="board-reminder"][aria-label="Generic reminder: Red herring"]'
+	);
+	await expect(placed).toHaveCount(2);
+	await expect(placed.first().locator('[data-symbol^="ph:"]')).toBeAttached();
+	await expect(token).toHaveCount(1);
+
+	// Saved with the game.
+	await page.reload();
+	await expect(token).toHaveCount(1);
+
+	// Edited from its Put on sheet: the copy already placed keeps its words.
+	await token.tap();
+	await page.getByRole('button', { name: 'Edit token' }).tap();
+	await text.fill('Changed');
+	await text.press('Enter');
+	await page.keyboard.press('Escape');
+	await expect(text).toBeHidden();
+	const changed = bank.getByRole('button', { name: 'Generic reminder: Changed' });
+	await expect(changed).toHaveCount(1);
+	await expect(placed).toHaveCount(1);
+
+	// The red trash takes it out of the bank; the copy on the seat stays.
+	await changed.tap();
+	await page.getByRole('button', { name: 'Edit token' }).tap();
+	await page.getByRole('button', { name: 'Delete token' }).tap();
+	await expect(text).toBeHidden();
+	await expect(changed).toHaveCount(0);
+	await expect(placed).toHaveCount(1);
+});
+
 test('the generic ∞ reminder is always in the bank and can carry a few words', async ({ page }) => {
 	await startGame(page);
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
-	// Last in the bank, whatever is in play (Trevor, 2026-10-18).
-	await expect(bank.locator('> li').last().getByTestId('board-reminder')).toHaveAttribute(
+	// Last in the bank, whatever is in play (Trevor, 2026-10-18), before "+ New token" (plan B9).
+	await expect(bank.locator('> li').last().getByRole('button')).toHaveAccessibleName('New token');
+	await expect(bank.locator('> li').nth(-2).getByTestId('board-reminder')).toHaveAttribute(
 		'aria-label',
 		'Generic reminder'
 	);
