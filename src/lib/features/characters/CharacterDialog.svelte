@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { wikiUrl, type Character } from '#lib/core/data/index.ts';
+	import { wikiUrl, type Alignment, type Character } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { clearTermHandler } from '#lib/features/glossary/term-handler.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -26,9 +26,11 @@
 		 * header's link in its place.
 		 */
 		sourcePage?: string;
+		/** The seat it was opened from (CharacterSummary). */
+		seat?: { number: number; alignment?: Alignment };
 	}
 
-	let { open = $bindable(false), character, icon: given, sourcePage }: Props = $props();
+	let { open = $bindable(false), character, icon: given, sourcePage, seat }: Props = $props();
 	// Terms here open their popover, even when these details were opened from the Glossary.
 	clearTermHandler();
 	// Its own badge in the text draws the eye back to the summary at the top (Trevor, 2026-10-20).
@@ -171,7 +173,7 @@
 			if (event.target === event.currentTarget) pulse = false;
 		}}
 	>
-		<CharacterSummary {character} icon={given} />
+		<CharacterSummary {character} icon={given} {seat} />
 	</div>
 	<ContentsLayout
 		label={t('characters.moreFromWiki')}

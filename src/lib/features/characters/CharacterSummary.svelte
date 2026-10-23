@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { Character } from '#lib/core/data/index.ts';
+	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
 	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
@@ -20,9 +20,14 @@
 		icon?: string;
 		/** Every reminder token under the ability. */
 		reminders?: boolean;
+		/**
+		 * The seat it was opened from: its number and alignment show above the type, since
+		 * custom tokens can look alike (Trevor, 2026-10-22, plan L26).
+		 */
+		seat?: { number: number; alignment?: Alignment };
 	}
 
-	let { character, icon: given, reminders: showReminders = true }: Props = $props();
+	let { character, icon: given, reminders: showReminders = true, seat }: Props = $props();
 
 	const icon = $derived(given ?? iconUrl(character));
 	const typeLabel = $derived(character.type[0].toUpperCase() + character.type.slice(1));
@@ -60,6 +65,17 @@
 			/>{/if}</span
 	>
 	<div>
+		{#if seat}<p class="type" data-testid="character-seat">
+				{t('characters.seatLine', {
+					number: seat.number,
+					alignment:
+						seat.alignment === 'good'
+							? t('characters.good')
+							: seat.alignment === 'evil'
+								? t('characters.evil')
+								: t('common.none')
+				})}
+			</p>{/if}
 		<p class="type">
 			{#if character.edition}<button
 					type="button"
