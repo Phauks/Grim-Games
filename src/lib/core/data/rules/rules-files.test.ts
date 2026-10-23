@@ -106,6 +106,12 @@ describe('parseCharacterRules', () => {
 		expect(parse({ impairs: { tokens: { Dead: { reason: 'drunk', on: 'all' } } } }).issues).toEqual(
 			['rules.impairs.tokens.Dead.on: unknown value "all"']
 		);
+		expect(parse({ registersAs: { self: { types: ['wizard'] } } }).issues).toEqual([
+			'rules.registersAs.self.types: unknown value "wizard"'
+		]);
+		expect(parse({ registersAs: { tokens: { Paw: { alignments: ['evil'] } } } }).issues).toEqual([
+			'rules.registersAs.tokens.Paw: not one of this character’s reminders'
+		]);
 		expect(parse({ dayClaim: 'shout' }).issues).toEqual(['rules.dayClaim: unknown value "shout"']);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'

@@ -20,16 +20,6 @@ import {
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
-/**
- * Characters that might register as another character type or alignment, so a truthful
- * answer about them is the Storyteller's choice (`registrations` has the full rule).
- * https://wiki.bloodontheclocktower.com/Spy, https://wiki.bloodontheclocktower.com/Recluse
- */
-export const MAY_MISREGISTER: Readonly<Record<CharacterId, string>> = {
-	spy: `${W}Spy`,
-	recluse: `${W}Recluse`
-};
-
 export interface Reliability {
 	/** The waking player's ability does not work (the first reason): any answer is allowed. */
 	unreliable?: ImpairmentReason;

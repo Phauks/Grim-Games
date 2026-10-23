@@ -244,7 +244,8 @@ export interface Registration {
 }
 
 /**
- * Players whose registration is the Storyteller's choice, or fixed by an ability:
+ * Players whose registration is the Storyteller's choice, or fixed by an ability, as each
+ * character's `registersAs` rules say:
  * - the Recluse might register as evil and as a Minion or Demon, even if dead
  *   (https://wiki.bloodontheclocktower.com/Recluse);
  * - the Spy might register as good and as a Townsfolk or Outsider, even if dead
@@ -260,43 +261,42 @@ export function registrations(game: Game, characters: CharacterLookup): Registra
 		const alignment = alignmentOf(game, seatId);
 		const type = typeOf(game, seatId, characters);
 		if (!alignment || !type) continue;
-		if ((id === 'recluse' || id === 'spy') && abilityState(game, seatId, characters).works) {
-			const recluse = id === 'recluse';
+		const self = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
+		if (id && self && abilityState(game, seatId, characters).works) {
 			out.push({
 				seatId,
-				alignments: [alignment, recluse ? 'evil' : 'good'].filter(
+				alignments: [alignment, ...(self.alignments ?? [])].filter(
 					(a, i, all): a is Alignment => all.indexOf(a) === i
 				),
-				types: [type, ...(recluse ? ['minion', 'demon'] : ['townsfolk', 'outsider'])].filter(
+				types: [type, ...(self.types ?? [])].filter(
 					(t, i, all): t is CharacterType => all.indexOf(t) === i
 				),
 				source: { characterId: id, seatId },
-				wiki: `${W}${recluse ? 'Recluse' : 'Spy'}`
+				wiki: wikiOf(id, characters)
 			});
 			continue;
 		}
-		const pawToken = game.seats[seatId].reminders.find(
-			(r) => r.characterId === 'lycanthrope' && r.label === 'Faux Paw'
-		);
-		if (pawToken && alignment === 'good') {
-			const lycanthrope = game.seating.find(
+		for (const token of game.seats[seatId].reminders) {
+			const rule = rulesOf(token.characterId, characters)?.registersAs?.tokens?.[token.label];
+			if (!rule || (rule.carrierAlignment && rule.carrierAlignment !== alignment)) continue;
+			const source = game.seating.find(
 				(s) =>
-					trueCharacter(game, s, characters) === 'lycanthrope' &&
+					trueCharacter(game, s, characters) === token.characterId &&
 					abilityState(game, s, characters).works
 			);
-			if (lycanthrope) {
-				out.push({
-					seatId,
-					alignments: ['evil'],
-					types: [type],
-					source: {
-						characterId: 'lycanthrope',
-						seatId: lycanthrope,
-						reminderId: pawToken.reminderId
-					},
-					wiki: `${W}Lycanthrope`
-				});
-			}
+			if (!source) continue;
+			out.push({
+				seatId,
+				alignments: (rule.alignments ?? [alignment]).filter(
+					(a, i, all): a is Alignment => all.indexOf(a) === i
+				),
+				types: (rule.types ?? [type]).filter(
+					(t, i, all): t is CharacterType => all.indexOf(t) === i
+				),
+				source: { characterId: token.characterId, seatId: source, reminderId: token.reminderId },
+				wiki: wikiOf(token.characterId, characters)
+			});
+			break;
 		}
 	}
 	return out;

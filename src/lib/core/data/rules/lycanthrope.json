@@ -15,5 +15,13 @@
 			"note": "The one good player set up to register as evil.",
 			"ambiguous": "The wiki does not say whether the Lycanthrope itself can be the Faux Paw player."
 		}
+	},
+	"registersAs": {
+		"tokens": {
+			"Faux Paw": {
+				"alignments": ["evil"],
+				"carrierAlignment": "good"
+			}
+		}
 	}
 }

@@ -31,7 +31,6 @@
  * day"; opening the night order never does (Trevor, 2026-10-15).
  */
 export {
-	MAY_MISREGISTER,
 	type Reliability,
 	type WhyFact,
 	type WhyAlternative,
