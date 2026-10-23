@@ -62,7 +62,7 @@ describe('Leviathan', () => {
 				(s) => ({ type: 'Execute', seatId: s[1] })
 			);
 			expect(gameEnds(session.game, testCharacters)).toMatchObject([
-				{ rule: 'leviathan-executions', winner: 'evil' }
+				{ rule: 'executions-of-alignment', winner: 'evil' }
 			]);
 		});
 		it.todo('Example 2: Two evil executed, then one good');

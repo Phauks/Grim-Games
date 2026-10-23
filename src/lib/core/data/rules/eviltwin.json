@@ -5,5 +5,20 @@
 			"alignment": "opposite",
 			"note": "The good twin, not the Evil Twin; the wiki advises against a Traveller."
 		}
+	},
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "marked-executed",
+				"token": "Twin",
+				"winner": "evil"
+			}
+		],
+		"holds": [
+			{
+				"kind": "marked-alive",
+				"token": "Twin"
+			}
+		]
 	}
 }

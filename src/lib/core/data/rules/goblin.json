@@ -4,5 +4,8 @@
 			"seat": "self",
 			"note": "On the Goblin after they publicly claim Goblin when nominated."
 		}
+	},
+	"gameEnd": {
+		"decidedByStoryteller": true
 	}
 }

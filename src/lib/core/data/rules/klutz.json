@@ -2,5 +2,8 @@
 	"actsWhenDead": true,
 	"onDeath": {
 		"by": "any"
+	},
+	"gameEnd": {
+		"decidedByStoryteller": true
 	}
 }

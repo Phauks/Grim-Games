@@ -4,5 +4,8 @@
 			"seat": "self",
 			"note": "On the Damsel after a Minion's guess has been spent."
 		}
+	},
+	"gameEnd": {
+		"decidedByStoryteller": true
 	}
 }

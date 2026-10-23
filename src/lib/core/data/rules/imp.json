@@ -10,5 +10,13 @@
 			"seat": "any",
 			"note": "Any player the Imp attacks, including itself or a player already dead."
 		}
+	},
+	"gameEnd": {
+		"holds": [
+			{
+				"kind": "death-passes",
+				"to": "minion"
+			}
+		]
 	}
 }

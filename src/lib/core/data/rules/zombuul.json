@@ -15,5 +15,10 @@
 			"seat": "any",
 			"note": "On any player who died during the day, the Zombuul included."
 		}
+	},
+	"gameEnd": {
+		"aliveWhileDead": {
+			"untilToken": "Dead"
+		}
 	}
 }

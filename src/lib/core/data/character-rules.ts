@@ -9,6 +9,7 @@
  * TypeScript move here one per PR (the list is in docs/shared-components.md).
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
+import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
 import {
 	ALIGNMENTS,
@@ -94,6 +95,8 @@ export interface CharacterRules {
 	impairs?: Impairs;
 	/** Players who may register as another alignment or character type (`rules/ability.ts`). */
 	registersAs?: RegistersAs;
+	/** How the ability ends the game, keeps it going, or changes who wins (`rules/game-end.ts`). */
+	gameEnd?: GameEndRules;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -226,7 +229,8 @@ export const RULE_KEYS = [
 	'onNominated',
 	'dayClaim',
 	'impairs',
-	'registersAs'
+	'registersAs',
+	'gameEnd'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -351,6 +355,10 @@ export function parseCharacterRules(
 	if (raw.registersAs !== undefined) {
 		const registersAs = readRegistersAs(raw.registersAs, `${path}.registersAs`, issues, reminders);
 		if (registersAs) rules.registersAs = registersAs;
+	}
+	if (raw.gameEnd !== undefined) {
+		const gameEnd = readGameEnd(raw.gameEnd, `${path}.gameEnd`, issues, reminders);
+		if (gameEnd) rules.gameEnd = gameEnd;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

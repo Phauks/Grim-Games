@@ -12,5 +12,13 @@
 			"seat": "self",
 			"note": "By the Summoner to count the nights."
 		}
+	},
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "dead-without-demon",
+				"winner": "good"
+			}
+		]
 	}
 }

@@ -112,6 +112,15 @@ describe('parseCharacterRules', () => {
 		expect(parse({ registersAs: { tokens: { Paw: { alignments: ['evil'] } } } }).issues).toEqual([
 			'rules.registersAs.tokens.Paw: not one of this character’s reminders'
 		]);
+		expect(parse({ gameEnd: { ends: [{ kind: 'win-now' }] } }).issues).toEqual([
+			'rules.gameEnd.ends[0].kind: unknown value "win-now"'
+		]);
+		expect(parse({ gameEnd: { ends: [{ kind: 'survives-day', day: 5 }] } }).issues).toEqual([
+			'rules.gameEnd.ends[0].winner: missing'
+		]);
+		expect(parse({ gameEnd: { holds: [{ kind: 'marked-alive', token: 'Twin' }] } }).issues).toEqual(
+			['rules.gameEnd.holds[0].token: not one of this character’s reminders']
+		);
 		expect(parse({ dayClaim: 'shout' }).issues).toEqual(['rules.dayClaim: unknown value "shout"']);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'
