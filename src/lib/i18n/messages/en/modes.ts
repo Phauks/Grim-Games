@@ -189,6 +189,7 @@ export const modes = {
 	'modes.inspectRule': 'Inspect {name}',
 	'modes.deleteRule': 'Delete {name}',
 	'modes.switch.named': 'Name the characters',
+	'modes.switch.threeAlive': '3-player limit',
 	'modes.recap.title': 'Special rules in this game',
 	'modes.recap.back': 'Back',
 	'modes.recap.on': 'On',
