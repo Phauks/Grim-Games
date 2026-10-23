@@ -55,6 +55,10 @@
 			aren't marked while dragging, and tapping a reminder in the bank doesn't offer seats. One
 			already on a seat comes off it when moved.
 		</li>
+		<li>
+			No line runs from a reminder back to its seat, and reminders are no longer fitted around their
+			seats.
+		</li>
 		<li>Reminders no longer move with their seat when seats are arranged, added or removed.</li>
 		<li>
 			Reminders can cover seats, other reminders, the Fabled and Loric and the buttons in the
