@@ -1045,7 +1045,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	);
 	await expect(info.locator('[data-field="version"] td')).toHaveText('2.2');
 	// Its source can be passed on, and its file saved (Trevor, 2026-10-22, plan G3).
-	await expect(info.getByTestId('share-source')).toBeEnabled();
+	await expect(page.getByTestId('share-source')).toBeEnabled();
 	const download = page.waitForEvent('download');
 	await page.getByTestId('game-info-download').tap();
 	const file = await download;
@@ -1081,8 +1081,8 @@ test('Game info opens a special rule in full when tapped, and a script with no s
 	const info = page.getByTestId('game-info');
 	// Standard is no mode to open; the rule's name opens its About, parts and rule file.
 	await expect(info.locator('[data-field="mode"] button')).toHaveCount(0);
-	// A built-in script has no source page: Share stays in its place, off, saying why.
-	const share = info.getByTestId('share-source');
+	// A built-in script has no source page: Share stays in the header, off, saying why.
+	const share = page.getByTestId('share-source');
 	await expect(share).toBeDisabled();
 	await expect(share).toHaveAttribute('title', 'This script has no source page to share');
 	await info.getByRole('button', { name: 'Inspect Stowed Away' }).tap();

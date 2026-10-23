@@ -236,12 +236,15 @@
 		justify-content: space-between;
 		gap: var(--space-3);
 	}
-	/* The header's icons sit as far apart as the last one is from Close (Trevor, 2026-10-23). */
 	.head-actions {
 		flex: none;
 		display: flex;
 		align-items: center;
-		gap: var(--space-3);
+	}
+	/* Close sits as close to the last icon as the icons sit to each other (Trevor, 2026-10-23:
+	   uneven gaps); the head's gap stays between the title and the icons. */
+	.head-actions + :global([data-part='close-trigger']) {
+		margin-left: calc(var(--space-3) * -1);
 	}
 	.titled {
 		flex: 1;
