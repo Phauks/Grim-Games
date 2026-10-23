@@ -189,7 +189,7 @@ const saveToggle = (page: Page) => details(page).getByRole('button', { name: 'Sa
 
 /** Phones: the details cover the list until Back. */
 async function backToList(page: Page) {
-	const back = details(page).getByRole('button', { name: 'Back' });
+	const back = details(page).getByRole('button', { name: 'Back', exact: true });
 	if (await back.isVisible()) await back.tap();
 }
 

@@ -130,7 +130,8 @@ test('the player view has no sidebar, and leaving it asks first', async ({ page 
 	const menu = page.getByRole('button', { name: 'Menu', exact: true });
 	const title = page.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
 	const [m, h] = [(await menu.boundingBox())!, (await title.boundingBox())!];
-	expect(Math.abs(m.y + m.height / 2 - (h.y + h.height / 2))).toBeLessThan(m.height / 2);
+	// Level with the title's first line: on a phone, three header buttons can wrap the name.
+	expect(Math.abs(m.y - h.y)).toBeLessThan(m.height / 2);
 	expect(m.x + m.width).toBeLessThanOrEqual(h.x);
 
 	await menu.tap();
