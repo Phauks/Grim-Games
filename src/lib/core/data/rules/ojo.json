@@ -13,5 +13,8 @@
 	},
 	"dayReminders": {
 		"none": "night kills"
+	},
+	"deathCause": {
+		"kind": "kills"
 	}
 }

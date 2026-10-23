@@ -15,5 +15,8 @@
 	},
 	"dayReminders": {
 		"none": "night action"
+	},
+	"deathCause": {
+		"none": "returns an ability to a dead player"
 	}
 }

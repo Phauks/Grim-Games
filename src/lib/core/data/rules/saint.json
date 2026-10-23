@@ -22,5 +22,8 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"none": "loss condition"
 	}
 }

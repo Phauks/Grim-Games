@@ -25,5 +25,8 @@
 	},
 	"dayReminders": {
 		"none": "first-night action"
+	},
+	"deathCause": {
+		"none": "poisons; info"
 	}
 }

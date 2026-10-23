@@ -21,5 +21,8 @@
 	},
 	"dayReminders": {
 		"none": "night action"
+	},
+	"deathCause": {
+		"none": "removes Minion abilities"
 	}
 }

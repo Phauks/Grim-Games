@@ -15,5 +15,8 @@
 	},
 	"dayReminders": {
 		"none": "night protection"
+	},
+	"deathCause": {
+		"none": "protects"
 	}
 }

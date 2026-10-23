@@ -31,5 +31,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "extra nominations and votes"
 	}
 }

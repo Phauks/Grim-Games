@@ -68,5 +68,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "poisons"
 	}
 }

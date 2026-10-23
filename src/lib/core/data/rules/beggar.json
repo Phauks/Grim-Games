@@ -13,5 +13,8 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"none": "vote tokens; info"
 	}
 }

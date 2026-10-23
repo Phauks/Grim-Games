@@ -31,5 +31,8 @@
 	},
 	"dayReminders": {
 		"none": "night kills; setup change"
+	},
+	"deathCause": {
+		"kind": "kills"
 	}
 }

@@ -51,5 +51,8 @@
 	},
 	"dayReminders": {
 		"none": "night action; setup change"
+	},
+	"deathCause": {
+		"none": "makes a Demon; the Demon kills"
 	}
 }

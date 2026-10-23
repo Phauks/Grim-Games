@@ -50,5 +50,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "kills"
 	}
 }

@@ -21,5 +21,8 @@
 	},
 	"dayReminders": {
 		"none": "night action; setup change"
+	},
+	"deathCause": {
+		"none": "changes the Damsel"
 	}
 }

@@ -1,5 +1,8 @@
 {
 	"dayReminders": {
 		"none": "first-night bluffs"
+	},
+	"deathCause": {
+		"none": "bluffs"
 	}
 }

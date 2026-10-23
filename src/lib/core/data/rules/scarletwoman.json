@@ -34,5 +34,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "becomes the Demon"
 	}
 }

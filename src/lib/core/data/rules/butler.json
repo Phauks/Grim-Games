@@ -29,5 +29,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "vote restriction"
 	}
 }

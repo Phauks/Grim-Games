@@ -23,5 +23,8 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"none": "changes Minion and Demon characters"
 	}
 }

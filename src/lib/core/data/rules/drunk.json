@@ -30,5 +30,8 @@
 	},
 	"dayReminders": {
 		"none": "setup only"
+	},
+	"deathCause": {
+		"none": "is drunk"
 	}
 }

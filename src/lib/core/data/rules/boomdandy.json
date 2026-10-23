@@ -14,5 +14,11 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "kills",
+		"victim": {
+			"who": "not-self"
+		}
 	}
 }

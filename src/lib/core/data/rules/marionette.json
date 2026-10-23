@@ -33,5 +33,8 @@
 	},
 	"dayReminders": {
 		"none": "setup only"
+	},
+	"deathCause": {
+		"none": "thinks it is good"
 	}
 }

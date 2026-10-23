@@ -35,5 +35,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "kills"
 	}
 }

@@ -41,5 +41,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "protects"
 	}
 }

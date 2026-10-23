@@ -4,5 +4,8 @@
 	},
 	"dayReminders": {
 		"none": "night info"
+	},
+	"deathCause": {
+		"none": "info"
 	}
 }

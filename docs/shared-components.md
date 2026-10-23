@@ -108,7 +108,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Day reminders (`day-reminders.ts`: also registration interactions such as the Spy and the Virgin) | `dayReminders`                        | moved         |
 | Setup reminders and preparation notes (`setup-reminders.ts`)                                      | `setupPrep`                           | moved         |
 | Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest)                    | `setupModifier`                       | moved         |
-| Death causes (`death-causes.data.ts`)                                                             |                                       | not yet moved |
+| Death causes (`death-causes.ts`: who can cause a death and whom)                                  | `deathCause`                          | moved         |
 | Reminder movement and placeholders (`reminder-movement.data.ts`, `reminder-placeholders.data.ts`) |                                       | not yet moved |
 | Night text overrides (`night-text-overrides.data.ts`)                                             |                                       | not yet moved |
 | On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                  | `onDeath`                             | moved         |

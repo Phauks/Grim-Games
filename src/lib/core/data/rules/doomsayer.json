@@ -17,5 +17,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "kills"
 	}
 }

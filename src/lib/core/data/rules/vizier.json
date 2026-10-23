@@ -25,5 +25,11 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "execution",
+		"victim": {
+			"who": "not-self"
+		}
 	}
 }

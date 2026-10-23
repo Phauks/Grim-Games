@@ -30,5 +30,8 @@
 	},
 	"dayReminders": {
 		"none": "night info and night death"
+	},
+	"deathCause": {
+		"kind": "own-death"
 	}
 }

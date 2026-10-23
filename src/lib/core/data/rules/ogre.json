@@ -10,5 +10,8 @@
 	},
 	"dayReminders": {
 		"none": "first-night choice"
+	},
+	"deathCause": {
+		"none": "changes alignment"
 	}
 }

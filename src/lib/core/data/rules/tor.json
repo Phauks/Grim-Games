@@ -21,5 +21,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "hidden characters"
 	}
 }

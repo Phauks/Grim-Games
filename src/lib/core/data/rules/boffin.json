@@ -13,5 +13,8 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "gained-ability"
 	}
 }

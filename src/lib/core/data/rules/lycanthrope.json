@@ -42,5 +42,12 @@
 	},
 	"dayReminders": {
 		"none": "night action"
+	},
+	"deathCause": {
+		"kind": "kills",
+		"victim": {
+			"who": "registers",
+			"as": "good"
+		}
 	}
 }

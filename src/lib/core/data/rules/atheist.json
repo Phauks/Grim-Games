@@ -40,5 +40,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "win condition"
 	}
 }

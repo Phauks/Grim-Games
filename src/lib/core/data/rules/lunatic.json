@@ -20,5 +20,8 @@
 	},
 	"dayReminders": {
 		"none": "night effect"
+	},
+	"deathCause": {
+		"none": "thinks it is the Demon"
 	}
 }

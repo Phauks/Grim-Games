@@ -82,5 +82,13 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "kills",
+		"onlyWith": ["banshee"],
+		"victim": {
+			"who": "registers",
+			"as": "good"
+		}
 	}
 }
