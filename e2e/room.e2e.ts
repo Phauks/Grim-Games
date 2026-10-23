@@ -66,12 +66,17 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await expect(phone.locator('ol li').nth(2)).toContainText('Alex');
 
 	// Coming back (Trevor, 2026-10-19: "it booted me out like I had not joined it yet"): Join
-	// game lists the room, and opening it shows the seat this phone already has.
-	await phone.goto('/join');
+	// game lists the room, and opening it shows the seat this phone already has. Resume game
+	// points there rather than listing it again (Trevor, 2026-10-23).
+	await phone.goto('/games');
+	await phone.getByRole('main').getByRole('link', { name: 'Join game' }).tap();
+	await expect(phone).toHaveURL(/\/join$/);
 	const recent = phone.getByTestId('recent-rooms').getByRole('button');
 	await expect(recent).toHaveCount(1);
 	await expect(recent).toContainText('Trouble Brewing');
 	await expect(recent).toContainText(`${code.slice(0, 3)} ${code.slice(3)}`);
+	// When this phone last opened it.
+	await expect(recent).toContainText(String(new Date().getFullYear()));
 	await recent.tap();
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
 	// A phone with a seat opens on the script.

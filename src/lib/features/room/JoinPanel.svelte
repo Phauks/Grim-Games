@@ -12,7 +12,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
-	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { SeatId } from '#lib/core/model/index.ts';
@@ -113,6 +113,10 @@
 		return () => (cancelled = true);
 	});
 
+	// When this phone last opened each of its games, as Resume game dates saved games.
+	const lastSeen = $derived(
+		new Intl.DateTimeFormat(locale.current, { dateStyle: 'medium', timeStyle: 'short' })
+	);
 	const view = $derived(player?.view);
 	const status = $derived(player?.status);
 	/** In a room (not the code form): the script, your seat and the table show. */
@@ -412,7 +416,8 @@
 													code: formatRoomCode(room.code),
 													name: game.storyteller
 												})
-											: formatRoomCode(room.code)}</span
+											: formatRoomCode(room.code)}
+									· {lastSeen.format(room.at)}</span
 								>
 							</span>
 						</button>
