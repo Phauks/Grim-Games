@@ -209,6 +209,7 @@
 				label={t('room.watch.password')}
 				bind:value={password}
 				maxlength={64}
+				type="password"
 				disabled={!host.viewerKey}
 				oncommit={setPassword}
 				testid="grim-view-password"
