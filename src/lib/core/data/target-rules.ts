@@ -27,6 +27,9 @@
  * - `withLabel` / `notWithLabel`: must share, or must not share, a seat with another of
  *   the character's tokens (the Washerwoman's Wrong is never on her Townsfolk);
  * - `global`: the token marks the game, never a player (a Fabled's or Loric's own tokens);
+ * - `differsFromLastNight`: the ability says "different to last night": `player`, never the
+ *   player who carried the token at the latest dawn (the Devil's Advocate, Exorcist);
+ *   `type`, never a player of that player's character type (the Balloonist);
  * - `minOwners`: the token exists only while this many seats hold the character (the
  *   Village Idiot's Drunk, with 2 or more Village Idiots);
  * - `info`: the token marks what the character's information showed. While the character
@@ -86,6 +89,7 @@ export interface TargetRule {
 	notWithLabel?: string;
 	global?: boolean;
 	minOwners?: number;
+	differsFromLastNight?: 'player' | 'type';
 	info?: boolean;
 	note?: string;
 	ambiguous?: string;
@@ -94,6 +98,7 @@ export interface TargetRule {
 const SEATS = ['self', 'other', 'any'] as const;
 const RULE_ALIGNMENTS = [...ALIGNMENTS, 'same', 'opposite'] as const;
 const LIFE = ['alive', 'dead'] as const;
+const DIFFERS = ['player', 'type'] as const;
 const TARGET_KEYS = [
 	'seat',
 	'types',
@@ -107,6 +112,7 @@ const TARGET_KEYS = [
 	'notWithLabel',
 	'global',
 	'minOwners',
+	'differsFromLastNight',
 	'info',
 	'note',
 	'ambiguous'
@@ -180,6 +186,8 @@ function readTarget(raw: unknown, path: string, issues: Issues): TargetRule | un
 	}
 	const life = readEnum(raw, 'life', LIFE, path, issues, false);
 	if (life) out.life = life;
+	const differs = readEnum(raw, 'differsFromLastNight', DIFFERS, path, issues, false);
+	if (differs) out.differsFromLastNight = differs;
 	if (raw.neighbour !== undefined) {
 		const neighbour = readNeighbour(raw.neighbour, `${path}.neighbour`, issues);
 		if (neighbour) out.neighbour = neighbour;

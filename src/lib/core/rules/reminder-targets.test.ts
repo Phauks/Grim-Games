@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import type { Command } from '#lib/core/engine/commands.ts';
 import type { GameSession } from '#lib/core/engine/log.ts';
+import { dawnGames } from '#lib/core/engine/dawns.ts';
 import type { EngineContext } from '#lib/core/engine/context.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import type { Reminder } from '#lib/core/model/types.ts';
@@ -400,5 +401,70 @@ describe('placement corrections (Trevor, 2026-10-23)', () => {
 		expect(fitting(session, { characterId: 'xaan', label: 'Night 1' })).toEqual([0]);
 		expect(fitting(session, { characterId: 'xaan', label: 'X' })).toEqual([0]);
 		expect(fitting(session, { characterId: 'fanggu', label: 'Once' })).toEqual([1]);
+	});
+});
+
+describe('different to last night', () => {
+	/** A game where `label` went on seat `on` last night, then New day. */
+	function lastNight(cast: string[], characterId: string, label: string, on: number) {
+		const first = grimoire(cast);
+		const session = run(first.session, first.ctx, {
+			type: 'AddReminder',
+			seatId: first.seats[on],
+			reminder: { characterId, label }
+		});
+		const dawn = run(session, first.ctx, { type: 'NewDay' });
+		return { game: dawn.game, atDawn: dawnGames(dawn.log).at(-1)!, seats: first.seats };
+	}
+
+	// https://wiki.bloodontheclocktower.com/Devil%27s_Advocate: a living player, never the
+	// same one two nights running.
+	it('the Devil’s Advocate does not choose last night’s player again', () => {
+		const reminder = { characterId: 'devilsadvocate', label: 'Survives Execution' };
+		const { game, atDawn, seats } = lastNight(
+			['devilsadvocate', 'chef', 'empath', 'imp'],
+			reminder.characterId,
+			reminder.label,
+			1
+		);
+		expect(reminderTargetMisses(game, reminder, seats[1], characters, atDawn)).toEqual([
+			'last-night'
+		]);
+		expect(reminderTargetMisses(game, reminder, seats[2], characters, atDawn)).toEqual([]);
+		// Without last night's game (the first night), nothing is ruled out.
+		expect(reminderTargetMisses(game, reminder, seats[1], characters)).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Exorcist: a different player each night.
+	it('the Exorcist does not choose last night’s player again', () => {
+		const reminder = { characterId: 'exorcist', label: 'Chosen' };
+		const { game, atDawn, seats } = lastNight(
+			['exorcist', 'chef', 'empath', 'imp'],
+			reminder.characterId,
+			reminder.label,
+			3
+		);
+		expect(reminderTargetMisses(game, reminder, seats[3], characters, atDawn)).toEqual([
+			'last-night'
+		]);
+		expect(reminderTargetMisses(game, reminder, seats[2], characters, atDawn)).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Balloonist: each night a player of a different
+	// character type from last night's.
+	it('the Balloonist is not shown last night’s character type again', () => {
+		const reminder = { characterId: 'balloonist', label: 'Know' };
+		const { game, atDawn, seats } = lastNight(
+			['balloonist', 'chef', 'empath', 'butler', 'imp'],
+			reminder.characterId,
+			reminder.label,
+			1
+		);
+		const misses = (i: number) =>
+			reminderTargetMisses(game, reminder, seats[i], characters, atDawn);
+		expect(misses(1)).toEqual(['last-night']);
+		expect(misses(2)).toEqual(['last-night']);
+		expect(misses(3)).toEqual([]);
+		expect(misses(4)).toEqual([]);
 	});
 });

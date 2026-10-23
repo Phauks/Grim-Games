@@ -149,6 +149,9 @@ describe('parseCharacterRules', () => {
 		expect(
 			parse({ setupModifier: { summary: '+1', ops: [{ kind: 'delta', type: 'outsider' }] } }).issues
 		).toEqual(['rules.setupModifier.ops[0].values: expected a list of whole numbers']);
+		expect(parse({ reminderTargets: { Dead: { differsFromLastNight: 'seat' } } }).issues).toEqual([
+			'rules.reminderTargets.Dead.differsFromLastNight: unknown value "seat"'
+		]);
 		expect(parse({ dayClaim: 'shout' }).issues).toEqual(['rules.dayClaim: unknown value "shout"']);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'

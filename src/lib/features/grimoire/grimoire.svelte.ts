@@ -1,4 +1,4 @@
-import type { Command } from '#lib/core/engine/index.ts';
+import { dawnGames, type Command } from '#lib/core/engine/index.ts';
 import { demonToBecome, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
@@ -205,6 +205,12 @@ export class Grimoire {
 		return this.open.game;
 	}
 
+	/**
+	 * The game as it stood at the latest "New day", so a token whose ability says "different
+	 * to last night" is not suggested on last night's player; undefined before the first day.
+	 */
+	readonly atDawn = $derived.by(() => dawnGames(this.open.session.log).at(-1));
+
 	/** Runs a command; returns whether it was accepted. */
 	run(command: Command): boolean {
 		const misfit = this.misfit(command);
@@ -328,11 +334,11 @@ export class Grimoire {
 		const game = this.open.game;
 		const characters = this.open.characters;
 		if (command.type === 'AddReminder')
-			return reminderFitWarning(game, command.reminder, command.seatId, characters);
+			return reminderFitWarning(game, command.reminder, command.seatId, characters, this.atDawn);
 		if (command.type === 'MoveReminder') {
 			for (const seatId of game.seating) {
 				const r = game.seats[seatId].reminders.find((x) => x.reminderId === command.reminderId);
-				if (r) return reminderFitWarning(game, r, command.toSeatId, characters);
+				if (r) return reminderFitWarning(game, r, command.toSeatId, characters, this.atDawn);
 			}
 		}
 		return undefined;

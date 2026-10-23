@@ -3,7 +3,8 @@
 		"Chosen": {
 			"seat": "any",
 			"note": "The player the Exorcist chooses, not last night's pick.",
-			"ambiguous": "The wiki doesn't say whether the Exorcist may choose themself."
+			"ambiguous": "The wiki doesn't say whether the Exorcist may choose themself.",
+			"differsFromLastNight": "player"
 		}
 	},
 	"setupPrep": {

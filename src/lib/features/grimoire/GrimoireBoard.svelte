@@ -543,7 +543,9 @@
 		const reminder = looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder);
 		if (!reminder) return new Set<SeatId>();
 		return new Set(
-			game.seating.filter((id) => seatMisses(game, reminder, id, characters).length > 0)
+			game.seating.filter(
+				(id) => seatMisses(game, reminder, id, characters, grimoire.atDawn).length > 0
+			)
 		);
 	});
 	/**
