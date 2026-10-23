@@ -1472,6 +1472,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			const entry: DayEntry = { kind: 'note', entryId: ctx.newId(), characterId, text };
 			if (command.seatId !== undefined) entry.seatId = seatOf(game, command.seatId).seatId;
 			if (guesses.length > 0) entry.guesses = guesses;
+			if (typeof command.holds === 'boolean') entry.holds = command.holds;
 			return [{ type: 'DayEntryAdded', entry }];
 		}
 
@@ -1485,7 +1486,9 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			}
 			const next: Extract<DayEntry, { kind: 'note' }> = { ...entry, text };
 			delete next.guesses;
+			delete next.holds;
 			if (guesses.length > 0) next.guesses = guesses;
+			if (typeof command.holds === 'boolean') next.holds = command.holds;
 			if (JSON.stringify(next) === JSON.stringify(entry)) {
 				warn('no-change', 'the note is unchanged');
 				return [];

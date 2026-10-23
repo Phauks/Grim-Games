@@ -46,3 +46,4 @@ export * from './end-reason.ts';
 export * from './ability-parts.ts';
 export * from './savant.ts';
 export * from './nominations.ts';
+export * from './day-claims.ts';

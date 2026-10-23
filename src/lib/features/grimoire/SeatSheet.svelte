@@ -46,6 +46,10 @@
 	import { isGeneric, tokenLabel } from './reminders.ts';
 	import ReminderNoteField from './ReminderNoteField.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
+	import NoteSheet from '#lib/features/day/NoteSheet.svelte';
+	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
+	import { dayClaim } from '#lib/core/rules/index.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 
 	interface Props {
@@ -367,6 +371,16 @@
 		seat?.characterId === 'savant' && preferences.current.assistance.savantInfo
 	);
 	let remindersOpen = $state(false);
+	/** A player's claim in town (L56): Guesses or Statement, as on their day row. */
+	const claim = $derived.by(() => {
+		const id = seat?.characterId;
+		const c = id ? dayClaim(id, grimoire.open.characters) : undefined;
+		return preferences.current.assistance.playerClaims && (c === 'guesses' || c === 'statement')
+			? c
+			: undefined;
+	});
+	let claimOpen = $state(false);
+	const day = $derived(new LiveDay(grimoire.open));
 </script>
 
 <BottomSheet bind:open {title} description={`Seat ${number}`}>
@@ -618,6 +632,9 @@
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
 <SavantSheet bind:open={savantOpen} {grimoire} {seatId} />
+{#if claim && seat?.characterId}
+	<NoteSheet bind:open={claimOpen} game={day} target={{ characterId: seat.characterId, seatId }} />
+{/if}
 
 <ReminderPicker
 	bind:open={remindersOpen}
@@ -932,6 +949,11 @@
 		{#if savant}
 			<Button variant="quiet" icon="random" onclick={() => fromMenu(() => (savantOpen = true))}>
 				Savant information…
+			</Button>
+		{/if}
+		{#if claim}
+			<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => (claimOpen = true))}>
+				{t(claim === 'guesses' ? 'day.guesses' : 'day.statement')}…
 			</Button>
 		{/if}
 		<Button
