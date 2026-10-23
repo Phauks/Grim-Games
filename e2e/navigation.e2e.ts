@@ -33,9 +33,10 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	]) {
 		await expect(drawer.getByRole('link', { name })).toBeVisible();
 	}
-	// Grouped under plain labels: games, preparation, then you (Trevor, 2026-10-16; no Player view, 2026-10-19).
+	// Grouped under plain labels: games, preparation, you, then the app's own pages (Trevor,
+	// 2026-10-16; no Player view, 2026-10-19; the footer's pages, 2026-10-23).
 	// Headed with the app's name, not "Menu" (Trevor, 2026-10-18).
-	await expect(drawer.getByRole('heading')).toHaveText([APP_NAME, 'Play', 'Prepare', 'You']);
+	await expect(drawer.getByRole('heading')).toHaveText([APP_NAME, 'Play', 'Prepare', 'You', 'App']);
 	// Home stands first on its own, outside the groups (Trevor, 2026-10-16).
 	await expect(drawer.getByRole('link').first()).toHaveText('Home');
 	await expect(

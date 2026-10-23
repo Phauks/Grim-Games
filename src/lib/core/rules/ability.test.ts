@@ -17,7 +17,14 @@ import {
 } from '#lib/core/model/fixtures.test-support.ts';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
-import { abilityState, protection, registrations, registrationWorlds } from './ability.ts';
+import {
+	abilityState,
+	firstDeathSaver,
+	killRedirect,
+	protection,
+	registrations,
+	registrationWorlds
+} from './ability.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
@@ -254,5 +261,62 @@ describe('protection', () => {
 		expect(protection(g, seats[1], all, 'demon')).toMatchObject({ characterId: 'lampwarden' });
 		expect(protection(g, seats[1], all, 'other')).toBeUndefined();
 		expect(protection(g, seats[1], characters, 'demon')).toBeUndefined();
+	});
+});
+
+describe('custom characters', () => {
+	function custom(raw: Record<string, unknown>) {
+		const issues = new Issues();
+		const character = parseCharacter(raw, '[0]', issues, { strict: false, scriptFields: true });
+		expect(issues.list).toEqual([]);
+		const all = new Map([...characters, [character!.id, character!]]);
+		const created = newGame(2, { ctx: testContext({ characters: all }) });
+		const { ctx, seats } = created;
+		const session = run(
+			created.session,
+			ctx,
+			...[character!.id, 'imp'].map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			}))
+		);
+		return { g: session.game, seats, all, ctx, session };
+	}
+
+	// A homebrew Townsfolk whose kill, by anyone, may land elsewhere, as the Mayor's may
+	// (https://wiki.bloodontheclocktower.com/Mayor).
+	it('can move a kill elsewhere through its rules block', () => {
+		const { g, seats, all } = custom({
+			id: 'decoy',
+			name: 'Decoy',
+			team: 'townsfolk',
+			ability: 'If you die at night, another player might die instead.',
+			rules: { redirectsKill: { from: 'any' } }
+		});
+		expect(killRedirect(g, seats[0], all, 'other')).toEqual({
+			characterId: 'decoy',
+			seatId: seats[0]
+		});
+		expect(killRedirect(g, seats[0], characters, 'demon')).toBeUndefined();
+	});
+
+	// A homebrew Outsider that survives its first death, as the Fool does
+	// (https://wiki.bloodontheclocktower.com/Fool), until its own spent token is placed.
+	it('can survive its first death through its rules block', () => {
+		const { g, seats, all, session, ctx } = custom({
+			id: 'lucky',
+			name: 'Lucky',
+			team: 'outsider',
+			ability: 'The first time you die, you don’t.',
+			reminders: ['Unlucky'],
+			rules: { survivesFirstDeath: { spentToken: 'Unlucky' } }
+		});
+		expect(firstDeathSaver(g, seats[0], all)).toEqual({
+			source: { characterId: 'lucky', seatId: seats[0] },
+			spentToken: 'Unlucky'
+		});
+		const spent = run(session, ctx, add(0, 'lucky', 'Unlucky')(seats)).game;
+		expect(firstDeathSaver(spent, seats[0], all)).toBeUndefined();
 	});
 });

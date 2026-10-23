@@ -7,8 +7,9 @@
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
- * - `may-bounce`: the Mayor, against the Demon, so another player might die instead;
- * - `survives-first-death`: the Fool, until their No Ability token is placed;
+ * - `may-bounce`: an ability that may move the kill elsewhere (the Mayor, against the Demon);
+ * - `survives-first-death`: an ability that stops its player's first death (the Fool), until
+ *   its spent token is placed;
  * - `on-death`: dying sets off an ability (the Ravenkeeper wakes, the Farmer passes on,
  *   the Grandmother dies with her grandchild...).
  *
@@ -26,7 +27,14 @@ import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { abilityState, protectors, type AbilitySource, type Impairment } from './ability.ts';
+import {
+	abilityState,
+	firstDeathSaver,
+	killRedirect,
+	protectors,
+	type AbilitySource,
+	type Impairment
+} from './ability.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -180,6 +188,10 @@ function deathAlerts(
 	const out: NightAlert[] = [];
 	const alert = (kind: NightAlertKind, source: AbilitySource, wiki: string | undefined) =>
 		out.push(sourceAlert(game, kind, seatId, source, characters, wiki));
+	const wikiOf = (source: AbilitySource) => {
+		const character = characters.get(source.characterId);
+		return character && wikiUrl(character);
+	};
 	const holder = (id: CharacterId) =>
 		game.seating.find((s) => trueCharacter(game, s, characters) === id);
 
@@ -189,18 +201,12 @@ function deathAlerts(
 			out.push({ kind: 'protected', seatId, source: 'override', works: true, impairments: [] });
 		}
 		for (const { source } of protectors(game, seatId, characters, killer.by)) {
-			const character = characters.get(source.characterId);
-			alert('protected', source, character && wikiUrl(character));
+			alert('protected', source, wikiOf(source));
 		}
-		if (own === 'mayor' && killer.by === 'demon') {
-			alert('may-bounce', { characterId: 'mayor', seatId }, W + 'Mayor');
-		}
-		const foolSpent = seat.reminders.some(
-			(r) => r.characterId === 'fool' && r.label === 'No Ability'
-		);
-		if (own === 'fool' && !foolSpent) {
-			alert('survives-first-death', { characterId: 'fool', seatId }, W + 'Fool');
-		}
+		const redirect = killRedirect(game, seatId, characters, killer.by);
+		if (redirect) alert('may-bounce', redirect, wikiOf(redirect));
+		const saver = firstDeathSaver(game, seatId, characters);
+		if (saver) alert('survives-first-death', saver.source, wikiOf(saver.source));
 	}
 
 	const trigger = own ? onDeathTrigger(own, characters) : undefined;

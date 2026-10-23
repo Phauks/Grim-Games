@@ -147,7 +147,7 @@
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
-	import FoolAsk from './FoolAsk.svelte';
+	import FirstDeathAsk from './FirstDeathAsk.svelte';
 	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
@@ -2000,7 +2000,8 @@
 				{seatAt}
 				{spotAllowed}
 				{ruleAt}
-				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
+				onRule={(reminder, characterId, tokenId) =>
+					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
 				run={bankRun}
 				disabled={watching}
@@ -2185,7 +2186,7 @@
 />
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
-<FoolAsk {grimoire} />
+<FirstDeathAsk {grimoire} />
 <NominationAsk {grimoire} bind:asks={nominationAsks} />
 <GameEndPrompt
 	{grimoire}
@@ -2556,7 +2557,7 @@
 		isolation: isolate;
 		display: flex;
 		flex-direction: column;
-		/* Fills the screen: a game hides the sidebar and footer (route data). */
+		/* Fills the screen: a game hides the sidebar (route data). */
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}

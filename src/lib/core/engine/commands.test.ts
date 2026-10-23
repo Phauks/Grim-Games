@@ -855,6 +855,82 @@ describe('the generic reminder', () => {
 	});
 });
 
+describe('bank ∞ tokens', () => {
+	// Plan B9 (Trevor, 2026-10-23: "Tokens only"): "+ New token" makes a reusable ∞ token whose
+	// copies start with its symbol, colour and text.
+	it('makes, changes and removes a token, and its copies start with its look', () => {
+		const { session, ctx, seats } = newGame(names);
+		const made = run(session, ctx, {
+			type: 'AddGenericToken',
+			look: { note: ' Chose Sam ', symbol: 'ph:skull', symbolColour: 'red' }
+		});
+		const [token] = made.game.genericTokens!;
+		expect(token).toEqual({
+			tokenId: token.tokenId,
+			note: 'Chose Sam',
+			symbol: 'ph:skull',
+			symbolColour: 'red'
+		});
+		const generic = { characterId: GENERIC_REMINDER_ID, label: '' };
+		const placed = run(
+			made,
+			ctx,
+			{ type: 'AddReminder', seatId: seats[0], reminder: generic, tokenId: token.tokenId },
+			{ type: 'PlaceLooseReminder', reminder: generic, tokenId: token.tokenId }
+		);
+		expect(placed.game.seats[seats[0]].reminders[0]).toMatchObject({
+			note: 'Chose Sam',
+			symbol: 'ph:skull',
+			symbolColour: 'red'
+		});
+		expect(placed.game.looseReminders![0].symbol).toBe('ph:skull');
+		// The token stays in the bank, and changing it leaves the placed copies as they are.
+		const changed = run(placed, ctx, {
+			type: 'SetGenericToken',
+			tokenId: token.tokenId,
+			look: { symbol: '🦉' }
+		});
+		expect(changed.game.genericTokens).toEqual([{ tokenId: token.tokenId, symbol: '🦉' }]);
+		expect(changed.game.seats[seats[0]].reminders[0].symbol).toBe('ph:skull');
+		expect(
+			warned(changed, ctx, {
+				type: 'SetGenericToken',
+				tokenId: token.tokenId,
+				look: { symbol: '🦉' }
+			})
+		).toContain('no-change');
+		const removed = run(changed, ctx, { type: 'RemoveGenericToken', tokenId: token.tokenId });
+		expect(removed.game).not.toHaveProperty('genericTokens');
+		expect(removed.game.seats[seats[0]].reminders).toHaveLength(1);
+		expect(undo(removed).game.genericTokens).toHaveLength(1);
+	});
+
+	it('refuses an unknown token, a long symbol and an unknown colour', () => {
+		const { session, ctx, seats } = newGame(names);
+		const generic = { characterId: GENERIC_REMINDER_ID, label: '' };
+		expect(
+			refused(session, ctx, {
+				type: 'AddReminder',
+				seatId: seats[0],
+				reminder: generic,
+				tokenId: 'x'
+			})
+		).toBe('unknown-token');
+		expect(refused(session, ctx, { type: 'RemoveGenericToken', tokenId: 'x' })).toBe(
+			'unknown-token'
+		);
+		expect(
+			refused(session, ctx, { type: 'AddGenericToken', look: { symbol: 'x'.repeat(40) } })
+		).toBe('invalid-symbol');
+		expect(
+			refused(session, ctx, {
+				type: 'AddGenericToken',
+				look: { symbolColour: 'pink' as SymbolColour }
+			})
+		).toBe('invalid-colour');
+	});
+});
+
 describe('loose reminders', () => {
 	// Trevor (2026-10-17): a reminder put down anywhere on the board belongs to no seat.
 	it('places a loose reminder, puts it on a seat or a Fabled, loosens it and removes it', () => {

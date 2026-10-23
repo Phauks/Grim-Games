@@ -368,6 +368,10 @@ function entriesOf<K extends DayEntry['kind']>(game: Game, kind: K) {
  * Town Crier: whether a Minion nominated today, and who
  * (https://wiki.bloodontheclocktower.com/Town_Crier). Uses each nominator's true character;
  * a Recluse who nominated might register as a Minion and a Spy might not (`possible`).
+ *
+ * The answer comes from the nominations recorded today (seat sheet or day view). With none
+ * recorded the app can't tell a day without nominations from one nobody recorded, so it
+ * gives no answer rather than "no" (Trevor, 2026-10-23).
  */
 export function townCrierAnswer(
 	game: Game,
@@ -377,6 +381,17 @@ export function townCrierAnswer(
 	const nominators = entriesOf(game, 'nomination')
 		.map((e) => e.nominator)
 		.filter((s, i, all) => all.indexOf(s) === i);
+	if (nominators.length === 0) {
+		return answer(
+			game,
+			seatId,
+			'towncrier',
+			characters,
+			{ kind: 'none', reason: 'No nominations recorded today' },
+			[],
+			{ relevant: [] }
+		);
+	}
 	const w = byWorld(game, seatId, characters, (world) => ({
 		kind: 'yes-no',
 		value: nominators.some((s) => world.type(s) === 'minion')

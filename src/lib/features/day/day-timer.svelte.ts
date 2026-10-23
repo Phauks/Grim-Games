@@ -109,7 +109,7 @@ class LiveDayTimer {
 	adjust(steps: number): void {
 		this.now = Date.now();
 		this.#adjusted = true;
-		this.#timer = adjust(this.#timer, steps, this.now);
+		this.#timer = adjust(this.#timer, steps, this.now, this.mode);
 		this.#signalled = this.done;
 	}
 
@@ -130,7 +130,8 @@ class LiveDayTimer {
 		if (!this.#signalled) {
 			this.#signalled = true;
 			if (preferences.current.timerVibrate) vibrateTimer();
-			playTimerSound(preferences.current.timerSound);
+			// A stopwatch has no sound (Trevor, 2026-10-23); its setting shows disabled.
+			if (this.mode === 'down') playTimerSound(preferences.current.timerSound);
 		}
 	}
 
