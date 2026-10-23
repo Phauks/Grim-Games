@@ -56,7 +56,6 @@ import ph_guitar from '~icons/ph/guitar';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
-import ph_hand_pointing from '~icons/ph/hand-pointing';
 import ph_hard_drives from '~icons/ph/hard-drives';
 import ph_heart from '~icons/ph/heart';
 import ph_hexagon from '~icons/ph/hexagon';
@@ -71,6 +70,7 @@ import ph_link_simple_break from '~icons/ph/link-simple-break';
 import ph_list_dashes from '~icons/ph/list-dashes';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_lock from '~icons/ph/lock';
+import ph_megaphone from '~icons/ph/megaphone';
 import ph_minus_circle from '~icons/ph/minus-circle';
 import ph_moon from '~icons/ph/moon';
 import ph_mountains from '~icons/ph/mountains';
@@ -179,7 +179,6 @@ const icons: IconMap = {
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,
-	'ph:hand-pointing': ph_hand_pointing,
 	'ph:hard-drives': ph_hard_drives,
 	'ph:heart': ph_heart,
 	'ph:hexagon': ph_hexagon,
@@ -194,6 +193,7 @@ const icons: IconMap = {
 	'ph:list-dashes': ph_list_dashes,
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:lock': ph_lock,
+	'ph:megaphone': ph_megaphone,
 	'ph:minus-circle': ph_minus_circle,
 	'ph:moon': ph_moon,
 	'ph:mountains': ph_mountains,

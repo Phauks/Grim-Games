@@ -86,6 +86,7 @@ import ph_folder_open_light from '~icons/ph/folder-open-light';
 import ph_folder_simple_light from '~icons/ph/folder-simple-light';
 import ph_frame_corners_light from '~icons/ph/frame-corners-light';
 import ph_funnel_light from '~icons/ph/funnel-light';
+import ph_gavel_light from '~icons/ph/gavel-light';
 import ph_gear_light from '~icons/ph/gear-light';
 import ph_gear_six_light from '~icons/ph/gear-six-light';
 import ph_ghost_light from '~icons/ph/ghost-light';
@@ -126,6 +127,7 @@ import ph_lock_light from '~icons/ph/lock-light';
 import ph_lock_simple_light from '~icons/ph/lock-simple-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
+import ph_megaphone_light from '~icons/ph/megaphone-light';
 import ph_minus_light from '~icons/ph/minus-light';
 import ph_minus_circle_light from '~icons/ph/minus-circle-light';
 import ph_moon_light from '~icons/ph/moon-light';
@@ -305,6 +307,7 @@ const icons: IconMap = {
 	'ph:folder-simple-light': ph_folder_simple_light,
 	'ph:frame-corners-light': ph_frame_corners_light,
 	'ph:funnel-light': ph_funnel_light,
+	'ph:gavel-light': ph_gavel_light,
 	'ph:gear-light': ph_gear_light,
 	'ph:gear-six-light': ph_gear_six_light,
 	'ph:ghost-light': ph_ghost_light,
@@ -345,6 +348,7 @@ const icons: IconMap = {
 	'ph:lock-simple-light': ph_lock_simple_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
 	'ph:mask-sad-light': ph_mask_sad_light,
+	'ph:megaphone-light': ph_megaphone_light,
 	'ph:minus-light': ph_minus_light,
 	'ph:minus-circle-light': ph_minus_circle_light,
 	'ph:moon-light': ph_moon_light,

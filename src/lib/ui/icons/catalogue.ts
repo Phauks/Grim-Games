@@ -26,6 +26,8 @@ export const ICON_SLOTS = {
 	night: { label: 'Night', choices: ['ph:moon-stars', 'ph:moon'] },
 	day: { label: 'Day', choices: ['ph:sun', 'ph:sun-horizon'] },
 	vote: { label: 'Vote', choices: ['ph:hand-palm', 'ph:hand-fist'] },
+	nominator: { label: 'Has nominated', choices: ['ph:hand-pointing', 'ph:megaphone'] },
+	nominated: { label: 'Was nominated', choices: ['ph:gavel', 'ph:scales'] },
 	demon: { label: 'Demon', choices: ['ph:mask-sad', 'ph:smiley-angry', 'ph:fire'] },
 	bag: { label: 'Bag', choices: ['ph:handbag', 'ph:tote', 'ph:bag-simple'] },
 	reminder: { label: 'Reminder', choices: ['ph:push-pin', 'ph:bookmark-simple', 'ph:tag'] },

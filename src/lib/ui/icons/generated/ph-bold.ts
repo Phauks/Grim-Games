@@ -86,6 +86,7 @@ import ph_folder_open_bold from '~icons/ph/folder-open-bold';
 import ph_folder_simple_bold from '~icons/ph/folder-simple-bold';
 import ph_frame_corners_bold from '~icons/ph/frame-corners-bold';
 import ph_funnel_bold from '~icons/ph/funnel-bold';
+import ph_gavel_bold from '~icons/ph/gavel-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
@@ -126,6 +127,7 @@ import ph_lock_bold from '~icons/ph/lock-bold';
 import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
+import ph_megaphone_bold from '~icons/ph/megaphone-bold';
 import ph_minus_bold from '~icons/ph/minus-bold';
 import ph_minus_circle_bold from '~icons/ph/minus-circle-bold';
 import ph_moon_bold from '~icons/ph/moon-bold';
@@ -305,6 +307,7 @@ const icons: IconMap = {
 	'ph:folder-simple-bold': ph_folder_simple_bold,
 	'ph:frame-corners-bold': ph_frame_corners_bold,
 	'ph:funnel-bold': ph_funnel_bold,
+	'ph:gavel-bold': ph_gavel_bold,
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,
 	'ph:ghost-bold': ph_ghost_bold,
@@ -345,6 +348,7 @@ const icons: IconMap = {
 	'ph:lock-simple-bold': ph_lock_simple_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
+	'ph:megaphone-bold': ph_megaphone_bold,
 	'ph:minus-bold': ph_minus_bold,
 	'ph:minus-circle-bold': ph_minus_circle_bold,
 	'ph:moon-bold': ph_moon_bold,

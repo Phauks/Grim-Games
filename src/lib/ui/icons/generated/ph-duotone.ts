@@ -86,6 +86,7 @@ import ph_folder_open_duotone from '~icons/ph/folder-open-duotone';
 import ph_folder_simple_duotone from '~icons/ph/folder-simple-duotone';
 import ph_frame_corners_duotone from '~icons/ph/frame-corners-duotone';
 import ph_funnel_duotone from '~icons/ph/funnel-duotone';
+import ph_gavel_duotone from '~icons/ph/gavel-duotone';
 import ph_gear_duotone from '~icons/ph/gear-duotone';
 import ph_gear_six_duotone from '~icons/ph/gear-six-duotone';
 import ph_ghost_duotone from '~icons/ph/ghost-duotone';
@@ -126,6 +127,7 @@ import ph_lock_duotone from '~icons/ph/lock-duotone';
 import ph_lock_simple_duotone from '~icons/ph/lock-simple-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
+import ph_megaphone_duotone from '~icons/ph/megaphone-duotone';
 import ph_minus_duotone from '~icons/ph/minus-duotone';
 import ph_minus_circle_duotone from '~icons/ph/minus-circle-duotone';
 import ph_moon_duotone from '~icons/ph/moon-duotone';
@@ -305,6 +307,7 @@ const icons: IconMap = {
 	'ph:folder-simple-duotone': ph_folder_simple_duotone,
 	'ph:frame-corners-duotone': ph_frame_corners_duotone,
 	'ph:funnel-duotone': ph_funnel_duotone,
+	'ph:gavel-duotone': ph_gavel_duotone,
 	'ph:gear-duotone': ph_gear_duotone,
 	'ph:gear-six-duotone': ph_gear_six_duotone,
 	'ph:ghost-duotone': ph_ghost_duotone,
@@ -345,6 +348,7 @@ const icons: IconMap = {
 	'ph:lock-simple-duotone': ph_lock_simple_duotone,
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,
+	'ph:megaphone-duotone': ph_megaphone_duotone,
 	'ph:minus-duotone': ph_minus_duotone,
 	'ph:minus-circle-duotone': ph_minus_circle_duotone,
 	'ph:moon-duotone': ph_moon_duotone,
