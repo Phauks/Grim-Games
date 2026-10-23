@@ -45,6 +45,8 @@
 	import { roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
 	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
 
@@ -65,6 +67,17 @@
 	let error = $state<string>();
 	// svelte-ignore state_referenced_locally
 	let tab = $state(join ? 'room' : 'script');
+	/**
+	 * Joining opens on the room's name and seat form; once the phone has a seat, or has asked
+	 * for one, it moves to the script, once (Trevor, 2026-10-23: "when joining game, spawn on
+	 * script").
+	 */
+	let landed = false;
+	function seated() {
+		if (landed) return;
+		landed = true;
+		tab = 'script';
+	}
 
 	onMount(async () => {
 		try {
@@ -117,6 +130,12 @@
 	const script = $derived(
 		!data ? undefined : join ? roomScript(joining || undefined) : currentScript.current
 	);
+	const logo = $derived(script && scriptLogo(script));
+	let logoFailed = $state(false);
+	$effect(() => {
+		void logo;
+		logoFailed = false;
+	});
 	// A report sent from here carries the script (Trevor, 2026-10-22).
 	offerScriptToReports(() => script);
 	/** No script yet: the Scripts page no longer lists the base three, so offer them here. */
@@ -198,6 +217,15 @@
 <!-- Print and Share stay on the title's line at every width (Trevor, 2026-10-19). -->
 <Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions menu>
 	<!-- No sidebar here, as on the board (2026-10-19): the menu is one tap away. -->
+	<!-- The script's logo before its name, when it has one; nothing in its place otherwise
+	     (Trevor, 2026-10-23). -->
+	{#snippet lead()}
+		{#if logo && !logoFailed}<ScriptLogo
+				src={logo}
+				class="title-logo"
+				onfail={() => (logoFailed = true)}
+			/>{/if}
+	{/snippet}
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. -->
 	{#snippet actions()}
@@ -259,6 +287,7 @@
 					{version}
 					initialCode={join ? (join.code ?? null) : undefined}
 					onCode={join ? openRoom : undefined}
+					onSeated={join ? seated : undefined}
 				/>{/snippet}
 		</PlayerScriptTabs>
 	{/if}
@@ -304,6 +333,12 @@
 {/if}
 
 <style>
+	/* Beside the name in the title, as tall as two lines of it at most. */
+	:global(.title-logo) {
+		flex: none;
+		width: 1.8em;
+		height: 1.8em;
+	}
 	.choose {
 		display: grid;
 		gap: var(--space-2);

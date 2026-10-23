@@ -92,103 +92,143 @@
 	}
 </script>
 
-<BottomSheet bind:open title={t('room.scriptVote.title')}>
-	{#if tally}
-		<!-- The room's code and QR, so players who are not in the room yet can join and vote. -->
-		<section class="join" aria-label={t('room.scriptVote.join')}>
-			<SharePanel
-				url={link}
-				title={t('room.scriptVote.join')}
-				qrLabel={t('room.qrLabel')}
-				pending={t('room.joining')}
-				code={{ label: t('room.joinCode'), value: host.code && formatRoomCode(host.code) }}
-				text={host.code ? t('room.shareText', { code: formatRoomCode(host.code) }) : undefined}
-			/>
-		</section>
-		<VoteTimeLeft endsAt={tally.endsAt} />
-		<p class="count" data-testid="script-vote-count">
-			{t('room.scriptVote.voted', { voted: tally.voted, members: tally.members })}
-		</p>
-		<ul class="results" data-testid="script-vote-results">
-			{#each tally.options as option (option.id)}
-				<li>
-					<span class="name">{option.name}</span>
-					<span class="points"
-						>{t(tally.kind === 'ranked' ? 'room.scriptVote.points' : 'room.scriptVote.votes', {
-							count: tally.points[option.id] ?? 0
-						})}</span
-					>
-					<Button onclick={() => pick(option.id)}>{t('room.scriptVote.play')}</Button>
-				</li>
-			{/each}
-		</ul>
-		<Button variant="danger" onclick={() => host.closeScriptVote()}
-			>{t('room.scriptVote.close')}</Button
-		>
-	{:else}
+<BottomSheet bind:open title={t('room.scriptVote.title')} wide>
+	<!-- Two columns on a tablet or wider (Trevor, 2026-10-23): the scripts on the left; the
+	     room's code and QR, the time and the count on the right, from before the vote opens
+	     so players can join first. One column on a phone, the scripts first. -->
+	<div class="layout">
 		<form
-			class="new"
+			class="vote"
 			onsubmit={(e) => {
 				e.preventDefault();
-				if (ready) openVote();
+				if (!tally && ready) openVote();
 			}}
 		>
-			<!-- Three rows, always here, so adding or removing a script moves nothing. -->
-			<fieldset class="slots">
-				<legend>{t('room.scriptVote.scripts')}</legend>
-				<ol data-testid="script-vote-slots">
-					{#each { length: MAX_SCRIPT_VOTE_OPTIONS }, i}
-						{@const id = picked[i]}
-						<li>
-							<span class="slot">{t('room.scriptVote.slot', { number: i + 1 })}</span>
-							<span class="name" class:none={!id}>{id ? nameOf(id) : t('common.none')}</span>
-							<DeleteButton
-								label={t('room.scriptVote.remove', { name: id ? nameOf(id) : '' })}
-								disabled={!id}
-								onclick={() => (picked = picked.filter((p) => p !== id))}
-							/>
-						</li>
-					{/each}
-				</ol>
-			</fieldset>
-			<!-- New game's own script controls: the base three, search, and the Library. -->
-			<ScriptPicker
-				label={t('room.scriptVote.addScript')}
-				value={adding}
-				onChange={(v) => (adding = v)}
-			/>
-			<Button icon="add" disabled={!addable} onclick={() => (picked = [...picked, adding])}
-				>{t('room.scriptVote.add')}</Button
-			>
-			<Select
-				label={t('room.scriptVote.how')}
-				options={kinds}
-				value={kind}
-				onChange={(v) => (kind = v)}
-			/>
-			<Select
-				label={t('room.scriptVote.timeLimit')}
-				options={limits}
-				value={minutes}
-				onChange={(v) => (minutes = v)}
-			/>
-			<ModalActions
-				onCancel={() => (open = false)}
-				submit
-				disabled={!ready || !host.code}
-				confirmLabel={t('room.scriptVote.open')}
-			/>
+			<div class="scripts">
+				{#if tally}
+					<ul class="results" data-testid="script-vote-results">
+						{#each tally.options as option (option.id)}
+							<li>
+								<span class="name">{option.name}</span>
+								<span class="points"
+									>{t(
+										tally.kind === 'ranked' ? 'room.scriptVote.points' : 'room.scriptVote.votes',
+										{ count: tally.points[option.id] ?? 0 }
+									)}</span
+								>
+								<Button onclick={() => pick(option.id)}>{t('room.scriptVote.play')}</Button>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<!-- Three rows, always here, so adding or removing a script moves nothing. -->
+					<fieldset class="slots">
+						<legend>{t('room.scriptVote.scripts')}</legend>
+						<ol data-testid="script-vote-slots">
+							{#each { length: MAX_SCRIPT_VOTE_OPTIONS }, i}
+								{@const id = picked[i]}
+								<li>
+									<span class="slot">{t('room.scriptVote.slot', { number: i + 1 })}</span>
+									<span class="name" class:none={!id}>{id ? nameOf(id) : t('common.none')}</span>
+									<DeleteButton
+										label={t('room.scriptVote.remove', { name: id ? nameOf(id) : '' })}
+										disabled={!id}
+										onclick={() => (picked = picked.filter((p) => p !== id))}
+									/>
+								</li>
+							{/each}
+						</ol>
+					</fieldset>
+					<!-- New game's own script controls: the base three, search, and the Library. -->
+					<ScriptPicker
+						label={t('room.scriptVote.addScript')}
+						value={adding}
+						onChange={(v) => (adding = v)}
+					/>
+					<Button icon="add" disabled={!addable} onclick={() => (picked = [...picked, adding])}
+						>{t('room.scriptVote.add')}</Button
+					>
+					<Select
+						label={t('room.scriptVote.how')}
+						options={kinds}
+						value={kind}
+						onChange={(v) => (kind = v)}
+					/>
+				{/if}
+			</div>
+			<div class="room">
+				<!-- The room's code and QR, so players who are not in the room yet can join and vote. -->
+				<section class="join" aria-label={t('room.scriptVote.join')}>
+					<SharePanel
+						url={link}
+						title={t('room.scriptVote.join')}
+						qrLabel={t('room.qrLabel')}
+						pending={t('room.joining')}
+						code={{ label: t('room.joinCode'), value: host.code && formatRoomCode(host.code) }}
+						text={host.code ? t('room.shareText', { code: formatRoomCode(host.code) }) : undefined}
+					/>
+				</section>
+				{#if tally}
+					<VoteTimeLeft endsAt={tally.endsAt} />
+					<p class="count" data-testid="script-vote-count">
+						{t('room.scriptVote.voted', { voted: tally.voted, members: tally.members })}
+					</p>
+				{:else}
+					<Select
+						label={t('room.scriptVote.timeLimit')}
+						options={limits}
+						value={minutes}
+						onChange={(v) => (minutes = v)}
+					/>
+				{/if}
+			</div>
+			<div class="end">
+				{#if tally}
+					<Button variant="danger" onclick={() => host.closeScriptVote()}
+						>{t('room.scriptVote.close')}</Button
+					>
+				{:else}
+					<ModalActions
+						onCancel={() => (open = false)}
+						submit
+						disabled={!ready || !host.code}
+						confirmLabel={t('room.scriptVote.open')}
+					/>
+				{/if}
+			</div>
 		</form>
-	{/if}
+	</div>
 </BottomSheet>
 
 <style>
-	.new {
+	.vote {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-4);
 	}
-	.join {
-		margin-bottom: var(--space-4);
+	.layout {
+		container-type: inline-size;
+	}
+	.scripts,
+	.room {
+		display: grid;
+		align-content: start;
+		gap: var(--space-4);
+		min-width: 0;
+	}
+	.end {
+		display: flex;
+		justify-content: flex-end;
+	}
+	/* The sheet's width, not the window's: a computer's panel and a tablet's sheet alike. */
+	@container (min-width: 30rem) {
+		.vote {
+			grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+			column-gap: var(--space-5);
+		}
+		.end {
+			grid-column: 1 / -1;
+		}
 	}
 	.slots {
 		margin: 0;
@@ -226,13 +266,13 @@
 		color: var(--on-surface-muted);
 	}
 	.count {
-		margin: 0 0 var(--space-3);
+		margin: 0;
 		color: var(--on-surface-muted);
 	}
 	.results {
 		display: grid;
 		gap: var(--space-2);
-		margin: 0 0 var(--space-4);
+		margin: 0;
 		padding: 0;
 		list-style: none;
 	}

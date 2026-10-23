@@ -67,7 +67,6 @@ export const DEATH_CAUSE_ENTRIES: Readonly<Record<CharacterId, DeathCauseEntry>>
 	godfather: kills('Godfather'),
 	harpy: kills('Harpy'),
 	witch: kills('Witch'),
-	pithag: kills('Pit-Hag'),
 	psychopath: kills('Psychopath'),
 	assassin: kills('Assassin'),
 	wizard: kills('Wizard'),
@@ -199,6 +198,9 @@ export const NO_DEATH: Readonly<Record<CharacterId, string>> = {
 
 	// Minions
 	mezepheles: 'changes alignment',
+	// A new Demon makes that night's deaths the Storyteller's choice, not the Pit-Hag's
+	// (Trevor, 2026-10-23: "not a source of direct death").
+	pithag: 'changes characters',
 	poisoner: 'poisons',
 	devilsadvocate: 'executed player survives',
 	spy: 'info; registration',

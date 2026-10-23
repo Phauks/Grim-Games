@@ -17,7 +17,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
+	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BoardBackdrop from './BoardBackdrop.svelte';
 	import { boardBackground } from './board-background.svelte.ts';
@@ -49,17 +49,15 @@
 	import {
 		dayNumber,
 		livingByTeam,
-		promptApplies,
-		reminderOwnerDead,
-		reminderPrompt,
-		type ReminderPrompt,
 		setupComplete,
 		diedSinceNewDay,
 		onDeathTrigger,
 		abilityState,
 		stepNightNumbers,
 		todaysNominations,
-		gameClock
+		characterNominationPrompts,
+		gameClock,
+		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import {
@@ -105,6 +103,7 @@
 		toPx as boardToPx
 	} from './board-geometry.ts';
 	import { cornerRoom } from './corner-room.ts';
+	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
@@ -129,6 +128,9 @@
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
+	import SeatChooser from './SeatChooser.svelte';
+	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
+	import { recordNomination } from './record-nomination.ts';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
@@ -155,6 +157,7 @@
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FirstDeathAsk from './FirstDeathAsk.svelte';
+	import ReminderAsk from './ReminderAsk.svelte';
 	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
@@ -205,7 +208,18 @@
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	// Who nominated and who was nominated today, for the marks on the seats (Track nominations).
-	const nominated = $derived.by(() => {
+	/**
+	 * A seat's nomination marks (Trevor, 2026-10-23): on every living player, greyed until
+	 * they happen, as the ghost vote shows on the dead. Not on the dead, unless the player
+	 * was part of a nomination today (they nominated, then died, and the day goes on).
+	 */
+	function seatNominationMarks(seat: { seatId: SeatId; dead: boolean }) {
+		if (!nominatedToday) return undefined;
+		const made = nominatedToday.made.has(seat.seatId);
+		const received = nominatedToday.received.has(seat.seatId);
+		return !seat.dead || made || received ? { made, received } : undefined;
+	}
+	const nominatedToday = $derived.by(() => {
 		if (!preferences.current.assistance.trackNominations) return undefined;
 		const today = todaysNominations(game);
 		return {
@@ -213,7 +227,17 @@
 			received: new Set(today.map((n) => n.nominee))
 		};
 	});
-	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
+	/**
+	 * The walk-through strip under the board takes this much of its height (measured, as it
+	 * scales with text). Tokens are sized as if it weren't there, so starting the night only
+	 * draws the seats closer together and never shrinks them (Trevor, 2026-10-23).
+	 */
+	const STRIP_H = '7.5rem';
+	let stripReserve = $state(0);
+	const sizingHeight = $derived.by(() => (walk ? height + stripReserve : height));
+	const size = $derived(
+		seatTokenSize(game.seating, layout, { width, height: sizingHeight }, tokenScale)
+	);
 	// The Token size preview in Settings draws at this board's size.
 	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
@@ -696,7 +720,23 @@
 	 */
 	const attackRule = $derived(gameRules.find((r) => r.parts.demonAttacks)?.name);
 	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
-	let nominationAsks = $state<NominationPrompt[]>([]);
+	let nominationAsks = $state<(NominationPrompt | CharacterNominationPrompt)[]>([]);
+	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
+	function nominated(nomination: { nominator: SeatId; nominee: SeatId }) {
+		nominationAsks = [
+			...nominationPrompts(grimoire.game, nomination, gameRules, characters),
+			...characterNominationPrompts(grimoire.game, nomination, characters)
+		];
+	}
+	/** The seat whose nomination marks were tapped: who did they nominate? */
+	let nominatingFrom = $state<SeatId>();
+	function nominateFrom(nominee: SeatId | undefined) {
+		const seatId = nominatingFrom;
+		nominatingFrom = undefined;
+		if (seatId === undefined) return;
+		const pair = recordNomination(grimoire, seatId, 'made', nominee);
+		if (pair) nominated(pair);
+	}
 	const walkAttack = $derived.by(() => {
 		if (!attackRule || !walkStep || walk?.night !== 'other') return undefined;
 		if (walkStep.character?.type !== 'demon') return undefined;
@@ -859,100 +899,6 @@
 		};
 	});
 
-	// ── Reminders that ask (Trevor, 2026-10-19) ──
-	// A reminder placed by any route (bank, sheet, drag) whose words change a player's state
-	// asks first: "Dead" or "Died Today" on a living player asks to mark them dead; "Alive" on a
-	// dead one asks to revive them. Which reminders ask is data (REMINDER_PROMPTS); each kind of
-	// question has its words and setting below. Moving one to another seat asks too.
-	// Reminders already where they were when the board opened never ask.
-	const PROMPTS: Record<
-		ReminderPrompt,
-		{ title: string; verb: string; after: string; setting: AssistKey; dead: boolean }
-	> = {
-		markDead: {
-			title: 'Mark dead?',
-			verb: 'Mark',
-			after: ' dead?',
-			setting: 'deathReminderAsk',
-			dead: true
-		},
-		revive: {
-			title: 'Revive?',
-			verb: 'Revive',
-			after: '?',
-			setting: 'reviveReminderAsk',
-			dead: false
-		}
-	};
-	let promptSeen: Set<string> | undefined;
-	let promptAsk = $state<{ seatId: SeatId; prompt: ReminderPrompt }>();
-	let promptAskOpen = $state(false);
-	/** Where each reminder on a seat was at the last look, so a cancelled move goes back. */
-	let lastSeat: Record<ReminderId, SeatId> = {};
-	/**
-	 * A reminder of a character whose player is dead asks first (Trevor, 2026-10-20); Cancel
-	 * takes it back off, or back where it was moved from. Any other question waits for it.
-	 */
-	let deadAsk = $state<{ reminder: ReminderInstance; seatId: SeatId; from?: SeatId }>();
-	let deadAskOpen = $state(false);
-	let afterDeadAsk: { seatId: SeatId; prompt: ReminderPrompt } | undefined;
-	$effect(() => {
-		const fresh: { seatId: SeatId; prompt: ReminderPrompt }[] = [];
-		const freshDead: { reminder: ReminderInstance; seatId: SeatId; from?: SeatId }[] = [];
-		const now: string[] = [];
-		const where: Record<ReminderId, SeatId> = {};
-		for (const seatId of game.seating) {
-			const seat = game.seats[seatId];
-			for (const reminder of seat.reminders) {
-				const key = `${reminder.reminderId}@${seatId}`;
-				now.push(key);
-				where[reminder.reminderId] = seatId;
-				if (!promptSeen || promptSeen.has(key)) continue;
-				if (reminderOwnerDead(game, reminder, characters))
-					freshDead.push({ reminder, seatId, from: lastSeat[reminder.reminderId] });
-				const prompt = reminderPrompt(reminder.label, reminder.characterId, characters);
-				if (prompt && promptApplies(prompt, !!seat.dead)) fresh.push({ seatId, prompt });
-			}
-		}
-		promptSeen = new Set(now);
-		lastSeat = where;
-		if (grimoire.open.viewOnly) return;
-		const assistance = untrack(() => preferences.current.assistance);
-		const ask = fresh.find(({ prompt }) => assistance[PROMPTS[prompt].setting]);
-		if (assistance.deadReminderAsk && freshDead.length > 0) {
-			deadAsk = freshDead[0];
-			afterDeadAsk = ask;
-			deadAskOpen = true;
-			return;
-		}
-		if (!ask) return;
-		promptAsk = ask;
-		promptAskOpen = true;
-	});
-	function keepDeadReminder() {
-		const next = afterDeadAsk;
-		afterDeadAsk = undefined;
-		if (!next) return;
-		promptAsk = next;
-		promptAskOpen = true;
-	}
-	function undoDeadReminder() {
-		afterDeadAsk = undefined;
-		if (!deadAsk) return;
-		const { reminder, from } = deadAsk;
-		if (from) {
-			// Back where it was is not a new placing: it doesn't ask again.
-			promptSeen = new Set([...(promptSeen ?? []), `${reminder.reminderId}@${from}`]);
-			grimoire.run({ type: 'MoveReminder', reminderId: reminder.reminderId, toSeatId: from });
-		} else grimoire.run({ type: 'RemoveReminder', reminderId: reminder.reminderId });
-	}
-	/** The dead seat a reminder belongs to, for the question's words. */
-	function deadOwner(reminder: ReminderInstance): SeatId | undefined {
-		if (reminder.ownerSeatId && game.seats[reminder.ownerSeatId]) return reminder.ownerSeatId;
-		return game.seating.find(
-			(id) => game.seats[id].characterId === reminder.characterId && game.seats[id].dead
-		);
-	}
 	function endNight() {
 		if (!grimoire.endNight()) return;
 		walk = undefined;
@@ -1043,6 +989,9 @@
 		drawFor = seatId;
 		drawOpen = true;
 	}
+
+	// Sheets and dialogs over the board blur it (Trevor, 2026-10-23: game integrity).
+	$effect(() => markBoardShown());
 
 	// ── Full screen, for those who don't know their browser's own way (Trevor, 2026-10-23).
 	// Only where the browser can: iPhone Safari can't for a page, so the button isn't there. ──
@@ -1407,6 +1356,13 @@
 {/snippet}
 
 <div class="grimoire">
+	<!-- The strip's share of the board's height, to size tokens without it (sizingHeight). -->
+	<div
+		class="strip-measure"
+		aria-hidden="true"
+		style:--strip-h={STRIP_H}
+		bind:clientHeight={stripReserve}
+	></div>
 	<BoardBackdrop
 		url={backgroundUrl}
 		preset={background.kind === 'preset' ? background.id : undefined}
@@ -1501,7 +1457,7 @@
 		class:walking={walk !== undefined}
 		class:ended={!!ended}
 		style:--tray-h="{chip + 30}px"
-		style:--strip-h={walk ? '7.5rem' : undefined}
+		style:--strip-h={walk ? STRIP_H : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
 		style:--name-offset={boardLooks.current.nameOffset}
 		bind:this={board}
@@ -1512,6 +1468,7 @@
 				src={boardLogo}
 				class="board-logo"
 				--logo-opacity={boardLooks.current.logoOpacity}
+				--logo-h={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
 		{#each seats as seat, i (seat.seatId)}
@@ -1542,10 +1499,7 @@
 							}
 						: undefined}
 					orphan={isOrphan(seat, game.script, characters)}
-					nominations={nominated && {
-						made: nominated.made.has(seat.seatId),
-						received: nominated.received.has(seat.seatId)
-					}}
+					nominations={seatNominationMarks(seat)}
 					dropTarget={seatArr.reorderTarget === seat.seatId ||
 						(remDrag.drag !== undefined &&
 							remDrag.drag.target === seat.seatId &&
@@ -1560,7 +1514,9 @@
 							? readCharacter(seat.characterId)
 							: part === 'note'
 								? editNote(seat.seatId)
-								: openSeat(seat.seatId))}
+								: part === 'nominate'
+									? (nominatingFrom = seat.seatId)
+									: openSeat(seat.seatId))}
 					onHold={seatArr.arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
 					onGhostVote={() =>
 						!seatArr.arranging &&
@@ -1830,6 +1786,10 @@
 					>{:else}{#if game.script.meta?.author}<span class="author"
 							>by {game.script.meta.author}</span
 						>{/if}{/each}
+				<!-- Who runs the game, under the author (Trevor, 2026-10-23); no line when unnamed. -->
+				{#if game.storytellerName?.trim()}<span class="author" data-testid="board-storyteller"
+						>{t('settings.storytellerLine', { name: game.storytellerName.trim() })}</span
+					>{/if}
 				<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
 				     place before a room opens, so nothing moves when its code arrives. -->
 				{#if showRoomCode}<button
@@ -2003,77 +1963,7 @@
 	}}
 />
 
-<!-- Like the day's End day, with its setting where it is used (Trevor, 2026-10-18). -->
-{#if promptAsk && game.seats[promptAsk.seatId]}
-	{@const { seatId, prompt } = promptAsk}
-	{@const ui = PROMPTS[prompt]}
-	{@const asked = game.seats[seatId]}
-	{@const askedId = asked.characterId}
-	{@const name = asked.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`}
-	<ConfirmDialog
-		bind:open={promptAskOpen}
-		title={ui.title}
-		onConfirm={() => grimoire.run({ type: 'SetDead', seatId, dead: ui.dead })}
-	>
-		{#snippet heading()}
-			{ui.verb}
-			{#if askedId}<CharacterBadge
-					characterId={askedId}
-					character={characters.get(askedId)}
-					alignment={asked.alignment}
-					playerName={name}
-				/>{:else}{name}{/if}{ui.after}
-		{/snippet}
-		<SettingToggle
-			label={ASSIST_LABELS[ui.setting].label}
-			description={ASSIST_LABELS[ui.setting].description}
-			checked={preferences.current.assistance[ui.setting]}
-			onChange={(on) =>
-				preferences.update({
-					assistance: { ...preferences.current.assistance, [ui.setting]: on }
-				})}
-		/>
-	</ConfirmDialog>
-{/if}
-
-{#if deadAsk}
-	{@const { reminder } = deadAsk}
-	{@const ownerId = deadOwner(reminder)}
-	{@const owner = ownerId ? game.seats[ownerId] : undefined}
-	<ConfirmDialog
-		bind:open={deadAskOpen}
-		title="Place reminder?"
-		onConfirm={keepDeadReminder}
-		onCancel={undoDeadReminder}
-	>
-		{#snippet heading()}
-			Place <ReminderToken
-				label={tokenLabel(reminder)}
-				character={characters.get(reminder.characterId)}
-				alignment={placingAlignment(game, reminder, characters)}
-			/>?
-		{/snippet}
-		<p class="dead-owner">
-			<CharacterBadge
-				characterId={reminder.characterId}
-				character={characters.get(reminder.characterId)}
-				alignment={owner?.alignment}
-				playerName={ownerId
-					? (owner?.playerName ?? `Seat ${game.seating.indexOf(ownerId) + 1}`)
-					: undefined}
-			/> is dead.
-		</p>
-		<SettingToggle
-			label={ASSIST_LABELS.deadReminderAsk.label}
-			description={ASSIST_LABELS.deadReminderAsk.description}
-			checked={preferences.current.assistance.deadReminderAsk}
-			onChange={(on) =>
-				preferences.update({
-					assistance: { ...preferences.current.assistance, deadReminderAsk: on }
-				})}
-		/>
-	</ConfirmDialog>
-{/if}
+<ReminderAsk {grimoire} />
 
 <ConfirmDialog bind:open={startAskOpen} title="Start the game?" onConfirm={beginGame}>
 	<p class="ask-note">Setup reminders not yet placed:</p>
@@ -2144,8 +2034,20 @@
 		onDraw(id);
 	}}
 	onNotes={(id) => notesSheet?.edit(id)}
-	onNominated={(nomination) =>
-		(nominationAsks = nominationPrompts(grimoire.game, nomination, gameRules, characters))}
+	onNominated={nominated}
+/>
+
+<!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
+<SeatChooser
+	open={nominatingFrom !== undefined}
+	title={nominatingFrom === undefined
+		? ''
+		: `Who did ${seatLabelFor(game, nominatingFrom)} nominate?`}
+	{game}
+	{characters}
+	exclude={nominatingFrom}
+	onNone={() => nominateFrom(undefined)}
+	onChoose={(nominee) => nominateFrom(nominee)}
 />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
@@ -2384,6 +2286,13 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
+	.strip-measure {
+		position: absolute;
+		visibility: hidden;
+		pointer-events: none;
+		/* What .board.walking adds to the bottom margin. */
+		height: calc(var(--strip-h) + var(--space-2));
+	}
 	.board {
 		position: relative;
 		flex: 1;
@@ -2566,7 +2475,9 @@
 		left: 50%;
 		top: 50%;
 		width: 42%;
-		height: 42%;
+		/* The board's height without the walk-through strip (sizingHeight), so the logo keeps
+		   its size when the night starts (Trevor, 2026-10-23: "flexes for a second"). */
+		height: var(--logo-h, 42%);
 		translate: -50% -50%;
 		opacity: var(--logo-opacity);
 		pointer-events: none;

@@ -15,6 +15,7 @@ import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_bookmarks_simple from '~icons/ph/bookmarks-simple';
 import ph_books from '~icons/ph/books';
 import ph_bug from '~icons/ph/bug';
+import ph_camera from '~icons/ph/camera';
 import ph_caret_down from '~icons/ph/caret-down';
 import ph_caret_left from '~icons/ph/caret-left';
 import ph_caret_right from '~icons/ph/caret-right';
@@ -116,6 +117,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple': ph_bookmarks_simple,
 	'ph:books': ph_books,
 	'ph:bug': ph_bug,
+	'ph:camera': ph_camera,
 	'ph:caret-down': ph_caret_down,
 	'ph:caret-left': ph_caret_left,
 	'ph:caret-right': ph_caret_right,

@@ -38,6 +38,13 @@ describe('parseCharacterRules', () => {
 		return { rules: parseCharacterRules(raw, 'rules', issues, reminders), issues: issues.list };
 	};
 
+	it('reads what being nominated sets off, and rejects an unknown type or effect', () => {
+		const onNominated = { by: 'townsfolk', effect: 'execute-nominator' };
+		expect(parse({ onNominated }).rules).toEqual({ onNominated });
+		expect(parse({ onNominated: { ...onNominated, by: 'player' } }).issues).toHaveLength(1);
+		expect(parse({ onNominated: { ...onNominated, effect: 'swap' } }).issues).toHaveLength(1);
+	});
+
 	it('reads a reminder prompt', () => {
 		expect(parse({ reminderPrompts: { Dead: 'markDead' } })).toEqual({
 			rules: { reminderPrompts: { Dead: 'markDead' } },

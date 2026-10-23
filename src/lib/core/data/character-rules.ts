@@ -29,6 +29,10 @@ export type ReminderPrompt = (typeof REMINDER_PROMPTS)[number];
 export const KILLED_BY = ['demon', 'other', 'any'] as const;
 export type KilledBy = (typeof KILLED_BY)[number];
 
+/** What being nominated sets off: the nominator is executed straight away. */
+export const NOMINATED_EFFECTS = ['execute-nominator'] as const;
+export type NominatedEffect = (typeof NOMINATED_EFFECTS)[number];
+
 /**
  * What a player says in town that the day log keeps for their ability (Trevor, 2026-10-23:
  * L56, "these all relate to specific announcements in town by players"): seat and character
@@ -60,6 +64,11 @@ export interface CharacterRules {
 	 * marks the ability used (the Fool's "No Ability").
 	 */
 	survivesFirstDeath?: { spentToken: ReminderLabel };
+	/**
+	 * The first time its player is nominated by a `by` character, `effect` happens (the
+	 * Virgin). Once used, the character's "No Ability" reminder marks it spent.
+	 */
+	onNominated?: { by: CharacterType; effect: NominatedEffect };
 	/**
 	 * The ability kills at night: the Demon's kill or another ability's (`by`), any player or
 	 * only its own (`targets: self`, the Gambler), and ignoring protection (the Assassin).
@@ -155,6 +164,7 @@ export const RULE_KEYS = [
 	'reminderTargets',
 	'learns',
 	'answers',
+	'onNominated',
 	'dayClaim'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
@@ -259,6 +269,17 @@ export function parseCharacterRules(
 	if (raw.protects !== undefined) {
 		const protects = readProtects(raw.protects, `${path}.protects`, issues, reminders);
 		if (protects) rules.protects = protects;
+	}
+	if (raw.onNominated !== undefined) {
+		const at = `${path}.onNominated`;
+		if (!isObject(raw.onNominated)) {
+			issues.add(at, `expected object, got ${describe(raw.onNominated)}`);
+		} else {
+			checkKeys(raw.onNominated, ['by', 'effect'], at, issues);
+			const by = readEnum(raw.onNominated, 'by', CHARACTER_TYPES, at, issues, true);
+			const effect = readEnum(raw.onNominated, 'effect', NOMINATED_EFFECTS, at, issues, true);
+			if (by && effect) rules.onNominated = { by, effect };
+		}
 	}
 	const dayClaim = readEnum(raw, 'dayClaim', DAY_CLAIMS, path, issues, false);
 	if (dayClaim) rules.dayClaim = dayClaim;

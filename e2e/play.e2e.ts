@@ -774,9 +774,11 @@ test('the Room tab joins a live room in place, and the player moves between it a
 	// Trevor, 2026-10-19: a tab on the player view for the room, to move between.
 	await openTab(page, 'Room');
 	const room = page.getByRole('tabpanel', { name: 'Room' });
-	await expect(room.getByRole('heading', { name: 'Join game' })).toBeVisible();
-	// Nothing to share until the phone is in a room; the icon is there, so nothing moves.
-	await expect(room.getByRole('button', { name: 'Share room' })).toBeDisabled();
+	// The code form, with no title or Share of its own until the phone is in a room (Trevor,
+	// 2026-10-23: Join game said it twice, with two share buttons).
+	await expect(room.getByRole('textbox', { name: 'Room code from the Storyteller' })).toBeVisible();
+	await expect(room.getByRole('heading', { name: 'Join game' })).toHaveCount(0);
+	await expect(room.getByRole('button', { name: 'Share room' })).toHaveCount(0);
 
 	// The Storyteller opens a room on another device.
 	const st = await (await browser.newContext({ ...testInfo.project.use })).newPage();

@@ -29,6 +29,7 @@ import ph_bookmarks_simple_bold from '~icons/ph/bookmarks-simple-bold';
 import ph_books_bold from '~icons/ph/books-bold';
 import ph_bug_bold from '~icons/ph/bug-bold';
 import ph_calculator_bold from '~icons/ph/calculator-bold';
+import ph_camera_bold from '~icons/ph/camera-bold';
 import ph_caret_circle_down_bold from '~icons/ph/caret-circle-down-bold';
 import ph_caret_down_bold from '~icons/ph/caret-down-bold';
 import ph_caret_left_bold from '~icons/ph/caret-left-bold';
@@ -143,6 +144,7 @@ import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
+import ph_scan_bold from '~icons/ph/scan-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
 import ph_share_network_bold from '~icons/ph/share-network-bold';
@@ -229,6 +231,7 @@ const icons: IconMap = {
 	'ph:books-bold': ph_books_bold,
 	'ph:bug-bold': ph_bug_bold,
 	'ph:calculator-bold': ph_calculator_bold,
+	'ph:camera-bold': ph_camera_bold,
 	'ph:caret-circle-down-bold': ph_caret_circle_down_bold,
 	'ph:caret-down-bold': ph_caret_down_bold,
 	'ph:caret-left-bold': ph_caret_left_bold,
@@ -343,6 +346,7 @@ const icons: IconMap = {
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
 	'ph:scales-bold': ph_scales_bold,
+	'ph:scan-bold': ph_scan_bold,
 	'ph:scroll-bold': ph_scroll_bold,
 	'ph:shapes-bold': ph_shapes_bold,
 	'ph:share-network-bold': ph_share_network_bold,

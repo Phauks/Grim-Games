@@ -553,7 +553,13 @@
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
-<RulesRecap bind:open={recapOpen} {rules} choices={switchChoices} onStart={() => recap?.()} />
+<RulesRecap
+	bind:open={recapOpen}
+	{rules}
+	choices={switchChoices}
+	onSwitch={(c) => (switchChoices = c)}
+	onStart={() => recap?.()}
+/>
 <SpecialRulesDialog
 	bind:open={choosingRules}
 	{mode}
