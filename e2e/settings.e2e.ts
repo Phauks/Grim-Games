@@ -357,7 +357,8 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Night',
 		'Bag draw',
 		'Day',
-		'Share'
+		'Share',
+		'QR codes'
 	]);
 });
 

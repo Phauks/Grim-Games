@@ -127,6 +127,8 @@ test('the day view recommends Savant information until it is set for today', asy
 });
 
 test('the end of the night offers to set the Savant’s information', async ({ page }) => {
+	// Eight character picks before the night: about 15s alone, past 30s on a loaded runner.
+	test.setTimeout(90_000);
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
 	await page.getByRole('button', { name: 'Start game' }).tap();

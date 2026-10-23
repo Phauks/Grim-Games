@@ -5,6 +5,7 @@
  * - https://wiki.bloodontheclocktower.com/Flowergirl
  * - https://wiki.bloodontheclocktower.com/Undertaker
  * - https://wiki.bloodontheclocktower.com/Juggler
+ * - https://wiki.bloodontheclocktower.com/Gossip
  * - https://wiki.bloodontheclocktower.com/Oracle
  * - https://wiki.bloodontheclocktower.com/Washerwoman, /Librarian, /Investigator, /Chef,
  *   /Empath, /Fortune_Teller, /Steward, /Noble
@@ -17,26 +18,30 @@ import {
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	abnormalCauses,
 	abnormalSinceDawn,
 	answerCauses,
-	flowergirlAnswer,
 	infoPicker,
-	mathematicianAnswer,
+	nightAnswer,
 	infoRecord,
 	isAllowed,
 	isTruthful,
-	jugglerAnswer,
-	oracleAnswer,
-	townCrierAnswer,
 	truthfulFirst,
-	undertakerAnswer,
 	validInformation,
 	withNightInfo
 } from './night-info.ts';
 import { nightOrder } from './night-order.ts';
+
+/** The night answer for a character that has one (each test's does). */
+function answerOf(...args: Parameters<typeof nightAnswer>) {
+	const a = nightAnswer(...args);
+	if (!a) throw new Error(`no night answer for ${args[2]}`);
+	return a;
+}
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
@@ -74,7 +79,7 @@ describe('Town Crier', () => {
 			nominator: s[4],
 			nominee: s[0]
 		}));
-		expect(townCrierAnswer(g, seats[0], characters)).toMatchObject({
+		expect(answerOf(g, seats[0], 'towncrier', characters)).toMatchObject({
 			kind: 'yes-no',
 			value: true,
 			because: [seats[4]]
@@ -87,7 +92,10 @@ describe('Town Crier', () => {
 			(s) => ({ type: 'Nominate', nominator: s[3], nominee: s[4] }),
 			(s) => ({ type: 'Nominate', nominator: s[5], nominee: s[3] })
 		);
-		expect(townCrierAnswer(g, seats[0], characters)).toMatchObject({ value: false, because: [] });
+		expect(answerOf(g, seats[0], 'towncrier', characters)).toMatchObject({
+			value: false,
+			because: []
+		});
 	});
 
 	it('reads the current day log only: after New day nothing is recorded again', () => {
@@ -97,14 +105,16 @@ describe('Town Crier', () => {
 			nominee: s[0]
 		}));
 		const next = run(session, ctx, { type: 'NewDay' });
-		expect(townCrierAnswer(next.game, seats[0], characters)).toMatchObject({ kind: 'none' });
+		expect(answerOf(next.game, seats[0], 'towncrier', characters)).toMatchObject({
+			kind: 'none'
+		});
 	});
 
 	// Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented
 	// nomination tracking". With no nominations recorded the answer is unknown, never no.
 	it('gives no answer until a nomination is recorded today', () => {
 		const { game: g, seats } = game(snv);
-		expect(townCrierAnswer(g, seats[0], characters)).toMatchObject({
+		expect(answerOf(g, seats[0], 'towncrier', characters)).toMatchObject({
 			kind: 'none',
 			reason: 'No nominations recorded today',
 			because: []
@@ -117,26 +127,26 @@ describe('Town Crier', () => {
 			seatId: s[0],
 			reminder: { characterId: 'nodashii', label: 'Poisoned' }
 		}));
-		expect(townCrierAnswer(g, seats[0], characters).unreliable).toBe('poisoned');
+		expect(answerOf(g, seats[0], 'towncrier', characters).unreliable).toBe('poisoned');
 	});
 
 	it('must be false with a Vortox in play', () => {
 		const cast = snv.map((id) => (id === 'nodashii' ? 'vortox' : id));
 		const { game: g, seats } = game(cast);
-		expect(townCrierAnswer(g, seats[0], characters).mustBeFalse).toBe(true);
+		expect(answerOf(g, seats[0], 'towncrier', characters).mustBeFalse).toBe(true);
 	});
 
 	// Trevor, 2026-10-17: only players whose registration could change the answer.
 	it('flags a Spy or Recluse who nominated, who might register as something else', () => {
 		const cast = ['towncrier', 'spy', 'recluse', 'imp', 'chef'];
 		const quiet = game(cast);
-		expect(townCrierAnswer(quiet.game, quiet.seats[0], characters).misregister).toEqual([]);
+		expect(answerOf(quiet.game, quiet.seats[0], 'towncrier', characters).misregister).toEqual([]);
 		const { game: g, seats } = game(
 			cast,
 			(s) => ({ type: 'Nominate', nominator: s[1], nominee: s[4] }),
 			(s) => ({ type: 'Nominate', nominator: s[2], nominee: s[3] })
 		);
-		const a = townCrierAnswer(g, seats[0], characters);
+		const a = answerOf(g, seats[0], 'towncrier', characters);
 		expect(a.misregister).toEqual([seats[1], seats[2]]);
 		// Why: the nominators as they are, and what each registration would make it.
 		expect(a.why.facts.map((f) => [f.seatId, f.characterId, f.type])).toEqual([
@@ -157,25 +167,29 @@ describe('Town Crier', () => {
 			characterId: 'towncrier',
 			text: 'Shown no'
 		}));
-		expect(townCrierAnswer(g, seats[0], characters).shown).toMatchObject({ text: 'Shown no' });
+		expect(answerOf(g, seats[0], 'towncrier', characters).shown).toMatchObject({
+			text: 'Shown no'
+		});
 	});
 });
 
 describe('Flowergirl', () => {
 	it('has no answer until the Storyteller marks whether the Demon voted', () => {
 		const { game: g, seats } = game(snv);
-		expect(flowergirlAnswer(g, seats[1], characters).kind).toBe('none');
+		expect(answerOf(g, seats[1], 'flowergirl', characters).kind).toBe('none');
 	});
 
 	it('hears yes when the Demon voted, and no when it did not', () => {
 		const voted = game(snv, () => ({ type: 'SetDemonVoted', voted: true }));
-		expect(flowergirlAnswer(voted.game, voted.seats[1], characters)).toMatchObject({
+		expect(answerOf(voted.game, voted.seats[1], 'flowergirl', characters)).toMatchObject({
 			kind: 'yes-no',
 			value: true,
 			because: [voted.seats[5]]
 		});
 		const not = game(snv, () => ({ type: 'SetDemonVoted', voted: false }));
-		expect(flowergirlAnswer(not.game, not.seats[1], characters)).toMatchObject({ value: false });
+		expect(answerOf(not.game, not.seats[1], 'flowergirl', characters)).toMatchObject({
+			value: false
+		});
 	});
 });
 
@@ -184,7 +198,7 @@ describe('Undertaker', () => {
 
 	it('learns the character of the player executed today', () => {
 		const { game: g, seats } = game(tb, (s) => ({ type: 'Execute', seatId: s[4] }));
-		expect(undertakerAnswer(g, seats[0], characters)).toMatchObject({
+		expect(answerOf(g, seats[0], 'undertaker', characters)).toMatchObject({
 			kind: 'character',
 			value: 'poisoner',
 			because: [seats[4]]
@@ -201,7 +215,7 @@ describe('Undertaker', () => {
 			}),
 			(s) => ({ type: 'Execute', seatId: s[1] })
 		);
-		expect(undertakerAnswer(g, seats[0], characters)).toMatchObject({ value: 'drunk' });
+		expect(answerOf(g, seats[0], 'undertaker', characters)).toMatchObject({ value: 'drunk' });
 	});
 
 	it('learns nothing when the executed player did not die by it', () => {
@@ -210,7 +224,7 @@ describe('Undertaker', () => {
 			(s) => ({ type: 'SetDead', seatId: s[2], dead: true }),
 			(s) => ({ type: 'Execute', seatId: s[2] })
 		);
-		expect(undertakerAnswer(g, seats[0], characters).kind).toBe('none');
+		expect(answerOf(g, seats[0], 'undertaker', characters).kind).toBe('none');
 	});
 
 	it('learns nothing once the execution is removed from the log', () => {
@@ -219,7 +233,7 @@ describe('Undertaker', () => {
 			type: 'RemoveDayEntry',
 			entryId: session.game.today.entries[0].entryId
 		});
-		expect(undertakerAnswer(removed.game, seats[0], characters).kind).toBe('none');
+		expect(answerOf(removed.game, seats[0], 'undertaker', characters).kind).toBe('none');
 	});
 
 	it('without a day log, reads the dead player carrying the Died Today reminder', () => {
@@ -232,7 +246,7 @@ describe('Undertaker', () => {
 				reminder: { characterId: 'undertaker', label: 'Died Today' }
 			})
 		);
-		expect(undertakerAnswer(g, seats[0], characters)).toMatchObject({
+		expect(answerOf(g, seats[0], 'undertaker', characters)).toMatchObject({
 			kind: 'character',
 			value: 'imp',
 			because: [seats[5]]
@@ -249,7 +263,7 @@ describe('Undertaker', () => {
 				reminder: { characterId: 'poisoner', label: 'Poisoned' }
 			})
 		);
-		expect(undertakerAnswer(g, seats[0], characters)).toMatchObject({
+		expect(answerOf(g, seats[0], 'undertaker', characters)).toMatchObject({
 			value: 'poisoner',
 			unreliable: 'poisoned'
 		});
@@ -262,7 +276,7 @@ describe('Undertaker', () => {
 			(s) => ({ type: 'SetAlignment', seatId: s[7], alignment: 'good' }),
 			(s) => ({ type: 'Exile', seatId: s[7] })
 		);
-		expect(undertakerAnswer(g, seats[0], characters).kind).toBe('none');
+		expect(answerOf(g, seats[0], 'undertaker', characters).kind).toBe('none');
 	});
 });
 
@@ -288,7 +302,7 @@ describe('Juggler', () => {
 				]
 			})
 		);
-		expect(jugglerAnswer(g, seats[0], characters)).toMatchObject({
+		expect(answerOf(g, seats[0], 'juggler', characters)).toMatchObject({
 			kind: 'number',
 			value: 2,
 			because: [seats[2], seats[3]]
@@ -311,12 +325,63 @@ describe('Juggler', () => {
 				guesses: [{ seatId: s[1], characterId: 'witch' }]
 			})
 		);
-		expect(jugglerAnswer(g, seats[0], characters)).toMatchObject({ value: 1 });
+		expect(answerOf(g, seats[0], 'juggler', characters)).toMatchObject({ value: 1 });
 	});
 
 	it('has no answer with no guesses logged', () => {
 		const { game: g, seats } = game(['juggler', 'witch', 'nodashii']);
-		expect(jugglerAnswer(g, seats[0], characters).kind).toBe('none');
+		expect(answerOf(g, seats[0], 'juggler', characters).kind).toBe('none');
+	});
+});
+
+describe('Gossip', () => {
+	const statement =
+		(holds?: boolean) =>
+		(s: string[]): Command => ({
+			type: 'DayNote',
+			characterId: 'gossip',
+			seatId: s[0],
+			text: 'Ben is the Demon',
+			...(holds === undefined ? {} : { holds })
+		});
+
+	it('says a player dies when today’s statement was marked true', () => {
+		const { game: g, seats } = game(['gossip', 'nodashii', 'witch'], statement(true));
+		expect(answerOf(g, seats[0], 'gossip', characters)).toMatchObject({
+			kind: 'yes-no',
+			value: true
+		});
+	});
+
+	it('says nobody dies when it was marked false', () => {
+		const { game: g, seats } = game(['gossip', 'nodashii', 'witch'], statement(false));
+		expect(answerOf(g, seats[0], 'gossip', characters)).toMatchObject({
+			kind: 'yes-no',
+			value: false
+		});
+	});
+
+	it('asks for the truth, or for a statement, when either is missing', () => {
+		const unmarked = game(['gossip', 'nodashii', 'witch'], statement());
+		expect(answerOf(unmarked.game, unmarked.seats[0], 'gossip', characters)).toMatchObject({
+			kind: 'none',
+			reason: 'Mark whether the statement was true'
+		});
+		const silent = game(['gossip', 'nodashii', 'witch']);
+		expect(answerOf(silent.game, silent.seats[0], 'gossip', characters).kind).toBe('none');
+	});
+
+	it('is not reliable while the Gossip is poisoned (no death)', () => {
+		const { game: g, seats } = game(
+			['gossip', 'nodashii', 'witch', 'poisoner'],
+			statement(true),
+			(s) => ({
+				type: 'AddReminder',
+				seatId: s[0],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			})
+		);
+		expect(answerOf(g, seats[0], 'gossip', characters)).toMatchObject({ unreliable: 'poisoned' });
 	});
 });
 
@@ -332,7 +397,7 @@ describe('Oracle', () => {
 				reminder: { characterId: 'zombuul', label: 'Dead' }
 			})
 		);
-		expect(oracleAnswer(g, seats[0], characters)).toMatchObject({
+		expect(answerOf(g, seats[0], 'oracle', characters)).toMatchObject({
 			value: 2,
 			because: [seats[1], seats[3]]
 		});
@@ -646,7 +711,7 @@ describe('registration ranges', () => {
 			seatId: s[1],
 			dead: true
 		}));
-		expect(oracleAnswer(oracle.game, oracle.seats[0], characters)).toMatchObject({
+		expect(answerOf(oracle.game, oracle.seats[0], 'oracle', characters)).toMatchObject({
 			value: 0,
 			possible: [
 				{ kind: 'number', value: 0 },
@@ -658,7 +723,7 @@ describe('registration ranges', () => {
 			nominator: s[1],
 			nominee: s[3]
 		}));
-		expect(townCrierAnswer(crier.game, crier.seats[0], characters)).toMatchObject({
+		expect(answerOf(crier.game, crier.seats[0], 'towncrier', characters)).toMatchObject({
 			value: false,
 			possible: [
 				{ kind: 'yes-no', value: false },
@@ -723,7 +788,7 @@ describe('relevant misregistration and why', () => {
 			type: 'Execute',
 			seatId: s[2]
 		}));
-		const a = undertakerAnswer(g, seats[0], characters);
+		const a = answerOf(g, seats[0], 'undertaker', characters);
 		expect(a.misregister).toEqual([seats[2]]);
 		expect(a.why.facts.map((f) => [f.seatId, f.characterId, f.dead])).toEqual([
 			[seats[2], 'recluse', true]
@@ -737,7 +802,7 @@ describe('relevant misregistration and why', () => {
 			seatId: s[2],
 			dead: true
 		}));
-		const a = oracleAnswer(g, seats[0], characters);
+		const a = answerOf(g, seats[0], 'oracle', characters);
 		expect(a.misregister).toEqual([seats[2]]);
 		expect(a.why.facts.map((f) => f.seatId)).toEqual([seats[2]]);
 		expect(a.why.alternatives[0].as.map((x) => x.value)).toContainEqual({
@@ -762,7 +827,7 @@ describe('relevant misregistration and why', () => {
 	// https://wiki.bloodontheclocktower.com/Mathematician: registration isn't its input.
 	it('Mathematician: nobody is offered as misregistering', () => {
 		const { game: g, seats } = game(['mathematician', 'spy', 'recluse', 'imp', 'chef']);
-		expect(mathematicianAnswer(g, seats[0], characters).misregister).toEqual([]);
+		expect(answerOf(g, seats[0], 'mathematician', characters).misregister).toEqual([]);
 	});
 });
 
@@ -775,7 +840,7 @@ describe('Mathematician Abnormal reminders', () => {
 			add(1, 'mathematician', 'Abnormal'),
 			add(2, 'mathematician', 'Abnormal')
 		);
-		const a = mathematicianAnswer(g, seats[0], characters);
+		const a = answerOf(g, seats[0], 'mathematician', characters);
 		expect(a).toMatchObject({ kind: 'number', value: 2, because: [seats[1], seats[2]] });
 		expect(a.why.facts.map((f) => [f.seatId, f.characterId])).toEqual([
 			[seats[1], 'chef'],
@@ -785,7 +850,10 @@ describe('Mathematician Abnormal reminders', () => {
 
 	it('counts recorded abnormal info while no Abnormal reminder is placed', () => {
 		const { game: g, seats } = game(['mathematician', 'chef', 'imp']);
-		expect(mathematicianAnswer(g, seats[0], characters)).toMatchObject({ value: 0, because: [] });
+		expect(answerOf(g, seats[0], 'mathematician', characters)).toMatchObject({
+			value: 0,
+			because: []
+		});
 	});
 });
 
@@ -798,7 +866,7 @@ describe('impaired info', () => {
 			add(0, 'poisoner', 'Poisoned'),
 			(s) => ({ type: 'Execute', seatId: s[1] })
 		);
-		expect(undertakerAnswer(g, seats[0], characters)).toMatchObject({
+		expect(answerOf(g, seats[0], 'undertaker', characters)).toMatchObject({
 			kind: 'character',
 			value: 'chef',
 			unreliable: 'poisoned',
@@ -860,7 +928,7 @@ describe('Mathematician', () => {
 			{ type: 'RecordNightInfo', seatId: seats[1], characterId: 'chef', ...registered },
 			{ type: 'RecordNightInfo', seatId: seats[5], characterId: 'empath', ...lie }
 		).game;
-		const a = mathematicianAnswer(g, seats[0], characters);
+		const a = answerOf(g, seats[0], 'mathematician', characters);
 		expect(a).toMatchObject({ kind: 'number', value: 2, because: [seats[1], seats[5]] });
 		expect(a.abnormal).toMatchObject([
 			{ seatId: seats[1], characterId: 'chef', causes: [{ reason: 'registration' }] },
@@ -872,7 +940,7 @@ describe('Mathematician', () => {
 		]);
 		// A new day starts the count again.
 		const next = run({ ...session, game: g }, ctx, { type: 'NewDay' }).game;
-		expect(mathematicianAnswer(next, seats[0], characters)).toMatchObject({ value: 0 });
+		expect(answerOf(next, seats[0], 'mathematician', characters)).toMatchObject({ value: 0 });
 	});
 
 	// https://wiki.bloodontheclocktower.com/Vortox: false info because of the Vortox counts.
@@ -896,7 +964,7 @@ describe('Mathematician', () => {
 			abnormal: [{ reason: 'poisoned', characterId: 'poisoner', seatId: s[2] }]
 		}));
 		expect(abnormalSinceDawn(g)).toEqual([]);
-		expect(mathematicianAnswer(g, seats[0], characters)).toMatchObject({ value: 0 });
+		expect(answerOf(g, seats[0], 'mathematician', characters)).toMatchObject({ value: 0 });
 	});
 
 	it('free-text answers take their causes from the waking player', () => {
@@ -904,7 +972,7 @@ describe('Mathematician', () => {
 			['undertaker', 'chef', 'poisoner', 'imp'],
 			add(0, 'poisoner', 'Poisoned')
 		);
-		expect(answerCauses(undertakerAnswer(g, seats[0], characters))).toEqual([
+		expect(answerCauses(answerOf(g, seats[0], 'undertaker', characters))).toEqual([
 			{ reason: 'poisoned', characterId: 'poisoner', seatId: seats[2] }
 		]);
 	});
@@ -951,5 +1019,52 @@ describe('every valid piece of information', () => {
 		const valid = validInformation(g, infoPicker(g, seats[0], 'washerwoman', characters)!);
 		expect(valid.at(-1)).toEqual({ reason: 'unreliable', seats: [], anyOther: true });
 		expect(valid.filter((v) => v.reason === 'true')).toHaveLength(3);
+	});
+});
+
+// Homebrew characters built from the same rules as official ones: an Empath-like one learns
+// its evil alive neighbours (https://wiki.bloodontheclocktower.com/Empath), an Oracle-like one
+// the evil dead (https://wiki.bloodontheclocktower.com/Oracle).
+describe('custom characters', () => {
+	function custom(raw: Record<string, unknown>) {
+		const issues = new Issues();
+		const character = parseCharacter(raw, '[0]', issues, { strict: false, scriptFields: true });
+		expect(issues.list).toEqual([]);
+		return new Map([...characters, [character!.id, character!]]);
+	}
+
+	it('learn first-night information through their rules block', () => {
+		const all = custom({
+			id: 'heartreader',
+			name: 'Heart Reader',
+			team: 'townsfolk',
+			ability: 'You start knowing how many of your 2 alive neighbours are evil.',
+			rules: { learns: { measure: 'evil-alive-neighbours' } }
+		});
+		const { game: g, seats } = game(['chef', 'imp', 'poisoner']);
+		const picker = infoPicker(g, seats[0], 'heartreader', all);
+		expect(picker).toMatchObject({ kind: 'number', measure: 'evil-alive-neighbours' });
+		expect(picker?.range?.truth).toBe(2);
+		expect(infoPicker(g, seats[0], 'heartreader', characters)).toBeUndefined();
+	});
+
+	it('get a night answer through their rules block', () => {
+		const all = custom({
+			id: 'gravewatcher',
+			name: 'Grave Watcher',
+			team: 'townsfolk',
+			ability: 'Each night*, you learn how many dead players are evil.',
+			rules: { answers: { question: 'evil-dead' } }
+		});
+		const { game: g, seats } = game(['chef', 'imp', 'poisoner'], (s) => ({
+			type: 'SetDead',
+			seatId: s[1],
+			dead: true
+		}));
+		expect(nightAnswer(g, seats[0], 'gravewatcher', all)).toMatchObject({
+			kind: 'number',
+			value: 1
+		});
+		expect(nightAnswer(g, seats[0], 'gravewatcher', characters)).toBeUndefined();
 	});
 });

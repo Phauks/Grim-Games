@@ -8,5 +8,8 @@
 			"seat": "self",
 			"note": "On the Town Crier, replacing the other reminder, once a Minion nominates that day."
 		}
+	},
+	"answers": {
+		"question": "minion-nominated"
 	}
 }

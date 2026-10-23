@@ -12,5 +12,13 @@
 			"notWithLabel": "Townsfolk",
 			"note": "The second, decoy player pointed at alongside the Townsfolk."
 		}
+	},
+	"learns": {
+		"measure": "pair-of-type",
+		"type": "townsfolk",
+		"reminders": {
+			"target": "Townsfolk",
+			"other": "Wrong"
+		}
 	}
 }

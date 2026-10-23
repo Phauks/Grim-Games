@@ -198,6 +198,11 @@
 				data-testid="preview-room-code"
 				>{t('room.joinCode')} <span class="code">{SAMPLE_CODE}</span></span
 			>{/if}
+		{#if preferences.current.assistance.gameClock}<span
+				class="preview-room-code"
+				data-testid="preview-game-clock"
+				>{t('history.gameLength')} <span class="code">1:23:45</span></span
+			>{/if}
 	</p>
 	<ul class="bank" aria-label={t('settings.previewBank')} data-testid="preview-bank">
 		{#each bank as item (item.key)}

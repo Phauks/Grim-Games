@@ -45,6 +45,10 @@ describe('parseCharacterRules', () => {
 		});
 	});
 
+	it('reads the claim a player makes by day (L56)', () => {
+		expect(parse({ dayClaim: 'guesses' })).toEqual({ rules: { dayClaim: 'guesses' }, issues: [] });
+	});
+
 	it('reports unknown rules, unknown prompts and reminders the character lacks', () => {
 		expect(parse({ slays: true }).issues).toEqual(['rules.slays: unknown rule']);
 		expect(parse({ onDeath: { by: 'night' } }).issues).toEqual([
@@ -74,6 +78,19 @@ describe('parseCharacterRules', () => {
 		expect(parse({ kills: { by: 'other', targets: 'all' } }).issues).toEqual([
 			'rules.kills.targets: unknown value "all"'
 		]);
+		expect(parse({ learns: { measure: 'pair-of-type' } }).issues).toEqual([
+			'rules.learns.type: missing'
+		]);
+		expect(parse({ learns: { measure: 'demon-or-token' } }).issues).toEqual([
+			'rules.learns.token: missing'
+		]);
+		expect(
+			parse({ learns: { measure: 'evil-pairs', reminders: { each: 'Know' } } }).issues
+		).toEqual(['rules.learns.reminders.each: not one of this character’s reminders']);
+		expect(parse({ answers: { question: 'who-knows' } }).issues).toEqual([
+			'rules.answers.question: unknown value "who-knows"'
+		]);
+		expect(parse({ dayClaim: 'shout' }).issues).toEqual(['rules.dayClaim: unknown value "shout"']);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'
 		]);

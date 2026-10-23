@@ -44,6 +44,7 @@
 				onNote={(note) => set({ note: note || undefined })}
 				onSymbol={(symbol) => set({ symbol: symbol || undefined })}
 				onColour={(symbolColour) => set({ symbolColour })}
+				onFill={(fill) => set({ symbolFill: fill || undefined })}
 			/>
 		{/key}
 	{/if}

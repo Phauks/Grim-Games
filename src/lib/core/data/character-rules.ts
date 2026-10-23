@@ -10,7 +10,7 @@
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
-import type { ReminderLabel } from './types.ts';
+import { CHARACTER_TYPES, type CharacterType, type ReminderLabel } from './types.ts';
 import {
 	checkKeys,
 	describe,
@@ -28,6 +28,14 @@ export type ReminderPrompt = (typeof REMINDER_PROMPTS)[number];
 /** Who did the killing: the Demon's kill, another ability's, or either. */
 export const KILLED_BY = ['demon', 'other', 'any'] as const;
 export type KilledBy = (typeof KILLED_BY)[number];
+
+/**
+ * What a player says in town that the day log keeps for their ability (Trevor, 2026-10-23:
+ * L56, "these all relate to specific announcements in town by players"): seat and character
+ * guesses, one statement that is true or false, or two statements.
+ */
+export const DAY_CLAIMS = ['guesses', 'statement', 'statements'] as const;
+export type DayClaim = (typeof DAY_CLAIMS)[number];
 
 export interface CharacterRules {
 	/** Reminders whose placing is the moment to change the seat's state, by label. */
@@ -59,6 +67,66 @@ export interface CharacterRules {
 	kills?: Kills;
 	/** Where each of its reminder tokens may go, by label (`target-rules.ts`). */
 	reminderTargets?: Readonly<Record<ReminderLabel, TargetRule>>;
+	/** First-night information the Storyteller picks from the truthful options (the Chef). */
+	learns?: Learns;
+	/** A night answer worked out from the grimoire and today's log (the Town Crier). */
+	answers?: Answers;
+	/** The claim its player makes by day, logged from their day row and seat ⋯ menu (L56). */
+	dayClaim?: DayClaim;
+}
+
+/**
+ * What a `learns` character is shown, each worked out in `rules/night-info.ts`:
+ * - `pair-of-type`: two players, one of them a `type` character, shown which (Washerwoman);
+ *   `noneWhenAbsent` lets it learn there are none (Librarian);
+ * - `evil-pairs`: pairs of evil neighbours (Chef);
+ * - `evil-alive-neighbours`: evil among the two alive neighbours (Empath);
+ * - `demon-minion-steps`: steps from the Demon to its nearest Minion (Clockmaker);
+ * - `demon-or-token`: yes if either of two chosen players is the Demon or carries `token`
+ *   (Fortune Teller's Red Herring);
+ * - `good-player`: one good player (Steward);
+ * - `one-evil-of-three`: three players, exactly one evil (Noble).
+ * `reminders` are the tokens to place: `target` on the shown character's player, `other` on the
+ * second player, `each` on every player tapped.
+ */
+export const LEARNS_MEASURES = [
+	'pair-of-type',
+	'evil-pairs',
+	'evil-alive-neighbours',
+	'demon-minion-steps',
+	'demon-or-token',
+	'good-player',
+	'one-evil-of-three'
+] as const;
+export interface Learns {
+	measure: (typeof LEARNS_MEASURES)[number];
+	type?: CharacterType;
+	token?: ReminderLabel;
+	noneWhenAbsent?: boolean;
+	reminders?: { target?: ReminderLabel; other?: ReminderLabel; each?: ReminderLabel };
+}
+
+/**
+ * What an `answers` character learns, each worked out in `rules/night-info.ts`:
+ * `minion-nominated` (Town Crier), `demon-voted` (Flowergirl), `executed-character`
+ * (Undertaker), `outsider-died` (Godfather), `correct-guesses` (Juggler), `evil-dead`
+ * (Oracle), `abnormal-abilities` (Mathematician), `statement-true` (Gossip, from the
+ * statement logged by day, L58). `token` is the character's reminder that
+ * marks the answer on the board ("Died Today", "Abnormal").
+ */
+export const ANSWER_QUESTIONS = [
+	'minion-nominated',
+	'demon-voted',
+	'executed-character',
+	'outsider-died',
+	'correct-guesses',
+	'evil-dead',
+	'abnormal-abilities',
+	'statement-true'
+] as const;
+export interface Answers {
+	question: (typeof ANSWER_QUESTIONS)[number];
+	token?: ReminderLabel;
 }
 
 export const KILLS_BY = ['demon', 'other'] as const;
@@ -84,7 +152,10 @@ export const RULE_KEYS = [
 	'redirectsKill',
 	'survivesFirstDeath',
 	'kills',
-	'reminderTargets'
+	'reminderTargets',
+	'learns',
+	'answers',
+	'dayClaim'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -145,6 +216,21 @@ export function parseCharacterRules(
 			} else if (token !== undefined) rules.survivesFirstDeath = { spentToken: token };
 		}
 	}
+	if (raw.learns !== undefined) {
+		const learns = readLearns(raw.learns, `${path}.learns`, issues, reminders);
+		if (learns) rules.learns = learns;
+	}
+	if (raw.answers !== undefined) {
+		const at = `${path}.answers`;
+		if (!isObject(raw.answers)) {
+			issues.add(at, `expected object, got ${describe(raw.answers)}`);
+		} else {
+			checkKeys(raw.answers, ['question', 'token'], at, issues);
+			const question = readEnum(raw.answers, 'question', ANSWER_QUESTIONS, at, issues, true);
+			const token = readToken(raw.answers, 'token', at, issues, reminders);
+			if (question) rules.answers = { question, ...(token ? { token } : {}) };
+		}
+	}
 	if (raw.reminderTargets !== undefined) {
 		const targets = readReminderTargets(
 			raw.reminderTargets,
@@ -174,6 +260,8 @@ export function parseCharacterRules(
 		const protects = readProtects(raw.protects, `${path}.protects`, issues, reminders);
 		if (protects) rules.protects = protects;
 	}
+	const dayClaim = readEnum(raw, 'dayClaim', DAY_CLAIMS, path, issues, false);
+	if (dayClaim) rules.dayClaim = dayClaim;
 	return issues.list.length > before ? undefined : rules;
 }
 
@@ -229,4 +317,60 @@ function readProtects(
 /** Whether `token` is one of the character's reminders; true when they are not given. */
 function ownReminder(token: string, reminders: readonly ReminderLabel[] | undefined): boolean {
 	return !reminders || reminders.some((r) => r.toLowerCase() === token.toLowerCase());
+}
+
+/** An optional reminder label field, which must be one of the character's reminders. */
+function readToken(
+	raw: Record<string, unknown>,
+	key: string,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): ReminderLabel | undefined {
+	const token = readString(raw, key, path, issues, false);
+	if (token === undefined) return undefined;
+	if (!ownReminder(token, reminders)) {
+		issues.add(`${path}.${key}`, 'not one of this character’s reminders');
+		return undefined;
+	}
+	return token;
+}
+
+function readLearns(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): Learns | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['measure', 'type', 'token', 'noneWhenAbsent', 'reminders'], path, issues);
+	const measure = readEnum(raw, 'measure', LEARNS_MEASURES, path, issues, true);
+	const type = readEnum(raw, 'type', CHARACTER_TYPES, path, issues, false);
+	const token = readToken(raw, 'token', path, issues, reminders);
+	const noneWhenAbsent = readBoolean(raw, 'noneWhenAbsent', path, issues);
+	if (!measure) return undefined;
+	if (measure === 'pair-of-type' && !type) issues.add(`${path}.type`, 'missing');
+	if (measure === 'demon-or-token' && !token) issues.add(`${path}.token`, 'missing');
+	const out: Learns = { measure };
+	if (type) out.type = type;
+	if (token) out.token = token;
+	if (noneWhenAbsent !== undefined) out.noneWhenAbsent = noneWhenAbsent;
+	if (raw.reminders !== undefined) {
+		const at = `${path}.reminders`;
+		if (!isObject(raw.reminders)) {
+			issues.add(at, `expected object, got ${describe(raw.reminders)}`);
+		} else {
+			checkKeys(raw.reminders, ['target', 'other', 'each'], at, issues);
+			const placed: NonNullable<Learns['reminders']> = {};
+			for (const key of ['target', 'other', 'each'] as const) {
+				const label = readToken(raw.reminders, key, at, issues, reminders);
+				if (label) placed[key] = label;
+			}
+			out.reminders = placed;
+		}
+	}
+	return out;
 }

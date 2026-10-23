@@ -8,5 +8,11 @@
 				"evil": 1
 			}
 		}
+	},
+	"learns": {
+		"measure": "one-evil-of-three",
+		"reminders": {
+			"each": "Know"
+		}
 	}
 }

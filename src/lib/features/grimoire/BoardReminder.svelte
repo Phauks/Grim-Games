@@ -37,6 +37,8 @@
 		symbol?: string;
 		/** Its symbol's colour (Trevor, 2026-10-20); none is the reminder's ink. */
 		symbolColour?: SymbolColour;
+		/** Its icon symbol drawn filled (Trevor, 2026-10-23: per token). */
+		symbolFill?: boolean;
 		disabled?: boolean;
 		onTap: () => void;
 		/** Pointer position in client px while dragging; `end` true when released. */
@@ -59,6 +61,7 @@
 		infinite = false,
 		symbol = '',
 		symbolColour,
+		symbolFill = false,
 		disabled = false,
 		onTap,
 		onDrag,
@@ -227,8 +230,8 @@
 					data-symbol={symbol}
 					style:color={symbolColour && SYMBOL_COLOUR_LOOKS[symbolColour].colour}
 					><IconGlyph
-						id={withWeight(symbol, appearance.genericIconFill ? 'fill' : weight)}
-						{set}
+						id={withWeight(symbol, symbolFill ? 'fill' : weight)}
+						set={symbolFill ? 'ph-fill' : set}
 					/></span
 				>{:else if symbol}<span class="symbol emoji" data-symbol={symbol} aria-hidden="true"
 					>{symbol}</span
@@ -340,9 +343,10 @@
 	.emoji {
 		font-size: calc(var(--d) * 0.36);
 	}
+	/* Character icon size (Settings > Tokens). */
 	img {
-		width: 84%;
-		height: 84%;
+		width: calc(84% * var(--reminder-icon, 1));
+		height: calc(84% * var(--reminder-icon, 1));
 		margin-top: -16%;
 		object-fit: contain;
 		pointer-events: none;

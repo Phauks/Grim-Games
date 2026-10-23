@@ -424,7 +424,7 @@ test('a saved script is shared by QR code and link, with no code to type', async
 
 test("a script's logo sits in the middle of its QR code, and its name if the logo fails", async ({
 	page
-}) => {
+}, testInfo) => {
 	const logo = 'https://logos.example/storm-front.svg';
 	const missing = 'https://logos.example/missing.svg';
 	await page.route(logo, (route) =>
@@ -459,6 +459,16 @@ test("a script's logo sits in the middle of its QR code, and its name if the log
 	// The logo covers under 10% of the code, so it still scans at the highest correction.
 	const [code, middle] = await Promise.all([qr.boundingBox(), center.boundingBox()]);
 	expect((middle!.width * middle!.height) / (code!.width * code!.height)).toBeLessThan(0.1);
+	// The backing covers whole squares of the code (Trevor, 2026-10-23: no slivers round it),
+	// and the logo sits over exactly those squares.
+	const backing = qr.getByTestId('qr-backing');
+	for (const edge of ['x', 'y', 'width', 'height']) {
+		expect(Number.isInteger(Number(await backing.getAttribute(edge)))).toBe(true);
+	}
+	const drawn = (await backing.boundingBox())!;
+	expect(Math.abs(drawn.x - middle!.x)).toBeLessThan(1);
+	expect(Math.abs(drawn.width - middle!.width)).toBeLessThan(1);
+	await qr.screenshot({ path: testInfo.outputPath('qr.png') });
 
 	// A logo that fails to load leaves the name instead, never an empty square.
 	const broken = await share('Calm Front', missing);

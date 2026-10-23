@@ -8,5 +8,9 @@
 			"life": "dead",
 			"note": "The player who was executed and died today, who may be the Undertaker."
 		}
+	},
+	"answers": {
+		"question": "executed-character",
+		"token": "Died Today"
 	}
 }

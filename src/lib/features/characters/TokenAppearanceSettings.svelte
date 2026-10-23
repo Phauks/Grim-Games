@@ -14,6 +14,7 @@
 		REMINDER_ICON_COLOURS,
 		REMINDER_LABEL_WIDTH,
 		TOKEN_COLOURS,
+		ICON_SCALE,
 		TOKEN_SCALE,
 		tokenColour,
 		tokenContrast,
@@ -128,6 +129,14 @@
 		defaultValue={1}
 		onChange={(tokenScale) => onChange({ ...value, tokenScale })}
 	/>
+	<SettingSlider
+		label={t('characters.tokenIconSize')}
+		description={t('characters.tokenIconSizeHelp')}
+		value={value.tokenIconScale}
+		{...ICON_SCALE}
+		defaultValue={1}
+		onChange={(tokenIconScale) => onChange({ ...value, tokenIconScale })}
+	/>
 	<SettingToggle
 		label={t('characters.boardNames')}
 		description={t('characters.boardNamesHelp')}
@@ -208,8 +217,7 @@
 	{#snippet preview()}
 		<!-- As it rests, then highlighted as a held seat's reminder (Trevor, 2026-10-20). Its
 		     player has turned good, so Owner's icon colour shows a difference (Trevor, 2026-10-22:
-		     every setting shows in its preview). Then an ∞ token with an icon symbol, for Filled
-		     ∞ token symbols (Trevor, 2026-10-23). -->
+		     every setting shows in its preview). Then an ∞ token with an icon symbol. -->
 		<div class="preview reminder-sample" style:--sample="{largestReminder}px">
 			{#if reminderSample}<BoardReminder
 					label={reminderSample.reminders[0]}
@@ -246,6 +254,14 @@
 		{...TOKEN_SCALE}
 		defaultValue={1}
 		onChange={(reminderScale) => onChange({ ...value, reminderScale })}
+	/>
+	<SettingSlider
+		label={t('characters.reminderIconSize')}
+		description={t('characters.reminderIconSizeHelp')}
+		value={value.reminderIconScale}
+		{...ICON_SCALE}
+		defaultValue={1}
+		onChange={(reminderIconScale) => onChange({ ...value, reminderIconScale })}
 	/>
 	<SettingSlider
 		label={t('characters.reminderLabelWidth')}
@@ -294,12 +310,6 @@
 				onChange={(reminderIconColour) => onChange({ ...value, reminderIconColour })}
 			/>{/snippet}
 	</SettingRow>
-	<SettingToggle
-		label={t('characters.genericIconFill')}
-		description={t('characters.genericIconFillHelp')}
-		checked={value.genericIconFill}
-		onChange={(genericIconFill) => onChange({ ...value, genericIconFill })}
-	/>
 	{@render colourRow('reminder')}
 	{@render colourRow('reminderLabel')}
 	{@render colourRow('reminderInk')}

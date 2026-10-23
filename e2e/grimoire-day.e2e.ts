@@ -279,7 +279,7 @@ test("the day's sections fold with their caret and their headers stick under the
 	const day = await openDay(page);
 	await expect(page.getByTestId('announcements').getByTestId('spoken')).toHaveCount(4);
 	const toolbar = page.getByTestId('day-toolbar');
-	const sections = day.locator('.panel > .collapsible');
+	const sections = day.locator('.sections > .collapsible');
 	expect(await sections.count()).toBeGreaterThan(2);
 	// No Players section (Trevor, 2026-10-20); the Slayer's Used sits on the Slayer's own row.
 	await expect(day.getByRole('heading', { name: 'Players' })).toHaveCount(0);
@@ -307,7 +307,7 @@ test("the day's sections fold with their caret and their headers stick under the
 	// A section's header stays just under the toolbar while its content scrolls (Trevor).
 	const scroller = toolbar.locator('xpath=../..');
 	// Announcements, scrolled until its top has passed under the toolbar.
-	const section = day.locator('.panel > .collapsible', {
+	const section = day.locator('.sections > .collapsible', {
 		has: page.getByTestId('announcements')
 	});
 	const head = section.locator('> .head');
@@ -748,4 +748,18 @@ test('holding the day timer or a new day resets it to the time per living player
 	await expect(day.getByRole('button', { name: 'Start timer' })).toBeEnabled();
 	// After a night with no deaths, that is the announcement (Trevor, 2026-10-19).
 	await expect(day.getByTestId('announcements')).toHaveText('Nobody died in the night.');
+});
+
+test('a wide day view puts the toolbar beside the sections', async ({ page }) => {
+	await startGame(page);
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	// Two columns on a wide screen (Trevor, 2026-10-23: L45).
+	const toolbar = await page.getByTestId('day-toolbar').boundingBox();
+	const announcements = await page.getByTestId('announcements').boundingBox();
+	expect(announcements!.x).toBeGreaterThan(toolbar!.x + toolbar!.width - 1);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect
+		.poll(async () => (await page.getByTestId('announcements').boundingBox())!.y)
+		.toBeGreaterThan((await page.getByTestId('day-toolbar').boundingBox())!.y);
 });
