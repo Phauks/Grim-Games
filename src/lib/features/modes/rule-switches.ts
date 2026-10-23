@@ -8,12 +8,15 @@ import type { SpecialRule } from '#lib/core/modes/index.ts';
  */
 export interface RuleSwitch {
 	id: string;
-	/** i18n key of the switch's label. */
-	label: 'modes.switch.named' | 'modes.switch.threeAlive';
+	/** i18n key of the switch's label, which may depend on the rule it belongs to. */
+	label: (ruleId: string) => SwitchLabel;
 	/** How the rule file plays without the switch being touched. */
 	default: boolean;
 	apply: (rule: SpecialRule, on: boolean) => SpecialRule;
 }
+
+export type SwitchLabel =
+	'modes.switch.namedOne' | 'modes.switch.namedMany' | 'modes.switch.threeAlive';
 
 /** The Storyteller's switch choices, by `ruleId:switchId`; a missing one is its default. */
 export type SwitchChoices = Readonly<Record<string, boolean>>;
@@ -31,7 +34,9 @@ export const INFINITE_NAMED = 'Tell the table which characters from off the scri
 const EXTRAS: readonly RuleSwitch[] = [
 	{
 		id: 'named',
-		label: 'modes.switch.named',
+		// Trevor (2026-10-23): "Storyteller Announces Character"; plural for Infinite
+		// Possibilities, which may hide several.
+		label: (ruleId) => (ruleId === 'plus-one' ? 'modes.switch.namedOne' : 'modes.switch.namedMany'),
 		default: false,
 		apply: (rule, on) => {
 			if (!on) return rule;
@@ -65,7 +70,7 @@ export const DJINN_THREE_ALIVE =
 const DJINN: readonly RuleSwitch[] = [
 	{
 		id: 'three-alive',
-		label: 'modes.switch.threeAlive',
+		label: () => 'modes.switch.threeAlive',
 		default: false,
 		apply: (rule, on) => {
 			if (!on) return rule;
