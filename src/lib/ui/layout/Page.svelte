@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
+	import { fitWords } from '#lib/ui/fit-words.ts';
 
 	interface Props {
 		/** The page's one `<h1>`; every page has one, so screen readers can find it. */
@@ -80,12 +81,16 @@
 				<div class="start">
 					<span class="menu-room" aria-hidden="true"></span>
 					<h1>
-						{#if lead}{@render lead()}{/if}{title}
+						{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}
+							>{title}</span
+						>
 					</h1>
 				</div>
 			{:else}
 				<h1>
-					{#if lead}{@render lead()}{/if}{title}
+					{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}
+						>{title}</span
+					>
 				</h1>
 			{/if}
 			{#if actions}<div class="actions">{@render actions()}</div>{/if}
@@ -145,10 +150,14 @@
 		min-height: var(--tap-target);
 		margin: 0;
 		font-size: var(--page-title-size);
-		/* The narrowest phone at the largest text, with the hamburger beside it: a long title
-		   breaks (hyphenated where the browser can) rather than push the page sideways. */
-		overflow-wrap: anywhere;
-		hyphens: auto;
+	}
+	/* A word never breaks in the middle (2026-10-23): the title shrinks until its longest word
+	   fits (fitWords). Only below that, on the narrowest phone at the largest text, does a
+	   word break, rather than push the page sideways. */
+	.title-text {
+		min-width: 0;
+		font-size: calc(1em * var(--fit, 1));
+		overflow-wrap: break-word;
 	}
 	.start {
 		display: flex;

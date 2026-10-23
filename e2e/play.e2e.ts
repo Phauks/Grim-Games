@@ -97,6 +97,31 @@ test('the player view is a reading page, with no Storyteller controls', async ({
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
 
+test("the script's name never breaks inside a word, beside its logo and buttons", async ({
+	page
+}) => {
+	// It broke as "Troub / le Brewi / ng" on a phone (2026-10-23); it shrinks to fit instead.
+	const title = page.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
+	const broken = await title.evaluate((el) => {
+		const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+		let text: Node | null;
+		while ((text = walk.nextNode()) && !text.textContent?.includes('Trouble'));
+		const words = [...(text?.textContent ?? '').matchAll(/\S+/g)];
+		return words.filter((word) => {
+			const range = document.createRange();
+			range.setStart(text!, word.index);
+			range.setEnd(text!, word.index + word[0].length);
+			const tops = new Set([...range.getClientRects()].map((r) => Math.round(r.top)));
+			return tops.size > 1;
+		}).length;
+	});
+	expect(broken).toBe(0);
+	// Nothing pushes the page sideways.
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+		await page.evaluate(() => document.documentElement.clientWidth)
+	);
+});
+
 test('tabs that do not fit move into a ⋯ menu instead of wrapping', async ({ page }) => {
 	// Trevor, 2026-10-20: on his Pixel the tabs wrapped onto a second line; "triple dot drop
 	// down". A narrow screen stands in for a big text size.
