@@ -11,6 +11,7 @@
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
+	import { fromScript, scriptToJson } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -21,6 +22,8 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { onLayerOpen } from '#lib/ui/primitives/layers.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import { copyText } from '#lib/ui/clipboard.ts';
+	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
 	import { campaignOf } from './campaigns.ts';
 	import { findMode } from './custom-modes.svelte.ts';
 	import { readGameMode } from './game-mode-store.ts';
@@ -110,6 +113,11 @@
 			value: rules.map((r) => r.name).join(', ')
 		}
 	]);
+	/** What the mode and rules rows open when tapped: each one's whole Inspect (plan G5). */
+	const inspectable = $derived<Record<string, readonly (GameMode | SpecialRule)[]>>({
+		mode: base ? [base] : [],
+		rules
+	});
 	const campaign = $derived(campaignOf(gameId));
 	const specters = $derived(hasSpectatorVote(gameId));
 	const assignment = $derived(mode?.parts.assignment?.kind);
@@ -149,6 +157,41 @@
 		);
 	}
 
+	function inspect(item: GameMode | SpecialRule) {
+		open = false;
+		inspected = item;
+		inspecting = true;
+	}
+
+	/** The game's script as a file in TPI's format (Trevor, 2026-10-22, plan G3). */
+	async function downloadScript() {
+		try {
+			const data = await loadOfficialData();
+			const name = game.script.meta?.name ?? '';
+			downloadJson(fileNameFor(name, 'script'), scriptToJson(fromScript(game.script, data).script));
+		} catch (e) {
+			reportError(e, { area: 'grimoire' });
+		}
+	}
+
+	/** Where the script came from, passed on as the share sheet passes a link (plan G3). */
+	async function shareSource() {
+		if (!scriptPage) return;
+		const title = game.script.meta?.name ?? t('modes.info.script');
+		if (typeof navigator.share === 'function') {
+			try {
+				await navigator.share({ title, url: scriptPage });
+				return;
+			} catch (e) {
+				// Closing the share sheet is not a failure.
+				if (e instanceof DOMException && e.name === 'AbortError') return;
+			}
+		}
+		await copyText(scriptPage, {
+			failed: [t('share.copyFailed'), t('share.copyFailedHint')]
+		});
+	}
+
 	function go(path: Parameters<typeof goto>[0]) {
 		open = false;
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- every caller passes a resolved path
@@ -172,11 +215,28 @@
 				<tr data-field={row.key}>
 					<th scope="row">{row.label}</th>
 					<td>
-						{#if 'href' in row && row.href && row.value?.trim()}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site's page -->
+						{#if inspectable[row.key]?.length}<!-- Tapped for its full details (Trevor,
+							2026-10-22: "allow clicking game mode or special rules in game info to see
+							exact details"). -->{#each inspectable[row.key] as item, i (item.id)}{#if i > 0},
+								{/if}<button
+									type="button"
+									class="inspect-link"
+									aria-label={t('modes.inspect', { name: item.name })}
+									onclick={() => inspect(item)}>{item.name}</button
+								>{/each}{:else if 'href' in row && row.href && row.value?.trim()}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site's page -->
 							<a href={row.href} target="_blank" rel="noopener noreferrer">{row.value}</a
 							>{:else}{row.value?.trim() || none}{/if}{#if 'extra' in row && row.extra}<span
 								class="extra"
 								data-testid="info-extra">{row.extra}</span
+							>{/if}{#if row.key === 'script'}<span class="share-source"
+								><IconButton
+									icon="share"
+									label={t('modes.info.shareSource')}
+									title={scriptPage ? t('modes.info.shareSource') : t('modes.info.noSource')}
+									disabled={!scriptPage}
+									data-testid="share-source"
+									onclick={() => void shareSource()}
+								/></span
 							>{/if}
 					</td>
 				</tr>
@@ -247,22 +307,15 @@
 				{t('modes.deal.menu')}
 			</Button>
 		{/if}
-		{#each [...(base ? [base] : []), ...rules] as item (item.id)}
-			<Button
-				variant="quiet"
-				icon="info"
-				onclick={() => {
-					open = false;
-					inspected = item;
-					inspecting = true;
-				}}
-			>
-				{t('modes.inspect', { name: item.name })}
-			</Button>
-		{/each}
 	</div>
 {/snippet}
 {#snippet edit()}
+	<IconButton
+		icon="download"
+		label={t('modes.info.download')}
+		data-testid="game-info-download"
+		onclick={() => void downloadScript()}
+	/>
 	{#if onEdit}<IconButton
 			icon="rename"
 			label={t('modes.info.edit')}
@@ -347,6 +400,35 @@
 	.info td {
 		padding-block: var(--space-1);
 		vertical-align: top;
+	}
+	/* The mode and each rule read as text and open their details; the tap target is
+	   widened without moving the row, as the corner name's is. */
+	.inspect-link {
+		position: relative;
+		/* Inline in the row like the script's link; the ::before below is its tap target. */
+		min-height: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--heading);
+		font: inherit;
+		text-align: inherit;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+	.inspect-link::before {
+		content: '';
+		position: absolute;
+		inset: 50% auto auto 50%;
+		min-width: max(100%, var(--tap-target));
+		min-height: max(100%, var(--tap-target));
+		transform: translate(-50%, -50%);
+	}
+	/* Share sits after the script's name, always there so the row never changes height. */
+	.share-source {
+		display: inline-block;
+		margin-inline-start: var(--space-1);
+		vertical-align: middle;
 	}
 	/* The Storyteller's row is a button: its name, tapped to rename them. */
 	.actions:empty {
