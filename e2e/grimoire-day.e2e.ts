@@ -260,6 +260,9 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 test("the day's sections fold with their caret and their headers stick under the toolbar", async ({
 	page
 }) => {
+	// Twelve seats, eight characters and four deaths to set up before the day opens: past
+	// 30 seconds on a loaded CI runner.
+	test.slow();
 	await startGame(page, 12);
 	// Characters whose pre-day reminders fill the day with sections to scroll.
 	for (const [number, name] of [
