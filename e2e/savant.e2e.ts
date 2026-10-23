@@ -27,7 +27,7 @@ async function closeSheet(page: Page) {
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
 }
 
-test('the Savant seat offers one true and one false statement, one kept while the other cycles', async ({
+test('the Savant seat offers one true and one false statement, each cycled or written on its own', async ({
 	page
 }) => {
 	await page.goto('/new');
@@ -53,10 +53,13 @@ test('the Savant seat offers one true and one false statement, one kept while th
 	await expect(savant.locator('[data-truth="true"]')).toHaveCount(1);
 	await expect(savant.locator('[data-truth="false"]')).toHaveCount(1);
 
-	// Keep the first; the second cycles and the pair stays one of each.
+	// Each says whether it holds, and why where the grimoire shows it (Trevor, 2026-10-23: L49;
+	// the reasons are unit-tested in savant.test.ts).
+	await expect(savant.locator('.verdict')).toHaveCount(2);
+
+	// No lock (L48): the second cycles on its own and the pair stays one of each.
+	await expect(savant.getByRole('button', { name: /^Keep statement/ })).toHaveCount(0);
 	const first = await lines.nth(0).locator('.sentence').innerText();
-	await savant.getByRole('button', { name: 'Keep statement 1' }).tap();
-	await expect(savant.getByRole('button', { name: 'Another statement 1' })).toBeDisabled();
 	const second = await lines.nth(1).locator('.sentence').innerText();
 	await savant.getByRole('button', { name: 'Another statement 2' }).tap();
 	await expect(lines.nth(0).locator('.sentence')).toHaveText(first);
@@ -64,12 +67,31 @@ test('the Savant seat offers one true and one false statement, one kept while th
 	await expect(savant.locator('[data-truth="true"]')).toHaveCount(1);
 	await expect(savant.locator('[data-truth="false"]')).toHaveCount(1);
 
-	// Both false on request (a drunk or poisoned Savant may hear two of a kind); a kept line
-	// stays as it is, so let it go first.
-	await savant.getByRole('button', { name: 'Keep statement 1' }).tap();
+	// Both false on request (a drunk or poisoned Savant may hear two of a kind).
 	await savant.getByRole('combobox', { name: 'Statements' }).tap();
 	await page.getByRole('option', { name: 'Both false' }).tap();
 	await expect(savant.locator('[data-truth="false"]')).toHaveCount(2);
+
+	// The Storyteller's own words (L47), marked true or false by a tap.
+	await savant.getByRole('button', { name: 'Write statement 1 yourself' }).tap();
+	const field = savant.getByRole('textbox', { name: 'Statement 1, your words' });
+	await field.fill('Seat 4 has a secret.');
+	const verdict = lines.nth(0).getByRole('button', { name: 'False' });
+	await verdict.tap();
+	await expect(lines.nth(0).getByRole('button', { name: 'True' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+
+	// Shown like info tokens, with no True or False (L50).
+	await savant.getByRole('button', { name: 'Show to player' }).tap();
+	const shown = page.locator('dialog[open][data-testid="show-to-player"]');
+	await expect(shown).toBeVisible();
+	await expect(shown).toContainText('Seat 4 has a secret.');
+	await expect(shown).not.toContainText('True');
+	await expect(shown).not.toContainText('False');
+	await page.keyboard.press('Escape');
+	await expect(shown).toBeHidden();
 
 	await savant.getByRole('button', { name: 'Use these' }).tap();
 	await expect(savant).toBeHidden();
