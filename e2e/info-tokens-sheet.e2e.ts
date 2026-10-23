@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // The info-token sheet the grimoire board opens from its header (Trevor, 2026-10-16).
 
@@ -144,6 +145,7 @@ test('a card to show with long character names keeps the sheet its width', async
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page

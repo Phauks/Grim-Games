@@ -31,7 +31,10 @@ test('a game with a special rule restates it, then Character selection; Back kee
 	page
 }) => {
 	await page.goto('/new');
-	await page.getByRole('main').getByRole('button', { name: /^Special rules/ }).tap();
+	await page
+		.getByRole('main')
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
 	const rules = page.getByRole('dialog', { name: 'Special rules' });
 	await rules.getByTestId('special-rules').getByText('Stowed Away', { exact: true }).tap();
 	await rules.getByRole('button', { name: 'Close' }).tap();
@@ -47,9 +50,7 @@ test('a game with a special rule restates it, then Character selection; Back kee
 	);
 });
 
-test('Character selection goes on to the board without a bag', async ({
-	page
-}) => {
+test('Character selection goes on to the board without a bag', async ({ page }) => {
 	await page.goto('/new');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);

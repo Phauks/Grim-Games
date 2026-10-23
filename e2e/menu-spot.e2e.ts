@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
 // Trevor (2026-10-23): the sidebar's hamburger was not where the board's was. It now has one
@@ -17,6 +18,7 @@ async function startGame(page: Page) {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
 	await page.getByRole('button', { name: 'Start game' }).click();
+	await toBoard(page);
 	await expect(page.getByTestId('seat').first()).toBeVisible();
 }
 

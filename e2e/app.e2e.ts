@@ -264,6 +264,7 @@ test("every screen's backdrop fades into the phone's bars", async ({ page }) => 
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.locator('.app-body.bare')).toBeVisible();
 	const image = await layer();
 	expect(image.match(/linear-gradient/g)).toHaveLength(2);

@@ -39,6 +39,9 @@ export async function nameStoryteller(page: Page, name: string): Promise<void> {
  */
 export async function toBoard(page: Page): Promise<void> {
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	await page.getByTestId('setup-to-board').tap();
+	// A tap on touch screens: a click would leave the mouse over the board, pausing its toasts.
+	const shortcut = page.getByTestId('setup-to-board');
+	if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await shortcut.tap();
+	else await shortcut.click();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 }

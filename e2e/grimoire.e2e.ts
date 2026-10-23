@@ -2723,6 +2723,7 @@ test("on a crowded table one seat's reminders never cover another's", async ({ p
 		.tap();
 	for (let i = 0; i < 7; i++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(15);
 	for (const [seat, name] of [
 		[1, 'Washerwoman'],
@@ -3091,10 +3092,11 @@ test('Back closes an open sheet first, then asks before leaving the game', async
 	await leave.getByRole('button', { name: 'Cancel' }).tap();
 	expect(page.url()).toBe(board);
 
-	// Asks again on the next Back, and Confirm leaves for where the game was opened from.
+	// Asks again on the next Back, and Confirm leaves for where the game was opened from:
+	// Character selection, the step before the board (G7).
 	await page.goBack();
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page).toHaveURL(/\/new$/);
+	await expect(page).toHaveURL(/\/setup$/);
 });
 
 test('once every token is placed, the board does not prompt for the Demon bluffs', async ({
@@ -3921,6 +3923,7 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 			await page.getByRole('button', { name: 'Fewer players' }).tap();
 		await expect(count).toContainText(String(players));
 		await page.getByRole('button', { name: 'Start game' }).tap();
+		await toBoard(page);
 		await expect(page.getByTestId('seat')).toHaveCount(players);
 		const gameId = page.url().split('/').pop()!;
 		await page.evaluate(
@@ -4743,7 +4746,7 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	for (const [number, name] of [
 		[1, 'Poisoner'],
 		[2, 'Empath']
@@ -4787,7 +4790,7 @@ test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', as
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	for (const [number, name] of [
 		[6, 'Washerwoman'],
 		[7, 'Empath']
@@ -5261,7 +5264,7 @@ async function startWithRule(
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	for (const [number, name] of cast) {
 		const sheet = await openSeat(page, number);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();

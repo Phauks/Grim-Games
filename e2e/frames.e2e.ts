@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 import { openSettingsDialog } from './shell.ts';
 
 // Frames round seat tokens (L4, Trevor 2026-10-22): the Storyteller's Board default, and each
@@ -38,6 +38,7 @@ test('the Board default frame draws round the preview and every seat, moving not
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	const seats = page.getByTestId('seat');
 	await expect(seats).toHaveCount(8);
 	await expect(page.locator('[data-testid="seat"] svg[data-frame="laurel"]')).toHaveCount(8);

@@ -11,8 +11,8 @@ async function selectionFor(page: Page, players: number, script = 'Trouble Brewi
 	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	for (let n = 8; n < players; n++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await toBoard(page);
-	await page.goto(`${new URL(page.url()).pathname}/setup`);
+	// A new game opens on character selection (G7).
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('player-count')).toHaveText(String(players));
 }
@@ -47,13 +47,15 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
 	const barButtons = async () => {
 		const [back, next] = await Promise.all([
-			bar.getByRole('link').first().boundingBox(),
+			bar.locator('a, button').first().boundingBox(),
 			bar.locator('a, button').last().boundingBox()
 		]);
 		expect(back!.x).toBeLessThan(next!.x);
 		return { back, next };
 	};
-	await expect(bar.getByRole('link', { name: 'Grimoire' })).toBeVisible();
+	// Before any character is dealt, Back goes to New game; the board is one tap away.
+	await expect(bar.getByRole('button', { name: 'New game' })).toBeVisible();
+	await expect(bar.getByTestId('setup-to-board')).toBeVisible();
 	await expect(bar.getByRole('button', { name: 'Build bag' })).toBeVisible();
 	const onCharacters = await barButtons();
 
@@ -702,8 +704,7 @@ test.describe('in a computer window', () => {
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
 		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
 		await page.getByRole('button', { name: 'Start game' }).click();
-		await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-		await page.goto(`${new URL(page.url()).pathname}/setup`);
+		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 
 		// The setup sheet is beside the characters; Build bag is in the bar at the bottom right.
 		const sheet = await page.getByTestId('setup-table').boundingBox();
