@@ -141,16 +141,15 @@
 				{:else}
 					{@render ability(h.characterId)}
 				{/if}
-			{:else if h.rule === 'evil-twin'}
+			{:else if h.rule === 'marked-alive'}
 				Good can't win while {@render seat(h.seats[0])} and {@render seat(h.seats[1])} live.
-			{:else if h.rule === 'scarlet-woman'}
+			{:else if h.rule === 'becomes-demon'}
 				{@render seat(h.seats[0])} may become the Demon.
-			{:else if h.rule === 'mastermind'}
+			{:else if h.rule === 'extra-day'}
 				{@render seat(h.seats[0])}: play for 1 more day.
-			{:else if h.rule === 'imp'}
-				{@render character('imp')}: a Minion may become the Imp.
-			{:else if h.rule === 'fang-gu'}
-				{@render character('fanggu')}: an Outsider may become the Fang Gu.
+			{:else if h.rule === 'death-passes'}
+				{@render character(h.characterId)}: {#each h.seats as id (id)}{@render seat(id)}{/each} may become
+				the Demon.
 			{:else}
 				{@render seat(h.seats[0])} is drunk, poisoned or has no ability.
 			{/if}
@@ -171,29 +170,29 @@
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead.
 					{:else if end.rule === 'two-alive'}
 						Just 2 players alive.
-					{:else if end.rule === 'saint'}
+					{:else if end.rule === 'executed-loses'}
 						{@render seat(end.seats[0])} executed.
-					{:else if end.rule === 'evil-twin'}
+					{:else if end.rule === 'marked-executed'}
 						{@render seat(end.seats[0])} executed, twin of {@render seat(end.seats[1])}.
-					{:else if end.rule === 'vortox'}
-						{@render character('vortox')}: no execution on day {end.day}.
-					{:else if end.rule === 'mayor'}
-						{@render seat(end.seats[0])}: 3 alive and no execution today.
-					{:else if end.rule === 'leviathan-executions'}
-						{@render character('leviathan')}:
+					{:else if end.rule === 'day-without-execution' && end.characterId}
+						{@render character(end.characterId)}: no execution on day {end.day}.
+					{:else if end.rule === 'alive-at-dusk'}
+						{@render seat(end.seats[0])}: few alive and no execution today.
+					{:else if end.rule === 'executions-of-alignment' && end.characterId}
+						{@render character(end.characterId)}:
 						{#each end.seats as id (id)}{@render seat(id)}{/each} executed.
-					{:else if end.rule === 'leviathan-day-5'}
-						{@render seat(end.seats[0])} alive after day 5.
-					{:else if end.rule === 'fearmonger'}
+					{:else if end.rule === 'survives-day'}
+						{@render seat(end.seats[0])} alive after day {end.day}.
+					{:else if end.rule === 'nominated-marked-executed'}
 						{@render seat(end.seats[1])} nominated and executed {@render seat(end.seats[0])}.
 					{:else if end.rule === 'demon-executed'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} executed ({end.ruleName}).
-					{:else if end.rule === 'summoner'}
+					{:else if end.rule === 'dead-without-demon'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead with no Demon.
-					{:else if end.seats.length > 0}
-						{@render character('mastermind')}: {@render seat(end.seats[0])} executed on day {end.day}.
-					{:else}
-						{@render character('mastermind')}: no execution on day {end.day}.
+					{:else if end.characterId && end.seats.length > 0}
+						{@render character(end.characterId)}: {@render seat(end.seats[0])} executed on day {end.day}.
+					{:else if end.characterId}
+						{@render character(end.characterId)}: no execution on day {end.day}.
 					{/if}
 					<strong class="team" data-team={end.winner}>{teamText(end.winner)}</strong>
 					{#if end.flippedBy?.seatId && OWN_WORDING}
@@ -202,10 +201,10 @@
 				</span>
 			</li>
 			{#if end.flippedBy?.seatId && !OWN_WORDING}
-				<li class="hold" data-rule="heretic">
+				<li class="hold" data-rule="invert-winner">
 					<span class="text">
 						{@render seat(end.flippedBy.seatId)}
-						{@render ability('heretic')}
+						{@render ability(end.flippedBy.characterId)}
 					</span>
 				</li>
 			{/if}

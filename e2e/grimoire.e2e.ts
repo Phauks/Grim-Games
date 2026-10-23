@@ -2242,7 +2242,9 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await execute(1);
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(prompt.getByTestId('game-end-prompt')).toContainText('Evil wins');
-	await expect(prompt.locator('[data-rule="saint"] [data-character-id="saint"]')).toBeVisible();
+	await expect(
+		prompt.locator('[data-rule="executed-loses"] [data-character-id="saint"]')
+	).toBeVisible();
 	await expect(prompt.getByRole('combobox', { name: 'Winner' })).toContainText('Evil');
 	// How it ended is preselected from the grimoire (Trevor, 2026-10-18), for History's stats.
 	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toContainText('Saint');

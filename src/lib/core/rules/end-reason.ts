@@ -5,36 +5,13 @@
  * character's own win condition, or the Storyteller's call (`other`).
  */
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { gameEnds, type GameEnd, type GameEndOptions } from './game-end.ts';
 
 export type EndReason = 'demon-dead' | 'two-alive' | `character:${CharacterId}` | 'other';
-
-/**
- * Characters whose ability can decide the game, in the order End game lists them. The first
- * ones `gameEnds` checks; the rest need a public claim, guess or choice only the Storyteller
- * sees, each on its wiki page: Klutz, Damsel, Goblin, Atheist, Cult Leader, Alsaahir, Fiddler.
- * The Heretic is left out: it flips whichever end happened.
- */
-export const END_CHARACTERS: readonly CharacterId[] = [
-	'saint',
-	'eviltwin',
-	'mastermind',
-	'vortox',
-	'mayor',
-	'leviathan',
-	'fearmonger',
-	'summoner',
-	'klutz',
-	'damsel',
-	'goblin',
-	'atheist',
-	'cultleader',
-	'alsaahir',
-	'fiddler'
-];
 
 const characterReason = (id: CharacterId): EndReason => `character:${id}`;
 
@@ -77,8 +54,11 @@ export function detectedEndReason(
 }
 
 /**
- * The characters End game offers: those in `END_CHARACTERS` on the script, in a seat, or in
- * play as a rule character (the Fiddler), plus `extra` (a saved reason).
+ * The characters End game offers: those on the script, in a seat, or in play as a rule
+ * character (the Fiddler) whose ability can decide the game, plus `extra` (a saved reason).
+ * First those `gameEnds` checks (`gameEnd.ends`), then those only the Storyteller can judge
+ * (`gameEnd.decidedByStoryteller`: a public claim, guess or choice), each in the order found.
+ * An inverted winner (the Heretic) is left out: it flips whichever end happened.
  */
 export function endCharacters(
 	game: Game,
@@ -95,6 +75,10 @@ export function endCharacters(
 	}
 	const saved = endReasonCharacter(extra);
 	if (saved) present.add(saved);
-	const listed = END_CHARACTERS.filter((id) => present.has(id));
+	const rules = (id: CharacterId) => rulesOf(id, characters)?.gameEnd;
+	const listed = [
+		...[...present].filter((id) => (rules(id)?.ends?.length ?? 0) > 0),
+		...[...present].filter((id) => rules(id)?.decidedByStoryteller)
+	];
 	return saved && !listed.includes(saved) ? [...listed, saved] : listed;
 }

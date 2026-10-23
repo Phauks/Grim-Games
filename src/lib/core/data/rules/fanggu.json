@@ -11,5 +11,14 @@
 			"note": "On the Fang Gu after the first Outsider jump; stays all game.",
 			"seat": "self"
 		}
+	},
+	"gameEnd": {
+		"holds": [
+			{
+				"kind": "death-passes",
+				"to": "outsider",
+				"spentToken": "Once"
+			}
+		]
 	}
 }

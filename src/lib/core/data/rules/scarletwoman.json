@@ -4,5 +4,13 @@
 			"seat": "self",
 			"note": "The Scarlet Woman after she becomes the Demon."
 		}
+	},
+	"gameEnd": {
+		"holds": [
+			{
+				"kind": "becomes-demon",
+				"aliveAtLeast": 4
+			}
+		]
 	}
 }

@@ -9,6 +9,7 @@ import { Issues } from '../validate.ts';
 import acrobat from './acrobat.json' with { type: 'json' };
 import alchemist from './alchemist.json' with { type: 'json' };
 import alhadikhia from './alhadikhia.json' with { type: 'json' };
+import alsaahir from './alsaahir.json' with { type: 'json' };
 import amnesiac from './amnesiac.json' with { type: 'json' };
 import angel from './angel.json' with { type: 'json' };
 import apprentice from './apprentice.json' with { type: 'json' };
@@ -31,6 +32,7 @@ import cerenovus from './cerenovus.json' with { type: 'json' };
 import chef from './chef.json' with { type: 'json' };
 import clockmaker from './clockmaker.json' with { type: 'json' };
 import courtier from './courtier.json' with { type: 'json' };
+import cultleader from './cultleader.json' with { type: 'json' };
 import damsel from './damsel.json' with { type: 'json' };
 import deusexfiasco from './deusexfiasco.json' with { type: 'json' };
 import devilsadvocate from './devilsadvocate.json' with { type: 'json' };
@@ -44,6 +46,7 @@ import fanggu from './fanggu.json' with { type: 'json' };
 import farmer from './farmer.json' with { type: 'json' };
 import fearmonger from './fearmonger.json' with { type: 'json' };
 import fibbin from './fibbin.json' with { type: 'json' };
+import fiddler from './fiddler.json' with { type: 'json' };
 import fisherman from './fisherman.json' with { type: 'json' };
 import flowergirl from './flowergirl.json' with { type: 'json' };
 import fool from './fool.json' with { type: 'json' };
@@ -81,6 +84,7 @@ import lordoftyphon from './lordoftyphon.json' with { type: 'json' };
 import lunatic from './lunatic.json' with { type: 'json' };
 import lycanthrope from './lycanthrope.json' with { type: 'json' };
 import marionette from './marionette.json' with { type: 'json' };
+import mastermind from './mastermind.json' with { type: 'json' };
 import mathematician from './mathematician.json' with { type: 'json' };
 import mayor from './mayor.json' with { type: 'json' };
 import mezepheles from './mezepheles.json' with { type: 'json' };
@@ -150,6 +154,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	acrobat,
 	alchemist,
 	alhadikhia,
+	alsaahir,
 	amnesiac,
 	angel,
 	apprentice,
@@ -172,6 +177,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	chef,
 	clockmaker,
 	courtier,
+	cultleader,
 	damsel,
 	deusexfiasco,
 	devilsadvocate,
@@ -185,6 +191,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	farmer,
 	fearmonger,
 	fibbin,
+	fiddler,
 	fisherman,
 	flowergirl,
 	fool,
@@ -222,6 +229,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	lunatic,
 	lycanthrope,
 	marionette,
+	mastermind,
 	mathematician,
 	mayor,
 	mezepheles,

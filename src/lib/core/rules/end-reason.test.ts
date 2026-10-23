@@ -49,17 +49,17 @@ describe('detectedEndReason', () => {
 });
 
 describe('endCharacters', () => {
-	it('lists those on the script or in a seat that can decide the game, in End game order', () => {
+	it('lists those on the script or in a seat that can decide the game, checked ones first', () => {
 		// Trouble Brewing has the Saint and the Mayor; the Klutz is only in a seat.
 		const { session } = castGame(['klutz', 'chef', 'saint', 'poisoner', 'imp']);
-		expect(endCharacters(session.game, characters)).toEqual(['saint', 'mayor', 'klutz']);
+		expect(endCharacters(session.game, characters)).toEqual(['mayor', 'saint', 'klutz']);
 	});
 
 	it('adds a saved reason that is no longer in play', () => {
 		const { session } = castGame(TB);
 		expect(endCharacters(session.game, characters, 'character:fiddler')).toEqual([
-			'saint',
 			'mayor',
+			'saint',
 			'fiddler'
 		]);
 	});

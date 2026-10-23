@@ -1,3 +1,10 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "executed-loses"
+			}
+		]
+	}
 }

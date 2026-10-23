@@ -58,7 +58,7 @@ describe('Evil Twin', () => {
 				(s) => ({ type: 'Execute', seatId: s[0] })
 			);
 			expect(gameEnds(session.game, testCharacters)).toMatchObject([
-				{ rule: 'evil-twin', winner: 'evil' }
+				{ rule: 'marked-executed', winner: 'evil' }
 			]);
 		});
 		it('Example 3: Wrong twin executed; night deaths stop', () => {
@@ -72,7 +72,7 @@ describe('Evil Twin', () => {
 				(s) => ({ type: 'Execute', seatId: s[4] })
 			);
 			expect(gameEnds(session.game, testCharacters)).toMatchObject([
-				{ rule: 'demon-dead', holds: [{ rule: 'evil-twin' }] }
+				{ rule: 'demon-dead', holds: [{ rule: 'marked-alive' }] }
 			]);
 		});
 		it.todo('Example 4: New good twin executed; evil wins');

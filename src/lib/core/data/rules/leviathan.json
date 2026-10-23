@@ -25,5 +25,20 @@
 			"alignment": "good",
 			"note": "The first good player who is executed."
 		}
+	},
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "executions-of-alignment",
+				"alignment": "good",
+				"count": 2,
+				"winner": "evil"
+			},
+			{
+				"kind": "survives-day",
+				"day": 5,
+				"winner": "evil"
+			}
+		]
 	}
 }

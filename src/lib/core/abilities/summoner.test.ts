@@ -54,7 +54,7 @@ describe('Summoner', () => {
 				(s) => ({ type: 'Execute', seatId: s[4] })
 			);
 			expect(gameEnds(session.game, testCharacters)).toMatchObject([
-				{ rule: 'summoner', winner: 'good' }
+				{ rule: 'dead-without-demon', winner: 'good' }
 			]);
 		});
 		it.todo('Example 3: Alchemist turned into Leviathan, revealed at dawn');
