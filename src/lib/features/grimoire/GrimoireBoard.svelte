@@ -10,7 +10,7 @@
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames } from './device-notes.ts';
+	import { endedGames, gameStarts } from './device-notes.ts';
 	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
@@ -58,7 +58,8 @@
 		onDeathTrigger,
 		abilityState,
 		stepNightNumbers,
-		todaysNominations
+		todaysNominations,
+		gameClock
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import {
@@ -260,11 +261,27 @@
 		// A line per special rule (Trevor, 2026-10-19) when they all fit; otherwise one line,
 		// as before. Both heights come from what is shown now, so the choice never flip-flops.
 		const extra = Math.max(0, modeLines.length - 1) * (lineHs[0] ?? 0);
-		const stackedH = stackRules ? titleH : titleH + extra;
+		// Game time takes a line of its own where the corner has room for it; otherwise it
+		// shares the join code's line, so the name and rules keep their room.
+		const clockShown = showGameClock && clockFits ? clockH : 0;
+		const baseH = titleH - clockShown;
+		const stackedH = stackRules ? baseH : baseH + extra;
 		const stacked = room(stackedH);
-		if (extra > 0 && stacked >= 2 * rootFont) return { room: stacked, stack: true };
-		return { room: room(stackRules ? titleH - extra : titleH), stack: false };
+		const stack = extra > 0 && stacked >= 2 * rootFont;
+		const h = stack ? stackedH : stackRules ? baseH - extra : baseH;
+		const withClock = room(h + clockH);
+		if (showGameClock && (withClock >= 2 * rootFont || !showRoomCode))
+			return { room: withClock, stack, clock: true };
+		return { room: stack ? stacked : room(h), stack, clock: false };
 	});
+	/** Whether Game time has a line of its own now; follows cornerFit, as stackRules does. */
+	// eslint-disable-next-line svelte/prefer-writable-derived -- cornerFit reads it back, so a derived would be circular
+	let clockFits = $state(true);
+	$effect(() => {
+		clockFits = cornerFit.clock;
+	});
+	/** The Game time line's height, kept while it shares a line so its fit can be judged again. */
+	let clockH = $state(0);
 	/** Whether the rules show a line each now; follows cornerFit once the lines are measured. */
 	// eslint-disable-next-line svelte/prefer-writable-derived -- cornerFit reads it back, so a derived would be circular
 	let stackRules = $state(false);
@@ -772,6 +789,8 @@
 		beginGame();
 	}
 	function beginGame() {
+		gameStarts.start(game.gameId);
+		startedRead += 1;
 		if (preferences.current.assistance.nightWalkthrough) runNight();
 		else endDay();
 	}
@@ -1195,6 +1214,25 @@
 	/** The join code under the script's name (a Board setting, on by default). */
 	const showRoomCode = $derived(!watching && preferences.current.assistance.roomCode);
 	const roomCode = $derived(roomHost().code);
+	/**
+	 * How long the game has run, from Start game to End game (Trevor, 2026-10-23), under the
+	 * join code; None until the first night begins. A Board setting, on by default.
+	 */
+	const showGameClock = $derived(!watching && preferences.current.assistance.gameClock);
+	let startedRead = $state(0);
+	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
+	let clockNow = $state(Date.now());
+	$effect(() => {
+		if (!showGameClock || startedAt === undefined || ended) return;
+		clockNow = Date.now();
+		const tick = setInterval(() => (clockNow = Date.now()), 1000);
+		return () => clearInterval(tick);
+	});
+	const gameLengthText = $derived(
+		startedAt === undefined
+			? t('common.none')
+			: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, ended?.endedAt))
+	);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -1802,8 +1840,22 @@
 						><span class="room-code-line"
 							>{t('room.joinCode')}
 							<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
-							></span
+							>{#if showGameClock && !clockFits}
+								·
+								<span data-testid="board-game-clock"
+									><span class="visually-hidden">{t('history.gameLength')}</span>
+									<span class="code" role="timer">{gameLengthText}</span></span
+								>{/if}</span
 						></button
+					>{/if}
+				<!-- The game's length (Trevor, 2026-10-23), kept in place before the first night so
+				     nothing moves when it starts. -->
+				{#if showGameClock && clockFits}<span
+						class="game-clock"
+						data-testid="board-game-clock"
+						bind:clientHeight={() => clockH, (h) => (h > 0 ? (clockH = h) : undefined)}
+						>{t('history.gameLength')}
+						<span class="code" role="timer">{gameLengthText}</span></span
 					>{/if}
 			</p>
 		{/if}
@@ -2604,7 +2656,17 @@
 		/* The corner lets taps through to the board; its buttons take them. */
 		pointer-events: auto;
 	}
-	.room-code .code {
+	/* Read only, in the join code's look, one line. */
+	.game-clock {
+		display: block;
+		overflow: hidden;
+		color: var(--on-surface-muted);
+		font-size: 0.7rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.room-code .code,
+	.game-clock .code {
 		color: var(--on-surface);
 		font-family: var(--font-control);
 		font-variant-numeric: tabular-nums;
