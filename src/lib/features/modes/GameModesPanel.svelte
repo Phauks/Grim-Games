@@ -601,8 +601,8 @@
 		padding-top: var(--space-2);
 		border-top: 1px solid var(--border);
 	}
-	/* A computer window: the preview sits to the right and scrolls on its own, held below the
-	   app header as Page's side column is. */
+	/* A computer window: the preview sits to the right and scrolls on its own, held at the
+	   top of the screen as Page's side column is. */
 	@media (min-width: 75rem) {
 		.new-game {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -610,8 +610,8 @@
 		}
 		.preview {
 			position: sticky;
-			top: calc(var(--tap-target) + env(safe-area-inset-top));
-			max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top));
+			top: calc(var(--app-top) + var(--space-2));
+			max-height: calc(100dvh - var(--app-top) - var(--space-4));
 			overflow-y: auto;
 			padding-bottom: var(--space-4);
 		}

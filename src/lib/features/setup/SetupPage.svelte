@@ -512,7 +512,7 @@
 			surface="page"
 			contained={false}
 			types={TYPES}
-			pinTop="calc(var(--tap-target) + env(safe-area-inset-top) + {Math.max(0, bandHeight - 1)}px)"
+			pinTop="calc(var(--app-top) + {Math.max(0, bandHeight - 1)}px)"
 			keepTypes={['traveller', 'fabled', 'loric']}
 			closedTypes={travellersChosenAtStart ? ['fabled', 'loric'] : ['traveller', 'fabled', 'loric']}
 			onSelect={(id) => {
