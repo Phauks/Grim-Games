@@ -5252,6 +5252,49 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	await expect(marks).toHaveCount(0);
 });
 
+// Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented
+// nomination tracking". The Town Crier's answer comes from the nominations recorded today
+// (https://wiki.bloodontheclocktower.com/Town_Crier), and is unknown until one is.
+test("the Town Crier's step reads today's recorded nominations", async ({ page }) => {
+	await startGame(page, 'Sects & Violets');
+	for (const [number, name] of [
+		[1, 'Town Crier'],
+		[2, 'Witch'],
+		[3, 'Fang Gu']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+
+	const step = await openStep(page, 'Town Crier');
+	let suggested = step.getByTestId('night-suggested');
+	await expect(suggested).toContainText('No nominations recorded today');
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(step).toBeHidden();
+
+	// The Witch (a Minion) nominates the Fang Gu.
+	await trackNominations(page);
+	const sheet = await openSeat(page, 2);
+	await sheet.getByTestId('sheet-nominated').tap();
+	await page.getByRole('dialog', { name: 'Who did Seat 2 nominate?' }).getByText('Seat 3').tap();
+	await closeSheet(page);
+	suggested = (await openStep(page, 'Town Crier')).getByTestId('night-suggested');
+	await expect(suggested).not.toContainText('No nominations recorded today');
+	await expect(suggested).toContainText('Yes');
+	await expect(suggested.locator('.because')).toContainText('Seat 2');
+});
+
 /** Turns on Settings > Storyteller > Track nominations. */
 async function trackNominations(page: Page) {
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();

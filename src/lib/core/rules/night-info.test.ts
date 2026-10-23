@@ -90,14 +90,25 @@ describe('Town Crier', () => {
 		expect(townCrierAnswer(g, seats[0], characters)).toMatchObject({ value: false, because: [] });
 	});
 
-	it('reads the current day log only: after New day it is no again', () => {
+	it('reads the current day log only: after New day nothing is recorded again', () => {
 		const { session, ctx, seats } = game(snv, (s) => ({
 			type: 'Nominate',
 			nominator: s[4],
 			nominee: s[0]
 		}));
 		const next = run(session, ctx, { type: 'NewDay' });
-		expect(townCrierAnswer(next.game, seats[0], characters)).toMatchObject({ value: false });
+		expect(townCrierAnswer(next.game, seats[0], characters)).toMatchObject({ kind: 'none' });
+	});
+
+	// Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented
+	// nomination tracking". With no nominations recorded the answer is unknown, never no.
+	it('gives no answer until a nomination is recorded today', () => {
+		const { game: g, seats } = game(snv);
+		expect(townCrierAnswer(g, seats[0], characters)).toMatchObject({
+			kind: 'none',
+			reason: 'No nominations recorded today',
+			because: []
+		});
 	});
 
 	it('is unreliable while the Town Crier is poisoned', () => {
