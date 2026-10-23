@@ -55,9 +55,11 @@
 		onDraw?: (seatId: SeatId) => void;
 		/** Edits this player's notes, which live in the board's Notes sheet. */
 		onNotes?: (seatId: SeatId) => void;
+		/** A nomination was recorded or changed: special rules may act on it (NominationAsk). */
+		onNominated?: (nomination: { nominator: SeatId; nominee: SeatId }) => void;
 	}
 
-	let { open = $bindable(), grimoire, seatId, onDraw, onNotes }: Props = $props();
+	let { open = $bindable(), grimoire, seatId, onDraw, onNotes, onNominated }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -331,11 +333,12 @@
 			side === 'made'
 				? { nominator: seatId, nominee: other }
 				: { nominator: other, nominee: seatId };
-		grimoire.run(
+		const done = grimoire.run(
 			entry
 				? { type: 'EditNomination', entryId: entry.entryId, ...pair }
 				: { type: 'Nominate', ...pair }
 		);
+		if (done) onNominated?.(pair);
 	}
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let menuOpen = $state(false);

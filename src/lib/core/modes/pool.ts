@@ -183,6 +183,9 @@ export function runsPart(mode: { parts: CombinedParts }, part: ModePart | RulePa
 		case 'demonAttacks':
 			// The walk-through names the next target on the Demon's step (NightStrip).
 			return !p.demonAttacks || p.demonAttacks.kind === 'script-order';
+		case 'nominations':
+			// The board offers each effect when a nomination is recorded (NominationPrompt).
+			return true;
 		case 'nightSteps':
 			// A one-night step for the dead joins that night's order (night-steps.ts).
 			return (p.nightSteps ?? []).every((s) => s.when === 'one-night' && s.dead === true);

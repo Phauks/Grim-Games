@@ -5,7 +5,7 @@ const PAGE = 'https://beardytas.com/garden-of-djinn/the-warrens/';
 /**
  * The Warrens' rule (Script World Cup 2025): while 5 or more players live, an evil player who
  * nominates another living evil player swaps characters with them on the spot. Travellers are
- * left out. The app doesn't record who nominated whom, so the Storyteller runs it; they learn
+ * left out. When a nomination is recorded the board offers the swap (`nominations`); they learn
  * their new characters that night, as the page says. The page names no author. Source: PAGE.
  */
 export const WARRENS: SpecialRule = {
@@ -22,6 +22,7 @@ export const WARRENS: SpecialRule = {
 		text: [
 			'If 5 or more players live, evil players who nominate other living evil players (not Travellers) immediately swap characters'
 		],
+		nominations: [{ kind: 'evil-swap', minAlive: 5 }],
 		ruleChanges: [
 			{
 				instructions:

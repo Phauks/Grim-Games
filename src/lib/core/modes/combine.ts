@@ -50,7 +50,8 @@ const LISTS = [
 	'daySteps',
 	'nightSteps',
 	'text',
-	'countChanges'
+	'countChanges',
+	'nominations'
 ] as const satisfies readonly (keyof CombinedParts)[];
 
 export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Combined {
