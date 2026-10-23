@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 15;
+export const SAVED_GAME_VERSION = 16;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -185,6 +185,14 @@ const migrateV13toV14: Migration = (doc) => ({ ...doc, schemaVersion: 14 });
  */
 const migrateV14toV15: Migration = (doc) => ({ ...doc, schemaVersion: 15 });
 
+/**
+ * Version 16 (2026-10-23) added the filled symbol of a generic reminder or bank ∞ token
+ * (`symbolFill`, the `ReminderSymbolFillSet` event). The log needs no change: an older
+ * reminder has none. The bump makes older builds refuse a version 16 save instead of failing
+ * on the unknown event.
+ */
+const migrateV15toV16: Migration = (doc) => ({ ...doc, schemaVersion: 16 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -200,7 +208,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	11: migrateV11toV12,
 	12: migrateV12toV13,
 	13: migrateV13toV14,
-	14: migrateV14toV15
+	14: migrateV14toV15,
+	15: migrateV15toV16
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {

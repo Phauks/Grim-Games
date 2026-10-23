@@ -422,7 +422,7 @@
 	{#snippet titleEnd()}
 		<span class="ink"
 			><IconButton
-				icon="rename"
+				icon="edit"
 				label="Edit player name"
 				disabled={editingName}
 				onclick={editName}

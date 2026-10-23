@@ -4090,7 +4090,9 @@ test("the Investigator's own seat fits its Wrong; its Minion is marked and warns
 	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
 		1
 	);
-	await expect(page.getByText(/never goes on its character's own player/)).toBeVisible();
+	// The Investigator is no Minion, so its Minion never fits its own seat (Trevor, 2026-10-23:
+	// no rule about self is needed).
+	await expect(page.getByText(/the character type is not one it goes on/)).toBeVisible();
 });
 
 test('Resume game names a game’s alternative mode beside its script', async ({ page }) => {
@@ -4288,6 +4290,57 @@ test('"+ New token" makes a reusable ∞ token whose copies carry its look', asy
 	await expect(text).toBeHidden();
 	await expect(changed).toHaveCount(0);
 	await expect(placed).toHaveCount(1);
+});
+
+test('an ∞ token can have a filled symbol, and copying one is not unusual', async ({ page }) => {
+	// Trevor (2026-10-23): fill is set on each ∞ token, a filled icon is drawn, and an ∞ token
+	// has no "Uncommon" warning when copied.
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	await bank.getByRole('button', { name: 'New token' }).tap();
+	const filled = page.getByRole('checkbox', { name: 'Filled symbol' });
+	const fillLabel = page.getByText('Filled symbol', { exact: true });
+	// Only for an icon symbol, like its colour.
+	await expect(filled).toBeDisabled();
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	await fillLabel.tap();
+	await expect(filled).toBeChecked();
+	await page.keyboard.press('Escape');
+	await expect(fillLabel).toBeHidden();
+	const token = bank.getByRole('button', { name: 'Generic reminder' }).filter({
+		has: page.locator('[data-symbol="ph:star"]')
+	});
+	// Drawn, not an empty box.
+	await expect(token.locator('[data-icon="ph:star-fill"] svg')).toBeAttached();
+
+	// A copy on a seat starts filled; its own sheet draws it as an outline again.
+	await token.tap();
+	await page
+		.getByRole('dialog', { name: /^Put .* on$/ })
+		.getByRole('button', { name: /None Seat 1/ })
+		.tap();
+	const placed = page
+		.locator('.chip-slot[data-seat="1"]')
+		.getByTestId('board-reminder')
+		.filter({
+			has: page.locator('[data-symbol="ph:star"]')
+		});
+	await expect(placed.locator('[data-icon="ph:star-fill"] svg')).toBeAttached();
+	await placed.tap();
+	await fillLabel.tap();
+	await expect(filled).not.toBeChecked();
+	await page.keyboard.press('Escape');
+	await expect(placed.locator('[data-icon="ph:star-fill"]')).toHaveCount(0);
+	await expect(placed.locator('[data-icon^="ph:star"] svg')).toBeAttached();
+	// The bank's token stays filled.
+	await expect(token.locator('[data-icon="ph:star-fill"]')).toBeAttached();
+
+	// Duplicating an ∞ reminder gives no "Uncommon" warning.
+	await placed.tap();
+	await page.getByRole('button', { name: 'More reminder actions' }).tap();
+	await page.getByRole('button', { name: 'Duplicate reminder' }).tap();
+	await expect(page.getByText('Uncommon', { exact: true })).toHaveCount(0);
 });
 
 test('the generic ∞ reminder is always in the bank and can carry a few words', async ({ page }) => {

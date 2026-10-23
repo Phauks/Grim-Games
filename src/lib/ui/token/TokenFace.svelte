@@ -198,12 +198,14 @@
 		stroke-width: 1;
 		opacity: 0.6;
 	}
+	/* Character icon size (Settings > Tokens) scales it about the middle. */
 	img {
 		position: absolute;
-		left: 13%;
-		top: 13%;
-		width: 74%;
-		height: 74%;
+		left: 50%;
+		top: 50%;
+		width: calc(74% * var(--token-icon, 1));
+		height: calc(74% * var(--token-icon, 1));
+		translate: -50% -50%;
 		object-fit: contain;
 	}
 	.name {

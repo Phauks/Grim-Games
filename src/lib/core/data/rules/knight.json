@@ -1,0 +1,10 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"info": true,
+			"seat": "any",
+			"types": ["townsfolk", "outsider", "minion", "traveller"],
+			"note": "Two non-Demon players shown to the Knight at setup; with the Vortox in play one of them may be the Demon."
+		}
+	}
+}

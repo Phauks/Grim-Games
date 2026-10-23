@@ -1,0 +1,11 @@
+{
+	"reminderTargets": {
+		"Correct": {
+			"seat": "self",
+			"note": "On the Juggler, one per correct guess."
+		}
+	},
+	"answers": {
+		"question": "correct-guesses"
+	}
+}

@@ -1,0 +1,13 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "The one good player who learns a Widow is in play."
+		},
+		"Poisoned": {
+			"seat": "any",
+			"note": "Any player the Widow poisons, possibly the Widow itself."
+		}
+	}
+}

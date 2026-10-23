@@ -1,3 +1,17 @@
 {
-	"reminderPrompts": { "Alive": "revive" }
+	"reminderPrompts": {
+		"Alive": "revive"
+	},
+	"reminderTargets": {
+		"Alive": {
+			"seat": "other",
+			"types": ["townsfolk"],
+			"life": "dead",
+			"note": "A dead Townsfolk the Professor brings back to life."
+		},
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Professor after they use their ability."
+		}
+	}
 }

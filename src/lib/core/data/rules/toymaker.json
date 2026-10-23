@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"Final Night: No Attack": {
+			"seat": "any",
+			"types": ["demon"],
+			"note": "On the Demon until it skips an attack."
+		}
+	}
+}

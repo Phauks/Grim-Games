@@ -1,0 +1,16 @@
+{
+	"reminderTargets": {
+		"Day 1": {
+			"note": "On the Riot on day 1.",
+			"seat": "self"
+		},
+		"Day 2": {
+			"note": "On the Riot on day 2.",
+			"seat": "self"
+		},
+		"Day 3": {
+			"note": "On the Riot on day 3.",
+			"seat": "self"
+		}
+	}
+}

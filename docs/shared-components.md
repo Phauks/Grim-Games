@@ -43,6 +43,7 @@ the shared one (a prop, a snippet) instead of copying it.
 | A text button                                                     | `ui/primitives/Button.svelte` (`solid`, `quiet`, `accent`, `danger` red fill, `field`); every variant has a 3:1 edge from the theme (`--button-edge`, `--accent-edge`, `--danger-edge`, tested in `themes.test.ts`)                                                                         | review                                  |
 | Delete, remove, clear (not Account settings¹)                     | `ui/primitives/DeleteButton.svelte`                                                                                                                                                                                                                                                         | `grim/delete-button`                    |
 | A close or dismiss X                                              | `ui/primitives/IconButton.svelte` with `icon="close"`; the primitives' own X is `data-part="close-trigger"`, round with the shared tint (base.css)                                                                                                                                          | `grim/close-button`, `e2e/mouse.e2e.ts` |
+| An icon, or a button's icon                                       | a catalogue slot (`ui/icons/catalogue.ts`) through `<Icon name>` or a button's `icon`, never an icon package; one slot per meaning: edit, rename or change in place = `edit` (the pencil); `pen` and `eraser` are the scratch pad's tools only                                              | `grim/icon-meaning`                     |
 | A pill button or on/off chip                                      | `ui/primitives/Chip.svelte` (`pressed`, `marked`)                                                                                                                                                                                                                                           | review                                  |
 | A number with − and +                                             | `ui/primitives/Stepper.svelte` (`typeable` lets the number be typed; `oncommit` on Enter)                                                                                                                                                                                                   | review                                  |
 | An icon-only link to an outside page (the wiki)                   | `ui/primitives/IconButton.svelte` with `href` (new tab, `rel="noopener"`), so it looks and hovers like the X                                                                                                                                                                                | `e2e/badges.e2e.ts`                     |
@@ -96,7 +97,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Table                                                                                             | Rules key                             | State         |
 | ------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------- |
 | Reminder prompts (`rules/reminder-prompts.ts`)                                                    | `reminderPrompts`                     | moved         |
-| Reminder targets (`reminder-targets.data.ts`)                                                     |                                       | not yet moved |
+| Reminder targets (`reminder-targets.ts`)                                                          | `reminderTargets`                     | moved         |
 | Day reminders (`day-reminders.data.ts`)                                                           |                                       | not yet moved |
 | Setup reminders and setup counts (`setup-reminders.data.ts`, `setup-modifiers.ts`)                |                                       | not yet moved |
 | Death causes (`death-causes.data.ts`)                                                             |                                       | not yet moved |
@@ -104,11 +105,12 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Night text overrides (`night-text-overrides.data.ts`)                                             |                                       | not yet moved |
 | On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                  | `onDeath`                             | moved         |
 | Protection (`ability.ts`, `night-alerts.ts`)                                                      | `protects`                            | moved         |
-| Night killers (`night-alerts.ts`, `night-deaths.ts`)                                              |                                       | not yet moved |
+| Night killers (`night-alerts.ts` `NIGHT_KILLERS`)                                                 | `kills`                               | moved         |
+| Death checks (`night-deaths.ts`, the Gambler and Acrobat)                                         |                                       | not yet moved |
 | Kill redirect and first-death survival (`ability.ts`, `first-death.ts`)                           | `redirectsKill`, `survivesFirstDeath` | moved         |
 | Nomination abilities (`rules/nominations.ts`)                                                     | `onNominated`                         | moved         |
 | Acts when dead (`dead-characters.ts`)                                                             | `actsWhenDead`                        | moved         |
-| Night information and answers (`night-info.ts`)                                                   |                                       | not yet moved |
+| Night information and answers (`night-info.ts`)                                                   | `learns`, `answers`                   | moved         |
 | Game end (`game-end.ts`, `end-reason.ts`, `becomes-demon.ts`)                                     |                                       | not yet moved |
 
 ## Lists that only shrink
@@ -116,6 +118,13 @@ character: a rule becomes a behaviour with parameters that any character can use
 Some lints start with a list of files written before the lint (for example
 `LOCAL_STORAGE_TODO` in `eslint.config.js`). Move a file onto the shared piece and take it off
 the list. Never add a file to one.
+
+`npm run lint:lines` (`scripts/check-lines.ts`) keeps every source file at 800 lines or fewer
+(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its
+`LARGE_FILE_TODO` holds the files that were longer when it began; split one into modules with a
+small surface and take it off the list (a stale entry is reported, not a failure, so
+parallel splits never break each other). The plan for each is in the project's
+`refactor/large-files.md`.
 
 ## Still to share
 

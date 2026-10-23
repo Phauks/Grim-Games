@@ -581,20 +581,31 @@ test('reminder highlight can be switched and restyled, and the owner icon recolo
 	});
 });
 
-test('∞ token symbols can be drawn filled', async ({ page }) => {
-	// Trevor (2026-10-23): "for infinite tokens, allow setting to turn on fill for the icons".
+test('character icon size is set for character tokens and reminder tokens apart', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): "character icon size should be a setting on character tokens and
+	// reminder tokens". Each preview shows its own.
 	await page.goto('/');
 	const dialog = await openTokens(page);
-	const star = dialog
-		.getByTestId('reminder-preview')
-		.locator('[data-symbol="ph:star"] [data-icon]');
-	await expect(star).toHaveAttribute('data-icon', /^ph:star(?!-fill)/);
-	await dialog.getByText('Filled ∞ token symbols', { exact: true }).tap();
-	await expect(star).toHaveAttribute('data-icon', 'ph:star-fill');
+	const tokenIcon = dialog.getByTestId('token-preview').locator('img').first();
+	const reminderIcon = dialog.getByTestId('reminder-preview').locator('img').first();
+	const width = async (icon: typeof tokenIcon) => (await icon.boundingBox())!.width;
+	const tokenBefore = await width(tokenIcon);
+	const reminderBefore = await width(reminderIcon);
+	const sliders = dialog.getByRole('slider', { name: 'Character icon size' });
+	await expect(sliders).toHaveCount(2);
+	await sliders.first().fill('0.5');
+	await expect.poll(() => width(tokenIcon)).toBeCloseTo(tokenBefore / 2, 0);
+	expect(await width(reminderIcon)).toBeCloseTo(reminderBefore, 0);
+	await sliders.last().fill('1.25');
+	await expect.poll(() => width(reminderIcon)).toBeCloseTo(reminderBefore * 1.25, 0);
 	const saved = await page.evaluate(
 		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
 	);
-	expect(saved.genericIconFill).toBe(true);
+	expect(saved).toMatchObject({ tokenIconScale: 0.5, reminderIconScale: 1.25 });
+	// The fill of ∞ symbols is each token's own now, not a setting here.
+	await expect(dialog.getByText('Filled ∞ token symbols', { exact: true })).toHaveCount(0);
 });
 
 test('night leaves can be switched off, or carry night order numbers', async ({ page }) => {

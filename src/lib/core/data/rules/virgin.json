@@ -1,4 +1,10 @@
 {
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Virgin the first time they are nominated."
+		}
+	},
 	"onNominated": {
 		"by": "townsfolk",
 		"effect": "execute-nominator"

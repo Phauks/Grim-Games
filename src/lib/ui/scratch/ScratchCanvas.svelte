@@ -8,6 +8,7 @@
 		type ScratchStroke,
 		type ScratchTool
 	} from '#lib/core/scratch/scratch.ts';
+	import { rememberPadShape } from './pad-shape.svelte.ts';
 	import { drawAll, drawSegment, finish, inkColours, type InkColours } from './render.ts';
 	import type { ScratchPadState } from './scratch-store.svelte.ts';
 
@@ -80,6 +81,8 @@
 	// Size the backing store for sharp lines, then draw everything.
 	$effect(() => {
 		if (!width || !height) return;
+		// So the list previews take this screen's pad shape.
+		rememberPadShape(width, height);
 		const ratio = window.devicePixelRatio || 1;
 		canvas.width = Math.round(width * ratio);
 		canvas.height = Math.round(height * ratio);

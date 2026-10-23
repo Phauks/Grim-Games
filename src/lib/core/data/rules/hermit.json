@@ -1,0 +1,19 @@
+{
+	"reminderTargets": {
+		"1": {
+			"seat": "any",
+			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates.",
+			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
+		},
+		"2": {
+			"seat": "any",
+			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates.",
+			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
+		},
+		"3": {
+			"seat": "any",
+			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates.",
+			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
+		}
+	}
+}

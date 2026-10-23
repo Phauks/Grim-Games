@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"Amigo": {
+			"seat": "other",
+			"alignment": "same",
+			"note": "Another player who shares the Gnome's alignment."
+		}
+	}
+}
