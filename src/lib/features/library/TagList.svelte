@@ -98,7 +98,7 @@
 			<li>
 				<span class="tag static">{label.name}</span>
 				<IconButton
-					icon="rename"
+					icon="edit"
 					label={t('library.renameNamed', { name: label.name })}
 					onclick={() => startRename(kind, label)}
 				/>

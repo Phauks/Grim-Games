@@ -4,7 +4,7 @@
  * `reminders` and `remindersGlobal` while it is in play (`reminderGroups` has the exceptions).
  */
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-import { gainedAbilities, type Night } from '#lib/core/rules/index.ts';
+import { gainedAbilities, reminderOffered, type Night } from '#lib/core/rules/index.ts';
 import { isBagDisabled, isNotDealt } from '#lib/core/rules/bag-characters.ts';
 import { REMINDER_PLACEHOLDERS } from '#lib/core/rules/reminder-placeholders.data.ts';
 import {
@@ -313,6 +313,8 @@ export function bankReminders(
 	const out: BankReminder[] = [];
 	for (const { character, labels } of reminderGroups(game, characters)) {
 		for (const label of labels) {
+			// A token that doesn't exist in this game yet (the Village Idiot's Drunk with one).
+			if (!reminderOffered(game, { characterId: character.id, label }, characters)) continue;
 			const key = reminderKey({ characterId: character.id, label });
 			const n = left.get(key) ?? 1;
 			const now = focus?.characterId === character.id && focus.labels.includes(label);

@@ -12,8 +12,11 @@ describe('reminder target labels', () => {
 	// https://wiki.bloodontheclocktower.com/Fortune_Teller: the red herring is a good player.
 	it('reads the board rules for a real reminder', () => {
 		expect(reminderTargetLabel('fortuneteller', 'Red Herring', nameOf)).toBe('Good players');
-		// https://wiki.bloodontheclocktower.com/Washerwoman: shown a Townsfolk other than themself.
-		expect(reminderTargetLabel('washerwoman', 'Townsfolk', nameOf)).toBe('Townsfolk, not self');
+		// https://wiki.bloodontheclocktower.com/Washerwoman: shown a Townsfolk, who may be
+		// themself (Trevor, 2026-10-23).
+		expect(reminderTargetLabel('washerwoman', 'Townsfolk', nameOf)).toBe('Townsfolk');
+		// https://wiki.bloodontheclocktower.com/Professor: never brings themself back.
+		expect(reminderTargetLabel('professor', 'Alive', nameOf)).toBe('Dead Townsfolk, not self');
 	});
 
 	it('has no words for a reminder without a rule', () => {

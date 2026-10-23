@@ -4,5 +4,11 @@
 	},
 	"kills": {
 		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "Any player the Imp attacks, including itself or a player already dead."
+		}
 	}
 }

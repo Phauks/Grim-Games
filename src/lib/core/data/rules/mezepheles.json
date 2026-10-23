@@ -1,0 +1,13 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "The Mezepheles once someone has turned evil."
+		},
+		"Turns Evil": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "The first good player to say the secret word, who may be the Mezepheles if it is good."
+		}
+	}
+}

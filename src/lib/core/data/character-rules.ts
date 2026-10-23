@@ -9,6 +9,7 @@
  * TypeScript move here one per PR (the list is in docs/shared-components.md).
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
+import { readReminderTargets, type TargetRule } from './target-rules.ts';
 import type { ReminderLabel } from './types.ts';
 import {
 	checkKeys,
@@ -56,6 +57,8 @@ export interface CharacterRules {
 	 * only its own (`targets: self`, the Gambler), and ignoring protection (the Assassin).
 	 */
 	kills?: Kills;
+	/** Where each of its reminder tokens may go, by label (`target-rules.ts`). */
+	reminderTargets?: Readonly<Record<ReminderLabel, TargetRule>>;
 }
 
 export const KILLS_BY = ['demon', 'other'] as const;
@@ -80,7 +83,8 @@ export const RULE_KEYS = [
 	'protects',
 	'redirectsKill',
 	'survivesFirstDeath',
-	'kills'
+	'kills',
+	'reminderTargets'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -140,6 +144,15 @@ export function parseCharacterRules(
 				issues.add(`${at}.spentToken`, 'not one of this character’s reminders');
 			} else if (token !== undefined) rules.survivesFirstDeath = { spentToken: token };
 		}
+	}
+	if (raw.reminderTargets !== undefined) {
+		const targets = readReminderTargets(
+			raw.reminderTargets,
+			`${path}.reminderTargets`,
+			issues,
+			reminders
+		);
+		if (targets) rules.reminderTargets = targets;
 	}
 	if (raw.kills !== undefined) {
 		const at = `${path}.kills`;

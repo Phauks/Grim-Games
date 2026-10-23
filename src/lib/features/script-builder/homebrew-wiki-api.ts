@@ -65,8 +65,18 @@ export function creditKey(name: string): string {
 		.replace(/[^a-z0-9]/g, '');
 }
 
-/** Credits for the homebrew characters on a collection's script, from the grid feed. */
-export function readCredits(grid: unknown, script: readonly unknown[]): HomebrewCredit[] {
+/**
+ * Credits for the homebrew characters on a collection's script, from the grid feed. Names are
+ * not unique on the wiki: a second Glassblower gets the page `c/call-of-the-executioner/
+ * glassblower-2` (Trevor, 2026-10-23). So a character in the collection itself, whose page is
+ * under `c/<collection>/`, is matched first; a name the collection has no row for falls back
+ * to the first character of that name elsewhere.
+ */
+export function readCredits(
+	grid: unknown,
+	script: readonly unknown[],
+	collection?: string
+): HomebrewCredit[] {
 	const wanted = new Set(
 		script.flatMap((entry) =>
 			isObject(entry) && entry.id !== '_meta' && text(entry.name)
@@ -75,14 +85,24 @@ export function readCredits(grid: unknown, script: readonly unknown[]): Homebrew
 		)
 	);
 	if (!Array.isArray(grid)) return [];
-	const seen = new Set<string>();
-	return grid.flatMap((row): HomebrewCredit[] => {
+	const rows = grid.flatMap((row) => {
 		if (!isObject(row)) return [];
 		const name = text(row.name);
-		const key = creditKey(name);
 		const page = text(row.page).replace(/^\/+/, '');
-		if (!wanted.has(key) || seen.has(key) || !page) return [];
+		return wanted.has(creditKey(name)) && page ? [{ name, creator: text(row.creator), page }] : [];
+	});
+	const own = collection ? `c/${collection}/` : undefined;
+	const ordered = own
+		? [
+				...rows.filter((r) => r.page.startsWith(own)),
+				...rows.filter((r) => !r.page.startsWith(own))
+			]
+		: rows;
+	const seen = new Set<string>();
+	return ordered.flatMap(({ name, creator, page }): HomebrewCredit[] => {
+		const key = creditKey(name);
+		if (seen.has(key)) return [];
 		seen.add(key);
-		return [{ name, creator: text(row.creator), url: `${HOMEBREW_WIKI_ORIGIN}/${page}` }];
+		return [{ name, creator, url: `${HOMEBREW_WIKI_ORIGIN}/${page}` }];
 	});
 }

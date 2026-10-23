@@ -1,5 +1,16 @@
 {
 	"kills": {
 		"by": "demon"
+	},
+	"reminderTargets": {
+		"About To Die": {
+			"seat": "any",
+			"note": "The player secretly executed when a zero-vote test is forced."
+		},
+		"Dead": {
+			"seat": "any",
+			"note": "Any player who dies to Legion at night.",
+			"ambiguous": "The How to Run section never mentions the Dead token, so its placement is inferred from the ability."
+		}
 	}
 }

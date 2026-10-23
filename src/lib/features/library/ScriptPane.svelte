@@ -216,11 +216,7 @@
 					onclick={() => void unlink()}
 				/>
 			{/if}
-			<IconButton
-				icon="rename"
-				label={t('library.renameScript')}
-				onclick={() => (renaming = true)}
-			/>
+			<IconButton icon="edit" label={t('library.renameScript')} onclick={() => (renaming = true)} />
 			<IconButton
 				icon="changeKind"
 				label={t('library.changeKind')}
@@ -240,7 +236,7 @@
 		>
 			{#snippet extraActions()}
 				<IconButton
-					icon="buildScript"
+					icon="edit"
 					label={t('library.edit')}
 					disabled={!editable || viewingUnsaved}
 					onclick={() => editable && editInBuilder(editable.scriptId)}

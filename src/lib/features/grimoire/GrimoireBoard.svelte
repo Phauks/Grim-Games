@@ -96,7 +96,16 @@
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
-	import { nameBox, placeNames, type Box } from './name-placement.ts';
+	import type { Box } from './name-placement.ts';
+	import {
+		avoidBoxes,
+		cornerObstacles,
+		keepClear,
+		nameBoxes as boardNameBoxes,
+		rimToward,
+		toPercent as boardToPercent,
+		toPx as boardToPx
+	} from './board-geometry.ts';
 	import { cornerRoom } from './corner-room.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
@@ -231,56 +240,25 @@
 		void preferences.current;
 		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 	});
-	const toPx = (p: SeatPoint) => ({ x: (p.x / 100) * width, y: (p.y / 100) * height });
-	const toPercent = (p: { x: number; y: number }): SeatPoint => ({
-		x: (p.x / width) * 100,
-		y: (p.y / height) * 100
-	});
-	/** The point on a seat's rim facing `to`, in % of the board (where a tether starts). */
-	function rimToward(seat: SeatPoint, to: SeatPoint): SeatPoint {
-		const a = toPx(seat);
-		const b = toPx(to);
-		const d = Math.hypot(b.x - a.x, b.y - a.y);
-		if (d < 1) return seat;
-		const r = Math.min(size / 2, d);
-		return toPercent({ x: a.x + ((b.x - a.x) / d) * r, y: a.y + ((b.y - a.y) / d) * r });
-	}
-	/** Each seat's name, its box in px (the badge: 0.8rem text, padding and border). */
-	const nameBoxes = $derived.by(() => {
-		if (width <= 0 || height <= 0) return [];
-		const font = rootFont * 0.8;
-		const lineHeight = Math.ceil(font * 1.2 + font * 0.3 + 2);
-		const widths = seats.map((seat, i) => {
-			const name = seat.playerName ?? `Seat ${i + 1}`;
-			return Math.min(size + 2 * unit, name.length * font * 0.55 + font + 2);
-		});
-		const centres = shown.map(toPx);
-		const places = placeNames({
-			seats: centres,
+	const boardSize = $derived({ width, height });
+	const toPx = (p: SeatPoint) => boardToPx(p, boardSize);
+	const toPercent = (p: { x: number; y: number }): SeatPoint => boardToPercent(p, boardSize);
+	const nameBoxes = $derived.by(() =>
+		boardNameBoxes({
+			names: seats.map((seat, i) => seat.playerName ?? `Seat ${i + 1}`),
+			seats: shown,
 			size,
-			widths,
-			height: lineHeight,
-			obstacles: [],
-			board: { width, height }
-		});
-		return places.map((place, i) => ({
-			place,
-			box: nameBox(centres[i], place, size, widths[i], lineHeight)
-		}));
-	});
+			unit,
+			rootFont,
+			board: boardSize
+		})
+	);
 	/**
 	 * The script's name in the corner keeps clear of every seat and name (Trevor, 2026-10-18),
 	 * cut short with an ellipsis where it would reach one (always the lower left).
 	 */
 	const cornerFit = $derived.by(() => {
-		const boxes = shown.flatMap((p, i) => {
-			const c = toPx(p);
-			const name = nameBoxes[i]?.box;
-			// The token, with the name pill straddling its lower rim (PlayerNameMark).
-			const off = boardLooks.current.nameOffset;
-			const token = { x: c.x, y: c.y + (0.05 + off / 2) * size, w: size, h: (1.1 + off) * size };
-			return name ? [token, name] : [token];
-		});
+		const boxes = cornerObstacles(shown, nameBoxes, size, boardLooks.current.nameOffset, boardSize);
 		// The name sits 4px (--space-1) in from the edges.
 		const room = (h: number) => cornerRoom(boxes, { width, height }, h + 4, 4 + 8);
 		// A line per special rule (Trevor, 2026-10-19) when they all fit; otherwise one line,
@@ -354,26 +332,15 @@
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
 	function avoidFor(i: number): Box[] {
-		const out: Box[] = [];
-		const c = toPx(shown[i]);
-		const hasFace = seats[i]?.characterId !== undefined;
-		if (!hasFace) {
-			const name = nameBoxes[i]?.box;
-			if (name) out.push(name);
-		} else {
-			// The badge pill straddles the token's lower rim (PlayerNameMark).
-			// Lower by the badge offset (Board and tokens).
-			const off = boardLooks.current.nameOffset;
-			out.push({ x: c.x, y: c.y + (0.5 + off) * size, w: 0.9 * size, h: 0.18 * size });
-		}
-		if (seats[i]?.dead) {
-			out.push({ x: c.x - 0.41 * size, y: c.y + 0.37 * size, w: 0.38 * size, h: 0.38 * size });
-		}
-		// The note mark, lower right (SeatToken).
-		if (seats[i]?.note) {
-			out.push({ x: c.x + 0.39 * size, y: c.y + 0.39 * size, w: 0.3 * size, h: 0.3 * size });
-		}
-		return out;
+		return avoidBoxes({
+			centre: toPx(shown[i]),
+			size,
+			hasFace: seats[i]?.characterId !== undefined,
+			name: nameBoxes[i]?.box,
+			dead: !!seats[i]?.dead,
+			note: !!seats[i]?.note,
+			nameOffset: boardLooks.current.nameOffset
+		});
 	}
 	/**
 	 * Every seat's reminders, laid out together so one seat's never cover another's (Trevor,
@@ -403,30 +370,16 @@
 				chip: Math.max(chip, tapPx),
 				avoid: avoidFor(i)
 			})),
-			// The Set up button and the Fabled and Loric in the middle stay clear and tappable.
-			[
-				...(centreW > 0 ? [{ x: width / 2, y: height / 2, w: centreW + 12, h: centreH + 12 }] : []),
-				// Fabled and Loric along the edge or grouped, in the top left corner.
-				...(edgeW > 0 && boardLooks.current.rulesAt !== 'middle'
-					? [{ x: edgeW / 2, y: edgeH / 2, w: edgeW + 12, h: edgeH + 12 }]
-					: []),
-				// The day timer, in the top right corner.
-				...(timerW > 0 && showTimer
-					? [{ x: width - timerW / 2, y: timerH / 2, w: timerW + 12, h: timerH + 12 }]
-					: []),
-				// The script's name in a lower corner.
-				...(titleW > 0
-					? [
-							{
-								x: titleW / 2,
-								y: height - titleH / 2,
-								w: titleW + 12,
-								h: titleH + 12
-							}
-						]
-					: [])
-			],
-			{ width, height }
+			// The Set up button and the Fabled and Loric in the middle, the Fabled and Loric along
+			// the edge, the day timer and the script's name stay clear and tappable.
+			keepClear({
+				centre: { w: centreW, h: centreH },
+				edge: boardLooks.current.rulesAt !== 'middle' ? { w: edgeW, h: edgeH } : undefined,
+				timer: showTimer ? { w: timerW, h: timerH } : undefined,
+				title: { w: titleW, h: titleH },
+				board: boardSize
+			}),
+			boardSize
 		);
 		return fitted.at.map((points) => points.map(toPercent));
 	});
@@ -1845,7 +1798,7 @@
 			{#each seats as seat, i (seat.seatId)}
 				{#if !looseMode && reminderDrag === undefined}
 					{#each fan[i] ?? [] as p, k (k)}
-						{@const from = rimToward(shown[i], p)}
+						{@const from = rimToward(shown[i], p, boardSize, size)}
 						<line
 							x1={from.x}
 							y1={from.y}
@@ -2618,7 +2571,7 @@
 		   smallest phones so six buttons still fit at 320px. No dividing line: the dashed
 		   outline shows the board's edge while arranging. */
 		gap: min(var(--space-2), 1.5vw);
-		padding: var(--space-2) var(--space-2) 0;
+		padding: var(--menu-inset) var(--menu-inset) 0;
 	}
 	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
 	   on any image (Trevor, 2026-10-18). */

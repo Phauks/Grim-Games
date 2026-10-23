@@ -2,5 +2,11 @@
 	"actsWhenDead": true,
 	"onDeath": {
 		"by": "any"
+	},
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "any",
+			"note": "Any one player the Storyteller picks when the Sweetheart dies."
+		}
 	}
 }

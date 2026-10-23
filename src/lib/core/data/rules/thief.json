@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Negative Vote": {
+			"seat": "other",
+			"note": "The player the Thief chooses, never themself; dead players allowed."
+		}
+	}
+}

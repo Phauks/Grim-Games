@@ -143,7 +143,10 @@ export function parseCharacter(
 		firstNight = readNumber(raw, 'firstNight', path, issues);
 		otherNight = readNumber(raw, 'otherNight', path, issues);
 		if (raw.rules !== undefined)
-			rules = parseCharacterRules(raw.rules, `${path}.rules`, issues, reminders);
+			rules = parseCharacterRules(raw.rules, `${path}.rules`, issues, [
+				...reminders,
+				...remindersGlobal
+			]);
 	}
 
 	if (issues.list.length > before) return undefined;

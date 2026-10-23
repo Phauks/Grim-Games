@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"Doesn't Kill": {
+			"seat": "other",
+			"types": ["demon"],
+			"note": "On the Demon after the Princess nominates and executes on day one."
+		}
+	}
+}

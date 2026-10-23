@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "The Slayer once they have used their shot."
+		}
+	}
+}

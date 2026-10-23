@@ -24,7 +24,10 @@ describe('official rules files (data/rules/<id>.json)', () => {
 		expect(character, id).toBeDefined();
 		const issues = new Issues();
 		const raw: unknown = JSON.parse(readFileSync(new URL(file, dir), 'utf8'));
-		parseCharacterRules(raw, file, issues, character!.reminders);
+		parseCharacterRules(raw, file, issues, [
+			...character!.reminders,
+			...character!.remindersGlobal
+		]);
 		expect(issues.list).toEqual([]);
 	});
 });
@@ -119,7 +122,7 @@ describe('custom characters', () => {
 	});
 
 	it('keep the official block when they reuse an official id without rules', () => {
-		expect(rulesOf('imp', new Map([['imp', {}]]))).toEqual({
+		expect(rulesOf('imp', new Map([['imp', {}]]))).toMatchObject({
 			reminderPrompts: { Dead: 'markDead' },
 			kills: { by: 'demon' }
 		});

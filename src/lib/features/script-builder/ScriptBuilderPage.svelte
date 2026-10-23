@@ -598,7 +598,7 @@
 									<span class="creator">{credit?.creator || t('common.none')}</span>
 									{#if saved}
 										<IconButton
-											icon="buildCharacter"
+											icon="edit"
 											label={t('character-builder.editCharacter', { name: character.name })}
 											onclick={() => buildCharacter(saved.savedId, character.id)}
 										/>

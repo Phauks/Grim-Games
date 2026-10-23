@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Claimed": {
+			"seat": "self",
+			"note": "On the Goblin after they publicly claim Goblin when nominated."
+		}
+	}
+}

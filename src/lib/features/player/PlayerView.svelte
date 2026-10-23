@@ -45,7 +45,6 @@
 	import { roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
 	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
-	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
 
@@ -197,9 +196,8 @@
 <svelte:window onhashchange={() => data && void openSharedLink()} />
 
 <!-- Print and Share stay on the title's line at every width (Trevor, 2026-10-19). -->
-<Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions>
+<Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions menu>
 	<!-- No sidebar here, as on the board (2026-10-19): the menu is one tap away. -->
-	{#snippet start()}<NavMenuButton />{/snippet}
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. -->
 	{#snippet actions()}
