@@ -43,7 +43,7 @@ describe('parseCharacterRules', () => {
 	});
 
 	it('reports unknown rules, unknown prompts and reminders the character lacks', () => {
-		expect(parse({ kills: true }).issues).toEqual(['rules.kills: unknown rule']);
+		expect(parse({ slays: true }).issues).toEqual(['rules.slays: unknown rule']);
 		expect(parse({ onDeath: { by: 'night' } }).issues).toEqual([
 			'rules.onDeath.by: unknown value "night"'
 		]);
@@ -64,6 +64,12 @@ describe('parseCharacterRules', () => {
 		]);
 		expect(parse({ survivesFirstDeath: {} }).issues).toEqual([
 			'rules.survivesFirstDeath.spentToken: missing'
+		]);
+		expect(parse({ kills: { by: 'night' } }).issues).toEqual([
+			'rules.kills.by: unknown value "night"'
+		]);
+		expect(parse({ kills: { by: 'other', targets: 'all' } }).issues).toEqual([
+			'rules.kills.targets: unknown value "all"'
 		]);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'
@@ -114,7 +120,8 @@ describe('custom characters', () => {
 
 	it('keep the official block when they reuse an official id without rules', () => {
 		expect(rulesOf('imp', new Map([['imp', {}]]))).toEqual({
-			reminderPrompts: { Dead: 'markDead' }
+			reminderPrompts: { Dead: 'markDead' },
+			kills: { by: 'demon' }
 		});
 	});
 

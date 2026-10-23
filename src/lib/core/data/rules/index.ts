@@ -6,25 +6,41 @@
 import type { CharacterId } from '../types.ts';
 import { parseCharacterRules, type CharacterRules } from '../character-rules.ts';
 import { Issues } from '../validate.ts';
+import acrobat from './acrobat.json' with { type: 'json' };
+import alhadikhia from './alhadikhia.json' with { type: 'json' };
+import assassin from './assassin.json' with { type: 'json' };
 import atheist from './atheist.json' with { type: 'json' };
 import banshee from './banshee.json' with { type: 'json' };
 import barber from './barber.json' with { type: 'json' };
+import fanggu from './fanggu.json' with { type: 'json' };
 import farmer from './farmer.json' with { type: 'json' };
 import fool from './fool.json' with { type: 'json' };
+import gambler from './gambler.json' with { type: 'json' };
 import godfather from './godfather.json' with { type: 'json' };
 import gossip from './gossip.json' with { type: 'json' };
+import harlot from './harlot.json' with { type: 'json' };
 import hatter from './hatter.json' with { type: 'json' };
 import heretic from './heretic.json' with { type: 'json' };
 import imp from './imp.json' with { type: 'json' };
 import innkeeper from './innkeeper.json' with { type: 'json' };
+import kazali from './kazali.json' with { type: 'json' };
 import klutz from './klutz.json' with { type: 'json' };
+import legion from './legion.json' with { type: 'json' };
+import lilmonsta from './lilmonsta.json' with { type: 'json' };
+import lleech from './lleech.json' with { type: 'json' };
+import lordoftyphon from './lordoftyphon.json' with { type: 'json' };
+import lycanthrope from './lycanthrope.json' with { type: 'json' };
 import mayor from './mayor.json' with { type: 'json' };
 import monk from './monk.json' with { type: 'json' };
 import moonchild from './moonchild.json' with { type: 'json' };
+import nodashii from './nodashii.json' with { type: 'json' };
+import ojo from './ojo.json' with { type: 'json' };
 import plaguedoctor from './plaguedoctor.json' with { type: 'json' };
+import po from './po.json' with { type: 'json' };
 import politician from './politician.json' with { type: 'json' };
 import poppygrower from './poppygrower.json' with { type: 'json' };
 import professor from './professor.json' with { type: 'json' };
+import pukka from './pukka.json' with { type: 'json' };
 import puzzlemaster from './puzzlemaster.json' with { type: 'json' };
 import ravenkeeper from './ravenkeeper.json' with { type: 'json' };
 import recluse from './recluse.json' with { type: 'json' };
@@ -38,28 +54,47 @@ import sweetheart from './sweetheart.json' with { type: 'json' };
 import tealady from './tealady.json' with { type: 'json' };
 import tinker from './tinker.json' with { type: 'json' };
 import undertaker from './undertaker.json' with { type: 'json' };
+import vigormortis from './vigormortis.json' with { type: 'json' };
+import vortox from './vortox.json' with { type: 'json' };
+import yaggababble from './yaggababble.json' with { type: 'json' };
 import zombuul from './zombuul.json' with { type: 'json' };
 
 const FILES: Readonly<Record<CharacterId, unknown>> = {
+	acrobat,
+	alhadikhia,
+	assassin,
 	atheist,
 	banshee,
 	barber,
+	fanggu,
 	farmer,
 	fool,
+	gambler,
 	godfather,
 	gossip,
+	harlot,
 	hatter,
 	heretic,
 	imp,
 	innkeeper,
+	kazali,
 	klutz,
+	legion,
+	lilmonsta,
+	lleech,
+	lordoftyphon,
+	lycanthrope,
 	mayor,
 	monk,
 	moonchild,
+	nodashii,
+	ojo,
 	plaguedoctor,
+	po,
 	politician,
 	poppygrower,
 	professor,
+	pukka,
 	puzzlemaster,
 	ravenkeeper,
 	recluse,
@@ -73,6 +108,9 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	tealady,
 	tinker,
 	undertaker,
+	vigormortis,
+	vortox,
+	yaggababble,
 	zombuul
 };
 

@@ -1,3 +1,8 @@
 {
-	"reminderPrompts": { "Dead": "markDead" }
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
+	"kills": {
+		"by": "demon"
+	}
 }
