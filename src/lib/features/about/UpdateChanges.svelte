@@ -42,6 +42,10 @@
 		padding: 0;
 		list-style: none;
 	}
+	/* A line between changes, as between other stacked rows (Reference's token rows). */
+	li + li {
+		border-top: var(--card-border);
+	}
 	/* The whole row is the link, so each commit is one comfortable tap. */
 	a {
 		display: grid;
@@ -49,6 +53,7 @@
 		align-items: center;
 		gap: var(--space-2);
 		min-height: var(--tap-target);
+		padding-block: var(--space-1);
 		color: inherit;
 		text-decoration: none;
 	}
