@@ -140,6 +140,11 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'S6', title: 'One "not official" notice, linking the official site', prs: [317] },
 			{ id: 'S1', title: 'Install app button at the bottom of Settings', prs: [320] },
 			{ id: 'S3', title: 'Player name options in Tokens settings', prs: [332] },
+			{
+				id: 'S11',
+				title: 'Buttons stand out from what is behind them; End game is a red button'
+			},
+			{ id: 'S12', title: 'Lists of information never run together without a line or gap' },
 			{ id: 'B5', title: 'Reminder glow and source mark settings' },
 			{ id: 'L16', title: 'Glossary: every character of a script and character type', prs: [324] },
 			{ id: 'O1', title: 'New app logo' }
