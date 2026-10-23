@@ -490,202 +490,209 @@
 			>
 		</div>
 	</div>
-
-	<Collapsible
-		title={t('day.announcements')}
-		storageKey="day.announcements"
-		count={died.length + revived.length + announcers.length}
-	>
-		{#snippet aside()}
-			<Button
-				variant="quiet"
-				icon="protected"
-				data-testid="prevented-button"
-				disabled={prevented.length === 0}
-				aria-label={t('day.preventedButton', { count: prevented.length })}
-				title={t('day.preventedButton', { count: prevented.length })}
-				onclick={() => (preventedOpen = true)}>{prevented.length}</Button
-			>
-		{/snippet}
-		{#if customInPlay}
-			<p class="custom-note" data-testid="custom-announcements">{t('day.announce.custom')}</p>
-		{/if}
-		<ul class="reminders" data-testid="announcements">
-			{#each died as death (death.seatId)}
-				{@const seat = g.seats[death.seatId]}
-				<li class="death" data-seat={death.seatId}>
-					{#if privateDeaths}
-						<span class="dont-announce" data-testid="dont-announce">{t('day.announce.dont')}</span>
-					{:else}
-						<span class="spoken" data-testid="spoken">{spokenDeath(death.seatId)}</span>
-					{/if}
-					<em class="private" data-testid="storyteller-only"
-						><Sentence text={privateDeath(death.cause)}
-							>{#snippet fill(name)}{#if name === 'character'}{#if seat.characterId}<CharacterBadge
+	<!-- Beside the toolbar on a wide screen (Trevor, 2026-10-23: L45), under it on a phone. -->
+	<div class="sections">
+		<Collapsible
+			title={t('day.announcements')}
+			storageKey="day.announcements"
+			count={died.length + revived.length + announcers.length}
+		>
+			{#snippet aside()}
+				<Button
+					variant="quiet"
+					icon="protected"
+					data-testid="prevented-button"
+					disabled={prevented.length === 0}
+					aria-label={t('day.preventedButton', { count: prevented.length })}
+					title={t('day.preventedButton', { count: prevented.length })}
+					onclick={() => (preventedOpen = true)}>{prevented.length}</Button
+				>
+			{/snippet}
+			{#if customInPlay}
+				<p class="custom-note" data-testid="custom-announcements">{t('day.announce.custom')}</p>
+			{/if}
+			<ul class="reminders" data-testid="announcements">
+				{#each died as death (death.seatId)}
+					{@const seat = g.seats[death.seatId]}
+					<li class="death" data-seat={death.seatId}>
+						{#if privateDeaths}
+							<span class="dont-announce" data-testid="dont-announce">{t('day.announce.dont')}</span
+							>
+						{:else}
+							<span class="spoken" data-testid="spoken">{spokenDeath(death.seatId)}</span>
+						{/if}
+						<em class="private" data-testid="storyteller-only"
+							><Sentence text={privateDeath(death.cause)}
+								>{#snippet fill(
+									name
+								)}{#if name === 'character'}{#if seat.characterId}<CharacterBadge
+												characterId={seat.characterId}
+												alignment={seat.alignment}
+											/>{:else}{t('day.announce.noCharacter')}{/if}{:else}{@render badge(
+											death.cause
+										)}{/if}{/snippet}</Sentence
+							></em
+						>
+					</li>
+				{/each}
+				{#each revived as seatId (seatId)}
+					{@const seat = g.seats[seatId]}
+					<li class="death" data-seat={seatId} data-testid="revived">
+						{#if privateDeaths}
+							<span class="dont-announce">{t('day.announce.dont')}</span>
+						{:else}
+							<span class="spoken">{spokenRevival(seatId)}</span>
+						{/if}
+						<em class="private"
+							><Sentence
+								text={t('day.announce.private', {
+									character: slot('character'),
+									how: t('day.announce.backToLife')
+								})}
+								>{#snippet fill()}{#if seat.characterId}<CharacterBadge
 											characterId={seat.characterId}
 											alignment={seat.alignment}
-										/>{:else}{t('day.announce.noCharacter')}{/if}{:else}{@render badge(
-										death.cause
-									)}{/if}{/snippet}</Sentence
-						></em
-					>
-				</li>
-			{/each}
-			{#each revived as seatId (seatId)}
-				{@const seat = g.seats[seatId]}
-				<li class="death" data-seat={seatId} data-testid="revived">
-					{#if privateDeaths}
-						<span class="dont-announce">{t('day.announce.dont')}</span>
-					{:else}
-						<span class="spoken">{spokenRevival(seatId)}</span>
-					{/if}
-					<em class="private"
-						><Sentence
-							text={t('day.announce.private', {
-								character: slot('character'),
-								how: t('day.announce.backToLife')
-							})}
-							>{#snippet fill()}{#if seat.characterId}<CharacterBadge
-										characterId={seat.characterId}
-										alignment={seat.alignment}
-									/>{:else}{t('day.announce.noCharacter')}{/if}{/snippet}</Sentence
-						></em
-					>
-				</li>
-			{/each}
-			{#if died.length === 0 && dawned}
-				<li class="death"><span class="spoken">{t('day.announce.nobody')}</span></li>
-			{/if}
-			{#each announcers as a (a.character.id)}
-				<li data-character={a.character.id}>
-					<CharacterEntry
-						characterId={a.character.id}
-						alignment={g.seats[a.seatId].alignment}
-						playerName={game.seatName(a.seatId)}
-					>
-						<span class="sentence"
-							><NightText text={a.text} character={a.character} night={a.night} /></span
+										/>{:else}{t('day.announce.noCharacter')}{/if}{/snippet}</Sentence
+							></em
 						>
-					</CharacterEntry>
-				</li>
+					</li>
+				{/each}
+				{#if died.length === 0 && dawned}
+					<li class="death"><span class="spoken">{t('day.announce.nobody')}</span></li>
+				{/if}
+				{#each announcers as a (a.character.id)}
+					<li data-character={a.character.id}>
+						<CharacterEntry
+							characterId={a.character.id}
+							alignment={g.seats[a.seatId].alignment}
+							playerName={game.seatName(a.seatId)}
+						>
+							<span class="sentence"
+								><NightText text={a.text} character={a.character} night={a.night} /></span
+							>
+						</CharacterEntry>
+					</li>
+				{/each}
+				{#if died.length === 0 && !dawned && revived.length === 0 && announcers.length === 0}
+					<li>{t('common.none')}</li>
+				{/if}
+			</ul>
+		</Collapsible>
+
+		<!-- The Flowergirl's switch, when it isn't in the toolbar. -->
+		{#if hasFlowergirl && !assistance.demonVotedButton}
+			<div class="demon-voted">
+				<Toggle
+					label={t('day.demonVoted')}
+					checked={g.today.demonVoted === true}
+					onChange={(checked) => game.run({ type: 'SetDemonVoted', voted: checked })}
+				/>
+			</div>
+		{/if}
+
+		{#if assistance.preDayReminders}
+			<!-- Each group is its own section; no "Today" wrapper (Trevor, 2026-10-17). -->
+			{#each reminders.groups as group (group.group)}
+				<Collapsible
+					title={group.title}
+					storageKey={`day.group.${group.group}`}
+					count={group.reminders.length}
+				>
+					<ul class="reminders rows">
+						{#each group.reminders as reminder (reminder.key)}
+							{@const head =
+								reminder.segments[0]?.kind === 'character' ? reminder.segments[0] : undefined}
+							<!-- The heading is the character; the rest is a written sentence (Trevor, 2026-10-18). -->
+							{@const line = daySentence(head ? reminder.segments.slice(1) : reminder.segments)}
+							{@const explained = explainBlock(
+								line.segments.map((s) => (s.kind === 'text' ? s.text : ''))
+							)}
+							{@const character = head ? game.characters.get(head.ref.characterId) : undefined}
+							<li data-character={reminder.characterId}>
+								{#if character}
+									<CharacterRow
+										{character}
+										alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
+										note={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
+										info
+									>
+										{#snippet end()}{@const seatId =
+												buttonRows[reminder.key]}{#if seatId}{@render dayEnd(
+													reminder.characterId,
+													seatId
+												)}{/if}{/snippet}
+										<!-- The ability first, beside the name; the state under it (Trevor, 2026-10-18). -->
+										{@render sentence()}
+									</CharacterRow>
+								{:else}
+									<CharacterEntry characterId={head?.ref.characterId}>
+										{#snippet end()}{@const seatId =
+												buttonRows[reminder.key]}{#if seatId}{@render dayButton(
+													reminder.characterId,
+													seatId
+												)}{/if}{/snippet}
+										{@render sentence()}
+									</CharacterEntry>
+								{/if}
+								{#snippet sentence()}
+									<span class="sentence" data-testid="day-state">
+										{#each line.segments as segment, i (i)}
+											{@const stop = line.stop && i === line.segments.length - 1}
+											{#if segment.kind === 'character'}
+												<span class="glued"
+													><CharacterBadge
+														characterId={segment.ref.characterId}
+														alignment={segment.ref.seatId
+															? g.seats[segment.ref.seatId]?.alignment
+															: undefined}
+														playerName={segment.ref.seatId
+															? game.seatName(segment.ref.seatId)
+															: undefined}
+													/>{#if stop}.{/if}</span
+												>
+											{:else if segment.kind === 'value'}
+												<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
+												<span
+													>({segment.value ?? segment.placeholder}){#if stop}.{/if}</span
+												>
+											{:else}
+												<span><GlossaryText segments={explained[i] ?? []} /></span>
+											{/if}
+										{/each}
+									</span>
+								{/snippet}
+							</li>
+						{/each}
+					</ul>
+				</Collapsible>
 			{/each}
-			{#if died.length === 0 && !dawned && revived.length === 0 && announcers.length === 0}
-				<li>{t('common.none')}</li>
-			{/if}
-		</ul>
-	</Collapsible>
-
-	<!-- The Flowergirl's switch, when it isn't in the toolbar. -->
-	{#if hasFlowergirl && !assistance.demonVotedButton}
-		<div class="demon-voted">
-			<Toggle
-				label={t('day.demonVoted')}
-				checked={g.today.demonVoted === true}
-				onChange={(checked) => game.run({ type: 'SetDemonVoted', voted: checked })}
-			/>
-		</div>
-	{/if}
-
-	{#if assistance.preDayReminders}
-		<!-- Each group is its own section; no "Today" wrapper (Trevor, 2026-10-17). -->
-		{#each reminders.groups as group (group.group)}
-			<Collapsible
-				title={group.title}
-				storageKey={`day.group.${group.group}`}
-				count={group.reminders.length}
-			>
+		{/if}
+		{#if !assistance.preDayReminders || unlisted.length > 0}
+			{@const listed = assistance.preDayReminders ? unlisted : seats.filter((s) => s.characterId)}
+			<Collapsible title={t('day.abilities')} storageKey="day.abilities" count={listed.length}>
 				<ul class="reminders rows">
-					{#each group.reminders as reminder (reminder.key)}
-						{@const head =
-							reminder.segments[0]?.kind === 'character' ? reminder.segments[0] : undefined}
-						<!-- The heading is the character; the rest is a written sentence (Trevor, 2026-10-18). -->
-						{@const line = daySentence(head ? reminder.segments.slice(1) : reminder.segments)}
-						{@const explained = explainBlock(
-							line.segments.map((s) => (s.kind === 'text' ? s.text : ''))
-						)}
-						{@const character = head ? game.characters.get(head.ref.characterId) : undefined}
-						<li data-character={reminder.characterId}>
+					{#each listed as seat (seat.seatId)}
+						{@const character = seat.characterId
+							? game.characters.get(seat.characterId)
+							: undefined}
+						<li data-character={seat.characterId}>
 							{#if character}
+								<!-- Drawn like character selection (Trevor, 2026-10-20: L12). -->
 								<CharacterRow
 									{character}
-									alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
-									note={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
+									alignment={seat.alignment}
+									note={game.seatName(seat.seatId)}
 									info
 								>
-									{#snippet end()}{@const seatId =
-											buttonRows[reminder.key]}{#if seatId}{@render dayEnd(
-												reminder.characterId,
-												seatId
-											)}{/if}{/snippet}
-									<!-- The ability first, beside the name; the state under it (Trevor, 2026-10-18). -->
-									{@render sentence()}
+									{#snippet end()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}
 								</CharacterRow>
-							{:else}
-								<CharacterEntry characterId={head?.ref.characterId}>
-									{#snippet end()}{@const seatId =
-											buttonRows[reminder.key]}{#if seatId}{@render dayButton(
-												reminder.characterId,
-												seatId
-											)}{/if}{/snippet}
-									{@render sentence()}
-								</CharacterEntry>
 							{/if}
-							{#snippet sentence()}
-								<span class="sentence" data-testid="day-state">
-									{#each line.segments as segment, i (i)}
-										{@const stop = line.stop && i === line.segments.length - 1}
-										{#if segment.kind === 'character'}
-											<span class="glued"
-												><CharacterBadge
-													characterId={segment.ref.characterId}
-													alignment={segment.ref.seatId
-														? g.seats[segment.ref.seatId]?.alignment
-														: undefined}
-													playerName={segment.ref.seatId
-														? game.seatName(segment.ref.seatId)
-														: undefined}
-												/>{#if stop}.{/if}</span
-											>
-										{:else if segment.kind === 'value'}
-											<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
-											<span
-												>({segment.value ?? segment.placeholder}){#if stop}.{/if}</span
-											>
-										{:else}
-											<span><GlossaryText segments={explained[i] ?? []} /></span>
-										{/if}
-									{/each}
-								</span>
-							{/snippet}
 						</li>
 					{/each}
 				</ul>
 			</Collapsible>
-		{/each}
-	{/if}
-	{#if !assistance.preDayReminders || unlisted.length > 0}
-		{@const listed = assistance.preDayReminders ? unlisted : seats.filter((s) => s.characterId)}
-		<Collapsible title={t('day.abilities')} storageKey="day.abilities" count={listed.length}>
-			<ul class="reminders rows">
-				{#each listed as seat (seat.seatId)}
-					{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
-					<li data-character={seat.characterId}>
-						{#if character}
-							<!-- Drawn like character selection (Trevor, 2026-10-20: L12). -->
-							<CharacterRow
-								{character}
-								alignment={seat.alignment}
-								note={game.seatName(seat.seatId)}
-								info
-							>
-								{#snippet end()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}
-							</CharacterRow>
-						{/if}
-					</li>
-				{/each}
-			</ul>
-		</Collapsible>
-	{/if}
+		{/if}
+	</div>
 </div>
 
 {#snippet ability(characterId: string | undefined)}
@@ -779,9 +786,11 @@
 <CountDialog bind:open={countOpen} game={g} count={countShown} title={countTitle} />
 
 <style>
-	.panel {
+	.panel,
+	.sections {
 		display: grid;
 		gap: var(--space-5);
+		align-items: start;
 	}
 	.toolbar {
 		position: sticky;
@@ -812,7 +821,7 @@
 		gap: var(--space-2);
 	}
 	/* While a section scrolls, its header stays just under the toolbar (Trevor, 2026-10-17). */
-	.panel > :global(.collapsible > .head) {
+	.sections > :global(.collapsible > .head) {
 		position: sticky;
 		/* Tucked 1px under the toolbar, so no scrolled content shows between them (Trevor). */
 		top: calc(var(--toolbar-height, 0px) - 1px); /* px-ok: hairline overlap */
@@ -979,5 +988,17 @@
 	}
 	.because {
 		margin-block-start: var(--space-1);
+	}
+	/*
+	 * A wide day in two columns (Trevor, 2026-10-23: L45): the timer, counts and Night order
+	 * stay put on the left while the day's sections scroll on the right.
+	 */
+	@container day (min-width: 60rem) {
+		.panel {
+			grid-template-columns: minmax(22rem, 1fr) minmax(0, 2fr);
+		}
+		.sections {
+			--toolbar-height: 0px; /* px-ok: nothing above the section headers here */
+		}
 	}
 </style>
