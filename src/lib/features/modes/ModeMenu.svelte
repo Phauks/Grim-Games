@@ -11,6 +11,9 @@
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
+	import { gameClock } from '#lib/core/rules/index.ts';
+	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { editionWikiUrl, fromScript, scriptEdition, scriptToJson } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -55,9 +58,29 @@
 		/** Renames the Storyteller: their row is then tappable (Trevor, 2026-10-19: "edit storyteller name in bottom left"). */
 		/** Saves the Game info pencil's changes; without it Game info has no pencil. */
 		onEdit?: (changes: GameInfoChanges) => void;
+		/**
+		 * The board corner's other lines, so Game info has all of them where the corner can't
+		 * show them (Trevor, 2026-10-23: "on mobile I can't see the join code or game time").
+		 * When the game started and ended, for Game time.
+		 */
+		startedAt?: number;
+		endedAt?: number;
+		/** Spectators on the view-only link. */
+		watcherCount?: number;
+		/** The join code opens Share; without it (a spectator's board) there is no join code row. */
+		onShare?: () => void;
 	}
 
-	let { game, children, open = $bindable(false), onEdit }: Props = $props();
+	let {
+		game,
+		children,
+		open = $bindable(false),
+		onEdit,
+		startedAt,
+		endedAt,
+		watcherCount = 0,
+		onShare
+	}: Props = $props();
 	let editing = $state(false);
 	const gameId = $derived(game.gameId);
 	// The corner's popover closes when a seat's sheet or another overlay opens over the board
@@ -88,6 +111,20 @@
 		(savedChoice?.source && sourcePage(savedChoice.source)) ??
 			editionWikiUrl(scriptEdition(game.script)?.id)
 	);
+	const roomCode = $derived(roomHost().code);
+	/** Game time ticks while the sheet is open, as the corner's does. */
+	let clockNow = $state(Date.now());
+	$effect(() => {
+		if (!open || startedAt === undefined || endedAt !== undefined) return;
+		clockNow = Date.now();
+		const tick = setInterval(() => (clockNow = Date.now()), 1000);
+		return () => clearInterval(tick);
+	});
+	const gameLength = $derived(
+		startedAt === undefined
+			? undefined
+			: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, endedAt))
+	);
 	const info = $derived([
 		{
 			key: 'script',
@@ -114,6 +151,22 @@
 			key: 'rules',
 			label: t('modes.info.rules'),
 			value: rules.map((r) => r.name).join(', ')
+		},
+		...(onShare
+			? [
+					{
+						key: 'join-code',
+						label: t('room.joinCode'),
+						value: roomCode ? formatRoomCode(roomCode) : undefined,
+						action: onShare
+					}
+				]
+			: []),
+		{ key: 'game-time', label: t('history.gameLength'), value: gameLength },
+		{
+			key: 'watchers',
+			label: t('modes.info.watchers'),
+			value: watcherCount > 0 ? String(watcherCount) : undefined
 		}
 	]);
 	/** What the mode and rules rows open when tapped: each one's whole Inspect (plan G5). */
@@ -226,7 +279,17 @@
 									class="inspect-link"
 									aria-label={t('modes.inspect', { name: item.name })}
 									onclick={() => inspect(item)}>{item.name}</button
-								>{/each}{:else if 'href' in row && row.href && row.value?.trim()}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site's page -->
+								>{/each}{:else if 'action' in row && row.action}<!-- The join code opens
+							Share, as the corner's does; before a room opens it is None and opens Share
+							to start one. --><button
+								type="button"
+								class="inspect-link"
+								data-testid="info-join-code"
+								onclick={() => {
+									open = false;
+									row.action?.();
+								}}>{row.value || none}</button
+							>{:else if 'href' in row && row.href && row.value?.trim()}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site's page -->
 							<a href={row.href} target="_blank" rel="noopener noreferrer">{row.value}</a
 							>{:else}{row.value?.trim() || none}{/if}{#if 'extra' in row && row.extra}<span
 								class="extra"

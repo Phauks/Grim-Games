@@ -157,7 +157,13 @@
 				><Icon name="watchers" /><span aria-hidden="true">{watcherCount}</span></span
 			>{/if}
 		<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
-		<ModeMenu {game} onEdit={watching ? undefined : onEdit}
+		<ModeMenu
+			{game}
+			onEdit={watching ? undefined : onEdit}
+			{startedAt}
+			{endedAt}
+			{watcherCount}
+			onShare={watching ? undefined : onShare}
 			><span
 				class="script-name"
 				class:mode={modeInName}

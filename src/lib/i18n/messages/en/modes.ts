@@ -14,6 +14,7 @@ export const modes = {
 	'modes.info.storyteller': 'Storyteller',
 	'modes.info.players': 'Players',
 	'modes.info.edit': 'Edit game info',
+	'modes.info.watchers': 'Watching',
 	'modes.info.rules': 'Special rules',
 	'modes.info.download': 'Download script',
 	'modes.info.shareSource': 'Share the script’s source',
