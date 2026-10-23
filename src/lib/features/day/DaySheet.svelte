@@ -56,6 +56,8 @@
 
 <style>
 	.body {
+		/* The day's two columns (L45) follow the sheet's width, not the window's. */
+		container: day / inline-size;
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
