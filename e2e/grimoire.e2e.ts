@@ -2228,8 +2228,12 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 		.getByRole('dialog', { name: 'Status of Seat 2' })
 		.getByRole('button', { name: 'Executed' })
 		.tap();
+	// During the day, Executed asks as the day's Execution does (Trevor, 2026-10-23).
+	await page
+		.getByRole('alertdialog', { name: 'End the day?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 	await keepPlaying(page);
-	await closeSheet(page);
 
 	const suggested = (await openStep(page, 'Undertaker')).getByTestId('night-suggested');
 	await expect(suggested.locator('[data-character-id="imp"]').first()).toBeVisible();
@@ -4001,7 +4005,7 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 			.tap();
 		await closeSheet(page);
 	}
-	// The first night ends; two players die on Day 1.
+	// The first night ends; the Empath is executed on Day 1 and the Ravenkeeper dies tonight.
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
@@ -4014,6 +4018,14 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 				.getByRole('dialog', { name: `Status of Seat ${seat}` })
 				.getByRole('button', { name: 'Executed' })
 				.tap();
+			// During the day, Executed asks as the day's Execution does (Trevor, 2026-10-23),
+			// and its Confirm ends the day.
+			const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+			if (seat === 2) {
+				await expect(ask.getByRole('combobox', { name: 'Execution' })).toContainText('Seat 2');
+				await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+				continue;
+			}
 			await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
 		}
 		await closeSheet(page);
@@ -4021,8 +4033,6 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	// Trevor (2026-10-18): "If character is dead do not show them in assisted night order."
 	// The Ravenkeeper still wakes on the night they die
 	// (https://wiki.bloodontheclocktower.com/Ravenkeeper).
-	await bankNight(page, 'Execution').tap();
-	await chooseExecution(page);
 	const strip = page.getByTestId('night-strip');
 	const names: string[] = [];
 	for (let i = 0; i < 12; i++) {

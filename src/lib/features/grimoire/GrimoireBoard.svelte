@@ -686,6 +686,18 @@
 	 * Execution ends the day (Trevor, 2026-10-22): the player chosen is executed first, unless
 	 * that execution is already logged, so the rules checked at dusk see it.
 	 */
+	/** A seat's status chose Executed: during the day, the day's Execution asks with them chosen. */
+	let executeChosen = $state<SeatId>();
+	$effect(() => {
+		if (!endDayOpen) executeChosen = undefined;
+	});
+	function executeFromSeat(seatId: SeatId): boolean {
+		if (bankRun.label !== t('day.execution') || bankRun.disabled) return false;
+		sheetOpen = false;
+		executeChosen = seatId;
+		endDayOpen = true;
+		return true;
+	}
 	function executeAndEndDay(seatId: SeatId | undefined): void {
 		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
 		if (seatId && !logged) grimoire.run({ type: 'Execute', seatId });
@@ -1482,6 +1494,7 @@
 	bind:open={endDayOpen}
 	{game}
 	characters={grimoire.open.characters}
+	chosen={executeChosen}
 	onConfirm={executeAndEndDay}
 />
 
@@ -1519,6 +1532,7 @@
 	}}
 	onNotes={(id) => notesSheet?.edit(id)}
 	onNominated={nominated}
+	onExecute={executeFromSeat}
 />
 
 <!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->

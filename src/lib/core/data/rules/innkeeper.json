@@ -2,7 +2,8 @@
 	"protects": {
 		"who": "marked",
 		"token": "Safe",
-		"from": "any"
+		"from": "any",
+		"night": true
 	},
 	"reminderTargets": {
 		"Safe": {

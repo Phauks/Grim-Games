@@ -188,7 +188,12 @@ export type Command =
 	 */
 	| { type: 'SetPrepValue'; key: string; value?: string }
 	/** Logs an execution and marks the player dead by execution, if alive. */
-	| { type: 'Execute'; seatId: SeatId }
+	/**
+	 * Executes a player. A living player whom the grimoire says cannot die to an execution
+	 * (the Devil's Advocate, the Tea Lady, the Sailor, a "can't die" override) is logged as
+	 * executed and alive, unless `dies` says the Storyteller ruled otherwise.
+	 */
+	| { type: 'Execute'; seatId: SeatId; dies?: boolean }
 	/** Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. */
 	| { type: 'Exile'; seatId: SeatId }
 	/**

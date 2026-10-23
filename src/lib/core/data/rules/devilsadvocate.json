@@ -1,4 +1,9 @@
 {
+	"protects": {
+		"who": "marked",
+		"token": "Survives Execution",
+		"from": "execution"
+	},
 	"reminderTargets": {
 		"Survives Execution": {
 			"seat": "any",

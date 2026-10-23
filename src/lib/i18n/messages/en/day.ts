@@ -114,6 +114,9 @@ export const day = {
 	'day.logNomination': '{nominator} nominated {nominee}',
 	'day.logExecuted': '{name} executed',
 	'day.logExecutedDead': '{name} executed (already dead)',
+	// Trevor's wording (2026-10-23), named by the ability that saved them when there is one.
+	'day.logExecutedSurvived': '{name} has been executed and does not die',
+	'day.logExecutedSavedBy': '{name} has been executed and does not die ({character})',
 	'day.logExiled': '{name} exiled',
 	'day.logExiledDead': '{name} exiled (already dead)',
 	'day.logAbility': '{character} ({seat}) used their ability',

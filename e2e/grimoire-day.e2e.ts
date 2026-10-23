@@ -4,12 +4,9 @@ import { pickScript, toBoard } from './new-game.ts';
 // The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
 
-async function startGame(page: Page, players = 8) {
+async function startGame(page: Page, players = 8, script = 'Trouble Brewing') {
 	await page.goto('/new');
-	await page
-		.getByRole('radiogroup', { name: 'Script' })
-		.getByText('Trouble Brewing', { exact: true })
-		.tap();
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script, { exact: true }).tap();
 	for (let i = 8; i < players; i++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
@@ -675,6 +672,48 @@ test('Execution names the player executed, who dies before tonight', async ({ pa
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 	await expect(boardSeat(page, 'Seat 3')).toHaveAccessibleName(/dead/);
 	await expect(boardSeat(page, 'Seat 2')).not.toHaveAccessibleName(/dead/);
+});
+
+test("Executed in a seat's status during the day asks as Execution does; a Sailor does not die", async ({
+	page
+}) => {
+	test.setTimeout(90_000);
+	// https://wiki.bloodontheclocktower.com/Sailor: the Sailor can't die.
+	await startGame(page, 8, 'Bad Moon Rising');
+	await chooseCharacter(page, 3, 'Sailor');
+	// Night 1 runs from the day's Execution, then the night ends: day 2.
+	await openDay(page);
+	await daySheet(page).getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await closeDay(page);
+	// The same as the day's Execution (Trevor, 2026-10-23): it asks, with the seat chosen.
+	const status = await openStatus(page, 3);
+	await status.getByRole('button', { name: 'Executed', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await expect(ask).toBeVisible();
+	await expect(ask.getByRole('combobox', { name: 'Execution' })).toContainText('Seat 3');
+	// Executed and does not die, named by the rule that saves them, before Confirm.
+	await expect(ask.getByTestId('execution-saved')).toContainText(
+		'Seat 3 has been executed and does not die'
+	);
+	await expect(ask.getByTestId('execution-saved')).toContainText('Sailor');
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(boardSeat(page, 'Seat 3')).not.toHaveAccessibleName(/dead/);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'History' })
+		.tap();
+	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
+		'Seat 3 has been executed and does not die'
+	);
 });
 
 test('an unnamed seat is named by its number in the day view', async ({ page }) => {

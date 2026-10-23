@@ -214,7 +214,18 @@ export interface CharacterGuess {
  */
 export type DayEntry =
 	| { kind: 'nomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
-	| { kind: 'execution'; entryId: DayEntryId; seatId: SeatId; died: boolean }
+	| {
+			kind: 'execution';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			died: boolean;
+			/**
+			 * Executed and does not die (Trevor, 2026-10-23): the ability that saved them, or no
+			 * `characterId` for the Storyteller's "can't die" override. Absent when they died or
+			 * were already dead.
+			 */
+			savedBy?: { characterId?: CharacterId; seatId?: SeatId };
+	  }
 	| { kind: 'exile'; entryId: DayEntryId; seatId: SeatId; died: boolean }
 	| {
 			kind: 'ability';

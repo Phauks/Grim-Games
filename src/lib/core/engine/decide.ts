@@ -48,7 +48,8 @@ import {
 	type DayReminderOverride,
 	type Night,
 	type NightStepOverride,
-	fixedReminderMove
+	fixedReminderMove,
+	protection
 } from '#lib/core/rules/index.ts';
 import { startingRuleCharacters } from '#lib/core/rules/script-rules.ts';
 import type { Command, CommandOf } from './commands.ts';
@@ -117,6 +118,7 @@ export type WarningCode =
 	| 'traveller-executed'
 	| 'not-traveller'
 	| 'already-dead'
+	| 'survives-execution'
 	| 'not-seat-character'
 	| 'already-used'
 	| 'empty-day'
@@ -1421,6 +1423,18 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			if (seat.dead) {
 				warn('already-dead', 'the player was already dead, so the execution is only logged');
 				return [{ type: 'DayEntryAdded', entry }];
+			}
+			const saved =
+				command.dies === true
+					? undefined
+					: protection(game, seat.seatId, ctx.characters, 'execution');
+			if (saved) {
+				warn('survives-execution', 'the player is executed and does not die');
+				const savedBy =
+					saved === 'override'
+						? {}
+						: { characterId: saved.characterId, ...(saved.seatId ? { seatId: saved.seatId } : {}) };
+				return [{ type: 'DayEntryAdded', entry: { ...entry, died: false, savedBy } }];
 			}
 			return [
 				{ type: 'DayEntryAdded', entry },
