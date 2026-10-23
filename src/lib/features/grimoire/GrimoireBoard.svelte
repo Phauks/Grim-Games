@@ -147,7 +147,7 @@
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
-	import FoolAsk from './FoolAsk.svelte';
+	import FirstDeathAsk from './FirstDeathAsk.svelte';
 	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
@@ -2186,7 +2186,7 @@
 />
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
-<FoolAsk {grimoire} />
+<FirstDeathAsk {grimoire} />
 <NominationAsk {grimoire} bind:asks={nominationAsks} />
 <GameEndPrompt
 	{grimoire}

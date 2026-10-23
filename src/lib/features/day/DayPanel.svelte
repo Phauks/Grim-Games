@@ -183,9 +183,9 @@
 				return because.source === 'override' ? [] : [because.source];
 			case 'killer-impaired':
 				return because.impairments.map((i) => i.source);
-			case 'fool':
-			case 'mayor':
-				return [{ characterId: because.kind, seatId: because.seatId }];
+			case 'survives-first-death':
+			case 'may-bounce':
+				return [because.source];
 		}
 	}
 

@@ -1,3 +1,4 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"redirectsKill": { "from": "demon" }
 }
