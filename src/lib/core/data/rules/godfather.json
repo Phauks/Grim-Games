@@ -16,5 +16,9 @@
 			"seat": "any",
 			"note": "The player the Godfather kills that night."
 		}
+	},
+	"answers": {
+		"question": "outsider-died",
+		"token": "Died Today"
 	}
 }

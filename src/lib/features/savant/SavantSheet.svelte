@@ -268,7 +268,7 @@
 				data-testid="savant-line"
 			>
 				<IconButton
-					icon="pen"
+					icon="edit"
 					label={t('savant.write', { number: i + 1 })}
 					aria-pressed={written}
 					disabled={written}
