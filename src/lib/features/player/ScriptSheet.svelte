@@ -215,6 +215,13 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-4);
 	}
+	/* A line across the whole sheet where one character type gives way to the next (Trevor,
+	   2026-10-23: "a line that covers the screen to show the delineation"), on screen and in
+	   print. */
+	.sheet > :global(section + section) {
+		padding-top: var(--space-3);
+		border-top: var(--card-border);
+	}
 	ul {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(20 * var(--u))), 1fr));

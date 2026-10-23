@@ -3,10 +3,11 @@
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
+	import LightSheetSwitch from './LightSheetSwitch.svelte';
 	import PrintScriptButton from './PrintScriptButton.svelte';
 
 	/**
-	 * Print and Share for the players' script: /play's title line, and the Script the
+	 * The light background switch, Print and Share for the players' script: /play's title line, and the Script the
 	 * Storyteller opens from the board, which matches it exactly (Trevor, 2026-10-19).
 	 */
 	interface Props {
@@ -24,6 +25,8 @@
 	});
 </script>
 
+<!-- One switch for the Script and Night tabs, beside Print and Share (Trevor, 2026-10-23). -->
+<LightSheetSwitch />
 <PrintScriptButton {script} {version} />
 <ShareControl
 	what="script"
