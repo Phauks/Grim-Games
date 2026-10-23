@@ -302,6 +302,9 @@
 		gap: 0.2em;
 		min-width: 0;
 		max-width: 100%;
+		/* Text high, not a button's 44px: the corner's room is measured from its height
+		   (corner-room.ts); the ::before below keeps the tap target. */
+		min-height: 0;
 		padding: 0;
 		/* The corner title lets taps through to the board; its town name takes them. */
 		pointer-events: auto;

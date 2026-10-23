@@ -1256,17 +1256,12 @@ test('each special rule takes its own line under the script name in the board co
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const corner = page.getByTestId('script-title');
 	const lines = corner.getByTestId('game-mode');
+	await expect(corner).toBeVisible();
 	if (test.info().project.name === 'phone') {
-		// A phone's corner beside seat 5 has no room for the name and a rule line: the name
-		// hides, and the ⋯ menu has Game info, with the mode and its rules, instead.
-		await expect(corner).toBeHidden();
-		await page.getByRole('button', { name: 'More', exact: true }).tap();
-		await expect(
-			page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Game info' })
-		).toBeVisible();
+		// A phone's corner beside seat 5 has room for the name and one line: the rules share it.
+		await expect(lines).toHaveText(['Stowed Away + I See Dead People']);
 		return;
 	}
-	await expect(corner).toBeVisible();
 	await expect(lines).toHaveText(['Stowed Away', 'I See Dead People']);
 	const [first, second] = [
 		(await lines.nth(0).boundingBox())!,

@@ -1965,8 +1965,10 @@
 						class="room-code"
 						data-testid="board-room-code"
 						onclick={() => (phonesOpen = true)}
-						>{t('room.joinCode')}
-						<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
+						><span class="room-code-line"
+							>{t('room.joinCode')}
+							<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
+							></span
 						></button
 					>{/if}
 			</p>
@@ -2730,6 +2732,9 @@
 	.room-code {
 		position: relative;
 		display: block;
+		min-width: 0;
+		/* Text high, as the mode name (ModeMenu); the ::before keeps the tap target. */
+		min-height: 0;
 		padding: 0;
 		border: 0;
 		background: none;
@@ -2748,6 +2753,14 @@
 		letter-spacing: 0.08em;
 	}
 	/* A tap target bigger than the small corner text, without moving anything (ModeMenu). */
+	/* One line, cut short like the corner's other lines: wrapping would make the corner taller
+	   as its room shrinks, and the room would shrink again (corner-room.ts). */
+	.room-code-line {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 	.room-code::before {
 		content: '';
 		position: absolute;
