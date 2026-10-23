@@ -320,6 +320,27 @@ describe('custom characters', () => {
 		expect(firstDeathSaver(spent, seats[0], all)).toBeUndefined();
 	});
 
+	// A homebrew Outsider that may register as evil and a Minion, as the Recluse may
+	// (https://wiki.bloodontheclocktower.com/Recluse).
+	it('can register as something else through its rules block', () => {
+		const { g, seats, all } = custom({
+			id: 'shady',
+			name: 'Shady',
+			team: 'outsider',
+			ability: 'You might register as evil and as a Minion, even if dead.',
+			rules: { registersAs: { self: { alignments: ['evil'], types: ['minion'] } } }
+		});
+		expect(registrations(g, all)).toMatchObject([
+			{
+				seatId: seats[0],
+				alignments: ['good', 'evil'],
+				types: ['outsider', 'minion'],
+				source: { characterId: 'shady' }
+			}
+		]);
+		expect(registrations(g, characters)).toEqual([]);
+	});
+
 	// A homebrew Outsider that is always drunk, as the Drunk is
 	// (https://wiki.bloodontheclocktower.com/Drunk).
 	it('can be impaired itself through its rules block', () => {

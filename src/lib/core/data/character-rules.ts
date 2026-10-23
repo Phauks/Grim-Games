@@ -10,7 +10,13 @@
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
-import { CHARACTER_TYPES, type CharacterType, type ReminderLabel } from './types.ts';
+import {
+	ALIGNMENTS,
+	CHARACTER_TYPES,
+	type Alignment,
+	type CharacterType,
+	type ReminderLabel
+} from './types.ts';
 import {
 	checkKeys,
 	describe,
@@ -19,6 +25,7 @@ import {
 	readEnum,
 	readNumber,
 	readString,
+	readStringArray,
 	type Issues
 } from './validate.ts';
 
@@ -85,6 +92,26 @@ export interface CharacterRules {
 	dayClaim?: DayClaim;
 	/** How the ability leaves players drunk, poisoned or with no ability (`rules/ability.ts`). */
 	impairs?: Impairs;
+	/** Players who may register as another alignment or character type (`rules/ability.ts`). */
+	registersAs?: RegistersAs;
+}
+
+/** What a player may also register as, besides their true alignment and character type. */
+export interface Registers {
+	alignments?: readonly Alignment[];
+	types?: readonly CharacterType[];
+}
+
+/**
+ * Who may register as something else while this character's ability works: `self`, its own
+ * player, even if dead (the Spy as good and a Townsfolk or Outsider, the Recluse as evil and a
+ * Minion or Demon); `tokens`, the player carrying one of its reminders, by label, only while
+ * their alignment is `carrierAlignment` when given (the Lycanthrope's "Faux Paw" on a good
+ * player, as evil).
+ */
+export interface RegistersAs {
+	self?: Registers;
+	tokens?: Readonly<Record<ReminderLabel, Registers & { carrierAlignment?: Alignment }>>;
 }
 
 /** Why an ability does not work. `no-ability`: an effect such as the Preacher's. */
@@ -198,7 +225,8 @@ export const RULE_KEYS = [
 	'answers',
 	'onNominated',
 	'dayClaim',
-	'impairs'
+	'impairs',
+	'registersAs'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -320,7 +348,84 @@ export function parseCharacterRules(
 		const impairs = readImpairs(raw.impairs, `${path}.impairs`, issues, reminders);
 		if (impairs) rules.impairs = impairs;
 	}
+	if (raw.registersAs !== undefined) {
+		const registersAs = readRegistersAs(raw.registersAs, `${path}.registersAs`, issues, reminders);
+		if (registersAs) rules.registersAs = registersAs;
+	}
 	return issues.list.length > before ? undefined : rules;
+}
+
+function readEnumList<T extends string>(
+	raw: Record<string, unknown>,
+	key: string,
+	values: readonly T[],
+	path: string,
+	issues: Issues
+): T[] | undefined {
+	const list = readStringArray(raw, key, path, issues);
+	if (!list) return undefined;
+	const bad = list.filter((v) => !(values as readonly string[]).includes(v));
+	for (const v of bad) issues.add(`${path}.${key}`, `unknown value ${JSON.stringify(v)}`);
+	return bad.length > 0 ? undefined : (list as T[]);
+}
+
+function readRegisters(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	extra: readonly string[] = []
+): (Registers & { carrierAlignment?: Alignment }) | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['alignments', 'types', ...extra], path, issues);
+	const out: Registers & { carrierAlignment?: Alignment } = {};
+	const alignments = readEnumList(raw, 'alignments', ALIGNMENTS, path, issues);
+	if (alignments) out.alignments = alignments;
+	const types = readEnumList(raw, 'types', CHARACTER_TYPES, path, issues);
+	if (types) out.types = types;
+	if (extra.includes('carrierAlignment')) {
+		const carrier = readEnum(raw, 'carrierAlignment', ALIGNMENTS, path, issues, false);
+		if (carrier) out.carrierAlignment = carrier;
+	}
+	return out;
+}
+
+function readRegistersAs(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): RegistersAs | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['self', 'tokens'], path, issues);
+	const out: RegistersAs = {};
+	if (raw.self !== undefined) {
+		const self = readRegisters(raw.self, `${path}.self`, issues);
+		if (self) out.self = self;
+	}
+	if (raw.tokens !== undefined) {
+		const at = `${path}.tokens`;
+		if (!isObject(raw.tokens)) {
+			issues.add(at, `expected object, got ${describe(raw.tokens)}`);
+		} else {
+			const tokens: Record<ReminderLabel, Registers & { carrierAlignment?: Alignment }> = {};
+			for (const [label, value] of Object.entries(raw.tokens)) {
+				if (!ownReminder(label, reminders)) {
+					issues.add(`${at}.${label}`, 'not one of this character’s reminders');
+					continue;
+				}
+				const rule = readRegisters(value, `${at}.${label}`, issues, ['carrierAlignment']);
+				if (rule) tokens[label] = rule;
+			}
+			out.tokens = tokens;
+		}
+	}
+	return out;
 }
 
 function readImpairs(

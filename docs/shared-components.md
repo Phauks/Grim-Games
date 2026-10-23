@@ -111,6 +111,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                  | `onDeath`                             | moved         |
 | Protection (`ability.ts`, `night-alerts.ts`)                                                      | `protects`                            | moved         |
 | Impairments (`ability.ts`: the Drunk, Witch, Minstrel and Preacher)                               | `impairs`                             | moved         |
+| Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw)                          | `registersAs`                         | moved         |
 | Night killers (`night-alerts.ts` `NIGHT_KILLERS`)                                                 | `kills`                               | moved         |
 | Death checks (`night-deaths.ts`, the Gambler and Acrobat)                                         |                                       | not yet moved |
 | Kill redirect and first-death survival (`ability.ts`, `first-death.ts`)                           | `redirectsKill`, `survivesFirstDeath` | moved         |
