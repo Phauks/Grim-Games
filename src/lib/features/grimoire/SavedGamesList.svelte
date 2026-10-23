@@ -22,6 +22,7 @@
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
+	import { forgetGame } from './forget-game.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -71,11 +72,7 @@
 		await refresh();
 	}
 
-	async function forget(gameId: GameId) {
-		await gameStore().delete(gameId);
-		seatLayouts.forget(gameId);
-		endedGames.reopen(gameId);
-	}
+	const forget = forgetGame;
 
 	/** Deletes every game this list shows (Trevor, 2026-10-18: clear all on Resume game). */
 	export async function clearAll() {

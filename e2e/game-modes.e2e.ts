@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 
 /**
  * Game modes on New game (Trevor, 2026-10-17): choose a mode, inspect every part of it, and
@@ -76,7 +76,7 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 	await chooseMode(page, 'Standard');
 	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 });
 
 test('a mode’s own settings sit under Game mode settings, each with its description', async ({
@@ -1027,7 +1027,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 		page.getByTestId('chosen-script').getByRole('link', { name: "Open the script's source page" })
 	).toHaveAttribute('href', /\/script\/7\/2\.2/);
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const more = page.getByRole('dialog', { name: 'Grimoire' });

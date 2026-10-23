@@ -32,3 +32,13 @@ export async function nameStoryteller(page: Page, name: string): Promise<void> {
 	await page.goto(board);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 }
+
+/**
+ * After Start game: every start goes on to Character selection (Trevor, 2026-10-23); this
+ * goes on from there to the board without building a bag.
+ */
+export async function toBoard(page: Page): Promise<void> {
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await page.getByTestId('setup-to-board').tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+}

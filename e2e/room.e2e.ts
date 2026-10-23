@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
-import { nameStoryteller } from './new-game.ts';
+import { nameStoryteller, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
@@ -21,7 +21,7 @@ async function startGame(page: Page, storyteller?: string) {
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	if (storyteller !== undefined) await nameStoryteller(page, storyteller);
 	return new URL(page.url()).pathname;
 }
@@ -299,7 +299,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
 	await expect(ballot).toHaveCount(0);
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	// The same room carries the next game: its script, and seats to ask for again.
 	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
 	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();

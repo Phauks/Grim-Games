@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript, nameStoryteller } from './new-game.ts';
+import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
 
@@ -10,7 +10,7 @@ async function startGame(page: Page, script = 'Trouble Brewing') {
 	await page.goto('/new');
 	await pickScript(page, script);
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 }
 
@@ -3911,7 +3911,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	const board = page.url();
 	// Always in place, so the bank never moves: Set up until the tokens are handed out
 	// (Trevor, 2026-10-19), then Start game.
