@@ -8,6 +8,8 @@ import { resets } from './resets.ts';
 import IconsSection from './IconsSection.svelte';
 import DataSection from './DataSection.svelte';
 import BoardSection from './BoardSection.svelte';
+import ProfilesSection from '../profiles/ProfilesSection.svelte';
+import NewProfileButton from '../profiles/NewProfileButton.svelte';
 // Feature-owned sections, registered by their own modules.
 import '#lib/features/player/settings-section.ts';
 
@@ -16,12 +18,23 @@ import '#lib/features/player/settings-section.ts';
 // the same way from their own modules.
 // Theme and Text, Board and Tokens are separate sections (Trevor, 2026-10-18); each section
 // has its own reset, which puts back only its own settings.
+// Settings profiles first (plan S18): the sections marked `profile` belong to the one in use.
+registerSettingsSection({
+	id: 'profiles',
+	label: { key: 'settings.sectionProfiles' },
+	icon: 'settings',
+	component: ProfilesSection,
+	headingAction: NewProfileButton,
+	profile: true,
+	order: 5
+});
 registerSettingsSection({
 	id: 'theme',
 	label: { key: 'settings.sectionTheme' },
 	icon: 'appearance',
 	component: ThemeSection,
 	reset: resets.theme,
+	profile: true,
 	order: 10
 });
 registerSettingsSection({
@@ -30,6 +43,7 @@ registerSettingsSection({
 	icon: 'fonts',
 	component: TextSection,
 	reset: resets.text,
+	profile: true,
 	order: 15
 });
 registerSettingsSection({
@@ -38,6 +52,7 @@ registerSettingsSection({
 	icon: 'icons',
 	component: IconsSection,
 	reset: resets.icons,
+	profile: true,
 	order: 20
 });
 registerSettingsSection({
@@ -47,6 +62,7 @@ registerSettingsSection({
 	icon: 'boardSettings',
 	component: BoardSection,
 	reset: resets.board,
+	profile: true,
 	order: 30
 });
 registerSettingsSection({
@@ -55,6 +71,7 @@ registerSettingsSection({
 	icon: 'tokenSettings',
 	component: TokensSection,
 	reset: resets.tokens,
+	profile: true,
 	order: 32
 });
 registerSettingsSection({
@@ -63,6 +80,7 @@ registerSettingsSection({
 	icon: 'assistance',
 	component: AssistanceSection,
 	reset: resets.assistance,
+	profile: true,
 	order: 35
 });
 registerSettingsSection({

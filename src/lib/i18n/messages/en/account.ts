@@ -87,6 +87,10 @@ export const account = {
 		one: '{count} character collection',
 		other: '{count} character collections'
 	},
+	'account.firstSync.settings-profile': {
+		one: '{count} settings profile',
+		other: '{count} settings profiles'
+	},
 	'account.sync.otherDevice': '{name} (other device)',
 
 	'account.devices.title': 'Signed-in devices',

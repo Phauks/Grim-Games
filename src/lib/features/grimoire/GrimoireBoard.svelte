@@ -149,6 +149,7 @@
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FoolAsk from './FoolAsk.svelte';
 	import NominationAsk from './NominationAsk.svelte';
+	import { settingsProfiles } from '#lib/features/settings/profiles/settings-profiles.svelte.ts';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -1405,6 +1406,11 @@
 			? game.script.meta?.background
 			: undefined
 	);
+	// The game's settings profile: the one it was started or last played with (plan S18).
+	$effect(() => {
+		const gameId = game.gameId;
+		untrack(() => settingsProfiles.openGame(gameId));
+	});
 	// Chosen in Board and tokens, for this game or all (Trevor, 2026-10-18).
 	$effect(() =>
 		boardBackground.set({

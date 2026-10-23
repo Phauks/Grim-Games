@@ -29,6 +29,8 @@
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import ScriptVoteSheet from '#lib/features/room/ScriptVoteSheet.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import ProfileSelect from '#lib/features/settings/profiles/ProfileSelect.svelte';
+	import { settingsProfiles } from '#lib/features/settings/profiles/settings-profiles.svelte.ts';
 
 	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
 	onMount(() => {
@@ -54,6 +56,9 @@
 	let edition = $state<ScriptChoice>('tb');
 	let players = $state(8);
 	let starting = $state(false);
+	/** The settings profile the game starts with (plan S18): the default one first. */
+	let profile = $state(settingsProfiles.defaultId);
+	$effect(() => settingsProfiles.chooseForNextGame(profile));
 	/** Teensyville scripts grey out counts above 6 (Trevor, 2026-10-19). */
 	const maxPlayers = $derived.by(() => {
 		const data = officialData.current;
@@ -103,6 +108,8 @@
 
 <!-- The page's title is the route's (Page); this is its content. -->
 <section>
+	<!-- Above the modes so every kind of game starts with it; always shown (plan S18). -->
+	<ProfileSelect showLabel value={profile} onChange={(id) => (profile = id)} />
 	<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
 	<GameModesPanel standardScript={edition} standardPlayers={players}>
 		{#snippet standard(rules, begin)}
