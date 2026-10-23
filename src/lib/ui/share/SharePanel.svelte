@@ -8,6 +8,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { qrPicture } from './qr-picture.svelte.ts';
 	import QrCentreSetting from './QrCentreSetting.svelte';
+	import QrPicture from './QrPicture.svelte';
 
 	/**
 	 * The one share screen (Trevor, 2026-10-18): an optional code in large type, the QR code,
@@ -147,6 +148,8 @@
 				center={middle}
 				centerShape={middleShape}
 				caption={qrCaption}
+				modules={preferences.current.qrModules}
+				finders={preferences.current.qrFinders}
 			/>
 			{#if hidden}<p class="placeholder cover" data-testid="share-hidden">
 					{t('share.hidden')}
@@ -196,7 +199,7 @@
 </div>
 
 {#snippet pictureCentre()}
-	<img class="qr-picture" src={qrPicture.current} alt="" />
+	<QrPicture />
 {/snippet}
 
 <Popover bind:open={centreOpen} title={t('share.qrCentre')} anchor={centreButton}>
@@ -204,11 +207,6 @@
 </Popover>
 
 <style>
-	.qr-picture {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
 	.centre {
 		display: grid;
 		gap: var(--space-2);
