@@ -7,8 +7,9 @@
  * Counts every line of the .ts, .js, .svelte and .css files under src and worker. Tests,
  * rules data tables (`*.data.ts`, moving to `src/lib/core/data/rules/`), i18n catalogs and
  * generated files are not counted. LARGE_FILE_TODO lists the files that were over the limit
- * when the lint began; it only shrinks: a file comes off it when its split lands, and the lint
- * fails while a listed file is back under the limit. Run by `npm run lint`.
+ * when the lint began; it only shrinks: a new file never goes on it, and a split takes its file
+ * off. A listed file that is back under the limit (or gone) is only reported, not a failure, so
+ * splits running in parallel never break each other's lint on beta. Run by `npm run lint`.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -84,16 +85,12 @@ if (process.argv.includes('--run')) {
 	const problems = lineProblems(sizes);
 	const missing = LARGE_FILE_TODO.filter((file) => !sizes.has(file));
 	for (const { file, lines, problem } of problems) {
-		console.error(
-			problem === 'too-long'
-				? `${file}: ${lines} lines, over ${MAX_LINES}. Split it into modules.`
-				: `${file}: ${lines} lines, under the limit now. Take it off LARGE_FILE_TODO in scripts/check-lines.ts.`
-		);
+		if (problem === 'too-long') {
+			console.error(`${file}: ${lines} lines, over ${MAX_LINES}. Split it into modules.`);
+		} else {
+			console.log(`${file}: ${lines} lines now; take it off LARGE_FILE_TODO.`);
+		}
 	}
-	for (const file of missing) {
-		console.error(
-			`${file}: no longer exists. Take it off LARGE_FILE_TODO in scripts/check-lines.ts.`
-		);
-	}
-	if (problems.length || missing.length) process.exit(1);
+	for (const file of missing) console.log(`${file}: gone; take it off LARGE_FILE_TODO.`);
+	if (problems.some((p) => p.problem === 'too-long')) process.exit(1);
 }
