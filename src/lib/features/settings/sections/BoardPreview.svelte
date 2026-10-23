@@ -106,8 +106,6 @@
 	// The board's reminder size for this token: half of it, kept between 30 and 48px.
 	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5))));
 	const loose = $derived(boardLooks.current.reminders === 'free');
-	// As on the board: stacks only while reminders stay beside their seat.
-	const stacking = $derived(boardLooks.current.reminderStacks && !loose);
 	const rulesSize = $derived(
 		boardLooks.current.rulesAt === 'middle' ? Math.round(size * 0.6) : Math.round(size * 0.4)
 	);
@@ -185,18 +183,6 @@
 				{#if i === 0}<span class="seat-reminder" class:loose data-testid="preview-seat-reminder"
 						>{@render reminder(STEP, 0, 'good')}</span
 					>{/if}
-				<!-- Stack crowded reminders: Sam's seat as a crowded one, its "+N" token under the
-				     reminder (the board's own token, sample count). -->
-				{#if i === 0 && stacking}<span class="seat-more" data-testid="preview-seat-stack"
-						><BoardReminder
-							label=""
-							character={undefined}
-							more={3}
-							size={chip}
-							disabled
-							onTap={() => {}}
-						/></span
-					>{/if}
 			</div>
 		{/each}
 	</div>
@@ -204,17 +190,15 @@
 		{#if boardLooks.current.rulesAt === 'middle'}{@render rules()}{/if}
 	</div>
 
-	{#if preferences.current.assistance.scriptTitle}
-		<p class="preview-title" data-testid="preview-script-title">
-			{scriptName}
-			<!-- The join code under the name, as on the board; a sample code here. -->
-			{#if preferences.current.assistance.roomCode}<span
-					class="preview-room-code"
-					data-testid="preview-room-code"
-					>{t('room.joinCode')} <span class="code">{SAMPLE_CODE}</span></span
-				>{/if}
-		</p>
-	{/if}
+	<p class="preview-title" data-testid="preview-script-title">
+		{scriptName}
+		<!-- The join code under the name, as on the board; a sample code here. -->
+		{#if preferences.current.assistance.roomCode}<span
+				class="preview-room-code"
+				data-testid="preview-room-code"
+				>{t('room.joinCode')} <span class="code">{SAMPLE_CODE}</span></span
+			>{/if}
+	</p>
 	<ul class="bank" aria-label={t('settings.previewBank')} data-testid="preview-bank">
 		{#each bank as item (item.key)}
 			{@const now = item.characterId === STEP}
@@ -263,11 +247,6 @@
 		position: absolute;
 		left: 100%;
 		top: 0;
-	}
-	.seat-more {
-		position: absolute;
-		left: 100%;
-		top: var(--chip);
 	}
 	.seat-reminder.loose {
 		left: 115%;

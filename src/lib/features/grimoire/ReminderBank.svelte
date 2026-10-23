@@ -256,9 +256,14 @@
 			...rest.filter((i) => i.group === 'dead')
 		]);
 	});
-	/** "Only this character": the step's reminders alone, while a step is walked through. */
+	/**
+	 * "Only this character": the step's reminders, while a step is walked through, then the ∞
+	 * tokens, which any step can use (Trevor, 2026-10-23).
+	 */
 	function only(list: Item[]): Item[] {
-		return focus && focusMode === 'only' ? list.filter((i) => i.now) : list;
+		return focus && focusMode === 'only'
+			? list.filter((i) => i.now || i.group === 'generic')
+			: list;
 	}
 	const dimRest = $derived(focusMode === 'highlight' && items.some((i) => i.now));
 	/** A solid line goes before each stretch but the first. */
@@ -803,14 +808,20 @@
 		color: var(--on-surface-muted);
 		cursor: default;
 	}
-	/* Cut into the bank's top edge, like the day timer's mode (DayTimer .caption). */
+	/*
+	 * On the bank's top edge, half over the board, so it is the seat name's pill (PlayerNameMark):
+	 * a band of the bank's own see-through colour didn't match every board background (Trevor,
+	 * 2026-10-23).
+	 */
 	.caption {
 		position: absolute;
 		top: 0;
 		z-index: 3;
 		margin-left: var(--space-2);
-		padding: 0 var(--space-1);
-		background: var(--board-bar-background);
+		padding: 0.2em var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
 		color: var(--on-surface-muted);
 		font: 600 0.65rem / 1 var(--font-control);
 		letter-spacing: 0.08em;
