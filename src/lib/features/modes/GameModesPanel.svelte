@@ -596,6 +596,11 @@
 	.town {
 		margin: var(--space-3) 0 0;
 	}
+	/* Rows of the preview are ruled apart, as stacked rows are elsewhere (Trevor, 2026-10-22). */
+	.preview :global(li.character) {
+		padding-top: var(--space-2);
+		border-top: 1px solid var(--border);
+	}
 	/* A computer window: the preview sits to the right and scrolls on its own, held below the
 	   app header as Page's side column is. */
 	@media (min-width: 75rem) {
