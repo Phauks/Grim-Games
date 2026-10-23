@@ -1685,10 +1685,21 @@ test('the board background can be an image from the device, kept after a reload'
 	// loaded again, e.g. on a ghost vote (Trevor, 2026-10-23).
 	const image = await backdrop.getAttribute('style');
 	const node = await backdrop.elementHandle();
-	await nameSeat(await openSeat(page, 1), 'Ana');
+	const sheet = await openSeat(page, 1);
+	await nameSeat(sheet, 'Ana');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Ana' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
+	// Starting the night too, as the seats close up for the walk-through (Trevor, 2026-10-23).
+	const box = await backdrop.boundingBox();
+	await bankNight(page, 'Start game').tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
 	await expect(backdrop).toHaveAttribute('style', image!);
+	expect(await backdrop.boundingBox()).toEqual(box);
 	expect(await node!.evaluate((el) => el.isConnected)).toBe(true);
 
 	await page.reload();
