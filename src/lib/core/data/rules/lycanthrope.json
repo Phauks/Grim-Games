@@ -23,5 +23,8 @@
 				"carrierAlignment": "good"
 			}
 		}
+	},
+	"deathCheck": {
+		"kind": "chosen-good-dies"
 	}
 }

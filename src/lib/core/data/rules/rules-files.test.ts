@@ -121,6 +121,12 @@ describe('parseCharacterRules', () => {
 		expect(parse({ gameEnd: { holds: [{ kind: 'marked-alive', token: 'Twin' }] } }).issues).toEqual(
 			['rules.gameEnd.holds[0].token: not one of this character’s reminders']
 		);
+		expect(parse({ deathCheck: { kind: 'explodes' } }).issues).toEqual([
+			'rules.deathCheck.kind: unknown value "explodes"'
+		]);
+		expect(parse({ deathCheck: { kind: 'marked-killed-by-demon' } }).issues).toEqual([
+			'rules.deathCheck.token: missing'
+		]);
 		expect(parse({ dayClaim: 'shout' }).issues).toEqual(['rules.dayClaim: unknown value "shout"']);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'

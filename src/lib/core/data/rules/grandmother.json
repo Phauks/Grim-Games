@@ -9,5 +9,9 @@
 			"seat": "self",
 			"note": "On the Grandmother when the Demon kills her Grandchild."
 		}
+	},
+	"deathCheck": {
+		"kind": "marked-killed-by-demon",
+		"token": "Grandchild"
 	}
 }

@@ -1,6 +1,7 @@
 /**
  * Night deaths a character's own ability causes, worked out from the grimoire so the
- * Storyteller is told who dies (the DEAD reminder) instead of having to remember:
+ * Storyteller is told who dies (the DEAD reminder) instead of having to remember. Each is a
+ * `deathCheck` rule in the character's rules file (or a custom character's `rules`):
  * - Gambler: a wrong guess kills the Gambler (https://wiki.bloodontheclocktower.com/Gambler);
  * - Acrobat: choosing a player who is drunk or poisoned tonight kills the Acrobat
  *   (https://wiki.bloodontheclocktower.com/Acrobat);
@@ -18,7 +19,10 @@
  * Verdicts are data only (no wording): `because` says which rule decided it, and the
  * seats and sources say who, so the UI shows values.
  */
-import type { CharacterId } from '#lib/core/data/types.ts';
+import type { DeathCheckKind } from '#lib/core/data/character-rules.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
+import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { AbnormalCause, Game, SeatId } from '#lib/core/model/types.ts';
@@ -96,11 +100,12 @@ export interface DeathChoice {
 
 export type DeathNeeds = 'player' | 'player-character' | 'none';
 
-export const DEATH_CHECKS: Readonly<Record<CharacterId, { needs: DeathNeeds; wiki: string }>> = {
-	gambler: { needs: 'player-character', wiki: `${W}Gambler` },
-	acrobat: { needs: 'player', wiki: `${W}Acrobat` },
-	lycanthrope: { needs: 'player', wiki: `${W}Lycanthrope` },
-	grandmother: { needs: 'none', wiki: `${W}Grandmother` }
+/** What the waking player must choose for each kind of death check. */
+const NEEDS: Readonly<Record<DeathCheckKind, DeathNeeds>> = {
+	'wrong-guess': 'player-character',
+	'chose-impaired': 'player',
+	'chosen-good-dies': 'player',
+	'marked-killed-by-demon': 'none'
 };
 
 /** The death check for one waking player; `verdict` is worked out when no choice is needed. */
@@ -145,7 +150,7 @@ const guarded = (by: AbilitySource | 'override'): NoDeath => ({
 	abnormal: [protectedCause(by)]
 });
 
-function gambler(
+function wrongGuess(
 	game: Game,
 	seatId: SeatId,
 	choice: DeathChoice,
@@ -171,7 +176,7 @@ function gambler(
 	return { kind: 'dies', seatIds: [seatId], because: 'wrong-guess' };
 }
 
-function acrobat(
+function choseImpaired(
 	game: Game,
 	seatId: SeatId,
 	choice: DeathChoice,
@@ -191,7 +196,7 @@ function acrobat(
 	return { kind: 'dies', seatIds: [seatId], because: 'chosen-impaired', chosen };
 }
 
-function lycanthrope(
+function chosenGoodDies(
 	game: Game,
 	seatId: SeatId,
 	choice: DeathChoice,
@@ -220,10 +225,16 @@ function lycanthrope(
 	return { kind: 'dies', seatIds: [target], demonKills: false, because: 'registers-good' };
 }
 
-function grandmother(game: Game, seatId: SeatId, characters: CharacterLookup): DeathVerdict {
+function markedKilledByDemon(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	token: ReminderLabel,
+	characters: CharacterLookup
+): DeathVerdict {
 	if (game.seats[seatId]?.dead) return { kind: 'no-death', because: 'actor-dead' };
 	const grandchild = game.seating.find((s) =>
-		game.seats[s].reminders.some((r) => r.characterId === 'grandmother' && r.label === 'Grandchild')
+		game.seats[s].reminders.some((r) => r.characterId === characterId && r.label === token)
 	);
 	if (!grandchild) return { kind: 'no-death', because: 'no-grandchild' };
 	const child = game.seats[grandchild];
@@ -257,15 +268,18 @@ export function deathVerdict(
 	choice: DeathChoice,
 	characters: CharacterLookup
 ): DeathVerdict | undefined {
-	switch (characterId) {
-		case 'gambler':
-			return gambler(game, seatId, choice, characters);
-		case 'acrobat':
-			return acrobat(game, seatId, choice, characters);
-		case 'lycanthrope':
-			return lycanthrope(game, seatId, choice, characters);
-		case 'grandmother':
-			return grandmother(game, seatId, characters);
+	const rule = rulesOf(characterId, characters)?.deathCheck;
+	switch (rule?.kind) {
+		case 'wrong-guess':
+			return wrongGuess(game, seatId, choice, characters);
+		case 'chose-impaired':
+			return choseImpaired(game, seatId, choice, characters);
+		case 'chosen-good-dies':
+			return chosenGoodDies(game, seatId, choice, characters);
+		case 'marked-killed-by-demon':
+			return rule.token
+				? markedKilledByDemon(game, seatId, characterId, rule.token, characters)
+				: undefined;
 		default:
 			return undefined;
 	}
@@ -278,15 +292,17 @@ export function deathCheck(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): DeathCheck | undefined {
-	const spec = Object.hasOwn(DEATH_CHECKS, characterId) ? DEATH_CHECKS[characterId] : undefined;
-	if (!spec) return undefined;
+	const rule = rulesOf(characterId, characters)?.deathCheck;
+	if (!rule) return undefined;
+	const needs = NEEDS[rule.kind];
+	const character = characters.get(characterId);
 	return {
 		characterId,
 		seatId,
-		needs: spec.needs,
-		...(spec.needs === 'none'
+		needs,
+		...(needs === 'none'
 			? { verdict: deathVerdict(game, seatId, characterId, {}, characters) }
 			: {}),
-		wiki: spec.wiki
+		wiki: (character && wikiUrl(character)) ?? `${W}Glossary`
 	};
 }
