@@ -89,13 +89,23 @@ export function recommendedTravellers(script: Script, characters: CharacterLooku
 
 /**
  * The orphan warning: a seat whose character token is not on the game's script (Travellers
- * never are, so they are not orphans).
+ * never are, so they are not orphans), nor put in play by a special rule (`allowed`: +1,
+ * Infinite Possibilities; Trevor, 2026-10-23).
  */
-export function isOrphan(seat: Seat, script: Script, characters: CharacterLookup): boolean {
+export function isOrphan(
+	seat: Seat,
+	script: Script,
+	characters: CharacterLookup,
+	allowed: ReadonlySet<CharacterId> = new Set()
+): boolean {
 	if (seat.characterId === undefined) return false;
 	const character = characters.get(seat.characterId);
 	if (!character) return true;
-	return character.type !== 'traveller' && !isOnScript(script, seat.characterId);
+	return (
+		character.type !== 'traveller' &&
+		!isOnScript(script, seat.characterId) &&
+		!allowed.has(seat.characterId)
+	);
 }
 
 /**

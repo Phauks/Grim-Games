@@ -56,6 +56,13 @@ describe('isOrphan', () => {
 		expect(isOrphan(seat('gunslinger'), tb, characters)).toBe(false);
 		expect(isOrphan(seat(), tb, characters)).toBe(false);
 	});
+
+	// Trevor, 2026-10-23: a character a special rule put in play (+1) is not flagged.
+	it('does not flag a character a special rule put in play', () => {
+		const allowed = new Set(['zombuul']);
+		expect(isOrphan(seat('zombuul'), tb, characters, allowed)).toBe(false);
+		expect(isOrphan(seat('pukka'), tb, characters, allowed)).toBe(true);
+	});
 });
 
 describe('causeLabel', () => {

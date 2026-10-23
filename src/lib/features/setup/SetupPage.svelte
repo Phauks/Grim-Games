@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -184,7 +185,11 @@
 			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id)
 		)
 	);
-	const offScriptIds = $derived(new Set([...offScript, ...offScriptRules].map((c) => c.id)));
+	/** Characters a special rule put in play (+1, Infinite Possibilities) are not marked. */
+	const ruleAllowed = $derived(game ? allowedOffScriptIn(game.gameId) : new Set<CharacterId>());
+	const offScriptIds = $derived(
+		new Set([...offScript, ...offScriptRules].map((c) => c.id).filter((id) => !ruleAllowed.has(id)))
+	);
 	/** The Demon's bluffs, chosen below the list, are tagged in it (Trevor, 2026-10-18). */
 	const bluffIds = $derived(new Set(game?.bluffs[DEMON_SET] ?? []));
 	/**

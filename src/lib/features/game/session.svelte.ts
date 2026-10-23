@@ -34,6 +34,7 @@ import {
 } from '#lib/core/model/index.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { endedGames } from '#lib/features/grimoire/device-notes.ts';
+import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 import { IdbGameStore } from './idb-store.ts';
 
 let defaultStore: GameStore | undefined;
@@ -214,7 +215,18 @@ export class OpenGame {
 			this.session = result.session;
 			void this.save();
 		}
-		return { ok: true, warnings: result.warnings };
+		// A character a special rule put in play from off the script is not flagged (Trevor,
+		// 2026-10-23).
+		const allowed = allowedOffScriptIn(this.game.gameId);
+		const warnings = result.warnings.filter(
+			(w) =>
+				!(
+					w.code === 'not-on-script' &&
+					w.characters?.length &&
+					w.characters.every((id) => allowed.has(id))
+				)
+		);
+		return { ok: true, warnings };
 	}
 
 	get canUndo(): boolean {
