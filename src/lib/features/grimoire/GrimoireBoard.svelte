@@ -10,7 +10,7 @@
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames, gameStarts } from './device-notes.ts';
-	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -22,9 +22,6 @@
 	import { boardLooks } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
-	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
-	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
-	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { goto, pushState, replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount, tick, untrack } from 'svelte';
@@ -67,9 +64,7 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ReminderOrigin from './ReminderOrigin.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
@@ -131,10 +126,11 @@
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
-	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import BoardCorner from './BoardCorner.svelte';
+	import BoardMenu from './BoardMenu.svelte';
+	import BoardToolbar from './BoardToolbar.svelte';
 	import RuleCharacters from './RuleCharacters.svelte';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
@@ -863,25 +859,6 @@
 	// Sheets and dialogs over the board blur it (Trevor, 2026-10-23: game integrity).
 	$effect(() => markBoardShown());
 
-	// ── Full screen, for those who don't know their browser's own way (Trevor, 2026-10-23).
-	// Only where the browser can: iPhone Safari can't for a page, so the button isn't there. ──
-	/**
-	 * Not in the installed app (Trevor, 2026-10-23): it already has no address bar, and full
-	 * screen would only take the clock and status bar he wants to keep.
-	 */
-	const canFullScreen =
-		document.fullscreenEnabled === true && !matchMedia('(display-mode: standalone)').matches;
-	let fullScreen = $state(!!document.fullscreenElement);
-	$effect(() => {
-		const sync = () => (fullScreen = !!document.fullscreenElement);
-		document.addEventListener('fullscreenchange', sync);
-		return () => document.removeEventListener('fullscreenchange', sync);
-	});
-	function toggleFullScreen() {
-		if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-		else void document.documentElement.requestFullscreen().catch(() => {});
-	}
-
 	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
 	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
@@ -1063,10 +1040,6 @@
 	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
-	function fromMenu(action: () => void) {
-		menuOpen = false;
-		action();
-	}
 
 	// ── Fabled and Loric: their dialogs (RuleCharacters) ──
 	let rules = $state<ReturnType<typeof RuleCharacters>>();
@@ -1179,88 +1152,18 @@
 		preset={background.kind === 'preset' ? background.id : undefined}
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
 	/>
-	<div class="toolbar" role="toolbar" aria-label="Grimoire">
-		{#if seatArr.arranging}
-			<span class="title arranging-title">Arrange seats</span>
-			<span class="spacer"></span>
-			<IconButton
-				icon="undo"
-				label="Rotate players anticlockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
-			/>
-			<IconButton
-				icon="redo"
-				label="Rotate players clockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
-			/>
-			<Button
-				variant="quiet"
-				disabled={Object.keys(layout.placed).length === 0 && Object.keys(layout.gaps).length === 0}
-				onclick={() => seatArr.spread()}>Spread evenly</Button
-			>
-			<Button variant="accent" icon="check" onclick={() => (seatArr.arranging = false)}>Done</Button
-			>
-		{:else if placing}
-			<span class="title">Add a seat</span>
-			<Button variant="quiet" icon="close" onclick={() => (placing = undefined)}>Cancel</Button>
-		{:else}
-			<!-- The app's navigation; on the narrowest phones it is in More instead. -->
-			<span class="nav-menu" class:watching><NavMenuButton /></span>
-			<!-- Icons on phones; with their words on wider screens, where there is room. A
-			     spectator's board says what it is in that room (Trevor, 2026-10-19). -->
-			<span class="spacer"
-				>{#if watching}<span class="view-only" data-testid="view-only">View-Only</span>{/if}</span
-			>
-			<!-- A spectator sees every control the Storyteller does, disabled (Trevor, 2026-10-19):
-			     nothing opens, so nothing invites a try. Script only shows the players' copy. -->
-			<!-- On or off, one word, so the toolbar never moves (two states = a toggle). -->
-			{#if canFullScreen}<Button
-					variant="quiet"
-					icon={fullScreen ? 'exitFullScreen' : 'fullScreen'}
-					aria-label="Full screen"
-					aria-pressed={fullScreen}
-					onclick={toggleFullScreen}><span class="tool-label">Full screen</span></Button
-				>{/if}
-			<Button
-				variant="quiet"
-				icon="day"
-				aria-label="Day"
-				disabled={watching}
-				onclick={() => (dayOpen = true)}><span class="tool-label">Day</span></Button
-			>
-			<Button
-				variant="quiet"
-				icon="info"
-				aria-label="Info tokens"
-				disabled={watching}
-				onclick={() => (infoOpen = true)}><span class="tool-label">Info tokens</span></Button
-			>
-			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16),
-			     before Share (Trevor, 2026-10-23). -->
-			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
-				><span class="tool-label">Script</span></Button
-			>
-			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). Pointing at, focusing or
-			     pressing it starts opening the room, so the code and QR are ready. -->
-			<Button
-				variant="quiet"
-				icon="share"
-				aria-label="Share"
-				disabled={watching}
-				onpointerenter={prepareRoom}
-				onfocus={prepareRoom}
-				onpointerdown={prepareRoom}
-				onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
-			>
-			<Button
-				variant="quiet"
-				icon="more"
-				aria-label="More"
-				disabled={watching}
-				onclick={() => (menuOpen = true)}><span class="tool-label">More</span></Button
-			>
-		{/if}
-	</div>
+	<BoardToolbar
+		{grimoire}
+		{watching}
+		{seatArr}
+		placing={!!placing}
+		onCancelPlacing={() => (placing = undefined)}
+		onDay={() => (dayOpen = true)}
+		onInfo={() => (infoOpen = true)}
+		onScript={() => (scriptOpen = true)}
+		onShare={() => (phonesOpen = true)}
+		onMore={() => (menuOpen = true)}
+	/>
 
 	<div
 		class="board"
@@ -1606,87 +1509,23 @@
 </div>
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
-<Dialog bind:open={menuOpen} title="Grimoire">
-	<div class="menu">
-		<Button variant="quiet" icon="history" onclick={() => fromMenu(() => (historyOpen = true))}>
-			History
-		</Button>
-		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
-			Demon bluffs
-		</Button>
-		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => (notesOpen = true))}
-			>Notes</Button
-		>
-		{#if cornerHidden}
-			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
-				Game info
-			</Button>
-		{/if}
-		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
-		     apart at the bottom (Trevor, 2026-10-18). -->
-		<hr class="menu-rule" />
-		<Button
-			variant="quiet"
-			icon="add"
-			onclick={() =>
-				fromMenu(() =>
-					// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
-					startPlacing((position) => void grimoire.addSeat(position))
-				)}
-		>
-			Add seat
-		</Button>
-		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(() => rules?.add())}>
-			Add Fabled or Loric
-		</Button>
-		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(() => seatArr.start())}>
-			Arrange seats
-		</Button>
-		<hr class="menu-rule" />
-		<!-- Board and token settings over the board (Trevor, 2026-10-17); two sections since
-		     2026-10-18. -->
-		<Button
-			variant="quiet"
-			icon="boardSettings"
-			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
-		>
-			Board
-		</Button>
-		<Button
-			variant="quiet"
-			icon="tokenSettings"
-			onclick={() => fromMenu(() => settingsDialog.showOnly('tokens'))}
-		>
-			Tokens
-		</Button>
-		<!-- The board's settings apart from the app's items (Trevor, 2026-10-23). -->
-		<hr class="menu-rule" />
-		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
-		<span class="menu-nav">
-			<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
-				Navigation
-			</Button>
-		</span>
-		<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
-		<Button variant="quiet" icon="report" onclick={() => fromMenu(() => reportDialog.show())}>
-			{t('shell.reportIssue')}
-		</Button>
-		<hr class="menu-rule" />
-		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
-		{#if ended}
-			<Button variant="quiet" icon="download" onclick={() => fromMenu(() => (exportOpen = true))}>
-				Export game
-			</Button>
-			<Button variant="quiet" icon="undo" onclick={() => fromMenu(() => (reopenOpen = true))}>
-				Reopen game
-			</Button>
-		{:else}
-			<Button variant="danger" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
-				End game
-			</Button>
-		{/if}
-	</div>
-</Dialog>
+<BoardMenu
+	bind:open={menuOpen}
+	gameInfo={cornerHidden}
+	ended={!!ended}
+	onHistory={() => (historyOpen = true)}
+	onBluffs={() => (bluffsOpen = true)}
+	onNotes={() => (notesOpen = true)}
+	onGameInfo={() => (modeMenuOpen = true)}
+	onAddSeat={() =>
+		// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
+		startPlacing((position) => void grimoire.addSeat(position))}
+	onAddRule={() => rules?.add()}
+	onArrange={() => seatArr.start()}
+	onExport={() => (exportOpen = true)}
+	onReopen={() => (reopenOpen = true)}
+	onEnd={() => (endOpen = true)}
+/>
 
 <ModeMenu
 	{game}
@@ -1954,36 +1793,6 @@
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}
-	.toolbar {
-		/* A fixed height, so swapping in the arranging controls never moves the board. */
-		flex: none;
-		box-sizing: border-box;
-		height: calc(var(--tap-target) + var(--space-2));
-		display: flex;
-		align-items: center;
-		/* One spacing step everywhere (Trevor, 2026-10-16): the same inset from the screen's
-		   top and sides as the board's margin, and between buttons, narrowing only on the
-		   smallest phones so six buttons still fit at 320px. No dividing line: the dashed
-		   outline shows the board's edge while arranging. */
-		gap: min(var(--space-2), 1.5vw);
-		padding: var(--menu-inset) var(--menu-inset) 0;
-	}
-	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
-	   on any image (Trevor, 2026-10-18). */
-	.grimoire:has(> :global(.backdrop))
-		.toolbar
-		:global(button:not([data-variant='accent']):not([data-variant='danger'])) {
-		background: var(--board-bar-background);
-	}
-	.title {
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
-		font-family: var(--font-heading);
-		color: var(--heading);
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
 	.strip-measure {
 		position: absolute;
 		visibility: hidden;
@@ -2182,20 +1991,6 @@
 		opacity: var(--logo-opacity);
 		pointer-events: none;
 	}
-	.spacer {
-		flex: 1;
-		min-width: 0;
-		text-align: center;
-	}
-	.view-only {
-		display: block;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		color: var(--evil);
-		font-family: var(--font-heading);
-		font-weight: 700;
-	}
 	.change {
 		display: grid;
 		grid-template-columns: auto 1fr;
@@ -2211,45 +2006,6 @@
 	}
 	.winner {
 		margin-top: var(--space-3);
-	}
-	/* On a phone the arranging controls need the whole bar. */
-	.menu-nav {
-		display: none;
-	}
-	@media (max-width: 359.98px) {
-		/* Without More, a viewer's navigation stays on the toolbar. */
-		.nav-menu:not(.watching) {
-			display: none;
-		}
-		.menu-nav {
-			display: contents;
-		}
-	}
-	@media (max-width: 479.98px) {
-		.arranging-title {
-			display: none;
-		}
-	}
-	/* Solid, so the board's background never shows through; the day timer on the board has
-	   the same fill and edge (Trevor, 2026-10-23). A hover still shows its wash. */
-	.toolbar :global(.button[data-variant='quiet']:not(:hover)) {
-		background: var(--surface);
-	}
-	/* Phones show the toolbar's icons only; wider screens add the words. */
-	.toolbar :global(.tool-label) {
-		display: none;
-	}
-	@media (max-width: 719.98px) {
-		.toolbar :global(.button:has(.tool-label)) {
-			min-width: var(--tap-target);
-			padding: 0;
-			gap: 0;
-		}
-	}
-	@media (min-width: 720px) {
-		.toolbar :global(.tool-label) {
-			display: inline;
-		}
 	}
 	.rules {
 		display: flex;
@@ -2309,19 +2065,6 @@
 		border-radius: 50%;
 		background: none;
 		cursor: pointer;
-	}
-	.menu {
-		display: grid;
-		gap: var(--space-2);
-		margin-top: var(--space-3);
-	}
-	.menu-rule {
-		width: 100%;
-		margin: 0;
-		border: 0;
-		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
-		   2026-10-19). */
-		border-top: 0.125rem solid var(--button-edge);
 	}
 	/* The corner stack: tokens overlapping, with how many there are. */
 	.rules-stack {
