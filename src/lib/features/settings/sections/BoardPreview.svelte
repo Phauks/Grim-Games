@@ -106,6 +106,8 @@
 	// The board's reminder size for this token: half of it, kept between 30 and 48px.
 	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5))));
 	const loose = $derived(boardLooks.current.reminders === 'free');
+	// As on the board: stacks only while reminders stay beside their seat.
+	const stacking = $derived(boardLooks.current.reminderStacks && !loose);
 	const rulesSize = $derived(
 		boardLooks.current.rulesAt === 'middle' ? Math.round(size * 0.6) : Math.round(size * 0.4)
 	);
@@ -183,6 +185,18 @@
 				{#if i === 0}<span class="seat-reminder" class:loose data-testid="preview-seat-reminder"
 						>{@render reminder(STEP, 0, 'good')}</span
 					>{/if}
+				<!-- Stack crowded reminders: Sam's seat as a crowded one, its "+N" token under the
+				     reminder (the board's own token, sample count). -->
+				{#if i === 0 && stacking}<span class="seat-more" data-testid="preview-seat-stack"
+						><BoardReminder
+							label=""
+							character={undefined}
+							more={3}
+							size={chip}
+							disabled
+							onTap={() => {}}
+						/></span
+					>{/if}
 			</div>
 		{/each}
 	</div>
@@ -249,6 +263,11 @@
 		position: absolute;
 		left: 100%;
 		top: 0;
+	}
+	.seat-more {
+		position: absolute;
+		left: 100%;
+		top: var(--chip);
 	}
 	.seat-reminder.loose {
 		left: 115%;

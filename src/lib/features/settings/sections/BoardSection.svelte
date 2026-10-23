@@ -49,10 +49,12 @@
 	<SettingRow label={REMINDER_MODE_LABEL}>
 		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
 	</SettingRow>
+	<!-- Stacks only while reminders stay beside their seat, so off while they stay where dropped. -->
 	<SettingToggle
 		label={t('settings.reminderStacks')}
 		description={t('settings.reminderStacksHelp')}
 		checked={boardLooks.current.reminderStacks}
+		disabled={boardLooks.current.reminders === 'free'}
 		onChange={(reminderStacks) => boardLooks.update({ reminderStacks })}
 	/>
 	<SettingRow label={STEP_FOCUS_LABEL}>
