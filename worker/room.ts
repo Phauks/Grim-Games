@@ -199,7 +199,7 @@ export class Room extends DurableObject<RoomEnv> {
 			} else if (message.type === 'vote') {
 				room = castVote(room, id, message.voteId, message.choice);
 			} else if (message.type === 'script-ballot') {
-				room = castScriptBallot(room, id, message.voteId, message.choices);
+				room = castScriptBallot(room, id, message.voteId, message.choices, Date.now());
 			} else return;
 			await this.save(room);
 			return;
@@ -295,7 +295,14 @@ export class Room extends DurableObject<RoomEnv> {
 				room = setChoosing(room, message.on);
 				break;
 			case 'open-script-vote':
-				room = openScriptVote(room, message.voteId, message.kind, message.options);
+				room = openScriptVote(
+					room,
+					message.voteId,
+					message.kind,
+					message.options,
+					message.minutes,
+					Date.now()
+				);
 				break;
 			case 'close-script-vote':
 				room = closeScriptVote(room);

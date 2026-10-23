@@ -54,6 +54,12 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'J1', title: "Join game shows nothing from the phone until the room's script arrives" },
 			{ id: 'J2', title: 'Scan a code on Join game, with the camera in the app' },
 			{ id: 'J3', title: 'Password fields are masked, with an eye button to show them' },
+			{
+				id: 'J4',
+				title: "The script vote shows the room's code and QR, so players can join to vote"
+			},
+			{ id: 'J5', title: 'The Storyteller can set a time limit on the script vote' },
+			{ id: 'J6', title: "The script vote finds scripts with New game's own script controls" },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
 		]
 	},

@@ -15,6 +15,7 @@ import type { PublicGameState } from './public-projection.ts';
 import {
 	cleanBallot,
 	newScriptVote,
+	scriptVoteEnded,
 	tallyScriptVote,
 	type ScriptVote,
 	type ScriptVoteKind,
@@ -194,7 +195,14 @@ export type ClientMessage =
 	/** The Storyteller is (or no longer is) choosing the next script. */
 	| { type: 'choosing'; on: boolean }
 	/** Opens a vote on the next script, replacing any open one. */
-	| { type: 'open-script-vote'; voteId: string; kind: ScriptVoteKind; options: ScriptVoteOption[] }
+	| {
+			type: 'open-script-vote';
+			voteId: string;
+			kind: ScriptVoteKind;
+			options: ScriptVoteOption[];
+			/** A time limit in minutes (one of SCRIPT_VOTE_MINUTES); older apps send none. */
+			minutes?: number;
+	  }
 	| { type: 'close-script-vote' }
 	| { type: 'close' };
 
@@ -240,6 +248,8 @@ export interface PlayerView {
 		kind: ScriptVoteKind;
 		options: ScriptVoteOption[];
 		choices?: string[];
+		/** When the time limit runs out (epoch ms, the room's clock). */
+		endsAt?: number;
 	};
 }
 
@@ -430,8 +440,9 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 	}
 	if (room.choosing) view.choosing = true;
 	if (room.scriptVote) {
-		const { voteId, kind, options, ballots } = room.scriptVote;
+		const { voteId, kind, options, ballots, endsAt } = room.scriptVote;
 		view.scriptVote = { voteId, kind, options };
+		if (endsAt !== undefined) view.scriptVote.endsAt = endsAt;
 		if (ballots[memberId]) view.scriptVote.choices = ballots[memberId];
 	}
 	if (room.vote && isSpectator(me)) {
@@ -681,9 +692,11 @@ export function openScriptVote(
 	room: RoomState,
 	voteId: unknown,
 	kind: unknown,
-	options: unknown
+	options: unknown,
+	minutes?: unknown,
+	now = 0
 ): RoomState {
-	const vote = newScriptVote(voteId, kind, options);
+	const vote = newScriptVote(voteId, kind, options, minutes, now);
 	return vote ? { ...room, scriptVote: vote } : room;
 }
 
@@ -694,17 +707,22 @@ export function closeScriptVote(room: RoomState): RoomState {
 	return rest;
 }
 
-/** A member's ballot in the open script vote; a stale or malformed one is ignored. */
+/**
+ * A member's ballot in the open script vote; a stale or malformed one, or one after the time
+ * limit ran out at `now`, is ignored.
+ */
 export function castScriptBallot(
 	room: RoomState,
 	memberId: string,
 	voteId: unknown,
-	choices: unknown
+	choices: unknown,
+	now = 0
 ): RoomState {
 	const vote = room.scriptVote;
 	if (!vote || voteId !== vote.voteId || !room.members.some((m) => m.memberId === memberId)) {
 		return room;
 	}
+	if (scriptVoteEnded(vote, now)) return room;
 	const ballot = cleanBallot(vote, choices);
 	if (!ballot) return room;
 	return { ...room, scriptVote: { ...vote, ballots: { ...vote.ballots, [memberId]: ballot } } };
