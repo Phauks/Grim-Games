@@ -407,10 +407,16 @@ test('the Storyteller picks what goes in the middle of the QR code', async ({ pa
 	const qr = page.getByRole('img', { name: 'QR code to join the room' });
 	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
 
-	const centre = page.getByRole('dialog', { name: 'QR code centre' });
-	await page.getByRole('button', { name: 'QR code centre' }).first().tap();
+	// A dialog with the QR code on top (Trevor, 2026-10-23), which shows each change at once.
+	const centre = page.getByRole('dialog', { name: 'QR code settings' });
+	await page.getByRole('button', { name: 'QR code settings' }).first().tap();
+	const preview = centre
+		.getByTestId('qr-preview')
+		.getByRole('img', { name: 'QR code to join the room' });
+	await expect(preview.getByTestId('script-logo')).toBeVisible();
 	await centre.getByRole('combobox', { name: 'QR code centre' }).tap();
 	await page.getByRole('option', { name: 'None' }).tap();
+	await expect(preview.getByTestId('script-logo')).toHaveCount(0);
 	await expect(qr.getByTestId('script-logo')).toHaveCount(0);
 
 	// Picking Your picture opens nothing by itself (Trevor, 2026-10-23); Choose picture does.
@@ -435,7 +441,7 @@ test('the Storyteller picks what goes in the middle of the QR code', async ({ pa
 			'base64'
 		)
 	});
-	const picture = qr.getByTestId('qr-picture');
+	const picture = preview.getByTestId('qr-picture');
 	await expect(picture.locator('img')).toHaveAttribute('src', /^data:image\/png/);
 	await expect(centre.getByRole('button', { name: 'Change picture' })).toBeEnabled();
 
@@ -446,12 +452,27 @@ test('the Storyteller picks what goes in the middle of the QR code', async ({ pa
 	await expect(picture).toHaveAttribute('data-corners', 'circle');
 	await centre.getByText('Show the whole picture', { exact: true }).tap();
 	await expect(picture).toHaveAttribute('data-whole', 'true');
-	const pattern = qr.getByTestId('qr-pattern');
+	const pattern = preview.getByTestId('qr-pattern');
 	const squares = await pattern.getAttribute('d');
 	await centre.getByRole('combobox', { name: 'QR squares' }).tap();
 	await page.getByRole('option', { name: 'Dots' }).tap();
 	await expect(pattern).not.toHaveAttribute('d', squares!);
 	await expect(pattern).toHaveAttribute('d', /a0\.5,0\.5/);
+
+	// An open list closes when the dialog scrolls under it, rather than riding over its edge;
+	// the QR code stays on top as the settings scroll (Trevor, 2026-10-23).
+	await centre.getByRole('combobox', { name: 'QR corner markers' }).tap();
+	await expect(page.getByRole('listbox')).toBeVisible();
+	await page.screenshot({ path: test.info().outputPath('qr-settings-open.png') });
+	const scrolls = await centre.evaluate((el) => el.scrollHeight > el.clientHeight);
+	if (scrolls) {
+		// Tapping the list scrolled it into view, so scroll whichever way is left.
+		await centre.evaluate((el) => el.scrollTo(0, el.scrollTop > 0 ? 0 : el.scrollHeight));
+		await expect(page.getByRole('listbox')).toHaveCount(0);
+		await page.screenshot({ path: test.info().outputPath('qr-settings-scrolled.png') });
+		await expect(preview).toBeInViewport({ ratio: 1 });
+	}
+	await page.keyboard.press('Escape');
 
 	// It stays on this device.
 	await page.reload();

@@ -8,6 +8,7 @@ export const share = {
 	'share.share': 'Share',
 	'share.sendFile': 'Send the file',
 	'share.qrCentre': 'QR code centre',
+	'share.qrSettings': 'QR code settings',
 	'share.qrCentre.script': 'Script logo',
 	'share.qrCentre.picture': 'Your picture',
 	'share.qrCentre.none': 'None',
