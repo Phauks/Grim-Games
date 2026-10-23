@@ -1125,8 +1125,9 @@ test('the join code shows under the script name, a Board setting, and opens Shar
 	await expect(code).toHaveText(/^\d{3} \d{3}$/);
 	const shown = (await code.textContent())!;
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
-	// Game time joins the code's line where a phone's corner has no line to spare for it.
-	const codeLine = new RegExp(`^Join code ${shown}(· Game time None)?$`);
+	// The day or night and Game time join the code's line where a phone's corner has no line
+	// to spare for them.
+	const codeLine = new RegExp(`^Join code ${shown}(\\s*·\\s*Setup\\s*·\\s*Game time None)?$`);
 	await expect(corner).toHaveText(codeLine);
 	// A tap on it opens Share. The corner waits while a phone's seats leave it no room.
 	if (await page.getByTestId('script-title').isVisible()) {
