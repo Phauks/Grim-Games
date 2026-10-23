@@ -189,11 +189,11 @@ describe('publicProjection', () => {
 		const s = run(session, ctx, {
 			type: 'SetSeatLook',
 			seatId: seats[0],
-			avatar: 'cat',
+			avatar: 'initials',
 			frame: 'ring'
 		});
 		const [first, second] = publicProjection(s.game).seats;
-		expect(first).toMatchObject({ avatar: 'cat', frame: 'ring' });
+		expect(first).toMatchObject({ avatar: 'initials', frame: 'ring' });
 		expect('avatar' in second || 'frame' in second).toBe(false);
 	});
 

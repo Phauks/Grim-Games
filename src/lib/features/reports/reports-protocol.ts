@@ -7,6 +7,7 @@
  *   GET    /api/reports              (signed in)                  -> 200 ReportList
  *   PATCH  /api/reports/<id>         (admin) { status }           -> 204
  *   DELETE /api/reports/<id>         (admin)                      -> 204
+ *   GET    /api/reports/<id>/script  (admin, or its sender)       -> 200 the script's JSON
  *
  * Triage needs a signed-in admin, one whose sign-in email is in the ADMIN_EMAILS secret
  * (Trevor, 2026-10-22: no admin key, admin is inherent by user type); otherwise it answers 404.
@@ -30,7 +31,10 @@ export const REPORT_LIMITS = {
 	contact: 200,
 	page: 200,
 	build: 200,
-	device: 400
+	device: 400,
+	scriptName: 200,
+	/** The script's JSON text: room for big homebrew scripts, not for embedded images. */
+	script: 200_000
 } as const;
 
 /** What the app sends. `details` is only there when the person chose to include it. */
@@ -44,9 +48,16 @@ export interface ReportDraft {
 	build?: string;
 	/** The browser's own description (user agent). */
 	device?: string;
+	/**
+	 * The script it was sent from, in TPI's JSON (Trevor, 2026-10-22), with its name. Only the
+	 * script: never the game, its players or notes.
+	 */
+	script?: string;
+	scriptName?: string;
 }
 
-export interface Report extends ReportDraft {
+/** A listed report: the script's JSON is fetched on its own (`reportScriptPath`). */
+export interface Report extends Omit<ReportDraft, 'script'> {
 	id: number;
 	status: ReportStatus;
 	createdAt: number;
@@ -56,6 +67,8 @@ export interface Report extends ReportDraft {
 	reporter?: string;
 	/** Sent from the account reading the list. */
 	mine?: boolean;
+	/** Sent with a script; its name is in `scriptName` for those who may see it. */
+	hasScript?: boolean;
 }
 
 /** What the list shows the reader: everything to an admin, else the public part (above). */
@@ -70,7 +83,14 @@ export interface CreatedReport {
 }
 
 /** What a report was sent with: shown only to its sender and the admins. */
-export const REPORT_OPTIONAL_FIELDS = ['details', 'contact', 'page', 'build', 'device'] as const;
+export const REPORT_OPTIONAL_FIELDS = [
+	'details',
+	'contact',
+	'page',
+	'build',
+	'device',
+	'scriptName'
+] as const;
 
 export function isReportKind(value: unknown): value is ReportKind {
 	return (REPORT_KINDS as readonly unknown[]).includes(value);
@@ -102,7 +122,34 @@ export function parseReportDraft(raw: unknown): ReportDraft | { error: string } 
 		if (value === false) return { error: `Bad ${key}` };
 		if (value !== undefined) draft[key] = value;
 	}
+	if (input.script !== undefined && input.script !== null) {
+		if (!isScriptJson(input.script)) return { error: 'Bad script' };
+		draft.script = input.script;
+	} else {
+		delete draft.scriptName;
+	}
 	return draft;
+}
+
+/** A script's JSON text within the limit: an array, as TPI's format is. */
+function isScriptJson(value: unknown): value is string {
+	if (typeof value !== 'string' || value.length > REPORT_LIMITS.script) return false;
+	try {
+		return Array.isArray(JSON.parse(value));
+	} catch {
+		return false;
+	}
+}
+
+/** Where a report's script is read. */
+export function reportScriptPath(id: number): string {
+	return `${REPORTS_API}/${id}/script`;
+}
+
+/** `/api/reports/<id>/script` -> id, else undefined. */
+export function parseReportScriptPath(pathname: string): number | undefined {
+	const match = pathname.match(/^\/api\/reports\/(\d{1,9})\/script$/);
+	return match ? Number(match[1]) : undefined;
 }
 
 /** `/api/reports/<id>` -> id, else undefined. */

@@ -13,6 +13,8 @@ export const reports = {
 	'reports.body': 'Description',
 	'reports.contact': 'Contact (optional)',
 	'reports.includeDetails': 'Include problem details',
+	'reports.includeScript': 'Include the script',
+	'reports.script': 'Script',
 	'reports.sentWith': 'Sent with it',
 	'reports.build': 'Build',
 	'reports.device': 'Device',

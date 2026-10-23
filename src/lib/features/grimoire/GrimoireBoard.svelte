@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { EndReason, Night, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
@@ -54,9 +55,10 @@
 		type ReminderPrompt,
 		setupComplete,
 		diedSinceNewDay,
-		ON_DEATH,
+		onDeathTrigger,
 		abilityState,
-		stepNightNumbers
+		stepNightNumbers,
+		todaysNominations
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import { nextScriptOrderTarget, seatHasAbility } from '#lib/core/modes/index.ts';
@@ -189,6 +191,15 @@
 	// sizes the board only (Trevor, 2026-10-19): tokens elsewhere keep their own size.
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
+	// Who nominated and who was nominated today, for the marks on the seats (Track nominations).
+	const nominated = $derived.by(() => {
+		if (!preferences.current.assistance.trackNominations) return undefined;
+		const today = todaysNominations(game);
+		return {
+			made: new Set(today.map((n) => n.nominator)),
+			received: new Set(today.map((n) => n.nominee))
+		};
+	});
 	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
 	// The Token size preview in Settings draws at this board's size.
 	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
@@ -315,7 +326,7 @@
 			holders.some(
 				(s) =>
 					seatHasAbility(abilitiesRule, game, s, characters) ||
-					(id !== undefined && id in ON_DEATH && diedTonight.has(s))
+					(id !== undefined && !!onDeathTrigger(id, characters) && diedTonight.has(s))
 			)
 		);
 	}
@@ -1292,6 +1303,8 @@
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
+	// A report sent from the board carries the game's script, never the game (Trevor, 2026-10-22).
+	offerScriptToReports(() => loadedScript);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
@@ -1730,6 +1743,10 @@
 							}
 						: undefined}
 					orphan={isOrphan(seat, game.script, characters)}
+					nominations={nominated && {
+						made: nominated.made.has(seat.seatId),
+						received: nominated.received.has(seat.seatId)
+					}}
 					dropTarget={reorderTarget === seat.seatId ||
 						(reminderDrag !== undefined &&
 							reminderDrag.target === seat.seatId &&

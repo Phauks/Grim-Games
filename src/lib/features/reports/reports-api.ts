@@ -1,5 +1,6 @@
 import {
 	REPORTS_API,
+	reportScriptPath,
 	type CreatedReport,
 	type ReportDraft,
 	type ReportList,
@@ -46,4 +47,12 @@ export async function deleteReport(id: number) {
 		headers: json
 	});
 	if (!response.ok) throw new Error(await response.text());
+}
+
+/** The script a report was sent with, as TPI's JSON; undefined when there is none to show. */
+export async function fetchReportScript(id: number): Promise<unknown[] | undefined> {
+	const response = await fetch(reportScriptPath(id));
+	if (response.status === 404) return undefined;
+	if (!response.ok) throw new Error(await response.text());
+	return (await response.json()) as unknown[];
 }

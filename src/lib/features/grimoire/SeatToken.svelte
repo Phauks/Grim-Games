@@ -42,6 +42,11 @@
 		 * A hold is never a tap, so it opens nothing.
 		 */
 		onHold?: (holding: boolean) => void;
+		/**
+		 * Today's nominations (Trevor, 2026-10-23, option A), only while Track nominations is on:
+		 * whether this player has nominated, and whether they were nominated.
+		 */
+		nominations?: { made: boolean; received: boolean };
 	}
 
 	let {
@@ -57,7 +62,8 @@
 		nightNumbers,
 		onTap,
 		onGhostVote,
-		onHold
+		onHold,
+		nominations
 	}: Props = $props();
 
 	// The player's alignment is not the one their character type starts with (a good Minion,
@@ -155,7 +161,18 @@
 		>{/if}
 	<!-- The player's own avatar (plan R6), upper left, while a character covers the face. -->
 	{#if character && seat.avatar}<span class="mark avatar" data-testid="avatar-mark"
-			><AvatarFace avatar={seat.avatar} /></span
+			><AvatarFace avatar={seat.avatar} {name} /></span
+		>{/if}
+	<!-- Today's nominations: one pill on the left rim, a fixed slot for each mark, so the pill
+	     never changes size. Every corner already has its mark. -->
+	{#if nominations && (nominations.made || nominations.received)}<span
+			class="nominations"
+			data-testid="nomination-marks"
+			><span class="slot nominator" data-testid="nominator-mark" title="Has nominated today"
+				>{#if nominations.made}<Icon name="nominator" />{/if}</span
+			><span class="slot nominated" data-testid="nominated-mark" title="Was nominated today"
+				>{#if nominations.received}<Icon name="nominated" />{/if}</span
+			></span
 		>{/if}
 	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
 	{#if seat.note}<span class="mark note" data-testid="note-mark" title="Note"
@@ -286,6 +303,34 @@
 		bottom: -4%;
 		background: var(--surface-raised);
 		color: var(--on-surface);
+	}
+	/* Left rim, middle: a column of two fixed slots, the finger above the gavel. */
+	.nominations {
+		position: absolute;
+		left: -10%;
+		top: 50%;
+		translate: 0 -50%;
+		display: grid;
+		gap: calc(0.125 * var(--u));
+		padding: calc(0.125 * var(--u));
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
+		box-shadow: var(--shadow);
+		pointer-events: none;
+	}
+	.nominations .slot {
+		display: grid;
+		place-items: center;
+		width: max(var(--u), calc(var(--size) * 0.24));
+		height: max(var(--u), calc(var(--size) * 0.24));
+		border-radius: 50%;
+		--icon-size: calc(max(var(--u), calc(var(--size) * 0.24)) * 0.7);
+	}
+	.nominations .slot:has(:global(svg)) {
+		/* One neutral fill for both: the icon tells them apart, and red or blue would read as
+		   an alignment (the accent is red in some themes). */
+		background: var(--on-surface);
+		color: var(--surface);
 	}
 	/* A tap target bigger than the mark it shows (Trevor, 2026-10-19: tap it for the notes). */
 	.note::after {

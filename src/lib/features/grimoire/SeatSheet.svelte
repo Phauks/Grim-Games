@@ -563,7 +563,7 @@
 						data-testid="sheet-nominated"
 						onclick={() => (nominating = 'made')}
 					>
-						<Icon name="vote" />
+						<Icon name="nominator" />
 						<span>{nominations.made ? seatLabelFor(game, nominations.made.nominee) : 'None'}</span>
 					</button>
 				</div>
@@ -576,7 +576,7 @@
 						data-testid="sheet-nominated-by"
 						onclick={() => (nominating = 'received')}
 					>
-						<Icon name="vote" />
+						<Icon name="nominated" />
 						<span
 							>{nominations.received
 								? seatLabelFor(game, nominations.received.nominator)

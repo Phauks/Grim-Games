@@ -1,5 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { pickScript } from './new-game.ts';
 
 async function signIn(page: Page, email: string) {
 	await page.goto('/account');
@@ -185,4 +186,41 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	await expect(page.getByRole('dialog', { name: new RegExp(title) })).toContainText(
 		'sender on Discord'
 	);
+});
+
+test('a report sent from the board carries its script, for its sender and the admins to open', async ({
+	page
+}) => {
+	// Trevor, 2026-10-22: "if submitting report from a script, we should include the script".
+	const title = `From a script ${Date.now()}`;
+	await signIn(page, `scripted-${Date.now()}@example.com`);
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page.getByTestId('seat')).toHaveCount(8);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Report an issue' })
+		.tap();
+
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await form.getByRole('textbox', { name: 'Title' }).fill(title);
+	await form.getByRole('textbox', { name: 'Description' }).fill('The Chef counts wrong.');
+	await expect(form.getByLabel('Include the script')).toBeChecked();
+	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await expect(form.getByTestId('report-script')).toHaveText('Trouble Brewing');
+	await form.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(form.getByTestId('report-sent')).toBeVisible();
+	await form.getByRole('button', { name: 'Close' }).last().tap();
+
+	// Its sender opens the script from the report, as its JSON; the game itself never goes.
+	await page.goto('/reports');
+	const row = page.getByTestId('reports').locator('tr', { hasText: title });
+	await row.getByRole('button', { name: title }).tap();
+	const report = page.getByRole('dialog', { name: new RegExp(title) });
+	await report.getByRole('button', { name: 'Trouble Brewing' }).tap();
+	const json = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	await expect(json).toContainText('washerwoman');
+	await expect(json).not.toContainText('Seat');
 });

@@ -5,6 +5,7 @@ import { parseCharacterRules } from '../character-rules.ts';
 import { parseCharacter } from '../parse.ts';
 import { Issues } from '../validate.ts';
 import { actsWhenDead } from '#lib/core/rules/dead-characters.ts';
+import { onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
 import { reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
 import { OFFICIAL_RULES, rulesOf } from './index.ts';
 
@@ -43,6 +44,9 @@ describe('parseCharacterRules', () => {
 
 	it('reports unknown rules, unknown prompts and reminders the character lacks', () => {
 		expect(parse({ kills: true }).issues).toEqual(['rules.kills: unknown rule']);
+		expect(parse({ onDeath: { by: 'night' } }).issues).toEqual([
+			'rules.onDeath.by: unknown value "night"'
+		]);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'
 		]);
@@ -117,5 +121,28 @@ describe('custom characters', () => {
 		const characters = new Map([[lantern!.id, lantern!]]);
 		expect(actsWhenDead('lanternbearer', characters)).toBe(true);
 		expect(actsWhenDead('lanternbearer')).toBe(false);
+	});
+
+	// A homebrew Townsfolk woken by a Demon kill, as the Sage is
+	// (https://wiki.bloodontheclocktower.com/Sage).
+	it('can be set off by their death', () => {
+		const issues = new Issues();
+		const watcher = parseCharacter(
+			{
+				id: 'lastwatch',
+				name: 'Last Watch',
+				team: 'townsfolk',
+				ability: 'If the Demon kills you, you learn a player.',
+				rules: { onDeath: { by: 'demon' } }
+			},
+			'[0]',
+			issues,
+			{ strict: false, scriptFields: true }
+		);
+		expect(issues.list).toEqual([]);
+		expect(onDeathTrigger('lastwatch', new Map([[watcher!.id, watcher!]]))).toEqual({
+			by: 'demon'
+		});
+		expect(onDeathTrigger('lastwatch')).toBeUndefined();
 	});
 });

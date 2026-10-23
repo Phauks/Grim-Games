@@ -25,7 +25,10 @@ export interface PlayerSettings {
 	 * their avatar). Undefined leaves it to the Storyteller's board default.
 	 */
 	frame?: FrameId;
-	/** The picture on this player's seat token (plan R6), sent with their frame. None if unset. */
+	/**
+	 * What this player puts on their seat token (plan R6), sent with their frame: their initials
+	 * unless switched off (Trevor, 2026-10-22: "avatar is default"). Undefined shows the number.
+	 */
 	avatar?: AvatarId;
 	/**
 	 * Grim tab: this player's guess of a seat's character shows on its token in place of the
@@ -96,9 +99,13 @@ const DEFAULTS: PlayerSettings = {
 	hideNoteContents: false,
 	density: 'normal',
 	print: PRINT_DEFAULTS,
+	avatar: 'initials',
 	guessesOnTokens: false,
 	lightSheet: false
 };
+
+/** How an avatar switched off is stored, so it does not come back as the default. */
+const NO_AVATAR = 'none';
 
 function read(): PlayerSettings {
 	try {
@@ -108,7 +115,7 @@ function read(): PlayerSettings {
 			density: SHEET_DENSITIES.find((d) => d === raw.density) ?? DEFAULTS.density,
 			print: readPrint(raw.print),
 			frame: parseFrameId(raw.frame),
-			avatar: parseAvatarId(raw.avatar),
+			avatar: raw.avatar === NO_AVATAR ? undefined : (parseAvatarId(raw.avatar) ?? DEFAULTS.avatar),
 			guessesOnTokens: raw.guessesOnTokens === true,
 			lightSheet: raw.lightSheet === true
 		};
@@ -128,7 +135,10 @@ class PlayerSettingsState {
 	update(patch: Partial<PlayerSettings>) {
 		this.#current = { ...this.current, ...patch };
 		try {
-			localStorage.setItem(KEY, JSON.stringify(this.#current));
+			localStorage.setItem(
+				KEY,
+				JSON.stringify({ ...this.#current, avatar: this.#current.avatar ?? NO_AVATAR })
+			);
 		} catch {
 			// Private browsing or full storage: the setting lasts until the page closes.
 		}

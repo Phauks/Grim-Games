@@ -14,7 +14,7 @@ registerSettingsSection({
 			density: 'normal',
 			print: PRINT_DEFAULTS,
 			frame: undefined,
-			avatar: undefined,
+			avatar: 'initials',
 			guessesOnTokens: false,
 			lightSheet: false
 		}),

@@ -232,8 +232,12 @@
 			</li>
 			<li>
 				A problem's details, or from the Diagnostics page its summary of this device and the app,
-				only if you leave them in. It never holds player names, notes, scripts, games or room codes,
-				and web addresses are shortened.
+				only if you leave them in.
+			</li>
+			<li>
+				When you send it from a script, the grimoire or the player view, that script, only if you
+				leave it in. It never holds player names, notes, games or room codes, and web addresses are
+				shortened.
 			</li>
 		</ul>
 		<p>

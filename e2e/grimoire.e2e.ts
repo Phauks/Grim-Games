@@ -5237,6 +5237,18 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	await page.getByRole('dialog', { name: 'Who did Seat 1 nominate?' }).getByText('Seat 3').tap();
 	await expect(nominated).toHaveText('Seat 3');
 	await closeSheet(page);
+	// Trevor (2026-10-23, option A): the board marks both seats, a finger and a gavel in one
+	// pill whose two slots never change size.
+	const seats = page.getByTestId('seat');
+	const marks = page.getByTestId('nomination-marks');
+	await expect(marks).toHaveCount(2);
+	await expect(seats.nth(0).getByTestId('nominator-mark').locator('svg')).toHaveCount(1);
+	await expect(seats.nth(0).getByTestId('nominated-mark').locator('svg')).toHaveCount(0);
+	await expect(seats.nth(2).getByTestId('nominated-mark').locator('svg')).toHaveCount(1);
+	const one = await seats.nth(0).getByTestId('nomination-marks').boundingBox();
+	const three = await seats.nth(2).getByTestId('nomination-marks').boundingBox();
+	expect(Math.abs((one?.height ?? 0) - (three?.height ?? 1))).toBeLessThan(1);
+	await expect(seats.nth(1).getByTestId('nomination-marks')).toHaveCount(0);
 	// The nominee's sheet shows it from the other side.
 	sheet = await openSeat(page, 3);
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('Seat 1');
@@ -5247,6 +5259,8 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 		.getByRole('button', { name: 'None', exact: true })
 		.tap();
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
+	await closeSheet(page);
+	await expect(marks).toHaveCount(0);
 });
 
 // Trevor (2026-10-22, plan D2): a crowded seat's reminders keep a thin line back to it, and

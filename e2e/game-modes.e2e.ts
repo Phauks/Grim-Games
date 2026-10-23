@@ -260,6 +260,39 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	await noSidewaysScroll(page);
 });
 
+test('Sushi Buffet with the slot machine on: reels spin in each offer, one more crossed out per refusal', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): the 3-2-1 reel is Sushi Buffet's offers of 3, 2 and 1.
+	await page.addInitScript(() =>
+		localStorage.setItem('grim-games:preferences:v1', JSON.stringify({ slotMachine: true }))
+	);
+	await startIn(page, 'Sushi Buffet');
+	await bagTiles(page).first().tap();
+	const reels = page.getByTestId('offer-reels');
+	const crossed = reels.locator('[data-testid="offer-reel"][data-crossed]');
+	const refuse = page.getByRole('button', { name: 'Refuse offer' });
+	// While the reels spin, the offer's list waits and it can't be refused.
+	await expect(reels).toHaveAttribute('data-spinning', '');
+	await expect(refuse).toBeDisabled();
+	await expect(reels.getByTestId('offer-reel')).toHaveCount(3);
+	await expect(crossed).toHaveCount(0);
+	await expect(reels).not.toHaveAttribute('data-spinning');
+	await expect(rows(page)).toHaveCount(3);
+	await expect(rows(page).first()).toBeVisible();
+	await refuse.tap();
+	await expect(crossed).toHaveCount(1);
+	await expect(reels).not.toHaveAttribute('data-spinning');
+	await expect(rows(page)).toHaveCount(2);
+	await refuse.tap();
+	await expect(crossed).toHaveCount(2);
+	await expect(reels).not.toHaveAttribute('data-spinning');
+	await expect(rows(page)).toHaveCount(1);
+	await expect(refuse).toBeDisabled();
+	await keepFirst(page);
+	await noSidewaysScroll(page);
+});
+
 test('Sushi Buffet has no script to choose: it drafts from every official character', async ({
 	page
 }) => {
