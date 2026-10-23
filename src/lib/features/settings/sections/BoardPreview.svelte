@@ -19,6 +19,7 @@
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
 	import { seatFrame } from '#lib/core/frames/index.ts';
+	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 
 	/**
 	 * A small board for every Board setting (Trevor, 2026-10-20: "you can't really see changes
@@ -36,6 +37,7 @@
 	const RULES = ['duchess', 'bootlegger'] as const;
 	/** The walked-through night step whose reminders the bank brings into focus. */
 	const STEP: CharacterId = 'washerwoman';
+	const SAMPLE_CODE = formatRoomCode('482913');
 
 	const characters = $derived(officialData.current?.byId);
 	const character = (id: string) => characters?.get(id);
@@ -189,7 +191,15 @@
 	</div>
 
 	{#if preferences.current.assistance.scriptTitle}
-		<p class="preview-title" data-testid="preview-script-title">{scriptName}</p>
+		<p class="preview-title" data-testid="preview-script-title">
+			{scriptName}
+			<!-- The join code under the name, as on the board; a sample code here. -->
+			{#if preferences.current.assistance.roomCode}<span
+					class="preview-room-code"
+					data-testid="preview-room-code"
+					>{t('room.joinCode')} <span class="code">{SAMPLE_CODE}</span></span
+				>{/if}
+		</p>
 	{/if}
 	<ul class="bank" aria-label={t('settings.previewBank')} data-testid="preview-bank">
 		{#each bank as item (item.key)}
@@ -295,6 +305,17 @@
 		font-size: 0.9rem;
 		line-height: 1.15;
 		color: var(--heading);
+	}
+	.preview-room-code {
+		display: block;
+		font-family: var(--font-control);
+		font-size: 0.7rem;
+		color: var(--on-surface-muted);
+	}
+	.preview-room-code .code {
+		color: var(--on-surface);
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.08em;
 	}
 	.bank {
 		position: relative;
