@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // The day timer on the board has the toolbar buttons' fill and edge, solid, with nothing of
 // the board's background showing through (Trevor, 2026-10-23). Checked on the drawn screen.
@@ -49,6 +50,7 @@ test('the board timer has the same solid fill and edge as the toolbar buttons', 
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const timer = page.locator('.board-timer').getByTestId('day-timer');
 	await expect(timer).toBeVisible();

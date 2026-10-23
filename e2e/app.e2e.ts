@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { menuButton, openSettingsDialog, theMenu } from './shell.ts';
 
@@ -168,7 +169,7 @@ test('a game in progress hides the sidebar, so a stray tap cannot leave it', asy
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await expect(page.locator('.app-body.bare')).toHaveCount(1);
 
 	// Setting up a game is not "in progress": the page's own hamburger is back there.
@@ -263,6 +264,7 @@ test("every screen's backdrop fades into the phone's bars", async ({ page }) => 
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.locator('.app-body.bare')).toBeVisible();
 	const image = await layer();
 	expect(image.match(/linear-gradient/g)).toHaveLength(2);

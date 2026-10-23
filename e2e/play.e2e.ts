@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
@@ -787,7 +788,7 @@ test('the Room tab joins a live room in place, and the player moves between it a
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await st.getByRole('button', { name: 'Start game' }).tap();
-	await expect(st).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(st);
 	await st.goto(`${new URL(st.url()).pathname}/room`);
 	await expect(st.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(st.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);

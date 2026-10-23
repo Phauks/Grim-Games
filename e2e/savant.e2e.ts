@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 
 // The Savant information sheet (L2): one true and one false statement from the grimoire,
 // from the Savant seat's ⋯ menu (https://wiki.bloodontheclocktower.com/Savant).
@@ -33,6 +33,7 @@ test('the Savant seat offers one true and one false statement, each cycled or wr
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	for (const [i, name] of CAST.entries()) {
 		const sheet = await openSeat(page, i + 1);
@@ -101,6 +102,7 @@ test('the day view recommends Savant information until it is set for today', asy
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	for (const [i, name] of CAST.entries()) {
 		const sheet = await openSeat(page, i + 1);
@@ -130,6 +132,7 @@ test('the end of the night offers to set the Savant’s information', async ({ p
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	for (const [i, name] of CAST.entries()) {
 		const sheet = await openSeat(page, i + 1);

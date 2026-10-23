@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // Pulling down refreshes ordinary pages (Trevor, 2026-10-16); a game in progress keeps it off,
 // so a pull can't reload past the leave question. Headless Chromium can't perform the browser's
@@ -19,6 +20,6 @@ test('pulling down refreshes ordinary pages but not a game in progress', async (
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await expect.poll(() => pullDown(page)).toBe('none');
 });

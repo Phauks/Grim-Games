@@ -1,5 +1,6 @@
 import { gzipSync } from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 import { WORLD_CUPS } from '../src/lib/features/scripts/world-cup.ts';
 
@@ -783,7 +784,7 @@ test('Play starts a new game with a found script, without saving it', async ({ p
 	const search = page.getByRole('combobox', { name: 'Find a script' });
 	await expect(search).toHaveValue('Big Town');
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 
 	// Still offered after a reload, and never saved.
 	await page.goto('/new');

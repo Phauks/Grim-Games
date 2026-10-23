@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 import { touchDrag } from './touch.ts';
 
 // Full-screen dialogs scroll what is under their header by themselves (component review,
@@ -13,7 +14,7 @@ test("a full-screen dialog with no scroll area of its own (Players' phones) scro
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 	await page.getByRole('button', { name: 'Share' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Share' });

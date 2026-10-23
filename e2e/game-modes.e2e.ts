@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 import { openSettingsDialog } from './shell.ts';
 
 /**
@@ -77,7 +77,7 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 	await chooseMode(page, 'Standard');
 	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 });
 
 test('a mode’s own settings sit under Game mode settings, each with its description', async ({
@@ -1034,7 +1034,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 		page.getByTestId('chosen-script').getByRole('link', { name: "Open the script's source page" })
 	).toHaveAttribute('href', /\/script\/7\/2\.2/);
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const more = page.getByRole('dialog', { name: 'Grimoire' });
@@ -1075,7 +1075,7 @@ test('Game info opens a special rule in full when tapped, and a base script shar
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const more = page.getByRole('dialog', { name: 'Grimoire' });
 	const entry = more.getByRole('button', { name: 'Game info' });
@@ -1351,7 +1351,7 @@ test('each special rule takes its own line under the script name in the board co
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	const corner = page.getByTestId('script-title');
 	const lines = corner.getByTestId('game-mode');
 	await expect(corner).toBeVisible();
@@ -1381,7 +1381,7 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	// The death is marked on the board (Trevor, 2026-10-20), then read in the day view.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
@@ -1543,7 +1543,7 @@ test('Binary Supernovae asks for one more Demon, and an executed Demon wins it f
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
