@@ -6,6 +6,7 @@
 	} from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
+	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 
 	/**
@@ -40,6 +41,7 @@
 	value={boardLooks.current.logoOpacity}
 	{...LOGO_OPACITY}
 	defaultValue={DEFAULT_BOARD_LOOKS.logoOpacity}
+	disabled={!boardLooks.current.logo}
 	format={(opacity) => intl.number(opacity, { style: 'percent' })}
 	onChange={(logoOpacity) => boardLooks.update({ logoOpacity })}
 />
@@ -48,4 +50,12 @@
 	label={t('settings.strikeUsedGhostVote')}
 	checked={boardLooks.current.usedGhostVote === 'struck'}
 	onChange={(struck) => boardLooks.update({ usedGhostVote: struck ? 'struck' : 'hollow' })}
+/>
+<!-- Round every seat token whose player has not picked their own frame (L4). -->
+<SettingFrame
+	label={t('settings.seatFrame')}
+	value={boardLooks.current.defaultFrame}
+	defaultValue={DEFAULT_BOARD_LOOKS.defaultFrame}
+	onChange={(defaultFrame) => boardLooks.update({ defaultFrame })}
+	testid="seat-frame-setting"
 />

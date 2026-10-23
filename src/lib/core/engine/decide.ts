@@ -21,6 +21,7 @@ import {
 	GENERAL_DEATH_CAUSES,
 	GENERIC_REMINDER_ID,
 	OVERRIDE_FIELDS,
+	SYMBOL_COLOURS,
 	getSeat,
 	isKnownReminder,
 	isOnScript,
@@ -80,7 +81,8 @@ export type ErrorCode =
 	| 'wrong-entry-kind'
 	| 'invalid-abnormal'
 	| 'invalid-prep-value'
-	| 'invalid-symbol';
+	| 'invalid-symbol'
+	| 'invalid-colour';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -637,6 +639,18 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [event];
 		}
 
+		case 'SetSeatLook': {
+			const seat = seatOf(game, command.seatId);
+			if (command.avatar === seat.avatar && command.frame === seat.frame) {
+				warn('no-change', 'the look is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'SeatLookSet', seatId: seat.seatId };
+			if (command.avatar !== undefined) event.avatar = command.avatar;
+			if (command.frame !== undefined) event.frame = command.frame;
+			return [event];
+		}
+
 		case 'SetGameNotes': {
 			const notes = command.notes?.trim() || undefined;
 			if (notes === game.notes) {
@@ -948,6 +962,22 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [event];
 		}
 
+		case 'SetReminderSymbolColour': {
+			const from = reminderHolder(game, command.reminderId);
+			if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+			const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
+			const { colour } = command;
+			if (colour !== undefined && !SYMBOL_COLOURS.includes(colour))
+				refuse('invalid-colour', `no symbol colour ${colour}`);
+			if (colour === reminder.symbolColour) {
+				warn('no-change', 'the colour is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'ReminderSymbolColourSet', reminderId: command.reminderId };
+			if (colour !== undefined) event.colour = colour;
+			return [event];
+		}
+
 		case 'PlaceLooseReminder': {
 			const reminder: Reminder = reminderFrom(game, command.reminder);
 			checkReminder(game, reminder, ctx, warn);
@@ -984,7 +1014,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				command.direction === 'clockwise'
 					? [seating[seating.length - 1], ...seating.slice(0, -1)]
 					: [...seating.slice(1), seating[0]];
-			return [{ type: 'SeatingReordered', seating: rotated }];
+			return [...seatNumberNames(game), { type: 'SeatingReordered', seating: rotated }];
 		}
 
 		case 'MoveSeat': {
@@ -1000,7 +1030,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			}
 			const seating = game.seating.filter((id) => id !== seat.seatId);
 			seating.splice(position, 0, seat.seatId);
-			return [{ type: 'SeatingReordered', seating }];
+			return [...seatNumberNames(game), { type: 'SeatingReordered', seating }];
 		}
 
 		case 'SetOverride': {
@@ -1466,4 +1496,17 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			];
 		}
 	}
+}
+
+/**
+ * Before players move round the circle, each unnamed seat takes the name it shows now, its
+ * seat number ("Seat 3"), so every name moves with its player and character (Trevor,
+ * 2026-10-22: "all names don't stay with the seat").
+ */
+function seatNumberNames(game: Game): GameEvent[] {
+	return game.seating.flatMap((seatId, i): GameEvent[] =>
+		game.seats[seatId].playerName === undefined
+			? [{ type: 'SeatRenamed', seatId, playerName: `Seat ${i + 1}` }]
+			: []
+	);
 }

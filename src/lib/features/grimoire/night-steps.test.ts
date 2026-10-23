@@ -4,7 +4,8 @@ import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index
 import { characterLookup, type Game } from '#lib/core/model/index.ts';
 import type { NightStep } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { boardNightSteps, givesNumber, stepHolders } from './night-steps.ts';
+import { COUNCIL_OF_THE_DEAD } from '#lib/core/modes/rules/council-of-the-dead.ts';
+import { boardNightSteps, givesNumber, ruleNightSteps, stepHolders } from './night-steps.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -83,5 +84,15 @@ describe('character change steps', () => {
 		expect(stepHolders(g, step!, characters)).toEqual([g.seating[0]]);
 		const first = boardNightSteps(g, characters, 'first', data, { changes });
 		expect(first.some((s) => s.changed)).toBe(false);
+	});
+});
+
+// https://beardytas.com/garden-of-djinn/council-of-the-dead/: night 4 starts with the dead.
+describe('ruleNightSteps', () => {
+	it('adds Council of the Dead on night 4 only, headed by the rule', () => {
+		expect(ruleNightSteps([COUNCIL_OF_THE_DEAD], 3)).toEqual([]);
+		expect(ruleNightSteps([COUNCIL_OF_THE_DEAD], 4)).toMatchObject([
+			{ kind: 'custom', title: 'Council of the Dead', afterDawn: false }
+		]);
 	});
 });

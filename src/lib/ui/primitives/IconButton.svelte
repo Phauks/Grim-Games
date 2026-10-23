@@ -82,7 +82,7 @@
 	/* The quiet Button's edge and corners (Button.svelte). */
 	.icon-button[data-outlined] {
 		border-radius: var(--button-radius);
-		box-shadow: inset 0 0 0 1px var(--border);
+		box-shadow: var(--button-ring);
 	}
 	.icon-button:active {
 		background: var(--surface-selected);

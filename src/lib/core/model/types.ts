@@ -13,6 +13,8 @@ import type { Alignment, CharacterId, ReminderLabel, Script } from '#lib/core/da
 // the rules that apply them, and stored on the game.
 import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
 import type { NightStepOverride } from '#lib/core/rules/night-order.ts';
+import type { FrameId } from '#lib/core/frames/index.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
 
 export type GameId = string;
 export type SeatId = string;
@@ -49,7 +51,16 @@ export interface ReminderInstance extends Reminder {
 	 * symbol's icon id or an emoji. None shows a blank token.
 	 */
 	symbol?: string;
+	/**
+	 * The colour of the generic reminder's symbol (Trevor, 2026-10-20). None is the reminder's
+	 * own ink. An emoji keeps its own colours.
+	 */
+	symbolColour?: SymbolColour;
 }
+
+/** Colours a generic reminder's symbol can take, each one of the theme's own colours. */
+export const SYMBOL_COLOURS = ['blue', 'red', 'purple', 'gold', 'green'] as const;
+export type SymbolColour = (typeof SYMBOL_COLOURS)[number];
 
 /**
  * The generic ∞ reminder's `characterId` (Trevor, 2026-10-18: one plain reminder, as many as
@@ -117,6 +128,16 @@ export interface Seat {
 	 * Mezepheles' word or the Amnesiac's ability. Never in the public projection.
 	 */
 	note?: string;
+	/**
+	 * The frame the player picked for their token on their own phone (L4), carried with their
+	 * avatar. Undefined shows the board's default frame. Purely decorative.
+	 */
+	frame?: FrameId;
+	/**
+	 * The picture the player picked on their own phone (plan R6), shown on their seat token.
+	 * Undefined shows none. Purely decorative.
+	 */
+	avatar?: AvatarId;
 	reminders: ReminderInstance[];
 }
 

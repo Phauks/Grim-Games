@@ -9,6 +9,10 @@
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
+	import { seatFrame } from '#lib/core/frames/index.ts';
+	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { playerSettings } from './player-settings.svelte.ts';
 	import {
 		DEFAULT_SEAT_LAYOUT,
 		keepInside,
@@ -96,12 +100,14 @@
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
 			{@const guessed = characterOf(guesses[seat.seatId])}
-			{@const shown = known ?? guessed}
+			<!-- The player's avatar unless their own guess is set to show over it (plan R6). -->
+			{@const shown =
+				known ?? (seat.avatar && !playerSettings.current.guessesOnTokens ? undefined : guessed)}
 			<button
 				type="button"
 				class="seat"
 				data-mine={seat.seatId === mine || undefined}
-				data-guess={(!known && !!guessed) || undefined}
+				data-guess={(!known && !!guessed && shown === guessed) || undefined}
 				style:left="{point?.x ?? 50}%"
 				style:top="{point?.y ?? 50}%"
 				aria-label={label(seat)}
@@ -115,6 +121,8 @@
 					number={seat.seatNumber}
 					face={shown ? face : undefined}
 					vote={seat.ghostVote}
+					avatar={seat.avatar}
+					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
 				/>
 				{#snippet face()}
 					{#if shown}<CharacterToken character={shown} {size} />{/if}
@@ -128,6 +136,12 @@
 	bind:open
 	title={chosen ? `${t('common.seat', { number: chosen.seatNumber })} · ${nameOf(chosen)}` : ''}
 >
+	<!-- Also in Settings > Player: one switch for every seat. -->
+	<SettingToggle
+		label={t('player.guessesOnTokens')}
+		checked={playerSettings.current.guessesOnTokens}
+		onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
+	/>
 	<CharacterPicker
 		characters={script.characters}
 		selected={chosen && guesses[chosen.seatId] ? [guesses[chosen.seatId]] : []}

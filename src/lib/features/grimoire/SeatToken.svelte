@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
+	import { seatFrame } from '#lib/core/frames/index.ts';
 	import type { Seat } from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
+	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 
@@ -151,6 +153,10 @@
 	<!-- Corner marks sit in fixed places, so one appearing never moves anything. -->
 	{#if orphan}<span class="mark orphan" title="Not on the script"><Icon name="warning" /></span
 		>{/if}
+	<!-- The player's own avatar (plan R6), upper left, while a character covers the face. -->
+	{#if character && seat.avatar}<span class="mark avatar" data-testid="avatar-mark"
+			><AvatarFace avatar={seat.avatar} /></span
+		>{/if}
 	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
 	{#if seat.note}<span class="mark note" data-testid="note-mark" title="Note"
 			><Icon name="pen" /></span
@@ -187,6 +193,8 @@
 		{marks}
 		vote={seat.dead ? (seat.ghostVoteUsed ? 'used' : 'unused') : undefined}
 		usedVote={boardLooks.current.usedGhostVote}
+		frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
+		avatar={seat.avatar}
 	/>
 </button>
 
@@ -266,6 +274,11 @@
 		top: -4%;
 		background: var(--accent);
 		color: var(--on-accent);
+	}
+	/* Upper left. */
+	.avatar {
+		left: -4%;
+		top: -4%;
 	}
 	/* Lower right: the dead skull keeps the lower left. */
 	.note {

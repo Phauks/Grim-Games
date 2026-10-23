@@ -184,6 +184,19 @@ describe('publicProjection', () => {
 		expect('storytellerName' in state).toBe(false);
 	});
 
+	it("shows each player's own avatar and frame, and none where they picked none (plan R6)", () => {
+		const { session, ctx, seats } = newGame(2);
+		const s = run(session, ctx, {
+			type: 'SetSeatLook',
+			seatId: seats[0],
+			avatar: 'cat',
+			frame: 'ring'
+		});
+		const [first, second] = publicProjection(s.game).seats;
+		expect(first).toMatchObject({ avatar: 'cat', frame: 'ring' });
+		expect('avatar' in second || 'frame' in second).toBe(false);
+	});
+
 	it("shows the Storyteller's name, which the table already knows", () => {
 		const { session, ctx } = newGame(2);
 		const named = run(session, ctx, { type: 'SetStorytellerName', name: 'Sam' });

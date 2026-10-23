@@ -9,7 +9,7 @@
 		type CharacterId,
 		type CharacterType
 	} from '#lib/core/data/index.ts';
-	import type { Command } from '#lib/core/engine/index.ts';
+	import { BLUFFS_PER_SET, type Command } from '#lib/core/engine/index.ts';
 	import {
 		analyseSelection,
 		canDuplicate,
@@ -37,7 +37,7 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
-	import { DEMON_SET } from '#lib/features/bluffs/bluffs.ts';
+	import { DEMON_SET, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupNav from './SetupNav.svelte';
@@ -64,6 +64,8 @@
 	let replaceOpen = $state(false);
 	let errorsOpen = $state(false);
 	let query = $state('');
+	/** The counts band's height, so each type's heading pins just beneath it. */
+	let bandHeight = $state(0);
 
 	onMount(() => void loadOfficialData());
 
@@ -179,6 +181,22 @@
 	const offScriptIds = $derived(new Set([...offScript, ...offScriptRules].map((c) => c.id)));
 	/** The Demon's bluffs, chosen below the list, are tagged in it (Trevor, 2026-10-18). */
 	const bluffIds = $derived(new Set(game?.bluffs[DEMON_SET] ?? []));
+	/**
+	 * A Demon bluff from the character's own row (Trevor, 2026-10-22), for the good characters
+	 * a bluff can be (https://wiki.bloodontheclocktower.com/Demon): not Travellers.
+	 */
+	function canBluff(character: Character): boolean {
+		return character.type === 'townsfolk' || character.type === 'outsider';
+	}
+	function bluffBlocked(character: Character): string | undefined {
+		if (!ready) return '';
+		if (bluffIds.has(character.id) || bluffIds.size < BLUFFS_PER_SET) return undefined;
+		return t('setup.bluffsFull', { count: BLUFFS_PER_SET });
+	}
+	function toggleBluff(character: Character) {
+		const next = toggleDemonBluff([...bluffIds], character.id);
+		if (next) send({ type: 'SetBluffs', set: DEMON_SET, characterIds: next });
+	}
 	const listedIds = $derived(
 		new Set([...scriptOrder, ...[...editionTravellers, ...scriptRules].map((c) => c.id)])
 	);
@@ -291,6 +309,10 @@
 		for (const id of required.keys())
 			if ((s.selection[id] ?? 0) === 0) setupSelection.setCopies(id, 1);
 	});
+	/** What Clear takes out: everything but the locked and the required. */
+	const clearable = $derived(
+		ids.filter((id) => !s.locked.includes(id) && !required.has(id)).length
+	);
 	function explainRequired(character: Character) {
 		toast(t('setup.required'), t('setup.requiredBy', { rule: required.get(character.id) ?? '' }));
 	}
@@ -305,6 +327,9 @@
 		}
 		const n = setupSelection.copies(character.id);
 		if (n === 1 && required.has(character.id)) return explainRequired(character);
+		// A lock holds against taps as well as Random and Clear (Trevor, 2026-10-22).
+		if (n === 1 && s.locked.includes(character.id))
+			return toast(t('setup.locked'), t('setup.lockedHelp'));
 		setupSelection.setCopies(character.id, n === 0 ? 1 : n - 1);
 	}
 
@@ -447,37 +472,36 @@
 					}}
 				/>
 			{/if}
-			<div class="counts">
-				<CountsBar {analysis} {travellers} {travellerLimits} />
-				<div class="find">
-					<CharacterSearchBox bind:query shortcut />
-					<div class="tools">
-						<IconButton
-							icon="random"
-							label={t('setup.random')}
-							disabled={!ready}
-							onclick={random}
-						/>
-						<IconButton
-							icon="selectedOnly"
-							label={t('setup.selectedOnly')}
-							aria-pressed={selectedOnly}
-							disabled={!ready}
-							onclick={() => (selectedOnly = !selectedOnly)}
-						/>
-						<IconButton
-							icon="clearSelection"
-							label={t('setup.clearSelection')}
-							disabled={!ready || ids.length === 0}
-							onclick={() => (clearOpen = true)}
-						/>
-					</div>
-				</div>
-			</div>
 		</ErrorBoundary>
 	{/snippet}
 
 	<ErrorBoundary area="setup">
+		<!--
+			The counts, search and tools sit right above the characters at every width, sticky, with
+			each type's heading held just beneath them (Trevor, 2026-10-22: desktop matches phones).
+		-->
+		<div class="counts" data-testid="selection-band" bind:offsetHeight={bandHeight}>
+			<CountsBar {analysis} {travellers} {travellerLimits} />
+			<div class="find">
+				<CharacterSearchBox bind:query shortcut />
+				<div class="tools">
+					<IconButton icon="random" label={t('setup.random')} disabled={!ready} onclick={random} />
+					<IconButton
+						icon="selectedOnly"
+						label={t('setup.selectedOnly')}
+						aria-pressed={selectedOnly}
+						disabled={!ready}
+						onclick={() => (selectedOnly = !selectedOnly)}
+					/>
+					<IconButton
+						icon="clearSelection"
+						label={t('setup.clearSelection')}
+						disabled={!ready || clearable === 0}
+						onclick={() => (clearOpen = true)}
+					/>
+				</div>
+			</div>
+		</div>
 		<CharacterPicker
 			characters={listed}
 			mode="multi"
@@ -488,6 +512,7 @@
 			surface="page"
 			contained={false}
 			types={TYPES}
+			pinTop="calc(var(--tap-target) + env(safe-area-inset-top) + {Math.max(0, bandHeight - 1)}px)"
 			keepTypes={['traveller', 'fabled', 'loric']}
 			closedTypes={travellersChosenAtStart ? ['fabled', 'loric'] : ['traveller', 'fabled', 'loric']}
 			onSelect={(id) => {
@@ -524,6 +549,8 @@
 						: required.has(character.id)
 							? () => explainRequired(character)
 							: () => setupSelection.toggleLock(character.id)}
+					onBluff={canBluff(character) ? () => toggleBluff(character) : undefined}
+					bluffBlocked={canBluff(character) ? bluffBlocked(character) : undefined}
 					onAddCopy={() =>
 						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
 				/>
@@ -590,7 +617,11 @@
 	danger
 	onConfirm={() => setupSelection.clear()}
 >
-	<p>{t('setup.clear.body', { count: ids.length })}</p>
+	<p>
+		{t(clearable < ids.length ? 'setup.clear.bodyLocked' : 'setup.clear.body', {
+			count: clearable
+		})}
+	</p>
 </ConfirmDialog>
 <ConfirmDialog
 	bind:open={errorsOpen}
@@ -660,21 +691,18 @@
 	}
 	.tools :global(.icon-button) {
 		background: var(--surface-raised);
-		box-shadow: inset 0 0 0 1px var(--border);
+		box-shadow: var(--button-ring);
 	}
 	@media (hover: hover) {
 		.tools :global(.icon-button:hover:not(:disabled)) {
 			background: var(--surface-selected);
 		}
 	}
-	/* A computer window: the counts sit in the side column, which is sticky itself. */
+	/* A computer window: the band spans the characters' column, not the window. */
 	@media (min-width: 75rem) {
 		.counts {
-			position: static;
 			margin-inline: 0;
 			padding-inline: 0;
-			background: none;
-			box-shadow: none;
 		}
 	}
 	.errors {

@@ -101,6 +101,13 @@ describe('[bracketed] setup modifiers', () => {
 			demon: [1]
 		});
 		expect(result.modifiers[0].explanation).toBe('Baron: +2 Outsiders');
+		// The reasons each count differs from the sheet, for the count's info popup.
+		expect(result.reasons).toEqual({
+			townsfolk: ['Baron: +2 Outsiders'],
+			outsider: ['Baron: +2 Outsiders'],
+			minion: [],
+			demon: []
+		});
 	});
 
 	it('warns when the chosen characters do not match, naming the cause', () => {

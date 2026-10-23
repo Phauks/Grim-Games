@@ -32,6 +32,19 @@ export function iconUrl(character: Character, alignment?: Alignment): string | u
 }
 
 /**
+ * A reminder token's owner icon in the colour chosen in Settings > Tokens (Trevor,
+ * 2026-10-20): the placing player's alignment, else the character's usual one. "Plain" draws
+ * the player's icon without colour (BoardReminder greys it): TPI has no uncoloured icons.
+ */
+export function reminderIconUrl(
+	character: Character,
+	alignment: Alignment | undefined,
+	colour: 'player' | 'character' | 'plain'
+): string | undefined {
+	return iconUrl(character, colour === 'character' ? undefined : alignment);
+}
+
+/**
  * What to show instead when a homebrew character's own image fails to load (a dead link, or
  * offline): TPI's generic icon for its type, as when it has no image (Trevor, 2026-10-19).
  * Undefined for official characters, whose icons ship with the app.

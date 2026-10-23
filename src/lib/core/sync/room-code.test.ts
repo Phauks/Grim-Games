@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatRoomCode, makeRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from './room-code.ts';
+import {
+	formatRoomCode,
+	makeRoomCode,
+	normaliseRoomCode,
+	ROOM_CODE_LENGTH,
+	scannedRoom
+} from './room-code.ts';
 
 describe('room codes', () => {
 	it('accepts six digits with spaces or dashes between them', () => {
@@ -28,5 +34,39 @@ describe('room codes', () => {
 		}
 		expect(makeRoomCode(() => 0)).toBe('000000');
 		expect(makeRoomCode(() => 0.9999999)).toBe('999999');
+	});
+});
+
+describe('scanned codes (plan J2)', () => {
+	it('reads a code on its own', () => {
+		expect(scannedRoom(' 482 913 ')).toEqual({ kind: 'join', code: '482913' });
+	});
+
+	it("reads the Share screen's players link from any copy of the app", () => {
+		expect(scannedRoom('https://grimbinder.com/join/482913')).toEqual({
+			kind: 'join',
+			code: '482913'
+		});
+		expect(scannedRoom('https://beta.example.dev/app/join/482913/')).toEqual({
+			kind: 'join',
+			code: '482913'
+		});
+	});
+
+	it('reads a Grim view link with its key, and only with one', () => {
+		expect(scannedRoom('https://grimbinder.com/watch/482913#k3y')).toEqual({
+			kind: 'watch',
+			code: '482913',
+			key: 'k3y'
+		});
+		expect(scannedRoom('https://grimbinder.com/watch/482913')).toBeNull();
+	});
+
+	it('turns down anything else', () => {
+		expect(scannedRoom('hello')).toBeNull();
+		expect(scannedRoom('https://grimbinder.com/play#e=bmr')).toBeNull();
+		expect(scannedRoom('https://grimbinder.com/join/48291')).toBeNull();
+		expect(scannedRoom('javascript:alert(1)//join/482913')).toBeNull();
+		expect(scannedRoom('ftp://x/join/482913')).toBeNull();
 	});
 });

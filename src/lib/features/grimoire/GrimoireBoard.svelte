@@ -6,12 +6,13 @@
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { gameModeNames } from './game-mode-name.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { boardNightSteps, seatName, stepHolders, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
 	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
+	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -20,7 +21,7 @@
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BoardBackdrop from './BoardBackdrop.svelte';
 	import { boardBackground } from './board-background.svelte.ts';
-	import { boardLooks } from './board-looks.svelte.ts';
+	import { boardLooks, STACK_AT } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
@@ -59,6 +60,7 @@
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { nextScriptOrderTarget, seatHasAbility } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -108,6 +110,8 @@
 	import { publicProjection } from '#lib/core/sync/public-projection.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
+	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
@@ -215,6 +219,15 @@
 		x: (p.x / width) * 100,
 		y: (p.y / height) * 100
 	});
+	/** The point on a seat's rim facing `to`, in % of the board (where a tether starts). */
+	function rimToward(seat: SeatPoint, to: SeatPoint): SeatPoint {
+		const a = toPx(seat);
+		const b = toPx(to);
+		const d = Math.hypot(b.x - a.x, b.y - a.y);
+		if (d < 1) return seat;
+		const r = Math.min(size / 2, d);
+		return toPercent({ x: a.x + ((b.x - a.x) / d) * r, y: a.y + ((b.y - a.y) / d) * r });
+	}
 	/** Each seat's name, its box in px (the badge: 0.8rem text, padding and border). */
 	const nameBoxes = $derived.by(() => {
 		if (width <= 0 || height <= 0) return [];
@@ -288,23 +301,38 @@
 		const { entries, cursor } = grimoire.open.session.log;
 		return diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
 	});
+	/** The game's special rules, kept whole with the game (game-mode-store.ts). */
+	const gameRules = $derived(readGameMode(game.gameId)?.rules ?? []);
+	/**
+	 * Who has an ability under a special rule, when one changes it (The Phantom Detectives:
+	 * the dead keep theirs, living Townsfolk have none).
+	 */
+	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
 	function wakes(step: NightStep): boolean {
 		const holders = stepHolders(game, step, characters);
 		const id = step.character?.id;
 		return (
 			holders.length === 0 ||
 			holders.some(
-				(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && diedTonight.has(s))
+				(s) =>
+					seatHasAbility(abilitiesRule, game, s, characters) ||
+					(id !== undefined && id in ON_DEATH && diedTonight.has(s))
 			)
 		);
 	}
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
-		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
+		if (!data || preferences.current.tokenAppearance.nightLeaves !== 'numbers') return undefined;
 		const counts = wakes;
 		return {
-			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data, today), counts),
-			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data, today), counts)
+			first: stepNightNumbers(
+				boardNightSteps(game, characters, 'first', data, today, gameRules),
+				counts
+			),
+			other: stepNightNumbers(
+				boardNightSteps(game, characters, 'other', data, today, gameRules),
+				counts
+			)
 		};
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
@@ -346,13 +374,29 @@
 	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
+	/**
+	 * With stacks on (Board setting, off by default), a crowded seat shows its first reminders
+	 * and a "+N" token for the rest, which opens the seat (Trevor, 2026-10-22). Only while
+	 * reminders sit by their seat: a reminder left where it was dropped keeps its place.
+	 */
+	const stacking = $derived(
+		boardLooks.current.reminderStacks && boardLooks.current.reminders !== 'free'
+	);
+	function stackedAway(count: number): number {
+		return stacking && count > STACK_AT ? count - (STACK_AT - 1) : 0;
+	}
+	/** The reminder places a seat takes on the board, the "+N" token included. */
+	const places = (count: number) => (stackedAway(count) > 0 ? STACK_AT : count);
 	const fan = $derived.by(() => {
-		if (width <= 0 || height <= 0) return seats.map((s, i) => s.reminders.map(() => shown[i]));
+		if (width <= 0 || height <= 0)
+			return seats.map((s, i) =>
+				Array.from({ length: places(s.reminders.length) }, () => shown[i])
+			);
 		const fitted = fitReminders(
 			seats.map((s, i) => ({
 				seat: toPx(shown[i]),
 				middle: { x: width / 2, y: height / 2 },
-				count: s.reminders.length,
+				count: places(s.reminders.length),
 				size,
 				chip: Math.max(chip, tapPx),
 				avoid: avoidFor(i)
@@ -804,8 +848,8 @@
 		!ended &&
 			!grimoire.open.viewOnly &&
 			!setUp &&
-			!arranging &&
-			!placing &&
+			// Arranging or placing a token keeps Set up, disabled (Trevor, 2026-10-22: arranging
+			// turned it into Start game).
 			(Object.keys(game.bag?.tiles ?? {}).length > 0 ||
 				!game.seating.some((id) => game.seats[id].characterId !== undefined))
 	);
@@ -817,6 +861,9 @@
 	const saved = untrack(() => grimoire.nightView);
 	/** The day sheet; the old /day route lands here with `#day` to open it. */
 	let dayOpen = $state(false);
+	/** The Savant sheet, from the day view's Savant info button (L5). */
+	let savantSeat = $state<SeatId | undefined>();
+	let savantOpen = $state(false);
 	// ── Assisted night order (Trevor, 2026-10-16) ──
 	let guided = $state<{ step: NightStep; night: Night } | undefined>();
 	let guideOpen = $state(false);
@@ -827,7 +874,7 @@
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
 		return walk && data
-			? boardNightSteps(game, characters, walk.night, data, today).filter(wakes)
+			? boardNightSteps(game, characters, walk.night, data, today, gameRules).filter(wakes)
 			: [];
 	});
 	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
@@ -835,7 +882,7 @@
 		const data = officialData.current;
 		if (!guided || !data) return [];
 		const open = guided.step.id;
-		return boardNightSteps(game, characters, guided.night, data, today).filter(
+		return boardNightSteps(game, characters, guided.night, data, today, gameRules).filter(
 			(s) => s.id === open || wakes(s)
 		);
 	});
@@ -846,7 +893,9 @@
 		if (!guidedPending || !data) return;
 		const { night, stepId } = guidedPending;
 		guidedPending = undefined;
-		const step = boardNightSteps(game, characters, night, data, today).find((s) => s.id === stepId);
+		const step = boardNightSteps(game, characters, night, data, today, gameRules).find(
+			(s) => s.id === stepId
+		);
 		if (step) {
 			guided = { step, night };
 			guideOpen = true;
@@ -887,6 +936,17 @@
 			(rule) => rule.parts.seats?.kind === 'storyteller-seat' && rule.parts.seats.count > 0
 		)?.name
 	);
+	/**
+	 * Trained Killer (https://beardytas.com/garden-of-djinn/trained-killer/): on a Demon's step
+	 * after the first night, the next living in-play character in script order.
+	 */
+	const attackRule = $derived(gameRules.find((r) => r.parts.demonAttacks)?.name);
+	const walkAttack = $derived.by(() => {
+		if (!attackRule || !walkStep || walk?.night !== 'other') return undefined;
+		if (walkStep.character?.type !== 'demon') return undefined;
+		const target = nextScriptOrderTarget(game, characters);
+		return target === undefined ? undefined : seatName(game, target);
+	});
 	const walkEmptySeat = $derived(
 		!!emptySeatRule &&
 			!!walkStep &&
@@ -916,7 +976,7 @@
 		if (!data) return;
 		grimoire.beginNight();
 		const night = tonight(game);
-		const steps = boardNightSteps(game, characters, night, data, today).filter(wakes);
+		const steps = boardNightSteps(game, characters, night, data, today, gameRules).filter(wakes);
 		const next = fromDusk ? 0 : steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
 	}
@@ -940,12 +1000,22 @@
 	 * starts on the board, where it is on.
 	 */
 	function endDay(): void {
+		dayOpen = false;
 		if (liveDayTimer.running) liveDayTimer.toggle();
 		grimoire.beginNight();
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
 		if (preferences.current.assistance.nightWalkthrough) walkNight(true);
+	}
+	/**
+	 * Execution ends the day (Trevor, 2026-10-22): the player chosen is executed first, unless
+	 * that execution is already logged, so the rules checked at dusk see it.
+	 */
+	function executeAndEndDay(seatId: SeatId | undefined): void {
+		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
+		if (seatId && !logged) grimoire.run({ type: 'Execute', seatId });
+		endDay();
 	}
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
@@ -1008,7 +1078,7 @@
 				label: 'Set up',
 				text: 'Set up',
 				icon: 'bag' as const,
-				disabled: false,
+				disabled: arranging || !!placing,
 				onclick: openSetup
 			};
 		if (game.pastDays.length === 0)
@@ -1019,9 +1089,10 @@
 				disabled: !canRun,
 				onclick: startGame
 			};
+		// Execution in place of End day (Trevor, 2026-10-22): ending a day asks who was executed.
 		return {
-			label: 'End day',
-			text: 'End day',
+			label: t('day.execution'),
+			text: t('day.execution'),
 			icon: 'night' as const,
 			disabled: !!ended || grimoire.open.viewOnly || arranging || !!placing,
 			onclick: () => {
@@ -1325,6 +1396,12 @@
 			get scriptImage() {
 				return scriptBackground;
 			},
+			get scriptLogo() {
+				return boardLogo || undefined;
+			},
+			get scriptName() {
+				return game.script.meta?.name;
+			},
 			get current() {
 				return background;
 			},
@@ -1355,6 +1432,9 @@
 	);
 	/** The mode, then each special rule, a line each under the name (Trevor, 2026-10-19). */
 	const modeLines = $derived(modeInName ? modeNames.slice(1) : modeNames);
+	/** The join code under the script's name (a Board setting, on by default). */
+	const showRoomCode = $derived(!watching && preferences.current.assistance.roomCode);
+	const roomCode = $derived(roomHost().code);
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
@@ -1434,6 +1514,7 @@
 					label={reminderWords(last)}
 					infinite={isGeneric(last)}
 					symbol={last.symbol}
+					symbolColour={last.symbolColour}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1679,11 +1760,54 @@
 			</div>
 		{/each}
 
+		<!--
+			A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to
+			their seat's line, with a line back when they have to sit further out), so whose a
+			reminder is reads at a glance on a crowded board. Under the tokens.
+		-->
+		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+			{#each seats as seat, i (seat.seatId)}
+				{#if !looseMode && reminderDrag === undefined}
+					{#each fan[i] ?? [] as p, k (k)}
+						{@const from = rimToward(shown[i], p)}
+						<line
+							x1={from.x}
+							y1={from.y}
+							x2={p.x}
+							y2={p.y}
+							data-tether={i + 1}
+							vector-effect="non-scaling-stroke"
+						/>
+					{/each}
+				{/if}
+			{/each}
+		</svg>
+
 		{#each seats as seat, i (seat.seatId)}
 			{@const count = seat.reminders.length}
+			{@const away = stackedAway(count)}
 			{#if count > 0}
 				{@const at = fan[i]}
-				{#each seat.reminders as reminder, k (reminder.reminderId)}
+				{#if away > 0}
+					{@const p = at[STACK_AT - 1]}
+					<div
+						class="chip-slot"
+						data-seat={i + 1}
+						data-stack
+						style:left="{p.x}%"
+						style:top="{p.y}%"
+					>
+						<BoardReminder
+							label=""
+							character={undefined}
+							more={away}
+							size={chip}
+							disabled={arranging}
+							onTap={() => (watching ? readCharacter(seat.characterId) : openSeat(seat.seatId))}
+						/>
+					</div>
+				{/if}
+				{#each away > 0 ? seat.reminders.slice(0, STACK_AT - 1) : seat.reminders as reminder, k (reminder.reminderId)}
 					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
 					{@const spot =
 						boardLooks.current.reminders === 'free'
@@ -1707,6 +1831,7 @@
 							label={reminderWords(reminder)}
 							infinite={isGeneric(reminder)}
 							symbol={reminder.symbol}
+							symbolColour={reminder.symbolColour}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
@@ -1745,6 +1870,7 @@
 					label={reminderWords(reminder)}
 					infinite={isGeneric(reminder)}
 					symbol={reminder.symbol}
+					symbolColour={reminder.symbolColour}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
@@ -1767,6 +1893,7 @@
 					label={reminderWords(heldDrag)}
 					infinite={isGeneric(heldDrag)}
 					symbol={heldDrag.symbol}
+					symbolColour={heldDrag.symbolColour}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled
@@ -1811,6 +1938,7 @@
 				onPastEnd={() => endHint++}
 				asleepBy={walkAsleep ? poisonedSleepRule : undefined}
 				emptySeatBy={walkEmptySeat ? emptySeatRule : undefined}
+				attack={walkAttack && attackRule ? { seat: walkAttack, by: attackRule } : undefined}
 				onOpen={(step) => {
 					if (!walk) return;
 					guided = { step, night: walk.night };
@@ -1905,6 +2033,19 @@
 					>{:else}{#if game.script.meta?.author}<span class="author"
 							>by {game.script.meta.author}</span
 						>{/if}{/each}
+				<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
+				     place before a room opens, so nothing moves when its code arrives. -->
+				{#if showRoomCode}<button
+						type="button"
+						class="room-code"
+						data-testid="board-room-code"
+						onclick={() => (phonesOpen = true)}
+						><span class="room-code-line"
+							>{t('room.joinCode')}
+							<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
+							></span
+						></button
+					>{/if}
 			</p>
 		{/if}
 		{#if showTimer}
@@ -2005,7 +2146,7 @@
 				Reopen game
 			</Button>
 		{:else}
-			<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
+			<Button variant="danger" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
 				End game
 			</Button>
 		{/if}
@@ -2148,8 +2289,8 @@
 	/>
 </ConfirmDialog>
 
-<!-- The same question as the day view's End day. -->
-<ConfirmDialog bind:open={endDayOpen} title={t('day.endDayConfirm')} onConfirm={endDay} />
+<!-- The same question as the day view's Execution. -->
+<ExecutionDialog bind:open={endDayOpen} {game} onConfirm={executeAndEndDay} />
 
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">
@@ -2240,7 +2381,16 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={endDay} />
+<DaySheet
+	bind:open={dayOpen}
+	game={grimoire.open}
+	onEndDay={() => (endDayOpen = true)}
+	onSavant={(seatId) => {
+		savantSeat = seatId;
+		savantOpen = true;
+	}}
+/>
+<SavantSheet bind:open={savantOpen} {grimoire} seatId={savantSeat} />
 
 <GuidedStep
 	bind:open={guideOpen}
@@ -2497,6 +2647,19 @@
 		text-overflow: ellipsis;
 		pointer-events: none;
 	}
+	.tethers {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+	}
+	.tethers line {
+		stroke: var(--on-surface);
+		stroke-opacity: 0.35;
+		stroke-width: 1.5;
+	}
 	.chip-slot {
 		position: absolute;
 		translate: -50% -50%;
@@ -2515,15 +2678,13 @@
 		outline: 0.15rem dashed var(--on-surface);
 		outline-offset: 0.15rem;
 	}
-	/* The walked-through step's reminders already on the board: the bank's ring. */
-	.chip-slot.now > :global(.reminder) {
-		outline: 0.2rem solid var(--accent);
-		outline-offset: 0.15rem;
-	}
-	/* A held seat's reminders (Trevor, 2026-10-19): the step ring; the rest fade. */
+	/* The walked-through step's reminders already on the board, and a held seat's (Trevor,
+	   2026-10-19; the rest fade): the bank's highlight, a ring, glow or both (Settings > Tokens). */
+	.chip-slot.now > :global(.reminder),
 	.chip-slot.lit > :global(.reminder) {
-		outline: 0.2rem solid var(--accent);
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
 	}
 	.slot.dim,
 	.chip-slot.dim {
@@ -2655,6 +2816,46 @@
 	.corner-title .author {
 		font-size: 0.7rem;
 		color: var(--on-surface-muted);
+	}
+	.room-code {
+		position: relative;
+		display: block;
+		min-width: 0;
+		/* Text high, as the mode name (ModeMenu); the ::before keeps the tap target. */
+		min-height: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--on-surface-muted);
+		font: inherit;
+		font-size: 0.7rem;
+		text-align: inherit;
+		cursor: pointer;
+		/* The corner lets taps through to the board; its buttons take them. */
+		pointer-events: auto;
+	}
+	.room-code .code {
+		color: var(--on-surface);
+		font-family: var(--font-control);
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.08em;
+	}
+	/* A tap target bigger than the small corner text, without moving anything (ModeMenu). */
+	/* One line, cut short like the corner's other lines: wrapping would make the corner taller
+	   as its room shrinks, and the room would shrink again (corner-room.ts). */
+	.room-code-line {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.room-code::before {
+		content: '';
+		position: absolute;
+		inset: 50% auto auto 50%;
+		min-width: max(100%, var(--tap-target));
+		min-height: max(100%, var(--tap-target));
+		transform: translate(-50%, -50%);
 	}
 	.change {
 		display: grid;
@@ -2797,7 +2998,7 @@
 		border: 0;
 		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
 		   2026-10-19). */
-		border-top: 0.125rem solid var(--border);
+		border-top: 0.125rem solid var(--button-edge);
 	}
 	.rule-detail {
 		display: flex;

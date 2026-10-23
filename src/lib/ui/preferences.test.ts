@@ -51,7 +51,7 @@ describe('parsePreferences', () => {
 				tokenScale: 1.25,
 				reminderScale: 0.75,
 				boardNames: true,
-				nightNumbers: true,
+				nightLeaves: 'numbers',
 				nightBadgeScale: 0.75,
 				reminderLabelWidth: 2,
 				reminderLabelWrap: true,
@@ -63,20 +63,27 @@ describe('parsePreferences', () => {
 				inlineNameBadgeScale: 2,
 				reminderLeaves: false,
 				setupFlower: true,
-				setupMovesName: false
+				setupMovesName: false,
+				reminderHighlight: false,
+				reminderHighlightLook: 'both',
+				reminderIcon: true,
+				reminderIconColour: 'plain'
 			},
 			colors: {},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',
 			requireName: true,
 			holdToReveal: true,
+			slotMachine: true,
+			tileOrderRandom: true,
 			ownWording: true,
 			hideWatchLink: true,
 			timerSound: 'buzzer',
 			timerMode: 'up',
 			timerVibrate: false,
 			timerKeepAwake: false,
-			timerPerPlayer: 45
+			timerPerPlayer: 45,
+			qrCentre: 'picture'
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
 	});

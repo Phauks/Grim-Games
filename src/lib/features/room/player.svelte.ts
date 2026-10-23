@@ -5,11 +5,12 @@
  */
 import type { Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
-import { ROOM_PROTOCOL, type PlayerView } from '#lib/core/sync/room.ts';
+import { ROOM_PROTOCOL, type PlayerView, type SharedGrimoire } from '#lib/core/sync/room.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
 import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 import { travellersInPlay, type TravellerInPlay } from '#lib/features/player/travellers-in-play.ts';
+import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 
 const STORAGE_KEY = 'grim-games-room-player';
 
@@ -72,6 +73,8 @@ export class RoomPlayer {
 	view = $state.raw<PlayerView>();
 	/** The game's script, once the Storyteller's device has sent it. */
 	script = $state.raw<Script>();
+	/** The finished grimoire, once the Storyteller shares it after the game (plan R5). */
+	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
 	readonly code: string;
 	readonly #socket: RoomSocket;
 
@@ -85,6 +88,8 @@ export class RoomPlayer {
 			(m) => {
 				if (m.type === 'player-view') {
 					this.view = m;
+					// The game runs again, or a new one began: the finished grimoire goes.
+					if (!m.ended) this.revealed = undefined;
 					const storyteller = m.public?.storytellerName?.trim();
 					const travellers = travellersInPlay(m.public?.seats ?? []);
 					setTable(code, {
@@ -92,8 +97,27 @@ export class RoomPlayer {
 						...(travellers.length ? { travellers } : {})
 					});
 				} else if (m.type === 'script') this.script = m.script;
-			}
+				else if (m.type === 'reveal') {
+					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
+				}
+			},
+			() => this.sendLook()
 		);
+	}
+
+	/**
+	 * Tells the room this phone's avatar and frame (plan R6) when they differ from what it
+	 * has: on every connect, and when the player picks again.
+	 */
+	sendLook(): void {
+		const { avatar, frame } = playerSettings.current;
+		const me = this.view?.me;
+		if (me && me.avatar === avatar && me.frame === frame) return;
+		this.#socket.send({
+			type: 'look',
+			...(avatar ? { avatar } : {}),
+			...(frame ? { frame } : {})
+		});
 	}
 
 	get status() {
@@ -128,6 +152,12 @@ export class RoomPlayer {
 	vote(choice: SeatId): boolean {
 		const voteId = this.view?.vote?.voteId;
 		return voteId ? this.#socket.send({ type: 'vote', voteId, choice }) : false;
+	}
+
+	/** This phone's ballot in the script vote (plan R1); a new one replaces the last. */
+	scriptBallot(choices: string[]): boolean {
+		const voteId = this.view?.scriptVote?.voteId;
+		return voteId ? this.#socket.send({ type: 'script-ballot', voteId, choices }) : false;
 	}
 
 	stop(): void {

@@ -149,11 +149,20 @@ test('the player view has no app header, and leaving it asks first', async ({ pa
 	await expect(page).toHaveURL(/\/join$/);
 	await expect(ask).toHaveCount(0);
 
+	// Join game shows none of the phone's script (plan J1), so leaving it has nothing to ask.
+	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+	await menu.tap();
+	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
+	await expect(page).toHaveURL(/\/library$/);
+	await expect(ask).toHaveCount(0);
+	await expect(page.getByRole('banner')).toBeVisible();
+
+	// From the script itself it asks, and Confirm leaves.
+	await page.goto('/play');
 	await menu.tap();
 	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(/\/library$/);
-	await expect(page.getByRole('banner')).toBeVisible();
 });
 
 test('notes written on a seat by an older version are kept as titled notes', async ({ page }) => {

@@ -1,20 +1,43 @@
+<script lang="ts" module>
+	import type { SeatId as DraftSeat } from '#lib/core/model/index.ts';
+
+	/**
+	 * What the phone typed or chose in each room before asking. The panel is drawn again when the
+	 * room's script arrives (the page gains its tabs), and that must not lose it.
+	 */
+	const drafts: Record<string, { name: string; seat: DraftSeat | ''; placed?: DraftSeat | '' }> =
+		{};
+</script>
+
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { formatRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '#lib/core/sync/room-code.ts';
+	import {
+		formatRoomCode,
+		normaliseRoomCode,
+		ROOM_CODE_LENGTH,
+		scannedRoom
+	} from '#lib/core/sync/room-code.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import QrScanner from '#lib/ui/share/QrScanner.svelte';
+	import SettingAvatar from '#lib/ui/settings/SettingAvatar.svelte';
+	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
+	import SharedBoard from './SharedBoard.svelte';
+	import ScriptBallot from './ScriptBallot.svelte';
+	import VoteChoice from './VoteChoice.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
-	import { followRoomScript } from './room-script.ts';
+	import { followRoomScript } from './room-script.svelte.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { recentRooms, rememberRoom } from './recent-rooms.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -50,18 +73,35 @@
 
 	$effect(() => {
 		if (!valid) return;
-		const p = useRoom(valid);
+		// Only the code is tracked. Opening the room reads settings (the avatar, the frame), and a
+		// view arriving later must not wipe a name being typed.
+		const p = untrack(() => useRoom(valid));
 		player = p;
-		name = p.view?.me.name ?? p.savedName;
+		const draft = drafts[valid];
+		name = draft?.name ?? untrack(() => p.view?.me.name ?? p.savedName);
+		seat = draft?.seat ?? '';
+		lastPlaced = draft?.placed;
 		return () => releaseRoom(p);
+	});
+	$effect(() => {
+		if (valid) drafts[valid] = { name, seat, placed: lastPlaced };
+	});
+
+	// The player's avatar and frame go to the room as they pick them (plan R6).
+	$effect(() => {
+		void playerSettings.current.avatar;
+		void playerSettings.current.frame;
+		void player?.view;
+		player?.sendLook();
 	});
 
 	// The game's script becomes this phone's current script, for /play.
 	$effect(() => {
 		const sent = player?.script;
-		if (!sent) return;
+		const room = valid;
+		if (!sent || !room) return;
 		let cancelled = false;
-		void followRoomScript(sent)
+		void followRoomScript(sent, room)
 			.then((loaded) => {
 				if (cancelled || !loaded) return;
 				if (valid) rememberRoom(valid, loaded.name);
@@ -87,8 +127,12 @@
 	const placed = $derived(
 		view ? (view.request ? (view.request.seatId ?? '') : (mine ?? '')) : undefined
 	);
+	/** The seat the room last gave or held, so only a change to it moves the choice. */
+	let lastPlaced: SeatId | '' | undefined;
 	$effect(() => {
-		if (placed !== undefined) seat = placed;
+		if (placed === undefined || placed === lastPlaced) return;
+		lastPlaced = placed;
+		seat = placed;
 	});
 	/** Asking again for the seat and name this phone already has changes nothing. */
 	const unchanged = $derived(
@@ -100,6 +144,7 @@
 	};
 	const summary = $derived.by(() => {
 		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
+		if (view.choosing) return t('room.choosing');
 		// The same words as the Storyteller's board once the game has ended.
 		if (view.ended)
 			return view.ended.winner === 'good'
@@ -192,6 +237,20 @@
 	}
 
 	/*
+	 * Share grim (Trevor, 2026-10-20, plan R5): the finished grimoire the Storyteller shared
+	 * opens over the page once when it arrives, and again from its button.
+	 */
+	const revealed = $derived(player?.revealed);
+	let finalOpen = $state(false);
+	let seenReveal: string | undefined;
+	$effect(() => {
+		const id = revealed?.gameId;
+		if (id && id !== seenReveal) finalOpen = true;
+		if (!id) finalOpen = false;
+		seenReveal = id;
+	});
+
+	/*
 	 * Grim view (plan D1, Trevor 2026-10-22: "grim view by password or direct link. drop
 	 * spectate"): the room code and the Storyteller's password open the view-only grimoire.
 	 * Players without a seat (Specters) join as players.
@@ -210,6 +269,29 @@
 		await goto(`${resolve('/watch/[code]', { code: lookup.code })}#${key}`, {
 			state: { password: true }
 		});
+	}
+
+	/*
+	 * Scan a code (plan J2, 2026-10-22): the Share screen's QR code read in the app, as the
+	 * players link or the Grim view link it holds, or a room code on its own.
+	 */
+	let scanning = $state(false);
+	let scanProblem = $state('');
+	$effect(() => {
+		if (!scanning) scanProblem = '';
+	});
+	function scanned(text: string): boolean {
+		const room = scannedRoom(text);
+		if (!room) {
+			scanProblem = t('room.scanNotRoom');
+			return false;
+		}
+		scanning = false;
+		if (room.kind === 'join') openRoom(room.code);
+		// The key stays in the hash, which never reaches the server; the path is resolved.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		else void goto(`${resolve('/watch/[code]', { code: room.code })}#${room.key}`);
+		return true;
 	}
 
 	function ask(event: SubmitEvent) {
@@ -276,14 +358,19 @@
 			<Button disabled={!found?.grimView} onclick={() => (grimViewOpen = true)}
 				>{t('room.grimView')}</Button
 			>
+			<Button onclick={() => (scanning = true)}>{t('share.scan')}</Button>
 		</div>
 	</form>
+	<Dialog bind:open={scanning} title={t('share.scan')}>
+		{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} />{/if}
+	</Dialog>
 	<Dialog bind:open={grimViewOpen} title={t('room.grimView')}>
 		<form class="grim-view" onsubmit={grimView}>
 			<TextField
 				label={t('room.watch.password')}
 				bind:value={grimPassword}
 				maxlength={64}
+				type="password"
 				autocomplete="off"
 			/>
 			<ModalActions
@@ -330,6 +417,10 @@
 {:else}
 	<PageSection title={t('room.you')}>
 		<p class="summary" role="status" data-testid="join-status">{summary}</p>
+		<!-- Share grim (plan R5): in its place all game, usable once the Storyteller shares it. -->
+		<Button icon="grimoire" disabled={!revealed} onclick={() => (finalOpen = true)}
+			>{t('room.finalGrimoire')}</Button
+		>
 		<form onsubmit={ask}>
 			<label for="player-name">{t('room.yourName')}</label>
 			<ClearableField bind:value={name}>
@@ -342,6 +433,12 @@
 					onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
 				/>
 			</ClearableField>
+			<!-- Goes on the seat without asking (plan R6); also in Settings > Player. -->
+			<SettingAvatar
+				value={playerSettings.current.avatar}
+				onChange={(avatar) => playerSettings.update({ avatar })}
+				testid="join-avatar"
+			/>
 			<fieldset>
 				<legend>{t('room.yourSeat')}</legend>
 				<div class="seats">
@@ -417,22 +514,24 @@
 		{#each vote?.options ?? [] as option (option)}
 			{@const s = seats.find((x) => x.seatId === option)}
 			<li>
-				<button
-					type="button"
-					class="choice"
-					aria-pressed={vote?.choice === option}
+				<VoteChoice
+					mark={s?.seatNumber}
+					pressed={vote?.choice === option}
 					disabled={status !== 'open'}
 					onclick={() => player?.vote(option)}
+					>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</VoteChoice
 				>
-					<span class="number">{s?.seatNumber ?? ''}</span>
-					<span class="name"
-						>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</span
-					>
-				</button>
 			</li>
 		{/each}
 	</ul>
 </Dialog>
+
+<Dialog bind:open={finalOpen} title={t('room.finalGrimoire')} size="max" scroll={false}>
+	<div class="final" data-testid="final-grimoire">
+		<SharedBoard shared={revealed?.grimoire} />
+	</div>
+</Dialog>
+{#if player}<ScriptBallot {player} />{/if}
 
 <style>
 	form {
@@ -501,6 +600,11 @@
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: var(--space-2);
+	}
+	.final {
+		position: relative;
+		height: 100%;
+		min-height: 0;
 	}
 	.grim-view {
 		display: grid;
@@ -675,25 +779,5 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.choice {
-		display: grid;
-		grid-template-columns: 2.5em 1fr;
-		align-items: center;
-		gap: var(--space-2);
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		touch-action: manipulation;
-	}
-	.choice[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--surface-selected);
 	}
 </style>

@@ -58,15 +58,18 @@ export const resets = {
 		preferences.update({
 			...pick(
 				'tileFace',
+				'tileOrderRandom',
 				'requireName',
 				'holdToReveal',
+				'slotMachine',
 				'ownWording',
 				'hideWatchLink',
 				'timerSound',
 				'timerMode',
 				'timerVibrate',
 				'timerKeepAwake',
-				'timerPerPlayer'
+				'timerPerPlayer',
+				'qrCentre'
 			),
 			assistance: assistanceWith([...STORYTELLER_GROUPS.night, ...STORYTELLER_GROUPS.day])
 		})

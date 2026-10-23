@@ -7,6 +7,8 @@
  */
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
+import type { FrameId } from '#lib/core/frames/index.ts';
 import type {
 	DayEntry,
 	DayEntryId,
@@ -18,6 +20,7 @@ import type {
 	ReminderInstance,
 	SeatId,
 	SeatOverride,
+	SymbolColour,
 	Tile,
 	TileId
 } from '#lib/core/model/index.ts';
@@ -31,6 +34,8 @@ export type GameEvent =
 	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: string }
 	/** No `note` clears it. */
 	| { type: 'SeatNoteSet'; seatId: SeatId; note?: string }
+	/** The seat's avatar and frame; a missing one clears it. */
+	| { type: 'SeatLookSet'; seatId: SeatId; avatar?: AvatarId; frame?: FrameId }
 	| { type: 'GameNotesSet'; notes?: string }
 	/** No `alignment`: not chosen yet (a Traveller's), so the seat has none. */
 	| { type: 'CharacterAssigned'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }
@@ -51,6 +56,7 @@ export type GameEvent =
 	| { type: 'ReminderLoosened'; reminderId: ReminderId }
 	| { type: 'ReminderNoteSet'; reminderId: ReminderId; note?: string }
 	| { type: 'ReminderSymbolSet'; reminderId: ReminderId; symbol?: string }
+	| { type: 'ReminderSymbolColourSet'; reminderId: ReminderId; colour?: SymbolColour }
 	| { type: 'StorytellerNameSet'; name?: string }
 	| { type: 'SeatsSwapped'; seatA: SeatId; seatB: SeatId }
 	/** The whole seating order, the same seats in a new order (RotateSeats, MoveSeat). */

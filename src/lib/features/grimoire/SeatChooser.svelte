@@ -16,6 +16,8 @@
 		/** Left out of the list (the seat the choice starts from). */
 		exclude?: SeatId;
 		onChoose: (seatId: SeatId) => void;
+		/** A first "None" row, for a choice that can be cleared (a nomination). */
+		onNone?: () => void;
 	}
 
 	let {
@@ -26,7 +28,8 @@
 		game,
 		characters,
 		exclude,
-		onChoose
+		onChoose,
+		onNone
 	}: Props = $props();
 
 	const seats = $derived(
@@ -36,6 +39,11 @@
 
 <Dialog bind:open {title} {heading} {headActions}>
 	<ul>
+		{#if onNone}
+			<li>
+				<button type="button" class="none" onclick={() => onNone?.()}>None</button>
+			</li>
+		{/if}
 		{#each seats as { seat, number } (seat.seatId)}
 			{#if seat.seatId !== exclude}
 				{@const character = seat.characterId ? characters.get(seat.characterId) : undefined}
@@ -81,6 +89,9 @@
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
+	}
+	.none {
+		display: flex;
 	}
 	button:hover {
 		background: var(--surface-selected);

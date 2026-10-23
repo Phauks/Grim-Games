@@ -31,10 +31,14 @@ describe('token appearance', () => {
 		expect(parseTokenAppearance(null)).toEqual(DEFAULT_TOKEN_APPEARANCE);
 		expect(parseTokenAppearance({ boardNames: true }).boardNames).toBe(true);
 		expect(parseTokenAppearance({ boardNames: 'yes' }).boardNames).toBe(false);
-		expect(parseTokenAppearance({ nightNumbers: true, nightBadgeScale: 1.33 })).toMatchObject({
-			nightNumbers: true,
+		expect(parseTokenAppearance({ nightLeaves: 'off', nightBadgeScale: 1.33 })).toMatchObject({
+			nightLeaves: 'off',
 			nightBadgeScale: 1.35
 		});
+		expect(parseTokenAppearance({ nightLeaves: 'wide' }).nightLeaves).toBe('leaves');
+		// Earlier builds' night order numbers switch: on keeps the numbers on the leaves.
+		expect(parseTokenAppearance({ nightNumbers: true }).nightLeaves).toBe('numbers');
+		expect(parseTokenAppearance({ nightNumbers: false }).nightLeaves).toBe('leaves');
 		expect(
 			parseTokenAppearance({ reminderLabelWidth: 2.1, reminderLabelWrap: true })
 		).toMatchObject({ reminderLabelWidth: 2, reminderLabelWrap: true });
@@ -47,6 +51,16 @@ describe('token appearance', () => {
 		// The flower leaves the name in place unless asked (Trevor, 2026-10-19).
 		expect(parseTokenAppearance({}).setupMovesName).toBe(false);
 		expect(parseTokenAppearance({ setupMovesName: true }).setupMovesName).toBe(true);
+		// Reminder highlight and owner's icon (Trevor, 2026-10-20): on, ring, player's colour.
+		expect(parseTokenAppearance({})).toMatchObject({
+			reminderHighlight: true,
+			reminderHighlightLook: 'ring',
+			reminderIcon: true,
+			reminderIconColour: 'player'
+		});
+		expect(
+			parseTokenAppearance({ reminderHighlightLook: 'sparkle', reminderIconColour: 'gold' })
+		).toMatchObject({ reminderHighlightLook: 'ring', reminderIconColour: 'player' });
 		// Earlier builds' dot instead of the owner's icon is dropped (Trevor, 2026-10-18).
 		expect(parseTokenAppearance({ inlineReminderIcons: false })).toEqual(parseTokenAppearance({}));
 		expect(parseTokenAppearance({ reminderLabelWidth: 'wide' }).reminderLabelWidth).toBe(1.5);
@@ -63,6 +77,20 @@ describe('token appearance', () => {
 		expect(scale(1.33)).toBe(1.35);
 		expect(scale(0.1)).toBe(0.5);
 		expect(scale('big')).toBe(1);
+	});
+
+	it('writes the reminder highlight as a ring, a glow, both or neither', () => {
+		const lit = (look: Partial<typeof DEFAULT_TOKEN_APPEARANCE>) => {
+			const v = tokenVariables({ ...DEFAULT_TOKEN_APPEARANCE, ...look });
+			return [v['--reminder-lit-ring'] !== 'none', v['--reminder-lit-glow'] !== 'none'];
+		};
+		expect(lit({ reminderHighlightLook: 'ring' })).toEqual([true, false]);
+		expect(lit({ reminderHighlightLook: 'glow' })).toEqual([false, true]);
+		expect(lit({ reminderHighlightLook: 'both' })).toEqual([true, true]);
+		expect(lit({ reminderHighlight: false, reminderHighlightLook: 'both' })).toEqual([
+			false,
+			false
+		]);
 	});
 
 	it('writes the sizes and only the changed colours, each to its own variable', () => {
@@ -95,6 +123,8 @@ describe('token appearance', () => {
 			'--inline-name-text': '1.25',
 			'--inline-name-icon': '1.75',
 			'--inline-name-badge': '0.75',
+			'--reminder-lit-ring': '0.2rem solid var(--accent)',
+			'--reminder-lit-glow': 'none',
 			'--on-token': DARK,
 			'--token-face-shade': DARK,
 			'--reminder-label-face': PALE

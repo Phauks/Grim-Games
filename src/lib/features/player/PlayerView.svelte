@@ -33,6 +33,8 @@
 	import { scriptKey } from './notebook.ts';
 	import NoteEditor from './NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
+	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
+	import { roomScript } from '#lib/features/room/room-script.svelte.ts';
 	import PlayerScriptActions from './PlayerScriptActions.svelte';
 	import { scriptVersion } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
@@ -110,11 +112,16 @@
 		}
 	}
 
-	const script = $derived(data ? currentScript.current : undefined);
+	// On a room's link, only the script that room sends (plan J1, Trevor 2026-10-22: "when
+	// joining game, there should be no other information available"), never the device's own.
+	const joining = $derived(join && normaliseRoomCode(join.code ?? ''));
+	const script = $derived(
+		!data ? undefined : join ? roomScript(joining || undefined) : currentScript.current
+	);
 	// A report sent from here carries the script (Trevor, 2026-10-22).
 	offerScriptToReports(() => script);
 	/** No script yet: the Scripts page no longer lists the base three, so offer them here. */
-	const choosing = $derived(!!data && !currentScript.current);
+	const choosing = $derived(!!data && !script);
 	function chooseEdition(id: string) {
 		const chosen = data && editionScript(id, data);
 		if (chosen) void chooseScript(chosen, { kind: 'edition' });

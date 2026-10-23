@@ -8,6 +8,8 @@
  * pickers in Settings work offline. After editing this file run `npm run icons`.
  */
 
+import { AVATAR_IDS } from '#lib/core/avatars/index.ts';
+
 export interface IconSlotInfo {
 	label: string;
 	/** Iconify ids offered for this slot; the first is the default. */
@@ -115,6 +117,8 @@ export const ICON_SLOTS = {
 	lock: { label: 'Lock', choices: ['ph:lock-simple', 'ph:lock'] },
 	/** Hides what is written, e.g. a scratch pad's preview in the notes list. */
 	hide: { label: 'Hide', choices: ['ph:eye-slash', 'ph:eye-closed'] },
+	/** Shows what is masked, e.g. a password as it is typed. */
+	show: { label: 'Show', choices: ['ph:eye'] },
 	library: { label: 'Library', choices: ['ph:bookmarks-simple', 'ph:archive'] },
 	folder: { label: 'Folder', choices: ['ph:folder', 'ph:folder-simple'] },
 	tag: { label: 'Tag', choices: ['ph:tag', 'ph:tag-simple'] },
@@ -202,6 +206,9 @@ export const TILE_SYMBOL_ICONS = [
 	'ph:umbrella'
 ] as const;
 
+/** Player avatars (plan R6), each a Phosphor icon named by the avatar's id. Not slots either. */
+export const AVATAR_ICONS: readonly string[] = AVATAR_IDS.map((id) => `ph:${id}`);
+
 /** Each slot's default base Iconify id, deduplicated and sorted: what most screens draw. */
 export function defaultIconIds(): string[] {
 	return [...new Set(iconSlots.map((slot) => ICON_SLOTS[slot].choices[0]))].sort();
@@ -209,7 +216,7 @@ export function defaultIconIds(): string[] {
 
 /** Every base Iconify id offered by the catalogue, deduplicated and sorted. */
 export function catalogueIconIds(): string[] {
-	const ids = new Set<string>(TILE_SYMBOL_ICONS);
+	const ids = new Set<string>([...TILE_SYMBOL_ICONS, ...AVATAR_ICONS]);
 	for (const slot of iconSlots) for (const id of ICON_SLOTS[slot].choices) ids.add(id);
 	return [...ids].sort();
 }

@@ -61,6 +61,14 @@ export interface Preferences {
 	requireName: boolean;
 	/** The drawn token shows only while it's held down (Trevor, 2026-10-20: a setting, off). */
 	holdToReveal: boolean;
+	/** Bag tile labels come in a random order (Trevor, 2026-10-20). */
+	tileOrderRandom: boolean;
+	/**
+	 * The drawn token spins like a slot machine through the script's characters before it
+	 * stops on the player's (Trevor, 2026-10-22: a Bag draw setting, off). Purely visual: the
+	 * character was decided when the tile was drawn.
+	 */
+	slotMachine: boolean;
 	/**
 	 * Show text in our own wording that Trevor hasn't approved yet, such as the game modes'
 	 * About descriptions; off by default, when only source text and links show (no authored
@@ -68,7 +76,7 @@ export interface Preferences {
 	 */
 	ownWording: boolean;
 	/**
-	 * Share's View grimoire tab hides its QR code and link, e.g. while streaming (Trevor,
+	 * Share's view-only grimoire part hides its QR code and link, e.g. while streaming (Trevor,
 	 * 2026-10-21); Copy and Share still work.
 	 */
 	hideWatchLink: boolean;
@@ -82,7 +90,15 @@ export interface Preferences {
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
 	timerPerPlayer: number;
+	/**
+	 * What goes in the middle of a share QR code (Trevor, 2026-10-20, plan R1): the script's
+	 * logo (or its name), the Storyteller's own picture, or nothing.
+	 */
+	qrCentre: QrCentre;
 }
+
+export const QR_CENTRES = ['script', 'picture', 'none'] as const;
+export type QrCentre = (typeof QR_CENTRES)[number];
 
 export const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
@@ -152,13 +168,16 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	tileFace: 'numbers',
 	requireName: false,
 	holdToReveal: false,
+	slotMachine: false,
+	tileOrderRandom: false,
 	ownWording: false,
 	hideWatchLink: false,
 	timerSound: 'bell',
 	timerMode: 'down',
 	timerVibrate: true,
 	timerKeepAwake: true,
-	timerPerPlayer: DAY_SECONDS_PER_ALIVE
+	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
+	qrCentre: 'script'
 };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
@@ -199,12 +218,21 @@ export function parsePreferences(raw: unknown): Preferences {
 			typeof input.holdToReveal === 'boolean'
 				? input.holdToReveal
 				: DEFAULT_PREFERENCES.holdToReveal,
+		slotMachine:
+			typeof input.slotMachine === 'boolean' ? input.slotMachine : DEFAULT_PREFERENCES.slotMachine,
+		tileOrderRandom:
+			typeof input.tileOrderRandom === 'boolean'
+				? input.tileOrderRandom
+				: DEFAULT_PREFERENCES.tileOrderRandom,
 		ownWording:
 			typeof input.ownWording === 'boolean' ? input.ownWording : DEFAULT_PREFERENCES.ownWording,
 		hideWatchLink:
 			typeof input.hideWatchLink === 'boolean'
 				? input.hideWatchLink
 				: DEFAULT_PREFERENCES.hideWatchLink,
+		qrCentre: (QR_CENTRES as readonly unknown[]).includes(input.qrCentre)
+			? (input.qrCentre as QrCentre)
+			: DEFAULT_PREFERENCES.qrCentre,
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,

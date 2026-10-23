@@ -50,7 +50,6 @@ export const WHALE_BUFFET: GameMode = {
 		},
 		information: [
 			{
-				characters: [],
 				instructions: 'Evil learns which characters you asked a player to reconsider.'
 			}
 		],

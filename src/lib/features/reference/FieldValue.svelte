@@ -171,7 +171,8 @@
 			<CharacterToken
 				{character}
 				size={tokenSize}
-				nightNumbers={preferences.current.tokenAppearance.nightNumbers && officialData.current
+				nightNumbers={preferences.current.tokenAppearance.nightLeaves === 'numbers' &&
+				officialData.current
 					? sheetNumbersFor(officialData.current.nightSheet, character.id)
 					: undefined}
 			/>
@@ -345,8 +346,16 @@
 	.tokens {
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
-		gap: calc(0.25 * var(--u));
+		/* Each row spans the cell, so the line between rows does too. */
+		align-items: stretch;
+		gap: var(--space-2);
+	}
+	/* Stacked entries are told apart by a line, never by spacing alone (Trevor's delineation
+	   rule): a phone stacks them with nothing beside them. */
+	.token-row + .token-row,
+	.list li:not(.jinx) + li:not(.jinx) {
+		padding-top: var(--space-2);
+		border-top: var(--card-border);
 	}
 	.token-row {
 		display: flex;

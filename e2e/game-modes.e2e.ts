@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
 
@@ -26,9 +27,11 @@ async function chooseRules(page: Page, ...names: string[]) {
 		.getByRole('button', { name: /^Special rules/ })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	// The list, not the conflicts at the top, which repeat a rule's switch.
+	const list = dialog.getByTestId('special-rules');
 	for (const name of names) {
-		await dialog.getByText(name, { exact: true }).tap();
-		await expect(dialog.getByRole('checkbox', { name, includeHidden: true })).toBeChecked();
+		await list.getByText(name, { exact: true }).tap();
+		await expect(list.getByRole('checkbox', { name, includeHidden: true })).toBeChecked();
 	}
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
@@ -503,9 +506,8 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(boomdandy.locator('.main')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByText('Must be in the bag')).toBeVisible();
 	await expect(boomdandy.getByTestId('lock-character')).toHaveAttribute('aria-pressed', 'true');
-	await page.getByRole('button', { name: 'Clear selection' }).tap();
-	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByTestId('count-minion')).toHaveText('1');
+	// Clear never takes it out, so with only it chosen there is nothing to clear.
+	await expect(page.getByRole('button', { name: 'Clear selection' })).toBeDisabled();
 	const first = page.url();
 	await pick(page, ['Washerwoman', 'Librarian', 'Investigator', 'Zombuul']);
 	await page.getByRole('button', { name: 'Build bag' }).tap();
@@ -629,6 +631,10 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	await expect(page.getByRole('heading', { name: 'Hidden characters', level: 1 })).toBeVisible();
 	const extras = page.getByTestId('extras').locator('li');
@@ -697,6 +703,10 @@ test('with no hidden character, Infinite Possibilities can’t go on to the setu
 	await page.goto('/new');
 	await chooseRules(page, 'A Script of Infinite Possibilities');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/extras$/);
 	const extras = page.getByTestId('extras').locator('li');
 	await expect(extras).toHaveCount(4);
@@ -806,6 +816,10 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 
@@ -901,7 +915,9 @@ test('New game shows each script’s author under its name, and its versions in 
 	await expect(version).not.toContainText('v');
 	const before = await line.boundingBox();
 	await custom.tap();
-	await expect(page.getByTestId('script-byline')).toHaveText('by Test Author');
+	await expect(page.getByTestId('chosen-script').getByTestId('script-byline')).toHaveText(
+		'by Test Author'
+	);
 	await expect(version).toContainText('v2.1');
 	expect((await line.boundingBox())?.height).toBe(before?.height);
 	// In the script search's list too, on Standard and in a mode alike.
@@ -939,17 +955,22 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	await page.route('**/api/botcscripts/versions/7', (route) =>
 		route.fulfill({ json: { scriptId: 7, latest: '2.2', versions: ['2.2', '2.1', '2.0'] } })
 	);
-	await page.route('**/api/botcscripts/script/7/2.2', (route) =>
-		route.fulfill({
-			json: {
-				scriptId: 7,
-				versionId: 70,
-				name: 'Many Versions',
-				version: '2.2',
-				author: 'Test Author',
-				content: [{ id: '_meta', name: 'Many Versions', author: 'Test Author' }, 'chef', 'imp']
-			}
-		})
+	// The version arrives only when the test says, so its loading state can be seen.
+	let release = () => {};
+	const held = new Promise<void>((done) => (release = done));
+	await page.route('**/api/botcscripts/script/7/2.2', async (route) =>
+		held.then(() =>
+			route.fulfill({
+				json: {
+					scriptId: 7,
+					versionId: 70,
+					name: 'Many Versions',
+					version: '2.2',
+					author: 'Test Author',
+					content: [{ id: '_meta', name: 'Many Versions', author: 'Test Author' }, 'chef', 'imp']
+				}
+			})
+		)
 	);
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Custom', { exact: true }).tap();
@@ -958,7 +979,20 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	await version.tap();
 	await expect(page.getByRole('option')).toHaveText([/v2\.2/, /v2\.1/, /v2\.0/]);
 	await page.getByRole('option', { name: /v2\.2/ }).tap();
+	// While it loads, a spinner sits on the drop-down, which waits (Trevor, 2026-10-22).
+	const loading = page.getByTestId('version-loading');
+	await expect(loading).toBeVisible();
+	await expect(loading).toHaveAccessibleName('Loading this version…');
+	await expect(version).toBeDisabled();
+	const box = (await version.boundingBox())!;
+	release();
+	await expect(loading).toHaveCount(0);
 	await expect(version).toContainText('v2.2');
+	expect(await version.boundingBox()).toEqual(box);
+	// The chosen script's source page opens from New game too (Trevor, 2026-10-22).
+	await expect(
+		page.getByTestId('chosen-script').getByRole('link', { name: "Open the script's source page" })
+	).toHaveAttribute('href', /\/script\/7\/2\.2/);
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 
@@ -977,6 +1011,52 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 		/\/script\/7\/2\.2/
 	);
 	await expect(info.locator('[data-field="version"] td')).toHaveText('2.2');
+	// Its source can be passed on, and its file saved (Trevor, 2026-10-22, plan G3).
+	await expect(info.getByTestId('share-source')).toBeEnabled();
+	const download = page.waitForEvent('download');
+	await page.getByTestId('game-info-download').tap();
+	const file = await download;
+	expect(file.suggestedFilename()).toBe('many-versions.json');
+	const json = JSON.parse(await readFile((await file.path())!, 'utf8')) as unknown[];
+	expect(json).toContainEqual(expect.objectContaining({ id: '_meta', name: 'Many Versions' }));
+	expect(json).toContain('chef');
+});
+
+test('Game info opens a special rule in full when tapped, and a script with no source cannot be shared', async ({
+	page
+}) => {
+	// Trevor, 2026-10-22 (plan G5): "allow clicking game mode or special rules in game info to
+	// see exact detalis of that game mode".
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await chooseRules(page, 'Stowed Away');
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const more = page.getByRole('dialog', { name: 'Grimoire' });
+	const entry = more.getByRole('button', { name: 'Game info' });
+	if (await entry.count()) await entry.tap();
+	else {
+		await page.keyboard.press('Escape');
+		await expect(more).toBeHidden();
+		await page.getByTestId('mode-menu').tap();
+	}
+	const info = page.getByTestId('game-info');
+	// Standard is no mode to open; the rule's name opens its About, parts and rule file.
+	await expect(info.locator('[data-field="mode"] button')).toHaveCount(0);
+	// A built-in script has no source page: Share stays in its place, off, saying why.
+	const share = info.getByTestId('share-source');
+	await expect(share).toBeDisabled();
+	await expect(share).toHaveAttribute('title', 'This script has no source page to share');
+	await info.getByRole('button', { name: 'Inspect Stowed Away' }).tap();
+	const inspect = page.getByRole('dialog', { name: 'Stowed Away' });
+	await expect(inspect.getByTestId('mode-about')).toBeVisible();
+	await expect(inspect.getByRole('button', { name: 'Rule file', exact: true })).toBeVisible();
+	await noSidewaysScroll(page);
 });
 
 test('a custom script without a version shows N/A as its version', async ({ page }) => {
@@ -1005,6 +1085,10 @@ test('a custom script without a version shows N/A as its version', async ({ page
 	);
 	await expect(version).toHaveText('N/A');
 	await expect(version).toBeDisabled();
+	// A file has no page: the source button stays in place, disabled, naming the file.
+	await expect(
+		page.getByRole('button', { name: 'No source page (no-version.json)' })
+	).toBeDisabled();
 });
 
 test('any script beyond the base three is found by typing, or picked in the Library', async ({
@@ -1049,11 +1133,35 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 		.getByRole('button', { name: /^Special rules/ })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
-	await expect(dialog.getByTestId('rule-conflicts')).toContainText(
-		'Whale Buffet and A Script of Infinite Possibilities both set Character pool'
+	// Conflicts come first, in plain words, with each side's description, Inspect and switch
+	// (Trevor, 2026-10-22).
+	const conflicts = dialog.getByTestId('rule-conflicts');
+	await expect(conflicts).toContainText(
+		'Both change “Character pool” in different ways, so only one can apply.'
 	);
+	await expect(conflicts).toContainText('Game mode: Whale Buffet');
+	await expect(conflicts.getByRole('button', { name: 'Inspect Whale Buffet' })).toBeVisible();
+	const infinite = conflicts.getByRole('checkbox', {
+		name: 'A Script of Infinite Possibilities',
+		includeHidden: true
+	});
+	await expect(infinite).toBeChecked();
+	const conflictsBox = await conflicts.boundingBox();
+	const listBox = await dialog.getByTestId('special-rules').boundingBox();
+	expect(conflictsBox!.y).toBeLessThan(listBox!.y);
+	// Turning a side off there settles it.
+	await conflicts.getByText('A Script of Infinite Possibilities', { exact: true }).tap();
+	await expect(conflicts).toHaveText('None');
+	await dialog
+		.getByTestId('special-rules')
+		.getByText('A Script of Infinite Possibilities', { exact: true })
+		.tap();
+	await expect(conflicts).toContainText('Game mode: Whale Buffet');
 	// Inspect shows a rule's own parts and its rule file.
-	await dialog.getByRole('button', { name: 'Inspect A Script of Infinite Possibilities' }).tap();
+	await dialog
+		.getByTestId('special-rules')
+		.getByRole('button', { name: 'Inspect A Script of Infinite Possibilities' })
+		.tap();
 	const inspect = page.getByRole('dialog', { name: 'A Script of Infinite Possibilities' });
 	await expect(inspect.locator('li[data-part="pool"]')).toHaveAttribute('data-status', 'runs');
 	await expect(inspect.getByRole('button', { name: 'Rule file', exact: true })).toBeVisible();
@@ -1062,6 +1170,10 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 	await noSidewaysScroll(page);
 
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	// The game is named for its mode and rules wherever it is listed.
 	await page.goto('/games');
@@ -1095,7 +1207,9 @@ test('Special rules sits under Game mode, and opening it closes the Game mode li
 	await noSidewaysScroll(page);
 });
 
-test('each special rule shows its description under its switch', async ({ page }) => {
+test('each special rule shows its description beside its switch, with a line between rules', async ({
+	page
+}) => {
 	// Trevor, 2026-10-19: descriptions when toggling, the rest behind Inspect. Only approved
 	// descriptions show (I See Dead People's was approved the same day).
 	await page.goto('/new');
@@ -1105,14 +1219,22 @@ test('each special rule shows its description under its switch', async ({ page }
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
 	const rows = dialog.getByTestId('special-rules').locator('li');
 	const specters = rows.filter({ hasText: 'Specters' });
-	await expect(specters.getByTestId('rule-description')).toHaveText(
+	await expect(specters.locator('.toggle-description')).toHaveText(
 		'Spectators share one ability and vote during the game on how it is used.'
 	);
+	// A rule with its author's rule text shows that text (Trevor, 2026-10-22).
 	await expect(
-		rows.filter({ hasText: 'I See Dead People' }).getByTestId('rule-description')
+		rows.filter({ hasText: 'I See Dead People' }).locator('.toggle-description')
 	).toHaveText(
-		'Characters die as normal, but the Storyteller doesn’t announce deaths. Dead players can still nominate, and poisoned players don’t wake.'
+		"Characters die as normal but the storyteller doesn't announce deaths. Dead players can nominate. Poisoned players don't wake up."
 	);
+	// Trevor (2026-10-22): no text beneath a switch; the switch stays on the name's line.
+	const text = (await specters.locator('.toggle-description').boundingBox())!;
+	const control = (await specters.locator('[data-part="control"]').first().boundingBox())!;
+	expect(text.x + text.width).toBeLessThanOrEqual(control.x);
+	const name = (await specters.getByText('Specters', { exact: true }).boundingBox())!;
+	expect(control.y).toBeLessThan(name.y + name.height);
+	await expect(rows.nth(1)).toHaveCSS('border-top-style', 'solid');
 	await noSidewaysScroll(page);
 });
 
@@ -1148,10 +1270,12 @@ test('special rules read plainly in Inspect, and Special rules looks like the co
 	await expect(seats.locator('tr[data-field="count"] th')).toHaveText('Seats');
 	await expect(seats.locator('tr[data-field="speaks"] td')).toHaveText('Once per game');
 	await close(seat7);
-	// Stowed Away is 0 to 2 Travellers in the bag; its rule text reads as sentences.
+	// Stowed Away is 0 to 2 Travellers in the bag; its rule text reads as sentences, as its
+	// description, and isn't listed again as a part (Trevor, 2026-10-22).
 	const stowed = await inspect('Stowed Away');
 	await expect(stowed.locator('tr[data-field="inBag"] td')).toHaveText('0–2');
-	await expect(stowed.locator('li[data-part="text"]')).not.toContainText('., ');
+	await expect(stowed.getByTestId('inspect-about')).not.toContainText('., ');
+	await expect(stowed.locator('li[data-part="text"]')).toHaveCount(0);
 	await close(stowed);
 	// Infinite Possibilities: one of each type, nothing restricted, and the Storyteller may
 	// tell the table how many.
@@ -1172,20 +1296,19 @@ test('each special rule takes its own line under the script name in the board co
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'Stowed Away', 'I See Dead People');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const corner = page.getByTestId('script-title');
 	const lines = corner.getByTestId('game-mode');
+	await expect(corner).toBeVisible();
 	if (test.info().project.name === 'phone') {
-		// A phone's corner beside seat 5 has no room for the name and a rule line: the name
-		// hides, and the ⋯ menu has Game info, with the mode and its rules, instead.
-		await expect(corner).toBeHidden();
-		await page.getByRole('button', { name: 'More', exact: true }).tap();
-		await expect(
-			page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Game info' })
-		).toBeVisible();
+		// A phone's corner beside seat 5 has room for the name and one line: the rules share it.
+		await expect(lines).toHaveText(['Stowed Away + I See Dead People']);
 		return;
 	}
-	await expect(corner).toBeVisible();
 	await expect(lines).toHaveText(['Stowed Away', 'I See Dead People']);
 	const [first, second] = [
 		(await lines.nth(0).boundingBox())!,
@@ -1203,6 +1326,10 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'I See Dead People');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	// The death is marked on the board (Trevor, 2026-10-20), then read in the day view.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
@@ -1230,6 +1357,10 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	const extras = page.getByTestId('extras').locator('li');
 	await expect(extras).toHaveCount(4);
@@ -1264,6 +1395,81 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await expect(page.locator('.row[data-dashed]')).toContainText('Goon');
 });
 
+test('Start game restates the special rules first, and Back returns to New game', async ({
+	page
+}) => {
+	// Trevor (2026-10-22): a screen that restates the special rules, with a Back button.
+	await page.goto('/new');
+	await chooseRules(page, '+1', 'Binary Supernovae');
+	const panel = modesPanel(page);
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	const recap = page.getByRole('dialog', { name: 'Special rules in this game' });
+	const items = recap.getByTestId('rules-recap').locator('li');
+	await expect(items).toHaveCount(2);
+	await expect(items.nth(1)).toContainText('Binary Supernovae');
+	await expect(items.nth(1)).toContainText('If a Demon dies by execution, good wins.');
+	await expect(items.nth(0)).toContainText('Name the characters Off');
+	await noSidewaysScroll(page);
+	// Back keeps everything as chosen.
+	await recap.getByRole('button', { name: 'Back' }).tap();
+	await expect(recap).toBeHidden();
+	await expect(page).toHaveURL(/\/new$/);
+	await expect(panel.getByRole('button', { name: /^Special rules/ })).toHaveText(
+		'Special rules (2)'
+	);
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await recap.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
+});
+
+test('Special rules has a search box', async ({ page }) => {
+	// Trevor (2026-10-22): "add search bar for special rules, since it may grow large over time".
+	await page.goto('/new');
+	await modesPanel(page)
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const list = dialog.getByTestId('special-rules');
+	await dialog.getByRole('searchbox', { name: 'Search special rules' }).fill('supernova');
+	await expect(list.locator('li')).toHaveCount(1);
+	await expect(list).toContainText('Binary Supernovae');
+	await dialog.getByRole('searchbox', { name: 'Search special rules' }).fill('zzzz');
+	await expect(list).toHaveText('None');
+	await dialog.getByRole('button', { name: 'Clear' }).tap();
+	await expect(list.getByText('+1', { exact: true })).toBeVisible();
+	await noSidewaysScroll(page);
+});
+
+test('+1 has a switch for naming its character, shown in its instructions', async ({ page }) => {
+	// Trevor (2026-10-22): "add setting for +1", with his two instructions.
+	await page.goto('/new');
+	await modesPanel(page)
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const plusOne = dialog
+		.getByTestId('special-rules')
+		.locator('li')
+		.filter({ has: page.getByText('+1', { exact: true }) });
+	const named = plusOne.getByRole('checkbox', { name: 'Name the characters', includeHidden: true });
+	// Always there, so nothing moves; usable once +1 is on.
+	await expect(named).toBeDisabled();
+	await plusOne.getByText('+1', { exact: true }).tap();
+	await expect(named).toBeEnabled();
+	const inspectPlusOne = async (text: string) => {
+		await dialog.getByRole('button', { name: 'Inspect +1' }).tap();
+		const inspect = page.getByRole('dialog', { name: '+1' });
+		await expect(inspect).toContainText(text);
+		await inspect.getByRole('button', { name: 'Close' }).tap();
+		await expect(inspect).toBeHidden();
+	};
+	await inspectPlusOne('Tell the table that one character from off the script is in play.');
+	await plusOne.getByText('Name the characters', { exact: true }).tap();
+	await expect(named).toBeChecked();
+	await inspectPlusOne('Tell the table which character from off the script is in play.');
+	await noSidewaysScroll(page);
+});
+
 test('Binary Supernovae asks for one more Demon, and an executed Demon wins it for good', async ({
 	page
 }) => {
@@ -1272,6 +1478,10 @@ test('Binary Supernovae asks for one more Demon, and an executed Demon wins it f
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'Binary Supernovae');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);
@@ -1299,4 +1509,26 @@ test('Binary Supernovae asks for one more Demon, and an executed Demon wins it f
 	const line = prompt.locator('[data-rule="demon-executed"]');
 	await expect(line).toContainText('Binary Supernovae');
 	await expect(line).toContainText('Good wins');
+});
+
+test('New game previews the script as it will play, beside the settings', async ({ page }) => {
+	// Trevor, 2026-10-22: always open, never collapsed, beside the settings on a computer and
+	// under them on a phone, with the game mode's and special rules' changes.
+	await page.goto('/new');
+	const preview = page.getByRole('complementary', { name: 'Script preview' });
+	await expect(preview.getByRole('heading', { name: 'Script preview' })).toBeVisible();
+	await expect(preview).toContainText('Washerwoman');
+	await expect(preview).not.toContainText('Seat 7 remains empty');
+	await modesPanel(page)
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Bad Moon Rising', { exact: true })
+		.tap();
+	await expect(preview).toContainText('Grandmother');
+	await expect(preview).not.toContainText('Washerwoman');
+	await chooseRules(page, 'The Ballad of Seat 7');
+	await expect(preview).toContainText('Seat 7 remains empty');
+	// A mode with two towns previews each town's script.
+	await chooseMode(page, 'Two games at once');
+	await expect(preview.getByRole('heading', { name: 'Town 2 script' })).toBeVisible();
+	await noSidewaysScroll(page);
 });

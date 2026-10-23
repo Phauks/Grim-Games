@@ -225,6 +225,8 @@ function describeEvent(
 			return event.note
 				? [text('Note on '), seatPart(before, event.seatId)]
 				: [text('Cleared the note on '), seatPart(before, event.seatId)];
+		case 'SeatLookSet':
+			return [text('Avatar and frame for '), seatPart(before, event.seatId)];
 		case 'GameNotesSet':
 			return [text(event.notes ? 'Game notes' : 'Cleared the game notes')];
 		case 'SeatsSwapped':
@@ -370,9 +372,11 @@ export function describeEntry(
 ): HistoryPart[] {
 	const [first] = entry.events;
 	if (!first) return [text('No change')];
-	if (first.type === 'SeatingReordered' && before) {
+	// Moving players names the unnamed seats first (their seat numbers), so look past them.
+	const reorder = entry.events.find((e) => e.type === 'SeatingReordered');
+	if (reorder?.type === 'SeatingReordered' && before) {
 		const was = before.seating;
-		const now = first.seating;
+		const now = reorder.seating;
 		if (entry.command === 'RotateSeats' && now.length > 1)
 			return [text(`Rotated the seats ${now[1] === was[0] ? 'clockwise' : 'anticlockwise'}`)];
 		// MoveSeat: the one seat whose removal leaves the same order.

@@ -2,7 +2,7 @@
  * The roadmap, kept in the repository so it ticks itself off: an item is done once a merged
  * change names its ID in brackets in its title, such as "Savant info generator (L2)", or is
  * one of the PRs listed with it. The IDs are the backlog plan's (D1, R1-R7, B1-B6, S1-S6,
- * P1-P2, L1-L28, A1, O1). Add new items here with their ID; never tick them by hand.
+ * P1-P2, L1-L28, G1-G5, A1, O1). Add new items here with their ID; never tick them by hand.
  */
 import type { BuildCommit } from './update-notes.ts';
 import type { Change } from './changelog.ts';
@@ -39,6 +39,11 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				prs: [323]
 			},
 			{ id: 'L18b', title: 'The view-only grimoire uses the full width on desktop' },
+			{
+				id: 'G4',
+				title: 'Share is one screen: the join code, then the view-only link',
+				prs: [365]
+			},
 			{ id: 'R3', title: 'Watcher count beside the script name on the board' },
 			{ id: 'R7', title: "Player view tabs that don't fit move into a ⋯ menu", prs: [318] },
 			{
@@ -46,7 +51,19 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'Next game in the same room, with a script vote and a custom QR centre logo'
 			},
 			{ id: 'R6', title: 'Player avatars on seat tokens, from our own set' },
+			{ id: 'J1', title: "Join game shows nothing from the phone until the room's script arrives" },
+			{ id: 'J2', title: 'Scan a code on Join game, with the camera in the app' },
+			{ id: 'J3', title: 'Password fields are masked, with an eye button to show them' },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
+		]
+	},
+	{
+		title: 'New game and Game info',
+		items: [
+			{ id: 'G1', title: 'New game shows a spinner while a script version loads' },
+			{ id: 'G2', title: 'New game previews the script as it will play, beside the settings' },
+			{ id: 'G3', title: "Game info downloads the script's file and shares its source" },
+			{ id: 'G5', title: 'Game info opens the game mode or a special rule in full when tapped' }
 		]
 	},
 	{
@@ -75,18 +92,26 @@ export const ROADMAP: readonly RoadmapArea[] = [
 	{
 		title: 'Day',
 		items: [
-			{ id: 'L12', title: 'Day character rows look like character selection' },
-			{ id: 'L21', title: 'Day badges coloured at the top, in ghost colour order' },
-			{ id: 'L13', title: 'Execution button; "no execution" is a choice each day' },
+			{ id: 'L12', title: 'Day character rows look like character selection', prs: [337] },
+			{ id: 'L21', title: 'Day badges coloured at the top, in ghost colour order', prs: [344] },
+			{ id: 'L13', title: 'Execution button; "no execution" is a choice each day', prs: [355] },
 			{ id: 'L9', title: 'Announcements include revived players' },
 			{ id: 'L28', title: 'Custom characters noted in Announcements' },
-			{ id: 'L5', title: 'Savant reminder when no Savant information is set for the next day' }
+			{ id: 'L5', title: 'Savant reminder when no Savant information is set for the next day' },
+			{
+				id: 'L32',
+				title: 'An unnamed seat shows "Seat N" where its name is asked for',
+				prs: [364]
+			},
+			{ id: 'L33', title: 'Day ghost votes count: a dark ghost on white', prs: [355] }
 		]
 	},
 	{
 		title: 'Characters and rules',
 		items: [
 			{ id: 'L1', title: 'The +1 special rule', prs: [314] },
+			{ id: 'L35', title: 'The Warrens special rule' },
+			{ id: 'L36', title: 'The Djinn’s Bargain special rule' },
 			{
 				id: 'L11',
 				title: 'Godfather: the night step knows whether an Outsider died today',
@@ -138,6 +163,11 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				prs: [351]
 			},
 			{ id: 'S10', title: 'A report sent from a script carries that script' },
+			{
+				id: 'S11',
+				title: 'Buttons stand out from what is behind them; End game is a red button'
+			},
+			{ id: 'S12', title: 'Lists of information never run together without a line or gap' },
 			{ id: 'B5', title: 'Reminder glow and source mark settings' },
 			{ id: 'L16', title: 'Glossary: every character of a script and character type', prs: [324] },
 			{ id: 'O1', title: 'New app logo' }

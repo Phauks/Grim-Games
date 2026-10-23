@@ -1,6 +1,8 @@
 <script lang="ts">
+	import type { SymbolColour } from '#lib/core/model/index.ts';
+	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
-	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { fallbackIconUrl, reminderIconUrl } from '#lib/features/characters/icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
 	import IconGlyph from '#lib/ui/icons/IconGlyph.svelte';
@@ -32,6 +34,8 @@
 		infinite?: boolean;
 		/** The generic reminder's own symbol, an icon id or an emoji (Trevor, 2026-10-19: per token). */
 		symbol?: string;
+		/** Its symbol's colour (Trevor, 2026-10-20); none is the reminder's ink. */
+		symbolColour?: SymbolColour;
 		disabled?: boolean;
 		onTap: () => void;
 		/** Pointer position in client px while dragging; `end` true when released. */
@@ -53,6 +57,7 @@
 		more,
 		infinite = false,
 		symbol = '',
+		symbolColour,
 		disabled = false,
 		onTap,
 		onDrag,
@@ -60,7 +65,13 @@
 		panX = false
 	}: Props = $props();
 
-	const src = $derived(character ? iconUrl(character, alignment) : undefined);
+	// Settings > Tokens: the owner's icon can be hidden or coloured differently (Trevor, 2026-10-20).
+	const appearance = $derived(preferences.current.tokenAppearance);
+	const src = $derived(
+		character && appearance.reminderIcon
+			? reminderIconUrl(character, alignment, appearance.reminderIconColour)
+			: undefined
+	);
 	const set = $derived(resolveIconSet(preferences.current, preferences.theme));
 	const weight = $derived(ICON_SETS.find((s) => s.id === set)?.weight ?? 'regular');
 
@@ -201,12 +212,16 @@
 	{#if more}
 		<span class="more">+{more}</span>
 	{:else}
-		{#if infinite}{#if symbol.startsWith('ph:')}<span class="symbol" data-symbol={symbol}
+		{#if infinite}{#if symbol.startsWith('ph:')}<span
+					class="symbol"
+					data-symbol={symbol}
+					style:color={symbolColour && SYMBOL_COLOUR_LOOKS[symbolColour].colour}
 					><IconGlyph id={withWeight(symbol, weight)} {set} /></span
 				>{:else if symbol}<span class="symbol emoji" data-symbol={symbol} aria-hidden="true"
 					>{symbol}</span
 				>{/if}{:else if src}<img
 				{src}
+				data-plain={appearance.reminderIconColour === 'plain' || undefined}
 				alt=""
 				draggable="false"
 				{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
@@ -217,6 +232,10 @@
 </button>
 
 <style>
+	/* Settings > Tokens' plain owner icon (Trevor, 2026-10-20). */
+	img[data-plain] {
+		filter: grayscale(1);
+	}
 	.reminder {
 		--rim: var(--reminder-face);
 		position: relative;

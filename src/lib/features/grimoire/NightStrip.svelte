@@ -34,6 +34,8 @@
 		asleepBy?: string;
 		/** A special rule leaves this step's seat to no one (The Ballad of Seat 7), named by the rule. */
 		emptySeatBy?: string;
+		/** The player a special rule says the Demon attacks tonight (Trained Killer), and the rule. */
+		attack?: { seat: string; by: string };
 	}
 
 	let {
@@ -46,7 +48,8 @@
 		onClose,
 		onPastEnd,
 		asleepBy,
-		emptySeatBy
+		emptySeatBy,
+		attack
 	}: Props = $props();
 
 	const game = $derived(grimoire.game);
@@ -105,6 +108,9 @@
 					>{/if}
 				{#if emptySeatBy}<span class="empty-seat" data-testid="step-empty-seat"
 						>No player: make its choices ({emptySeatBy})</span
+					>{/if}
+				{#if attack}<span class="attack" data-testid="step-attack"
+						>Attacks {attack.seat} ({attack.by})</span
 					>{/if}
 				<!-- What to do comes before any information (Trevor, 2026-10-20). -->
 				<span class="text">
@@ -252,6 +258,10 @@
 		white-space: nowrap;
 	}
 	.asleep {
+		color: var(--evil);
+		font-size: 0.9rem;
+	}
+	.attack {
 		color: var(--evil);
 		font-size: 0.9rem;
 	}
