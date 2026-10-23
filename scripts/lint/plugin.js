@@ -7,6 +7,7 @@ import { dropdownChoice } from './dropdown-choice.js';
 import { iconMeaning } from './icon-meaning.js';
 import { modalActions } from './modal-actions.js';
 import { namesAsBadges } from './names-as-badges.js';
+import { sharePanel } from './share-panel.js';
 import { textField } from './text-field.js';
 
 export default {
@@ -19,6 +20,7 @@ export default {
 		'modal-actions': modalActions,
 		'dropdown-choice': dropdownChoice,
 		'text-field': textField,
-		'icon-meaning': iconMeaning
+		'icon-meaning': iconMeaning,
+		'share-panel': sharePanel
 	}
 };

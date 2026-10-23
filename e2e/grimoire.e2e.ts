@@ -2565,6 +2565,12 @@ test("a finished game is shared to the players' phones, without the notes", asyn
 	const download = phone.waitForEvent('download');
 	await phone.getByRole('button', { name: 'Save', exact: true }).tap();
 	expect((await download).suggestedFilename()).toMatch(/^trouble-brewing-.*\.html$/);
+	// Its Share is the one share screen, with the recap's QR code and link (Trevor, 2026-10-23).
+	await phone.getByRole('button', { name: 'Share', exact: true }).tap();
+	const passOn = phone.getByRole('dialog', { name: /^Share / });
+	await expect(passOn.getByTestId('share-url')).toHaveValue(url);
+	await expect(passOn.getByRole('img', { name: 'QR code for the game recap' })).toBeVisible();
+	await phone.keyboard.press('Escape');
 
 	// Reopening the dialog finds the same share; Stop sharing deletes it.
 	await page.keyboard.press('Escape');
@@ -2623,9 +2629,8 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	for (let i = 0; i < 30 && !(await last.evaluate(inView)); i++) await page.mouse.wheel(0, 600);
 	await expect(last).toBeInViewport();
 	expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-	// The same Script and Night tabs as players' /play, without their private Notes (Trevor,
-	// 2026-10-18: what the Storyteller sees is what players get).
-	await expect(sheet.getByRole('tab')).toHaveText(['Script', 'Night']);
+	// Every tab players' /play has, Grim and Notes too (Trevor, 2026-10-23: "feature parity").
+	await expect(sheet.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
 	await sheet.getByRole('tab', { name: 'Night' }).tap();
 	await expect(sheet.locator('section[data-night="first"] li[data-step="empath"]')).toBeVisible();
 	await page.keyboard.press('Escape');

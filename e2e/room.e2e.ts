@@ -57,6 +57,13 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	// Asking moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
 	// script"); the Room tab keeps the seat's state.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
+	// In a room, Share script hands on the room, as the board's does (Trevor, 2026-10-23).
+	await phone.getByRole('button', { name: 'Share script' }).tap();
+	const passOn = phone.getByRole('dialog', { name: 'Share Trouble Brewing' });
+	await expect(passOn.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
+	await expect(passOn.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
+	await phone.keyboard.press('Escape');
+	await expect(passOn).toBeHidden();
 
 	const request = page.getByRole('listitem', { name: 'Alex asks for Seat 3' });
 	await request.getByRole('button', { name: 'Approve' }).tap();

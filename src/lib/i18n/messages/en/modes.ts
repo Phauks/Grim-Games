@@ -18,6 +18,7 @@ export const modes = {
 	'modes.info.rules': 'Special rules',
 	'modes.info.download': 'Download script',
 	'modes.info.shareSource': 'Share the script’s source',
+	'modes.info.sourceQr': 'QR code for the script’s source',
 	'modes.info.noSource': 'This script has no source page to share',
 	'modes.storytellerName': 'Storyteller',
 	'modes.script': 'Script',

@@ -11,6 +11,12 @@ import grim from './scripts/lint/plugin.js';
  * Files still reaching localStorage directly instead of #lib/ui/stored.ts; only ever shrinks
  * (component review, 2026-10-18).
  */
+/**
+ * Files still calling the phone's share sheet themselves instead of opening SharePanel; only
+ * ever shrinks (Trevor, 2026-10-23: every Share the same). Empty since the share audit.
+ */
+const SHARE_TODO = [];
+
 const LOCAL_STORAGE_TODO = [
 	'src/lib/features/account/profile-scripts.svelte.ts',
 	'src/lib/features/grimoire/board-looks.svelte.ts',
@@ -189,6 +195,20 @@ export default defineConfig(
 				}
 			]
 		}
+	},
+	{
+		// Every Share opens the one share screen (Trevor, 2026-10-23); only it calls
+		// navigator.share. SHARE_TODO only shrinks.
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
+		ignores: [
+			'src/lib/ui/share/SharePanel.svelte',
+			'src/**/*.test.ts',
+			'src/lib/features/spikes/**',
+			'src/routes/spikes/**',
+			...SHARE_TODO
+		],
+		plugins: { grim },
+		rules: { 'grim/share-panel': 'error' }
 	},
 	{
 		// Labelled text fields are the shared TextField, search boxes SearchField

@@ -25,7 +25,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { onLayerOpen } from '#lib/ui/primitives/layers.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
-	import { copyText } from '#lib/ui/clipboard.ts';
+	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
 	import { campaignOf } from './campaigns.ts';
 	import { findMode } from './custom-modes.svelte.ts';
@@ -230,23 +230,12 @@
 		}
 	}
 
-	/** Where the script came from, passed on as the share sheet passes a link (plan G3). */
-	async function shareSource() {
-		if (!scriptPage) return;
-		const title = game.script.meta?.name ?? t('modes.info.script');
-		if (typeof navigator.share === 'function') {
-			try {
-				await navigator.share({ title, url: scriptPage });
-				return;
-			} catch (e) {
-				// Closing the share sheet is not a failure.
-				if (e instanceof DOMException && e.name === 'AbortError') return;
-			}
-		}
-		await copyText(scriptPage, {
-			failed: [t('share.copyFailed'), t('share.copyFailedHint')]
-		});
-	}
+	/**
+	 * Where the script came from, on the one share screen (plan G3; Trevor, 2026-10-23: every
+	 * Share the same), with its QR code, Copy and Share.
+	 */
+	let sharingSource = $state(false);
+	const sourceTitle = $derived(game.script.meta?.name ?? t('modes.info.script'));
 
 	function go(path: Parameters<typeof goto>[0]) {
 		open = false;
@@ -375,7 +364,10 @@
 		title={scriptPage ? t('modes.info.shareSource') : t('modes.info.noSource')}
 		disabled={!scriptPage}
 		data-testid="share-source"
-		onclick={() => void shareSource()}
+		onclick={() => {
+			open = false;
+			sharingSource = true;
+		}}
 	/>
 	<IconButton
 		icon="download"
@@ -410,10 +402,23 @@
 		onsave={onEdit}
 	/>
 {/if}
+<Dialog bind:open={sharingSource} title={t('scripts.share.title', { title: sourceTitle })}>
+	<div class="share-source">
+		<SharePanel
+			url={scriptPage}
+			title={sourceTitle}
+			qrLabel={t('modes.info.sourceQr')}
+			pending={t('modes.info.noSource')}
+		/>
+	</div>
+</Dialog>
 {#if inspected}<ModeInspectDialog bind:open={inspecting} mode={inspected} />{/if}
 {#if specters && mode}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
 
 <style>
+	.share-source {
+		margin-top: var(--space-3);
+	}
 	.extra {
 		display: block;
 	}
