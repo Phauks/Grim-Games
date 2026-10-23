@@ -1,5 +1,5 @@
 import type { CombinedParts } from '#lib/core/modes/index.ts';
-import { PLUS_ONE_NAMED } from './rule-switches.ts';
+import { DJINN_THREE_ALIVE, PLUS_ONE_NAMED } from './rule-switches.ts';
 
 /**
  * Built-in mode and special rule descriptions Trevor has approved (2026-10-18: "You write game mode
@@ -36,7 +36,12 @@ export const APPROVED_ABOUT: Readonly<Record<string, string>> = {
 	'plus-one':
 		'1 Character not on the script is added to the bag. This character may or may not be announced.',
 	'council-of-the-dead':
-		'On night 4 the dead wake together for 2 minutes, then secretly vote for a living player, who receives a boon.'
+		'On night 4 the dead wake together for 2 minutes, then secretly vote for a living player, who receives a boon.',
+	// Approved 2026-10-23 ("instructions and about are fine").
+	warrens:
+		'While 5 or more players are alive, an evil player who nominates another living evil player swaps characters with them at once. Travellers are left out.',
+	'djinns-bargain':
+		'A player who nominates may choose to die. If they do, the player they nominated has their ability work twice until dusk the next day.'
 };
 
 /** Whether a built-in mode's description is the text Trevor approved. */
@@ -51,6 +56,9 @@ export function aboutApproved(modeId: string, about: string | undefined): boolea
  * project files) and sent them back the same day, rewording some. The two lines he took out
  * (Whale Buffet's information, Infinite Possibilities' rule change) stay hidden.
  */
+const DJINN_BARGAIN =
+	'A player may say, as they nominate, that they choose to die. Don’t ask them; once the nomination is made, the chance has passed. If they do, they die at once, and you announce it. Until dusk the next day, the nominee’s ability works twice: each time it takes effect, resolve it twice, one choice at a time. A once per game ability that was already used stays used.';
+
 export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly string[]>> = {
 	'flesh-and-bone:parts.forced':
 		'Put the Flesh and Bone Fabled in play. It is homebrew, so its ability is on its own page, not in the app.',
@@ -97,7 +105,12 @@ export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly st
 	'plus-one:parts.information[0]': [
 		'Tell the table that one character from off the script is in play.',
 		PLUS_ONE_NAMED
-	]
+	],
+	// Approved 2026-10-23 ("instructions and about are fine"); the Djinn's Bargain's second text
+	// is with its 3-player switch on (rule-switches.ts).
+	'warrens:parts.ruleChanges[0]':
+		'While 5 or more players are alive, when an evil player nominates another living evil player, and neither is a Traveller, swap their character tokens straight away. Each learns their new character when they next wake at night.',
+	'djinns-bargain:parts.ruleChanges[0]': [DJINN_BARGAIN, `${DJINN_BARGAIN} ${DJINN_THREE_ALIVE}`]
 };
 
 /** Whether a built-in instruction is text Trevor approved for that part. */
