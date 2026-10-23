@@ -13,10 +13,21 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  # A stalled cache download gives up after 2 minutes instead of the default 10, and the job
+  # carries on without the npm cache (on 2026-10-23 setup-node sat 10 minutes on every job).
+  SEGMENT_DOWNLOAD_TIMEOUT_MINS: 2
+
 jobs:
   verify:
     name: Typecheck, lint, unit tests, build
     runs-on: ubuntu-latest
+    # Playwright's own image has Chromium and its system libraries installed, so no job spends
+    # time on `playwright install --with-deps` (which took 10 minutes on about one run in ten).
+    # The tag must match the installed @playwright/test; scripts/scripts.test.ts checks it.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --ipc=host
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
@@ -25,8 +36,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Install Chromium for browser component tests
-        run: npx playwright install --with-deps chromium
       - run: npm run check
       - run: npm run lint
       - run: npm run test:unit -- --run
@@ -35,9 +44,16 @@ jobs:
   e2e:
     name: Touch e2e (phone + tablet, shard ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
-    # Each shard runs a third of the tests (fullyParallel spreads single tests, not files);
-    # the whole suite is about 23 minutes on one runner.
-    timeout-minutes: 30
+    # Playwright's own image has Chromium and its system libraries installed, so no job spends
+    # time on `playwright install --with-deps` (which took 10 minutes on about one run in ten).
+    # The tag must match the installed @playwright/test; scripts/scripts.test.ts checks it.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --ipc=host
+    # Each shard runs a third of the tests (fullyParallel spreads single tests, not files). On
+    # 2026-10-23 a shard's tests took 12 to 20 minutes; the limit is a backstop for a hung run.
+    # The check names are required on beta, so a fourth shard needs the ruleset updated too.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -49,7 +65,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e -- --shard=${{ matrix.shard }}/3
       - name: List flaky tests
         if: always()
