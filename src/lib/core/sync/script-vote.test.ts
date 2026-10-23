@@ -91,6 +91,26 @@ describe('a vote on the next script', () => {
 		expect(closeScriptVote(r).scriptVote).toBeUndefined();
 	});
 
+	// Trevor, 2026-10-23: "storyteller can create time-limit for vote".
+	it('takes no more ballots once its time limit runs out', () => {
+		let r = openScriptVote(room(), 'v1', 'single', options, 2, 1000);
+		expect(r.scriptVote?.endsAt).toBe(1000 + 2 * 60_000);
+		expect(playerView(r, 'alex').scriptVote?.endsAt).toBe(121_000);
+		expect(hostView(r).scriptVote?.endsAt).toBe(121_000);
+		r = castScriptBallot(r, 'alex', 'v1', ['tb'], 120_999);
+		expect(hostView(r).scriptVote?.voted).toBe(1);
+		expect(castScriptBallot(r, 'bo', 'v1', ['bmr'], 121_000)).toBe(r);
+		// Only the listed limits; anything else is a vote with no limit.
+		expect(openScriptVote(room(), 'v1', 'single', options, 7, 0).scriptVote).not.toHaveProperty(
+			'endsAt'
+		);
+		expect(openScriptVote(room(), 'v1', 'single', options).scriptVote).not.toHaveProperty('endsAt');
+		expect(
+			castScriptBallot(openScriptVote(room(), 'v1', 'single', options), 'bo', 'v1', ['tb'], 9e12)
+				.scriptVote?.ballots.bo
+		).toEqual(['tb']);
+	});
+
 	it('ends, with the Storyteller choosing, when the next game starts', () => {
 		let r = setChoosing(openScriptVote(room(), 'v1', 'single', options), true);
 		expect(playerView(r, 'alex').choosing).toBe(true);

@@ -4,9 +4,6 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const account = {
 	'account.pageTitle': `Account · ${APP_NAME}`,
 	'account.title': 'Account',
-	'account.button': 'Account',
-	'account.buttonSignedIn': 'Account: signed in as {name}',
-	'account.settings': 'Account settings',
 
 	'account.signIn.title': 'Sign in',
 	'account.signIn.intro':

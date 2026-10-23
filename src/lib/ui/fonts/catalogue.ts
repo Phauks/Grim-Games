@@ -139,7 +139,7 @@ export const FONT_ROLE_INFO: Record<FontRole, FontRoleInfo> = {
 	heading: {
 		id: 'heading',
 		label: 'Headings',
-		description: 'Page, section, dialog and sheet titles, and the app name in the header.',
+		description: 'Page, section, dialog and sheet titles, and the app name in the menu.',
 		sample: 'First night',
 		length: 'short'
 	},

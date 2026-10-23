@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { menuButton, openSettingsDialog } from './shell.ts';
 
 test('home page renders on a touch device', async ({ page }) => {
 	await page.goto('/');
@@ -164,7 +165,7 @@ test("the 'not official' notice links the official site, in About and the privac
 	).toHaveAttribute('href', official);
 
 	await page.goto('/');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -197,7 +198,7 @@ test('the footer never makes the page wider than the screen, even at the largest
 test('Diagnostics is under About, closed, and its old page address opens it', async ({ page }) => {
 	await page.goto('/');
 	await page.evaluate(() => document.fonts.ready);
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -221,24 +222,24 @@ test('Diagnostics is under About, closed, and its old page address opens it', as
 
 // Turned on by the board's +layout.ts ({ chrome: 'game' }); the board's toolbar opens the
 // app menu, and leaving asks first (src/lib/features/shell/shell.ts).
-test('a game in progress hides the header and footer, so a stray tap cannot leave it', async ({
+test('a game in progress hides the sidebar and footer, so a stray tap cannot leave it', async ({
 	page
 }) => {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-	await expect(page.getByRole('banner')).toHaveCount(0);
 	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
-	// Setting up a game is not "in progress": the header is back there.
+	// Setting up a game is not "in progress": the footer is back there.
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
-	await expect(page.getByRole('banner').getByRole('link', { name: APP_NAME })).toBeVisible();
+	await expect(page.getByRole('contentinfo')).toBeVisible();
 });
 
 // Trevor (2026-10-19): the phone's top and bottom bars match the palette. The page draws under
-// them (viewport-fit=cover) and the status bar takes the header's colour, in every theme.
-test("the phone's bars follow the header colour, custom colours included", async ({ page }) => {
+// them (viewport-fit=cover) and the status bar takes the surface colour, in every theme. With no
+// app header (2026-10-22), a strip of that colour stays under the status bar as the page scrolls.
+test("the phone's bars follow the surface colour, custom colours included", async ({ page }) => {
 	const hex = (rgb: string) =>
 		'#' +
 		(rgb.match(/\d+/g) ?? [])
@@ -248,7 +249,7 @@ test("the phone's bars follow the header colour, custom colours included", async
 	const barColours = () =>
 		page.evaluate(() => ({
 			meta: document.querySelector('meta[name="theme-color"]')?.getAttribute('content'),
-			header: getComputedStyle(document.querySelector('header')!).backgroundColor
+			header: getComputedStyle(document.querySelector('.app-body')!, '::before').backgroundColor
 		}));
 
 	await page.goto('/');
@@ -256,7 +257,7 @@ test("the phone's bars follow the header colour, custom colours included", async
 		'content',
 		/viewport-fit=cover/
 	);
-	await expect(page.getByRole('banner')).toBeVisible();
+	await expect(menuButton(page)).toBeVisible();
 	const before = await barColours();
 	expect(before.meta).toBe(hex(before.header));
 
@@ -267,7 +268,7 @@ test("the phone's bars follow the header colour, custom colours included", async
 		)
 	);
 	await page.reload();
-	await expect(page.getByRole('banner')).toBeVisible();
+	await expect(menuButton(page)).toBeVisible();
 	const after = await barColours();
 	expect(after.meta).toBe('#203040');
 	expect(hex(after.header)).toBe('#203040');
@@ -279,7 +280,7 @@ test("the theme's backdrop is a fixed layer that reaches under the phone's bars"
 	page
 }) => {
 	await page.goto('/');
-	await expect(page.getByRole('banner')).toBeVisible();
+	await expect(menuButton(page)).toBeVisible();
 	const looks = await page.evaluate(() => {
 		const layer = getComputedStyle(document.body, '::before');
 		return {
@@ -303,13 +304,13 @@ test("a game screen's backdrop fades into the phone's bars", async ({ page }) =>
 	const layer = () =>
 		page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage);
 	await page.goto('/');
-	await expect(page.getByRole('banner')).toBeVisible();
+	await expect(menuButton(page)).toBeVisible();
 	expect((await layer()).match(/linear-gradient/g)).toBeNull();
 
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page.getByRole('banner')).toHaveCount(0);
+	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 	const surface = await page.evaluate(() => {
 		const probe = document.createElement('i');
 		probe.style.color = 'var(--surface)';

@@ -90,6 +90,7 @@
 			width={size}
 			height={size}
 			loading="lazy"
+			referrerpolicy="no-referrer"
 			{@attach iconFallback(fallback)}
 		/>{/if}
 	<!-- Leaves are drawn over the icon, so they always show. -->

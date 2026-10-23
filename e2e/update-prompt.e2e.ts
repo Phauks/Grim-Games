@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 // Trevor (2026-10-16): the update prompt opens a list of what changed since the running build.
 
@@ -141,7 +142,7 @@ async function fakeServiceWorker(page: Page, waiting: boolean) {
 }
 
 async function openAbout(page: Page) {
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
