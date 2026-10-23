@@ -128,10 +128,13 @@
 		min-width: 0;
 		/* Clear of a landscape phone's notch (viewport-fit=cover in app.html). */
 		padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+		/* Where sticky page parts stop: just below the sticky app header. */
+		--header-offset: calc(var(--tap-target) + env(safe-area-inset-top));
 	}
 	/* No header or footer (a game): clear of the status and navigation bars here instead. */
 	.app-body.bare {
 		padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
+		--header-offset: env(safe-area-inset-top);
 	}
 	.app-main {
 		flex: 1;

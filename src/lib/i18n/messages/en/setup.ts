@@ -41,6 +41,7 @@ export const setup = {
 	'setup.lockFor': 'Lock {name}',
 	'setup.bluffFor': 'Demon bluff: {name}',
 	'setup.bluffsFull': '{count} bluffs chosen',
+	'setup.check.bluffInPlay': '{name} is a Demon bluff and is also chosen to be in play.',
 	'setup.locked': 'Locked',
 	'setup.lockedHelp': 'Unlock this character to take it out.',
 	'setup.clearSelection': 'Clear selection',

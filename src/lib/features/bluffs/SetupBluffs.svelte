@@ -58,7 +58,11 @@
 		<!-- Each bluff like a character in the list above: token, name and ability. -->
 		<ul class="rows">
 			{#each bluffs as character (character.id)}
-				<li><CharacterRow {character} /></li>
+				{@const playing = inPlay?.includes(character.id) ?? false}
+				<!-- Also chosen to be in play: a warning in its kept place, never a lock (Trevor, 2026-10-23). -->
+				<li data-in-play={playing ? '' : undefined}>
+					<CharacterRow {character} withNote note={playing ? t('bluffs.alsoInPlay') : undefined} />
+				</li>
 			{:else}
 				<li class="none">{t('common.none')}</li>
 			{/each}

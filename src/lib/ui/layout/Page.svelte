@@ -221,8 +221,8 @@
 		.side {
 			position: sticky;
 			/* Just below the app header, which is sticky too. */
-			top: calc(var(--tap-target) + env(safe-area-inset-top));
-			max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top));
+			top: var(--header-offset);
+			max-height: calc(100dvh - var(--header-offset));
 			overflow-y: auto;
 			padding-bottom: var(--space-4);
 		}

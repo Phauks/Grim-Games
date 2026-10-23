@@ -231,9 +231,11 @@ test('a game in progress hides the header and footer, so a stray tap cannot leav
 	await expect(page.getByRole('banner')).toHaveCount(0);
 	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
-	// Setting up a game is not "in progress": the header is back there.
+	// Character setup is part of the game too (Trevor, 2026-10-23): no header there either.
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
-	await expect(page.getByRole('banner').getByRole('link', { name: APP_NAME })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+	await expect(page.getByRole('banner')).toHaveCount(0);
+	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 });
 
 // Trevor (2026-10-19): the phone's top and bottom bars match the palette. The page draws under

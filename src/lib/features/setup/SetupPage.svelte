@@ -37,7 +37,7 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
-	import { DEMON_SET, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
+	import { DEMON_SET, randomBluffs, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupNav from './SetupNav.svelte';
@@ -171,11 +171,14 @@
 			.map((id) => lookup(id))
 			.filter((c): c is Character => c !== undefined && !isRuleCharacter(c.type))
 	);
-	/** Only the chosen characters, with the search still applying (Trevor, 2026-10-18). */
+	/**
+	 * Only the chosen characters, with the search still applying (Trevor, 2026-10-18), and the
+	 * Demon's bluffs (Trevor, 2026-10-23).
+	 */
 	let selectedOnly = $state(false);
 	const listed = $derived(
 		[...choices, ...editionTravellers, ...offScript, ...scriptRules, ...offScriptRules].filter(
-			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id)
+			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id) || bluffIds.has(c.id)
 		)
 	);
 	const offScriptIds = $derived(new Set([...offScript, ...offScriptRules].map((c) => c.id)));
@@ -280,7 +283,11 @@
 		...setupWarningMessages(analysis.warnings, requirements, name),
 		...plan.issues.map((i) => i.message),
 		...jinxSetupWarnings(jinxes, ids, name).map((w) => w.message),
-		...(script ? teensyvilleWarnings(script.characters, s.players) : [])
+		...(script ? teensyvilleWarnings(script.characters, s.players) : []),
+		// A Demon bluff that is also chosen: a warning, never a lock (Trevor, 2026-10-23).
+		...[...bluffIds]
+			.filter((id) => (s.selection[id] ?? 0) > 0)
+			.map((id) => t('setup.check.bluffInPlay', { name: name(id) }))
 	]);
 
 	const errors = $derived(
@@ -419,8 +426,23 @@
 			random: Math.random,
 			travellersInBag
 		});
-		if (result.ok) setupSelection.replace(result.selection);
-		else
+		if (result.ok) {
+			setupSelection.replace(result.selection);
+			// New Demon bluffs too, never one just chosen (Trevor, 2026-10-23).
+			const chosen = new Set(
+				Object.keys(result.selection).filter((id) => result.selection[id] > 0)
+			);
+			send({
+				type: 'SetBluffs',
+				set: DEMON_SET,
+				characterIds: randomBluffs(
+					choices.filter(canBluff).map((c) => c.id),
+					chosen,
+					BLUFFS_PER_SET,
+					Math.random
+				)
+			});
+		} else
 			toast(
 				t(s.locked.length > 0 ? 'setup.randomNoneLocked' : 'setup.randomNone'),
 				result.problems[0]
@@ -512,7 +534,7 @@
 			surface="page"
 			contained={false}
 			types={TYPES}
-			pinTop="calc(var(--tap-target) + env(safe-area-inset-top) + {Math.max(0, bandHeight - 1)}px)"
+			pinTop="calc(var(--header-offset) + {Math.max(0, bandHeight - 1)}px)"
 			keepTypes={['traveller', 'fabled', 'loric']}
 			closedTypes={travellersChosenAtStart ? ['fabled', 'loric'] : ['traveller', 'fabled', 'loric']}
 			onSelect={(id) => {
@@ -667,8 +689,8 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		position: sticky;
-		/* Just below the app header, which is sticky too (as the sidebar does). */
-		top: calc(var(--tap-target) + env(safe-area-inset-top));
+		/* Just below the app header, which is sticky too, or at the top in a game (no header). */
+		top: var(--header-offset);
 		z-index: var(--z-raised);
 		/* Edge to edge, like the app header above it, so nothing shows beside it (Trevor). */
 		margin-inline: calc(-1 * var(--page-gutter));
