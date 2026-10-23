@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ScriptMeta } from '#lib/core/data/index.ts';
 	import type { Game } from '#lib/core/model/index.ts';
 	import { gameClock } from '#lib/core/rules/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
@@ -13,27 +14,31 @@
 	/**
 	 * The board's lower left corner (Trevor, 2026-10-17): the script's name, small and clear of
 	 * the seats, with the game's mode and rules, the author, the Storyteller, the join code and
-	 * Game time under it, and who watches above it.
+	 * Game time under it, and who watches above it. A player's grim shows the same corner
+	 * (plan J13), from its script and Storyteller, with nothing to open or share.
 	 */
 	interface Props {
-		game: Game;
+		/** The Storyteller's game; a player's grim gives `meta` and `storytellerName` instead. */
+		game?: Game;
+		meta?: ScriptMeta;
+		storytellerName?: string;
 		/** A spectator's board: nothing to share or edit. */
 		watching?: boolean;
 		/** Spectators on this game's view-only link. */
-		watcherCount: number;
+		watcherCount?: number;
 		/** How wide the corner may be for a given height, in px (corner-room.ts). */
 		fitRoom: (height: number) => number;
 		/** The board's width and the root font size, in px. */
 		width: number;
 		rootFont: number;
-		/** The night or day in play, or Setup before the game starts. */
-		phase: string;
+		/** The night or day in play, or Setup before the game starts; none on a player's grim. */
+		phase?: string;
 		/** When the game started and ended, for Game time. */
-		startedAt: number | undefined;
-		endedAt: number | undefined;
-		onEdit: (changes: GameInfoChanges) => void;
+		startedAt?: number;
+		endedAt?: number;
+		onEdit?: (changes: GameInfoChanges) => void;
 		/** The join code opens Share. */
-		onShare: () => void;
+		onShare?: () => void;
 		/** The corner's size, kept clear of reminders. */
 		titleW?: number;
 		titleH?: number;
@@ -43,8 +48,10 @@
 
 	let {
 		game,
+		meta: givenMeta,
+		storytellerName,
 		watching = false,
-		watcherCount,
+		watcherCount = 0,
 		fitRoom,
 		width,
 		rootFont,
@@ -63,27 +70,28 @@
 	 * A game played in an alternative mode says so where the script's name is (Trevor,
 	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
 	 */
-	const modeNames = $derived(gameModeNames(game.gameId));
+	const modeNames = $derived(game ? gameModeNames(game.gameId) : []);
+	const meta = $derived(game ? game.script.meta : givenMeta);
+	const storyteller = $derived((game ? game.storytellerName : storytellerName)?.trim());
 	/**
 	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
 	 * says it once, in the mode's colour, rather than twice (Trevor, 2026-10-18).
 	 */
 	const modeInName = $derived(
-		modeNames.length > 0 &&
-			(game.script.meta?.name ?? '').toLowerCase().startsWith(modeNames[0].toLowerCase())
+		modeNames.length > 0 && (meta?.name ?? '').toLowerCase().startsWith(modeNames[0].toLowerCase())
 	);
 	/** The mode, then each special rule, a line each under the name (Trevor, 2026-10-19). */
 	const modeLines = $derived(modeInName ? modeNames.slice(1) : modeNames);
 	/** The join code under the script's name (a Board setting, on by default). */
-	const showRoomCode = $derived(!watching && preferences.current.assistance.roomCode);
+	const showRoomCode = $derived(!!game && !watching && preferences.current.assistance.roomCode);
 	const roomCode = $derived(roomHost().code);
 	/**
 	 * How long the game has run, from Start game to End game (Trevor, 2026-10-23), under the
 	 * join code; None until the first night begins. A Board setting, on by default.
 	 */
-	const showGameClock = $derived(!watching && preferences.current.assistance.gameClock);
+	const showGameClock = $derived(!!game && !watching && preferences.current.assistance.gameClock);
 	/** The night or day in play (Trevor, 2026-10-23), a Board setting, on by default. */
-	const showPhase = $derived(preferences.current.assistance.boardPhase);
+	const showPhase = $derived(phase !== undefined && preferences.current.assistance.boardPhase);
 	/** The phase and Game time share one line, so the day or night never costs the corner one. */
 	const showClockLine = $derived(showGameClock || showPhase);
 	let clockNow = $state(Date.now());
@@ -100,7 +108,7 @@
 	);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
-	const showTitle = $derived(!game.script.meta?.hideTitle);
+	const showTitle = $derived(!meta?.hideTitle);
 
 	/** The heights of the mode and rule lines under the script's name. */
 	let lineHs = $state<number[]>([]);
@@ -157,7 +165,7 @@
 		>{/if}
 {/snippet}
 
-{#if showTitle && game.script.meta?.name}
+{#if showTitle && meta?.name}
 	<!-- Small in the lower left corner, clear of the seats (Trevor, 2026-10-17). -->
 	<p
 		class="corner-title"
@@ -177,30 +185,29 @@
 				><Icon name="watchers" /><span aria-hidden="true">{watcherCount}</span></span
 			>{/if}
 		<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
-		<ModeMenu
-			{game}
-			onEdit={watching ? undefined : onEdit}
-			{startedAt}
-			{endedAt}
-			{watcherCount}
-			onShare={watching ? undefined : onShare}
-			><span
-				class="script-name"
-				class:mode={modeInName}
-				data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
-			></ModeMenu
-		>
+		{#if game}<ModeMenu
+				{game}
+				onEdit={watching ? undefined : onEdit}
+				{startedAt}
+				{endedAt}
+				{watcherCount}
+				onShare={watching ? undefined : onShare}
+				><span
+					class="script-name"
+					class:mode={modeInName}
+					data-testid={modeInName ? 'game-mode' : undefined}>{meta.name}</span
+				></ModeMenu
+			>{:else}<span class="script-name">{meta.name}</span>{/if}
 		<!-- The mode and rules take the author's line: a line each where the corner has room
 		     for them all (corner-room.ts), else one line joined with " + ". -->
 		{#each stackRules ? modeLines : modeLines.length ? [modeLines.join(' + ')] : [] as line, i (i)}<span
 				class="mode"
 				data-testid="game-mode"
 				bind:clientHeight={lineHs[i]}>{line}</span
-			>{:else}{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span
-				>{/if}{/each}
+			>{:else}{#if meta.author}<span class="author">by {meta.author}</span>{/if}{/each}
 		<!-- Who runs the game, under the author (Trevor, 2026-10-23); no line when unnamed. -->
-		{#if game.storytellerName?.trim()}<span class="author" data-testid="board-storyteller"
-				>{t('settings.storytellerLine', { name: game.storytellerName.trim() })}</span
+		{#if storyteller}<span class="author" data-testid="board-storyteller"
+				>{t('settings.storytellerLine', { name: storyteller })}</span
 			>{/if}
 		<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
 		     place before a room opens, so nothing moves when its code arrives. -->

@@ -36,6 +36,7 @@ import {
 	reminderSpots,
 	seatLayouts
 } from '#lib/features/grimoire/device-notes.ts';
+import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
@@ -260,9 +261,12 @@ export class RoomHost {
 				});
 			});
 			$effect(() => {
+				// Where the board draws the seats, so phones draw the town the same way (plan J13).
+				const layout = notes ? parseSeatLayout(notes().layout) : seatLayouts.read(game.game.gameId);
 				const state = publicProjection(
 					game.game,
-					publicTravellerTest(game.game.gameId, game.characters)
+					publicTravellerTest(game.game.gameId, game.characters),
+					layout
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
@@ -456,6 +460,8 @@ export class RoomHost {
 	}
 
 	#publish(published: { gameId: string; state: PublicGameState }): void {
+		// The board's notes change with every reminder moved; the table only when it does.
+		if (JSON.stringify(published) === JSON.stringify(this.#published)) return;
 		this.#published = published;
 		this.#resend();
 	}
