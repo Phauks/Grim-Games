@@ -68,6 +68,12 @@ export interface SavantStatement {
 	byDefault: boolean;
 	/** With `either`: the players whose registration decides it. */
 	dependsOn: SeatId[];
+	/**
+	 * Why it holds or not, for the Storyteller (Trevor, 2026-10-23: L49): the true count
+	 * when it gives a number, and the character of each player and where each character it
+	 * names is. Empty for a statement only the Storyteller can check.
+	 */
+	why: SavantPart[][];
 }
 
 /** One true and one false, or two of a kind (a drunk or poisoned Savant, the Vortox). */
@@ -1435,7 +1441,8 @@ export function savantStatements(
 	if (!w0) return [];
 	const out: SavantStatement[] = [];
 	for (const t of SAVANT_TEMPLATES) {
-		for (const inst of t.instances(f, w0)) {
+		const instances = t.instances(f, w0);
+		for (const inst of instances) {
 			const results = worlds.map((w) => inst.holds(w));
 			const truth: SavantTruth = inst.manual
 				? 'check'
@@ -1459,11 +1466,98 @@ export function savantStatements(
 				parts: inst.parts,
 				truth,
 				byDefault: results[0],
-				dependsOn
+				dependsOn,
+				why: inst.manual ? [] : whyOf(f, w0, inst, instances)
 			});
 		}
 	}
 	return out;
+}
+
+/** The same words, numbers aside. */
+const sameButNumbers = (a: readonly SavantPart[], b: readonly SavantPart[]) =>
+	a.length === b.length &&
+	a.every((p, i) =>
+		'number' in p ? 'number' in b[i] : JSON.stringify(p) === JSON.stringify(b[i])
+	);
+
+/** "Seat 4 (Butler)", for a reason. */
+const seatFact = (f: Facts, seat: SeatId): SavantPart[] => {
+	const id = trueCharacter(f.game, seat, f.characters);
+	return id ? [{ seat }, text(' ('), { character: id }, text(')')] : [{ seat }];
+};
+
+/** A list of seats for a reason, or "none". */
+function seatsFact(f: Facts, head: SavantPart[], seats: readonly SeatId[]): SavantPart[] {
+	if (seats.length === 0) return [...head, text(': none')];
+	return [
+		...head,
+		text(': '),
+		...seats.flatMap((s, i) => [...(i ? [text(', ')] : []), ...seatFact(f, s)])
+	];
+}
+
+const TYPE_WORDS: readonly [CharacterType, RegExp][] = [
+	['townsfolk', /\bTownsfolk\b/],
+	['outsider', /\bOutsiders?\b/],
+	['minion', /\bMinions?\b/],
+	['demon', /\bDemons?\b/]
+];
+
+/**
+ * The facts a statement rests on, as the grimoire has them (`SavantStatement.why`): the true
+ * count for a wrong number; each player it names with their character; where each character
+ * it names is; who holds each character type it speaks of; the Savant's neighbours for a
+ * line about "you"; who is mad for a line about madness.
+ */
+function whyOf(
+	f: Facts,
+	w0: RegistrationWorld,
+	inst: Instance,
+	instances: readonly Instance[]
+): SavantPart[][] {
+	const facts: SavantPart[][] = [];
+	if (inst.parts.some((p) => 'number' in p) && !inst.holds(w0)) {
+		const truth = instances.find((o) => o.holds(w0) && sameButNumbers(o.parts, inst.parts));
+		if (truth) facts.push(truth.parts);
+	}
+	const seats: SeatId[] = [];
+	for (const p of inst.parts) if ('seat' in p && !seats.includes(p.seat)) seats.push(p.seat);
+	for (const seat of seats) facts.push(seatFact(f, seat));
+	const named: CharacterId[] = [];
+	for (const p of inst.parts)
+		if ('character' in p && !named.includes(p.character)) named.push(p.character);
+	for (const id of named) {
+		const seat = seatOf(f, id);
+		if (seat !== undefined && seats.includes(seat)) continue;
+		facts.push(
+			seat === undefined
+				? [{ character: id }, text(': not in play')]
+				: [{ character: id }, text(': '), { seat }]
+		);
+	}
+	const words = inst.parts.map((p) => ('text' in p ? p.text : '')).join('');
+	const types = new Set<CharacterType>();
+	for (const p of inst.parts) if ('type' in p) types.add(p.type);
+	for (const [type, re] of TYPE_WORDS) if (re.test(words)) types.add(type);
+	for (const [type] of TYPE_WORDS)
+		if (types.has(type)) facts.push(seatsFact(f, [{ type }], typed(f, w0, type)));
+	if (/\byou(r)?\b/i.test(words)) {
+		const near = /living/i.test(words)
+			? aliveNeighbours(f.game, f.savant)
+			: sideBySide(f, f.savant);
+		facts.push(seatsFact(f, [text('Beside you')], near));
+	}
+	if (/\bmad\b/i.test(words)) {
+		facts.push(
+			seatsFact(
+				f,
+				[text('Mad')],
+				f.seats.filter((s) => hasLabel(f, s, 'Mad'))
+			)
+		);
+	}
+	return facts;
 }
 
 const fits = (s: SavantStatement, want: boolean) =>

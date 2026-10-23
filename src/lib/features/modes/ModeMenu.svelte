@@ -231,15 +231,6 @@
 							>{:else}{row.value?.trim() || none}{/if}{#if 'extra' in row && row.extra}<span
 								class="extra"
 								data-testid="info-extra">{row.extra}</span
-							>{/if}{#if row.key === 'script'}<span class="share-source"
-								><IconButton
-									icon="share"
-									label={t('modes.info.shareSource')}
-									title={scriptPage ? t('modes.info.shareSource') : t('modes.info.noSource')}
-									disabled={!scriptPage}
-									data-testid="share-source"
-									onclick={() => void shareSource()}
-								/></span
 							>{/if}
 					</td>
 				</tr>
@@ -313,6 +304,16 @@
 	</div>
 {/snippet}
 {#snippet edit()}
+	<!-- Share and download sit with Edit in the header, so the script's name has its line to
+	     itself (Trevor, 2026-10-23: the name sat oddly beside an inline button). -->
+	<IconButton
+		icon="share"
+		label={t('modes.info.shareSource')}
+		title={scriptPage ? t('modes.info.shareSource') : t('modes.info.noSource')}
+		disabled={!scriptPage}
+		data-testid="share-source"
+		onclick={() => void shareSource()}
+	/>
 	<IconButton
 		icon="download"
 		label={t('modes.info.download')}
@@ -429,12 +430,6 @@
 		min-width: max(100%, var(--tap-target));
 		min-height: max(100%, var(--tap-target));
 		transform: translate(-50%, -50%);
-	}
-	/* Share sits after the script's name, always there so the row never changes height. */
-	.share-source {
-		display: inline-block;
-		margin-inline-start: var(--space-1);
-		vertical-align: middle;
 	}
 	/* The Storyteller's row is a button: its name, tapped to rename them. */
 	.actions:empty {

@@ -11,6 +11,7 @@ import ph_arrow_square_out_thin from '~icons/ph/arrow-square-out-thin';
 import ph_arrow_u_up_left_thin from '~icons/ph/arrow-u-up-left-thin';
 import ph_arrow_u_up_right_thin from '~icons/ph/arrow-u-up-right-thin';
 import ph_arrows_down_up_thin from '~icons/ph/arrows-down-up-thin';
+import ph_arrows_in_thin from '~icons/ph/arrows-in-thin';
 import ph_arrows_left_right_thin from '~icons/ph/arrows-left-right-thin';
 import ph_arrows_out_thin from '~icons/ph/arrows-out-thin';
 import ph_arrows_out_cardinal_thin from '~icons/ph/arrows-out-cardinal-thin';
@@ -46,6 +47,7 @@ import ph_club_thin from '~icons/ph/club-thin';
 import ph_coin_thin from '~icons/ph/coin-thin';
 import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
+import ph_corners_in_thin from '~icons/ph/corners-in-thin';
 import ph_corners_out_thin from '~icons/ph/corners-out-thin';
 import ph_cross_thin from '~icons/ph/cross-thin';
 import ph_crown_thin from '~icons/ph/crown-thin';
@@ -209,6 +211,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-left-thin': ph_arrow_u_up_left_thin,
 	'ph:arrow-u-up-right-thin': ph_arrow_u_up_right_thin,
 	'ph:arrows-down-up-thin': ph_arrows_down_up_thin,
+	'ph:arrows-in-thin': ph_arrows_in_thin,
 	'ph:arrows-left-right-thin': ph_arrows_left_right_thin,
 	'ph:arrows-out-thin': ph_arrows_out_thin,
 	'ph:arrows-out-cardinal-thin': ph_arrows_out_cardinal_thin,
@@ -244,6 +247,7 @@ const icons: IconMap = {
 	'ph:coin-thin': ph_coin_thin,
 	'ph:copy-thin': ph_copy_thin,
 	'ph:copy-simple-thin': ph_copy_simple_thin,
+	'ph:corners-in-thin': ph_corners_in_thin,
 	'ph:corners-out-thin': ph_corners_out_thin,
 	'ph:cross-thin': ph_cross_thin,
 	'ph:crown-thin': ph_crown_thin,

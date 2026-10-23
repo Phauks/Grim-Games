@@ -55,7 +55,6 @@ describe('token appearance', () => {
 		expect(parseTokenAppearance({})).toMatchObject({
 			reminderHighlight: true,
 			reminderHighlightLook: 'ring',
-			reminderIcon: true,
 			reminderIconColour: 'player'
 		});
 		expect(

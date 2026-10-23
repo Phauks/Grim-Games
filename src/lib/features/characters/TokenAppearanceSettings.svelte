@@ -282,18 +282,11 @@
 				onChange={(reminderHighlightLook) => onChange({ ...value, reminderHighlightLook })}
 			/>{/snippet}
 	</SettingRow>
-	<SettingToggle
-		label={t('characters.reminderIcon')}
-		description={t('characters.reminderIconHelp')}
-		checked={value.reminderIcon}
-		onChange={(reminderIcon) => onChange({ ...value, reminderIcon })}
-	/>
 	<SettingRow label={t('characters.reminderIconColour')}>
 		{#snippet control(labelId)}<Select
 				label={t('characters.reminderIconColour')}
 				labelledBy={labelId}
 				value={value.reminderIconColour}
-				disabled={!value.reminderIcon}
 				options={REMINDER_ICON_COLOURS.map((colour) => ({
 					value: colour,
 					label: t(`characters.iconColour.${colour}`)

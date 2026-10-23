@@ -101,6 +101,38 @@ describe('Savant statements', () => {
 		expect(byKey(all, 'demon-is:zombuul')?.truth).toBe('false');
 	});
 
+	it('says why each line holds or not (L49)', () => {
+		const { game: g, seats } = game(cast);
+		const all = savantStatements(g, seats[0], characters);
+		// A wrong count names the true one.
+		expect(byKey(all, 'evil-pairs:0')?.why).toEqual([byKey(all, 'evil-pairs:1')?.parts]);
+		// A character named: where it is, or that it is not in play.
+		expect(byKey(all, 'in-play:chef')?.why).toEqual([
+			[{ character: 'chef' }, { text: ': ' }, { seat: seats[1] }]
+		]);
+		expect(byKey(all, 'in-play:washerwoman')?.why).toEqual([
+			[{ character: 'washerwoman' }, { text: ': not in play' }]
+		]);
+		// A player named: their character.
+		const seat = byKey(all, `alignment:${seats[4]}|good`);
+		expect(seat?.truth).toBe('false');
+		expect(seat?.why).toContainEqual([
+			{ seat: seats[4] },
+			{ text: ' (' },
+			{ character: 'poisoner' },
+			{ text: ')' }
+		]);
+		// A character type spoken of: who holds it.
+		expect(byKey(all, 'demon-beside:outsider|no')?.why).toContainEqual([
+			{ type: 'outsider' },
+			{ text: ': ' },
+			{ seat: seats[3] },
+			{ text: ' (' },
+			{ character: 'butler' },
+			{ text: ')' }
+		]);
+	});
+
 	it('marks a line that depends on how the Recluse registers', () => {
 		const { game: g, seats } = game(['savant', 'recluse', 'empath', 'chef', 'poisoner', 'imp']);
 		const all = savantStatements(g, seats[0], characters);
