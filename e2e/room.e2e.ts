@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { renderSVG } from 'uqr';
 import { nameStoryteller } from './new-game.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
@@ -868,5 +869,74 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
+	await phoneContext.close();
+});
+
+/**
+ * Points a page's camera at a picture: getUserMedia gives a stream drawn from it, as a phone's
+ * back camera would see the code on the Storyteller's screen.
+ */
+async function aimCamera(phone: Page, src: string) {
+	await phone.addInitScript((src) => {
+		navigator.mediaDevices.getUserMedia = async () => {
+			const image = new Image();
+			image.src = src;
+			await image.decode();
+			const canvas = document.createElement('canvas');
+			canvas.width = canvas.height = 480;
+			const context = canvas.getContext('2d')!;
+			const draw = () => {
+				context.fillStyle = '#fff';
+				context.fillRect(0, 0, 480, 480);
+				context.drawImage(image, 40, 40, 400, 400);
+				requestAnimationFrame(draw);
+			};
+			draw();
+			return canvas.captureStream(10);
+		};
+	}, src);
+}
+
+test("Scan a code on Join game reads the Share screen's QR code and joins its room", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Plan J2 (2026-10-22): "on join room, allow an option to scan a code". In the app, since
+	// an iPhone's camera app opens the link in Safari rather than the installed app.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const qr = page.getByRole('img', { name: 'QR code to join the room' });
+	const png = await qr.screenshot({ animations: 'disabled' });
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await aimCamera(phone, `data:image/png;base64,${png.toString('base64')}`);
+	await phone.goto('/join');
+	await phone.getByRole('button', { name: 'Scan a code' }).tap();
+	await expect(phone.getByRole('dialog', { name: 'Scan a code' })).toBeVisible();
+	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`), { timeout: 15_000 });
+	await expect(phone.getByRole('heading', { name: /^Room \d{3} \d{3}$/ })).toBeVisible();
+	await expect(phone.getByRole('dialog', { name: 'Scan a code' })).toBeHidden();
+	await phoneContext.close();
+});
+
+test('Scan a code says so when the code is not a room', async ({ browser }, testInfo) => {
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	// A QR code for a script link, which is not a room.
+	const svg = renderSVG('https://grimbinder.com/play#e=tb', { border: 2 });
+	await aimCamera(phone, `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`);
+	await phone.goto('/join');
+	await phone.getByRole('button', { name: 'Scan a code' }).tap();
+	const scanner = phone.getByRole('dialog', { name: 'Scan a code' });
+	await expect(scanner.getByRole('alert')).toHaveText("That code is not a game's room code.", {
+		timeout: 15_000
+	});
+	await expect(phone).toHaveURL(/\/join$/);
+	await scanner.getByRole('button', { name: 'Close' }).tap();
+	await expect(scanner).toBeHidden();
 	await phoneContext.close();
 });

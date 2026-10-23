@@ -51,6 +51,9 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'Next game in the same room, with a script vote and a custom QR centre logo'
 			},
 			{ id: 'R6', title: 'Player avatars on seat tokens, from our own set' },
+			{ id: 'J1', title: "Join game shows nothing from the phone until the room's script arrives" },
+			{ id: 'J2', title: 'Scan a code on Join game, with the camera in the app' },
+			{ id: 'J3', title: 'Password fields are masked, with an eye button to show them' },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
 		]
 	},

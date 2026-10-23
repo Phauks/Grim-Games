@@ -16,5 +16,12 @@ export const share = {
 	'share.qrCentre.pictureError': 'That picture could not be read. Try another.',
 	'share.tooLong': 'Too long for a QR code. Copy the link or use Share.',
 	'share.copyFailed': 'Could not copy the link',
-	'share.copyFailedHint': 'Use the QR code instead.'
+	'share.copyFailedHint': 'Use the QR code instead.',
+	'share.scan': 'Scan a code',
+	'share.scan.camera': 'Camera',
+	'share.scan.starting': 'Opening the camera',
+	'share.scan.denied':
+		'The camera is blocked for this app. Allow it in your browser or phone settings, then try again.',
+	'share.scan.noCamera': 'No camera could be opened on this device.',
+	'share.scan.failed': 'Codes could not be read on this device.'
 } as const;
