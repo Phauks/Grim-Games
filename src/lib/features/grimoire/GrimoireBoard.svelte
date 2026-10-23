@@ -21,9 +21,7 @@
 	import { boardBackground } from './board-background.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
-	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
-	import { goto, pushState, replaceState } from '$app/navigation';
-	import { page } from '$app/state';
+	import { goto, replaceState } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
@@ -129,12 +127,12 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import BoardCorner from './BoardCorner.svelte';
+	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
 	import RuleCharacters from './RuleCharacters.svelte';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
-	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import {
 		extraReminders,
 		isGeneric,
@@ -889,68 +887,6 @@
 	);
 	// "These characters are not in play" shows a bluff set (Trevor, 2026-10-16).
 	const infoBluffSets = $derived(showableBluffSets(game, characters));
-	// ── Leaving: the navigation menu (or Back) asks first; the game stays saved ──
-	let exitOpen = $state(false);
-	let pendingLeave: (() => void) | undefined;
-	let releaseGuard: (() => void) | undefined;
-	$effect(() => {
-		if (watching) return;
-		const gameId = game.gameId;
-		const release = setLeaveGuard(
-			(leave) => {
-				pendingLeave = leave;
-				exitOpen = true;
-			},
-			// This board's screens, and the other boards and pages of its mode.
-			(url) => url.pathname.startsWith(`/grimoire/${gameId}`) || withinModeSession(gameId, url)
-		);
-		releaseGuard = release;
-		return release;
-	});
-	// ── Back (Trevor, 2026-10-17): the browser's Back, a back swipe or Android's Back button ──
-	// The board adds one history entry of its own. Back first lands on the entry under it,
-	// still this page: an open sheet or dialog closes, or else the board asks as for any other
-	// way out. The browser runs no code for a Back that leaves the app, so the extra entry is
-	// what lets it ask.
-	let trapped = false;
-	// After the setup and day hash handling below, which replaces the entry's state.
-	onMount(() => {
-		if (watching) return;
-		setTimeout(() => {
-			if (!page.state.inGame) pushState('', { inGame: true });
-			trapped = true;
-		});
-	});
-	$effect(() => {
-		const inGame = page.state.inGame;
-		// Only the entry's state is watched: closing an overlay below reads other state.
-		untrack(() => {
-			if (inGame || !trapped) return;
-			trapped = false;
-			const overlay = document.querySelector(
-				'[data-part="content"][data-state="open"]:is([data-scope="dialog"], [data-scope="drawer"])'
-			);
-			pushState('', { inGame: true });
-			trapped = true;
-			if (overlay) {
-				// Escape closes the newest overlay (Ark's layer stack), as Back should.
-				overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-				return;
-			}
-			// Past the board's own entry and the page under it, to wherever the game was opened from.
-			pendingLeave = () => history.go(-2);
-			exitOpen = true;
-		});
-	});
-	function confirmLeave() {
-		exitOpen = false;
-		const leave = pendingLeave;
-		pendingLeave = undefined;
-		// Confirmed: nothing more to ask on the way out.
-		releaseGuard?.();
-		leave?.();
-	}
-
 	// ── Background: an image of the Storyteller's own, kept on this device ──
 	let background = $state<BackgroundChoice>({ kind: 'none' });
 	let backgroundRead = $state(0);
@@ -1610,14 +1546,7 @@
 	onConfirm={executeAndEndDay}
 />
 
-<ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>In the grimoire for {game.script.meta?.name ?? 'this game'}</dd>
-		<dt>Becomes</dt>
-		<dd>The game stays saved and opens again from Resume game.</dd>
-	</dl>
-</ConfirmDialog>
+<LeaveGuard {game} {watching} />
 
 <ConfirmDialog bind:open={reopenOpen} title="Reopen game?" onConfirm={reopenGame}>
 	<dl class="change">
