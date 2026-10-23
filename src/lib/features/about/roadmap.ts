@@ -145,7 +145,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 		items: [
 			{ id: 'L15', title: 'Character selection polish: lock, hover areas, no reflow, count popup' },
 			{ id: 'L24', title: 'No "held" once a character has been seen' },
-			{ id: 'B6', title: 'Slot-machine character draw, with Whale Buffet reels' }
+			{ id: 'B6', title: 'Slot-machine character draw, with Sushi Buffet reels' }
 		]
 	},
 	{
