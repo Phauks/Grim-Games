@@ -74,7 +74,12 @@
 
 	const face = $derived(preferences.current.tileFace);
 	const marks = $derived(
-		tileMarks(pairs?.length ?? 0, face, `${groupId}:${pairs?.[0]?.tiles[0] ?? ''}`)
+		tileMarks(
+			pairs?.length ?? 0,
+			face,
+			`${groupId}:${pairs?.[0]?.tiles[0] ?? ''}`,
+			preferences.current.tileOrderRandom
+		)
 	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
 

@@ -128,7 +128,14 @@
 			};
 		})
 	);
-	const marks = $derived(tileMarks(slots.length, preferences.current.tileFace, `deal:${gameId}`));
+	const marks = $derived(
+		tileMarks(
+			slots.length,
+			preferences.current.tileFace,
+			`deal:${gameId}`,
+			preferences.current.tileOrderRandom
+		)
+	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
 
 	function draw(slot: BagSlot) {
@@ -212,7 +219,7 @@
 
 <Page title={dealTitle(gameId)}>
 	{#snippet actions()}
-		<Button variant="danger-quiet" icon="reset" onclick={() => (restarting = true)}>
+		<Button variant="danger" icon="reset" onclick={() => (restarting = true)}>
 			{t('modes.deal.restart')}
 		</Button>
 	{/snippet}

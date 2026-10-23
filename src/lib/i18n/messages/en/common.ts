@@ -10,6 +10,7 @@ export const common = {
 	'common.confirm': 'Confirm',
 	'common.none': 'None',
 	'common.hideContents': 'Hide contents',
+	'common.showPassword': 'Show password',
 	'common.seat': 'Seat {number}',
 	'common.seatWithName': '{seat} ({name})',
 	'common.save': 'Save',

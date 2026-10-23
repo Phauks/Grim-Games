@@ -212,7 +212,9 @@ test('the board looks and background are in Board, saved with the board', async 
 		nameSize: 1,
 		nameOffset: 0,
 		reminders: 'seat',
-		usedGhostVote: 'hollow'
+		usedGhostVote: 'hollow',
+		defaultFrame: 'none',
+		reminderStacks: false
 	});
 
 	await page.reload();
@@ -592,4 +594,95 @@ test('opened as an installed app, Settings has no Install app button', async ({ 
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
 	await expect(nav.getByRole('button', { name: 'About' })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'Install app' })).toHaveCount(0);
+});
+
+test('Board settings show their looks in a live preview', async ({ page }) => {
+	// Trevor (2026-10-20): "Should we have a preview area for the board as well? Since you
+	// can't really see changes until you leave".
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Board');
+	const preview = dialog.getByTestId('board-preview');
+	await expect(preview.getByTestId('token-player-name')).toHaveCount(2);
+	await expect(preview.getByTestId('preview-background')).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Green felt' }).tap();
+	await expect(preview.getByTestId('preview-background')).toHaveAttribute('data-preset', 'felt');
+	const vignette = preview.getByTestId('preview-vignette');
+	await expect(vignette).toBeAttached();
+	await slide(page, 'Vignette strength', 0.3);
+	await expect(vignette).toHaveAttribute('style', /--vignette: 0\.3/);
+	await dialog.getByText('Vignette', { exact: true }).tap();
+	await expect(vignette).toHaveCount(0);
+	// The dead player's used ghost vote follows its look.
+	const dead = preview.getByTestId('dead-mark');
+	await expect(dead).toHaveAttribute('data-used-look', 'hollow');
+	await dialog.getByText('Strike through used ghost votes', { exact: true }).tap();
+	await expect(dead).toHaveAttribute('data-used-look', 'struck');
+});
+
+test('every Board setting shows in its preview', async ({ page }) => {
+	// Trevor (2026-10-22): "all preview settings should populate in the preview area, stacking
+	// reminders, the reminder token bin, fabled/loric settings", and the script's logo.
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Board');
+	const preview = dialog.getByTestId('board-preview');
+	const choose = async (name: string, option: string) => {
+		await dialog.getByRole('combobox', { name, exact: true }).tap();
+		await page.getByRole('option', { name: option, exact: true }).tap();
+	};
+
+	// The script's logo, faint in the middle, and the script's name in the corner.
+	const logo = preview.getByTestId('script-logo');
+	await expect(logo).toHaveAttribute('data-logo', /^(data:image\/svg|.*example-script-logo)/);
+	await slide(page, 'Script logo opacity', 0.6);
+	await expect.poll(() => logo.evaluate((el) => getComputedStyle(el).opacity)).toBe('0.6');
+	await dialog.getByText('Script logo', { exact: true }).tap();
+	await expect(logo).toHaveCount(0);
+	await expect(preview.getByTestId('preview-script-title')).toContainText('Example script');
+	// The join code under the name, switched on its own; it needs the name shown.
+	const joinCode = dialog.getByRole('checkbox', { name: 'Join code on the board' });
+	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
+		(await joinCode.isChecked()) ? 1 : 0
+	);
+	await dialog.getByText('Join code on the board', { exact: true }).tap();
+	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
+		(await joinCode.isChecked()) ? 1 : 0
+	);
+	if (!(await joinCode.isChecked()))
+		await dialog.getByText('Join code on the board', { exact: true }).tap();
+	await expect(preview.getByTestId('preview-room-code')).toHaveText('Join code 482 913');
+	await dialog.getByText('Script name on the board', { exact: true }).tap();
+	await expect(preview.getByTestId('preview-script-title')).toHaveCount(0);
+	await expect(joinCode).toBeDisabled();
+
+	// Duplicate reminders in the bank, one token with a count when stacked.
+	const bank = preview.getByTestId('preview-bank');
+	await expect(bank.locator('li')).toHaveCount(5);
+	await dialog.getByText('Stack duplicate reminders', { exact: true }).tap();
+	await expect(bank.locator('li')).toHaveCount(4);
+	await expect(bank.locator('[aria-label="2 copies"]')).toBeVisible();
+
+	// The walked-through step's reminders: first, alone, or lit with the rest faded.
+	await expect(bank.locator('li').first()).toHaveClass(/now/);
+	await choose("Show this character's reminders", 'Only this character');
+	await expect(bank.locator('li')).toHaveCount(2);
+	await choose("Show this character's reminders", 'Highlight');
+	await expect(bank.locator('li.dim')).toHaveCount(2);
+
+	// A seat's reminder beside its seat, or where it was dropped.
+	const seatReminder = preview.getByTestId('preview-seat-reminder');
+	await expect(seatReminder).not.toHaveClass(/loose/);
+	await choose('Reminders', 'Stay where dropped');
+	await page
+		.getByRole('alertdialog', { name: 'Reminders stay where dropped?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(seatReminder).toHaveClass(/loose/);
+
+	// The Fabled and Loric: in the middle or the corner, each or stacked.
+	await expect(preview.locator('.preview-middle').getByTestId('preview-rules')).toBeVisible();
+	await choose('Location', 'Corner');
+	await expect(preview.locator('.preview-rules-edge').getByTestId('preview-rules')).toBeVisible();
+	await choose('Grouping', 'Stacked');
+	await expect(preview.getByTestId('preview-rules-stack')).toBeVisible();
+	await preview.screenshot({ path: test.info().outputPath('board-preview.png') });
 });

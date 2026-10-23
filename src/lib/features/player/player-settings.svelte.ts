@@ -1,3 +1,6 @@
+import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
+import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
+
 /**
  * Player view settings, kept in this browser only. Separate from the app's shared
  * preferences because only the player view reads them.
@@ -17,6 +20,18 @@ export interface PlayerSettings {
 	density: SheetDensity;
 	/** How our own printed sheet is laid out (Trevor, 2026-10-19: a print settings screen). */
 	print: PrintSettings;
+	/**
+	 * The frame round this player's seat token (L4, Trevor 2026-10-22: players pick it with
+	 * their avatar). Undefined leaves it to the Storyteller's board default.
+	 */
+	frame?: FrameId;
+	/** The picture on this player's seat token (plan R6), sent with their frame. None if unset. */
+	avatar?: AvatarId;
+	/**
+	 * Grim tab: this player's guess of a seat's character shows on its token in place of the
+	 * player's avatar (plan R6, Trevor 2026-10-22: "avatar is default", one on/off toggle).
+	 */
+	guessesOnTokens: boolean;
 }
 
 /** `auto` fits each side to one page, as before; the others fix that choice. */
@@ -75,7 +90,8 @@ export type SheetDensity = (typeof SHEET_DENSITIES)[number];
 const DEFAULTS: PlayerSettings = {
 	hideNoteContents: false,
 	density: 'normal',
-	print: PRINT_DEFAULTS
+	print: PRINT_DEFAULTS,
+	guessesOnTokens: false
 };
 
 function read(): PlayerSettings {
@@ -84,7 +100,10 @@ function read(): PlayerSettings {
 		return {
 			hideNoteContents: raw.hideNoteContents === true,
 			density: SHEET_DENSITIES.find((d) => d === raw.density) ?? DEFAULTS.density,
-			print: readPrint(raw.print)
+			print: readPrint(raw.print),
+			frame: parseFrameId(raw.frame),
+			avatar: parseAvatarId(raw.avatar),
+			guessesOnTokens: raw.guessesOnTokens === true
 		};
 	} catch {
 		return DEFAULTS;

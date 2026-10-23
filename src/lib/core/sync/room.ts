@@ -8,8 +8,19 @@
  * then does the grimoire change, through its own commands.
  */
 import type { Alignment, Script } from '#lib/core/data/index.ts';
+import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
+import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
+import {
+	cleanBallot,
+	newScriptVote,
+	tallyScriptVote,
+	type ScriptVote,
+	type ScriptVoteKind,
+	type ScriptVoteOption,
+	type ScriptVoteTally
+} from './script-vote.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -23,6 +34,12 @@ export interface RoomMember {
 	name?: string;
 	/** The seat the Storyteller approved, in the current game. */
 	seatId?: SeatId;
+	/**
+	 * The avatar and frame the player picked on their phone (plan R6, L4). Purely decorative,
+	 * so no approval: the Storyteller's device puts them on the member's seat.
+	 */
+	avatar?: AvatarId;
+	frame?: FrameId;
 }
 
 /** "Sit in this seat as this name", or just a name, waiting for the Storyteller. */
@@ -58,6 +75,10 @@ export interface RoomState {
 	viewerPassword?: true;
 	/** The current game is over, as the Storyteller ended it; a new game clears it. */
 	ended?: GameOver;
+	/** The Storyteller is choosing the next script (plan R1); a new game clears it. */
+	choosing?: true;
+	/** The room's vote on the next script, while the Storyteller has it open. */
+	scriptVote?: ScriptVote;
 }
 
 /**
@@ -136,8 +157,12 @@ export type ClientMessage =
 	| { type: 'request'; name: string; seatId?: SeatId }
 	| { type: 'cancel-request' }
 	| { type: 'leave-seat' }
+	/** The player's avatar and frame (plan R6); a missing one clears it. */
+	| { type: 'look'; avatar?: string; frame?: string }
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
+	/** A player's ballot in the script vote; a new one replaces the last. */
+	| { type: 'script-ballot'; voteId: string; choices: string[] }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**
@@ -159,8 +184,18 @@ export type ClientMessage =
 	| { type: 'grimoire'; grimoire: SharedGrimoire }
 	/** The game `gameId` is over (protocol 2). */
 	| { type: 'game-over'; gameId: string; winner?: Alignment; reason?: string }
+	/**
+	 * The finished grimoire for every player (Share grim, Trevor 2026-10-20, plan R5): only
+	 * once the game `gameId` is over, and kept until it is reopened or a new game starts.
+	 */
+	| { type: 'reveal'; gameId: string; grimoire: SharedGrimoire }
 	/** The Storyteller reopened the game `gameId`: it runs again (protocol 2). */
 	| { type: 'reopen-game'; gameId: string }
+	/** The Storyteller is (or no longer is) choosing the next script. */
+	| { type: 'choosing'; on: boolean }
+	/** Opens a vote on the next script, replacing any open one. */
+	| { type: 'open-script-vote'; voteId: string; kind: ScriptVoteKind; options: ScriptVoteOption[] }
+	| { type: 'close-script-vote' }
 	| { type: 'close' };
 
 /** What the Storyteller's device sees. */
@@ -170,6 +205,8 @@ export interface HostView {
 	requests: RoomRequest[];
 	/** The open vote's count of spectators' choices; absent when no vote is open. */
 	vote?: VoteTally;
+	/** The script vote's count, while one is open. */
+	scriptVote?: ScriptVoteTally;
 }
 
 export interface VoteTally {
@@ -195,6 +232,15 @@ export interface PlayerView {
 	vote?: { voteId: string; options: SeatId[]; ability?: string; choice?: SeatId };
 	/** The game on the table is over, with who won and how. */
 	ended?: Omit<GameOver, 'gameId'>;
+	/** The Storyteller is choosing the next script. */
+	choosing?: true;
+	/** The script vote, while one is open, with this phone's own ballot. */
+	scriptVote?: {
+		voteId: string;
+		kind: ScriptVoteKind;
+		options: ScriptVoteOption[];
+		choices?: string[];
+	};
 }
 
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
@@ -209,8 +255,16 @@ export interface GrimoireView {
 	grimoire: SharedGrimoire;
 }
 
+/** The finished grimoire, sent to every player once the Storyteller shares it (plan R5). */
+export interface RevealView {
+	type: 'reveal';
+	gameId: string;
+	grimoire: SharedGrimoire;
+}
+
 export type ServerMessage =
 	| HostView
+	| RevealView
 	| PlayerView
 	| ScriptView
 	| GrimoireView
@@ -330,6 +384,12 @@ export function newRoom(hostKeyHash: string): RoomState {
 export function hostView(room: RoomState): HostView {
 	const view: HostView = { type: 'host-view', members: room.members, requests: room.requests };
 	if (room.vote) view.vote = tally(room, room.vote);
+	if (room.scriptVote) {
+		view.scriptVote = tallyScriptVote(
+			room.scriptVote,
+			room.members.map((m) => m.memberId)
+		);
+	}
 	return view;
 }
 
@@ -367,6 +427,12 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
 		view.ended = ended;
+	}
+	if (room.choosing) view.choosing = true;
+	if (room.scriptVote) {
+		const { voteId, kind, options, ballots } = room.scriptVote;
+		view.scriptVote = { voteId, kind, options };
+		if (ballots[memberId]) view.scriptVote.choices = ballots[memberId];
 	}
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
@@ -427,7 +493,7 @@ function setMember(room: RoomState, memberId: string, change: Partial<RoomMember
 			if (m.memberId !== memberId) {
 				// One phone per seat: taking a seat moves anyone else out of it.
 				return change.seatId && m.seatId === change.seatId
-					? { memberId: m.memberId, ...nameOf(m) }
+					? { memberId: m.memberId, ...nameOf(m), ...lookOf(m) }
 					: m;
 			}
 			const updated: RoomMember = { ...m, ...change };
@@ -439,6 +505,31 @@ function setMember(room: RoomState, memberId: string, change: Partial<RoomMember
 
 function nameOf(m: RoomMember): Pick<RoomMember, 'name'> {
 	return m.name === undefined ? {} : { name: m.name };
+}
+
+function lookOf(m: RoomMember): Pick<RoomMember, 'avatar' | 'frame'> {
+	return {
+		...(m.avatar === undefined ? {} : { avatar: m.avatar }),
+		...(m.frame === undefined ? {} : { frame: m.frame })
+	};
+}
+
+/** A player's avatar and frame; unknown ones are dropped, as if none were picked. */
+export function setLook(
+	room: RoomState,
+	memberId: string,
+	raw: { avatar?: unknown; frame?: unknown }
+): RoomState {
+	const member = room.members.find((m) => m.memberId === memberId);
+	if (!member) return room;
+	const avatar = parseAvatarId(raw.avatar);
+	const frame = parseFrameId(raw.frame);
+	if (avatar === member.avatar && frame === member.frame) return room;
+	const { avatar: _a, frame: _f, ...rest } = member;
+	void _a;
+	void _f;
+	const updated: RoomMember = { ...rest, ...lookOf({ memberId, avatar, frame }) };
+	return { ...room, members: room.members.map((m) => (m.memberId === memberId ? updated : m)) };
 }
 
 /**
@@ -474,13 +565,15 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 	const seats = new Set(state.seats.map((s) => s.seatId));
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
-	const base = newGame ? withoutEnded(closeVote(room)) : room;
+	const base = newGame ? closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)) : room;
 	return {
 		...base,
 		gameId,
 		public: state,
 		members: room.members.map((m) =>
-			keep(m.seatId) || m.seatId === undefined ? m : { memberId: m.memberId, ...nameOf(m) }
+			keep(m.seatId) || m.seatId === undefined
+				? m
+				: { memberId: m.memberId, ...nameOf(m), ...lookOf(m) }
 		),
 		requests: room.requests.map((r) => {
 			if (r.seatId === undefined || keep(r.seatId)) return r;
@@ -557,6 +650,11 @@ export function gameOver(
 	return { ...room, ended };
 }
 
+/** Whether the finished grimoire of `gameId` may go to the players: only once it is over. */
+export function canReveal(room: RoomState, gameId: unknown): boolean {
+	return typeof gameId === 'string' && room.gameId === gameId && room.ended?.gameId === gameId;
+}
+
 /** The game `gameId` runs again; nothing changes if it was not the one that ended. */
 export function reopenGame(room: RoomState, gameId: unknown): RoomState {
 	return room.ended?.gameId === gameId ? withoutEnded(room) : room;
@@ -567,6 +665,49 @@ function withoutEnded(room: RoomState): RoomState {
 	const { ended: _over, ...rest } = room;
 	void _over;
 	return rest;
+}
+
+/** The Storyteller is choosing the next script, or has stopped; anything else is ignored. */
+export function setChoosing(room: RoomState, on: unknown): RoomState {
+	if (on === true) return room.choosing ? room : { ...room, choosing: true };
+	if (on !== false || !room.choosing) return room;
+	const { choosing: _off, ...rest } = room;
+	void _off;
+	return rest;
+}
+
+/** Opens a vote on the next script, replacing any open one; a malformed one changes nothing. */
+export function openScriptVote(
+	room: RoomState,
+	voteId: unknown,
+	kind: unknown,
+	options: unknown
+): RoomState {
+	const vote = newScriptVote(voteId, kind, options);
+	return vote ? { ...room, scriptVote: vote } : room;
+}
+
+export function closeScriptVote(room: RoomState): RoomState {
+	if (!room.scriptVote) return room;
+	const { scriptVote: _closed, ...rest } = room;
+	void _closed;
+	return rest;
+}
+
+/** A member's ballot in the open script vote; a stale or malformed one is ignored. */
+export function castScriptBallot(
+	room: RoomState,
+	memberId: string,
+	voteId: unknown,
+	choices: unknown
+): RoomState {
+	const vote = room.scriptVote;
+	if (!vote || voteId !== vote.voteId || !room.members.some((m) => m.memberId === memberId)) {
+		return room;
+	}
+	const ballot = cleanBallot(vote, choices);
+	if (!ballot) return room;
+	return { ...room, scriptVote: { ...vote, ballots: { ...vote.ballots, [memberId]: ballot } } };
 }
 
 /**

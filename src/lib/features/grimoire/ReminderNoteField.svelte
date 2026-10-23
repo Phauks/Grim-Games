@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { reminderHolder, type ReminderInstance } from '#lib/core/model/index.ts';
+	import {
+		reminderHolder,
+		SYMBOL_COLOURS,
+		type ReminderInstance,
+		type SymbolColour
+	} from '#lib/core/model/index.ts';
+	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { named, TILE_EMOJI, TILE_SYMBOLS } from '#lib/features/setup/tile-face.ts';
@@ -34,27 +40,74 @@
 	}
 	onDestroy(save);
 
+	// Select drops an empty value, so None and Default need a word of their own.
+	const NONE = 'none';
+	const DEFAULT = 'default';
 	const symbols = [
-		{ value: '', label: 'None' },
+		{ value: NONE, label: 'None' },
 		...TILE_SYMBOLS.map(({ icon, key }) => ({ value: icon, label: named(key), group: 'Symbols' })),
 		...TILE_EMOJI.map(({ emoji, key }) => ({ value: emoji, label: named(key), group: 'Emoji' }))
 	];
 	function setSymbol(symbol: string) {
 		if (!reminderHolder(grimoire.game, reminder.reminderId)) return;
-		grimoire.run({ type: 'SetReminderSymbol', reminderId: reminder.reminderId, symbol });
+		grimoire.run({
+			type: 'SetReminderSymbol',
+			reminderId: reminder.reminderId,
+			symbol: symbol === NONE ? '' : symbol
+		});
+	}
+
+	/**
+	 * The symbol's colour (Trevor, 2026-10-20). Always there, so nothing moves; usable once the
+	 * symbol is an icon, as an emoji keeps its own colours.
+	 */
+	const colours = [
+		{ value: DEFAULT, label: 'Default' },
+		...SYMBOL_COLOURS.map((c) => ({ value: c, label: SYMBOL_COLOUR_LOOKS[c].label }))
+	];
+	const iconSymbol = $derived(!!reminder.symbol?.startsWith('ph:'));
+	function setColour(value: string) {
+		if (!reminderHolder(grimoire.game, reminder.reminderId)) return;
+		grimoire.run({
+			type: 'SetReminderSymbolColour',
+			reminderId: reminder.reminderId,
+			colour: value === DEFAULT ? undefined : (value as SymbolColour)
+		});
 	}
 </script>
 
-<Select label="Symbol" value={reminder.symbol ?? ''} options={symbols} onChange={setSymbol}>
+<Select label="Symbol" value={reminder.symbol || NONE} options={symbols} onChange={setSymbol}>
 	{#snippet item(option)}{@render choice(option)}{/snippet}
 	{#snippet selected(option)}{@render choice(option)}{/snippet}
 </Select>
+
+<Select
+	label="Symbol colour"
+	value={reminder.symbolColour ?? DEFAULT}
+	options={colours}
+	onChange={setColour}
+	disabled={!iconSymbol}
+>
+	{#snippet item(option)}{@render swatch(option)}{/snippet}
+	{#snippet selected(option)}{@render swatch(option)}{/snippet}
+</Select>
+
+{#snippet swatch(option: { value: string; label: string })}
+	<span class="choice"
+		><span
+			class="swatch"
+			style:background={option.value !== DEFAULT
+				? SYMBOL_COLOUR_LOOKS[option.value as SymbolColour].colour
+				: 'var(--on-reminder)'}
+		></span>{option.label}</span
+	>
+{/snippet}
 
 {#snippet choice(option: { value: string; label: string })}
 	<span class="choice"
 		>{#if option.value.startsWith('ph:')}<TileMarkFace
 				mark={{ kind: 'symbol', icon: option.value, name: option.label }}
-			/>{:else if option.value}<TileMarkFace
+			/>{:else if option.value !== NONE}<TileMarkFace
 				mark={{ kind: 'emoji', emoji: option.value, name: option.label }}
 			/>{/if}{option.label}</span
 	>
@@ -74,6 +127,12 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
+	}
+	.swatch {
+		width: 1em;
+		height: 1em;
+		border: 0.0625rem solid var(--border);
+		border-radius: 50%;
 	}
 	.choice :global(.mark) {
 		font-size: 0.75em;

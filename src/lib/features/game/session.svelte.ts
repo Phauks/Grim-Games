@@ -47,8 +47,11 @@ export function gameStore(): GameStore {
 export type RunResult = { ok: true; warnings: EngineWarning[] } | { ok: false; error: EngineError };
 
 export class OpenGame {
-	session = $state.raw<GameSession>() as GameSession;
-	readonly characters: CharacterLookup;
+	#session = $state.raw<GameSession>() as GameSession;
+	readonly #characters: CharacterLookup;
+	/** Bumped when the script's own characters change, so what reads `characters` updates. */
+	#charactersVersion = $state(0);
+	#script: unknown;
 	readonly #ctx: EngineContext;
 	readonly #store: GameStore;
 	#saving: Promise<void> = Promise.resolve();
@@ -59,8 +62,9 @@ export class OpenGame {
 		store: GameStore,
 		ctx?: EngineContext
 	) {
+		this.#characters = characters;
+		this.#script = session.game.script;
 		this.session = session;
-		this.characters = characters;
 		this.#ctx = ctx ?? systemContext(characters);
 		this.#store = store;
 	}
@@ -119,6 +123,36 @@ export class OpenGame {
 		game.watching = true;
 		game.setViewOnly(true);
 		return game;
+	}
+
+	get session(): GameSession {
+		return this.#session;
+	}
+
+	set session(next: GameSession) {
+		this.#session = next;
+		this.#followScript(next.game.script);
+	}
+
+	/** Characters for the game: official ones plus its script's own. */
+	get characters(): CharacterLookup {
+		void this.#charactersVersion;
+		return this.#characters;
+	}
+
+	/**
+	 * Keeps the lookup on the script's own characters when the script changes during the game
+	 * (the Storyteller setting how one goes in the bag, backlog L25). The same map, so the
+	 * engine context built on it sees the change too.
+	 */
+	#followScript(script: Game['script']): void {
+		if (script === this.#script) return;
+		this.#script = script;
+		if (!(this.#characters instanceof Map)) return;
+		for (const entry of script.entries) {
+			if (entry.kind === 'custom') this.#characters.set(entry.character.id, entry.character);
+		}
+		this.#charactersVersion++;
 	}
 
 	watching = false;

@@ -5,7 +5,9 @@
  *
  * While a game is attached, its public projection is published on every change. Nothing a
  * phone sends changes the grimoire until the Storyteller approves it, and approving runs an
- * ordinary command, so it shows in History and can be rolled back.
+ * ordinary command, so it shows in History and can be rolled back. The one exception is a
+ * seated player's avatar and frame (plan R6), which are decorative and go on their seat as
+ * they pick them, also as an ordinary command.
  */
 import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import type { Script } from '#lib/core/data/index.ts';
@@ -21,6 +23,11 @@ import {
 	type SharedGrimoire,
 	type VoteTally
 } from '#lib/core/sync/room.ts';
+import type {
+	ScriptVoteKind,
+	ScriptVoteOption,
+	ScriptVoteTally
+} from '#lib/core/sync/script-vote.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import {
@@ -63,6 +70,8 @@ export class RoomHost {
 	requests = $state.raw<RoomRequest[]>([]);
 	/** The spectators' open vote and its count (Specters), if one is open. */
 	vote = $state.raw<VoteTally>();
+	/** The room's vote on the next script and its count (plan R1), if one is open. */
+	scriptVote = $state.raw<ScriptVoteTally>();
 	/** True when opening a room failed, e.g. offline. */
 	problem = $state(false);
 	/** True while a room is being opened. */
@@ -83,6 +92,7 @@ export class RoomHost {
 	#grimoire: SharedGrimoire | undefined;
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
+	#choosing = false;
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -296,12 +306,69 @@ export class RoomHost {
 		this.#socket?.send({ type: 'close-vote' });
 	}
 
+	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */
+	endedGame = $state<string>();
+	/** The game whose final grimoire the room's phones were sent (Share grim, R5). */
+	revealedGame = $state<string>();
+
+	/**
+	 * Share grim (R5): sends the whole grimoire to the room's phones once the game is over.
+	 * False when it is too large or the room is offline.
+	 */
+	reveal(game: OpenGame, notes?: BoardNotes): boolean {
+		const gameId = game.game.gameId;
+		const saved = toSavedGame(game.session, Date.now());
+		const message = {
+			type: 'reveal',
+			gameId,
+			grimoire: {
+				saved: saved as unknown as Record<string, unknown>,
+				...(notes ?? storedNotes(gameId))
+			}
+		} as const;
+		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;
+		if (!this.#socket?.send(message)) return false;
+		this.revealedGame = gameId;
+		return true;
+	}
+
+	/**
+	 * Phones show the Storyteller is choosing the next script while New game is open, once
+	 * the game on the table is over (or before there is one), never in the middle of one.
+	 */
+	setChoosing(on: boolean): void {
+		const between =
+			!this.#published || (this.#ended?.gameId === this.#published.gameId && !!this.#ended.ended);
+		if (on && !between) return;
+		this.#choosing = on;
+		this.#socket?.send({ type: 'choosing', on });
+	}
+
+	/** Opens a vote on the next script, replacing any open one. False when offline. */
+	openScriptVote(kind: ScriptVoteKind, options: ScriptVoteOption[]): boolean {
+		return (
+			this.#socket?.send({
+				type: 'open-script-vote',
+				voteId: crypto.randomUUID(),
+				kind,
+				options
+			}) ?? false
+		);
+	}
+
+	closeScriptVote(): void {
+		this.#socket?.send({ type: 'close-script-vote' });
+	}
+
 	/**
 	 * Tells the room the game is over (End game), or running again (`undefined`, Reopen). The
 	 * room stays open, so its phones see the end; kept and sent again after a reconnect.
 	 */
 	setEnded(gameId: GameId, ended: { winner?: 'good' | 'evil'; reason?: string } | undefined): void {
 		this.#ended = { gameId, ended };
+		this.endedGame = ended ? gameId : undefined;
+		// Reopen takes the shared grimoire back (the room drops it too).
+		if (!ended && this.revealedGame === gameId) this.revealedGame = undefined;
 		this.#sendEnded();
 	}
 
@@ -326,9 +393,11 @@ export class RoomHost {
 
 	#receive(message: ServerMessage): void {
 		if (message.type === 'host-view') {
+			this.#applyLooks(this.members, message.members);
 			this.members = message.members;
 			this.requests = message.requests;
 			this.vote = message.vote;
+			this.scriptVote = message.scriptVote;
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
 		} else if (message.type === 'refused' && message.reason === 'too-old') {
@@ -336,6 +405,29 @@ export class RoomHost {
 		} else if (message.type === 'refused' || message.type === 'closed') {
 			// The room expired or this device no longer owns it.
 			this.#forget();
+		}
+	}
+
+	/**
+	 * Puts each seated player's avatar and frame on their seat (plan R6). They are decorative,
+	 * so they need no approval, but only a change is applied: a seat the Storyteller has since
+	 * changed back (by undoing) stays as it is until the player picks again or moves seat.
+	 */
+	#applyLooks(before: RoomMember[], after: RoomMember[]): void {
+		const game = this.#game;
+		if (!game) return;
+		const key = (m: RoomMember) => `${m.seatId}|${m.avatar ?? ''}|${m.frame ?? ''}`;
+		const was: Record<string, string> = Object.fromEntries(before.map((m) => [m.memberId, key(m)]));
+		for (const member of after) {
+			const seat = member.seatId && game.game.seats[member.seatId];
+			if (!seat || was[member.memberId] === key(member)) continue;
+			if (seat.avatar === member.avatar && seat.frame === member.frame) continue;
+			game.run({
+				type: 'SetSeatLook',
+				seatId: seat.seatId,
+				...(member.avatar ? { avatar: member.avatar } : {}),
+				...(member.frame ? { frame: member.frame } : {})
+			});
 		}
 	}
 
@@ -360,6 +452,7 @@ export class RoomHost {
 	#resend(): void {
 		if (this.#published) this.#socket?.send({ type: 'publish', ...this.#published });
 		this.#sendEnded();
+		if (this.#choosing) this.#socket?.send({ type: 'choosing', on: true });
 		if (this.#script) this.#socket?.send({ type: 'script', script: this.#script });
 		// While a stored key's hash is still being worked out, say nothing about viewers.
 		if (!this.viewerKey) this.#socket?.send({ type: 'viewers', keyHash: null });
@@ -386,8 +479,10 @@ export class RoomHost {
 		this.members = [];
 		this.requests = [];
 		this.vote = undefined;
+		this.scriptVote = undefined;
 		this.viewerKey = undefined;
 		this.viewerPassword = undefined;
+		this.revealedGame = undefined;
 		this.#viewerKeyHash = undefined;
 		this.#grimoire = undefined;
 		clearTimeout(this.#grimoireTimer);

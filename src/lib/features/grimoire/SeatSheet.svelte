@@ -9,7 +9,7 @@
 	import { setupReminders, validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
-	import { abilityState, type ImpairmentReason } from '#lib/core/rules/index.ts';
+	import { abilityState, seatNominations, type ImpairmentReason } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderOrigin from './ReminderOrigin.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
@@ -68,6 +68,10 @@
 	const title = $derived(seat ? (seat.playerName ?? `Seat ${number}`) : '');
 	/** "Seat 3 (Cat)", or "Seat 3" with no name. */
 	const seatLabel = $derived(seatId === undefined ? '' : seatLabelFor(game, seatId));
+	/** Custom tokens can look alike, so the type shows too (Trevor, 2026-10-22, plan L26). */
+	const typeText = $derived(
+		character ? character.type[0].toUpperCase() + character.type.slice(1) : ''
+	);
 	const alignmentText = $derived(
 		seat?.alignment === 'evil' ? 'Evil' : seat?.alignment === 'good' ? 'Good' : 'None'
 	);
@@ -310,6 +314,29 @@
 	// ── Reminders and seats ──
 	let moving = $state<ReminderId | undefined>();
 	let moveOpen = $state(false);
+	/** Which of the seat's nominations is being chosen (Track nominations). */
+	let nominating = $state<'made' | 'received'>();
+	const nominations = $derived(seatId === undefined ? {} : seatNominations(game, seatId));
+	/** Records, changes or clears the seat's nomination, in the game's day log. */
+	function nominate(other: SeatId | undefined) {
+		const side = nominating;
+		nominating = undefined;
+		if (!side || seatId === undefined) return;
+		const entry = side === 'made' ? nominations.made : nominations.received;
+		if (!other) {
+			if (entry) grimoire.run({ type: 'RemoveDayEntry', entryId: entry.entryId });
+			return;
+		}
+		const pair =
+			side === 'made'
+				? { nominator: seatId, nominee: other }
+				: { nominator: other, nominee: seatId };
+		grimoire.run(
+			entry
+				? { type: 'EditNomination', entryId: entry.entryId, ...pair }
+				: { type: 'Nominate', ...pair }
+		);
+	}
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let menuOpen = $state(false);
 	let reminderMenuOpen = $state(false);
@@ -357,8 +384,8 @@
 	{#snippet subtitle()}
 		<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token (lead) -->
 		{#if character}<span class="role">{character.name}</span>
-			<span class="meta">{alignmentText} · Seat {number}</span>{:else}<span class="meta"
-				>Seat {number}</span
+			<span class="meta">{typeText} · {alignmentText} · Seat {number}</span>{:else}<span
+				class="meta">Seat {number}</span
 			>{/if}
 	{/snippet}
 	{#snippet lead()}
@@ -524,6 +551,41 @@
 				</button>
 			</div>
 
+			<!-- Nomination tracking (Trevor, 2026-10-22: "if enabled, just add beneath dead vote the
+			     same area there to track it"). Both rows always show while the setting is on. -->
+			{#if preferences.current.assistance.trackNominations}
+				<div class="row">
+					<span class="label" id={`nominated-${seat.seatId}`}>Nominated</span>
+					<button
+						type="button"
+						class="value nomination"
+						aria-labelledby={`nominated-${seat.seatId}`}
+						data-testid="sheet-nominated"
+						onclick={() => (nominating = 'made')}
+					>
+						<Icon name="vote" />
+						<span>{nominations.made ? seatLabelFor(game, nominations.made.nominee) : 'None'}</span>
+					</button>
+				</div>
+				<div class="row">
+					<span class="label" id={`nominated-by-${seat.seatId}`}>Nominated by</span>
+					<button
+						type="button"
+						class="value nomination"
+						aria-labelledby={`nominated-by-${seat.seatId}`}
+						data-testid="sheet-nominated-by"
+						onclick={() => (nominating = 'received')}
+					>
+						<Icon name="vote" />
+						<span
+							>{nominations.received
+								? seatLabelFor(game, nominations.received.nominator)
+								: 'None'}</span
+						>
+					</button>
+				</div>
+			{/if}
+
 			<div class="row reminders-head">
 				<h3>Reminders</h3>
 				<!-- A + only (Trevor, 2026-10-19). -->
@@ -599,7 +661,11 @@
 		: undefined}
 />
 
-{#if character}<CharacterDialog bind:open={detailsOpen} {character} />{/if}
+{#if character}<CharacterDialog
+		bind:open={detailsOpen}
+		{character}
+		seat={{ number, alignment: seat?.alignment }}
+	/>{/if}
 
 {#snippet team(alignment: Alignment | undefined)}
 	<strong class="team" data-team={alignment ?? 'neutral'}
@@ -972,6 +1038,18 @@
 </Dialog>
 
 <SeatChooser
+	open={nominating !== undefined}
+	title={nominating === 'received'
+		? `Who nominated ${seatLabel}?`
+		: `Who did ${seatLabel} nominate?`}
+	{game}
+	{characters}
+	exclude={seatId}
+	onNone={() => nominate(undefined)}
+	onChoose={(other) => nominate(other)}
+/>
+
+<SeatChooser
 	bind:open={moveOpen}
 	title="Move reminder to"
 	{game}
@@ -1276,6 +1354,12 @@
 	.value.ghost[aria-pressed='true'] {
 		border-color: var(--ghost-used-rim);
 		background: var(--ghost-used-wash);
+	}
+	.nomination span {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.ghost-text {
 		display: inline-grid;

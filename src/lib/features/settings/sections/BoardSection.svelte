@@ -11,10 +11,13 @@
 	} from '#lib/features/grimoire/StepFocusSetting.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import BoardLooksRows from './BoardLooksRows.svelte';
+	import BoardPreview from './BoardPreview.svelte';
+	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
 	import RulesLooksRows from './RulesLooksRows.svelte';
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
 	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
+	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 	/**
@@ -24,30 +27,43 @@
 	const assistance = $derived(preferences.current.assistance);
 </script>
 
-<!-- With a board open, its own background too (the board thread, Trevor 2026-10-18). -->
-{#if boardBackground.context}<BoardBackgroundRow
-		board={boardBackground.context}
-	/>{:else}<DefaultBackgroundRow />{/if}
-{#each STORYTELLER_GROUPS.board as key (key)}
+<!-- A live preview beside the looks it shows (Trevor, 2026-10-20), as in Tokens. -->
+<SettingGroup title={t('settings.boardPreview')} testid="board-preview">
+	{#snippet preview()}<BoardPreview />{/snippet}
+	<!-- With a board open, its own background too (the board thread, Trevor 2026-10-18). -->
+	{#if boardBackground.context}<BoardBackgroundRow
+			board={boardBackground.context}
+		/>{:else}<DefaultBackgroundRow />{/if}
+	<BoardLooksRows />
+	{#each STORYTELLER_GROUPS.board as key (key)}
+		<SettingToggle
+			label={ASSIST_LABELS[key].label}
+			description={ASSIST_LABELS[key].description}
+			checked={assistance[key]}
+			disabled={key === 'roomCode' && !assistance.scriptTitle}
+			onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
+		/>
+	{/each}
+	<!-- The board thread's own control, with its Confirm (Trevor, 2026-10-17). -->
+	<!-- Name left, drop-down right, as every setting row (Trevor, 2026-10-18). -->
+	<SettingRow label={REMINDER_MODE_LABEL}>
+		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
+	</SettingRow>
+	<!-- Stacks only while reminders stay beside their seat, so off while they stay where dropped. -->
 	<SettingToggle
-		label={ASSIST_LABELS[key].label}
-		description={ASSIST_LABELS[key].description}
-		checked={assistance[key]}
-		onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
+		label={t('settings.reminderStacks')}
+		description={t('settings.reminderStacksHelp')}
+		checked={boardLooks.current.reminderStacks}
+		disabled={boardLooks.current.reminders === 'free'}
+		onChange={(reminderStacks) => boardLooks.update({ reminderStacks })}
 	/>
-{/each}
-<BoardLooksRows />
-<!-- The board thread's own control, with its Confirm (Trevor, 2026-10-17). -->
-<!-- Name left, drop-down right, as every setting row (Trevor, 2026-10-18). -->
-<SettingRow label={REMINDER_MODE_LABEL}>
-	{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
-</SettingRow>
-<SettingRow label={STEP_FOCUS_LABEL}>
-	{#snippet control(labelId)}<StepFocusSetting labelledBy={labelId} />{/snippet}
-</SettingRow>
+	<SettingRow label={STEP_FOCUS_LABEL}>
+		{#snippet control(labelId)}<StepFocusSetting labelledBy={labelId} />{/snippet}
+	</SettingRow>
 
-<h3>{t('settings.groupRules')}</h3>
-<RulesLooksRows />
+	<h3>{t('settings.groupRules')}</h3>
+	<RulesLooksRows />
+</SettingGroup>
 
 <style>
 	h3 {

@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ClearableField from './ClearableField.svelte';
+	import IconButton from './IconButton.svelte';
 
 	/**
 	 * A labelled text field: the label above, the field under it at full width. Single-line
@@ -81,6 +83,13 @@
 		plain = false
 	}: Props = $props();
 
+	/*
+	 * A password is masked, with an eye button that shows it (Trevor, 2026-10-22: "password
+	 * field should have eyeball"), so a glance at the screen doesn't give it away.
+	 */
+	let revealed = $state(false);
+	const inputType = $derived(type === 'password' && revealed ? 'text' : type);
+
 	let area = $state<HTMLTextAreaElement>();
 	$effect(() => {
 		void value;
@@ -122,10 +131,15 @@
 			data-testid={testid}
 			oninput={(e) => oninput?.(e.currentTarget.value)}></textarea>
 	{:else}
-		<ClearableField bind:value {disabled} {end} onclear={() => oninput?.('')}>
+		<ClearableField
+			bind:value
+			{disabled}
+			end={type === 'password' && !end ? eye : end}
+			onclear={() => oninput?.('')}
+		>
 			<input
 				bind:value
-				{type}
+				type={inputType}
 				{inputmode}
 				{placeholder}
 				{maxlength}
@@ -149,6 +163,14 @@
 		</ClearableField>
 	{/if}
 </label>
+
+{#snippet eye()}<IconButton
+		icon={revealed ? 'hide' : 'show'}
+		label={t('common.showPassword')}
+		aria-pressed={revealed}
+		{disabled}
+		onclick={() => (revealed = !revealed)}
+	/>{/snippet}
 
 <style>
 	.text-field {

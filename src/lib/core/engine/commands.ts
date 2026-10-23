@@ -5,6 +5,8 @@
  */
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
+import type { FrameId } from '#lib/core/frames/index.ts';
 import type {
 	AbnormalCause,
 	CharacterGuess,
@@ -15,6 +17,7 @@ import type {
 	ReminderId,
 	SeatId,
 	SeatOverride,
+	SymbolColour,
 	TileId
 } from '#lib/core/model/index.ts';
 
@@ -49,6 +52,11 @@ export type Command =
 	| { type: 'SetStorytellerName'; name?: string }
 	/** The Storyteller's private note on a seat. Trimmed; an empty or missing note clears it. */
 	| { type: 'SetSeatNote'; seatId: SeatId; note?: string }
+	/**
+	 * The avatar and frame the seat's player picked on their phone (plan R6, L4); a missing one
+	 * clears it. Sent by the live room, never typed by the Storyteller.
+	 */
+	| { type: 'SetSeatLook'; seatId: SeatId; avatar?: AvatarId; frame?: FrameId }
 	/** The game's general notes; no `notes` or blank text clears them. */
 	| { type: 'SetGameNotes'; notes?: string }
 	/**
@@ -96,6 +104,8 @@ export type Command =
 	| { type: 'SetReminderNote'; reminderId: ReminderId; note?: string }
 	/** The generic reminder's middle symbol; none, or blank, clears it. */
 	| { type: 'SetReminderSymbol'; reminderId: ReminderId; symbol?: string }
+	/** The colour of the generic reminder's symbol; none clears it. */
+	| { type: 'SetReminderSymbolColour'; reminderId: ReminderId; colour?: SymbolColour }
 	/**
 	 * Places several reminders at once, such as the suggested setup reminders
 	 * (`setupReminders`, `placeableSetupReminders`). Each becomes a normal reminder that can

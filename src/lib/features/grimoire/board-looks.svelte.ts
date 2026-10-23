@@ -1,3 +1,5 @@
+import { DEFAULT_FRAME, parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
+
 /**
  * How the board looks on this device, for every game (Trevor, 2026-10-17), shown beside the
  * background where it takes effect and in Settings:
@@ -9,7 +11,8 @@
  * - the script's logo faint in the middle of the board, and how faint (Trevor, 2026-10-18);
  * - how big each seat's player name badge is, and how far below the token it sits;
  * - whether reminders are held by their seat or stay where they are dropped;
- * - how a dead player's used ghost vote looks on their badge.
+ * - how a dead player's used ghost vote looks on their badge;
+ * - the frame round seat tokens whose player has not picked their own (L4).
  */
 export interface BoardLooks {
 	vignette: boolean;
@@ -39,7 +42,20 @@ export interface BoardLooks {
 	 * ('struck') (Trevor, 2026-10-19: both looks, picked in Settings).
 	 */
 	usedGhostVote: 'hollow' | 'struck';
+	/**
+	 * The frame round every seat token whose player has not picked one (Trevor, 2026-10-22:
+	 * players pick with their avatar, the Storyteller sets the board's default).
+	 */
+	defaultFrame: FrameId;
+	/**
+	 * A seat with more than `STACK_AT` reminders shows the first few and a "+N" token that opens
+	 * the seat (Trevor, 2026-10-22: a Board setting, off by default).
+	 */
+	reminderStacks: boolean;
 }
+
+/** How many reminder places a stacked seat uses: the first ones, then "+N" in the last. */
+export const STACK_AT = 3;
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
 export const NAME_SIZE = { min: 0.6, max: 1.6, step: 0.1 } as const;
@@ -59,7 +75,9 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	nameSize: 1,
 	nameOffset: 0,
 	reminders: 'seat',
-	usedGhostVote: 'hollow'
+	usedGhostVote: 'hollow',
+	defaultFrame: DEFAULT_FRAME,
+	reminderStacks: false
 };
 const KEY = 'grim.boardLooks';
 
@@ -89,7 +107,9 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 			? Math.min(NAME_OFFSET.max, Math.max(NAME_OFFSET.min, nameOffset))
 			: DEFAULT_BOARD_LOOKS.nameOffset,
 		reminders: value.reminders === 'free' ? 'free' : 'seat',
-		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow'
+		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
+		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME,
+		reminderStacks: value.reminderStacks === true
 	};
 }
 

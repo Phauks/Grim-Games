@@ -11,6 +11,7 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
+	import QrCentreSetting from '#lib/ui/share/QrCentreSetting.svelte';
 
 	const assistance = $derived(preferences.current.assistance);
 </script>
@@ -38,6 +39,13 @@
 	onChange={(tileFace) => preferences.update({ tileFace })}
 />
 <SettingToggle
+	label={t('settings.tileOrderRandom')}
+	description={t('settings.tileOrderRandomHelp')}
+	checked={preferences.current.tileOrderRandom}
+	disabled={preferences.current.tileFace === 'random' || preferences.current.tileFace === 'none'}
+	onChange={(tileOrderRandom) => preferences.update({ tileOrderRandom })}
+/>
+<SettingToggle
 	label={t('settings.requireName')}
 	description={t('settings.requireNameHelp')}
 	checked={preferences.current.requireName}
@@ -48,6 +56,12 @@
 	description={t('settings.holdToRevealHelp')}
 	checked={preferences.current.holdToReveal}
 	onChange={(holdToReveal) => preferences.update({ holdToReveal })}
+/>
+<SettingToggle
+	label={t('settings.slotMachine')}
+	description={t('settings.slotMachineHelp')}
+	checked={preferences.current.slotMachine}
+	onChange={(slotMachine) => preferences.update({ slotMachine })}
 />
 <SettingToggle
 	label={t('settings.ownWording')}
@@ -99,13 +113,14 @@
 <TimerPerPlayerRow />
 
 <h3>{t('settings.groupShare')}</h3>
-<!-- Also on Share's View grimoire tab, where it is used. -->
+<!-- Also on Share, beside the view-only link, where it is used. -->
 <SettingToggle
 	label={t('settings.hideWatchLink')}
 	description={t('settings.hideWatchLinkHelp')}
 	checked={preferences.current.hideWatchLink}
 	onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
 />
+<QrCentreSetting />
 
 <style>
 	h3 {

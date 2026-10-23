@@ -6,8 +6,12 @@
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { Theme } from '#lib/ui/themes/types.ts';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import {
 		MIN_CONTRAST,
+		NIGHT_LEAVES,
+		REMINDER_HIGHLIGHT_LOOKS,
+		REMINDER_ICON_COLOURS,
 		REMINDER_LABEL_WIDTH,
 		TOKEN_COLOURS,
 		TOKEN_SCALE,
@@ -54,11 +58,15 @@
 	// also long enough to show the reminder word settings.
 	const SAMPLE_ID = 'godfather';
 	const sample = $derived(officialData.current?.byId.get(SAMPLE_ID));
+	// Long words, so Reminder words width and Wrap long reminder words show (Trevor,
+	// 2026-10-22: every setting shows in its preview).
+	const REMINDER_SAMPLE_ID = 'devilsadvocate';
+	const reminderSample = $derived(officialData.current?.byId.get(REMINDER_SAMPLE_ID));
 	// The sample as the only character in play (Trevor, 2026-10-17: "a low number (1) (1),
 	// not absolute"): 1 on each night it wakes.
 	const sampleNumbers = $derived.by(() => {
 		const data = officialData.current;
-		if (!data || !value.nightNumbers) return undefined;
+		if (!data || value.nightLeaves !== 'numbers') return undefined;
 		const { first, other } = sheetNumbersFor(data.nightSheet, SAMPLE_ID);
 		return { first: first && 1, other: other && 1 };
 	});
@@ -111,7 +119,6 @@
 				>{/if}
 		</div>
 	{/snippet}
-	{@render characterFont?.()}
 	<SettingSlider
 		label={t('characters.tokenSize')}
 		description={t('characters.tokenSizeHelp')}
@@ -126,19 +133,28 @@
 		checked={value.boardNames}
 		onChange={(boardNames) => onChange({ ...value, boardNames })}
 	/>
-	<SettingToggle
-		label={t('characters.nightNumbers')}
-		description={t('characters.nightNumbersHelp')}
-		checked={value.nightNumbers}
-		onChange={(nightNumbers) => onChange({ ...value, nightNumbers })}
-	/>
-	<!-- Always shown, so switching the badges on or off never moves the settings below. -->
+	<!-- The side leaves and their night order numbers, one setting (Trevor, 2026-10-22). -->
+	<SettingRow label={t('characters.nightLeaves')} description={t('characters.nightLeavesHelp')}>
+		{#snippet control(labelId)}<Select
+				label={t('characters.nightLeaves')}
+				labelledBy={labelId}
+				value={value.nightLeaves}
+				options={NIGHT_LEAVES.map((leaves) => ({
+					value: leaves,
+					label: t(`characters.nightLeaves.${leaves}`)
+				}))}
+				onChange={(nightLeaves) => onChange({ ...value, nightLeaves })}
+			/>{/snippet}
+	</SettingRow>
+	<!-- Always shown, so switching the badges on or off never moves the settings below;
+	     disabled while they are off. -->
 	<SettingSlider
 		label={t('characters.nightBadgeSize')}
 		description={t('characters.nightBadgeSizeHelp')}
 		value={value.nightBadgeScale}
 		{...TOKEN_SCALE}
 		defaultValue={1}
+		disabled={value.nightLeaves !== 'numbers'}
 		onChange={(nightBadgeScale) => onChange({ ...value, nightBadgeScale })}
 	/>
 	<SettingToggle
@@ -189,14 +205,27 @@
 
 <SettingGroup title={t('characters.group.reminder')} testid="reminder-preview">
 	{#snippet preview()}
+		<!-- As it rests, then highlighted as a held seat's reminder (Trevor, 2026-10-20). Its
+		     player has turned good, so Owner's icon colour shows a difference (Trevor, 2026-10-22:
+		     every setting shows in its preview). -->
 		<div class="preview reminder-sample" style:--sample="{largestReminder}px">
-			{#if sample}<BoardReminder
-					label={sample.reminders[0] ?? t('characters.previewReminder')}
-					character={sample}
+			{#if reminderSample}<BoardReminder
+					label={reminderSample.reminders[0]}
+					character={reminderSample}
+					alignment="good"
 					size={reminderSize}
 					disabled
 					onTap={() => {}}
-				/>{/if}
+				/><span class="lit" data-testid="lit-reminder-sample"
+					><BoardReminder
+						label={reminderSample.reminders[0]}
+						character={reminderSample}
+						alignment="good"
+						size={reminderSize}
+						disabled
+						onTap={() => {}}
+					/></span
+				>{/if}
 		</div>
 	{/snippet}
 	{@render reminderFont?.()}
@@ -222,6 +251,46 @@
 		checked={value.reminderLabelWrap}
 		onChange={(reminderLabelWrap) => onChange({ ...value, reminderLabelWrap })}
 	/>
+	<!-- Reminder glow and owner's icon (Trevor, 2026-10-20). The drop-downs stay in place,
+	     disabled while their switch is off, so nothing below moves. -->
+	<SettingToggle
+		label={t('characters.reminderHighlight')}
+		description={t('characters.reminderHighlightHelp')}
+		checked={value.reminderHighlight}
+		onChange={(reminderHighlight) => onChange({ ...value, reminderHighlight })}
+	/>
+	<SettingRow label={t('characters.reminderHighlightLook')}>
+		{#snippet control(labelId)}<Select
+				label={t('characters.reminderHighlightLook')}
+				labelledBy={labelId}
+				value={value.reminderHighlightLook}
+				disabled={!value.reminderHighlight}
+				options={REMINDER_HIGHLIGHT_LOOKS.map((look) => ({
+					value: look,
+					label: t(`characters.highlightLook.${look}`)
+				}))}
+				onChange={(reminderHighlightLook) => onChange({ ...value, reminderHighlightLook })}
+			/>{/snippet}
+	</SettingRow>
+	<SettingToggle
+		label={t('characters.reminderIcon')}
+		description={t('characters.reminderIconHelp')}
+		checked={value.reminderIcon}
+		onChange={(reminderIcon) => onChange({ ...value, reminderIcon })}
+	/>
+	<SettingRow label={t('characters.reminderIconColour')}>
+		{#snippet control(labelId)}<Select
+				label={t('characters.reminderIconColour')}
+				labelledBy={labelId}
+				value={value.reminderIconColour}
+				disabled={!value.reminderIcon}
+				options={REMINDER_ICON_COLOURS.map((colour) => ({
+					value: colour,
+					label: t(`characters.iconColour.${colour}`)
+				}))}
+				onChange={(reminderIconColour) => onChange({ ...value, reminderIconColour })}
+			/>{/snippet}
+	</SettingRow>
 	{@render colourRow('reminder')}
 	{@render colourRow('reminderLabel')}
 	{@render colourRow('reminderInk')}
@@ -250,6 +319,9 @@
 			</p>
 		</div>
 	{/snippet}
+	<!-- Here, not under Character token: the names in this line always show the font, while
+	     names on tokens are a switch (Trevor, 2026-10-22: every setting shows in its preview). -->
+	{@render characterFont?.()}
 	<!-- Text, icon and badge sizes for each, none shared (Trevor, 2026-10-18). -->
 	<SettingSlider
 		label={t('characters.inlineNameTextSize')}
@@ -355,6 +427,23 @@
 	}
 	.reminder-sample {
 		height: max(var(--sample), 3rem);
+	}
+	/* Wide, the box beside the settings is too narrow for both reminders side by side at their
+	   largest, so the highlighted one sits under the one at rest. */
+	@container (min-width: 26rem) {
+		.reminder-sample {
+			flex-direction: column;
+			height: max(calc(2 * var(--sample) + var(--space-4)), 6rem);
+		}
+	}
+	/* The board's highlight on a held seat's reminders (GrimoireBoard .chip-slot.lit). */
+	.lit {
+		display: contents;
+	}
+	.lit > :global(.reminder) {
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
+		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
 	}
 	/*
 	 * Narrow, the box sits above its settings, so it keeps room for every size at its largest

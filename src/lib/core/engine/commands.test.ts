@@ -7,7 +7,7 @@ import {
 	testScript
 } from '#lib/core/model/fixtures.test-support.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/index.ts';
-import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
+import { GENERIC_REMINDER_ID, type SymbolColour } from '#lib/core/model/index.ts';
 import type { Command } from './commands.ts';
 import { decide } from './decide.ts';
 import { createGame, dispatch, redo, undo, type GameSession } from './log.ts';
@@ -152,6 +152,27 @@ describe('seats', () => {
 		);
 	});
 
+	it("keeps the avatar and frame a seat's player picked, and clears them (plan R6)", () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(session, ctx, {
+			type: 'SetSeatLook',
+			seatId: seats[1],
+			avatar: 'cat',
+			frame: 'ring'
+		});
+		expect(s.game.seats[seats[1]]).toMatchObject({ avatar: 'cat', frame: 'ring' });
+		const same = dispatch(
+			s,
+			{ type: 'SetSeatLook', seatId: seats[1], avatar: 'cat', frame: 'ring' },
+			ctx
+		);
+		expect(same.ok && codes(same)).toEqual(['no-change']);
+		const cleared = run(s, ctx, { type: 'SetSeatLook', seatId: seats[1], avatar: 'cat' });
+		expect(cleared.game.seats[seats[1]].avatar).toBe('cat');
+		expect('frame' in cleared.game.seats[seats[1]]).toBe(false);
+		expect(refused(s, ctx, { type: 'SetSeatLook', seatId: 'nobody' })).toBe('unknown-seat');
+	});
+
 	it("keeps the Storyteller's general game notes, trimmed, undoable and clearable", () => {
 		const { session, ctx } = newGame(names);
 		const s = run(session, ctx, { type: 'SetGameNotes', notes: ' Ana asked about the Fang Gu\n' });
@@ -196,6 +217,24 @@ describe('seats', () => {
 		const anticlockwise = run(s, ctx, { type: 'RotateSeats', direction: 'anticlockwise' });
 		expect(anticlockwise.game.seating).toEqual([...seats.slice(1), seats[0]]);
 		expect(undo(clockwise).game.seating).toEqual(seats);
+	});
+
+	// Trevor (2026-10-22): every name moves with its player, a seat-number name too.
+	it('gives unnamed seats the seat number they showed before moving them', () => {
+		const fresh = newGame(5);
+		const { ctx, seats } = fresh;
+		const session = run(fresh.session, ctx, {
+			type: 'RenameSeat',
+			seatId: seats[0],
+			playerName: 'Ana'
+		});
+		const s = run(session, ctx, { type: 'RotateSeats', direction: 'clockwise' });
+		expect(s.game.seats[seats[0]].playerName).toBe('Ana');
+		expect(s.game.seats[seats[1]].playerName).toBe('Seat 2');
+		expect(s.game.seating.indexOf(seats[1])).toBe(2);
+		const moved = run(session, ctx, { type: 'MoveSeat', seatId: seats[4], position: 0 });
+		expect(moved.game.seats[seats[4]].playerName).toBe('Seat 5');
+		expect(undo(s).game.seats[seats[1]].playerName).toBeUndefined();
 	});
 
 	it('moves one player to another place, the others closing up', () => {
@@ -779,6 +818,32 @@ describe('the generic reminder', () => {
 		expect(
 			refused(s, ctx, { type: 'SetReminderSymbol', reminderId: id, symbol: 'x'.repeat(40) })
 		).toBe('invalid-symbol');
+	});
+
+	it("colours the generic reminder's symbol, or clears its colour", () => {
+		// Trevor (2026-10-20): the Storyteller picks the colour of a generic token's icon.
+		const { session, ctx, seats } = newGame(names);
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[0],
+			reminder: { characterId: GENERIC_REMINDER_ID, label: '' }
+		});
+		const id = s.game.seats[seats[0]].reminders[0].reminderId;
+		const red = run(s, ctx, { type: 'SetReminderSymbolColour', reminderId: id, colour: 'red' });
+		expect(red.game.seats[seats[0]].reminders[0].symbolColour).toBe('red');
+		expect(
+			warned(red, ctx, { type: 'SetReminderSymbolColour', reminderId: id, colour: 'red' })
+		).toContain('no-change');
+		const cleared = run(red, ctx, { type: 'SetReminderSymbolColour', reminderId: id });
+		expect(cleared.game.seats[seats[0]].reminders[0]).not.toHaveProperty('symbolColour');
+		expect(undo(cleared).game.seats[seats[0]].reminders[0].symbolColour).toBe('red');
+		expect(
+			refused(s, ctx, {
+				type: 'SetReminderSymbolColour',
+				reminderId: id,
+				colour: 'pink' as SymbolColour
+			})
+		).toBe('invalid-colour');
 	});
 });
 

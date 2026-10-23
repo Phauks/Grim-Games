@@ -9,6 +9,9 @@ export interface BoardBackgroundContext {
 	readonly gameId: string;
 	/** The script's background link, if it has one. */
 	readonly scriptImage: string | undefined;
+	/** The script's logo and name as the board shows them, for the Board settings preview. */
+	readonly scriptLogo?: string | undefined;
+	readonly scriptName?: string | undefined;
 	/** What the board shows now. */
 	readonly current: BackgroundChoice;
 	/** A choice was saved: the board reads it again. */

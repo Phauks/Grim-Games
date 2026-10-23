@@ -31,7 +31,6 @@ export const FLESH_AND_BONE: GameMode = {
 	parts: {
 		pool: { kind: 'campaign', startingScript: 'any' },
 		forced: {
-			inPlay: [],
 			homebrew: [{ title: 'Flesh and Bone (Fabled)', url: 'https://fleshandbone.app/' }],
 			instructions:
 				'Put the Flesh and Bone Fabled in play. It is homebrew, so its ability is on its own page, not in the app.'

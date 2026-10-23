@@ -7,8 +7,11 @@
 
 	let { changes }: { changes: Changes } = $props();
 
+	// A line for several direct commits opens the history from its newest one.
 	const link = (commit: BuildCommit) =>
-		commit.pr ? `${REPOSITORY_URL}/pull/${commit.pr}` : `${REPOSITORY_URL}/commit/${commit.sha}`;
+		commit.pr
+			? `${REPOSITORY_URL}/pull/${commit.pr}`
+			: `${REPOSITORY_URL}/${commit.commits ? 'commits' : 'commit'}/${commit.sha}`;
 </script>
 
 <div class="list" data-testid="update-changes">

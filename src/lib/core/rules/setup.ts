@@ -69,6 +69,11 @@ export interface SetupAnalysis {
 	 */
 	notDealt: CharacterId[];
 	modifiers: AppliedModifier[];
+	/**
+	 * Why each type's count differs from the setup sheet, "Baron: +2 Outsiders", for the
+	 * count's info popup (Trevor, 2026-10-20). Empty when the sheet's count stands.
+	 */
+	reasons: Record<SeatedType, string[]>;
 	warnings: SetupWarning[];
 	/** Setup notes from the modifiers (bag contents, seating), "Baron: …". */
 	notes: string[];
@@ -248,10 +253,10 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	const total = SEATED_TYPES.reduce((sum, type) => sum + chosen[type], 0);
 	const anyChosen = total > 0;
 
-	if (anyChosen) {
-		for (const type of SEATED_TYPES) {
-			if (expected[type].includes(chosen[type])) continue;
-			const because = [
+	const because = Object.fromEntries(
+		SEATED_TYPES.map((type) => [
+			type,
+			[
 				...modifiers.filter((m) => m.ops.some((op) => op.type === type)).map((m) => m.explanation),
 				...(type === 'townsfolk' || type === 'outsider'
 					? extraFor
@@ -261,10 +266,25 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 									`${c.name}: +1 ${c.id === 'drunk' || c.type === 'outsider' ? 'Townsfolk' : 'good character'} in the bag`
 							)
 					: [])
-			];
+			]
+		])
+	) as Record<SeatedType, string[]>;
+	// A count the sheet no longer gives, with no modifier of its own, makes room for another
+	// type's change (the Baron's Outsiders take Townsfolk places): every modifier explains it.
+	const reasons = Object.fromEntries(
+		SEATED_TYPES.map((type) => {
+			const changed = expected[type].length !== 1 || expected[type][0] !== split.counts[type];
+			const own = because[type];
+			return [type, own.length > 0 || !changed ? own : modifiers.map((m) => m.explanation)];
+		})
+	) as Record<SeatedType, string[]>;
+
+	if (anyChosen) {
+		for (const type of SEATED_TYPES) {
+			if (expected[type].includes(chosen[type])) continue;
 			warnings.push({
 				code: 'count-mismatch',
-				message: `${plural(type, chosen[type])} chosen; expected ${listValues(expected[type])} for ${dealt} players${because.length ? ` (${because.join('; ')})` : ''}.`
+				message: `${plural(type, chosen[type])} chosen; expected ${listValues(expected[type])} for ${dealt} players${because[type].length ? ` (${because[type].join('; ')})` : ''}.`
 			});
 		}
 		if (total !== tokens) {
@@ -308,6 +328,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		chosen,
 		notDealt,
 		modifiers,
+		reasons,
 		warnings,
 		notes
 	};

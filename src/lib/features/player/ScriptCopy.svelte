@@ -24,9 +24,19 @@
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play, with their players (Trevor, 2026-10-19). */
 		travellers?: readonly TravellerInPlay[];
+		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
+		showBreakdown?: boolean;
 	}
 
-	let { script, players, version, byline = true, inPlay, travellers }: Props = $props();
+	let {
+		script,
+		players,
+		version,
+		byline = true,
+		inPlay,
+		travellers,
+		showBreakdown = true
+	}: Props = $props();
 
 	$effect(() => {
 		if (!officialData.current) void loadOfficialData();
@@ -47,7 +57,7 @@
 
 {#if data}
 	{#if byline}<ScriptByline author={script.meta.author} {version} />{/if}
-	<ScriptSheet {characters} {jinxes} {players} {inPlay} {travellers} />
+	<ScriptSheet {characters} {jinxes} {players} {inPlay} {travellers} {showBreakdown} />
 {:else}
 	<p class="muted">{t('player.loading')}</p>
 {/if}

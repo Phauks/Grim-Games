@@ -35,7 +35,12 @@
 	let { open = $bindable(), mode }: Props = $props();
 
 	const isRule = $derived(mode.kind === 'special-rule');
-	const partNames = $derived<readonly (ModePart | RulePart)[]>(isRule ? RULE_PARTS : MODE_PARTS);
+	// A rule's own text is its description (shownAbout), so it isn't listed again as a part.
+	const partNames = $derived<readonly (ModePart | RulePart)[]>(
+		mode.kind === 'special-rule'
+			? RULE_PARTS.filter((part) => part !== 'text' || !mode.parts.text?.length)
+			: MODE_PARTS
+	);
 	const parts = $derived<CombinedParts>(shownParts(mode.id, mode.parts, showsOwnWording(mode)));
 	const unconfirmed = $derived<readonly string[]>(mode.unconfirmed ?? []);
 

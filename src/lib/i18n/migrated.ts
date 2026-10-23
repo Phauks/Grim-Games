@@ -11,6 +11,7 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/about/',
 	'src/lib/features/settings/',
 	'src/routes/changelog/',
+	'src/routes/roadmap/',
 	'src/routes/+layout.svelte',
 	'src/lib/i18n/',
 	'src/lib/features/errors/',

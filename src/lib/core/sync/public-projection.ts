@@ -13,6 +13,8 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
+import type { FrameId } from '#lib/core/frames/index.ts';
 
 export interface PublicSeat {
 	seatId: SeatId;
@@ -36,6 +38,9 @@ export interface PublicSeat {
 	 * mode keeps Travellers secret (Stowed Away).
 	 */
 	traveller?: CharacterId;
+	/** The avatar and frame the seat's player picked on their phone (plan R6): theirs to show. */
+	avatar?: AvatarId;
+	frame?: FrameId;
 }
 
 /**
@@ -87,6 +92,8 @@ export function publicProjection(
 				dead: appearsDead(seat)
 			};
 			if (seat.playerName !== undefined) view.playerName = seat.playerName;
+			if (seat.avatar !== undefined) view.avatar = seat.avatar;
+			if (seat.frame !== undefined) view.frame = seat.frame;
 			// Every seat that looks dead shows a vote the same way, so a Zombuul looks no different.
 			if (view.dead) view.ghostVote = seat.ghostVoteUsed ? 'used' : 'unused';
 			if (seat.characterId && publicTraveller?.(seat.characterId))
