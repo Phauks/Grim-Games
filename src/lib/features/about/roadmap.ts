@@ -145,7 +145,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 		items: [
 			{ id: 'L15', title: 'Character selection polish: lock, hover areas, no reflow, count popup' },
 			{ id: 'L24', title: 'No "held" once a character has been seen' },
-			{ id: 'B6', title: 'Slot-machine character draw, with Whale Buffet reels' }
+			{ id: 'B6', title: 'Slot-machine character draw, with Sushi Buffet reels' }
 		]
 	},
 	{
@@ -157,6 +157,12 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'S6', title: 'One "not official" notice, linking the official site', prs: [317] },
 			{ id: 'S1', title: 'Install app button at the bottom of Settings', prs: [320] },
 			{ id: 'S3', title: 'Player name options in Tokens settings', prs: [332] },
+			{
+				id: 'S7',
+				title: 'Reports: no Admins list or Only mine; admins set in Cloudflare',
+				prs: [351]
+			},
+			{ id: 'S10', title: 'A report sent from a script carries that script' },
 			{
 				id: 'S11',
 				title: 'Buttons stand out from what is behind them; End game is a red button'

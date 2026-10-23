@@ -52,6 +52,8 @@ interface Row extends Record<string, SqlStorageValue> {
 	status: string;
 	created_at: number;
 	user_id: string | null;
+	script_name: string | null;
+	has_script: number;
 }
 
 /**
@@ -91,6 +93,11 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 		if (!columns.some((c) => c.name === 'user_id')) {
 			this.sql.exec('ALTER TABLE reports ADD COLUMN user_id TEXT');
 		}
+		// The script it was sent from (Trevor, 2026-10-22), as TPI's JSON, and its name.
+		if (!columns.some((c) => c.name === 'script')) {
+			this.sql.exec('ALTER TABLE reports ADD COLUMN script TEXT');
+			this.sql.exec('ALTER TABLE reports ADD COLUMN script_name TEXT');
+		}
 	}
 
 	async add(draft: ReportDraft, now: number, userId?: string): Promise<number | undefined> {
@@ -106,8 +113,9 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 		}
 		return this.sql
 			.exec<{ id: number }>(
-				`INSERT INTO reports (kind, title, body, details, contact, page, build, device, created_at, user_id)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+				`INSERT INTO reports (kind, title, body, details, contact, page, build, device, created_at,
+				 user_id, script, script_name)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
 				draft.kind,
 				draft.title,
 				draft.body,
@@ -117,19 +125,25 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 				draft.build ?? null,
 				draft.device ?? null,
 				now,
-				userId ?? null
+				userId ?? null,
+				draft.script ?? null,
+				draft.script ? (draft.scriptName ?? null) : null
 			)
 			.one().id;
 	}
 
 	/**
 	 * Newest first, each with its sending account's id. `fromAccounts`: only those sent while
-	 * signed in (what a non-admin may read).
+	 * signed in (what a non-admin may read). Scripts are left out (`script`). `withScripts`:
+	 * include whether each has one and its name; an app from before scripts doesn't ask, as it
+	 * wouldn't keep them from other readers (the data Worker deploys from beta before main).
 	 */
-	async list(fromAccounts = false): Promise<(Report & { userId?: string })[]> {
+	async list(fromAccounts = false, withScripts = false): Promise<(Report & { userId?: string })[]> {
 		return this.sql
 			.exec<Row>(
-				`SELECT * FROM reports ${fromAccounts ? 'WHERE user_id IS NOT NULL' : ''} ORDER BY id DESC`
+				`SELECT id, kind, title, body, details, contact, page, build, device, status, created_at,
+				 user_id, script_name, script IS NOT NULL AS has_script
+				 FROM reports ${fromAccounts ? 'WHERE user_id IS NOT NULL' : ''} ORDER BY id DESC`
 			)
 			.toArray()
 			.map((row) => {
@@ -142,11 +156,28 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 					createdAt: row.created_at
 				};
 				for (const key of REPORT_OPTIONAL_FIELDS) {
-					if (row[key] !== null) report[key] = row[key];
+					if (key === 'scriptName' && !withScripts) continue;
+					const value = row[key === 'scriptName' ? 'script_name' : key];
+					if (value !== null) report[key] = value;
 				}
+				if (withScripts && row.has_script) report.hasScript = true;
 				if (row.user_id !== null) report.userId = row.user_id;
 				return report;
 			});
+	}
+
+	/** A report's script and its sending account's id; undefined when it has no script. */
+	async script(id: number): Promise<{ script: string; userId?: string } | undefined> {
+		const row = this.sql
+			.exec<{ script: string | null; user_id: string | null }>(
+				'SELECT script, user_id FROM reports WHERE id = ?',
+				id
+			)
+			.toArray()[0];
+		if (!row?.script) return undefined;
+		return row.user_id === null
+			? { script: row.script }
+			: { script: row.script, userId: row.user_id };
 	}
 
 	async setStatus(id: number, status: ReportStatus): Promise<boolean> {
