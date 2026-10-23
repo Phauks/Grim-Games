@@ -3369,8 +3369,10 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 });
 
 /** Drags a token by mouse from its centre to a point, lifting it straight up first. */
-async function dragTo(page: Page, token: Locator, to: { x: number; y: number }) {
+async function dragTo(page: Page, token: Locator, to: { x: number; y: number } | Locator) {
 	await token.scrollIntoViewIfNeeded();
+	// A target is measured once the token is in view: scrolling to it can move the board.
+	if ('boundingBox' in to) to = await centreOf(to);
 	const box = (await token.boundingBox())!;
 	const x = box.x + box.width / 2;
 	const y = box.y + box.height / 2;
@@ -3406,15 +3408,11 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 	const held = page.getByRole('group', { name: "Angel's reminders" });
 
 	// The Angel's own reminder goes straight on (https://wiki.bloodontheclocktower.com/Angel).
-	await dragTo(
-		page,
-		all.getByRole('button', { name: 'Something Bad reminder' }),
-		await centreOf(angel)
-	);
+	await dragTo(page, all.getByRole('button', { name: 'Something Bad reminder' }), angel);
 	await expect(held.getByRole('button', { name: 'Something Bad reminder' })).toBeVisible();
 
 	// Another character's asks first, saying why (Trevor, 2026-10-17).
-	await dragTo(page, all.getByRole('button', { name: 'Poisoned reminder' }), await centreOf(angel));
+	await dragTo(page, all.getByRole('button', { name: 'Poisoned reminder' }), angel);
 	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
 	await expect(confirm).toContainText('Not a Fabled or Loric reminder.');
 	await expect(confirm).toContainText(/Now\s*In the reminder bank/);
@@ -4296,7 +4294,7 @@ test('loose reminders belong to no seat, leave the bank, and are marked back in 
 	// Trevor (2026-10-18): dropped on a seat or anywhere else, it is put there, belongs to no
 	// seat, and leaves the bank either way.
 	const board = (await page.locator('.board').boundingBox())!;
-	await dragTo(page, inBank('Townsfolk'), await centreOf(seatLabelled(page, 'Seat 2')));
+	await dragTo(page, inBank('Townsfolk'), seatLabelled(page, 'Seat 2'));
 	await dragTo(page, inBank('Wrong'), {
 		x: board.x + board.width * 0.35,
 		y: board.y + board.height * 0.4
@@ -4310,7 +4308,7 @@ test('loose reminders belong to no seat, leave the bank, and are marked back in 
 	await reminderMode(page, 'Held by seat');
 	await expect(page.locator('[data-loose][data-unassigned]')).toHaveCount(2);
 	const wrong = loose.getByRole('button', { name: 'Wrong reminder' });
-	await dragTo(page, wrong, await centreOf(seatLabelled(page, 'Seat 3')));
+	await dragTo(page, wrong, seatLabelled(page, 'Seat 3'));
 	await expect(page.locator('[data-loose][data-unassigned]')).toHaveCount(1);
 });
 
