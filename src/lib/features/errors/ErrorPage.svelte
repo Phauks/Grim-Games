@@ -9,6 +9,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import { loadAfresh, staleBuild } from '#lib/features/offline/stale-build.svelte.ts';
 	import { errorLog } from './report.svelte.ts';
 
 	const notFound = $derived(page.status === 404);
@@ -16,6 +17,9 @@
 	let fool = $state.raw<Character>();
 
 	onMount(() => {
+		// The page's code was gone (a newer build replaced it): load it afresh on the build the
+		// service worker holds, rather than show an error (stale-build.svelte.ts).
+		if (staleBuild.current && !notFound && loadAfresh(location.href)) return;
 		if (notFound) {
 			loadOfficialData()
 				.then((data) => (fool = data.byId.get('fool')))
