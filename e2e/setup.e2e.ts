@@ -1036,6 +1036,24 @@ test('each good character row sets or clears a Demon bluff, up to three', async 
 	await expect(bluffButton('monk')).toBeEnabled();
 });
 
+test('the keyboard focus ring on a character token is round, around the token', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): it was a square around the token's button.
+	await selectionFor(page, 5);
+	const info = page.getByRole('button', { name: 'About the Chef' });
+	await info.tap();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeFocused();
+	expect(await info.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('none');
+	const face = info.locator('[data-token-face]');
+	const ring = await face.evaluate((el) => {
+		const style = getComputedStyle(el);
+		return { outline: style.outlineStyle, radius: style.borderRadius };
+	});
+	expect(ring).toEqual({ outline: 'solid', radius: '50%' });
+});
+
 // Trevor, 2026-10-19: the bag's cog and Share sit on the Draw heading's line, at the right.
 test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 	await selectionFor(page, 5);
