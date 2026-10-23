@@ -377,8 +377,9 @@ test('night order badges sit on the side leaves, counting this game’s characte
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Tokens' })
 		.tap();
-	const label = 'Show night order numbers on tokens';
-	await dialog.getByText(label, { exact: true }).tap();
+	// Night leaves, with their night order numbers (Trevor, 2026-10-22: one setting).
+	await dialog.getByRole('combobox', { name: 'Night leaves', exact: true }).tap();
+	await page.getByRole('option', { name: 'Leaves and numbers', exact: true }).tap();
 	// The preview's one character is 1 on each night (Trevor, 2026-10-17: not absolute).
 	const previewBadges = dialog.getByTestId('token-preview').getByTestId('night-badge');
 	await expect(previewBadges).toHaveText(['1', '1']);
@@ -576,4 +577,31 @@ test('reminder highlight and owner icon can be switched and restyled', async ({ 
 		reminderIcon: false,
 		reminderIconColour: 'plain'
 	});
+});
+
+test('night leaves can be switched off, or carry night order numbers', async ({ page }) => {
+	// Trevor (2026-10-22): "add setting for night leaves. should be combined with the night
+	// order number section".
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const preview = dialog.getByTestId('token-preview');
+	const leaves = preview.locator('.leaf[data-kind="night"]');
+	const badgeSize = dialog.getByRole('slider', { name: 'Night order badge size' });
+	const nightLeaves = dialog.getByRole('combobox', { name: 'Night leaves', exact: true });
+	const choose = async (option: string) => {
+		await nightLeaves.tap();
+		await page.getByRole('option', { name: option, exact: true }).tap();
+	};
+	// Leaves by default, with no numbers.
+	await expect(nightLeaves).toContainText('Leaves');
+	await expect(leaves).toHaveCount(2);
+	await expect(preview.getByTestId('night-badge')).toHaveCount(0);
+	await expect(badgeSize).toBeDisabled();
+	await choose('Leaves and numbers');
+	await expect(preview.getByTestId('night-badge')).toHaveText(['1', '1']);
+	await expect(badgeSize).toBeEnabled();
+	await choose('Off');
+	await expect(leaves).toHaveCount(0);
+	await expect(preview.getByTestId('night-badge')).toHaveCount(0);
+	await expect(badgeSize).toBeDisabled();
 });

@@ -9,6 +9,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import {
 		MIN_CONTRAST,
+		NIGHT_LEAVES,
 		REMINDER_HIGHLIGHT_LOOKS,
 		REMINDER_ICON_COLOURS,
 		REMINDER_LABEL_WIDTH,
@@ -65,7 +66,7 @@
 	// not absolute"): 1 on each night it wakes.
 	const sampleNumbers = $derived.by(() => {
 		const data = officialData.current;
-		if (!data || !value.nightNumbers) return undefined;
+		if (!data || value.nightLeaves !== 'numbers') return undefined;
 		const { first, other } = sheetNumbersFor(data.nightSheet, SAMPLE_ID);
 		return { first: first && 1, other: other && 1 };
 	});
@@ -132,12 +133,19 @@
 		checked={value.boardNames}
 		onChange={(boardNames) => onChange({ ...value, boardNames })}
 	/>
-	<SettingToggle
-		label={t('characters.nightNumbers')}
-		description={t('characters.nightNumbersHelp')}
-		checked={value.nightNumbers}
-		onChange={(nightNumbers) => onChange({ ...value, nightNumbers })}
-	/>
+	<!-- The side leaves and their night order numbers, one setting (Trevor, 2026-10-22). -->
+	<SettingRow label={t('characters.nightLeaves')} description={t('characters.nightLeavesHelp')}>
+		{#snippet control(labelId)}<Select
+				label={t('characters.nightLeaves')}
+				labelledBy={labelId}
+				value={value.nightLeaves}
+				options={NIGHT_LEAVES.map((leaves) => ({
+					value: leaves,
+					label: t(`characters.nightLeaves.${leaves}`)
+				}))}
+				onChange={(nightLeaves) => onChange({ ...value, nightLeaves })}
+			/>{/snippet}
+	</SettingRow>
 	<!-- Always shown, so switching the badges on or off never moves the settings below;
 	     disabled while they are off. -->
 	<SettingSlider
@@ -146,7 +154,7 @@
 		value={value.nightBadgeScale}
 		{...TOKEN_SCALE}
 		defaultValue={1}
-		disabled={!value.nightNumbers}
+		disabled={value.nightLeaves !== 'numbers'}
 		onChange={(nightBadgeScale) => onChange({ ...value, nightBadgeScale })}
 	/>
 	<SettingToggle

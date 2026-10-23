@@ -31,10 +31,14 @@ describe('token appearance', () => {
 		expect(parseTokenAppearance(null)).toEqual(DEFAULT_TOKEN_APPEARANCE);
 		expect(parseTokenAppearance({ boardNames: true }).boardNames).toBe(true);
 		expect(parseTokenAppearance({ boardNames: 'yes' }).boardNames).toBe(false);
-		expect(parseTokenAppearance({ nightNumbers: true, nightBadgeScale: 1.33 })).toMatchObject({
-			nightNumbers: true,
+		expect(parseTokenAppearance({ nightLeaves: 'off', nightBadgeScale: 1.33 })).toMatchObject({
+			nightLeaves: 'off',
 			nightBadgeScale: 1.35
 		});
+		expect(parseTokenAppearance({ nightLeaves: 'wide' }).nightLeaves).toBe('leaves');
+		// Earlier builds' night order numbers switch: on keeps the numbers on the leaves.
+		expect(parseTokenAppearance({ nightNumbers: true }).nightLeaves).toBe('numbers');
+		expect(parseTokenAppearance({ nightNumbers: false }).nightLeaves).toBe('leaves');
 		expect(
 			parseTokenAppearance({ reminderLabelWidth: 2.1, reminderLabelWrap: true })
 		).toMatchObject({ reminderLabelWidth: 2, reminderLabelWrap: true });

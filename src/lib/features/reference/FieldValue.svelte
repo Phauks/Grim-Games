@@ -171,7 +171,8 @@
 			<CharacterToken
 				{character}
 				size={tokenSize}
-				nightNumbers={preferences.current.tokenAppearance.nightNumbers && officialData.current
+				nightNumbers={preferences.current.tokenAppearance.nightLeaves === 'numbers' &&
+				officialData.current
 					? sheetNumbersFor(officialData.current.nightSheet, character.id)
 					: undefined}
 			/>
