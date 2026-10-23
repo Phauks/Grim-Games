@@ -12,7 +12,6 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -357,20 +356,20 @@
 							{@const character = head ? game.characters.get(head.ref.characterId) : undefined}
 							<li data-character={reminder.characterId}>
 								{#if character}
-									<CharacterRow
-										{character}
+									<!-- The character's band, the ability under it, then a strip joined below with
+									     what is known and the button (Trevor, 2026-10-23). -->
+									<CharacterEntry
+										characterId={character.id}
 										alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
 										playerName={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
-										info
 									>
-										{#snippet end()}{@const seatId =
-												buttonRows[reminder.key]}{#if seatId}{@render dayEnd(
+										{#snippet footer()}{@const seatId =
+												buttonRows[reminder.key]}{@render sentence()}{#if seatId}{@render dayEnd(
 													reminder.characterId,
 													seatId
 												)}{/if}{/snippet}
-										<!-- The ability first, beside the name; the state under it (Trevor, 2026-10-18). -->
-										{@render sentence()}
-									</CharacterRow>
+										<span class="ability">{character.ability}</span>
+									</CharacterEntry>
 								{:else}
 									<CharacterEntry characterId={head?.ref.characterId}>
 										{#snippet end()}{@const seatId =
@@ -424,15 +423,25 @@
 							: undefined}
 						<li data-character={seat.characterId}>
 							{#if character}
-								<!-- Drawn like character selection (Trevor, 2026-10-20: L12). -->
-								<CharacterRow
-									{character}
-									alignment={seat.alignment}
-									playerName={game.seatName(seat.seatId)}
-									info
-								>
-									{#snippet end()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}
-								</CharacterRow>
+								<!-- As the reminders above: band, ability, then the button's strip (Trevor, 2026-10-23). -->
+								{#if hasDayButton(seat.characterId)}
+									<CharacterEntry
+										characterId={character.id}
+										alignment={seat.alignment}
+										playerName={game.seatName(seat.seatId)}
+									>
+										{#snippet footer()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}
+										<span class="ability">{character.ability}</span>
+									</CharacterEntry>
+								{:else}
+									<CharacterEntry
+										characterId={character.id}
+										alignment={seat.alignment}
+										playerName={game.seatName(seat.seatId)}
+									>
+										<span class="ability">{character.ability}</span>
+									</CharacterEntry>
+								{/if}
 							{/if}
 						</li>
 					{/each}
@@ -532,7 +541,13 @@
 	.day-end {
 		display: flex;
 		align-items: center;
-		padding-inline-end: var(--space-2);
+		margin-inline-start: auto;
+	}
+	.ability {
+		font-family: var(--font-ability);
+		font-size: 0.8rem;
+		line-height: 1.3;
+		opacity: 0.9;
 	}
 	/*
 	 * Character rows read as one list split by dividers, not boxes with the background showing

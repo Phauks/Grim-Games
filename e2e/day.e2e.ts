@@ -122,16 +122,19 @@ test("day notes are gone; a player's day button sits in their ability row", asyn
 	await expect(button).toHaveCount(1);
 	const row = page.locator('li[data-character="slayer"]').filter({ has: button });
 	await expect(row).toHaveCount(1);
-	// Drawn like character selection (Trevor, 2026-10-20): the button at the row's end,
-	// after the name, the player and the ability.
-	await expect(row.locator('.head')).toContainText('Slayer');
-	await expect(row.locator('.head .player')).toHaveText('· Ben');
-	const text = await place(row.locator('.main'));
+	// The character's band across the row, the ability under it, then a strip joined below
+	// with the state and the button at its end (Trevor, 2026-10-23).
+	const band = row.locator('.bar .badge');
+	await expect(band).toContainText('Slayer');
+	await expect(band).toContainText('· Ben');
+	const bar = await place(row.locator('.bar'));
+	const ability = await place(row.locator('.ability'));
+	const footer = await place(row.locator('.footer'));
 	const used = await place(button);
-	const box = await place(row.locator('.row'));
-	expect(used.x).toBeGreaterThanOrEqual(text.x + text.width - 1);
-	expect(used.y).toBeGreaterThanOrEqual(box.y - 1);
-	expect(used.y + used.height).toBeLessThanOrEqual(box.y + box.height + 1);
+	expect(ability.y).toBeGreaterThanOrEqual(bar.y + bar.height - 1);
+	expect(footer.y).toBeGreaterThanOrEqual(ability.y + ability.height - 1);
+	expect(used.y).toBeGreaterThanOrEqual(footer.y - 1);
+	expect(used.x + used.width).toBeGreaterThan(footer.x + footer.width * 0.6);
 	await row.screenshot({ path: `test-results/day-used-row-${test.info().project.name}.png` });
 });
 
