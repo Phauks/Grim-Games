@@ -26,6 +26,7 @@
 	import { QrCode } from '@ark-ui/svelte/qr-code';
 	import { encode } from 'uqr';
 	import { qrCentreBox } from './qr-centre.ts';
+	import { qrPath, type QrFinderShape, type QrModuleShape } from './qr-pattern.ts';
 
 	interface Props {
 		value: string;
@@ -44,29 +45,48 @@
 		 * (Trevor, 2026-10-19: the view-only grimoire link says it shows spoilers).
 		 */
 		caption?: string;
+		/** The squares' shape and the corner markers' (Trevor, 2026-10-23); square by default. */
+		modules?: QrModuleShape;
+		finders?: QrFinderShape;
 	}
 
-	let { value, label, center, centerShape = 'square', caption }: Props = $props();
+	let {
+		value,
+		label,
+		center,
+		centerShape = 'square',
+		caption,
+		modules = 'square',
+		finders = 'square'
+	}: Props = $props();
 	const centred = $derived(!!center && fitsCentredQrCode(value));
 	const ecc = $derived(centred ? 'H' : 'L');
 	/**
 	 * The middle in whole modules (Trevor, 2026-10-23: the logo's backing ends exactly on the
 	 * squares' lines). The same encoder as the drawn code, so the module count matches.
 	 */
+	// The same encoder and options as Ark's, so this matrix is the one its frame is sized to.
+	const matrix = $derived(encode(value, { ecc }));
+	const pattern = $derived(qrPath(matrix, modules, finders));
 	const box = $derived.by(() => {
 		if (!centred) return undefined;
-		const modules = encode(value, { ecc }).size;
+		const size = matrix.size;
 		return {
-			modules,
-			...(centerShape === 'wide' ? qrCentreBox(modules, 0.48, 0.14) : qrCentreBox(modules, 0.3))
+			modules: size,
+			...(centerShape === 'wide' ? qrCentreBox(size, 0.48, 0.14) : qrCentreBox(size, 0.3))
 		};
 	});
 </script>
 
 <!-- Dark on light whatever the theme, with a quiet zone, so phone cameras read it. -->
 <QrCode.Root {value} encoding={{ ecc }} pixelSize={1} class="qr" role="img" aria-label={label}>
-	<QrCode.Frame shape-rendering="crispEdges">
-		<QrCode.Pattern />
+	<QrCode.Frame
+		shape-rendering={modules === 'square' && finders === 'square'
+			? 'crispEdges'
+			: 'geometricPrecision'}
+	>
+		<!-- Our own drawing of the matrix, for the shapes; Ark's draws squares only. -->
+		<path class="qr-pattern" data-testid="qr-pattern" d={pattern} fill-rule="evenodd" />
 		<!-- The picture's backing, on the code's own grid, so it covers whole squares only. -->
 		{#if box}<rect
 				class="qr-backing"
@@ -121,7 +141,7 @@
 		width: 100%;
 		height: 100%;
 	}
-	:global(.qr [data-part='pattern']) {
+	.qr-pattern {
 		fill: currentColor;
 	}
 	/* A logo 30% wide (Trevor, 2026-10-19: logos should be expressive). Opaque middles stop

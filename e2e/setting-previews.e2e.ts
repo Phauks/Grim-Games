@@ -9,7 +9,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * skipped; a file picker can't be driven here.
  */
 
-const SECTIONS = ['Board', 'Tokens'] as const;
+const SECTIONS = ['Board', 'Tokens', 'Storyteller'] as const;
 /**
  * Settings that show only while another one is on, and also work outside the preview (so
  * they aren't disabled): the switch they need, turned on before they are measured.

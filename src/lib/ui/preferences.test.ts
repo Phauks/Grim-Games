@@ -83,9 +83,28 @@ describe('parsePreferences', () => {
 			timerVibrate: false,
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
-			qrCentre: 'picture'
+			qrCentre: 'picture',
+			qrPictureWhole: true,
+			qrPictureZoom: 1.5,
+			qrPictureCorners: 'circle',
+			qrModules: 'dot',
+			qrFinders: 'rounded'
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
+		// Shapes it doesn't know, and a zoom out of range, fall back (Trevor, 2026-10-23).
+		expect(
+			parsePreferences({
+				qrModules: 'stars',
+				qrFinders: 7,
+				qrPictureZoom: 9,
+				qrPictureCorners: 'x'
+			})
+		).toMatchObject({
+			qrModules: 'square',
+			qrFinders: 'square',
+			qrPictureZoom: 2,
+			qrPictureCorners: 'rounded'
+		});
 	});
 
 	it('keeps any bag tile label, and reads an unknown one as numbers', () => {

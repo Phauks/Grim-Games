@@ -319,10 +319,18 @@ test('the Storyteller picks what goes in the middle of the QR code', async ({ pa
 	await page.getByRole('option', { name: 'None' }).tap();
 	await expect(qr.getByTestId('script-logo')).toHaveCount(0);
 
-	// Your picture asks for one; it shows in the middle, here and in every share.
-	const chooser = page.waitForEvent('filechooser');
+	// Picking Your picture opens nothing by itself (Trevor, 2026-10-23); Choose picture does.
+	let asked = false;
+	page.on('filechooser', () => (asked = true));
 	await centre.getByRole('combobox', { name: 'QR code centre' }).tap();
 	await page.getByRole('option', { name: 'Your picture' }).tap();
+	await expect(centre.getByRole('combobox', { name: 'QR code centre' })).toHaveText(/Your picture/);
+	expect(asked).toBe(false);
+	// The picture's shape waits, shown but off, until there is a picture.
+	const corners = centre.getByRole('combobox', { name: 'Picture corners' });
+	await expect(corners).toBeDisabled();
+	const chooser = page.waitForEvent('filechooser');
+	await centre.getByRole('button', { name: 'Choose picture' }).tap();
 	await (
 		await chooser
 	).setFiles({
@@ -333,12 +341,31 @@ test('the Storyteller picks what goes in the middle of the QR code', async ({ pa
 			'base64'
 		)
 	});
-	await expect(qr.locator('img.qr-picture')).toHaveAttribute('src', /^data:image\/png/);
+	const picture = qr.getByTestId('qr-picture');
+	await expect(picture.locator('img')).toHaveAttribute('src', /^data:image\/png/);
 	await expect(centre.getByRole('button', { name: 'Change picture' })).toBeEnabled();
+
+	// Its shape, and the code's own squares, change the QR beside them at once.
+	await expect(picture).toHaveAttribute('data-corners', 'rounded');
+	await corners.tap();
+	await page.getByRole('option', { name: 'Round', exact: true }).tap();
+	await expect(picture).toHaveAttribute('data-corners', 'circle');
+	await centre.getByText('Show the whole picture', { exact: true }).tap();
+	await expect(picture).toHaveAttribute('data-whole', 'true');
+	const pattern = qr.getByTestId('qr-pattern');
+	const squares = await pattern.getAttribute('d');
+	await centre.getByRole('combobox', { name: 'QR squares' }).tap();
+	await page.getByRole('option', { name: 'Dots' }).tap();
+	await expect(pattern).not.toHaveAttribute('d', squares!);
+	await expect(pattern).toHaveAttribute('d', /a0\.5,0\.5/);
 
 	// It stays on this device.
 	await page.reload();
-	await expect(qr.locator('img.qr-picture')).toHaveAttribute('src', /^data:image\/png/);
+	await expect(qr.getByTestId('qr-picture').locator('img')).toHaveAttribute(
+		'src',
+		/^data:image\/png/
+	);
+	await expect(qr.getByTestId('qr-picture')).toHaveAttribute('data-corners', 'circle');
 });
 
 test('a phone that joins gets the game script before anyone has a seat', async ({
