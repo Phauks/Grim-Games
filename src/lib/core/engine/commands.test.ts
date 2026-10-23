@@ -7,7 +7,7 @@ import {
 	testScript
 } from '#lib/core/model/fixtures.test-support.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/index.ts';
-import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
+import { GENERIC_REMINDER_ID, type SymbolColour } from '#lib/core/model/index.ts';
 import type { Command } from './commands.ts';
 import { decide } from './decide.ts';
 import { createGame, dispatch, redo, undo, type GameSession } from './log.ts';
@@ -797,6 +797,32 @@ describe('the generic reminder', () => {
 		expect(
 			refused(s, ctx, { type: 'SetReminderSymbol', reminderId: id, symbol: 'x'.repeat(40) })
 		).toBe('invalid-symbol');
+	});
+
+	it("colours the generic reminder's symbol, or clears its colour", () => {
+		// Trevor (2026-10-20): the Storyteller picks the colour of a generic token's icon.
+		const { session, ctx, seats } = newGame(names);
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[0],
+			reminder: { characterId: GENERIC_REMINDER_ID, label: '' }
+		});
+		const id = s.game.seats[seats[0]].reminders[0].reminderId;
+		const red = run(s, ctx, { type: 'SetReminderSymbolColour', reminderId: id, colour: 'red' });
+		expect(red.game.seats[seats[0]].reminders[0].symbolColour).toBe('red');
+		expect(
+			warned(red, ctx, { type: 'SetReminderSymbolColour', reminderId: id, colour: 'red' })
+		).toContain('no-change');
+		const cleared = run(red, ctx, { type: 'SetReminderSymbolColour', reminderId: id });
+		expect(cleared.game.seats[seats[0]].reminders[0]).not.toHaveProperty('symbolColour');
+		expect(undo(cleared).game.seats[seats[0]].reminders[0].symbolColour).toBe('red');
+		expect(
+			refused(s, ctx, {
+				type: 'SetReminderSymbolColour',
+				reminderId: id,
+				colour: 'pink' as SymbolColour
+			})
+		).toBe('invalid-colour');
 	});
 });
 
