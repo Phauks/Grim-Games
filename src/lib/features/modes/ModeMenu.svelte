@@ -11,7 +11,7 @@
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
-	import { fromScript, scriptToJson } from '#lib/core/data/index.ts';
+	import { editionWikiUrl, fromScript, scriptEdition, scriptToJson } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -84,7 +84,10 @@
 	// The saved script the game started from: its name links its source page, and its version
 	// shows when the game's own script names none (Trevor, backlog L14).
 	const savedChoice = $derived(savedChoiceFor(game.script));
-	const scriptPage = $derived(savedChoice?.source ? sourcePage(savedChoice.source) : undefined);
+	const scriptPage = $derived(
+		(savedChoice?.source && sourcePage(savedChoice.source)) ??
+			editionWikiUrl(scriptEdition(game.script)?.id)
+	);
 	const info = $derived([
 		{
 			key: 'script',

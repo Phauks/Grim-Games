@@ -5,7 +5,6 @@
 	import { page } from '$app/state';
 	import favicon from '#lib/assets/favicon.svg';
 	import '#lib/ui/base.css';
-	import AppFooter from '#lib/features/about/AppFooter.svelte';
 	import UpdateBanner from '#lib/features/about/UpdateBanner.svelte';
 	import GlossaryPopover from '#lib/features/glossary/GlossaryPopover.svelte';
 	import { startAccount } from '#lib/features/account/start.ts';
@@ -13,7 +12,6 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { keepData } from '#lib/features/settings/data/keep-data.ts';
 	import { installApp } from '#lib/features/settings/install-app.svelte.ts';
-	import AppHeader from '#lib/features/shell/AppHeader.svelte';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
 	import NavDrawer from '#lib/features/shell/NavDrawer.svelte';
 	import {
@@ -39,7 +37,7 @@
 		void locale.init();
 	});
 
-	// Who is signed in, checked once for every page, including games without the header.
+	// Who is signed in, checked once for every page, including games.
 	$effect(() => {
 		void startAccount();
 	});
@@ -94,7 +92,7 @@
 		leaveTo(() => void goto(to.href));
 	});
 
-	// A game in progress hides the header and footer (src/lib/features/shell/shell.ts), and so
+	// A game in progress hides the sidebar (src/lib/features/shell/shell.ts), and so
 	// does a locked draw while the phone is passed round.
 	const shell = $derived(
 		showsAppShell(page.data) && !lockedDrawHidesShell(page.url.pathname, drawLock.lockedGame)
@@ -106,13 +104,10 @@
 	<title>{APP_NAME}</title>
 </svelte:head>
 
-{#if shell}<AppHeader />{/if}
-<!-- Grows to fill the screen so the footer sits at the bottom on short pages. -->
 <div class="app-body" class:bare={!shell}>
 	{#if shell}<AppNav />{/if}
 	<div class="app-main">{@render children()}</div>
 </div>
-{#if shell}<AppFooter />{/if}
 
 <SettingsModal />
 <NavDrawer />
@@ -129,9 +124,20 @@
 		/* Clear of a landscape phone's notch (viewport-fit=cover in app.html). */
 		padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
 	}
-	/* No header or footer (a game): clear of the status and navigation bars here instead. */
-	.app-body.bare {
-		padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
+	/* Clear of the phone's status and navigation bars: there is no app header (2026-10-22) or
+	   footer (2026-10-23). */
+	.app-body {
+		padding-block: var(--app-top) env(safe-area-inset-bottom);
+	}
+	/* The status bar's strip keeps the theme's colour while the page scrolls under it (an
+	   installed app on iPhone draws the page there; zero high elsewhere). */
+	.app-body::before {
+		content: '';
+		position: fixed;
+		inset: 0 0 auto;
+		z-index: var(--z-raised);
+		height: var(--app-top);
+		background: var(--surface);
 	}
 	.app-main {
 		flex: 1;

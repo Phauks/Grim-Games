@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ACCOUNT_ITEM, isCurrent, NAV_ITEMS, NAV_SECTIONS, REPORTS_ITEM } from './nav.ts';
+import {
+	ACCOUNT_ITEM,
+	APP_ITEMS,
+	isCurrent,
+	NAV_ITEMS,
+	NAV_SECTIONS,
+	REPORT_ISSUE_ICON,
+	REPORTS_ITEM
+} from './nav.ts';
 
 describe('navigation', () => {
 	const scripts = NAV_ITEMS.find((item) => item.id === 'scripts')!;
@@ -18,9 +26,14 @@ describe('navigation', () => {
 	});
 
 	it('gives every destination its own icon (Trevor, 2026-10-16)', () => {
-		const icons = [...NAV_ITEMS, ACCOUNT_ITEM, REPORTS_ITEM, { icon: 'settings' }].map(
-			(item) => item.icon
-		);
+		const icons = [
+			...NAV_ITEMS,
+			ACCOUNT_ITEM,
+			REPORTS_ITEM,
+			...APP_ITEMS,
+			{ icon: 'settings' },
+			{ icon: REPORT_ISSUE_ICON }
+		].map((item) => item.icon);
 		expect(new Set(icons).size).toBe(icons.length);
 	});
 

@@ -337,7 +337,8 @@ export const RULE_ONLY_PARTS = [
 	'deaths',
 	'nightSteps',
 	'abilities',
-	'demonAttacks'
+	'demonAttacks',
+	'nominations'
 ] as const;
 export type RuleOnlyPart = (typeof RULE_ONLY_PARTS)[number];
 
@@ -394,6 +395,21 @@ export interface DemonAttacksRule extends Cited {
 	kind: 'script-order';
 }
 
+/**
+ * What a nomination sets off (The Warrens, The Djinn's Bargain). The board offers it to the
+ * Storyteller when a nomination is recorded; they decide.
+ */
+export interface NominationEffect extends Cited {
+	/**
+	 * `evil-swap`: an evil nominator and a living evil nominee, neither a Traveller, swap
+	 * characters. `nominator-may-die`: the nominator may choose to die, and the nominee's
+	 * ability then works twice until the next dusk.
+	 */
+	kind: 'evil-swap' | 'nominator-may-die';
+	/** Only while at least this many players are alive. */
+	minAlive?: number;
+}
+
 export interface RuleOnlyParts {
 	/** The rule's own lines, shown on the Bootlegger (a script's `_meta.bootlegger`). */
 	text?: string[];
@@ -405,6 +421,7 @@ export interface RuleOnlyParts {
 	nightSteps?: NightStep[];
 	abilities?: AbilitiesRule;
 	demonAttacks?: DemonAttacksRule;
+	nominations?: NominationEffect[];
 }
 
 /** A special rule's pool can only add to the script. */

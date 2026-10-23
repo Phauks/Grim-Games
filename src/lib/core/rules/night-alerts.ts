@@ -26,7 +26,7 @@ import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { abilityState, type AbilitySource, type Impairment } from './ability.ts';
+import { abilityState, protectors, type AbilitySource, type Impairment } from './ability.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -188,25 +188,9 @@ function deathAlerts(
 		if (override && !override.value) {
 			out.push({ kind: 'protected', seatId, source: 'override', works: true, impairments: [] });
 		}
-		if (own === 'sailor') alert('protected', { characterId: 'sailor', seatId }, W + 'Sailor');
-		if (own === 'soldier' && killer.by === 'demon') {
-			alert('protected', { characterId: 'soldier', seatId }, W + 'Soldier');
-		}
-		const tokens: [CharacterId, string, KillBy | 'any', string][] = [
-			['tealady', 'Cannot Die', 'any', 'Tea_Lady'],
-			['innkeeper', 'Safe', 'any', 'Innkeeper'],
-			['monk', 'Safe', 'demon', 'Monk']
-		];
-		for (const [source, label, against, page] of tokens) {
-			if (against !== 'any' && against !== killer.by) continue;
-			const token = seat.reminders.find((r) => r.characterId === source && r.label === label);
-			if (!token) continue;
-			const from = holder(source);
-			alert(
-				'protected',
-				{ characterId: source, ...(from ? { seatId: from } : {}), reminderId: token.reminderId },
-				W + page
-			);
+		for (const { source } of protectors(game, seatId, characters, killer.by)) {
+			const character = characters.get(source.characterId);
+			alert('protected', source, character && wikiUrl(character));
 		}
 		if (own === 'mayor' && killer.by === 'demon') {
 			alert('may-bounce', { characterId: 'mayor', seatId }, W + 'Mayor');

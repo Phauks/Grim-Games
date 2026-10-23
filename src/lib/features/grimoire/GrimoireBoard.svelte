@@ -61,7 +61,12 @@
 		todaysNominations
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
-	import { nextScriptOrderTarget, seatHasAbility } from '#lib/core/modes/index.ts';
+	import {
+		nextScriptOrderTarget,
+		nominationPrompts,
+		seatHasAbility,
+		type NominationPrompt
+	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -143,6 +148,7 @@
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FoolAsk from './FoolAsk.svelte';
+	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -951,6 +957,8 @@
 	 * after the first night, the next living in-play character in script order.
 	 */
 	const attackRule = $derived(gameRules.find((r) => r.parts.demonAttacks)?.name);
+	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
+	let nominationAsks = $state<NominationPrompt[]>([]);
 	const walkAttack = $derived.by(() => {
 		if (!attackRule || !walkStep || walk?.night !== 'other') return undefined;
 		if (walkStep.character?.type !== 'demon') return undefined;
@@ -1992,7 +2000,8 @@
 				{seatAt}
 				{spotAllowed}
 				{ruleAt}
-				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
+				onRule={(reminder, characterId, tokenId) =>
+					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
 				run={bankRun}
 				disabled={watching}
@@ -2178,6 +2187,7 @@
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FoolAsk {grimoire} />
+<NominationAsk {grimoire} bind:asks={nominationAsks} />
 <GameEndPrompt
 	{grimoire}
 	active={!ended && !grimoire.open.viewOnly}
@@ -2346,6 +2356,8 @@
 		onDraw(id);
 	}}
 	onNotes={(id) => notesSheet?.edit(id)}
+	onNominated={(nomination) =>
+		(nominationAsks = nominationPrompts(grimoire.game, nomination, gameRules, characters))}
 />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
@@ -2545,7 +2557,7 @@
 		isolation: isolate;
 		display: flex;
 		flex-direction: column;
-		/* Fills the screen: a game hides the app header and footer (route data). */
+		/* Fills the screen: a game hides the sidebar (route data). */
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}

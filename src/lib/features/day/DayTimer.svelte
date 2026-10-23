@@ -163,6 +163,7 @@
 				hideLabel
 				value={preferences.current.timerSound}
 				options={TIMER_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
+				disabled={preferences.current.timerMode === 'up'}
 				onChange={chooseSound}
 			/>
 			{@render vibrate()}
@@ -179,6 +180,7 @@
 				label={t('day.timerSoundTitle')}
 				value={preferences.current.timerSound}
 				options={TIMER_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
+				disabled={preferences.current.timerMode === 'up'}
 				onChange={chooseSound}
 			/>
 			{@render vibrate()}
@@ -233,6 +235,12 @@
 		display: grid;
 		gap: var(--space-4);
 		padding-top: var(--space-2);
+	}
+	/* On the board it looks like the toolbar's buttons: their fill and edge (Trevor,
+	   2026-10-23). */
+	.timer[data-variant='compact'] {
+		border-color: var(--button-edge);
+		background: transparent;
 	}
 	/* On the board the clock comes first, so it keeps clear of the rounded edge (Trevor). */
 	.timer[data-variant='compact'] .clock {

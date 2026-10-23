@@ -1,22 +1,36 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import {
 		MAX_SCRIPT_VOTE_OPTIONS,
 		MIN_SCRIPT_VOTE_OPTIONS,
 		SCRIPT_VOTE_KINDS,
+		SCRIPT_VOTE_MINUTES,
 		type ScriptVoteKind
 	} from '#lib/core/sync/script-vote.ts';
-	import type { ScriptChoiceOption } from '#lib/features/modes/script-choices.svelte.ts';
+	import ScriptPicker from '#lib/features/modes/ScriptPicker.svelte';
+	import type {
+		ScriptChoice,
+		ScriptChoiceOption
+	} from '#lib/features/modes/script-choices.svelte.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import { roomHost } from './host.svelte.ts';
+	import VoteTimeLeft from './VoteTimeLeft.svelte';
 
 	/**
 	 * The room's vote on the next script (Trevor, 2026-10-20, plan R1): the Storyteller offers
 	 * two or three scripts, players vote on their phones, and the Storyteller picks from the
-	 * count. New game shows it; the room only counts.
+	 * count. New game shows it; the room only counts. Scripts are found with New game's own
+	 * script controls (Trevor, 2026-10-23: "same search controls as available outside in new
+	 * game mode") and added to three fixed rows. While the vote is open the sheet shows the
+	 * room's code and QR, so players not in the room yet can join and vote (Trevor,
+	 * 2026-10-23), and the time left when the Storyteller set a limit.
 	 */
 	interface Props {
 		open: boolean;
@@ -32,6 +46,26 @@
 	const tally = $derived(host.scriptVote);
 	let picked = $state<string[]>([]);
 	let kind = $state<ScriptVoteKind>('single');
+	/** The script New game's controls show, added to the vote with Add to vote. */
+	let adding = $state<ScriptChoice>('tb');
+	const addable = $derived(
+		picked.length < MAX_SCRIPT_VOTE_OPTIONS &&
+			!picked.includes(adding) &&
+			choices.some((c) => c.value === adding)
+	);
+	const nameOf = (id: string) => choices.find((c) => c.value === id)?.label ?? id;
+	const NO_LIMIT = 'none';
+	let minutes = $state<string>(NO_LIMIT);
+	const limits = [
+		{ value: NO_LIMIT, label: t('room.scriptVote.noLimit') },
+		...SCRIPT_VOTE_MINUTES.map((m) => ({
+			value: String(m),
+			label: t('room.scriptVote.minutes', { count: m })
+		}))
+	];
+	const link = $derived(
+		host.code ? `${location.origin}${resolve('/join/[code]', { code: host.code })}` : undefined
+	);
 	const kinds = SCRIPT_VOTE_KINDS.map((value) => ({
 		value,
 		label: t(`room.scriptVote.kind.${value}`)
@@ -47,7 +81,8 @@
 				? [{ id, name: choice.label, ...(choice.author ? { author: choice.author } : {}) }]
 				: [];
 		});
-		if (host.openScriptVote(kind, options)) picked = [];
+		const limit = minutes === NO_LIMIT ? undefined : Number(minutes);
+		if (host.openScriptVote(kind, options, limit)) picked = [];
 	}
 
 	function pick(id: string) {
@@ -59,6 +94,18 @@
 
 <BottomSheet bind:open title={t('room.scriptVote.title')}>
 	{#if tally}
+		<!-- The room's code and QR, so players who are not in the room yet can join and vote. -->
+		<section class="join" aria-label={t('room.scriptVote.join')}>
+			<SharePanel
+				url={link}
+				title={t('room.scriptVote.join')}
+				qrLabel={t('room.qrLabel')}
+				pending={t('room.joining')}
+				code={{ label: t('room.joinCode'), value: host.code && formatRoomCode(host.code) }}
+				text={host.code ? t('room.shareText', { code: formatRoomCode(host.code) }) : undefined}
+			/>
+		</section>
+		<VoteTimeLeft endsAt={tally.endsAt} />
 		<p class="count" data-testid="script-vote-count">
 			{t('room.scriptVote.voted', { voted: tally.voted, members: tally.members })}
 		</p>
@@ -86,19 +133,44 @@
 				if (ready) openVote();
 			}}
 		>
-			<Select
-				label={t('room.scriptVote.scripts')}
-				multiple
-				options={choices.map((c) => ({ value: c.value, label: c.label }))}
-				values={picked}
-				onValuesChange={(v) => (picked = v)}
-				placeholder={t('common.none')}
+			<!-- Three rows, always here, so adding or removing a script moves nothing. -->
+			<fieldset class="slots">
+				<legend>{t('room.scriptVote.scripts')}</legend>
+				<ol data-testid="script-vote-slots">
+					{#each { length: MAX_SCRIPT_VOTE_OPTIONS }, i}
+						{@const id = picked[i]}
+						<li>
+							<span class="slot">{t('room.scriptVote.slot', { number: i + 1 })}</span>
+							<span class="name" class:none={!id}>{id ? nameOf(id) : t('common.none')}</span>
+							<DeleteButton
+								label={t('room.scriptVote.remove', { name: id ? nameOf(id) : '' })}
+								disabled={!id}
+								onclick={() => (picked = picked.filter((p) => p !== id))}
+							/>
+						</li>
+					{/each}
+				</ol>
+			</fieldset>
+			<!-- New game's own script controls: the base three, search, and the Library. -->
+			<ScriptPicker
+				label={t('room.scriptVote.addScript')}
+				value={adding}
+				onChange={(v) => (adding = v)}
 			/>
+			<Button icon="add" disabled={!addable} onclick={() => (picked = [...picked, adding])}
+				>{t('room.scriptVote.add')}</Button
+			>
 			<Select
 				label={t('room.scriptVote.how')}
 				options={kinds}
 				value={kind}
 				onChange={(v) => (kind = v)}
+			/>
+			<Select
+				label={t('room.scriptVote.timeLimit')}
+				options={limits}
+				value={minutes}
+				onChange={(v) => (minutes = v)}
 			/>
 			<ModalActions
 				onCancel={() => (open = false)}
@@ -114,6 +186,44 @@
 	.new {
 		display: grid;
 		gap: var(--space-4);
+	}
+	.join {
+		margin-bottom: var(--space-4);
+	}
+	.slots {
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+	.slots legend {
+		padding: 0;
+		margin-bottom: var(--space-2);
+	}
+	.slots ol {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	/* Rows with dividers (Trevor: stacked items are delineated). */
+	.slots li {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-3);
+	}
+	.slots li + li {
+		border-top: 1px solid var(--border);
+	}
+	.slot {
+		color: var(--on-surface-muted);
+	}
+	.name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.name.none {
+		color: var(--on-surface-muted);
 	}
 	.count {
 		margin: 0 0 var(--space-3);

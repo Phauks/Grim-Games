@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import { recentDeaths } from '#lib/core/engine/index.ts';
+	import { recentDeaths, recentRevivals } from '#lib/core/engine/index.ts';
 	import type { DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 	import {
 		afterDawn,
@@ -63,10 +63,10 @@
 	const hasFlowergirl = $derived(seats.some((s) => s.characterId === 'flowergirl'));
 	/**
 	 * The Flowergirl learns each night whether the Demon voted today (Trevor, 2026-10-19:
-	 * "we need quick action in day for that"): one tap in the pinned toolbar. Today's mark is
-	 * the day log's, so it starts unset each new day and History can undo it.
+	 * "we need quick action in day for that"): one tap on her own row (Trevor, 2026-10-23:
+	 * L43, not at the top of the day). Today's mark is the day log's, so it starts unset each
+	 * new day and History can undo it.
 	 */
-	const demonVotedButton = $derived(hasFlowergirl && assistance.demonVotedButton);
 	const demonVoted = $derived(g.today.demonVoted === true);
 
 	// ── Confirming a change: what it is now, and what it will be ──
@@ -169,6 +169,8 @@
 
 	/** Everyone who died since the previous day ended, to announce (Trevor, 2026-10-16). */
 	const died = $derived(recentDeaths(game.log, g));
+	/** And everyone brought back to life in that night (Trevor, 2026-10-20: L9). */
+	const revived = $derived(recentRevivals(game.log, g));
 
 	// ── What didn't happen: a kill whose Dead token sits on a living player (Trevor) ──
 	const prevented = $derived(preventedDeaths(g, game.characters));
@@ -196,6 +198,13 @@
 		const seat = g.seating.indexOf(seatId) + 1;
 		const name = g.seats[seatId].playerName;
 		return name ? t('day.announce.died', { name, seat }) : t('day.announce.diedUnnamed', { seat });
+	}
+	function spokenRevival(seatId: SeatId): string {
+		const seat = g.seating.indexOf(seatId) + 1;
+		const name = g.seats[seatId].playerName;
+		return name
+			? t('day.announce.revived', { name, seat })
+			: t('day.announce.revivedUnnamed', { seat });
 	}
 	function privateDeath(cause: DeathCause | undefined): string {
 		const how =
@@ -313,7 +322,13 @@
 	/** Used for a once-per-game day ability, Guesses for the Juggler. */
 	const hasDayButton = (characterId: CharacterId | undefined) =>
 		characterId !== undefined &&
-		(isOnceOnlyDayAbility(characterId) || characterId === 'juggler' || savantButton(characterId));
+		(isOnceOnlyDayAbility(characterId) ||
+			characterId === 'juggler' ||
+			savantButton(characterId) ||
+			demonVotedButton(characterId));
+	/** The Flowergirl's Demon voted, on her row while its setting is on (L43). */
+	const demonVotedButton = (characterId: CharacterId | undefined) =>
+		characterId === 'flowergirl' && assistance.demonVotedButton;
 	/**
 	 * The Savant's information for today, recommended until it is set (Trevor, 2026-10-20: L5):
 	 * with "Suggest Savant information" on, where the grimoire can open its sheet.
@@ -384,6 +399,16 @@
 		>
 			{t('day.guesses')}
 		</Chip>
+	{:else if demonVotedButton(characterId)}
+		<Chip
+			pressed={demonVoted}
+			data-testid="demon-voted"
+			onclick={() => game.run({ type: 'SetDemonVoted', voted: !demonVoted })}
+		>
+			<span class="tick" data-on={demonVoted || undefined}><Icon name="check" /></span>{t(
+				'day.demonVoted'
+			)}
+		</Chip>
 	{:else if savantButton(characterId)}
 		{@const set = hasNote({ characterId: 'savant', seatId })}
 		<!-- Not set yet: recommended, in the accent colour. -->
@@ -403,17 +428,6 @@
 	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
 	<div class="toolbar" data-testid="day-toolbar" bind:borderBoxSize={toolbarSize}>
 		<DayTimer alive={block.alive} />
-		{#if demonVotedButton}
-			<Chip
-				pressed={demonVoted}
-				data-testid="demon-voted"
-				onclick={() => game.run({ type: 'SetDemonVoted', voted: !demonVoted })}
-			>
-				<span class="tick" data-on={demonVoted || undefined}><Icon name="check" /></span>{t(
-					'day.demonVoted'
-				)}
-			</Chip>
-		{/if}
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
@@ -480,7 +494,7 @@
 	<Collapsible
 		title={t('day.announcements')}
 		storageKey="day.announcements"
-		count={died.length + announcers.length}
+		count={died.length + revived.length + announcers.length}
 	>
 		{#snippet aside()}
 			<Button
@@ -517,6 +531,28 @@
 					>
 				</li>
 			{/each}
+			{#each revived as seatId (seatId)}
+				{@const seat = g.seats[seatId]}
+				<li class="death" data-seat={seatId} data-testid="revived">
+					{#if privateDeaths}
+						<span class="dont-announce">{t('day.announce.dont')}</span>
+					{:else}
+						<span class="spoken">{spokenRevival(seatId)}</span>
+					{/if}
+					<em class="private"
+						><Sentence
+							text={t('day.announce.private', {
+								character: slot('character'),
+								how: t('day.announce.backToLife')
+							})}
+							>{#snippet fill()}{#if seat.characterId}<CharacterBadge
+										characterId={seat.characterId}
+										alignment={seat.alignment}
+									/>{:else}{t('day.announce.noCharacter')}{/if}{/snippet}</Sentence
+						></em
+					>
+				</li>
+			{/each}
 			{#if died.length === 0 && dawned}
 				<li class="death"><span class="spoken">{t('day.announce.nobody')}</span></li>
 			{/if}
@@ -533,7 +569,7 @@
 					</CharacterEntry>
 				</li>
 			{/each}
-			{#if died.length === 0 && !dawned && announcers.length === 0}
+			{#if died.length === 0 && !dawned && revived.length === 0 && announcers.length === 0}
 				<li>{t('common.none')}</li>
 			{/if}
 		</ul>
@@ -558,7 +594,7 @@
 				storageKey={`day.group.${group.group}`}
 				count={group.reminders.length}
 			>
-				<ul class="reminders">
+				<ul class="reminders rows">
 					{#each group.reminders as reminder (reminder.key)}
 						{@const head =
 							reminder.segments[0]?.kind === 'character' ? reminder.segments[0] : undefined}
@@ -630,7 +666,7 @@
 	{#if !assistance.preDayReminders || unlisted.length > 0}
 		{@const listed = assistance.preDayReminders ? unlisted : seats.filter((s) => s.characterId)}
 		<Collapsible title={t('day.abilities')} storageKey="day.abilities" count={listed.length}>
-			<ul class="reminders">
+			<ul class="reminders rows">
 				{#each listed as seat (seat.seatId)}
 					{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
 					<li data-character={seat.characterId}>
@@ -806,8 +842,23 @@
 		align-items: center;
 		padding-inline-end: var(--space-2);
 	}
-	.reminders :global(.row) {
-		margin-block: calc(var(--space-1) / 2);
+	/*
+	 * Character rows read as one list split by dividers, not boxes with the background showing
+	 * between them (Trevor, 2026-10-23: L44).
+	 */
+	.rows {
+		border-radius: var(--radius-md);
+		background: var(--choice-background);
+		box-shadow: inset 0 0 0 1px var(--border);
+		overflow: hidden;
+	}
+	.rows > li + li {
+		border-top: 1px solid var(--border); /* px-ok: hairline divider */
+	}
+	.rows > li > :global(.row) {
+		border-radius: 0;
+		background: none;
+		box-shadow: none;
 	}
 	/* The tick is always laid out, so pressing Used never changes the chip's width. */
 	.tick {
@@ -871,9 +922,9 @@
 	/* Ghost votes left in an unused ghost vote's colours (DeadBadge.svelte), inverted: a dark
 	   ghost on white (Trevor, 2026-10-22). */
 	.badge.ghost {
-		border-color: rgb(232 222 200); /* colour-ok: DeadBadge's unused ghost vote, inverted */
-		background: rgb(244 236 218); /* colour-ok: DeadBadge's unused ghost vote, inverted */
-		color: rgb(16 12 20); /* colour-ok: DeadBadge's unused ghost vote, inverted */
+		border-color: var(--ghost-vote-rim);
+		background: var(--ghost-vote);
+		color: var(--ghost-vote-badge);
 	}
 	/* Votes needed in gold; --heading on --surface is a theme contrast pair. */
 	.badge.votes {

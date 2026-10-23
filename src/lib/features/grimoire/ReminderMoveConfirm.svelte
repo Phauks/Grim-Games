@@ -102,14 +102,19 @@
 	 * Gives a Fabled or Loric a reminder: one already on the board (by id) or a new one from
 	 * the bank. One that isn't a Fabled or Loric reminder asks first (Trevor, 2026-10-17).
 	 */
-	export function requestRule(what: ReminderId | Reminder, characterId: CharacterId): void {
+	export function requestRule(
+		what: ReminderId | Reminder,
+		characterId: CharacterId,
+		/** A copy of one of the bank's ∞ tokens (plan B9). */
+		tokenId?: string
+	): void {
 		const found: { reminder: Reminder; from: Place } | undefined =
 			typeof what === 'string' ? find(what) : { reminder: what, from: { bank: true } };
 		if (!found) return;
 		const run = () =>
 			typeof what === 'string'
 				? grimoire.run({ type: 'MoveReminderToRuleCharacter', reminderId: what, characterId })
-				: grimoire.run({ type: 'AddRuleReminder', characterId, reminder: what });
+				: grimoire.run({ type: 'AddRuleReminder', characterId, reminder: what, tokenId });
 		const type = characters.get(found.reminder.characterId)?.type;
 		const seatWhy = 'seatId' in found.from ? fixedReminderReason(found.reminder) : undefined;
 		if (type === 'fabled' || type === 'loric') {

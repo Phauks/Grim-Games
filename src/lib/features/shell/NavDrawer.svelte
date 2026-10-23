@@ -8,7 +8,7 @@
 </script>
 
 <!-- The same destinations as the sidebar, sliding in from the left (phones and game screens).
-     Headed with the app's name, as in the header; the nav keeps "Menu" as its label (Trevor, 2026-10-18). -->
+     Headed with the app's name, as the sidebar is; the nav keeps "Menu" as its label (2026-10-18). -->
 <Dialog bind:open={navDrawer.open} title={t('shell.appName')} size="side" closeButton={false}>
 	{#snippet lead()}
 		<!-- Where the hamburger that opened it was, so the same spot closes it. -->
@@ -20,7 +20,7 @@
 		/>
 	{/snippet}
 	<nav class="drawer-nav" aria-label={t('shell.navLabel')}>
-		<NavList withAccount onChoose={() => (navDrawer.open = false)} />
+		<NavList onChoose={() => (navDrawer.open = false)} />
 	</nav>
 	<!-- The Community Created Content logo, always at the bottom of the menu (Trevor, 2026-10-17). -->
 	<div class="bottom"><CccLogo /></div>

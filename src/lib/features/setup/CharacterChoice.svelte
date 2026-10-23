@@ -99,6 +99,7 @@
 						{src}
 						alt=""
 						data-partner={p.id}
+						referrerpolicy="no-referrer"
 						{@attach iconFallback(fallbackIconUrl(p))}
 					/>{:else}<span class="dot" data-partner={p.id}></span>{/if}{/each}</span
 		>

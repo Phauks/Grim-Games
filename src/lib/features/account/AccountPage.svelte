@@ -159,6 +159,14 @@
 			await loadSessions();
 		});
 
+	// This device's own row signs out here: there is no app header with an account card any more
+	// (2026-10-22).
+	const signOutHere = () =>
+		act(async () => {
+			await account.signOut();
+			toast(t('account.signedOut'));
+		});
+
 	const endOthers = () =>
 		act(async () => {
 			await accountApi.endOtherSessions();
@@ -341,8 +349,8 @@
 								<Button
 									variant="quiet"
 									aria-label={t('account.devices.signOutDevice', { device: deviceName(session) })}
-									onclick={() => endSession(session.id)}
-									disabled={busy || session.current}>{t('account.devices.signOut')}</Button
+									onclick={() => (session.current ? signOutHere() : endSession(session.id))}
+									disabled={busy}>{t('account.devices.signOut')}</Button
 								>
 							{/if}
 						{/snippet}

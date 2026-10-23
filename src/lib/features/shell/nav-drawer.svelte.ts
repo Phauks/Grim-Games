@@ -17,7 +17,7 @@ class NavMenu {
 	open = $state(false);
 	/** The wide-screen sidebar was closed; remembered on the device. */
 	hidden = $state(readHidden());
-	/** AppNav is on this page (not on game screens). */
+	/** AppNav is on this page (the app's pages, not game screens). */
 	sidebarMounted = $state(false);
 	wide = $state(globalThis.matchMedia?.(WIDE).matches ?? false);
 
@@ -30,6 +30,14 @@ class NavMenu {
 	/** Whether the hamburger acts on the sidebar rather than the drawer. */
 	get sidebar(): boolean {
 		return this.sidebarMounted && this.wide;
+	}
+
+	/**
+	 * Whether a page's title row carries the hamburger: the app's pages (not game screens,
+	 * which have their own) while no sidebar is showing. There is no app header.
+	 */
+	get pageButton(): boolean {
+		return this.sidebarMounted && !(this.wide && !this.hidden);
 	}
 
 	/** Whether the menu the hamburger controls is showing. */

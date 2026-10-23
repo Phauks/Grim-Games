@@ -401,6 +401,19 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				looseReminders: [...(lifted.game.looseReminders ?? []), lifted.reminder]
 			};
 		}
+		case 'GenericTokenAdded':
+			return { ...game, genericTokens: [...(game.genericTokens ?? []), { ...event.token }] };
+		case 'GenericTokenSet':
+			return {
+				...game,
+				genericTokens: (game.genericTokens ?? []).map((t) =>
+					t.tokenId === event.token.tokenId ? { ...event.token } : t
+				)
+			};
+		case 'GenericTokenRemoved': {
+			const genericTokens = (game.genericTokens ?? []).filter((t) => t.tokenId !== event.tokenId);
+			return genericTokens.length > 0 ? { ...game, genericTokens } : omit(game, 'genericTokens');
+		}
 		case 'StorytellerNameSet':
 			return event.name === undefined
 				? omit(game, 'storytellerName')

@@ -43,7 +43,7 @@ html[data-leave-guard] body {
 }
 
 body {
-	/* Header, page, footer: the footer stays at the bottom of short pages. */
+	/* The page fills the screen's height (the sidebar's line runs to the bottom). */
 	display: flex;
 	flex-direction: column;
 	background: transparent;
@@ -61,11 +61,11 @@ body::before {
 	background: var(--page-background);
 	pointer-events: none;
 }
-/* A screen with no header or footer (a game): the backdrop fades to the theme's --surface at
+/* No header or footer on any screen (2026-10-22/23): the backdrop fades to the theme's --surface at
    the top and bottom edges. A phone's status and navigation bars take that flat colour (the
    theme-color meta, apply.ts) and can't show a gradient, so they now run into the screen
    instead of standing apart from it (Trevor, 2026-10-19, on a Pixel). */
-body:has(.app-body.bare)::before {
+body::before {
 	/* Solid over the bars themselves (the layer starts one inset above the screen), then fading. */
 	--edge-top: calc(2 * env(safe-area-inset-top));
 	--edge-bottom: calc(2 * env(safe-area-inset-bottom));
@@ -83,13 +83,12 @@ body:has(.app-body.bare)::before {
 }
 
 /* A bar pinned to the screen's bottom edge (the setup steps' Back and Next bar, SetupNav):
-   the page keeps the bar's room below everything, the footer included, so nothing is hidden
-   under it (Trevor, 2026-10-20: the Draw page's footer was cut off). */
+   the page keeps the bar's room below everything, so nothing is hidden under it (2026-10-20).
+   The navigation bar's inset is already kept by the root layout. */
 body:has(.pinned-bottom) {
 	--pinned-border: 1px; /* px-ok: the bar's top border */
 	padding-bottom: calc(
-		var(--space-4) + var(--tap-target) + 2 * var(--space-2) + var(--pinned-border) +
-			env(safe-area-inset-bottom)
+		var(--space-4) + var(--tap-target) + 2 * var(--space-2) + var(--pinned-border)
 	);
 }
 
@@ -160,6 +159,16 @@ textarea {
 }
 
 :focus-visible {
+	outline: 3px solid var(--focus);
+	outline-offset: 2px;
+}
+
+/* A button or link showing a token rings the round token, not its own box (Trevor, 2026-10-23). */
+:is(button, a, [role='button']):focus-visible:has([data-token-face]) {
+	outline: none;
+}
+:is(button, a, [role='button']):focus-visible [data-token-face] {
+	border-radius: 50%;
 	outline: 3px solid var(--focus);
 	outline-offset: 2px;
 }

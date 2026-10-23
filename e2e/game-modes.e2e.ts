@@ -1055,7 +1055,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	expect(json).toContain('chef');
 });
 
-test('Game info opens a special rule in full when tapped, and a script with no source cannot be shared', async ({
+test('Game info opens a special rule in full when tapped, and a base script shares its wiki page', async ({
 	page
 }) => {
 	// Trevor, 2026-10-22 (plan G5): "allow clicking game mode or special rules in game info to
@@ -1081,15 +1081,26 @@ test('Game info opens a special rule in full when tapped, and a script with no s
 	const info = page.getByTestId('game-info');
 	// Standard is no mode to open; the rule's name opens its About, parts and rule file.
 	await expect(info.locator('[data-field="mode"] button')).toHaveCount(0);
-	// A built-in script has no source page: Share stays in the header, off, saying why.
-	const share = page.getByTestId('share-source');
-	await expect(share).toBeDisabled();
-	await expect(share).toHaveAttribute('title', 'This script has no source page to share');
+	// A base script's source page is its wiki page (Trevor, 2026-10-23), so Share is on.
+	await expect(info.getByRole('link', { name: 'Trouble Brewing' })).toHaveAttribute(
+		'href',
+		'https://wiki.bloodontheclocktower.com/Trouble_Brewing'
+	);
+	await expect(page.getByTestId('share-source')).toBeEnabled();
 	await info.getByRole('button', { name: 'Inspect Stowed Away' }).tap();
 	const inspect = page.getByRole('dialog', { name: 'Stowed Away' });
 	await expect(inspect.getByTestId('mode-about')).toBeVisible();
 	await expect(inspect.getByRole('button', { name: 'Rule file', exact: true })).toBeVisible();
 	await noSidewaysScroll(page);
+});
+
+test('a base script opens its wiki page from New game', async ({ page }) => {
+	// Trevor, 2026-10-23: the base three link the BotC wiki as their source.
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Bad Moon Rising').tap();
+	await expect(
+		page.getByTestId('chosen-script').getByRole('link', { name: "Open the script's source page" })
+	).toHaveAttribute('href', 'https://wiki.bloodontheclocktower.com/Bad_Moon_Rising');
 });
 
 test('a custom script without a version shows N/A as its version', async ({ page }) => {

@@ -475,6 +475,12 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
 	await expect(clock).toHaveText('0:00');
 	expect((await timer.boundingBox())!.height).toBe(height);
+	// More and less change the time shown in both modes (Trevor, 2026-10-23).
+	await timer.getByRole('button', { name: '30 seconds more' }).tap();
+	await expect(clock).toHaveText('0:30');
+	await timer.getByRole('button', { name: '30 seconds less' }).tap();
+	await timer.getByRole('button', { name: '30 seconds less' }).tap();
+	await expect(clock).toHaveText('0:00');
 	await timer.getByRole('button', { name: 'Start timer' }).tap();
 	await page.clock.runFor(61_000);
 	await expect(clock).toHaveText('1:01');
@@ -580,11 +586,13 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 
 	// Tapping the clock switches timer and stopwatch; there is no drop-down for it (Trevor).
 	await expect(sheet.getByRole('combobox', { name: 'Mode' })).toHaveCount(0);
-	await timer.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
-	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
 	await sheet.getByRole('combobox', { name: 'Timer sound' }).tap();
 	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
 	await expect(sheet.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
+	await timer.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
+	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
+	// A stopwatch plays no sound, so its choice is greyed in place (Trevor, 2026-10-23).
+	await expect(sheet.getByRole('combobox', { name: 'Timer sound' })).toBeDisabled();
 	// Vibration is its own switch beside the sound (Trevor, 2026-10-18).
 	const vibrate = sheet.getByRole('checkbox', { name: 'Vibrate' });
 	await expect(vibrate).toBeChecked();
@@ -661,6 +669,44 @@ test('an unnamed seat is named by its number in the day view', async ({ page }) 
 	const day = await openDay(page);
 	// No name set, so the default "Seat N" (Trevor, 2026-10-22: L32).
 	await expect(day.locator('li[data-character="slayer"]').first()).toContainText('Seat 3');
+});
+
+test('Announcements name a player brought back to life in the night', async ({ page }) => {
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	const endNight = async () => {
+		await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+		await page
+			.getByRole('alertdialog', { name: 'End the night?' })
+			.getByRole('button', { name: 'Confirm' })
+			.tap();
+	};
+	await openDay(page);
+	await daySheet(page).getByRole('button', { name: 'Execution' }).tap();
+	await endTheDay(page);
+	// Night 1: seat 2 dies.
+	await markDead(page, 2, 'The Demon');
+	await endNight();
+	await closeDay(page);
+	await bank.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page);
+	// Night 2: seat 2 comes back (the Professor, say).
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: /^Status/ }).tap();
+	const status = page.getByRole('dialog', { name: 'Status of Seat 2' });
+	await status.getByRole('button', { name: 'Alive', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: /back to life\?$/ })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await closeSeat(page);
+	await endNight();
+	// Announcements must include people being revived (Trevor, 2026-10-20: L9).
+	const announcements = daySheet(page).getByTestId('announcements');
+	await expect(announcements.getByTestId('revived')).toContainText(
+		'The player in seat 2 is alive.'
+	);
+	await expect(announcements).toContainText('Nobody died in the night.');
 });
 
 test('holding the day timer or a new day resets it to the time per living player', async ({

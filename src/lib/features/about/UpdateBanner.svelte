@@ -68,7 +68,7 @@
 		navigator.serviceWorker.ready.then(watch);
 		let hadController = !!navigator.serviceWorker.controller;
 		const onControllerChange = () => {
-			// Refresh was tapped here or in About; updateCheck.refresh reloads the page.
+			// Update was tapped here or in About; updateCheck.refresh activates the new build and reloads.
 			if (updateCheck.refreshing) return;
 			// A first install claims the page too; only a page that had a controller is behind.
 			if (hadController) {

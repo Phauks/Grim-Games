@@ -75,7 +75,7 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	demonVotedButton: {
 		label: 'Demon voted button',
 		description:
-			'While a Flowergirl is in play, a Demon voted button at the top of the day, for her night answer.'
+			'While a Flowergirl is in play, a Demon voted button on her row of the day, for her night answer.'
 	},
 	savantInfo: {
 		label: 'Suggest Savant information',

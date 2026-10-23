@@ -138,6 +138,8 @@ export interface TokenAppearance {
 	/** The owning character's icon on reminder tokens (Trevor, 2026-10-20: on/off and colour). */
 	reminderIcon: boolean;
 	reminderIconColour: ReminderIconColour;
+	/** ∞ tokens' icon symbols drawn filled instead of as outlines (Trevor, 2026-10-23); off by default. */
+	genericIconFill: boolean;
 }
 
 /** A ring round the reminder, a glow, or both, as a picked seat (SeatToken). */
@@ -177,7 +179,8 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	reminderHighlight: true,
 	reminderHighlightLook: 'ring',
 	reminderIcon: true,
-	reminderIconColour: 'player'
+	reminderIconColour: 'player',
+	genericIconFill: false
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -228,7 +231,8 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		reminderHighlight: input.reminderHighlight !== false,
 		reminderHighlightLook: oneOf(REMINDER_HIGHLIGHT_LOOKS, input.reminderHighlightLook, 'ring'),
 		reminderIcon: input.reminderIcon !== false,
-		reminderIconColour: oneOf(REMINDER_ICON_COLOURS, input.reminderIconColour, 'player')
+		reminderIconColour: oneOf(REMINDER_ICON_COLOURS, input.reminderIconColour, 'player'),
+		genericIconFill: input.genericIconFill === true
 	};
 }
 
