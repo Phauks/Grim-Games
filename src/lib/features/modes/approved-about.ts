@@ -1,5 +1,5 @@
 import type { CombinedParts } from '#lib/core/modes/index.ts';
-import { DJINN_THREE_ALIVE, PLUS_ONE_NAMED } from './rule-switches.ts';
+import { DJINN_THREE_ALIVE, INFINITE_NAMED, PLUS_ONE_NAMED } from './rule-switches.ts';
 
 /**
  * Built-in mode and special rule descriptions Trevor has approved (2026-10-18: "You write game mode
@@ -106,6 +106,8 @@ export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly st
 		'Tell the table that one character from off the script is in play.',
 		PLUS_ONE_NAMED
 	],
+	// Approved 2026-10-23 (decision card): the same switch's text for Infinite Possibilities.
+	'infinite-possibilities:parts.information[0]': INFINITE_NAMED,
 	// Approved 2026-10-23 ("instructions and about are fine"); the Djinn's Bargain's second text
 	// is with its 3-player switch on (rule-switches.ts).
 	'warrens:parts.ruleChanges[0]':

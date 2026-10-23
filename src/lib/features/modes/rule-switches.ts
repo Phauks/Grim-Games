@@ -23,7 +23,7 @@ export type SwitchChoices = Readonly<Record<string, boolean>>;
 
 /** +1's two instructions, both Trevor's wording (2026-10-22); the first is the rule's own. */
 export const PLUS_ONE_NAMED = 'Tell the table which character from off the script is in play.';
-/** Our draft for Infinite Possibilities' named setting; hidden until approved. */
+/** Infinite Possibilities' named setting, our wording (approved 2026-10-23). */
 export const INFINITE_NAMED = 'Tell the table which characters from off the script are in play.';
 
 /**
