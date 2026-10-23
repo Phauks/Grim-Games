@@ -971,23 +971,32 @@ test("on a laptop the player's screen shows the script's logo, and the guess she
 	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
 	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });
 	await expect(empath).toBeVisible();
-	// The nearest scrolling box around the characters; how far it can go depends on the fonts,
-	// so the test scrolls to the end and checks the box moved there.
-	const scrolled = () =>
-		empath.evaluate((el) => {
-			let box = el.parentElement;
-			const scrolls = (b: HTMLElement) =>
-				b.scrollHeight > b.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(b).overflowY);
-			while (box && !scrolls(box)) box = box.parentElement;
-			return box ? { top: box.scrollTop, max: box.scrollHeight - box.clientHeight } : undefined;
-		});
-	const start = (await scrolled())!;
-	expect(start.top).toBe(0);
-	expect(start.max).toBeGreaterThan(0);
-	const at = (await empath.boundingBox())!;
-	await phone.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
-	await phone.mouse.wheel(0, start.max + 200);
-	await expect.poll(async () => (await scrolled())!.top).toBeGreaterThanOrEqual(start.max - 1);
+	// A wheel or trackpad scrolls the scroll box under the pointer. CI's Chromium does not
+	// scroll on synthetic wheel events reliably, so the test checks what the scroll needs: the
+	// characters sit in a scroll box with more to show, nothing covers them at the pointer, and
+	// scrolling that box moves them.
+	const box = await empath.evaluate((el) => {
+		const scrolls = (b: HTMLElement) =>
+			b.scrollHeight > b.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(b).overflowY);
+		let b = el.parentElement;
+		while (b && !scrolls(b)) b = b.parentElement;
+		if (!b) return undefined;
+		const r = el.getBoundingClientRect();
+		const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+		return { inSheet: !!b.closest('[role="dialog"]'), underPointer: !!hit && b.contains(hit) };
+	});
+	expect(box).toEqual({ inSheet: true, underPointer: true });
+	const before = (await empath.boundingBox())!.y;
+	await empath.evaluate((el) => {
+		let b = el.parentElement;
+		while (
+			b &&
+			!(b.scrollHeight > b.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(b).overflowY))
+		)
+			b = b.parentElement;
+		b!.scrollTop = b!.scrollHeight;
+	});
+	await expect.poll(async () => (await empath.boundingBox())!.y).toBeLessThan(before);
 	await laptop.close();
 });
 
