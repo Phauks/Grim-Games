@@ -7,6 +7,8 @@
  */
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
+import type { FrameId } from '#lib/core/frames/index.ts';
 import type {
 	DayEntry,
 	DayEntryId,
@@ -32,6 +34,8 @@ export type GameEvent =
 	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: string }
 	/** No `note` clears it. */
 	| { type: 'SeatNoteSet'; seatId: SeatId; note?: string }
+	/** The seat's avatar and frame; a missing one clears it. */
+	| { type: 'SeatLookSet'; seatId: SeatId; avatar?: AvatarId; frame?: FrameId }
 	| { type: 'GameNotesSet'; notes?: string }
 	/** No `alignment`: not chosen yet (a Traveller's), so the seat has none. */
 	| { type: 'CharacterAssigned'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }

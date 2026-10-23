@@ -3,6 +3,8 @@
 	import { FACE_RADIUS, type Frame } from '#lib/core/frames/index.ts';
 	import DeadBadge from './DeadBadge.svelte';
 	import FrameDrawing from './FrameDrawing.svelte';
+	import AvatarFace from './AvatarFace.svelte';
+	import type { AvatarId } from '#lib/core/avatars/index.ts';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 
 	/**
@@ -33,6 +35,8 @@
 		 * footprint, the face shrinking a little, so nothing around the seat moves.
 		 */
 		frame?: Frame;
+		/** The player's avatar (plan R6), shown when there is no face in place of the number. */
+		avatar?: AvatarId;
 	}
 
 	let {
@@ -44,7 +48,8 @@
 		marks,
 		vote,
 		usedVote = 'hollow',
-		frame
+		frame,
+		avatar
 	}: Props = $props();
 
 	const framed = $derived(frame !== undefined && frame.drawing.length > 0);
@@ -59,7 +64,9 @@
 >
 	<span class="disc">
 		<span class="face"
-			>{#if face}{@render face()}{:else}<span class="empty">{number}</span>{/if}</span
+			>{#if face}{@render face()}{:else if avatar}<AvatarFace {avatar} />{:else}<span class="empty"
+					>{number}</span
+				>{/if}</span
 		>
 		{#if frame && framed}<span class="frame-layer"><FrameDrawing {frame} /></span>{/if}
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->

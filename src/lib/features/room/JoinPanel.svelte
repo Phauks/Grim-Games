@@ -1,4 +1,16 @@
+<script lang="ts" module>
+	import type { SeatId as DraftSeat } from '#lib/core/model/index.ts';
+
+	/**
+	 * What the phone typed or chose in each room before asking. The panel is drawn again when the
+	 * room's script arrives (the page gains its tabs), and that must not lose it.
+	 */
+	const drafts: Record<string, { name: string; seat: DraftSeat | ''; placed?: DraftSeat | '' }> =
+		{};
+</script>
+
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
@@ -17,6 +29,8 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
+	import SettingAvatar from '#lib/ui/settings/SettingAvatar.svelte';
+	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
 	import ScriptBallot from './ScriptBallot.svelte';
@@ -59,10 +73,26 @@
 
 	$effect(() => {
 		if (!valid) return;
-		const p = useRoom(valid);
+		// Only the code is tracked. Opening the room reads settings (the avatar, the frame), and a
+		// view arriving later must not wipe a name being typed.
+		const p = untrack(() => useRoom(valid));
 		player = p;
-		name = p.view?.me.name ?? p.savedName;
+		const draft = drafts[valid];
+		name = draft?.name ?? untrack(() => p.view?.me.name ?? p.savedName);
+		seat = draft?.seat ?? '';
+		lastPlaced = draft?.placed;
 		return () => releaseRoom(p);
+	});
+	$effect(() => {
+		if (valid) drafts[valid] = { name, seat, placed: lastPlaced };
+	});
+
+	// The player's avatar and frame go to the room as they pick them (plan R6).
+	$effect(() => {
+		void playerSettings.current.avatar;
+		void playerSettings.current.frame;
+		void player?.view;
+		player?.sendLook();
 	});
 
 	// The game's script becomes this phone's current script, for /play.
@@ -97,8 +127,12 @@
 	const placed = $derived(
 		view ? (view.request ? (view.request.seatId ?? '') : (mine ?? '')) : undefined
 	);
+	/** The seat the room last gave or held, so only a change to it moves the choice. */
+	let lastPlaced: SeatId | '' | undefined;
 	$effect(() => {
-		if (placed !== undefined) seat = placed;
+		if (placed === undefined || placed === lastPlaced) return;
+		lastPlaced = placed;
+		seat = placed;
 	});
 	/** Asking again for the seat and name this phone already has changes nothing. */
 	const unchanged = $derived(
@@ -399,6 +433,12 @@
 					onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
 				/>
 			</ClearableField>
+			<!-- Goes on the seat without asking (plan R6); also in Settings > Player. -->
+			<SettingAvatar
+				value={playerSettings.current.avatar}
+				onChange={(avatar) => playerSettings.update({ avatar })}
+				testid="join-avatar"
+			/>
 			<fieldset>
 				<legend>{t('room.yourSeat')}</legend>
 				<div class="seats">

@@ -872,6 +872,74 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phoneContext.close();
 });
 
+test("a player's avatar and frame go on their seat, and their guess shows over it only if they choose", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Plan R6 (Trevor, 2026-10-22: "avatar is default"; our own pictures, never Clocktower art)
+	// and L4 (players pick their frame with their avatar).
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('textbox', { name: 'Your name' }).fill('Alex');
+	await phone.getByRole('combobox', { name: 'Your avatar' }).tap();
+	await phone.getByRole('option', { name: 'Cat' }).tap();
+	await expect(phone.getByRole('listbox')).toBeHidden();
+	await phone.getByText('Seat 3', { exact: true }).tap();
+	await phone.getByRole('button', { name: 'Ask the Storyteller' }).tap();
+	await page
+		.getByRole('listitem', { name: 'Alex asks for Seat 3' })
+		.getByRole('button', { name: 'Approve' })
+		.tap();
+	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
+
+	// On the board: the seat has no character yet, so the avatar is its face.
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex"]');
+	await expect(seat.getByTestId('avatar-face')).toHaveAttribute('data-avatar', 'cat');
+
+	// The frame (picked in Settings > Player, e2e/frames.e2e.ts) goes when the phone connects.
+	await phone.evaluate(() => {
+		const key = 'grim-games:player-settings:v1';
+		const settings = JSON.parse(localStorage.getItem(key) ?? '{}');
+		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'clock' }));
+	});
+	await phone.reload();
+	await expect(seat.locator('svg[data-frame="clock"]')).toBeAttached();
+	// Picking again changes it without asking.
+	await phone.getByRole('combobox', { name: 'Your avatar' }).tap();
+	await phone.getByRole('option', { name: 'Rocket' }).tap();
+	await expect(phone.getByRole('listbox')).toBeHidden();
+	await expect(seat.getByTestId('avatar-face')).toHaveAttribute('data-avatar', 'rocket');
+
+	// Every phone at the table sees it; a guess shows over it only once that is switched on.
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const mine = phone.getByTestId('grim-seat').nth(2);
+	await expect(mine.getByTestId('avatar-face')).toHaveAttribute('data-avatar', 'rocket');
+	await mine.tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Alex' });
+	// The switch above the picker pushes it down on a phone: scroll first, so the tap is not
+	// taken as part of the sheet's own scroll.
+	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });
+	await empath.scrollIntoViewIfNeeded();
+	await expect(empath).toBeInViewport();
+	await empath.tap();
+	await expect(sheet).toBeHidden();
+	await expect(mine).toHaveAttribute('aria-label', /your guess: Empath/);
+	await expect(mine.getByTestId('avatar-face')).toBeVisible();
+	await mine.tap();
+	await sheet.getByText('Guesses over avatars', { exact: true }).tap();
+	await expect(mine.getByTestId('avatar-face')).toHaveCount(0);
+	await expect(mine).toHaveAttribute('data-guess', 'true');
+	await phoneContext.close();
+});
+
 /**
  * Points a page's camera at a picture: getUserMedia gives a stream drawn from it, as a phone's
  * back camera would see the code on the Storyteller's screen.
