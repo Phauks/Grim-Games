@@ -163,6 +163,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				prs: [351]
 			},
 			{ id: 'S10', title: 'A report sent from a script carries that script' },
+			{ id: 'S16', title: 'Report an issue from the Library, Search and the player view' },
 			{
 				id: 'S11',
 				title: 'Buttons stand out from what is behind them; End game is a red button'
