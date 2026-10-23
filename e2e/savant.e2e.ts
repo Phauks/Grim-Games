@@ -101,3 +101,33 @@ test('the day view recommends Savant information until it is set for today', asy
 	await expect(info).toHaveAttribute('data-marked', 'true');
 	await expect(info).not.toHaveClass(/recommend/);
 });
+
+test('the end of the night offers to set the Savant’s information', async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Sects & Violets');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page.getByTestId('seat')).toHaveCount(8);
+	for (const [i, name] of CAST.entries()) {
+		const sheet = await openSeat(page, i + 1);
+		await sheet.getByRole('button', { name: 'Choose' }).tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${i + 1}` });
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await expect(picker).toBeHidden();
+		await closeSheet(page);
+	}
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
+	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	// A question, never a block (Trevor, 2026-10-23: L46).
+	const ask = page.getByRole('alertdialog', { name: 'Set the Savant’s information for today?' });
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	const savant = page.getByRole('dialog', { name: /^Savant information/ });
+	await expect(savant.getByTestId('savant-line')).toHaveCount(2);
+	await savant.getByRole('button', { name: 'Use these' }).tap();
+	await expect(savant).toBeHidden();
+	await expect(page.getByTestId('savant-info')).toHaveAttribute('data-marked', 'true');
+});

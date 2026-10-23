@@ -29,7 +29,7 @@
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { goto, pushState, replaceState } from '$app/navigation';
 	import { page } from '$app/state';
-	import { onMount, untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -880,6 +880,23 @@
 	/** The Savant sheet, from the day view's Savant info button (L5). */
 	let savantSeat = $state<SeatId | undefined>();
 	let savantOpen = $state(false);
+	/**
+	 * At the end of the night, a living Savant's information is offered (Trevor, 2026-10-23:
+	 * L46): a question, never a block.
+	 */
+	let savantAskOpen = $state(false);
+	function offerSavant() {
+		if (!preferences.current.assistance.savantInfo || grimoire.open.viewOnly) return;
+		const seatId = game.seating.find(
+			(id) => game.seats[id].characterId === 'savant' && !game.seats[id].dead
+		);
+		if (seatId === undefined) return;
+		savantSeat = seatId;
+		// After the day view has opened, if it opens too, so the question is above it.
+		void tick().then(() =>
+			requestAnimationFrame(() => requestAnimationFrame(() => (savantAskOpen = true)))
+		);
+	}
 	// ── Assisted night order (Trevor, 2026-10-16) ──
 	let guided = $state<{ step: NightStep; night: Night } | undefined>();
 	let guideOpen = $state(false);
@@ -1218,6 +1235,7 @@
 		walk = undefined;
 		// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
 		if (preferences.current.assistance.dayAfterNight) dayOpen = true;
+		offerSavant();
 	}
 	/**
 	 * The step's reminders already on the board are ringed too, on any night (Trevor,
@@ -2416,6 +2434,11 @@
 	}}
 />
 <SavantSheet bind:open={savantOpen} {grimoire} seatId={savantSeat} />
+<ConfirmDialog
+	bind:open={savantAskOpen}
+	title={t('day.savantAsk')}
+	onConfirm={() => (savantOpen = true)}
+/>
 
 <GuidedStep
 	bind:open={guideOpen}
