@@ -19,6 +19,7 @@
 	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
+	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 
 	/**
 	 * How the grimoire board looks and behaves (Trevor, 2026-10-18: tokens have their own
@@ -59,11 +60,18 @@
 	level={3}
 	storageKey="settings-board-advanced"
 	defaultOpen={false}
-	count={1}
+	count={2}
 >
 	<SettingRow label={REMINDER_MODE_LABEL} warning={t('settings.reminderModeWarning')}>
 		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
 	</SettingRow>
+	<!-- Both ways built so Trevor can pick after trying them (2026-10-23). -->
+	<SettingToggle
+		label={t('settings.dragSourceBank')}
+		description={t('settings.dragSourceBankDescription')}
+		checked={boardLooks.current.dragSource === 'bank'}
+		onChange={(on) => boardLooks.update({ dragSource: on ? 'bank' : 'pill' })}
+	/>
 </Collapsible>
 
 <style>
