@@ -23,6 +23,9 @@ export const ICON_SLOTS = {
 	protected: { label: 'Protected', choices: ['ph:shield', 'ph:shield-check', 'ph:shield-star'] },
 	night: { label: 'Night', choices: ['ph:moon-stars', 'ph:moon'] },
 	day: { label: 'Day', choices: ['ph:sun', 'ph:sun-horizon'] },
+	/** A script or night order sheet on a light background, or the dark one (Trevor, 2026-10-23). */
+	lightSheet: { label: 'Light background', choices: ['ph:sun'] },
+	darkSheet: { label: 'Dark background', choices: ['ph:moon'] },
 	vote: { label: 'Vote', choices: ['ph:hand-palm', 'ph:hand-fist'] },
 	nominator: { label: 'Has nominated', choices: ['ph:hand-pointing', 'ph:megaphone'] },
 	nominated: { label: 'Was nominated', choices: ['ph:gavel', 'ph:scales'] },

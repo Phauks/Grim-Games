@@ -11,6 +11,8 @@
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import { playerNight } from './player-script.ts';
+	import { playerSettings } from './player-settings.svelte.ts';
+	import { LIGHT_SHEET_STYLE } from '#lib/ui/themes/print.ts';
 	import ScriptCopy from './ScriptCopy.svelte';
 	import type { TravellerInPlay } from './travellers-in-play.ts';
 
@@ -75,11 +77,20 @@
 			<!-- A crash in one tab replaces only that tab. -->
 			<ErrorBoundary area="play">
 				{#if value === 'script'}
-					<ScriptCopy {script} {players} {inPlay} {travellers} byline={false} />
+					<ScriptCopy {script} {players} {inPlay} {travellers} byline={false} lightSwitch={false} />
 				{:else if value === 'night'}
-					{#if data}<PlayerNightOrder {nights} />{:else}<p class="muted">
-							{t('player.loading')}
-						</p>{/if}
+					<!-- The night order takes the same light background as the script (Trevor,
+					     2026-10-23: "Sun and Moon should affect night order as well"). -->
+					<div
+						class="sheet"
+						class:light={playerSettings.current.lightSheet}
+						style={playerSettings.current.lightSheet ? LIGHT_SHEET_STYLE : undefined}
+						data-testid="night-sheet"
+					>
+						{#if data}<PlayerNightOrder {nights} />{:else}<p class="muted">
+								{t('player.loading')}
+							</p>{/if}
+					</div>
 				{:else if value === 'grim' && grim}
 					{@render grim()}
 				{:else if value === 'notes' && notes}
@@ -95,6 +106,16 @@
 <style>
 	.panel {
 		padding-top: var(--space-3);
+	}
+	/* Padded either way, as ScriptCopy is, so the light background moves nothing. */
+	.sheet {
+		padding: var(--space-3);
+		border-radius: var(--radius-md);
+	}
+	/* The colours themselves are LIGHT_SHEET (themes/print.ts), set on the element. */
+	.light {
+		background: var(--surface);
+		color: var(--on-surface);
 	}
 	.muted {
 		margin: 0;
