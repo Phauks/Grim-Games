@@ -384,8 +384,8 @@
 	{#snippet subtitle()}
 		<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token (lead) -->
 		{#if character}<span class="role">{character.name}</span>
-			<span class="meta">{typeText} · {alignmentText} · Seat {number}</span>{:else}<span class="meta"
-				>Seat {number}</span
+			<span class="meta">{typeText} · {alignmentText} · Seat {number}</span>{:else}<span
+				class="meta">Seat {number}</span
 			>{/if}
 	{/snippet}
 	{#snippet lead()}
