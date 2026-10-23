@@ -26,7 +26,8 @@ import {
 import type {
 	ScriptVoteKind,
 	ScriptVoteOption,
-	ScriptVoteTally
+	ScriptVoteTally,
+	VoteSubject
 } from '#lib/core/sync/script-vote.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -348,14 +349,20 @@ export class RoomHost {
 	 * Opens a vote on the next script, replacing any open one, with a time limit in minutes
 	 * if given. False when offline.
 	 */
-	openScriptVote(kind: ScriptVoteKind, options: ScriptVoteOption[], minutes?: number): boolean {
+	openScriptVote(
+		kind: ScriptVoteKind,
+		options: ScriptVoteOption[],
+		minutes?: number,
+		subject: VoteSubject = 'script'
+	): boolean {
 		return (
 			this.#socket?.send({
 				type: 'open-script-vote',
 				voteId: crypto.randomUUID(),
 				kind,
 				options,
-				...(minutes !== undefined ? { minutes } : {})
+				...(minutes !== undefined ? { minutes } : {}),
+				...(subject === 'mode' ? { subject } : {})
 			}) ?? false
 		);
 	}

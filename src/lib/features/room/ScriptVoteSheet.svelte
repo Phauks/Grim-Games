@@ -7,7 +7,9 @@
 		MIN_SCRIPT_VOTE_OPTIONS,
 		SCRIPT_VOTE_KINDS,
 		SCRIPT_VOTE_MINUTES,
-		type ScriptVoteKind
+		VOTE_SUBJECTS,
+		type ScriptVoteKind,
+		type VoteSubject
 	} from '#lib/core/sync/script-vote.ts';
 	import ScriptPicker from '#lib/features/modes/ScriptPicker.svelte';
 	import type {
@@ -25,10 +27,12 @@
 
 	/**
 	 * The room's vote on the next script (Trevor, 2026-10-20, plan R1): the Storyteller offers
-	 * two or three scripts, players vote on their phones, and the Storyteller picks from the
-	 * count. New game shows it; the room only counts. Scripts are found with New game's own
-	 * script controls (Trevor, 2026-10-23: "same search controls as available outside in new
-	 * game mode") and added to three fixed rows. While the vote is open the sheet shows the
+	 * scripts, players vote on their phones, and the Storyteller picks from the count. New game
+	 * shows it; the room only counts. Scripts are found with New game's own script controls
+	 * (Trevor, 2026-10-23: "same search controls as available outside in new game mode") and
+	 * added in rows, any number up to MAX_SCRIPT_VOTE_OPTIONS (Trevor, 2026-10-23: "should not
+	 * be limited to 2 or 3"). The same vote can be on the game mode, from New game's own list
+	 * of modes (Trevor, 2026-10-23). While the vote is open the sheet shows the
 	 * room's code and QR, so players not in the room yet can join and vote (Trevor,
 	 * 2026-10-23), and the time left when the Storyteller set a limit.
 	 */
@@ -38,22 +42,55 @@
 		choices: ScriptChoiceOption[];
 		/** The Storyteller picked this script from the count. */
 		onPick: (id: string) => void;
+		/** The game modes New game offers, Standard first. */
+		modes: { value: string; label: string }[];
+		/** The Storyteller picked this game mode from the count. */
+		onPickMode: (id: string) => void;
 	}
 
-	let { open = $bindable(), choices, onPick }: Props = $props();
+	let { open = $bindable(), choices, onPick, modes, onPickMode }: Props = $props();
 
 	const host = roomHost();
 	const tally = $derived(host.scriptVote);
+	let subject = $state<VoteSubject>('script');
+	const onMode = $derived(subject === 'mode');
+	const subjects = VOTE_SUBJECTS.map((value) => ({
+		value,
+		label: t(`room.scriptVote.subject.${value}`)
+	}));
 	let picked = $state<string[]>([]);
 	let kind = $state<ScriptVoteKind>('single');
 	/** The script New game's controls show, added to the vote with Add to vote. */
 	let adding = $state<ScriptChoice>('tb');
+	/** The game mode the drop-down shows, for a vote on the mode. */
+	let addingMode = $state('');
+	const nextMode = $derived(modes.find((m) => !picked.includes(m.value))?.value ?? '');
+	const modeShown = $derived(
+		modes.some((m) => m.value === addingMode) && !picked.includes(addingMode)
+			? addingMode
+			: nextMode
+	);
+	const candidate = $derived(onMode ? modeShown : adding);
+	const offered = $derived(onMode ? modes : choices);
 	const addable = $derived(
 		picked.length < MAX_SCRIPT_VOTE_OPTIONS &&
-			!picked.includes(adding) &&
-			choices.some((c) => c.value === adding)
+			!!candidate &&
+			!picked.includes(candidate) &&
+			offered.some((c) => c.value === candidate)
 	);
-	const nameOf = (id: string) => choices.find((c) => c.value === id)?.label ?? id;
+	const nameOf = (id: string) => offered.find((c) => c.value === id)?.label ?? id;
+	/**
+	 * Rows for what is picked and one more while there is room, never fewer than a vote needs,
+	 * so the next Add fills a row that is already there.
+	 */
+	const rows = $derived(
+		Math.min(MAX_SCRIPT_VOTE_OPTIONS, Math.max(MIN_SCRIPT_VOTE_OPTIONS, picked.length + 1))
+	);
+	function setSubject(next: VoteSubject) {
+		if (next === subject) return;
+		subject = next;
+		picked = [];
+	}
 	const NO_LIMIT = 'none';
 	let minutes = $state<string>(NO_LIMIT);
 	const limits = [
@@ -76,23 +113,37 @@
 
 	function openVote() {
 		const options = picked.flatMap((id) => {
+			if (onMode) {
+				const mode = modes.find((m) => m.value === id);
+				return mode ? [{ id, name: mode.label }] : [];
+			}
 			const choice = choices.find((c) => c.value === id);
 			return choice
 				? [{ id, name: choice.label, ...(choice.author ? { author: choice.author } : {}) }]
 				: [];
 		});
 		const limit = minutes === NO_LIMIT ? undefined : Number(minutes);
-		if (host.openScriptVote(kind, options, limit)) picked = [];
+		if (host.openScriptVote(kind, options, limit, subject)) picked = [];
 	}
 
 	function pick(id: string) {
+		const mode = tally?.subject === 'mode';
 		host.closeScriptVote();
 		open = false;
-		onPick(id);
+		if (mode) onPickMode(id);
+		else onPick(id);
 	}
 </script>
 
-<BottomSheet bind:open title={t('room.scriptVote.title')} wide>
+<BottomSheet
+	bind:open
+	title={t(
+		(tally ? tally.subject === 'mode' : onMode)
+			? 'room.scriptVote.modeTitle'
+			: 'room.scriptVote.title'
+	)}
+	wide
+>
 	<!-- Two columns on a tablet or wider (Trevor, 2026-10-23): the scripts on the left; the
 	     room's code and QR, the time and the count on the right, from before the vote opens
 	     so players can join first. One column on a phone, the scripts first. -->
@@ -121,14 +172,24 @@
 						{/each}
 					</ul>
 				{:else}
-					<!-- Three rows, always here, so adding or removing a script moves nothing. -->
+					<Select
+						label={t('room.scriptVote.subject')}
+						options={subjects}
+						value={subject}
+						onChange={setSubject}
+					/>
+					<!-- A row for each pick and an empty one for the next, so Add fills a row in place. -->
 					<fieldset class="slots">
-						<legend>{t('room.scriptVote.scripts')}</legend>
+						<legend>{t(onMode ? 'room.scriptVote.modes' : 'room.scriptVote.scripts')}</legend>
 						<ol data-testid="script-vote-slots">
-							{#each { length: MAX_SCRIPT_VOTE_OPTIONS }, i}
+							{#each { length: rows }, i}
 								{@const id = picked[i]}
 								<li>
-									<span class="slot">{t('room.scriptVote.slot', { number: i + 1 })}</span>
+									<span class="slot"
+										>{t(onMode ? 'room.scriptVote.modeSlot' : 'room.scriptVote.slot', {
+											number: i + 1
+										})}</span
+									>
 									<span class="name" class:none={!id}>{id ? nameOf(id) : t('common.none')}</span>
 									<DeleteButton
 										label={t('room.scriptVote.remove', { name: id ? nameOf(id) : '' })}
@@ -139,13 +200,23 @@
 							{/each}
 						</ol>
 					</fieldset>
-					<!-- New game's own script controls: the base three, search, and the Library. -->
-					<ScriptPicker
-						label={t('room.scriptVote.addScript')}
-						value={adding}
-						onChange={(v) => (adding = v)}
-					/>
-					<Button icon="add" disabled={!addable} onclick={() => (picked = [...picked, adding])}
+					{#if onMode}
+						<!-- New game's own list of modes, Standard first. -->
+						<Select
+							label={t('room.scriptVote.addMode')}
+							options={modes.filter((m) => !picked.includes(m.value))}
+							value={modeShown}
+							onChange={(v) => (addingMode = v)}
+						/>
+					{:else}
+						<!-- New game's own script controls: the base three, search, and the Library. -->
+						<ScriptPicker
+							label={t('room.scriptVote.addScript')}
+							value={adding}
+							onChange={(v) => (adding = v)}
+						/>
+					{/if}
+					<Button icon="add" disabled={!addable} onclick={() => (picked = [...picked, candidate])}
 						>{t('room.scriptVote.add')}</Button
 					>
 					<Select

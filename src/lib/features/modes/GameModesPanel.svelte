@@ -79,9 +79,16 @@
 		standardScript: ScriptChoice;
 		/** Standard's own player count, for the preview's Players breakdown. */
 		standardPlayers: number;
+		/** The mode chosen; New game sets it when the room votes on the mode (Trevor, 2026-10-23). */
+		modeId?: string;
 	}
 
-	let { standard, standardScript, standardPlayers }: Props = $props();
+	let {
+		standard,
+		standardScript,
+		standardPlayers,
+		modeId = $bindable(STANDARD.id)
+	}: Props = $props();
 	/** Start game with special rules on restates them first (RulesRecap). */
 	let recap = $state<(() => void) | undefined>();
 	let recapOpen = $state(false);
@@ -120,7 +127,6 @@
 	// Standard first, then every mode (Trevor, 2026-10-18: one screen, modes in a drop-down).
 	const modes = $derived([STANDARD, ...allModes().filter((m) => m.id !== STANDARD.id)]);
 	const storyteller = $derived(storytellerName.current);
-	let modeId = $state(STANDARD.id);
 	const isStandard = $derived(modeId === STANDARD.id);
 	const custom = $derived(customModes.list.some((m) => m.id === modeId));
 	let adding = $state(false);

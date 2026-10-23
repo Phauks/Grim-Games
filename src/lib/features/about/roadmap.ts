@@ -76,6 +76,10 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'J13', title: "The player's grim looks exactly like the Storyteller's board" },
 			{ id: 'J14', title: "Resume game points players to Join game's list of their games" },
 			{ id: 'J15', title: 'Trackpad scrolling over the guess sheet on a laptop' },
+			{ id: 'J16', title: 'Join game shows Print and Share only once you have joined' },
+			{ id: 'J17', title: 'Open a room and its vote from New game before choosing a script' },
+			{ id: 'J18', title: 'The room vote takes any number of scripts' },
+			{ id: 'J19', title: 'The room votes on the game mode too' },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
 		]
 	},
