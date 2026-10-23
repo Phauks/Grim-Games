@@ -32,7 +32,7 @@
 	import { onMount, tick, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
-	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		charactersInPlay,
 		looseReminders,
@@ -69,15 +69,12 @@
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import ReminderOrigin from './ReminderOrigin.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
@@ -107,7 +104,6 @@
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
-	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import { fromScript, scriptLogo, scriptToJson } from '#lib/core/data/index.ts';
@@ -135,10 +131,10 @@
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
-	import RulesAtSetting from './RulesAtSetting.svelte';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
+	import RuleCharacters from './RuleCharacters.svelte';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
@@ -484,8 +480,7 @@
 	function readCharacter(id: CharacterId | undefined) {
 		const character = id ? characters.get(id) : undefined;
 		if (!character) return;
-		ruleDetails = character;
-		ruleDetailsOpen = true;
+		rules?.details(character);
 	}
 
 	// ── Notes (Trevor, 2026-10-19): the game's and every player's in ⋯ Notes ──
@@ -1206,18 +1201,8 @@
 		action();
 	}
 
-	// ── Fabled and Loric ──
-	let ruleOpen = $state(false);
-	let ruleShown = $state<CharacterId | undefined>();
-	let ruleShownOpen = $state(false);
-	/** Every Fabled and Loric at once, from the corner stack. */
-	let rulesGroupOpen = $state(false);
-	const removeRuleLabel = (name: string) => `Remove ${name} from the game`;
-	let ruleRemoveOpen = $state(false);
-	const ruleShownCharacter = $derived(ruleShown ? characters.get(ruleShown) : undefined);
-	// Tapping a Fabled or Loric token opens its entry, as a seat's token does (Trevor, 2026-10-18).
-	let ruleDetails = $state<Character | undefined>();
-	let ruleDetailsOpen = $state(false);
+	// ── Fabled and Loric: their dialogs (RuleCharacters) ──
+	let rules = $state<ReturnType<typeof RuleCharacters>>();
 </script>
 
 <!-- Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
@@ -1230,7 +1215,7 @@
 			class="rules-stack"
 			data-rule-stack
 			aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
-			onclick={() => (rulesGroupOpen = true)}
+			onclick={() => rules?.showAll()}
 		>
 			{#each game.ruleCharacters.slice(0, 3) as id (id)}
 				{@const character = characters.get(id)}
@@ -1243,7 +1228,7 @@
 		{@render heldCluster(
 			Object.values(game.ruleReminders ?? {}).flat(),
 			'Fabled and Loric reminders',
-			() => (rulesGroupOpen = true)
+			() => rules?.showAll()
 		)}
 	</span>
 {/snippet}
@@ -1288,43 +1273,6 @@
 	{/if}
 {/snippet}
 
-<!-- A Fabled or Loric's reminders in its dialog; a tap opens one. -->
-{#snippet heldList(id: CharacterId)}
-	<!-- Nothing when it holds none; placed ones under a Reminders header (Trevor, 2026-10-18). -->
-	{#if ruleReminders(game, id).length > 0}<h3 class="held-head">Reminders</h3>{/if}
-	<div class="held-list" role="group" aria-label="Reminders">
-		{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
-			<button
-				type="button"
-				class="held-chip"
-				aria-label={reminder.label}
-				disabled={watching}
-				onclick={() => heldDialog?.show(reminder.reminderId)}
-			>
-				<ReminderToken
-					label={tokenLabel(reminder)}
-					character={characters.get(reminder.characterId)}
-					alignment={placingAlignment(game, reminder, characters)}
-				/>
-			</button>
-		{/each}
-	</div>
-{/snippet}
-
-{#snippet ruleToken(character: Character)}
-	<button
-		type="button"
-		class="rule-token"
-		aria-label={`About the ${character.name}`}
-		onclick={() => {
-			ruleDetails = character;
-			ruleDetailsOpen = true;
-		}}
-	>
-		<CharacterToken {character} size={64} />
-	</button>
-{/snippet}
-
 {#snippet rulesList(tokenSize: number)}
 	<ul class="rules" class:edge={tokenSize < size * 0.8} aria-label="Fabled and Loric">
 		{#each game.ruleCharacters as id (id)}
@@ -1336,19 +1284,15 @@
 						class="rule"
 						data-rule={id}
 						aria-label={character.name}
-						onclick={() => {
-							ruleShown = id;
-							ruleShownOpen = true;
-						}}
+						onclick={() => rules?.show(id)}
 					>
 						<CharacterToken {character} size={tokenSize} />
 					</button>
 					<!-- Its reminders, tight to its top right: parked there, out of play (Trevor,
 					     2026-10-18). -->
-					{@render heldCluster(ruleReminders(game, id), heldLabel(character.name), () => {
-						ruleShown = id;
-						ruleShownOpen = true;
-					})}
+					{@render heldCluster(ruleReminders(game, id), heldLabel(character.name), () =>
+						rules?.show(id)
+					)}
 				</li>
 			{/if}
 		{/each}
@@ -1874,7 +1818,7 @@
 		>
 			Add seat
 		</Button>
-		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(() => (ruleOpen = true))}>
+		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(() => rules?.add())}>
 			Add Fabled or Loric
 		</Button>
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(() => seatArr.start())}>
@@ -2148,90 +2092,7 @@
 	dispatch={(command) => grimoire.open.run(command)}
 />
 
-<CharacterPicker
-	bind:open={ruleOpen}
-	title="Add Fabled or Loric"
-	{characters}
-	script={game.script}
-	types={['fabled', 'loric']}
-	alwaysAll
-	onPick={(characterId) => {
-		ruleOpen = false;
-		grimoire.run({ type: 'AddRuleCharacter', characterId });
-	}}
-/>
-
-<!-- eslint-disable-next-line grim/names-as-badges -- the rule character's own details, under its token -->
-<Dialog bind:open={ruleShownOpen} title={ruleShownCharacter?.name ?? ''}>
-	{#if ruleShownCharacter}
-		<div class="rule-detail">
-			{@render ruleToken(ruleShownCharacter)}
-			<p>{ruleShownCharacter.ability}</p>
-		</div>
-		{@render heldList(ruleShownCharacter.id)}
-	{/if}
-	<RulesAtSetting />
-	{#snippet headActions()}
-		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
-		<DeleteButton
-			label="Remove from the game"
-			disabled={watching}
-			onclick={() => (ruleRemoveOpen = true)}
-		/>
-	{/snippet}
-</Dialog>
-
-{#if ruleDetails}<CharacterDialog bind:open={ruleDetailsOpen} character={ruleDetails} />{/if}
-
-<Dialog bind:open={rulesGroupOpen} title="Fabled and Loric">
-	<ul class="rules-group">
-		{#each game.ruleCharacters as id (id)}
-			{@const character = characters.get(id)}
-			{#if character}
-				<li class="rule-detail">
-					{@render ruleToken(character)}
-					<div>
-						<CharacterBadge characterId={id} {character} />
-						<p>{character.ability}</p>
-						{@render heldList(id)}
-					</div>
-					<DeleteButton
-						label={removeRuleLabel(character.name)}
-						disabled={watching}
-						onclick={() => {
-							ruleShown = id;
-							ruleRemoveOpen = true;
-						}}
-					/>
-				</li>
-			{/if}
-		{:else}
-			<li class="none">None</li>
-		{/each}
-	</ul>
-	<RulesAtSetting />
-</Dialog>
-
-<ConfirmDialog
-	bind:open={ruleRemoveOpen}
-	title="Remove from the game?"
-	danger
-	onConfirm={() => {
-		ruleShownOpen = false;
-		if (ruleShown) grimoire.run({ type: 'RemoveRuleCharacter', characterId: ruleShown });
-	}}
->
-	{#if ruleShown}
-		<dl class="change">
-			<dt>Now</dt>
-			<dd>
-				<CharacterBadge characterId={ruleShown} character={ruleShownCharacter} /> in play
-			</dd>
-			<dt>Becomes</dt>
-			<dd>Not in play</dd>
-		</dl>
-	{/if}
-</ConfirmDialog>
+<RuleCharacters bind:this={rules} {grimoire} {watching} onReminder={(id) => heldDialog?.show(id)} />
 
 <style>
 	/* Start game's question: the setup reminders still to place (Trevor, 2026-10-20). */
@@ -2706,27 +2567,6 @@
 	.held .lifted {
 		opacity: 0.3;
 	}
-	.held-head {
-		margin: var(--space-2) 0 0;
-		font-size: 0.8rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--on-surface-muted);
-	}
-	.held-list {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-1);
-		margin-top: var(--space-2);
-	}
-	.held-chip {
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		cursor: pointer;
-	}
 	.rule {
 		/* Sized from the seats, which already follow the token size setting. */
 		padding: 0;
@@ -2747,34 +2587,6 @@
 		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
 		   2026-10-19). */
 		border-top: 0.125rem solid var(--button-edge);
-	}
-	.rule-detail {
-		display: flex;
-		gap: var(--space-3);
-		align-items: flex-start;
-	}
-	.rule-token {
-		flex: none;
-		padding: 0;
-		border: 0;
-		border-radius: 50%;
-		background: none;
-		cursor: pointer;
-	}
-	.rule-detail p {
-		margin: 0;
-		font-family: var(--font-ability);
-	}
-	.rule-detail > div {
-		flex: 1;
-		min-width: 0;
-	}
-	.rules-group {
-		display: grid;
-		gap: var(--space-3);
-		margin: 0 0 var(--space-3);
-		padding: 0;
-		list-style: none;
 	}
 	/* The corner stack: tokens overlapping, with how many there are. */
 	.rules-stack {
