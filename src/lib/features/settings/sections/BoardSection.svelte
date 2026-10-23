@@ -39,6 +39,7 @@
 			label={ASSIST_LABELS[key].label}
 			description={ASSIST_LABELS[key].description}
 			checked={assistance[key]}
+			disabled={key === 'roomCode' && !assistance.scriptTitle}
 			onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
 		/>
 	{/each}
