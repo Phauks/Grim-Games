@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
-	import type { EndReason, Night, NightStep } from '#lib/core/rules/index.ts';
+	import type { EndReason, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { gameModeNames } from './game-mode-name.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, seatName, stepHolders, tonight } from './night-steps.ts';
+	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -38,7 +38,6 @@
 		looseReminders,
 		ruleReminders,
 		scriptCharacterIds,
-		seatNumber,
 		trueCharacter,
 		type Reminder,
 		type ReminderInstance,
@@ -52,7 +51,6 @@
 		setupComplete,
 		diedSinceNewDay,
 		onDeathTrigger,
-		abilityState,
 		stepNightNumbers,
 		todaysNominations,
 		characterNominationPrompts,
@@ -61,7 +59,6 @@
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import {
-		nextScriptOrderTarget,
 		nominationPrompts,
 		seatHasAbility,
 		type NominationPrompt
@@ -158,6 +155,7 @@
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FirstDeathAsk from './FirstDeathAsk.svelte';
 	import ReminderAsk from './ReminderAsk.svelte';
+	import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
 	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
@@ -234,7 +232,7 @@
 	 */
 	const STRIP_H = '7.5rem';
 	let stripReserve = $state(0);
-	const sizingHeight = $derived.by(() => (walk ? height + stripReserve : height));
+	const sizingHeight = $derived.by(() => (nw.walk ? height + stripReserve : height));
 	const size = $derived(
 		seatTokenSize(game.seating, layout, { width, height: sizingHeight }, tokenScale)
 	);
@@ -571,7 +569,7 @@
 	);
 	const sourceSeats = $derived.by(() => {
 		const id = handReminder?.characterId;
-		if (id === undefined) return walkHolders;
+		if (id === undefined) return nw.holders;
 		return game.seating.filter(
 			(s) => game.seats[s].characterId === id || trueCharacter(game, s, characters) === id
 		);
@@ -616,10 +614,6 @@
 	);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
-	// The walk-through and the open step come back after a reload or an update (Trevor,
-	// 2026-10-16), from what this device saved. The night order sheet left the board (Trevor,
-	// 2026-10-18): the bank's Run night runs it, and the Script screen lists it.
-	const saved = untrack(() => grimoire.nightView);
 	/** The day sheet; the old /day route lands here with `#day` to open it. */
 	let dayOpen = $state(false);
 	/** The Savant sheet, from the day view's Savant info button (L5). */
@@ -642,83 +636,19 @@
 			requestAnimationFrame(() => requestAnimationFrame(() => (savantAskOpen = true)))
 		);
 	}
-	// ── Assisted night order (Trevor, 2026-10-16) ──
-	let guided = $state<{ step: NightStep; night: Night } | undefined>();
-	let guideOpen = $state(false);
-	/** Walking through the night under the board: which night and which step. */
-	let walk = $state<{ night: Night; index: number } | undefined>(saved.walk);
-	// Run Night Order leaves out dead players (Trevor, 2026-10-18) unless their ability is set
-	// off by dying tonight; the night order sheet still lists every step, to open by hand.
-	const walkSteps = $derived.by(() => {
-		const data = officialData.current;
-		return walk && data
-			? boardNightSteps(game, characters, walk.night, data, today, gameRules).filter(wakes)
-			: [];
-	});
-	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
-	const guidedSteps = $derived.by(() => {
-		const data = officialData.current;
-		if (!guided || !data) return [];
-		const open = guided.step.id;
-		return boardNightSteps(game, characters, guided.night, data, today, gameRules).filter(
-			(s) => s.id === open || wakes(s)
-		);
-	});
-	// The saved step dialog opens once the night order can be worked out.
-	let guidedPending = $state(saved.guided);
-	$effect(() => {
-		const data = officialData.current;
-		if (!guidedPending || !data) return;
-		const { night, stepId } = guidedPending;
-		guidedPending = undefined;
-		const step = boardNightSteps(game, characters, night, data, today, gameRules).find(
-			(s) => s.id === stepId
-		);
-		if (step) {
-			guided = { step, night };
-			guideOpen = true;
-		}
-	});
-	$effect(() => {
-		grimoire.saveNightView({
-			walk: walk ? { ...walk } : undefined,
-			guided: guideOpen && guided ? { night: guided.night, stepId: guided.step.id } : guidedPending
-		});
-	});
-	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
-	/**
-	 * The rule that keeps poisoned players asleep, if the game has one (I See Dead People,
-	 * https://beardytas.com/garden-of-djinn/i-see-dead-people/), and whether it applies to the
-	 * walk-through's step: every player who wakes for it is poisoned.
-	 */
-	const poisonedSleepRule = $derived(
-		readGameMode(game.gameId)?.rules.find((rule) => rule.parts.deaths?.kind === 'private')?.name
-	);
-	const walkAsleep = $derived.by(() => {
-		if (!poisonedSleepRule || !walkStep) return false;
-		const holders = stepHolders(game, walkStep, characters);
-		return (
-			holders.length > 0 &&
-			holders.every((seatId) =>
-				abilityState(game, seatId, characters).impairments.some((i) => i.reason === 'poisoned')
-			)
-		);
-	});
-	/**
-	 * The rule that leaves seat 7 to no one, if the game has one (The Ballad of Seat 7,
-	 * https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/), and whether that seat wakes
-	 * for the walk-through's step: the Storyteller makes its choices.
-	 */
-	const emptySeatRule = $derived(
-		readGameMode(game.gameId)?.rules.find(
-			(rule) => rule.parts.seats?.kind === 'storyteller-seat' && rule.parts.seats.count > 0
-		)?.name
-	);
-	/**
-	 * Trained Killer (https://beardytas.com/garden-of-djinn/trained-killer/): on a Demon's step
-	 * after the first night, the next living in-play character in script order.
-	 */
-	const attackRule = $derived(gameRules.find((r) => r.parts.demonAttacks)?.name);
+	// ── Assisted night order (Trevor, 2026-10-16): night-walk.svelte.ts ──
+	// Typed, as seat sizes depend on whether the walk-through is open.
+	const nw: NightWalk = new NightWalk((): NightWalkContext => ({
+		grimoire,
+		game,
+		characters,
+		data: officialData.current,
+		today,
+		rules: gameRules,
+		wakes,
+		ended: !!ended,
+		busy: seatArr.arranging || !!placing
+	}));
 	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
 	let nominationAsks = $state<(NominationPrompt | CharacterNominationPrompt)[]>([]);
 	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
@@ -737,57 +667,6 @@
 		const pair = recordNomination(grimoire, seatId, 'made', nominee);
 		if (pair) nominated(pair);
 	}
-	const walkAttack = $derived.by(() => {
-		if (!attackRule || !walkStep || walk?.night !== 'other') return undefined;
-		if (walkStep.character?.type !== 'demon') return undefined;
-		const target = nextScriptOrderTarget(game, characters);
-		return target === undefined ? undefined : seatName(game, target);
-	});
-	const walkEmptySeat = $derived(
-		!!emptySeatRule &&
-			!!walkStep &&
-			stepHolders(game, walkStep, characters).some((seatId) => seatNumber(game, seatId) === 7)
-	);
-	/**
-	 * Run Night Order in one tap, from the right end of the reminder bank (Trevor, 2026-10-18:
-	 * a change on the board itself, not a toolbar page). Always there while the walk-through
-	 * setting is on, so the bank never moves; usable once a seat has a character, empty seats
-	 * or not (warn, never lock: it is the only way into the night steps on the board). It
-	 * starts tonight's walk-through at the first step not yet done.
-	 */
-	const canRun = $derived(
-		!ended &&
-			!grimoire.open.viewOnly &&
-			!walk &&
-			!seatArr.arranging &&
-			!placing &&
-			game.seating.some((id) => game.seats[id].characterId !== undefined)
-	);
-	function runNight(): void {
-		walkNight(false);
-	}
-	/** From Dusk when the night starts (Trevor, 2026-10-20), else at the first step not done. */
-	function walkNight(fromDusk: boolean): void {
-		const data = officialData.current;
-		if (!data) return;
-		grimoire.beginNight();
-		const night = tonight(game);
-		const steps = boardNightSteps(game, characters, night, data, today, gameRules).filter(wakes);
-		const next = fromDusk ? 0 : steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
-		walk = { night, index: Math.max(0, next) };
-	}
-	/**
-	 * While the night is walked through, the bank's button is End night, which replaces
-	 * ticking Dawn (Trevor, 2026-10-18). A walk-through stopped mid-night shows Run night
-	 * again, to pick it up at the first step not done: with the night order sheet gone it is
-	 * the only way back to the steps. With the walk-through switched off it is End night all
-	 * the time, usable while a night runs (Dusk ticked by End day).
-	 */
-	const nightOn = $derived(
-		!ended &&
-			(walk !== undefined ||
-				(grimoire.nightRunning && !preferences.current.assistance.nightWalkthrough))
-	);
 	let endNightOpen = $state(false);
 	let endDayOpen = $state(false);
 	/**
@@ -802,7 +681,7 @@
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
-		if (preferences.current.assistance.nightWalkthrough) walkNight(true);
+		if (preferences.current.assistance.nightWalkthrough) nw.run(true);
 	}
 	/**
 	 * Execution ends the day (Trevor, 2026-10-22): the player chosen is executed first, unless
@@ -831,7 +710,7 @@
 	function beginGame() {
 		gameStarts.start(game.gameId);
 		startedRead += 1;
-		if (preferences.current.assistance.nightWalkthrough) runNight();
+		if (preferences.current.assistance.nightWalkthrough) nw.run();
 		else endDay();
 	}
 	/** Setup's next step: Characters, or the bag draw once they are chosen. */
@@ -849,7 +728,7 @@
 	 * during a day; a walk-through stopped mid-night offers Run night to pick it up again.
 	 */
 	const bankRun = $derived.by(() => {
-		if (nightOn)
+		if (nw.nightOn)
 			return {
 				label: 'End night',
 				text: 'End night',
@@ -866,8 +745,8 @@
 				label: 'Run Night Order',
 				text: 'Run night',
 				icon: 'night' as const,
-				disabled: !canRun,
-				onclick: runNight
+				disabled: !nw.canRun,
+				onclick: () => nw.run()
 			};
 		// Set up stands in for Start game only: once a night or day is under way, the bank
 		// ends it, characters or not.
@@ -884,7 +763,7 @@
 				label: 'Start game',
 				text: 'Start game',
 				icon: 'night' as const,
-				disabled: !canRun,
+				disabled: !nw.canRun,
 				onclick: startGame
 			};
 		// Execution in place of End day (Trevor, 2026-10-22): ending a day asks who was executed.
@@ -901,27 +780,11 @@
 
 	function endNight() {
 		if (!grimoire.endNight()) return;
-		walk = undefined;
+		nw.walk = undefined;
 		// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
 		if (preferences.current.assistance.dayAfterNight) dayOpen = true;
 		offerSavant();
 	}
-	/**
-	 * The step's reminders already on the board are ringed too, on any night (Trevor,
-	 * 2026-10-18: the Butler's Master placed on the first night).
-	 */
-	const walkLabels = $derived(
-		walk && walkStep?.character
-			? new Set([
-					...stepReminders(walkStep.character.id, walk.night, walkStep.character).labels,
-					...walkStep.character.reminders
-				])
-			: undefined
-	);
-	const walkOn = (r: { characterId: CharacterId; label: string }) =>
-		walkStep?.character?.id === r.characterId && (walkLabels?.has(r.label) ?? false);
-	/** Who wakes for the current walk-through step, marked on the board. */
-	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
 	// ── End game (Trevor, 2026-10-16): the game moves to History ──
 	// The Storyteller stays on the board, which says the game is over (Trevor, 2026-10-17).
@@ -1454,10 +1317,10 @@
 	<div
 		class="board"
 		class:arranging={seatArr.arranging}
-		class:walking={walk !== undefined}
+		class:walking={nw.walk !== undefined}
 		class:ended={!!ended}
 		style:--tray-h="{chip + 30}px"
-		style:--strip-h={walk ? STRIP_H : undefined}
+		style:--strip-h={nw.walk ? STRIP_H : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
 		style:--name-offset={boardLooks.current.nameOffset}
 		bind:this={board}
@@ -1569,7 +1432,7 @@
 						class:dragging={dragged}
 						class:extra={extras.has(reminder.reminderId)}
 						data-extra={extras.has(reminder.reminderId) ? '' : undefined}
-						class:now={walkOn(reminder)}
+						class:now={nw.isStepReminder(reminder)}
 						class:lit={lit(reminder)}
 						class:dim={holding !== undefined && !lit(reminder)}
 						data-lit={lit(reminder) || undefined}
@@ -1609,7 +1472,7 @@
 				data-extra={extras.has(reminder.reminderId) ? '' : undefined}
 				class:unassigned={!looseMode}
 				data-unassigned={looseMode ? undefined : ''}
-				class:now={walkOn(reminder)}
+				class:now={nw.isStepReminder(reminder)}
 				class:lit={lit(reminder)}
 				class:dim={holding !== undefined && !lit(reminder)}
 				data-lit={lit(reminder) || undefined}
@@ -1680,23 +1543,23 @@
 				/>
 			</p>
 		{/if}
-		{#if walk}
+		{#if nw.walk}
 			<NightStrip
 				{grimoire}
-				steps={walkSteps}
-				night={walk.night}
-				index={walk.index}
-				onIndex={(index) => walk && (walk = { ...walk, index })}
+				steps={nw.steps}
+				night={nw.walk.night}
+				index={nw.walk.index}
+				onIndex={(index) => nw.walk && (nw.walk = { ...nw.walk, index })}
 				onPastEnd={() => endHint++}
-				asleepBy={walkAsleep ? poisonedSleepRule : undefined}
-				emptySeatBy={walkEmptySeat ? emptySeatRule : undefined}
-				attack={walkAttack && attackRule ? { seat: walkAttack, by: attackRule } : undefined}
+				asleepBy={nw.asleepRule}
+				emptySeatBy={nw.emptySeatRule}
+				attack={nw.attack}
 				onOpen={(step) => {
-					if (!walk) return;
-					guided = { step, night: walk.night };
-					guideOpen = true;
+					if (!nw.walk) return;
+					nw.guided = { step, night: nw.walk.night };
+					nw.guideOpen = true;
 				}}
-				onClose={() => (walk = undefined)}
+				onClose={() => (nw.walk = undefined)}
 			/>
 		{/if}
 		{#if ended}
@@ -1723,8 +1586,8 @@
 				{grimoire}
 				{board}
 				size={chip}
-				focus={walk && walkStep?.character
-					? stepReminders(walkStep.character.id, walk.night, walkStep.character)
+				focus={nw.walk && nw.step?.character
+					? stepReminders(nw.step.character.id, nw.walk.night, nw.step.character)
 					: undefined}
 				focusMode={stepFocus.current.mode}
 				seatAt={remDrag.seatAt}
@@ -2114,18 +1977,18 @@
 />
 
 <GuidedStep
-	bind:open={guideOpen}
+	bind:open={nw.guideOpen}
 	{grimoire}
-	step={guided?.step}
-	night={guided?.night ?? 'first'}
-	steps={guidedSteps}
+	step={nw.guided?.step}
+	night={nw.guided?.night ?? 'first'}
+	steps={nw.guidedSteps}
 	onStep={(step) => {
-		if (!guided) return;
-		guided = { step, night: guided.night };
+		if (!nw.guided) return;
+		nw.guided = { step, night: nw.guided.night };
 		// The walk-through under the board follows.
-		if (walk && walk.night === guided.night) {
-			const i = walkSteps.findIndex((s) => s.id === step.id);
-			if (i >= 0) walk = { ...walk, index: i };
+		if (nw.walk && nw.walk.night === nw.guided.night) {
+			const i = nw.steps.findIndex((s) => s.id === step.id);
+			if (i >= 0) nw.walk = { ...nw.walk, index: i };
 		}
 	}}
 	onInfoTokens={(token) => {
