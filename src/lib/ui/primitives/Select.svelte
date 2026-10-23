@@ -64,6 +64,22 @@
 	$effect(() => {
 		if (open) return onLayerOpen(() => (open = false));
 	});
+	/*
+	 * Scrolling what is under the list closes it, so it never rides along over a scroll box's
+	 * edge (Trevor, 2026-10-23: it "eventually shows up beneath the area"). Scrolling the list
+	 * itself doesn't.
+	 */
+	$effect(() => {
+		if (!open) return;
+		const close = (event: Event) => {
+			const target = event.target;
+			if (target instanceof Element && target.closest("[data-scope='select'][data-part='content']"))
+				return;
+			open = false;
+		};
+		addEventListener('scroll', close, { capture: true, passive: true });
+		return () => removeEventListener('scroll', close, { capture: true });
+	});
 
 	function change(next: T[]) {
 		if (action && next.includes(action.value)) {
