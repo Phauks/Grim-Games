@@ -7,8 +7,8 @@
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import { setupReminders, validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
+	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
+	import { setupReminders } from '#lib/core/rules/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import { abilityState, seatNominations, type ImpairmentReason } from '#lib/core/rules/index.ts';
@@ -25,7 +25,6 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import {
-		causeFlagText,
 		causeLabel,
 		isOrphan,
 		placingAlignment,
@@ -34,6 +33,7 @@
 		tableCheck
 	} from './board.ts';
 	import CauseName from './CauseName.svelte';
+	import SeatStatusDialog from './SeatStatusDialog.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -305,37 +305,9 @@
 
 	// ── Status: Alive, or dead with its cause, in one list (Trevor, 2026-10-16) ──
 	let causeOpen = $state(false);
-	let reviveOpen = $state(false);
 	const statusText = $derived(
 		seat?.dead ? `Dead: ${causeLabel(seat.deathCause, characters, traveller)}` : 'Alive'
 	);
-	// Only the causes that fit this player (core, which no longer offers "Something else").
-	const causes = $derived(seatId && open ? validDeathCauses(game, seatId, characters) : []);
-	let flagged = $state<ValidDeathCause | undefined>();
-	let flagOpen = $state(false);
-
-	// A death always has a cause (Trevor, 2026-10-16: "dead, no cause" does not exist). Alive
-	// brings a dead player back, after a confirm that states both sides.
-	function pickAlive() {
-		causeOpen = false;
-		if (seat?.dead) reviveOpen = true;
-	}
-	function revive() {
-		reviveOpen = false;
-		if (seatId) grimoire.run({ type: 'SetDead', seatId, dead: false });
-	}
-
-	function setCause(cause: DeathCause) {
-		causeOpen = false;
-		if (!seat || !seatId) return;
-		if (seat.dead) grimoire.run({ type: 'SetDeathCause', seatId, cause });
-		// An execution or exile is also today's day log entry (the Undertaker, game end, stats),
-		// as the day's Players section logged it before it went (Trevor, 2026-10-20).
-		else if (cause === 'execution') {
-			if (!onExecute?.(seatId)) grimoire.run({ type: 'Execute', seatId });
-		} else if (cause === 'exile') grimoire.run({ type: 'Exile', seatId });
-		else grimoire.run({ type: 'SetDead', seatId, dead: true, cause });
-	}
 
 	// ── Reminders and seats ──
 	let moving = $state<ReminderId | undefined>();
@@ -836,101 +808,7 @@
 	{/if}
 </Dialog>
 
-<Dialog bind:open={causeOpen} title={`Status of ${title}`}>
-	<div class="causes">
-		<div class="cause-row">
-			<button type="button" class="cause" aria-pressed={!seat?.dead} onclick={pickAlive}>
-				<span class="slot status-icon"><Icon name="alive" /></span>
-				Alive
-			</button>
-		</div>
-		{#each causes as { cause, flags, gained }, i (cause)}
-			{@const killer = characters.get(cause)}
-			<div class="cause-row">
-				<button
-					type="button"
-					class="cause"
-					aria-pressed={seat?.deathCause === cause}
-					onclick={() => setCause(cause)}
-				>
-					<span class="slot" class:status-icon={!killer} data-dead
-						>{#if killer}<CharacterToken character={killer} size={32} />{:else}<Icon
-								name="dead"
-							/>{/if}</span
-					>
-					{causeLabel(cause, characters, traveller)}
-					<!-- The gained ability that kills, as on the day sheet: "Cannibal (Slayer)". -->
-					{#if gained}<span class="gained"
-							>(<CharacterBadge
-								characterId={gained}
-								character={characters.get(gained)}
-								interactive={false}
-							/>)</span
-						>{/if}
-				</button>
-				{#if flags.length > 0}
-					<IconButton
-						icon="warning"
-						label={`Why ${causeLabel(cause, characters, traveller)} is marked`}
-						onclick={() => {
-							flagged = causes[i];
-							flagOpen = true;
-						}}
-					/>
-				{/if}
-			</div>
-		{/each}
-	</div>
-	{#snippet actions()}
-		<ModalActions onCancel={() => (causeOpen = false)} />
-	{/snippet}
-</Dialog>
-
-<ConfirmDialog bind:open={reviveOpen} title={`Bring ${title} back to life?`} onConfirm={revive}>
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>
-			<span class="state-pill" data-dead
-				><Icon name="dead" />Dead: <CauseName
-					cause={seat?.deathCause}
-					{characters}
-					{traveller}
-				/></span
-			>
-		</dd>
-		<dt>Becomes</dt>
-		<dd><span class="state-pill"><Icon name="alive" />Alive</span></dd>
-	</dl>
-</ConfirmDialog>
-
-<Dialog
-	bind:open={flagOpen}
-	title={flagged ? causeLabel(flagged.cause, characters, traveller) : ''}
-	description="Offered with a caution"
->
-	{#if flagged}
-		<ul class="flags">
-			{#each flagged.flags as flag, i (i)}
-				{@const why = causeFlagText(flag, game, characters, title)}
-				<li>
-					{why.text}{#if why.by}
-						(<CharacterBadge characterId={why.by} character={characters.get(why.by)} />).{/if}
-				</li>
-			{/each}
-		</ul>
-	{/if}
-	{#snippet actions()}
-		{@const registers = flagged?.flags.find((f) => f.code === 'registers')}
-		{#if registers?.code === 'registers'}
-			<!-- External wiki page (the rules authority), not an app route. -->
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a class="wiki" href={registers.wiki} target="_blank" rel="noopener">
-				<Icon name="wiki" /><span>Open wiki entry</span>
-			</a>
-		{/if}
-		<Button variant="quiet" onclick={() => (flagOpen = false)}>Close</Button>
-	{/snippet}
-</Dialog>
+<SeatStatusDialog bind:open={causeOpen} {grimoire} {seatId} sheetOpen={open} {onExecute} />
 
 {#snippet seatBadge(id: SeatId | undefined)}
 	{@const other = id ? game.seats[id] : undefined}
@@ -1130,9 +1008,6 @@
 	.ink {
 		display: contents;
 	}
-	.gained {
-		color: var(--on-surface-muted);
-	}
 	.change {
 		display: grid;
 		grid-template-columns: auto 1fr;
@@ -1316,12 +1191,6 @@
 	.state.warn {
 		color: var(--accent);
 	}
-	.slot {
-		display: grid;
-		place-items: center;
-		width: calc(3 * var(--u));
-		height: calc(3 * var(--u));
-	}
 	.row {
 		display: flex;
 		align-items: center;
@@ -1339,23 +1208,9 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.status[data-dead],
-	.state-pill[data-dead],
-	.status-icon[data-dead] {
+	.status[data-dead] {
 		background: var(--backdrop);
 		color: var(--on-surface);
-	}
-	.state-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		padding: 0 var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-	}
-	.status-icon {
-		border-radius: 50%;
-		--icon-size: calc(1.25 * var(--u));
 	}
 	.value {
 		display: inline-flex;
@@ -1442,58 +1297,5 @@
 		flex-wrap: wrap;
 		gap: var(--space-2);
 		margin-top: var(--space-3);
-	}
-	.causes {
-		display: grid;
-		gap: calc(0.125 * var(--u));
-		margin-top: var(--space-2);
-	}
-	.cause {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-2);
-		border: 1px solid transparent;
-		border-radius: var(--radius-md);
-		background: none;
-		color: inherit;
-		font: inherit;
-		text-align: left;
-		cursor: pointer;
-	}
-	.cause:hover {
-		background: var(--surface-selected);
-	}
-	.cause[aria-pressed='true'] {
-		border-color: var(--focus);
-	}
-	.cause-row {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		align-items: center;
-	}
-	.wiki {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-4);
-		border-radius: var(--radius-md);
-		background: var(--accent);
-		color: var(--on-accent, var(--on-surface));
-		text-decoration: none;
-		font-weight: 600;
-	}
-	.flags {
-		margin: var(--space-2) 0 0;
-		padding-left: var(--space-3);
-	}
-	.flags li + li {
-		margin-top: var(--space-1);
-	}
-	.cause .slot {
-		width: calc(2 * var(--u));
-		height: calc(2 * var(--u));
 	}
 </style>
