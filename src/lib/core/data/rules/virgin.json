@@ -1,0 +1,6 @@
+{
+	"onNominated": {
+		"by": "townsfolk",
+		"effect": "execute-nominator"
+	}
+}

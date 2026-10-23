@@ -37,6 +37,7 @@ import sweetheart from './sweetheart.json' with { type: 'json' };
 import tealady from './tealady.json' with { type: 'json' };
 import tinker from './tinker.json' with { type: 'json' };
 import undertaker from './undertaker.json' with { type: 'json' };
+import virgin from './virgin.json' with { type: 'json' };
 import zombuul from './zombuul.json' with { type: 'json' };
 
 const FILES: Readonly<Record<CharacterId, unknown>> = {
@@ -71,6 +72,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	tealady,
 	tinker,
 	undertaker,
+	virgin,
 	zombuul
 };
 

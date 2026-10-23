@@ -105,6 +105,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Protection (`ability.ts`, `night-alerts.ts`)                                                      | `protects`        | moved         |
 | Night killers (`night-alerts.ts`, `night-deaths.ts`)                                              |                   | not yet moved |
 | Acts when dead (`dead-characters.ts`)                                                             | `actsWhenDead`    | moved         |
+| Nomination abilities (`rules/nominations.ts`)                                                     | `onNominated`     | moved         |
 | Night information and answers (`night-info.ts`)                                                   |                   | not yet moved |
 | Game end (`game-end.ts`, `end-reason.ts`, `becomes-demon.ts`)                                     |                   | not yet moved |
 

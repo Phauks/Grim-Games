@@ -9,7 +9,7 @@
  * TypeScript move here one per PR (the list is in docs/shared-components.md).
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
-import type { ReminderLabel } from './types.ts';
+import { CHARACTER_TYPES, type CharacterType, type ReminderLabel } from './types.ts';
 import {
 	checkKeys,
 	describe,
@@ -28,6 +28,10 @@ export type ReminderPrompt = (typeof REMINDER_PROMPTS)[number];
 export const KILLED_BY = ['demon', 'other', 'any'] as const;
 export type KilledBy = (typeof KILLED_BY)[number];
 
+/** What being nominated sets off: the nominator is executed straight away. */
+export const NOMINATED_EFFECTS = ['execute-nominator'] as const;
+export type NominatedEffect = (typeof NOMINATED_EFFECTS)[number];
+
 export interface CharacterRules {
 	/** Reminders whose placing is the moment to change the seat's state, by label. */
 	reminderPrompts?: Readonly<Record<ReminderLabel, ReminderPrompt>>;
@@ -44,6 +48,11 @@ export interface CharacterRules {
 	 * with its `token` (the Monk's "Safe"), against the Demon's kill only or any kill.
 	 */
 	protects?: Protects;
+	/**
+	 * The first time its player is nominated by a `by` character, `effect` happens (the
+	 * Virgin). Once used, the character's "No Ability" reminder marks it spent.
+	 */
+	onNominated?: { by: CharacterType; effect: NominatedEffect };
 }
 
 export const PROTECTS_WHO = ['self', 'marked'] as const;
@@ -57,7 +66,8 @@ export const RULE_KEYS = [
 	'reminderPrompts',
 	'actsWhenDead',
 	'onDeath',
-	'protects'
+	'protects',
+	'onNominated'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -99,6 +109,17 @@ export function parseCharacterRules(
 	if (raw.protects !== undefined) {
 		const protects = readProtects(raw.protects, `${path}.protects`, issues, reminders);
 		if (protects) rules.protects = protects;
+	}
+	if (raw.onNominated !== undefined) {
+		const at = `${path}.onNominated`;
+		if (!isObject(raw.onNominated)) {
+			issues.add(at, `expected object, got ${describe(raw.onNominated)}`);
+		} else {
+			checkKeys(raw.onNominated, ['by', 'effect'], at, issues);
+			const by = readEnum(raw.onNominated, 'by', CHARACTER_TYPES, at, issues, true);
+			const effect = readEnum(raw.onNominated, 'effect', NOMINATED_EFFECTS, at, issues, true);
+			if (by && effect) rules.onNominated = { by, effect };
+		}
 	}
 	return issues.list.length > before ? undefined : rules;
 }
