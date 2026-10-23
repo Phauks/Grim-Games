@@ -96,7 +96,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Table                                                                                             | Rules key                             | State         |
 | ------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------- |
 | Reminder prompts (`rules/reminder-prompts.ts`)                                                    | `reminderPrompts`                     | moved         |
-| Reminder targets (`reminder-targets.data.ts`)                                                     |                                       | not yet moved |
+| Reminder targets (`reminder-targets.ts`)                                                          | `reminderTargets`                     | moved         |
 | Day reminders (`day-reminders.data.ts`)                                                           |                                       | not yet moved |
 | Setup reminders and setup counts (`setup-reminders.data.ts`, `setup-modifiers.ts`)                |                                       | not yet moved |
 | Death causes (`death-causes.data.ts`)                                                             |                                       | not yet moved |

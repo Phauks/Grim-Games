@@ -1,0 +1,12 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"seat": "any",
+			"note": "One of the three players shown to the Noble: two of the three are good and one is evil.",
+			"alignmentCounts": {
+				"good": 2,
+				"evil": 1
+			}
+		}
+	}
+}

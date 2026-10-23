@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"Not Me": {
+			"seat": "any",
+			"note": "The player the Cacklejack chooses that day.",
+			"ambiguous": "The wiki doesn't say whether the Cacklejack may choose themself or a dead player."
+		}
+	}
+}

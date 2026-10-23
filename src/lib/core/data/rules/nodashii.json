@@ -1,5 +1,20 @@
 {
 	"kills": {
 		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player the No Dashii kills that night."
+		},
+		"Poisoned": {
+			"seat": "other",
+			"types": ["townsfolk"],
+			"neighbour": {
+				"of": "self",
+				"type": "townsfolk"
+			},
+			"note": "The nearest Townsfolk each way round from the No Dashii, alive or dead."
+		}
 	}
 }

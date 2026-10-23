@@ -2,5 +2,11 @@
 	"kills": {
 		"by": "other",
 		"targets": "self"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "self",
+			"note": "On the Gambler after a wrong guess."
+		}
 	}
 }

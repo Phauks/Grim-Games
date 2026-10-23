@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Master": {
+			"seat": "other",
+			"note": "The player the Butler chose as master; dead players are allowed."
+		}
+	}
+}

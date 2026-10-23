@@ -334,6 +334,6 @@ export function reminderFitWarning(
 	const misses = seatMisses(game, reminder, seatId, characters);
 	if (misses.length === 0) return undefined;
 	const why = misses.map((m) => MISS_WORDS[m]).join('; ');
-	const note = targetRule(reminder)?.note;
+	const note = targetRule(reminder, characters)?.note;
 	return `Not a usual place for it: ${why}.${note ? ` ${note}` : ''}`;
 }

@@ -2,5 +2,15 @@
 	"kills": {
 		"by": "other",
 		"ignoresProtection": true
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player the Assassin picks, possibly the Assassin itself."
+		},
+		"No Ability": {
+			"seat": "self",
+			"note": "The Assassin once they have used their ability."
+		}
 	}
 }

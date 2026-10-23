@@ -4015,7 +4015,9 @@ test("the Investigator's own seat fits its Wrong; its Minion is marked and warns
 	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
 		1
 	);
-	await expect(page.getByText(/never goes on its character's own player/)).toBeVisible();
+	// The Investigator is no Minion, so its Minion never fits its own seat (Trevor, 2026-10-23:
+	// no rule about self is needed).
+	await expect(page.getByText(/the character type is not one it goes on/)).toBeVisible();
 });
 
 test('Resume game names a game’s alternative mode beside its script', async ({ page }) => {

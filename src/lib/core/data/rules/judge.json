@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Judge once they have used their ability."
+		}
+	}
+}

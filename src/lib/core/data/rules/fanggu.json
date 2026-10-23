@@ -1,5 +1,15 @@
 {
 	"kills": {
 		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "On the player who dies: the chosen target, or the Fang Gu itself when it jumps into an Outsider."
+		},
+		"Once": {
+			"note": "On the Fang Gu after the first Outsider jump; stays all game.",
+			"seat": "self"
+		}
 	}
 }

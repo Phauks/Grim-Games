@@ -5,5 +5,15 @@
 	"actsWhenDead": true,
 	"kills": {
 		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "On the player the Zombuul chose tonight."
+		},
+		"Died Today": {
+			"seat": "any",
+			"note": "On any player who died during the day, the Zombuul included."
+		}
 	}
 }

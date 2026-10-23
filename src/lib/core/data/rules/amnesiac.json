@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"?": {
+			"seat": "any",
+			"note": "A general-purpose marker for whatever the Amnesiac's hidden ability tracks.",
+			"ambiguous": "The wiki says the token can be used if needed but gives no placement, since it depends on the ability chosen."
+		}
+	}
+}

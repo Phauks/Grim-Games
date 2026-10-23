@@ -1,3 +1,9 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"reminderTargets": {
+		"Tea Party Tonight": {
+			"seat": "self",
+			"note": "On the Hatter when they die."
+		}
+	}
 }
