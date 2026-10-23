@@ -4,6 +4,7 @@
 	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { named, TILE_EMOJI, TILE_SYMBOLS } from '#lib/features/setup/tile-face.ts';
 	import TileMarkFace from '#lib/features/setup/TileMarkFace.svelte';
 
@@ -22,9 +23,10 @@
 		onSymbol: (symbol: string) => void;
 		/** None is the reminder's own ink. */
 		onColour: (colour: SymbolColour | undefined) => void;
+		onFill: (fill: boolean) => void;
 	}
 
-	let { look, onNote, onSymbol, onColour }: Props = $props();
+	let { look, onNote, onSymbol, onColour, onFill }: Props = $props();
 	// eslint-disable-next-line svelte/prefer-writable-derived -- edited here, saved on commit
 	let text = $state('');
 	$effect.pre(() => {
@@ -77,6 +79,14 @@
 	{#snippet item(option)}{@render swatch(option)}{/snippet}
 	{#snippet selected(option)}{@render swatch(option)}{/snippet}
 </Select>
+
+<!-- Per token (Trevor, 2026-10-23); like the colour, usable once the symbol is an icon. -->
+<Toggle
+	label="Filled symbol"
+	checked={!!look.symbolFill}
+	onChange={onFill}
+	disabled={!iconSymbol}
+/>
 
 {#snippet swatch(option: { value: string; label: string })}
 	<span class="choice"

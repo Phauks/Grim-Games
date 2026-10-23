@@ -430,6 +430,10 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return withReminder(game, event.reminderId, (r) =>
 				event.colour === undefined ? omit(r, 'symbolColour') : { ...r, symbolColour: event.colour }
 			);
+		case 'ReminderSymbolFillSet':
+			return withReminder(game, event.reminderId, (r) =>
+				event.fill ? { ...r, symbolFill: true } : omit(r, 'symbolFill')
+			);
 		case 'BluffsSet': {
 			const bluffs = game.bluffs.map((set) => [...set]);
 			if (event.set < 0 || event.set > bluffs.length) return game;

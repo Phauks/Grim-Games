@@ -73,7 +73,8 @@ describe('parsePreferences', () => {
 				reminderHighlight: false,
 				reminderHighlightLook: 'both',
 				reminderIconColour: 'plain',
-				genericIconFill: true
+				tokenIconScale: 0.9,
+				reminderIconScale: 1.2
 			},
 			colors: {},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },

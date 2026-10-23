@@ -329,6 +329,7 @@ function genericLook(look: GenericLook | undefined): GenericLook {
 			refuse('invalid-colour', `no symbol colour ${look.symbolColour}`);
 		out.symbolColour = look.symbolColour;
 	}
+	if (look?.symbolFill === true) out.symbolFill = true;
 	return out;
 }
 
@@ -341,6 +342,7 @@ function tokenLook(game: Game, tokenId: string | undefined): GenericLook {
 	if (token.note !== undefined) look.note = token.note;
 	if (token.symbol !== undefined) look.symbol = token.symbol;
 	if (token.symbolColour !== undefined) look.symbolColour = token.symbolColour;
+	if (token.symbolFill) look.symbolFill = true;
 	return look;
 }
 
@@ -1016,6 +1018,19 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [event];
 		}
 
+		case 'SetReminderSymbolFill': {
+			const from = reminderHolder(game, command.reminderId);
+			if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+			const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
+			if (command.fill === !!reminder.symbolFill) {
+				warn('no-change', 'the symbol is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'ReminderSymbolFillSet', reminderId: command.reminderId };
+			if (command.fill) event.fill = true;
+			return [event];
+		}
+
 		case 'PlaceLooseReminder': {
 			const reminder: Reminder = reminderFrom(game, command.reminder);
 			const look = tokenLook(game, command.tokenId);
@@ -1037,7 +1052,8 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			if (
 				look.note === token.note &&
 				look.symbol === token.symbol &&
-				look.symbolColour === token.symbolColour
+				look.symbolColour === token.symbolColour &&
+				look.symbolFill === token.symbolFill
 			) {
 				warn('no-change', 'the token is unchanged');
 				return [];

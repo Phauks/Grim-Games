@@ -39,6 +39,10 @@ export const characters = {
 		'Character tokens on the grimoire board. Tokens elsewhere, Text size and Icon size stay the same.',
 	'characters.reminderSize': 'Reminder token size',
 	'characters.reminderSizeHelp': 'Reminder tokens on the grimoire board.',
+	'characters.tokenIconSize': 'Character icon size',
+	'characters.tokenIconSizeHelp': "The character's picture inside character tokens.",
+	'characters.reminderIconSize': 'Character icon size',
+	'characters.reminderIconSizeHelp': "The character's picture inside reminder tokens.",
 	'characters.boardNames': 'Show character names on tokens',
 	'characters.boardNamesHelp':
 		'Writes each character’s name on its token: on the grimoire board, in Show to player and in the seat sheet. Small icons in lists stay plain.',
@@ -103,9 +107,6 @@ export const characters = {
 	'characters.highlightLook.glow': 'Glow',
 	'characters.highlightLook.both': 'Ring and glow',
 	'characters.reminderIconColour': "Owner's icon colour",
-	'characters.genericIconFill': 'Filled ∞ token symbols',
-	'characters.genericIconFillHelp':
-		"An ∞ token's icon symbol is drawn filled in, not as an outline.",
 	'characters.iconColour.player': "Player's alignment",
 	'characters.iconColour.character': "Character's alignment",
 	'characters.iconColour.plain': 'Plain',
