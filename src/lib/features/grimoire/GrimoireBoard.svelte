@@ -2917,6 +2917,11 @@
 			display: none;
 		}
 	}
+	/* Solid, so the board's background never shows through; the day timer on the board has
+	   the same fill and edge (Trevor, 2026-10-23). A hover still shows its wash. */
+	.toolbar :global(.button[data-variant='quiet']:not(:hover)) {
+		background: var(--surface);
+	}
 	/* Phones show the toolbar's icons only; wider screens add the words. */
 	.toolbar :global(.tool-label) {
 		display: none;
