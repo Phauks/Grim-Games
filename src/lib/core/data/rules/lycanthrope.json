@@ -1,0 +1,19 @@
+{
+	"kills": {
+		"by": "other"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "A living good player the Lycanthrope chose, who dies.",
+			"ambiguous": "Neither the How to Run nor the summary says whether the Lycanthrope may choose themselves."
+		},
+		"Faux Paw": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "The one good player set up to register as evil.",
+			"ambiguous": "The wiki does not say whether the Lycanthrope itself can be the Faux Paw player."
+		}
+	}
+}

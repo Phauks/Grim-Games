@@ -5,17 +5,24 @@
  */
 import { describe, expect, it } from 'vitest';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { godfatherAnswer } from './night-info.ts';
+import { nightAnswer } from './night-info.ts';
+
+/** The night answer for a character that has one (each test's does). */
+function answerOf(...args: Parameters<typeof nightAnswer>) {
+	const a = nightAnswer(...args);
+	if (!a) throw new Error(`no night answer for ${args[2]}`);
+	return a;
+}
 
 const CAST = ['chef', 'butler', 'drunk', 'godfather', 'imp'];
 
-describe('godfatherAnswer', () => {
+describe('Godfather night answer', () => {
 	it('says no when no Outsider died today', () => {
 		const { session, seats } = castGame(CAST, { type: 'NewDay' }, (s) => ({
 			type: 'Execute',
 			seatId: s[0]
 		}));
-		expect(godfatherAnswer(session.game, seats[3], characters, { died: [] })).toMatchObject({
+		expect(answerOf(session.game, seats[3], 'godfather', characters, { died: [] })).toMatchObject({
 			kind: 'none',
 			because: []
 		});
@@ -26,7 +33,7 @@ describe('godfatherAnswer', () => {
 			type: 'Execute',
 			seatId: s[1]
 		}));
-		expect(godfatherAnswer(session.game, seats[3], characters)).toMatchObject({
+		expect(answerOf(session.game, seats[3], 'godfather', characters)).toMatchObject({
 			kind: 'yes-no',
 			value: true,
 			because: [seats[1]]
@@ -40,9 +47,9 @@ describe('godfatherAnswer', () => {
 			dead: true,
 			cause: 'slayer'
 		}));
-		expect(godfatherAnswer(session.game, seats[3], characters, { died: [seats[2]] })).toMatchObject(
-			{ kind: 'yes-no', value: true, because: [seats[2]] }
-		);
+		expect(
+			answerOf(session.game, seats[3], 'godfather', characters, { died: [seats[2]] })
+		).toMatchObject({ kind: 'yes-no', value: true, because: [seats[2]] });
 	});
 
 	it("counts the Godfather's Died Today reminder on a dead Outsider", () => {
@@ -55,7 +62,7 @@ describe('godfatherAnswer', () => {
 				reminder: { characterId: 'godfather', label: 'Died Today' }
 			})
 		);
-		expect(godfatherAnswer(session.game, seats[3], characters)).toMatchObject({
+		expect(answerOf(session.game, seats[3], 'godfather', characters)).toMatchObject({
 			because: [seats[1]]
 		});
 	});

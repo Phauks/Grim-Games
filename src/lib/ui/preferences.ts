@@ -211,6 +211,9 @@ function oneOf<T extends string>(values: readonly T[], input: unknown, fallback:
 	return (values as readonly unknown[]).includes(input) ? (input as T) : fallback;
 }
 
+/** Icon slots saved under an older name: new name -> old name. */
+const RENAMED_SLOTS: Partial<Record<IconSlot, string>> = { edit: 'rename' };
+
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
 export function parsePreferences(raw: unknown): Preferences {
 	const input = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
@@ -219,7 +222,7 @@ export function parsePreferences(raw: unknown): Preferences {
 	) as Record<string, unknown>;
 	const iconOverrides: Preferences['iconOverrides'] = {};
 	for (const slot of iconSlots) {
-		const id = overrides[slot];
+		const id = overrides[slot] ?? overrides[RENAMED_SLOTS[slot] ?? ''];
 		if (isIconChoice(slot, id)) iconOverrides[slot] = id;
 	}
 	const iconScale = parseScale(input.iconScale, ICON_SCALE, DEFAULT_PREFERENCES.iconScale);

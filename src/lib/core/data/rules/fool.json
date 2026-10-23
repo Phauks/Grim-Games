@@ -1,3 +1,11 @@
 {
-	"survivesFirstDeath": { "spentToken": "No Ability" }
+	"survivesFirstDeath": {
+		"spentToken": "No Ability"
+	},
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Fool once they have survived their first death."
+		}
+	}
 }

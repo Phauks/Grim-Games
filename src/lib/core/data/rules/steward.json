@@ -1,0 +1,16 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"info": true,
+			"seat": "any",
+			"alignment": "good",
+			"note": "Marks the one good player the Steward is shown at setup, who may be the Steward."
+		}
+	},
+	"learns": {
+		"measure": "good-player",
+		"reminders": {
+			"each": "Know"
+		}
+	}
+}

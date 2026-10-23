@@ -15,7 +15,8 @@ registerSettingsSection({
 			print: PRINT_DEFAULTS,
 			frame: undefined,
 			avatar: 'initials',
-			guessesOnTokens: false
+			guessesOnTokens: false,
+			lightSheet: false
 		}),
 	order: 37
 });

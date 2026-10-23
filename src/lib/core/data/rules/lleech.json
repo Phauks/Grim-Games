@@ -1,0 +1,16 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player the Lleech kills that night."
+		},
+		"Poisoned": {
+			"seat": "any",
+			"note": "The host the Lleech picks on the first night.",
+			"ambiguous": "The wiki says any player and doesn't say whether the Lleech may pick itself."
+		}
+	}
+}

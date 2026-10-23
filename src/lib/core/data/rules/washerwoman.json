@@ -1,0 +1,24 @@
+{
+	"reminderTargets": {
+		"Townsfolk": {
+			"info": true,
+			"seat": "any",
+			"types": ["townsfolk"],
+			"note": "The Townsfolk whose character the Washerwoman is shown, who may be the Washerwoman."
+		},
+		"Wrong": {
+			"info": true,
+			"seat": "any",
+			"notWithLabel": "Townsfolk",
+			"note": "The second, decoy player pointed at alongside the Townsfolk."
+		}
+	},
+	"learns": {
+		"measure": "pair-of-type",
+		"type": "townsfolk",
+		"reminders": {
+			"target": "Townsfolk",
+			"other": "Wrong"
+		}
+	}
+}

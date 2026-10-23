@@ -6,24 +6,20 @@
 	import { MAX_LABEL_NAME, nameFree, siblings } from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 
-	/** Names a new folder inside `parent`, or renames `folder`; Enter saves. */
+	/** Renames a folder; Enter saves. New folders are made at once, named "New folder". */
 	interface Props {
 		open?: boolean;
-		/** The folder being renamed; a new folder when none. */
+		/** The folder being renamed. */
 		folder?: string;
-		/** Where a new folder goes (the top level when none). */
-		parent?: string;
-		/** Called with the new folder's id. */
-		oncreated?: (id: string) => void;
 	}
 
-	let { open = $bindable(false), folder, parent, oncreated }: Props = $props();
+	let { open = $bindable(false), folder }: Props = $props();
 
 	let name = $state('');
 	const renaming = $derived(libraryLabels.state.folders.find((f) => f.id === folder));
-	const inside = $derived(renaming ? renaming.parent : parent);
 	const ok = $derived(
-		nameFree(siblings(libraryLabels.state, 'folders', inside), name, renaming?.id)
+		!!renaming &&
+			nameFree(siblings(libraryLabels.state, 'folders', renaming.parent), name, renaming.id)
 	);
 
 	// Starts from the folder's own name each time it opens.
@@ -32,18 +28,13 @@
 	});
 
 	function save() {
-		if (!ok) return;
-		if (renaming) {
-			libraryLabels.rename('folders', renaming.id, name);
-		} else {
-			const id = libraryLabels.add('folders', name, parent);
-			if (id) oncreated?.(id);
-		}
+		if (!ok || !renaming) return;
+		libraryLabels.rename('folders', renaming.id, name);
 		open = false;
 	}
 </script>
 
-<Dialog bind:open title={renaming ? t('library.renameTitle') : t('library.newFolder')}>
+<Dialog bind:open title={t('library.renameTitle')}>
 	<TextField
 		label={t('library.name')}
 		bind:value={name}

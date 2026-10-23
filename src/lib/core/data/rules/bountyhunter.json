@@ -1,0 +1,10 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"info": true,
+			"seat": "any",
+			"alignment": "evil",
+			"note": "The evil player the Bounty Hunter currently knows, who may be the Bounty Hunter; moves to a new evil player when they die."
+		}
+	}
+}

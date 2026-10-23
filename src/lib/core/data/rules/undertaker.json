@@ -1,3 +1,16 @@
 {
-	"reminderPrompts": { "Died Today": "markDead" }
+	"reminderPrompts": {
+		"Died Today": "markDead"
+	},
+	"reminderTargets": {
+		"Died Today": {
+			"seat": "any",
+			"life": "dead",
+			"note": "The player who was executed and died today, who may be the Undertaker."
+		}
+	},
+	"answers": {
+		"question": "executed-character",
+		"token": "Died Today"
+	}
 }

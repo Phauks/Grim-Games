@@ -29,7 +29,7 @@
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { goto, pushState, replaceState } from '$app/navigation';
 	import { page } from '$app/state';
-	import { onMount, untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -88,14 +88,21 @@
 		keepInside,
 		seatPoints,
 		seatTokenSize,
-		spreadEvenly,
-		orderAround,
-		withPlaced,
-		withoutPlaced,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
-	import { nameBox, placeNames, type Box } from './name-placement.ts';
+	import type { Box } from './name-placement.ts';
+	import { SeatArranging } from './seat-arranging.svelte.ts';
+	import { ReminderDragging } from './reminder-drag.svelte.ts';
+	import {
+		avoidBoxes,
+		cornerObstacles,
+		keepClear,
+		nameBoxes as boardNameBoxes,
+		rimToward,
+		toPercent as boardToPercent,
+		toPx as boardToPx
+	} from './board-geometry.ts';
 	import { cornerRoom } from './corner-room.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
@@ -136,7 +143,6 @@
 		extraReminders,
 		isGeneric,
 		isSeatsReminder,
-		onBoard,
 		reminderWords,
 		tokenLabel
 	} from './reminders.ts';
@@ -230,56 +236,25 @@
 		void preferences.current;
 		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 	});
-	const toPx = (p: SeatPoint) => ({ x: (p.x / 100) * width, y: (p.y / 100) * height });
-	const toPercent = (p: { x: number; y: number }): SeatPoint => ({
-		x: (p.x / width) * 100,
-		y: (p.y / height) * 100
-	});
-	/** The point on a seat's rim facing `to`, in % of the board (where a tether starts). */
-	function rimToward(seat: SeatPoint, to: SeatPoint): SeatPoint {
-		const a = toPx(seat);
-		const b = toPx(to);
-		const d = Math.hypot(b.x - a.x, b.y - a.y);
-		if (d < 1) return seat;
-		const r = Math.min(size / 2, d);
-		return toPercent({ x: a.x + ((b.x - a.x) / d) * r, y: a.y + ((b.y - a.y) / d) * r });
-	}
-	/** Each seat's name, its box in px (the badge: 0.8rem text, padding and border). */
-	const nameBoxes = $derived.by(() => {
-		if (width <= 0 || height <= 0) return [];
-		const font = rootFont * 0.8;
-		const lineHeight = Math.ceil(font * 1.2 + font * 0.3 + 2);
-		const widths = seats.map((seat, i) => {
-			const name = seat.playerName ?? `Seat ${i + 1}`;
-			return Math.min(size + 2 * unit, name.length * font * 0.55 + font + 2);
-		});
-		const centres = shown.map(toPx);
-		const places = placeNames({
-			seats: centres,
+	const boardSize = $derived({ width, height });
+	const toPx = (p: SeatPoint) => boardToPx(p, boardSize);
+	const toPercent = (p: { x: number; y: number }): SeatPoint => boardToPercent(p, boardSize);
+	const nameBoxes = $derived.by(() =>
+		boardNameBoxes({
+			names: seats.map((seat, i) => seat.playerName ?? `Seat ${i + 1}`),
+			seats: shown,
 			size,
-			widths,
-			height: lineHeight,
-			obstacles: [],
-			board: { width, height }
-		});
-		return places.map((place, i) => ({
-			place,
-			box: nameBox(centres[i], place, size, widths[i], lineHeight)
-		}));
-	});
+			unit,
+			rootFont,
+			board: boardSize
+		})
+	);
 	/**
 	 * The script's name in the corner keeps clear of every seat and name (Trevor, 2026-10-18),
 	 * cut short with an ellipsis where it would reach one (always the lower left).
 	 */
 	const cornerFit = $derived.by(() => {
-		const boxes = shown.flatMap((p, i) => {
-			const c = toPx(p);
-			const name = nameBoxes[i]?.box;
-			// The token, with the name pill straddling its lower rim (PlayerNameMark).
-			const off = boardLooks.current.nameOffset;
-			const token = { x: c.x, y: c.y + (0.05 + off / 2) * size, w: size, h: (1.1 + off) * size };
-			return name ? [token, name] : [token];
-		});
+		const boxes = cornerObstacles(shown, nameBoxes, size, boardLooks.current.nameOffset, boardSize);
 		// The name sits 4px (--space-1) in from the edges.
 		const room = (h: number) => cornerRoom(boxes, { width, height }, h + 4, 4 + 8);
 		// A line per special rule (Trevor, 2026-10-19) when they all fit; otherwise one line,
@@ -353,26 +328,15 @@
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
 	function avoidFor(i: number): Box[] {
-		const out: Box[] = [];
-		const c = toPx(shown[i]);
-		const hasFace = seats[i]?.characterId !== undefined;
-		if (!hasFace) {
-			const name = nameBoxes[i]?.box;
-			if (name) out.push(name);
-		} else {
-			// The badge pill straddles the token's lower rim (PlayerNameMark).
-			// Lower by the badge offset (Board and tokens).
-			const off = boardLooks.current.nameOffset;
-			out.push({ x: c.x, y: c.y + (0.5 + off) * size, w: 0.9 * size, h: 0.18 * size });
-		}
-		if (seats[i]?.dead) {
-			out.push({ x: c.x - 0.41 * size, y: c.y + 0.37 * size, w: 0.38 * size, h: 0.38 * size });
-		}
-		// The note mark, lower right (SeatToken).
-		if (seats[i]?.note) {
-			out.push({ x: c.x + 0.39 * size, y: c.y + 0.39 * size, w: 0.3 * size, h: 0.3 * size });
-		}
-		return out;
+		return avoidBoxes({
+			centre: toPx(shown[i]),
+			size,
+			hasFace: seats[i]?.characterId !== undefined,
+			name: nameBoxes[i]?.box,
+			dead: !!seats[i]?.dead,
+			note: !!seats[i]?.note,
+			nameOffset: boardLooks.current.nameOffset
+		});
 	}
 	/**
 	 * Every seat's reminders, laid out together so one seat's never cover another's (Trevor,
@@ -402,195 +366,49 @@
 				chip: Math.max(chip, tapPx),
 				avoid: avoidFor(i)
 			})),
-			// The Set up button and the Fabled and Loric in the middle stay clear and tappable.
-			[
-				...(centreW > 0 ? [{ x: width / 2, y: height / 2, w: centreW + 12, h: centreH + 12 }] : []),
-				// Fabled and Loric along the edge or grouped, in the top left corner.
-				...(edgeW > 0 && boardLooks.current.rulesAt !== 'middle'
-					? [{ x: edgeW / 2, y: edgeH / 2, w: edgeW + 12, h: edgeH + 12 }]
-					: []),
-				// The day timer, in the top right corner.
-				...(timerW > 0 && showTimer
-					? [{ x: width - timerW / 2, y: timerH / 2, w: timerW + 12, h: timerH + 12 }]
-					: []),
-				// The script's name in a lower corner.
-				...(titleW > 0
-					? [
-							{
-								x: titleW / 2,
-								y: height - titleH / 2,
-								w: titleW + 12,
-								h: titleH + 12
-							}
-						]
-					: [])
-			],
-			{ width, height }
+			// The Set up button and the Fabled and Loric in the middle, the Fabled and Loric along
+			// the edge, the day timer and the script's name stay clear and tappable.
+			keepClear({
+				centre: { w: centreW, h: centreH },
+				edge: boardLooks.current.rulesAt !== 'middle' ? { w: edgeW, h: edgeH } : undefined,
+				timer: showTimer ? { w: timerW, h: timerH } : undefined,
+				title: { w: titleW, h: titleH },
+				board: boardSize
+			}),
+			boardSize
 		);
 		return fitted.at.map((points) => points.map(toPercent));
 	});
 
-	interface ReminderDrag {
-		reminderId: ReminderId;
-		/** The seat it is on; none for a loose reminder or one a Fabled or Loric holds. */
-		from: SeatId | undefined;
-		/** Where the token is, in % of the board. */
-		at: SeatPoint;
-		target?: SeatId;
-	}
-	let reminderDrag = $state<ReminderDrag | undefined>();
-	/**
-	 * Where a dragged reminder came from (Trevor, 2026-10-16): its character, the seats that
-	 * hold that character (marked on the board) and the seat it is on now.
-	 */
-	const dragOrigin = $derived.by(() => {
-		if (!reminderDrag) return undefined;
-		const id = reminderDrag.reminderId;
-		const reminder = onBoard(game).find((r) => r.reminderId === id);
-		if (!reminder) return undefined;
-		const holders = game.seating.filter(
-			(s) =>
-				game.seats[s].characterId === reminder.characterId ||
-				trueCharacter(game, s, characters) === reminder.characterId
-		);
-		return { holders, reminder };
-	});
-
-	/** The seat under a point (in % of the board), if it is within reach of a token. */
-	function seatAt(at: SeatPoint): SeatId | undefined {
-		let best: SeatId | undefined;
-		let bestDistance = size * 0.75;
-		game.seating.forEach((id, i) => {
-			const d = Math.hypot(
-				((points[i].x - at.x) / 100) * width,
-				((points[i].y - at.y) / 100) * height
-			);
-			if (d < bestDistance) {
-				best = id;
-				bestDistance = d;
-			}
-		});
-		return best;
-	}
-
+	// ── Dragging reminders (reminder-drag.svelte.ts) ──
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
-	/**
-	 * Where a free reminder may stay: on the board, but not over the reminder bank, the night
-	 * walk-through, the middle's buttons, the timer or the Fabled and Loric (Trevor, 2026-10-17).
-	 */
-	function spotAllowed(x: number, y: number): boolean {
-		if (!board) return false;
-		const inside = (r: DOMRect | undefined) =>
-			!!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-		if (!inside(board.getBoundingClientRect())) return false;
-		const blocked = board.querySelectorAll(
-			'[data-tray], [data-testid="night-strip"], .centre > *, .board-timer, .rules-edge'
-		);
-		return ![...blocked].some((el) => inside(el.getBoundingClientRect()));
-	}
-	/**
-	 * The Fabled or Loric under a client point, if any: its own token, or the grouped stack
-	 * (then the one whose reminder it is, else the first) (Trevor, 2026-10-17).
-	 */
-	function ruleAt(x: number, y: number, reminder: Reminder): CharacterId | undefined {
-		const hit = document
-			.elementsFromPoint(x, y)
-			.map((el) => el.closest<HTMLElement>('[data-rule], [data-rule-stack]'))
-			.find((el) => el !== null);
-		if (!hit) return undefined;
-		if (hit.dataset.rule) return hit.dataset.rule;
-		return game.ruleCharacters.includes(reminder.characterId)
-			? reminder.characterId
-			: game.ruleCharacters[0];
-	}
 	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
-	/** A Fabled or Loric's reminder being dragged off it. */
-	const heldDrag = $derived.by(() => {
-		const id = reminderDrag?.reminderId;
-		if (!id) return undefined;
-		return Object.values(game.ruleReminders ?? {})
-			.flat()
-			.find((r) => r.reminderId === id);
-	});
 	const heldLabel = (name: string) => `${name}'s reminders`;
-	/** Gives a dropped spot to a reminder now loose on the board. */
-	function looseAt(reminderId: ReminderId, at: SeatPoint) {
-		grimoire.setReminderSpot(reminderId, at);
-	}
-	function dragReminder(
-		reminderId: ReminderId,
-		from: SeatId | undefined,
-		x: number,
-		y: number,
-		end: boolean
-	) {
-		if (!board) return;
-		const rect = board.getBoundingClientRect();
-		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
-		const target = seatAt(at);
-		if (!end) {
-			reminderDrag = {
-				reminderId,
-				from,
-				at,
-				target: boardLooks.current.reminders === 'free' ? undefined : target
-			};
-			return;
-		}
-		reminderDrag = undefined;
-		// Dropped back on the setup reminders tray: it waits there again (History has it).
-		const tray = board.querySelector('[data-tray]')?.getBoundingClientRect();
-		if (tray && x >= tray.left && x <= tray.right && y >= tray.top && y <= tray.bottom) {
-			moveConfirm?.requestReturn(reminderId);
-			return;
-		}
-		const reminder = onBoard(game).find((r) => r.reminderId === reminderId);
-		if (!reminder) return;
-		// Dropped on a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
-		const rule = ruleAt(x, y, reminder);
-		if (rule) {
-			if (!ruleReminders(game, rule).some((r) => r.reminderId === reminderId))
-				moveConfirm?.requestRule(reminderId, rule);
-			return;
-		}
-		// Loose mode (Trevor, 2026-10-18): nothing is given to a seat. A reminder goes where it
-		// is dropped, seats included; one still on a seat from before comes off it.
-		if (boardLooks.current.reminders === 'free') {
-			if (!spotAllowed(x, y)) return;
-			if (looseReminders(game).some((r) => r.reminderId === reminderId))
-				grimoire.setReminderSpot(reminderId, at);
-			else moveConfirm?.requestLoose(reminderId, () => looseAt(reminderId, at));
-			return;
-		}
-		// Dropped on another seat: moved (one History entry).
-		if (target && target !== from) moveConfirm?.request(reminderId, target);
-	}
+	const remDrag = new ReminderDragging(() => ({
+		grimoire,
+		game,
+		characters,
+		points,
+		size,
+		board: boardSize,
+		element: board,
+		free: boardLooks.current.reminders === 'free',
+		confirm: moveConfirm
+	}));
+	const dragOrigin = $derived(remDrag.origin);
+	const heldDrag = $derived(remDrag.held);
 
-	// ── Arranging seats ──
-	// Seats can be dragged anywhere (people on a couch, a gap by the door) and gaps left
-	// between neighbours. Only where seats are drawn changes; the seating order does not.
-	let arranging = $state(false);
-	function startArranging() {
-		arranging = true;
-		toast(
-			'Arrange seats',
-			'Drag a seat anywhere to space the table, or onto another seat to change the seating order.'
-		);
-	}
-
-	interface Drag {
-		seatId: SeatId;
-		pointerId: number;
-		/** From the pointer to the seat's centre, so the seat does not jump under a finger. */
-		offset: SeatPoint;
-		at: SeatPoint;
-		moved: boolean;
-	}
-	let drag = $state<Drag | undefined>();
-	/** Where seats are drawn now: a dragged seat follows the finger, with its reminders. */
-	const shown = $derived(
-		drag ? points.map((p, i) => (game.seating[i] === drag!.seatId ? drag!.at : p)) : points
-	);
+	// ── Arranging seats (seat-arranging.svelte.ts) ──
+	const seatArr = new SeatArranging(() => ({
+		grimoire,
+		seating: game.seating,
+		layout,
+		points,
+		size,
+		board: boardSize,
+		element: board
+	}));
+	const shown = $derived(seatArr.shown);
 
 	// Rotating moves the players, not the places: a hand-placed spot or a gap stays where it
 	// is and whoever now sits there takes it. Also after History restores a rotation.
@@ -601,105 +419,6 @@
 			grimoire.setLayout(followSeating(grimoire.layout, lastSeating, seating));
 		lastSeating = seating;
 	});
-	/**
-	 * Spread evenly keeps hand moves (Trevor, 2026-10-16): the seating order is first read from
-	 * where seats sit around the circle, so seats renumber to match (each move is in History),
-	 * then they are spaced evenly in that order.
-	 */
-	function spreadSeats() {
-		const even = seatPoints(game.seating, spreadEvenly(layout), { width, height });
-		const target = orderAround(
-			game.seating,
-			shown.map(toPx),
-			{ x: width / 2, y: height / 2 },
-			even.map(toPx)
-		);
-		for (let i = 0; i < target.length; i++) {
-			if (game.seating[i] !== target[i])
-				grimoire.run({ type: 'MoveSeat', seatId: target[i], position: i });
-		}
-		grimoire.setLayout(spreadEvenly(grimoire.layout));
-	}
-	/** Pointer movement, in pixels, before a press counts as a drag. */
-	const DRAG_SLOP = 6;
-	let pressedAt = { x: 0, y: 0 };
-
-	function boardPoint(event: PointerEvent): SeatPoint {
-		const rect = board!.getBoundingClientRect();
-		return {
-			x: ((event.clientX - rect.left) / rect.width) * 100,
-			y: ((event.clientY - rect.top) / rect.height) * 100
-		};
-	}
-	/**
-	 * The seat last touched draws over the others where tokens overlap, its name included
-	 * (Trevor, 2026-10-19). Only for this visit to the board: a reload goes back to seat order.
-	 */
-	let front = $state<SeatId | undefined>();
-	function dragStart(event: PointerEvent, seatId: SeatId, at: SeatPoint) {
-		front = seatId;
-		if (!arranging || drag || !board) return;
-		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-		const p = boardPoint(event);
-		pressedAt = { x: event.clientX, y: event.clientY };
-		drag = {
-			seatId,
-			pointerId: event.pointerId,
-			offset: { x: at.x - p.x, y: at.y - p.y },
-			at,
-			moved: false
-		};
-	}
-	function dragMove(event: PointerEvent) {
-		if (!drag || event.pointerId !== drag.pointerId) return;
-		const moved =
-			drag.moved ||
-			Math.hypot(event.clientX - pressedAt.x, event.clientY - pressedAt.y) >= DRAG_SLOP;
-		const p = boardPoint(event);
-		drag = { ...drag, moved, at: { x: p.x + drag.offset.x, y: p.y + drag.offset.y } };
-	}
-	/** The other seat a dragged seat is over, if any: dropping there changes the order. */
-	const reorderTarget = $derived.by(() => {
-		if (!drag?.moved) return undefined;
-		const dragged = drag.seatId;
-		let best: SeatId | undefined;
-		let bestDistance = size * 0.6;
-		game.seating.forEach((id, i) => {
-			if (id === dragged) return;
-			const d = Math.hypot(
-				((points[i].x - drag!.at.x) / 100) * width,
-				((points[i].y - drag!.at.y) / 100) * height
-			);
-			if (d < bestDistance) {
-				best = id;
-				bestDistance = d;
-			}
-		});
-		return best;
-	});
-	function dragEnd(event: PointerEvent) {
-		if (!drag || event.pointerId !== drag.pointerId) return;
-		const target = reorderTarget;
-		if (target) {
-			// Onto another seat: the player takes that place in the seating order (one History
-			// entry), and follows the ring rather than a hand-placed spot.
-			const position = game.seating.indexOf(target);
-			if (grimoire.run({ type: 'MoveSeat', seatId: drag.seatId, position }))
-				grimoire.setLayout(withoutPlaced(layout, drag.seatId));
-		} else if (drag.moved) grimoire.setLayout(withPlaced(layout, drag.seatId, drag.at));
-		drag = undefined;
-	}
-	/** Arrow keys move a seat while arranging, for keyboards and switch access. */
-	function nudge(event: KeyboardEvent, seatId: SeatId, at: SeatPoint) {
-		if (!arranging) return;
-		const step = { ArrowLeft: [-2, 0], ArrowRight: [2, 0], ArrowUp: [0, -2], ArrowDown: [0, 2] }[
-			event.key
-		];
-		if (!step) return;
-		event.preventDefault();
-		grimoire.setLayout(withPlaced(layout, seatId, { x: at.x + step[0], y: at.y + step[1] }));
-	}
-
 	/**
 	 * The seat whose token is held down (Trevor, 2026-10-19): its character's reminders light
 	 * up, on the board and in the bank, and everything else dims until it is let go.
@@ -865,6 +584,23 @@
 	/** The Savant sheet, from the day view's Savant info button (L5). */
 	let savantSeat = $state<SeatId | undefined>();
 	let savantOpen = $state(false);
+	/**
+	 * At the end of the night, a living Savant's information is offered (Trevor, 2026-10-23:
+	 * L46): a question, never a block.
+	 */
+	let savantAskOpen = $state(false);
+	function offerSavant() {
+		if (!preferences.current.assistance.savantInfo || grimoire.open.viewOnly) return;
+		const seatId = game.seating.find(
+			(id) => game.seats[id].characterId === 'savant' && !game.seats[id].dead
+		);
+		if (seatId === undefined) return;
+		savantSeat = seatId;
+		// After the day view has opened, if it opens too, so the question is above it.
+		void tick().then(() =>
+			requestAnimationFrame(() => requestAnimationFrame(() => (savantAskOpen = true)))
+		);
+	}
 	// ── Assisted night order (Trevor, 2026-10-16) ──
 	let guided = $state<{ step: NightStep; night: Night } | undefined>();
 	let guideOpen = $state(false);
@@ -966,7 +702,7 @@
 		!ended &&
 			!grimoire.open.viewOnly &&
 			!walk &&
-			!arranging &&
+			!seatArr.arranging &&
 			!placing &&
 			game.seating.some((id) => game.seats[id].characterId !== undefined)
 	);
@@ -1081,7 +817,7 @@
 				label: 'Set up',
 				text: 'Set up',
 				icon: 'bag' as const,
-				disabled: arranging || !!placing,
+				disabled: seatArr.arranging || !!placing,
 				onclick: openSetup
 			};
 		if (game.pastDays.length === 0)
@@ -1097,7 +833,7 @@
 			label: t('day.execution'),
 			text: t('day.execution'),
 			icon: 'night' as const,
-			disabled: !!ended || grimoire.open.viewOnly || arranging || !!placing,
+			disabled: !!ended || grimoire.open.viewOnly || seatArr.arranging || !!placing,
 			onclick: () => {
 				endDayOpen = true;
 			}
@@ -1203,6 +939,7 @@
 		walk = undefined;
 		// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
 		if (preferences.current.assistance.dayAfterNight) dayOpen = true;
+		offerSavant();
 	}
 	/**
 	 * The step's reminders already on the board are ringed too, on any night (Trevor,
@@ -1532,19 +1269,20 @@
 	{@const last = held.at(-1)}
 	{#if last}
 		<span class="held" role="group" aria-label={label}>
-			<span class:lifted={reminderDrag?.reminderId === last.reminderId}>
+			<span class:lifted={remDrag.drag?.reminderId === last.reminderId}>
 				<BoardReminder
 					label={reminderWords(last)}
 					infinite={isGeneric(last)}
 					symbol={last.symbol}
 					symbolColour={last.symbolColour}
+					symbolFill={last.symbolFill}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
-					disabled={arranging || watching}
+					disabled={seatArr.arranging || watching}
 					onTap={() => heldDialog?.show(last.reminderId)}
-					onDrag={(x, y, end) => dragReminder(last.reminderId, undefined, x, y, end)}
-					onCancel={() => (reminderDrag = undefined)}
+					onDrag={(x, y, end) => remDrag.move(last.reminderId, undefined, x, y, end)}
+					onCancel={() => remDrag.cancel()}
 				/>
 			</span>
 			{#if held.length > 1}
@@ -1554,7 +1292,7 @@
 						character={undefined}
 						more={held.length - 1}
 						size={Math.round(chip * 0.7)}
-						disabled={arranging || watching}
+						disabled={seatArr.arranging || watching}
 						onTap={onMore}
 					/>
 				</span>
@@ -1637,7 +1375,7 @@
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
 	/>
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
-		{#if arranging}
+		{#if seatArr.arranging}
 			<span class="title arranging-title">Arrange seats</span>
 			<span class="spacer"></span>
 			<IconButton
@@ -1653,9 +1391,10 @@
 			<Button
 				variant="quiet"
 				disabled={Object.keys(layout.placed).length === 0 && Object.keys(layout.gaps).length === 0}
-				onclick={spreadSeats}>Spread evenly</Button
+				onclick={() => seatArr.spread()}>Spread evenly</Button
 			>
-			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
+			<Button variant="accent" icon="check" onclick={() => (seatArr.arranging = false)}>Done</Button
+			>
 		{:else if placing}
 			<span class="title">Add a seat</span>
 			<Button variant="quiet" icon="close" onclick={() => (placing = undefined)}>Cancel</Button>
@@ -1720,7 +1459,7 @@
 
 	<div
 		class="board"
-		class:arranging
+		class:arranging={seatArr.arranging}
 		class:walking={walk !== undefined}
 		class:ended={!!ended}
 		style:--tray-h="{chip + 30}px"
@@ -1741,16 +1480,16 @@
 			{@const at = shown[i]}
 			<div
 				class="slot"
-				class:dragging={drag?.seatId === seat.seatId}
-				class:front={front === seat.seatId}
+				class:dragging={seatArr.drag?.seatId === seat.seatId}
+				class:front={seatArr.front === seat.seatId}
 				class:dim={holding !== undefined && holding !== seat.seatId}
 				style:left="{at.x}%"
 				style:top="{at.y}%"
-				onpointerdown={(event) => dragStart(event, seat.seatId, at)}
-				onpointermove={dragMove}
-				onpointerup={dragEnd}
-				onpointercancel={() => (drag = undefined)}
-				onkeydown={(event) => nudge(event, seat.seatId, at)}
+				onpointerdown={(event) => seatArr.dragStart(event, seat.seatId, at)}
+				onpointermove={(event) => seatArr.dragMove(event)}
+				onpointerup={(event) => seatArr.dragEnd(event)}
+				onpointercancel={() => seatArr.dragCancel()}
+				onkeydown={(event) => seatArr.nudge(event, seat.seatId, at)}
 				role="presentation"
 			>
 				<SeatToken
@@ -1769,24 +1508,24 @@
 						made: nominated.made.has(seat.seatId),
 						received: nominated.received.has(seat.seatId)
 					}}
-					dropTarget={reorderTarget === seat.seatId ||
-						(reminderDrag !== undefined &&
-							reminderDrag.target === seat.seatId &&
-							reminderDrag.from !== seat.seatId) ||
+					dropTarget={seatArr.reorderTarget === seat.seatId ||
+						(remDrag.drag !== undefined &&
+							remDrag.drag.target === seat.seatId &&
+							remDrag.drag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
-					dragFrom={reminderDrag !== undefined && reminderDrag.from === seat.seatId}
+					dragFrom={remDrag.drag !== undefined && remDrag.drag.from === seat.seatId}
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
 					onTap={(part) =>
-						!arranging &&
+						!seatArr.arranging &&
 						(watching
 							? readCharacter(seat.characterId)
 							: part === 'note'
 								? editNote(seat.seatId)
 								: openSeat(seat.seatId))}
-					onHold={arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
+					onHold={seatArr.arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
 					onGhostVote={() =>
-						!arranging &&
+						!seatArr.arranging &&
 						!watching &&
 						grimoire.run({
 							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
@@ -1803,9 +1542,9 @@
 		-->
 		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
 			{#each seats as seat, i (seat.seatId)}
-				{#if !looseMode && reminderDrag === undefined}
+				{#if !looseMode && remDrag.drag === undefined}
 					{#each fan[i] ?? [] as p, k (k)}
-						{@const from = rimToward(shown[i], p)}
+						{@const from = rimToward(shown[i], p, boardSize, size)}
 						<line
 							x1={from.x}
 							y1={from.y}
@@ -1824,12 +1563,12 @@
 			{#if count > 0}
 				{@const at = fan[i]}
 				{#each seat.reminders as reminder, k (reminder.reminderId)}
-					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
+					{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 					{@const spot =
 						boardLooks.current.reminders === 'free'
 							? grimoire.reminderSpots[reminder.reminderId]
 							: undefined}
-					{@const p = dragged ? reminderDrag!.at : (spot ?? at[k])}
+					{@const p = dragged ? remDrag.drag!.at : (spot ?? at[k])}
 					<div
 						class="chip-slot"
 						data-seat={i + 1}
@@ -1848,13 +1587,14 @@
 							infinite={isGeneric(reminder)}
 							symbol={reminder.symbol}
 							symbolColour={reminder.symbolColour}
+							symbolFill={reminder.symbolFill}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
-							disabled={arranging || watching}
+							disabled={seatArr.arranging || watching}
 							onTap={() => openReminder(seat.seatId, reminder.reminderId)}
-							onDrag={(x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
-							onCancel={() => (reminderDrag = undefined)}
+							onDrag={(x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
+							onCancel={() => remDrag.cancel()}
 						/>
 					</div>
 				{/each}
@@ -1863,9 +1603,9 @@
 
 		<!-- Reminders that belong to no one, where they were put down (Trevor, 2026-10-17). -->
 		{#each looseReminders(game) as reminder, k (reminder.reminderId)}
-			{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
+			{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 			{@const p = dragged
-				? reminderDrag!.at
+				? remDrag.drag!.at
 				: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
 			<div
 				class="chip-slot"
@@ -1887,13 +1627,14 @@
 					infinite={isGeneric(reminder)}
 					symbol={reminder.symbol}
 					symbolColour={reminder.symbolColour}
+					symbolFill={reminder.symbolFill}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
-					disabled={arranging || watching}
+					disabled={seatArr.arranging || watching}
 					onTap={() => heldDialog?.show(reminder.reminderId)}
-					onDrag={(x, y, end) => dragReminder(reminder.reminderId, undefined, x, y, end)}
-					onCancel={() => (reminderDrag = undefined)}
+					onDrag={(x, y, end) => remDrag.move(reminder.reminderId, undefined, x, y, end)}
+					onCancel={() => remDrag.cancel()}
 				/>
 			</div>
 		{/each}
@@ -1901,8 +1642,8 @@
 		{#if heldDrag}
 			<div
 				class="chip-slot dragging"
-				style:left="{reminderDrag!.at.x}%"
-				style:top="{reminderDrag!.at.y}%"
+				style:left="{remDrag.drag!.at.x}%"
+				style:top="{remDrag.drag!.at.y}%"
 				aria-hidden="true"
 			>
 				<BoardReminder
@@ -1910,6 +1651,7 @@
 					infinite={isGeneric(heldDrag)}
 					symbol={heldDrag.symbol}
 					symbolColour={heldDrag.symbolColour}
+					symbolFill={heldDrag.symbolFill}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled
@@ -1928,7 +1670,7 @@
 				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
 			>
 		{/each}
-		{#if reminderDrag && dragOrigin}
+		{#if remDrag.drag && dragOrigin}
 			{@const r = dragOrigin.reminder}
 			<p class="origin" role="status">
 				<ReminderToken
@@ -1939,7 +1681,7 @@
 					{game}
 					{characters}
 					characterId={r.characterId}
-					on={reminderDrag.from}
+					on={remDrag.drag.from}
 					interactive={false}
 				/>
 			</p>
@@ -1991,9 +1733,9 @@
 					? stepReminders(walkStep.character.id, walk.night, walkStep.character)
 					: undefined}
 				focusMode={stepFocus.current.mode}
-				{seatAt}
-				{spotAllowed}
-				{ruleAt}
+				seatAt={remDrag.seatAt}
+				spotAllowed={remDrag.spotAllowed}
+				ruleAt={remDrag.ruleAt}
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
@@ -2123,7 +1865,7 @@
 		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(() => (ruleOpen = true))}>
 			Add Fabled or Loric
 		</Button>
-		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
+		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(() => seatArr.start())}>
 			Arrange seats
 		</Button>
 		<hr class="menu-rule" />
@@ -2411,6 +2153,11 @@
 	}}
 />
 <SavantSheet bind:open={savantOpen} {grimoire} seatId={savantSeat} />
+<ConfirmDialog
+	bind:open={savantAskOpen}
+	title={t('day.savantAsk')}
+	onConfirm={() => (savantOpen = true)}
+/>
 
 <GuidedStep
 	bind:open={guideOpen}
@@ -2567,7 +2314,7 @@
 		   smallest phones so six buttons still fit at 320px. No dividing line: the dashed
 		   outline shows the board's edge while arranging. */
 		gap: min(var(--space-2), 1.5vw);
-		padding: var(--space-2) var(--space-2) 0;
+		padding: var(--menu-inset) var(--menu-inset) 0;
 	}
 	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
 	   on any image (Trevor, 2026-10-18). */
@@ -2913,6 +2660,11 @@
 		.arranging-title {
 			display: none;
 		}
+	}
+	/* Solid, so the board's background never shows through; the day timer on the board has
+	   the same fill and edge (Trevor, 2026-10-23). A hover still shows its wash. */
+	.toolbar :global(.button[data-variant='quiet']:not(:hover)) {
+		background: var(--surface);
 	}
 	/* Phones show the toolbar's icons only; wider screens add the words. */
 	.toolbar :global(.tool-label) {

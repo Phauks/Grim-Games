@@ -1,3 +1,20 @@
 {
-	"reminderPrompts": { "Alive": "revive" }
+	"reminderPrompts": {
+		"Alive": "revive"
+	},
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "On each of the two players the Shabaloth chose, alive or already dead."
+		},
+		"Alive": {
+			"seat": "other",
+			"life": "dead",
+			"withLabel": "Dead",
+			"note": "Replaces Dead on a player the Shabaloth chose last night who is regurgitated."
+		}
+	}
 }

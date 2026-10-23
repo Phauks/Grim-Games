@@ -5,7 +5,7 @@
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { onBoard } from './reminders.ts';
+	import { isGeneric, onBoard } from './reminders.ts';
 
 	/**
 	 * A reminder's ⋯ (Trevor, 2026-10-18), beside its delete in a placed reminder's sheet and
@@ -34,7 +34,12 @@
 			(reminderId ? onBoard(grimoire.game).find((r) => r.reminderId === reminderId) : undefined);
 		if (!token) return;
 		grimoire.addBankCopy({ characterId: token.characterId, label: token.label });
-		toast('Uncommon', 'More copies of this reminder than the game gives. The copy is in the bank.');
+		// An ∞ token has no limit, so another copy is never unusual (Trevor, 2026-10-23).
+		if (!isGeneric(token))
+			toast(
+				'Uncommon',
+				'More copies of this reminder than the game gives. The copy is in the bank.'
+			);
 		onDone?.();
 	}
 </script>

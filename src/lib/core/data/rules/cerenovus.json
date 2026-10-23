@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Mad": {
+			"seat": "any",
+			"note": "Any player the Cerenovus makes mad about a good character."
+		}
+	}
+}

@@ -118,9 +118,6 @@ export const APP_ITEMS: readonly NavItem[] = [
 	{ id: 'privacy', path: '/privacy', label: 'shell.privacy', icon: 'lock' }
 ];
 
-/** Report an issue's icon: not the Reports inbox's, so the two never look alike. */
-export const REPORT_ISSUE_ICON: IconSlot = 'warning';
-
 /** The item a page belongs to: its own path or anything under it. */
 export function isCurrent(item: NavItem, pathname: string): boolean {
 	if (item.path === '/') return pathname === '/';

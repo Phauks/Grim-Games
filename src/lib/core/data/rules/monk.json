@@ -3,5 +3,11 @@
 		"who": "marked",
 		"token": "Safe",
 		"from": "demon"
+	},
+	"reminderTargets": {
+		"Safe": {
+			"seat": "other",
+			"note": "The player the Monk protects from the Demon tonight."
+		}
 	}
 }

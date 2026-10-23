@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Hat": {
+			"seat": "any",
+			"note": "Whichever player currently wears the Ug hat."
+		}
+	}
+}

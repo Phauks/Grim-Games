@@ -1,0 +1,13 @@
+{
+	"reminderTargets": {
+		"Red Herring": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "Any good player, possibly the Fortune Teller themself."
+		}
+	},
+	"learns": {
+		"measure": "demon-or-token",
+		"token": "Red Herring"
+	}
+}

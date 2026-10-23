@@ -1,0 +1,25 @@
+{
+	"reminderTargets": {
+		"Outsider": {
+			"info": true,
+			"seat": "other",
+			"types": ["outsider"],
+			"note": "The player whose Outsider character the Librarian is shown."
+		},
+		"Wrong": {
+			"info": true,
+			"seat": "any",
+			"notWithLabel": "Outsider",
+			"note": "The second player shown, who is not that Outsider."
+		}
+	},
+	"learns": {
+		"measure": "pair-of-type",
+		"type": "outsider",
+		"noneWhenAbsent": true,
+		"reminders": {
+			"target": "Outsider",
+			"other": "Wrong"
+		}
+	}
+}

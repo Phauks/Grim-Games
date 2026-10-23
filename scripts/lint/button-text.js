@@ -56,3 +56,23 @@ export function visibleText(node) {
 	}
 	return out.trim();
 }
+
+/**
+ * What an attribute such as IconButton's `label` says, as far as it can be read: a literal,
+ * or `{t('key')}` / `{t('key', params)}` looked up in the English catalog.
+ * @param {any} node @param {string} name
+ */
+export function attributeText(node, name) {
+	const [value] = attribute(node, name)?.value ?? [];
+	if (value?.type === 'SvelteLiteral') return value.value.trim();
+	const e = value?.type === 'SvelteMustacheTag' ? value.expression : undefined;
+	if (e?.type === 'Literal' && typeof e.value === 'string') return e.value.trim();
+	if (
+		e?.type === 'CallExpression' &&
+		e.callee.type === 'Identifier' &&
+		e.callee.name === 't' &&
+		e.arguments[0]?.type === 'Literal'
+	)
+		return (message(e.arguments[0].value) ?? '').trim();
+	return '';
+}

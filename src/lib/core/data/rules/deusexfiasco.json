@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Whoopsie": {
+			"global": true,
+			"note": "Added to the Grimoire each time the Storyteller admits a mistake; not on a player."
+		}
+	}
+}

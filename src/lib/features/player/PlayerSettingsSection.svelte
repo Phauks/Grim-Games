@@ -46,6 +46,13 @@
 	onChange={(density) => playerSettings.update({ density })}
 />
 
+<!-- Also at the top of every script sheet (Trevor, 2026-10-23). -->
+<SettingToggle
+	label={t('player.lightSheet')}
+	checked={playerSettings.current.lightSheet}
+	onChange={(lightSheet) => playerSettings.update({ lightSheet })}
+/>
+
 <!-- Also in Print's own screen (Trevor: every setting in Settings and where it is used). -->
 <Collapsible title={t('player.printSettings')} level={3} storageKey="settings-player-print">
 	<PrintSettingsFields />

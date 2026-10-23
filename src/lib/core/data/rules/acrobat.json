@@ -1,0 +1,16 @@
+{
+	"kills": {
+		"by": "other",
+		"targets": "self"
+	},
+	"reminderTargets": {
+		"Chosen": {
+			"seat": "any",
+			"note": "The player the Acrobat picks tonight."
+		},
+		"Dead": {
+			"seat": "self",
+			"note": "The Acrobat, when their pick is or becomes drunk or poisoned tonight."
+		}
+	}
+}

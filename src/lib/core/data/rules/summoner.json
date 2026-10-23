@@ -1,0 +1,16 @@
+{
+	"reminderTargets": {
+		"Night 1": {
+			"seat": "self",
+			"note": "By the Summoner to count the nights."
+		},
+		"Night 2": {
+			"seat": "self",
+			"note": "By the Summoner to count the nights."
+		},
+		"Night 3": {
+			"seat": "self",
+			"note": "By the Summoner to count the nights."
+		}
+	}
+}

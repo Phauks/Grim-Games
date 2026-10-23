@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"Poisoned": {
+			"seat": "any",
+			"characters": ["snakecharmer"],
+			"note": "On the player who was the Demon and has just become the new Snake Charmer after the swap."
+		}
+	}
+}
