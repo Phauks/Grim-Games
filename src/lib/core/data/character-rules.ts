@@ -17,6 +17,7 @@ import {
 	isObject,
 	readBoolean,
 	readEnum,
+	readNumber,
 	readString,
 	type Issues
 } from './validate.ts';
@@ -82,6 +83,37 @@ export interface CharacterRules {
 	answers?: Answers;
 	/** The claim its player makes by day, logged from their day row and seat ⋯ menu (L56). */
 	dayClaim?: DayClaim;
+	/** How the ability leaves players drunk, poisoned or with no ability (`rules/ability.ts`). */
+	impairs?: Impairs;
+}
+
+/** Why an ability does not work. `no-ability`: an effect such as the Preacher's. */
+export const IMPAIRMENT_REASONS = ['drunk', 'poisoned', 'no-ability'] as const;
+export type ImpairmentReason = (typeof IMPAIRMENT_REASONS)[number];
+
+/**
+ * Who a reminder token impairs: `carrier`, the player it sits on (only a `type` character,
+ * and with `whileWorks` only while this character's own ability works: the Preacher's "No
+ * Ability"), or `others`, every other player except Travellers while the token is on the
+ * board (the Minstrel's "Everyone Is Drunk").
+ */
+export const IMPAIRS_ON = ['carrier', 'others'] as const;
+export interface TokenImpairment {
+	reason: ImpairmentReason;
+	on: (typeof IMPAIRS_ON)[number];
+	type?: CharacterType;
+	whileWorks?: boolean;
+}
+
+/**
+ * How the ability impairs players. `self`: its own player always is (the Drunk), or once at
+ * most `aliveAtMost` players live (the Witch). `tokens`: what each of its reminders does, by
+ * label. A reminder with no entry here impairs its carrier when its label says "Poisoned" or
+ * "Drunk".
+ */
+export interface Impairs {
+	self?: { reason: ImpairmentReason; aliveAtMost?: number };
+	tokens?: Readonly<Record<ReminderLabel, TokenImpairment>>;
 }
 
 /**
@@ -165,7 +197,8 @@ export const RULE_KEYS = [
 	'learns',
 	'answers',
 	'onNominated',
-	'dayClaim'
+	'dayClaim',
+	'impairs'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -283,7 +316,69 @@ export function parseCharacterRules(
 	}
 	const dayClaim = readEnum(raw, 'dayClaim', DAY_CLAIMS, path, issues, false);
 	if (dayClaim) rules.dayClaim = dayClaim;
+	if (raw.impairs !== undefined) {
+		const impairs = readImpairs(raw.impairs, `${path}.impairs`, issues, reminders);
+		if (impairs) rules.impairs = impairs;
+	}
 	return issues.list.length > before ? undefined : rules;
+}
+
+function readImpairs(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): Impairs | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['self', 'tokens'], path, issues);
+	const out: Impairs = {};
+	if (raw.self !== undefined) {
+		const at = `${path}.self`;
+		if (!isObject(raw.self)) {
+			issues.add(at, `expected object, got ${describe(raw.self)}`);
+		} else {
+			checkKeys(raw.self, ['reason', 'aliveAtMost'], at, issues);
+			const reason = readEnum(raw.self, 'reason', IMPAIRMENT_REASONS, at, issues, true);
+			const aliveAtMost = readNumber(raw.self, 'aliveAtMost', at, issues);
+			if (reason) out.self = { reason, ...(aliveAtMost !== undefined ? { aliveAtMost } : {}) };
+		}
+	}
+	if (raw.tokens !== undefined) {
+		const at = `${path}.tokens`;
+		if (!isObject(raw.tokens)) {
+			issues.add(at, `expected object, got ${describe(raw.tokens)}`);
+		} else {
+			const tokens: Record<ReminderLabel, TokenImpairment> = {};
+			for (const [label, value] of Object.entries(raw.tokens)) {
+				const here = `${at}.${label}`;
+				if (!ownReminder(label, reminders)) {
+					issues.add(here, 'not one of this character’s reminders');
+					continue;
+				}
+				if (!isObject(value)) {
+					issues.add(here, `expected object, got ${describe(value)}`);
+					continue;
+				}
+				checkKeys(value, ['reason', 'on', 'type', 'whileWorks'], here, issues);
+				const reason = readEnum(value, 'reason', IMPAIRMENT_REASONS, here, issues, true);
+				const on = readEnum(value, 'on', IMPAIRS_ON, here, issues, true);
+				const type = readEnum(value, 'type', CHARACTER_TYPES, here, issues, false);
+				const whileWorks = readBoolean(value, 'whileWorks', here, issues);
+				if (!reason || !on) continue;
+				tokens[label] = {
+					reason,
+					on,
+					...(type ? { type } : {}),
+					...(whileWorks !== undefined ? { whileWorks } : {})
+				};
+			}
+			out.tokens = tokens;
+		}
+	}
+	return out;
 }
 
 function readPrompts(
