@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
+import { menuButton, openSettingsDialog } from './shell.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
 
@@ -137,19 +138,18 @@ async function noSidewaysScroll(page: Page) {
 }
 
 // Trevor, 2026-10-17: the counts and search stay in view below the app header, never over it.
-test('the counts and search stick just below the header while the list scrolls', async ({
+test('the counts and search stick at the top of the screen while the list scrolls', async ({
 	page
 }) => {
 	await selectionFor(page, 5);
 	await page.mouse.wheel(0, 3000);
 	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-	const header = (await page.getByRole('banner').boundingBox())!;
 	const counts = page.getByTestId('setup-counts');
 	await expect(counts).toBeInViewport();
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
 	await expect(search).toBeInViewport();
 	for (const box of [await counts.boundingBox(), await search.boundingBox()]) {
-		expect(box!.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+		expect(box!.y).toBeGreaterThanOrEqual(-1);
 	}
 	// It really did scroll: the page heading is gone.
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).not.toBeInViewport();
@@ -463,7 +463,7 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 	expect(Math.abs(t!.y + t!.height / 2 - (f!.y + f!.height / 2))).toBeLessThan(2);
 
 	// A dropdown, not a switch (Trevor, 2026-10-16).
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
 	await page.getByRole('option', { name: 'Letters' }).tap();
@@ -521,7 +521,7 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 test('with Require a name, the token stays hidden until a name is typed', async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByText('Require a name before drawing', { exact: true }).tap();
 	await page.keyboard.press('Escape');
@@ -1036,6 +1036,24 @@ test('each good character row sets or clears a Demon bluff, up to three', async 
 	await expect(bluffButton('monk')).toBeEnabled();
 });
 
+test('the keyboard focus ring on a character token is round, around the token', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): it was a square around the token's button.
+	await selectionFor(page, 5);
+	const info = page.getByRole('button', { name: 'About the Chef' });
+	await info.tap();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeFocused();
+	expect(await info.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('none');
+	const face = info.locator('[data-token-face]');
+	const ring = await face.evaluate((el) => {
+		const style = getComputedStyle(el);
+		return { outline: style.outlineStyle, radius: style.borderRadius };
+	});
+	expect(ring).toEqual({ outline: 'solid', radius: '50%' });
+});
+
 // Trevor, 2026-10-19: the bag's cog and Share sit on the Draw heading's line, at the right.
 test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 	await selectionFor(page, 5);
@@ -1051,7 +1069,9 @@ test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 		const middle = box.y + box.height / 2;
 		expect(middle).toBeGreaterThan(title.y);
 		expect(middle).toBeLessThan(title.y + title.height);
-		expect(box.x).toBeGreaterThan(title.x);
+		// The hamburger comes before the title (no app header); the cog and Share after it.
+		if ((await button.getAttribute('aria-label')) === 'Menu') expect(box.x).toBeLessThan(title.x);
+		else expect(box.x).toBeGreaterThan(title.x);
 	}
 	await noSidewaysScroll(page);
 });
@@ -1147,16 +1167,16 @@ async function lockedDraw(page: Page) {
 	await lockDraw(page);
 }
 
-// Trevor (2026-10-20, Pixel): the footer was cut off under the Draw page's bottom bar.
-test('the page footer clears the bottom bar on the setup steps', async ({ page }) => {
+// Trevor (2026-10-20, Pixel): the page's end was cut off under the Draw page's bottom bar.
+test("the page's end clears the bottom bar on the setup steps", async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
 	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-	const footer = await page.getByRole('contentinfo').boundingBox();
+	const end = await page.locator('.app-body').boundingBox();
 	const bar = await page.locator('.setup-nav').boundingBox();
-	expect(footer && bar && footer.y + footer.height).toBeLessThanOrEqual(bar!.y + 1);
+	expect(end && bar && end.y + end.height).toBeLessThanOrEqual(bar!.y + 1);
 });
 
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
@@ -1169,10 +1189,9 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	await expect(title).toHaveText('Trouble Brewing');
 	await expect(title.getByTestId('script-logo')).toHaveCount(1);
 	await expect(page.locator('.setup-nav')).toHaveCount(0);
-	// No header, sidebar or footer to leave by while the phone is passed round.
-	await expect(page.getByRole('banner')).toHaveCount(0);
+	// No menu to leave by while the phone is passed round.
+	await expect(menuButton(page)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
-	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
 	// Hold to see character is off by default, locked or not (Trevor, 2026-10-20).
 	await page.getByRole('button', { name: /^Tile 1/ }).tap();
@@ -1202,8 +1221,8 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
-	// Unlocked: the header is back.
-	await expect(page.getByRole('banner')).toBeVisible();
+	// Unlocked: the menu is back.
+	await expect(menuButton(page)).toBeVisible();
 	await noSidewaysScroll(page);
 });
 
@@ -1294,7 +1313,6 @@ test('the board stays locked while the draw is, until the Storyteller PIN', asyn
 	const locked = page.getByTestId('board-locked');
 	await expect(locked).toContainText('The grimoire is locked');
 	await expect(page.getByTestId('seat')).toHaveCount(0);
-	await expect(page.getByRole('banner')).toHaveCount(0);
 
 	// Back to the draw is always there; the PIN opens the board.
 	await expect(locked.getByRole('link', { name: 'Back to the draw' })).toBeVisible();

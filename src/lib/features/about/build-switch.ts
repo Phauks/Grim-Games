@@ -11,7 +11,7 @@ export interface BuildSwitch {
 }
 
 /**
- * The footer link to the other build (Trevor, 2026-10-19: "switch between beta and production
+ * The menu's link to the other build (Trevor, 2026-10-19: "switch between beta and production
  * builds"). Production opens beta on `beta.<host>`; beta and every other preview, which Cloudflare
  * serves as `<alias>.<production host>`, open production on the host without that first label.
  * Local builds have no other build, so they get none. Only the path is carried over: the query

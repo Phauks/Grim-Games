@@ -61,6 +61,7 @@
 				alt=""
 				width="64"
 				height="64"
+				referrerpolicy="no-referrer"
 				{@attach iconFallback(fallbackIconUrl(character))}
 			/>{/if}</span
 	>

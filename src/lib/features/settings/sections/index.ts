@@ -1,5 +1,4 @@
 import { registerSettingsSection } from '../registry.ts';
-import AboutSection from './AboutSection.svelte';
 import AssistanceSection from './AssistanceSection.svelte';
 import ThemeSection from './ThemeSection.svelte';
 import TextSection from './TextSection.svelte';
@@ -89,11 +88,4 @@ registerSettingsSection({
 	icon: 'data',
 	component: DataSection,
 	order: 90
-});
-registerSettingsSection({
-	id: 'about',
-	label: { key: 'shell.about' },
-	icon: 'about',
-	component: AboutSection,
-	order: 95
 });

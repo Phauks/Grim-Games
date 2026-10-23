@@ -28,7 +28,7 @@
 
 <style>
 	/* Pinned to the screen's bottom edge, so it sits in the same place on every step. Its room
-	   is kept below the whole page, footer included (`.pinned-bottom` in base.css). */
+	   is kept below the whole page (`.pinned-bottom` in base.css). */
 	.setup-nav {
 		position: fixed;
 		right: 0;

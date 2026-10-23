@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 // Spike: the day log and the night answers it feeds (/spikes/day), touch only.
 
@@ -34,8 +35,11 @@ test('Demon voted feeds the Flowergirl, and there is no New day button', async (
 	// Nominations happen off the grimoire, so there is nothing to tap for them.
 	await expect(page.getByRole('radiogroup', { name: 'Tapping a player' })).toHaveCount(0);
 
-	// One tap in the pinned toolbar (Trevor, 2026-10-19), pressed until tapped again.
-	const voted = page.getByTestId('day-toolbar').getByRole('button', { name: 'Demon voted' });
+	// One tap on the Flowergirl's own row (Trevor, 2026-10-23: L43), pressed until tapped again.
+	await expect(page.getByTestId('day-toolbar').getByTestId('demon-voted')).toHaveCount(0);
+	const voted = page
+		.locator('li[data-character="flowergirl"]')
+		.getByRole('button', { name: 'Demon voted' });
 	await voted.tap();
 	await expect(voted).toHaveAttribute('aria-pressed', 'true');
 	await expect(
@@ -155,7 +159,7 @@ test('with help switched off the night is a checklist with no worked-out answers
 	page
 }) => {
 	await loaded(page);
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -247,4 +251,18 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 	// Ana is counted dead in the day view's living players.
 	await page.getByTestId('alive-count').tap();
 	await expect(anaRow).toContainText('Dead');
+});
+
+test('character rows read as one list split by dividers', async ({ page }) => {
+	await loaded(page);
+	// No boxes with the background showing between them (Trevor, 2026-10-23: L44).
+	const list = page
+		.locator('ul.rows')
+		.filter({ has: page.locator('li + li') })
+		.first();
+	const rows = list.locator(':scope > li');
+	const first = await place(rows.nth(0));
+	const second = await place(rows.nth(1));
+	expect(second.y - (first.y + first.height)).toBeLessThan(1);
+	await expect(rows.nth(1)).toHaveCSS('border-top-style', 'solid');
 });

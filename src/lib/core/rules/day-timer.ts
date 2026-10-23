@@ -69,11 +69,22 @@ export function reset(t: DayTimer): DayTimer {
 }
 
 /**
- * Lengthens or shortens the timer by whole steps, before or while it runs. The length never
- * drops below one step, nor below the time already used (so it can end now, not in the past).
+ * Changes the time shown by whole steps, before or while it runs (Trevor, 2026-10-23: "+/-
+ * should add subtract in countdown and timer both"). Counting down it lengthens or shortens
+ * the timer, never below one step nor below the time already used (so it can end now, not in
+ * the past). Counting up it adds to or takes from the time used, never below 0:00.
  */
-export function adjust(t: DayTimer, steps: number, now: number): DayTimer {
+export function adjust(
+	t: DayTimer,
+	steps: number,
+	now: number,
+	mode: DayTimerMode = 'down'
+): DayTimer {
 	const used = elapsed(t, now);
+	if (mode === 'up') {
+		const elapsedMs = Math.max(0, used + steps * DAY_TIMER_STEP_MS);
+		return isRunning(t) ? { ...t, elapsedMs, startedAt: now } : { ...t, elapsedMs };
+	}
 	const durationMs = Math.max(DAY_TIMER_STEP_MS, used, t.durationMs + steps * DAY_TIMER_STEP_MS);
 	return { ...t, durationMs };
 }

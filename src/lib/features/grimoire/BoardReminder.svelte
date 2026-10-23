@@ -216,7 +216,10 @@
 					class="symbol"
 					data-symbol={symbol}
 					style:color={symbolColour && SYMBOL_COLOUR_LOOKS[symbolColour].colour}
-					><IconGlyph id={withWeight(symbol, weight)} {set} /></span
+					><IconGlyph
+						id={withWeight(symbol, appearance.genericIconFill ? 'fill' : weight)}
+						{set}
+					/></span
 				>{:else if symbol}<span class="symbol emoji" data-symbol={symbol} aria-hidden="true"
 					>{symbol}</span
 				>{/if}{:else if src}<img
@@ -224,6 +227,7 @@
 				data-plain={appearance.reminderIconColour === 'plain' || undefined}
 				alt=""
 				draggable="false"
+				referrerpolicy="no-referrer"
 				{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
 			/>{/if}
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->

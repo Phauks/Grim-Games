@@ -475,6 +475,12 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
 	await expect(clock).toHaveText('0:00');
 	expect((await timer.boundingBox())!.height).toBe(height);
+	// More and less change the time shown in both modes (Trevor, 2026-10-23).
+	await timer.getByRole('button', { name: '30 seconds more' }).tap();
+	await expect(clock).toHaveText('0:30');
+	await timer.getByRole('button', { name: '30 seconds less' }).tap();
+	await timer.getByRole('button', { name: '30 seconds less' }).tap();
+	await expect(clock).toHaveText('0:00');
 	await timer.getByRole('button', { name: 'Start timer' }).tap();
 	await page.clock.runFor(61_000);
 	await expect(clock).toHaveText('1:01');
@@ -580,11 +586,13 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 
 	// Tapping the clock switches timer and stopwatch; there is no drop-down for it (Trevor).
 	await expect(sheet.getByRole('combobox', { name: 'Mode' })).toHaveCount(0);
-	await timer.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
-	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
 	await sheet.getByRole('combobox', { name: 'Timer sound' }).tap();
 	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
 	await expect(sheet.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
+	await timer.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
+	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
+	// A stopwatch plays no sound, so its choice is greyed in place (Trevor, 2026-10-23).
+	await expect(sheet.getByRole('combobox', { name: 'Timer sound' })).toBeDisabled();
 	// Vibration is its own switch beside the sound (Trevor, 2026-10-18).
 	const vibrate = sheet.getByRole('checkbox', { name: 'Vibrate' });
 	await expect(vibrate).toBeChecked();

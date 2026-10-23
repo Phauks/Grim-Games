@@ -109,7 +109,17 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'An unnamed seat shows "Seat N" where its name is asked for',
 				prs: [364]
 			},
-			{ id: 'L33', title: 'Day ghost votes count: a dark ghost on white', prs: [355] }
+			{ id: 'L33', title: 'Day ghost votes count: a dark ghost on white', prs: [355] },
+			{ id: 'L41', title: 'Savant information: Use these and Cancel always respond' },
+			{ id: 'L42', title: 'The Pit-Hag is no longer listed as a day ability' },
+			{ id: 'L43', title: 'The Flowergirl’s Demon voted sits in her own row' },
+			{ id: 'L44', title: 'Day rows split by dividers, not bordered cards' },
+			{ id: 'L45', title: 'Day view in two columns on wide screens' },
+			{ id: 'L46', title: 'End of night offers to set Savant information' },
+			{ id: 'L47', title: 'Savant information: type your own statements' },
+			{ id: 'L48', title: 'Savant information: no lock button' },
+			{ id: 'L49', title: 'Savant information: True or False, with the reason' },
+			{ id: 'L50', title: 'Savant information: a spoiler-free view to show' }
 		]
 	},
 	{
@@ -141,8 +151,12 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'Tell a script from a character or a character collection when adding JSON',
 				prs: [329]
 			},
-			{ id: 'L25', title: 'Edit custom scripts in place from the ⋯ menu' },
-			{ id: 'P1', title: 'Almanac link in the Glossary' },
+			{ id: 'L25', title: 'Edit custom scripts in place from the ⋯ menu', prs: [345] },
+			{ id: 'P1', title: 'Almanac link in the Glossary', prs: [357] },
+			{ id: 'L37', title: "New game opens the chosen script's source page", prs: [368] },
+			{ id: 'L51', title: 'Search: the list and the script details as one surface' },
+			{ id: 'L52', title: 'Search: open the shown script at its source' },
+			{ id: 'L53', title: 'The base three scripts link their wiki pages' },
 			{ id: 'P2', title: 'Alternate art packs in Icons settings' }
 		]
 	},
@@ -174,6 +188,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'Buttons stand out from what is behind them; End game is a red button'
 			},
 			{ id: 'S12', title: 'Lists of information never run together without a line or gap' },
+			{ id: 'S17', title: 'Every colour follows the theme: no hard-coded colours' },
 			{
 				id: 'S18',
 				title: 'Settings profiles: save your board and settings, and pick one for each game'

@@ -32,6 +32,7 @@ function loadImage(src: string | undefined): Promise<HTMLImageElement | undefine
 	return new Promise((resolve) => {
 		const img = new Image();
 		img.crossOrigin = 'anonymous';
+		img.referrerPolicy = 'no-referrer';
 		img.onload = () => resolve(img);
 		img.onerror = () => resolve(undefined);
 		img.src = src;

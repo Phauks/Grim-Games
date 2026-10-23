@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openMenu, openSettingsDialog } from './shell.ts';
 
 // Local runs use the preview email sender: no email is sent and the code is shown on screen.
 const homebrew = [
@@ -30,10 +31,13 @@ async function previewCode(page: Page): Promise<string> {
 	return code;
 }
 
-/** Sign out lives in the header's account card, not on the Account page (Trevor, 2026-10-18). */
+/** This device signs out from its own row in Devices on the Account page (2026-10-22). */
 async function signOut(page: Page) {
-	await page.getByRole('button', { name: /^Account: signed in as / }).tap();
-	await page.getByRole('button', { name: 'Sign out', exact: true }).tap();
+	await page.goto('/account');
+	await page
+		.getByTestId('devices-table')
+		.getByRole('button', { name: /^Sign out .*\(this device\)$/ })
+		.tap();
 }
 
 async function signInWithCode(page: Page, email: string, creating = true) {
@@ -87,17 +91,16 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	await page.reload();
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 	expect(await page.evaluate(() => document.cookie)).not.toContain('gg_session');
-	// Devices are a table; this device can't be signed out from its own row.
+	// Devices are a table; this device signs out from its own row (there is no header).
 	const devices = page.getByTestId('devices-table');
 	await expect(devices.getByText('(this device)')).toBeVisible();
 	// A rough place per device; the local server has none from Cloudflare, so None.
 	await expect(devices.getByText('Location').first()).toBeVisible();
 	const own = devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ });
-	await expect(own).toBeDisabled();
+	await expect(own).toBeEnabled();
 	// Signing out is a text button, not the trash can (Trevor, 2026-10-18).
 	await expect(own).toHaveText('Sign out');
-	// Sign out other devices sits in the section's header; Delete account has a section of its own;
-	// signing out of this device is only in the header's account card.
+	// Sign out other devices sits in the section's header; Delete account has a section of its own.
 	await expect(page.getByRole('button', { name: 'Sign out other devices' })).toBeDisabled();
 	await expect(page.getByRole('heading', { name: 'Delete account' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toHaveCount(0);
@@ -191,7 +194,7 @@ const libraryRow = (page: Page, name: string) =>
 	page.getByTestId('library-table').getByRole('button', { name: new RegExp(`^${name}`) });
 
 async function scriptsSwitch(page: Page) {
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -334,26 +337,26 @@ test('the account id is a chain of words that stays when the username and email 
 	await expect(naming.getByRole('status')).toHaveText('That username is taken.');
 });
 
-test('the header account button shows who is signed in, with settings and sign out', async ({
-	page
-}) => {
-	const email = uniqueEmail('header');
+test('Account in the menu opens the Account page, signed in or out', async ({ page }) => {
+	const email = uniqueEmail('menu');
 	await signInWithCode(page, email);
 	await page.goto('/library');
-	await page.getByRole('button', { name: `Account: signed in as ${email}` }).tap();
-	const card = page.getByTestId('account-card');
-	await expect(card).toContainText(email);
-	await page.getByRole('button', { name: 'Account settings' }).tap();
+	const account = (await openMenu(page)).getByRole('link', { name: 'Account' });
+	await expect(account.getByTestId('profile-icon').locator('..')).toHaveAttribute(
+		'data-signed-in',
+		'true'
+	);
+	await account.tap();
 	await expect(page).toHaveURL(/\/account$/);
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 
-	await page.getByRole('button', { name: `Account: signed in as ${email}` }).tap();
-	await page.getByRole('button', { name: 'Sign out', exact: true }).last().tap();
+	await signOut(page);
 	await expect(page.getByLabel('Email address')).toBeVisible();
-	// Signed out, the same button goes to sign-in.
+	// Signed out, the same item goes to sign-in.
 	await page.goto('/library');
-	await page.getByRole('button', { name: 'Account', exact: true }).tap();
+	await (await openMenu(page)).getByRole('link', { name: 'Account' }).tap();
 	await expect(page).toHaveURL(/\/account$/);
+	await expect(page.getByLabel('Email address')).toBeVisible();
 });
 
 test('my data downloads with the account name and the time in its file name', async ({ page }) => {
@@ -438,7 +441,9 @@ test('a code-only account can set a password in Account settings', async ({ page
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 });
 
-test('the profile icon is picked from the characters and shows in the header', async ({ page }) => {
+test('the profile icon is picked from the characters and shows on Account in the menu', async ({
+	page
+}) => {
 	await signInWithCode(page, uniqueEmail('icon'));
 	await expect(page.getByTestId('profile-icon').first()).not.toHaveAttribute('data-icon');
 	await page.getByRole('button', { name: 'Change icon' }).tap();
@@ -449,15 +454,20 @@ test('the profile icon is picked from the characters and shows in the header', a
 		.first()
 		.tap();
 	await expect(dialog).toBeHidden();
-	const header = page.getByRole('button', { name: /^Account: signed in as / });
-	await expect(header.getByTestId('profile-icon')).toHaveAttribute('data-icon', 'fortuneteller');
+	const inMenu = async () => (await openMenu(page)).getByRole('link', { name: 'Account' });
+	await expect((await inMenu()).getByTestId('profile-icon')).toHaveAttribute(
+		'data-icon',
+		'fortuneteller'
+	);
 	// It is kept on the account, not the device.
 	await page.reload();
-	await expect(header.getByTestId('profile-icon')).toHaveAttribute('data-icon', 'fortuneteller');
+	const account = await inMenu();
+	await expect(account.getByTestId('profile-icon')).toHaveAttribute('data-icon', 'fortuneteller');
+	await account.tap();
 
 	await page.getByRole('button', { name: 'Change icon' }).tap();
 	await dialog.getByRole('button', { name: 'None' }).tap();
-	await expect(header.getByTestId('profile-icon')).not.toHaveAttribute('data-icon');
+	await expect((await inMenu()).getByTestId('profile-icon')).not.toHaveAttribute('data-icon');
 });
 
 // Trevor (2026-10-18): what Download my data saves, Import data reads back in.

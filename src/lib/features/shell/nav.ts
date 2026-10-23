@@ -20,7 +20,11 @@ export interface NavItem {
 		| '/reference'
 		| '/info-tokens'
 		| '/account'
-		| '/reports';
+		| '/reports'
+		| '/about'
+		| '/changelog'
+		| '/roadmap'
+		| '/privacy';
 	label: MessageKey;
 	icon: IconSlot;
 }
@@ -102,6 +106,20 @@ export const REPORTS_ITEM: NavItem = {
 	label: 'shell.navReports',
 	icon: 'report'
 };
+
+/**
+ * The app's own pages, under "App" after You: what the footer held before it went (2026-10-23).
+ * Report an issue follows them as a button (NavList), and the build line under that.
+ */
+export const APP_ITEMS: readonly NavItem[] = [
+	{ id: 'about', path: '/about', label: 'shell.about', icon: 'about' },
+	{ id: 'changelog', path: '/changelog', label: 'shell.changelog', icon: 'notes' },
+	{ id: 'roadmap', path: '/roadmap', label: 'shell.roadmap', icon: 'forward' },
+	{ id: 'privacy', path: '/privacy', label: 'shell.privacy', icon: 'lock' }
+];
+
+/** Report an issue's icon: not the Reports inbox's, so the two never look alike. */
+export const REPORT_ISSUE_ICON: IconSlot = 'warning';
 
 /** The item a page belongs to: its own path or anything under it. */
 export function isCurrent(item: NavItem, pathname: string): boolean {
