@@ -39,8 +39,9 @@ test('the board shows how long the game has run since the first night began', as
 	await expect(clock).toHaveText(/Game time\s*0:00/);
 	await page.clock.runFor(65_000);
 	await expect(clock).toHaveText(/Game time\s*1:05/);
-	// The corner keeps its height (the night's strip may move the whole board).
-	expect((await corner.boundingBox())?.height).toBe(height);
+	// The corner never grows (the night's strip may move the whole board). Where the smaller
+	// board leaves no room for a line of its own, Game time shares the join code's line.
+	expect((await corner.boundingBox())!.height).toBeLessThanOrEqual(height!);
 
 	// A reload keeps the start: the clock carries on from it.
 	await page.reload();
