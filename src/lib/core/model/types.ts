@@ -230,6 +230,8 @@ export type DayEntry =
 			seatId?: SeatId;
 			text: string;
 			guesses?: CharacterGuess[];
+			/** For a statement (the Gossip's): whether it is true, as the Storyteller marked it. */
+			holds?: boolean;
 	  }
 	| {
 			kind: 'info';

@@ -149,10 +149,35 @@ test("the Juggler's note keeps a guess for each player", async ({ page }) => {
 	await guess.tap();
 	await page.getByRole('option', { name: 'Witch', exact: true }).tap();
 	await expect(guess).toHaveText('Witch');
+	// The live count of right guesses (L57): Ana is not the Witch, Eve is.
+	const correct = sheet.getByTestId('correct-guesses');
+	await expect(correct).toHaveText('0 correct');
+	await sheet.getByRole('combobox', { name: 'Guess for Eve' }).tap();
+	await page.getByRole('option', { name: 'Witch', exact: true }).tap();
+	await expect(correct).toHaveText('1 correct');
 	await sheet.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(sheet).toBeHidden();
 	await page.getByRole('button', { name: /^Guesses: Juggler/ }).tap();
 	await expect(guess).toHaveText('Witch');
+});
+
+test('the Gossip’s statement, marked true, is a yes on her night step (L58)', async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Gossip: a true public statement means a death tonight.
+	await loaded(page);
+	await sampleGame(page, 'Sects & Violets');
+	const button = page
+		.locator('li[data-character="gossip"]')
+		.getByRole('button', { name: /^Statement: Gossip/ });
+	await expect(button).toHaveCount(1);
+	await button.tap();
+	const sheet = page.getByRole('dialog', { name: /^Note: Gossip/ });
+	await sheet.getByRole('textbox', { name: 'Statement' }).fill('Fay is the Demon');
+	await sheet.getByText('The statement is true', { exact: true }).tap();
+	await sheet.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(sheet).toBeHidden();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
+	const gossip = await walkTo(page, 'Gossip');
+	await expect(gossip.getByRole('group', { name: 'Gossip answer' })).toContainText('Yes');
 });
 
 test('with help switched off the night is a checklist with no worked-out answers', async ({

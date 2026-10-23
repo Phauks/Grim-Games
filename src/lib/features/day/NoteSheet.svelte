@@ -9,6 +9,8 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { correctGuesses, dayClaim } from '#lib/core/rules/index.ts';
 	import type { DayPort } from './day-port.ts';
 
 	export interface NoteTarget {
@@ -32,7 +34,8 @@
 					e.kind === 'note' && e.characterId === target.characterId && e.seatId === target.seatId
 			)
 	);
-	const juggler = $derived(target?.characterId === 'juggler');
+	/** The claim the player makes in town (L56): guesses, or one statement true or false. */
+	const claim = $derived(target && dayClaim(target.characterId, game.characters));
 	const scriptIds = $derived(
 		game.game.script.entries.map((e) => (e.kind === 'official' ? e.id : e.character.id))
 	);
@@ -46,32 +49,42 @@
 
 	let text = $state('');
 	let guesses = $state<Record<SeatId, CharacterId>>({});
+	let holds = $state(false);
 
 	// Fill the form each time the sheet opens.
 	$effect(() => {
 		if (!open) return;
 		text = existing?.text ?? '';
 		guesses = Object.fromEntries((existing?.guesses ?? []).map((g) => [g.seatId, g.characterId]));
+		holds = existing?.holds ?? false;
 	});
+
+	const list = $derived<CharacterGuess[]>(
+		Object.entries(guesses)
+			.filter(([, id]) => id)
+			.map(([seatId, characterId]) => ({ seatId, characterId }))
+	);
+	/** How many guesses are right so far, from the grimoire's true characters. */
+	const correct = $derived(correctGuesses(game.game, list, game.characters).length);
 
 	function save() {
 		if (!target) return;
-		const list: CharacterGuess[] = Object.entries(guesses)
-			.filter(([, id]) => id)
-			.map(([seatId, characterId]) => ({ seatId, characterId }));
+		const truth = claim === 'statement' ? { holds } : {};
 		const ok = existing
 			? game.run({
 					type: 'EditDayNote',
 					entryId: existing.entryId,
 					text,
-					...(list.length ? { guesses: list } : {})
+					...(list.length ? { guesses: list } : {}),
+					...truth
 				})
 			: game.run({
 					type: 'DayNote',
 					characterId: target.characterId,
 					...(target.seatId ? { seatId: target.seatId } : {}),
 					text,
-					...(list.length ? { guesses: list } : {})
+					...(list.length ? { guesses: list } : {}),
+					...truth
 				});
 		if (ok) open = false;
 	}
@@ -104,11 +117,24 @@
 			save();
 		}}
 	>
-		<TextField label={t('day.note')} bind:value={text} multiline rows={6} testid="note-text" />
+		<TextField
+			label={t(claim === 'statement' ? 'day.statement' : 'day.note')}
+			bind:value={text}
+			multiline
+			rows={6}
+			testid="note-text"
+		/>
 
-		{#if juggler}
+		{#if claim === 'statement'}
+			<Toggle label={t('day.statementTrue')} checked={holds} onChange={(on) => (holds = on)} />
+		{:else if claim === 'guesses'}
 			<fieldset class="guesses">
-				<legend>{t('day.jugglerGuesses')}</legend>
+				<legend
+					>{t('day.guessesTitle')}
+					<span class="correct" data-testid="correct-guesses"
+						>{t('day.correctGuesses', { count: correct })}</span
+					></legend
+				>
 				{#each others as seatId (seatId)}
 					<div class="guess">
 						<span>{game.seatName(seatId)}</span>
@@ -143,9 +169,16 @@
 		border: 0;
 	}
 	legend {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
 		font-family: var(--font-control);
 		margin-bottom: var(--space-2);
 		font-weight: 600;
+	}
+	.correct {
+		font-weight: 400;
+		color: var(--on-surface-muted);
 	}
 	.guess {
 		display: grid;

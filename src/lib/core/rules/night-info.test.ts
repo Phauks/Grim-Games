@@ -5,6 +5,7 @@
  * - https://wiki.bloodontheclocktower.com/Flowergirl
  * - https://wiki.bloodontheclocktower.com/Undertaker
  * - https://wiki.bloodontheclocktower.com/Juggler
+ * - https://wiki.bloodontheclocktower.com/Gossip
  * - https://wiki.bloodontheclocktower.com/Oracle
  * - https://wiki.bloodontheclocktower.com/Washerwoman, /Librarian, /Investigator, /Chef,
  *   /Empath, /Fortune_Teller, /Steward, /Noble
@@ -330,6 +331,57 @@ describe('Juggler', () => {
 	it('has no answer with no guesses logged', () => {
 		const { game: g, seats } = game(['juggler', 'witch', 'nodashii']);
 		expect(answerOf(g, seats[0], 'juggler', characters).kind).toBe('none');
+	});
+});
+
+describe('Gossip', () => {
+	const statement =
+		(holds?: boolean) =>
+		(s: string[]): Command => ({
+			type: 'DayNote',
+			characterId: 'gossip',
+			seatId: s[0],
+			text: 'Ben is the Demon',
+			...(holds === undefined ? {} : { holds })
+		});
+
+	it('says a player dies when today’s statement was marked true', () => {
+		const { game: g, seats } = game(['gossip', 'nodashii', 'witch'], statement(true));
+		expect(answerOf(g, seats[0], 'gossip', characters)).toMatchObject({
+			kind: 'yes-no',
+			value: true
+		});
+	});
+
+	it('says nobody dies when it was marked false', () => {
+		const { game: g, seats } = game(['gossip', 'nodashii', 'witch'], statement(false));
+		expect(answerOf(g, seats[0], 'gossip', characters)).toMatchObject({
+			kind: 'yes-no',
+			value: false
+		});
+	});
+
+	it('asks for the truth, or for a statement, when either is missing', () => {
+		const unmarked = game(['gossip', 'nodashii', 'witch'], statement());
+		expect(answerOf(unmarked.game, unmarked.seats[0], 'gossip', characters)).toMatchObject({
+			kind: 'none',
+			reason: 'Mark whether the statement was true'
+		});
+		const silent = game(['gossip', 'nodashii', 'witch']);
+		expect(answerOf(silent.game, silent.seats[0], 'gossip', characters).kind).toBe('none');
+	});
+
+	it('is not reliable while the Gossip is poisoned (no death)', () => {
+		const { game: g, seats } = game(
+			['gossip', 'nodashii', 'witch', 'poisoner'],
+			statement(true),
+			(s) => ({
+				type: 'AddReminder',
+				seatId: s[0],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			})
+		);
+		expect(answerOf(g, seats[0], 'gossip', characters)).toMatchObject({ unreliable: 'poisoned' });
 	});
 });
 
