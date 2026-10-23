@@ -204,6 +204,11 @@
 				data-testid="preview-room-code"
 				>{t('room.joinCode')} <span class="code">{SAMPLE_CODE}</span></span
 			>{/if}
+		<!-- The night or day in play, as on the board (Trevor, 2026-10-23); a sample one here. -->
+		{#if preferences.current.assistance.boardPhase}<span
+				class="preview-room-code"
+				data-testid="preview-phase">{t('day.nightNumber', { number: 2 })}</span
+			>{/if}
 		{#if preferences.current.assistance.gameClock}<span
 				class="preview-room-code"
 				data-testid="preview-game-clock"

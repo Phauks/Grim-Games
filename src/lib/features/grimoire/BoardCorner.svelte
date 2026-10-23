@@ -26,6 +26,8 @@
 		/** The board's width and the root font size, in px. */
 		width: number;
 		rootFont: number;
+		/** The night or day in play, or Setup before the game starts. */
+		phase: string;
 		/** When the game started and ended, for Game time. */
 		startedAt: number | undefined;
 		endedAt: number | undefined;
@@ -46,6 +48,7 @@
 		fitRoom,
 		width,
 		rootFont,
+		phase,
 		startedAt,
 		endedAt,
 		onEdit,
@@ -79,6 +82,10 @@
 	 * join code; None until the first night begins. A Board setting, on by default.
 	 */
 	const showGameClock = $derived(!watching && preferences.current.assistance.gameClock);
+	/** The night or day in play (Trevor, 2026-10-23), a Board setting, on by default. */
+	const showPhase = $derived(preferences.current.assistance.boardPhase);
+	/** The phase and Game time share one line, so the day or night never costs the corner one. */
+	const showClockLine = $derived(showGameClock || showPhase);
 	let clockNow = $state(Date.now());
 	$effect(() => {
 		if (!showGameClock || startedAt === undefined || endedAt !== undefined) return;
@@ -107,14 +114,14 @@
 		const extra = Math.max(0, modeLines.length - 1) * (lineHs[0] ?? 0);
 		// Game time takes a line of its own where the corner has room for it; otherwise it
 		// shares the join code's line, so the name and rules keep their room.
-		const clockShown = showGameClock && clockFits ? clockH : 0;
+		const clockShown = showClockLine && clockFits ? clockH : 0;
 		const baseH = titleH - clockShown;
 		const stackedH = stackRules ? baseH : baseH + extra;
 		const stacked = fitRoom(stackedH);
 		const stack = extra > 0 && stacked >= 2 * rootFont;
 		const h = stack ? stackedH : stackRules ? baseH - extra : baseH;
 		const withClock = fitRoom(h + clockH);
-		if (showGameClock && (withClock >= 2 * rootFont || !showRoomCode))
+		if (showClockLine && (withClock >= 2 * rootFont || !showRoomCode))
 			return { room: withClock, stack, clock: true };
 		return { room: stack ? stacked : fitRoom(h), stack, clock: false };
 	});
@@ -136,6 +143,19 @@
 		room = cornerFit.room;
 	});
 </script>
+
+<!-- The day or night, then Game time: on a line of their own, or after the join code where the
+     corner has no line to spare (shared), where Game time's label is for screen readers only. -->
+{#snippet clockLine(shared: boolean)}
+	{#if showPhase}<span data-testid="board-phase">{phase}</span>{/if}{#if showPhase && showGameClock}
+		·
+	{/if}{#if showGameClock}<span data-testid="board-game-clock"
+			>{#if shared}<span class="visually-hidden">{t('history.gameLength')}</span>{:else}{t(
+					'history.gameLength'
+				)}{/if}
+			<span class="code" role="timer">{gameLengthText}</span></span
+		>{/if}
+{/snippet}
 
 {#if showTitle && game.script.meta?.name}
 	<!-- Small in the lower left corner, clear of the seats (Trevor, 2026-10-17). -->
@@ -192,22 +212,16 @@
 				><span class="room-code-line"
 					>{t('room.joinCode')}
 					<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
-					>{#if showGameClock && !clockFits}
-						·
-						<span data-testid="board-game-clock"
-							><span class="visually-hidden">{t('history.gameLength')}</span>
-							<span class="code" role="timer">{gameLengthText}</span></span
-						>{/if}</span
+					>{#if showClockLine && !clockFits}
+						· {@render clockLine(true)}{/if}</span
 				></button
 			>{/if}
 		<!-- The game's length (Trevor, 2026-10-23), kept in place before the first night so
 		     nothing moves when it starts. -->
-		{#if showGameClock && clockFits}<span
+		{#if showClockLine && clockFits}<span
 				class="game-clock"
-				data-testid="board-game-clock"
 				bind:clientHeight={() => clockH, (h) => (h > 0 ? (clockH = h) : undefined)}
-				>{t('history.gameLength')}
-				<span class="code" role="timer">{gameLengthText}</span></span
+				>{@render clockLine(false)}</span
 			>{/if}
 	</p>
 {/if}

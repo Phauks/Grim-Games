@@ -2,6 +2,8 @@
 export const day = {
 	'day.title': 'Day',
 	'day.titleNumber': 'Day {number}',
+	'day.nightNumber': 'Night {number}',
+	'day.setup': 'Setup',
 	'day.endDayConfirm': 'End the day?',
 	'day.execution': 'Execution',
 	'day.executionChoose': 'Choose',

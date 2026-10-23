@@ -459,11 +459,18 @@
 	});
 	/**
 	 * The seat whose token is held down (Trevor, 2026-10-19): its character's reminders light
-	 * up, on the board and in the bank, and everything else dims until it is let go.
+	 * up, on the board and in the bank, and everything else dims until it is let go. With
+	 * Board > Advanced's switch (Trevor, 2026-10-23), the reminders placed on that seat light
+	 * instead, whoever's they are; none in the bank is on a seat.
 	 */
 	let holding = $state<SeatId | undefined>();
-	function lit(reminder: Pick<Reminder, 'characterId' | 'ownerSeatId'>): boolean {
-		return holding !== undefined && isSeatsReminder(game, reminder, holding, characters);
+	function lit(
+		reminder: Pick<Reminder, 'characterId' | 'ownerSeatId'> & { reminderId?: ReminderId }
+	): boolean {
+		if (holding === undefined) return false;
+		if (boardLooks.current.holdLights === 'seat')
+			return game.seats[holding].reminders.some((r) => r.reminderId === reminder.reminderId);
+		return isSeatsReminder(game, reminder, holding, characters);
 	}
 
 	// ── Seat sheet ──
@@ -858,7 +865,12 @@
 
 	// ── Full screen, for those who don't know their browser's own way (Trevor, 2026-10-23).
 	// Only where the browser can: iPhone Safari can't for a page, so the button isn't there. ──
-	const canFullScreen = document.fullscreenEnabled === true;
+	/**
+	 * Not in the installed app (Trevor, 2026-10-23): it already has no address bar, and full
+	 * screen would only take the clock and status bar he wants to keep.
+	 */
+	const canFullScreen =
+		document.fullscreenEnabled === true && !matchMedia('(display-mode: standalone)').matches;
 	let fullScreen = $state(!!document.fullscreenElement);
 	$effect(() => {
 		const sync = () => (fullScreen = !!document.fullscreenElement);
@@ -1020,6 +1032,17 @@
 	/** When Start game was tapped, for Game time in the corner; read again when it is. */
 	let startedRead = $state(0);
 	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
+	/**
+	 * The night or day in play, for the corner (Trevor, 2026-10-23): Setup until Start game,
+	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day.
+	 */
+	const phase = $derived(
+		startedAt === undefined
+			? t('day.setup')
+			: game.pastDays.length === 0 || grimoire.nightRunning || grimoire.nightUnderway
+				? t('day.nightNumber', { number: game.pastDays.length + 1 })
+				: t('day.titleNumber', { number: game.pastDays.length })
+	);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -1549,6 +1572,7 @@
 			fitRoom={fitCorner}
 			{width}
 			{rootFont}
+			{phase}
 			{startedAt}
 			endedAt={ended?.endedAt}
 			onEdit={editGameInfo}
@@ -1635,6 +1659,8 @@
 		>
 			Tokens
 		</Button>
+		<!-- The board's settings apart from the app's items (Trevor, 2026-10-23). -->
+		<hr class="menu-rule" />
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 		<span class="menu-nav">
 			<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>

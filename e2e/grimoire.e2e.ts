@@ -1125,7 +1125,10 @@ test('the join code shows under the script name, a Board setting, and opens Shar
 	await expect(code).toHaveText(/^\d{3} \d{3}$/);
 	const shown = (await code.textContent())!;
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
-	await expect(corner).toHaveText(`Join code ${shown}`);
+	// The day or night and Game time join the code's line where a phone's corner has no line
+	// to spare for them.
+	const codeLine = new RegExp(`^Join code ${shown}(\\s*·\\s*Setup\\s*·\\s*Game time None)?$`);
+	await expect(corner).toHaveText(codeLine);
 	// A tap on it opens Share. The corner waits while a phone's seats leave it no room.
 	if (await page.getByTestId('script-title').isVisible()) {
 		await corner.tap();
@@ -1146,7 +1149,7 @@ test('the join code shows under the script name, a Board setting, and opens Shar
 	await share.getByText('Join code on the board', { exact: true }).tap();
 	await expect(onShare).toBeChecked();
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
-	await expect(corner).toHaveText(`Join code ${shown}`);
+	await expect(corner).toHaveText(codeLine);
 });
 
 // Trevor (2026-10-23): the Storyteller's name under the author, in the lower left corner.
@@ -3400,8 +3403,10 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 });
 
 /** Drags a token by mouse from its centre to a point, lifting it straight up first. */
-async function dragTo(page: Page, token: Locator, to: { x: number; y: number }) {
+async function dragTo(page: Page, token: Locator, to: { x: number; y: number } | Locator) {
 	await token.scrollIntoViewIfNeeded();
+	// A target is measured once the token is in view: scrolling to it can move the board.
+	if ('boundingBox' in to) to = await centreOf(to);
 	const box = (await token.boundingBox())!;
 	const x = box.x + box.width / 2;
 	const y = box.y + box.height / 2;
@@ -3437,15 +3442,11 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 	const held = page.getByRole('group', { name: "Angel's reminders" });
 
 	// The Angel's own reminder goes straight on (https://wiki.bloodontheclocktower.com/Angel).
-	await dragTo(
-		page,
-		all.getByRole('button', { name: 'Something Bad reminder' }),
-		await centreOf(angel)
-	);
+	await dragTo(page, all.getByRole('button', { name: 'Something Bad reminder' }), angel);
 	await expect(held.getByRole('button', { name: 'Something Bad reminder' })).toBeVisible();
 
 	// Another character's asks first, saying why (Trevor, 2026-10-17).
-	await dragTo(page, all.getByRole('button', { name: 'Poisoned reminder' }), await centreOf(angel));
+	await dragTo(page, all.getByRole('button', { name: 'Poisoned reminder' }), angel);
 	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
 	await expect(confirm).toContainText('Not a Fabled or Loric reminder.');
 	await expect(confirm).toContainText(/Now\s*In the reminder bank/);
@@ -3930,14 +3931,15 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Trevor (2026-10-18, 2026-10-19): game actions, the seats, the settings, then End game.
-	// Storyteller names who runs the game (Trevor, 2026-10-19).
-	await expect(menu.getByRole('separator')).toHaveCount(3);
+	// Storyteller names who runs the game (Trevor, 2026-10-19). A line between Tokens and
+	// Report an issue (Trevor, 2026-10-23).
+	await expect(menu.getByRole('separator')).toHaveCount(4);
 	const items = menu.locator('.menu > :is(button, hr), .menu > .menu-nav > button');
 	const names = await items.evaluateAll((els) =>
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes( Game info)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens (Navigation )?Report an issue \| End game$/
+		/^History Demon bluffs Notes( Game info)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens \| (Navigation )?Report an issue \| End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu
@@ -4375,7 +4377,7 @@ test('loose reminders belong to no seat, leave the bank, and are marked back in 
 	// Trevor (2026-10-18): dropped on a seat or anywhere else, it is put there, belongs to no
 	// seat, and leaves the bank either way.
 	const board = (await page.locator('.board').boundingBox())!;
-	await dragTo(page, inBank('Townsfolk'), await centreOf(seatLabelled(page, 'Seat 2')));
+	await dragTo(page, inBank('Townsfolk'), seatLabelled(page, 'Seat 2'));
 	await dragTo(page, inBank('Wrong'), {
 		x: board.x + board.width * 0.35,
 		y: board.y + board.height * 0.4
@@ -4389,7 +4391,7 @@ test('loose reminders belong to no seat, leave the bank, and are marked back in 
 	await reminderMode(page, 'Held by seat');
 	await expect(page.locator('[data-loose][data-unassigned]')).toHaveCount(2);
 	const wrong = loose.getByRole('button', { name: 'Wrong reminder' });
-	await dragTo(page, wrong, await centreOf(seatLabelled(page, 'Seat 3')));
+	await dragTo(page, wrong, seatLabelled(page, 'Seat 3'));
 	await expect(page.locator('[data-loose][data-unassigned]')).toHaveCount(1);
 });
 
@@ -5373,6 +5375,34 @@ test("holding a seat's token lights its character's reminders and dims the rest"
 	await page.mouse.up();
 	await expect(lit).toHaveCount(0);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
+
+	// Board > Advanced (Trevor, 2026-10-23): the reminders on the held seat light instead,
+	// whoever's they are, so Seat 2 lights Seat 3's token and Seat 3 lights nothing.
+	await openSettingsDialog(page);
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board' })
+		.tap();
+	await settings.getByRole('button', { name: /Advanced/ }).tap();
+	await settings.getByText("Holding a token lights its seat's reminders", { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	const hold = async (number: number) => {
+		const box = await seat(number);
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await page.mouse.down();
+	};
+	await hold(2);
+	await expect(placed).toHaveAttribute('data-lit', 'true');
+	await expect(lit).toHaveCount(1);
+	await expect(deadCell).toHaveClass(/dim/);
+	await page.mouse.up();
+	await expect(lit).toHaveCount(0);
+	await hold(3);
+	await expect(placed).toHaveClass(/dim/);
+	await expect(lit).toHaveCount(0);
+	await page.mouse.up();
 });
 
 test('the walk-through shows the character, then its player below, with the count at the top right', async ({

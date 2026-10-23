@@ -151,11 +151,6 @@ export interface TokenAppearance {
 	 */
 	reminderHighlight: boolean;
 	reminderHighlightLook: ReminderHighlightLook;
-	/**
-	 * The colour of the owning character's icon on reminder tokens (Trevor, 2026-10-20). The
-	 * icon itself is always shown (Trevor, 2026-10-23: "do not allow to be disabled").
-	 */
-	reminderIconColour: ReminderIconColour;
 }
 
 /** A ring round the reminder, a glow, or both, as a picked seat (SeatToken). */
@@ -168,8 +163,6 @@ export type ReminderHighlightLook = (typeof REMINDER_HIGHLIGHT_LOOKS)[number];
  * The icon in the alignment of the player who put the token down (red for a turned-evil good
  * player, Trevor 2026-10-16), in the character's usual alignment, or plain (unaligned).
  */
-export const REMINDER_ICON_COLOURS = ['player', 'character', 'plain'] as const;
-export type ReminderIconColour = (typeof REMINDER_ICON_COLOURS)[number];
 
 const oneOf = <T extends string>(choices: readonly T[], raw: unknown, fallback: T): T =>
 	choices.includes(raw as T) ? (raw as T) : fallback;
@@ -195,8 +188,7 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	setupFlower: false,
 	setupMovesName: false,
 	reminderHighlight: true,
-	reminderHighlightLook: 'ring',
-	reminderIconColour: 'player'
+	reminderHighlightLook: 'ring'
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -247,9 +239,9 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		setupFlower: input.setupFlower === true,
 		setupMovesName: input.setupMovesName === true,
 		reminderHighlight: input.reminderHighlight !== false,
-		reminderHighlightLook: oneOf(REMINDER_HIGHLIGHT_LOOKS, input.reminderHighlightLook, 'ring'),
-		// Earlier builds' `reminderIcon` switch is dropped: the owner's icon always shows.
-		reminderIconColour: oneOf(REMINDER_ICON_COLOURS, input.reminderIconColour, 'player')
+		reminderHighlightLook: oneOf(REMINDER_HIGHLIGHT_LOOKS, input.reminderHighlightLook, 'ring')
+		// Earlier builds' `reminderIcon` switch is dropped: the owner's icon always shows, and
+		// their `reminderIconColour` too: it is always the owner's alignment (Trevor, 2026-10-23).
 		// Earlier builds' `genericIconFill` switch is dropped: each ∞ token has its own
 		// (Trevor, 2026-10-23).
 	};

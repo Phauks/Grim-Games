@@ -567,18 +567,16 @@ test('reminder highlight can be switched and restyled, and the owner icon recolo
 
 	const icon = lit.locator('img');
 	await expect(icon).toBeVisible();
-	await dialog.getByRole('combobox', { name: "Owner's icon colour", exact: true }).tap();
-	await page.getByRole('option', { name: 'Plain', exact: true }).tap();
-	await expect(icon).toHaveAttribute('data-plain', 'true');
-	// The owner's icon is always shown (Trevor, 2026-10-23): no switch to hide it.
+	// The owner's icon is always shown, in its owner's alignment (Trevor, 2026-10-23): no
+	// switch to hide it and no colour to pick.
 	await expect(dialog.getByText("Owner's icon on reminders", { exact: true })).toHaveCount(0);
+	await expect(dialog.getByText("Owner's icon colour", { exact: true })).toHaveCount(0);
 	const saved = await page.evaluate(
 		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
 	);
 	expect(saved).toMatchObject({
 		reminderHighlight: false,
-		reminderHighlightLook: 'glow',
-		reminderIconColour: 'plain'
+		reminderHighlightLook: 'glow'
 	});
 });
 
