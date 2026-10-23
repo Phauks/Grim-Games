@@ -41,6 +41,7 @@
 	value={boardLooks.current.logoOpacity}
 	{...LOGO_OPACITY}
 	defaultValue={DEFAULT_BOARD_LOOKS.logoOpacity}
+	disabled={!boardLooks.current.logo}
 	format={(opacity) => intl.number(opacity, { style: 'percent' })}
 	onChange={(logoOpacity) => boardLooks.update({ logoOpacity })}
 />
