@@ -4,5 +4,8 @@
 			"seat": "self",
 			"note": "On the Fisherman once they have had their advice."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

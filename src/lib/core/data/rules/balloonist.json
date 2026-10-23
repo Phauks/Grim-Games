@@ -4,5 +4,18 @@
 			"seat": "any",
 			"note": "The player shown tonight; after the first night their character type must differ from the previous night's pick."
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Know",
+				"text": "Choose any player to show the Balloonist: put [Know] on them",
+				"target": {
+					"choose": "any",
+					"choice": "any player"
+				},
+				"reason": "The player the Balloonist is shown on the first night"
+			}
+		]
 	}
 }

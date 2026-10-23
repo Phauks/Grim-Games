@@ -9,5 +9,8 @@
 			"notWithLabel": "Visitor",
 			"note": "The third visitor, who gets false info."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

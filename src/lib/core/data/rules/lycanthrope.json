@@ -26,5 +26,18 @@
 	},
 	"deathCheck": {
 		"kind": "chosen-good-dies"
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Faux Paw",
+				"text": "Choose a good player who registers as evil: put [Faux Paw] on them",
+				"target": {
+					"choose": "good",
+					"choice": "a good player"
+				},
+				"reason": "This good player registers as evil"
+			}
+		]
 	}
 }

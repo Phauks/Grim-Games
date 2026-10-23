@@ -20,5 +20,22 @@
 				"winner": "good"
 			}
 		]
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Night 1",
+				"text": "Put [Night 1] on the Summoner",
+				"target": {
+					"self": true
+				},
+				"reason": "Counts the nights until the Summoner chooses on night 3"
+			}
+		],
+		"notes": [
+			{
+				"text": "Choose 3 not-in-play good characters as the Summoner’s bluffs"
+			}
+		]
 	}
 }

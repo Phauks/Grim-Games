@@ -12,5 +12,19 @@
 		"reminders": {
 			"each": "Know"
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Know",
+				"text": "Choose a good player to show the Steward: put [Know] on them",
+				"target": {
+					"choose": "good",
+					"choice": "a good player",
+					"notSelf": true
+				},
+				"reason": "The good player the Steward is shown"
+			}
+		]
 	}
 }

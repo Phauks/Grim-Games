@@ -16,5 +16,8 @@
 			"seat": "self",
 			"note": "On the Courtier once the drunkenness has ended."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
 	}
 }

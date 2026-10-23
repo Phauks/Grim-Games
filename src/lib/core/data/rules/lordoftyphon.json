@@ -7,5 +7,13 @@
 			"seat": "any",
 			"note": "The player the Lord of Typhon picks to kill."
 		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "Check the evil players sit in a line with the Lord of Typhon in the middle"
+			}
+		],
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

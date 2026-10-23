@@ -38,7 +38,7 @@ static/data/       synced TPI data and icons (generated; see Data)
 | `npm run sync:data`                              | Refresh TPI's data and icons in `static/data/` (see [Data](#data))                                                |
 | `npm run scaffold:rules-tests`                   | Create missing character and jinx test files (see [Rules tests](#rules-tests))                                    |
 | `npm run check:rules-coverage`                   | Fail if a character or jinx has no test file; count scenario todos                                                |
-| `npm run export:setup-prep -- <file>`            | Write every character's setup preparation as JSON for review (from `setup-reminders.data.ts`)                     |
+| `npm run export:setup-prep -- <file>`            | Write every character's setup preparation as JSON for review (from each rules file's `setupPrep`)                 |
 | `npm run export:reminder-placeholders -- <file>` | Write what every `:reminder:` in TPI's night text means as JSON for review (from `reminder-placeholders.data.ts`) |
 
 If Chromium is already installed somewhere (for example a sandbox), set `PLAYWRIGHT_CHROMIUM_PATH` to its executable instead of running `npx playwright install`.

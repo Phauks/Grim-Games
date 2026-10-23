@@ -16,5 +16,8 @@
 			"withLabel": "Dead",
 			"note": "Replaces Dead on a player the Shabaloth chose last night who is regurgitated."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

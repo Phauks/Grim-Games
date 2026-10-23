@@ -4,5 +4,14 @@
 			"seat": "any",
 			"note": "On each player given a goal, alive or dead, Travellers included."
 		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "Choose goals for one or more players: put [Goal] on each (or hand them out later)",
+				"tokens": ["Goal"]
+			}
+		],
+		"none": "goals can be handed out at any time; mark a player with Goal when they get one"
 	}
 }

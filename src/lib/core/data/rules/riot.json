@@ -12,5 +12,18 @@
 			"note": "On the Riot on day 3.",
 			"seat": "self"
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Day 1",
+				"text": "At the start of the first day, put [Day 1] on the Riot",
+				"target": {
+					"self": true
+				},
+				"reason": "Counts the days until day 3",
+				"timing": "first-day"
+			}
+		]
 	}
 }

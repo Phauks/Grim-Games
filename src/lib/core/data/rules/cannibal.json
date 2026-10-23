@@ -9,5 +9,8 @@
 			"seat": "self",
 			"note": "On the Cannibal when their lunch was evil."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

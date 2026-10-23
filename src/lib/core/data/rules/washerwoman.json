@@ -20,5 +20,28 @@
 			"target": "Townsfolk",
 			"other": "Wrong"
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Townsfolk",
+				"text": "Choose a Townsfolk to show the Washerwoman: put [Townsfolk] on them",
+				"target": {
+					"choose": "townsfolk",
+					"choice": "a Townsfolk player",
+					"notSelf": true
+				},
+				"reason": "Marks the Townsfolk the Washerwoman learns about"
+			},
+			{
+				"label": "Wrong",
+				"text": "Choose a player: put [Wrong] on them",
+				"target": {
+					"choose": "any",
+					"choice": "any player"
+				},
+				"reason": "Marks the second player the Washerwoman is shown"
+			}
+		]
 	}
 }

@@ -40,5 +40,18 @@
 				"winner": "evil"
 			}
 		]
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Day 1",
+				"text": "At the start of the first day, put [Day 1] on the Leviathan",
+				"target": {
+					"self": true
+				},
+				"reason": "Counts the days; evil wins after day 5",
+				"timing": "first-day"
+			}
+		]
 	}
 }

@@ -127,6 +127,21 @@ describe('parseCharacterRules', () => {
 		expect(parse({ deathCheck: { kind: 'marked-killed-by-demon' } }).issues).toEqual([
 			'rules.deathCheck.token: missing'
 		]);
+		expect(
+			parse({ setupPrep: { reminders: [{ label: 'Dead', text: 'x', reason: 'y' }] } }).issues
+		).toEqual(['rules.setupPrep.reminders[0].target: missing']);
+		expect(
+			parse({
+				setupPrep: {
+					reminders: [
+						{ label: 'Lit', text: 'x', reason: 'y', target: { choose: 'all', choice: 'z' } }
+					]
+				}
+			}).issues
+		).toEqual([
+			'rules.setupPrep.reminders[0].label: not one of this character’s reminders',
+			'rules.setupPrep.reminders[0].target.choose: unknown value "all"'
+		]);
 		expect(parse({ dayClaim: 'shout' }).issues).toEqual(['rules.dayClaim: unknown value "shout"']);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'
