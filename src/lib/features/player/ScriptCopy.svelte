@@ -8,6 +8,7 @@
 	import ScriptSheet from './ScriptSheet.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
+	import { LIGHT_SHEET_STYLE } from '#lib/ui/themes/print.ts';
 
 	/**
 	 * The players' copy of a script: the /play Script tab, as one component. The Storyteller's
@@ -59,7 +60,12 @@
 
 <!-- The light background switch sits at the top of every copy, wherever it shows, and in
      Settings > Player (Trevor, 2026-10-23). -->
-<div class="copy" class:light={playerSettings.current.lightSheet} data-testid="script-copy">
+<div
+	class="copy"
+	class:light={playerSettings.current.lightSheet}
+	style={playerSettings.current.lightSheet ? LIGHT_SHEET_STYLE : undefined}
+	data-testid="script-copy"
+>
 	<div class="head">
 		{#if byline && data}<ScriptByline author={script.meta.author} {version} />{/if}
 		<span class="light-switch">
@@ -96,20 +102,8 @@
 	.light-switch {
 		margin-left: auto;
 	}
-	/* Dark ink on light paper whatever the theme, team colours darkened to stay readable. */
+	/* The colours themselves are LIGHT_SHEET (themes/print.ts), set on the element. */
 	.light {
-		--surface: #fbf8f1;
-		--surface-raised: #efe9dc;
-		--surface-selected: #e2d9c6;
-		--on-surface: #1b1b1b;
-		--on-surface-muted: #555555;
-		--heading: #1b1b1b;
-		--border: rgb(0 0 0 / 0.18);
-		--button-edge: #8a7a5c;
-		--good: #1f5fa8;
-		--evil: #a8231f;
-		--traveller-text: #5c2f6e;
-		--loric-text: #2e6b34;
 		background: var(--surface);
 		color: var(--on-surface);
 	}
