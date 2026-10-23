@@ -48,9 +48,9 @@
 	 * the skull), dark on every theme so it stands out from any token face.
 	 */
 	.dead-badge[data-vote] {
-		border-color: rgb(232 222 200); /* colour-ok: the badge looks the same on every theme */
-		background: rgb(16 12 20); /* colour-ok: the badge looks the same on every theme */
-		color: rgb(244 236 218); /* colour-ok: the badge looks the same on every theme */
+		border-color: var(--ghost-vote-rim);
+		background: var(--ghost-vote-badge);
+		color: var(--ghost-vote);
 	}
 	/* The ghost vote spent: a grey outline ghost. */
 	.dead-badge[data-vote='used'] {
