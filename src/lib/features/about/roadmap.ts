@@ -89,7 +89,10 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'G6', title: 'A light background switch on every script sheet, also in Settings' },
 			{ id: 'G7', title: 'One start flow for every game, with Back on every step' },
 			{ id: 'G8', title: 'Change the script from inside a game, keeping its players' },
-			{ id: 'G9', title: 'Game info shows everything the board corner can, join code and Game time too' }
+			{
+				id: 'G9',
+				title: 'Game info shows everything the board corner can, join code and Game time too'
+			}
 		]
 	},
 	{
