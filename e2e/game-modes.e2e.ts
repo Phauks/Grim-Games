@@ -700,6 +700,21 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
 	await expect(picker).toBeHidden();
 	await expect(extras.nth(1)).toContainText('Goon');
+	// A long name ends in "…" in its badge; the row's tools keep their place (Trevor,
+	// 2026-10-23: "long name pushes rest of stuff to side").
+	await extras.nth(2).getByRole('button', { name: 'Choose a hidden Minion' }).tap();
+	const minions = page.getByRole('dialog', { name: 'Choose a hidden Minion' });
+	await minions.getByRole('searchbox').fill('Devil');
+	await minions.getByRole('button', { name: /^Devil.s Advocate\b/ }).tap();
+	await expect(minions).toBeHidden();
+	await expect(extras.nth(2)).toContainText(/Devil.s Advocate/);
+	const row = (await extras.nth(2).boundingBox())!;
+	const clear = (await extras
+		.nth(2)
+		.getByRole('button', { name: 'Clear the hidden Minion' })
+		.boundingBox())!;
+	expect(clear.x + clear.width).toBeLessThanOrEqual(row.x + row.width + 1);
+	await noSidewaysScroll(page);
 	await extras.nth(2).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
 	await expect(extras.nth(2)).toContainText('None');
 	await extras.nth(3).getByRole('button', { name: 'Clear the hidden Demon' }).tap();
@@ -1444,6 +1459,64 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.locator('.row[data-dashed]')).toHaveCount(1);
 	await expect(page.locator('.row[data-dashed]')).toContainText('Goon');
+});
+
+test('Game info’s Special rules opens the screen once the game is set up', async ({ page }) => {
+	// Trevor (2026-10-23): "This special rules button seems to do nothing but flash the page".
+	await page.goto('/new');
+	await chooseRules(page, '+1');
+	const panel = modesPanel(page);
+	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
+	const board = new URL(page.url()).pathname.replace(/\/extras$/, '');
+	const extras = page.getByTestId('extras').locator('li');
+	for (const [i, type] of ['Townsfolk', 'Outsider', 'Minion', 'Demon'].entries()) {
+		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
+		if (await clear.isEnabled()) await clear.tap();
+	}
+	await extras.nth(1).getByRole('button', { name: 'Choose a hidden Outsider' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
+	await picker.getByRole('searchbox').fill('Goon');
+	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
+	await page.getByRole('button', { name: 'Choose characters' }).tap();
+	await expect(page).toHaveURL(`${board}/setup`);
+	for (const name of ['Washerwoman', 'Empath', 'Poisoner', 'Imp'])
+		await page
+			.getByTestId('character-picker')
+			.getByRole('button', { name: new RegExp(`^${name}\\b`) })
+			.first()
+			.tap();
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	const confirm = page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' });
+	if (await confirm.isVisible()) await confirm.tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+	for (let n = 1; n <= 5; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	await page.goto(board);
+	await page.getByTestId('mode-menu').tap();
+	await page
+		.getByRole('dialog', { name: 'Game info', exact: true })
+		.getByRole('button', { name: 'Special rules' })
+		.tap();
+	// It stays on the screen rather than going straight back to the board.
+	await expect(page).toHaveURL(`${board}/extras`);
+	await expect(page.getByRole('heading', { name: 'Special rules', level: 1 })).toBeVisible();
+	await expect(extras.nth(1)).toContainText('Goon');
+	await page.waitForTimeout(500);
+	await expect(page).toHaveURL(`${board}/extras`);
+	// Characters are chosen by now: the bar goes back to the board.
+	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
+	await expect(bar.getByRole('button', { name: 'Choose characters' })).toHaveCount(0);
+	await bar.getByRole('link', { name: 'Grimoire' }).tap();
+	await expect(page).toHaveURL(board);
 });
 
 test('Start game restates the special rules first, and Back returns to New game', async ({
