@@ -229,6 +229,10 @@ function describeEvent(
 			return [text('Avatar and frame for '), seatPart(before, event.seatId)];
 		case 'GameNotesSet':
 			return [text(event.notes ? 'Game notes' : 'Cleared the game notes')];
+		case 'GameNoteSet':
+			return [text(event.note.title ? `Game note: ${event.note.title}` : 'Game note')];
+		case 'GameNoteDeleted':
+			return [text('Deleted a game note')];
 		case 'SeatsSwapped':
 			return [
 				text('Swapped '),

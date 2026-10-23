@@ -2723,14 +2723,42 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	const sheet = page.getByTestId('notes-sheet');
 	// Every player, headed by their character, seat and name (Trevor, 2026-10-19).
 	await expect(sheet.locator('li[data-seat]')).toHaveCount(8);
-	const general = sheet.getByRole('button', { name: /^Game notes:/ });
-	await expect(general).toHaveAccessibleName('Game notes: None');
-	await general.tap();
-	const gameDialog = page.getByRole('dialog', { name: 'Game notes' });
-	await gameDialog.getByRole('textbox').tap();
-	await page.keyboard.type('Ana asked about the Fang Gu');
+	// Game notes as the player's notebook keeps them (Trevor, 2026-10-23): several, each with a
+	// title, starting as a "+ New note" card with a dashed edge.
+	const add = sheet.getByTestId('new-note');
+	const cards = sheet.locator('[data-note]');
+	await expect(cards).toHaveCount(0);
+	await expect(add).toHaveText('New note');
+	await expect(add).toHaveCSS('border-top-style', 'dashed');
+	await add.tap();
+	const gameDialog = page.getByRole('dialog', { name: 'Note' });
+	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Fang Gu');
+	await gameDialog.getByRole('textbox', { name: 'Text' }).fill('Ana asked about the Fang Gu');
 	await gameDialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(general).toContainText('Ana asked about the Fang Gu');
+	await expect(cards).toHaveCount(1);
+	await expect(cards).toHaveText(/^\s*Fang Gu\s*Ana asked about the Fang Gu\s*$/);
+	// A new note left blank is not kept.
+	await add.tap();
+	await page.keyboard.press('Escape');
+	await expect(cards).toHaveCount(1);
+	// A second note goes after the first, and the trash deletes it after asking.
+	await add.tap();
+	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Bluffs');
+	await gameDialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(cards).toHaveText([/Fang Gu/, /Bluffs/]);
+	await cards.nth(1).tap();
+	await gameDialog.getByRole('button', { name: 'Delete note' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Delete this note?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(cards).toHaveCount(1);
+	// Each note hides its own text in the list, keeping its title.
+	await cards.first().tap();
+	await gameDialog.getByRole('button', { name: 'Hide contents' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(cards).toHaveText(/^\s*Fang Gu\s*Hidden\s*$/);
+	await page.screenshot({ path: `test-results/game-notes-${test.info().project.name}.png` });
 
 	const notes = sheet.getByRole('button', { name: /^Notes for Seat 1 \(Ana\):/ });
 	await expect(notes).toHaveAccessibleName('Notes for Seat 1 (Ana): None');
@@ -2806,7 +2834,8 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
 	await expect(history).toContainText('Note on Ana');
-	await expect(history).toContainText('Game notes');
+	await expect(history).toContainText('Game note: Fang Gu');
+	await expect(history).toContainText('Deleted a game note');
 });
 
 test("a seat's reminder list shows who has each reminder and moves it here", async ({ page }) => {

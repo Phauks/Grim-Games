@@ -58,8 +58,12 @@ export type Command =
 	 * clears it. Sent by the live room, never typed by the Storyteller.
 	 */
 	| { type: 'SetSeatLook'; seatId: SeatId; avatar?: AvatarId; frame?: FrameId }
-	/** The game's general notes; no `notes` or blank text clears them. */
-	| { type: 'SetGameNotes'; notes?: string }
+	/**
+	 * Writes one of the game's notes, trimmed; no `noteId` adds a new one (nothing when it is
+	 * blank).
+	 */
+	| { type: 'SetGameNote'; noteId?: string; title: string; text: string; hidden: boolean }
+	| { type: 'DeleteGameNote'; noteId: string }
 	/**
 	 * Puts a character token on a seat. Without `alignment`, an empty seat takes the
 	 * default for the character type and a seat that had a character keeps its alignment

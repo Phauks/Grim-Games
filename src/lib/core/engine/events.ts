@@ -14,6 +14,7 @@ import type {
 	DayEntryId,
 	DeathCause,
 	GameId,
+	GameNote,
 	GenericToken,
 	OverrideField,
 	Reminder,
@@ -37,7 +38,14 @@ export type GameEvent =
 	| { type: 'SeatNoteSet'; seatId: SeatId; note?: string }
 	/** The seat's avatar and frame; a missing one clears it. */
 	| { type: 'SeatLookSet'; seatId: SeatId; avatar?: AvatarId; frame?: FrameId }
+	/**
+	 * The single general note of games saved before 2026-10-23; replayed as the untitled
+	 * note `n1`. No `notes` clears it. Never written now.
+	 */
 	| { type: 'GameNotesSet'; notes?: string }
+	/** Adds or replaces the game note with `note.noteId`. */
+	| { type: 'GameNoteSet'; note: GameNote }
+	| { type: 'GameNoteDeleted'; noteId: string }
 	/** No `alignment`: not chosen yet (a Traveller's), so the seat has none. */
 	| { type: 'CharacterAssigned'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }
 	| { type: 'CharacterCleared'; seatId: SeatId }

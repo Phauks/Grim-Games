@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 16;
+export const SAVED_GAME_VERSION = 17;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -193,6 +193,14 @@ const migrateV14toV15: Migration = (doc) => ({ ...doc, schemaVersion: 15 });
  */
 const migrateV15toV16: Migration = (doc) => ({ ...doc, schemaVersion: 16 });
 
+/**
+ * Version 17 (2026-10-23) gave the Storyteller several titled game notes (`Game.notes` as a
+ * list, the `GameNoteSet` and `GameNoteDeleted` events). The log needs no change: an older
+ * game's `GameNotesSet` replays as the untitled first note. The bump makes older builds
+ * refuse a version 17 save instead of failing on the unknown events.
+ */
+const migrateV16toV17: Migration = (doc) => ({ ...doc, schemaVersion: 17 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -209,7 +217,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	12: migrateV12toV13,
 	13: migrateV13toV14,
 	14: migrateV14toV15,
-	15: migrateV15toV16
+	15: migrateV15toV16,
+	16: migrateV16toV17
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
