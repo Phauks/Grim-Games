@@ -1097,6 +1097,84 @@ test('the join code shows under the script name, a Board setting, and opens Shar
 	await expect(corner).toHaveText(`Join code ${shown}`);
 });
 
+// Trevor (2026-10-23): the Storyteller's name under the author, in the lower left corner.
+test("the board's corner names the Storyteller under the author, when named", async ({ page }) => {
+	await startGame(page);
+	const corner = page.getByTestId('script-title');
+	await expect(corner).toContainText('by The Pandemonium Institute');
+	await expect(page.getByTestId('board-storyteller')).toHaveCount(0);
+	await nameStoryteller(page, 'Sam');
+	await expect(page.getByTestId('board-storyteller')).toHaveText('Storyteller: Sam');
+	// The Board preview shows it too.
+	await menu(page, 'Board');
+	await expect(
+		page.getByRole('dialog', { name: 'Settings' }).getByTestId('preview-storyteller')
+	).toHaveText('Storyteller: Sam');
+});
+
+// Trevor (2026-10-23): "when grim is not main screen, we should blur out for game integrity".
+test('the board is blurred behind every sheet and dialog over it', async ({ page }) => {
+	await startGame(page);
+	const blur = (scope: 'dialog' | 'drawer') =>
+		page
+			.locator(`[data-scope="${scope}"][data-part="backdrop"]`)
+			.last()
+			.evaluate((el) => getComputedStyle(el).backdropFilter);
+	await openSeat(page, 1);
+	expect(await blur('drawer')).toMatch(/^blur\(/);
+	await closeSheet(page);
+	await page.getByRole('button', { name: 'Share', exact: true }).tap();
+	expect(await blur('dialog')).toMatch(/^blur\(/);
+	await page
+		.getByRole('dialog', { name: 'Share' })
+		.getByRole('button', { name: 'Close', exact: true })
+		.tap();
+	// Away from the board, a dialog only dims what is behind it: the page is no longer marked.
+	await page.goto('/library');
+	await expect(page.locator('html[data-board-shown]')).toHaveCount(0);
+});
+
+// Trevor (2026-10-23): starting the night opens the walk-through strip under the board; the
+// seats close up to make room, but the tokens keep their size.
+test('tokens keep their size when the night walk-through opens', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	const token = page.getByTestId('seat').first();
+	const before = (await token.boundingBox())!.width;
+	// The script's logo behind the seats keeps its size too (Trevor, 2026-10-23).
+	const logo = page.locator('.board-logo');
+	await expect(logo).toBeVisible();
+	const logoBefore = (await logo.boundingBox())!;
+	await bankNight(page, 'Start game').tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect
+		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
+		.toBeLessThan(1);
+	const logoAfter = (await logo.boundingBox())!;
+	expect(Math.abs(logoAfter.width - logoBefore.width)).toBeLessThan(1);
+	expect(Math.abs(logoAfter.height - logoBefore.height)).toBeLessThan(1);
+});
+
+// Trevor (2026-10-23): "change board look to board preview", and its bank looks like the board's.
+test("the Board preview's bank has the board bank's outline and colour", async ({ page }) => {
+	await startGame(page);
+	const look = (el: Element) => {
+		const style = getComputedStyle(el);
+		return [style.borderTopWidth, style.borderTopColor, style.borderRadius, style.backgroundColor];
+	};
+	const board = await page.locator('[data-tray]').evaluate(look);
+	await menu(page, 'Board');
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await expect(dialog.getByRole('heading', { name: 'Board preview' })).toBeVisible();
+	expect(await dialog.getByTestId('preview-bank').evaluate(look)).toEqual(board);
+});
+
 // Trevor (2026-10-23): a full screen button on the board, for those who don't know how.
 test('the board can go full screen from its toolbar, and back', async ({ page }) => {
 	await startGame(page);
@@ -4884,6 +4962,13 @@ test('a Dead reminder put on a living player asks whether to mark them dead', as
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, no character, dead')).toBeAttached();
 	await page.keyboard.press('Escape');
+	// The reminder's own character is the cause (Trevor, 2026-10-23: "it should know the token
+	// caused the death").
+	await expect(
+		page
+			.locator('[data-scope="drawer"][data-part="content"]')
+			.getByRole('button', { name: /^Status: Dead: Imp/ })
+	).toBeVisible();
 	await closeSheet(page);
 
 	// Cancel leaves them alive; switched off, it never asks.
