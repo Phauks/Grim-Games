@@ -384,7 +384,7 @@
 	>
 		{#snippet actions()}
 			<IconButton
-				icon="rename"
+				icon="edit"
 				label={t('info-tokens.editNamed', { name })}
 				onclick={() => edit(token)}
 			/>
@@ -759,7 +759,7 @@
 									interactive={false}
 								/>{:else}{t('common.none')}{/each}
 						</span>
-						<Button icon="rename" onclick={() => (editView = 'characters')}
+						<Button icon="edit" onclick={() => (editView = 'characters')}
 							>{t('info-tokens.chooseCharacters')}</Button
 						>
 					</div>

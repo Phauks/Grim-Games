@@ -168,7 +168,7 @@
 							<span class="label">{label(index)}</span>
 							<span class="ink"
 								><IconButton
-									icon="rename"
+									icon="edit"
 									label={t(stale ? 'bluffs.replaceNamed' : 'bluffs.chooseNamed', {
 										set: label(index)
 									})}

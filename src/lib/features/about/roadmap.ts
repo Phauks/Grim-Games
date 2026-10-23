@@ -191,6 +191,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			},
 			{ id: 'S12', title: 'Lists of information never run together without a line or gap' },
 			{ id: 'S17', title: 'Every colour follows the theme: no hard-coded colours' },
+			{ id: 'S19', title: 'One icon per meaning: every edit button is the pencil' },
 			{ id: 'B5', title: 'Reminder glow and source mark settings' },
 			{ id: 'L16', title: 'Glossary: every character of a script and character type', prs: [324] },
 			{ id: 'O1', title: 'New app logo' }

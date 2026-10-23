@@ -652,7 +652,7 @@
 		{:else if choosing?.token}
 			{@const tokenId = choosing.token.tokenId}
 			<IconButton
-				icon="pen"
+				icon="edit"
 				label="Edit token"
 				onclick={() => {
 					chooserOpen = false;

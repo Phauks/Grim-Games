@@ -321,7 +321,7 @@
 		onclick={() => void downloadScript()}
 	/>
 	{#if onEdit}<IconButton
-			icon="rename"
+			icon="edit"
 			label={t('modes.info.edit')}
 			data-testid="game-info-edit"
 			onclick={() => {
