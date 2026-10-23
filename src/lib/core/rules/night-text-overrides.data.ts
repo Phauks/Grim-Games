@@ -94,7 +94,7 @@ export const FULL_NIGHT_TEXT: Readonly<Partial<Record<PlaceholderKey, NightTextO
 		reason: 'Says when the Dead token is used (Trevor’s review).'
 	},
 	'exorcist:other': {
-		text: 'The Exorcist chooses a player other than last night’s: move *CHOSEN* to them. Put the Exorcist to sleep. If they chose the Demon: wake the Demon, show the *THIS CHARACTER SELECTED YOU* & Exorcist tokens and point to the Exorcist. The Demon does not act tonight.',
+		text: 'The Exorcist chooses a player (different to last night): move *CHOSEN* to them. Put the Exorcist to sleep. If they chose the Demon: wake the Demon, show the *THIS CHARACTER SELECTED YOU* & Exorcist tokens and point to the Exorcist. The Demon does not act tonight.',
 		reason: 'Says the Chosen token moves each night and what it stops.'
 	},
 	'lycanthrope:other': {
@@ -147,7 +147,7 @@ export const FULL_NIGHT_TEXT: Readonly<Partial<Record<PlaceholderKey, NightTextO
 		reason: 'Says last night’s Poisoned token comes off.'
 	},
 	'devilsadvocate:other': {
-		text: 'The Devil’s Advocate chooses a living player other than last night’s: move *SURVIVES EXECUTION* to them.',
+		text: 'The Devil’s Advocate chooses a living player (different to last night): move *SURVIVES EXECUTION* to them.',
 		reason: 'Says the token moves and the same player can’t be chosen twice in a row.'
 	},
 	'witch:other': {

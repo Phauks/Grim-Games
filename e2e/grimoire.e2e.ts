@@ -4148,6 +4148,55 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await expect(endDay).toBeEnabled();
 });
 
+// https://wiki.bloodontheclocktower.com/Devil%27s_Advocate: a living player, different to last
+// night (Trevor, 2026-10-23: last night's player is not suggested again, but can be chosen).
+test("the Devil's Advocate's token is not suggested on last night's player", async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	const first = await openSeat(page, 1);
+	await first.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: "Devil's Advocate", exact: true })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Dusk');
+
+	// Night 1: the Devil's Advocate chooses Seat 2.
+	const picker = async (seat: number) => {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+		const dialog = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
+		const token = dialog
+			.getByRole('group', { name: "Devil's Advocate" })
+			.getByRole('button')
+			.filter({ hasText: 'Survives Execution' });
+		return { dialog, token };
+	};
+	const night1 = await picker(2);
+	await expect(night1.token).not.toHaveAttribute('data-misfit');
+	await night1.token.tap();
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+	await endNight(page);
+	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	// Night 2: the token comes off Seat 2, which is then marked as not a usual place for it.
+	const again = await picker(2);
+	await again.dialog.getByRole('group', { name: 'On this seat' }).getByRole('button').tap();
+	await expect(again.token).toHaveAttribute('data-misfit', '');
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+	const other = await picker(3);
+	await expect(other.token).not.toHaveAttribute('data-misfit');
+	// Warn, never lock: placed on Seat 2 anyway, with a note saying why.
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+	const back = await picker(2);
+	await back.token.tap();
+	await expect(page.getByText(/the ability says different to last night/)).toBeVisible();
+});
+
 // https://wiki.bloodontheclocktower.com/Investigator: the Minion shown is another player; the
 // other player shown may be the Investigator (Trevor, 2026-10-18).
 test("the Investigator's own seat fits its Wrong; its Minion is marked and warns if placed", async ({

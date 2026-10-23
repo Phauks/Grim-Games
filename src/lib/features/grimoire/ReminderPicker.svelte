@@ -150,7 +150,8 @@
 	 * a dashed edge; it can still be placed, and the board then says why (warn, never lock).
 	 */
 	const misfit = (reminder: Reminder) =>
-		seatId !== undefined && seatMisses(grimoire.game, reminder, seatId, characters).length > 0;
+		seatId !== undefined &&
+		seatMisses(grimoire.game, reminder, seatId, characters, grimoire.atDawn).length > 0;
 </script>
 
 <Dialog bind:open title={`Reminders for ${title}`} size="full">

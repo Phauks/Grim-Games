@@ -45,7 +45,9 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
  *   of the token it was dealt, for `shown`), alignment, character, or alive/dead state is
  *   wrong;
  * - `neighbour`: not a neighbour as the rule counts them;
- * - `with-label` / `not-with-label`: missing, or already carrying, the owner's other token.
+ * - `with-label` / `not-with-label`: missing, or already carrying, the owner's other token;
+ * - `last-night`: the ability says "different to last night", and this player carried the
+ *   token at the latest dawn (or, for `type`, has that player's character type).
  */
 export type TargetMiss =
 	| 'global'
@@ -57,7 +59,8 @@ export type TargetMiss =
 	| 'life'
 	| 'neighbour'
 	| 'with-label'
-	| 'not-with-label';
+	| 'not-with-label'
+	| 'last-night';
 
 export interface TargetFit {
 	seatId: SeatId;
@@ -138,13 +141,16 @@ function mayBeFalse(
 /**
  * Whether `seatId` fits the token's rule. A seat always fits a token with no rule. Rules
  * that depend on the owner (its seat, alignment or neighbours) are skipped while the
- * owner isn't in play, so nothing is flagged that can't be judged.
+ * owner isn't in play, so nothing is flagged that can't be judged. `atDawn` is the game as
+ * it stood at the latest "New day" (`dawnGames`), for "different to last night"; without it
+ * (the first night) that check is skipped.
  */
 export function reminderTargetMisses(
 	game: Game,
 	reminder: Reminder,
 	seatId: SeatId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	atDawn?: Game
 ): TargetMiss[] {
 	const rule = targetRule(reminder, characters);
 	if (!rule || !Object.hasOwn(game.seats, seatId)) return [];
@@ -247,6 +253,15 @@ export function reminderTargetMisses(
 		.map((r) => r.label);
 	if (rule.withLabel && !labels.includes(rule.withLabel)) misses.push('with-label');
 	if (rule.notWithLabel && labels.includes(rule.notWithLabel)) misses.push('not-with-label');
+	if (rule.differsFromLastNight && atDawn) {
+		const before = seatsWith(atDawn, reminder.characterId, reminder.label);
+		const type = typeOf(game, seatId, characters);
+		const repeat =
+			rule.differsFromLastNight === 'player'
+				? before.includes(seatId)
+				: type !== undefined && before.some((id) => typeOf(atDawn, id, characters) === type);
+		if (repeat) misses.push('last-night');
+	}
 	return misses;
 }
 
@@ -254,10 +269,11 @@ export function reminderTargetMisses(
 export function reminderTargets(
 	game: Game,
 	reminder: Reminder,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	atDawn?: Game
 ): TargetFit[] {
 	return game.seating.map((seatId) => ({
 		seatId,
-		misses: reminderTargetMisses(game, reminder, seatId, characters)
+		misses: reminderTargetMisses(game, reminder, seatId, characters, atDawn)
 	}));
 }
