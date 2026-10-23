@@ -16,5 +16,8 @@
 				"reason": "The Apprentice’s token is swapped for the ability they gain"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "first-night action"
 	}
 }

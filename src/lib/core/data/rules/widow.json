@@ -22,5 +22,8 @@
 				"reason": "This good player learns a Widow is in play"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "first-night action"
 	}
 }

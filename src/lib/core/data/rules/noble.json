@@ -47,5 +47,8 @@
 				"reason": "A good player among the 3 the Noble is shown"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "first-night info"
 	}
 }

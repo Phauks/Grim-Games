@@ -28,5 +28,8 @@
 			"Deal no Minions: good characters take their place.",
 			"On the first night the Kazali turns players into the usual number of Minions."
 		]
+	},
+	"dayReminders": {
+		"none": "night kills; setup change"
 	}
 }

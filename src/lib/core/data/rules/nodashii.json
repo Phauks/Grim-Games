@@ -38,5 +38,8 @@
 				"reason": "The No Dashii’s Townsfolk neighbour is poisoned"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "night kills"
 	}
 }

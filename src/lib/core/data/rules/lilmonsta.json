@@ -31,5 +31,8 @@
 			}
 		],
 		"notes": ["Lil’ Monsta is not dealt: an extra Minion goes in the bag instead."]
+	},
+	"dayReminders": {
+		"none": "night kills; setup change"
 	}
 }

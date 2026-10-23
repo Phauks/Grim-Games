@@ -29,5 +29,21 @@
 			}
 		],
 		"notes": ["The Hermit counts as one of the Outsiders and may be the one removed."]
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has every Outsider ability"
+					}
+				]
+			}
+		]
 	}
 }

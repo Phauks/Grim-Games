@@ -26,5 +26,8 @@
 				"reason": "The good player the Steward is shown"
 			}
 		]
+	},
+	"dayReminders": {
+		"none": "first-night info"
 	}
 }

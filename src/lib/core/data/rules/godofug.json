@@ -17,5 +17,27 @@
 				"reason": "Who wears the Ug hat at the start"
 			}
 		]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "hat is on"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Hat",
+					"self": "any"
+				}
+			}
+		]
 	}
 }

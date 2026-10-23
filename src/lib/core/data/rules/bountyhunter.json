@@ -29,5 +29,8 @@
 		"summary": "1 Townsfolk is evil",
 		"ops": [],
 		"notes": ["Turn one Townsfolk evil during setup."]
+	},
+	"dayReminders": {
+		"none": "night info; setup change"
 	}
 }

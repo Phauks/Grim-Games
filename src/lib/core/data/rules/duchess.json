@@ -12,5 +12,23 @@
 	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is taking visitors"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
 	}
 }

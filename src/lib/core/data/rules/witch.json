@@ -13,5 +13,27 @@
 	},
 	"setupPrep": {
 		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has chosen"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Cursed"
+				}
+			}
+		]
 	}
 }

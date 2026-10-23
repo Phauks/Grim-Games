@@ -8,5 +8,27 @@
 	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "madness",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has made mad"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Mad",
+					"self": "any"
+				}
+			}
+		]
 	}
 }

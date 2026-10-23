@@ -1,5 +1,8 @@
 {
 	"learns": {
 		"measure": "evil-pairs"
+	},
+	"dayReminders": {
+		"none": "first-night info"
 	}
 }

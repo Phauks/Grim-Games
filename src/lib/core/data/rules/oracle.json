@@ -1,5 +1,8 @@
 {
 	"answers": {
 		"question": "evil-dead"
+	},
+	"dayReminders": {
+		"none": "night info"
 	}
 }

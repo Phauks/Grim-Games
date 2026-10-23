@@ -1,0 +1,21 @@
+{
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "must vote"
+					}
+				],
+				"when": {
+					"minAlive": 5
+				}
+			}
+		]
+	}
+}

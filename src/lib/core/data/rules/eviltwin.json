@@ -33,5 +33,27 @@
 				"reason": "The good twin; the twins learn each other"
 			}
 		]
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is twinned with"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Twin"
+				}
+			}
+		]
 	}
 }

@@ -3,8 +3,9 @@
  * during the coming day, as short state-based sentences ("[Witch · Sam] has chosen
  * [Librarian · Alex]", "[Saint] is alive", "[Slayer] is poisoned") (Trevor, 2026-10-15).
  *
- * The curated list is `day-reminders.data.ts`. Homebrew and unlisted characters fall back
- * to keywords in their ability text and TPI `special`, flagged `autoDetected`.
+ * What each character shows is the `dayReminders` part of its rules block
+ * (`data/day-reminder-rules.ts`). Characters without one fall back to keywords in their
+ * ability text and TPI `special`, flagged `autoDetected`.
  *
  * Everything is driven by grimoire state: seats, their reminders, who is dead and (when
  * known) how they died. The app does not track day or night. The Storyteller can override
@@ -17,26 +18,18 @@ import { abilityState, impairmentOfLabel, type AbilityState, type Impairment } f
 import {
 	DAY_GROUP_TITLES,
 	DAY_GROUPS,
-	DAY_INTERACTIONS,
-	DAY_REMINDER_ENTRIES,
-	NO_DAY_RELEVANCE,
 	type DayCondition,
 	type DayGroup,
 	type DayInteraction,
-	type DayReminderEntry,
+	type DayReminderRules,
 	type DayReminderSpec,
 	type DeathCauseMatch
-} from './day-reminders.data.ts';
+} from '#lib/core/data/day-reminder-rules.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { wikiUrl } from '#lib/core/data/wiki.ts';
 
-export { DAY_GROUP_TITLES, DAY_GROUPS, DAY_INTERACTIONS, DAY_REMINDER_ENTRIES, NO_DAY_RELEVANCE };
-export type {
-	DayCondition,
-	DayGroup,
-	DayInteraction,
-	DayReminderEntry,
-	DayReminderSpec,
-	DeathCauseMatch
-};
+export { DAY_GROUP_TITLES, DAY_GROUPS };
+export type { DayCondition, DayGroup, DayInteraction, DayReminderSpec, DeathCauseMatch };
 
 /** Defined with the model's `Seat`; re-exported here for existing imports. */
 export type { DeathCause };
@@ -158,8 +151,46 @@ export function daySentence(segments: readonly ReminderSegment[]): {
 	return { segments: out, stop: false };
 }
 
-const ENTRIES = new Map(DAY_REMINDER_ENTRIES.map((e) => [e.id, e]));
-const QUIET = new Set(Object.keys(NO_DAY_RELEVANCE));
+/**
+ * A character's `dayReminders` rules: a homebrew character's own block only, else its rules
+ * block (a custom character's own, or our overlay file).
+ */
+function rulesFor(
+	characterId: CharacterId,
+	character: Character | undefined
+): DayReminderRules | undefined {
+	if (character && character.edition === undefined) return character.rules?.dayReminders;
+	const lookup = character ? new Map([[characterId, character]]) : undefined;
+	return rulesOf(characterId, lookup)?.dayReminders;
+}
+
+/** A character's `dayReminders` rules, as `rulesFor` reads them. */
+export function dayRulesOf(
+	characterId: CharacterId,
+	lookup?: CharacterLookup
+): DayReminderRules | undefined {
+	return rulesFor(characterId, lookup?.get(characterId));
+}
+
+/** One character's day reminders, with the wiki page to link. */
+interface DayReminderEntry {
+	id: CharacterId;
+	wiki: string | undefined;
+	impairable?: true;
+	reminders: readonly DayReminderSpec[];
+}
+
+function entryOf(characterId: CharacterId, character: Character | undefined) {
+	const rules = rulesFor(characterId, character);
+	if (!rules?.reminders?.length && !rules?.impairable) return { rules };
+	const entry: DayReminderEntry = {
+		id: characterId,
+		wiki: character && wikiUrl(character),
+		...(rules.impairable ? { impairable: true as const } : {}),
+		reminders: rules.reminders ?? []
+	};
+	return { rules, entry };
+}
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
@@ -360,7 +391,7 @@ function curated(
 			characterId: entry.id,
 			group: spec.group,
 			autoDetected: false,
-			wiki: entry.wiki,
+			...(entry.wiki ? { wiki: entry.wiki } : {}),
 			...(holds === 'unknown' ? { uncertain: true } : {})
 		};
 		const key = `${entry.id}#${index}@${at}`;
@@ -493,34 +524,41 @@ export function applyDayOverrides(
 	return { shown, hidden };
 }
 
-/** Registration interactions (`DAY_INTERACTIONS`) between living characters in play. */
+/**
+ * Registration interactions (a rules block's `dayReminders.interactions`) between living
+ * characters in play.
+ */
 function interactions(state: DayState): DayReminder[] {
 	const out: DayReminder[] = [];
 	const living = (id: CharacterId) => state.seats.filter((s) => s.characterId === id && !s.dead);
-	DAY_INTERACTIONS.forEach((rule: DayInteraction, index) => {
-		const others = living(rule.other);
-		if (others.length === 0) return;
-		if (rule.otherNoReminder && carriers(state, rule.other, rule.otherNoReminder).length > 0) {
-			return;
-		}
-		for (const registrant of living(rule.registrant)) {
-			if (seatImpairments(state, registrant).length > 0) continue;
-			for (const other of others) {
-				out.push({
-					key: `interaction#${index}@${registrant.seatId}>${other.seatId}`,
-					characterId: rule.registrant,
-					group: rule.group,
-					segments: [
-						{ kind: 'character', ref: refFor(registrant, rule.registrant) },
-						{ kind: 'text', text: rule.text },
-						{ kind: 'character', ref: refFor(other, rule.other) }
-					],
-					autoDetected: false,
-					wiki: rule.wiki[0]
-				});
+	const registrants = new Set(state.seats.flatMap((s) => (s.characterId ? [s.characterId] : [])));
+	for (const id of registrants) {
+		const character = state.character(id);
+		rulesFor(id, character)?.interactions?.forEach((rule, index) => {
+			const others = living(rule.other);
+			if (others.length === 0) return;
+			if (rule.otherNoReminder && carriers(state, rule.other, rule.otherNoReminder).length > 0) {
+				return;
 			}
-		}
-	});
+			for (const registrant of living(id)) {
+				if (seatImpairments(state, registrant).length > 0) continue;
+				for (const other of others) {
+					out.push({
+						key: `interaction#${id}.${index}@${registrant.seatId}>${other.seatId}`,
+						characterId: id,
+						group: rule.group,
+						segments: [
+							{ kind: 'character', ref: refFor(registrant, id) },
+							{ kind: 'text', text: rule.text },
+							{ kind: 'character', ref: refFor(other, rule.other) }
+						],
+						autoDetected: false,
+						...(character && wikiUrl(character) ? { wiki: wikiUrl(character) } : {})
+					});
+				}
+			}
+		});
+	}
 	return out;
 }
 
@@ -530,8 +568,7 @@ export function dayReminders(state: DayState): DayReminders {
 	const all: DayReminder[] = [];
 	const visit = (characterId: CharacterId, seat: DaySeat | undefined) => {
 		const character = state.character(characterId);
-		const homebrew = character !== undefined && character.edition === undefined;
-		const entry = homebrew ? undefined : ENTRIES.get(characterId);
+		const { rules, entry } = entryOf(characterId, character);
 		// A character with no ability at all (a Minion the Preacher chose) is always worth a
 		// line, even when its entry is not impairable or it has nothing to watch by day.
 		if (seat && !entry?.impairable) {
@@ -543,7 +580,7 @@ export function dayReminders(state: DayState): DayReminders {
 			}
 		}
 		if (entry) all.push(...curated(entry, seat, state, alive));
-		else if (character && (homebrew || !QUIET.has(characterId)) && !seat?.dead) {
+		else if (character && rules?.none === undefined && !seat?.dead) {
 			all.push(...detectDayReminders(character, refFor(seat, characterId)));
 		}
 	};
@@ -564,8 +601,9 @@ export function dayReminders(state: DayState): DayReminders {
  * reminder token (the Slayer, Artist, Fisherman, Virgin, Fool), so the day panel offers a
  * one-tap "Used" (`UseAbility` places the token).
  */
-export function isOnceOnlyDayAbility(characterId: CharacterId): boolean {
+export function isOnceOnlyDayAbility(characterId: CharacterId, lookup?: CharacterLookup): boolean {
 	return (
-		ENTRIES.get(characterId)?.reminders.some((r) => r.when?.noReminder === 'No Ability') ?? false
+		dayRulesOf(characterId, lookup)?.reminders?.some((r) => r.when?.noReminder === 'No Ability') ??
+		false
 	);
 }

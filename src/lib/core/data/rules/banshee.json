@@ -12,5 +12,24 @@
 	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may nominate and vote twice"
+					}
+				],
+				"when": {
+					"self": "dead",
+					"cause": ["demon"]
+				}
+			}
+		]
 	}
 }

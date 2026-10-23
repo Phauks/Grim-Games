@@ -30,5 +30,8 @@
 			}
 		],
 		"notes": ["Seat all evil players in a row with the Lord of Typhon inside it, not at an end."]
+	},
+	"dayReminders": {
+		"none": "night kills; setup change"
 	}
 }

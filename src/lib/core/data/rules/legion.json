@@ -35,5 +35,20 @@
 			}
 		],
 		"notes": ["More than half the players are Legion; the rest are good."]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
 	}
 }

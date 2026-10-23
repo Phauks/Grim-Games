@@ -1,0 +1,18 @@
+{
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may shoot a voter"
+					}
+				]
+			}
+		]
+	}
+}

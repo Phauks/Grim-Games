@@ -17,5 +17,8 @@
 		"summary": "Shown a Demon",
 		"ops": [],
 		"notes": ["The Lunatic is shown a Demon token, not the Lunatic."]
+	},
+	"dayReminders": {
+		"none": "night effect"
 	}
 }

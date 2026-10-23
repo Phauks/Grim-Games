@@ -19,5 +19,27 @@
 				"reason": "Everyone learns this player"
 			}
 		]
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "protects"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Amigo"
+				}
+			}
+		]
 	}
 }

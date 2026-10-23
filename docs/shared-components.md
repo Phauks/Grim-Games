@@ -104,7 +104,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | ------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------- |
 | Reminder prompts (`rules/reminder-prompts.ts`)                                                    | `reminderPrompts`                     | moved         |
 | Reminder targets (`reminder-targets.ts`)                                                          | `reminderTargets`                     | moved         |
-| Day reminders (`day-reminders.data.ts`)                                                           |                                       | not yet moved |
+| Day reminders (`day-reminders.ts`: also registration interactions such as the Spy and the Virgin) | `dayReminders`                        | moved         |
 | Setup reminders and preparation notes (`setup-reminders.ts`)                                      | `setupPrep`                           | moved         |
 | Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest)                    | `setupModifier`                       | moved         |
 | Death causes (`death-causes.data.ts`)                                                             |                                       | not yet moved |

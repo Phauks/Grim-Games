@@ -14,5 +14,20 @@
 	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is watching for a Minion nomination"
+					}
+				]
+			}
+		]
 	}
 }

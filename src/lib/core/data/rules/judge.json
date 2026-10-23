@@ -7,5 +7,24 @@
 	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has an unused ruling"
+					}
+				],
+				"when": {
+					"noReminder": "No Ability"
+				}
+			}
+		]
 	}
 }

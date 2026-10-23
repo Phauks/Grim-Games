@@ -10,6 +10,7 @@
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
 import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rules.ts';
+import { readDayReminders, type DayReminderRules } from './day-reminder-rules.ts';
 import { readSetupPrep, type SetupPrepRules } from './setup-prep-rules.ts';
 import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
@@ -125,6 +126,8 @@ export interface CharacterRules {
 	setupPrep?: SetupPrepRules;
 	/** How its [bracketed] text changes which characters are dealt (`rules/setup-modifiers.ts`). */
 	setupModifier?: SetupModifierRules;
+	/** What to watch for during the day because of it (`rules/day-reminders.ts`). */
+	dayReminders?: DayReminderRules;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -261,7 +264,8 @@ export const RULE_KEYS = [
 	'gameEnd',
 	'deathCheck',
 	'setupPrep',
-	'setupModifier'
+	'setupModifier',
+	'dayReminders'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -411,6 +415,10 @@ export function parseCharacterRules(
 	if (raw.setupModifier !== undefined) {
 		const setupModifier = readSetupModifier(raw.setupModifier, `${path}.setupModifier`, issues);
 		if (setupModifier) rules.setupModifier = setupModifier;
+	}
+	if (raw.dayReminders !== undefined) {
+		const day = readDayReminders(raw.dayReminders, `${path}.dayReminders`, issues, reminders);
+		if (day) rules.dayReminders = day;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

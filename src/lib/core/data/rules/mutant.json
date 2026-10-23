@@ -1,0 +1,18 @@
+{
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "madness",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "must not claim Outsider"
+					}
+				]
+			}
+		]
+	}
+}

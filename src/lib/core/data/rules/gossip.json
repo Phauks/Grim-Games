@@ -17,5 +17,21 @@
 	"dayClaim": "statement",
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may make a statement"
+					}
+				]
+			}
+		]
 	}
 }
