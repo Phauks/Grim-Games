@@ -44,5 +44,8 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Follows the No Dashii’s nearest Townsfolk neighbours."
 	}
 }

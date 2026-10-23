@@ -44,5 +44,9 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["Poisoned"],
+		"why": "The host is chosen once, on the first night."
 	}
 }

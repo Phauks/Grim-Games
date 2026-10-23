@@ -71,5 +71,8 @@
 	},
 	"deathCause": {
 		"none": "poisons"
+	},
+	"reminderMovement": {
+		"why": "A counter the Storyteller advances."
 	}
 }

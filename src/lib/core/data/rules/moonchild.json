@@ -38,5 +38,8 @@
 			"as": "good",
 			"notSelf": true
 		}
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
 	}
 }

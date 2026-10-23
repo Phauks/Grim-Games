@@ -4,5 +4,8 @@
 	},
 	"deathCause": {
 		"none": "changes characters"
+	},
+	"reminderMovement": {
+		"relocates": "changes a player’s character"
 	}
 }

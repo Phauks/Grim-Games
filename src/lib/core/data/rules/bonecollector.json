@@ -18,5 +18,9 @@
 	},
 	"deathCause": {
 		"none": "returns an ability to a dead player"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability", "Has Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
 	}
 }

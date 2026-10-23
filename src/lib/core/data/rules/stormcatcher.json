@@ -44,5 +44,9 @@
 	},
 	"deathCause": {
 		"none": "protects; info"
+	},
+	"reminderMovement": {
+		"fixed": ["Stormcaught"],
+		"why": "The stormcaught character is chosen at setup."
 	}
 }

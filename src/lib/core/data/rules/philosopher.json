@@ -19,5 +19,9 @@
 	},
 	"deathCause": {
 		"kind": "gained-ability"
+	},
+	"reminderMovement": {
+		"fixed": ["Drunk", "Is The Philosopher"],
+		"why": "The choice is made once; its drunk player and the Philosopher stay marked."
 	}
 }

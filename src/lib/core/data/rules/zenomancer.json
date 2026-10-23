@@ -38,5 +38,9 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["Goal"],
+		"why": "Each player’s goal is set at the start."
 	}
 }

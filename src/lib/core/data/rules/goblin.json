@@ -32,5 +32,8 @@
 	},
 	"deathCause": {
 		"none": "win condition"
+	},
+	"reminderMovement": {
+		"why": "Placed on whoever claims the Goblin today."
 	}
 }

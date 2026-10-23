@@ -42,5 +42,9 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["Has Ability", "Poisoned"],
+		"why": "A killed Minion keeps its ability, and its Townsfolk neighbour stays poisoned."
 	}
 }

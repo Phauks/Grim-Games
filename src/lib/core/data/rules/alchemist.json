@@ -35,5 +35,9 @@
 	},
 	"deathCause": {
 		"kind": "gained-ability"
+	},
+	"reminderMovement": {
+		"fixed": ["Is The Alchemist"],
+		"why": "Marks which player is the Alchemist."
 	}
 }

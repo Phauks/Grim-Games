@@ -40,5 +40,8 @@
 	},
 	"deathCause": {
 		"none": "loss condition"
+	},
+	"reminderMovement": {
+		"why": "The Fearmonger may choose a new player."
 	}
 }

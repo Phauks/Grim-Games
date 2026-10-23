@@ -37,5 +37,8 @@
 	},
 	"deathCause": {
 		"kind": "gained-ability"
+	},
+	"reminderMovement": {
+		"why": "Follows the most recent execution."
 	}
 }

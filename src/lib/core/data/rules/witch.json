@@ -38,5 +38,8 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
 	}
 }

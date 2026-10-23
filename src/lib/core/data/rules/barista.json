@@ -24,5 +24,8 @@
 	},
 	"deathCause": {
 		"none": "sobers or doubles another ability"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
 	}
 }

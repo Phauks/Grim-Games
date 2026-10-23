@@ -24,5 +24,9 @@
 	},
 	"deathCause": {
 		"none": "changes the Damsel"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
 	}
 }

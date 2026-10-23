@@ -28,5 +28,8 @@
 	},
 	"deathCause": {
 		"kind": "own-death"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
 	}
 }

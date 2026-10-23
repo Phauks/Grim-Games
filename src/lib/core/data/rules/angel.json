@@ -46,5 +46,9 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["Protected", "Something Bad"],
+		"why": "The protected players are chosen at setup."
 	}
 }

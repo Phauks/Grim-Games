@@ -17,5 +17,8 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"reminderMovement": {
+		"why": "Marks this night’s malfunctioning players."
 	}
 }

@@ -33,5 +33,8 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"reminderMovement": {
+		"why": "Marks whoever was executed today."
 	}
 }

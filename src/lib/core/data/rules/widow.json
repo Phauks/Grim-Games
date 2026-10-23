@@ -28,5 +28,9 @@
 	},
 	"deathCause": {
 		"none": "poisons; info"
+	},
+	"reminderMovement": {
+		"fixed": ["Poisoned", "Know"],
+		"why": "The Widow poisons once, on the first night, and one good player learns of her."
 	}
 }

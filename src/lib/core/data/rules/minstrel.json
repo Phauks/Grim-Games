@@ -49,5 +49,8 @@
 	},
 	"deathCause": {
 		"none": "drunkenness"
+	},
+	"reminderMovement": {
+		"why": "Marks a day-long effect."
 	}
 }

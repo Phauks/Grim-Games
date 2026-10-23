@@ -15,5 +15,8 @@
 	},
 	"deathCause": {
 		"none": "stops the Demon waking"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
 	}
 }

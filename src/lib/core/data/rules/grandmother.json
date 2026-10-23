@@ -33,5 +33,9 @@
 	},
 	"deathCause": {
 		"kind": "own-death"
+	},
+	"reminderMovement": {
+		"fixed": ["Grandchild"],
+		"why": "The grandchild is shown once; Dead marks tonight’s death and moves."
 	}
 }

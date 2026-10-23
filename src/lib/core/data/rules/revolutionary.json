@@ -32,5 +32,9 @@
 	},
 	"deathCause": {
 		"none": "registration"
+	},
+	"reminderMovement": {
+		"fixed": ["Register Falsely?", "Aligned"],
+		"why": "The pair of neighbours is chosen at setup."
 	}
 }

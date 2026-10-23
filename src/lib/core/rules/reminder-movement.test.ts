@@ -7,15 +7,28 @@ import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/commands.ts';
 import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import {
-	FIXED_REMINDERS,
-	MOVING_REMINDERS,
-	REMINDER_RELOCATORS,
-	fixedReminderMove,
-	isFixedReminder
-} from './reminder-movement.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
+import type { Character } from '#lib/core/data/types.ts';
+import { Issues } from '#lib/core/data/validate.ts';
+import { fixedReminderMove, isFixedReminder } from './reminder-movement.ts';
 
 const data = committedGameData();
+const movement = [...OFFICIAL_RULES].flatMap(([id, rules]) =>
+	rules.reminderMovement ? [[id, rules.reminderMovement] as const] : []
+);
+/** Official characters with some tokens that stay put: the labels, and why. */
+const FIXED_REMINDERS = Object.fromEntries(
+	movement.flatMap(([id, m]) => (m.fixed ? [[id, { labels: m.fixed, why: m.why ?? '' }]] : []))
+);
+/** Official characters whose tokens all move, and why. */
+const MOVING_REMINDERS = Object.fromEntries(
+	movement.flatMap(([id, m]) => (!m.fixed && m.why !== undefined ? [[id, m.why]] : []))
+);
+/** Official characters that can carry a fixed token elsewhere, and how. */
+const REMINDER_RELOCATORS = Object.fromEntries(
+	movement.flatMap(([id, m]) => (m.relocates ? [[id, m.relocates]] : []))
+);
 
 describe('coverage', () => {
 	it('classifies every official character with reminder tokens exactly once', () => {
@@ -65,8 +78,43 @@ describe('isFixedReminder', () => {
 		expect(isFixedReminder({ characterId: 'grandmother', label: 'Dead' })).toBe(false);
 	});
 
-	it('never fixes homebrew tokens', () => {
+	it('never fixes homebrew tokens without a rule', () => {
 		expect(isFixedReminder({ characterId: 'my-homebrew', label: 'Know' })).toBe(false);
+	});
+
+	// A custom character's own `reminderMovement` works as an official one's: the Fortune
+	// Teller's red herring is chosen once (https://wiki.bloodontheclocktower.com/Fortune_Teller).
+	it('fixes the tokens a custom character’s rule names', () => {
+		const seer: Character = {
+			...data.byId.get('fortuneteller')!,
+			id: 'seer',
+			edition: undefined,
+			reminders: ['Decoy', 'Seen'],
+			rules: parseCharacterRules(
+				{ reminderMovement: { fixed: ['Decoy'], why: 'Chosen once at setup.' } },
+				'seer',
+				new Issues(),
+				['Decoy', 'Seen']
+			)
+		};
+		const lookup = new Map([['seer', seer]]);
+		expect(isFixedReminder({ characterId: 'seer', label: 'Decoy' }, lookup)).toBe(true);
+		expect(isFixedReminder({ characterId: 'seer', label: 'Seen' }, lookup)).toBe(false);
+	});
+
+	it('reports a malformed reminderMovement rule', () => {
+		const issues = new Issues();
+		parseCharacterRules(
+			{ reminderMovement: { fixed: ['Red Herring', 'Nope'], moves: true } },
+			'rules',
+			issues,
+			['Red Herring']
+		);
+		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
+			'rules.reminderMovement.moves',
+			'rules.reminderMovement.fixed[1]',
+			'rules.reminderMovement.why'
+		]);
 	});
 });
 

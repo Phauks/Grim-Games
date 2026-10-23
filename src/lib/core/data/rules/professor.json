@@ -22,5 +22,9 @@
 	},
 	"deathCause": {
 		"none": "resurrects"
+	},
+	"reminderMovement": {
+		"fixed": ["Alive", "No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
 	}
 }

@@ -28,5 +28,9 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["Red Herring"],
+		"why": "The red herring is chosen once at setup."
 	}
 }
