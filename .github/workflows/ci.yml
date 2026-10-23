@@ -32,8 +32,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       # The container runs as root over a checkout owned by the runner user, so git refuses
-      # the repo without this and the build's changelog and update notes come out empty.
-      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      # the repo without safe.directory and the changelog and update notes come out empty.
+      # DejaVu is the runner's monospace font; the image lacks it, and its fallback monospace
+      # has narrower letters that change wrapping in the layout tests.
+      - name: Prepare container
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          apt-get update -qq && apt-get install -y -qq --no-install-recommends fonts-dejavu-core
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -64,8 +69,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       # The container runs as root over a checkout owned by the runner user, so git refuses
-      # the repo without this and the build's changelog and update notes come out empty.
-      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      # the repo without safe.directory and the changelog and update notes come out empty.
+      # DejaVu is the runner's monospace font; the image lacks it, and its fallback monospace
+      # has narrower letters that change wrapping in the layout tests.
+      - name: Prepare container
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          apt-get update -qq && apt-get install -y -qq --no-install-recommends fonts-dejavu-core
       - uses: actions/setup-node@v6
         with:
           node-version: 22
