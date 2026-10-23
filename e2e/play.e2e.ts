@@ -164,7 +164,10 @@ test('the player view has no sidebar, and leaving it asks first', async ({ page 
 });
 
 test('notes written on a seat by an older version are kept as titled notes', async ({ page }) => {
-	// A v4 notebook from when /play had a seat circle (notebook.ts migrateNotebook).
+	// A v4 notebook from when /play had a seat circle (notebook.ts migrateNotebook). The
+	// notebook's database opens with the Notes tab, so open it once first.
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(page.locator('[data-note]')).toHaveCount(1);
 	await page.evaluate(
 		() =>
 			new Promise<void>((resolve, reject) => {

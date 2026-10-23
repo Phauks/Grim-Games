@@ -13,7 +13,6 @@
 	} from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
-	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import {
 		chooseScript,
@@ -23,16 +22,12 @@
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
 	import type { FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
-	import { fetchSharedRef } from '#lib/features/scripts/share-codes.ts';
+	import { fetchSharedRef, scriptShareable } from '#lib/features/scripts/share-codes.ts';
 	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import ScratchPadDialog from '#lib/ui/scratch/ScratchPadDialog.svelte';
-	import { ScratchPads, type ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
-	import { NotebookState } from './notebook-store.svelte.ts';
 	import { scriptKey } from './notebook.ts';
-	import NoteEditor from '#lib/ui/notes/NoteEditor.svelte';
-	import NotesPanel from './NotesPanel.svelte';
+	import PlayerNotes from './PlayerNotes.svelte';
 	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
 	import { roomScript } from '#lib/features/room/room-script.svelte.ts';
 	import PlayerScriptActions from './PlayerScriptActions.svelte';
@@ -42,7 +37,7 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
 	import PlayerRoom from './PlayerRoom.svelte';
-	import { roomTable } from '#lib/features/room/player.svelte.ts';
+	import { lastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
 	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -63,7 +58,6 @@
 	const openRoom = (code: string) => void goto(resolve('/join/[code]', { code }));
 
 	let data = $state<GameData>();
-	let notebook = $state<NotebookState>();
 	let error = $state<string>();
 	// svelte-ignore state_referenced_locally
 	let tab = $state(join ? 'room' : 'script');
@@ -145,18 +139,20 @@
 		if (chosen) void chooseScript(chosen, { kind: 'edition' });
 	}
 
-	/** What Share links to: the saved script, or the edition. */
+	/** What Share links to: the saved script, or the edition or script itself. */
 	const shareable = $derived.by(() => {
 		if (!script) return undefined;
-		const saved = currentScript.current === script ? currentScript.saved : undefined;
-		return (
-			saved ?? {
-				edition: script.edition,
-				json: script.edition ? [script.edition] : [],
-				source: { kind: 'edition' as const }
-			}
+		return scriptShareable(
+			script,
+			currentScript.current === script ? currentScript.saved : undefined
 		);
 	});
+	/** The room that sent this script, when there is one: Share hands on its link and code. */
+	const inRoom = $derived(
+		script
+			? [joining || undefined, lastRoom()].find((c) => c && roomScript(c) === script)
+			: undefined
+	);
 	// One notebook per script: official editions by id, saved scripts by their library id.
 	const key = $derived.by(() => {
 		if (!script) return undefined;
@@ -165,50 +161,10 @@
 			? `saved:${saved.scriptId}`
 			: scriptKey(script);
 	});
-	$effect(() => {
-		if (!key || notebook?.key === key) return;
-		const book = new NotebookState(key);
-		noteOpen = false;
-		void book.load().then(() => {
-			if (book.key === key) notebook = book;
-		});
-	});
-
-	// Scratch pads per script, like the notebook's notes, in their own database on the device.
-	let scratch = $state<ScratchPads>();
-	let scratchPad = $state<ScratchPadState>();
-	let scratchOpen = $state(false);
-	$effect(() => {
-		if (!key || scratch?.base === `player:${key}`) return;
-		const pads = new ScratchPads(`player:${key}`);
-		scratchOpen = false;
-		void pads.load().then(() => {
-			if (pads.base === `player:${key}`) scratch = pads;
-		});
-	});
-	function openScratch(pad: ScratchPadState) {
-		scratchPad = pad;
-		scratchOpen = true;
-	}
-
-	// Saving can fail (private browsing, full storage): say so once, as a toast (no reflow).
-	let warnedSave = false;
-	$effect(() => {
-		const scratchError = scratch?.saveError || scratch?.pads.some((pad) => pad.saveError);
-		if (!(notebook?.saveError || scratchError) || warnedSave) return;
-		warnedSave = true;
-		toast(t('player.cannotSave'), t('player.cannotSaveDetail'));
-	});
 
 	const version = $derived(
 		scriptVersion(currentScript.current === script ? currentScript.saved : undefined, script?.meta)
 	);
-	let noteId = $state<string>();
-	let noteOpen = $state(false);
-	function openNote(id: string) {
-		noteId = id;
-		noteOpen = true;
-	}
 </script>
 
 <!-- A shared link opened while /play is already showing changes only the hash. -->
@@ -230,7 +186,7 @@
 	     Another script loads only from a share link or QR code. Before a game is joined or a
 	     script loaded, there is nothing to print or share, so neither shows (Trevor, 2026-10-23). -->
 	{#snippet actions()}
-		{#if script}<PlayerScriptActions {script} {version} share={shareable} />{/if}
+		{#if script}<PlayerScriptActions {script} {version} share={shareable} room={inRoom} />{/if}
 	{/snippet}
 	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). -->
 	{#snippet subtitle()}
@@ -269,20 +225,7 @@
 		<!-- The same tabs the board's Script button shows, plus the player's own Notes. -->
 		<PlayerScriptTabs {script} travellers={roomTable.travellers} bind:tab>
 			{#snippet grim()}<PlayerGrim {script} />{/snippet}
-			{#snippet notes()}
-				{#if !notebook}
-					<p class="muted">{t('player.loading')}</p>
-				{:else}
-					<NotesPanel
-						notes={notebook.book.notes}
-						pads={scratch?.pads}
-						onAdd={() => openNote(notebook!.addNote())}
-						onOpenNote={openNote}
-						onAddScratch={() => scratch && openScratch(scratch.add())}
-						onOpenScratch={openScratch}
-					/>
-				{/if}
-			{/snippet}
+			{#snippet notes()}<PlayerNotes notesKey={key} />{/snippet}
 			{#snippet room()}<PlayerRoom
 					{script}
 					{version}
@@ -312,26 +255,6 @@
 		if (loaded) void chooseScript(loaded, checkingSource);
 	}}
 />
-
-{#if notebook && script}
-	<ErrorBoundary area="play">
-		<NoteEditor
-			bind:open={noteOpen}
-			note={notebook.book.notes.find((n) => n.noteId === noteId)}
-			onChange={(patch) => noteId && notebook!.updateNote(noteId, patch)}
-			onDelete={() => noteId && notebook!.deleteNote(noteId)}
-		/>
-	</ErrorBoundary>
-{/if}
-{#if scratch && scratchPad}
-	<ErrorBoundary area="play">
-		<ScratchPadDialog
-			bind:open={scratchOpen}
-			pad={scratchPad}
-			onDelete={() => scratchPad && void scratch!.remove(scratchPad)}
-		/>
-	</ErrorBoundary>
-{/if}
 
 <style>
 	/* Beside the name in the title, as tall as two lines of it at most. */

@@ -80,6 +80,9 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'J17', title: 'Open a room and its vote from New game before choosing a script' },
 			{ id: 'J18', title: 'The room vote takes any number of scripts' },
 			{ id: 'J19', title: 'The room votes on the game mode too' },
+			{ id: 'J20', title: 'Every Share opens the same share screen, with the room code in a room' },
+			{ id: 'J21', title: "The board's Script has the players' Grim and Notes tabs" },
+			{ id: 'J22', title: 'QR settings in a dialog with the QR code on top' },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
 		]
 	},

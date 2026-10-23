@@ -101,10 +101,15 @@
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { fromScript, scriptLogo, scriptToJson } from '#lib/core/data/index.ts';
+	import { fromScript, scriptLogo, scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
+	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
+	import PlayerNotes from '#lib/features/player/PlayerNotes.svelte';
+	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
+	import { currentScript } from '#lib/features/scripts/current-script.svelte.ts';
+	import { scriptKey } from '#lib/features/player/notebook.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import {
@@ -876,6 +881,14 @@
 	// A report sent from the board carries the game's script, never the game (Trevor, 2026-10-22).
 	offerScriptToReports(() => loadedScript);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
+	/** Share links to the saved script when it is the game's, as /play's does (parity). */
+	const scriptShare = $derived.by(() => {
+		if (!scriptOpen || !loadedScript) return undefined;
+		const json = (s: LoadedScript) => JSON.stringify(scriptToJson(s));
+		const current = currentScript.current;
+		const same = current && json(current) === json(loadedScript);
+		return scriptShareable(loadedScript, same ? currentScript.saved : undefined);
+	});
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
@@ -1800,11 +1813,8 @@
 		<PlayerScriptActions
 			script={loadedScript}
 			version={scriptVersion(undefined, loadedScript?.meta)}
-			share={loadedScript && {
-				edition: loadedScript.edition,
-				json: loadedScript.edition ? [loadedScript.edition] : scriptToJson(loadedScript),
-				source: { kind: 'edition' }
-			}}
+			share={scriptShare}
+			room={watching ? undefined : roomHost().code}
 		/>
 	{/snippet}
 	{#snippet subtitle()}
@@ -1818,14 +1828,21 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
+			{@const town = publicProjection(game, publicTravellerTest(game.gameId, characters)).seats}
+			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
+			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
 			<PlayerScriptTabs
 				script={loadedScript}
 				players={game.seating.length}
 				inPlay={charactersInPlay(game)}
-				travellers={travellersInPlay(
-					publicProjection(game, publicTravellerTest(game.gameId, characters)).seats
-				)}
-			/>
+				travellers={travellersInPlay(town)}
+			>
+				{#snippet grim()}<PlayerGrim
+						script={loadedScript!}
+						town={{ seats: town, guessKey: `storyteller:${game.gameId}` }}
+					/>{/snippet}
+				{#snippet notes()}<PlayerNotes notesKey={scriptKey(loadedScript!)} />{/snippet}
+			</PlayerScriptTabs>
 		{/if}
 	</div>
 </Dialog>

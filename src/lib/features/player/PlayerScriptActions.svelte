@@ -14,9 +14,11 @@
 		version?: string;
 		/** What Share links to; without it Share is shown disabled. */
 		share: Shareable | undefined;
+		/** The live room this device is in, whose link and join code Share hands on. */
+		room?: string;
 	}
 
-	let { script, version, share }: Props = $props();
+	let { script, version, share, room }: Props = $props();
 	const target = $derived.by(() => {
 		if (!share) return undefined;
 		const from = share;
@@ -32,4 +34,5 @@
 	{version}
 	logo={script ? scriptLogo(script) : undefined}
 	{target}
+	{room}
 />

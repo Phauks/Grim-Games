@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import QrCode, { fitsQrCode } from '#lib/ui/primitives/QrCode.svelte';
 	import { copyText } from '#lib/ui/clipboard.ts';
@@ -49,6 +50,12 @@
 		 * Copy and Share still work.
 		 */
 		hidden?: boolean;
+		/**
+		 * A file to send as well as the link, e.g. a game recap's page, offered where the phone
+		 * can share files; sending it can fail over to `onFileFailed` (e.g. a download).
+		 */
+		file?: File;
+		onFileFailed?: () => void;
 	}
 
 	let {
@@ -63,7 +70,9 @@
 		qrCenter,
 		qrCenterShape,
 		qrCaption,
-		hidden = false
+		hidden = false,
+		file,
+		onFileFailed
 	}: Props = $props();
 	/*
 	 * The middle of the QR is the Storyteller's choice (plan R1): the caller's (the script's
@@ -80,6 +89,7 @@
 	const codeId = `${id}-code`;
 
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+	const canShareFile = $derived(!!file && canShare && !!navigator.canShare?.({ files: [file] }));
 
 	/** A copy icon shows a check for a moment instead of a success popup. */
 	const COPIED_MS = 1500;
@@ -117,6 +127,15 @@
 		} catch (e) {
 			// Closing the share sheet is not a failure.
 			if (!(e instanceof DOMException && e.name === 'AbortError')) await copy();
+		}
+	}
+
+	async function shareFile() {
+		if (!file) return;
+		try {
+			await navigator.share({ title, files: [file] });
+		} catch (e) {
+			if (!(e instanceof DOMException && e.name === 'AbortError')) onFileFailed?.();
 		}
 	}
 </script>
@@ -195,7 +214,10 @@
 			/>
 		</div>
 	</div>
-	{#if actions}<div class="actions">{@render actions()}</div>{/if}
+	{#if actions || canShareFile}<div class="actions">
+			{#if canShareFile}<Button onclick={() => void shareFile()}>{t('share.sendFile')}</Button>{/if}
+			{@render actions?.()}
+		</div>{/if}
 </div>
 
 {#snippet pictureCentre()}

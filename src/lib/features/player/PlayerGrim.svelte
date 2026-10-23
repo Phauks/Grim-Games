@@ -31,17 +31,24 @@
 	 */
 	interface Props {
 		script: LoadedScript;
+		/**
+		 * The town as the table knows it, given by the Storyteller's board (Trevor, 2026-10-23:
+		 * the board's Script shows every screen a player has); a phone reads its room instead.
+		 */
+		town?: { seats: readonly PublicSeat[]; guessKey: string };
 	}
 
-	let { script }: Props = $props();
+	let { script, town }: Props = $props();
 
-	const code = lastRoom();
-	const player = code ? useRoom(code) : undefined;
+	// svelte-ignore state_referenced_locally
+	const code = town ? town.guessKey : lastRoom();
+	// svelte-ignore state_referenced_locally
+	const player = !town && code ? useRoom(code) : undefined;
 	$effect(() => () => {
 		if (player) releaseRoom(player);
 	});
 
-	const seats = $derived(player?.view?.public?.seats ?? []);
+	const seats = $derived(town?.seats ?? player?.view?.public?.seats ?? []);
 	const mine = $derived(player?.view?.me.seatId);
 	let guesses = $state<Guesses>(code ? readGuesses(code) : {});
 
