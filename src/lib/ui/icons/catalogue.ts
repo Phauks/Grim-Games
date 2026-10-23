@@ -113,6 +113,8 @@ export const ICON_SLOTS = {
 	history: { label: 'History', choices: ['ph:clock-counter-clockwise', 'ph:list-bullets'] },
 	join: { label: 'Join game', choices: ['ph:sign-in', 'ph:door-open'] },
 	share: { label: 'Share', choices: ['ph:share-network', 'ph:qr-code'] },
+	/** Reads a QR code with the camera (Join game). */
+	scan: { label: 'Scan a code', choices: ['ph:camera', 'ph:scan'] },
 	copy: { label: 'Copy', choices: ['ph:copy', 'ph:copy-simple'] },
 	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] },
 	/** The scratch pad's drawing tool only; an edit button is `edit` (grim/icon-meaning). */

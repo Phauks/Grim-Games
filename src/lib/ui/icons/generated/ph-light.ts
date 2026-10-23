@@ -29,6 +29,7 @@ import ph_bookmarks_simple_light from '~icons/ph/bookmarks-simple-light';
 import ph_books_light from '~icons/ph/books-light';
 import ph_bug_light from '~icons/ph/bug-light';
 import ph_calculator_light from '~icons/ph/calculator-light';
+import ph_camera_light from '~icons/ph/camera-light';
 import ph_caret_circle_down_light from '~icons/ph/caret-circle-down-light';
 import ph_caret_down_light from '~icons/ph/caret-down-light';
 import ph_caret_left_light from '~icons/ph/caret-left-light';
@@ -143,6 +144,7 @@ import ph_push_pin_light from '~icons/ph/push-pin-light';
 import ph_qr_code_light from '~icons/ph/qr-code-light';
 import ph_question_light from '~icons/ph/question-light';
 import ph_scales_light from '~icons/ph/scales-light';
+import ph_scan_light from '~icons/ph/scan-light';
 import ph_scroll_light from '~icons/ph/scroll-light';
 import ph_shapes_light from '~icons/ph/shapes-light';
 import ph_share_network_light from '~icons/ph/share-network-light';
@@ -229,6 +231,7 @@ const icons: IconMap = {
 	'ph:books-light': ph_books_light,
 	'ph:bug-light': ph_bug_light,
 	'ph:calculator-light': ph_calculator_light,
+	'ph:camera-light': ph_camera_light,
 	'ph:caret-circle-down-light': ph_caret_circle_down_light,
 	'ph:caret-down-light': ph_caret_down_light,
 	'ph:caret-left-light': ph_caret_left_light,
@@ -343,6 +346,7 @@ const icons: IconMap = {
 	'ph:qr-code-light': ph_qr_code_light,
 	'ph:question-light': ph_question_light,
 	'ph:scales-light': ph_scales_light,
+	'ph:scan-light': ph_scan_light,
 	'ph:scroll-light': ph_scroll_light,
 	'ph:shapes-light': ph_shapes_light,
 	'ph:share-network-light': ph_share_network_light,

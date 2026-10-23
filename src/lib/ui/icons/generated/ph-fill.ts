@@ -29,6 +29,7 @@ import ph_bookmarks_simple_fill from '~icons/ph/bookmarks-simple-fill';
 import ph_books_fill from '~icons/ph/books-fill';
 import ph_bug_fill from '~icons/ph/bug-fill';
 import ph_calculator_fill from '~icons/ph/calculator-fill';
+import ph_camera_fill from '~icons/ph/camera-fill';
 import ph_caret_circle_down_fill from '~icons/ph/caret-circle-down-fill';
 import ph_caret_down_fill from '~icons/ph/caret-down-fill';
 import ph_caret_left_fill from '~icons/ph/caret-left-fill';
@@ -143,6 +144,7 @@ import ph_push_pin_fill from '~icons/ph/push-pin-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
 import ph_scales_fill from '~icons/ph/scales-fill';
+import ph_scan_fill from '~icons/ph/scan-fill';
 import ph_scroll_fill from '~icons/ph/scroll-fill';
 import ph_shapes_fill from '~icons/ph/shapes-fill';
 import ph_share_network_fill from '~icons/ph/share-network-fill';
@@ -229,6 +231,7 @@ const icons: IconMap = {
 	'ph:books-fill': ph_books_fill,
 	'ph:bug-fill': ph_bug_fill,
 	'ph:calculator-fill': ph_calculator_fill,
+	'ph:camera-fill': ph_camera_fill,
 	'ph:caret-circle-down-fill': ph_caret_circle_down_fill,
 	'ph:caret-down-fill': ph_caret_down_fill,
 	'ph:caret-left-fill': ph_caret_left_fill,
@@ -343,6 +346,7 @@ const icons: IconMap = {
 	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
 	'ph:scales-fill': ph_scales_fill,
+	'ph:scan-fill': ph_scan_fill,
 	'ph:scroll-fill': ph_scroll_fill,
 	'ph:shapes-fill': ph_shapes_fill,
 	'ph:share-network-fill': ph_share_network_fill,

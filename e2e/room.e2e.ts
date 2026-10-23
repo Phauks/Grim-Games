@@ -54,6 +54,9 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await expect(phone.getByTestId('join-status')).toHaveText(
 		'Waiting for the Storyteller: Alex, seat 3.'
 	);
+	// Asking moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
+	// script"); the Room tab keeps the seat's state.
+	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 
 	const request = page.getByRole('listitem', { name: 'Alex asks for Seat 3' });
 	await request.getByRole('button', { name: 'Approve' }).tap();
@@ -71,6 +74,8 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await expect(recent).toContainText(`${code.slice(0, 3)} ${code.slice(3)}`);
 	await recent.tap();
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
+	// A phone with a seat opens on the script.
+	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
 	await expect(phone.getByRole('radio', { name: /^Seat 3/ })).toBeChecked();
 	await expect(phone.getByRole('button', { name: 'Ask the Storyteller' })).toBeDisabled();
@@ -256,6 +261,15 @@ test('after a game the room votes on the next script, and the next game opens in
 		/^Script 2\s*None\s*$/,
 		/^Script 3\s*None\s*$/
 	]);
+	// The room's code from before the vote opens, so players can join first; on a tablet it
+	// is in a column of its own beside the scripts (Trevor, 2026-10-23).
+	const joinCode = sheet.getByTestId('share-code');
+	await expect(joinCode).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
+	if (testInfo.project.name === 'tablet') {
+		const slotsBox = (await sheet.getByTestId('script-vote-slots').boundingBox())!;
+		const codeBox = (await joinCode.boundingBox())!;
+		expect(codeBox.x).toBeGreaterThan(slotsBox.x + slotsBox.width);
+	}
 	await add.tap();
 	await expect(add).toBeDisabled();
 	await scripts.getByText('Bad Moon Rising', { exact: true }).tap();
@@ -277,7 +291,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
 	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 0 of 1');
 	await expect(sheet.getByTestId('script-vote-time')).toHaveText(/^Time left: [12]:\d\d$/);
-	// The room's code is on the vote, for players not in the room yet (Trevor, 2026-10-23).
+	// The room's code stays on the vote, for players not in the room yet (Trevor, 2026-10-23).
 	await expect(sheet.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
 
 	// The phone ranks them; the Storyteller sees points by place.
@@ -923,6 +937,46 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	await phoneContext.close();
+});
+
+test("on a laptop the player's screen has the app's sidebar, the script's logo, and the guess sheet scrolls", async ({
+	page,
+	browser
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'tablet', 'A laptop window, once');
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	// A laptop: a mouse or trackpad and a wide window.
+	const laptop = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+	const phone = await laptop.newPage();
+	// The menu button sits where every page's does: at the head of the sidebar (Trevor,
+	// 2026-10-23), not before the page's title.
+	await phone.goto('/library');
+	const menu = phone.getByRole('button', { name: 'Menu', exact: true });
+	const libraryMenu = (await menu.boundingBox())!;
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	expect(await menu.boundingBox()).toEqual(libraryMenu);
+	// The script's logo before its name (Trevor, 2026-10-23).
+	await expect(phone.getByRole('heading', { level: 1 }).getByTestId('script-logo')).toHaveAttribute(
+		'data-logo',
+		/.+/
+	);
+
+	// A trackpad's two-finger scroll moves the guess sheet's characters (Trevor, 2026-10-23).
+	await phone.getByRole('tab', { name: 'Grim' }).click();
+	await phone.getByTestId('grim-seat').nth(1).click();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
+	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });
+	await expect(empath).toBeVisible();
+	const before = (await empath.boundingBox())!;
+	await phone.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+	await phone.mouse.wheel(0, 300);
+	await expect.poll(async () => (await empath.boundingBox())!.y).toBeLessThan(before.y - 100);
+	await laptop.close();
 });
 
 test("a player's initials and frame go on their seat, and their guess shows over them only if they choose", async ({

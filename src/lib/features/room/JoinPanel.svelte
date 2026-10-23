@@ -24,6 +24,7 @@
 	} from '#lib/core/sync/room-code.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
@@ -60,9 +61,11 @@
 		onJoined?: (joined: boolean) => void;
 		/** Told the Storyteller's name the room gives, for the share text around it. */
 		onStoryteller?: (name: string | undefined) => void;
+		/** Told when the phone has a seat here, or has asked for one, as it does or on its return. */
+		onSeated?: () => void;
 	}
 
-	let { code, onCode, onJoined, onStoryteller }: Props = $props();
+	let { code, onCode, onJoined, onStoryteller, onSeated }: Props = $props();
 
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
@@ -123,6 +126,9 @@
 	const storyteller = $derived(view?.public?.storytellerName);
 	$effect(() => onStoryteller?.(storyteller));
 	const mine = $derived(view?.me.seatId);
+	$effect(() => {
+		if (view?.request || mine) untrack(() => onSeated?.());
+	});
 	// The seat this phone has, or asked for, is the one chosen when the room opens again.
 	const placed = $derived(
 		view ? (view.request ? (view.request.seatId ?? '') : (mine ?? '')) : undefined
@@ -358,7 +364,8 @@
 			<Button disabled={!found?.grimView} onclick={() => (grimViewOpen = true)}
 				>{t('room.grimView')}</Button
 			>
-			<Button onclick={() => (scanning = true)}>{t('share.scan')}</Button>
+			<!-- A camera icon, not words (Trevor, 2026-10-23). -->
+			<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
 		</div>
 	</form>
 	<Dialog bind:open={scanning} title={t('share.scan')}>
