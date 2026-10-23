@@ -56,6 +56,12 @@
 		const all = [...scriptChoices(), ...searchableScripts()];
 		return all.filter((c, i) => all.findIndex((d) => d.value === c.value) === i);
 	});
+	function openVote() {
+		const host = roomHost();
+		host.prepare();
+		host.setChoosing(true);
+		voteOpen = true;
+	}
 	// ── New game ──
 	/** An official edition, `recent:<scriptId>` or `profile:<id>` (script-choices.svelte.ts). */
 	let edition = $state<ScriptChoice>('tb');
@@ -120,12 +126,10 @@
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
 			<PageSection title="Script">
 				{#snippet aside()}
-					<!-- Always here, so nothing moves; usable once this device has a room. -->
-					<Button
-						variant="quiet"
-						icon="vote"
-						disabled={!roomHost().code}
-						onclick={() => (voteOpen = true)}>{t('room.scriptVote.button')}</Button
+					<!-- Opens this device's room if it has none, so the table can gather and vote
+					     before any script is chosen (Trevor, 2026-10-23). -->
+					<Button variant="quiet" icon="vote" onclick={openVote}
+						>{t('room.scriptVote.button')}</Button
 					>
 				{/snippet}
 				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />

@@ -325,6 +325,38 @@ test('after a game the room votes on the next script, and the next game opens in
 	await phoneContext.close();
 });
 
+test('New game opens a room for the vote before any game or script', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-23: "allow storytellers to create rooms without having selected a
+	// script", so the table can gather and vote first.
+	await page.goto('/new');
+	await page.getByRole('button', { name: 'Room vote' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Vote on the next script' });
+	const joinCode = sheet.getByTestId('share-code');
+	await expect(joinCode).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await joinCode.textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toHaveText(
+		'The Storyteller is choosing a script.'
+	);
+
+	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
+	await sheet
+		.getByRole('radiogroup', { name: 'Add a script' })
+		.getByText('Bad Moon Rising', { exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
+	await sheet.getByRole('button', { name: 'Open vote' }).tap();
+	const ballot = phone.getByRole('dialog', { name: 'Vote on the next script' });
+	await ballot.getByRole('button', { name: /Bad Moon Rising/ }).tap();
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
+	await phoneContext.close();
+});
+
 test('the Storyteller picks what goes in the middle of the QR code', async ({ page }) => {
 	// Trevor, 2026-10-20 (plan R1): a custom QR centre logo, or none.
 	const board = await startGame(page);
