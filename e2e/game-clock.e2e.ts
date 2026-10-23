@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 
 // How long the game has run, under the join code in the board's corner (Trevor, 2026-10-23:
 // "starts when first night begins"). Kept on the device, so a reload keeps it.
@@ -9,7 +9,7 @@ test('the board shows how long the game has run since the first night began', as
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	const clock = page.getByTestId('board-game-clock');
 	// In place before the first night, so nothing moves when it starts.
 	await expect(clock).toHaveText(/Game time\s*None/);

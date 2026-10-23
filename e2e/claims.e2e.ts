@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 
 // Claims players make in town (L56-L58), logged from the seat's ⋯ menu as well as the day
 // view: https://wiki.bloodontheclocktower.com/Gossip, /Juggler.
@@ -24,6 +24,7 @@ async function start(page: Page, script: string) {
 	await page.goto('/new');
 	await pickScript(page, script);
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 }
 
