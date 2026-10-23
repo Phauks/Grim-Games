@@ -142,6 +142,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				prs: [329]
 			},
 			{ id: 'L25', title: 'Edit custom scripts in place from the ⋯ menu' },
+			{ id: 'L55', title: 'Library: New folder is made at once, named "New folder"' },
 			{ id: 'P1', title: 'Almanac link in the Glossary' },
 			{ id: 'P2', title: 'Alternate art packs in Icons settings' }
 		]
