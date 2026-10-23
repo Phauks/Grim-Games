@@ -65,7 +65,9 @@
 		childFolders,
 		folderMoveProblem,
 		folderPath,
-		libraryKey
+		freeName,
+		libraryKey,
+		siblings
 	} from './library-labels.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
@@ -536,7 +538,15 @@
 
 	// ---- New folder, new collection ----
 
-	let folderNaming = $state(false);
+	/**
+	 * A new folder is made at once, named "New folder" (numbered when taken) and selected, so
+	 * Rename or F2 names it (Trevor, 2026-10-23: "just create, and name new folder").
+	 */
+	function newFolder() {
+		const name = freeName(siblings(labels, 'folders', folder), t('library.newFolder'));
+		const id = libraryLabels.add('folders', name, folder);
+		if (id) selectedKey = `folder:${id}`;
+	}
 	let collectionNaming = $state(false);
 	export function newCollection() {
 		collectionNaming = true;
@@ -566,7 +576,7 @@
 					bind:place
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
-					onnewfolder={() => (folderNaming = true)}
+					onnewfolder={newFolder}
 					onmove={move}
 					onrename={renameFolder}
 				/>
@@ -580,7 +590,7 @@
 					bind:place
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
-					onnewfolder={() => (folderNaming = true)}
+					onnewfolder={newFolder}
 					onmove={move}
 					onrename={renameFolder}
 				/>
@@ -718,7 +728,6 @@
 {/snippet}
 
 <!-- The new folder isn't opened (Trevor, 2026-10-18); it is listed in the folder made in. -->
-<FolderNameDialog bind:open={folderNaming} parent={folder} />
 <FolderNameDialog bind:open={renameOpen} folder={renaming} />
 
 <NameDialog

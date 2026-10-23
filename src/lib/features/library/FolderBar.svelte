@@ -208,7 +208,7 @@
 	<Icon name="home" /><span class="visually-hidden">{t('library.home')}</span>
 {/snippet}
 
-<FolderNameDialog bind:open={nameOpen} folder={naming?.folder} parent={here?.id} />
+<FolderNameDialog bind:open={nameOpen} folder={naming?.folder} />
 
 <Dialog bind:open={moveOpen} title={here ? t('library.moveNamed', { name: here.name }) : ''}>
 	<Select

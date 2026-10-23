@@ -158,6 +158,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'L51', title: 'Search: the list and the script details as one surface' },
 			{ id: 'L52', title: 'Search: open the shown script at its source' },
 			{ id: 'L53', title: 'The base three scripts link their wiki pages' },
+			{ id: 'L55', title: 'Library: New folder is made at once, named "New folder"' },
 			{ id: 'P2', title: 'Alternate art packs in Icons settings' }
 		]
 	},
