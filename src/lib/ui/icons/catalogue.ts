@@ -127,6 +127,7 @@ export const ICON_SLOTS = {
 	/** Opens an item from its preview into a window over the page. */
 	openItem: { label: 'Open', choices: ['ph:arrow-square-out', 'ph:frame-corners'] },
 	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
+	exitFullScreen: { label: 'Exit full screen', choices: ['ph:arrows-in', 'ph:corners-in'] },
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
 	/** Someone is watching the view-only grimoire (Trevor, 2026-10-20). */
 	watchers: { label: 'Watching', choices: ['ph:eye', 'ph:binoculars'] },

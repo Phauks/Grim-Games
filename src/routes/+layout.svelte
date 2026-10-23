@@ -5,7 +5,6 @@
 	import { page } from '$app/state';
 	import favicon from '#lib/assets/favicon.svg';
 	import '#lib/ui/base.css';
-	import AppFooter from '#lib/features/about/AppFooter.svelte';
 	import UpdateBanner from '#lib/features/about/UpdateBanner.svelte';
 	import GlossaryPopover from '#lib/features/glossary/GlossaryPopover.svelte';
 	import { startAccount } from '#lib/features/account/start.ts';
@@ -93,7 +92,7 @@
 		leaveTo(() => void goto(to.href));
 	});
 
-	// A game in progress hides the sidebar and footer (src/lib/features/shell/shell.ts), and so
+	// A game in progress hides the sidebar (src/lib/features/shell/shell.ts), and so
 	// does a locked draw while the phone is passed round.
 	const shell = $derived(
 		showsAppShell(page.data) && !lockedDrawHidesShell(page.url.pathname, drawLock.lockedGame)
@@ -105,12 +104,10 @@
 	<title>{APP_NAME}</title>
 </svelte:head>
 
-<!-- Grows to fill the screen so the footer sits at the bottom on short pages. -->
 <div class="app-body" class:bare={!shell}>
 	{#if shell}<AppNav />{/if}
 	<div class="app-main">{@render children()}</div>
 </div>
-{#if shell}<AppFooter />{/if}
 
 <SettingsModal />
 <NavDrawer />
@@ -127,13 +124,10 @@
 		/* Clear of a landscape phone's notch (viewport-fit=cover in app.html). */
 		padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
 	}
-	/* Clear of the phone's status bar: there is no app header (2026-10-22). */
+	/* Clear of the phone's status and navigation bars: there is no app header (2026-10-22) or
+	   footer (2026-10-23). */
 	.app-body {
-		padding-top: var(--app-top);
-	}
-	/* No footer (a game): clear of the navigation bar here instead. */
-	.app-body.bare {
-		padding-bottom: env(safe-area-inset-bottom);
+		padding-block: var(--app-top) env(safe-area-inset-bottom);
 	}
 	/* The status bar's strip keeps the theme's colour while the page scrolls under it (an
 	   installed app on iPhone draws the page there; zero high elsewhere). */

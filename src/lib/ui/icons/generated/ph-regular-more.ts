@@ -22,6 +22,7 @@ import ph_clipboard from '~icons/ph/clipboard';
 import ph_club from '~icons/ph/club';
 import ph_coin from '~icons/ph/coin';
 import ph_copy_simple from '~icons/ph/copy-simple';
+import ph_corners_in from '~icons/ph/corners-in';
 import ph_corners_out from '~icons/ph/corners-out';
 import ph_cross from '~icons/ph/cross';
 import ph_crown from '~icons/ph/crown';
@@ -122,6 +123,7 @@ const icons: IconMap = {
 	'ph:club': ph_club,
 	'ph:coin': ph_coin,
 	'ph:copy-simple': ph_copy_simple,
+	'ph:corners-in': ph_corners_in,
 	'ph:corners-out': ph_corners_out,
 	'ph:cross': ph_cross,
 	'ph:crown': ph_crown,

@@ -279,6 +279,27 @@ test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 		'href',
 		'https://botcscripts.com/script/42/1.2.0'
 	);
+	// A button in the details' header opens it at its source too (Trevor, 2026-10-23).
+	await expect(
+		details(page).getByRole('link', { name: "Open the script's source page" })
+	).toHaveAttribute('href', 'https://botcscripts.com/script/42/1.2.0');
+});
+
+test('a script from a file has no source page: its button stays, disabled, naming the file', async ({
+	page
+}) => {
+	await page.goto('/library');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'my-script.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(
+			JSON.stringify([{ id: '_meta', name: 'From A File' }, 'washerwoman', 'imp'])
+		)
+	});
+	await expect(page.getByTestId('script-details-name')).toHaveText('From A File');
+	await expect(
+		page.getByRole('button', { name: 'No source page (my-script.json)' })
+	).toBeDisabled();
 });
 
 test('a pasted Bloodstar link, old address or new, is read through our Worker', async ({

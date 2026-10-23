@@ -10,6 +10,7 @@ import atheist from './atheist.json' with { type: 'json' };
 import banshee from './banshee.json' with { type: 'json' };
 import barber from './barber.json' with { type: 'json' };
 import farmer from './farmer.json' with { type: 'json' };
+import fool from './fool.json' with { type: 'json' };
 import godfather from './godfather.json' with { type: 'json' };
 import gossip from './gossip.json' with { type: 'json' };
 import hatter from './hatter.json' with { type: 'json' };
@@ -45,6 +46,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	banshee,
 	barber,
 	farmer,
+	fool,
 	godfather,
 	gossip,
 	hatter,

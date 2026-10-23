@@ -48,6 +48,13 @@ export interface CharacterRules {
 	 * with its `token` (the Monk's "Safe"), against the Demon's kill only or any kill.
 	 */
 	protects?: Protects;
+	/** A kill on its player, by `from`, may land on another player instead (the Mayor). */
+	redirectsKill?: { from: (typeof PROTECTS_FROM)[number] };
+	/**
+	 * Its player's first death does not happen; placing `spentToken`, one of its reminders,
+	 * marks the ability used (the Fool's "No Ability").
+	 */
+	survivesFirstDeath?: { spentToken: ReminderLabel };
 	/**
 	 * The first time its player is nominated by a `by` character, `effect` happens (the
 	 * Virgin). Once used, the character's "No Ability" reminder marks it spent.
@@ -67,6 +74,8 @@ export const RULE_KEYS = [
 	'actsWhenDead',
 	'onDeath',
 	'protects',
+	'redirectsKill',
+	'survivesFirstDeath',
 	'onNominated'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
@@ -104,6 +113,28 @@ export function parseCharacterRules(
 			checkKeys(raw.onDeath, ['by'], `${path}.onDeath`, issues);
 			const by = readEnum(raw.onDeath, 'by', KILLED_BY, `${path}.onDeath`, issues, true);
 			if (by) rules.onDeath = { by };
+		}
+	}
+	if (raw.redirectsKill !== undefined) {
+		const at = `${path}.redirectsKill`;
+		if (!isObject(raw.redirectsKill)) {
+			issues.add(at, `expected object, got ${describe(raw.redirectsKill)}`);
+		} else {
+			checkKeys(raw.redirectsKill, ['from'], at, issues);
+			const from = readEnum(raw.redirectsKill, 'from', PROTECTS_FROM, at, issues, true);
+			if (from) rules.redirectsKill = { from };
+		}
+	}
+	if (raw.survivesFirstDeath !== undefined) {
+		const at = `${path}.survivesFirstDeath`;
+		if (!isObject(raw.survivesFirstDeath)) {
+			issues.add(at, `expected object, got ${describe(raw.survivesFirstDeath)}`);
+		} else {
+			checkKeys(raw.survivesFirstDeath, ['spentToken'], at, issues);
+			const token = readString(raw.survivesFirstDeath, 'spentToken', at, issues, true);
+			if (token !== undefined && !ownReminder(token, reminders)) {
+				issues.add(`${at}.spentToken`, 'not one of this character’s reminders');
+			} else if (token !== undefined) rules.survivesFirstDeath = { spentToken: token };
 		}
 	}
 	if (raw.protects !== undefined) {
@@ -166,9 +197,14 @@ function readProtects(
 	}
 	const token = readString(raw, 'token', path, issues, true);
 	if (token === undefined) return undefined;
-	if (reminders && !reminders.some((r) => r.toLowerCase() === token.toLowerCase())) {
+	if (!ownReminder(token, reminders)) {
 		issues.add(`${path}.token`, 'not one of this character’s reminders');
 		return undefined;
 	}
 	return { who, token, from };
+}
+
+/** Whether `token` is one of the character's reminders; true when they are not given. */
+function ownReminder(token: string, reminders: readonly ReminderLabel[] | undefined): boolean {
+	return !reminders || reminders.some((r) => r.toLowerCase() === token.toLowerCase());
 }

@@ -21,7 +21,7 @@
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BoardBackdrop from './BoardBackdrop.svelte';
 	import { boardBackground } from './board-background.svelte.ts';
-	import { boardLooks, STACK_AT } from './board-looks.svelte.ts';
+	import { boardLooks } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
@@ -152,7 +152,7 @@
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
-	import FoolAsk from './FoolAsk.svelte';
+	import FirstDeathAsk from './FirstDeathAsk.svelte';
 	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
@@ -406,29 +406,14 @@
 	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
-	/**
-	 * With stacks on (Board setting, off by default), a crowded seat shows its first reminders
-	 * and a "+N" token for the rest, which opens the seat (Trevor, 2026-10-22). Only while
-	 * reminders sit by their seat: a reminder left where it was dropped keeps its place.
-	 */
-	const stacking = $derived(
-		boardLooks.current.reminderStacks && boardLooks.current.reminders !== 'free'
-	);
-	function stackedAway(count: number): number {
-		return stacking && count > STACK_AT ? count - (STACK_AT - 1) : 0;
-	}
-	/** The reminder places a seat takes on the board, the "+N" token included. */
-	const places = (count: number) => (stackedAway(count) > 0 ? STACK_AT : count);
 	const fan = $derived.by(() => {
 		if (width <= 0 || height <= 0)
-			return seats.map((s, i) =>
-				Array.from({ length: places(s.reminders.length) }, () => shown[i])
-			);
+			return seats.map((s, i) => Array.from({ length: s.reminders.length }, () => shown[i]));
 		const fitted = fitReminders(
 			seats.map((s, i) => ({
 				seat: toPx(shown[i]),
 				middle: { x: width / 2, y: height / 2 },
-				count: places(s.reminders.length),
+				count: s.reminders.length,
 				size,
 				chip: Math.max(chip, tapPx),
 				avoid: avoidFor(i)
@@ -1335,6 +1320,20 @@
 		drawOpen = true;
 	}
 
+	// ── Full screen, for those who don't know their browser's own way (Trevor, 2026-10-23).
+	// Only where the browser can: iPhone Safari can't for a page, so the button isn't there. ──
+	const canFullScreen = document.fullscreenEnabled === true;
+	let fullScreen = $state(!!document.fullscreenElement);
+	$effect(() => {
+		const sync = () => (fullScreen = !!document.fullscreenElement);
+		document.addEventListener('fullscreenchange', sync);
+		return () => document.removeEventListener('fullscreenchange', sync);
+	});
+	function toggleFullScreen() {
+		if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+		else void document.documentElement.requestFullscreen().catch(() => {});
+	}
+
 	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
 	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
@@ -1422,12 +1421,18 @@
 	// ── Background: an image of the Storyteller's own, kept on this device ──
 	let background = $state<BackgroundChoice>({ kind: 'none' });
 	let backgroundRead = $state(0);
+	/**
+	 * Read again only when the game or the choice changes. Every command replaces `game`, so
+	 * an effect reading `game.gameId` itself ran after each one (a ghost vote too) and made a
+	 * new image link, and the image flashed while it loaded again (Trevor, 2026-10-23).
+	 */
+	const backgroundGameId = $derived(game.gameId);
 	$effect(() => {
 		void backgroundRead;
-		const gameId = game.gameId;
+		const gameId = backgroundGameId;
 		backgroundFor(gameId)
 			.then((choice) => {
-				if (game.gameId === gameId) background = choice;
+				if (backgroundGameId === gameId) background = choice;
 			})
 			.catch(() => (background = { kind: 'none' }));
 	});
@@ -1485,9 +1490,9 @@
 	/** The join code under the script's name (a Board setting, on by default). */
 	const showRoomCode = $derived(!watching && preferences.current.assistance.roomCode);
 	const roomCode = $derived(roomHost().code);
-	const showTitle = $derived(
-		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
-	);
+	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
+	// script name and author on board, remove as an option").
+	const showTitle = $derived(!game.script.meta?.hideTitle);
 	/**
 	 * The corner name is hidden (switched off, or no room beside the seats): Game info is
 	 * then on the ⋯ menu instead, so a mode's actions stay in reach. Otherwise only the corner
@@ -1696,6 +1701,14 @@
 			>
 			<!-- A spectator sees every control the Storyteller does, disabled (Trevor, 2026-10-19):
 			     nothing opens, so nothing invites a try. Script only shows the players' copy. -->
+			<!-- On or off, one word, so the toolbar never moves (two states = a toggle). -->
+			{#if canFullScreen}<Button
+					variant="quiet"
+					icon={fullScreen ? 'exitFullScreen' : 'fullScreen'}
+					aria-label="Full screen"
+					aria-pressed={fullScreen}
+					onclick={toggleFullScreen}><span class="tool-label">Full screen</span></Button
+				>{/if}
 			<Button
 				variant="quiet"
 				icon="day"
@@ -1710,6 +1723,11 @@
 				disabled={watching}
 				onclick={() => (infoOpen = true)}><span class="tool-label">Info tokens</span></Button
 			>
+			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16),
+			     before Share (Trevor, 2026-10-23). -->
+			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
+				><span class="tool-label">Script</span></Button
+			>
 			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). Pointing at, focusing or
 			     pressing it starts opening the room, so the code and QR are ready. -->
 			<Button
@@ -1721,10 +1739,6 @@
 				onfocus={prepareRoom}
 				onpointerdown={prepareRoom}
 				onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
-			>
-			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16). -->
-			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
-				><span class="tool-label">Script</span></Button
 			>
 			<Button
 				variant="quiet"
@@ -1838,29 +1852,9 @@
 
 		{#each seats as seat, i (seat.seatId)}
 			{@const count = seat.reminders.length}
-			{@const away = stackedAway(count)}
 			{#if count > 0}
 				{@const at = fan[i]}
-				{#if away > 0}
-					{@const p = at[STACK_AT - 1]}
-					<div
-						class="chip-slot"
-						data-seat={i + 1}
-						data-stack
-						style:left="{p.x}%"
-						style:top="{p.y}%"
-					>
-						<BoardReminder
-							label=""
-							character={undefined}
-							more={away}
-							size={chip}
-							disabled={arranging}
-							onTap={() => (watching ? readCharacter(seat.characterId) : openSeat(seat.seatId))}
-						/>
-					</div>
-				{/if}
-				{#each away > 0 ? seat.reminders.slice(0, STACK_AT - 1) : seat.reminders as reminder, k (reminder.reminderId)}
+				{#each seat.reminders as reminder, k (reminder.reminderId)}
 					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
 					{@const spot =
 						boardLooks.current.reminders === 'free'
@@ -2031,7 +2025,8 @@
 				{seatAt}
 				{spotAllowed}
 				{ruleAt}
-				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
+				onRule={(reminder, characterId, tokenId) =>
+					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
 				run={bankRun}
 				disabled={watching}
@@ -2216,7 +2211,7 @@
 />
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
-<FoolAsk {grimoire} />
+<FirstDeathAsk {grimoire} />
 <NominationAsk {grimoire} bind:asks={nominationAsks} />
 <GameEndPrompt
 	{grimoire}
@@ -2599,7 +2594,7 @@
 		isolation: isolate;
 		display: flex;
 		flex-direction: column;
-		/* Fills the screen: a game hides the sidebar and footer (route data). */
+		/* Fills the screen: a game hides the sidebar (route data). */
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}
@@ -2856,6 +2851,9 @@
 		font-family: var(--font-heading);
 		line-height: 1.15;
 		color: var(--heading);
+		/* Straight on the board, with no band behind it, so a faint halo keeps it readable on
+		   any background or image (Trevor, 2026-10-23). */
+		text-shadow: 0 0 0.3em var(--surface);
 		pointer-events: none;
 	}
 	.watchers {

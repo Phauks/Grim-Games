@@ -15,7 +15,7 @@
  *
  * Everything here is a suggestion: the Storyteller can override any of it.
  */
-import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
@@ -439,4 +439,46 @@ export function protection(
 	return protectors(game, seatId, characters, by).find(
 		(p) => !p.source.seatId || works(p.source.seatId)
 	)?.source;
+}
+
+/**
+ * The seat's own ability that may move a kill `by` the Demon or another ability onto another
+ * player (`redirectsKill`, the Mayor against the Demon:
+ * https://wiki.bloodontheclocktower.com/Mayor). Whether it works is the caller's to check.
+ */
+export function killRedirect(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	by: 'demon' | 'other'
+): AbilitySource | undefined {
+	const id = trueCharacter(game, seatId, characters);
+	const rule = id ? rulesOf(id, characters)?.redirectsKill : undefined;
+	if (!id || !rule || (rule.from === 'demon' && by !== 'demon')) return undefined;
+	return { characterId: id, seatId };
+}
+
+/** An ability that stops its player's first death, and the token that marks it spent. */
+export interface FirstDeathSaver {
+	source: AbilitySource;
+	spentToken: ReminderLabel;
+}
+
+/**
+ * The seat's own ability that stops its first death (`survivesFirstDeath`, the Fool's), while
+ * its spent token is not on the seat. Whether it works is the caller's to check.
+ */
+export function firstDeathSaver(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): FirstDeathSaver | undefined {
+	const seat = getSeat(game, seatId);
+	const id = trueCharacter(game, seatId, characters);
+	const rule = id ? rulesOf(id, characters)?.survivesFirstDeath : undefined;
+	if (!seat || !id || !rule) return undefined;
+	const spent = rule.spentToken.toLowerCase();
+	if (seat.reminders.some((r) => r.characterId === id && r.label.toLowerCase() === spent))
+		return undefined;
+	return { source: { characterId: id, seatId }, spentToken: rule.spentToken };
 }

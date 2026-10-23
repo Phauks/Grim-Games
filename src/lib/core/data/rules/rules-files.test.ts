@@ -63,6 +63,15 @@ describe('parseCharacterRules', () => {
 		expect(parse({ protects: { who: 'marked', token: 'Safe', from: 'any' } }).issues).toEqual([
 			'rules.protects.token: not one of this character’s reminders'
 		]);
+		expect(parse({ redirectsKill: { from: 'other' } }).issues).toEqual([
+			'rules.redirectsKill.from: unknown value "other"'
+		]);
+		expect(parse({ survivesFirstDeath: { spentToken: 'No Ability' } }).issues).toEqual([
+			'rules.survivesFirstDeath.spentToken: not one of this character’s reminders'
+		]);
+		expect(parse({ survivesFirstDeath: {} }).issues).toEqual([
+			'rules.survivesFirstDeath.spentToken: missing'
+		]);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'
 		]);

@@ -102,9 +102,10 @@ export const characters = {
 	'characters.highlightLook.ring': 'Ring',
 	'characters.highlightLook.glow': 'Glow',
 	'characters.highlightLook.both': 'Ring and glow',
-	'characters.reminderIcon': "Owner's icon on reminders",
-	'characters.reminderIconHelp': 'The icon of the character a reminder token belongs to.',
 	'characters.reminderIconColour': "Owner's icon colour",
+	'characters.genericIconFill': 'Filled ∞ token symbols',
+	'characters.genericIconFillHelp':
+		"An ∞ token's icon symbol is drawn filled in, not as an outline.",
 	'characters.iconColour.player': "Player's alignment",
 	'characters.iconColour.character': "Character's alignment",
 	'characters.iconColour.plain': 'Plain',

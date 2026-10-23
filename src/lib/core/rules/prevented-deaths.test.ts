@@ -46,7 +46,7 @@ function short(list: PreventedDeath[], seats: string[]): string[] {
 						? `protected by ${b.source === 'override' ? 'override' : b.source.characterId}`
 						: b.kind === 'killer-impaired'
 							? `${b.impairments[0].reason} by ${b.impairments[0].source.characterId}`
-							: b.kind
+							: b.source.characterId
 				)
 				.join(', ')}`
 	);

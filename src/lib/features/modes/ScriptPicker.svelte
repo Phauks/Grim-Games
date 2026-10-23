@@ -2,12 +2,13 @@
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { loadScript, OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
+	import { editionWikiUrl, loadScript, OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import LibraryBrowser, { type LibraryPick } from '#lib/features/library/LibraryBrowser.svelte';
 	import PreviewToggle from '#lib/features/library/PreviewToggle.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
+	import ScriptSourceButton from '#lib/features/scripts/ScriptSourceButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Spinner from '#lib/ui/primitives/Spinner.svelte';
 	import { chooseScript, currentScript } from '#lib/features/scripts/current-script.svelte.ts';
@@ -145,17 +146,8 @@
 			loadingVersion = false;
 		}
 	}
-	// The chosen script's source page opens from here (Trevor, 2026-10-22). Kept in place,
-	// disabled, when there is none; then its label names the source, such as the file name.
+	// The chosen script's source page opens from here (Trevor, 2026-10-22).
 	const shownSource = $derived(custom ? chosen?.source : undefined);
-	const sourceHref = $derived(shownSource && sourcePage(shownSource));
-	const sourceLabel = $derived(
-		sourceHref
-			? t('modes.scriptSearch.openSource')
-			: shownSource
-				? t('modes.scriptSearch.sourceNoPage', { source: describeSource(shownSource) })
-				: t('modes.scriptSearch.openSource')
-	);
 	/** Tapping Custom's search or Library button chooses Custom first. */
 	function toCustom() {
 		if (!custom) choose(CUSTOM);
@@ -228,16 +220,10 @@
 		</span>
 		<ScriptByline author={chosen?.author} inline />
 		<span class="source">
-			{#if sourceHref}
-				<IconButton
-					icon="openInNewTab"
-					label={sourceLabel}
-					href={sourceHref}
-					rel="noopener noreferrer"
-				/>
-			{:else}
-				<IconButton icon="openInNewTab" label={sourceLabel} disabled />
-			{/if}
+			<ScriptSourceButton
+				page={custom ? shownSource && sourcePage(shownSource) : editionWikiUrl(value)}
+				source={shownSource && describeSource(shownSource)}
+			/>
 		</span>
 	</div>
 </div>

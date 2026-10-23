@@ -55,12 +55,14 @@ describe('token appearance', () => {
 		expect(parseTokenAppearance({})).toMatchObject({
 			reminderHighlight: true,
 			reminderHighlightLook: 'ring',
-			reminderIcon: true,
 			reminderIconColour: 'player'
 		});
 		expect(
 			parseTokenAppearance({ reminderHighlightLook: 'sparkle', reminderIconColour: 'gold' })
 		).toMatchObject({ reminderHighlightLook: 'ring', reminderIconColour: 'player' });
+		// ∞ token symbols as outlines unless asked (Trevor, 2026-10-23).
+		expect(parseTokenAppearance({}).genericIconFill).toBe(false);
+		expect(parseTokenAppearance({ genericIconFill: true }).genericIconFill).toBe(true);
 		// Earlier builds' dot instead of the owner's icon is dropped (Trevor, 2026-10-18).
 		expect(parseTokenAppearance({ inlineReminderIcons: false })).toEqual(parseTokenAppearance({}));
 		expect(parseTokenAppearance({ reminderLabelWidth: 'wide' }).reminderLabelWidth).toBe(1.5);

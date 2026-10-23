@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { foolSurvives } from '#lib/core/rules/fool.ts';
+import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 const CAST = ['fool', 'chef', 'poisoner', 'assassin', 'imp'];
@@ -56,16 +56,24 @@ describe('Fool', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Fool#Examples)', () => {
 		it('Example 1: survives the first execution, then dies to the second', () => {
 			const { session, seats } = castGame(CAST);
-			expect(foolSurvives(session.game, seats[0], 'execution', characters)).toBe(true);
+			expect(survivesFirstDeath(session.game, seats[0], 'execution', characters)).toMatchObject({
+				spentToken: 'No Ability'
+			});
 			const after = castGame(CAST, spent);
-			expect(foolSurvives(after.session.game, after.seats[0], 'execution', characters)).toBe(false);
+			expect(
+				survivesFirstDeath(after.session.game, after.seats[0], 'execution', characters)
+			).toBeUndefined();
 		});
 
 		it('Example 2: survives a night kill, so a later execution kills them', () => {
 			const { session, seats } = castGame(CAST);
-			expect(foolSurvives(session.game, seats[0], 'demon', characters)).toBe(true);
+			expect(survivesFirstDeath(session.game, seats[0], 'demon', characters)).toMatchObject({
+				spentToken: 'No Ability'
+			});
 			const after = castGame(CAST, spent);
-			expect(foolSurvives(after.session.game, after.seats[0], 'execution', characters)).toBe(false);
+			expect(
+				survivesFirstDeath(after.session.game, after.seats[0], 'execution', characters)
+			).toBeUndefined();
 		});
 		it.todo('Example 3: Protected twice; ability saves once');
 	});
@@ -75,13 +83,15 @@ describe('Fool', () => {
 	// poisoned Fool has no ability (https://wiki.bloodontheclocktower.com/Poisoner).
 	it('dies to the Assassin, and when poisoned; only the Fool survives this way', () => {
 		const { session, seats } = castGame(CAST);
-		expect(foolSurvives(session.game, seats[0], 'assassin', characters)).toBe(false);
-		expect(foolSurvives(session.game, seats[1], 'demon', characters)).toBe(false);
+		expect(survivesFirstDeath(session.game, seats[0], 'assassin', characters)).toBeUndefined();
+		expect(survivesFirstDeath(session.game, seats[1], 'demon', characters)).toBeUndefined();
 		const poisoned = castGame(CAST, (s) => ({
 			type: 'AddReminder',
 			seatId: s[0],
 			reminder: { characterId: 'poisoner', label: 'Poisoned' }
 		}));
-		expect(foolSurvives(poisoned.session.game, poisoned.seats[0], 'demon', characters)).toBe(false);
+		expect(
+			survivesFirstDeath(poisoned.session.game, poisoned.seats[0], 'demon', characters)
+		).toBeUndefined();
 	});
 });

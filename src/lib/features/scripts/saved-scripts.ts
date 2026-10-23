@@ -11,6 +11,7 @@ import { HOMEBREW_ORIGIN } from './homebrew-scripts-api.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import {
 	editionScript,
+	editionWikiUrl,
 	loadScript,
 	type GameData,
 	type LoadedScript
@@ -138,10 +139,13 @@ export function describeSource(source: ScriptSource): string {
  * The script's own page where it came from (Trevor, 2026-10-16: every script links to its
  * source page, never just a site): its BotC Scripts page, its section of a collection doc,
  * the official page that lists it, or the link it was loaded from. Undefined for pasted,
- * file, shared and built-in scripts, which have no page.
+ * file, shared and built-in scripts, which have no page. A base script (`edition`) links its
+ * wiki page (Trevor, 2026-10-23).
  */
-export function sourcePage(source: ScriptSource): string | undefined {
+export function sourcePage(source: ScriptSource, edition?: string): string | undefined {
 	switch (source.kind) {
+		case 'edition':
+			return editionWikiUrl(edition);
 		case 'link':
 			return source.page ?? (isSpecificPage(source.url) ? source.url : undefined);
 		case 'botcscripts':

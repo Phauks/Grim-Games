@@ -158,6 +158,10 @@ describe('source pages (Trevor, 2026-10-16: every script links to its own source
 
 	it('has no page for pasted, file and shared scripts, and rejects bare sites', () => {
 		expect(sourcePage({ kind: 'paste' })).toBeUndefined();
+		expect(sourcePage({ kind: 'edition' })).toBeUndefined();
+		expect(sourcePage({ kind: 'edition' }, 'bmr')).toBe(
+			'https://wiki.bloodontheclocktower.com/Bad_Moon_Rising'
+		);
 		expect(sourcePage({ kind: 'file', fileName: 'x.json' })).toBeUndefined();
 		expect(sourcePage({ kind: 'share' })).toBeUndefined();
 		expect(sourcePage({ kind: 'link', url: 'https://drive.google.com/' })).toBeUndefined();

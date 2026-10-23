@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { wikiUrl } from './wiki.ts';
+import { editionWikiUrl, wikiUrl } from './wiki.ts';
 
 describe('wikiUrl', () => {
 	it('uses underscores for spaces', () => {
@@ -19,5 +19,14 @@ describe('wikiUrl', () => {
 
 	it('has no page for homebrew characters', () => {
 		expect(wikiUrl({ name: 'My Homebrew' })).toBeUndefined();
+	});
+
+	it('links the base scripts to their wiki pages', () => {
+		// https://wiki.bloodontheclocktower.com/Trouble_Brewing, /Bad_Moon_Rising, /Sects_%26_Violets
+		expect(editionWikiUrl('tb')).toBe('https://wiki.bloodontheclocktower.com/Trouble_Brewing');
+		expect(editionWikiUrl('bmr')).toBe('https://wiki.bloodontheclocktower.com/Bad_Moon_Rising');
+		expect(editionWikiUrl('snv')).toBe('https://wiki.bloodontheclocktower.com/Sects_%26_Violets');
+		expect(editionWikiUrl('carousel')).toBeUndefined();
+		expect(editionWikiUrl(undefined)).toBeUndefined();
 	});
 });
