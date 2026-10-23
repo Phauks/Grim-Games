@@ -45,7 +45,6 @@
 	import { roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
 	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
-	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 
