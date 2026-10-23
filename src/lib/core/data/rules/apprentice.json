@@ -4,5 +4,17 @@
 			"seat": "self",
 			"note": "The Apprentice's own seat once their token is swapped for the character whose ability they gained."
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Is The Apprentice",
+				"text": "Choose the Apprentice’s Townsfolk (if good) or Minion (if evil) ability: put [Is The Apprentice] on them",
+				"target": {
+					"self": true
+				},
+				"reason": "The Apprentice’s token is swapped for the ability they gain"
+			}
+		]
 	}
 }

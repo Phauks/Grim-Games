@@ -10,5 +10,17 @@
 		"self": {
 			"reason": "drunk"
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Is The Drunk",
+				"text": "Put [Is The Drunk] on the Drunk; choose a not-in-play Townsfolk they think they are",
+				"target": {
+					"self": true
+				},
+				"reason": "The Drunk is shown a Townsfolk; this marks who really is the Drunk"
+			}
+		]
 	}
 }

@@ -4,5 +4,13 @@
 			"seat": "self",
 			"note": "On the Huntsman once they have used their ability."
 		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "If the Damsel is not in play, add her in place of a Townsfolk"
+			}
+		],
+		"none": "No Ability goes on only when the Huntsman uses their ability"
 	}
 }

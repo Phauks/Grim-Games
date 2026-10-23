@@ -124,4 +124,9 @@ describe('uncuratedReminderCharacters', () => {
 		];
 		expect(uncuratedReminderCharacters(inPlay)).toEqual(['lamp']);
 	});
+
+	it('leaves out a custom character whose rules say what it places at setup', () => {
+		const lamp = { ...custom('lamp', ['Lit']), rules: { setupPrep: { none: 'lit later' } } };
+		expect(uncuratedReminderCharacters([lamp])).toEqual([]);
+	});
 });

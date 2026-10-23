@@ -24,7 +24,9 @@ export function fieldFilterValue(entry: ReferenceEntry, field: FieldId): FilterV
 		case 'flavor':
 			return character.flavor ?? '';
 		case 'prep':
-			return setupPrep(character.id, character.name).map((step) => step.text);
+			return setupPrep(character.id, character.name, new Map([[character.id, character]])).map(
+				(step) => step.text
+			);
 		case 'special':
 			return (character.special ?? []).map((s) => `${s.type}: ${s.name}`);
 		case 'cards':

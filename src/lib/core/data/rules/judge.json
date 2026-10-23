@@ -4,5 +4,8 @@
 			"seat": "self",
 			"note": "On the Judge once they have used their ability."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

@@ -14,5 +14,8 @@
 			"withLabel": "Safe",
 			"note": "One of the two players the Innkeeper protected."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

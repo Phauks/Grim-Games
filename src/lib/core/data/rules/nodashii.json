@@ -16,5 +16,27 @@
 			},
 			"note": "The nearest Townsfolk each way round from the No Dashii, alive or dead."
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Poisoned",
+				"text": "Put [Poisoned] on the nearest Townsfolk anticlockwise from the No Dashii",
+				"target": {
+					"choose": "nearest-townsfolk-anticlockwise",
+					"choice": "the nearest Townsfolk anticlockwise"
+				},
+				"reason": "The No Dashii’s Townsfolk neighbour is poisoned"
+			},
+			{
+				"label": "Poisoned",
+				"text": "Put [Poisoned] on the nearest Townsfolk clockwise from the No Dashii",
+				"target": {
+					"choose": "nearest-townsfolk-clockwise",
+					"choice": "the nearest Townsfolk clockwise"
+				},
+				"reason": "The No Dashii’s Townsfolk neighbour is poisoned"
+			}
+		]
 	}
 }

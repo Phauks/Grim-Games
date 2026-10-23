@@ -4,5 +4,8 @@
 			"global": true,
 			"note": "Added to the Grimoire each time the Storyteller admits a mistake; not on a player."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

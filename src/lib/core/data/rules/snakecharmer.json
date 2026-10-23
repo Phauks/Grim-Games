@@ -5,5 +5,8 @@
 			"characters": ["snakecharmer"],
 			"note": "On the player who was the Demon and has just become the new Snake Charmer after the swap."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
 	}
 }

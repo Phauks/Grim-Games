@@ -5,5 +5,8 @@
 			"note": "Free-use marker for whatever homebrew rule needs tracking.",
 			"ambiguous": "The wiki never says where the Bootlegger's reminder goes."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

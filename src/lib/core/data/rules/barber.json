@@ -9,5 +9,8 @@
 			"life": "dead",
 			"note": "The Barber once they have died."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

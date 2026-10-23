@@ -18,5 +18,8 @@
 				"to": "minion"
 			}
 		]
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

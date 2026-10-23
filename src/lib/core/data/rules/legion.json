@@ -12,5 +12,8 @@
 			"note": "Any player who dies to Legion at night.",
 			"ambiguous": "The How to Run section never mentions the Dead token, so its placement is inferred from the ability."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

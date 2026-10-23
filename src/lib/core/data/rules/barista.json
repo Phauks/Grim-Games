@@ -15,5 +15,8 @@
 			"withLabel": "Acts Twice",
 			"note": "On the player acting twice, standing in for their character's own reminders if needed."
 		}
+	},
+	"setupPrep": {
+		"none": "the Storyteller picks a player and one of two effects each night, then marks it"
 	}
 }

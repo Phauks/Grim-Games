@@ -9,5 +9,18 @@
 	"learns": {
 		"measure": "demon-or-token",
 		"token": "Red Herring"
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Red Herring",
+				"text": "Choose a good player as the [Red Herring]",
+				"target": {
+					"choose": "good",
+					"choice": "any good player, even the Fortune Teller"
+				},
+				"reason": "This good player registers as a Demon to the Fortune Teller"
+			}
+		]
 	}
 }

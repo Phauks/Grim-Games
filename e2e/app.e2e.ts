@@ -91,6 +91,10 @@ test('the menu links the changelog page, which lists merged changes by day', asy
 	await expect(main.getByRole('heading', { level: 3 }).first()).toBeVisible();
 	const change = main.getByTestId('update-changes').getByRole('link').first();
 	await expect(change).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\//);
+	// A line between changes, none above the first.
+	const rows = main.getByTestId('update-changes').first().getByRole('listitem');
+	await expect(rows.first()).toHaveCSS('border-top-width', '0px');
+	if ((await rows.count()) > 1) await expect(rows.nth(1)).not.toHaveCSS('border-top-width', '0px');
 });
 
 test('the menu links the roadmap, which lists planned items by area', async ({ page }) => {

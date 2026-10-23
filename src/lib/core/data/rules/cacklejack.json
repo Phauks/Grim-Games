@@ -5,5 +5,8 @@
 			"note": "The player the Cacklejack chooses that day.",
 			"ambiguous": "The wiki doesn't say whether the Cacklejack may choose themself or a dead player."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

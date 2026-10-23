@@ -4,5 +4,17 @@
 			"seat": "self",
 			"note": "The Alchemist's own seat, now showing the upside-down Minion token they copy."
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Is The Alchemist",
+				"text": "Choose the Alchemist’s Minion ability; if that Minion is not in play, put [Is The Alchemist] on them",
+				"target": {
+					"self": true
+				},
+				"reason": "When their Minion ability is not in play, the Alchemist shows that Minion"
+			}
+		]
 	}
 }

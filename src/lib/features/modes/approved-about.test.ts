@@ -7,7 +7,7 @@ import {
 	instructionApproved,
 	shownParts
 } from './approved-about.ts';
-import { PLUS_ONE_NAMED, RULE_SWITCHES } from './rule-switches.ts';
+import { INFINITE_NAMED, PLUS_ONE_NAMED, RULE_SWITCHES } from './rule-switches.ts';
 
 describe('approved mode descriptions', () => {
 	it('show only while the text is exactly what Trevor approved', () => {
@@ -45,6 +45,9 @@ describe('approved Storyteller instructions', () => {
 			instructionApproved(key, 'Tell the table that one character from off the script is in play.')
 		).toBe(true);
 		expect(instructionApproved(key, `${PLUS_ONE_NAMED} `)).toBe(false);
+		expect(instructionApproved('infinite-possibilities:parts.information[0]', INFINITE_NAMED)).toBe(
+			true
+		);
 	});
 
 	it('approve only text a built-in mode or rule still has', () => {
