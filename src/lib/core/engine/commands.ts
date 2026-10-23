@@ -108,6 +108,8 @@ export type Command =
 	| { type: 'SetReminderSymbol'; reminderId: ReminderId; symbol?: string }
 	/** The colour of the generic reminder's symbol; none clears it. */
 	| { type: 'SetReminderSymbolColour'; reminderId: ReminderId; colour?: SymbolColour }
+	/** The generic reminder's icon symbol filled or as an outline. */
+	| { type: 'SetReminderSymbolFill'; reminderId: ReminderId; fill: boolean }
 	/** A new reusable ∞ token at the end of the bank's ones (plan B9). */
 	| { type: 'AddGenericToken'; look?: GenericLook }
 	/** Replaces a bank ∞ token's look; the copies already placed keep theirs. */

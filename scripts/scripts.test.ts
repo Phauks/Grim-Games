@@ -169,6 +169,17 @@ describe('flaky-summary', () => {
 	});
 });
 
+describe('CI Playwright image', () => {
+	it('matches the installed @playwright/test, so its baked-in Chromium is the one tests expect', () => {
+		const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+		const lock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
+		const installed = lock.packages['node_modules/@playwright/test'].version;
+		const tags = [...ci.matchAll(/mcr\.microsoft\.com\/playwright:v([\d.]+)-/g)].map((m) => m[1]);
+		expect(tags.length).toBeGreaterThan(0);
+		for (const tag of tags) expect(tag, 'update the image tags in ci.yml').toBe(installed);
+	});
+});
+
 describe('check-lines', () => {
 	it('counts lines as wc -l does', () => {
 		expect(lineCount('')).toBe(0);

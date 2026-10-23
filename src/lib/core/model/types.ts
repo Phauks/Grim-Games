@@ -56,10 +56,15 @@ export interface ReminderInstance extends Reminder {
 	 * own ink. An emoji keeps its own colours.
 	 */
 	symbolColour?: SymbolColour;
+	/**
+	 * The generic reminder's icon symbol drawn filled instead of as an outline, chosen per
+	 * token (Trevor, 2026-10-23). An emoji is unaffected.
+	 */
+	symbolFill?: true;
 }
 
-/** What a generic reminder looks like: its text, its symbol and the symbol's colour. */
-export type GenericLook = Pick<ReminderInstance, 'note' | 'symbol' | 'symbolColour'>;
+/** What a generic reminder looks like: its text, its symbol and how the symbol is drawn. */
+export type GenericLook = Pick<ReminderInstance, 'note' | 'symbol' | 'symbolColour' | 'symbolFill'>;
 
 /**
  * A reusable ∞ token in the reminder bank (plan B9, Trevor 2026-10-23: "Tokens only"): made

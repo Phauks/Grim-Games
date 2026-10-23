@@ -60,9 +60,13 @@ describe('token appearance', () => {
 		expect(
 			parseTokenAppearance({ reminderHighlightLook: 'sparkle', reminderIconColour: 'gold' })
 		).toMatchObject({ reminderHighlightLook: 'ring', reminderIconColour: 'player' });
-		// ∞ token symbols as outlines unless asked (Trevor, 2026-10-23).
-		expect(parseTokenAppearance({}).genericIconFill).toBe(false);
-		expect(parseTokenAppearance({ genericIconFill: true }).genericIconFill).toBe(true);
+		// The old global ∞ fill switch is dropped: each ∞ token has its own (Trevor, 2026-10-23).
+		expect(parseTokenAppearance({ genericIconFill: true })).toEqual(parseTokenAppearance({}));
+		// Character icon sizes (Trevor, 2026-10-23): kept on 50% to 125%, else 100%.
+		expect(parseTokenAppearance({}).tokenIconScale).toBe(1);
+		expect(parseTokenAppearance({ tokenIconScale: 1.1 }).tokenIconScale).toBe(1.1);
+		expect(parseTokenAppearance({ reminderIconScale: 3 }).reminderIconScale).toBe(1.25);
+		expect(parseTokenAppearance({ reminderIconScale: 'big' }).reminderIconScale).toBe(1);
 		// Earlier builds' dot instead of the owner's icon is dropped (Trevor, 2026-10-18).
 		expect(parseTokenAppearance({ inlineReminderIcons: false })).toEqual(parseTokenAppearance({}));
 		expect(parseTokenAppearance({ reminderLabelWidth: 'wide' }).reminderLabelWidth).toBe(1.5);
@@ -115,6 +119,8 @@ describe('token appearance', () => {
 		).toEqual({
 			'--token-scale': '1.25',
 			'--reminder-scale': '0.75',
+			'--token-icon': '1',
+			'--reminder-icon': '1',
 			'--night-badge-scale': '1.5',
 			'--reminder-label-width': '2.5',
 			'--reminder-label-wrap': 'normal',

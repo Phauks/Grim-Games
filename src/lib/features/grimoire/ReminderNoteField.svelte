@@ -27,4 +27,8 @@
 		if (held())
 			grimoire.run({ type: 'SetReminderSymbolColour', reminderId: reminder.reminderId, colour });
 	}}
+	onFill={(fill) => {
+		if (held())
+			grimoire.run({ type: 'SetReminderSymbolFill', reminderId: reminder.reminderId, fill });
+	}}
 />

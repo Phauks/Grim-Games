@@ -853,6 +853,32 @@ describe('the generic reminder', () => {
 			})
 		).toBe('invalid-colour');
 	});
+
+	it("fills the generic reminder's symbol, or draws it as an outline again", () => {
+		// Trevor (2026-10-23): filled or outlined is chosen per ∞ token, not for all of them.
+		const { session, ctx, seats } = newGame(names);
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[0],
+			reminder: { characterId: GENERIC_REMINDER_ID, label: '' }
+		});
+		const id = s.game.seats[seats[0]].reminders[0].reminderId;
+		expect(
+			warned(s, ctx, { type: 'SetReminderSymbolFill', reminderId: id, fill: false })
+		).toContain('no-change');
+		const filled = run(s, ctx, { type: 'SetReminderSymbolFill', reminderId: id, fill: true });
+		expect(filled.game.seats[seats[0]].reminders[0].symbolFill).toBe(true);
+		const outlined = run(filled, ctx, {
+			type: 'SetReminderSymbolFill',
+			reminderId: id,
+			fill: false
+		});
+		expect(outlined.game.seats[seats[0]].reminders[0]).not.toHaveProperty('symbolFill');
+		expect(undo(outlined).game.seats[seats[0]].reminders[0].symbolFill).toBe(true);
+		expect(refused(s, ctx, { type: 'SetReminderSymbolFill', reminderId: 'nope', fill: true })).toBe(
+			'unknown-reminder'
+		);
+	});
 });
 
 describe('bank ∞ tokens', () => {
@@ -884,6 +910,20 @@ describe('bank ∞ tokens', () => {
 			symbolColour: 'red'
 		});
 		expect(placed.game.looseReminders![0].symbol).toBe('ph:skull');
+		// A filled token's copies start filled (Trevor, 2026-10-23).
+		const filledToken = run(placed, ctx, {
+			type: 'SetGenericToken',
+			tokenId: token.tokenId,
+			look: { symbol: 'ph:skull', symbolFill: true }
+		});
+		expect(filledToken.game.genericTokens![0].symbolFill).toBe(true);
+		const filledCopy = run(filledToken, ctx, {
+			type: 'PlaceLooseReminder',
+			reminder: generic,
+			tokenId: token.tokenId
+		});
+		expect(filledCopy.game.looseReminders![1].symbolFill).toBe(true);
+		expect(placed.game.seats[seats[0]].reminders[0]).not.toHaveProperty('symbolFill');
 		// The token stays in the bank, and changing it leaves the placed copies as they are.
 		const changed = run(placed, ctx, {
 			type: 'SetGenericToken',
