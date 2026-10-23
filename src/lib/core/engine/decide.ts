@@ -63,6 +63,7 @@ export type ErrorCode =
 	| 'unknown-seat'
 	| 'unknown-character'
 	| 'unknown-reminder'
+	| 'unknown-note'
 	| 'unknown-token'
 	| 'unknown-override'
 	| 'not-seatable'
@@ -689,15 +690,37 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [event];
 		}
 
-		case 'SetGameNotes': {
-			const notes = command.notes?.trim() || undefined;
-			if (notes === game.notes) {
-				warn('no-change', 'the notes are unchanged');
+		case 'SetGameNote': {
+			const notes = game.notes ?? [];
+			const before = command.noteId
+				? (notes.find((n) => n.noteId === command.noteId) ??
+					refuse('unknown-note', `no note ${command.noteId}`))
+				: undefined;
+			const title = command.title.trim();
+			const text = command.text.trim();
+			if (!before && !title && !text) {
+				warn('no-change', 'a new note with nothing in it is not kept');
 				return [];
 			}
-			const event: GameEvent = { type: 'GameNotesSet' };
-			if (notes !== undefined) event.notes = notes;
-			return [event];
+			if (
+				before &&
+				before.title === title &&
+				before.text === text &&
+				before.hidden === command.hidden
+			) {
+				warn('no-change', 'the note is unchanged');
+				return [];
+			}
+			const noteId =
+				before?.noteId ??
+				`n${notes.reduce((max, n) => Math.max(max, Number(n.noteId.slice(1)) || 0), 0) + 1}`;
+			return [{ type: 'GameNoteSet', note: { noteId, title, text, hidden: command.hidden } }];
+		}
+
+		case 'DeleteGameNote': {
+			if (!game.notes?.some((n) => n.noteId === command.noteId))
+				refuse('unknown-note', `no note ${command.noteId}`);
+			return [{ type: 'GameNoteDeleted', noteId: command.noteId }];
 		}
 
 		case 'AssignCharacter': {

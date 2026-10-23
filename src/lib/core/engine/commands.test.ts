@@ -181,14 +181,42 @@ describe('seats', () => {
 		expect('avatar' in replayed.seats[seats[1]]).toBe(false);
 	});
 
-	it("keeps the Storyteller's general game notes, trimmed, undoable and clearable", () => {
+	it("keeps the Storyteller's titled game notes, trimmed, undoable and deletable", () => {
 		const { session, ctx } = newGame(names);
-		const s = run(session, ctx, { type: 'SetGameNotes', notes: ' Ana asked about the Fang Gu\n' });
-		expect(s.game.notes).toBe('Ana asked about the Fang Gu');
+		const note = { title: ' Fang Gu ', text: ' Ana asked about the Fang Gu\n', hidden: false };
+		const s = run(session, ctx, { type: 'SetGameNote', ...note });
+		expect(s.game.notes).toEqual([
+			{ noteId: 'n1', title: 'Fang Gu', text: 'Ana asked about the Fang Gu', hidden: false }
+		]);
 		expect('notes' in undo(s).game).toBe(false);
-		const same = dispatch(s, { type: 'SetGameNotes', notes: 'Ana asked about the Fang Gu' }, ctx);
+		// A second note goes after the first; editing one keeps its place.
+		const two = run(s, ctx, { type: 'SetGameNote', title: 'Bluffs', text: '', hidden: true });
+		const edited = run(two, ctx, { type: 'SetGameNote', noteId: 'n1', ...note, text: 'Asked' });
+		expect(edited.game.notes?.map((n) => [n.noteId, n.title, n.text, n.hidden])).toEqual([
+			['n1', 'Fang Gu', 'Asked', false],
+			['n2', 'Bluffs', '', true]
+		]);
+		const same = dispatch(
+			edited,
+			{ type: 'SetGameNote', noteId: 'n2', title: 'Bluffs', text: '', hidden: true },
+			ctx
+		);
 		expect(same.ok && codes(same)).toEqual(['no-change']);
-		expect('notes' in run(s, ctx, { type: 'SetGameNotes', notes: '  ' }).game).toBe(false);
+		// A blank new note is not kept.
+		const blank = dispatch(s, { type: 'SetGameNote', title: ' ', text: '', hidden: false }, ctx);
+		expect(blank.ok && codes(blank)).toEqual(['no-change']);
+		const deleted = run(edited, ctx, { type: 'DeleteGameNote', noteId: 'n1' });
+		expect(deleted.game.notes?.map((n) => n.noteId)).toEqual(['n2']);
+		expect('notes' in run(deleted, ctx, { type: 'DeleteGameNote', noteId: 'n2' }).game).toBe(false);
+		expect(refused(s, ctx, { type: 'DeleteGameNote', noteId: 'n9' })).toBe('unknown-note');
+		expect(refused(s, ctx, { type: 'SetGameNote', noteId: 'n9', ...note })).toBe('unknown-note');
+	});
+
+	it("replays an older game's single general note as its first, untitled note", () => {
+		const { session } = newGame(names);
+		const game = applyEvent(session.game, { type: 'GameNotesSet', notes: 'Ana asked' });
+		expect(game.notes).toEqual([{ noteId: 'n1', title: '', text: 'Ana asked', hidden: false }]);
+		expect('notes' in applyEvent(game, { type: 'GameNotesSet' })).toBe(false);
 	});
 
 	it('moves the note with its player when seats swap', () => {

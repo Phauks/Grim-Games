@@ -4,6 +4,7 @@
 	import ScratchThumb from '#lib/ui/scratch/ScratchThumb.svelte';
 	import { padShape } from '#lib/ui/scratch/pad-shape.svelte.ts';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
+	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
 	interface Props {
@@ -17,7 +18,6 @@
 	}
 
 	let { notes, pads, onAdd, onOpenNote, onAddScratch, onOpenScratch }: Props = $props();
-	const preview = (text: string) => text.trim().split('\n')[0] || t('player.empty');
 </script>
 
 <div class="notes">
@@ -26,31 +26,7 @@
 			<h2 id="my-notes">{t('player.myNotes')}</h2>
 			<Button icon="add" onclick={onAdd}>{t('player.newNote')}</Button>
 		</div>
-		{#if notes.length}
-			<ul>
-				{#each notes as note (note.noteId)}
-					<li>
-						<button
-							type="button"
-							class="row"
-							data-note={note.noteId}
-							onclick={() => onOpenNote(note.noteId)}
-						>
-							<!-- Titles always show, so notes can be found (Trevor, 2026-10-16). -->
-							<span class="title">{note.title.trim() || t('player.untitled')}</span>
-							<!-- A hidden note keeps its title; the text line says Hidden, so nothing moves. -->
-							{#if note.hidden}
-								<span class="preview" data-hidden>{t('player.hidden')}</span>
-							{:else}
-								<span class="preview">{preview(note.text)}</span>
-							{/if}
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="none">{t('common.none')}</p>
-		{/if}
+		<NoteCards {notes} onOpen={onOpenNote} />
 	</section>
 
 	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16). Several pads, kept like

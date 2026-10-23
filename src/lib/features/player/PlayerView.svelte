@@ -31,7 +31,7 @@
 	import { ScratchPads, type ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import { NotebookState } from './notebook-store.svelte.ts';
 	import { scriptKey } from './notebook.ts';
-	import NoteEditor from './NoteEditor.svelte';
+	import NoteEditor from '#lib/ui/notes/NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
 	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
 	import { roomScript } from '#lib/features/room/room-script.svelte.ts';

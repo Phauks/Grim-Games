@@ -284,6 +284,19 @@ export interface DayLog {
 	closedAt?: number;
 }
 
+/**
+ * One of the Storyteller's notes on the game (Trevor, 2026-10-23: "allow for multiple notes,
+ * each gets a title", as the player's notebook does).
+ */
+export interface GameNote {
+	noteId: string;
+	/** Empty until the Storyteller names it. */
+	title: string;
+	text: string;
+	/** The list shows the title only; the text shows when the note is opened. */
+	hidden: boolean;
+}
+
 export interface Game {
 	gameId: GameId;
 	/** Milliseconds since the epoch. */
@@ -325,10 +338,11 @@ export interface Game {
 	 */
 	prepValues?: Record<string, string>;
 	/**
-	 * The Storyteller's notes on the game as a whole (Trevor, 2026-10-19), beside each seat's
-	 * own note. Private: never in the public projection. Absent until written.
+	 * The Storyteller's titled notes on the game as a whole (Trevor, 2026-10-19; several since
+	 * 2026-10-23, like a player's notebook), beside each seat's own note, oldest first.
+	 * Private: never in the public projection. Absent until one is written.
 	 */
-	notes?: string;
+	notes?: GameNote[];
 	/** The current day log, since the last "New day". */
 	today: DayLog;
 	/** Earlier day logs, oldest first, closed by "New day". */
