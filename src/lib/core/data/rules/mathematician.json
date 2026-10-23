@@ -4,5 +4,9 @@
 			"seat": "any",
 			"note": "Any player whose ability misfired because of another character's ability since dawn."
 		}
+	},
+	"answers": {
+		"question": "abnormal-abilities",
+		"token": "Abnormal"
 	}
 }

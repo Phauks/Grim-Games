@@ -8,5 +8,8 @@
 			"seat": "self",
 			"note": "Replaces the other token on the Flowergirl once the Demon has voted today."
 		}
+	},
+	"answers": {
+		"question": "demon-voted"
 	}
 }

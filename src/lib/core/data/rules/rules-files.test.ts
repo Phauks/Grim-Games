@@ -74,6 +74,18 @@ describe('parseCharacterRules', () => {
 		expect(parse({ kills: { by: 'other', targets: 'all' } }).issues).toEqual([
 			'rules.kills.targets: unknown value "all"'
 		]);
+		expect(parse({ learns: { measure: 'pair-of-type' } }).issues).toEqual([
+			'rules.learns.type: missing'
+		]);
+		expect(parse({ learns: { measure: 'demon-or-token' } }).issues).toEqual([
+			'rules.learns.token: missing'
+		]);
+		expect(
+			parse({ learns: { measure: 'evil-pairs', reminders: { each: 'Know' } } }).issues
+		).toEqual(['rules.learns.reminders.each: not one of this character’s reminders']);
+		expect(parse({ answers: { question: 'who-knows' } }).issues).toEqual([
+			'rules.answers.question: unknown value "who-knows"'
+		]);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'
 		]);

@@ -28,12 +28,15 @@ import butler from './butler.json' with { type: 'json' };
 import cacklejack from './cacklejack.json' with { type: 'json' };
 import cannibal from './cannibal.json' with { type: 'json' };
 import cerenovus from './cerenovus.json' with { type: 'json' };
+import chef from './chef.json' with { type: 'json' };
+import clockmaker from './clockmaker.json' with { type: 'json' };
 import courtier from './courtier.json' with { type: 'json' };
 import damsel from './damsel.json' with { type: 'json' };
 import deusexfiasco from './deusexfiasco.json' with { type: 'json' };
 import devilsadvocate from './devilsadvocate.json' with { type: 'json' };
 import drunk from './drunk.json' with { type: 'json' };
 import duchess from './duchess.json' with { type: 'json' };
+import empath from './empath.json' with { type: 'json' };
 import engineer from './engineer.json' with { type: 'json' };
 import eviltwin from './eviltwin.json' with { type: 'json' };
 import exorcist from './exorcist.json' with { type: 'json' };
@@ -89,6 +92,7 @@ import noble from './noble.json' with { type: 'json' };
 import nodashii from './nodashii.json' with { type: 'json' };
 import ogre from './ogre.json' with { type: 'json' };
 import ojo from './ojo.json' with { type: 'json' };
+import oracle from './oracle.json' with { type: 'json' };
 import organgrinder from './organgrinder.json' with { type: 'json' };
 import philosopher from './philosopher.json' with { type: 'json' };
 import pixie from './pixie.json' with { type: 'json' };
@@ -164,12 +168,15 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	cacklejack,
 	cannibal,
 	cerenovus,
+	chef,
+	clockmaker,
 	courtier,
 	damsel,
 	deusexfiasco,
 	devilsadvocate,
 	drunk,
 	duchess,
+	empath,
 	engineer,
 	eviltwin,
 	exorcist,
@@ -225,6 +232,7 @@ const FILES: Readonly<Record<CharacterId, unknown>> = {
 	nodashii,
 	ogre,
 	ojo,
+	oracle,
 	organgrinder,
 	philosopher,
 	pixie,

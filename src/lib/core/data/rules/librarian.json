@@ -12,5 +12,14 @@
 			"notWithLabel": "Outsider",
 			"note": "The second player shown, who is not that Outsider."
 		}
+	},
+	"learns": {
+		"measure": "pair-of-type",
+		"type": "outsider",
+		"noneWhenAbsent": true,
+		"reminders": {
+			"target": "Outsider",
+			"other": "Wrong"
+		}
 	}
 }

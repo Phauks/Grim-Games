@@ -12,5 +12,13 @@
 			"notWithLabel": "Minion",
 			"note": "Goes on the second shown player, who is not that Minion."
 		}
+	},
+	"learns": {
+		"measure": "pair-of-type",
+		"type": "minion",
+		"reminders": {
+			"target": "Minion",
+			"other": "Wrong"
+		}
 	}
 }
