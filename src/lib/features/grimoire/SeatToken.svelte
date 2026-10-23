@@ -155,7 +155,7 @@
 		>{/if}
 	<!-- The player's own avatar (plan R6), upper left, while a character covers the face. -->
 	{#if character && seat.avatar}<span class="mark avatar" data-testid="avatar-mark"
-			><AvatarFace avatar={seat.avatar} /></span
+			><AvatarFace avatar={seat.avatar} {name} /></span
 		>{/if}
 	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
 	{#if seat.note}<span class="mark note" data-testid="note-mark" title="Note"
