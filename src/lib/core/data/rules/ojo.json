@@ -1,0 +1,11 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player holding the named character, or a player the Storyteller picks when it is not in play."
+		}
+	}
+}

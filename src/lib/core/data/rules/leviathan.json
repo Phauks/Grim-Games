@@ -1,0 +1,29 @@
+{
+	"reminderTargets": {
+		"Day 1": {
+			"seat": "self",
+			"note": "The Leviathan during day 1; it carries only one day token at a time."
+		},
+		"Day 2": {
+			"seat": "self",
+			"note": "The Leviathan during day 2; it carries only one day token at a time."
+		},
+		"Day 3": {
+			"seat": "self",
+			"note": "The Leviathan during day 3; it carries only one day token at a time."
+		},
+		"Day 4": {
+			"seat": "self",
+			"note": "The Leviathan during day 4; it carries only one day token at a time."
+		},
+		"Day 5": {
+			"seat": "self",
+			"note": "The Leviathan during day 5; it carries only one day token at a time."
+		},
+		"Good Player Executed": {
+			"seat": "other",
+			"alignment": "good",
+			"note": "The first good player who is executed."
+		}
+	}
+}

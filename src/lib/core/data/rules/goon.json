@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "other",
+			"note": "On the first player that night to choose the Goon with their own ability."
+		}
+	}
+}

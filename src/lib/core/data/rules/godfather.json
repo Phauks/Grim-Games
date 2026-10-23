@@ -1,3 +1,20 @@
 {
-	"reminderPrompts": { "Died Today": "markDead" }
+	"reminderPrompts": {
+		"Died Today": "markDead"
+	},
+	"kills": {
+		"by": "other"
+	},
+	"reminderTargets": {
+		"Died Today": {
+			"seat": "other",
+			"types": ["outsider"],
+			"life": "dead",
+			"note": "An Outsider who died during the day."
+		},
+		"Dead": {
+			"seat": "any",
+			"note": "The player the Godfather kills that night."
+		}
+	}
 }

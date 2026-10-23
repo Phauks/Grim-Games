@@ -1,0 +1,14 @@
+{
+	"reminderTargets": {
+		"Is The Marionette": {
+			"seat": "any",
+			"alignment": "good",
+			"neighbour": {
+				"of": "self",
+				"ofType": "demon",
+				"alignment": "good"
+			},
+			"note": "The nearest good player each side of the Demon, skipping evil players, who was dealt a good character token; placing it makes them evil. A player who may register as the Demon (the Recluse) counts as the Demon."
+		}
+	}
+}

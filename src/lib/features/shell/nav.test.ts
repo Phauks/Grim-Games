@@ -5,7 +5,6 @@ import {
 	isCurrent,
 	NAV_ITEMS,
 	NAV_SECTIONS,
-	REPORT_ISSUE_ICON,
 	REPORTS_ITEM
 } from './nav.ts';
 
@@ -31,8 +30,7 @@ describe('navigation', () => {
 			ACCOUNT_ITEM,
 			REPORTS_ITEM,
 			...APP_ITEMS,
-			{ icon: 'settings' },
-			{ icon: REPORT_ISSUE_ICON }
+			{ icon: 'settings' }
 		].map((item) => item.icon);
 		expect(new Set(icons).size).toBe(icons.length);
 	});

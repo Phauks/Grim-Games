@@ -1,3 +1,11 @@
 {
-	"reminderPrompts": { "Dead": "markDead" }
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "self",
+			"note": "On the Tinker when they die at night."
+		}
+	}
 }

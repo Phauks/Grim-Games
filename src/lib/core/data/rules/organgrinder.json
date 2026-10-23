@@ -1,0 +1,13 @@
+{
+	"reminderTargets": {
+		"About To Die": {
+			"seat": "any",
+			"life": "alive",
+			"note": "The nominee who has enough votes to be executed."
+		},
+		"Drunk": {
+			"seat": "self",
+			"note": "On the Organ Grinder when they choose to be drunk."
+		}
+	}
+}

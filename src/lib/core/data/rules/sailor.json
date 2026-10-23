@@ -2,5 +2,12 @@
 	"protects": {
 		"who": "self",
 		"from": "any"
+	},
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "any",
+			"life": "alive",
+			"note": "Either the Sailor or the alive player they chose, at the Storyteller's call."
+		}
 	}
 }

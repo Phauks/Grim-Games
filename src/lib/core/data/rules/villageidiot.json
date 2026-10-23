@@ -1,0 +1,10 @@
+{
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "any",
+			"characters": ["villageidiot"],
+			"note": "One of the Village Idiots, marking the extra one who is drunk; only while 2 or more are in play.",
+			"minOwners": 2
+		}
+	}
+}

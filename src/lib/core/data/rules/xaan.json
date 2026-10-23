@@ -1,0 +1,20 @@
+{
+	"reminderTargets": {
+		"Night 1": {
+			"note": "On the Xaan on night 1.",
+			"seat": "self"
+		},
+		"Night 2": {
+			"note": "On the Xaan on night 2.",
+			"seat": "self"
+		},
+		"Night 3": {
+			"note": "On the Xaan on night 3.",
+			"seat": "self"
+		},
+		"X": {
+			"note": "On the Xaan on night X, while all Townsfolk are poisoned, until the next dusk.",
+			"seat": "self"
+		}
+	}
+}

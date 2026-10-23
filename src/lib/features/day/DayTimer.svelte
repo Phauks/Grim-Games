@@ -236,11 +236,11 @@
 		gap: var(--space-4);
 		padding-top: var(--space-2);
 	}
-	/* On the board it looks like the toolbar's buttons: their fill and edge (Trevor,
-	   2026-10-23). */
+	/* On the board it looks like the toolbar's buttons: the same solid fill and edge, nothing
+	   showing through (Trevor, 2026-10-23; GrimoireBoard.svelte gives them that fill). */
 	.timer[data-variant='compact'] {
 		border-color: var(--button-edge);
-		background: transparent;
+		background: var(--surface);
 	}
 	/* On the board the clock comes first, so it keeps clear of the rounded edge (Trevor). */
 	.timer[data-variant='compact'] .clock {

@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"3 Votes": {
+			"seat": "other",
+			"note": "The player whose vote counts triple tomorrow; dead players are allowed."
+		}
+	}
+}

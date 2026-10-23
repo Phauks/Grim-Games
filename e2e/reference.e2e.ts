@@ -410,7 +410,7 @@ test('reminder tokens show their copies and whether setup places them; the table
 
 	await search.fill('Washerwoman');
 	await expect(rowsOf('washerwoman')).toHaveText([
-		'TownsfolkPlaced at setup · Goes on: Townsfolk, not self',
+		'TownsfolkPlaced at setup · Goes on: Townsfolk',
 		'WrongPlaced at setup · Goes on: Players, not with Townsfolk'
 	]);
 

@@ -99,7 +99,11 @@ export const ICON_SLOTS = {
 	save: { label: 'Save', choices: ['ph:bookmark-simple', 'ph:floppy-disk'] },
 	swap: { label: 'Swap seats', choices: ['ph:arrows-left-right', 'ph:swap'] },
 	alignment: { label: 'Change alignment', choices: ['ph:yin-yang', 'ph:scales'] },
-	rename: { label: 'Rename', choices: ['ph:pencil-simple', 'ph:user-switch'] },
+	/**
+	 * Every edit, rename or change-in-place button: the one pencil (Trevor, 2026-10-23). Was
+	 * `rename` until then; saved overrides under that name still load (preferences.ts).
+	 */
+	edit: { label: 'Edit', choices: ['ph:pencil-simple', 'ph:user-switch'] },
 	move: { label: 'Move', choices: ['ph:arrow-bend-up-right'] },
 	traveller: { label: 'Traveller', choices: ['ph:person-simple-walk', 'ph:user-plus'] },
 	fabled: { label: 'Fabled and Loric', choices: ['ph:sparkle'] },
@@ -111,6 +115,7 @@ export const ICON_SLOTS = {
 	share: { label: 'Share', choices: ['ph:share-network', 'ph:qr-code'] },
 	copy: { label: 'Copy', choices: ['ph:copy', 'ph:copy-simple'] },
 	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] },
+	/** The scratch pad's drawing tool only; an edit button is `edit` (grim/icon-meaning). */
 	pen: { label: 'Pen', choices: ['ph:pen-nib', 'ph:pencil-simple-line'] },
 	eraser: { label: 'Eraser', choices: ['ph:eraser'] },
 	/** Locks a scratch pad so a stray touch can't draw on it. */

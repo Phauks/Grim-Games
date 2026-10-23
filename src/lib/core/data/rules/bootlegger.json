@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"?": {
+			"seat": "any",
+			"note": "Free-use marker for whatever homebrew rule needs tracking.",
+			"ambiguous": "The wiki never says where the Bootlegger's reminder goes."
+		}
+	}
+}

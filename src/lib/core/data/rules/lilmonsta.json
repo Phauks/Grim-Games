@@ -1,0 +1,16 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "Any player who dies at night to Lil' Monsta."
+		},
+		"Is The Demon": {
+			"seat": "any",
+			"life": "alive",
+			"note": "The living player the Minions pick to babysit tonight; Minion or not."
+		}
+	}
+}

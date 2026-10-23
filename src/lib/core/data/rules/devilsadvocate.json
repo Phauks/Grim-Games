@@ -1,0 +1,10 @@
+{
+	"reminderTargets": {
+		"Survives Execution": {
+			"seat": "any",
+			"life": "alive",
+			"note": "On the player chosen tonight, which may be the Devil's Advocate but not last night's choice.",
+			"ambiguous": "The ability and summary say a living player, but How to Run says any player."
+		}
+	}
+}

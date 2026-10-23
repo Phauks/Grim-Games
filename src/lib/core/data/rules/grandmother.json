@@ -1,0 +1,13 @@
+{
+	"reminderTargets": {
+		"Grandchild": {
+			"seat": "other",
+			"alignment": "good",
+			"note": "A good player other than the Grandmother, chosen at setup; any character type, since a Minion or Demon may be good."
+		},
+		"Dead": {
+			"seat": "self",
+			"note": "On the Grandmother when the Demon kills her Grandchild."
+		}
+	}
+}

@@ -11,7 +11,7 @@
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, firstDeathSaver, type FirstDeathSaver } from './ability.ts';
-import { NIGHT_KILLERS } from './night-alerts.ts';
+import { nightKiller } from './night-alerts.ts';
 
 /** The ability that stops this death, when it is the player's first and the ability works. */
 export function survivesFirstDeath(
@@ -22,7 +22,7 @@ export function survivesFirstDeath(
 ): FirstDeathSaver | undefined {
 	const saver = firstDeathSaver(game, seatId, characters);
 	if (!saver) return undefined;
-	if (cause && NIGHT_KILLERS[cause]?.ignoresProtection) return undefined;
+	if (cause && nightKiller(cause, characters)?.ignoresProtection) return undefined;
 	// Drunk or poisoned, the player has no ability (death itself is what the ability stops).
 	if (abilityState(game, seatId, characters).impairments.length > 0) return undefined;
 	return saver;

@@ -2,7 +2,7 @@
  * The roadmap, kept in the repository so it ticks itself off: an item is done once a merged
  * change names its ID in brackets in its title, such as "Savant info generator (L2)", or is
  * one of the PRs listed with it. The IDs are the backlog plan's (D1, R1-R7, B1-B6, S1-S6,
- * P1-P2, L1-L28, G1-G5, A1, O1). Add new items here with their ID; never tick them by hand.
+ * P1-P2, L1-L28, G1-G6, A1, O1). Add new items here with their ID; never tick them by hand.
  */
 import type { BuildCommit } from './update-notes.ts';
 import type { Change } from './changelog.ts';
@@ -69,7 +69,8 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'G1', title: 'New game shows a spinner while a script version loads' },
 			{ id: 'G2', title: 'New game previews the script as it will play, beside the settings' },
 			{ id: 'G3', title: "Game info downloads the script's file and shares its source" },
-			{ id: 'G5', title: 'Game info opens the game mode or a special rule in full when tapped' }
+			{ id: 'G5', title: 'Game info opens the game mode or a special rule in full when tapped' },
+			{ id: 'G6', title: 'A light background switch on every script sheet, also in Settings' }
 		]
 	},
 	{
@@ -157,6 +158,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'L51', title: 'Search: the list and the script details as one surface' },
 			{ id: 'L52', title: 'Search: open the shown script at its source' },
 			{ id: 'L53', title: 'The base three scripts link their wiki pages' },
+			{ id: 'L55', title: 'Library: New folder is made at once, named "New folder"' },
 			{ id: 'P2', title: 'Alternate art packs in Icons settings' }
 		]
 	},
@@ -189,6 +191,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			},
 			{ id: 'S12', title: 'Lists of information never run together without a line or gap' },
 			{ id: 'S17', title: 'Every colour follows the theme: no hard-coded colours' },
+			{ id: 'S19', title: 'One icon per meaning: every edit button is the pencil' },
 			{ id: 'B5', title: 'Reminder glow and source mark settings' },
 			{ id: 'L16', title: 'Glossary: every character of a script and character type', prs: [324] },
 			{ id: 'O1', title: 'New app logo' }
