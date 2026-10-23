@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { findColourFunctions, findHexColours } from './check-colors.ts';
+import { findColourFunctions, findHexColours, findNamedColours } from './check-colors.ts';
 import { findPxSizes, svelteStyles } from './check-px.ts';
 import { flakyTests, summaryMarkdown } from './flaky-summary.ts';
 import { generatedFiles, missingIcons } from './generate-icons.ts';
@@ -56,6 +56,33 @@ describe('check-colors', () => {
 		const css =
 			'a { background: linear-gradient(\n\trgb(0 0 0) 75%\n\t/* colour-ok: shade */,\n\trgb(0 0 0)\n); }';
 		expect(findColourFunctions(css)).toEqual([{ line: 4, match: 'rgb' }]);
+	});
+
+	it('flags named colours wherever a colour goes', () => {
+		const source = [
+			'a { background: white; border: 1px solid var(--x, gainsboro); }',
+			'<circle fill="black" style="color: red" />',
+			"ctx.fillStyle = 'navy';",
+			'b { --paper: ivory; }'
+		].join('\n');
+		expect(findNamedColours(source)).toEqual([
+			{ line: 1, match: 'white' },
+			{ line: 1, match: 'gainsboro' },
+			{ line: 2, match: 'black' },
+			{ line: 2, match: 'red' },
+			{ line: 3, match: 'navy' },
+			{ line: 4, match: 'ivory' }
+		]);
+	});
+
+	it('leaves words, keywords and tokens that only look like colours', () => {
+		const source = [
+			'a { color: currentColor; background: transparent; fill: none; }',
+			'b { --scratch-white-ink: var(--on-reminder); background: var(--surface, Canvas); }',
+			"const label = 'Green felt'; const team = 'red';",
+			'c { color: white; } /* colour-ok: a reason */'
+		].join('\n');
+		expect(findNamedColours(source)).toEqual([]);
 	});
 });
 
