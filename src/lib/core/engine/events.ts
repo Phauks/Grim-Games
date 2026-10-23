@@ -58,6 +58,8 @@ export type GameEvent =
 	| { type: 'ReminderNoteSet'; reminderId: ReminderId; note?: string }
 	| { type: 'ReminderSymbolSet'; reminderId: ReminderId; symbol?: string }
 	| { type: 'ReminderSymbolColourSet'; reminderId: ReminderId; colour?: SymbolColour }
+	/** Without `fill`, the symbol goes back to an outline. */
+	| { type: 'ReminderSymbolFillSet'; reminderId: ReminderId; fill?: true }
 	| { type: 'GenericTokenAdded'; token: GenericToken }
 	/** Replaces the bank ∞ token with the same `tokenId`. */
 	| { type: 'GenericTokenSet'; token: GenericToken }

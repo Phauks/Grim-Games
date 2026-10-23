@@ -576,6 +576,7 @@
 						infinite={isGeneric(item)}
 						symbol={item.token?.symbol}
 						symbolColour={item.token?.symbolColour}
+						symbolFill={item.token?.symbolFill}
 						{size}
 						{disabled}
 						onTap={() => tap(item)}
@@ -614,6 +615,7 @@
 			infinite={isGeneric(drag.item)}
 			symbol={drag.item.token?.symbol}
 			symbolColour={drag.item.token?.symbolColour}
+			symbolFill={drag.item.token?.symbolFill}
 			{size}
 			disabled
 			onTap={() => {}}
