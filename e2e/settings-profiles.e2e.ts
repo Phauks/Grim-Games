@@ -1,11 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Settings profiles (plan S18, Trevor 2026-10-23): named sets of settings, made in Settings,
 // picked on New game and switched from the board's Board sheet; each game remembers its own.
 
 async function openSection(page: Page, section: string) {
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
