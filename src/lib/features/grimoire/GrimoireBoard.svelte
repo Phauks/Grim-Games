@@ -54,7 +54,7 @@
 		type ReminderPrompt,
 		setupComplete,
 		diedSinceNewDay,
-		ON_DEATH,
+		onDeathTrigger,
 		abilityState,
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
@@ -315,7 +315,7 @@
 			holders.some(
 				(s) =>
 					seatHasAbility(abilitiesRule, game, s, characters) ||
-					(id !== undefined && id in ON_DEATH && diedTonight.has(s))
+					(id !== undefined && !!onDeathTrigger(id, characters) && diedTonight.has(s))
 			)
 		);
 	}
