@@ -12,7 +12,8 @@ import { DEFAULT_FRAME, parseFrameId, type FrameId } from '#lib/core/frames/inde
  * - how big each seat's player name badge is, and how far below the token it sits;
  * - whether reminders are held by their seat or stay where they are dropped;
  * - how a dead player's used ghost vote looks on their badge;
- * - the frame round seat tokens whose player has not picked their own (L4).
+ * - the frame round seat tokens whose player has not picked their own (L4);
+ * - where a dragged reminder names the character it came from.
  */
 export interface BoardLooks {
 	vignette: boolean;
@@ -47,6 +48,12 @@ export interface BoardLooks {
 	 * players pick with their avatar, the Storyteller sets the board's default).
 	 */
 	defaultFrame: FrameId;
+	/**
+	 * Where a dragged reminder, from the bank or a seat, names the character it came from:
+	 * 'pill', a translucent pill beside the token, or 'bank', the reminder bank's caption
+	 * (Trevor, 2026-10-23: both built, so he can pick after trying them).
+	 */
+	dragSource: 'pill' | 'bank';
 }
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
@@ -68,7 +75,8 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	nameOffset: 0,
 	reminders: 'seat',
 	usedGhostVote: 'hollow',
-	defaultFrame: DEFAULT_FRAME
+	defaultFrame: DEFAULT_FRAME,
+	dragSource: 'pill'
 };
 const KEY = 'grim.boardLooks';
 
@@ -101,7 +109,8 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
 		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the
 		// board (Trevor, 2026-10-23).
-		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME
+		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME,
+		dragSource: value.dragSource === 'bank' ? 'bank' : 'pill'
 	};
 }
 

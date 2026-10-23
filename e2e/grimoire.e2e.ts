@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
-import { openMenu } from './shell.ts';
+import { openMenu, openSettingsDialog } from './shell.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -781,6 +781,59 @@ test('the name is edited in place; Done saves and closes the keyboard', async ({
 	await expect(sheet).toBeVisible();
 });
 
+test('a dragged reminder names whose it is beside the token, or in the bank', async ({ page }) => {
+	// Trevor (2026-10-23): A, a pill beside the token, and C, the bank's caption, both built
+	// to try; a Board setting picks one. Both work for a token from the bank or from a seat.
+	await startGame(page, 'Bad Moon Rising');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Sailor', exact: true })
+		.tap();
+	await closeSheet(page);
+	const tray = page.getByRole('list', { name: 'Reminder bank' });
+	const source = page.getByTestId('drag-source');
+	const lift = async (token: ReturnType<Page['getByRole']>) => {
+		const box = (await token.boundingBox())!;
+		const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(from.x + 20, from.y - 80, { steps: 4 });
+		return async () => {
+			await page.mouse.move(from.x, from.y, { steps: 2 });
+			await page.mouse.up();
+		};
+	};
+
+	// A: the pill, over the board by the token, for a token from the bank.
+	let drop = await lift(tray.getByRole('button', { name: 'Drunk reminder' }));
+	await expect(source).toHaveText(/^\s*Sailor\s*· Seat 1\s*$/);
+	await expect(page.locator('.board [data-testid="drag-source"]')).toBeVisible();
+	await drop();
+	await expect(source).toHaveCount(0);
+	const captions = page.locator('[data-tray] [data-testid^="bank-"]');
+	expect(await captions.count()).toBeGreaterThan(0);
+
+	// C: the bank's caption says it in the captions' place.
+	await openSettingsDialog(page);
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board' })
+		.tap();
+	await settings.getByRole('button', { name: /Advanced/ }).tap();
+	await settings.getByText("Dragged reminder's source in the bank", { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	drop = await lift(tray.getByRole('button', { name: 'Drunk reminder' }));
+	await expect(source).toHaveText(/^\s*Drunk\s*, from\s*Sailor\s*· Seat 1\s*$/);
+	await expect(page.locator('[data-tray] [data-testid="drag-source"]')).toBeVisible();
+	await expect(captions).toHaveCount(0);
+	await drop();
+	await expect(source).toHaveCount(0);
+});
+
 test('a reminder on the board drags to another seat (the Sailor picks again)', async ({ page }) => {
 	await startGame(page, 'Bad Moon Rising');
 	const sheet = await openSeat(page, 1);
@@ -817,10 +870,9 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		await page.mouse.move(from.x, from.y);
 		await page.mouse.down();
 		await page.mouse.move(from.x + 30, from.y + 30, { steps: 4 });
-		// Whose it is: the character with its player, and the seat it is on (Trevor, 2026-10-17).
-		await expect(page.getByRole('status').filter({ hasText: 'Drunk, from Sailor' })).toContainText(
-			/Sailor\s*· Seat 1\s*on\s*Sailor\s*· Seat 1/
-		);
+		// Whose it is: the character with its player, in a pill beside the token (Trevor,
+		// 2026-10-23, option A).
+		await expect(page.getByTestId('drag-source')).toHaveText(/^\s*Sailor\s*· Seat 1\s*$/);
 		// The seat it comes from is marked unlike the others (Trevor, 2026-10-20).
 		await expect(page.locator('[data-testid="seat"][data-from]')).toHaveCount(1);
 		await expect(seatLabelled(page, 'Seat 1:')).toHaveAttribute('data-from', 'true');

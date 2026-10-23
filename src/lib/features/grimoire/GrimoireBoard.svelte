@@ -83,7 +83,7 @@
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import type { Box } from './name-placement.ts';
 	import { SeatArranging } from './seat-arranging.svelte.ts';
-	import { ReminderDragging } from './reminder-drag.svelte.ts';
+	import { ReminderDragging, type DraggedReminder } from './reminder-drag.svelte.ts';
 	import {
 		avoidBoxes,
 		cornerObstacles,
@@ -396,6 +396,37 @@
 	}));
 	const dragOrigin = $derived(remDrag.origin);
 	const heldDrag = $derived(remDrag.held);
+	/** A reminder dragged on the board: whose it is, its words and where it is. */
+	const boardDrag = $derived.by((): DraggedReminder | undefined => {
+		const r = dragOrigin?.reminder ?? heldDrag;
+		return remDrag.drag && r
+			? {
+					characterId: r.characterId,
+					label: tokenLabel(r),
+					ownerSeatId: r.ownerSeatId,
+					at: remDrag.drag.at
+				}
+			: undefined;
+	});
+	/** A token dragged from the bank (ReminderBank's onDrag). */
+	let bankDrag = $state<DraggedReminder | undefined>();
+	/**
+	 * Where a dragged reminder came from, in a pill beside the token (boardLooks.dragSource
+	 * 'pill', Trevor 2026-10-23): above it, or below it near the board's top. Its left edge
+	 * moves across it as the token crosses the board, so it never runs off either side.
+	 */
+	const sourcePill = $derived.by(() => {
+		const dragged = boardDrag ?? bankDrag;
+		if (!dragged || boardLooks.current.dragSource !== 'pill' || height <= 0) return undefined;
+		const lift = ((chip * 0.7) / height) * 100;
+		const below = dragged.at.y - lift < 12;
+		return {
+			dragged,
+			x: Math.min(100, Math.max(0, dragged.at.x)),
+			y: below ? dragged.at.y + lift : dragged.at.y - lift,
+			below
+		};
+	});
 
 	// ── Arranging seats (seat-arranging.svelte.ts) ──
 	const seatArr = new SeatArranging(() => ({
@@ -1403,18 +1434,20 @@
 				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
 			>
 		{/each}
-		{#if remDrag.drag && dragOrigin}
-			{@const r = dragOrigin.reminder}
-			<p class="origin" role="status">
-				<ReminderToken
-					label={tokenLabel(r)}
-					character={characters.get(r.characterId)}
-					alignment={placingAlignment(game, r, characters)}
-				/>, from <ReminderOrigin
+		{#if sourcePill}
+			<p
+				class="source-pill"
+				class:below={sourcePill.below}
+				role="status"
+				data-testid="drag-source"
+				style:left="{sourcePill.x}%"
+				style:top="{sourcePill.y}%"
+				style:--across="{-sourcePill.x}%"
+			>
+				<ReminderOrigin
 					{game}
 					{characters}
-					characterId={r.characterId}
-					on={remDrag.drag.from}
+					characterId={sourcePill.dragged.characterId}
 					interactive={false}
 				/>
 			</p>
@@ -1472,6 +1505,8 @@
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
+				onDrag={(d) => (bankDrag = d)}
+				dragged={boardDrag}
 				run={bankRun}
 				disabled={watching}
 				lit={holding === undefined ? undefined : lit}
@@ -1963,24 +1998,26 @@
 	.place-spot:hover {
 		background: var(--surface-selected);
 	}
-	/* Over the top of the board while a reminder is dragged: where it came from. */
-	.origin {
+	/* Beside a dragged reminder: whose it is, as a name on the board (a translucent pill). */
+	.source-pill {
 		position: absolute;
-		top: var(--space-1);
-		left: 50%;
-		z-index: 4;
-		max-width: calc(100% - 2 * var(--space-2));
+		z-index: 5;
+		max-width: 70%;
 		margin: 0;
 		padding: var(--space-1) var(--space-2);
-		translate: -50% 0;
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
+		translate: var(--across) -100%;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: var(--board-bar-background);
 		color: var(--on-surface);
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		pointer-events: none;
+	}
+	.source-pill.below {
+		translate: var(--across) 0;
 	}
 	.tethers {
 		position: absolute;
