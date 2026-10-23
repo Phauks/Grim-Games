@@ -13,13 +13,30 @@ import {
 const sameScript = (a: LoadedScript, b: LoadedScript) =>
 	JSON.stringify(scriptToJson(a)) === JSON.stringify(scriptToJson(b));
 
-/** Loads `script` and makes it current, unless it already is. */
-export async function followRoomScript(script: Script): Promise<LoadedScript | undefined> {
+let followed = $state.raw<{ code: string; script: LoadedScript }>();
+
+/**
+ * The script room `code` sent this phone, once it has (plan J1, Trevor 2026-10-22): a join
+ * screen shows nothing from the device, such as the last script used, until then.
+ */
+export function roomScript(code: string | undefined): LoadedScript | undefined {
+	return code && followed?.code === code ? followed.script : undefined;
+}
+
+/** Loads `script`, sent by room `code`, and makes it current, unless it already is. */
+export async function followRoomScript(
+	script: Script,
+	code: string
+): Promise<LoadedScript | undefined> {
 	const [data] = await Promise.all([loadOfficialData(), restoreScripts()]);
 	const { script: loaded } = fromScript(script, data);
 	if (loaded.characters.length === 0) return undefined;
 	const current = currentScript.current;
-	if (current && sameScript(current, loaded)) return current;
+	if (current && sameScript(current, loaded)) {
+		followed = { code, script: current };
+		return current;
+	}
 	await chooseScript(loaded, { kind: 'share' });
+	followed = { code, script: loaded };
 	return loaded;
 }

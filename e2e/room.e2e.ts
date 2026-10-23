@@ -343,6 +343,37 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	await phoneContext.close();
 });
 
+test('a join screen shows nothing from the phone until the room sends its script', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Plan J1 (Trevor, 2026-10-22): "when joining game, there should be no other information
+	// available". The phone last used Bad Moon Rising; the room plays Trouble Brewing.
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto('/play#e=bmr');
+	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
+	// A code no room has: only the join form, none of the phone's own script.
+	await phone.goto('/join/000000');
+	await expect(phone.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+	await expect(phone.getByRole('tab')).toHaveCount(0);
+	await expect(phone.getByText('Bad Moon Rising')).toHaveCount(0);
+
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await phone.goto(`/join/${code}`);
+	// Once in the room, its script, and only that.
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+	await expect(phone.getByRole('tabpanel', { name: 'Script' })).not.toContainText(
+		'Bad Moon Rising'
+	);
+	await phoneContext.close();
+});
+
 test('Share and Copy link carry the room code as well as the link', async ({ page, context }) => {
 	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 	await page.addInitScript(() => {
