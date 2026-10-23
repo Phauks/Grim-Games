@@ -78,6 +78,7 @@
 	value={preferences.current.timerSound}
 	options={TIMER_SOUNDS.map((sound) => ({ value: sound, label: t(`day.timerSound.${sound}`) }))}
 	defaultValue="bell"
+	disabled={preferences.current.timerMode === 'up'}
 	onChange={(timerSound) => {
 		preferences.update({ timerSound });
 		playTimerSound(timerSound);
