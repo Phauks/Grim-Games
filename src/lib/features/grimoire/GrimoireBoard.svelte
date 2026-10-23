@@ -93,6 +93,7 @@
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import type { Box } from './name-placement.ts';
 	import { SeatArranging } from './seat-arranging.svelte.ts';
+	import { ReminderDragging } from './reminder-drag.svelte.ts';
 	import {
 		avoidBoxes,
 		cornerObstacles,
@@ -142,7 +143,6 @@
 		extraReminders,
 		isGeneric,
 		isSeatsReminder,
-		onBoard,
 		reminderWords,
 		tokenLabel
 	} from './reminders.ts';
@@ -380,141 +380,23 @@
 		return fitted.at.map((points) => points.map(toPercent));
 	});
 
-	interface ReminderDrag {
-		reminderId: ReminderId;
-		/** The seat it is on; none for a loose reminder or one a Fabled or Loric holds. */
-		from: SeatId | undefined;
-		/** Where the token is, in % of the board. */
-		at: SeatPoint;
-		target?: SeatId;
-	}
-	let reminderDrag = $state<ReminderDrag | undefined>();
-	/**
-	 * Where a dragged reminder came from (Trevor, 2026-10-16): its character, the seats that
-	 * hold that character (marked on the board) and the seat it is on now.
-	 */
-	const dragOrigin = $derived.by(() => {
-		if (!reminderDrag) return undefined;
-		const id = reminderDrag.reminderId;
-		const reminder = onBoard(game).find((r) => r.reminderId === id);
-		if (!reminder) return undefined;
-		const holders = game.seating.filter(
-			(s) =>
-				game.seats[s].characterId === reminder.characterId ||
-				trueCharacter(game, s, characters) === reminder.characterId
-		);
-		return { holders, reminder };
-	});
-
-	/** The seat under a point (in % of the board), if it is within reach of a token. */
-	function seatAt(at: SeatPoint): SeatId | undefined {
-		let best: SeatId | undefined;
-		let bestDistance = size * 0.75;
-		game.seating.forEach((id, i) => {
-			const d = Math.hypot(
-				((points[i].x - at.x) / 100) * width,
-				((points[i].y - at.y) / 100) * height
-			);
-			if (d < bestDistance) {
-				best = id;
-				bestDistance = d;
-			}
-		});
-		return best;
-	}
-
+	// ── Dragging reminders (reminder-drag.svelte.ts) ──
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
-	/**
-	 * Where a free reminder may stay: on the board, but not over the reminder bank, the night
-	 * walk-through, the middle's buttons, the timer or the Fabled and Loric (Trevor, 2026-10-17).
-	 */
-	function spotAllowed(x: number, y: number): boolean {
-		if (!board) return false;
-		const inside = (r: DOMRect | undefined) =>
-			!!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-		if (!inside(board.getBoundingClientRect())) return false;
-		const blocked = board.querySelectorAll(
-			'[data-tray], [data-testid="night-strip"], .centre > *, .board-timer, .rules-edge'
-		);
-		return ![...blocked].some((el) => inside(el.getBoundingClientRect()));
-	}
-	/**
-	 * The Fabled or Loric under a client point, if any: its own token, or the grouped stack
-	 * (then the one whose reminder it is, else the first) (Trevor, 2026-10-17).
-	 */
-	function ruleAt(x: number, y: number, reminder: Reminder): CharacterId | undefined {
-		const hit = document
-			.elementsFromPoint(x, y)
-			.map((el) => el.closest<HTMLElement>('[data-rule], [data-rule-stack]'))
-			.find((el) => el !== null);
-		if (!hit) return undefined;
-		if (hit.dataset.rule) return hit.dataset.rule;
-		return game.ruleCharacters.includes(reminder.characterId)
-			? reminder.characterId
-			: game.ruleCharacters[0];
-	}
 	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
-	/** A Fabled or Loric's reminder being dragged off it. */
-	const heldDrag = $derived.by(() => {
-		const id = reminderDrag?.reminderId;
-		if (!id) return undefined;
-		return Object.values(game.ruleReminders ?? {})
-			.flat()
-			.find((r) => r.reminderId === id);
-	});
 	const heldLabel = (name: string) => `${name}'s reminders`;
-	/** Gives a dropped spot to a reminder now loose on the board. */
-	function looseAt(reminderId: ReminderId, at: SeatPoint) {
-		grimoire.setReminderSpot(reminderId, at);
-	}
-	function dragReminder(
-		reminderId: ReminderId,
-		from: SeatId | undefined,
-		x: number,
-		y: number,
-		end: boolean
-	) {
-		if (!board) return;
-		const rect = board.getBoundingClientRect();
-		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
-		const target = seatAt(at);
-		if (!end) {
-			reminderDrag = {
-				reminderId,
-				from,
-				at,
-				target: boardLooks.current.reminders === 'free' ? undefined : target
-			};
-			return;
-		}
-		reminderDrag = undefined;
-		// Dropped back on the setup reminders tray: it waits there again (History has it).
-		const tray = board.querySelector('[data-tray]')?.getBoundingClientRect();
-		if (tray && x >= tray.left && x <= tray.right && y >= tray.top && y <= tray.bottom) {
-			moveConfirm?.requestReturn(reminderId);
-			return;
-		}
-		const reminder = onBoard(game).find((r) => r.reminderId === reminderId);
-		if (!reminder) return;
-		// Dropped on a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
-		const rule = ruleAt(x, y, reminder);
-		if (rule) {
-			if (!ruleReminders(game, rule).some((r) => r.reminderId === reminderId))
-				moveConfirm?.requestRule(reminderId, rule);
-			return;
-		}
-		// Loose mode (Trevor, 2026-10-18): nothing is given to a seat. A reminder goes where it
-		// is dropped, seats included; one still on a seat from before comes off it.
-		if (boardLooks.current.reminders === 'free') {
-			if (!spotAllowed(x, y)) return;
-			if (looseReminders(game).some((r) => r.reminderId === reminderId))
-				grimoire.setReminderSpot(reminderId, at);
-			else moveConfirm?.requestLoose(reminderId, () => looseAt(reminderId, at));
-			return;
-		}
-		// Dropped on another seat: moved (one History entry).
-		if (target && target !== from) moveConfirm?.request(reminderId, target);
-	}
+	const remDrag = new ReminderDragging(() => ({
+		grimoire,
+		game,
+		characters,
+		points,
+		size,
+		board: boardSize,
+		element: board,
+		free: boardLooks.current.reminders === 'free',
+		confirm: moveConfirm
+	}));
+	const dragOrigin = $derived(remDrag.origin);
+	const heldDrag = $derived(remDrag.held);
 
 	// ── Arranging seats (seat-arranging.svelte.ts) ──
 	const seatArr = new SeatArranging(() => ({
@@ -1387,7 +1269,7 @@
 	{@const last = held.at(-1)}
 	{#if last}
 		<span class="held" role="group" aria-label={label}>
-			<span class:lifted={reminderDrag?.reminderId === last.reminderId}>
+			<span class:lifted={remDrag.drag?.reminderId === last.reminderId}>
 				<BoardReminder
 					label={reminderWords(last)}
 					infinite={isGeneric(last)}
@@ -1398,8 +1280,8 @@
 					size={Math.round(chip * 0.7)}
 					disabled={seatArr.arranging || watching}
 					onTap={() => heldDialog?.show(last.reminderId)}
-					onDrag={(x, y, end) => dragReminder(last.reminderId, undefined, x, y, end)}
-					onCancel={() => (reminderDrag = undefined)}
+					onDrag={(x, y, end) => remDrag.move(last.reminderId, undefined, x, y, end)}
+					onCancel={() => remDrag.cancel()}
 				/>
 			</span>
 			{#if held.length > 1}
@@ -1626,11 +1508,11 @@
 						received: nominated.received.has(seat.seatId)
 					}}
 					dropTarget={seatArr.reorderTarget === seat.seatId ||
-						(reminderDrag !== undefined &&
-							reminderDrag.target === seat.seatId &&
-							reminderDrag.from !== seat.seatId) ||
+						(remDrag.drag !== undefined &&
+							remDrag.drag.target === seat.seatId &&
+							remDrag.drag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
-					dragFrom={reminderDrag !== undefined && reminderDrag.from === seat.seatId}
+					dragFrom={remDrag.drag !== undefined && remDrag.drag.from === seat.seatId}
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
 					onTap={(part) =>
@@ -1659,7 +1541,7 @@
 		-->
 		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
 			{#each seats as seat, i (seat.seatId)}
-				{#if !looseMode && reminderDrag === undefined}
+				{#if !looseMode && remDrag.drag === undefined}
 					{#each fan[i] ?? [] as p, k (k)}
 						{@const from = rimToward(shown[i], p, boardSize, size)}
 						<line
@@ -1680,12 +1562,12 @@
 			{#if count > 0}
 				{@const at = fan[i]}
 				{#each seat.reminders as reminder, k (reminder.reminderId)}
-					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
+					{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 					{@const spot =
 						boardLooks.current.reminders === 'free'
 							? grimoire.reminderSpots[reminder.reminderId]
 							: undefined}
-					{@const p = dragged ? reminderDrag!.at : (spot ?? at[k])}
+					{@const p = dragged ? remDrag.drag!.at : (spot ?? at[k])}
 					<div
 						class="chip-slot"
 						data-seat={i + 1}
@@ -1709,8 +1591,8 @@
 							size={chip}
 							disabled={seatArr.arranging || watching}
 							onTap={() => openReminder(seat.seatId, reminder.reminderId)}
-							onDrag={(x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
-							onCancel={() => (reminderDrag = undefined)}
+							onDrag={(x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
+							onCancel={() => remDrag.cancel()}
 						/>
 					</div>
 				{/each}
@@ -1719,9 +1601,9 @@
 
 		<!-- Reminders that belong to no one, where they were put down (Trevor, 2026-10-17). -->
 		{#each looseReminders(game) as reminder, k (reminder.reminderId)}
-			{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
+			{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 			{@const p = dragged
-				? reminderDrag!.at
+				? remDrag.drag!.at
 				: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
 			<div
 				class="chip-slot"
@@ -1748,8 +1630,8 @@
 					size={chip}
 					disabled={seatArr.arranging || watching}
 					onTap={() => heldDialog?.show(reminder.reminderId)}
-					onDrag={(x, y, end) => dragReminder(reminder.reminderId, undefined, x, y, end)}
-					onCancel={() => (reminderDrag = undefined)}
+					onDrag={(x, y, end) => remDrag.move(reminder.reminderId, undefined, x, y, end)}
+					onCancel={() => remDrag.cancel()}
 				/>
 			</div>
 		{/each}
@@ -1757,8 +1639,8 @@
 		{#if heldDrag}
 			<div
 				class="chip-slot dragging"
-				style:left="{reminderDrag!.at.x}%"
-				style:top="{reminderDrag!.at.y}%"
+				style:left="{remDrag.drag!.at.x}%"
+				style:top="{remDrag.drag!.at.y}%"
 				aria-hidden="true"
 			>
 				<BoardReminder
@@ -1784,7 +1666,7 @@
 				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
 			>
 		{/each}
-		{#if reminderDrag && dragOrigin}
+		{#if remDrag.drag && dragOrigin}
 			{@const r = dragOrigin.reminder}
 			<p class="origin" role="status">
 				<ReminderToken
@@ -1795,7 +1677,7 @@
 					{game}
 					{characters}
 					characterId={r.characterId}
-					on={reminderDrag.from}
+					on={remDrag.drag.from}
 					interactive={false}
 				/>
 			</p>
@@ -1847,9 +1729,9 @@
 					? stepReminders(walkStep.character.id, walk.night, walkStep.character)
 					: undefined}
 				focusMode={stepFocus.current.mode}
-				{seatAt}
-				{spotAllowed}
-				{ruleAt}
+				seatAt={remDrag.seatAt}
+				spotAllowed={remDrag.spotAllowed}
+				ruleAt={remDrag.ruleAt}
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
