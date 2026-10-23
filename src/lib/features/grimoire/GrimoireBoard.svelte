@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
-	import type { EndReason, NightStep } from '#lib/core/rules/index.ts';
+	import type { NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
@@ -140,10 +140,9 @@
 	} from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
-	import EndGameFields from './EndGameFields.svelte';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
-	import GameEndPrompt from './GameEndPrompt.svelte';
+	import EndGameDialogs from './EndGameDialogs.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FirstDeathAsk from './FirstDeathAsk.svelte';
 	import ReminderAsk from './ReminderAsk.svelte';
@@ -802,14 +801,6 @@
 	// The live room stays open and tells its phones the game is over, so the table can see the
 	// finished grimoire and play again in the same room (plan R1, R4, R5).
 	let endOpen = $state(false);
-	let winner = $state<'good' | 'evil' | undefined>();
-	let endReason = $state<EndReason | undefined>();
-	function endGame() {
-		endOpen = false;
-		endedGames.end(game.gameId, winner, endReason);
-		grimoire.open.setViewOnly(true);
-		endedRead += 1;
-	}
 	$effect(() => {
 		const over = ended && {
 			...(ended.winner ? { winner: ended.winner } : {}),
@@ -836,11 +827,6 @@
 	};
 	// Reopening puts it back in Resume game.
 	let reopenOpen = $state(false);
-	function reopenGame() {
-		endedGames.reopen(game.gameId);
-		grimoire.open.setViewOnly(false);
-		endedRead += 1;
-	}
 	const endedText = $derived(
 		ended?.winner === 'good'
 			? 'Good won'
@@ -1434,14 +1420,13 @@
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FirstDeathAsk {grimoire} />
 <NominationAsk {grimoire} bind:asks={nominationAsks} />
-<GameEndPrompt
+<EndGameDialogs
 	{grimoire}
-	active={!ended && !grimoire.open.viewOnly}
-	onEnd={(team, reason) => {
-		winner = team;
-		endReason = reason;
-		endGame();
-	}}
+	{ended}
+	{endedText}
+	bind:endOpen
+	bind:reopenOpen
+	onChange={() => (endedRead += 1)}
 />
 
 <InfoTokensSheet
@@ -1499,27 +1484,6 @@
 />
 
 <LeaveGuard {game} {watching} />
-
-<ConfirmDialog bind:open={reopenOpen} title="Reopen game?" onConfirm={reopenGame}>
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>Ended, in History: {endedText}</dd>
-		<dt>Becomes</dt>
-		<dd>In Resume game</dd>
-	</dl>
-</ConfirmDialog>
-
-<ConfirmDialog bind:open={endOpen} title="End game?" danger onConfirm={endGame}>
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>In Resume game</dd>
-		<dt>Becomes</dt>
-		<dd>Ended, in History</dd>
-	</dl>
-	<div class="winner">
-		<EndGameFields {grimoire} bind:winner bind:reason={endReason} />
-	</div>
-</ConfirmDialog>
 
 <SeatSheet
 	bind:this={seatSheet}
@@ -1872,22 +1836,6 @@
 		translate: -50% -50%;
 		opacity: var(--logo-opacity);
 		pointer-events: none;
-	}
-	.change {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-1) var(--space-3);
-		margin: 0;
-	}
-	.change dt {
-		color: var(--on-surface-muted);
-		font-size: 0.85rem;
-	}
-	.change dd {
-		margin: 0;
-	}
-	.winner {
-		margin-top: var(--space-3);
 	}
 	.rules {
 		display: flex;
