@@ -17,6 +17,7 @@ describe('board looks', () => {
 				reminders: 'free',
 				usedGhostVote: 'struck',
 				defaultFrame: 'laurel',
+				reminderStacks: true,
 				// The script's name is only in the lower left corner now (Trevor, 2026-10-18).
 				titleAt: 'corner'
 			})
@@ -31,7 +32,8 @@ describe('board looks', () => {
 			nameOffset: 0.3,
 			reminders: 'free',
 			usedGhostVote: 'struck',
-			defaultFrame: 'laurel'
+			defaultFrame: 'laurel',
+			reminderStacks: true
 		});
 		expect(
 			parseBoardLooks({
@@ -43,6 +45,7 @@ describe('board looks', () => {
 				reminders: 'x',
 				usedGhostVote: 'x',
 				defaultFrame: 'gilded',
+				reminderStacks: 'yes',
 				titleAt: 'x'
 			})
 		).toEqual(DEFAULT_BOARD_LOOKS);
