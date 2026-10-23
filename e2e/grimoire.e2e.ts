@@ -4851,7 +4851,7 @@ test('two copies of a character each have their own reminders, in their own colo
 				.getByRole('dialog', { name: 'Alignment' })
 				.getByRole('button', { name: 'Confirm' })
 				.tap();
-			await expect(sheet).toContainText(/Imp\s*Good · Seat 3/);
+			await expect(sheet).toContainText(/Imp\s*Demon · Good · Seat 3/);
 		}
 		await closeSheet(page);
 	}
