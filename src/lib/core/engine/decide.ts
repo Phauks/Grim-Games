@@ -952,7 +952,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				warn('no-change', 'the reminder is already on that seat');
 				return [];
 			}
-			const fixed = fixedReminderMove(game, command.reminderId, to.seatId);
+			const fixed = fixedReminderMove(game, command.reminderId, to.seatId, ctx.characters);
 			if (fixed)
 				warn('reminder-fixed', `${fixed.reminder.label} usually stays where it was placed`);
 			return [{ type: 'ReminderMoved', reminderId: command.reminderId, toSeatId: to.seatId }];

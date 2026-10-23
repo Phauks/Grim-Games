@@ -29,5 +29,9 @@
 	},
 	"deathCause": {
 		"none": "drunkenness"
+	},
+	"reminderMovement": {
+		"fixed": ["Drunk"],
+		"why": "One player becomes drunk once, when the Sweetheart dies."
 	}
 }

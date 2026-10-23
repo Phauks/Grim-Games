@@ -13,5 +13,8 @@
 	},
 	"deathCause": {
 		"none": "drunkenness; changes alignment"
+	},
+	"reminderMovement": {
+		"why": "Follows whoever chose the Goon tonight."
 	}
 }

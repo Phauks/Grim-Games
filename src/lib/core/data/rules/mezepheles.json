@@ -39,5 +39,9 @@
 	},
 	"deathCause": {
 		"none": "changes alignment"
+	},
+	"reminderMovement": {
+		"fixed": ["Turns Evil", "No Ability"],
+		"why": "Only the first player to say the word turns evil."
 	}
 }

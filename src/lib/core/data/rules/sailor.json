@@ -31,5 +31,8 @@
 	},
 	"deathCause": {
 		"none": "drunkenness; protects itself"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
 	}
 }

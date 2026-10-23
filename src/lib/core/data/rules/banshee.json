@@ -34,5 +34,9 @@
 	},
 	"deathCause": {
 		"none": "extra nominations and votes"
+	},
+	"reminderMovement": {
+		"fixed": ["Has Ability"],
+		"why": "Marks this character’s own state, so it stays on its seat."
 	}
 }

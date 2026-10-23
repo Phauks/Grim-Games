@@ -36,5 +36,9 @@
 	},
 	"deathCause": {
 		"none": "thinks it is good"
+	},
+	"reminderMovement": {
+		"fixed": ["Is The Marionette"],
+		"why": "Marks which player is the Marionette."
 	}
 }

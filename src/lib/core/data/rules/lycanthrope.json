@@ -49,5 +49,9 @@
 			"who": "registers",
 			"as": "good"
 		}
+	},
+	"reminderMovement": {
+		"fixed": ["Faux Paw"],
+		"why": "The good player who registers as evil is chosen once."
 	}
 }

@@ -37,5 +37,9 @@
 	},
 	"deathCause": {
 		"none": "becomes the Demon"
+	},
+	"reminderMovement": {
+		"fixed": ["Is The Demon"],
+		"why": "Marks that the Scarlet Woman became the Demon."
 	}
 }

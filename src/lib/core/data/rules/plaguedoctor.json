@@ -31,5 +31,9 @@
 	},
 	"deathCause": {
 		"kind": "gained-ability"
+	},
+	"reminderMovement": {
+		"fixed": ["Storyteller Ability"],
+		"why": "A Minion gains the ability once, when the Plague Doctor dies."
 	}
 }

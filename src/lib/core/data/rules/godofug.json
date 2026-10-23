@@ -42,5 +42,9 @@
 	},
 	"deathCause": {
 		"none": "speaking and voting rule"
+	},
+	"reminderMovement": {
+		"fixed": ["Hat"],
+		"why": "The player with the hat is chosen at setup."
 	}
 }

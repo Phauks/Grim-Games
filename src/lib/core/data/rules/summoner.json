@@ -54,5 +54,8 @@
 	},
 	"deathCause": {
 		"none": "makes a Demon; the Demon kills"
+	},
+	"reminderMovement": {
+		"why": "A counter the Storyteller advances."
 	}
 }

@@ -27,5 +27,8 @@
 	},
 	"deathCause": {
 		"none": "changes a character"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each day."
 	}
 }

@@ -48,5 +48,8 @@
 	},
 	"deathCause": {
 		"kind": "gained-ability"
+	},
+	"reminderMovement": {
+		"why": "Marks which Outsider abilities the Hermit has."
 	}
 }

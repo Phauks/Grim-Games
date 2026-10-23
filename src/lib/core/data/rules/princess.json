@@ -30,5 +30,9 @@
 	},
 	"deathCause": {
 		"none": "stops the Demon killing"
+	},
+	"reminderMovement": {
+		"fixed": ["Doesn't Kill"],
+		"why": "Placed once, on the Demon, after the Princess’s nominee dies."
 	}
 }

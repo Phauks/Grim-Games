@@ -24,5 +24,9 @@
 	},
 	"deathCause": {
 		"none": "removes Minion abilities"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability"],
+		"why": "Each Minion the Preacher finds keeps the token for the rest of the game."
 	}
 }

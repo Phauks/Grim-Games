@@ -26,5 +26,9 @@
 	},
 	"deathCause": {
 		"none": "changes Minion and Demon characters"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s tea party.",
+		"relocates": "lets players change characters"
 	}
 }

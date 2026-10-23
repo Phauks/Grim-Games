@@ -56,5 +56,9 @@
 	},
 	"deathCause": {
 		"kind": "gained-ability"
+	},
+	"reminderMovement": {
+		"fixed": ["Mad", "Has Ability"],
+		"why": "The Townsfolk shown is chosen once at the start."
 	}
 }

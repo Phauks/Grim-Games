@@ -37,5 +37,8 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "The babysitter can change each night."
 	}
 }

@@ -90,5 +90,9 @@
 			"who": "registers",
 			"as": "good"
 		}
+	},
+	"reminderMovement": {
+		"fixed": ["Good Player Executed"],
+		"why": "Marks this character’s own state, so it stays on its seat."
 	}
 }

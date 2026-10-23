@@ -27,5 +27,8 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "The Storyteller decides what these mean."
 	}
 }

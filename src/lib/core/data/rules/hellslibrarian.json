@@ -28,5 +28,9 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["Something Bad"],
+		"why": "Marks this character’s own state, so it stays on its seat."
 	}
 }

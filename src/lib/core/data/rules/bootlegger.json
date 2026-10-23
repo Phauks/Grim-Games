@@ -35,5 +35,8 @@
 	},
 	"deathCause": {
 		"none": "homebrew rules"
+	},
+	"reminderMovement": {
+		"why": "The Storyteller decides what these mean."
 	}
 }

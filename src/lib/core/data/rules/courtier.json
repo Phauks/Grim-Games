@@ -25,5 +25,9 @@
 	},
 	"deathCause": {
 		"none": "drunkenness"
+	},
+	"reminderMovement": {
+		"fixed": ["Drunk 3", "Drunk 2", "Drunk 1", "No Ability"],
+		"why": "The chosen character is drunk for three days; the choice is made once."
 	}
 }

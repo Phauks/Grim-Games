@@ -31,5 +31,9 @@
 	},
 	"deathCause": {
 		"none": "loss condition"
+	},
+	"reminderMovement": {
+		"fixed": ["Guess Used"],
+		"why": "Marks that this character has used its once-per-game ability."
 	}
 }

@@ -23,5 +23,8 @@
 	},
 	"deathCause": {
 		"none": "thinks it is the Demon"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
 	}
 }

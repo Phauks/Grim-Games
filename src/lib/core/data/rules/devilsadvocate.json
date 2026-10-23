@@ -35,5 +35,8 @@
 	},
 	"deathCause": {
 		"none": "executed player survives"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
 	}
 }

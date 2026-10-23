@@ -44,5 +44,8 @@
 	},
 	"deathCause": {
 		"none": "protects"
+	},
+	"reminderMovement": {
+		"why": "Follows the Tea Lady’s alive neighbours."
 	}
 }

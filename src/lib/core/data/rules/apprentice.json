@@ -22,5 +22,9 @@
 	},
 	"deathCause": {
 		"kind": "gained-ability"
+	},
+	"reminderMovement": {
+		"fixed": ["Is The Apprentice"],
+		"why": "Marks which player is the Apprentice."
 	}
 }

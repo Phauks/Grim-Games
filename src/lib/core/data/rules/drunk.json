@@ -33,5 +33,9 @@
 	},
 	"deathCause": {
 		"none": "is drunk"
+	},
+	"reminderMovement": {
+		"fixed": ["Is The Drunk"],
+		"why": "Marks which player is the Drunk."
 	}
 }

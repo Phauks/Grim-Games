@@ -14,5 +14,10 @@
 	},
 	"deathCause": {
 		"none": "swaps characters"
+	},
+	"reminderMovement": {
+		"fixed": ["Poisoned"],
+		"why": "The old Demon stays poisoned after the swap, whatever happens next.",
+		"relocates": "swaps characters with the Demon"
 	}
 }

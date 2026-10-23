@@ -33,5 +33,8 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"reminderMovement": {
+		"why": "Placed on new visitors each day."
 	}
 }

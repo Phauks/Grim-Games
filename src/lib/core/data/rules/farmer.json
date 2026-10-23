@@ -8,5 +8,8 @@
 	},
 	"deathCause": {
 		"none": "makes a Farmer when it dies"
+	},
+	"reminderMovement": {
+		"relocates": "makes a good player a Farmer"
 	}
 }

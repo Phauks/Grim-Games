@@ -13,5 +13,9 @@
 	},
 	"deathCause": {
 		"none": "setup"
+	},
+	"reminderMovement": {
+		"fixed": ["No More Evil"],
+		"why": "Marks this character’s own state, so it stays on its seat."
 	}
 }

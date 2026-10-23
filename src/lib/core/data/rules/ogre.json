@@ -13,5 +13,9 @@
 	},
 	"deathCause": {
 		"none": "changes alignment"
+	},
+	"reminderMovement": {
+		"fixed": ["Friend"],
+		"why": "The Ogre’s friend is chosen once, on the first night."
 	}
 }

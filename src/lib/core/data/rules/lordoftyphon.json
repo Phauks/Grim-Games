@@ -36,5 +36,8 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
 	}
 }

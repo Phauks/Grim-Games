@@ -53,5 +53,8 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "A counter the Storyteller advances."
 	}
 }

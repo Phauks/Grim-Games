@@ -36,5 +36,9 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["Know"],
+		"why": "Marks the information the player started knowing."
 	}
 }
