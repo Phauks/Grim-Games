@@ -53,5 +53,18 @@
 	"reminderMovement": {
 		"fixed": ["Faux Paw"],
 		"why": "The good player who registers as evil is chosen once."
+	},
+	"reminderPlaceholders": {
+		"note": "A good chosen player who is not the Faux Paw dies.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

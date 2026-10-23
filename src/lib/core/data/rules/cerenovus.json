@@ -35,5 +35,27 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Mad",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Mad",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

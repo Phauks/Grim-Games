@@ -27,5 +27,37 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Sober & Healthy",
+						"action": "place"
+					},
+					{
+						"label": "Acts Twice",
+						"action": "place"
+					}
+				],
+				"either": true
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Sober & Healthy",
+						"action": "place"
+					},
+					{
+						"label": "Acts Twice",
+						"action": "place"
+					}
+				],
+				"either": true
+			}
+		]
 	}
 }

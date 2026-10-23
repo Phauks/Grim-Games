@@ -25,5 +25,26 @@
 	"reminderMovement": {
 		"fixed": ["No Ability"],
 		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"note": "Kills through protection; once per game.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

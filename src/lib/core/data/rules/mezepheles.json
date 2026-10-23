@@ -43,5 +43,26 @@
 	"reminderMovement": {
 		"fixed": ["Turns Evil", "No Ability"],
 		"why": "Only the first player to say the word turns evil."
+	},
+	"reminderPlaceholders": {
+		"note": "The player who said the word turns evil; the Mezepheles' ability is used.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Turns Evil",
+						"action": "remove"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

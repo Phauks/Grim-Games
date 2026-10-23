@@ -46,5 +46,34 @@
 	"reminderMovement": {
 		"fixed": ["Has Ability", "Poisoned"],
 		"why": "A killed Minion keeps its ability, and its Townsfolk neighbour stays poisoned."
+	},
+	"reminderPlaceholders": {
+		"note": "A kill; a killed Minion keeps their ability and poisons a neighbouring Townsfolk.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Has Ability",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

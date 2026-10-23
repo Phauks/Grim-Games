@@ -12,7 +12,7 @@
  * Wording is short and our own, paraphrasing the character's wiki page
  * (`https://wiki.bloodontheclocktower.com/<Name>`); `reason` says why ours differs.
  */
-import type { PlaceholderKey } from './reminder-placeholders.data.ts';
+import type { PlaceholderKey } from './night-text.ts';
 
 export interface NightTextOverride {
 	text: string;

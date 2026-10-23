@@ -26,5 +26,26 @@
 	"reminderMovement": {
 		"fixed": ["Alive", "No Ability"],
 		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"note": "A resurrected Townsfolk; the ability is used either way.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Alive",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

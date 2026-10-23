@@ -19,5 +19,17 @@
 	},
 	"reminderMovement": {
 		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

@@ -38,5 +38,18 @@
 	"reminderMovement": {
 		"fixed": ["Has Ability"],
 		"why": "Marks this character’s own state, so it stays on its seat."
+	},
+	"reminderPlaceholders": {
+		"note": "The Banshee, killed by the Demon, gains their nominate-and-vote ability.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Has Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

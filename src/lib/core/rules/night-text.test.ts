@@ -13,12 +13,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/types.ts';
+import type { ReminderPlaceholder } from '#lib/core/data/reminder-placeholder-rules.ts';
 import { committedCharacter, committedGameData } from '#lib/core/testing/committed-data.ts';
 import { characterNames } from './character-names.ts';
 import {
 	FULL_NIGHT_INSTRUCTIONS,
 	FULL_NIGHT_TEXT,
-	REMINDER_PLACEHOLDERS,
 	REVIEWED_NIGHT_TEXT,
 	SHOW_DIFFERS_FROM_SOURCE,
 	nightTextFor,
@@ -28,16 +28,28 @@ import {
 	placeholdersFor,
 	type PlaceholderKey
 } from './night-text.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 
 const data = committedGameData();
 const names = characterNames(data.characters);
 const name = (id: string) => data.byId.get(id)?.name ?? id;
+/** Each official `:reminder:` mapping, keyed `<characterId>:<first|other>`. */
+const REMINDER_PLACEHOLDERS: Record<string, readonly unknown[]> = Object.fromEntries(
+	[...OFFICIAL_RULES].flatMap(([id, rules]) =>
+		(['first', 'other'] as const).flatMap((night) => {
+			const list = rules.reminderPlaceholders?.[night];
+			return list ? [[`${id}:${night}`, list]] : [];
+		})
+	)
+);
 
 /** TPI's text for a night, with its mapping and names, as plain text. */
 const plain = (id: string, night: 'first' | 'other' = 'other') => {
 	const c = committedCharacter(id);
 	const text = night === 'first' ? c.firstNightReminder! : c.otherNightReminder!;
-	const placeholders = placeholdersFor(id, night);
+	const placeholders = placeholdersFor(c, night);
 	return nightTextPlain(
 		nightTextSegments(text, c, { names, ...(placeholders ? { placeholders } : {}) }),
 		name
@@ -137,7 +149,7 @@ describe('nightTextSegments', () => {
 			for (const night of ['first', 'other'] as const) {
 				const text = night === 'first' ? c.firstNightReminder : c.otherNightReminder;
 				if (!text) continue;
-				const placeholders = placeholdersFor(c.id, night);
+				const placeholders = placeholdersFor(c, night);
 				const out = nightTextPlain(
 					nightTextSegments(text, c, { names, ...(placeholders ? { placeholders } : {}) })
 				);
@@ -147,7 +159,7 @@ describe('nightTextSegments', () => {
 	});
 });
 
-describe('REMINDER_PLACEHOLDERS', () => {
+describe('reminderPlaceholders', () => {
 	it('maps every :reminder: in TPI’s night text, with the same count per text', () => {
 		const expected = new Map<string, number>();
 		for (const c of data.characters) {
@@ -170,7 +182,7 @@ describe('REMINDER_PLACEHOLDERS', () => {
 			otherNightReminder: 'Do it. :reminder: :reminder:'
 		};
 		expect(placeholderProblems([extra])).toContainEqual(
-			"witch:other: 2 :reminder: in TPI's text, 1 in REMINDER_PLACEHOLDERS"
+			"witch:other: 2 :reminder: in TPI's text, 1 in its rules file"
 		);
 	});
 
@@ -178,7 +190,7 @@ describe('REMINDER_PLACEHOLDERS', () => {
 		for (const [key, list] of Object.entries(REMINDER_PLACEHOLDERS)) {
 			const c = committedCharacter(key.split(':')[0]);
 			const own = new Set([...c.reminders, ...c.remindersGlobal]);
-			for (const p of list) {
+			for (const p of list as ReminderPlaceholder[]) {
 				expect(p.tokens.length, key).toBeGreaterThan(0);
 				for (const t of p.tokens) expect(own.has(t.label), `${key}: ${t.label}`).toBe(true);
 			}
@@ -258,7 +270,7 @@ describe('night text of ours', () => {
 		expect(nightTextFor(witch, 'other')).toEqual({
 			text: witch.otherNightReminder,
 			source: witch.otherNightReminder,
-			placeholders: REMINDER_PLACEHOLDERS['witch:other']
+			placeholders: placeholdersFor(witch, 'other')
 		});
 		// With the flag on, the parked text would be used.
 		expect(shown('witch', 'other', true)).toBe(
@@ -275,5 +287,62 @@ describe('night text of ours', () => {
 		const homebrew: Character = { ...gm };
 		delete homebrew.edition;
 		expect(nightTextFor(homebrew, 'other')?.text).toBe(gm.otherNightReminder);
+	});
+
+	// A custom character's own `reminderPlaceholders` map its own text, as the Witch's map
+	// TPI's (https://wiki.bloodontheclocktower.com/Witch: the chosen player is Cursed).
+	it('maps a homebrew character’s own :reminder: with its own rule', () => {
+		const hexer: Character = {
+			...committedCharacter('witch'),
+			id: 'hexer',
+			name: 'Hexer',
+			edition: undefined,
+			reminders: ['Hexed'],
+			otherNightReminder: 'The Hexer chooses a player. :reminder:',
+			rules: parseCharacterRules(
+				{ reminderPlaceholders: { other: [{ tokens: [{ label: 'Hexed', action: 'place' }] }] } },
+				'hexer',
+				new Issues(),
+				['Hexed']
+			)
+		};
+		const resolved = nightTextFor(hexer, 'other');
+		expect(resolved?.placeholders).toEqual([{ tokens: [{ label: 'Hexed', action: 'place' }] }]);
+		expect(
+			nightTextPlain(
+				nightTextSegments(resolved!.text, hexer, { placeholders: resolved!.placeholders }),
+				name
+			)
+		).toBe('The Hexer chooses a player. [+Hexed]');
+		// Someone else's text: the mapping does not apply.
+		expect(
+			nightTextFor(hexer, 'other', { text: 'Mine. :reminder:' })?.placeholders
+		).toBeUndefined();
+	});
+
+	it('reports a malformed reminderPlaceholders rule', () => {
+		const issues = new Issues();
+		parseCharacterRules(
+			{
+				reminderPlaceholders: {
+					dusk: [],
+					other: [
+						{ tokens: [] },
+						{ tokens: [{ label: 'Cursed', action: 'move' }] },
+						{ tokens: [{ label: 'Nope', action: 'place' }], either: 'yes' }
+					]
+				}
+			},
+			'rules',
+			issues,
+			['Cursed']
+		);
+		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
+			'rules.reminderPlaceholders.dusk',
+			'rules.reminderPlaceholders.other[0].tokens',
+			'rules.reminderPlaceholders.other[1].tokens[0].action',
+			'rules.reminderPlaceholders.other[2].either',
+			'rules.reminderPlaceholders.other[2].tokens[0].label'
+		]);
 	});
 });

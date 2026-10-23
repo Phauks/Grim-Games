@@ -40,5 +40,44 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "The 1st target is mad; the 2nd is the player they must be mad about.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Mad",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "2nd",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Mad",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "2nd",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

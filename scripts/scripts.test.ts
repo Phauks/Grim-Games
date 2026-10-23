@@ -192,7 +192,7 @@ describe('check-lines', () => {
 		expect(counted('src/lib/ui/table/DataTable.svelte')).toBe(true);
 		expect(counted('src/lib/features/grimoire/board.test.ts')).toBe(false);
 		expect(counted('e2e/board.e2e.ts')).toBe(false);
-		expect(counted('src/lib/core/rules/reminder-placeholders.data.ts')).toBe(false);
+		expect(counted('src/lib/core/rules/night-text-overrides.data.ts')).toBe(false);
 		expect(counted('src/lib/i18n/messages/en/room.ts')).toBe(false);
 		expect(counted('src/lib/ui/icons/generated/ph-regular.ts')).toBe(false);
 		expect(counted('src/lib/core/data/rules/fool.json')).toBe(false);

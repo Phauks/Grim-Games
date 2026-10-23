@@ -38,5 +38,27 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Survives Execution",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Survives Execution",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

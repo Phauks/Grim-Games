@@ -29,5 +29,44 @@
 	"reminderMovement": {
 		"fixed": ["Drunk 3", "Drunk 2", "Drunk 1", "No Ability"],
 		"why": "The chosen character is drunk for three days; the choice is made once."
+	},
+	"reminderPlaceholders": {
+		"note": "The chosen character's player is drunk for 3 nights and 3 days; the ability is used.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk 3",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk 3",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

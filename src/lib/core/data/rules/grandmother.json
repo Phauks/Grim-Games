@@ -37,5 +37,18 @@
 	"reminderMovement": {
 		"fixed": ["Grandchild"],
 		"why": "The grandchild is shown once; Dead marks tonight’s death and moves."
+	},
+	"reminderPlaceholders": {
+		"note": "The Grandmother dies with her grandchild.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

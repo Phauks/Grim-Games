@@ -48,5 +48,28 @@
 	"reminderMovement": {
 		"fixed": ["Poisoned"],
 		"why": "The host is chosen once, on the first night."
+	},
+	"reminderPlaceholders": {
+		"note": "The host is poisoned; then the Lleech kills each night.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

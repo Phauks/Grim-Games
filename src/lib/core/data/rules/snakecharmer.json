@@ -19,5 +19,28 @@
 		"fixed": ["Poisoned"],
 		"why": "The old Demon stays poisoned after the swap, whatever happens next.",
 		"relocates": "swaps characters with the Demon"
+	},
+	"reminderPlaceholders": {
+		"note": "The old Demon, now the Snake Charmer, is poisoned.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

@@ -23,5 +23,47 @@
 	},
 	"reminderMovement": {
 		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"note": "One kill, or no kill and 3 Attacks; after a charge, 3 kills.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					},
+					{
+						"label": "3 Attacks",
+						"action": "place"
+					}
+				],
+				"either": true
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

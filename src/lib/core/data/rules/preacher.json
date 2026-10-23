@@ -28,5 +28,28 @@
 	"reminderMovement": {
 		"fixed": ["No Ability"],
 		"why": "Each Minion the Preacher finds keeps the token for the rest of the game."
+	},
+	"reminderPlaceholders": {
+		"note": "A chosen Minion loses their ability.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

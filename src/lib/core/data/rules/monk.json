@@ -21,5 +21,17 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Safe",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

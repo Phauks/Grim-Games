@@ -28,5 +28,34 @@
 	},
 	"reminderMovement": {
 		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"note": "A player killed last night may come back; then 2 kills.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Alive",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

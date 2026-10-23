@@ -28,5 +28,27 @@
 	"reminderMovement": {
 		"fixed": ["No Ability"],
 		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }

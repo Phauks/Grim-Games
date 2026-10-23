@@ -24,5 +24,40 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "Tonight's target is poisoned; last night's target dies and becomes healthy.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					},
+					{
+						"label": "Poisoned",
+						"action": "remove"
+					}
+				]
+			}
+		]
 	}
 }

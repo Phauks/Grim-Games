@@ -26,5 +26,17 @@
 	"reminderMovement": {
 		"fixed": ["Is The Apprentice"],
 		"why": "Marks which player is the Apprentice."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Is The Apprentice",
+						"action": "place"
+					}
+				]
+			}
+		]
 	}
 }
