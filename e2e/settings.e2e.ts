@@ -636,9 +636,22 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	await expect.poll(() => logo.evaluate((el) => getComputedStyle(el).opacity)).toBe('0.6');
 	await dialog.getByText('Script logo', { exact: true }).tap();
 	await expect(logo).toHaveCount(0);
-	await expect(preview.getByTestId('preview-script-title')).toHaveText('Example script');
+	await expect(preview.getByTestId('preview-script-title')).toContainText('Example script');
+	// The join code under the name, switched on its own; it needs the name shown.
+	const joinCode = dialog.getByRole('checkbox', { name: 'Join code on the board' });
+	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
+		(await joinCode.isChecked()) ? 1 : 0
+	);
+	await dialog.getByText('Join code on the board', { exact: true }).tap();
+	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
+		(await joinCode.isChecked()) ? 1 : 0
+	);
+	if (!(await joinCode.isChecked()))
+		await dialog.getByText('Join code on the board', { exact: true }).tap();
+	await expect(preview.getByTestId('preview-room-code')).toHaveText('Join code 482 913');
 	await dialog.getByText('Script name on the board', { exact: true }).tap();
 	await expect(preview.getByTestId('preview-script-title')).toHaveCount(0);
+	await expect(joinCode).toBeDisabled();
 
 	// Duplicate reminders in the bank, one token with a count when stacked.
 	const bank = preview.getByTestId('preview-bank');
