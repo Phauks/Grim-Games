@@ -68,5 +68,19 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Courtier might choose a character. If so, that character’s player is drunk: mark them *DRUNK 3*, and mark the Courtier *NO ABILITY*.",
+				"reason": "Says which token goes on whom."
+			}
+		},
+		"other": {
+			"full": {
+				"text": "Count down an existing drunk token: *DRUNK 3* becomes *DRUNK 2*, *DRUNK 2* becomes *DRUNK 1*, *DRUNK 1* comes off. The Courtier might choose a character. If so, mark that character’s player *DRUNK 3*, and the Courtier *NO ABILITY*.",
+				"reason": "Says how the drunk tokens count down over 3 nights and days."
+			}
+		}
 	}
 }

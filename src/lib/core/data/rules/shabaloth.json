@@ -57,5 +57,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "A player the Shabaloth killed last night might be resurrected: remove their *DEAD* and mark them *ALIVE*. The Shabaloth chooses 2 players: mark each *DEAD*.",
+				"reason": "Says which tokens go on and come off."
+			}
+		}
 	}
 }

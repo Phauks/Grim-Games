@@ -53,5 +53,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"reviewed": {
+				"text": "If there are multiple Village Idiots, mark one as *DRUNK*. Wake the Village Idiots one at a time to choose a player. Give a thumb signal.",
+				"reason": "The Drunk token is named once, not again as an unnamed reminder (Trevor’s review)."
+			}
+		}
 	}
 }

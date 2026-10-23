@@ -57,5 +57,19 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Sailor chooses a living player. Either the Sailor or that player is drunk until dusk: mark them *DRUNK*.",
+				"reason": "Says who gets the Drunk token and when it comes off."
+			}
+		},
+		"other": {
+			"full": {
+				"text": "The Sailor chooses a living player. Either the Sailor or that player is drunk until dusk: mark them *DRUNK*.",
+				"reason": "Says who gets the Drunk token and when it comes off."
+			}
+		}
 	}
 }

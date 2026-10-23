@@ -51,5 +51,19 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"reviewed": {
+				"text": "The Preacher chooses a player. :reminder: If they chose a Minion: Put the Preacher to sleep. Wake the target. Show the *THIS CHARACTER SELECTED YOU* & Preacher token.",
+				"reason": "Only one Preacher token is shown: “token”, not “tokens” (Trevor’s review)."
+			}
+		},
+		"other": {
+			"reviewed": {
+				"text": "The Preacher chooses a player. :reminder: If they chose a Minion: Put the Preacher to sleep. Wake the target. Show the *THIS CHARACTER SELECTED YOU* & Preacher token.",
+				"reason": "Only one Preacher token is shown: “token”, not “tokens” (Trevor’s review)."
+			}
+		}
 	}
 }

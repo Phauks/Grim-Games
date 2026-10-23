@@ -66,5 +66,17 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"reviewed": {
+				"text": "The Lycanthrope chooses a player. *DEAD*",
+				"reason": "The chosen player is marked with the death marker, not an unnamed reminder (Trevor’s review)."
+			},
+			"full": {
+				"text": "The Lycanthrope chooses a living player. If they are good and not marked *FAUX PAW*, they die: mark them *DEAD*, and the Demon kills no one tonight.",
+				"reason": "Says when the Dead token is used (Trevor’s review: TPI’s text is not enough to use it)."
+			}
+		}
 	}
 }

@@ -39,5 +39,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Poisoner chooses a player: move *POISONED* to them.",
+				"reason": "Says last night’s Poisoned token comes off."
+			}
+		}
 	}
 }

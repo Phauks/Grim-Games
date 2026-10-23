@@ -57,5 +57,19 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Organ Grinder nods to be drunk or shakes their head to be sober. Nod: mark them *DRUNK*. Shake: remove *DRUNK*.",
+				"reason": "Says when the Drunk token goes on and comes off."
+			}
+		},
+		"other": {
+			"full": {
+				"text": "The Organ Grinder nods to be drunk or shakes their head to be sober. Nod: mark them *DRUNK*. Shake: remove *DRUNK*.",
+				"reason": "Says when the Drunk token goes on and comes off."
+			}
+		}
 	}
 }

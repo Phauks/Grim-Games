@@ -53,5 +53,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "Show the Grimoire for as long as the Widow needs. The Widow chooses a player: mark them *POISONED*. Choose a good player: mark them *KNOW*. Put the Widow to sleep, wake the *KNOW* player and show them the Widow token.",
+				"reason": "Says which token goes on whom, in the order they are placed."
+			}
+		}
 	}
 }

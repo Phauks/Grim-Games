@@ -65,5 +65,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Devil’s Advocate chooses a living player (different to last night): move *SURVIVES EXECUTION* to them.",
+				"reason": "Says the token moves and the same player can’t be chosen twice in a row."
+			}
+		}
 	}
 }

@@ -71,5 +71,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Lleech chooses a player: mark them *POISONED*. They are the Lleech’s host.",
+				"reason": "Says the Poisoned token marks the host for the whole game."
+			}
+		}
 	}
 }

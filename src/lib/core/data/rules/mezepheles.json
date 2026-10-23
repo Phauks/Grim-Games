@@ -64,5 +64,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "If a good player said the secret word today (*TURNS EVIL*), wake them, show the *YOU ARE* info token & give a thumbs-down: they are now evil. Remove *TURNS EVIL* and mark the Mezepheles *NO ABILITY*.",
+				"reason": "Says when the Turns Evil token comes off and the ability is used."
+			}
+		}
 	}
 }

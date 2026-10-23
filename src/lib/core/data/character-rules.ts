@@ -12,6 +12,7 @@
 import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rules.ts';
 import { readDayReminders, type DayReminderRules } from './day-reminder-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
+import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
 	readReminderPlaceholders,
@@ -140,6 +141,8 @@ export interface CharacterRules {
 	reminderMovement?: ReminderMovementRules;
 	/** What each `:reminder:` in its night text means (`rules/night-text.ts`). */
 	reminderPlaceholders?: ReminderPlaceholderRules;
+	/** Our own night text in place of the original (`rules/night-text.ts`). */
+	nightText?: NightTextRules;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -285,7 +288,8 @@ export const RULE_KEYS = [
 	'dayReminders',
 	'deathCause',
 	'reminderMovement',
-	'reminderPlaceholders'
+	'reminderPlaceholders',
+	'nightText'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -453,6 +457,10 @@ export function parseCharacterRules(
 		const at = `${path}.reminderPlaceholders`;
 		const placeholders = readReminderPlaceholders(raw.reminderPlaceholders, at, issues, reminders);
 		if (placeholders) rules.reminderPlaceholders = placeholders;
+	}
+	if (raw.nightText !== undefined) {
+		const nightText = readNightText(raw.nightText, `${path}.nightText`, issues);
+		if (nightText) rules.nightText = nightText;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

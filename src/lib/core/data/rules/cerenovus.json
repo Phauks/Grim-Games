@@ -57,5 +57,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Cerenovus chooses a player & a character: move *MAD* to them. Put the Cerenovus to sleep, wake the target and show the *THIS CHARACTER SELECTED YOU* token, the Cerenovus token, then the madness-character token.",
+				"reason": "Says last night’s Mad token comes off."
+			}
+		}
 	}
 }
