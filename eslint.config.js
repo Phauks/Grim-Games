@@ -219,6 +219,19 @@ export default defineConfig(
 		rules: { 'grim/close-button': 'error' }
 	},
 	{
+		// One icon per meaning, from the catalogue: an edit is always the pencil (Trevor,
+		// 2026-10-23). `owners` keeps a tool's icon on its own screen.
+		files: ['src/**/*.svelte', 'src/**/*.ts'],
+		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: {
+			'grim/icon-meaning': [
+				'error',
+				{ owners: { pen: ['src/lib/ui/scratch/'], eraser: ['src/lib/ui/scratch/'] } }
+			]
+		}
+	},
+	{
 		// Decision modals end in Cancel and Confirm, bottom right (Trevor, 2026-10-17).
 		files: ['src/**/*.svelte'],
 		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],

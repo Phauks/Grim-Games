@@ -46,11 +46,7 @@
 		<CharacterBadge characterId={character.id} {character} interactive={false} />
 	{/snippet}
 	{#snippet headActions()}
-		<IconButton
-			icon="buildCharacter"
-			label={t('library.editCharacter')}
-			onclick={() => (editing = true)}
-		/>
+		<IconButton icon="edit" label={t('library.editCharacter')} onclick={() => (editing = true)} />
 		<IconButton
 			icon="changeKind"
 			label={t('library.changeKind')}

@@ -184,7 +184,7 @@
 		/>
 		<!-- Always rendered, so nothing moves when a folder opens; usable inside a folder only. -->
 		<IconButton
-			icon="rename"
+			icon="edit"
 			label={here ? t('library.renameNamed', { name: here.name }) : t('library.renameTitle')}
 			disabled={!here || searching}
 			onclick={rename}

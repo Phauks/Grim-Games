@@ -136,7 +136,7 @@
 			{#if ability.kind === 'character'}
 				<div class="character">
 					<CharacterBadge characterId={ability.characterId} />
-					<Button icon="rename" disabled={!data} onclick={() => (picking = true)}>
+					<Button icon="edit" disabled={!data} onclick={() => (picking = true)}>
 						{t('modes.specters.pickCharacter')}
 					</Button>
 				</div>
