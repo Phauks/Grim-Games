@@ -818,7 +818,7 @@
 		top: 0;
 		z-index: 3;
 		margin-left: var(--space-2);
-		padding: 0.2em var(--space-2);
+		padding: 0 var(--space-2);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-full);
 		background: var(--surface-raised);

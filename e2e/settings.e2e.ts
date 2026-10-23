@@ -674,6 +674,8 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	// A seat's reminder beside its seat, or where it was dropped.
 	const seatReminder = preview.getByTestId('preview-seat-reminder');
 	await expect(seatReminder).not.toHaveClass(/loose/);
+	// In Board's closed Advanced part (Trevor, 2026-10-23).
+	await dialog.getByRole('button', { name: /^Advanced/ }).tap();
 	await choose('Reminders', 'Stay where dropped');
 	await page
 		.getByRole('alertdialog', { name: 'Reminders stay where dropped?' })
