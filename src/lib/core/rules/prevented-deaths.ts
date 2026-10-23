@@ -11,9 +11,10 @@
  * - `killer-impaired`: the killer was drunk, poisoned or had no ability, so its ability did
  *   nothing (https://wiki.bloodontheclocktower.com/Glossary: drunk and poisoned players
  *   have no ability);
- * - `fool`: the Fool survives their first death (https://wiki.bloodontheclocktower.com/Fool);
- * - `mayor`: a Demon kill on the Mayor may land on someone else
- *   (https://wiki.bloodontheclocktower.com/Mayor).
+ * - `survives-first-death`: the player's ability stops their first death (the Fool,
+ *   https://wiki.bloodontheclocktower.com/Fool; `firstDeathSaver`);
+ * - `may-bounce`: the player's ability may move the kill onto someone else (the Mayor against
+ *   the Demon, https://wiki.bloodontheclocktower.com/Mayor; `killRedirect`).
  * Several reasons can apply at once; none means the Storyteller made a call the board
  * doesn't show (`because` is empty). Data only, no wording: the UI shows the characters'
  * TPI ability text.
@@ -25,14 +26,21 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { REGISTERS_AS_DEAD_REMINDERS, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
-import { abilityState, protection, type AbilitySource, type Impairment } from './ability.ts';
+import {
+	abilityState,
+	firstDeathSaver,
+	killRedirect,
+	protection,
+	type AbilitySource,
+	type Impairment
+} from './ability.ts';
 import { NIGHT_KILLERS } from './night-alerts.ts';
 
 export type PreventedBecause =
 	| { kind: 'protected'; source: AbilitySource | 'override' }
 	| { kind: 'killer-impaired'; seatId: SeatId; impairments: Impairment[] }
-	| { kind: 'fool'; seatId: SeatId }
-	| { kind: 'mayor'; seatId: SeatId };
+	| { kind: 'survives-first-death'; source: AbilitySource }
+	| { kind: 'may-bounce'; source: AbilitySource };
 
 export interface PreventedDeath {
 	/** The character whose "Dead" token is on the survivor. */
@@ -77,11 +85,12 @@ export function preventedDeaths(game: Game, characters: CharacterLookup): Preven
 				const source = protection(game, seatId, characters, killer.by);
 				if (source) because.push({ kind: 'protected', source });
 			}
-			const target = trueCharacter(game, seatId, characters);
-			const works = abilityState(game, seatId, characters).works;
-			if (target === 'fool' && works) because.push({ kind: 'fool', seatId });
-			if (target === 'mayor' && killer.by === 'demon' && works)
-				because.push({ kind: 'mayor', seatId });
+			if (abilityState(game, seatId, characters).works) {
+				const saver = firstDeathSaver(game, seatId, characters);
+				if (saver) because.push({ kind: 'survives-first-death', source: saver.source });
+				const redirect = killRedirect(game, seatId, characters, killer.by);
+				if (redirect) because.push({ kind: 'may-bounce', source: redirect });
+			}
 
 			out.push({
 				killer: reminder.characterId,

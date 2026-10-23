@@ -88,21 +88,22 @@ character's script entry. Both are read by `parseCharacterRules`
 a moved table goes in the character's file, never in a TypeScript table. Rules code names no
 character: a rule becomes a behaviour with parameters that any character can use.
 
-| Table                                                                                             | Rules key         | State         |
-| ------------------------------------------------------------------------------------------------- | ----------------- | ------------- |
-| Reminder prompts (`rules/reminder-prompts.ts`)                                                    | `reminderPrompts` | moved         |
-| Reminder targets (`reminder-targets.data.ts`)                                                     |                   | not yet moved |
-| Day reminders (`day-reminders.data.ts`)                                                           |                   | not yet moved |
-| Setup reminders and setup counts (`setup-reminders.data.ts`, `setup-modifiers.ts`)                |                   | not yet moved |
-| Death causes (`death-causes.data.ts`)                                                             |                   | not yet moved |
-| Reminder movement and placeholders (`reminder-movement.data.ts`, `reminder-placeholders.data.ts`) |                   | not yet moved |
-| Night text overrides (`night-text-overrides.data.ts`)                                             |                   | not yet moved |
-| On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                  | `onDeath`         | moved         |
-| Protection (`ability.ts`, `night-alerts.ts`)                                                      | `protects`        | moved         |
-| Night killers (`night-alerts.ts`, `night-deaths.ts`)                                              |                   | not yet moved |
-| Acts when dead (`dead-characters.ts`)                                                             | `actsWhenDead`    | moved         |
-| Night information and answers (`night-info.ts`)                                                   |                   | not yet moved |
-| Game end (`game-end.ts`, `end-reason.ts`, `becomes-demon.ts`)                                     |                   | not yet moved |
+| Table                                                                                             | Rules key                             | State         |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------- |
+| Reminder prompts (`rules/reminder-prompts.ts`)                                                    | `reminderPrompts`                     | moved         |
+| Reminder targets (`reminder-targets.data.ts`)                                                     |                                       | not yet moved |
+| Day reminders (`day-reminders.data.ts`)                                                           |                                       | not yet moved |
+| Setup reminders and setup counts (`setup-reminders.data.ts`, `setup-modifiers.ts`)                |                                       | not yet moved |
+| Death causes (`death-causes.data.ts`)                                                             |                                       | not yet moved |
+| Reminder movement and placeholders (`reminder-movement.data.ts`, `reminder-placeholders.data.ts`) |                                       | not yet moved |
+| Night text overrides (`night-text-overrides.data.ts`)                                             |                                       | not yet moved |
+| On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                  | `onDeath`                             | moved         |
+| Protection (`ability.ts`, `night-alerts.ts`)                                                      | `protects`                            | moved         |
+| Night killers (`night-alerts.ts`, `night-deaths.ts`)                                              |                                       | not yet moved |
+| Kill redirect and first-death survival (`ability.ts`, `first-death.ts`)                           | `redirectsKill`, `survivesFirstDeath` | moved         |
+| Acts when dead (`dead-characters.ts`)                                                             | `actsWhenDead`                        | moved         |
+| Night information and answers (`night-info.ts`)                                                   |                                       | not yet moved |
+| Game end (`game-end.ts`, `end-reason.ts`, `becomes-demon.ts`)                                     |                                       | not yet moved |
 
 ## Lists that only shrink
 
