@@ -63,5 +63,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Witch chooses a player: move *CURSED* to them.",
+				"reason": "Says last night’s Cursed token comes off."
+			}
+		}
 	}
 }

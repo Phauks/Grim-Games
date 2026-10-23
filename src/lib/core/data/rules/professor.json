@@ -47,5 +47,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Professor might choose a dead player. If they do, mark the Professor *NO ABILITY*. If that player is a Townsfolk, they are resurrected: mark them *ALIVE*.",
+				"reason": "Says which token goes on whom."
+			}
+		}
 	}
 }

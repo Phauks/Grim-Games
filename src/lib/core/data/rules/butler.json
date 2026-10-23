@@ -57,5 +57,19 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Butler chooses a player: mark them *MASTER*.",
+				"reason": "Says the Master token goes on the chosen player."
+			}
+		},
+		"other": {
+			"full": {
+				"text": "The Butler chooses a player: move *MASTER* to them.",
+				"reason": "Says the Master token moves to tonight’s choice."
+			}
+		}
 	}
 }

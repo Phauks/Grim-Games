@@ -50,5 +50,19 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"reviewed": {
+				"text": "Point to the *GRANDCHILD* player & show their character token.",
+				"reason": "Names the Grandchild reminder token instead of “the grandchild player” (Trevor’s review)."
+			}
+		},
+		"other": {
+			"reviewed": {
+				"text": "If the grandchild was killed by the Demon, the Grandmother dies too. *DEAD*",
+				"reason": "Marks the Grandmother dead with the death marker, not an unnamed reminder (Trevor’s review)."
+			}
+		}
 	}
 }

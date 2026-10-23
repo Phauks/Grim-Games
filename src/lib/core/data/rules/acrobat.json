@@ -40,5 +40,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "Move *CHOSEN* to the player the Acrobat chooses. If that player is or becomes drunk or poisoned tonight, the Acrobat dies: mark them *DEAD*.",
+				"reason": "Says when the Dead token is used (Trevor’s review)."
+			}
+		}
 	}
 }

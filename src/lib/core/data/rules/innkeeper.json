@@ -55,5 +55,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "Remove last night’s tokens. The Innkeeper chooses 2 players: mark both *SAFE* (they can’t die tonight), and mark one of them *DRUNK* until dusk.",
+				"reason": "Says which token goes where and that last night’s come off."
+			}
+		}
 	}
 }

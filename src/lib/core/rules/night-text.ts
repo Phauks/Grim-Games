@@ -12,16 +12,13 @@
  * draws every one as a badge.
  *
  * `nightTextFor` picks the text to show for a night: Trevor's reviewed edit of TPI's text
- * (`REVIEWED_NIGHT_TEXT`) when there is one, otherwise TPI's. Our fuller text
- * (`FULL_NIGHT_TEXT`) is parked behind `FULL_NIGHT_INSTRUCTIONS`, which is off.
+ * (the rules block's `nightText.<night>.reviewed`) when there is one, otherwise TPI's. Our
+ * fuller text (`nightText.<night>.full`) is parked behind `FULL_NIGHT_INSTRUCTIONS`, which is
+ * off. A homebrew character's text is its author's own, so it takes no override.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
-import {
-	FULL_NIGHT_TEXT,
-	REVIEWED_NIGHT_TEXT,
-	type NightTextOverride
-} from './night-text-overrides.data.ts';
+import type { NightTextOverride } from '#lib/core/data/night-text-rules.ts';
 import type {
 	PlaceholderAction,
 	ReminderPlaceholder,
@@ -29,14 +26,12 @@ import type {
 } from '#lib/core/data/reminder-placeholder-rules.ts';
 import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
 
-export { FULL_NIGHT_TEXT, REVIEWED_NIGHT_TEXT };
-
 /** A character's night: `<characterId>:<first|other>`. */
 export type PlaceholderKey = `${CharacterId}:${'first' | 'other'}`;
 
 /**
  * Parked (Trevor, 2026-10-15: "lets step back from adding our own information"): when
- * true, `FULL_NIGHT_TEXT` replaces TPI's text. A code-level flag, so Settings gains no
+ * true, our fuller text (`nightText.<night>.full`) replaces TPI's text. A code-level flag, so Settings gains no
  * switch for hidden content.
  */
 export const FULL_NIGHT_INSTRUCTIONS = false;
@@ -118,8 +113,8 @@ export function nightTextOverride(
 	night: NightName,
 	full: boolean = FULL_NIGHT_INSTRUCTIONS
 ): NightTextOverride | undefined {
-	const key = placeholderKey(id, night);
-	return (full ? FULL_NIGHT_TEXT[key] : undefined) ?? REVIEWED_NIGHT_TEXT[key];
+	const ours = OFFICIAL_RULES.get(id)?.nightText?.[night];
+	return (full ? ours?.full : undefined) ?? ours?.reviewed;
 }
 
 export interface ResolvedNightText {

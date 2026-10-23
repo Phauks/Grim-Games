@@ -65,5 +65,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "If the Po chose no one last night (*3 ATTACKS*), remove it: the Po chooses 3 players, mark each *DEAD*. Otherwise the Po may choose a player (mark them *DEAD*) or no one (mark the Po *3 ATTACKS*).",
+				"reason": "Says when the 3 Attacks token goes on and comes off."
+			}
+		}
 	}
 }

@@ -118,5 +118,19 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "Mark the Xaan *NIGHT 1*. If X is 1, also mark the Xaan *X*: tonight and tomorrow, all Outsiders are poisoned.",
+				"reason": "Says which night token goes on and what X does."
+			}
+		},
+		"other": {
+			"full": {
+				"text": "Change the Xaan’s night token to tonight (*NIGHT 2*, *NIGHT 3*). If tonight is night X, mark the Xaan *X*: tonight and tomorrow, all Outsiders are poisoned.",
+				"reason": "Says which night token goes on and what X does."
+			}
+		}
 	}
 }

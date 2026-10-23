@@ -65,5 +65,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Fearmonger chooses a player: move *FEAR* to them. If it moved to a different player, announce that the Fearmonger has chosen a player.",
+				"reason": "Says the Fear token moves to tonight’s choice."
+			}
+		}
 	}
 }

@@ -46,5 +46,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Assassin might choose a player. If so, they die even if protected: mark them *DEAD*, and mark the Assassin *NO ABILITY*.",
+				"reason": "Says which token goes on whom."
+			}
+		}
 	}
 }

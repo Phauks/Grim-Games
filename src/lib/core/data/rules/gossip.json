@@ -51,5 +51,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "If the Gossip’s public statement today was true, a player dies: mark them *DEAD*.",
+				"reason": "Says what makes the Gossip kill."
+			}
+		}
 	}
 }

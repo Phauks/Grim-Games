@@ -79,5 +79,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Harpy chooses 2 players: move *MAD* to the 1st and *2ND* to the 2nd. Put the Harpy to sleep, wake the 1st target, show the *THIS CHARACTER SELECTED YOU* token and the Harpy token, then point to the 2nd target.",
+				"reason": "Says which token goes on which target and that last night’s come off."
+			}
+		}
 	}
 }

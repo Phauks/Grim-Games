@@ -57,5 +57,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Thief chooses a player: move *NEGATIVE VOTE* to them.",
+				"reason": "Says last night’s Negative Vote token comes off."
+			}
+		}
 	}
 }

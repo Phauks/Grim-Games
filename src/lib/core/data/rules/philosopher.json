@@ -56,5 +56,19 @@
 				"either": true
 			}
 		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Philosopher might choose a good character. If that character is in play, its player is drunk: mark them *DRUNK*. If not, swap the Philosopher’s token for that character and mark them *IS THE PHILOSOPHER*.",
+				"reason": "Says which of the two tokens applies."
+			}
+		},
+		"other": {
+			"full": {
+				"text": "The Philosopher might choose a good character. If that character is in play, its player is drunk: mark them *DRUNK*. If not, swap the Philosopher’s token for that character and mark them *IS THE PHILOSOPHER*.",
+				"reason": "Says which of the two tokens applies."
+			}
+		}
 	}
 }

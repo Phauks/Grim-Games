@@ -60,5 +60,13 @@
 	"reminderMovement": {
 		"fixed": ["Mad", "Has Ability"],
 		"why": "The Townsfolk shown is chosen once at the start."
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "Show the Townsfolk character token marked *MAD*. If the Pixie later gains that ability (*HAS ABILITY*), wake them when that character would wake.",
+				"reason": "Says when the Has Ability token goes on and that the Pixie then wakes as that character."
+			}
+		}
 	}
 }

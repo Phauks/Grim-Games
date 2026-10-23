@@ -18,8 +18,6 @@ import { committedCharacter, committedGameData } from '#lib/core/testing/committ
 import { characterNames } from './character-names.ts';
 import {
 	FULL_NIGHT_INSTRUCTIONS,
-	FULL_NIGHT_TEXT,
-	REVIEWED_NIGHT_TEXT,
 	SHOW_DIFFERS_FROM_SOURCE,
 	nightTextFor,
 	nightTextPlain,
@@ -35,6 +33,19 @@ import { Issues } from '#lib/core/data/validate.ts';
 const data = committedGameData();
 const names = characterNames(data.characters);
 const name = (id: string) => data.byId.get(id)?.name ?? id;
+/** Our night text for official characters, keyed `<characterId>:<first|other>`, by kind. */
+const nightTexts = (kind: 'reviewed' | 'full') =>
+	Object.fromEntries(
+		[...OFFICIAL_RULES].flatMap(([id, rules]) =>
+			(['first', 'other'] as const).flatMap((night) => {
+				const o = rules.nightText?.[night]?.[kind];
+				return o ? [[`${id}:${night}`, o]] : [];
+			})
+		)
+	);
+const REVIEWED_NIGHT_TEXT = nightTexts('reviewed');
+const FULL_NIGHT_TEXT = nightTexts('full');
+
 /** Each official `:reminder:` mapping, keyed `<characterId>:<first|other>`. */
 const REMINDER_PLACEHOLDERS: Record<string, readonly unknown[]> = Object.fromEntries(
 	[...OFFICIAL_RULES].flatMap(([id, rules]) =>
@@ -318,6 +329,27 @@ describe('night text of ours', () => {
 		expect(
 			nightTextFor(hexer, 'other', { text: 'Mine. :reminder:' })?.placeholders
 		).toBeUndefined();
+	});
+
+	it('reports a malformed nightText rule', () => {
+		const issues = new Issues();
+		parseCharacterRules(
+			{
+				nightText: {
+					dusk: {},
+					first: { reviewed: { text: 'Wake them.' }, draft: { text: 'x', reason: 'y' } },
+					other: { full: { text: 'Do it. :reminder:', reason: 'Names the token.' } }
+				}
+			},
+			'rules',
+			issues
+		);
+		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
+			'rules.nightText.dusk',
+			'rules.nightText.first.draft',
+			'rules.nightText.first.reviewed.reason',
+			'rules.nightText.other.full.text'
+		]);
 	});
 
 	it('reports a malformed reminderPlaceholders rule', () => {

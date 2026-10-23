@@ -59,5 +59,13 @@
 				]
 			}
 		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Pukka chooses a player: mark them *POISONED*. The player poisoned last night dies: mark them *DEAD* and remove their *POISONED*.",
+				"reason": "Says the new target is poisoned and last night’s target dies, then is healthy."
+			}
+		}
 	}
 }

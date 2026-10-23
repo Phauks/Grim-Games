@@ -101,29 +101,29 @@ character's script entry. Both are read by `parseCharacterRules`
 a moved table goes in the character's file, never in a TypeScript table. Rules code names no
 character: a rule becomes a behaviour with parameters that any character can use.
 
-| Table                                                                                               | Rules key                             | State         |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------- |
-| Reminder prompts (`rules/reminder-prompts.ts`)                                                      | `reminderPrompts`                     | moved         |
-| Reminder targets (`reminder-targets.ts`)                                                            | `reminderTargets`                     | moved         |
-| Day reminders (`day-reminders.ts`: also registration interactions such as the Spy and the Virgin)   | `dayReminders`                        | moved         |
-| Setup reminders and preparation notes (`setup-reminders.ts`)                                        | `setupPrep`                           | moved         |
-| Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest)                      | `setupModifier`                       | moved         |
-| Death causes (`death-causes.ts`: who can cause a death and whom)                                    | `deathCause`                          | moved         |
-| Reminder movement (`reminder-movement.ts`: tokens that stay put, and characters that relocate them) | `reminderMovement`                    | moved         |
-| Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means)             | `reminderPlaceholders`                | moved         |
-| Night text overrides (`night-text-overrides.data.ts`)                                               |                                       | not yet moved |
-| On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                    | `onDeath`                             | moved         |
-| Protection (`ability.ts`, `night-alerts.ts`)                                                        | `protects`                            | moved         |
-| Impairments (`ability.ts`: the Drunk, Witch, Minstrel and Preacher)                                 | `impairs`                             | moved         |
-| Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw)                            | `registersAs`                         | moved         |
-| Night killers (`night-alerts.ts` `NIGHT_KILLERS`)                                                   | `kills`                               | moved         |
-| Death checks (`night-deaths.ts`: the Gambler, Acrobat, Lycanthrope and Grandmother)                 | `deathCheck`                          | moved         |
-| Kill redirect and first-death survival (`ability.ts`, `first-death.ts`)                             | `redirectsKill`, `survivesFirstDeath` | moved         |
-| Nomination abilities (`rules/nominations.ts`)                                                       | `onNominated`                         | moved         |
-| Acts when dead (`dead-characters.ts`)                                                               | `actsWhenDead`                        | moved         |
-| Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56)                | `dayClaim`                            | moved         |
-| Night information and answers (`night-info.ts`)                                                     | `learns`, `answers`                   | moved         |
-| Game end (`game-end.ts`, `end-reason.ts`)                                                           | `gameEnd`                             | moved         |
+| Table                                                                                               | Rules key                             | State |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------- | ----- |
+| Reminder prompts (`rules/reminder-prompts.ts`)                                                      | `reminderPrompts`                     | moved |
+| Reminder targets (`reminder-targets.ts`)                                                            | `reminderTargets`                     | moved |
+| Day reminders (`day-reminders.ts`: also registration interactions such as the Spy and the Virgin)   | `dayReminders`                        | moved |
+| Setup reminders and preparation notes (`setup-reminders.ts`)                                        | `setupPrep`                           | moved |
+| Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest)                      | `setupModifier`                       | moved |
+| Death causes (`death-causes.ts`: who can cause a death and whom)                                    | `deathCause`                          | moved |
+| Reminder movement (`reminder-movement.ts`: tokens that stay put, and characters that relocate them) | `reminderMovement`                    | moved |
+| Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means)             | `reminderPlaceholders`                | moved |
+| Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text)          | `nightText`                           | moved |
+| On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                    | `onDeath`                             | moved |
+| Protection (`ability.ts`, `night-alerts.ts`)                                                        | `protects`                            | moved |
+| Impairments (`ability.ts`: the Drunk, Witch, Minstrel and Preacher)                                 | `impairs`                             | moved |
+| Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw)                            | `registersAs`                         | moved |
+| Night killers (`night-alerts.ts` `NIGHT_KILLERS`)                                                   | `kills`                               | moved |
+| Death checks (`night-deaths.ts`: the Gambler, Acrobat, Lycanthrope and Grandmother)                 | `deathCheck`                          | moved |
+| Kill redirect and first-death survival (`ability.ts`, `first-death.ts`)                             | `redirectsKill`, `survivesFirstDeath` | moved |
+| Nomination abilities (`rules/nominations.ts`)                                                       | `onNominated`                         | moved |
+| Acts when dead (`dead-characters.ts`)                                                               | `actsWhenDead`                        | moved |
+| Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56)                | `dayClaim`                            | moved |
+| Night information and answers (`night-info.ts`)                                                     | `learns`, `answers`                   | moved |
+| Game end (`game-end.ts`, `end-reason.ts`)                                                           | `gameEnd`                             | moved |
 
 ## Lists that only shrink
 
