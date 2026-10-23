@@ -1561,18 +1561,24 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			{@const town = publicProjection(game, publicTravellerTest(game.gameId, characters)).seats}
+			{@const town = publicProjection(game, publicTravellerTest(game.gameId, characters), layout)}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
 			<PlayerScriptTabs
 				script={loadedScript}
 				players={game.seating.length}
 				inPlay={charactersInPlay(game)}
-				travellers={travellersInPlay(town)}
+				travellers={travellersInPlay(town.seats)}
 			>
 				{#snippet grim()}<PlayerGrim
 						script={loadedScript!}
-						town={{ seats: town, guessKey: `storyteller:${game.gameId}` }}
+						town={{
+							seats: town.seats,
+							layout: town.layout,
+							storytellerName: town.storytellerName,
+							gameId: game.gameId,
+							guessKey: `storyteller:${game.gameId}`
+						}}
 					/>{/snippet}
 				{#snippet notes()}<PlayerNotes notesKey={scriptKey(loadedScript!)} />{/snippet}
 			</PlayerScriptTabs>

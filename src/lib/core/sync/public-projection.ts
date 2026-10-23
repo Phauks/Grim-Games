@@ -56,12 +56,38 @@ export interface PublicDay {
 	executions: SeatId[];
 }
 
+/**
+ * Where the Storyteller's board draws the seats (plan J13): its ring's shape, the gaps, and
+ * the seats placed by hand, by seat id, as percentages of the board. Where people sit is
+ * plain to the whole table, so phones draw the town the same way. Phones parse it before
+ * use (parseSeatLayout), as they would a saved layout.
+ */
+export interface PublicSeatLayout {
+	shape: string;
+	gaps: Readonly<Record<string, number>>;
+	placed: Readonly<Record<string, { x: number; y: number }>>;
+}
+
 export interface PublicGameState {
 	/** The Storyteller's name, when the game has one: the table already knows who runs it. */
 	storytellerName?: string;
 	/** In clockwise seating order. */
 	seats: PublicSeat[];
 	today: PublicDay;
+	/** Left out while the board draws its seats on the plain ring. */
+	layout?: PublicSeatLayout;
+}
+
+/** The layout's three parts only, or nothing when it is the plain oval ring. */
+function boardLayout(layout: PublicSeatLayout): PublicSeatLayout | undefined {
+	const { shape, gaps, placed } = layout;
+	if (shape === 'oval' && Object.keys(gaps).length === 0 && Object.keys(placed).length === 0)
+		return undefined;
+	return {
+		shape,
+		gaps: { ...gaps },
+		placed: Object.fromEntries(Object.entries(placed).map(([id, p]) => [id, { x: p.x, y: p.y }]))
+	};
 }
 
 function appearsDead(seat: Seat): boolean {
@@ -78,13 +104,17 @@ function appearsDead(seat: Seat): boolean {
 /**
  * @param publicTraveller Whether a character is a Traveller the town knows about: the
  *   caller knows the character types and the game's mode. Left out, no character is shown.
+ * @param layout Where the board draws the seats, kept on the Storyteller's device.
  */
 export function publicProjection(
 	game: Game,
-	publicTraveller?: (characterId: CharacterId) => boolean
+	publicTraveller?: (characterId: CharacterId) => boolean,
+	layout?: PublicSeatLayout
 ): PublicGameState {
+	const drawn = layout && boardLayout(layout);
 	return {
 		...(game.storytellerName ? { storytellerName: game.storytellerName } : {}),
+		...(drawn ? { layout: drawn } : {}),
 		seats: seatsInOrder(game).map((seat, i) => {
 			const view: PublicSeat = {
 				seatId: seat.seatId,

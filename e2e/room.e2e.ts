@@ -1033,6 +1033,10 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	const seats = phone.getByTestId('grim-seat');
 	await expect(seats).toHaveCount(8);
 	await expect(seats.first()).toHaveAttribute('aria-label', 'Seat 1: Seat 1');
+	// Drawn as the board is (plan J13): the script's name in the corner, with no join code.
+	const corner = phone.getByTestId('player-grim').getByTestId('script-title');
+	await expect(corner).toContainText('Trouble Brewing');
+	await expect(corner.getByTestId('board-room-code')).toHaveCount(0);
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();

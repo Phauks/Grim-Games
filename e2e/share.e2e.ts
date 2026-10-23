@@ -73,3 +73,41 @@ test("Game info's Share opens the share screen with the script's source", async 
 	);
 	await expect(share.getByRole('img', { name: 'QR code for the script’s source' })).toBeVisible();
 });
+
+test("the players' Grim is drawn as the board: its seats where the board has them, and its corner", async ({
+	page
+}) => {
+	// Trevor (2026-10-23): the player's grim should look exactly like the Storyteller's board.
+	await startGame(page);
+	const seat = page.getByRole('button', { name: /^Seat 1:/ });
+	const board = (await page.locator('.board').boundingBox())!;
+	const from = (await seat.boundingBox())!;
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Arrange seats' })
+		.tap();
+	// Seat 1 goes to the middle, a third of the way down, clear of the centre's buttons.
+	const to = { x: board.x + board.width / 2, y: board.y + board.height * 0.3 };
+	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(to.x, (from.y + to.y) / 2, { steps: 4 });
+	await page.mouse.move(to.x, to.y, { steps: 4 });
+	await page.mouse.up();
+	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+
+	const sheet = await openScript(page);
+	await sheet.getByRole('tab', { name: 'Grim' }).tap();
+	const town = sheet.getByTestId('player-grim');
+	await expect(town.getByTestId('grim-seat')).toHaveCount(8);
+	const box = (await town.boundingBox())!;
+	const placed = (await town.getByTestId('grim-seat').first().boundingBox())!;
+	expect(Math.abs(placed.x + placed.width / 2 - (box.x + box.width / 2))).toBeLessThan(
+		box.width * 0.05
+	);
+	expect(placed.y + placed.height / 2 - box.y).toBeLessThan(box.height * 0.45);
+	// The board's corner, with the script's name, and its vignette under the seats.
+	await expect(town.getByTestId('script-title')).toContainText('Trouble Brewing');
+	await expect(town.getByTestId('board-room-code')).toHaveCount(0);
+	await expect(town.getByTestId('preview-vignette')).toBeAttached();
+});

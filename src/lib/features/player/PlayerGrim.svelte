@@ -13,14 +13,27 @@
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import BoardBackdrop from '#lib/features/grimoire/BoardBackdrop.svelte';
+	import BoardCorner from '#lib/features/grimoire/BoardCorner.svelte';
+	import {
+		backgroundFor,
+		readBackground,
+		type BackgroundChoice
+	} from '#lib/features/grimoire/backgrounds.ts';
+	import { cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
+	import { cornerRoom } from '#lib/features/grimoire/corner-room.ts';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import { scriptLogo } from '#lib/core/data/script-logo.ts';
+	import type { PublicSeatLayout } from '#lib/core/sync/public-projection.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import {
 		DEFAULT_SEAT_LAYOUT,
 		keepInside,
+		parseSeatLayout,
 		seatPoints,
-		seatTokenSize,
-		withShape
+		seatTokenSize
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { readGuesses, withGuess, writeGuesses, type Guesses } from './grim-guesses.ts';
 
@@ -29,7 +42,8 @@
 	 * the live room this phone joined. Who is alive or dead, who has spent their ghost vote,
 	 * and the Travellers the town was told about; nothing else, so it never says more than the
 	 * table does. A tap puts the player's own guess of a seat's character on it, kept on this
-	 * phone only.
+	 * phone only. Drawn as the Storyteller's board is (plan J13): its background and vignette,
+	 * the seats where the board has them, the script's logo and the corner's lines.
 	 */
 	interface Props {
 		script: LoadedScript;
@@ -37,7 +51,14 @@
 		 * The town as the table knows it, given by the Storyteller's board (Trevor, 2026-10-23:
 		 * the board's Script shows every screen a player has); a phone reads its room instead.
 		 */
-		town?: { seats: readonly PublicSeat[]; guessKey: string };
+		town?: {
+			seats: readonly PublicSeat[];
+			layout?: PublicSeatLayout;
+			storytellerName?: string;
+			/** The board's own game, whose background this town shows. */
+			gameId: string;
+			guessKey: string;
+		};
 	}
 
 	let { script, town }: Props = $props();
@@ -50,27 +71,71 @@
 		if (player) releaseRoom(player);
 	});
 
-	const seats = $derived(town?.seats ?? player?.view?.public?.seats ?? []);
+	const table = $derived(town ?? player?.view?.public);
+	const seats = $derived(table?.seats ?? []);
 	const mine = $derived(player?.view?.me.seatId);
 	let guesses = $state<Guesses>(code ? readGuesses(code) : {});
 
-	const layout = withShape(DEFAULT_SEAT_LAYOUT, 'circle');
+	const nameOf = (seat: PublicSeat) =>
+		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
+
+	// The board's own layout, read like a saved one, so a bad one never stops the drawing.
+	const layout = $derived(table?.layout ? parseSeatLayout(table.layout) : DEFAULT_SEAT_LAYOUT);
 	let width = $state(0);
 	let height = $state(0);
+	const board = $derived({ width, height });
 	const ids = $derived(seats.map((s) => s.seatId as string));
-	const size = $derived(seatTokenSize(ids, layout, { width, height }));
-	const points = $derived(
-		keepInside(seatPoints(ids, layout, { width, height }), { width, height }, size / 2)
+	const size = $derived(
+		seatTokenSize(ids, layout, board, preferences.current.tokenAppearance.tokenScale)
 	);
+	// As on the board: each seat keeps one --u (16px) clear of the edge.
+	const unit = 16;
+	const points = $derived(keepInside(seatPoints(ids, layout, board), board, size / 2 + unit));
+
+	// The corner's script name keeps clear of every seat and name, as on the board.
+	let rootFont = $state(16);
+	$effect(() => {
+		void preferences.current;
+		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+	});
+	const cornerBoxes = $derived(
+		cornerObstacles(
+			points,
+			nameBoxes({ names: seats.map(nameOf), seats: points, size, unit, rootFont, board }),
+			size,
+			boardLooks.current.nameOffset,
+			board
+		)
+	);
+	const fitCorner = (h: number) => cornerRoom(cornerBoxes, board, h + 4, 4 + 8);
+
+	// This device's background for the board: the game's own on the Storyteller's, else the
+	// one for every game. The script's own image is only a web link (backgrounds.ts).
+	let background = $state<BackgroundChoice>({ kind: 'none' });
+	$effect(() => {
+		const gameId = town?.gameId;
+		(gameId ? backgroundFor(gameId) : readBackground('default'))
+			.then((choice) => (background = choice ?? { kind: 'none' }))
+			.catch(() => (background = { kind: 'none' }));
+	});
+	let backgroundUrl = $state<string | undefined>();
+	$effect(() => {
+		if (background.kind === 'image') {
+			const url = URL.createObjectURL(background.image);
+			backgroundUrl = url;
+			return () => URL.revokeObjectURL(url);
+		}
+		const link = script.meta?.background ?? '';
+		backgroundUrl = background.kind === 'script' && /^https:\/\//.test(link) ? link : undefined;
+	});
+	const logo = $derived(scriptLogo(script));
+	let logoFailed = $state(false);
 
 	const characterOf = (id: CharacterId | undefined) =>
 		id === undefined
 			? undefined
 			: (script.characters.find((c) => c.id === id) ??
 				officialData.current?.characters.find((c) => c.id === id));
-
-	const nameOf = (seat: PublicSeat) =>
-		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
 
 	let open = $state(false);
 	let chosen = $state<PublicSeat>();
@@ -113,7 +178,28 @@
 {#if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
-	<div class="town" bind:clientWidth={width} bind:clientHeight={height} data-testid="player-grim">
+	<div
+		class="town"
+		bind:clientWidth={width}
+		bind:clientHeight={height}
+		style:--name-scale={boardLooks.current.nameSize}
+		style:--name-offset={boardLooks.current.nameOffset}
+		data-testid="player-grim"
+	>
+		<BoardBackdrop
+			contained
+			url={backgroundUrl}
+			preset={background.kind === 'preset' ? background.id : undefined}
+			vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
+		/>
+		{#if boardLooks.current.logo && logo && !logoFailed}
+			<ScriptLogo
+				src={logo}
+				class="town-logo"
+				--logo-opacity={boardLooks.current.logoOpacity}
+				onfail={() => (logoFailed = true)}
+			/>
+		{/if}
 		{#each seats as seat, i (seat.seatId)}
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
@@ -140,6 +226,7 @@
 					face={shown ? face : undefined}
 					vote={seat.ghostVote}
 					avatar={seat.avatar}
+					usedVote={boardLooks.current.usedGhostVote}
 					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
 				/>
 				{#snippet face()}
@@ -147,6 +234,15 @@
 				{/snippet}
 			</button>
 		{/each}
+		<!-- The corner's script name, author and Storyteller; nothing to open or share here. -->
+		<BoardCorner
+			meta={script.meta}
+			storytellerName={table?.storytellerName}
+			watching
+			fitRoom={fitCorner}
+			{width}
+			{rootFont}
+		/>
 	</div>
 {/if}
 
@@ -178,13 +274,27 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	/* A square town on a phone, as tall as the screen allows on a wide window. */
+	/* The board's shape (plan J13): the screen's width, and most of its height, so the seats
+	   sit as they do on the Storyteller's board, tall on a phone and wide on a tablet. */
 	.town {
 		position: relative;
+		/* The backdrop and vignette sit under the seats, inside the town (BoardBackdrop). */
+		isolation: isolate;
+		overflow: hidden;
+		border-radius: var(--radius-md);
 		width: 100%;
-		max-width: 80dvh;
-		aspect-ratio: 1;
-		margin-inline: auto;
+		height: 75dvh;
+	}
+	/* Faint behind the seats, as on the board. */
+	.town :global(.town-logo) {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 42%;
+		height: 42%;
+		translate: -50% -50%;
+		opacity: var(--logo-opacity);
+		pointer-events: none;
 	}
 	.seat {
 		position: absolute;

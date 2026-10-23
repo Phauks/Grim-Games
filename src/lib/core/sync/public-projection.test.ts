@@ -85,6 +85,20 @@ describe('publicProjection', () => {
 		});
 	});
 
+	it('carries where the board draws the seats, and nothing else of the layout (plan J13)', () => {
+		const { game, seats } = busyGame();
+		expect(
+			publicProjection(game, undefined, { shape: 'oval', gaps: {}, placed: {} })
+		).not.toHaveProperty('layout');
+		const placed = { x: 20, y: 30, note: 'secret' } as { x: number; y: number };
+		const layout = { shape: 'circle', gaps: { [seats[0]]: 1 }, placed: { [seats[1]]: placed } };
+		expect(publicProjection(game, undefined, layout).layout).toEqual({
+			shape: 'circle',
+			gaps: { [seats[0]]: 1 },
+			placed: { [seats[1]]: { x: 20, y: 30 } }
+		});
+	});
+
 	it('leaks no characters, alignments, reminders, overrides, bluffs, rule characters or bag', () => {
 		const { game } = busyGame();
 		const json = JSON.stringify(publicProjection(game));
