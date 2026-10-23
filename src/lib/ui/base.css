@@ -164,6 +164,16 @@ textarea {
 	outline-offset: 2px;
 }
 
+/* A button or link showing a token rings the round token, not its own box (Trevor, 2026-10-23). */
+:is(button, a, [role='button']):focus-visible:has([data-token-face]) {
+	outline: none;
+}
+:is(button, a, [role='button']):focus-visible [data-token-face] {
+	border-radius: 50%;
+	outline: 3px solid var(--focus);
+	outline-offset: 2px;
+}
+
 /* Text fields draw their ring inside their own border, following its rounded corners, so a
    sheet or dialog that scrolls can never clip it into stray bars (Trevor, 2026-10-16). */
 input:not([type='checkbox'], [type='radio'], [type='range']):focus-visible,
