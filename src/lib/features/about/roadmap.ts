@@ -65,6 +65,17 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			},
 			{ id: 'J5', title: 'The Storyteller can set a time limit on the script vote' },
 			{ id: 'J6', title: "The script vote finds scripts with New game's own script controls" },
+			{
+				id: 'J7',
+				title: "The script vote in two columns, with the room's code shown before it opens"
+			},
+			{ id: 'J8', title: 'Join game has one title and one Share, and a camera icon to scan' },
+			{ id: 'J10', title: "The script's logo beside its name on the player's screen" },
+			{ id: 'J11', title: 'Joining a game opens the script once you have asked for a seat' },
+			{ id: 'J12', title: "The player's Room tab folds into the script view" },
+			{ id: 'J13', title: "The player's grim looks exactly like the Storyteller's board" },
+			{ id: 'J14', title: "Resume game points players to Join game's list of their games" },
+			{ id: 'J15', title: 'Trackpad scrolling over the guess sheet on a laptop' },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
 		]
 	},
