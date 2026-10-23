@@ -22,7 +22,6 @@ export const LARGE_FILE_TODO = [
 	'src/lib/core/engine/decide.ts',
 	'src/lib/core/modes/format-guide.ts',
 	'src/lib/core/rules/night-info.ts',
-	'src/lib/features/day/DayPanel.svelte',
 	'src/lib/features/grimoire/GrimoireBoard.svelte',
 	'src/lib/features/grimoire/ReminderBank.svelte',
 	'src/lib/features/grimoire/SeatSheet.svelte',
