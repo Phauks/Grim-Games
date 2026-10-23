@@ -1486,6 +1486,7 @@
 					label={reminderWords(last)}
 					infinite={isGeneric(last)}
 					symbol={last.symbol}
+					symbolColour={last.symbolColour}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1759,6 +1760,7 @@
 							label={reminderWords(reminder)}
 							infinite={isGeneric(reminder)}
 							symbol={reminder.symbol}
+							symbolColour={reminder.symbolColour}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
@@ -1797,6 +1799,7 @@
 					label={reminderWords(reminder)}
 					infinite={isGeneric(reminder)}
 					symbol={reminder.symbol}
+					symbolColour={reminder.symbolColour}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
@@ -1819,6 +1822,7 @@
 					label={reminderWords(heldDrag)}
 					infinite={isGeneric(heldDrag)}
 					symbol={heldDrag.symbol}
+					symbolColour={heldDrag.symbolColour}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled

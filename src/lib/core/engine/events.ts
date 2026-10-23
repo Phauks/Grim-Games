@@ -20,6 +20,7 @@ import type {
 	ReminderInstance,
 	SeatId,
 	SeatOverride,
+	SymbolColour,
 	Tile,
 	TileId
 } from '#lib/core/model/index.ts';
@@ -55,6 +56,7 @@ export type GameEvent =
 	| { type: 'ReminderLoosened'; reminderId: ReminderId }
 	| { type: 'ReminderNoteSet'; reminderId: ReminderId; note?: string }
 	| { type: 'ReminderSymbolSet'; reminderId: ReminderId; symbol?: string }
+	| { type: 'ReminderSymbolColourSet'; reminderId: ReminderId; colour?: SymbolColour }
 	| { type: 'StorytellerNameSet'; name?: string }
 	| { type: 'SeatsSwapped'; seatA: SeatId; seatB: SeatId }
 	/** The whole seating order, the same seats in a new order (RotateSeats, MoveSeat). */
