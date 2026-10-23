@@ -36,7 +36,8 @@ export const KINDS: Partial<Record<(typeof RULE_PARTS)[number] | ModePart, reado
 	deaths: ['private'],
 	nightSteps: ['wake'],
 	abilities: ['dead-keep'],
-	demonAttacks: ['script-order']
+	demonAttacks: ['script-order'],
+	nominations: ['evil-swap', 'nominator-may-die']
 };
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -215,6 +216,12 @@ function checkFile(
 						if (!(CAMPAIGN_ENDS as readonly unknown[]).includes(e))
 							add(`${at}.endConditions[${n}]`, `unknown end condition ${String(e)}`);
 					});
+				if (
+					key === 'nominations' &&
+					item.minAlive !== undefined &&
+					(!Number.isInteger(item.minAlive) || (item.minAlive as number) < 1)
+				)
+					add(`${at}.minAlive`, 'must be a whole number of at least 1');
 				if (key === 'assignment' && item.kind === 'draft') {
 					const offers = item.offers;
 					if (

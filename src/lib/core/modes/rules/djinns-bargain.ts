@@ -6,8 +6,10 @@ const PAGE = 'https://beardytas.com/garden-of-djinn/the-djinns-bargain/';
  * The Djinn's Bargain's rule (Script World Cup 2025, carried there as a homebrew Fabled): a
  * player may die as they nominate, and their nominee's ability then works twice until dusk the
  * next day. The page adds that no one may do so while only 3 players live, and that the
- * Storyteller never prompts it. The 3-player limit is a switch on New game (rule-switches.ts,
- * Trevor 2026-10-23), off by default as the rule text leaves it out. The Storyteller runs it. The page names no author. Source: PAGE.
+ * Storyteller never asks the player; the board's prompt asks the Storyteller, once the player
+ * has said so. The 3-player limit is a switch on New game (rule-switches.ts, Trevor
+ * 2026-10-23), off by default as the rule text leaves it out. The page names no author.
+ * Source: PAGE.
  */
 export const DJINNS_BARGAIN: SpecialRule = {
 	kind: 'special-rule',
@@ -24,6 +26,8 @@ export const DJINNS_BARGAIN: SpecialRule = {
 			'Nominators may choose to die after making a nomination.',
 			'If they do, their nominee’s ability works twice until dusk tomorrow.'
 		],
+		// The board asks whether the nominator chose to die when a nomination is recorded.
+		nominations: [{ kind: 'nominator-may-die' }],
 		ruleChanges: [
 			{
 				instructions:

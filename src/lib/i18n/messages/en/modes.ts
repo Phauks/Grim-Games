@@ -234,6 +234,7 @@ export const modes = {
 	'modes.part.nightSteps': 'Night steps',
 	'modes.part.abilities': 'Abilities',
 	'modes.part.demonAttacks': 'Demon attacks',
+	'modes.part.nominations': 'Nominations',
 	'modes.field.kind': 'Kind',
 	'modes.field.cite': 'Source',
 	'modes.field.instructions': 'Storyteller instructions',
