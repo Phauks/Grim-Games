@@ -33,8 +33,6 @@
 		grim?: Snippet;
 		/** The player's own Notes tab (/play only). */
 		notes?: Snippet;
-		/** The live room this phone is in, or joining one (/play only). */
-		room?: Snippet;
 		tab?: string;
 	}
 
@@ -45,7 +43,6 @@
 		travellers,
 		grim,
 		notes,
-		room,
 		tab = $bindable('script')
 	}: Props = $props();
 
@@ -66,8 +63,7 @@
 		{ value: 'script', label: t('player.tab.script') },
 		{ value: 'night', label: t('player.tab.night') },
 		...(grim ? [{ value: 'grim', label: t('player.tab.grim') }] : []),
-		...(notes ? [{ value: 'notes', label: t('player.tab.notes') }] : []),
-		...(room ? [{ value: 'room', label: t('player.tab.room') }] : [])
+		...(notes ? [{ value: 'notes', label: t('player.tab.notes') }] : [])
 	]);
 </script>
 
@@ -95,8 +91,6 @@
 					{@render grim()}
 				{:else if value === 'notes' && notes}
 					{@render notes()}
-				{:else if value === 'room' && room}
-					{@render room()}
 				{/if}
 			</ErrorBoundary>
 		</div>
