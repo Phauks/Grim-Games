@@ -1646,7 +1646,15 @@
 	</div>
 </Dialog>
 
-<ModeMenu {game} bind:open={modeMenuOpen} onEdit={watching ? undefined : editGameInfo} />
+<ModeMenu
+	{game}
+	bind:open={modeMenuOpen}
+	onEdit={watching ? undefined : editGameInfo}
+	{startedAt}
+	endedAt={ended?.endedAt}
+	{watcherCount}
+	onShare={watching ? undefined : () => (phonesOpen = true)}
+/>
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 <HeldReminderDialog
 	bind:this={heldDialog}
