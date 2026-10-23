@@ -50,6 +50,7 @@ export const player = {
 	'player.delete': 'Delete',
 
 	'player.density': 'Script sheet layout',
+	'player.lightSheet': 'Light background',
 	'player.frame': 'Your frame',
 	'player.avatar': 'Your avatar',
 	'player.avatar.none': 'Seat number',

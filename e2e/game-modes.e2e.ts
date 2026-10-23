@@ -1532,3 +1532,38 @@ test('New game previews the script as it will play, beside the settings', async 
 	await expect(preview.getByRole('heading', { name: 'Town 2 script' })).toBeVisible();
 	await noSidewaysScroll(page);
 });
+
+test('the script preview turns light from its own switch, and Settings > Player shows the same switch', async ({
+	page
+}) => {
+	await page.goto('/new');
+	const copy = page.getByTestId('script-preview').getByTestId('script-copy');
+	await copy.getByText('Chef').first().waitFor();
+	const light = copy.getByRole('checkbox', { name: 'Light background' });
+	await expect(light).not.toBeChecked();
+	const size = async () => {
+		const box = await copy.boundingBox();
+		return box && { width: box.width, height: box.height };
+	};
+	const before = await size();
+	await copy.getByText('Light background').tap();
+	await expect(light).toBeChecked();
+	await expect(copy).toHaveCSS('background-color', 'rgb(251, 248, 241)');
+	// Nothing moves when it turns light (no layout reflow).
+	expect(await size()).toEqual(before);
+
+	// Remembered on this device, and the same setting in Settings > Player.
+	await page.reload();
+	await expect(light).toBeChecked();
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Player' })
+		.tap();
+	const setting = dialog.getByRole('checkbox', { name: 'Light background' });
+	await expect(setting).toBeChecked();
+	await dialog.getByText('Light background', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(light).not.toBeChecked();
+});

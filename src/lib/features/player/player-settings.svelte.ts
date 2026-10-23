@@ -32,6 +32,11 @@ export interface PlayerSettings {
 	 * player's avatar (plan R6, Trevor 2026-10-22: "avatar is default", one on/off toggle).
 	 */
 	guessesOnTokens: boolean;
+	/**
+	 * The script sheet reads dark on light, wherever it shows (Trevor, 2026-10-23: the
+	 * preview is hard to read on the dark theme).
+	 */
+	lightSheet: boolean;
 }
 
 /** `auto` fits each side to one page, as before; the others fix that choice. */
@@ -91,7 +96,8 @@ const DEFAULTS: PlayerSettings = {
 	hideNoteContents: false,
 	density: 'normal',
 	print: PRINT_DEFAULTS,
-	guessesOnTokens: false
+	guessesOnTokens: false,
+	lightSheet: false
 };
 
 function read(): PlayerSettings {
@@ -103,7 +109,8 @@ function read(): PlayerSettings {
 			print: readPrint(raw.print),
 			frame: parseFrameId(raw.frame),
 			avatar: parseAvatarId(raw.avatar),
-			guessesOnTokens: raw.guessesOnTokens === true
+			guessesOnTokens: raw.guessesOnTokens === true,
+			lightSheet: raw.lightSheet === true
 		};
 	} catch {
 		return DEFAULTS;
