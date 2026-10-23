@@ -158,6 +158,12 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'S1', title: 'Install app button at the bottom of Settings', prs: [320] },
 			{ id: 'S3', title: 'Player name options in Tokens settings', prs: [332] },
 			{
+				id: 'S7',
+				title: 'Reports: no Admins list or Only mine; admins set in Cloudflare',
+				prs: [351]
+			},
+			{ id: 'S10', title: 'A report sent from a script carries that script' },
+			{
 				id: 'S11',
 				title: 'Buttons stand out from what is behind them; End game is a red button'
 			},

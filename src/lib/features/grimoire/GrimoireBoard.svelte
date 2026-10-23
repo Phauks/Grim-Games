@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { EndReason, Night, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
@@ -1292,6 +1293,8 @@
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
+	// A report sent from the board carries the game's script, never the game (Trevor, 2026-10-22).
+	offerScriptToReports(() => loadedScript);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
