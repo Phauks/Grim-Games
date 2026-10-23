@@ -344,14 +344,18 @@ export class RoomHost {
 		this.#socket?.send({ type: 'choosing', on });
 	}
 
-	/** Opens a vote on the next script, replacing any open one. False when offline. */
-	openScriptVote(kind: ScriptVoteKind, options: ScriptVoteOption[]): boolean {
+	/**
+	 * Opens a vote on the next script, replacing any open one, with a time limit in minutes
+	 * if given. False when offline.
+	 */
+	openScriptVote(kind: ScriptVoteKind, options: ScriptVoteOption[], minutes?: number): boolean {
 		return (
 			this.#socket?.send({
 				type: 'open-script-vote',
 				voteId: crypto.randomUUID(),
 				kind,
-				options
+				options,
+				...(minutes !== undefined ? { minutes } : {})
 			}) ?? false
 		);
 	}

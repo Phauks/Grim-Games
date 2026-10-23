@@ -4,6 +4,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import VoteChoice from './VoteChoice.svelte';
+	import VoteTimeLeft from './VoteTimeLeft.svelte';
 
 	/**
 	 * A phone's ballot in the room's vote on the next script (Trevor, 2026-10-20, plan R1). It
@@ -33,7 +34,9 @@
 	/** A ranking being made, from the first tap or Start again until it is sent and after. */
 	let ranking = $state<string[]>();
 	const chosen = $derived(ranking ?? vote?.choices ?? []);
-	const offline = $derived(player.status !== 'open');
+	let ended = $state(false);
+	/** No taps while offline or once the Storyteller's time limit is up. */
+	const offline = $derived(player.status !== 'open' || ended);
 
 	function tap(id: string) {
 		if (!vote) return;
@@ -60,6 +63,7 @@
 
 <Dialog bind:open title={t('room.scriptVote.title')}>
 	<p class="lead">{lead}</p>
+	<VoteTimeLeft endsAt={vote?.endsAt} onEnded={(e) => (ended = e)} />
 	<ul class="vote" data-testid="script-ballot">
 		{#each vote?.options ?? [] as option (option.id)}
 			{@const place = chosen.indexOf(option.id)}
