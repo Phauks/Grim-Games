@@ -4,13 +4,19 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { formatRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '#lib/core/sync/room-code.ts';
+	import {
+		formatRoomCode,
+		normaliseRoomCode,
+		ROOM_CODE_LENGTH,
+		scannedRoom
+	} from '#lib/core/sync/room-code.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
 	import ScriptBallot from './ScriptBallot.svelte';
@@ -231,6 +237,29 @@
 		});
 	}
 
+	/*
+	 * Scan a code (plan J2, 2026-10-22): the Share screen's QR code read in the app, as the
+	 * players link or the Grim view link it holds, or a room code on its own.
+	 */
+	let scanning = $state(false);
+	let scanProblem = $state('');
+	$effect(() => {
+		if (!scanning) scanProblem = '';
+	});
+	function scanned(text: string): boolean {
+		const room = scannedRoom(text);
+		if (!room) {
+			scanProblem = t('room.scanNotRoom');
+			return false;
+		}
+		scanning = false;
+		if (room.kind === 'join') openRoom(room.code);
+		// The key stays in the hash, which never reaches the server; the path is resolved.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		else void goto(`${resolve('/watch/[code]', { code: room.code })}#${room.key}`);
+		return true;
+	}
+
 	function ask(event: SubmitEvent) {
 		event.preventDefault();
 		const n = name.trim();
@@ -295,8 +324,12 @@
 			<Button disabled={!found?.grimView} onclick={() => (grimViewOpen = true)}
 				>{t('room.grimView')}</Button
 			>
+			<Button onclick={() => (scanning = true)}>{t('share.scan')}</Button>
 		</div>
 	</form>
+	<Dialog bind:open={scanning} title={t('share.scan')}>
+		{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} />{/if}
+	</Dialog>
 	<Dialog bind:open={grimViewOpen} title={t('room.grimView')}>
 		<form class="grim-view" onsubmit={grimView}>
 			<TextField
