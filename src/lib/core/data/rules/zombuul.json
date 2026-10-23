@@ -2,5 +2,8 @@
 	"reminderPrompts": {
 		"Died Today": "markDead"
 	},
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"kills": {
+		"by": "demon"
+	}
 }

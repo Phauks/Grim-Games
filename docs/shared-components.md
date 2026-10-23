@@ -104,7 +104,8 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Night text overrides (`night-text-overrides.data.ts`)                                             |                                       | not yet moved |
 | On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                  | `onDeath`                             | moved         |
 | Protection (`ability.ts`, `night-alerts.ts`)                                                      | `protects`                            | moved         |
-| Night killers (`night-alerts.ts`, `night-deaths.ts`)                                              |                                       | not yet moved |
+| Night killers (`night-alerts.ts` `NIGHT_KILLERS`)                                                 | `kills`                               | moved         |
+| Death checks (`night-deaths.ts`, the Gambler and Acrobat)                                         |                                       | not yet moved |
 | Kill redirect and first-death survival (`ability.ts`, `first-death.ts`)                           | `redirectsKill`, `survivesFirstDeath` | moved         |
 | Acts when dead (`dead-characters.ts`)                                                             | `actsWhenDead`                        | moved         |
 | Night information and answers (`night-info.ts`)                                                   |                                       | not yet moved |
