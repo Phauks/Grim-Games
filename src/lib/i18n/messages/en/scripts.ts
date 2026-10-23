@@ -102,6 +102,8 @@ export const scripts = {
 	'scripts.details.savedVersion': '{version} (saved)',
 	'scripts.details.newerVersion': 'Newer: {version}',
 	'scripts.details.play': 'Play',
+	'scripts.openSource': "Open the script's source page",
+	'scripts.noSourcePage': 'No source page ({source})',
 	'scripts.checks.characters': 'Characters',
 	'scripts.checks.missing': 'Missing',
 	'scripts.checks.setup': 'Setup changes',
