@@ -955,7 +955,7 @@ test("on a laptop the player's screen shows the script's logo, and the guess she
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 
 	// A laptop: a mouse or trackpad and a wide window.
-	const laptop = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+	const laptop = await browser.newContext({ viewport: { width: 1366, height: 600 } });
 	const phone = await laptop.newPage();
 	await phone.goto(`/join/${code}`);
 	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
@@ -971,11 +971,23 @@ test("on a laptop the player's screen shows the script's logo, and the guess she
 	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
 	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });
 	await expect(empath).toBeVisible();
-	const before = (await empath.boundingBox())!;
-	await phone.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
-	await phone.mouse.wheel(0, 300);
-	// How far it can go depends on the fonts, so any clear move counts.
-	await expect.poll(async () => (await empath.boundingBox())!.y).toBeLessThan(before.y - 10);
+	// The nearest scrolling box around the characters; how far it can go depends on the fonts,
+	// so the test scrolls to the end and checks the box moved there.
+	const scrolled = () =>
+		empath.evaluate((el) => {
+			let box = el.parentElement;
+			const scrolls = (b: HTMLElement) =>
+				b.scrollHeight > b.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(b).overflowY);
+			while (box && !scrolls(box)) box = box.parentElement;
+			return box ? { top: box.scrollTop, max: box.scrollHeight - box.clientHeight } : undefined;
+		});
+	const start = (await scrolled())!;
+	expect(start.top).toBe(0);
+	expect(start.max).toBeGreaterThan(0);
+	const at = (await empath.boundingBox())!;
+	await phone.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
+	await phone.mouse.wheel(0, start.max + 200);
+	await expect.poll(async () => (await scrolled())!.top).toBeGreaterThanOrEqual(start.max - 1);
 	await laptop.close();
 });
 
