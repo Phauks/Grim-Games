@@ -52,16 +52,18 @@
 		}
 	}
 
+	const mode = $derived(vote?.subject === 'mode');
 	const lead = $derived(
 		vote?.kind === 'single'
-			? t('room.scriptVote.ballotSingle')
+			? t(mode ? 'room.scriptVote.modeBallotSingle' : 'room.scriptVote.ballotSingle')
 			: vote?.kind === 'multiple'
-				? t('room.scriptVote.ballotMultiple')
-				: t('room.scriptVote.ballotRanked')
+				? t(mode ? 'room.scriptVote.modeBallotMultiple' : 'room.scriptVote.ballotMultiple')
+				: t(mode ? 'room.scriptVote.modeBallotRanked' : 'room.scriptVote.ballotRanked')
 	);
 </script>
 
-<Dialog bind:open title={t('room.scriptVote.title')}>
+<!-- The same ballot for a vote on the game mode (Trevor, 2026-10-23). -->
+<Dialog bind:open title={t(mode ? 'room.scriptVote.modeTitle' : 'room.scriptVote.title')}>
 	<p class="lead">{lead}</p>
 	<VoteTimeLeft endsAt={vote?.endsAt} onEnded={(e) => (ended = e)} />
 	<ul class="vote" data-testid="script-ballot">

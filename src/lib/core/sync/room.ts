@@ -202,6 +202,8 @@ export type ClientMessage =
 			options: ScriptVoteOption[];
 			/** A time limit in minutes (one of SCRIPT_VOTE_MINUTES); older apps send none. */
 			minutes?: number;
+			/** A vote on the game mode; a script vote when absent. */
+			subject?: 'mode';
 	  }
 	| { type: 'close-script-vote' }
 	| { type: 'close' };
@@ -246,6 +248,7 @@ export interface PlayerView {
 	scriptVote?: {
 		voteId: string;
 		kind: ScriptVoteKind;
+		subject?: 'mode';
 		options: ScriptVoteOption[];
 		choices?: string[];
 		/** When the time limit runs out (epoch ms, the room's clock). */
@@ -440,8 +443,8 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 	}
 	if (room.choosing) view.choosing = true;
 	if (room.scriptVote) {
-		const { voteId, kind, options, ballots, endsAt } = room.scriptVote;
-		view.scriptVote = { voteId, kind, options };
+		const { voteId, kind, subject, options, ballots, endsAt } = room.scriptVote;
+		view.scriptVote = { voteId, kind, options, ...(subject ? { subject } : {}) };
 		if (endsAt !== undefined) view.scriptVote.endsAt = endsAt;
 		if (ballots[memberId]) view.scriptVote.choices = ballots[memberId];
 	}
@@ -694,9 +697,10 @@ export function openScriptVote(
 	kind: unknown,
 	options: unknown,
 	minutes?: unknown,
-	now = 0
+	now = 0,
+	subject?: unknown
 ): RoomState {
-	const vote = newScriptVote(voteId, kind, options, minutes, now);
+	const vote = newScriptVote(voteId, kind, options, minutes, now, subject);
 	return vote ? { ...room, scriptVote: vote } : room;
 }
 

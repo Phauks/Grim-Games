@@ -26,6 +26,7 @@
 		searchableScripts,
 		type ScriptChoice
 	} from '#lib/features/modes/script-choices.svelte.ts';
+	import { allModes } from '#lib/features/modes/custom-modes.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import ScriptVoteSheet from '#lib/features/room/ScriptVoteSheet.svelte';
 	import { openedByBack, readDraft, saveDraft } from '#lib/features/modes/new-game-draft.ts';
@@ -62,6 +63,14 @@
 		host.setChoosing(true);
 		voteOpen = true;
 	}
+	/** New game's modes, Standard first, for a vote on the mode (Trevor, 2026-10-23). */
+	const voteModes = $derived(
+		[STANDARD, ...allModes().filter((m) => m.id !== STANDARD.id)].map((m) => ({
+			value: m.id,
+			label: m.name
+		}))
+	);
+	let modeId = $state(STANDARD.id);
 	// ── New game ──
 	/** An official edition, `recent:<scriptId>` or `profile:<id>` (script-choices.svelte.ts). */
 	let edition = $state<ScriptChoice>('tb');
@@ -121,7 +130,7 @@
 <!-- The page's title is the route's (Page); this is its content. -->
 <section>
 	<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
-	<GameModesPanel standardScript={edition} standardPlayers={players}>
+	<GameModesPanel standardScript={edition} standardPlayers={players} bind:modeId>
 		{#snippet standard(rules, begin)}
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
 			<PageSection title="Script">
@@ -146,7 +155,13 @@
 	</GameModesPanel>
 </section>
 
-<ScriptVoteSheet bind:open={voteOpen} choices={voteChoices} onPick={(id) => (edition = id)} />
+<ScriptVoteSheet
+	bind:open={voteOpen}
+	choices={voteChoices}
+	onPick={(id) => (edition = id)}
+	modes={voteModes}
+	onPickMode={(id) => (modeId = id)}
+/>
 
 <style>
 	section {

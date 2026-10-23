@@ -1,13 +1,20 @@
 /**
  * The room's vote on the next script (Trevor, 2026-10-20, plan R1): the Storyteller offers
- * two or three scripts and players vote on their phones, by single choice, multiple choice
- * or ranking. The room only counts; the Storyteller reads the result and picks.
+ * scripts and players vote on their phones, by single choice, multiple choice or ranking. The
+ * room only counts; the Storyteller reads the result and picks. Any number of scripts up to
+ * MAX_SCRIPT_VOTE_OPTIONS (Trevor, 2026-10-23: "should not be limited to 2 or 3"), and the
+ * same vote can be on the game mode instead (Trevor, 2026-10-23).
  */
 
 /** How players vote: one script, any number of them, or all of them in order. */
 export type ScriptVoteKind = 'single' | 'multiple' | 'ranked';
 
 export const SCRIPT_VOTE_KINDS: readonly ScriptVoteKind[] = ['single', 'multiple', 'ranked'];
+
+/** What the vote chooses: the next script, or the next game mode. */
+export type VoteSubject = 'script' | 'mode';
+
+export const VOTE_SUBJECTS: readonly VoteSubject[] = ['script', 'mode'];
 
 /** A script on offer: an id the Storyteller's device knows it by, and what phones show. */
 export interface ScriptVoteOption {
@@ -23,13 +30,16 @@ export interface ScriptVoteOption {
 export const SCRIPT_VOTE_MINUTES = [1, 2, 3, 5, 10] as const;
 
 export const MIN_SCRIPT_VOTE_OPTIONS = 2;
-export const MAX_SCRIPT_VOTE_OPTIONS = 3;
+/** A practical ceiling, so one vote can't flood every phone; the only place it is set. */
+export const MAX_SCRIPT_VOTE_OPTIONS = 12;
 const MAX_ID = 200;
 const MAX_TEXT = 120;
 
 export interface ScriptVote {
 	voteId: string;
 	kind: ScriptVoteKind;
+	/** A script vote when absent, as from apps before mode votes. */
+	subject?: 'mode';
 	options: ScriptVoteOption[];
 	/** Each player's ballot, by member id: their choices, in order for a ranked vote. */
 	ballots: Record<string, string[]>;
@@ -41,6 +51,7 @@ export interface ScriptVote {
 export interface ScriptVoteTally {
 	voteId: string;
 	kind: ScriptVoteKind;
+	subject?: 'mode';
 	options: ScriptVoteOption[];
 	/**
 	 * Per option id: votes for a single or multiple choice; for a ranked vote, points by
@@ -64,7 +75,8 @@ export function newScriptVote(
 	kind: unknown,
 	options: unknown,
 	minutes?: unknown,
-	now = 0
+	now = 0,
+	subject?: unknown
 ): ScriptVote | undefined {
 	if (typeof voteId !== 'string' || !voteId || voteId.length > MAX_ID) return undefined;
 	if (!SCRIPT_VOTE_KINDS.includes(kind as ScriptVoteKind) || !Array.isArray(options)) return;
@@ -81,6 +93,7 @@ export function newScriptVote(
 	}
 	if (clean.length < MIN_SCRIPT_VOTE_OPTIONS || clean.length > MAX_SCRIPT_VOTE_OPTIONS) return;
 	const vote: ScriptVote = { voteId, kind: kind as ScriptVoteKind, options: clean, ballots: {} };
+	if (subject === 'mode') vote.subject = 'mode';
 	if (SCRIPT_VOTE_MINUTES.includes(minutes as (typeof SCRIPT_VOTE_MINUTES)[number])) {
 		vote.endsAt = now + (minutes as number) * 60_000;
 	}
@@ -122,6 +135,7 @@ export function tallyScriptVote(vote: ScriptVote, memberIds: readonly string[]):
 	return {
 		voteId: vote.voteId,
 		kind: vote.kind,
+		...(vote.subject ? { subject: vote.subject } : {}),
 		options: vote.options,
 		points,
 		voted,
