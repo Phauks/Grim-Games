@@ -15,5 +15,25 @@
 	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"setupModifier": {
+		"summary": "Most players are Legion",
+		"ops": [
+			{
+				"kind": "set",
+				"type": "demon",
+				"values": "most"
+			},
+			{
+				"kind": "set",
+				"type": "minion",
+				"values": [0]
+			},
+			{
+				"kind": "any",
+				"type": "outsider"
+			}
+		],
+		"notes": ["More than half the players are Legion; the rest are good."]
 	}
 }

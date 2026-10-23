@@ -25,5 +25,12 @@
 				"timing": "first-day"
 			}
 		]
+	},
+	"setupModifier": {
+		"summary": "No setup change",
+		"ops": [],
+		"notes": [
+			"Deal Minions as usual: they become Riot on day 3. Older printings had a setup bracket."
+		]
 	}
 }

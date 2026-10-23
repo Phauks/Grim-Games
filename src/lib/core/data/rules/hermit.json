@@ -18,5 +18,16 @@
 	},
 	"setupPrep": {
 		"none": "the 1, 2, 3 tokens stand in for other Outsiders’ tokens when needed"
+	},
+	"setupModifier": {
+		"summary": "−0 or −1 Outsider",
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "outsider",
+				"values": [0, -1]
+			}
+		],
+		"notes": ["The Hermit counts as one of the Outsiders and may be the one removed."]
 	}
 }

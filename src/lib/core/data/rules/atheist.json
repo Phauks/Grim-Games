@@ -2,5 +2,25 @@
 	"actsWhenDead": true,
 	"gameEnd": {
 		"decidedByStoryteller": true
+	},
+	"setupModifier": {
+		"summary": "No evil characters",
+		"ops": [
+			{
+				"kind": "set",
+				"type": "minion",
+				"values": [0]
+			},
+			{
+				"kind": "set",
+				"type": "demon",
+				"values": [0]
+			},
+			{
+				"kind": "any",
+				"type": "outsider"
+			}
+		],
+		"notes": ["Take out every Minion and Demon; fill with any mix of Townsfolk and Outsiders."]
 	}
 }

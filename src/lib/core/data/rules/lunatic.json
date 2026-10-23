@@ -12,5 +12,10 @@
 			}
 		],
 		"none": "the Lunatic’s character token is in the grimoire; Chosen marks their later night attacks"
+	},
+	"setupModifier": {
+		"summary": "Shown a Demon",
+		"ops": [],
+		"notes": ["The Lunatic is shown a Demon token, not the Lunatic."]
 	}
 }

@@ -9,6 +9,7 @@
  * TypeScript move here one per PR (the list is in docs/shared-components.md).
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
+import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rules.ts';
 import { readSetupPrep, type SetupPrepRules } from './setup-prep-rules.ts';
 import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
@@ -122,6 +123,8 @@ export interface CharacterRules {
 	deathCheck?: DeathCheckRule;
 	/** Tokens and steps to prepare before the first night (`rules/setup-reminders.ts`). */
 	setupPrep?: SetupPrepRules;
+	/** How its [bracketed] text changes which characters are dealt (`rules/setup-modifiers.ts`). */
+	setupModifier?: SetupModifierRules;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -257,7 +260,8 @@ export const RULE_KEYS = [
 	'registersAs',
 	'gameEnd',
 	'deathCheck',
-	'setupPrep'
+	'setupPrep',
+	'setupModifier'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -403,6 +407,10 @@ export function parseCharacterRules(
 	if (raw.setupPrep !== undefined) {
 		const setupPrep = readSetupPrep(raw.setupPrep, `${path}.setupPrep`, issues, reminders);
 		if (setupPrep) rules.setupPrep = setupPrep;
+	}
+	if (raw.setupModifier !== undefined) {
+		const setupModifier = readSetupModifier(raw.setupModifier, `${path}.setupModifier`, issues);
+		if (setupModifier) rules.setupModifier = setupModifier;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

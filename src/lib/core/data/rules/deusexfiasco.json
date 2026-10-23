@@ -7,5 +7,10 @@
 	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"setupModifier": {
+		"summary": "No setup change",
+		"ops": [],
+		"notes": ["Plan the mistake you will make and admit to."]
 	}
 }
