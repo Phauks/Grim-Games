@@ -21,5 +21,8 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"none": "one more day; executions are normal"
 	}
 }

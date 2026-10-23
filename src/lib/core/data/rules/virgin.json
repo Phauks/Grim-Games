@@ -30,5 +30,12 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "execution",
+		"victim": {
+			"who": "registers",
+			"as": "townsfolk"
+		}
 	}
 }

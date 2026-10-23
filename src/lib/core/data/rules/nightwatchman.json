@@ -10,5 +10,8 @@
 	},
 	"dayReminders": {
 		"none": "night action"
+	},
+	"deathCause": {
+		"none": "info"
 	}
 }

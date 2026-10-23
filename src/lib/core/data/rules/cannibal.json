@@ -34,5 +34,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "gained-ability"
 	}
 }

@@ -27,5 +27,8 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"none": "swaps characters"
 	}
 }

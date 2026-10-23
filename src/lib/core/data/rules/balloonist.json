@@ -31,5 +31,8 @@
 	},
 	"dayReminders": {
 		"none": "night info; setup change"
+	},
+	"deathCause": {
+		"none": "info"
 	}
 }

@@ -21,5 +21,8 @@
 			}
 		],
 		"none": "night action"
+	},
+	"deathCause": {
+		"none": "info; registration"
 	}
 }

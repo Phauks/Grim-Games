@@ -30,5 +30,13 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "kills",
+		"victim": {
+			"who": "registers",
+			"as": "good",
+			"notSelf": true
+		}
 	}
 }

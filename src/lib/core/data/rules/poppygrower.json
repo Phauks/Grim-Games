@@ -12,5 +12,8 @@
 	},
 	"dayReminders": {
 		"none": "changes evil info"
+	},
+	"deathCause": {
+		"none": "changes what evil learns"
 	}
 }

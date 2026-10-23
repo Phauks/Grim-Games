@@ -19,5 +19,8 @@
 	},
 	"dayReminders": {
 		"none": "first-night action"
+	},
+	"deathCause": {
+		"kind": "gained-ability"
 	}
 }

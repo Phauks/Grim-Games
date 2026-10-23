@@ -26,5 +26,12 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "kills",
+		"victim": {
+			"who": "registers",
+			"as": "demon"
+		}
 	}
 }

@@ -39,5 +39,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "speaking and voting rule"
 	}
 }

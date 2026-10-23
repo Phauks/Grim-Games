@@ -13,5 +13,8 @@
 	},
 	"dayReminders": {
 		"none": "night action"
+	},
+	"deathCause": {
+		"kind": "kills"
 	}
 }

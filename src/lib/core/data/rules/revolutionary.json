@@ -29,5 +29,8 @@
 	},
 	"dayReminders": {
 		"none": "registration only"
+	},
+	"deathCause": {
+		"none": "registration"
 	}
 }

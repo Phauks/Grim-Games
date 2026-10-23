@@ -36,5 +36,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "changes alignment"
 	}
 }

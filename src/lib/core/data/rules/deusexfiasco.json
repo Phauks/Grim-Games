@@ -31,5 +31,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "Storyteller mistake"
 	}
 }

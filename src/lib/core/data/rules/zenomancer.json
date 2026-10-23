@@ -35,5 +35,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "info"
 	}
 }

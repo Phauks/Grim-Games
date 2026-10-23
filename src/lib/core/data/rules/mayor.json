@@ -26,5 +26,8 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"none": "win condition; the Demon kills whoever dies instead"
 	}
 }

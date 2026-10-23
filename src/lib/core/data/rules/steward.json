@@ -29,5 +29,8 @@
 	},
 	"dayReminders": {
 		"none": "first-night info"
+	},
+	"deathCause": {
+		"none": "info"
 	}
 }

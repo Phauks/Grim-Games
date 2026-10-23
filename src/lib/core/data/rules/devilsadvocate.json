@@ -32,5 +32,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "executed player survives"
 	}
 }

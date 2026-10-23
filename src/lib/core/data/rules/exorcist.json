@@ -12,5 +12,8 @@
 	},
 	"dayReminders": {
 		"none": "night action"
+	},
+	"deathCause": {
+		"none": "stops the Demon waking"
 	}
 }

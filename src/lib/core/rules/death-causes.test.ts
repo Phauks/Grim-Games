@@ -1,18 +1,19 @@
 /**
- * Characters that can cause a death. Each entry in `death-causes.data.ts` cites its
- * character's wiki page; the tests below cite the pages they encode.
+ * Characters that can cause a death. Each official character's `deathCause` lives in its
+ * rules block (`data/rules/<id>.json`); the tests below cite the wiki pages they encode.
  */
 import { describe, expect, it } from 'vitest';
 import type { Character, Script } from '#lib/core/data/types.ts';
 import { characterLookup } from '#lib/core/model/characters.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { newGame } from '#lib/core/model/fixtures.test-support.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import {
-	DEATH_CAUSE_ENTRIES,
 	deathCauseEntry,
 	deathCauses,
 	gameDeathCauses,
-	NO_DEATH,
 	reminderDeathCause,
 	type DeathKind
 } from './death-causes.ts';
@@ -21,7 +22,19 @@ const data = committedGameData();
 const official: Script = { entries: [] };
 const characters = characterLookup(data, official);
 const kindOf = (id: string) => deathCauseEntry(id)?.kind;
-const W = 'https://wiki.bloodontheclocktower.com/';
+/** Official characters whose ability can cause a death, by id. */
+const DEATH_CAUSE_ENTRIES = Object.fromEntries(
+	[...OFFICIAL_RULES].flatMap(([id]) => {
+		const entry = deathCauseEntry(id);
+		return entry ? [[id, entry]] : [];
+	})
+);
+/** Official characters whose ability never causes a death, and why. */
+const NO_DEATH = Object.fromEntries(
+	[...OFFICIAL_RULES].flatMap(([id, rules]) =>
+		rules.deathCause && 'none' in rules.deathCause ? [[id, rules.deathCause.none]] : []
+	)
+);
 
 describe('coverage', () => {
 	it('lists every official character exactly once, as a death cause or as no death', () => {
@@ -33,10 +46,9 @@ describe('coverage', () => {
 		expect([...all].filter((id) => !data.byId.has(id))).toEqual([]);
 	});
 
-	it('cites the wiki page of every character that can cause a death', () => {
-		for (const [id, entry] of Object.entries(DEATH_CAUSE_ENTRIES)) {
-			const name = data.byId.get(id)?.name ?? id;
-			expect(entry.wiki, id).toBe(W + name.replaceAll(' ', '_'));
+	it('gives every character that can cause a death a wiki page', () => {
+		for (const id of Object.keys(DEATH_CAUSE_ENTRIES)) {
+			expect(data.byId.get(id)?.edition, id).toBeDefined();
 		}
 	});
 });
@@ -185,6 +197,54 @@ describe('deathCauses', () => {
 		]);
 	});
 
+	// A custom character's own `deathCause` works as an official one's: the Slayer's kill
+	// (https://wiki.bloodontheclocktower.com/Slayer), the Leviathan's only with the Banshee
+	// (https://wiki.bloodontheclocktower.com/Leviathan), the Chef's none.
+	it('reads a custom character’s own deathCause rule', () => {
+		const brew = (id: string, deathCause: unknown): Character => ({
+			...(data.byId.get('chef') as Character),
+			id,
+			name: id,
+			rules: parseCharacterRules({ deathCause }, id, new Issues())
+		});
+		const script: Script = {
+			entries: [
+				{
+					kind: 'custom',
+					character: brew('hunter', { kind: 'kills', victim: { who: 'registers', as: 'demon' } })
+				},
+				{ kind: 'custom', character: brew('sleeper', { kind: 'kills', onlyWith: ['banshee'] }) },
+				{ kind: 'custom', character: brew('cook', { none: 'info' }) }
+			]
+		};
+		const lookup = characterLookup(data, script);
+		expect(deathCauses(['hunter', 'sleeper', 'cook'], lookup)).toEqual([
+			{ characterId: 'hunter', kind: 'kills' }
+		]);
+		expect(deathCauses(['hunter', 'sleeper', 'cook', 'banshee'], lookup)).toEqual([
+			{ characterId: 'hunter', kind: 'kills' },
+			{ characterId: 'sleeper', kind: 'kills' }
+		]);
+	});
+
+	it('reports a malformed deathCause rule', () => {
+		const issues = new Issues();
+		for (const deathCause of [
+			{ kind: 'maims' },
+			{ kind: 'kills', victim: { who: 'registers' } },
+			{ kind: 'kills', victim: { who: 'self', as: 'good' } },
+			{ none: 'info', kind: 'kills' }
+		]) {
+			parseCharacterRules({ deathCause }, 'rules', issues);
+		}
+		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
+			'rules.deathCause.kind',
+			'rules.deathCause.victim.as',
+			'rules.deathCause.victim.as',
+			'rules.deathCause.kind'
+		]);
+	});
+
 	it('reads a game: its script, its seats and its Fabled and Loric', () => {
 		const { session, seats } = newGame(3);
 		const game = {
@@ -204,7 +264,7 @@ describe('deathCauses', () => {
 });
 
 describe('the Minions that can cause a death', () => {
-	// Each cites its wiki page in death-causes.data.ts; the Pit-Hag is not one (Trevor,
+	// Each cites its wiki page in its rules block; the Pit-Hag is not one (Trevor,
 	// 2026-10-23), nor is any Minion whose ability only informs, poisons or changes things.
 	it('are exactly these', () => {
 		const minions = Object.keys(DEATH_CAUSE_ENTRIES)

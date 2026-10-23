@@ -17,5 +17,8 @@
 	},
 	"dayReminders": {
 		"none": "night action"
+	},
+	"deathCause": {
+		"kind": "own-death"
 	}
 }

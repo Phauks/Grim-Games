@@ -11,5 +11,8 @@
 	},
 	"dayReminders": {
 		"none": "night rule"
+	},
+	"deathCause": {
+		"none": "the Demon may not attack"
 	}
 }

@@ -11,6 +11,7 @@
  */
 import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rules.ts';
 import { readDayReminders, type DayReminderRules } from './day-reminder-rules.ts';
+import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readSetupPrep, type SetupPrepRules } from './setup-prep-rules.ts';
 import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
@@ -128,6 +129,8 @@ export interface CharacterRules {
 	setupModifier?: SetupModifierRules;
 	/** What to watch for during the day because of it (`rules/day-reminders.ts`). */
 	dayReminders?: DayReminderRules;
+	/** Whether and how its ability can cause a death (`rules/death-causes.ts`). */
+	deathCause?: DeathCauseRule;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -265,7 +268,8 @@ export const RULE_KEYS = [
 	'deathCheck',
 	'setupPrep',
 	'setupModifier',
-	'dayReminders'
+	'dayReminders',
+	'deathCause'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -419,6 +423,10 @@ export function parseCharacterRules(
 	if (raw.dayReminders !== undefined) {
 		const day = readDayReminders(raw.dayReminders, `${path}.dayReminders`, issues, reminders);
 		if (day) rules.dayReminders = day;
+	}
+	if (raw.deathCause !== undefined) {
+		const deathCause = readDeathCause(raw.deathCause, `${path}.deathCause`, issues);
+		if (deathCause) rules.deathCause = deathCause;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

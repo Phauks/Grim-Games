@@ -24,5 +24,8 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"none": "changes a character"
 	}
 }

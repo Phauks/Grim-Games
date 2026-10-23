@@ -5,5 +5,8 @@
 	},
 	"dayReminders": {
 		"none": "triggers on Demon kill"
+	},
+	"deathCause": {
+		"none": "info when it dies"
 	}
 }

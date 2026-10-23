@@ -25,5 +25,8 @@
 				]
 			}
 		]
+	},
+	"deathCause": {
+		"kind": "kills"
 	}
 }

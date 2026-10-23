@@ -32,5 +32,8 @@
 				}
 			}
 		]
+	},
+	"deathCause": {
+		"none": "homebrew rules"
 	}
 }
