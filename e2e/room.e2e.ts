@@ -555,6 +555,9 @@ test('Join game in the menu takes a typed code, with spaces, and says when no ga
 	await page.getByRole('link', { name: 'Join game' }).tap();
 	await expect(page).toHaveURL(/\/join$/);
 	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+	// Nothing to print or share before a game is joined, so neither shows (Trevor, 2026-10-23).
+	for (const name of ['Print script', 'Share script'])
+		await expect(page.getByRole('button', { name })).toHaveCount(0);
 	const field = page.getByRole('textbox', { name: 'Room code from the Storyteller' });
 	await field.fill(' 482-913 ');
 	// No room has this code, so the screen says so in place and Enter doesn't leave it.
