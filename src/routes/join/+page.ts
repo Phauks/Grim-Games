@@ -1,5 +1,5 @@
 import type { Chrome } from '#lib/features/shell/shell.ts';
 
-// Player view shows the app's sidebar, so its menu button sits where every page's does
-// (Trevor, 2026-10-23).
-export const load = (): { chrome: Chrome } => ({ chrome: 'app' });
+// Player view fills the screen as the Storyteller's board does (Trevor, 2026-10-19): no
+// sidebar; its own menu button opens the menu.
+export const load = (): { chrome: Chrome } => ({ chrome: 'game' });

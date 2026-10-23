@@ -944,7 +944,7 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phoneContext.close();
 });
 
-test("on a laptop the player's screen has the app's sidebar, the script's logo, and the guess sheet scrolls", async ({
+test("on a laptop the player's screen shows the script's logo, and the guess sheet scrolls", async ({
 	page,
 	browser
 }, testInfo) => {
@@ -957,14 +957,8 @@ test("on a laptop the player's screen has the app's sidebar, the script's logo, 
 	// A laptop: a mouse or trackpad and a wide window.
 	const laptop = await browser.newContext({ viewport: { width: 1366, height: 768 } });
 	const phone = await laptop.newPage();
-	// The menu button sits where every page's does: at the head of the sidebar (Trevor,
-	// 2026-10-23), not before the page's title.
-	await phone.goto('/library');
-	const menu = phone.getByRole('button', { name: 'Menu', exact: true });
-	const libraryMenu = (await menu.boundingBox())!;
 	await phone.goto(`/join/${code}`);
 	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
-	expect(await menu.boundingBox()).toEqual(libraryMenu);
 	// The script's logo before its name (Trevor, 2026-10-23).
 	await expect(phone.getByRole('heading', { level: 1 }).getByTestId('script-logo')).toHaveAttribute(
 		'data-logo',

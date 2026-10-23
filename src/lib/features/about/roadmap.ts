@@ -70,10 +70,6 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: "The script vote in two columns, with the room's code shown before it opens"
 			},
 			{ id: 'J8', title: 'Join game has one title and one Share, and a camera icon to scan' },
-			{
-				id: 'J9',
-				title: "The player's screen has the sidebar, its menu button where every page's is"
-			},
 			{ id: 'J10', title: "The script's logo beside its name on the player's screen" },
 			{ id: 'J11', title: 'Joining a game opens the script once you have asked for a seat' },
 			{ id: 'J12', title: "The player's Room tab folds into the script view" },
