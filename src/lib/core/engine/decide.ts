@@ -127,6 +127,8 @@ export interface Issue<C extends string> {
 	code: C;
 	/** English, for logs and tests; the UI shows its own text for each code. */
 	message: string;
+	/** The characters it is about, where a screen may judge it (not-on-script). */
+	characters?: CharacterId[];
 }
 export type EngineError = Issue<ErrorCode>;
 export type EngineWarning = Issue<WarningCode>;
@@ -158,7 +160,8 @@ function refuse(code: ErrorCode, message: string): never {
 /** Checks `command` against `game` and returns the events it produces, or why it cannot. */
 export function decide(game: Game | undefined, command: Command, ctx: EngineContext): Decision {
 	const warnings: EngineWarning[] = [];
-	const warn = (code: WarningCode, message: string) => warnings.push({ code, message });
+	const warn: Warn = (code, message, characters) =>
+		warnings.push(characters ? { code, message, characters } : { code, message });
 	try {
 		if (command.type === 'CreateGame') {
 			if (game) refuse('game-exists', 'this log already has a game');
@@ -174,7 +177,7 @@ export function decide(game: Game | undefined, command: Command, ctx: EngineCont
 	}
 }
 
-type Warn = (code: WarningCode, message: string) => void;
+type Warn = (code: WarningCode, message: string, characters?: CharacterId[]) => void;
 
 function createGame(command: CommandOf<'CreateGame'>, ctx: EngineContext, warn: Warn): GameEvent[] {
 	const { playerCount } = command;
@@ -604,7 +607,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			}
 			for (const id of offScript(game, command.script, ctx)) {
 				const name = ctx.characters.get(id)?.name ?? id;
-				warn('not-on-script', `${name} is not on the script`);
+				warn('not-on-script', `${name} is not on the script`, [id]);
 			}
 			return [{ type: 'ScriptChanged', script: command.script }];
 		}
@@ -727,7 +730,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			const seat = seatOf(game, command.seatId);
 			const character = seatableCharacter(ctx, command.characterId);
 			if (character.type !== 'traveller' && !isOnScript(game.script, character.id)) {
-				warn('not-on-script', `${character.name} is not on the script`);
+				warn('not-on-script', `${character.name} is not on the script`, [character.id]);
 			}
 			const elsewhere = game.seating.some(
 				(id) => id !== seat.seatId && game.seats[id].characterId === character.id
@@ -1207,7 +1210,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 					warn('bluff-not-good', `${character.name} is not a good character`);
 				}
 				if (!isOnScript(game.script, character.id)) {
-					warn('not-on-script', `${character.name} is not on the script`);
+					warn('not-on-script', `${character.name} is not on the script`, [character.id]);
 				}
 			}
 			return [{ type: 'BluffsSet', set, characterIds: characters.map((c) => c.id) }];
@@ -1271,7 +1274,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				}
 				for (const character of [shows, grimoire]) {
 					if (character.type !== 'traveller' && !isOnScript(game.script, character.id)) {
-						warn('not-on-script', `${character.name} is not on the script`);
+						warn('not-on-script', `${character.name} is not on the script`, [character.id]);
 					}
 				}
 				const reminders = (spec.reminders ?? []).map((r) => {

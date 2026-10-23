@@ -732,21 +732,28 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(most).toContainText('2');
 	await noSidewaysScroll(page);
 
+	const hidden = await page
+		.getByTestId('extras')
+		.locator('[data-character-id]')
+		.evaluateAll((els) => els.map((el) => el.getAttribute('data-character-id')!));
+	expect(hidden).toHaveLength(2);
 	await page.getByRole('button', { name: 'Choose characters' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	// Off the script but chosen for the bag: listed under their own types, marked (Trevor,
-	// 2026-10-18).
+	// Off the script but chosen for the bag: listed under their own types (Trevor,
+	// 2026-10-18), and not marked as off the script, since the rule put them in play
+	// (Trevor, 2026-10-23).
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 	await expect(page.getByTestId('count-minion')).toHaveText('0');
-	const offScript = page.locator('.row[data-dashed]');
-	await expect(offScript).toHaveCount(2);
-	await expect(offScript.first()).toContainText('Not on script');
-	await expect(offScript.first().locator('.main')).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('.row[data-dashed]')).toHaveCount(0);
+	const first = page.locator(`.main[data-character-id="${hidden[0]}"]`);
+	await expect(first).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('.row', { has: first })).not.toContainText('Not on script');
 	// Taking one out keeps it listed, so it can go back in.
-	await offScript.first().locator('.main').tap();
+	await first.tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
-	await expect(offScript).toHaveCount(2);
+	await expect(first).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.locator(`.main[data-character-id="${hidden[1]}"]`)).toBeVisible();
 });
 
 test('with no hidden character, Infinite Possibilities can’t go on to the setup', async ({
@@ -1457,8 +1464,12 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 
 	await next.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	await expect(page.locator('.row[data-dashed]')).toHaveCount(1);
-	await expect(page.locator('.row[data-dashed]')).toContainText('Goon');
+	// Listed, but not marked as off the script: +1 put it in play (Trevor, 2026-10-23).
+	await expect(page.locator('.main[data-character-id="goon"]')).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(page.locator('.row[data-dashed]')).toHaveCount(0);
 });
 
 test('Game info’s Special rules opens the screen once the game is set up', async ({ page }) => {
@@ -1501,6 +1512,11 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 		await page.getByRole('button', { name: 'Confirm' }).tap();
 	}
 	await page.goto(board);
+	// +1 put the Goon in play, so its seat is not flagged as off the script (Trevor,
+	// 2026-10-23).
+	await expect(page.getByRole('button', { name: /, Goon\b/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /not on the script/ })).toHaveCount(0);
+	await expect(page.locator('.mark.orphan')).toHaveCount(0);
 	await page.getByTestId('mode-menu').tap();
 	await page
 		.getByRole('dialog', { name: 'Game info', exact: true })

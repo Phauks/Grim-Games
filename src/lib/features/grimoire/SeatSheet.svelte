@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { recordNomination } from './record-nomination.ts';
 	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
@@ -67,6 +68,8 @@
 	let { open = $bindable(), grimoire, seatId, onDraw, onNotes, onNominated }: Props = $props();
 
 	const game = $derived(grimoire.game);
+	/** Characters a special rule put in play from off the script, not flagged (+1). */
+	const offScriptOk = $derived(allowedOffScriptIn(game.gameId));
 	const characters = $derived(grimoire.open.characters);
 	const seat = $derived(seatId === undefined ? undefined : game.seats[seatId]);
 	const number = $derived(seatId === undefined ? 0 : game.seating.indexOf(seatId) + 1);
@@ -152,7 +155,8 @@
 	const abilityLine = $derived.by((): LinePart[] => {
 		if (!seat || !character) return [{ text: 'None' }];
 		const parts: LinePart[] = [];
-		if (isOrphan(seat, game.script, characters)) parts.push({ text: 'Not on the script' });
+		if (isOrphan(seat, game.script, characters, offScriptOk))
+			parts.push({ text: 'Not on the script' });
 		if (really) parts.push({ text: 'Is the ', characterId: really.id });
 		// Only what the sheet shows nowhere else (Trevor, 2026-10-18): a reminder on this seat
 		// is in Reminders below, and death is in Status.
@@ -496,7 +500,7 @@
 				{/if}
 				<!-- One reserved line for what the rules say about this seat. -->
 				<p class="state" class:warn={stateWarn}>
-					{#if isOrphan(seat, game.script, characters)}<Icon name="warning" />{/if}
+					{#if isOrphan(seat, game.script, characters, offScriptOk)}<Icon name="warning" />{/if}
 					{#each abilityLine as part, i (i)}{#if i > 0}
 							·
 						{/if}{part.text}{#if part.characterId}<CharacterBadge

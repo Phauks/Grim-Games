@@ -55,6 +55,7 @@
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import {
 		nominationPrompts,
 		seatHasAbility,
@@ -168,6 +169,8 @@
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
 	const game = $derived(grimoire.game);
+	/** Characters a special rule put in play from off the script, not flagged (+1). */
+	const offScriptOk = $derived(allowedOffScriptIn(game.gameId));
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
 	const setUp = $derived(setupComplete(game));
 	const characters = $derived(grimoire.open.characters);
@@ -1270,7 +1273,7 @@
 								other: nightNumbers.other.get(seat.characterId)
 							}
 						: undefined}
-					orphan={isOrphan(seat, game.script, characters)}
+					orphan={isOrphan(seat, game.script, characters, offScriptOk)}
 					nominations={seatNominationMarks(seat)}
 					dropTarget={seatArr.reorderTarget === seat.seatId ||
 						(remDrag.drag !== undefined &&
