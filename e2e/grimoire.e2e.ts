@@ -5207,23 +5207,6 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 	);
 });
 
-/** Turns on Settings > Storyteller > Track nominations from the menu. */
-async function trackNominations(page: Page) {
-	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page
-		.getByRole('dialog', { name: APP_NAME })
-		.getByRole('button', { name: 'Settings' })
-		.tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Storyteller' })
-		.tap();
-	await settings.getByText('Track nominations', { exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(settings).toBeHidden();
-}
-
 test('with Track nominations on, a seat sheet records who nominated whom under the ghost vote', async ({
 	page
 }) => {
@@ -5309,6 +5292,73 @@ test("the Town Crier's step reads today's recorded nominations", async ({ page }
 	await expect(suggested).not.toContainText('No nominations recorded today');
 	await expect(suggested).toContainText('Yes');
 	await expect(suggested.locator('.because')).toContainText('Seat 2');
+});
+
+/** Turns on Settings > Storyteller > Track nominations. */
+async function trackNominations(page: Page) {
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page
+		.getByRole('dialog', { name: APP_NAME })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await settings.getByText('Track nominations', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+}
+
+/** Records on `nominator`'s seat sheet that they nominated `nominee`. */
+async function nominate(page: Page, nominator: number, nominee: number) {
+	const sheet = await openSeat(page, nominator);
+	await sheet.getByTestId('sheet-nominated').tap();
+	await page
+		.getByRole('dialog', { name: `Who did Seat ${nominator} nominate?` })
+		.getByText(`Seat ${nominee}`, { exact: true })
+		.tap();
+}
+
+// https://beardytas.com/garden-of-djinn/the-warrens/: while 5 or more live, an evil player who
+// nominates a living evil player swaps characters with them (Trevor, 2026-10-23).
+test('with The Warrens, an evil nomination of an evil player offers to swap their characters', async ({
+	page
+}) => {
+	await startWithRule(page, 'The Warrens', [
+		[1, 'Imp'],
+		[2, 'Poisoner'],
+		[3, 'Chef']
+	]);
+	await trackNominations(page);
+	// A good nominee: nothing to swap.
+	await nominate(page, 2, 3);
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+	await closeSheet(page);
+	await nominate(page, 2, 1);
+	const ask = page.getByRole('alertdialog', { name: 'The Warrens: swap characters?' });
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Poisoner')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
+});
+
+// https://beardytas.com/garden-of-djinn/the-djinns-bargain/: a nominator may choose to die.
+test("with The Djinn's Bargain, a nomination asks whether the nominator chose to die", async ({
+	page
+}) => {
+	await startWithRule(page, 'The Djinn’s Bargain', [[1, 'Chef']]);
+	await trackNominations(page);
+	await nominate(page, 1, 2);
+	const ask = page.getByRole('alertdialog', {
+		name: 'The Djinn’s Bargain: did Seat 1 choose to die?'
+	});
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Chef, dead')).toBeAttached();
 });
 
 // Trevor (2026-10-22, plan D2): a crowded seat's reminders keep a thin line back to it, and

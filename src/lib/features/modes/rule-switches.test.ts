@@ -30,6 +30,7 @@ describe('rule switches', () => {
 		expect(limited.parts.ruleChanges?.[0]?.instructions).toBe(
 			`${bargain.parts.ruleChanges?.[0]?.instructions} ${DJINN_THREE_ALIVE}`
 		);
+		expect(limited.parts.nominations).toEqual([{ kind: 'nominator-may-die', minAlive: 4 }]);
 		expect(parseSpecialRule(limited).ok).toBe(true);
 	});
 });
