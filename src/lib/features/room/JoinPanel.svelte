@@ -17,7 +17,7 @@
 	import VoteChoice from './VoteChoice.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
-	import { followRoomScript } from './room-script.ts';
+	import { followRoomScript } from './room-script.svelte.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { recentRooms, rememberRoom } from './recent-rooms.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -62,9 +62,10 @@
 	// The game's script becomes this phone's current script, for /play.
 	$effect(() => {
 		const sent = player?.script;
-		if (!sent) return;
+		const room = valid;
+		if (!sent || !room) return;
 		let cancelled = false;
-		void followRoomScript(sent)
+		void followRoomScript(sent, room)
 			.then((loaded) => {
 				if (cancelled || !loaded) return;
 				if (valid) rememberRoom(valid, loaded.name);

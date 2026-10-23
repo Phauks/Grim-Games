@@ -279,6 +279,42 @@ test('after a game the room votes on the next script, and the next game opens in
 	await phoneContext.close();
 });
 
+test('the Storyteller picks what goes in the middle of the QR code', async ({ page }) => {
+	// Trevor, 2026-10-20 (plan R1): a custom QR centre logo, or none.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const qr = page.getByRole('img', { name: 'QR code to join the room' });
+	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
+
+	const centre = page.getByRole('dialog', { name: 'QR code centre' });
+	await page.getByRole('button', { name: 'QR code centre' }).first().tap();
+	await centre.getByRole('combobox', { name: 'QR code centre' }).tap();
+	await page.getByRole('option', { name: 'None' }).tap();
+	await expect(qr.getByTestId('script-logo')).toHaveCount(0);
+
+	// Your picture asks for one; it shows in the middle, here and in every share.
+	const chooser = page.waitForEvent('filechooser');
+	await centre.getByRole('combobox', { name: 'QR code centre' }).tap();
+	await page.getByRole('option', { name: 'Your picture' }).tap();
+	await (
+		await chooser
+	).setFiles({
+		name: 'me.png',
+		mimeType: 'image/png',
+		buffer: Buffer.from(
+			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
+			'base64'
+		)
+	});
+	await expect(qr.locator('img.qr-picture')).toHaveAttribute('src', /^data:image\/png/);
+	await expect(centre.getByRole('button', { name: 'Change picture' })).toBeEnabled();
+
+	// It stays on this device.
+	await page.reload();
+	await expect(qr.locator('img.qr-picture')).toHaveAttribute('src', /^data:image\/png/);
+});
+
 test('a phone that joins gets the game script before anyone has a seat', async ({
 	page,
 	browser
@@ -304,6 +340,37 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 	await expect(phone.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
+	await phoneContext.close();
+});
+
+test('a join screen shows nothing from the phone until the room sends its script', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Plan J1 (Trevor, 2026-10-22): "when joining game, there should be no other information
+	// available". The phone last used Bad Moon Rising; the room plays Trouble Brewing.
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto('/play#e=bmr');
+	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
+	// A code no room has: only the join form, none of the phone's own script.
+	await phone.goto('/join/000000');
+	await expect(phone.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+	await expect(phone.getByRole('tab')).toHaveCount(0);
+	await expect(phone.getByText('Bad Moon Rising')).toHaveCount(0);
+
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await phone.goto(`/join/${code}`);
+	// Once in the room, its script, and only that.
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+	await expect(phone.getByRole('tabpanel', { name: 'Script' })).not.toContainText(
+		'Bad Moon Rising'
+	);
 	await phoneContext.close();
 });
 

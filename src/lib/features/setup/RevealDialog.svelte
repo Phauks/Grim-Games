@@ -41,6 +41,11 @@
 		 */
 		holdToReveal?: boolean;
 		/**
+		 * The slot machine reveal (Trevor, 2026-10-22, a Bag draw setting): the token first
+		 * spins through these characters, then stops on the player's. Purely visual.
+		 */
+		reel?: readonly Character[];
+		/**
 		 * Closing the reveal once the character was seen confirms it (Trevor, 2026-10-22: no
 		 * "held" after a player has seen their character, so nobody else can take it back).
 		 */
@@ -58,6 +63,7 @@
 		taken = [],
 		pair,
 		holdToReveal = false,
+		reel = [],
 		confirmOnClose = false,
 		onConfirm
 	}: Props = $props();
@@ -92,8 +98,48 @@
 			seen = false;
 		}
 	});
-	const visible = $derived(revealed && (!holdToReveal || held));
-	const canConfirm = $derived(revealed && (!holdToReveal || seen));
+	/** The reel's character while it spins; undefined once it has stopped on the player's. */
+	let spinning = $state<Character>();
+	let spun = false;
+	let timers: ReturnType<typeof setTimeout>[] = [];
+	function stopReel() {
+		for (const timer of timers) clearTimeout(timer);
+		timers = [];
+		spinning = undefined;
+	}
+	/** Ticks that slow down like a reel, about two seconds in all. */
+	function spin() {
+		spun = true;
+		if (reel.length < 2 || pair || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		let at = 0;
+		let step = 50;
+		let i = Math.floor(Math.random() * reel.length);
+		spinning = reel[i];
+		while (at < 1800) {
+			at += step;
+			step *= 1.12;
+			i = (i + 1) % reel.length;
+			const next = reel[i];
+			timers.push(setTimeout(() => (spinning = next), at));
+		}
+		timers.push(setTimeout(stopReel, at + step));
+	}
+	const shown = $derived(revealed && (!holdToReveal || held));
+	$effect(() => {
+		if (!open) {
+			spun = false;
+			stopReel();
+		} else if (shown && !spun && reel.length > 0) untrack(spin);
+	});
+	/** The character itself shows once the reel has stopped. */
+	const visible = $derived(shown && !spinning);
+	/** The character has been seen in this reveal (not just the spinning reel). */
+	let shownOnce = false;
+	$effect(() => {
+		if (!open) return;
+		if (visible) shownOnce = true;
+	});
+	const canConfirm = $derived(revealed && (!holdToReveal || seen) && !spinning);
 	function hold(on: boolean) {
 		held = on;
 		if (on) seen = true;
@@ -116,9 +162,10 @@
 		if (open) {
 			wasOpen = true;
 			confirmed = false;
+			if (!untrack(() => visible)) shownOnce = false;
 		} else if (wasOpen) {
 			wasOpen = false;
-			if (confirmOnClose && !confirmed && untrack(() => canConfirm)) confirm();
+			if (confirmOnClose && !confirmed && shownOnce) confirm();
 		}
 	});
 
@@ -187,14 +234,14 @@
 							oncontextmenu={(e) => e.preventDefault()}
 						>
 							{#if held}<CharacterToken
-									character={face.character}
+									character={spinning ?? face.character}
 									size={pair ? 120 : 160}
 								/>{:else}<span class="hidden-token">{t('setup.reveal.hold')}</span>{/if}
 						</button>
 					{:else}
-						<div class="token">
+						<div class="token" data-testid="reveal-token" data-spinning={spinning ? '' : undefined}>
 							{#if revealed}<CharacterToken
-									character={face.character}
+									character={spinning ?? face.character}
 									size={pair ? 120 : 160}
 								/>{:else}<span class="hidden-token" data-testid="reveal-locked"
 									>{t('setup.reveal.locked')}</span

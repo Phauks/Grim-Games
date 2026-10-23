@@ -150,6 +150,9 @@
 		cursor: pointer;
 		background: var(--surface-raised);
 		color: var(--on-surface);
+		/* The buttons' 1px edge, so a type colour never blends into the surface behind it
+		   (Trevor, 2026-10-22; button-edges.e2e.ts). */
+		box-shadow: var(--button-ring);
 	}
 	/* The tap area reaches the 44px minimum without making the line taller. */
 	.badge::before {

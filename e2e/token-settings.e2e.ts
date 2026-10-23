@@ -329,7 +329,7 @@ test('the preview draws the reminder as the board does, at the board size', asyn
 	const dialog = await openTokens(page);
 	const preview = dialog.getByTestId('reminder-preview');
 	const reminder = preview.getByTestId('board-reminder').first();
-	await expect(reminder).toHaveAttribute('aria-label', 'Died Today reminder');
+	await expect(reminder).toHaveAttribute('aria-label', 'Survives Execution reminder');
 	await expect(preview.getByTestId('reminder-token')).toHaveCount(0);
 	const before = (await reminder.boundingBox())!.width;
 	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('1.5');
@@ -451,7 +451,7 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 
 test('reminder words can run wider or wrap instead of ending in "…"', async ({ page }) => {
 	// Trevor (2026-10-17): "red he..." on the Red Herring reminder; the sample is now the
-	// Godfather's Died Today.
+	// Devil's Advocate's Survives Execution, long enough to need the room.
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const label = dialog
@@ -459,7 +459,7 @@ test('reminder words can run wider or wrap instead of ending in "…"', async ({
 		.getByTestId('board-reminder')
 		.first()
 		.locator('.label');
-	await expect(label).toHaveText('Died Today');
+	await expect(label).toHaveText('Survives Execution');
 	const cut = () => label.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
 	const lines = () =>
 		label.evaluate((el) =>

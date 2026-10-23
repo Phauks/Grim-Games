@@ -4,6 +4,10 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import QrCode, { fitsQrCode } from '#lib/ui/primitives/QrCode.svelte';
 	import { copyText } from '#lib/ui/clipboard.ts';
+	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { qrPicture } from './qr-picture.svelte.ts';
+	import QrCentreSetting from './QrCentreSetting.svelte';
 
 	/**
 	 * The one share screen (Trevor, 2026-10-18): an optional code in large type, the QR code,
@@ -60,6 +64,16 @@
 		qrCaption,
 		hidden = false
 	}: Props = $props();
+	/*
+	 * The middle of the QR is the Storyteller's choice (plan R1): the caller's (the script's
+	 * logo or name), their own picture, or nothing. Set here or in Settings.
+	 */
+	const centre = $derived(preferences.current.qrCentre);
+	const usePicture = $derived(centre === 'picture' && !!qrPicture.current);
+	const middle = $derived(centre === 'none' ? undefined : usePicture ? pictureCentre : qrCenter);
+	const middleShape = $derived(usePicture ? 'square' : qrCenterShape);
+	let centreOpen = $state(false);
+	let centreButton = $state<HTMLButtonElement>();
 	const id = $props.id();
 	const urlId = `${id}-url`;
 	const codeId = `${id}-code`;
@@ -130,8 +144,8 @@
 			<QrCode
 				value={url}
 				label={qrLabel}
-				center={qrCenter}
-				centerShape={qrCenterShape}
+				center={middle}
+				centerShape={middleShape}
 				caption={qrCaption}
 			/>
 			{#if hidden}<p class="placeholder cover" data-testid="share-hidden">
@@ -169,12 +183,36 @@
 			{#if canShare}
 				<IconButton icon="share" label={t('share.share')} onclick={share} disabled={!url} />
 			{/if}
+			<!-- The QR's middle, set where it shows as well as in Settings. -->
+			<IconButton
+				icon="settings"
+				label={t('share.qrCentre')}
+				bind:ref={centreButton}
+				onclick={() => (centreOpen = !centreOpen)}
+			/>
 		</div>
 	</div>
 	{#if actions}<div class="actions">{@render actions()}</div>{/if}
 </div>
 
+{#snippet pictureCentre()}
+	<img class="qr-picture" src={qrPicture.current} alt="" />
+{/snippet}
+
+<Popover bind:open={centreOpen} title={t('share.qrCentre')} anchor={centreButton}>
+	<div class="centre"><QrCentreSetting /></div>
+</Popover>
+
 <style>
+	.qr-picture {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.centre {
+		display: grid;
+		gap: var(--space-2);
+	}
 	.share {
 		display: grid;
 		gap: var(--space-3);

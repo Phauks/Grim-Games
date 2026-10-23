@@ -155,6 +155,31 @@ test('the counts and search stick just below the header while the list scrolls',
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).not.toBeInViewport();
 });
 
+test('tapping a type count shows the setup sheet count and every change to it', async ({
+	page
+}) => {
+	// Trevor (2026-10-20): a small info popup, like definitions, with the base and each modifier.
+	await selectionFor(page, 8);
+	await select(page, 'Baron');
+	const before = await page.getByTestId('setup-counts').boundingBox();
+	await page.getByTestId('count-info-outsider').tap();
+	const info = page.getByTestId('count-info');
+	await expect(info).toBeVisible();
+	await expect(info).toContainText('Setup sheet, 8 players1');
+	await expect(info).toContainText(/Baron\s*: \+2 Outsiders/);
+	await expect(info).toContainText('Expected3');
+	await expect(info).toContainText('Chosen0');
+	// An overlay: the counts don't move.
+	expect(await page.getByTestId('setup-counts').boundingBox()).toEqual(before);
+	await page.keyboard.press('Escape');
+	await expect(info).toBeHidden();
+	// Townsfolk make room for the Outsiders, so the Baron explains them too.
+	await page.getByTestId('count-info-townsfolk').tap();
+	await expect(info).toContainText('Setup sheet, 8 players5');
+	await expect(info).toContainText(/Baron\s*: \+2 Outsiders/);
+	await expect(info).toContainText('Expected3');
+});
+
 test('selection counts against the setup sheet and explains the Drunk', async ({ page }) => {
 	await selectionFor(page, 6);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Drunk', 'Poisoner', 'Imp');
@@ -1293,6 +1318,35 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	// Seen, closing it finishes the draw (Trevor, 2026-10-22: no "held" once seen).
 	await page.keyboard.press('Escape');
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
+});
+
+test("Slot machine reveal, a Bag draw setting, spins the token before it stops on the player's", async ({
+	page
+}) => {
+	// Trevor (2026-10-22): a Bag draw setting, off by default.
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	const setting = page
+		.getByTestId('bag-settings')
+		.getByText('Slot machine reveal', { exact: true });
+	await setting.tap();
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	const reveal = page.getByTestId('reveal');
+	const token = reveal.getByTestId('reveal-token');
+	// Spinning: the name and Confirm wait for the reel to stop.
+	await expect(token).toHaveAttribute('data-spinning', '');
+	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	await expect(page.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	// Closed while it spins, the character wasn't seen: the tile stays held for that seat.
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Tile 1, held by Seat 1' }).tap();
+	await expect(token).not.toHaveAttribute('data-spinning');
+	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	await expect(page.getByRole('button', { name: 'Confirm' })).toBeEnabled();
 });
 
 test('selecting a character moves nothing, and its lock picks it when not yet chosen', async ({

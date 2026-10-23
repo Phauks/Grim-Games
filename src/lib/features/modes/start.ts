@@ -33,9 +33,10 @@ interface StartInput<G> {
 
 /**
  * A mode's script with the chosen rules: the combined pool's script, with each rule's own
- * lines added to the script's Bootlegger lines so they show where a script's rules do.
+ * lines added to the script's Bootlegger lines so they show where a script's rules do. New
+ * game's preview shows the same script before the game starts.
  */
-function rulesScript(
+export function rulesScript(
 	mode: GameMode,
 	rules: readonly SpecialRule[],
 	script: Script,

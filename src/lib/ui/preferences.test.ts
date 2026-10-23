@@ -74,13 +74,15 @@ describe('parsePreferences', () => {
 			tileFace: 'letters',
 			requireName: true,
 			holdToReveal: true,
+			slotMachine: true,
 			ownWording: true,
 			hideWatchLink: true,
 			timerSound: 'buzzer',
 			timerMode: 'up',
 			timerVibrate: false,
 			timerKeepAwake: false,
-			timerPerPlayer: 45
+			timerPerPlayer: 45,
+			qrCentre: 'picture'
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
 	});

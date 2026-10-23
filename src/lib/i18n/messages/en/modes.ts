@@ -20,6 +20,7 @@ export const modes = {
 	'modes.info.noSource': 'This script has no source page to share',
 	'modes.storytellerName': 'Storyteller',
 	'modes.script': 'Script',
+	'modes.preview': 'Script preview',
 	'modes.scriptSearch.label': 'Find a script',
 	'modes.scriptSearch.custom': 'Custom',
 	'modes.scriptSearch.version': 'Script version',
