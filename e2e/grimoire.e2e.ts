@@ -4724,7 +4724,7 @@ test('a big name badge beside a dialog title shrinks instead of squeezing the ti
 		.getByRole('button', { name: 'Fortune Teller', exact: true })
 		.tap();
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
-	const menu = page.getByRole('dialog', { name: 'Seat 1' });
+	const menu = page.getByRole('dialog', { name: 'Seat 1', exact: true });
 	const title = menu.locator('[data-part="title"]');
 	await expect(title).toHaveText('Seat 1');
 	// One line: no word is broken across lines, so the title is no taller than its line.
