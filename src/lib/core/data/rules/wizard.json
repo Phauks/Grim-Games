@@ -5,5 +5,8 @@
 			"note": "Tracks whatever a granted wish needs.",
 			"ambiguous": "The wiki's How to Run doesn't mention the ? reminder or where it goes."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

@@ -20,5 +20,18 @@
 				"token": "Twin"
 			}
 		]
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Twin",
+				"text": "Choose the Evil Twin’s good twin: put [Twin] on them",
+				"target": {
+					"choose": "good",
+					"choice": "a good player (rarely a Traveller)"
+				},
+				"reason": "The good twin; the twins learn each other"
+			}
+		]
 	}
 }

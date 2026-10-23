@@ -13,5 +13,19 @@
 	"deathCheck": {
 		"kind": "marked-killed-by-demon",
 		"token": "Grandchild"
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Grandchild",
+				"text": "Choose a good player: put [Grandchild] on them",
+				"target": {
+					"choose": "good",
+					"choice": "a good player",
+					"notSelf": true
+				},
+				"reason": "The Grandmother learns this player and their character"
+			}
+		]
 	}
 }

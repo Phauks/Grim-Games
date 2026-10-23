@@ -4,5 +4,8 @@
 			"seat": "self",
 			"note": "On the Artist once their question is answered."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

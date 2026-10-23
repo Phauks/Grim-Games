@@ -9,6 +9,7 @@
  * TypeScript move here one per PR (the list is in docs/shared-components.md).
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
+import { readSetupPrep, type SetupPrepRules } from './setup-prep-rules.ts';
 import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
 import {
@@ -119,6 +120,8 @@ export interface CharacterRules {
 	gameEnd?: GameEndRules;
 	/** A night death its own ability decides (`rules/night-deaths.ts`). */
 	deathCheck?: DeathCheckRule;
+	/** Tokens and steps to prepare before the first night (`rules/setup-reminders.ts`). */
+	setupPrep?: SetupPrepRules;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -253,7 +256,8 @@ export const RULE_KEYS = [
 	'impairs',
 	'registersAs',
 	'gameEnd',
-	'deathCheck'
+	'deathCheck',
+	'setupPrep'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -395,6 +399,10 @@ export function parseCharacterRules(
 				issues.add(`${at}.token`, 'missing');
 			} else if (kind) rules.deathCheck = { kind, ...(token ? { token } : {}) };
 		}
+	}
+	if (raw.setupPrep !== undefined) {
+		const setupPrep = readSetupPrep(raw.setupPrep, `${path}.setupPrep`, issues, reminders);
+		if (setupPrep) rules.setupPrep = setupPrep;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

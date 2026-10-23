@@ -4,5 +4,8 @@
 			"seat": "other",
 			"note": "The player whose vote counts triple tomorrow; dead players are allowed."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
 	}
 }

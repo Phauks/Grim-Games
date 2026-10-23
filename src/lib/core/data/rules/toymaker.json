@@ -5,5 +5,8 @@
 			"types": ["demon"],
 			"note": "On the Demon until it skips an attack."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

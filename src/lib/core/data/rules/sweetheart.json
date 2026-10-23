@@ -8,5 +8,8 @@
 			"seat": "any",
 			"note": "Any one player the Storyteller picks when the Sweetheart dies."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

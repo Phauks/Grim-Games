@@ -14,5 +14,19 @@
 			"note": "Replaces Mad on that Townsfolk once they die, when the Pixie gains their ability.",
 			"ambiguous": "The wiki says to swap Mad for Has Ability but doesn't name whose token it sits by; the swap implies the dead Townsfolk."
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Mad",
+				"text": "Choose an in-play Townsfolk to show the Pixie: put [Mad] on them",
+				"target": {
+					"choose": "townsfolk",
+					"choice": "an in-play Townsfolk",
+					"notSelf": true
+				},
+				"reason": "The Townsfolk the Pixie is shown and must be mad about"
+			}
+		]
 	}
 }

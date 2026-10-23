@@ -61,8 +61,8 @@
 	const prep = $derived.by(() => {
 		if (field !== 'prep') return [];
 		const names = characterNames(officialData.current?.characters ?? []);
-		return setupPrep(character.id, character.name).map((step) =>
-			prepTextSegments(step.text, names)
+		return setupPrep(character.id, character.name, new Map([[character.id, character]])).map(
+			(step) => prepTextSegments(step.text, names)
 		);
 	});
 	const variants = $derived.by(() => {

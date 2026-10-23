@@ -4,5 +4,8 @@
 			"seat": "any",
 			"note": "Any player the Cerenovus makes mad about a good character."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
 	}
 }

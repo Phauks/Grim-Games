@@ -15,5 +15,8 @@
 			"seat": "any",
 			"note": "The third player chosen tonight."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

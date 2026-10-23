@@ -9,5 +9,8 @@
 			"life": "dead",
 			"note": "The Banshee after the Demon has killed them while they had their ability."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

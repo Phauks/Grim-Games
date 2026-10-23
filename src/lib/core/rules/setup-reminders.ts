@@ -3,7 +3,8 @@
  * Storyteller will need before the first night (and at the start of the first day),
  * suggested so they can be placed in one go (Trevor, 2026-10-15).
  *
- * The curated list is `setup-reminders.data.ts`. A suggestion names the token and, when
+ * Each character's tokens are the `setupPrep` key of its rules block (`data/setup-prep-rules.ts`;
+ * Trevor reviews and edits the official ones). A suggestion names the token and, when
  * the grimoire settles it, the seat it goes on (the Drunk's "Is The Drunk" on the Drunk;
  * the Washerwoman's TOWNSFOLK on the only Townsfolk). Otherwise `choice` says what the
  * Storyteller picks, and `candidates` lists the players who fit.
@@ -11,7 +12,18 @@
  * Tokens already in the grimoire are not suggested again. Placed suggestions are normal
  * reminders (`ApplySetupReminders`), so the Storyteller can move or remove any of them.
  */
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import type {
+	SeatFilter,
+	SetupCondition,
+	SetupNote,
+	SetupPrepRules,
+	SetupReminderSpec,
+	SetupTarget,
+	SetupTiming
+} from '#lib/core/data/setup-prep-rules.ts';
 import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
@@ -21,25 +33,12 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, Seat, SeatId } from '#lib/core/model/types.ts';
 import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
-import {
-	NO_SETUP_REMINDERS,
-	SETUP_NOTES,
-	SETUP_REMINDER_ENTRIES,
-	type SeatFilter,
-	type SetupCondition,
-	type SetupNote,
-	type SetupReminderEntry,
-	type SetupReminderSpec,
-	type SetupTarget,
-	type SetupTiming
-} from './setup-reminders.data.ts';
 
-export { NO_SETUP_REMINDERS, SETUP_NOTES, SETUP_REMINDER_ENTRIES };
 export type {
 	SeatFilter,
 	SetupCondition,
 	SetupNote,
-	SetupReminderEntry,
+	SetupPrepRules,
 	SetupReminderSpec,
 	SetupTarget,
 	SetupTiming
@@ -66,7 +65,41 @@ export interface SetupReminderOptions {
 	timings?: readonly SetupTiming[];
 }
 
-const ENTRIES = new Map(SETUP_REMINDER_ENTRIES.map((e) => [e.id, e]));
+const W = 'https://wiki.bloodontheclocktower.com/';
+
+/**
+ * A character's `setupPrep` rules. Homebrew characters share no rules with an official id:
+ * one that reuses it has only its own `rules`.
+ */
+export function setupPrepOf(
+	characterId: CharacterId,
+	lookup?: CharacterLookup
+): SetupPrepRules | undefined {
+	const character = lookup?.get(characterId);
+	if (character && character.edition === undefined) return character.rules?.setupPrep;
+	return rulesOf(characterId, lookup)?.setupPrep;
+}
+
+/** One character's setup tokens, with the wiki page to link. */
+interface SetupReminderEntry {
+	id: CharacterId;
+	wiki: string;
+	reminders: readonly SetupReminderSpec[];
+}
+
+function entryOf(
+	characterId: CharacterId,
+	lookup: CharacterLookup
+): SetupReminderEntry | undefined {
+	const reminders = setupPrepOf(characterId, lookup)?.reminders;
+	if (!reminders) return undefined;
+	const character = lookup.get(characterId);
+	return {
+		id: characterId,
+		wiki: (character && wikiUrl(character)) ?? `${W}Setup`,
+		reminders
+	};
+}
 
 interface SeatFacts {
 	seat: Seat;
@@ -215,7 +248,7 @@ function suggest(
 /**
  * The reminder tokens to place for the characters in play, in seating order of the
  * characters, then Fabled and Loric. Characters are in play by their token or their true
- * character; homebrew characters are not covered.
+ * character; a homebrew character is covered by its own `setupPrep` rules.
  */
 export function setupReminders(
 	game: Game,
@@ -233,12 +266,10 @@ export function setupReminders(
 	for (const id of game.ruleCharacters) if (!order.includes(id)) order.push(id);
 	const out: SetupReminder[] = [];
 	if (timings.has('setup'))
-		out.push(...drawnTileReminders(game), ...unseatedReminders(game, seats));
+		out.push(...drawnTileReminders(game, lookup), ...unseatedReminders(game, seats, lookup));
 	for (const id of order) {
-		const entry = ENTRIES.get(id);
-		const character = lookup.get(id);
-		// Homebrew characters share no rules with an official id.
-		if (!entry || (character && character.edition === undefined)) continue;
+		const entry = entryOf(id, lookup);
+		if (!entry) continue;
 		const selfSeats = seats.filter((f) => f.truly === id || f.seat.characterId === id);
 		out.push(...suggest(game, lookup, entry, seats, selfSeats, timings));
 	}
@@ -252,7 +283,7 @@ export function setupReminders(
  * shows only the token the player saw, so the seat is pre-filled. Skipped once a matching
  * reminder is on that seat.
  */
-function drawnTileReminders(game: Game): SetupReminder[] {
+function drawnTileReminders(game: Game, lookup: CharacterLookup): SetupReminder[] {
 	const out: SetupReminder[] = [];
 	const tiles = game.bag ? Object.values(game.bag.tiles) : [];
 	for (const tile of tiles) {
@@ -265,7 +296,7 @@ function drawnTileReminders(game: Game): SetupReminder[] {
 				(p) => p.characterId === r.characterId && p.label === r.label
 			);
 			if (placed) continue;
-			const entry = ENTRIES.get(r.characterId);
+			const entry = entryOf(r.characterId, lookup);
 			const spec = entry?.reminders.find((s) => s.label === r.label);
 			out.push({
 				characterId: r.characterId,
@@ -275,7 +306,7 @@ function drawnTileReminders(game: Game): SetupReminder[] {
 				reason: spec?.reason ?? 'This player drew a token that is not their true character',
 				candidates: [],
 				timing: 'setup',
-				wiki: entry?.wiki ?? 'https://wiki.bloodontheclocktower.com/Setup'
+				wiki: entry?.wiki ?? `${W}Setup`
 			});
 		}
 	}
@@ -290,7 +321,11 @@ function drawnTileReminders(game: Game): SetupReminder[] {
  * Demon (https://wiki.bloodontheclocktower.com/Marionette). One suggestion per copy not yet
  * on a seat.
  */
-function unseatedReminders(game: Game, seats: readonly SeatFacts[]): SetupReminder[] {
+function unseatedReminders(
+	game: Game,
+	seats: readonly SeatFacts[],
+	lookup: CharacterLookup
+): SetupReminder[] {
 	const out: SetupReminder[] = [];
 	const unseated = game.bag?.unseated ?? [];
 	const placed = (r: Reminder) =>
@@ -324,7 +359,7 @@ function unseatedReminders(game: Game, seats: readonly SeatFacts[]): SetupRemind
 			)
 			.filter((f) => !marked.has(f.seat.seatId))
 			.map((f) => f.seat.seatId);
-		const entry = ENTRIES.get(r.characterId);
+		const entry = entryOf(r.characterId, lookup);
 		const name = marionette
 			? 'Marionette'
 			: r.characterId === 'drunk'
@@ -340,7 +375,7 @@ function unseatedReminders(game: Game, seats: readonly SeatFacts[]): SetupRemind
 			choice: `Who is the ${name}`,
 			candidates,
 			timing: 'setup',
-			wiki: entry?.wiki ?? 'https://wiki.bloodontheclocktower.com/Setup'
+			wiki: entry?.wiki ?? `${W}Setup`
 		});
 	}
 	return out;
@@ -370,12 +405,18 @@ export interface SetupPrepStep {
 /**
  * Everything the Storyteller prepares for one character between the draw and the first
  * night (first-day tokens included), whatever is in play: the token steps of
- * `SETUP_REMINDER_ENTRIES` (tokens with the same text are one step), then `SETUP_NOTES`.
- * `name` is the character's name, used for a token on its own seat.
+ * `setupPrep.reminders` (tokens with the same text are one step), then `setupPrep.notes`.
+ * `name` is the character's name, used for a token on its own seat; `lookup` finds a custom
+ * character's own rules.
  */
-export function setupPrep(characterId: CharacterId, name: string): SetupPrepStep[] {
+export function setupPrep(
+	characterId: CharacterId,
+	name: string,
+	lookup?: CharacterLookup
+): SetupPrepStep[] {
+	const prep = setupPrepOf(characterId, lookup);
 	const steps: SetupPrepStep[] = [];
-	for (const spec of ENTRIES.get(characterId)?.reminders ?? []) {
+	for (const spec of prep?.reminders ?? []) {
 		const target = 'self' in spec.target ? `the ${name}` : spec.target.choice;
 		const same = steps.find((s) => s.text === spec.text);
 		if (same) {
@@ -384,7 +425,7 @@ export function setupPrep(characterId: CharacterId, name: string): SetupPrepStep
 			if (same.target !== target) delete same.target;
 		} else steps.push({ text: spec.text, tokens: [spec.label], target });
 	}
-	for (const note of SETUP_NOTES[characterId] ?? []) {
+	for (const note of prep?.notes ?? []) {
 		steps.push({
 			text: note.text,
 			tokens: [...(note.tokens ?? [])],
@@ -399,12 +440,13 @@ export function setupPrep(characterId: CharacterId, name: string): SetupPrepStep
  * first night can show them as already done. Tokens placed at the start of the first
  * day are not included.
  */
-export function prepTokens(characterId: CharacterId): string[] {
+export function prepTokens(characterId: CharacterId, lookup?: CharacterLookup): string[] {
+	const prep = setupPrepOf(characterId, lookup);
 	const out = new Set<string>();
-	for (const spec of ENTRIES.get(characterId)?.reminders ?? []) {
+	for (const spec of prep?.reminders ?? []) {
 		if ((spec.timing ?? 'setup') === 'setup') out.add(spec.label);
 	}
-	for (const note of SETUP_NOTES[characterId] ?? []) for (const t of note.tokens ?? []) out.add(t);
+	for (const note of prep?.notes ?? []) for (const t of note.tokens ?? []) out.add(t);
 	return [...out];
 }
 

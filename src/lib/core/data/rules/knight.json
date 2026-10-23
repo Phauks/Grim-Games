@@ -6,5 +6,29 @@
 			"types": ["townsfolk", "outsider", "minion", "traveller"],
 			"note": "Two non-Demon players shown to the Knight at setup; with the Vortox in play one of them may be the Demon."
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Know",
+				"text": "Choose 2 players who aren’t the Demon: put [Know] on each",
+				"target": {
+					"choose": "not-demon",
+					"choice": "a player who isn’t the Demon",
+					"notSelf": true
+				},
+				"reason": "First of the 2 players the Knight is shown"
+			},
+			{
+				"label": "Know",
+				"text": "Choose 2 players who aren’t the Demon: put [Know] on each",
+				"target": {
+					"choose": "not-demon",
+					"choice": "a player who isn’t the Demon",
+					"notSelf": true
+				},
+				"reason": "Second of the 2 players the Knight is shown"
+			}
+		]
 	}
 }

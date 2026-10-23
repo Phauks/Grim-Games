@@ -10,5 +10,8 @@
 			"seat": "self",
 			"note": "The Philosopher's own seat after their token is swapped for the chosen character."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
 	}
 }

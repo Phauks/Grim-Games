@@ -13,5 +13,8 @@
 			"seat": "self",
 			"note": "On the Professor after they use their ability."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

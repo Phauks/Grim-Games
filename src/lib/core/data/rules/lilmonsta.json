@@ -12,5 +12,8 @@
 			"life": "alive",
 			"note": "The living player the Minions pick to babysit tonight; Minion or not."
 		}
+	},
+	"setupPrep": {
+		"none": "the Minions choose the babysitter on the first night"
 	}
 }

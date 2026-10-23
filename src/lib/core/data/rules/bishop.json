@@ -10,5 +10,8 @@
 			"alignment": "evil",
 			"note": "On an evil Bishop each dawn until a good player is nominated."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

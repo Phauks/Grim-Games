@@ -9,5 +9,18 @@
 			"seat": "self",
 			"note": "On the Puzzlemaster once they have made their guess."
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Drunk",
+				"text": "Choose who the Puzzlemaster makes drunk, usually a Townsfolk: put [Drunk] on them",
+				"target": {
+					"choose": "townsfolk",
+					"choice": "any player, usually a Townsfolk"
+				},
+				"reason": "The player the Puzzlemaster makes drunk"
+			}
+		]
 	}
 }

@@ -9,5 +9,8 @@
 			"alignment": "good",
 			"note": "On the alive player the Moonchild chose, only if that player is good."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

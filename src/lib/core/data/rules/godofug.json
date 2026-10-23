@@ -4,5 +4,18 @@
 			"seat": "any",
 			"note": "Whichever player currently wears the Ug hat."
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Hat",
+				"text": "Give the Ug hat to a player: put [Hat] on them",
+				"target": {
+					"choose": "any",
+					"choice": "any player"
+				},
+				"reason": "Who wears the Ug hat at the start"
+			}
+		]
 	}
 }

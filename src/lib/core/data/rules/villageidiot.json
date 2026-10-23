@@ -6,5 +6,21 @@
 			"note": "One of the Village Idiots, marking the extra one who is drunk; only while 2 or more are in play.",
 			"minOwners": 2
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Drunk",
+				"text": "If multiple Village Idiots, mark one as [Drunk] on them",
+				"target": {
+					"choose": "copies",
+					"choice": "one of the Village Idiots"
+				},
+				"reason": "With more than one Village Idiot, one of them is drunk",
+				"when": {
+					"minCopies": 2
+				}
+			}
+		]
 	}
 }

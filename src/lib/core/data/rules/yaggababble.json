@@ -8,5 +8,17 @@
 			"note": "A player who dies from the phrase; also used as a tally at the Grimoire's side.",
 			"ambiguous": "The wiki also places this token off-seat as a count of times the phrase was said, and does not say whether targets must be alive."
 		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "Choose the Yaggababble’s secret phrase",
+				"value": {
+					"key": "phrase",
+					"label": "Secret phrase"
+				}
+			}
+		],
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }

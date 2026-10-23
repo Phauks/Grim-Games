@@ -10,5 +10,8 @@
 			"reason": "no-ability",
 			"aliveAtMost": 3
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
 	}
 }

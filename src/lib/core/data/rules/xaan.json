@@ -16,5 +16,28 @@
 			"note": "On the Xaan on night X, while all Townsfolk are poisoned, until the next dusk.",
 			"seat": "self"
 		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Night 1",
+				"text": "Put [Night 1] on the Xaan",
+				"target": {
+					"self": true
+				},
+				"reason": "Counts the nights until night X"
+			},
+			{
+				"label": "X",
+				"text": "With 1 Outsider in play, also put [X] on the Xaan",
+				"target": {
+					"self": true
+				},
+				"reason": "With 1 Outsider in play, night 1 is night X",
+				"when": {
+					"exactOutsiders": 1
+				}
+			}
+		]
 	}
 }

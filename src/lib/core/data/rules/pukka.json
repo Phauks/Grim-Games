@@ -12,5 +12,8 @@
 			"withLabel": "Poisoned",
 			"note": "On last night's poisoned player when they die."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
 	}
 }

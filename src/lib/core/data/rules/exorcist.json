@@ -5,5 +5,8 @@
 			"note": "The player the Exorcist chooses, not last night's pick.",
 			"ambiguous": "The wiki doesn't say whether the Exorcist may choose themself."
 		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
 	}
 }
