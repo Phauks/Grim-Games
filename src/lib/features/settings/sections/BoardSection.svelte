@@ -60,11 +60,17 @@
 	level={3}
 	storageKey="settings-board-advanced"
 	defaultOpen={false}
-	count={2}
+	count={3}
 >
 	<SettingRow label={REMINDER_MODE_LABEL} warning={t('settings.reminderModeWarning')}>
 		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
 	</SettingRow>
+	<SettingToggle
+		label={t('settings.holdLightsSeat')}
+		description={t('settings.holdLightsSeatDescription')}
+		checked={boardLooks.current.holdLights === 'seat'}
+		onChange={(on) => boardLooks.update({ holdLights: on ? 'seat' : 'character' })}
+	/>
 	<!-- Both ways built so Trevor can pick after trying them (2026-10-23). -->
 	<SettingToggle
 		label={t('settings.dragSourceBank')}

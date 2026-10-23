@@ -451,11 +451,18 @@
 	});
 	/**
 	 * The seat whose token is held down (Trevor, 2026-10-19): its character's reminders light
-	 * up, on the board and in the bank, and everything else dims until it is let go.
+	 * up, on the board and in the bank, and everything else dims until it is let go. With
+	 * Board > Advanced's switch (Trevor, 2026-10-23), the reminders placed on that seat light
+	 * instead, whoever's they are; none in the bank is on a seat.
 	 */
 	let holding = $state<SeatId | undefined>();
-	function lit(reminder: Pick<Reminder, 'characterId' | 'ownerSeatId'>): boolean {
-		return holding !== undefined && isSeatsReminder(game, reminder, holding, characters);
+	function lit(
+		reminder: Pick<Reminder, 'characterId' | 'ownerSeatId'> & { reminderId?: ReminderId }
+	): boolean {
+		if (holding === undefined) return false;
+		if (boardLooks.current.holdLights === 'seat')
+			return game.seats[holding].reminders.some((r) => r.reminderId === reminder.reminderId);
+		return isSeatsReminder(game, reminder, holding, characters);
 	}
 
 	// ── Seat sheet ──
@@ -848,7 +855,12 @@
 
 	// ── Full screen, for those who don't know their browser's own way (Trevor, 2026-10-23).
 	// Only where the browser can: iPhone Safari can't for a page, so the button isn't there. ──
-	const canFullScreen = document.fullscreenEnabled === true;
+	/**
+	 * Not in the installed app (Trevor, 2026-10-23): it already has no address bar, and full
+	 * screen would only take the clock and status bar he wants to keep.
+	 */
+	const canFullScreen =
+		document.fullscreenEnabled === true && !matchMedia('(display-mode: standalone)').matches;
 	let fullScreen = $state(!!document.fullscreenElement);
 	$effect(() => {
 		const sync = () => (fullScreen = !!document.fullscreenElement);
@@ -1617,6 +1629,8 @@
 		>
 			Tokens
 		</Button>
+		<!-- The board's settings apart from the app's items (Trevor, 2026-10-23). -->
+		<hr class="menu-rule" />
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 		<span class="menu-nav">
 			<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>

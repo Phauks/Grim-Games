@@ -5290,6 +5290,34 @@ test("holding a seat's token lights its character's reminders and dims the rest"
 	await page.mouse.up();
 	await expect(lit).toHaveCount(0);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
+
+	// Board > Advanced (Trevor, 2026-10-23): the reminders on the held seat light instead,
+	// whoever's they are, so Seat 2 lights Seat 3's token and Seat 3 lights nothing.
+	await openSettingsDialog(page);
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board' })
+		.tap();
+	await settings.getByRole('button', { name: /Advanced/ }).tap();
+	await settings.getByText("Holding a token lights its seat's reminders", { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	const hold = async (number: number) => {
+		const box = await seat(number);
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await page.mouse.down();
+	};
+	await hold(2);
+	await expect(placed).toHaveAttribute('data-lit', 'true');
+	await expect(lit).toHaveCount(1);
+	await expect(deadCell).toHaveClass(/dim/);
+	await page.mouse.up();
+	await expect(lit).toHaveCount(0);
+	await hold(3);
+	await expect(placed).toHaveClass(/dim/);
+	await expect(lit).toHaveCount(0);
+	await page.mouse.up();
 });
 
 test('the walk-through shows the character, then its player below, with the count at the top right', async ({

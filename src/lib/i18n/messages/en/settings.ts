@@ -111,6 +111,9 @@ export const settings = {
 	'settings.warning': 'Warning',
 	'settings.storytellerLine': 'Storyteller: {name}',
 	'settings.boardAdvanced': 'Advanced',
+	'settings.holdLightsSeat': "Holding a token lights its seat's reminders",
+	'settings.holdLightsSeatDescription':
+		"Off: the held character's reminders light, wherever they are. On: the reminders on the held seat light, whoever's they are.",
 	'settings.dragSourceBank': "Dragged reminder's source in the bank",
 	'settings.dragSourceBankDescription':
 		'Off: a pill beside the dragged token names whose it is. On: the reminder bank says it.',
