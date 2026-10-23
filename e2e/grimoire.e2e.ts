@@ -1048,6 +1048,34 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	await expect(seatLabelled(page, 'Seat 1:')).toBeVisible();
 });
 
+// Trevor (2026-10-22): the join code in the board's corner, to read without opening Share.
+test('the join code shows under the script name, a Board setting, and opens Share', async ({
+	page
+}) => {
+	await startGame(page);
+	const corner = page.getByTestId('board-room-code');
+	await expect(corner).toContainText('Join code');
+	await page.getByRole('button', { name: 'Share', exact: true }).tap();
+	const share = page.getByRole('dialog', { name: 'Share' });
+	const code = share.getByTestId('share-code');
+	await expect(code).toHaveText(/^\d{3} \d{3}$/);
+	const shown = (await code.textContent())!;
+	await share.getByRole('button', { name: 'Close', exact: true }).tap();
+	await expect(corner).toHaveText(`Join code ${shown}`);
+	// A tap on it opens Share. The corner waits while a phone's seats leave it no room.
+	if (await page.getByTestId('script-title').isVisible()) {
+		await corner.tap();
+		await expect(share).toBeVisible();
+		await share.getByRole('button', { name: 'Close', exact: true }).tap();
+	}
+
+	await menu(page, 'Board');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings.getByText('Join code on the board', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(corner).toHaveCount(0);
+});
+
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
 	await startGame(page);
 	// A Traveller joins as a new seat: Add seat, then choose them for it.

@@ -279,6 +279,42 @@ test('after a game the room votes on the next script, and the next game opens in
 	await phoneContext.close();
 });
 
+test('the Storyteller picks what goes in the middle of the QR code', async ({ page }) => {
+	// Trevor, 2026-10-20 (plan R1): a custom QR centre logo, or none.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const qr = page.getByRole('img', { name: 'QR code to join the room' });
+	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
+
+	const centre = page.getByRole('dialog', { name: 'QR code centre' });
+	await page.getByRole('button', { name: 'QR code centre' }).first().tap();
+	await centre.getByRole('combobox', { name: 'QR code centre' }).tap();
+	await page.getByRole('option', { name: 'None' }).tap();
+	await expect(qr.getByTestId('script-logo')).toHaveCount(0);
+
+	// Your picture asks for one; it shows in the middle, here and in every share.
+	const chooser = page.waitForEvent('filechooser');
+	await centre.getByRole('combobox', { name: 'QR code centre' }).tap();
+	await page.getByRole('option', { name: 'Your picture' }).tap();
+	await (
+		await chooser
+	).setFiles({
+		name: 'me.png',
+		mimeType: 'image/png',
+		buffer: Buffer.from(
+			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
+			'base64'
+		)
+	});
+	await expect(qr.locator('img.qr-picture')).toHaveAttribute('src', /^data:image\/png/);
+	await expect(centre.getByRole('button', { name: 'Change picture' })).toBeEnabled();
+
+	// It stays on this device.
+	await page.reload();
+	await expect(qr.locator('img.qr-picture')).toHaveAttribute('src', /^data:image\/png/);
+});
+
 test('a phone that joins gets the game script before anyone has a seat', async ({
 	page,
 	browser
