@@ -35,8 +35,8 @@
 		display: none;
 	}
 	@media (min-width: 64rem) {
-		/* The column runs the page's whole length, so its dividing line meets the footer's
-		   wherever the page is scrolled (Trevor, 2026-10-16). */
+		/* The column runs the page's whole length, so its dividing line reaches the bottom
+		   wherever the page is scrolled (2026-10-16). */
 		.app-nav {
 			display: block;
 			flex: none;

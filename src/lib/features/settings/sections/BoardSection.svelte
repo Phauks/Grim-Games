@@ -10,6 +10,7 @@
 		STEP_FOCUS_LABEL
 	} from '#lib/features/grimoire/StepFocusSetting.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import BoardLooksRows from './BoardLooksRows.svelte';
 	import BoardPreview from './BoardPreview.svelte';
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
@@ -17,7 +18,6 @@
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
 	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
-	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 	/**
@@ -40,23 +40,9 @@
 			label={ASSIST_LABELS[key].label}
 			description={ASSIST_LABELS[key].description}
 			checked={assistance[key]}
-			disabled={key === 'roomCode' && !assistance.scriptTitle}
 			onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
 		/>
 	{/each}
-	<!-- The board thread's own control, with its Confirm (Trevor, 2026-10-17). -->
-	<!-- Name left, drop-down right, as every setting row (Trevor, 2026-10-18). -->
-	<SettingRow label={REMINDER_MODE_LABEL}>
-		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
-	</SettingRow>
-	<!-- Stacks only while reminders stay beside their seat, so off while they stay where dropped. -->
-	<SettingToggle
-		label={t('settings.reminderStacks')}
-		description={t('settings.reminderStacksHelp')}
-		checked={boardLooks.current.reminderStacks}
-		disabled={boardLooks.current.reminders === 'free'}
-		onChange={(reminderStacks) => boardLooks.update({ reminderStacks })}
-	/>
 	<SettingRow label={STEP_FOCUS_LABEL}>
 		{#snippet control(labelId)}<StepFocusSetting labelledBy={labelId} />{/snippet}
 	</SettingRow>
@@ -64,6 +50,21 @@
 	<h3>{t('settings.groupRules')}</h3>
 	<RulesLooksRows />
 </SettingGroup>
+
+<!-- Where reminders sit, apart and closed, marked with a warning before it is touched, since
+     leaving them where dropped turns a lot off (Trevor, 2026-10-23). Its Confirm still lists
+     what changes (Trevor, 2026-10-17). The board's ⋯ > Board opens this section too. -->
+<Collapsible
+	title={t('settings.boardAdvanced')}
+	level={3}
+	storageKey="settings-board-advanced"
+	defaultOpen={false}
+	count={1}
+>
+	<SettingRow label={REMINDER_MODE_LABEL} warning={t('settings.reminderModeWarning')}>
+		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
+	</SettingRow>
+</Collapsible>
 
 <style>
 	h3 {

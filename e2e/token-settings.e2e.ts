@@ -542,7 +542,9 @@ test('the character name and reminder fonts are set beside their token previews'
 	await expect(dialog.getByRole('combobox', { name: 'Reminder tokens' })).toHaveCount(0);
 });
 
-test('reminder highlight and owner icon can be switched and restyled', async ({ page }) => {
+test('reminder highlight can be switched and restyled, and the owner icon recoloured', async ({
+	page
+}) => {
 	// Trevor (2026-10-20): settings for reminder glow effects (on/off and how they look) and
 	// for the reminder's source mark (the owning character's icon): on/off and colour.
 	await page.goto('/');
@@ -567,17 +569,32 @@ test('reminder highlight and owner icon can be switched and restyled', async ({ 
 	await dialog.getByRole('combobox', { name: "Owner's icon colour", exact: true }).tap();
 	await page.getByRole('option', { name: 'Plain', exact: true }).tap();
 	await expect(icon).toHaveAttribute('data-plain', 'true');
-	await dialog.getByText("Owner's icon on reminders", { exact: true }).tap();
-	await expect(icon).toHaveCount(0);
+	// The owner's icon is always shown (Trevor, 2026-10-23): no switch to hide it.
+	await expect(dialog.getByText("Owner's icon on reminders", { exact: true })).toHaveCount(0);
 	const saved = await page.evaluate(
 		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
 	);
 	expect(saved).toMatchObject({
 		reminderHighlight: false,
 		reminderHighlightLook: 'glow',
-		reminderIcon: false,
 		reminderIconColour: 'plain'
 	});
+});
+
+test('∞ token symbols can be drawn filled', async ({ page }) => {
+	// Trevor (2026-10-23): "for infinite tokens, allow setting to turn on fill for the icons".
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const star = dialog
+		.getByTestId('reminder-preview')
+		.locator('[data-symbol="ph:star"] [data-icon]');
+	await expect(star).toHaveAttribute('data-icon', /^ph:star(?!-fill)/);
+	await dialog.getByText('Filled ∞ token symbols', { exact: true }).tap();
+	await expect(star).toHaveAttribute('data-icon', 'ph:star-fill');
+	const saved = await page.evaluate(
+		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
+	);
+	expect(saved.genericIconFill).toBe(true);
 });
 
 test('night leaves can be switched off, or carry night order numbers', async ({ page }) => {

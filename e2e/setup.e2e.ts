@@ -1036,6 +1036,24 @@ test('each good character row sets or clears a Demon bluff, up to three', async 
 	await expect(bluffButton('monk')).toBeEnabled();
 });
 
+test('the keyboard focus ring on a character token is round, around the token', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): it was a square around the token's button.
+	await selectionFor(page, 5);
+	const info = page.getByRole('button', { name: 'About the Chef' });
+	await info.tap();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeFocused();
+	expect(await info.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('none');
+	const face = info.locator('[data-token-face]');
+	const ring = await face.evaluate((el) => {
+		const style = getComputedStyle(el);
+		return { outline: style.outlineStyle, radius: style.borderRadius };
+	});
+	expect(ring).toEqual({ outline: 'solid', radius: '50%' });
+});
+
 // Trevor, 2026-10-19: the bag's cog and Share sit on the Draw heading's line, at the right.
 test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 	await selectionFor(page, 5);
@@ -1149,16 +1167,16 @@ async function lockedDraw(page: Page) {
 	await lockDraw(page);
 }
 
-// Trevor (2026-10-20, Pixel): the footer was cut off under the Draw page's bottom bar.
-test('the page footer clears the bottom bar on the setup steps', async ({ page }) => {
+// Trevor (2026-10-20, Pixel): the page's end was cut off under the Draw page's bottom bar.
+test("the page's end clears the bottom bar on the setup steps", async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
 	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-	const footer = await page.getByRole('contentinfo').boundingBox();
+	const end = await page.locator('.app-body').boundingBox();
 	const bar = await page.locator('.setup-nav').boundingBox();
-	expect(footer && bar && footer.y + footer.height).toBeLessThanOrEqual(bar!.y + 1);
+	expect(end && bar && end.y + end.height).toBeLessThanOrEqual(bar!.y + 1);
 });
 
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
@@ -1171,10 +1189,9 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	await expect(title).toHaveText('Trouble Brewing');
 	await expect(title.getByTestId('script-logo')).toHaveCount(1);
 	await expect(page.locator('.setup-nav')).toHaveCount(0);
-	// No menu or footer to leave by while the phone is passed round.
+	// No menu to leave by while the phone is passed round.
 	await expect(menuButton(page)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
-	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
 	// Hold to see character is off by default, locked or not (Trevor, 2026-10-20).
 	await page.getByRole('button', { name: /^Tile 1/ }).tap();
@@ -1204,9 +1221,8 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
-	// Unlocked: the menu and footer are back.
+	// Unlocked: the menu is back.
 	await expect(menuButton(page)).toBeVisible();
-	await expect(page.getByRole('contentinfo')).toBeVisible();
 	await noSidewaysScroll(page);
 });
 
@@ -1297,7 +1313,6 @@ test('the board stays locked while the draw is, until the Storyteller PIN', asyn
 	const locked = page.getByTestId('board-locked');
 	await expect(locked).toContainText('The grimoire is locked');
 	await expect(page.getByTestId('seat')).toHaveCount(0);
-	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
 	// Back to the draw is always there; the PIN opens the board.
 	await expect(locked.getByRole('link', { name: 'Back to the draw' })).toBeVisible();

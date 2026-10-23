@@ -66,8 +66,8 @@ describe('parsePreferences', () => {
 				setupMovesName: false,
 				reminderHighlight: false,
 				reminderHighlightLook: 'both',
-				reminderIcon: true,
-				reminderIconColour: 'plain'
+				reminderIconColour: 'plain',
+				genericIconFill: true
 			},
 			colors: {},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },

@@ -107,10 +107,11 @@ export const settings = {
 	'settings.rulesAt.middle': 'Middle',
 	'settings.rulesAt.edge': 'Corner',
 	'settings.rulesGrouped': 'Grouping',
-	'settings.reminderStacks': 'Stack crowded reminders',
-	'settings.reminderStacksHelp':
-		'A seat with more than three reminders shows two and a +N token that opens the seat.',
 	'settings.groupRules': 'Fabled and Loric',
+	'settings.warning': 'Warning',
+	'settings.boardAdvanced': 'Advanced',
+	'settings.reminderModeWarning':
+		'Reminders left where dropped belong to no seat: no lines back to seats, no fitting around them, and they stay put when seats move.',
 	'settings.rulesGrouped.each': 'Individual',
 	'settings.rulesGrouped.grouped': 'Stacked',
 	'settings.groupShare': 'Share',

@@ -20,7 +20,6 @@ export const ASSIST_KEYS = [
 	'trackNominations',
 	'dayAfterNight',
 	'stackReminders',
-	'scriptTitle',
 	'roomCode',
 	'explainTerms'
 ] as const;
@@ -75,7 +74,7 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	demonVotedButton: {
 		label: 'Demon voted button',
 		description:
-			'While a Flowergirl is in play, a Demon voted button at the top of the day, for her night answer.'
+			'While a Flowergirl is in play, a Demon voted button on her row of the day, for her night answer.'
 	},
 	savantInfo: {
 		label: 'Suggest Savant information',
@@ -99,10 +98,6 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Stack duplicate reminders',
 		description:
 			'Show several copies of one reminder as a single token with a count. Off shows each copy.'
-	},
-	scriptTitle: {
-		label: 'Script name on the board',
-		description: "Show the script's name and author behind the grimoire circle."
 	},
 	roomCode: {
 		label: 'Join code on the board',

@@ -29,6 +29,7 @@
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import { sheetNumbersFor } from './sheet-night-numbers.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import type { ReminderLabel } from '#lib/core/data/index.ts';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
 	import {
 		boardLooks,
@@ -207,7 +208,8 @@
 	{#snippet preview()}
 		<!-- As it rests, then highlighted as a held seat's reminder (Trevor, 2026-10-20). Its
 		     player has turned good, so Owner's icon colour shows a difference (Trevor, 2026-10-22:
-		     every setting shows in its preview). -->
+		     every setting shows in its preview). Then an ∞ token with an icon symbol, for Filled
+		     ∞ token symbols (Trevor, 2026-10-23). -->
 		<div class="preview reminder-sample" style:--sample="{largestReminder}px">
 			{#if reminderSample}<BoardReminder
 					label={reminderSample.reminders[0]}
@@ -225,7 +227,15 @@
 						disabled
 						onTap={() => {}}
 					/></span
-				>{/if}
+				><BoardReminder
+					label={'' as ReminderLabel}
+					character={undefined}
+					infinite
+					symbol="ph:star"
+					size={reminderSize}
+					disabled
+					onTap={() => {}}
+				/>{/if}
 		</div>
 	{/snippet}
 	{@render reminderFont?.()}
@@ -272,18 +282,11 @@
 				onChange={(reminderHighlightLook) => onChange({ ...value, reminderHighlightLook })}
 			/>{/snippet}
 	</SettingRow>
-	<SettingToggle
-		label={t('characters.reminderIcon')}
-		description={t('characters.reminderIconHelp')}
-		checked={value.reminderIcon}
-		onChange={(reminderIcon) => onChange({ ...value, reminderIcon })}
-	/>
 	<SettingRow label={t('characters.reminderIconColour')}>
 		{#snippet control(labelId)}<Select
 				label={t('characters.reminderIconColour')}
 				labelledBy={labelId}
 				value={value.reminderIconColour}
-				disabled={!value.reminderIcon}
 				options={REMINDER_ICON_COLOURS.map((colour) => ({
 					value: colour,
 					label: t(`characters.iconColour.${colour}`)
@@ -291,6 +294,12 @@
 				onChange={(reminderIconColour) => onChange({ ...value, reminderIconColour })}
 			/>{/snippet}
 	</SettingRow>
+	<SettingToggle
+		label={t('characters.genericIconFill')}
+		description={t('characters.genericIconFillHelp')}
+		checked={value.genericIconFill}
+		onChange={(genericIconFill) => onChange({ ...value, genericIconFill })}
+	/>
 	{@render colourRow('reminder')}
 	{@render colourRow('reminderLabel')}
 	{@render colourRow('reminderInk')}
@@ -428,12 +437,12 @@
 	.reminder-sample {
 		height: max(var(--sample), 3rem);
 	}
-	/* Wide, the box beside the settings is too narrow for both reminders side by side at their
-	   largest, so the highlighted one sits under the one at rest. */
+	/* Wide, the box beside the settings is too narrow for the reminders side by side at their
+	   largest, so they stack: at rest, highlighted, then the ∞ token. */
 	@container (min-width: 26rem) {
 		.reminder-sample {
 			flex-direction: column;
-			height: max(calc(2 * var(--sample) + var(--space-4)), 6rem);
+			height: max(calc(3 * var(--sample) + 2 * var(--space-4)), 9rem);
 		}
 	}
 	/* The board's highlight on a held seat's reminders (GrimoireBoard .chip-slot.lit). */

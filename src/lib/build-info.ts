@@ -1,4 +1,4 @@
-/** What the app shows about the build it is running (footer, issue reports). */
+/** What the app shows about the build it is running (the build line at the end of the menu, issue reports). */
 export interface BuildInfo {
 	version: string;
 	commit: string;

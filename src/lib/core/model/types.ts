@@ -58,6 +58,18 @@ export interface ReminderInstance extends Reminder {
 	symbolColour?: SymbolColour;
 }
 
+/** What a generic reminder looks like: its text, its symbol and the symbol's colour. */
+export type GenericLook = Pick<ReminderInstance, 'note' | 'symbol' | 'symbolColour'>;
+
+/**
+ * A reusable ∞ token in the reminder bank (plan B9, Trevor 2026-10-23: "Tokens only"): made
+ * with "+ New token", it stays in the bank, and every copy pulled from it starts with its
+ * look. Changing it later leaves the copies already placed as they are.
+ */
+export interface GenericToken extends GenericLook {
+	tokenId: string;
+}
+
 /** Colours a generic reminder's symbol can take, each one of the theme's own colours. */
 export const SYMBOL_COLOURS = ['blue', 'red', 'purple', 'gold', 'green'] as const;
 export type SymbolColour = (typeof SYMBOL_COLOURS)[number];
@@ -286,6 +298,8 @@ export interface Game {
 	 * had it"). Where each one sits is the device's own; optional, so older games read as before.
 	 */
 	looseReminders?: ReminderInstance[];
+	/** The bank's reusable ∞ tokens (plan B9), in the order made; absent until one is made. */
+	genericTokens?: GenericToken[];
 	/** Demon bluffs; more than one set when more than one player gets bluffs. */
 	bluffs: CharacterId[][];
 	/**

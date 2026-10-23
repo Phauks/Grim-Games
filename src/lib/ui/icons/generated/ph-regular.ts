@@ -5,6 +5,7 @@ import ph_arrow_clockwise from '~icons/ph/arrow-clockwise';
 import ph_arrow_counter_clockwise from '~icons/ph/arrow-counter-clockwise';
 import ph_arrow_square_out from '~icons/ph/arrow-square-out';
 import ph_arrows_down_up from '~icons/ph/arrows-down-up';
+import ph_arrows_in from '~icons/ph/arrows-in';
 import ph_arrows_left_right from '~icons/ph/arrows-left-right';
 import ph_arrows_out from '~icons/ph/arrows-out';
 import ph_arrows_out_cardinal from '~icons/ph/arrows-out-cardinal';
@@ -105,6 +106,7 @@ const icons: IconMap = {
 	'ph:arrow-counter-clockwise': ph_arrow_counter_clockwise,
 	'ph:arrow-square-out': ph_arrow_square_out,
 	'ph:arrows-down-up': ph_arrows_down_up,
+	'ph:arrows-in': ph_arrows_in,
 	'ph:arrows-left-right': ph_arrows_left_right,
 	'ph:arrows-out': ph_arrows_out,
 	'ph:arrows-out-cardinal': ph_arrows_out_cardinal,

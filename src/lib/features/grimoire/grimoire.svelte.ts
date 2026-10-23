@@ -1,8 +1,8 @@
 import type { Command } from '#lib/core/engine/index.ts';
-import { demonToBecome, foolSurvives, type Night } from '#lib/core/rules/index.ts';
+import { demonToBecome, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -217,7 +217,7 @@ export class Grimoire {
 		if (misfit) toast('Note', misfit);
 		this.askAlignment(command);
 		this.askDemon(command);
-		this.askFool(command);
+		this.askFirstDeath(command);
 		return true;
 	}
 
@@ -240,13 +240,15 @@ export class Grimoire {
 	demonAsk = $state.raw<{ seatId: SeatId; characterId: CharacterId } | undefined>();
 
 	/**
-	 * A Fool just marked dead whose ability is unused and works (not by the Assassin): the
-	 * board offers to keep them alive and spend the ability (`foolSurvives`; Trevor,
-	 * 2026-10-22).
+	 * A player just marked dead whose ability stops their first death, unused and working (the
+	 * Fool, not by the Assassin): the board offers to keep them alive and spend the ability
+	 * (`survivesFirstDeath`; Trevor, 2026-10-22).
 	 */
-	foolAsk = $state.raw<{ seatId: SeatId } | undefined>();
+	firstDeathAsk = $state.raw<
+		{ seatId: SeatId; characterId: CharacterId; spentToken: ReminderLabel } | undefined
+	>();
 
-	private askFool(command: Command): void {
+	private askFirstDeath(command: Command): void {
 		const death =
 			command.type === 'SetDead' && command.dead
 				? { seatId: command.seatId, cause: command.cause }
@@ -254,8 +256,18 @@ export class Grimoire {
 					? { seatId: command.seatId, cause: 'execution' as const }
 					: undefined;
 		if (!death || !this.open.game.seats[death.seatId]?.dead) return;
-		if (foolSurvives(this.open.game, death.seatId, death.cause, this.open.characters))
-			this.foolAsk = { seatId: death.seatId };
+		const saver = survivesFirstDeath(
+			this.open.game,
+			death.seatId,
+			death.cause,
+			this.open.characters
+		);
+		if (saver)
+			this.firstDeathAsk = {
+				seatId: death.seatId,
+				characterId: saver.source.characterId,
+				spentToken: saver.spentToken
+			};
 	}
 
 	private askDemon(command: Command): void {
