@@ -340,7 +340,10 @@
 {#if onEdit}
 	<GameInfoEditDialog
 		bind:open={editing}
-		initial={{ storytellerName: game.storytellerName ?? '' }}
+		initial={{
+			storytellerName: game.storytellerName ?? '',
+			script: scriptEdition(game.script)?.id ?? savedChoice?.value
+		}}
 		onsave={onEdit}
 	/>
 {/if}
