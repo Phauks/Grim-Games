@@ -63,10 +63,10 @@
 	const hasFlowergirl = $derived(seats.some((s) => s.characterId === 'flowergirl'));
 	/**
 	 * The Flowergirl learns each night whether the Demon voted today (Trevor, 2026-10-19:
-	 * "we need quick action in day for that"): one tap in the pinned toolbar. Today's mark is
-	 * the day log's, so it starts unset each new day and History can undo it.
+	 * "we need quick action in day for that"): one tap on her own row (Trevor, 2026-10-23:
+	 * L43, not at the top of the day). Today's mark is the day log's, so it starts unset each
+	 * new day and History can undo it.
 	 */
-	const demonVotedButton = $derived(hasFlowergirl && assistance.demonVotedButton);
 	const demonVoted = $derived(g.today.demonVoted === true);
 
 	// ── Confirming a change: what it is now, and what it will be ──
@@ -322,7 +322,13 @@
 	/** Used for a once-per-game day ability, Guesses for the Juggler. */
 	const hasDayButton = (characterId: CharacterId | undefined) =>
 		characterId !== undefined &&
-		(isOnceOnlyDayAbility(characterId) || characterId === 'juggler' || savantButton(characterId));
+		(isOnceOnlyDayAbility(characterId) ||
+			characterId === 'juggler' ||
+			savantButton(characterId) ||
+			demonVotedButton(characterId));
+	/** The Flowergirl's Demon voted, on her row while its setting is on (L43). */
+	const demonVotedButton = (characterId: CharacterId | undefined) =>
+		characterId === 'flowergirl' && assistance.demonVotedButton;
 	/**
 	 * The Savant's information for today, recommended until it is set (Trevor, 2026-10-20: L5):
 	 * with "Suggest Savant information" on, where the grimoire can open its sheet.
@@ -393,6 +399,16 @@
 		>
 			{t('day.guesses')}
 		</Chip>
+	{:else if demonVotedButton(characterId)}
+		<Chip
+			pressed={demonVoted}
+			data-testid="demon-voted"
+			onclick={() => game.run({ type: 'SetDemonVoted', voted: !demonVoted })}
+		>
+			<span class="tick" data-on={demonVoted || undefined}><Icon name="check" /></span>{t(
+				'day.demonVoted'
+			)}
+		</Chip>
 	{:else if savantButton(characterId)}
 		{@const set = hasNote({ characterId: 'savant', seatId })}
 		<!-- Not set yet: recommended, in the accent colour. -->
@@ -412,17 +428,6 @@
 	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
 	<div class="toolbar" data-testid="day-toolbar" bind:borderBoxSize={toolbarSize}>
 		<DayTimer alive={block.alive} />
-		{#if demonVotedButton}
-			<Chip
-				pressed={demonVoted}
-				data-testid="demon-voted"
-				onclick={() => game.run({ type: 'SetDemonVoted', voted: !demonVoted })}
-			>
-				<span class="tick" data-on={demonVoted || undefined}><Icon name="check" /></span>{t(
-					'day.demonVoted'
-				)}
-			</Chip>
-		{/if}
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
@@ -589,7 +594,7 @@
 				storageKey={`day.group.${group.group}`}
 				count={group.reminders.length}
 			>
-				<ul class="reminders">
+				<ul class="reminders rows">
 					{#each group.reminders as reminder (reminder.key)}
 						{@const head =
 							reminder.segments[0]?.kind === 'character' ? reminder.segments[0] : undefined}
@@ -661,7 +666,7 @@
 	{#if !assistance.preDayReminders || unlisted.length > 0}
 		{@const listed = assistance.preDayReminders ? unlisted : seats.filter((s) => s.characterId)}
 		<Collapsible title={t('day.abilities')} storageKey="day.abilities" count={listed.length}>
-			<ul class="reminders">
+			<ul class="reminders rows">
 				{#each listed as seat (seat.seatId)}
 					{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
 					<li data-character={seat.characterId}>
@@ -837,8 +842,23 @@
 		align-items: center;
 		padding-inline-end: var(--space-2);
 	}
-	.reminders :global(.row) {
-		margin-block: calc(var(--space-1) / 2);
+	/*
+	 * Character rows read as one list split by dividers, not boxes with the background showing
+	 * between them (Trevor, 2026-10-23: L44).
+	 */
+	.rows {
+		border-radius: var(--radius-md);
+		background: var(--choice-background);
+		box-shadow: inset 0 0 0 1px var(--border);
+		overflow: hidden;
+	}
+	.rows > li + li {
+		border-top: 1px solid var(--border); /* px-ok: hairline divider */
+	}
+	.rows > li > :global(.row) {
+		border-radius: 0;
+		background: none;
+		box-shadow: none;
 	}
 	/* The tick is always laid out, so pressing Used never changes the chip's width. */
 	.tick {

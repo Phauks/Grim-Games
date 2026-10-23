@@ -109,7 +109,17 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'An unnamed seat shows "Seat N" where its name is asked for',
 				prs: [364]
 			},
-			{ id: 'L33', title: 'Day ghost votes count: a dark ghost on white', prs: [355] }
+			{ id: 'L33', title: 'Day ghost votes count: a dark ghost on white', prs: [355] },
+			{ id: 'L41', title: 'Savant information: Use these and Cancel always respond' },
+			{ id: 'L42', title: 'The Pit-Hag is no longer listed as a day ability' },
+			{ id: 'L43', title: 'The Flowergirl’s Demon voted sits in her own row' },
+			{ id: 'L44', title: 'Day rows split by dividers, not bordered cards' },
+			{ id: 'L45', title: 'Day view in two columns on wide screens' },
+			{ id: 'L46', title: 'End of night offers to set Savant information' },
+			{ id: 'L47', title: 'Savant information: type your own statements' },
+			{ id: 'L48', title: 'Savant information: no lock button' },
+			{ id: 'L49', title: 'Savant information: True or False, with the reason' },
+			{ id: 'L50', title: 'Savant information: a spoiler-free view to show' }
 		]
 	},
 	{
