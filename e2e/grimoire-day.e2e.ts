@@ -663,6 +663,44 @@ test('an unnamed seat is named by its number in the day view', async ({ page }) 
 	await expect(day.locator('li[data-character="slayer"]').first()).toContainText('Seat 3');
 });
 
+test('Announcements name a player brought back to life in the night', async ({ page }) => {
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	const endNight = async () => {
+		await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+		await page
+			.getByRole('alertdialog', { name: 'End the night?' })
+			.getByRole('button', { name: 'Confirm' })
+			.tap();
+	};
+	await openDay(page);
+	await daySheet(page).getByRole('button', { name: 'Execution' }).tap();
+	await endTheDay(page);
+	// Night 1: seat 2 dies.
+	await markDead(page, 2, 'The Demon');
+	await endNight();
+	await closeDay(page);
+	await bank.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page);
+	// Night 2: seat 2 comes back (the Professor, say).
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: /^Status/ }).tap();
+	const status = page.getByRole('dialog', { name: 'Status of Seat 2' });
+	await status.getByRole('button', { name: 'Alive', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: /back to life\?$/ })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await closeSeat(page);
+	await endNight();
+	// Announcements must include people being revived (Trevor, 2026-10-20: L9).
+	const announcements = daySheet(page).getByTestId('announcements');
+	await expect(announcements.getByTestId('revived')).toContainText(
+		'The player in seat 2 is alive.'
+	);
+	await expect(announcements).toContainText('Nobody died in the night.');
+});
+
 test('holding the day timer or a new day resets it to the time per living player', async ({
 	page
 }) => {

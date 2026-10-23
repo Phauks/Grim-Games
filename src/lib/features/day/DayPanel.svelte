@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import { recentDeaths } from '#lib/core/engine/index.ts';
+	import { recentDeaths, recentRevivals } from '#lib/core/engine/index.ts';
 	import type { DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 	import {
 		afterDawn,
@@ -169,6 +169,8 @@
 
 	/** Everyone who died since the previous day ended, to announce (Trevor, 2026-10-16). */
 	const died = $derived(recentDeaths(game.log, g));
+	/** And everyone brought back to life in that night (Trevor, 2026-10-20: L9). */
+	const revived = $derived(recentRevivals(game.log, g));
 
 	// ── What didn't happen: a kill whose Dead token sits on a living player (Trevor) ──
 	const prevented = $derived(preventedDeaths(g, game.characters));
@@ -196,6 +198,13 @@
 		const seat = g.seating.indexOf(seatId) + 1;
 		const name = g.seats[seatId].playerName;
 		return name ? t('day.announce.died', { name, seat }) : t('day.announce.diedUnnamed', { seat });
+	}
+	function spokenRevival(seatId: SeatId): string {
+		const seat = g.seating.indexOf(seatId) + 1;
+		const name = g.seats[seatId].playerName;
+		return name
+			? t('day.announce.revived', { name, seat })
+			: t('day.announce.revivedUnnamed', { seat });
 	}
 	function privateDeath(cause: DeathCause | undefined): string {
 		const how =
@@ -480,7 +489,7 @@
 	<Collapsible
 		title={t('day.announcements')}
 		storageKey="day.announcements"
-		count={died.length + announcers.length}
+		count={died.length + revived.length + announcers.length}
 	>
 		{#snippet aside()}
 			<Button
@@ -517,6 +526,28 @@
 					>
 				</li>
 			{/each}
+			{#each revived as seatId (seatId)}
+				{@const seat = g.seats[seatId]}
+				<li class="death" data-seat={seatId} data-testid="revived">
+					{#if privateDeaths}
+						<span class="dont-announce">{t('day.announce.dont')}</span>
+					{:else}
+						<span class="spoken">{spokenRevival(seatId)}</span>
+					{/if}
+					<em class="private"
+						><Sentence
+							text={t('day.announce.private', {
+								character: slot('character'),
+								how: t('day.announce.backToLife')
+							})}
+							>{#snippet fill()}{#if seat.characterId}<CharacterBadge
+										characterId={seat.characterId}
+										alignment={seat.alignment}
+									/>{:else}{t('day.announce.noCharacter')}{/if}{/snippet}</Sentence
+						></em
+					>
+				</li>
+			{/each}
 			{#if died.length === 0 && dawned}
 				<li class="death"><span class="spoken">{t('day.announce.nobody')}</span></li>
 			{/if}
@@ -533,7 +564,7 @@
 					</CharacterEntry>
 				</li>
 			{/each}
-			{#if died.length === 0 && !dawned && announcers.length === 0}
+			{#if died.length === 0 && !dawned && revived.length === 0 && announcers.length === 0}
 				<li>{t('common.none')}</li>
 			{/if}
 		</ul>
