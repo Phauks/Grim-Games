@@ -97,7 +97,7 @@ export const settings = {
 	'settings.scriptLogoOpacity': 'Script logo opacity',
 	'settings.nameSize': 'Player name size',
 	'settings.previewDeadPlayer': 'Alex',
-	'settings.boardPreview': 'Board look',
+	'settings.boardPreview': 'Board preview',
 	'settings.previewScript': 'Example script',
 	'settings.previewBank': 'Reminder bank',
 	'settings.nameOffset': 'Player name distance',

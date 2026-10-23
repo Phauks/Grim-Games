@@ -326,6 +326,9 @@
 		font-variant-numeric: tabular-nums;
 		letter-spacing: 0.08em;
 	}
+	/* The board's bank (ReminderBank .bank): its outline, corners and see-through bar, so the
+	   preview's bank reads as the board's (Trevor, 2026-10-23: "doesn't look like it has an
+	   outline"). e2e/settings.e2e.ts checks the two stay alike. */
 	.bank {
 		position: relative;
 		z-index: 1;
@@ -333,11 +336,13 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--space-1);
-		margin: 0;
+		margin: 0 var(--space-1) var(--space-1);
 		padding: 0 var(--space-1);
 		overflow: hidden;
 		list-style: none;
-		background: var(--card-background);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--board-bar-background);
 	}
 	.bank > li {
 		position: relative;

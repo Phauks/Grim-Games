@@ -1161,6 +1161,20 @@ test('tokens keep their size when the night walk-through opens', async ({ page }
 	expect(Math.abs(logoAfter.height - logoBefore.height)).toBeLessThan(1);
 });
 
+// Trevor (2026-10-23): "change board look to board preview", and its bank looks like the board's.
+test("the Board preview's bank has the board bank's outline and colour", async ({ page }) => {
+	await startGame(page);
+	const look = (el: Element) => {
+		const style = getComputedStyle(el);
+		return [style.borderTopWidth, style.borderTopColor, style.borderRadius, style.backgroundColor];
+	};
+	const board = await page.locator('[data-tray]').evaluate(look);
+	await menu(page, 'Board');
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await expect(dialog.getByRole('heading', { name: 'Board preview' })).toBeVisible();
+	expect(await dialog.getByTestId('preview-bank').evaluate(look)).toEqual(board);
+});
+
 // Trevor (2026-10-23): a full screen button on the board, for those who don't know how.
 test('the board can go full screen from its toolbar, and back', async ({ page }) => {
 	await startGame(page);
