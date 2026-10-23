@@ -50,6 +50,26 @@ export type NominatedEffect = (typeof NOMINATED_EFFECTS)[number];
 export const DAY_CLAIMS = ['guesses', 'statement', 'statements'] as const;
 export type DayClaim = (typeof DAY_CLAIMS)[number];
 
+/**
+ * Night deaths the ability itself decides (`rules/night-deaths.ts`):
+ * - `wrong-guess`: the player guesses a player's character and dies if wrong (the Gambler);
+ * - `chose-impaired`: the player dies if their pick is drunk or poisoned (the Acrobat);
+ * - `chosen-good-dies`: a chosen good player dies and the Demon does not kill (the Lycanthrope);
+ * - `marked-killed-by-demon`: the player dies when the Demon kills whoever carries `token`
+ *   (the Grandmother's Grandchild).
+ */
+export const DEATH_CHECK_KINDS = [
+	'wrong-guess',
+	'chose-impaired',
+	'chosen-good-dies',
+	'marked-killed-by-demon'
+] as const;
+export type DeathCheckKind = (typeof DEATH_CHECK_KINDS)[number];
+export interface DeathCheckRule {
+	kind: DeathCheckKind;
+	token?: ReminderLabel;
+}
+
 export interface CharacterRules {
 	/** Reminders whose placing is the moment to change the seat's state, by label. */
 	reminderPrompts?: Readonly<Record<ReminderLabel, ReminderPrompt>>;
@@ -97,6 +117,8 @@ export interface CharacterRules {
 	registersAs?: RegistersAs;
 	/** How the ability ends the game, keeps it going, or changes who wins (`rules/game-end.ts`). */
 	gameEnd?: GameEndRules;
+	/** A night death its own ability decides (`rules/night-deaths.ts`). */
+	deathCheck?: DeathCheckRule;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -230,7 +252,8 @@ export const RULE_KEYS = [
 	'dayClaim',
 	'impairs',
 	'registersAs',
-	'gameEnd'
+	'gameEnd',
+	'deathCheck'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -359,6 +382,19 @@ export function parseCharacterRules(
 	if (raw.gameEnd !== undefined) {
 		const gameEnd = readGameEnd(raw.gameEnd, `${path}.gameEnd`, issues, reminders);
 		if (gameEnd) rules.gameEnd = gameEnd;
+	}
+	if (raw.deathCheck !== undefined) {
+		const at = `${path}.deathCheck`;
+		if (!isObject(raw.deathCheck)) {
+			issues.add(at, `expected object, got ${describe(raw.deathCheck)}`);
+		} else {
+			checkKeys(raw.deathCheck, ['kind', 'token'], at, issues);
+			const kind = readEnum(raw.deathCheck, 'kind', DEATH_CHECK_KINDS, at, issues, true);
+			const token = readToken(raw.deathCheck, 'token', at, issues, reminders);
+			if (kind === 'marked-killed-by-demon' && raw.deathCheck.token === undefined) {
+				issues.add(`${at}.token`, 'missing');
+			} else if (kind) rules.deathCheck = { kind, ...(token ? { token } : {}) };
+		}
 	}
 	return issues.list.length > before ? undefined : rules;
 }

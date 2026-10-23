@@ -113,7 +113,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Impairments (`ability.ts`: the Drunk, Witch, Minstrel and Preacher)                               | `impairs`                             | moved         |
 | Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw)                          | `registersAs`                         | moved         |
 | Night killers (`night-alerts.ts` `NIGHT_KILLERS`)                                                 | `kills`                               | moved         |
-| Death checks (`night-deaths.ts`, the Gambler and Acrobat)                                         |                                       | not yet moved |
+| Death checks (`night-deaths.ts`: the Gambler, Acrobat, Lycanthrope and Grandmother)               | `deathCheck`                          | moved         |
 | Kill redirect and first-death survival (`ability.ts`, `first-death.ts`)                           | `redirectsKill`, `survivesFirstDeath` | moved         |
 | Nomination abilities (`rules/nominations.ts`)                                                     | `onNominated`                         | moved         |
 | Acts when dead (`dead-characters.ts`)                                                             | `actsWhenDead`                        | moved         |

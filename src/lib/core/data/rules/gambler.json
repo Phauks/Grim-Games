@@ -8,5 +8,8 @@
 			"seat": "self",
 			"note": "On the Gambler after a wrong guess."
 		}
+	},
+	"deathCheck": {
+		"kind": "wrong-guess"
 	}
 }
