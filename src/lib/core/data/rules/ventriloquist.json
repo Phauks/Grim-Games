@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"Mad": {
+			"seat": "any",
+			"life": "alive",
+			"note": "A nominee about to die who is claiming a character different from an earlier claim."
+		}
+	}
+}

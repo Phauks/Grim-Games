@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "other",
+			"types": ["minion"],
+			"note": "A Minion the Preacher chooses, alive or dead."
+		}
+	}
+}

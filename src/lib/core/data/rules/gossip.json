@@ -4,5 +4,11 @@
 	},
 	"kills": {
 		"by": "other"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "On any player the Storyteller picks to die that night after a true statement; parked by the Grimoire's left side during the day."
+		}
 	}
 }

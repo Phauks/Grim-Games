@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Chosen": {
+			"seat": "any",
+			"note": "Each player the Lunatic chooses at night."
+		}
+	}
+}

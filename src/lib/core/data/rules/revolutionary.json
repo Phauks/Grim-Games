@@ -1,0 +1,17 @@
+{
+	"reminderTargets": {
+		"Aligned": {
+			"seat": "any",
+			"neighbour": {
+				"of": "Aligned"
+			},
+			"note": "Each of the two neighbouring players who share an alignment.",
+			"ambiguous": "The How to Run section never mentions an ALIGNED token; it only places REGISTER FALSELY? between the pair."
+		},
+		"Register Falsely?": {
+			"seat": "any",
+			"withLabel": "Aligned",
+			"note": "One of the Revolutionary pair; removed once that player has registered falsely."
+		}
+	}
+}

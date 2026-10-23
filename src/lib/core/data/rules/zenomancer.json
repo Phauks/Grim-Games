@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Goal": {
+			"seat": "any",
+			"note": "On each player given a goal, alive or dead, Travellers included."
+		}
+	}
+}

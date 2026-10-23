@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"Is The Apprentice": {
+			"seat": "self",
+			"note": "The Apprentice's own seat once their token is swapped for the character whose ability they gained."
+		}
+	}
+}

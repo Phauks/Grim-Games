@@ -1,0 +1,8 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"global": true,
+			"note": "Beside the Fibbin token in the Grimoire once it has been used."
+		}
+	}
+}

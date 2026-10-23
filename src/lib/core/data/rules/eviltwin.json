@@ -1,0 +1,9 @@
+{
+	"reminderTargets": {
+		"Twin": {
+			"seat": "other",
+			"alignment": "opposite",
+			"note": "The good twin, not the Evil Twin; the wiki advises against a Traveller."
+		}
+	}
+}

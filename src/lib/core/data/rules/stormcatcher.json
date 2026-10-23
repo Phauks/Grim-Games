@@ -1,0 +1,10 @@
+{
+	"reminderTargets": {
+		"Stormcaught": {
+			"seat": "any",
+			"types": ["townsfolk", "outsider"],
+			"note": "The player with the named good character, if it is in play.",
+			"ambiguous": "The wiki calls this token SAFE; TPI's data names it Stormcaught."
+		}
+	}
+}
