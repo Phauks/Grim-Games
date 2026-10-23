@@ -319,4 +319,38 @@ describe('custom characters', () => {
 		const spent = run(session, ctx, add(0, 'lucky', 'Unlucky')(seats)).game;
 		expect(firstDeathSaver(spent, seats[0], all)).toBeUndefined();
 	});
+
+	// A homebrew Outsider that is always drunk, as the Drunk is
+	// (https://wiki.bloodontheclocktower.com/Drunk).
+	it('can be impaired itself through its rules block', () => {
+		const { g, seats, all } = custom({
+			id: 'sotted',
+			name: 'Sotted',
+			team: 'outsider',
+			ability: 'You are drunk.',
+			rules: { impairs: { self: { reason: 'drunk' } } }
+		});
+		expect(abilityState(g, seats[0], all).impairments).toMatchObject([
+			{ reason: 'drunk', source: { characterId: 'sotted', seatId: seats[0] } }
+		]);
+	});
+
+	// A homebrew Townsfolk whose token poisons everyone else, as the Minstrel's "Everyone Is
+	// Drunk" makes them drunk (https://wiki.bloodontheclocktower.com/Minstrel).
+	it('can impair every other player with a token through its rules block', () => {
+		const { g, seats, all, session, ctx } = custom({
+			id: 'bard',
+			name: 'Bard',
+			team: 'townsfolk',
+			ability: 'Once per game, at night, everyone else is poisoned until dusk.',
+			reminders: ['Hush'],
+			rules: { impairs: { tokens: { Hush: { reason: 'poisoned', on: 'others' } } } }
+		});
+		expect(abilityState(g, seats[1], all).works).toBe(true);
+		const hushed = run(session, ctx, add(0, 'bard', 'Hush')(seats)).game;
+		expect(abilityState(hushed, seats[0], all).impairments).toEqual([]);
+		expect(abilityState(hushed, seats[1], all).impairments).toMatchObject([
+			{ reason: 'poisoned', source: { characterId: 'bard', seatId: seats[0] } }
+		]);
+	});
 });

@@ -97,6 +97,15 @@ describe('parseCharacterRules', () => {
 		expect(parse({ answers: { question: 'who-knows' } }).issues).toEqual([
 			'rules.answers.question: unknown value "who-knows"'
 		]);
+		expect(parse({ impairs: { self: { reason: 'sleepy' } } }).issues).toEqual([
+			'rules.impairs.self.reason: unknown value "sleepy"'
+		]);
+		expect(
+			parse({ impairs: { tokens: { Hush: { reason: 'drunk', on: 'others' } } } }).issues
+		).toEqual(['rules.impairs.tokens.Hush: not one of this character’s reminders']);
+		expect(parse({ impairs: { tokens: { Dead: { reason: 'drunk', on: 'all' } } } }).issues).toEqual(
+			['rules.impairs.tokens.Dead.on: unknown value "all"']
+		);
 		expect(parse({ dayClaim: 'shout' }).issues).toEqual(['rules.dayClaim: unknown value "shout"']);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'

@@ -4,5 +4,13 @@
 			"note": "On the Minstrel, from the Minion's execution until dusk the next day.",
 			"seat": "self"
 		}
+	},
+	"impairs": {
+		"tokens": {
+			"Everyone Is Drunk": {
+				"reason": "drunk",
+				"on": "others"
+			}
+		}
 	}
 }
