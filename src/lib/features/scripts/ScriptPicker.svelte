@@ -861,6 +861,8 @@
 <style>
 	.panes {
 		container: script-panes / inline-size;
+		/* The table's height, which the details beside it share on a wide screen. */
+		--table-height: clamp(22rem, 60dvh, 36rem);
 	}
 	.grid {
 		position: relative;
@@ -913,13 +915,25 @@
 		color: var(--on-accent);
 	}
 	@container script-panes (min-width: 56rem) {
+		/* The list and the details are one surface (Trevor, 2026-10-23): no gap, one border
+		   between them, square inner corners, the same height. */
 		.grid {
 			grid-template-columns: minmax(0, 1fr) minmax(20rem, 28rem);
+			column-gap: 0;
+		}
+		.table :global(.scroll) {
+			border-start-end-radius: 0;
+			border-end-end-radius: 0;
 		}
 		.pane {
 			position: relative;
 			inset: auto;
 			grid-column: 2;
+			align-self: start;
+			height: var(--table-height);
+			border-inline-start: 0;
+			border-start-start-radius: 0;
+			border-end-start-radius: 0;
 			transform: none;
 			visibility: visible;
 			transition: none;
@@ -935,7 +949,6 @@
 	}
 	/* The same height whichever source is chosen; rows scroll inside it. */
 	.body {
-		height: clamp(22rem, 60dvh, 36rem);
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
@@ -949,7 +962,7 @@
 		white-space: nowrap;
 	}
 	.table {
-		flex: 1;
+		height: var(--table-height);
 		min-height: 0;
 	}
 	.pick {

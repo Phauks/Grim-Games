@@ -141,8 +141,12 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				title: 'Tell a script from a character or a character collection when adding JSON',
 				prs: [329]
 			},
-			{ id: 'L25', title: 'Edit custom scripts in place from the ⋯ menu' },
-			{ id: 'P1', title: 'Almanac link in the Glossary' },
+			{ id: 'L25', title: 'Edit custom scripts in place from the ⋯ menu', prs: [345] },
+			{ id: 'P1', title: 'Almanac link in the Glossary', prs: [357] },
+			{ id: 'L37', title: "New game opens the chosen script's source page", prs: [368] },
+			{ id: 'L51', title: 'Search: the list and the script details as one surface' },
+			{ id: 'L52', title: 'Search: open the shown script at its source' },
+			{ id: 'L53', title: 'The base three scripts link their wiki pages' },
 			{ id: 'P2', title: 'Alternate art packs in Icons settings' }
 		]
 	},
