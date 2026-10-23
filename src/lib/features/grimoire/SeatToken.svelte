@@ -161,7 +161,7 @@
 		>{/if}
 	<!-- The player's own avatar (plan R6), upper left, while a character covers the face. -->
 	{#if character && seat.avatar}<span class="mark avatar" data-testid="avatar-mark"
-			><AvatarFace avatar={seat.avatar} /></span
+			><AvatarFace avatar={seat.avatar} {name} /></span
 		>{/if}
 	<!-- Today's nominations: one pill on the left rim, a fixed slot for each mark, so the pill
 	     never changes size. Every corner already has its mark. -->

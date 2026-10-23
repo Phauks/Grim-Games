@@ -872,12 +872,12 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phoneContext.close();
 });
 
-test("a player's avatar and frame go on their seat, and their guess shows over it only if they choose", async ({
+test("a player's initials and frame go on their seat, and their guess shows over them only if they choose", async ({
 	page,
 	browser
 }, testInfo) => {
-	// Plan R6 (Trevor, 2026-10-22: "avatar is default"; our own pictures, never Clocktower art)
-	// and L4 (players pick their frame with their avatar).
+	// Plan R6 (Trevor, 2026-10-22: "avatar is default"; 2026-10-23: "Initials for now") and L4
+	// (players pick their frame with their avatar).
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -887,22 +887,22 @@ test("a player's avatar and frame go on their seat, and their guess shows over i
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await phone.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await phone.getByRole('combobox', { name: 'Your avatar' }).tap();
-	await phone.getByRole('option', { name: 'Cat' }).tap();
-	await expect(phone.getByRole('listbox')).toBeHidden();
+	await phone.getByRole('textbox', { name: 'Your name' }).fill('Alex Kim');
+	const initials = phone.getByRole('checkbox', { name: 'Initials on your seat' });
+	await expect(initials).toBeChecked();
+	const initialsSwitch = phone.getByText('Initials on your seat', { exact: true });
 	await phone.getByText('Seat 3', { exact: true }).tap();
 	await phone.getByRole('button', { name: 'Ask the Storyteller' }).tap();
 	await page
-		.getByRole('listitem', { name: 'Alex asks for Seat 3' })
+		.getByRole('listitem', { name: 'Alex Kim asks for Seat 3' })
 		.getByRole('button', { name: 'Approve' })
 		.tap();
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
+	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex Kim.');
 
-	// On the board: the seat has no character yet, so the avatar is its face.
+	// On the board: the seat has no character yet, so the initials are its face.
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
-	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex"]');
-	await expect(seat.getByTestId('avatar-face')).toHaveAttribute('data-avatar', 'cat');
+	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex Kim"]');
+	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 
 	// The frame (picked in Settings > Player, e2e/frames.e2e.ts) goes when the phone connects.
 	await phone.evaluate(() => {
@@ -912,18 +912,20 @@ test("a player's avatar and frame go on their seat, and their guess shows over i
 	});
 	await phone.reload();
 	await expect(seat.locator('svg[data-frame="clock"]')).toBeAttached();
-	// Picking again changes it without asking.
-	await phone.getByRole('combobox', { name: 'Your avatar' }).tap();
-	await phone.getByRole('option', { name: 'Rocket' }).tap();
-	await expect(phone.getByRole('listbox')).toBeHidden();
-	await expect(seat.getByTestId('avatar-face')).toHaveAttribute('data-avatar', 'rocket');
+	// Switching the initials off and on changes the seat without asking.
+	await initialsSwitch.tap();
+	await expect(initials).not.toBeChecked();
+	await expect(seat.getByTestId('avatar-face')).toHaveCount(0);
+	await expect(seat).toContainText('3');
+	await initialsSwitch.tap();
+	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 
 	// Every phone at the table sees it; a guess shows over it only once that is switched on.
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	const mine = phone.getByTestId('grim-seat').nth(2);
-	await expect(mine.getByTestId('avatar-face')).toHaveAttribute('data-avatar', 'rocket');
+	await expect(mine.getByTestId('avatar-face')).toHaveText('AK');
 	await mine.tap();
-	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Alex' });
+	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Alex Kim' });
 	// The switch above the picker pushes it down on a phone: scroll first, so the tap is not
 	// taken as part of the sheet's own scroll.
 	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });

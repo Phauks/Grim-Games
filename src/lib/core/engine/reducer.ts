@@ -3,6 +3,7 @@
  * never looks at character data, the clock or randomness, which the events already
  * carry. Events that refer to something missing (a seat removed since) change nothing.
  */
+import { parseAvatarId } from '#lib/core/avatars/index.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { Game, ReminderInstance, Seat, SeatId } from '#lib/core/model/index.ts';
 import type { GameEvent } from './events.ts';
@@ -180,7 +181,9 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'SeatLookSet':
 			return updateSeat(game, event.seatId, (seat) => {
 				const next: Seat = omit(seat, 'avatar', 'frame');
-				if (event.avatar !== undefined) next.avatar = event.avatar;
+				// A picture from the earlier icon set, in a game saved by that beta build, is dropped.
+				const avatar = parseAvatarId(event.avatar);
+				if (avatar !== undefined) next.avatar = avatar;
 				if (event.frame !== undefined) next.frame = event.frame;
 				return next;
 			});
