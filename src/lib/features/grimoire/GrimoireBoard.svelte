@@ -1541,6 +1541,7 @@
 				src={boardLogo}
 				class="board-logo"
 				--logo-opacity={boardLooks.current.logoOpacity}
+				--logo-h={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
 		{#each seats as seat, i (seat.seatId)}
@@ -2612,7 +2613,9 @@
 		left: 50%;
 		top: 50%;
 		width: 42%;
-		height: 42%;
+		/* The board's height without the walk-through strip (sizingHeight), so the logo keeps
+		   its size when the night starts (Trevor, 2026-10-23: "flexes for a second"). */
+		height: var(--logo-h, 42%);
 		translate: -50% -50%;
 		opacity: var(--logo-opacity);
 		pointer-events: none;

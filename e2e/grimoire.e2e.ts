@@ -1147,11 +1147,18 @@ test('tokens keep their size when the night walk-through opens', async ({ page }
 	await closeSheet(page);
 	const token = page.getByTestId('seat').first();
 	const before = (await token.boundingBox())!.width;
+	// The script's logo behind the seats keeps its size too (Trevor, 2026-10-23).
+	const logo = page.locator('.board-logo');
+	await expect(logo).toBeVisible();
+	const logoBefore = (await logo.boundingBox())!;
 	await bankNight(page, 'Start game').tap();
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 	await expect
 		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
 		.toBeLessThan(1);
+	const logoAfter = (await logo.boundingBox())!;
+	expect(Math.abs(logoAfter.width - logoBefore.width)).toBeLessThan(1);
+	expect(Math.abs(logoAfter.height - logoBefore.height)).toBeLessThan(1);
 });
 
 // Trevor (2026-10-23): a full screen button on the board, for those who don't know how.
