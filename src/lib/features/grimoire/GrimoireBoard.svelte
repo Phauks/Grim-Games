@@ -105,6 +105,8 @@
 		toPx as boardToPx
 	} from './board-geometry.ts';
 	import { cornerRoom } from './corner-room.ts';
+	import { markBoardShown } from '#lib/ui/board-cover.ts';
+	import { reminderDeathCause } from '#lib/core/rules/death-causes.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
@@ -885,7 +887,8 @@
 		}
 	};
 	let promptSeen: Set<string> | undefined;
-	let promptAsk = $state<{ seatId: SeatId; prompt: ReminderPrompt }>();
+	/** `cause`: the reminder's character, when it can kill (reminderDeathCause). */
+	let promptAsk = $state<{ seatId: SeatId; prompt: ReminderPrompt; cause?: CharacterId }>();
 	let promptAskOpen = $state(false);
 	/** Where each reminder on a seat was at the last look, so a cancelled move goes back. */
 	let lastSeat: Record<ReminderId, SeatId> = {};
@@ -895,9 +898,9 @@
 	 */
 	let deadAsk = $state<{ reminder: ReminderInstance; seatId: SeatId; from?: SeatId }>();
 	let deadAskOpen = $state(false);
-	let afterDeadAsk: { seatId: SeatId; prompt: ReminderPrompt } | undefined;
+	let afterDeadAsk: { seatId: SeatId; prompt: ReminderPrompt; cause?: CharacterId } | undefined;
 	$effect(() => {
-		const fresh: { seatId: SeatId; prompt: ReminderPrompt }[] = [];
+		const fresh: { seatId: SeatId; prompt: ReminderPrompt; cause?: CharacterId }[] = [];
 		const freshDead: { reminder: ReminderInstance; seatId: SeatId; from?: SeatId }[] = [];
 		const now: string[] = [];
 		const where: Record<ReminderId, SeatId> = {};
@@ -911,7 +914,13 @@
 				if (reminderOwnerDead(game, reminder, characters))
 					freshDead.push({ reminder, seatId, from: lastSeat[reminder.reminderId] });
 				const prompt = reminderPrompt(reminder.label, reminder.characterId, characters);
-				if (prompt && promptApplies(prompt, !!seat.dead)) fresh.push({ seatId, prompt });
+				// The Fang Gu's "Dead" names the Fang Gu as the cause (Trevor, 2026-10-23).
+				if (prompt && promptApplies(prompt, !!seat.dead))
+					fresh.push({
+						seatId,
+						prompt,
+						cause: reminderDeathCause(game, characters, reminder.characterId)
+					});
 			}
 		}
 		promptSeen = new Set(now);
@@ -1043,6 +1052,9 @@
 		drawFor = seatId;
 		drawOpen = true;
 	}
+
+	// Sheets and dialogs over the board blur it (Trevor, 2026-10-23: game integrity).
+	$effect(() => markBoardShown());
 
 	// ── Full screen, for those who don't know their browser's own way (Trevor, 2026-10-23).
 	// Only where the browser can: iPhone Safari can't for a page, so the button isn't there. ──
@@ -1830,6 +1842,10 @@
 					>{:else}{#if game.script.meta?.author}<span class="author"
 							>by {game.script.meta.author}</span
 						>{/if}{/each}
+				<!-- Who runs the game, under the author (Trevor, 2026-10-23); no line when unnamed. -->
+				{#if game.storytellerName?.trim()}<span class="author" data-testid="board-storyteller"
+						>{t('settings.storytellerLine', { name: game.storytellerName.trim() })}</span
+					>{/if}
 				<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
 				     place before a room opens, so nothing moves when its code arrives. -->
 				{#if showRoomCode}<button
@@ -2013,7 +2029,13 @@
 	<ConfirmDialog
 		bind:open={promptAskOpen}
 		title={ui.title}
-		onConfirm={() => grimoire.run({ type: 'SetDead', seatId, dead: ui.dead })}
+		onConfirm={() =>
+			grimoire.run({
+				type: 'SetDead',
+				seatId,
+				dead: ui.dead,
+				...(ui.dead && promptAsk?.cause ? { cause: promptAsk.cause } : {})
+			})}
 	>
 		{#snippet heading()}
 			{ui.verb}

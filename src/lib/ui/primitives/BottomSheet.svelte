@@ -117,6 +117,13 @@
 </Drawer.Root>
 
 <style>
+	/* Over the grimoire board, the board behind is blurred as well as dimmed, so nothing on it
+	   can be read while it isn't the main screen (Trevor, 2026-10-23: "for game integrity").
+	   GrimoireBoard marks the page while it is shown (board-cover.ts). */
+	:global(:root[data-board-shown] [data-scope='drawer'][data-part='backdrop']) {
+		-webkit-backdrop-filter: blur(var(--u));
+		backdrop-filter: blur(var(--u));
+	}
 	/* Ark renders these parts inside a portal, so they are styled by their data attributes. */
 	:global([data-scope='drawer'][data-part='backdrop']) {
 		position: fixed;
