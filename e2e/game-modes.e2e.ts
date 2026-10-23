@@ -670,7 +670,10 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 		.getByRole('button', { name: 'Start game' })
 		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
-	await expect(page.getByRole('heading', { name: 'Hidden characters', level: 1 })).toBeVisible();
+	// Named for the rules, since the characters may not stay hidden; the rule that opened the
+	// screen sits at its top (Trevor, 2026-10-23).
+	await expect(page.getByRole('heading', { name: 'Special rules', level: 1 })).toBeVisible();
+	await expect(page.getByTestId('rule-header')).toContainText('A Script of Infinite Possibilities');
 	const extras = page.getByTestId('extras').locator('li');
 	// Up to four, one of each type (Trevor, 2026-10-19).
 	await expect(extras).toHaveCount(4);
@@ -881,6 +884,9 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 		.getByRole('button', { name: 'Specters vote and ability' })
 		.tap();
 	const sheet = page.getByRole('dialog', { name: 'Specters vote and ability' });
+	// The rule behind the sheet sits at its top (Trevor, 2026-10-23).
+	await expect(sheet.getByTestId('rule-header')).toContainText('Specters');
+	await expect(sheet.getByRole('button', { name: 'Inspect Specters' })).toBeVisible();
 	await expect(sheet).toBeVisible();
 	await expect(page).toHaveURL(new RegExp(`/grimoire/${gameId}$`));
 	// The Storyteller sets the ability: the Wizard's by default, or their own words.
@@ -1453,7 +1459,13 @@ test('Start game restates the special rules first, and Back returns to New game'
 	await expect(items).toHaveCount(2);
 	await expect(items.nth(1)).toContainText('Binary Supernovae');
 	await expect(items.nth(1)).toContainText('If a Demon dies by execution, good wins.');
-	await expect(items.nth(0)).toContainText('Name the characters Off');
+	// The rule's switches can still change here (Trevor, 2026-10-23).
+	const announce = items
+		.nth(0)
+		.getByRole('checkbox', { name: 'Storyteller announces character', includeHidden: true });
+	await expect(announce).not.toBeChecked();
+	await items.nth(0).getByText('Storyteller announces character', { exact: true }).tap();
+	await expect(announce).toBeChecked();
 	await noSidewaysScroll(page);
 	// Back keeps everything as chosen.
 	await recap.getByRole('button', { name: 'Back' }).tap();
@@ -1463,6 +1475,7 @@ test('Start game restates the special rules first, and Back returns to New game'
 		'Special rules (2)'
 	);
 	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(announce).toBeChecked();
 	await recap.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 });
@@ -1496,7 +1509,10 @@ test('+1 has a switch for naming its character, shown in its instructions', asyn
 		.getByTestId('special-rules')
 		.locator('li')
 		.filter({ has: page.getByText('+1', { exact: true }) });
-	const named = plusOne.getByRole('checkbox', { name: 'Name the characters', includeHidden: true });
+	const named = plusOne.getByRole('checkbox', {
+		name: 'Storyteller announces character',
+		includeHidden: true
+	});
 	// Always there, so nothing moves; usable once +1 is on.
 	await expect(named).toBeDisabled();
 	await plusOne.getByText('+1', { exact: true }).tap();
@@ -1509,7 +1525,7 @@ test('+1 has a switch for naming its character, shown in its instructions', asyn
 		await expect(inspect).toBeHidden();
 	};
 	await inspectPlusOne('Tell the table that one character from off the script is in play.');
-	await plusOne.getByText('Name the characters', { exact: true }).tap();
+	await plusOne.getByText('Storyteller announces character', { exact: true }).tap();
 	await expect(named).toBeChecked();
 	await inspectPlusOne('Tell the table which character from off the script is in play.');
 	await noSidewaysScroll(page);

@@ -3,6 +3,8 @@
 	import type { CharacterNominationPrompt } from '#lib/core/rules/index.ts';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import RuleHeader from '#lib/features/modes/RuleHeader.svelte';
+	import { spawnedBy } from '#lib/features/modes/spawned-by.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -29,6 +31,12 @@
 	const ask = $derived(asks[0]);
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
+	/** The rule asking, shown at the top (Trevor, 2026-10-23). */
+	const spawning = $derived(
+		ask && 'rule' in ask
+			? spawnedBy(game.gameId, (p) => 'nominations' in p).filter((r) => r.name === ask.rule)
+			: []
+	);
 
 	function label(seatId: SeatId): string {
 		const n = seatNumber(game, seatId);
@@ -89,6 +97,7 @@
 
 <ConfirmDialog bind:open {title} onConfirm={confirm}>
 	{#if ask}
+		<RuleHeader rules={spawning} />
 		<dl class="change">
 			{#each [['Nominator', ask.nominator], ['Nominee', ask.nominee]] as const as [what, seatId] (what)}
 				{@const id = game.seats[seatId]?.characterId}

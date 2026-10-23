@@ -30,6 +30,8 @@
 	import { readGameMode } from './game-mode-store.ts';
 	import { gameModeOf } from './game-mode.ts';
 	import { readExtras, writeExtras } from './mode-extras.ts';
+	import RuleHeader from './RuleHeader.svelte';
+	import { spawnedBy } from './spawned-by.ts';
 
 	/**
 	 * The hidden extra characters of a mode like A Script of Infinite Possibilities, for the
@@ -51,6 +53,8 @@
 	const mode = $derived(gameModeOf(gameId) ?? STANDARD);
 	const restrictions = $derived(record?.restrictions ?? NO_RESTRICTIONS);
 	const pool = $derived(mode.parts.pool);
+	/** The mode or rules that hide characters, shown at the top. */
+	const spawning = $derived(spawnedBy(gameId, (p) => p.pool?.kind === 'script-plus-hidden'));
 	const announce = $derived(pool?.kind === 'script-plus-hidden' && pool.announceRange);
 	const scriptCharacters = $derived(
 		game.script.entries.flatMap((e): Character[] => {
@@ -180,6 +184,8 @@
 			{t('modes.extras.rollAll')}
 		</Button>
 	{/snippet}
+
+	<RuleHeader rules={spawning} />
 
 	<!-- One row per type, always drawn, so choosing or rolling never moves anything. -->
 	<ul class="extras" data-testid="extras">

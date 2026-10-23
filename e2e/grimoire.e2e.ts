@@ -5679,6 +5679,8 @@ test('with The Warrens, an evil nomination of an evil player offers to swap thei
 	await closeSheet(page);
 	await nominate(page, 2, 1);
 	const ask = page.getByRole('alertdialog', { name: 'The Warrens: swap characters?' });
+	// The rule asking sits at the top (Trevor, 2026-10-23).
+	await expect(ask.getByTestId('rule-header')).toContainText('The Warrens');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await closeSheet(page);
