@@ -1677,7 +1677,12 @@
 </ConfirmDialog>
 
 <!-- The same question as the day view's Execution. -->
-<ExecutionDialog bind:open={endDayOpen} {game} onConfirm={executeAndEndDay} />
+<ExecutionDialog
+	bind:open={endDayOpen}
+	{game}
+	characters={grimoire.open.characters}
+	onConfirm={executeAndEndDay}
+/>
 
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">

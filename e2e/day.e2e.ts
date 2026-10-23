@@ -125,7 +125,7 @@ test("day notes are gone; a player's day button sits in their ability row", asyn
 	// Drawn like character selection (Trevor, 2026-10-20): the button at the row's end,
 	// after the name, the player and the ability.
 	await expect(row.locator('.head')).toContainText('Slayer');
-	await expect(row.locator('.head .note')).toHaveText('Ben');
+	await expect(row.locator('.head .player')).toHaveText('· Ben');
 	const text = await place(row.locator('.main'));
 	const used = await place(button);
 	const box = await place(row.locator('.row'));
