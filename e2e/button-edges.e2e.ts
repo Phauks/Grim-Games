@@ -24,9 +24,6 @@ const ROUTES = [
  * list only shrinks: a button that now passes must come off it, and a new one fails.
  */
 const BUTTON_EDGE_TODO: readonly string[] = [
-	// A character name badge's fill is its type colour (Names as badges).
-	'/reference: badge',
-	'/build-character: badge',
 	// The Library's chosen folder (Library).
 	'/library: entry'
 ];
