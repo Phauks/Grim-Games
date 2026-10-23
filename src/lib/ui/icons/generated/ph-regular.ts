@@ -35,10 +35,12 @@ import ph_flask from '~icons/ph/flask';
 import ph_folder from '~icons/ph/folder';
 import ph_folder_open from '~icons/ph/folder-open';
 import ph_funnel from '~icons/ph/funnel';
+import ph_gavel from '~icons/ph/gavel';
 import ph_gear from '~icons/ph/gear';
 import ph_ghost from '~icons/ph/ghost';
 import ph_hammer from '~icons/ph/hammer';
 import ph_hand_palm from '~icons/ph/hand-palm';
+import ph_hand_pointing from '~icons/ph/hand-pointing';
 import ph_handbag from '~icons/ph/handbag';
 import ph_hash from '~icons/ph/hash';
 import ph_heartbeat from '~icons/ph/heartbeat';
@@ -133,10 +135,12 @@ const icons: IconMap = {
 	'ph:folder': ph_folder,
 	'ph:folder-open': ph_folder_open,
 	'ph:funnel': ph_funnel,
+	'ph:gavel': ph_gavel,
 	'ph:gear': ph_gear,
 	'ph:ghost': ph_ghost,
 	'ph:hammer': ph_hammer,
 	'ph:hand-palm': ph_hand_palm,
+	'ph:hand-pointing': ph_hand_pointing,
 	'ph:handbag': ph_handbag,
 	'ph:hash': ph_hash,
 	'ph:heartbeat': ph_heartbeat,

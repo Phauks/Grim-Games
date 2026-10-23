@@ -86,6 +86,7 @@ import ph_folder_open_fill from '~icons/ph/folder-open-fill';
 import ph_folder_simple_fill from '~icons/ph/folder-simple-fill';
 import ph_frame_corners_fill from '~icons/ph/frame-corners-fill';
 import ph_funnel_fill from '~icons/ph/funnel-fill';
+import ph_gavel_fill from '~icons/ph/gavel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
@@ -126,6 +127,7 @@ import ph_lock_fill from '~icons/ph/lock-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
+import ph_megaphone_fill from '~icons/ph/megaphone-fill';
 import ph_minus_fill from '~icons/ph/minus-fill';
 import ph_minus_circle_fill from '~icons/ph/minus-circle-fill';
 import ph_moon_fill from '~icons/ph/moon-fill';
@@ -305,6 +307,7 @@ const icons: IconMap = {
 	'ph:folder-simple-fill': ph_folder_simple_fill,
 	'ph:frame-corners-fill': ph_frame_corners_fill,
 	'ph:funnel-fill': ph_funnel_fill,
+	'ph:gavel-fill': ph_gavel_fill,
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,
 	'ph:ghost-fill': ph_ghost_fill,
@@ -345,6 +348,7 @@ const icons: IconMap = {
 	'ph:lock-simple-fill': ph_lock_simple_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
+	'ph:megaphone-fill': ph_megaphone_fill,
 	'ph:minus-fill': ph_minus_fill,
 	'ph:minus-circle-fill': ph_minus_circle_fill,
 	'ph:moon-fill': ph_moon_fill,

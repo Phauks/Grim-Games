@@ -86,6 +86,7 @@ import ph_folder_open_thin from '~icons/ph/folder-open-thin';
 import ph_folder_simple_thin from '~icons/ph/folder-simple-thin';
 import ph_frame_corners_thin from '~icons/ph/frame-corners-thin';
 import ph_funnel_thin from '~icons/ph/funnel-thin';
+import ph_gavel_thin from '~icons/ph/gavel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
@@ -126,6 +127,7 @@ import ph_lock_thin from '~icons/ph/lock-thin';
 import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
+import ph_megaphone_thin from '~icons/ph/megaphone-thin';
 import ph_minus_thin from '~icons/ph/minus-thin';
 import ph_minus_circle_thin from '~icons/ph/minus-circle-thin';
 import ph_moon_thin from '~icons/ph/moon-thin';
@@ -305,6 +307,7 @@ const icons: IconMap = {
 	'ph:folder-simple-thin': ph_folder_simple_thin,
 	'ph:frame-corners-thin': ph_frame_corners_thin,
 	'ph:funnel-thin': ph_funnel_thin,
+	'ph:gavel-thin': ph_gavel_thin,
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
 	'ph:ghost-thin': ph_ghost_thin,
@@ -345,6 +348,7 @@ const icons: IconMap = {
 	'ph:lock-simple-thin': ph_lock_simple_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
+	'ph:megaphone-thin': ph_megaphone_thin,
 	'ph:minus-thin': ph_minus_thin,
 	'ph:minus-circle-thin': ph_minus_circle_thin,
 	'ph:moon-thin': ph_moon_thin,
