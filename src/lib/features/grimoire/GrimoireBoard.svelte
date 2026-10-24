@@ -10,7 +10,7 @@
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames, gameStarts } from './device-notes.ts';
+	import { endedGames, gameStarts, nightUnderway } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -864,7 +864,13 @@
 	const phaseNow = $derived(
 		gamePhase(game.pastDays.length, {
 			begun: startedAt !== undefined,
-			nightUnderway: grimoire.nightRunning || grimoire.nightUnderway
+			nightUnderway: ended
+				? nightUnderway(
+						{ day: grimoire.nightDay, done: grimoire.nightDone },
+						game.pastDays.length,
+						true
+					)
+				: grimoire.nightRunning || grimoire.nightUnderway
 		})
 	);
 	const phase = $derived(phaseText(phaseNow));
@@ -898,7 +904,6 @@
 	function editGameInfo(changes: GameInfoChanges) {
 		if (changes.storytellerName !== (game.storytellerName ?? ''))
 			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
-		if (changes.script) void grimoire.changeScript(changes.script);
 	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
@@ -1357,6 +1362,9 @@
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
 	onGameInfo={() => (modeMenuOpen = true)}
+	onCharacterSelection={startedAt === undefined && !watching
+		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
+		: undefined}
 	onAddSeat={() =>
 		// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
 		startPlacing((position) => void grimoire.addSeat(position))}

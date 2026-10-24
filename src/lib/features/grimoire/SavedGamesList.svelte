@@ -132,7 +132,7 @@
 	const stageText = (game: SavedGameSummary) => {
 		const phase = gamePhase(game.days, {
 			begun: gameStarts.read(game.gameId) !== undefined,
-			nightUnderway: nightUnderway(nightViews.read(game.gameId), game.days)
+			nightUnderway: nightUnderway(nightViews.read(game.gameId), game.days, !!ended[game.gameId])
 		});
 		return phase.kind === 'setup' ? 'Setting up' : phaseText(phase);
 	};

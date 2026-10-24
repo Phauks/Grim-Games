@@ -32,6 +32,7 @@ import {
 } from '#lib/core/model/index.ts';
 import {
 	DAY_GROUPS,
+	guessLimit,
 	type DayReminderOverride,
 	type Night,
 	type NightStepOverride
@@ -427,6 +428,23 @@ export function guessesOf(
 		seatId: seatOf(game, g.seatId).seatId,
 		characterId: characterOf(ctx, g.characterId).id
 	}));
+}
+
+/**
+ * Warns when a note holds more guesses than its character may make (`guessLimit`, the
+ * Juggler's 5: https://wiki.bloodontheclocktower.com/Juggler). A warning: the Storyteller
+ * decides.
+ */
+export function checkGuessLimit(
+	ctx: EngineContext,
+	characterId: CharacterId,
+	count: number,
+	warn: Warn
+): void {
+	const limit = guessLimit(characterId, ctx.characters);
+	if (limit !== undefined && count > limit) {
+		warn('too-many-guesses', `the ${characterOf(ctx, characterId).name} guesses at most ${limit}`);
+	}
 }
 
 /** The reminder token a character places when its once-only ability is used. */

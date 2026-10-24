@@ -5,6 +5,7 @@
 	import type { Game } from '#lib/core/model/index.ts';
 	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
+	import { wasReplaced } from '#lib/features/game/next-game.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 
 	/**
@@ -30,8 +31,12 @@
 				pendingLeave = leave;
 				exitOpen = true;
 			},
-			// This board's screens, and the other boards and pages of its mode.
-			(url) => url.pathname.startsWith(`/grimoire/${gameId}`) || withinModeSession(gameId, url)
+			// This board's screens, the other boards and pages of its mode, and the game that
+			// Game info's New game just started in its place.
+			(url) =>
+				url.pathname.startsWith(`/grimoire/${gameId}`) ||
+				withinModeSession(gameId, url) ||
+				wasReplaced(gameId)
 		);
 		releaseGuard = release;
 		return release;

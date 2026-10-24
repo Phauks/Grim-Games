@@ -14,6 +14,9 @@ export const modes = {
 	'modes.info.storyteller': 'Storyteller',
 	'modes.info.players': 'Players',
 	'modes.info.edit': 'Edit game info',
+	'modes.newGame.ask': 'Start a new game?',
+	'modes.newGame.askText':
+		'This game moves to History when the new one starts. The room and players stay.',
 	'modes.info.watchers': 'Watching',
 	'modes.info.rules': 'Special rules',
 	'modes.info.download': 'Download script',
