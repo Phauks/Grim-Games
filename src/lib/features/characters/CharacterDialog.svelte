@@ -275,15 +275,17 @@
 	.own[data-pulse] {
 		animation: own-pulse 0.9s ease-out;
 	}
+	/* Drawn inside the box, so the dialog's edges never clip it (Trevor, 2026-10-24: only the
+	   bottom and corners showed). */
 	@keyframes own-pulse {
 		0%,
 		30% {
 			background-color: var(--surface-selected);
-			box-shadow: 0 0 0 calc(0.15 * var(--u)) var(--accent);
+			box-shadow: inset 0 0 0 calc(0.15 * var(--u)) var(--accent);
 		}
 		100% {
 			background-color: transparent;
-			box-shadow: 0 0 0 calc(0.15 * var(--u)) transparent;
+			box-shadow: inset 0 0 0 calc(0.15 * var(--u)) transparent;
 		}
 	}
 </style>
