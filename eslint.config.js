@@ -26,6 +26,7 @@ const PLAYER_BADGE_TODO = [
 	'src/lib/features/day/ExecutionDialog.svelte',
 	'src/lib/features/grimoire/GrimoireBoard.svelte',
 	'src/lib/features/grimoire/GuidedStep.svelte',
+	'src/lib/features/grimoire/NominationChooser.svelte',
 	'src/lib/features/grimoire/SeatChooser.svelte',
 	'src/lib/features/grimoire/SeatSheet.svelte',
 	'src/lib/features/grimoire/SeatToken.svelte',
