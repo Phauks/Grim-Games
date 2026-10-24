@@ -4,6 +4,7 @@
  * state itself.
  */
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
+import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
@@ -180,8 +181,11 @@ export type Command =
 	| { type: 'Nominate'; nominator: SeatId; nominee: SeatId }
 	/** Changes who nominated whom in a logged nomination. */
 	| { type: 'EditNomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
-	/** Marks whether the Demon voted today (for the Flowergirl); undefined clears it. */
-	| { type: 'SetDemonVoted'; voted?: boolean }
+	/**
+	 * Marks one of today's yes-or-no facts (whether the Demon voted, for the Flowergirl), and
+	 * swaps the tokens of each character in play that shows it (`dayMark`); undefined clears it.
+	 */
+	| { type: 'SetDayMark'; mark: DayMark; value?: boolean }
 	/**
 	 * Stores a value the Storyteller chose during prep (the Yaggababble's secret phrase) as
 	 * `Game.prepValues[key]`, `key` from `prepValueKey`; no `value` or an empty one clears it.
