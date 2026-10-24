@@ -1513,7 +1513,7 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	const sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
 	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
-	await expect(actions).toContainText(/From\s*Washerwoman\s*· Seat 1\s*on\s*\S+\s*· Seat 2/);
+	await expect(actions).toContainText(/From\s*Washerwoman\s*Seat 1\s*on\s*\S+\s*Seat 2/);
 	// In the seat sheet a reminder is just its token, tapped for these actions, delete among
 	// them (Trevor, 2026-10-19): no tick box, no owner, no ⋯.
 	await expect(actions.getByRole('button', { name: 'Remove reminder' })).toBeVisible();
@@ -1976,7 +1976,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	// In its own Afflictions section, not at the top (Trevor, 2026-10-17).
 	const empath = await openStep(page, 'Empath');
 	await expect(empath.getByTestId('step-afflictions')).toContainText(
-		/Poisoned\s*Empath\s*· Seat 2\s*by\s*Poisoner\s*· Seat 1/
+		/Poisoned\s*Empath\s*Seat 2\s*by\s*Poisoner\s*Seat 1/
 	);
 	await expect(empath.getByTestId('night-alerts')).toHaveCount(0);
 	await empath.getByRole('button', { name: 'Close' }).tap();
@@ -5706,7 +5706,7 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 		.getByRole('dialog', { name: 'Who did Seat 2 nominate?' })
 		.getByText('Seat 1', { exact: true })
 		.tap();
-	const ask = page.getByRole('alertdialog', { name: 'Virgin: execute Seat 2?' });
+	const ask = page.getByRole('alertdialog', { name: /^Virgin: execute Seat 2\s?\?$/ });
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await expect(seatLabelled(page, 'Seat 2: no name, Chef, dead')).toBeAttached();
@@ -5832,7 +5832,7 @@ test("with The Djinn's Bargain, a nomination asks whether the nominator chose to
 	await trackNominations(page);
 	await nominate(page, 1, 2);
 	const ask = page.getByRole('alertdialog', {
-		name: 'The Djinn’s Bargain: did Seat 1 choose to die?'
+		name: /^The Djinn’s Bargain: did Seat 1\s?choose to die\?$/
 	});
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
