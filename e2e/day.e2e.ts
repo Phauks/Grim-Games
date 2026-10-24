@@ -135,6 +135,13 @@ test("day notes are gone; a player's day button sits in their ability row", asyn
 	expect(footer.y).toBeGreaterThanOrEqual(ability.y + ability.height - 1);
 	expect(used.y).toBeGreaterThanOrEqual(footer.y - 1);
 	expect(used.x + used.width).toBeGreaterThan(footer.x + footer.width * 0.6);
+	// The button is the strip's square end, its full height, and the state reads at the
+	// ability's size (Trevor, 2026-10-24: option A).
+	expect(Math.abs(used.x + used.width - (footer.x + footer.width))).toBeLessThan(2);
+	expect(used.height).toBeGreaterThanOrEqual(footer.height - 2);
+	await expect(button).toHaveCSS('border-top-left-radius', '0px');
+	const size = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontSize);
+	expect(await size(row.getByTestId('day-state'))).toBe(await size(row.locator('.ability')));
 	await row.screenshot({ path: `test-results/day-used-row-${test.info().project.name}.png` });
 });
 
