@@ -4462,6 +4462,37 @@ test('"+ New token" makes a reusable ∞ token whose copies carry its look', asy
 	await expect(placed).toHaveCount(1);
 });
 
+test('an ∞ token is edited beside a live preview of it', async ({ page }, testInfo) => {
+	// Trevor (2026-10-24): two panes, the preview on the left; on a phone it is on top.
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	await bank.getByRole('button', { name: 'New token' }).tap();
+	const dialog = page.getByRole('dialog', { name: /token/ });
+	const preview = dialog.getByTestId('generic-token-preview');
+	const previewBox = (await dialog.getByTestId('dialog-aside').boundingBox())!;
+	const fieldsBox = (await dialog.getByTestId('dialog-pane').boundingBox())!;
+	if (testInfo.project.name === 'tablet') {
+		expect(previewBox.x + previewBox.width).toBeLessThanOrEqual(fieldsBox.x);
+	} else {
+		expect(previewBox.y + previewBox.height).toBeLessThanOrEqual(fieldsBox.y);
+	}
+
+	// Each change shows at once, the text while it is typed, before Enter saves it.
+	const token = preview.getByTestId('board-reminder');
+	await expect(token).toHaveAttribute('aria-label', 'Generic reminder');
+	await page.getByTestId('reminder-note').fill('Red herring');
+	await expect(token).toHaveAttribute('aria-label', 'Generic reminder: Red herring');
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	await expect(token.locator('[data-symbol="ph:star"]')).toBeAttached();
+	await page.getByText('Filled symbol', { exact: true }).tap();
+	await expect(token.locator('[data-icon="ph:star-fill"] svg')).toBeAttached();
+	// Picking a symbol kept the words typed before it.
+	await expect(page.getByTestId('reminder-note')).toHaveValue('Red herring');
+	await expect(token).toHaveAttribute('aria-label', 'Generic reminder: Red herring');
+	await page.screenshot({ path: testInfo.outputPath('generic-token-editor.png') });
+});
+
 test('an ∞ token can have a filled symbol, and copying one is not unusual', async ({ page }) => {
 	// Trevor (2026-10-23): fill is set on each ∞ token, a filled icon is drawn, and an ∞ token
 	// has no "Uncommon" warning when copied.

@@ -129,6 +129,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'L22', title: 'Rotating players: every name moves with its player' },
 			{ id: 'L27', title: 'Random order button for seat name colours' },
 			{ id: 'B1', title: 'Generic token icon colour per token' },
+			{ id: 'B11', title: 'Generic token editor shows the token beside its settings' },
 			{ id: 'B4', title: 'Fall of Rome reminder counts' },
 			{
 				id: 'D2',
