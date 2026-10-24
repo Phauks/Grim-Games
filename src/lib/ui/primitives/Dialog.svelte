@@ -39,6 +39,17 @@
 		 * with unsaved changes asks first).
 		 */
 		beforeClose?: () => boolean;
+		/**
+		 * A second pane, left of the content from 40rem of the dialog's width and stacked on a
+		 * phone: a preview beside its settings, or what came before beside an editor (Trevor,
+		 * 2026-10-24: Savant information, earlier days left, today's editing right). Each pane
+		 * scrolls on its own when side by side. `full` and `max` only.
+		 */
+		aside?: Snippet;
+		/** The aside's accessible name. */
+		asideLabel?: string;
+		/** On a phone, the aside goes under the content instead of above it (history, not a preview). */
+		asideBelow?: boolean;
 	}
 
 	let {
@@ -55,7 +66,10 @@
 		headActions,
 		closeButton = true,
 		scroll = true,
-		beforeClose
+		beforeClose,
+		aside,
+		asideLabel,
+		asideBelow = false
 	}: Props = $props();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
@@ -121,7 +135,16 @@
 				{#if subtitle}<Dialog.Description>{@render subtitle()}</Dialog.Description
 					>{:else if description}<Dialog.Description>{description}</Dialog.Description>{/if}
 				{#if size === 'full' || size === 'max'}
-					<div class="body" data-scroll={scroll || undefined}>{@render children()}</div>
+					<div class="body" data-scroll={scroll || undefined}>
+						{#if aside}
+							<div class="panes" class:aside-below={asideBelow}>
+								<section class="aside" aria-label={asideLabel}>{@render aside()}</section>
+								<div class="main">{@render children()}</div>
+							</div>
+						{:else}
+							{@render children()}
+						{/if}
+					</div>
 				{:else}
 					{@render children()}
 				{/if}
@@ -295,6 +318,41 @@
 	.body[data-scroll] {
 		overflow-y: auto;
 		overscroll-behavior: contain;
+	}
+	/* Two panes: stacked on a phone, where the body scrolls as one; side by side from 40rem of
+	   the dialog's width, each scrolling on its own under the fixed header. */
+	.body:has(> .panes) {
+		container-type: inline-size;
+	}
+	.panes {
+		display: grid;
+		gap: var(--space-4);
+		align-content: start;
+		padding-top: var(--space-3);
+	}
+	.aside-below > .aside {
+		order: 1;
+	}
+	@container (min-width: 40rem) {
+		.panes {
+			flex: 1;
+			min-height: 0;
+			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+			grid-template-rows: minmax(0, 1fr);
+			align-content: stretch;
+		}
+		.aside-below > .aside {
+			order: 0;
+		}
+		.panes > * {
+			min-height: 0;
+			overflow-y: auto;
+			overscroll-behavior: contain;
+		}
+		.aside {
+			padding-right: var(--space-4);
+			border-right: var(--card-border);
+		}
 	}
 	/* Bottom right, and in view at the bottom of a long dialog (Trevor, 2026-10-17). */
 	.actions {

@@ -20,12 +20,12 @@
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
-	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { noteText, savedStatements, statementText, TYPE_NAMES } from './statement-text.ts';
 
 	/**
@@ -33,7 +33,8 @@
 	 * from the grimoire (`core/rules/savant.ts`), each cycled on its own; a suggestion, never
 	 * the final word. Each says whether it is true and why (L49), the Storyteller can write
 	 * their own instead (L47), and the eye shows them to the player like info tokens, without
-	 * either (L50). "Use these" saves them as the Savant's note for today.
+	 * either (L50). "Use these" saves them as the Savant's note for today. Two panes (Trevor,
+	 * 2026-10-24): what the Savant was given on earlier days, then today's to edit.
 	 */
 	interface Props {
 		open?: boolean;
@@ -136,6 +137,22 @@
 		);
 		return note?.kind === 'note' ? note : undefined;
 	});
+
+	/** What the Savant was told on earlier days, the latest first. */
+	const earlier = $derived(
+		seatId === undefined
+			? []
+			: game.pastDays
+					.flatMap((log, day) =>
+						log.entries.flatMap((e) =>
+							e.kind === 'note' && e.characterId === 'savant' && e.seatId === seatId
+								? [{ day, ...savedStatements(e.text, prefixes) }]
+								: []
+						)
+					)
+					.filter((d) => d.statements.length > 0 || d.rest !== '')
+					.reverse()
+	);
 
 	// Today's saved statements when the sheet opens (Trevor, 2026-10-24: they seemed not to
 	// save, as a fresh pair was dealt each time); otherwise a new pair in the mode the rules
@@ -245,13 +262,16 @@
 	}
 </script>
 
-<BottomSheet
+<Dialog
 	bind:open
+	size="full"
 	title={seatId === undefined
 		? t('savant.title')
 		: t('savant.titleSeat', { seat: seatLabel(game, seatId) })}
+	asideLabel={t('savant.earlier')}
+	asideBelow
 >
-	{#snippet actions()}
+	{#snippet headActions()}
 		<IconButton
 			icon="showToPlayer"
 			label={t('savant.show')}
@@ -259,7 +279,35 @@
 			onclick={() => (showOpen = true)}
 		/>
 	{/snippet}
+	{#snippet aside()}
+		<h3 class="pane-title">{t('savant.earlier')}</h3>
+		{#if earlier.length === 0}
+			<p class="none">{t('common.none')}</p>
+		{:else}
+			<ol class="earlier" data-testid="savant-earlier">
+				{#each earlier as given, k (k)}
+					<li>
+						<h4>
+							{given.day === 0
+								? t('day.nightNumber', { number: 1 })
+								: t('day.titleNumber', { number: given.day })}
+						</h4>
+						{#each given.statements as statement, j (j)}
+							<p class="given">
+								<span class="given-truth" data-truth={statement.truth ? 'true' : 'false'}
+									>{statement.truth ? t('savant.true') : t('savant.false')}</span
+								>
+								{statement.words}
+							</p>
+						{/each}
+						{#if given.rest}<p class="rest">{given.rest}</p>{/if}
+					</li>
+				{/each}
+			</ol>
+		{/if}
+	{/snippet}
 	<div class="savant">
+		<h3 class="pane-title">{t('savant.today')}</h3>
 		<Select
 			label={t('savant.mode')}
 			value={mode}
@@ -293,15 +341,11 @@
 				/>
 				<div class="words">
 					{#if written}
-						<ClearableField bind:value={own[i]}>
-							<input
-								type="text"
-								aria-label={t('savant.writeField', { number: i + 1 })}
-								autocomplete="off"
-								enterkeyhint="done"
-								bind:value={own[i]}
-							/>
-						</ClearableField>
+						<TextField
+							label={t('savant.writeField', { number: i + 1 })}
+							hideLabel
+							bind:value={own[i]}
+						/>
 					{:else}
 						<p class="sentence">
 							{#if line}
@@ -341,16 +385,17 @@
 				/>
 			</section>
 		{/each}
-
+	</div>
+	{#snippet actions()}
 		<ModalActions
 			onCancel={() => (open = false)}
 			onConfirm={save}
 			confirmLabel={t('savant.use')}
 			disabled={shown.length === 0}
 		/>
-	</div>
+	{/snippet}
 	<ShowToPlayer bind:open={showOpen} cards={shown} />
-</BottomSheet>
+</Dialog>
 
 {#snippet parts(
 	list: readonly SavantPart[]
@@ -366,6 +411,44 @@
 	.savant {
 		display: grid;
 		gap: var(--space-3);
+	}
+	.pane-title {
+		margin: 0;
+		font-size: 1rem;
+		color: var(--heading);
+	}
+	.none {
+		margin: var(--space-2) 0 0;
+		color: var(--on-surface-muted);
+	}
+	/* Earlier days as rows with lines between, not bordered cards (Trevor's UI rules). */
+	.earlier {
+		margin: var(--space-2) 0 0;
+		padding: 0;
+		list-style: none;
+	}
+	.earlier > li {
+		display: grid;
+		gap: var(--space-1);
+		padding: var(--space-2) 0;
+		border-top: var(--card-border);
+	}
+	.earlier h4 {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--on-surface-muted);
+	}
+	.given,
+	.rest {
+		margin: 0;
+	}
+	.given-truth {
+		margin-right: var(--space-1);
+		font-weight: 600;
+	}
+	.rest {
+		white-space: pre-line;
+		color: var(--on-surface-muted);
 	}
 	.why {
 		margin: 0;

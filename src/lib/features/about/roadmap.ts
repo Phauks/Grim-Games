@@ -162,6 +162,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'L48', title: 'Savant information: no lock button' },
 			{ id: 'L49', title: 'Savant information: True or False, with the reason' },
 			{ id: 'L50', title: 'Savant information: a spoiler-free view to show' },
+			{ id: 'L62', title: 'Savant information: earlier days beside today’s' },
 			{ id: 'L56', title: 'Player claims in town: one way to log them' },
 			{ id: 'L57', title: 'Juggler claims: log the guesses' },
 			{ id: 'L58', title: 'Gossip claims: log the statement, true or false' }
