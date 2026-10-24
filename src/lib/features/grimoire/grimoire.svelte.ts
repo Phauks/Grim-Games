@@ -2,10 +2,7 @@ import { dawnGames, type Command } from '#lib/core/engine/index.ts';
 import { demonToBecome, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
-import { toScript, type CharacterId, type ReminderLabel } from '#lib/core/data/index.ts';
-import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
-import { reportError } from '#lib/features/errors/report.svelte.ts';
-import { loadScriptChoice, type ScriptChoice } from '#lib/features/modes/script-choices.svelte.ts';
+import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -243,24 +240,6 @@ export class Grimoire {
 		this.askDemon(command);
 		this.askFirstDeath(command);
 		return true;
-	}
-
-	/**
-	 * Swaps the game's script for one picked as on New game (Game info's pencil; Trevor,
-	 * 2026-10-23), keeping the seats, names and room. Characters the new script lacks stay
-	 * where they are, named together in one note (warn, never lock).
-	 */
-	async changeScript(choice: ScriptChoice): Promise<void> {
-		let script;
-		try {
-			script = toScript(loadScriptChoice(choice, await loadOfficialData()));
-		} catch (e) {
-			return void reportError(e, { area: 'grimoire' });
-		}
-		const result = this.open.run({ type: 'ChangeScript', script });
-		if (!result.ok) return void toast('Not done', result.error.message);
-		const missing = result.warnings.filter((w) => w.code === 'not-on-script');
-		if (missing.length) toast('Note', `${missing.map((w) => w.message).join('. ')}.`);
 	}
 
 	/** The seat and reminder an AddReminder or MoveReminder just put down. */
