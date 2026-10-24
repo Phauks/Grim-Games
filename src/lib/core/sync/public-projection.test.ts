@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castGame, newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import { NoopSyncProvider, publicProjection } from './public-projection.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -266,5 +267,43 @@ describe('NoopSyncProvider', () => {
 			provider.publish({ seats: [], today: { nominations: [], executions: [] } })
 		).resolves.toBeUndefined();
 		await expect(provider.close()).resolves.toBeUndefined();
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Banshee: everyone learns when the Demon kills the Banshee,
+// who then votes twice on each nomination; the players' grim shows that instead of a ghost vote.
+describe('a Banshee the Demon killed', () => {
+	const die =
+		(seat: number, cause?: 'demon' | 'execution' | 'imp') =>
+		(s: string[]): Command => ({
+			type: 'SetDead',
+			seatId: s[seat],
+			dead: true,
+			...(cause ? { cause } : {})
+		});
+	const seatOf = (cause?: 'demon' | 'execution' | 'imp') => {
+		const { session, ctx } = castGame(['banshee', 'chef', 'imp'], die(0, cause));
+		return publicProjection(session.game, undefined, undefined, undefined, ctx.characters).seats[0];
+	};
+
+	it('shows two votes and no ghost vote, by the Demon or the Imp', () => {
+		for (const cause of ['demon', 'imp'] as const) {
+			const seat = seatOf(cause);
+			expect(seat).toMatchObject({ dead: true, votes: 2 });
+			expect(seat).not.toHaveProperty('ghostVote');
+		}
+	});
+
+	it('shows a ghost vote when executed, or when the cause is not recorded', () => {
+		for (const cause of ['execution', undefined] as const) {
+			const seat = seatOf(cause);
+			expect(seat).toMatchObject({ dead: true, ghostVote: 'unused' });
+			expect(seat).not.toHaveProperty('votes');
+		}
+	});
+
+	it('names no character for the town without the characters', () => {
+		const { session } = castGame(['banshee', 'chef', 'imp'], die(0, 'demon'));
+		expect(publicProjection(session.game).seats[0]).toMatchObject({ ghostVote: 'unused' });
 	});
 });

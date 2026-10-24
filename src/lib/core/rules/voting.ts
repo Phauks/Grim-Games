@@ -71,6 +71,21 @@ export function votesWithoutToken(
 	return afterDeath(game, seatId, characters)?.votes;
 }
 
+/**
+ * `votesWithoutToken` as the town knows it: the Banshee's death to the Demon is announced to
+ * everyone (https://wiki.bloodontheclocktower.com/Banshee), so the players' grim shows it, but
+ * only once the cause is recorded. A death with no recorded cause still shows a ghost vote, so
+ * a dead player's character is never told to the town by guesswork.
+ */
+export function publicVotesWithoutToken(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): number | undefined {
+	if (game.seats[seatId]?.deathCause === undefined) return undefined;
+	return votesWithoutToken(game, seatId, characters);
+}
+
 /** A day count the Storyteller can open to see how it was worked out (Trevor, 2026-10-19). */
 export type DayCount = 'alive' | 'good' | 'evil' | 'ghostVotes';
 

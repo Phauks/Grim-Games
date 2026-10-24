@@ -1084,6 +1084,51 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phoneContext.close();
 });
 
+test("a Banshee the Demon killed shows two votes and no ghost vote on the players' Grim", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Everyone learns when the Demon kills the Banshee, who then votes twice on each nomination
+	// with no ghost vote to spend (https://wiki.bloodontheclocktower.com/Banshee); the players'
+	// grim says so as the board does.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seat = phone.getByTestId('grim-seat').first();
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 1: Seat 1');
+
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Banshee', exact: true }).tap();
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 1: Seat 1, dead, 2 votes per nomination');
+	// The skull, as on the board: no ghost to spend.
+	await expect(seat.getByTestId('dead-mark')).not.toHaveAttribute('data-vote');
+
+	// Executed instead, the Banshee is just dead, with a ghost vote like anyone.
+	await sheet.getByRole('button', { name: /^Status:/ }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 1: Seat 1, dead, ghost vote not used');
+	await phoneContext.close();
+});
+
 test("on a laptop the player's screen shows the script's logo, and the guess sheet scrolls", async ({
 	page,
 	browser

@@ -274,7 +274,8 @@ export class RoomHost {
 					game.game,
 					publicTravellerTest(game.game.gameId, game.characters),
 					layout,
-					corner
+					corner,
+					game.characters
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
