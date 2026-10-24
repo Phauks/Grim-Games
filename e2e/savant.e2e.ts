@@ -99,6 +99,8 @@ test('the Savant seat offers one true and one false statement, each cycled or wr
 });
 
 test('the day view recommends Savant information until it is set for today', async ({ page }) => {
+	// Eight character picks first: past 30s on a loaded runner, as in the tests below.
+	test.setTimeout(90_000);
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
 	await page.getByRole('button', { name: 'Start game' }).tap();
