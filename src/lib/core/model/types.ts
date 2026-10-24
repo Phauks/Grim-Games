@@ -9,6 +9,7 @@
  * are plain, JSON-serialisable data.
  */
 import type { Alignment, CharacterId, ReminderLabel, Script } from '#lib/core/data/index.ts';
+import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 // Type-only: the Storyteller's night-order and day-reminder overrides are defined next to
 // the rules that apply them, and stored on the game.
 import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
@@ -287,10 +288,11 @@ export interface AbnormalCause {
 export interface DayLog {
 	entries: DayEntry[];
 	/**
-	 * Whether the Demon voted, as the Storyteller marked it (for the Flowergirl). Undefined
-	 * until marked. Votes themselves are not tracked.
+	 * Today's yes-or-no facts as the Storyteller marked them (whether the Demon voted, whether
+	 * a Minion nominated: `DAY_MARKS`), for the characters that learn them at night. A fact is
+	 * missing until marked. Votes themselves are not tracked.
 	 */
-	demonVoted?: boolean;
+	marks?: Partial<Record<DayMark, boolean>>;
 	/** When "New day" closed this log (milliseconds since the epoch); only on past days. */
 	closedAt?: number;
 }

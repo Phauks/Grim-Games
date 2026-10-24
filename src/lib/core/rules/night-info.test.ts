@@ -160,6 +160,24 @@ describe('Town Crier', () => {
 		});
 	});
 
+	// Trevor, 2026-10-24: "town crier lacks day button to track nomination".
+	it("hears the Storyteller's Minion nominated mark over the nominations recorded", () => {
+		const { game: g, seats } = game(
+			snv,
+			(s) => ({ type: 'Nominate', nominator: s[0], nominee: s[1] }),
+			() => ({ type: 'SetDayMark', mark: 'minion-nominated', value: true })
+		);
+		expect(answerOf(g, seats[0], 'towncrier', characters)).toMatchObject({
+			kind: 'yes-no',
+			value: true
+		});
+		const none = game(snv, () => ({ type: 'SetDayMark', mark: 'minion-nominated', value: false }));
+		expect(answerOf(none.game, none.seats[0], 'towncrier', characters)).toMatchObject({
+			kind: 'yes-no',
+			value: false
+		});
+	});
+
 	it('shows what the Storyteller recorded, as their override', () => {
 		const { game: g, seats } = game(snv, (s) => ({
 			type: 'RecordNightInfo',
@@ -180,13 +198,13 @@ describe('Flowergirl', () => {
 	});
 
 	it('hears yes when the Demon voted, and no when it did not', () => {
-		const voted = game(snv, () => ({ type: 'SetDemonVoted', voted: true }));
+		const voted = game(snv, () => ({ type: 'SetDayMark', mark: 'demon-voted', value: true }));
 		expect(answerOf(voted.game, voted.seats[1], 'flowergirl', characters)).toMatchObject({
 			kind: 'yes-no',
 			value: true,
 			because: [voted.seats[5]]
 		});
-		const not = game(snv, () => ({ type: 'SetDemonVoted', voted: false }));
+		const not = game(snv, () => ({ type: 'SetDayMark', mark: 'demon-voted', value: false }));
 		expect(answerOf(not.game, not.seats[1], 'flowergirl', characters)).toMatchObject({
 			value: false
 		});

@@ -7,7 +7,7 @@ import {
 	type DayEntry,
 	type Reminder
 } from '#lib/core/model/index.ts';
-import { protection } from '#lib/core/rules/index.ts';
+import { DAY_MARKS, dayMarkValue, markTokenSwap, protection } from '#lib/core/rules/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	NO_ABILITY_LABEL,
@@ -28,7 +28,7 @@ import {
 export const DAY_DECIDERS: Deciders<
 	| 'Nominate'
 	| 'EditNomination'
-	| 'SetDemonVoted'
+	| 'SetDayMark'
 	| 'SetPrepValue'
 	| 'Execute'
 	| 'Exile'
@@ -63,14 +63,26 @@ export const DAY_DECIDERS: Deciders<
 		return [{ type: 'DayEntryReplaced', entry: { ...entry, nominator, nominee } }];
 	},
 
-	SetDemonVoted(game, command, ctx, warn) {
-		if (command.voted === game.today.demonVoted) {
+	SetDayMark(game, command, ctx, warn) {
+		if (!(DAY_MARKS as readonly string[]).includes(command.mark)) {
+			refuse('invalid-day-mark', `unknown day mark ${String(command.mark)}`);
+		}
+		if (command.value === dayMarkValue(game, command.mark)) {
 			warn('no-change', 'already marked');
 			return [];
 		}
-		const event: GameEvent = { type: 'DemonVotedSet' };
-		if (command.voted !== undefined) event.voted = command.voted;
-		return [event];
+		const swap = markTokenSwap(game, command.mark, command.value, ctx.characters);
+		const event: GameEvent = { type: 'DayMarkSet', mark: command.mark };
+		if (command.value !== undefined) event.value = command.value;
+		return [
+			event,
+			...swap.remove.map((reminderId): GameEvent => ({ type: 'ReminderRemoved', reminderId })),
+			...swap.add.map((p): GameEvent => ({
+				type: 'ReminderAdded',
+				seatId: p.seatId,
+				reminder: { reminderId: ctx.newId(), characterId: p.characterId, label: p.label }
+			}))
+		];
 	},
 
 	SetPrepValue(game, command, ctx, warn) {
@@ -282,7 +294,7 @@ export const DAY_DECIDERS: Deciders<
 	},
 
 	NewDay(game, command, ctx, warn) {
-		if (game.today.entries.length === 0 && game.today.demonVoted === undefined) {
+		if (game.today.entries.length === 0 && game.today.marks === undefined) {
 			warn('empty-day', 'nothing was logged since the last new day');
 		}
 		return [{ type: 'DayStarted', at: ctx.now() }];
