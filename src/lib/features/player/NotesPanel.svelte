@@ -5,6 +5,8 @@
 	import { padShape } from '#lib/ui/scratch/pad-shape.svelte.ts';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
+	import type { CharacterId } from '#lib/core/data/index.ts';
+	import SeatNoteEntry from '#lib/features/grimoire/SeatNoteEntry.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
 	interface Props {
@@ -15,9 +17,13 @@
 		onOpenNote: (noteId: string) => void;
 		onAddScratch: () => void;
 		onOpenScratch: (pad: ScratchPadState) => void;
+		/** The seats of the game this phone is in, with the player's note on each, if any. */
+		seats?: readonly { seatId: string; name: string; note?: string; characterId?: CharacterId }[];
+		onOpenSeat?: (seatId: string) => void;
 	}
 
-	let { notes, pads, onAdd, onOpenNote, onAddScratch, onOpenScratch }: Props = $props();
+	let { notes, pads, onAdd, onOpenNote, onAddScratch, onOpenScratch, seats, onOpenSeat }: Props =
+		$props();
 </script>
 
 <div class="notes">
@@ -65,6 +71,28 @@
 			</li>
 		</ul>
 	</section>
+
+	<!-- A note on each player, written here or from the Grim tab, as the Storyteller's Notes
+	     list one per player (Trevor, 2026-10-24). Only while this phone is in a game. -->
+	{#if seats}
+		<section aria-labelledby="seat-notes">
+			<div class="head">
+				<h2 id="seat-notes">{t('player.seatNotes')}</h2>
+			</div>
+			<ul class="seat-notes">
+				{#each seats as seat (seat.seatId)}
+					<li data-seat-note={seat.seatId}>
+						<SeatNoteEntry
+							characterId={seat.characterId}
+							label={seat.name}
+							note={seat.note}
+							onOpen={() => onOpenSeat?.(seat.seatId)}
+						/>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
 </div>
 
 <style>
@@ -149,6 +177,11 @@
 	/* Pads two to a row on a phone, each preview the shape of this screen's pad: tall on a
 	   phone (Trevor, 2026-10-19: "2x2 on mobile"), wide on a desktop (Trevor, 2026-10-23), so
 	   no paper shows that could never be written on. */
+	.seat-notes {
+		display: grid;
+		grid-template-columns: none;
+		gap: 0;
+	}
 	.pads {
 		grid-template-columns: repeat(auto-fill, minmax(min(45%, calc(12 * var(--u))), 1fr));
 	}

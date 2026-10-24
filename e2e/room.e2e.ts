@@ -1196,6 +1196,54 @@ test("a Banshee the Demon killed shows two votes and no ghost vote on the player
 	await phoneContext.close();
 });
 
+test('a player writes a note on a seat from the Grim tab, and the Notes tab lists it', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-24): "allow players to write notes directly from the grim screen relating
+	// to players", which "show up in the notes area", as the Storyteller's per-player notes do.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seats = phone.getByTestId('grim-seat');
+	await expect(seats).toHaveCount(8);
+
+	await seats.nth(2).tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
+	await expect(sheet.getByTestId('seat-note')).toContainText('None');
+	await sheet.getByTestId('seat-note').tap();
+	const editor = phone.getByRole('dialog', { name: 'Note: Seat 3' });
+	await editor.getByTestId('note-editor').fill('Claims Chef: 1');
+	// Kept as it closes, with no Save.
+	await editor.getByRole('button', { name: 'Close' }).tap();
+	await expect(sheet.getByTestId('seat-note')).toContainText('Claims Chef: 1');
+	await phone.keyboard.press('Escape');
+	await expect(seats.nth(2).getByTestId('note-mark')).toBeVisible();
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your note');
+
+	// The Notes tab lists every seat with its note, and opens the same editor.
+	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(phone.getByRole('heading', { name: 'Players' })).toBeVisible();
+	const row = phone.locator('[data-seat-note]').nth(2);
+	await expect(row).toContainText('Claims Chef: 1');
+	await expect(phone.locator('[data-seat-note]').first()).toContainText('None');
+	await row.getByRole('button').tap();
+	await editor.getByTestId('note-editor').fill('Claims Chef: 0');
+	await editor.getByRole('button', { name: 'Close' }).tap();
+	await expect(row).toContainText('Claims Chef: 0');
+	// On this phone only, and kept after a reload.
+	await phone.reload();
+	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(phone.locator('[data-seat-note]').nth(2)).toContainText('Claims Chef: 0');
+	await phoneContext.close();
+});
+
 test("on a laptop the player's screen shows the script's logo, and the guess sheet scrolls", async ({
 	page,
 	browser
