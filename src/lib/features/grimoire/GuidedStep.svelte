@@ -136,6 +136,8 @@
 	 */
 	let asking = $state<{ token: InfoToken; filled: FilledInfoToken } | undefined>();
 	let askOpen = $state(false);
+	// eslint-disable-next-line grim/names-as-badges -- the dialog's spoken name; its heading shows the badge
+	const askTitle = $derived(`${step?.character?.name ?? ''} chose`);
 	function chooseCard(token: InfoToken, filled?: FilledInfoToken) {
 		if (filled?.chosenAt === undefined) return onInfoTokens(token, filled);
 		asking = { token, filled };
@@ -377,13 +379,15 @@
 	onChoose={put}
 />
 
-<SeatChooser
-	bind:open={askOpen}
-	title={`${step?.character?.name ?? ''} chose`}
-	{game}
-	{characters}
-	onChoose={chosen}
-/>
+<SeatChooser bind:open={askOpen} title={askTitle} {game} {characters} onChoose={chosen}>
+	{#snippet heading()}
+		{#if step?.character}<CharacterBadge
+				characterId={step.character.id}
+				character={step.character}
+				interactive={false}
+			/>{/if} chose
+	{/snippet}
+</SeatChooser>
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
