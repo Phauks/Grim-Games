@@ -97,7 +97,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: 'Savant information: generated, typed or shown to the player',
-		parts: ['L2', 'L5', 'L41', ...range('L', 46, 50)]
+		parts: ['L2', 'L5', 'L41', ...range('L', 46, 50), 'L62']
 	},
 	{
 		title:
