@@ -3,7 +3,7 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import { playerSettings, SHEET_DENSITIES } from './player-settings.svelte.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
-	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingAvatar from '#lib/ui/settings/SettingAvatar.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -54,6 +54,6 @@
 />
 
 <!-- Also in Print's own screen (Trevor: every setting in Settings and where it is used). -->
-<Collapsible title={t('player.printSettings')} level={3} storageKey="settings-player-print">
+<SettingCollapsible title={t('player.printSettings')} storageKey="settings-player-print">
 	<PrintSettingsFields />
-</Collapsible>
+</SettingCollapsible>

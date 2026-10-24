@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -381,23 +380,21 @@
 
 {#snippet colourRow(key: TokenColour)}
 	{@const colour = TOKEN_COLOURS.find((c) => c.key === key)!}
-	<SettingRow label={t(colour.label)} description={t(colour.description)}>
+	<!-- The reset beside the name, as every other setting (Trevor, 2026-10-24); disabled, not
+	     hidden, while nothing changed: no reflow. -->
+	<SettingRow
+		label={t(colour.label)}
+		description={t(colour.description)}
+		onReset={() => setColour(colour.key, undefined)}
+		isDefault={!value.colours[colour.key]}
+	>
 		{#snippet control(labelId)}
-			<div class="colour">
-				<input
-					type="color"
-					aria-labelledby={labelId}
-					value={tokenColour(colour.key, value, theme)}
-					onchange={(event) => setColour(colour.key, event.currentTarget.value)}
-				/>
-				<!-- Disabled, not hidden, when nothing changed: no reflow. -->
-				<Button
-					variant="quiet"
-					aria-label={t('characters.colour.resetOne', { colour: t(colour.label) })}
-					disabled={!value.colours[colour.key]}
-					onclick={() => setColour(colour.key, undefined)}>{t('characters.colour.reset')}</Button
-				>
-			</div>
+			<input
+				type="color"
+				aria-labelledby={labelId}
+				value={tokenColour(colour.key, value, theme)}
+				onchange={(event) => setColour(colour.key, event.currentTarget.value)}
+			/>
 		{/snippet}
 	</SettingRow>
 {/snippet}
@@ -406,7 +403,7 @@
 	label: 'characters.contrast.face' | 'characters.contrast.reminder',
 	ratio: number
 )}
-	<dl class="contrast" data-testid="token-contrast">
+	<dl class="contrast" data-setting data-testid="token-contrast">
 		<dt>{t(label)}</dt>
 		<dd data-poor={ratio < MIN_CONTRAST || undefined}>{readable(ratio)}</dd>
 	</dl>
@@ -480,11 +477,6 @@
 		display: inline-block;
 		line-height: 0;
 	}
-	.colour {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-	}
 	input[type='color'] {
 		width: calc(4 * var(--u));
 		min-width: var(--tap-target);
@@ -499,7 +491,8 @@
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr);
 		gap: var(--space-1) var(--space-3);
-		margin: var(--space-5) 0 0;
+		margin: 0;
+		padding-block: var(--space-3);
 		font-size: 0.9rem;
 	}
 	.contrast dt {

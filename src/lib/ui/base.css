@@ -217,3 +217,13 @@ select:focus-visible {
 		scrollbar-color: var(--border) transparent;
 	}
 }
+
+/*
+	One framework for every stacked setting (Trevor, 2026-10-24): each setting, whatever draws it
+	(a row, a switch, a colour, a font line, a closed group), carries `data-setting`, and any two
+	stacked one after the other get a thin line between them. A setting heading
+	(`SettingHeading`) starts a new run, so no line sits right under it.
+*/
+[data-setting] + [data-setting] {
+	border-top: 1px solid var(--border);
+}

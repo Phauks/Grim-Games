@@ -13,7 +13,7 @@
 </script>
 
 <!-- An on/off setting; the switch carries its own label so the row is one tap target. -->
-<div class="row">
+<div class="row" data-setting>
 	<Toggle {...toggle} />
 	{#if description}<p class="description">{description}</p>{/if}
 </div>
@@ -22,9 +22,11 @@
 	.row {
 		padding-block: var(--space-3);
 	}
-	/* A thin line between settings (Trevor, 2026-10-18), as SettingRow. */
-	:global(.row) + .row {
-		border-top: 1px solid var(--border);
+	/* The same name as every other setting (Trevor, 2026-10-24), not plain text. */
+	.row :global([data-scope='switch'][data-part='label']) {
+		font-weight: var(--font-control-weight);
+		color: var(--heading);
+		letter-spacing: 0.03em;
 	}
 	.description {
 		margin: 0;
