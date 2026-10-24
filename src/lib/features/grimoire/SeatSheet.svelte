@@ -14,6 +14,7 @@
 		abilityState,
 		mayNominate,
 		seatNominations,
+		votesWithoutToken,
 		type ImpairmentReason
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -316,7 +317,16 @@
 	let moveOpen = $state(false);
 	/** Which of the seat's nominations is being chosen (Track nominations). */
 	let nominating = $state<{ seatId: SeatId; side: 'made' | 'received' }>();
-	const nominations = $derived(seatId === undefined ? {} : seatNominations(game, seatId));
+	const nominations = $derived(
+		seatId === undefined ? { allMade: [] } : seatNominations(game, seatId)
+	);
+	/**
+	 * Dead but voting with no vote token (the Banshee killed by the Demon, `afterDeath`): no
+	 * ghost vote to spend, so the row says how many votes they have instead.
+	 */
+	const tokenFreeVotes = $derived(
+		seatId === undefined ? undefined : votesWithoutToken(game, seatId, characters)
+	);
 	/** The dead may not nominate, unless their character says so; a row already set stays editable. */
 	const canNominate = $derived(
 		seatId !== undefined && (!!nominations.made || mayNominate(game, seatId, characters))
@@ -502,8 +512,8 @@
 					type="button"
 					class="value ghost"
 					aria-labelledby={`ghost-${seat.seatId}`}
-					aria-pressed={seat.dead ? seat.ghostVoteUsed : undefined}
-					disabled={!seat.dead}
+					aria-pressed={seat.dead && tokenFreeVotes === undefined ? seat.ghostVoteUsed : undefined}
+					disabled={!seat.dead || tokenFreeVotes !== undefined}
 					onclick={() =>
 						grimoire.run({
 							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
@@ -512,7 +522,7 @@
 				>
 					<!-- The board's badge (Trevor, 2026-10-19: one ghost vote look in and out of the sheet). -->
 					<DeadBadge
-						vote={seat.ghostVoteUsed ? 'used' : 'unused'}
+						vote={tokenFreeVotes !== undefined ? undefined : seat.ghostVoteUsed ? 'used' : 'unused'}
 						usedLook={boardLooks.current.usedGhostVote}
 						testid="sheet-ghost-vote"
 					/>
@@ -520,7 +530,13 @@
 					     the longer "None while alive", which only shows while alive: reserving that
 					     left "Not used" off centre in its button (Trevor, 2026-10-23). -->
 					<span class="ghost-text" data-reserve="Not used"
-						>{seat.dead ? (seat.ghostVoteUsed ? 'Used' : 'Not used') : 'None while alive'}</span
+						>{!seat.dead
+							? 'None while alive'
+							: tokenFreeVotes !== undefined
+								? `${tokenFreeVotes} votes`
+								: seat.ghostVoteUsed
+									? 'Used'
+									: 'Not used'}</span
 					>
 				</button>
 			</div>
@@ -539,7 +555,11 @@
 						onclick={() => seatId !== undefined && (nominating = { seatId, side: 'made' })}
 					>
 						<Icon name="nominator" />
-						<span>{nominations.made ? seatLabelFor(game, nominations.made.nominee) : 'None'}</span>
+						<span
+							>{nominations.allMade.length
+								? nominations.allMade.map((n) => seatLabelFor(game, n.nominee)).join(', ')
+								: 'None'}</span
+						>
 					</button>
 				</div>
 				<div class="row">

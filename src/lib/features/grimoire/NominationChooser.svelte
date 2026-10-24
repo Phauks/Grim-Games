@@ -1,6 +1,11 @@
 <script lang="ts">
 	import type { CharacterLookup, SeatId } from '#lib/core/model/index.ts';
-	import { mayNominate, todaysNominations } from '#lib/core/rules/index.ts';
+	import {
+		mayNominate,
+		nominationsPerDay,
+		seatNominations,
+		todaysNominations
+	} from '#lib/core/rules/index.ts';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -38,7 +43,12 @@
 		const ask = asking;
 		asking = undefined;
 		if (!ask) return;
-		const pair = recordNomination(grimoire, ask.seatId, ask.side, other);
+		// A player with nominations left today (the Banshee killed by the Demon) makes another.
+		const another =
+			ask.side === 'made' &&
+			seatNominations(game, ask.seatId).allMade.length <
+				nominationsPerDay(game, ask.seatId, characters);
+		const pair = recordNomination(grimoire, ask.seatId, ask.side, other, another);
 		if (pair) onNominated?.(pair);
 	}
 </script>

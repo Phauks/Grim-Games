@@ -159,3 +159,45 @@ test('a dead player may be nominated but is not offered as a nominator', async (
 	await nominate(page, 1, 4);
 	await expect(dead.getByTestId('nominated-mark').and(page.locator('[data-on]'))).toHaveCount(1);
 });
+
+test('a Banshee the Demon killed nominates twice a day and votes twice with no token', async ({
+	page
+}) => {
+	// Trevor (2026-10-24): "build special parameters for banshee to function". Killed by the
+	// Demon, the Banshee may nominate twice a day and vote twice on every nomination, with no
+	// vote token (https://wiki.bloodontheclocktower.com/Banshee).
+	await startGame(page);
+	await trackNominations(page);
+	let seat = await openSeat(page, 1);
+	await seat.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Banshee', exact: true }).tap();
+	await seat.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	// No ghost vote to spend: two votes on every nomination.
+	await expect(seat.getByRole('button', { name: 'Ghost vote' })).toBeDisabled();
+	await expect(seat.getByRole('button', { name: 'Ghost vote' })).toContainText('2 votes');
+	await closeSheet(page);
+	const banshee = page.getByTestId('seat').first();
+	await expect(banshee).toHaveAttribute('aria-label', /dead, 2 votes per nomination/);
+	await expect(banshee.getByTestId('nominator-mark')).toHaveCount(1);
+	// Two nominations, each its own entry, with no warning.
+	await nominate(page, 1, 3);
+	await nominate(page, 1, 5);
+	await expect(page.getByText('That player has already nominated today.')).toHaveCount(0);
+	seat = await openSeat(page, 1);
+	await expect(seat.getByTestId('sheet-nominated')).toHaveText('Seat 3, Seat 5');
+	await closeSheet(page);
+	for (const nominee of [3, 5])
+		await expect(
+			page
+				.getByTestId('seat')
+				.nth(nominee - 1)
+				.getByTestId('nominated-mark')
+				.and(page.locator('[data-on]'))
+		).toHaveCount(1);
+});

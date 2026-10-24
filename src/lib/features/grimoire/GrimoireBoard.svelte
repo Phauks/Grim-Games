@@ -45,6 +45,7 @@
 		stepNightNumbers,
 		todaysNominations,
 		mayNominate,
+		votesWithoutToken,
 		characterNominationPrompts,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
@@ -1089,6 +1090,7 @@
 						: undefined}
 					orphan={isOrphan(seat, game.script, characters, offScriptOk)}
 					nominations={seatNominationMarks(seat)}
+					tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
 					dropTarget={seatArr.reorderTarget === seat.seatId ||
 						(remDrag.drag !== undefined &&
 							remDrag.drag.target === seat.seatId &&

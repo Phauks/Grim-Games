@@ -1,6 +1,12 @@
 <script lang="ts">
-	import { alignmentOf, type Game } from '#lib/core/model/index.ts';
-	import { blockThreshold, counts, seatsBehind, type DayCount } from '#lib/core/rules/index.ts';
+	import { alignmentOf, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
+	import {
+		blockThreshold,
+		counts,
+		seatsBehind,
+		votesWithoutToken,
+		type DayCount
+	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
@@ -14,25 +20,32 @@
 	interface Props {
 		open: boolean;
 		game: Game;
+		characters: CharacterLookup;
 		count: DayCount | 'votes' | undefined;
 		/** The dialog's title: the count's own accessible name. */
 		title: string;
 	}
 
-	let { open = $bindable(), game, count, title }: Props = $props();
+	let { open = $bindable(), game, characters, count, title }: Props = $props();
 
 	const block = $derived(blockThreshold(game));
 	const seats = $derived(count && count !== 'votes' ? seatsBehind(game, count) : []);
 	const total = $derived(
-		count && count !== 'votes' ? seats.filter((s) => counts(game, count, s)).length : 0
+		count && count !== 'votes'
+			? seats.reduce((sum, s) => sum + counts(game, count, s, characters), 0)
+			: 0
 	);
 	/** The third column, where a seat can be in the list without adding one. */
 	const status = $derived(
 		count === 'alive'
 			? (seatId: string) => t(game.seats[seatId].dead ? 'day.count.dead' : 'day.count.alive')
 			: count === 'ghostVotes'
-				? (seatId: string) =>
-						t(game.seats[seatId].ghostVoteUsed ? 'day.count.used' : 'day.count.unused')
+				? (seatId: string) => {
+						// The Banshee killed by the Demon votes twice with no token (`afterDeath`).
+						const votes = votesWithoutToken(game, seatId, characters);
+						if (votes !== undefined) return t('day.count.noToken', { count: votes });
+						return t(game.seats[seatId].ghostVoteUsed ? 'day.count.used' : 'day.count.unused');
+					}
 				: undefined
 	);
 </script>
@@ -65,7 +78,7 @@
 			<tbody>
 				{#each seats as seatId (seatId)}
 					{@const seat = game.seats[seatId]}
-					<tr data-seat={seatId} data-counts={counts(game, count, seatId) || undefined}>
+					<tr data-seat={seatId} data-counts={counts(game, count, seatId, characters) || undefined}>
 						<td>{seatLabel(game, seatId)}</td>
 						<td
 							>{#if seat.characterId}<CharacterBadge

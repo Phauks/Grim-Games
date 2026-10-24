@@ -32,7 +32,7 @@ import {
 } from '#lib/core/model/index.ts';
 import {
 	DAY_GROUPS,
-	mayNominate,
+	nominationsPerDay,
 	type DayReminderOverride,
 	type Night,
 	type NightStepOverride
@@ -439,7 +439,8 @@ export function hasPlacedReminder(game: Game, reminderId: string): boolean {
 /**
  * Checks a nomination. Each player may nominate once per day and be nominated once per
  * day, and dead players may not nominate (https://wiki.bloodontheclocktower.com/Glossary,
- * "Nomination") unless their character says they may (`mayNominate`). These are warnings: abilities break them, and the Storyteller decides.
+ * "Nomination") unless their character says they may, and how often (`nominationsPerDay`).
+ * These are warnings: abilities break them, and the Storyteller decides.
  */
 export function checkNomination(
 	game: Game,
@@ -453,9 +454,9 @@ export function checkNomination(
 		(e): e is Extract<DayEntry, { kind: 'nomination' }> =>
 			e.kind === 'nomination' && e.entryId !== ignore
 	);
-	if (!mayNominate(game, nominator, characters))
-		warn('dead-nominator', 'dead players may not nominate');
-	if (others.some((e) => e.nominator === nominator)) {
+	const allowed = nominationsPerDay(game, nominator, characters);
+	if (allowed === 0) warn('dead-nominator', 'dead players may not nominate');
+	if (others.filter((e) => e.nominator === nominator).length >= Math.max(allowed, 1)) {
 		warn('already-nominated', 'this player has already nominated today');
 	}
 	if (others.some((e) => e.nominee === nominee)) {
