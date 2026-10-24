@@ -62,7 +62,9 @@ test('the Juggler seat logs guesses from the ⋯ menu, with the count right so f
 	await page.getByRole('dialog').getByRole('button', { name: 'Guesses…' }).tap();
 	const guesses = page.getByRole('dialog', { name: /^Note: Juggler/ });
 	await expect(guesses.getByTestId('correct-guesses')).toHaveText('0 correct');
-	await guesses.getByRole('combobox', { name: /^Guess for Seat 1/ }).tap();
+	await guesses.getByRole('combobox', { name: 'Player for guess 1' }).tap();
+	await page.getByRole('option', { name: 'Seat 1', exact: true }).tap();
+	await guesses.getByRole('combobox', { name: 'Character for guess 1' }).tap();
 	await page.getByRole('option', { name: 'Witch', exact: true }).tap();
 	await expect(guesses.getByTestId('correct-guesses')).toHaveText('1 correct');
 });

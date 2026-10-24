@@ -7,8 +7,8 @@
 	import type { SeatArranging } from './seat-arranging.svelte.ts';
 
 	/**
-	 * The bar over the board: the app's navigation, then Full screen, Day, Info tokens, Script,
-	 * Share and More. Arranging seats or placing one swaps in their own controls, at the same
+	 * The bar over the board: the app's navigation, then Day, Info tokens, Script,
+	 * Share, More and the full screen symbol. Arranging seats or placing one swaps in their own controls, at the same
 	 * height, so the board never moves.
 	 */
 	interface Props {
@@ -93,14 +93,6 @@
 		>
 		<!-- A spectator sees every control the Storyteller does, disabled (Trevor, 2026-10-19):
 		     nothing opens, so nothing invites a try. Script only shows the players' copy. -->
-		<!-- On or off, one word, so the toolbar never moves (two states = a toggle). -->
-		{#if canFullScreen}<Button
-				variant="quiet"
-				icon={fullScreen ? 'exitFullScreen' : 'fullScreen'}
-				aria-label="Full screen"
-				aria-pressed={fullScreen}
-				onclick={toggleFullScreen}><span class="tool-label">Full screen</span></Button
-			>{/if}
 		<Button variant="quiet" icon="day" aria-label="Day" disabled={watching} onclick={onDay}
 			><span class="tool-label">Day</span></Button
 		>
@@ -131,6 +123,15 @@
 		<Button variant="quiet" icon="more" aria-label="More" disabled={watching} onclick={onMore}
 			><span class="tool-label">More</span></Button
 		>
+		<!-- Last, after ⋯, as its symbol alone (Trevor, 2026-10-24); the symbol says on or off,
+		     and one button either way, so the toolbar never moves (two states = a toggle). -->
+		{#if canFullScreen}<IconButton
+				icon={fullScreen ? 'exitFullScreen' : 'fullScreen'}
+				label="Full screen"
+				outlined
+				aria-pressed={fullScreen}
+				onclick={toggleFullScreen}
+			/>{/if}
 	{/if}
 </div>
 
@@ -193,7 +194,8 @@
 	}
 	/* Solid, so the board's background never shows through; the day timer on the board has
 	   the same fill and edge (Trevor, 2026-10-23). A hover still shows its wash. */
-	.toolbar :global(.button[data-variant='quiet']:not(:hover)) {
+	.toolbar :global(.button[data-variant='quiet']:not(:hover)),
+	.toolbar :global(.icon-button[data-outlined]:not([aria-pressed='true'])) {
 		background: var(--surface);
 	}
 	/* Phones show the toolbar's icons only; wider screens add the words. */

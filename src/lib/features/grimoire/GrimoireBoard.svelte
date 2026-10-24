@@ -4,12 +4,13 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
+	import { phaseText } from './phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames, gameStarts } from './device-notes.ts';
+	import { endedGames, gameStarts, nightUnderway } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -38,6 +39,7 @@
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import {
 		dayNumber,
+		gamePhase,
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
@@ -609,6 +611,11 @@
 		ended: !!ended,
 		busy: seatArr.arranging || !!placing
 	}));
+	// Ending the game (often at the dusk an Execution starts) closes the night's walk-through:
+	// History's strip has the bottom of the board then (Trevor, 2026-10-24).
+	$effect(() => {
+		if (ended) nw.walk = undefined;
+	});
 	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
 	let nominationAsks = $state<(NominationPrompt | CharacterNominationPrompt)[]>([]);
 	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
@@ -850,15 +857,22 @@
 	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
 	/**
 	 * The night or day in play, for the corner (Trevor, 2026-10-23): Setup until Start game,
-	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day.
+	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day. A game
+	 * with days played is past Setup even where this device has no start time (gamePhase).
 	 */
-	const phase = $derived(
-		startedAt === undefined
-			? t('day.setup')
-			: game.pastDays.length === 0 || grimoire.nightRunning || grimoire.nightUnderway
-				? t('day.nightNumber', { number: game.pastDays.length + 1 })
-				: t('day.titleNumber', { number: game.pastDays.length })
+	const phaseNow = $derived(
+		gamePhase(game.pastDays.length, {
+			begun: startedAt !== undefined,
+			nightUnderway: ended
+				? nightUnderway(
+						{ day: grimoire.nightDay, done: grimoire.nightDone },
+						game.pastDays.length,
+						true
+					)
+				: grimoire.nightRunning || grimoire.nightUnderway
+		})
 	);
+	const phase = $derived(phaseText(phaseNow));
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -875,7 +889,6 @@
 	function editGameInfo(changes: GameInfoChanges) {
 		if (changes.storytellerName !== (game.storytellerName ?? ''))
 			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
-		if (changes.script) void grimoire.changeScript(changes.script);
 	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
@@ -1215,7 +1228,7 @@
 				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
 			>
 		{/each}
-		{#if nw.walk}
+		{#if nw.walk && !ended}
 			<NightStrip
 				{grimoire}
 				steps={nw.steps}
@@ -1237,8 +1250,8 @@
 		{#if ended}
 			<HistoryStrip {grimoire}>
 				{#snippet notice()}
-					<!-- Above History's Previous and Next, out of the circle (Trevor, 2026-10-18).
-					     Tapping it offers to reopen the game. -->
+					<!-- In History's strip, out of the circle (Trevor, 2026-10-18); in the strip so
+					     ending the game moves nothing (2026-10-24). Tapping it offers to reopen. -->
 					<button
 						type="button"
 						class="game-over"
@@ -1293,6 +1306,7 @@
 			{width}
 			{rootFont}
 			{phase}
+			begun={phaseNow.kind !== 'setup'}
 			{startedAt}
 			endedAt={ended?.endedAt}
 			onEdit={editGameInfo}
@@ -1334,6 +1348,9 @@
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
 	onGameInfo={() => (modeMenuOpen = true)}
+	onCharacterSelection={startedAt === undefined && !watching
+		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
+		: undefined}
 	onAddSeat={() =>
 		// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
 		startPlacing((position) => void grimoire.addSeat(position))}
@@ -1609,10 +1626,6 @@
 	.board {
 		margin-bottom: calc(var(--tray-h) + 2 * var(--space-2));
 	}
-	/* An ended game: the game over line sits above History's Previous and Next. */
-	.board.ended {
-		margin-bottom: calc(var(--tray-h) + var(--tap-target) + 3 * var(--space-2));
-	}
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
@@ -1731,7 +1744,8 @@
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.game-over {
-		max-width: 100%;
+		flex: none;
+		max-width: 50%;
 		min-height: var(--tap-target);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -1742,7 +1756,7 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font-family: var(--font-heading);
-		font-size: 1.1rem;
+		font-size: 0.9rem;
 		pointer-events: auto;
 	}
 	.game-over[data-team='good'] {

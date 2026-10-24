@@ -36,10 +36,10 @@ export interface SavedGameSummary {
 	scriptLogo?: string;
 	seatCount: number;
 	/**
-	 * How far the game has got, for the saved games list: `setup` until a seat has a
-	 * character, then the day it is on (1 from the first night; each New day adds one).
+	 * How many days have begun (each New day adds one), as `game.pastDays.length`: the saved
+	 * games list's phase (gamePhase) with what the device knows of the night.
 	 */
-	stage: { kind: 'setup' } | { kind: 'day'; day: number };
+	days: number;
 }
 
 /** A saved game that could not be read, so a list can still offer to delete it. */
@@ -304,10 +304,8 @@ export function summariseSavedGame(saved: SavedGame): SavedGameSummary {
 		savedAt: saved.savedAt,
 		createdAt: created?.createdAt ?? saved.savedAt,
 		seatCount: 0,
-		stage: { kind: 'setup' }
+		days: 0
 	};
-	let assigned = false;
-	let days = 0;
 	// Script and seat count at the cursor, without replaying the whole game.
 	let script = created?.script;
 	let seats = created?.seatIds.length ?? 0;
@@ -316,11 +314,9 @@ export function summariseSavedGame(saved: SavedGame): SavedGameSummary {
 			if (event.type === 'SeatAdded') seats++;
 			else if (event.type === 'SeatRemoved') seats--;
 			else if (event.type === 'ScriptChanged') script = event.script;
-			else if (event.type === 'CharacterAssigned') assigned = true;
-			else if (event.type === 'DayStarted') days++;
+			else if (event.type === 'DayStarted') summary.days++;
 		}
 	}
-	if (assigned || days > 0) summary.stage = { kind: 'day', day: days + 1 };
 	if (script?.meta?.name) summary.scriptName = script.meta.name;
 	const logo =
 		script &&

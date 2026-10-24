@@ -20,12 +20,6 @@
 		 * at every width (Trevor, 2026-10-19: the bag's cog and Share beside "Draw").
 		 */
 		iconActions?: boolean;
-		/**
-		 * The hamburger even with no sidebar on the page: Player view, which fills the screen
-		 * as a game does (2026-10-19). The app's pages show it whenever their sidebar
-		 * is not showing.
-		 */
-		menu?: boolean;
 		/** One muted line under the title (an author, a date, the script in play). */
 		subtitle?: Snippet;
 		/** One row under the title for search, filters and view switches. */
@@ -53,7 +47,6 @@
 		width = 'page',
 		actions,
 		iconActions = false,
-		menu = false,
 		subtitle,
 		toolbar,
 		side,
@@ -64,7 +57,7 @@
 
 	// Before the title: the page's own `start`, else the hamburger while no sidebar shows
 	// (phones, tablets, a closed sidebar), since there is no app header (2026-10-22).
-	const showMenu = $derived(menu || navDrawer.pageButton);
+	const showMenu = $derived(navDrawer.pageButton);
 </script>
 
 <!--
@@ -74,7 +67,7 @@
 	No Back button: the sidebar navigates. Overlays (dialogs, sheets) go beside it, not inside.
 -->
 <main class="page" data-width={width}>
-	<PageMenuButton always={menu} />
+	<PageMenuButton />
 	<header class="head" class:visually-hidden={hideTitle}>
 		<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
 			{#if showMenu && !hideTitle}
