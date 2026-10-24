@@ -119,6 +119,11 @@ test('the day view recommends Savant information until it is set for today', asy
 	await expect(info).toHaveClass(/recommend/);
 	await info.tap();
 	const savant = page.getByRole('dialog', { name: /^Savant information/ });
+	// Cancel closes it and sets nothing (L41: Trevor saw neither button respond, Oct 23).
+	await savant.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(savant).toBeHidden();
+	await expect(info).toHaveClass(/recommend/);
+	await info.tap();
 	await savant.getByRole('button', { name: 'Use these' }).tap();
 	await expect(savant).toBeHidden();
 	// Set for today: marked, no longer recommended.
