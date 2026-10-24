@@ -47,6 +47,9 @@
 		type Guesses
 	} from './grim-guesses.ts';
 	import GenericGuessToken from './GenericGuessToken.svelte';
+	import SeatNoteDialog from '#lib/ui/notes/SeatNoteDialog.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 
@@ -89,6 +92,11 @@
 	const seats = $derived(table?.seats ?? []);
 	const mine = $derived(player?.view?.me.seatId);
 	let guesses = $state<Guesses>(code ? readGuesses(code) : {});
+	/** The player's own note on each seat (Trevor, 2026-10-24), shared with the Notes tab. */
+	// Read here, not inside the derived, so the derived follows the notes it reads.
+	const book = code ? seatNotes(code) : undefined;
+	const notes = $derived(book?.notes ?? {});
+	let noteOpen = $state(false);
 
 	/**
 	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), in place of
@@ -200,6 +208,7 @@
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
 		const guessed = guessName(guesses[seat.seatId]);
 		if (guessed) parts.push(t('player.grim.guess', { name: guessed }));
+		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
 		return parts.join(', ');
 	}
 	/* eslint-enable grim/names-as-badges */
@@ -275,6 +284,7 @@
 					avatar={seat.avatar}
 					usedVote={boardLooks.current.usedGhostVote}
 					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
+					marks={notes[seat.seatId] ? noteMark : undefined}
 				/>
 				{#snippet face()}
 					{#if shown && 'key' in shown}<GenericGuessToken
@@ -311,6 +321,13 @@
 		checked={playerSettings.current.guessesOnTokens}
 		onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
 	/>
+	<!-- The player's own note on this seat, as the Storyteller has one per player (Trevor,
+	     2026-10-24); it shows on the Notes tab too. -->
+	<button type="button" class="seat-note" data-testid="seat-note" onclick={() => (noteOpen = true)}
+		><span class="seat-note-label">{t('player.note')}</span><span class="seat-note-text"
+			>{(chosen && notes[chosen.seatId]) || t('common.none')}</span
+		></button
+	>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
 	     characters. -->
 	<ul class="generic" aria-label={t('player.grim.generic')}>
@@ -334,7 +351,62 @@
 	/>
 </BottomSheet>
 
+{#snippet noteMark()}
+	<!-- Lower right, as the Storyteller's note mark on the board (SeatToken). -->
+	<span class="note-mark" data-testid="note-mark"><Icon name="notes" /></span>
+{/snippet}
+
+<SeatNoteDialog
+	bind:open={noteOpen}
+	title={chosen ? t('player.grim.noteTitle', { name: nameOf(chosen) }) : ''}
+	value={(chosen && notes[chosen.seatId]) || ''}
+	onSave={(note) => code && chosen && setSeatNote(code, chosen.seatId, note)}
+/>
+
 <style>
+	.seat-note {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: center;
+		gap: var(--space-2);
+		width: 100%;
+		min-height: var(--tap-target);
+		margin: var(--space-2) 0;
+		padding: var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+	}
+	.seat-note-label {
+		font-family: var(--font-control);
+		font-weight: 600;
+	}
+	.seat-note-text {
+		overflow: hidden;
+		color: var(--on-surface-muted);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	/* The board's note mark: a small disc on the token's lower right rim. */
+	.note-mark {
+		position: absolute;
+		right: -4%;
+		bottom: -4%;
+		display: grid;
+		place-items: center;
+		width: max(1.125 * var(--u), calc(var(--size) * 0.3));
+		height: max(1.125 * var(--u), calc(var(--size) * 0.3));
+		border-radius: 50%;
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		box-shadow: var(--shadow);
+		--icon-size: calc(max(1.125 * var(--u), calc(var(--size) * 0.3)) * 0.65);
+		pointer-events: none;
+	}
 	/* Two rows of three on a phone, one row where there is room. */
 	.generic {
 		display: grid;

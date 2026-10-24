@@ -7,6 +7,12 @@
 	import { NotebookState } from './notebook-store.svelte.ts';
 	import NoteEditor from '#lib/ui/notes/NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
+	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
+	import { lastRoom } from '#lib/features/room/player.svelte.ts';
+	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
+	import SeatNoteDialog from '#lib/ui/notes/SeatNoteDialog.svelte';
+	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
+	import { genericGuess, readGuesses } from './grim-guesses.ts';
 
 	/**
 	 * The Notes tab of the players' script: notes and scratch pads, one notebook per script, kept
@@ -16,9 +22,36 @@
 	interface Props {
 		/** The script's notebook key (`scriptKey`, or `saved:<id>` for a saved script). */
 		notesKey: string | undefined;
+		/**
+		 * The town as the table knows it, given by the Storyteller's board, with the key its
+		 * Grim tab keeps notes under; a phone reads its room instead (as PlayerGrim does).
+		 */
+		town?: { seats: readonly PublicSeat[]; guessKey: string };
 	}
 
-	let { notesKey }: Props = $props();
+	let { notesKey, town }: Props = $props();
+
+	// The player's note on each seat, written from the Grim tab or here (Trevor, 2026-10-24).
+	// svelte-ignore state_referenced_locally
+	const room = town ? town.guessKey : lastRoom();
+	// svelte-ignore state_referenced_locally
+	const player = !town && room ? useRoom(room) : undefined;
+	$effect(() => () => {
+		if (player) releaseRoom(player);
+	});
+	const seats = $derived(town?.seats ?? player?.view?.public?.seats ?? []);
+	// Read here, not inside the derived, so the derived follows the notes it reads.
+	const book = room ? seatNotes(room) : undefined;
+	const notesOnSeats = $derived(book?.notes ?? {});
+	const nameOf = (seat: PublicSeat) =>
+		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
+	const guesses = $derived(room ? readGuesses(room) : {});
+	const characterGuess = (seatId: string) => {
+		const guess = guesses[seatId];
+		return guess && !genericGuess(guess) ? guess : undefined;
+	};
+	let seatOpen = $state(false);
+	let seat = $state<PublicSeat>();
 
 	let notebook = $state<NotebookState>();
 	$effect(() => {
@@ -76,6 +109,19 @@
 		onOpenNote={openNote}
 		onAddScratch={() => scratch && openScratch(scratch.add())}
 		onOpenScratch={openScratch}
+		seats={room && seats.length
+			? seats.map((s) => ({
+					seatId: s.seatId,
+					name: nameOf(s),
+					note: notesOnSeats[s.seatId],
+					// The Traveller the town knows, or this player's own guess of a character.
+					characterId: s.traveller ?? characterGuess(s.seatId)
+				}))
+			: undefined}
+		onOpenSeat={(seatId) => {
+			seat = seats.find((s) => s.seatId === seatId);
+			seatOpen = !!seat;
+		}}
 	/>
 {/if}
 
@@ -89,6 +135,12 @@
 		/>
 	</ErrorBoundary>
 {/if}
+<SeatNoteDialog
+	bind:open={seatOpen}
+	title={seat ? t('player.grim.noteTitle', { name: nameOf(seat) }) : ''}
+	value={(seat && notesOnSeats[seat.seatId]) || ''}
+	onSave={(note) => room && seat && setSeatNote(room, seat.seatId, note)}
+/>
 {#if scratch && scratchPad}
 	<ErrorBoundary area="play">
 		<ScratchPadDialog

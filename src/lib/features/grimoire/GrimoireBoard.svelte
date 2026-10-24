@@ -1540,7 +1540,10 @@
 							guessKey: `storyteller:${game.gameId}`
 						}}
 					/>{/snippet}
-				{#snippet notes()}<PlayerNotes notesKey={scriptKey(loadedScript!)} />{/snippet}
+				{#snippet notes()}<PlayerNotes
+						notesKey={scriptKey(loadedScript!)}
+						town={{ seats: town.seats, guessKey: `storyteller:${game.gameId}` }}
+					/>{/snippet}
 			</PlayerScriptTabs>
 		{/if}
 	</div>
