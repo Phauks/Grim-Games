@@ -63,7 +63,8 @@
 	style:--face-scale={FACE_RADIUS / 50}
 >
 	<span class="disc">
-		<span class="face"
+		<!-- Marked as a token face, so a seat button's focus ring is round (base.css). -->
+		<span class="face" data-token-face
 			>{#if face}{@render face()}{:else if avatar}<AvatarFace {avatar} {name} />{:else}<span
 					class="empty">{number}</span
 				>{/if}</span
