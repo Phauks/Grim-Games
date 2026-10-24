@@ -26,7 +26,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import { noteText, statementText, TYPE_NAMES } from './statement-text.ts';
+	import { noteText, savedStatements, statementText, TYPE_NAMES } from './statement-text.ts';
 
 	/**
 	 * Savant information (L2, Trevor 2026-10-22): one true and one false statement worked out
@@ -124,15 +124,35 @@
 		);
 	}
 
-	// A new pair each time the sheet opens, in the mode the rules point to. Only `open` is
-	// tracked: locking or cycling must not start again.
+	/** How a saved statement starts in the note, so it can be read back. */
+	const prefixes = $derived([
+		t('savant.noteTrue', { statement: '' }),
+		t('savant.noteFalse', { statement: '' })
+	]);
+	/** The Savant's note for today, where Use these saves the statements. */
+	const todayNote = $derived.by(() => {
+		const note = game.today.entries.findLast(
+			(e) => e.kind === 'note' && e.characterId === 'savant' && e.seatId === seatId
+		);
+		return note?.kind === 'note' ? note : undefined;
+	});
+
+	// Today's saved statements when the sheet opens (Trevor, 2026-10-24: they seemed not to
+	// save, as a fresh pair was dealt each time); otherwise a new pair in the mode the rules
+	// point to. Only `open` is tracked: locking or cycling must not start again.
 	$effect(() => {
 		if (!open) return;
 		untrack(() => {
 			mode = situation?.mode ?? 'one-each';
+			lines = [undefined, undefined];
+			const saved = todayNote ? savedStatements(todayNote.text, prefixes).statements : [];
+			if (saved.length > 0) {
+				own = [saved[0]?.words ?? '', saved[1]?.words ?? ''];
+				ownTrue = [saved[0]?.truth ?? true, saved[1]?.truth ?? false];
+				return;
+			}
 			own = [undefined, undefined];
 			ownTrue = [true, false];
-			lines = [undefined, undefined];
 			refresh();
 		});
 	});
@@ -207,23 +227,20 @@
 			return [t(holds(i) ? 'savant.noteTrue' : 'savant.noteFalse', { statement: words.trim() })];
 		});
 		if (given.length === 0) return;
-		const existing = game.today.entries.findLast(
-			(e) => e.kind === 'note' && e.characterId === 'savant' && e.seatId === seatId
-		);
-		const ok =
-			existing && existing.kind === 'note'
-				? grimoire.run({
-						type: 'EditDayNote',
-						entryId: existing.entryId,
-						text: noteText(existing.text, given),
-						...(existing.guesses ? { guesses: existing.guesses } : {})
-					})
-				: grimoire.run({
-						type: 'DayNote',
-						characterId: 'savant',
-						seatId,
-						text: noteText('', given)
-					});
+		const existing = todayNote;
+		const ok = existing
+			? grimoire.run({
+					type: 'EditDayNote',
+					entryId: existing.entryId,
+					text: noteText(existing.text, given, prefixes),
+					...(existing.guesses ? { guesses: existing.guesses } : {})
+				})
+			: grimoire.run({
+					type: 'DayNote',
+					characterId: 'savant',
+					seatId,
+					text: noteText('', given)
+				});
 		if (ok) open = false;
 	}
 </script>
