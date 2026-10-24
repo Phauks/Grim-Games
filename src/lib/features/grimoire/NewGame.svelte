@@ -34,8 +34,8 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	interface Props {
-		/** In a sheet over the board (Game info's New game): no script preview, and the seat
-		 *  count of the game it replaces (next-game.ts). */
+		/** In a sheet over the board (Game info's New game): the seat count of the game it
+		 *  replaces (next-game.ts). The layout, script preview included, is the same. */
 		compact?: boolean;
 	}
 	let { compact = false }: Props = $props();
@@ -140,7 +140,7 @@
 <!-- The page's title is the route's (Page); this is its content. -->
 <section>
 	<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
-	<GameModesPanel standardScript={edition} standardPlayers={players} bind:modeId preview={!compact}>
+	<GameModesPanel standardScript={edition} standardPlayers={players} bind:modeId>
 		{#snippet standard(rules, begin)}
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
 			<PageSection title="Script">
