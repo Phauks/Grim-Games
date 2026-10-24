@@ -20,6 +20,8 @@
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
+	import { CORNER_LINES } from '#lib/ui/corner-lines.ts';
 
 	/**
 	 * How the grimoire board looks and behaves (Trevor, 2026-10-18: tokens have their own
@@ -47,6 +49,10 @@
 	<SettingRow label={STEP_FOCUS_LABEL}>
 		{#snippet control(labelId)}<StepFocusSetting labelledBy={labelId} />{/snippet}
 	</SettingRow>
+
+	<!-- The corner's lines, the same choices as the eyes in Game info (Trevor, 2026-10-24). -->
+	<h3>{t('settings.groupCorner')}</h3>
+	{#each CORNER_LINES as line (line)}<CornerLineToggle {line} />{/each}
 
 	<h3>{t('settings.groupRules')}</h3>
 	<RulesLooksRows />

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
-import { nameStoryteller, toBoard } from './new-game.ts';
+import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
@@ -1165,6 +1165,14 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Game time ticks, so it is read as the board shows it, not to the second.
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
+	// Each line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
+	const info = await openGameInfo(page);
+	await info.getByRole('button', { name: 'Author on the board' }).tap();
+	await info.getByRole('button', { name: 'Players on the board' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeHidden();
+	await expect(corner).not.toContainText('by The Pandemonium Institute');
+	await expect(corner.getByTestId('board-players')).toContainText('Players: 8');
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();

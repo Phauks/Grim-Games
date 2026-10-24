@@ -4975,7 +4975,7 @@ test('the Storyteller is named on the Characters screen and renamed from the cor
 	await openGameInfo(page);
 	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
 	// One pencil in Game info's header edits what can change (Trevor, 2026-10-19).
-	await expect(info.locator('tr[data-field="storyteller"] button')).toHaveCount(0);
+	await expect(info.locator('tr[data-field="storyteller"] td:last-child button')).toHaveCount(0);
 	await info.getByTestId('game-info-edit').tap();
 	await expect(info).toBeHidden();
 	const dialog = page.getByRole('dialog', { name: 'Edit game info' });
@@ -4998,7 +4998,7 @@ test('the corner script name opens the game’s info, in a Standard game too', a
 	await startGame(page);
 	await nameStoryteller(page, 'Trev');
 	const dialog = page.getByRole('dialog', { name: 'Game info', exact: true });
-	const row = (field: string) => dialog.locator(`tr[data-field="${field}"] td`);
+	const row = (field: string) => dialog.locator(`tr[data-field="${field}"] td:last-child`);
 	await openGameInfo(page);
 	await expect(row('script')).toHaveText('Trouble Brewing');
 	await expect(row('storyteller')).toHaveText('Trev');

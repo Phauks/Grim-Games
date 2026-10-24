@@ -81,6 +81,10 @@
 	const modeNames = $derived(corner?.modes ?? []);
 	const watcherCount = $derived(corner?.watchers ?? 0);
 	const meta = $derived(game ? game.script.meta : givenMeta);
+	// Each line has an eye in Game info and Settings > Board (corner-lines.ts); the name always shows.
+	const author = $derived(corner?.author === false ? undefined : meta?.author);
+	const version = $derived(corner?.version);
+	const players = $derived(corner?.players);
 	const storyteller = $derived((game ? game.storytellerName : storytellerName)?.trim());
 	/**
 	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
@@ -96,15 +100,14 @@
 	const roomCode = $derived(givenCode ?? roomHost().code);
 	/**
 	 * How long the game has run, from Start game to End game (Trevor, 2026-10-23), under the
-	 * join code; "Game time: Setup" until the first night begins (Trevor, 2026-10-24). A Board
-	 * setting, on by default.
+	 * join code; "Game time: Setup" until the first night begins (Trevor, 2026-10-24).
 	 */
 	const showGameClock = $derived(!!corner?.gameTime);
 	const clockStart = $derived(corner?.gameTime?.startedAt);
 	const clockEnd = $derived(corner?.gameTime?.endedAt);
 	/**
-	 * The night or day in play (Trevor, 2026-10-23), a Board setting, on by default. Before the
-	 * game starts Game time already says Setup, so the phase waits for the first night.
+	 * The night or day in play (Trevor, 2026-10-23), on Game time's line and under its eye.
+	 * Before the game starts Game time already says Setup, so the phase waits for the first night.
 	 */
 	const begun = $derived(!!corner?.gameTime?.begun);
 	const showPhase = $derived(!!corner?.phase && !(showGameClock && !begun));
@@ -241,10 +244,17 @@
 				class="mode"
 				data-testid="game-mode"
 				bind:clientHeight={lineHs[i]}>{line}</span
-			>{:else}{#if meta.author}<span class="author">by {meta.author}</span>{/if}{/each}
+			>{:else}{#if author}<span class="author">by {author}</span>{/if}{/each}
+		{#if version}<span class="author" data-testid="board-version"
+				>{t('modes.info.version')}: {version}</span
+			>{/if}
+		{#if players}<span class="author" data-testid="board-players"
+				>{t('modes.info.players')}: {players}</span
+			>{/if}
 		<!-- Who runs the game, under the author (Trevor, 2026-10-23); no line when unnamed. -->
-		{#if storyteller}<span class="author" data-testid="board-storyteller"
-				>{t('settings.storytellerLine', { name: storyteller })}</span
+		{#if storyteller && corner?.storyteller !== false}<span
+				class="author"
+				data-testid="board-storyteller">{t('settings.storytellerLine', { name: storyteller })}</span
 			>{/if}
 		<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
 		     place before a room opens, so nothing moves when its code arrives. Read only: Share

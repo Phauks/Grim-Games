@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_CORNER_LINES } from './corner-lines.ts';
 import {
 	ICON_SCALE,
 	parseScale,
@@ -77,6 +78,7 @@ describe('parsePreferences', () => {
 			},
 			colors: {},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
+			cornerLines: { ...DEFAULT_CORNER_LINES, version: true },
 			tileFace: 'letters',
 			requireName: true,
 			holdToReveal: true,

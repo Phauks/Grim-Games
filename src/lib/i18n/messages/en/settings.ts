@@ -108,6 +108,7 @@ export const settings = {
 	'settings.rulesAt.edge': 'Corner',
 	'settings.rulesGrouped': 'Grouping',
 	'settings.groupRules': 'Fabled and Loric',
+	'settings.groupCorner': 'Board corner',
 	'settings.warning': 'Warning',
 	'settings.storytellerLine': 'Storyteller: {name}',
 	'settings.boardAdvanced': 'Advanced',

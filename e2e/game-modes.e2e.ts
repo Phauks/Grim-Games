@@ -1075,7 +1075,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 		'href',
 		/\/script\/7\/2\.2/
 	);
-	await expect(info.locator('[data-field="version"] td')).toHaveText('2.2');
+	await expect(info.locator('[data-field="version"] td:last-child')).toHaveText('2.2');
 	// Its source can be passed on, and its file saved (Trevor, 2026-10-22, plan G3).
 	await expect(page.getByTestId('share-source')).toBeEnabled();
 	const download = page.waitForEvent('download');
@@ -1112,7 +1112,7 @@ test('Game info opens a special rule in full when tapped, and a base script shar
 	}
 	const info = page.getByTestId('game-info');
 	// Standard is no mode to open; the rule's name opens its About, parts and rule file.
-	await expect(info.locator('[data-field="mode"] button')).toHaveCount(0);
+	await expect(info.locator('[data-field="mode"] td:last-child button')).toHaveCount(0);
 	// A base script's source page is its wiki page (Trevor, 2026-10-23), so Share is on.
 	await expect(info.getByRole('link', { name: 'Trouble Brewing' })).toHaveAttribute(
 		'href',
@@ -1523,7 +1523,7 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	await page.getByTestId('mode-menu').tap();
 	await page
 		.getByRole('dialog', { name: 'Game info', exact: true })
-		.getByRole('button', { name: 'Special rules' })
+		.getByRole('button', { name: 'Special rules', exact: true })
 		.tap();
 	// It stays on the screen rather than going straight back to the board.
 	await expect(page).toHaveURL(`${board}/extras`);

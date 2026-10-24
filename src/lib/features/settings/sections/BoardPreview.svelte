@@ -107,6 +107,8 @@
 	// The board's reminder size for this token: half of it, kept between 30 and 48px.
 	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5))));
 	const storyteller = $derived(storytellerName.current.trim());
+	/** The corner's lines, as their eyes in Game info and Settings choose. */
+	const lines = $derived(preferences.current.cornerLines);
 	const loose = $derived(boardLooks.current.reminders === 'free');
 	const rulesSize = $derived(
 		boardLooks.current.rulesAt === 'middle' ? Math.round(size * 0.6) : Math.round(size * 0.4)
@@ -195,24 +197,19 @@
 	<p class="preview-title" data-testid="preview-script-title">
 		{scriptName}
 		<!-- Who runs the game, as on the board (Trevor, 2026-10-23): this device's name. -->
-		{#if storyteller}<span class="preview-room-code" data-testid="preview-storyteller"
+		{#if storyteller && lines.storyteller}<span
+				class="preview-room-code"
+				data-testid="preview-storyteller"
 				>{t('settings.storytellerLine', { name: storyteller })}</span
 			>{/if}
 		<!-- The join code under the name, as on the board; a sample code here. -->
-		{#if preferences.current.assistance.roomCode}<span
-				class="preview-room-code"
-				data-testid="preview-room-code"
+		{#if lines['join-code']}<span class="preview-room-code" data-testid="preview-room-code"
 				>{t('room.joinCode')} <span class="code">{SAMPLE_CODE}</span></span
 			>{/if}
-		<!-- The night or day in play, as on the board (Trevor, 2026-10-23); a sample one here. -->
-		{#if preferences.current.assistance.boardPhase}<span
-				class="preview-room-code"
-				data-testid="preview-phase">{t('day.nightNumber', { number: 2 })}</span
-			>{/if}
-		{#if preferences.current.assistance.gameClock}<span
-				class="preview-room-code"
-				data-testid="preview-game-clock"
-				>{t('history.gameLength')} <span class="code">1:23:45</span></span
+		<!-- The night or day in play and Game time, one line as on the board; sample ones here. -->
+		{#if lines['game-time']}<span class="preview-room-code" data-testid="preview-game-clock"
+				><span data-testid="preview-phase">{t('day.nightNumber', { number: 2 })}</span> ·
+				{t('history.gameLength')} <span class="code">1:23:45</span></span
 			>{/if}
 	</p>
 	<ul class="bank" aria-label={t('settings.previewBank')} data-testid="preview-bank">

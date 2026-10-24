@@ -107,6 +107,8 @@
 	import { scriptKey } from '#lib/features/player/notebook.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
+	import { playersLine } from '#lib/features/modes/players-line.ts';
+	import { savedChoiceFor } from '#lib/features/modes/script-choices.svelte.ts';
 	import {
 		publicTravellerTest,
 		travellersInPlay
@@ -896,7 +898,9 @@
 			startedAt,
 			endedAt: ended?.endedAt,
 			watchers: watcherCount,
-			watching
+			watching,
+			version: scriptVersion(undefined, game.script.meta) ?? savedChoiceFor(game.script)?.version,
+			players: playersLine(game, characters)
 		})
 	);
 	$effect(() => {
