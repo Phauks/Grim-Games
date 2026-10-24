@@ -20,6 +20,7 @@ import type { Reminder, ReminderId } from '#lib/core/model/index.ts';
 import {
 	bankCopies,
 	forgetUpsideDownMarks,
+	nightUnderway,
 	nightViews,
 	pastNames,
 	reminderCopyIds,
@@ -130,11 +131,7 @@ export class Grimoire {
 	 * Start game or End day.
 	 */
 	get nightUnderway(): boolean {
-		const today = `${this.game.pastDays.length}:`;
-		return (
-			this.nightDay === this.game.pastDays.length &&
-			this.nightDone.some((key) => key.startsWith(today))
-		);
+		return nightUnderway({ day: this.nightDay, done: this.nightDone }, this.game.pastDays.length);
 	}
 
 	/**
@@ -186,6 +183,24 @@ export class Grimoire {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const next = new Map(this.bankCopies);
 		next.set(key, (next.get(key) ?? 0) + 1);
+		this.bankCopies = next;
+		bankCopies.write(this.game.gameId, next);
+	}
+
+	/** Copies of a reminder Duplicate added to the bank, still there. */
+	bankCopyCount(reminder: Reminder): number {
+		return this.bankCopies.get(reminderKey(reminder)) ?? 0;
+	}
+
+	/** Takes one Duplicate copy back out of the bank (Trevor, 2026-10-24). */
+	removeBankCopy(reminder: Reminder): void {
+		const key = reminderKey(reminder);
+		const n = this.bankCopies.get(key) ?? 0;
+		if (n <= 0) return;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const next = new Map(this.bankCopies);
+		if (n === 1) next.delete(key);
+		else next.set(key, n - 1);
 		this.bankCopies = next;
 		bankCopies.write(this.game.gameId, next);
 	}

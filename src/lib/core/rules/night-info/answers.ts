@@ -7,8 +7,15 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
-import type { AbnormalCause, DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
+import type {
+	AbnormalCause,
+	CharacterGuess,
+	DayEntry,
+	Game,
+	SeatId
+} from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from '../ability.ts';
+import { distinctGuesses } from '../day-claims.ts';
 import { causesOf } from '../night-deaths.ts';
 import {
 	type AbnormalUse,
@@ -219,8 +226,9 @@ function marked(
 /**
  * Juggler: how many of today's guesses are correct
  * (https://wiki.bloodontheclocktower.com/Juggler). Guesses come from the Juggler's day notes
- * and are checked against each player's true character; a player guessed twice counts once,
- * by the latest guess.
+ * and are checked against each player's true character. Each guess is one player and one
+ * character, so a player guessed as two characters is two guesses; the same pair twice
+ * counts once.
  */
 function correctGuesses(
 	game: Game,
@@ -228,28 +236,30 @@ function correctGuesses(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): NightAnswer {
-	const latest = new Map<SeatId, CharacterId>();
-	for (const note of entriesOf(game, 'note')) {
-		if (note.characterId !== characterId || (note.seatId !== undefined && note.seatId !== seatId)) {
-			continue;
-		}
-		for (const guess of note.guesses ?? []) latest.set(guess.seatId, guess.characterId);
-	}
-	const correct = [...latest].filter(([s, id]) => trueCharacter(game, s, characters) === id);
+	const guesses = distinctGuesses(
+		entriesOf(game, 'note')
+			.filter(
+				(n) => n.characterId === characterId && (n.seatId === undefined || n.seatId === seatId)
+			)
+			.flatMap((n) => n.guesses ?? [])
+	);
+	const right = (g: CharacterGuess) => trueCharacter(game, g.seatId, characters) === g.characterId;
+	const correct = guesses.filter(right);
+	const once = (seats: SeatId[]) => seats.filter((s, i) => seats.indexOf(s) === i);
 	return answer(
 		game,
 		seatId,
 		characterId,
 		characters,
-		latest.size === 0
+		guesses.length === 0
 			? { kind: 'none', reason: 'No guesses logged today' }
 			: { kind: 'number', value: correct.length },
-		correct.map(([s]) => s),
+		once(correct.map((g) => g.seatId)),
 		{
-			relevant: [...latest.keys()],
-			facts: [...latest].map(([s, id]) => ({
-				...fact(game, s, characters),
-				guess: { characterId: id, correct: trueCharacter(game, s, characters) === id }
+			relevant: once(guesses.map((g) => g.seatId)),
+			facts: guesses.map((g) => ({
+				...fact(game, g.seatId, characters),
+				guess: { characterId: g.characterId, correct: right(g) }
 			}))
 		}
 	);

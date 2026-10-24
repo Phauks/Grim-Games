@@ -310,6 +310,15 @@ test("Travellers can join the bag: the edition's are listed, the rest are a sear
 		'Not on script'
 	);
 	await expect(page.getByTestId('count-traveller')).toHaveText('1');
+	// A Traveller is one more player, leaving the other counts for 8 (Trevor, 2026-10-24;
+	// https://wiki.bloodontheclocktower.com/Travellers).
+	for (const [type, expected] of [
+		['townsfolk', '/ 5'],
+		['outsider', '/ 1'],
+		['minion', '/ 1'],
+		['demon', '/ 1']
+	])
+		await expect(page.getByTestId(`count-info-${type}`)).toContainText(expected);
 	await noSidewaysScroll(page);
 });
 

@@ -23,6 +23,7 @@ import type { GameEvent } from '../events.ts';
 import {
 	NO_ABILITY_LABEL,
 	characterOf,
+	checkGuessLimit,
 	checkNomination,
 	checkReminder,
 	entryOf,
@@ -206,6 +207,7 @@ export const DAY_DECIDERS: Deciders<
 	DayNote(game, command, ctx, warn) {
 		const characterId = characterOf(ctx, command.characterId).id;
 		const guesses = guessesOf(game, ctx, command.guesses);
+		checkGuessLimit(ctx, characterId, guesses.length, warn);
 		const text = typeof command.text === 'string' ? command.text : '';
 		if (text.trim() === '' && guesses.length === 0) {
 			warn('no-change', 'the note is empty');
@@ -221,6 +223,7 @@ export const DAY_DECIDERS: Deciders<
 	EditDayNote(game, command, ctx, warn) {
 		const entry = entryOfKind(game, command.entryId, 'note');
 		const guesses = guessesOf(game, ctx, command.guesses);
+		checkGuessLimit(ctx, entry.characterId, guesses.length, warn);
 		const text = typeof command.text === 'string' ? command.text : '';
 		// Clearing a note removes it: nothing requires a note.
 		if (text.trim() === '' && guesses.length === 0) {

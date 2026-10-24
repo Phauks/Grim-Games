@@ -16,7 +16,13 @@ function check(
 	const selection: Record<string, number> = {};
 	for (const id of ids) selection[id] = (selection[id] ?? 0) + 1;
 	const scriptOrder = [...new Set(ids)];
-	const analysis = analyseSelection({ players, selection, scriptOrder, lookup });
+	const analysis = analyseSelection({
+		players,
+		selection,
+		scriptOrder,
+		lookup,
+		travellersInBag: travellerMax
+	});
 	const plan = planBag({
 		selection,
 		scriptCharacters: scriptOrder.map((id) => lookup(id)!),

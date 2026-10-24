@@ -28,6 +28,7 @@
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { pendingSetup, traySeats, type TrayItem } from './setup-tray.ts';
 
 	/**
@@ -643,6 +644,19 @@
 	{#snippet headActions()}
 		<!-- Duplicate from the bank too; the copy stays in the bank (Trevor, 2026-10-20). -->
 		{#if choosing && !isGeneric(choosing)}
+			<!-- A Duplicate copy goes back out of the bank, as one on the board does (Trevor,
+			     2026-10-24). -->
+			{#if choosing.extra && grimoire.bankCopyCount(choosing) > 0}
+				{@const copy = choosing}
+				<DeleteButton
+					label="Remove reminder"
+					onclick={() => {
+						grimoire.removeBankCopy(copy);
+						chooserOpen = false;
+						choosing = undefined;
+					}}
+				/>
+			{/if}
 			<ReminderMoreButton
 				{grimoire}
 				reminder={choosing}

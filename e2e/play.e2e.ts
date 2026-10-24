@@ -153,8 +153,8 @@ test('tabs that do not fit move into a ⋯ menu instead of wrapping', async ({ p
 	await expect(more).toHaveCount(0);
 });
 
-test('the player view has no sidebar, and leaving it asks first', async ({ page }) => {
-	// Like the Storyteller's board (Trevor, 2026-10-19): the menu button opens the menu.
+test("the player view's menu is the app's, and leaving it asks first", async ({ page }) => {
+	// The app pages' hamburger, as no sidebar shows on a phone or tablet (Trevor, 2026-10-24).
 	const menu = page.getByRole('button', { name: 'Menu', exact: true });
 	const title = page.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
 	const [m, h] = [(await menu.boundingBox())!, (await title.boundingBox())!];

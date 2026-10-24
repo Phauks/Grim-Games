@@ -1175,6 +1175,11 @@ test('the board can go full screen from its toolbar, and back', async ({ page })
 	await startGame(page);
 	const button = page.getByRole('button', { name: 'Full screen', exact: true });
 	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	// Its symbol alone, last on the toolbar after ⋯ (Trevor, 2026-10-24).
+	await expect(button).toHaveText('');
+	await expect(
+		page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button').last()
+	).toHaveAccessibleName('Full screen');
 	await button.tap();
 	await expect(button).toHaveAttribute('aria-pressed', 'true');
 	expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(true);
@@ -2337,11 +2342,12 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
 	// Read-only: nothing pops up in the middle (Trevor, 2026-10-18), and the game over line
-	// sits just above Previous and Next, out of the circle.
+	// sits in History's strip, out of the circle, so ending moves nothing (2026-10-24).
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
 	const over = (await page.getByTestId('game-over').boundingBox())!;
 	const strip = (await steps.boundingBox())!;
-	expect(over.y + over.height).toBeLessThanOrEqual(strip.y);
+	expect(over.y).toBeGreaterThanOrEqual(strip.y);
+	expect(over.y + over.height).toBeLessThanOrEqual(strip.y + strip.height + 1);
 	expect(over.y).toBeGreaterThanOrEqual(
 		(await page.locator('.board').boundingBox())!.y +
 			(await page.locator('.board').boundingBox())!.height
@@ -4397,13 +4403,23 @@ test("a reminder's ⋯ duplicates it into the bank, from the board or the bank",
 	await expect(put).toBeHidden();
 	await expect(inBank).toHaveCount(3);
 	await expect(bankExtras).toHaveCount(2);
+	// A copy in the bank is removed with the red trash, as on the board (Trevor, 2026-10-24);
+	// the game's own token has none.
+	await inBank.first().tap();
+	await expect(put.getByRole('button', { name: 'Remove reminder' })).toHaveCount(0);
+	await put.getByRole('button', { name: 'Close' }).tap();
+	await bankExtras.getByRole('button', { name: 'Poisoned reminder' }).first().tap();
+	await put.getByRole('button', { name: 'Remove reminder' }).tap();
+	await expect(put).toBeHidden();
+	await expect(inBank).toHaveCount(2);
+	await expect(bankExtras).toHaveCount(1);
 	// Placed, an added copy is marked as more than the game gives.
-	for (let n = 0; n < 3; n++) {
+	for (let n = 0; n < 2; n++) {
 		await inBank.first().tap();
 		await put.getByRole('button', { name: /Seat 2$/ }).tap();
 	}
 	await expect(inBank).toHaveCount(0);
-	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(2);
+	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(1);
 });
 
 test('"+ New token" makes a reusable ∞ token whose copies carry its look', async ({ page }) => {
