@@ -107,6 +107,7 @@ export type WarningCode =
 	| 'survives-execution'
 	| 'not-seat-character'
 	| 'already-used'
+	| 'too-many-guesses'
 	| 'empty-day'
 	| 'reminder-fixed'
 	| 'no-cause';

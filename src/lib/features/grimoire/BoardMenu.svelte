@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
+	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -20,6 +20,8 @@
 		onBluffs: () => void;
 		onNotes: () => void;
 		onGameInfo: () => void;
+		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
+		onCharacterSelection?: () => void;
 		onAddSeat: () => void;
 		onAddRule: () => void;
 		onArrange: () => void;
@@ -36,6 +38,7 @@
 		onBluffs,
 		onNotes,
 		onGameInfo,
+		onCharacterSelection,
 		onAddSeat,
 		onAddRule,
 		onArrange,
@@ -57,6 +60,11 @@
 		<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>
 		{#if gameInfo}
 			<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
+		{/if}
+		{#if onCharacterSelection}
+			<Button variant="quiet" icon="bag" onclick={() => fromMenu(onCharacterSelection)}>
+				{t('setup.characterSelection')}
+			</Button>
 		{/if}
 		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
 		     apart at the bottom (Trevor, 2026-10-18). -->
@@ -94,7 +102,11 @@
 			</Button>
 		</span>
 		<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
-		<Button variant="quiet" icon="report" onclick={() => fromMenu(() => reportDialog.show())}>
+		<Button
+			variant="quiet"
+			icon="report"
+			onclick={() => fromMenu(() => void reportWithDiagnostics())}
+		>
 			{t('shell.reportIssue')}
 		</Button>
 		<hr class="menu-rule" />

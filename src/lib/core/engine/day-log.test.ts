@@ -379,6 +379,23 @@ describe('DayNote', () => {
 		).toBe('unknown-character');
 	});
 
+	// https://wiki.bloodontheclocktower.com/Juggler: up to 5 guesses, a player more than once.
+	it('keeps a player guessed as several characters, and warns past the Juggler’s 5', () => {
+		const { session, ctx, seats } = setup();
+		const pair = (seat: number, characterId: string) => ({ seatId: seats[seat], characterId });
+		const five = [pair(0, 'imp'), pair(0, 'baron'), pair(1, 'imp'), pair(2, 'imp'), pair(3, 'imp')];
+		const note = (guesses: typeof five): Command => ({
+			type: 'DayNote',
+			characterId: 'juggler',
+			text: '',
+			guesses
+		});
+		const s = run(session, ctx, note(five));
+		expect(s.game.today.entries[0]).toMatchObject({ kind: 'note', guesses: five });
+		expect(warned(session, ctx, note(five))).toEqual([]);
+		expect(warned(session, ctx, note([...five, pair(4, 'imp')]))).toEqual(['too-many-guesses']);
+	});
+
 	it('skips an empty note: nothing requires one', () => {
 		const { session, ctx } = setup();
 		expect(warned(session, ctx, { type: 'DayNote', characterId: 'gossip', text: '  ' })).toEqual([

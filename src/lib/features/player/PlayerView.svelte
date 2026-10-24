@@ -160,8 +160,8 @@
 <svelte:window onhashchange={() => data && void openSharedLink()} />
 
 <!-- Print and Share stay on the title's line at every width (Trevor, 2026-10-19). -->
-<Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions menu>
-	<!-- No sidebar here, as on the board (2026-10-19): the menu is one tap away. -->
+<Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions>
+	<!-- The app's sidebar and hamburger, as on every app page (Trevor, 2026-10-24). -->
 	<!-- The script's logo before its name, when it has one; nothing in its place otherwise
 	     (Trevor, 2026-10-23). -->
 	{#snippet lead()}

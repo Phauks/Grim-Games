@@ -81,13 +81,17 @@
 		standardPlayers: number;
 		/** The mode chosen; New game sets it when the room votes on the mode (Trevor, 2026-10-23). */
 		modeId?: string;
+		/** False leaves the script preview out (New game in a sheet over the board, Trevor
+		 *  2026-10-24: "a tiny modal version of the new game screen"). */
+		preview?: boolean;
 	}
 
 	let {
 		standard,
 		standardScript,
 		standardPlayers,
-		modeId = $bindable(STANDARD.id)
+		modeId = $bindable(STANDARD.id),
+		preview = true
 	}: Props = $props();
 	/** Start game with special rules on restates them first (RulesRecap). */
 	let recap = $state<(() => void) | undefined>();
@@ -543,19 +547,19 @@
 	</div>
 
 	<!-- Always open, never collapsed; it scrolls on its own beside the settings. -->
-	<aside class="preview" aria-label={t('modes.preview')} data-testid="script-preview">
-		<PageSection title={t('modes.preview')}>
-			{#each previews as loaded, i (i)}
-				{#if previews.length > 1}<h3 class="town">
-						{t('modes.townScript', { number: i + 1 })}
-					</h3>{/if}
-				<!-- New game already shows the player counts beside the settings. -->
-				<ScriptCopy script={loaded} players={previewPlayers} showBreakdown={false} />
-			{:else}
-				<p class="muted" aria-busy="true">{t('scripts.details.loading')}</p>
-			{/each}
-		</PageSection>
-	</aside>
+	{#if preview}<aside class="preview" aria-label={t('modes.preview')} data-testid="script-preview">
+			<PageSection title={t('modes.preview')}>
+				{#each previews as loaded, i (i)}
+					{#if previews.length > 1}<h3 class="town">
+							{t('modes.townScript', { number: i + 1 })}
+						</h3>{/if}
+					<!-- New game already shows the player counts beside the settings. -->
+					<ScriptCopy script={loaded} players={previewPlayers} showBreakdown={false} />
+				{:else}
+					<p class="muted" aria-busy="true">{t('scripts.details.loading')}</p>
+				{/each}
+			</PageSection>
+		</aside>{/if}
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />

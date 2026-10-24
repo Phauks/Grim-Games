@@ -309,14 +309,19 @@ describe('Juggler', () => {
 		});
 	});
 
-	it('uses the latest guess when a player is guessed twice', () => {
+	// Wiki Juggler example 2, paraphrased: one player guessed as two characters is two guesses.
+	it('counts each guess of a player guessed as several characters, the same guess once', () => {
 		const { game: g, seats } = game(
 			['juggler', 'witch', 'nodashii'],
 			(s) => ({
 				type: 'DayNote',
 				characterId: 'juggler',
 				text: '',
-				guesses: [{ seatId: s[1], characterId: 'cerenovus' }]
+				guesses: [
+					{ seatId: s[1], characterId: 'cerenovus' },
+					{ seatId: s[1], characterId: 'witch' },
+					{ seatId: s[2], characterId: 'witch' }
+				]
 			}),
 			(s) => ({
 				type: 'DayNote',
@@ -325,7 +330,9 @@ describe('Juggler', () => {
 				guesses: [{ seatId: s[1], characterId: 'witch' }]
 			})
 		);
-		expect(answerOf(g, seats[0], 'juggler', characters)).toMatchObject({ value: 1 });
+		const out = answerOf(g, seats[0], 'juggler', characters);
+		expect(out).toMatchObject({ value: 1, because: [seats[1]] });
+		expect(out.why.facts).toHaveLength(3);
 	});
 
 	it('has no answer with no guesses logged', () => {

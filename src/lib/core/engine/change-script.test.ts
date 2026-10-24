@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { CharacterId, Script } from '#lib/core/data/index.ts';
+import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import { publicProjection } from '#lib/core/sync/public-projection.ts';
 import { dispatch, openSession, redo, replay, undo } from './log.ts';
@@ -68,6 +69,20 @@ describe('ChangeScript', () => {
 			].sort()
 		);
 		expect(result.warnings).toHaveLength(warnings.length);
+	});
+
+	// Trevor, 2026-10-24: "got message 'generic is not on the script'".
+	it('never warns about a generic reminder, which belongs to no character', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[0],
+			reminder: { characterId: GENERIC_REMINDER_ID, label: 'Note' }
+		});
+		const result = dispatch(s, { type: 'ChangeScript', script: smaller }, ctx);
+		if (!result.ok) throw new Error(result.error.message);
+		expect(result.warnings.map((w) => w.message)).not.toContain(expect.stringMatching(/generic/i));
+		expect(result.warnings.flatMap((w) => w.characters ?? [])).not.toContain(GENERIC_REMINDER_ID);
 	});
 
 	it('warns about bag tiles not on the new script', () => {

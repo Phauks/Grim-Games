@@ -13,7 +13,6 @@ import { DEFAULT_FRAME, parseFrameId, type FrameId } from '#lib/core/frames/inde
  * - whether reminders are held by their seat or stay where they are dropped;
  * - how a dead player's used ghost vote looks on their badge;
  * - the frame round seat tokens whose player has not picked their own (L4);
- * - where a dragged reminder names the character it came from;
  * - which reminders light up while a seat's token is held.
  */
 export interface BoardLooks {
@@ -50,12 +49,6 @@ export interface BoardLooks {
 	 */
 	defaultFrame: FrameId;
 	/**
-	 * Where a dragged reminder, from the bank or a seat, names the character it came from:
-	 * 'pill', a translucent pill beside the token, or 'bank', the reminder bank's caption
-	 * (Trevor, 2026-10-23: both built, so he can pick after trying them).
-	 */
-	dragSource: 'pill' | 'bank';
-	/**
 	 * Holding a seat's token lights its character's reminders, wherever they are ('character',
 	 * Trevor 2026-10-19), or the reminders placed on that seat, whoever's they are ('seat',
 	 * Trevor 2026-10-23).
@@ -83,7 +76,6 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	reminders: 'seat',
 	usedGhostVote: 'hollow',
 	defaultFrame: DEFAULT_FRAME,
-	dragSource: 'pill',
 	holdLights: 'character'
 };
 const KEY = 'grim.boardLooks';
@@ -116,9 +108,9 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		reminders: value.reminders === 'free' ? 'free' : 'seat',
 		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
 		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the
-		// board (Trevor, 2026-10-23).
+		// board (Trevor, 2026-10-23). So is `dragSource`: a dragged reminder no longer names
+		// where it came from (Trevor, 2026-10-24).
 		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME,
-		dragSource: value.dragSource === 'bank' ? 'bank' : 'pill',
 		holdLights: value.holdLights === 'seat' ? 'seat' : 'character'
 	};
 }

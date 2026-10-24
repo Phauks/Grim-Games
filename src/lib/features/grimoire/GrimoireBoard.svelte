@@ -4,12 +4,13 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
+	import { phaseText } from './phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames, gameStarts } from './device-notes.ts';
+	import { endedGames, gameStarts, nightUnderway } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -38,6 +39,7 @@
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import {
 		dayNumber,
+		gamePhase,
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
@@ -63,7 +65,6 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import ReminderOrigin from './ReminderOrigin.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
 		followSeating,
@@ -77,7 +78,7 @@
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import type { Box } from './name-placement.ts';
 	import { SeatArranging } from './seat-arranging.svelte.ts';
-	import { ReminderDragging, type DraggedReminder } from './reminder-drag.svelte.ts';
+	import { ReminderDragging } from './reminder-drag.svelte.ts';
 	import {
 		avoidBoxes,
 		cornerObstacles,
@@ -131,13 +132,7 @@
 	import RuleCharacters from './RuleCharacters.svelte';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
-	import {
-		extraReminders,
-		isGeneric,
-		isSeatsReminder,
-		reminderWords,
-		tokenLabel
-	} from './reminders.ts';
+	import { extraReminders, isGeneric, isSeatsReminder, reminderWords } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
@@ -397,37 +392,6 @@
 	}));
 	const dragOrigin = $derived(remDrag.origin);
 	const heldDrag = $derived(remDrag.held);
-	/** A reminder dragged on the board: whose it is, its words and where it is. */
-	const boardDrag = $derived.by((): DraggedReminder | undefined => {
-		const r = dragOrigin?.reminder ?? heldDrag;
-		return remDrag.drag && r
-			? {
-					characterId: r.characterId,
-					label: tokenLabel(r),
-					ownerSeatId: r.ownerSeatId,
-					at: remDrag.drag.at
-				}
-			: undefined;
-	});
-	/** A token dragged from the bank (ReminderBank's onDrag). */
-	let bankDrag = $state<DraggedReminder | undefined>();
-	/**
-	 * Where a dragged reminder came from, in a pill beside the token (boardLooks.dragSource
-	 * 'pill', Trevor 2026-10-23): above it, or below it near the board's top. Its left edge
-	 * moves across it as the token crosses the board, so it never runs off either side.
-	 */
-	const sourcePill = $derived.by(() => {
-		const dragged = boardDrag ?? bankDrag;
-		if (!dragged || boardLooks.current.dragSource !== 'pill' || height <= 0) return undefined;
-		const lift = ((chip * 0.7) / height) * 100;
-		const below = dragged.at.y - lift < 12;
-		return {
-			dragged,
-			x: Math.min(100, Math.max(0, dragged.at.x)),
-			y: below ? dragged.at.y + lift : dragged.at.y - lift,
-			below
-		};
-	});
 
 	// ── Arranging seats (seat-arranging.svelte.ts) ──
 	const seatArr = new SeatArranging(() => ({
@@ -649,6 +613,11 @@
 		ended: !!ended,
 		busy: seatArr.arranging || !!placing
 	}));
+	// Ending the game (often at the dusk an Execution starts) closes the night's walk-through:
+	// History's strip has the bottom of the board then (Trevor, 2026-10-24).
+	$effect(() => {
+		if (ended) nw.walk = undefined;
+	});
 	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
 	let nominationAsks = $state<(NominationPrompt | CharacterNominationPrompt)[]>([]);
 	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
@@ -891,15 +860,22 @@
 	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
 	/**
 	 * The night or day in play, for the corner (Trevor, 2026-10-23): Setup until Start game,
-	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day.
+	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day. A game
+	 * with days played is past Setup even where this device has no start time (gamePhase).
 	 */
-	const phase = $derived(
-		startedAt === undefined
-			? t('day.setup')
-			: game.pastDays.length === 0 || grimoire.nightRunning || grimoire.nightUnderway
-				? t('day.nightNumber', { number: game.pastDays.length + 1 })
-				: t('day.titleNumber', { number: game.pastDays.length })
+	const phaseNow = $derived(
+		gamePhase(game.pastDays.length, {
+			begun: startedAt !== undefined,
+			nightUnderway: ended
+				? nightUnderway(
+						{ day: grimoire.nightDay, done: grimoire.nightDone },
+						game.pastDays.length,
+						true
+					)
+				: grimoire.nightRunning || grimoire.nightUnderway
+		})
 	);
+	const phase = $derived(phaseText(phaseNow));
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -916,7 +892,6 @@
 	function editGameInfo(changes: GameInfoChanges) {
 		if (changes.storytellerName !== (game.storytellerName ?? ''))
 			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
-		if (changes.script) void grimoire.changeScript(changes.script);
 	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
@@ -1061,6 +1036,31 @@
 				--logo-h={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
+		<!--
+			A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to
+			their seat's line, with a line back when they have to sit further out), so whose a
+			reminder is reads at a glance on a crowded board. First on the board, so every token,
+			name, ghost vote and mark draws over them (Trevor, 2026-10-24); only the logo and the
+			background are under them.
+		-->
+		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+			{#each seats as seat, i (seat.seatId)}
+				{#if !looseMode && remDrag.drag === undefined}
+					{#each fan[i] ?? [] as p, k (k)}
+						{@const from = rimToward(shown[i], p, boardSize, size)}
+						<line
+							x1={from.x}
+							y1={from.y}
+							x2={p.x}
+							y2={p.y}
+							data-tether={i + 1}
+							vector-effect="non-scaling-stroke"
+						/>
+					{/each}
+				{/if}
+			{/each}
+		</svg>
+
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = shown[i]}
 			<div
@@ -1119,29 +1119,6 @@
 				/>
 			</div>
 		{/each}
-
-		<!--
-			A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to
-			their seat's line, with a line back when they have to sit further out), so whose a
-			reminder is reads at a glance on a crowded board. Under the tokens.
-		-->
-		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-			{#each seats as seat, i (seat.seatId)}
-				{#if !looseMode && remDrag.drag === undefined}
-					{#each fan[i] ?? [] as p, k (k)}
-						{@const from = rimToward(shown[i], p, boardSize, size)}
-						<line
-							x1={from.x}
-							y1={from.y}
-							x2={p.x}
-							y2={p.y}
-							data-tether={i + 1}
-							vector-effect="non-scaling-stroke"
-						/>
-					{/each}
-				{/if}
-			{/each}
-		</svg>
 
 		{#each seats as seat, i (seat.seatId)}
 			{@const count = seat.reminders.length}
@@ -1255,25 +1232,7 @@
 				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
 			>
 		{/each}
-		{#if sourcePill}
-			<p
-				class="source-pill"
-				class:below={sourcePill.below}
-				role="status"
-				data-testid="drag-source"
-				style:left="{sourcePill.x}%"
-				style:top="{sourcePill.y}%"
-				style:--across="{-sourcePill.x}%"
-			>
-				<ReminderOrigin
-					{game}
-					{characters}
-					characterId={sourcePill.dragged.characterId}
-					interactive={false}
-				/>
-			</p>
-		{/if}
-		{#if nw.walk}
+		{#if nw.walk && !ended}
 			<NightStrip
 				{grimoire}
 				steps={nw.steps}
@@ -1295,8 +1254,8 @@
 		{#if ended}
 			<HistoryStrip {grimoire}>
 				{#snippet notice()}
-					<!-- Above History's Previous and Next, out of the circle (Trevor, 2026-10-18).
-					     Tapping it offers to reopen the game. -->
+					<!-- In History's strip, out of the circle (Trevor, 2026-10-18); in the strip so
+					     ending the game moves nothing (2026-10-24). Tapping it offers to reopen. -->
 					<button
 						type="button"
 						class="game-over"
@@ -1326,8 +1285,6 @@
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
-				onDrag={(d) => (bankDrag = d)}
-				dragged={boardDrag}
 				run={bankRun}
 				disabled={watching}
 				lit={holding === undefined ? undefined : lit}
@@ -1353,6 +1310,7 @@
 			{width}
 			{rootFont}
 			{phase}
+			begun={phaseNow.kind !== 'setup'}
 			{startedAt}
 			endedAt={ended?.endedAt}
 			onEdit={editGameInfo}
@@ -1394,6 +1352,9 @@
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
 	onGameInfo={() => (modeMenuOpen = true)}
+	onCharacterSelection={startedAt === undefined && !watching
+		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
+		: undefined}
 	onAddSeat={() =>
 		// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
 		startPlacing((position) => void grimoire.addSeat(position))}
@@ -1410,6 +1371,7 @@
 	onEdit={watching ? undefined : editGameInfo}
 	{startedAt}
 	endedAt={ended?.endedAt}
+	{phase}
 	{watcherCount}
 	onShare={watching ? undefined : () => (phonesOpen = true)}
 />
@@ -1658,10 +1620,6 @@
 	.board {
 		margin-bottom: calc(var(--tray-h) + 2 * var(--space-2));
 	}
-	/* An ended game: the game over line sits above History's Previous and Next. */
-	.board.ended {
-		margin-bottom: calc(var(--tray-h) + var(--tap-target) + 3 * var(--space-2));
-	}
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
@@ -1708,27 +1666,6 @@
 	}
 	.place-spot:hover {
 		background: var(--surface-selected);
-	}
-	/* Beside a dragged reminder: whose it is, as a name on the board (a translucent pill). */
-	.source-pill {
-		position: absolute;
-		z-index: 5;
-		max-width: 70%;
-		margin: 0;
-		padding: var(--space-1) var(--space-2);
-		translate: var(--across) -100%;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: var(--board-bar-background);
-		color: var(--on-surface);
-		font-size: 0.8rem;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		pointer-events: none;
-	}
-	.source-pill.below {
-		translate: var(--across) 0;
 	}
 	.tethers {
 		position: absolute;
@@ -1801,7 +1738,8 @@
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.game-over {
-		max-width: 100%;
+		flex: none;
+		max-width: 50%;
 		min-height: var(--tap-target);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -1812,7 +1750,7 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font-family: var(--font-heading);
-		font-size: 1.1rem;
+		font-size: 0.9rem;
 		pointer-events: auto;
 	}
 	.game-over[data-team='good'] {

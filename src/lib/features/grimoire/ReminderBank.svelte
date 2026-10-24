@@ -12,8 +12,6 @@
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderCount from './ReminderCount.svelte';
-	import ReminderOrigin from './ReminderOrigin.svelte';
-	import type { DraggedReminder } from './reminder-drag.svelte.ts';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
@@ -30,6 +28,7 @@
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { pendingSetup, traySeats, type TrayItem } from './setup-tray.ts';
 
 	/**
@@ -62,10 +61,6 @@
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
-		/** A token dragged from the bank, and where it is now; none once let go. */
-		onDrag?: (dragged: DraggedReminder | undefined) => void;
-		/** A reminder dragged on the board, named in the caption (boardLooks.dragSource 'bank'). */
-		dragged?: DraggedReminder;
 		/**
 		 * At the bank's right end (Trevor, 2026-10-18): the game's next phase (Set up, Start game,
 		 * End night, End day, or Run night to pick a stopped walk-through up). Always there, so the
@@ -101,8 +96,6 @@
 		ruleAt,
 		onRule,
 		onHints,
-		onDrag,
-		dragged,
 		run,
 		disabled = false
 	}: Props = $props();
@@ -428,21 +421,6 @@
 
 	// ── Drag a token from the bank onto a seat ──
 	let drag = $state<{ item: Item; at: SeatPoint } | undefined>();
-	/**
-	 * Where a dragged reminder came from, in place of the captions (boardLooks.dragSource
-	 * 'bank'), for one dragged from the bank or on the board.
-	 */
-	const source = $derived(
-		boardLooks.current.dragSource === 'bank'
-			? drag
-				? {
-						characterId: drag.item.characterId,
-						label: drag.item.label,
-						ownerSeatId: drag.item.ownerSeatId
-					}
-				: dragged
-			: undefined
-	);
 	function dragItem(item: Item, x: number, y: number, end: boolean) {
 		if (!board) return;
 		const rect = board.getBoundingClientRect();
@@ -450,12 +428,6 @@
 		const target = seatAt(at);
 		if (!end) {
 			drag = { item, at };
-			onDrag?.({
-				characterId: item.characterId,
-				label: item.label,
-				ownerSeatId: item.ownerSeatId,
-				at
-			});
 			onHints(
 				loose
 					? { seats: [] }
@@ -468,7 +440,6 @@
 			return;
 		}
 		drag = undefined;
-		onDrag?.(undefined);
 		onHints({ seats: [] });
 		const tokenId = item.token?.tokenId;
 		const reminder = {
@@ -494,7 +465,6 @@
 	}
 	function cancelDrag() {
 		drag = undefined;
-		onDrag?.(undefined);
 		onHints({ seats: [] });
 	}
 
@@ -551,23 +521,12 @@
 			aria-hidden="true"
 			bind:offsetWidth={captionW[group as Group]}>{text}</span
 		>{/each}
-	{#if source}<span class="caption source" role="status" data-testid="drag-source"
-			><ReminderToken
-				label={source.label}
-				character={characters.get(source.characterId)}
-				alignment={placingAlignment(game, source, characters)}
-			/>, from <ReminderOrigin
-				{game}
-				{characters}
-				characterId={source.characterId}
-				interactive={false}
-			/></span
-		>{:else}{#each captions as caption (caption.group)}<span
-				class="caption"
-				data-group={caption.group}
-				data-testid="bank-{caption.group}"
-				style:left="{caption.left}%">{caption.text}</span
-			>{/each}{/if}
+	{#each captions as caption (caption.group)}<span
+			class="caption"
+			data-group={caption.group}
+			data-testid="bank-{caption.group}"
+			style:left="{caption.left}%">{caption.text}</span
+		>{/each}
 	<ul
 		class="tray"
 		bind:this={list}
@@ -685,6 +644,19 @@
 	{#snippet headActions()}
 		<!-- Duplicate from the bank too; the copy stays in the bank (Trevor, 2026-10-20). -->
 		{#if choosing && !isGeneric(choosing)}
+			<!-- A Duplicate copy goes back out of the bank, as one on the board does (Trevor,
+			     2026-10-24). -->
+			{#if choosing.extra && grimoire.bankCopyCount(choosing) > 0}
+				{@const copy = choosing}
+				<DeleteButton
+					label="Remove reminder"
+					onclick={() => {
+						grimoire.removeBankCopy(copy);
+						chooserOpen = false;
+						choosing = undefined;
+					}}
+				/>
+			{/if}
 			<ReminderMoreButton
 				{grimoire}
 				reminder={choosing}
@@ -878,17 +850,6 @@
 	 * The ∞ as tall as the other captions' capitals (Trevor, 2026-10-19). Measured in Cinzel:
 	 * its ink is about 0.62 of a capital's height, so 1.6 times the size matches them.
 	 */
-	/* While a reminder is dragged: its words and whose it is, in the captions' place. */
-	.caption.source {
-		left: 0;
-		max-width: calc(100% - 2 * var(--space-2));
-		overflow: hidden;
-		color: var(--on-surface);
-		font: 600 0.8rem / 1.4 var(--font-player);
-		letter-spacing: 0;
-		text-transform: none;
-		text-overflow: ellipsis;
-	}
 	.caption.measure {
 		left: 0;
 		visibility: hidden;

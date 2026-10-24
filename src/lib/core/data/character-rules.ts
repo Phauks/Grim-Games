@@ -134,6 +134,8 @@ export interface CharacterRules {
 	answers?: Answers;
 	/** The claim its player makes by day, logged from their day row and seat ⋯ menu (L56). */
 	dayClaim?: DayClaim;
+	/** At most this many guesses a day, for a `guesses` claim (the Juggler's 5). */
+	guessLimit?: number;
 	/** How the ability leaves players drunk, poisoned or with no ability (`rules/ability.ts`). */
 	impairs?: Impairs;
 	/** Players who may register as another alignment or character type (`rules/ability.ts`). */
@@ -330,6 +332,7 @@ export const RULE_KEYS = [
 	'onNominated',
 	'afterDeath',
 	'dayClaim',
+	'guessLimit',
 	'impairs',
 	'registersAs',
 	'gameEnd',
@@ -462,6 +465,11 @@ export function parseCharacterRules(
 	}
 	const dayClaim = readEnum(raw, 'dayClaim', DAY_CLAIMS, path, issues, false);
 	if (dayClaim) rules.dayClaim = dayClaim;
+	const guessLimit = readNumber(raw, 'guessLimit', path, issues);
+	if (guessLimit !== undefined) {
+		if (Number.isInteger(guessLimit) && guessLimit > 0) rules.guessLimit = guessLimit;
+		else issues.add(`${path}.guessLimit`, `expected a whole number above 0, got ${guessLimit}`);
+	}
 	if (raw.impairs !== undefined) {
 		const impairs = readImpairs(raw.impairs, `${path}.impairs`, issues, reminders);
 		if (impairs) rules.impairs = impairs;

@@ -543,6 +543,27 @@
 		align-items: center;
 		margin-inline-start: auto;
 	}
+	/*
+	 * In a row's strip, the state reads at the ability's size and the button is the strip's
+	 * square end, split off by a line (Trevor, 2026-10-24: option A).
+	 */
+	:global(.footer) .sentence {
+		align-self: center;
+		padding-block: var(--space-1);
+		font-size: 0.8rem;
+		line-height: 1.3;
+		opacity: 0.9;
+	}
+	:global(.footer) .day-end {
+		align-items: stretch;
+	}
+	:global(.footer) .day-end :global(.chip) {
+		border: 0;
+		border-inline-start: var(--card-border);
+		border-radius: 0;
+		padding-inline: var(--space-4);
+		font-size: 0.85rem;
+	}
 	.ability {
 		font-family: var(--font-ability);
 		font-size: 0.8rem;

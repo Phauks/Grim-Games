@@ -17,7 +17,7 @@
 	} from './nav.ts';
 	import { openSettings } from './shell.ts';
 	import BuildLine from '#lib/features/about/BuildLine.svelte';
-	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
+	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 
 	interface Props {
 		/** Called after a choice, e.g. to close the drawer. */
@@ -94,7 +94,7 @@
 			type="button"
 			onclick={() => {
 				onChoose?.();
-				reportDialog.show();
+				void reportWithDiagnostics();
 			}}>{t('shell.reportIssue')}</button
 		>
 	</p>

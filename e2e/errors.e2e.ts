@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { theMenu } from './shell.ts';
 
 const CHOOSER = 'https://github.com/Phauks/Grim-Games/issues/new/choose';
 
@@ -227,12 +228,10 @@ test('Diagnostics gathers build, device and problems on the device, without game
 	await expect(about.getByRole('button', { name: 'Refresh', exact: true })).toHaveCount(0);
 	await expect(panel.getByRole('button', { name: /Copy|Download/ })).toHaveCount(0);
 
-	// Report an issue is in About's main part, above Advanced (Trevor, 2026-10-19).
-	await expect(panel.getByRole('button', { name: 'Report an issue' })).toHaveCount(0);
-	const report = about.getByRole('button', { name: 'Report an issue' });
-	expect((await report.boundingBox())!.y).toBeLessThan((await heading.boundingBox())!.y);
-	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-	await report.tap();
+	// About has no Report an issue of its own (2026-10-24): the menu's, reachable everywhere,
+	// attaches the same diagnostics.
+	await expect(about.getByRole('button', { name: 'Report an issue' })).toHaveCount(0);
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 	const sent = await sendReport(page);
 	expect(sent.details).toContain('diagnostics test at example.com/room');
 	expect(JSON.stringify(sent)).not.toContain('SECRET');
