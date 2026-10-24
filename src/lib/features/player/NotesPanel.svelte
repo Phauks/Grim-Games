@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ScratchThumb from '#lib/ui/scratch/ScratchThumb.svelte';
 	import { padShape } from '#lib/ui/scratch/pad-shape.svelte.ts';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
@@ -22,11 +22,12 @@
 
 <div class="notes">
 	<section aria-labelledby="my-notes">
+		<!-- New ones start from a dashed card in the list itself, not a button in the header
+		     (Trevor, 2026-10-24). -->
 		<div class="head">
 			<h2 id="my-notes">{t('player.myNotes')}</h2>
-			<Button icon="add" onclick={onAdd}>{t('player.newNote')}</Button>
 		</div>
-		<NoteCards {notes} onOpen={onOpenNote} />
+		<NoteCards {notes} onOpen={onOpenNote} {onAdd} />
 	</section>
 
 	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16). Several pads, kept like
@@ -34,29 +35,35 @@
 	<section aria-labelledby="scratch-pads">
 		<div class="head">
 			<h2 id="scratch-pads">{t('scratch.pads')}</h2>
-			<Button icon="add" disabled={!pads} onclick={onAddScratch}>{t('scratch.newPad')}</Button>
 		</div>
-		{#if pads?.length}
-			<ul class="pads" style:--pad-shape={padShape.ratio}>
-				{#each pads as pad (pad.key)}
-					<li>
-						<button type="button" class="row" data-pad={pad.key} onclick={() => onOpenScratch(pad)}>
-							<span class="title">{pad.title.trim() || t('scratch.untitled')}</span>
-							<!-- The same box whether drawn on or hidden, so nothing moves. -->
-							<span class="thumb">
-								{#if pad.hidden}
-									<span class="preview" data-hidden>{t('scratch.hidden')}</span>
-								{:else}
-									<ScratchThumb {pad} />
-								{/if}
-							</span>
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="none">{t('common.none')}</p>
-		{/if}
+		<ul class="pads" style:--pad-shape={padShape.ratio}>
+			{#each pads ?? [] as pad (pad.key)}
+				<li>
+					<button type="button" class="row" data-pad={pad.key} onclick={() => onOpenScratch(pad)}>
+						<span class="title">{pad.title.trim() || t('scratch.untitled')}</span>
+						<!-- The same box whether drawn on or hidden, so nothing moves. -->
+						<span class="thumb">
+							{#if pad.hidden}
+								<span class="preview" data-hidden>{t('scratch.hidden')}</span>
+							{:else}
+								<ScratchThumb {pad} />
+							{/if}
+						</span>
+					</button>
+				</li>
+			{/each}
+			<!-- As the notes' "+ New note" (NoteCards): a dashed edge, as tall as a pad. -->
+			<li>
+				<button
+					type="button"
+					class="row add"
+					data-testid="new-pad"
+					disabled={!pads}
+					onclick={onAddScratch}
+					><span class="title"><Icon name="add" />{t('scratch.newPad')}</span></button
+				>
+			</li>
+		</ul>
 	</section>
 </div>
 
@@ -108,6 +115,20 @@
 	.row:hover {
 		background: var(--surface-selected);
 	}
+	li {
+		display: grid;
+	}
+	.add {
+		align-content: center;
+		border-style: dashed;
+		background: transparent;
+		color: var(--on-surface-muted);
+	}
+	.add .title {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
 	.title {
 		font-family: var(--font-control);
 		font-weight: 600;
@@ -141,9 +162,5 @@
 	.thumb :global(canvas) {
 		position: absolute;
 		inset: 0;
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 </style>
