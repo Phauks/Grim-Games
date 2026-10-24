@@ -187,19 +187,27 @@ test('a game in progress hides the sidebar, so a stray tap cannot leave it', asy
 	await expect(page.getByRole('button', { name: 'Menu', exact: true })).toHaveCount(0);
 });
 
-// Join game is an app page, not a game screen (Trevor, 2026-10-24: "join game page appears to
-// use different left sidebar"): the same sidebar where it shows, the same hamburger otherwise.
-test('Join game has the same sidebar and menu as the other pages', async ({ page }) => {
+// Join game and the player view are app pages, not game screens (Trevor, 2026-10-24: "join
+// game page appears to use different left sidebar", then the same of the player's Grim): the
+// same sidebar where it shows, the same hamburger otherwise.
+test('Join game and the player view have the same sidebar and menu as the other pages', async ({
+	page
+}) => {
 	const sidebar = page.getByRole('navigation', { name: 'Menu', exact: true });
-	for (const path of ['/join', '/join/123456']) {
+	for (const [path, current] of [
+		['/join', 'Join game'],
+		['/join/123456', 'Join game'],
+		['/play', undefined]
+	] as const) {
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto(path);
-		await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 		await expect(sidebar).toBeVisible();
-		await expect(sidebar.getByRole('link', { name: 'Join game' })).toHaveAttribute(
-			'aria-current',
-			'page'
-		);
+		if (current)
+			await expect(sidebar.getByRole('link', { name: current })).toHaveAttribute(
+				'aria-current',
+				'page'
+			);
 		// One hamburger: the sidebar's, none before the title.
 		await expect(menuButton(page)).toHaveCount(1);
 		await expect(page.locator('.app-body.bare')).toHaveCount(0);
@@ -208,10 +216,11 @@ test('Join game has the same sidebar and menu as the other pages', async ({ page
 		await page.setViewportSize({ width: 400, height: 800 });
 		await expect(sidebar).toBeHidden();
 		const nav = await theMenu(page);
-		await expect(nav.getByRole('link', { name: 'Join game' })).toHaveAttribute(
-			'aria-current',
-			'page'
-		);
+		if (current)
+			await expect(nav.getByRole('link', { name: current })).toHaveAttribute(
+				'aria-current',
+				'page'
+			);
 		await page.keyboard.press('Escape');
 	}
 });
