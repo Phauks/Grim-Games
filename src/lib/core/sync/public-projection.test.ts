@@ -106,7 +106,7 @@ describe('publicProjection', () => {
 			modes: ['World Cup', 'Djinn limit'],
 			joinCode: true,
 			phase: { kind: 'night', number: 2, secret: 'x' } as { kind: 'night'; number: number },
-			gameTime: { startedAt: 1000 },
+			gameTime: { begun: true, startedAt: 1000 },
 			watchers: 3,
 			grimoire: 'secret'
 		};
@@ -114,7 +114,7 @@ describe('publicProjection', () => {
 			modes: ['World Cup', 'Djinn limit'],
 			joinCode: true,
 			phase: { kind: 'night', number: 2 },
-			gameTime: { startedAt: 1000 },
+			gameTime: { begun: true, startedAt: 1000 },
 			watchers: 3
 		});
 		// Lines the board hides are left out.

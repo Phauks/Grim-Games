@@ -163,3 +163,54 @@ test('the end of the night offers to set the Savant’s information', async ({ p
 	await expect(savant).toBeHidden();
 	await expect(page.getByTestId('savant-info')).toHaveAttribute('data-marked', 'true');
 });
+
+test('Use these saves the statements: reopening shows them, true or false as given', async ({
+	page
+}) => {
+	test.setTimeout(90_000);
+	await page.goto('/new');
+	await pickScript(page, 'Sects & Violets');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	for (const [i, name] of CAST.entries()) {
+		const sheet = await openSeat(page, i + 1);
+		await sheet.getByRole('button', { name: 'Choose' }).tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${i + 1}` });
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await expect(picker).toBeHidden();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const info = page.getByTestId('savant-info');
+	await info.tap();
+	const savant = page.getByRole('dialog', { name: /^Savant information/ });
+	const lines = savant.getByTestId('savant-line');
+	const field = (i: number) =>
+		savant.getByRole('textbox', { name: `Statement ${i + 1}, your words` });
+	// Each line in words, so what was given can be read back exactly.
+	const given: { words: string; truth: string | null }[] = [];
+	for (const i of [0, 1]) {
+		await savant.getByRole('button', { name: `Write statement ${i + 1}` }).tap();
+		given.push({
+			words: await field(i).inputValue(),
+			truth: await lines.nth(i).locator('[data-truth]').getAttribute('data-truth')
+		});
+	}
+	await savant.getByRole('button', { name: 'Use these' }).tap();
+	await expect(savant).toBeHidden();
+	// Trevor (2026-10-24): saving seemed to do nothing, as reopening dealt a fresh pair.
+	for (let round = 0; round < 2; round++) {
+		await info.tap();
+		await expect(savant.getByRole('textbox')).toHaveCount(2);
+		for (const i of [0, 1]) {
+			await expect(field(i)).toHaveValue(given[i].words);
+			await expect(lines.nth(i).locator('[data-truth]')).toHaveAttribute(
+				'data-truth',
+				given[i].truth!
+			);
+		}
+		// Saving again keeps the same two, not a second pair under them.
+		await savant.getByRole('button', { name: 'Use these' }).tap();
+		await expect(savant).toBeHidden();
+	}
+});

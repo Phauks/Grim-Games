@@ -816,3 +816,93 @@ test('a wide day view puts the toolbar beside the sections', async ({ page }) =>
 		.poll(async () => (await page.getByTestId('announcements').boundingBox())!.y)
 		.toBeGreaterThan((await page.getByTestId('day-toolbar').boundingBox())!.y);
 });
+
+test('ending the game at an Execution closes the walk-through and moves nothing', async ({
+	page
+}) => {
+	await startGame(page);
+	await chooseCharacter(page, 3, 'Imp');
+	const corner = page.getByTestId('script-title');
+	const seat = boardSeat(page, 'Seat 1');
+	const before = { corner: await corner.boundingBox(), seat: await seat.boundingBox() };
+	// The Demon executed: good wins (https://wiki.bloodontheclocktower.com/Imp).
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Execution' }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 3\b/ }).tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(end).toBeHidden();
+	await page.keyboard.press('Escape');
+
+	// One strip at the bottom (Trevor, 2026-10-24): History's, with the game over notice in it;
+	// the night's walk-through closes once the game is over.
+	const over = page.getByTestId('game-over');
+	await expect(over).toHaveText('Game over: Good won');
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	const strip = (await page.getByTestId('history-strip').boundingBox())!;
+	const pill = (await over.boundingBox())!;
+	expect(pill.y).toBeGreaterThanOrEqual(strip.y);
+	expect(pill.y + pill.height).toBeLessThanOrEqual(strip.y + strip.height + 1);
+	// Nothing moves when the game ends: the corner and the seats stay where they were.
+	for (const [box, was] of [
+		[await corner.boundingBox(), before.corner],
+		[await seat.boundingBox(), before.seat]
+	]) {
+		expect(Math.abs(box!.y - was!.y)).toBeLessThan(1);
+		expect(Math.abs(box!.height - was!.height)).toBeLessThan(1);
+	}
+});
+
+test('the corner, the day view and Resume agree on the night or day, without a start time', async ({
+	page
+}) => {
+	test.setTimeout(90_000);
+	// Trevor (2026-10-24): Resume said Day 4 where the day view said Day 3, and Game time said
+	// Setup mid-game. This game never had Start game tapped, so the device has no start time.
+	const path = await startGame(page);
+	const phase = page.getByTestId('board-phase');
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	const endNight = async () => {
+		await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+		await page
+			.getByRole('alertdialog', { name: 'End the night?' })
+			.getByRole('button', { name: 'Confirm' })
+			.tap();
+		if (await daySheet(page).isVisible()) await closeDay(page);
+	};
+	const resumed = async (text: string) => {
+		await page.goto('/games');
+		await expect(
+			page.getByRole('link', { name: new RegExp(`Trouble Brewing.*${text} ·`) })
+		).toBeVisible();
+		await page.goto(path);
+		await expect(page.getByTestId('seat')).toHaveCount(8);
+	};
+
+	await (await openDay(page)).getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page);
+	await expect(phase).toHaveText('Night 1');
+	await endNight();
+	await expect(phase).toHaveText('Day 1');
+	await expect(page.getByTestId('board-game-clock')).toContainText('None');
+	await openDay(page);
+	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await daySheet(page).getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page);
+	// Tonight follows Day 1: Night 2 on the board and in Resume.
+	await expect(phase).toHaveText('Night 2');
+	await resumed('Night 2');
+	await expect(phase).toHaveText('Night 2');
+	await endNight();
+	await expect(phase).toHaveText('Day 2');
+	await openDay(page);
+	await expect(page.getByRole('dialog', { name: 'Day 2' })).toBeVisible();
+	await closeDay(page);
+	await resumed('Day 2');
+	await expect(phase).toHaveText('Day 2');
+});

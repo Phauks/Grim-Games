@@ -68,5 +68,7 @@ export const shell = {
 	'shell.roadmapTitle': `Roadmap · ${APP_NAME}`,
 	'shell.roadmapProgress': '{done} of {total} done',
 	'shell.roadmapDone': 'Done',
+	'shell.roadmapNext': 'Next',
+	'shell.roadmapLater': 'Later',
 	'shell.roadmapPlanned': 'Planned'
 } as const;

@@ -10,7 +10,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { phaseText } from './corner-lines.ts';
+	import { phaseText } from './phase-text.ts';
 
 	/**
 	 * The board's lower left corner (Trevor, 2026-10-17): the script's name, small and clear of
@@ -106,7 +106,8 @@
 	 * The night or day in play (Trevor, 2026-10-23), a Board setting, on by default. Before the
 	 * game starts Game time already says Setup, so the phase waits for the first night.
 	 */
-	const showPhase = $derived(!!corner?.phase && !(showGameClock && clockStart === undefined));
+	const begun = $derived(!!corner?.gameTime?.begun);
+	const showPhase = $derived(!!corner?.phase && !(showGameClock && !begun));
 	const phase = $derived(corner?.phase ? phaseText(corner.phase) : undefined);
 	/** The phase and Game time share one line, so the day or night never costs the corner one. */
 	const showClockLine = $derived(showGameClock || showPhase);
@@ -118,11 +119,13 @@
 		return () => clearInterval(tick);
 	});
 	const gameLengthText = $derived(
-		clockStart === undefined
+		!begun
 			? t('day.setup')
-			: gameClock.formatGameLength(
-					gameClock.gameLength(clockStart, Math.max(clockNow, clockStart), clockEnd)
-				)
+			: clockStart === undefined
+				? t('common.none')
+				: gameClock.formatGameLength(
+						gameClock.gameLength(clockStart, Math.max(clockNow, clockStart), clockEnd)
+					)
 	);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").

@@ -13,6 +13,7 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
+import type { GamePhase } from '#lib/core/rules/game-phase.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
 
@@ -68,8 +69,8 @@ export interface PublicSeatLayout {
 	placed: Readonly<Record<string, { x: number; y: number }>>;
 }
 
-/** The night or day in play, or Setup before the first night begins. */
-export type PublicPhase = { kind: 'setup' } | { kind: 'night' | 'day'; number: number };
+/** The night or day in play, or Setup before the first night begins (gamePhase). */
+export type PublicPhase = GamePhase;
 
 /**
  * The board's lower left corner as the Storyteller shows it (Trevor, 2026-10-24: the player
@@ -83,8 +84,8 @@ export interface PublicCorner {
 	/** The join code's line: each phone shows the code it joined with. */
 	joinCode?: boolean;
 	phase?: PublicPhase;
-	/** Game time: since the first night began, until End game. */
-	gameTime?: { startedAt?: number; endedAt?: number };
+	/** Game time: since the first night began, until End game; Setup until it has begun. */
+	gameTime?: { begun: boolean; startedAt?: number; endedAt?: number };
 	/** Spectators on the view-only link. */
 	watchers?: number;
 }
@@ -111,6 +112,7 @@ function boardCorner(corner: PublicCorner): PublicCorner {
 			phase.kind === 'setup' ? { kind: 'setup' } : { kind: phase.kind, number: phase.number };
 	if (gameTime)
 		view.gameTime = {
+			begun: !!gameTime.begun,
 			...(gameTime.startedAt !== undefined ? { startedAt: gameTime.startedAt } : {}),
 			...(gameTime.endedAt !== undefined ? { endedAt: gameTime.endedAt } : {})
 		};

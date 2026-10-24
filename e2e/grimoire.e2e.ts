@@ -2337,11 +2337,12 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
 	// Read-only: nothing pops up in the middle (Trevor, 2026-10-18), and the game over line
-	// sits just above Previous and Next, out of the circle.
+	// sits in History's strip, out of the circle, so ending moves nothing (2026-10-24).
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
 	const over = (await page.getByTestId('game-over').boundingBox())!;
 	const strip = (await steps.boundingBox())!;
-	expect(over.y + over.height).toBeLessThanOrEqual(strip.y);
+	expect(over.y).toBeGreaterThanOrEqual(strip.y);
+	expect(over.y + over.height).toBeLessThanOrEqual(strip.y + strip.height + 1);
 	expect(over.y).toBeGreaterThanOrEqual(
 		(await page.locator('.board').boundingBox())!.y +
 			(await page.locator('.board').boundingBox())!.height
