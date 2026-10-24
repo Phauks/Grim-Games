@@ -128,6 +128,9 @@ export function offScript(game: Game, script: Script, ctx: EngineContext): Chara
 		for (const r of tile.reminders) ids.add(r.characterId);
 	}
 	return [...ids].filter((id) => {
+		// A generic reminder belongs to no character, so no script lists it (Trevor,
+		// 2026-10-24: "generic is not on the script").
+		if (id === GENERIC_REMINDER_ID) return false;
 		const type = ctx.characters.get(id)?.type;
 		const exempt = type === 'traveller' || type === 'fabled' || type === 'loric';
 		return !exempt && !isOnScript(script, id);
