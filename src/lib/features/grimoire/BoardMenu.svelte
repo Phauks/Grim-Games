@@ -20,6 +20,8 @@
 		onBluffs: () => void;
 		onNotes: () => void;
 		onGameInfo: () => void;
+		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
+		onCharacterSelection?: () => void;
 		onAddSeat: () => void;
 		onAddRule: () => void;
 		onArrange: () => void;
@@ -36,6 +38,7 @@
 		onBluffs,
 		onNotes,
 		onGameInfo,
+		onCharacterSelection,
 		onAddSeat,
 		onAddRule,
 		onArrange,
@@ -57,6 +60,11 @@
 		<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>
 		{#if gameInfo}
 			<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
+		{/if}
+		{#if onCharacterSelection}
+			<Button variant="quiet" icon="bag" onclick={() => fromMenu(onCharacterSelection)}>
+				{t('setup.characterSelection')}
+			</Button>
 		{/if}
 		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
 		     apart at the bottom (Trevor, 2026-10-18). -->

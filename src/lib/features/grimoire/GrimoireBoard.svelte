@@ -913,7 +913,6 @@
 	function editGameInfo(changes: GameInfoChanges) {
 		if (changes.storytellerName !== (game.storytellerName ?? ''))
 			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
-		if (changes.script) void grimoire.changeScript(changes.script);
 	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
@@ -1390,6 +1389,9 @@
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
 	onGameInfo={() => (modeMenuOpen = true)}
+	onCharacterSelection={startedAt === undefined && !watching
+		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
+		: undefined}
 	onAddSeat={() =>
 		// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
 		startPlacing((position) => void grimoire.addSeat(position))}
