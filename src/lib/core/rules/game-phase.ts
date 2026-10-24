@@ -1,0 +1,17 @@
+/**
+ * Where a game is up to: Setup, a night or a day, numbered as the day view numbers its days
+ * (Trevor, 2026-10-24: the board, Game info, Resume and the day view must agree). Day N
+ * follows Night N, so `days` (the days begun, `game.pastDays.length`) is today's number.
+ * Pure: callers say whether the first night has begun and whether a night is under way,
+ * which only the device knows.
+ */
+export type GamePhase = { kind: 'setup' } | { kind: 'night' | 'day'; number: number };
+
+export function gamePhase(
+	days: number,
+	{ begun, nightUnderway }: { begun: boolean; nightUnderway: boolean }
+): GamePhase {
+	if (nightUnderway) return { kind: 'night', number: days + 1 };
+	if (days === 0) return begun ? { kind: 'night', number: 1 } : { kind: 'setup' };
+	return { kind: 'day', number: days };
+}

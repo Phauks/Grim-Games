@@ -34,6 +34,7 @@ export * from './traveller-alignment.ts';
 export * from './voting.ts';
 export * as dayTimers from './day-timer.ts';
 export * as gameClock from './game-clock.ts';
+export * from './game-phase.ts';
 export * from './reminder-movement.ts';
 export * from './reminder-targets.ts';
 export * from './night-alerts.ts';
