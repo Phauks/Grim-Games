@@ -21,8 +21,8 @@
 		 */
 		iconActions?: boolean;
 		/**
-		 * The hamburger even with no sidebar on the page: Player view and Join game, which fill
-		 * the screen as a game does (2026-10-19). The app's pages show it whenever their sidebar
+		 * The hamburger even with no sidebar on the page: Player view, which fills the screen
+		 * as a game does (2026-10-19). The app's pages show it whenever their sidebar
 		 * is not showing.
 		 */
 		menu?: boolean;

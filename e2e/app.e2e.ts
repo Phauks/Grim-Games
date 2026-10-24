@@ -183,6 +183,35 @@ test('a game in progress hides the sidebar, so a stray tap cannot leave it', asy
 	await expect(page.getByRole('button', { name: 'Menu', exact: true })).toHaveCount(0);
 });
 
+// Join game is an app page, not a game screen (Trevor, 2026-10-24: "join game page appears to
+// use different left sidebar"): the same sidebar where it shows, the same hamburger otherwise.
+test('Join game has the same sidebar and menu as the other pages', async ({ page }) => {
+	const sidebar = page.getByRole('navigation', { name: 'Menu', exact: true });
+	for (const path of ['/join', '/join/123456']) {
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.goto(path);
+		await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+		await expect(sidebar).toBeVisible();
+		await expect(sidebar.getByRole('link', { name: 'Join game' })).toHaveAttribute(
+			'aria-current',
+			'page'
+		);
+		// One hamburger: the sidebar's, none before the title.
+		await expect(menuButton(page)).toHaveCount(1);
+		await expect(page.locator('.app-body.bare')).toHaveCount(0);
+
+		// Narrow, the hamburger sits where every app page has it and opens the same drawer.
+		await page.setViewportSize({ width: 400, height: 800 });
+		await expect(sidebar).toBeHidden();
+		const nav = await theMenu(page);
+		await expect(nav.getByRole('link', { name: 'Join game' })).toHaveAttribute(
+			'aria-current',
+			'page'
+		);
+		await page.keyboard.press('Escape');
+	}
+});
+
 // Trevor (2026-10-19): the phone's top and bottom bars match the palette. The page draws under
 // them (viewport-fit=cover) and the status bar takes the surface colour, in every theme. With no
 // app header (2026-10-22), a strip of that colour stays under the status bar as the page scrolls.

@@ -2,7 +2,7 @@
 	import { navDrawer } from './nav-drawer.svelte.ts';
 	import NavMenuButton from './NavMenuButton.svelte';
 
-	/** Shown even with no sidebar on the page (Player view and Join game fill the screen). */
+	/** Shown even with no sidebar on the page (Player view fills the screen). */
 	let { always = false }: { always?: boolean } = $props();
 </script>
 
