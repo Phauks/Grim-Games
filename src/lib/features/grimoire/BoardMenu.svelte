@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
+	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -94,7 +94,11 @@
 			</Button>
 		</span>
 		<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
-		<Button variant="quiet" icon="report" onclick={() => fromMenu(() => reportDialog.show())}>
+		<Button
+			variant="quiet"
+			icon="report"
+			onclick={() => fromMenu(() => void reportWithDiagnostics())}
+		>
 			{t('shell.reportIssue')}
 		</Button>
 		<hr class="menu-rule" />
