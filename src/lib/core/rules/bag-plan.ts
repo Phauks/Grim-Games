@@ -192,9 +192,17 @@ export function planBag(input: BagPlanInput): BagPlan {
 }
 
 export interface SelectionAnalysisInput {
-	/** Everyone playing, Travellers included. */
+	/**
+	 * The players: those beyond 15 are Travellers, and each Traveller selected beyond them is
+	 * one more player, so the other counts stay as they are.
+	 */
 	players: number;
 	selection: BagSelection;
+	/**
+	 * A rule lets up to this many Travellers into the bag (Stowed Away). Its selected Travellers
+	 * are counted among the players instead, so the other counts are for that many fewer.
+	 */
+	travellersInBag?: number;
 	/** Fabled and Loric in play, which can change setup (the Sentinel). */
 	ruleCharacters?: readonly CharacterId[];
 	scriptOrder: readonly CharacterId[];
@@ -204,7 +212,9 @@ export interface SelectionAnalysisInput {
 
 /**
  * `analyseSetup` for a selection: Travellers are the selected Travellers (at least everyone
- * beyond 15).
+ * beyond 15). A Traveller joins as an extra player and is not counted in the setup counts
+ * (https://wiki.bloodontheclocktower.com/Travellers), so selecting one adds a player rather
+ * than lowering the other counts (Trevor, 2026-10-24), unless a rule puts it in the bag.
  */
 export function analyseSelection(input: SelectionAnalysisInput): SetupAnalysis {
 	const characters = [
@@ -213,10 +223,14 @@ export function analyseSelection(input: SelectionAnalysisInput): SetupAnalysis {
 	]
 		.map((id) => input.lookup(id))
 		.filter((c): c is Character => c !== undefined);
-	const travellers = characters.filter((c) => c.type === 'traveller').length;
+	const selected = characters.filter((c) => c.type === 'traveller').length;
+	const travellers = Math.max(selected, input.players - 15);
+	const players = input.travellersInBag
+		? input.players
+		: input.players + travellers - Math.max(0, input.players - 15);
 	return analyseSetup({
-		players: input.players,
-		travellers: Math.max(travellers, input.players - 15),
+		players,
+		travellers,
 		inPlay: characters,
 		findByName: input.findByName,
 		findById: input.lookup
@@ -244,7 +258,6 @@ export interface RandomSelectionInput extends Omit<SelectionAnalysisInput, 'sele
 	 * are picked at random, counting any already selected, and the rest is filled for that
 	 * many fewer players.
 	 */
-	travellersInBag?: number;
 }
 
 /**
