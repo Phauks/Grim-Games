@@ -225,6 +225,13 @@
 	];
 
 	const ready = $derived(script !== undefined && game !== undefined && s.gameId === game.gameId);
+	/**
+	 * Travellers a special rule lets into the bag (Stowed Away: up to 2, the other counts for
+	 * that many fewer players). Otherwise a selected Traveller is one more player.
+	 */
+	const travellersInBag = $derived(
+		game ? (gameModeOf(game.gameId)?.parts.travellers?.inBag ?? 0) : 0
+	);
 	const analysis = $derived(
 		analyseSelection({
 			players: s.players,
@@ -232,7 +239,8 @@
 			ruleCharacters: game?.ruleCharacters,
 			scriptOrder,
 			lookup,
-			findByName
+			findByName,
+			travellersInBag
 		})
 	);
 	const plan = $derived(
@@ -280,13 +288,6 @@
 		return of;
 	});
 	const travellers = $derived(ids.filter((id) => lookup(id)?.type === 'traveller').length);
-	/**
-	 * Travellers a special rule lets into the bag (Stowed Away: up to 2, the other counts for
-	 * that many fewer players). Selected Travellers already lower the other counts.
-	 */
-	const travellersInBag = $derived(
-		game ? (gameModeOf(game.gameId)?.parts.travellers?.inBag ?? 0) : 0
-	);
 	const travellerLimits = $derived(
 		travellersInBag ? travellerRange(s.players, travellersInBag) : undefined
 	);
@@ -392,7 +393,8 @@
 	async function buildBag() {
 		replaceOpen = false;
 		if (!game) return;
-		for (let n = port.game?.seating.length ?? 0; n < s.players; n++) {
+		// A seat for each player, selected Travellers included.
+		for (let n = port.game?.seating.length ?? 0; n < analysis.players; n++) {
 			if (!send({ type: 'AddSeat' })) return;
 		}
 		const built = send({

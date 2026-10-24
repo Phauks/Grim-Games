@@ -303,7 +303,8 @@
 		{#if why.facts.length > 0}
 			<span class="why-head">From</span>
 			<ul class="why" data-testid="why-facts">
-				{#each why.facts as f (f.seatId)}
+				<!-- By position: the Juggler's facts name a player once per guess. -->
+				{#each why.facts as f, i (i)}
 					<li>
 						{@render player(f.seatId, f.characterId)}
 						{#if f.type}<span class="fact">{TYPE[f.type] ?? f.type}</span>{/if}

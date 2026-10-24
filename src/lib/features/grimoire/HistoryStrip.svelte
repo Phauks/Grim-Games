@@ -12,7 +12,10 @@
 	 */
 	interface Props {
 		grimoire: Grimoire;
-		/** One line above Previous and Next: the board's game over notice. */
+		/**
+		 * The board's game over notice, inside the strip after Previous: the strip takes the
+		 * bank's place exactly, so ending a game moves nothing (Trevor, 2026-10-24).
+		 */
 		notice?: Snippet;
 	}
 
@@ -31,14 +34,14 @@
 	const position = $derived(stops.filter((c) => c <= cursor).length);
 </script>
 
-{#if notice}<div class="notice">{@render notice()}</div>{/if}
-<section class="strip" class:below={!!notice} aria-label="Game history" data-testid="history-strip">
+<section class="strip" aria-label="Game history" data-testid="history-strip">
 	<IconButton
 		icon="back"
 		label="Previous change"
 		disabled={previous === undefined}
 		onclick={() => previous !== undefined && open.goTo(previous)}
 	/>
+	{@render notice?.()}
 	<p class="line" aria-live="polite">
 		<span class="count">{position} of {stops.length}</span>
 		{#if item}<HistoryLine parts={item.parts} characters={open.characters} />{/if}
@@ -52,19 +55,6 @@
 </section>
 
 <style>
-	.notice {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: calc(100% + var(--space-2));
-		z-index: 2;
-		display: flex;
-		justify-content: center;
-		height: var(--tap-target);
-	}
-	.strip.below {
-		top: calc(100% + 2 * var(--space-2) + var(--tap-target));
-	}
 	.strip {
 		position: absolute;
 		left: 0;
