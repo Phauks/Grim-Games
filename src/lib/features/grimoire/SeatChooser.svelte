@@ -66,8 +66,9 @@
 									interactive={false}
 								/>{:else}None{/if}</span
 						>
-						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>
-						{#if rowMarks}<span class="marks">{@render rowMarks(seat.seatId)}</span>{/if}
+						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>{#if rowMarks}<span
+								class="marks">{@render rowMarks(seat.seatId)}</span
+							>{/if}
 					</button>
 				</li>
 			{/if}
