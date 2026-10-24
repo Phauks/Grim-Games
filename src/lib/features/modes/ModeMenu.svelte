@@ -65,6 +65,8 @@
 		 */
 		startedAt?: number;
 		endedAt?: number;
+		/** The night or day in play, as the corner shows it ("Setup", "Night 2", "Day 1"). */
+		phase?: string;
 		/** Spectators on the view-only link. */
 		watcherCount?: number;
 		/** The join code opens Share; without it (a spectator's board) there is no join code row. */
@@ -78,6 +80,7 @@
 		onEdit,
 		startedAt,
 		endedAt,
+		phase,
 		watcherCount = 0,
 		onShare
 	}: Props = $props();
@@ -162,7 +165,12 @@
 					}
 				]
 			: []),
-		{ key: 'game-time', label: t('history.gameLength'), value: gameLength },
+		// The day or night before the length, as on the corner's line (Trevor, 2026-10-24).
+		{
+			key: 'game-time',
+			label: t('history.gameLength'),
+			value: phase && gameLength ? `${phase} · ${gameLength}` : (phase ?? gameLength)
+		},
 		{
 			key: 'watchers',
 			label: t('modes.info.watchers'),
