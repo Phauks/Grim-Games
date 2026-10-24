@@ -99,6 +99,30 @@ describe('publicProjection', () => {
 		});
 	});
 
+	it("carries the board corner's lines, and nothing else (Trevor, 2026-10-24)", () => {
+		const { game } = busyGame();
+		expect(publicProjection(game)).not.toHaveProperty('corner');
+		const corner = {
+			modes: ['World Cup', 'Djinn limit'],
+			joinCode: true,
+			phase: { kind: 'night', number: 2, secret: 'x' } as { kind: 'night'; number: number },
+			gameTime: { startedAt: 1000 },
+			watchers: 3,
+			grimoire: 'secret'
+		};
+		expect(publicProjection(game, undefined, undefined, corner).corner).toEqual({
+			modes: ['World Cup', 'Djinn limit'],
+			joinCode: true,
+			phase: { kind: 'night', number: 2 },
+			gameTime: { startedAt: 1000 },
+			watchers: 3
+		});
+		// Lines the board hides are left out.
+		expect(publicProjection(game, undefined, undefined, { modes: [] }).corner).toEqual({
+			modes: []
+		});
+	});
+
 	it('leaks no characters, alignments, reminders, overrides, bluffs, rule characters or bag', () => {
 		const { game } = busyGame();
 		const json = JSON.stringify(publicProjection(game));

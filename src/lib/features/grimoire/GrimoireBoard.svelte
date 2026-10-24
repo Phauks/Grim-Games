@@ -125,6 +125,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import BoardCorner from './BoardCorner.svelte';
+	import { boardPhase, cornerLines } from './corner-lines.ts';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
@@ -886,17 +887,28 @@
 	/** When Start game was tapped, for Game time in the corner; read again when it is. */
 	let startedRead = $state(0);
 	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
-	/**
-	 * The night or day in play, for the corner (Trevor, 2026-10-23): Setup until Start game,
-	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day.
-	 */
+	/** The night or day in play, for the corner (corner-lines.ts). */
 	const phase = $derived(
-		startedAt === undefined
-			? t('day.setup')
-			: game.pastDays.length === 0 || grimoire.nightRunning || grimoire.nightUnderway
-				? t('day.nightNumber', { number: game.pastDays.length + 1 })
-				: t('day.titleNumber', { number: game.pastDays.length })
+		boardPhase(
+			startedAt !== undefined,
+			game.pastDays.length,
+			grimoire.nightRunning || grimoire.nightUnderway
+		)
 	);
+	/** The corner's lines, which the room's phones show too (Trevor, 2026-10-24). */
+	const cornerInfo = $derived(
+		cornerLines({
+			gameId: game.gameId,
+			phase,
+			startedAt,
+			endedAt: ended?.endedAt,
+			watchers: watcherCount,
+			watching
+		})
+	);
+	$effect(() => {
+		if (!watching) roomHost().showCorner(game.gameId, cornerInfo);
+	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -1344,11 +1356,10 @@
 		<BoardCorner
 			{game}
 			{watching}
-			{watcherCount}
+			corner={cornerInfo}
 			fitRoom={fitCorner}
 			{width}
 			{rootFont}
-			{phase}
 			{startedAt}
 			endedAt={ended?.endedAt}
 			onEdit={editGameInfo}
@@ -1539,7 +1550,12 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			{@const town = publicProjection(game, publicTravellerTest(game.gameId, characters), layout)}
+			{@const town = publicProjection(
+				game,
+				publicTravellerTest(game.gameId, characters),
+				layout,
+				cornerInfo
+			)}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
 			<PlayerScriptTabs
@@ -1554,6 +1570,7 @@
 							seats: town.seats,
 							layout: town.layout,
 							storytellerName: town.storytellerName,
+							corner: town.corner,
 							gameId: game.gameId,
 							guessKey: `storyteller:${game.gameId}`
 						}}

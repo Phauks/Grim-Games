@@ -2,20 +2,22 @@
 	import type { ScriptMeta } from '#lib/core/data/index.ts';
 	import type { Game } from '#lib/core/model/index.ts';
 	import { gameClock } from '#lib/core/rules/index.ts';
+	import type { PublicCorner } from '#lib/core/sync/public-projection.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { gameModeNames } from './game-mode-name.ts';
+	import { phaseText } from './corner-lines.ts';
 
 	/**
 	 * The board's lower left corner (Trevor, 2026-10-17): the script's name, small and clear of
 	 * the seats, with the game's mode and rules, the author, the Storyteller, the join code and
 	 * Game time under it, and who watches above it. A player's grim shows the same corner
-	 * (plan J13), from its script and Storyteller, with nothing to open or share.
+	 * (plan J13), from its script and the lines the Storyteller's board sends (corner-lines.ts),
+	 * with nothing to open or share.
 	 */
 	interface Props {
 		/** The Storyteller's game; a player's grim gives `meta` and `storytellerName` instead. */
@@ -24,16 +26,18 @@
 		storytellerName?: string;
 		/** A spectator's board: nothing to share or edit. */
 		watching?: boolean;
-		/** Spectators on this game's view-only link. */
-		watcherCount?: number;
+		/** The lines under the name, as the Storyteller's board shows them (corner-lines.ts). */
+		corner?: PublicCorner;
+		/** The join code to show; the room this device runs, if not given. */
+		roomCode?: string;
+		/** The script's logo before its name, on a player's grim (Trevor, 2026-10-24). */
+		logo?: string;
 		/** How wide the corner may be for a given height, in px (corner-room.ts). */
 		fitRoom: (height: number) => number;
 		/** The board's width and the root font size, in px. */
 		width: number;
 		rootFont: number;
-		/** The night or day in play, or Setup before the game starts; none on a player's grim. */
-		phase?: string;
-		/** When the game started and ended, for Game time. */
+		/** When the game started and ended, for the Game info sheet. */
 		startedAt?: number;
 		endedAt?: number;
 		onEdit?: (changes: GameInfoChanges) => void;
@@ -51,11 +55,12 @@
 		meta: givenMeta,
 		storytellerName,
 		watching = false,
-		watcherCount = 0,
+		corner,
+		roomCode: givenCode,
+		logo,
 		fitRoom,
 		width,
 		rootFont,
-		phase,
 		startedAt,
 		endedAt,
 		onEdit,
@@ -70,7 +75,8 @@
 	 * A game played in an alternative mode says so where the script's name is (Trevor,
 	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
 	 */
-	const modeNames = $derived(game ? gameModeNames(game.gameId) : []);
+	const modeNames = $derived(corner?.modes ?? []);
+	const watcherCount = $derived(corner?.watchers ?? 0);
 	const meta = $derived(game ? game.script.meta : givenMeta);
 	const storyteller = $derived((game ? game.storytellerName : storytellerName)?.trim());
 	/**
@@ -83,28 +89,33 @@
 	/** The mode, then each special rule, a line each under the name (Trevor, 2026-10-19). */
 	const modeLines = $derived(modeInName ? modeNames.slice(1) : modeNames);
 	/** The join code under the script's name (a Board setting, on by default). */
-	const showRoomCode = $derived(!!game && !watching && preferences.current.assistance.roomCode);
-	const roomCode = $derived(roomHost().code);
+	const showRoomCode = $derived(!!corner?.joinCode);
+	const roomCode = $derived(givenCode ?? roomHost().code);
 	/**
 	 * How long the game has run, from Start game to End game (Trevor, 2026-10-23), under the
 	 * join code; None until the first night begins. A Board setting, on by default.
 	 */
-	const showGameClock = $derived(!!game && !watching && preferences.current.assistance.gameClock);
+	const showGameClock = $derived(!!corner?.gameTime);
+	const clockStart = $derived(corner?.gameTime?.startedAt);
+	const clockEnd = $derived(corner?.gameTime?.endedAt);
 	/** The night or day in play (Trevor, 2026-10-23), a Board setting, on by default. */
-	const showPhase = $derived(phase !== undefined && preferences.current.assistance.boardPhase);
+	const showPhase = $derived(!!corner?.phase);
+	const phase = $derived(corner?.phase ? phaseText(corner.phase) : undefined);
 	/** The phase and Game time share one line, so the day or night never costs the corner one. */
 	const showClockLine = $derived(showGameClock || showPhase);
 	let clockNow = $state(Date.now());
 	$effect(() => {
-		if (!showGameClock || startedAt === undefined || endedAt !== undefined) return;
+		if (!showGameClock || clockStart === undefined || clockEnd !== undefined) return;
 		clockNow = Date.now();
 		const tick = setInterval(() => (clockNow = Date.now()), 1000);
 		return () => clearInterval(tick);
 	});
 	const gameLengthText = $derived(
-		startedAt === undefined
+		clockStart === undefined
 			? t('common.none')
-			: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, endedAt))
+			: gameClock.formatGameLength(
+					gameClock.gameLength(clockStart, Math.max(clockNow, clockStart), clockEnd)
+				)
 	);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
@@ -165,6 +176,15 @@
 		>{/if}
 {/snippet}
 
+{#snippet codeLine()}
+	<span class="room-code-line"
+		>{t('room.joinCode')}
+		<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
+		>{#if showClockLine && !clockFits}
+			· {@render clockLine(true)}{/if}</span
+	>
+{/snippet}
+
 {#if showTitle && meta?.name}
 	<!-- Small in the lower left corner, clear of the seats (Trevor, 2026-10-17). -->
 	<p
@@ -197,7 +217,13 @@
 					class:mode={modeInName}
 					data-testid={modeInName ? 'game-mode' : undefined}>{meta.name}</span
 				></ModeMenu
-			>{:else}<span class="script-name">{meta.name}</span>{/if}
+			>{:else}<span class="name-line"
+				>{#if logo}<ScriptLogo src={logo} class="corner-logo" />{/if}<span
+					class="script-name"
+					class:mode={modeInName}
+					data-testid={modeInName ? 'game-mode' : undefined}>{meta.name}</span
+				></span
+			>{/if}
 		<!-- The mode and rules take the author's line: a line each where the corner has room
 		     for them all (corner-room.ts), else one line joined with " + ". -->
 		{#each stackRules ? modeLines : modeLines.length ? [modeLines.join(' + ')] : [] as line, i (i)}<span
@@ -211,17 +237,13 @@
 			>{/if}
 		<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
 		     place before a room opens, so nothing moves when its code arrives. -->
-		{#if showRoomCode}<button
+		{#if showRoomCode && onShare}<button
 				type="button"
 				class="room-code"
 				data-testid="board-room-code"
-				onclick={onShare}
-				><span class="room-code-line"
-					>{t('room.joinCode')}
-					<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
-					>{#if showClockLine && !clockFits}
-						· {@render clockLine(true)}{/if}</span
-				></button
+				onclick={onShare}>{@render codeLine()}</button
+			>{:else if showRoomCode}<span class="room-code" data-testid="board-room-code"
+				>{@render codeLine()}</span
 			>{/if}
 		<!-- The game's length (Trevor, 2026-10-23), kept in place before the first night so
 		     nothing moves when it starts. -->
@@ -284,6 +306,21 @@
 	.corner-title .script-name {
 		font-size: 0.9rem;
 	}
+	/* The logo, then the name cut short beside it. */
+	.name-line {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		min-width: 0;
+	}
+	.name-line .script-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.name-line :global(.corner-logo) {
+		width: 1.6rem;
+		height: 1.6rem;
+	}
 	.corner-title .author {
 		font-size: 0.7rem;
 		color: var(--on-surface-muted);
@@ -330,7 +367,10 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.room-code::before {
+	span.room-code {
+		pointer-events: none;
+	}
+	button.room-code::before {
 		content: '';
 		position: absolute;
 		inset: 50% auto auto 50%;

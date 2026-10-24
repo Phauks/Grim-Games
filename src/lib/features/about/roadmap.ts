@@ -83,6 +83,14 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'J20', title: 'Every Share opens the same share screen, with the room code in a room' },
 			{ id: 'J21', title: "The board's Script has the players' Grim and Notes tabs" },
 			{ id: 'J22', title: 'QR settings in a dialog with the QR code on top' },
+			{ id: 'K1', title: "The player's grim corner shows what the board's corner shows" },
+			{ id: 'K2', title: "Players see the script's logo next to its name" },
+			{ id: 'K3', title: 'Notes: one dashed New in the list, for a note or a scratch pad' },
+			{
+				id: 'K4',
+				title: 'Guess a seat as any Townsfolk, Outsider, Minion or Demon, or Good or Evil'
+			},
+			{ id: 'K5', title: 'Notes on each seat, written from the grim' },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
 		]
 	},
