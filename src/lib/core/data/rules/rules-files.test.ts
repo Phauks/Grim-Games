@@ -45,6 +45,14 @@ describe('parseCharacterRules', () => {
 		expect(parse({ onNominated: { ...onNominated, effect: 'swap' } }).issues).toHaveLength(1);
 	});
 
+	it('reads which deaths still let a player nominate, and rejects an empty or bad list', () => {
+		const nominatesWhenDead = { cause: ['demon'] };
+		expect(parse({ nominatesWhenDead }).rules).toEqual({ nominatesWhenDead });
+		expect(parse({ nominatesWhenDead: { cause: [] } }).issues).toHaveLength(1);
+		expect(parse({ nominatesWhenDead: { cause: 'demon' } }).issues).toHaveLength(1);
+		expect(parse({ nominatesWhenDead: { cause: ['demon'], twice: true } }).issues).toHaveLength(1);
+	});
+
 	it('reads a reminder prompt', () => {
 		expect(parse({ reminderPrompts: { Dead: 'markDead' } })).toEqual({
 			rules: { reminderPrompts: { Dead: 'markDead' } },

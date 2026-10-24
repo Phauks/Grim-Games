@@ -3,6 +3,9 @@
 	"onDeath": {
 		"by": "demon"
 	},
+	"nominatesWhenDead": {
+		"cause": ["demon"]
+	},
 	"reminderTargets": {
 		"Has Ability": {
 			"seat": "self",

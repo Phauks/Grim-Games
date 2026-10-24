@@ -1,8 +1,13 @@
 /** Today's nominations, from the day log (https://wiki.bloodontheclocktower.com/Glossary, "Nomination"). */
 import { describe, expect, it } from 'vitest';
-import type { Command } from '#lib/core/engine/index.ts';
+import { dispatch, type Command } from '#lib/core/engine/index.ts';
 import { castGame } from '#lib/core/model/fixtures.test-support.ts';
-import { characterNominationPrompts, seatNominations, todaysNominations } from './nominations.ts';
+import {
+	characterNominationPrompts,
+	mayNominate,
+	seatNominations,
+	todaysNominations
+} from './nominations.ts';
 
 const nominate =
 	(by: number, who: number) =>
@@ -34,6 +39,53 @@ describe('seatNominations', () => {
 			received: { nominator: seats[2] }
 		});
 		expect(seatNominations(session.game, seats[1]).made).toBeUndefined();
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Glossary ("Nomination"): dead players may not nominate.
+// https://wiki.bloodontheclocktower.com/Banshee: once the Demon has killed them, they may (the
+// Banshee's rules file, `nominatesWhenDead`).
+describe('mayNominate', () => {
+	const die =
+		(seat: number, cause?: 'demon' | 'execution' | 'imp') =>
+		(s: string[]): Command => ({
+			type: 'SetDead',
+			seatId: s[seat],
+			dead: true,
+			...(cause ? { cause } : {})
+		});
+
+	it('lets the living nominate and not the dead', () => {
+		const { session, ctx, seats } = castGame(['chef', 'empath', 'imp'], die(1, 'demon'));
+		expect(mayNominate(session.game, seats[0], ctx.characters)).toBe(true);
+		expect(mayNominate(session.game, seats[1], ctx.characters)).toBe(false);
+	});
+
+	it('lets a Banshee the Demon killed nominate', () => {
+		const byDemon = castGame(['banshee', 'chef', 'imp'], die(0, 'demon'));
+		expect(mayNominate(byDemon.session.game, byDemon.seats[0], byDemon.ctx.characters)).toBe(true);
+		const byImp = castGame(['banshee', 'chef', 'imp'], die(0, 'imp'));
+		expect(mayNominate(byImp.session.game, byImp.seats[0], byImp.ctx.characters)).toBe(true);
+	});
+
+	it('does not let an executed Banshee nominate', () => {
+		const { session, ctx, seats } = castGame(['banshee', 'chef', 'imp'], die(0, 'execution'));
+		expect(mayNominate(session.game, seats[0], ctx.characters)).toBe(false);
+	});
+
+	it('offers a Banshee whose death has no recorded cause', () => {
+		const { session, ctx, seats } = castGame(['banshee', 'chef', 'imp'], die(0));
+		expect(mayNominate(session.game, seats[0], ctx.characters)).toBe(true);
+	});
+
+	it('warns on a dead nominator, but not on a Banshee the Demon killed', () => {
+		const warned = (cast: string[]) => {
+			const { session, ctx, seats } = castGame(cast, die(0, 'demon'));
+			const result = dispatch(session, nominate(0, 2)(seats), ctx);
+			return result.ok ? result.warnings.map((w) => w.code) : [];
+		};
+		expect(warned(['chef', 'empath', 'imp'])).toContain('dead-nominator');
+		expect(warned(['banshee', 'chef', 'imp'])).not.toContain('dead-nominator');
 	});
 });
 

@@ -10,7 +10,11 @@
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
 import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rules.ts';
-import { readDayReminders, type DayReminderRules } from './day-reminder-rules.ts';
+import {
+	readDayReminders,
+	type DayReminderRules,
+	type DeathCauseMatch
+} from './day-reminder-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
@@ -108,6 +112,13 @@ export interface CharacterRules {
 	 * Virgin). Once used, the character's "No Ability" reminder marks it spent.
 	 */
 	onNominated?: { by: CharacterType; effect: NominatedEffect };
+	/**
+	 * Its player may still nominate once dead, when the death's `cause` is one of these ('demon'
+	 * also matches any Demon's id; an unrecorded cause counts). Dead players may not nominate
+	 * otherwise (https://wiki.bloodontheclocktower.com/Glossary, "Nomination"); the Banshee killed
+	 * by the Demon may (https://wiki.bloodontheclocktower.com/Banshee).
+	 */
+	nominatesWhenDead?: { cause: readonly DeathCauseMatch[] };
 	/**
 	 * The ability kills at night: the Demon's kill or another ability's (`by`), any player or
 	 * only its own (`targets: self`, the Gambler), and ignoring protection (the Assassin).
@@ -278,6 +289,7 @@ export const RULE_KEYS = [
 	'learns',
 	'answers',
 	'onNominated',
+	'nominatesWhenDead',
 	'dayClaim',
 	'impairs',
 	'registersAs',
@@ -403,6 +415,22 @@ export function parseCharacterRules(
 			const by = readEnum(raw.onNominated, 'by', CHARACTER_TYPES, at, issues, true);
 			const effect = readEnum(raw.onNominated, 'effect', NOMINATED_EFFECTS, at, issues, true);
 			if (by && effect) rules.onNominated = { by, effect };
+		}
+	}
+	if (raw.nominatesWhenDead !== undefined) {
+		const at = `${path}.nominatesWhenDead`;
+		if (!isObject(raw.nominatesWhenDead)) {
+			issues.add(at, `expected object, got ${describe(raw.nominatesWhenDead)}`);
+		} else {
+			checkKeys(raw.nominatesWhenDead, ['cause'], at, issues);
+			const cause = raw.nominatesWhenDead.cause;
+			if (
+				!Array.isArray(cause) ||
+				cause.length === 0 ||
+				!cause.every((c) => typeof c === 'string' && c !== '')
+			) {
+				issues.add(`${at}.cause`, 'expected a list of death causes or character ids');
+			} else rules.nominatesWhenDead = { cause: cause as string[] };
 		}
 	}
 	const dayClaim = readEnum(raw, 'dayClaim', DAY_CLAIMS, path, issues, false);

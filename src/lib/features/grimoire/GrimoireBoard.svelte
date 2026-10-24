@@ -44,6 +44,7 @@
 		onDeathTrigger,
 		stepNightNumbers,
 		todaysNominations,
+		mayNominate,
 		characterNominationPrompts,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
@@ -115,9 +116,7 @@
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
-	import SeatChooser from './SeatChooser.svelte';
-	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
-	import { recordNomination } from './record-nomination.ts';
+	import NominationChooser from './NominationChooser.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
@@ -200,15 +199,17 @@
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	// Who nominated and who was nominated today, for the marks on the seats (Track nominations).
 	/**
-	 * A seat's nomination marks (Trevor, 2026-10-23): on every living player, greyed until
-	 * they happen, as the ghost vote shows on the dead. Not on the dead, unless the player
-	 * was part of a nomination today (they nominated, then died, and the day goes on).
+	 * A seat's nomination marks (Trevor, 2026-10-23): on every player, greyed until they
+	 * happen, as the ghost vote shows on the dead. The dead may still be nominated but not
+	 * nominate (Trevor, 2026-10-24), so they show only the gavel, unless their character may
+	 * (`mayNominate`) or they nominated before they died.
 	 */
-	function seatNominationMarks(seat: { seatId: SeatId; dead: boolean }) {
+	function seatNominationMarks(seat: { seatId: SeatId }) {
 		if (!nominatedToday) return undefined;
 		const made = nominatedToday.made.has(seat.seatId);
 		const received = nominatedToday.received.has(seat.seatId);
-		return !seat.dead || made || received ? { made, received } : undefined;
+		const nominates = made || mayNominate(game, seat.seatId, characters);
+		return { made: nominates ? made : undefined, received };
 	}
 	const nominatedToday = $derived.by(() => {
 		if (!preferences.current.assistance.trackNominations) return undefined;
@@ -656,15 +657,16 @@
 			...characterNominationPrompts(grimoire.game, nomination, characters)
 		];
 	}
-	/** The seat whose nomination marks were tapped: who did they nominate? */
-	let nominatingFrom = $state<SeatId>();
-	function nominateFrom(nominee: SeatId | undefined) {
-		const seatId = nominatingFrom;
-		nominatingFrom = undefined;
-		if (seatId === undefined) return;
-		const pair = recordNomination(grimoire, seatId, 'made', nominee);
-		if (pair) nominated(pair);
+	/**
+	 * The seat whose nomination marks were tapped: who did they nominate? A player who may
+	 * not nominate (the dead) is asked who nominated them instead.
+	 */
+	let nominatingFrom = $state<{ seatId: SeatId; side: 'made' | 'received' }>();
+	function askNomination(seatId: SeatId) {
+		const made = seatNominationMarks({ seatId })?.made;
+		nominatingFrom = { seatId, side: made === undefined ? 'received' : 'made' };
 	}
+
 	let endNightOpen = $state(false);
 	let endDayOpen = $state(false);
 	/**
@@ -1102,7 +1104,7 @@
 							: part === 'note'
 								? editNote(seat.seatId)
 								: part === 'nominate'
-									? (nominatingFrom = seat.seatId)
+									? askNomination(seat.seatId)
 									: openSeat(seat.seatId))}
 					onHold={seatArr.arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
 					onGhostVote={() =>
@@ -1500,17 +1502,7 @@
 />
 
 <!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
-<SeatChooser
-	open={nominatingFrom !== undefined}
-	title={nominatingFrom === undefined
-		? ''
-		: `Who did ${seatLabelFor(game, nominatingFrom)} nominate?`}
-	{game}
-	{characters}
-	exclude={nominatingFrom}
-	onNone={() => nominateFrom(undefined)}
-	onChoose={(nominee) => nominateFrom(nominee)}
-/>
+<NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 

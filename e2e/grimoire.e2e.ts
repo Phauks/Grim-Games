@@ -5724,8 +5724,8 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 
 // Trevor (2026-10-23): tapping a seat's nomination marks asks who that player nominated, and
 // tracking feeds nomination abilities: a Townsfolk who nominates the Virgin is executed
-// straight away (https://wiki.bloodontheclocktower.com/Virgin). The dead have no marks unless
-// they took part in a nomination today.
+// straight away (https://wiki.bloodontheclocktower.com/Virgin). The dead keep only the gavel,
+// unless they nominated today before dying.
 test('tapping the nomination marks records a nomination, and the Virgin executes a Townsfolk', async ({
 	page
 }) => {
@@ -5760,7 +5760,8 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 	await expect(
 		seats.nth(1).getByTestId('nominator-mark').and(page.locator('[data-on]'))
 	).toHaveCount(1);
-	// A player who died without nominating has none.
+	// A player who died without nominating may still be nominated, but not nominate
+	// (Trevor, 2026-10-24): only the gavel.
 	const empath = await openSeat(page, 4);
 	await empath.getByRole('button', { name: 'Status: Alive' }).tap();
 	await page
@@ -5768,8 +5769,9 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 		.getByRole('button', { name: 'The Demon' })
 		.tap();
 	await closeSheet(page);
-	await expect(seats.nth(3).getByTestId('nomination-marks')).toHaveCount(0);
-	await expect(page.getByTestId('nomination-marks')).toHaveCount(7);
+	await expect(seats.nth(3).getByTestId('nominated-mark')).toHaveCount(1);
+	await expect(seats.nth(3).getByTestId('nominator-mark')).toHaveCount(0);
+	await expect(page.getByTestId('nomination-marks')).toHaveCount(8);
 });
 
 // Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented

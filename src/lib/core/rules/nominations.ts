@@ -8,7 +8,7 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import type { NominatedEffect } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
 
@@ -28,6 +28,23 @@ export function seatNominations(
 	const made = today.find((n) => n.nominator === seatId);
 	const received = today.find((n) => n.nominee === seatId);
 	return { ...(made ? { made } : {}), ...(received ? { received } : {}) };
+}
+
+/**
+ * Whether a player may nominate (https://wiki.bloodontheclocktower.com/Glossary, "Nomination"):
+ * the living may, the dead may not, unless their character's rules say they still may after
+ * that kind of death (`nominatesWhenDead`, the Banshee killed by the Demon). A death whose
+ * cause was not recorded counts, so the Storyteller is still offered the choice.
+ */
+export function mayNominate(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	if (!registersAsDead(game, seatId)) return true;
+	const characterId = trueCharacter(game, seatId, characters);
+	const rule = characterId === undefined ? undefined : rulesOf(characterId, characters);
+	const wanted = rule?.nominatesWhenDead?.cause;
+	if (!wanted) return false;
+	const cause = game.seats[seatId]?.deathCause;
+	if (cause === undefined || wanted.includes(cause)) return true;
+	return wanted.includes('demon') && characters.get(cause)?.type === 'demon';
 }
 
 /** A character's ability a nomination sets off, for the board to offer (warn, never lock). */

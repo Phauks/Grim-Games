@@ -42,7 +42,7 @@ export const DAY_DECIDERS: Deciders<
 	Nominate(game, command, ctx, warn) {
 		const nominator = seatOf(game, command.nominator).seatId;
 		const nominee = seatOf(game, command.nominee).seatId;
-		checkNomination(game, nominator, nominee, warn);
+		checkNomination(game, ctx.characters, nominator, nominee, warn);
 		return [
 			{
 				type: 'DayEntryAdded',
@@ -59,7 +59,7 @@ export const DAY_DECIDERS: Deciders<
 			warn('no-change', 'the nomination is unchanged');
 			return [];
 		}
-		checkNomination(game, nominator, nominee, warn, entry.entryId);
+		checkNomination(game, ctx.characters, nominator, nominee, warn, entry.entryId);
 		return [{ type: 'DayEntryReplaced', entry: { ...entry, nominator, nominee } }];
 	},
 
