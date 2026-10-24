@@ -61,14 +61,17 @@ test('New game in Game info asks first, then starts the next game with the same 
 	info = await openGameInfo(page);
 	await info.getByTestId('game-info-new-game').tap();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	// New game in a sheet over the board: script, mode and room vote, no preview.
+	// New game in a sheet over the board: script, mode and room vote, and the same script
+	// preview as the New game screen (Trevor, 2026-10-24).
 	const newGame = page.getByRole('dialog', { name: 'New game' });
 	await expect(newGame.getByRole('button', { name: 'Room vote' })).toBeVisible();
-	await expect(newGame.getByTestId('script-preview')).toHaveCount(0);
+	const preview = newGame.getByTestId('script-preview');
+	await expect(preview).toContainText('Washerwoman');
 	await newGame
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Bad Moon Rising', { exact: true })
 		.tap();
+	await expect(preview).toContainText('Grandmother');
 	await newGame.getByRole('button', { name: 'Start game' }).tap();
 
 	// Character selection of the next game, then its board: the same seats and names.
