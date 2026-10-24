@@ -17,7 +17,7 @@
 	let { value, onChange, testid }: Props = $props();
 </script>
 
-<div class="avatar-setting" data-testid={testid}>
+<div class="avatar-setting" data-setting data-testid={testid}>
 	<SettingToggle
 		label={t('player.avatar')}
 		checked={value === 'initials'}

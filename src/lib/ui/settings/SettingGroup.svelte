@@ -21,7 +21,7 @@
 	sits left of its settings and stays in view while they scroll past. Narrow: the box sits
 	above them and stays under the section's name row until the group has scrolled away.
 -->
-<section class="setting-group" aria-labelledby="{id}-title">
+<section class="setting-group" data-setting aria-labelledby="{id}-title">
 	<div class="layout">
 		<div class="box" data-testid={testid}>
 			<h3 id="{id}-title">{title}</h3>
@@ -36,10 +36,10 @@
 		container-type: inline-size;
 		margin: 0 0 var(--space-5);
 	}
-	/* A line between groups, so each kind of token reads as its own (Trevor, 2026-10-18). */
-	:global(.setting-group) + .setting-group {
+	/* A line above, as between any two settings (ui/base.css), so each kind of token reads as
+	   its own (Trevor, 2026-10-18); room under it before the box. */
+	:global([data-setting]) + .setting-group {
 		padding-top: var(--space-4);
-		border-top: 1px solid var(--border);
 	}
 	.layout {
 		display: grid;

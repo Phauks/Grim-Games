@@ -117,7 +117,6 @@
 	}
 	ul {
 		display: grid;
-		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -130,7 +129,10 @@
 		min-height: var(--tap-target);
 		padding: 0 var(--space-3);
 		border: 0;
-		border-radius: var(--radius-md);
+		/* A line under every section, as on phones, so each name reads as its own row
+		   (Trevor, 2026-10-24). */
+		border-bottom: 1px solid var(--border);
+		border-radius: 0;
 		background: none;
 		color: var(--on-surface);
 		font-family: var(--font-control);
@@ -206,21 +208,6 @@
 		nav {
 			border-right: 0;
 			padding-right: 0;
-		}
-		nav button {
-			border-bottom: 1px solid var(--border);
-			border-radius: 0;
-		}
-		@media (hover: hover) and (pointer: fine) {
-			nav button:not([aria-current='page']):hover {
-				background: var(--surface-hover);
-			}
-		}
-		/* Wide windows: room for every section name on one line. */
-		@media (min-width: 64rem) {
-			.layout {
-				grid-template-columns: calc(15 * var(--u)) 1fr;
-			}
 		}
 		nav button[aria-current='page'] {
 			background: none;
