@@ -48,7 +48,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
 	import { setupSelection } from './selection.svelte.ts';
-	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
+	import { duplicatesAllowedIn, gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import { requiredInBag } from './required.ts';
 	import { afterTownBag } from '#lib/features/modes/town-setup.ts';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
@@ -232,6 +232,8 @@
 	const travellersInBag = $derived(
 		game ? (gameModeOf(game.gameId)?.parts.travellers?.inBag ?? 0) : 0
 	);
+	/** Characters may have several copies (Duplicate Characters, Trevor 2026-10-24). */
+	const duplicatesAllowed = $derived(game ? duplicatesAllowedIn(game.gameId) : undefined);
 	const analysis = $derived(
 		analyseSelection({
 			players: s.players,
@@ -240,7 +242,8 @@
 			scriptOrder,
 			lookup,
 			findByName,
-			travellersInBag
+			travellersInBag,
+			duplicatesAllowed
 		})
 	);
 	const plan = $derived(
@@ -573,7 +576,8 @@
 							? 1
 							: 0
 						: (s.selection[character.id] ?? 0)}
-					duplicates={!isRuleCharacter(character.type) && canDuplicate(character, inPlay)}
+					duplicates={!isRuleCharacter(character.type) &&
+						canDuplicate(character, inPlay, duplicatesAllowed)}
 					jinxedWith={jinxPartners[character.id]}
 					offScript={offScriptIds.has(character.id)}
 					bluff={bluffIds.has(character.id)}

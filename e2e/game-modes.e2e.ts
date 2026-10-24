@@ -1538,6 +1538,54 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	await expect(page).toHaveURL(board);
 });
 
+// Trevor (2026-10-24): "add special rule, Duplicate Characters. There can be multiple copies
+// of characters in the bag."
+test('Duplicate Characters lets any character but a Demon be chosen twice and sit on two seats', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await chooseRules(page, 'Duplicate Characters');
+	const panel = modesPanel(page);
+	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	const chef = page
+		.getByRole('button', { name: 'Chef', exact: true })
+		.and(page.locator('[aria-pressed]'));
+	await chef.tap();
+	await page.getByRole('button', { name: 'Add another Chef' }).tap();
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('2');
+	await noSidewaysScroll(page);
+	await toBoard(page);
+	const assign = async (number: number, name: string) => {
+		await page.getByRole('button', { name: new RegExp(`^Seat ${number}:`) }).tap();
+		const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await page.keyboard.press('Escape');
+		await expect(sheet).toBeHidden();
+	};
+	const flagged = page.getByText('That character is already on another seat.');
+	await assign(1, 'Chef');
+	await assign(2, 'Chef');
+	await expect(
+		page.locator('[data-testid="seat"][aria-label^="Seat 2: no name, Chef"]')
+	).toBeAttached();
+	await expect(flagged).toHaveCount(0);
+	// A second Demon is still flagged unless the rule's Duplicate Demons switch is on (Trevor,
+	// 2026-10-24).
+	await assign(3, 'Imp');
+	await assign(4, 'Imp');
+	await expect(flagged).toBeVisible();
+});
+
 test('Start game restates the special rules first, and Back returns to New game', async ({
 	page
 }) => {

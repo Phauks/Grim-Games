@@ -5,7 +5,12 @@
  *
  * https://wiki.bloodontheclocktower.com/Setup
  */
-import { canDuplicate, isNotDealt, isReplacedAfterDraw } from './bag-characters.ts';
+import {
+	canDuplicate,
+	isNotDealt,
+	isReplacedAfterDraw,
+	type AnyDuplicates
+} from './bag-characters.ts';
 import type { Character, CharacterId, CharacterName } from '#lib/core/data/types.ts';
 import { SEATED_TYPES, splitPlayers, type SeatedType, type TypeCounts } from './distribution.ts';
 import { setupModifierFor, type CountOp, type SetupModifier } from './setup-modifiers.ts';
@@ -25,6 +30,8 @@ export interface SetupInput {
 	findByName?: (name: string) => CharacterId | undefined;
 	/** Looks up a character by id, for requirements such as Huntsman → Damsel. */
 	findById?: (id: CharacterId) => Character | undefined;
+	/** A game rule lets characters have more than one copy (Duplicate Characters). */
+	duplicatesAllowed?: AnyDuplicates;
 }
 
 export interface AppliedModifier extends SetupModifier {
@@ -299,7 +306,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	for (const [id, n] of copies) {
 		if (n < 2) continue;
 		const character = input.inPlay.find((c) => c.id === id)!;
-		if (!canDuplicate(character, input.inPlay)) {
+		if (!canDuplicate(character, input.inPlay, input.duplicatesAllowed)) {
 			warnings.push({
 				code: 'duplicate',
 				message: `${character.name} is chosen ${n} times.`,

@@ -34,7 +34,7 @@ import {
 } from '#lib/core/model/index.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { endedGames } from '#lib/features/grimoire/device-notes.ts';
-import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
+import { allowedOffScriptIn, duplicatesAllowedIn } from '#lib/features/modes/game-mode.ts';
 import { IdbGameStore } from './idb-store.ts';
 
 let defaultStore: GameStore | undefined;
@@ -217,13 +217,21 @@ export class OpenGame {
 		}
 		// A character a special rule put in play from off the script is not flagged (Trevor,
 		// 2026-10-23).
+		// Nor a second seat with the same character under Duplicate Characters (2026-10-24).
 		const allowed = allowedOffScriptIn(this.game.gameId);
+		const duplicates = duplicatesAllowedIn(this.game.gameId);
 		const warnings = result.warnings.filter(
 			(w) =>
 				!(
-					w.code === 'not-on-script' &&
-					w.characters?.length &&
-					w.characters.every((id) => allowed.has(id))
+					(w.code === 'not-on-script' &&
+						w.characters?.length &&
+						w.characters.every((id) => allowed.has(id))) ||
+					(w.code === 'already-in-play' &&
+						duplicates &&
+						w.characters?.every((id) => {
+							const type = this.#characters.get(id)?.type;
+							return type !== undefined && !duplicates.notTypes?.includes(type);
+						}))
 				)
 		);
 		return { ok: true, warnings };
