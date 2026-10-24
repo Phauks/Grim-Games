@@ -39,6 +39,7 @@
 		{labelledBy}
 		value={playerSettings.current.sheetBackground}
 		{options}
+		listFitsTrigger={!compact}
 		onChange={(sheetBackground) =>
 			playerSettings.update({ sheetBackground: sheetBackground as SheetBackground })}
 	>
@@ -57,6 +58,24 @@
 	.sheet-background {
 		display: block;
 		min-width: 0;
+	}
+	/* Beside Print and Share: an icon button's size, the swatch alone, so the script's name
+	   keeps its room (the list still opens below it). */
+	.compact {
+		flex: none;
+		width: var(--tap-target);
+	}
+	.compact :global([data-scope='select'][data-part='trigger']) {
+		justify-content: center;
+		width: var(--tap-target);
+		padding: 0;
+	}
+	.compact :global([data-scope='select'][data-part='indicator']),
+	.compact :global([data-scope='select'][data-part='label']) {
+		display: none;
+	}
+	.compact :global(.value) {
+		flex: none;
 	}
 	.choice {
 		display: inline-flex;
