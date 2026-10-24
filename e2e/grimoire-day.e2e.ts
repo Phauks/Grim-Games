@@ -673,7 +673,10 @@ test('Execution asks whether the Demon voted and a Minion nominated, and places 
 	await expect(nominated).toBeChecked();
 	await endTheDay(page);
 	const token = (label: string) =>
-		page.locator(`[data-testid="board-reminder"][aria-label="${label} reminder"]`);
+		// Placed on the board, not waiting in the reminder bank.
+		page.locator(
+			`[data-testid="board-reminder"][aria-label="${label} reminder"]:not([aria-label="Reminder bank"] *)`
+		);
 	await expect(token('Demon Not Voted')).toHaveCount(1);
 	await expect(token('Minion Nominated')).toHaveCount(1);
 });
