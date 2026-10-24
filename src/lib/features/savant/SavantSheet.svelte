@@ -268,8 +268,7 @@
 	title={seatId === undefined
 		? t('savant.title')
 		: t('savant.titleSeat', { seat: seatLabel(game, seatId) })}
-	asideLabel={t('savant.earlier')}
-	asideBelow
+	pinAside={false}
 >
 	{#snippet headActions()}
 		<IconButton
@@ -279,33 +278,33 @@
 			onclick={() => (showOpen = true)}
 		/>
 	{/snippet}
-	{#snippet aside()}
-		<h3 class="pane-title">{t('savant.earlier')}</h3>
-		{#if earlier.length === 0}
-			<p class="none">{t('common.none')}</p>
-		{:else}
-			<ol class="earlier" data-testid="savant-earlier">
-				{#each earlier as given, k (k)}
-					<li>
-						<h4>
-							{given.day === 0
-								? t('day.nightNumber', { number: 1 })
-								: t('day.titleNumber', { number: given.day })}
-						</h4>
-						{#each given.statements as statement, j (j)}
-							<p class="given">
-								<span class="given-truth" data-truth={statement.truth ? 'true' : 'false'}
-									>{statement.truth ? t('savant.true') : t('savant.false')}</span
-								>
-								{statement.words}
-							</p>
-						{/each}
-						{#if given.rest}<p class="rest">{given.rest}</p>{/if}
-					</li>
-				{/each}
-			</ol>
-		{/if}
-	{/snippet}
+	{#snippet aside()}<section aria-label={t('savant.earlier')}>
+			<h3 class="pane-title">{t('savant.earlier')}</h3>
+			{#if earlier.length === 0}
+				<p class="none">{t('common.none')}</p>
+			{:else}
+				<ol class="earlier" data-testid="savant-earlier">
+					{#each earlier as given, k (k)}
+						<li>
+							<h4>
+								{given.day === 0
+									? t('day.nightNumber', { number: 1 })
+									: t('day.titleNumber', { number: given.day })}
+							</h4>
+							{#each given.statements as statement, j (j)}
+								<p class="given">
+									<span class="given-truth" data-truth={statement.truth ? 'true' : 'false'}
+										>{statement.truth ? t('savant.true') : t('savant.false')}</span
+									>
+									{statement.words}
+								</p>
+							{/each}
+							{#if given.rest}<p class="rest">{given.rest}</p>{/if}
+						</li>
+					{/each}
+				</ol>
+			{/if}
+		</section>{/snippet}
 	<div class="savant">
 		<h3 class="pane-title">{t('savant.today')}</h3>
 		<Select

@@ -279,10 +279,10 @@ test('earlier days’ Savant information sits beside today’s, which is edited 
 	await expect(savant.getByTestId('savant-line')).toHaveCount(2);
 	await expect(savant.getByRole('textbox')).toHaveCount(0);
 
-	// Side by side where there's room; stacked, today's first, on a phone.
+	// Side by side where there's room; stacked, earlier days on top, on a phone.
 	const today = await savant.getByTestId('savant-line').first().boundingBox();
 	const left = await earlier.boundingBox();
 	const wide = (page.viewportSize()?.width ?? 0) >= 700;
 	if (wide) expect(left!.x + left!.width).toBeLessThanOrEqual(today!.x);
-	else expect(left!.y).toBeGreaterThan(today!.y);
+	else expect(left!.y + left!.height).toBeLessThanOrEqual(today!.y);
 });

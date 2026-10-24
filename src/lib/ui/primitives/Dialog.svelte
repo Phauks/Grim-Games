@@ -35,21 +35,21 @@
 		 */
 		scroll?: boolean;
 		/**
+		 * A second pane: on the left once the dialog is wide enough, and on top on a phone,
+		 * e.g. a preview beside the settings it shows (Trevor, 2026-10-24: the QR settings).
+		 * Each pane scrolls on its own; the dialog itself doesn't.
+		 */
+		aside?: Snippet;
+		/**
+		 * On a phone, the aside stays on top while the rest scrolls under it (the default, for
+		 * a preview that has to stay in view); false scrolls the two together (a tall aside).
+		 */
+		pinAside?: boolean;
+		/**
 		 * Asked when ✕, Escape or a tap outside would close it; false keeps it open (a form
 		 * with unsaved changes asks first).
 		 */
 		beforeClose?: () => boolean;
-		/**
-		 * A second pane, left of the content from 40rem of the dialog's width and stacked on a
-		 * phone: a preview beside its settings, or what came before beside an editor (Trevor,
-		 * 2026-10-24: Savant information, earlier days left, today's editing right). Each pane
-		 * scrolls on its own when side by side. `full` and `max` only.
-		 */
-		aside?: Snippet;
-		/** The aside's accessible name. */
-		asideLabel?: string;
-		/** On a phone, the aside goes under the content instead of above it (history, not a preview). */
-		asideBelow?: boolean;
 	}
 
 	let {
@@ -66,10 +66,9 @@
 		headActions,
 		closeButton = true,
 		scroll = true,
-		beforeClose,
 		aside,
-		asideLabel,
-		asideBelow = false
+		pinAside = true,
+		beforeClose
 	}: Props = $props();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
@@ -109,7 +108,7 @@
 	<Portal>
 		<Dialog.Backdrop style={layerStyle(layer, 'backdrop')} />
 		<Dialog.Positioner style={layerStyle(layer, 'content')}>
-			<Dialog.Content data-size={size}>
+			<Dialog.Content data-size={size} data-panes={aside ? '' : undefined}>
 				<div class="head">
 					<div class="titled" class:with-lead={!!lead}>
 						{#if lead}<span class="lead">{@render lead()}</span>{/if}
@@ -134,17 +133,13 @@
 				</div>
 				{#if subtitle}<Dialog.Description>{@render subtitle()}</Dialog.Description
 					>{:else if description}<Dialog.Description>{description}</Dialog.Description>{/if}
-				{#if size === 'full' || size === 'max'}
-					<div class="body" data-scroll={scroll || undefined}>
-						{#if aside}
-							<div class="panes" class:aside-below={asideBelow}>
-								<section class="aside" aria-label={asideLabel}>{@render aside()}</section>
-								<div class="main">{@render children()}</div>
-							</div>
-						{:else}
-							{@render children()}
-						{/if}
+				{#if aside}
+					<div class="panes" data-pin={pinAside || undefined}>
+						<div class="aside" data-testid="dialog-aside">{@render aside()}</div>
+						<div class="pane" data-testid="dialog-pane">{@render children()}</div>
 					</div>
+				{:else if size === 'full' || size === 'max'}
+					<div class="body" data-scroll={scroll || undefined}>{@render children()}</div>
 				{:else}
 					{@render children()}
 				{/if}
@@ -186,6 +181,14 @@
 		background: var(--dialog-background);
 		color: var(--dialog-color);
 		box-shadow: var(--shadow);
+	}
+	/* Two panes (`aside`): wider than a plain dialog, its panes scrolling inside it. */
+	:global([data-scope='dialog'][data-part='content'][data-panes]) {
+		display: flex;
+		flex-direction: column;
+		width: min(100%, calc(48 * var(--u)));
+		overflow: hidden;
+		container: dialog-panes / inline-size;
 	}
 	:global([data-scope='dialog'][data-part='content'][data-size='full']) {
 		display: flex;
@@ -319,39 +322,41 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
-	/* Two panes: stacked on a phone, where the body scrolls as one; side by side from 40rem of
-	   the dialog's width, each scrolling on its own under the fixed header. */
-	.body:has(> .panes) {
-		container-type: inline-size;
-	}
+	/*
+	 * Two panes: stacked on a phone, the aside on top (held there while the other scrolls,
+	 * unless `pinAside` is false), and side by side, the aside first, once there is room.
+	 */
 	.panes {
 		display: grid;
-		gap: var(--space-4);
-		align-content: start;
-		padding-top: var(--space-3);
+		flex: 1;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: auto minmax(0, 1fr);
+		gap: var(--space-3);
+		min-height: 0;
+		margin-top: var(--space-3);
+		overflow-y: auto;
+		overscroll-behavior: contain;
 	}
-	.aside-below > .aside {
-		order: 1;
+	.panes[data-pin] {
+		overflow: hidden;
 	}
-	@container (min-width: 40rem) {
-		.panes {
-			flex: 1;
-			min-height: 0;
-			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+	.panes[data-pin] > .pane {
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	@container dialog-panes (min-width: 36rem) {
+		.panes,
+		.panes[data-pin] {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
 			grid-template-rows: minmax(0, 1fr);
-			align-content: stretch;
+			gap: var(--space-4);
+			overflow: hidden;
 		}
-		.aside-below > .aside {
-			order: 0;
-		}
-		.panes > * {
-			min-height: 0;
+		.aside,
+		.pane,
+		.panes[data-pin] > .pane {
 			overflow-y: auto;
 			overscroll-behavior: contain;
-		}
-		.aside {
-			padding-right: var(--space-4);
-			border-right: var(--card-border);
 		}
 	}
 	/* Bottom right, and in view at the bottom of a long dialog (Trevor, 2026-10-17). */
