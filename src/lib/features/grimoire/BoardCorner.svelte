@@ -37,7 +37,7 @@
 		startedAt?: number;
 		endedAt?: number;
 		onEdit?: (changes: GameInfoChanges) => void;
-		/** The join code opens Share. */
+		/** Game info's join code opens Share (ModeMenu). */
 		onShare?: () => void;
 		/** The corner's size, kept clear of reminders. */
 		titleW?: number;
@@ -87,11 +87,19 @@
 	const roomCode = $derived(roomHost().code);
 	/**
 	 * How long the game has run, from Start game to End game (Trevor, 2026-10-23), under the
-	 * join code; None until the first night begins. A Board setting, on by default.
+	 * join code; "Game time: Setup" until the first night begins (Trevor, 2026-10-24). A Board
+	 * setting, on by default.
 	 */
 	const showGameClock = $derived(!!game && !watching && preferences.current.assistance.gameClock);
-	/** The night or day in play (Trevor, 2026-10-23), a Board setting, on by default. */
-	const showPhase = $derived(phase !== undefined && preferences.current.assistance.boardPhase);
+	/**
+	 * The night or day in play (Trevor, 2026-10-23), a Board setting, on by default. Before the
+	 * game starts Game time already says Setup, so the phase waits for the first night.
+	 */
+	const showPhase = $derived(
+		phase !== undefined &&
+			preferences.current.assistance.boardPhase &&
+			!(showGameClock && startedAt === undefined)
+	);
 	/** The phase and Game time share one line, so the day or night never costs the corner one. */
 	const showClockLine = $derived(showGameClock || showPhase);
 	let clockNow = $state(Date.now());
@@ -103,7 +111,7 @@
 	});
 	const gameLengthText = $derived(
 		startedAt === undefined
-			? t('common.none')
+			? t('day.setup')
 			: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, endedAt))
 	);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
@@ -160,7 +168,7 @@
 	{/if}{#if showGameClock}<span data-testid="board-game-clock"
 			>{#if shared}<span class="visually-hidden">{t('history.gameLength')}</span>{:else}{t(
 					'history.gameLength'
-				)}{/if}
+				)}:{/if}
 			<span class="code" role="timer">{gameLengthText}</span></span
 		>{/if}
 {/snippet}
@@ -210,18 +218,15 @@
 				>{t('settings.storytellerLine', { name: storyteller })}</span
 			>{/if}
 		<!-- The room's join code, to read without opening Share (Trevor, 2026-10-22). Kept in
-		     place before a room opens, so nothing moves when its code arrives. -->
-		{#if showRoomCode}<button
-				type="button"
-				class="room-code"
-				data-testid="board-room-code"
-				onclick={onShare}
+		     place before a room opens, so nothing moves when its code arrives. Read only: Share
+		     is the toolbar's Share button (Trevor, 2026-10-24). -->
+		{#if showRoomCode}<span class="room-code" data-testid="board-room-code"
 				><span class="room-code-line"
 					>{t('room.joinCode')}
 					<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
 					>{#if showClockLine && !clockFits}
 						· {@render clockLine(true)}{/if}</span
-				></button
+				></span
 			>{/if}
 		<!-- The game's length (Trevor, 2026-10-23), kept in place before the first night so
 		     nothing moves when it starts. -->
@@ -289,21 +294,10 @@
 		color: var(--on-surface-muted);
 	}
 	.room-code {
-		position: relative;
 		display: block;
 		min-width: 0;
-		/* Text high, as the mode name (ModeMenu); the ::before keeps the tap target. */
-		min-height: 0;
-		padding: 0;
-		border: 0;
-		background: none;
 		color: var(--on-surface-muted);
-		font: inherit;
 		font-size: 0.7rem;
-		text-align: inherit;
-		cursor: pointer;
-		/* The corner lets taps through to the board; its buttons take them. */
-		pointer-events: auto;
 	}
 	/* Read only, in the join code's look, one line. */
 	.game-clock {
@@ -321,7 +315,6 @@
 		font-variant-numeric: tabular-nums;
 		letter-spacing: 0.08em;
 	}
-	/* A tap target bigger than the small corner text, without moving anything (ModeMenu). */
 	/* One line, cut short like the corner's other lines: wrapping would make the corner taller
 	   as its room shrinks, and the room would shrink again (corner-room.ts). */
 	.room-code-line {
@@ -329,13 +322,5 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.room-code::before {
-		content: '';
-		position: absolute;
-		inset: 50% auto auto 50%;
-		min-width: max(100%, var(--tap-target));
-		min-height: max(100%, var(--tap-target));
-		transform: translate(-50%, -50%);
 	}
 </style>

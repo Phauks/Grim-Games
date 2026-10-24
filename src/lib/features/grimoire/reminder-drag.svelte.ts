@@ -3,7 +3,7 @@
  * on the board, onto another seat, a Fabled or Loric, the setup tray, or (loose mode) any
  * free spot. A move goes through ReminderMoveConfirm, so it is one History entry.
  */
-import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
+import type { CharacterId } from '#lib/core/data/index.ts';
 import {
 	looseReminders,
 	ruleReminders,
@@ -44,18 +44,6 @@ export interface ReminderDrag {
 	/** Where the token is, in % of the board. */
 	at: SeatPoint;
 	target?: SeatId;
-}
-
-/**
- * A reminder being dragged, from the bank or the board: whose it is, its words and where the
- * token is, so the board or the bank can say where it came from (boardLooks.dragSource).
- */
-export interface DraggedReminder {
-	characterId: CharacterId;
-	label: ReminderLabel;
-	/** The seat it was placed for, if any, which can change its alignment. */
-	ownerSeatId?: SeatId;
-	at: SeatPoint;
 }
 
 export class ReminderDragging {
