@@ -9,8 +9,9 @@
 	import { lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
-	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import SharedBoard from '#lib/features/room/SharedBoard.svelte';
+	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
@@ -77,6 +78,21 @@
 	const seats = $derived(table?.seats ?? []);
 	const mine = $derived(player?.view?.me.seatId);
 	let guesses = $state<Guesses>(code ? readGuesses(code) : {});
+
+	/**
+	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), in place of
+	 * the town until switched off (Trevor, 2026-10-24); its History steps through on this
+	 * phone only.
+	 */
+	const final = $derived(player?.revealed);
+	let showFinal = $state(true);
+	let arrivedAt = $state(0);
+	$effect(() => {
+		if (final) arrivedAt = Date.now();
+	});
+	const over = $derived<EndedGame | undefined>(
+		final ? ({ endedAt: arrivedAt, ...player?.view?.ended } as EndedGame) : undefined
+	);
 
 	const nameOf = (seat: PublicSeat) =>
 		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
@@ -171,15 +187,22 @@
 </script>
 
 <!-- Share grim (plan R5): in its place all game, usable once the Storyteller shares it; the
-     board's own copy of this tab has no such button. -->
+     board's own copy of this tab has no such switch. -->
 {#if !town}
 	<div class="tools">
-		<Button icon="grimoire" disabled={!player?.revealed} onclick={() => (finalGrimoire.open = true)}
-			>{t('room.finalGrimoire')}</Button
-		>
+		<Toggle
+			label={t('room.finalGrimoire')}
+			checked={!!final && showFinal}
+			disabled={!final}
+			onChange={(on) => (showFinal = on)}
+		/>
 	</div>
 {/if}
-{#if !code || seats.length === 0}
+{#if final && showFinal}
+	<div class="final" data-testid="final-grimoire">
+		<SharedBoard shared={final.grimoire} {over} />
+	</div>
+{:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
 	<div
@@ -277,6 +300,12 @@
 		display: flex;
 		justify-content: flex-end;
 		margin-bottom: var(--space-2);
+	}
+	/* The Storyteller's board, with room under it for History's Previous and Next. */
+	.final {
+		position: relative;
+		height: 75dvh;
+		margin-bottom: calc(2 * var(--tray-h, var(--tap-target)));
 	}
 	.none {
 		margin: 0;
