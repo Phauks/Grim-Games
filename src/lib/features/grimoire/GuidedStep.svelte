@@ -14,7 +14,8 @@
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
-	import type { FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+	import { withChosen, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+	import { trueCharacter } from '#lib/core/model/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
@@ -128,6 +129,26 @@
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let choosing = $state<{ label: string; at?: { reminderId: string } } | undefined>();
 	let chooserOpen = $state(false);
+
+	/**
+	 * A card that shows the true character of a player the Storyteller taps first (the
+	 * Dreamer's, Trevor 2026-10-24): which player is asked here, then the card opens.
+	 */
+	let asking = $state<{ token: InfoToken; filled: FilledInfoToken } | undefined>();
+	let askOpen = $state(false);
+	function chooseCard(token: InfoToken, filled?: FilledInfoToken) {
+		if (filled?.chosenAt === undefined) return onInfoTokens(token, filled);
+		asking = { token, filled };
+		askOpen = true;
+	}
+	function chosen(seatId: SeatId) {
+		askOpen = false;
+		const ask = asking;
+		const id = trueCharacter(game, seatId, characters);
+		const character = id ? characters.get(id) : undefined;
+		if (!ask) return;
+		onInfoTokens(ask.token, character ? withChosen(ask.filled, character) : ask.filled);
+	}
 	function choose(label: string, at?: { reminderId: string }) {
 		choosing = { label, at };
 		chooserOpen = true;
@@ -301,7 +322,7 @@
 					text={step.reminder}
 					character={step.character}
 					{characters}
-					onchoose={(token, filled) => onInfoTokens(token, filled)}
+					onchoose={chooseCard}
 				/>
 			{/if}
 			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
@@ -354,6 +375,14 @@
 	{game}
 	{characters}
 	onChoose={put}
+/>
+
+<SeatChooser
+	bind:open={askOpen}
+	title={`${step?.character?.name ?? ''} chose`}
+	{game}
+	{characters}
+	onChoose={chosen}
 />
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />

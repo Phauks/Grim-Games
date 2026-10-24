@@ -5,6 +5,8 @@ export const show = {
 	'show.removeInPlay': 'Remove {name}, in play',
 	'show.inPlay': 'In play',
 	'show.notInPlayOnly': 'Not in play only',
+	'show.goodOnly': 'Good only',
+	'show.evilOnly': 'Evil only',
 	'show.random': 'Random',
 	'show.shownToPlayer': 'Shown to player',
 	'show.card': 'Card {number} of {count}',

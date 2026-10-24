@@ -4,5 +4,14 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"infoTokenCharacters": {
+		"this-player-is": {
+			"characters": ["chosen"],
+			"upTo": 2,
+			"others": "opposite-alignment",
+			"shuffle": true,
+			"offer": true
+		}
 	}
 }

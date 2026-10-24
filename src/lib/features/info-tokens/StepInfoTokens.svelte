@@ -2,12 +2,16 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
-	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
-	import { filledInfoToken, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
+	import {
+		filledInfoToken,
+		stepInfoTokens,
+		type FilledInfoToken
+	} from '#lib/core/rules/info-token-characters.ts';
 	import InfoTokenTile from './InfoTokenTile.svelte';
 
 	interface Props {
-		/** The step's night text; the info tokens it names are offered. */
+		/** The step's night text; the info tokens it names are offered, with any its rules offer. */
 		text: string | undefined;
 		/** The step's character, whose rules may fill in a card's characters. */
 		character: Character;
@@ -22,7 +26,7 @@
 	let { text, character, characters, onchoose }: Props = $props();
 
 	const tokens = $derived(
-		infoTokensNamedIn(text).map((token) => {
+		stepInfoTokens(character, text).map((token) => {
 			const filled = token.asks?.characters
 				? filledInfoToken(character, token.id, token.asks.characters)
 				: undefined;
