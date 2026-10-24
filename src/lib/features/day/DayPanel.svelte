@@ -586,6 +586,13 @@
 	:global(.footer) .day-end {
 		align-items: stretch;
 	}
+	/*
+	 * A long button ("Minion nominated") drops under the state on a narrow phone with large
+	 * text, rather than widening the row past the screen.
+	 */
+	.reminders li :global(.footer) {
+		flex-wrap: wrap;
+	}
 	:global(.footer) .day-end :global(.chip) {
 		border: 0;
 		border-inline-start: var(--card-border);
