@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AlignmentPill from './AlignmentPill.svelte';
+	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { recordNomination } from './record-nomination.ts';
 	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
@@ -641,12 +643,6 @@
 		seat={{ number, alignment: seat?.alignment }}
 	/>{/if}
 
-{#snippet team(alignment: Alignment | undefined)}
-	<strong class="team" data-team={alignment ?? 'neutral'}
-		>{alignment === 'good' ? 'Good' : alignment === 'evil' ? 'Evil' : 'Not set'}</strong
-	>
-{/snippet}
-
 <!-- Every change of state says what it is now and what it becomes (Trevor, 2026-10-16). -->
 <ConfirmDialog bind:open={changeOpen} title="Change character?" onConfirm={confirmChange}>
 	{#if seat?.characterId && changeTo}
@@ -686,21 +682,7 @@
 	{/if}
 </ConfirmDialog>
 
-<Dialog bind:open={changesOpen} title={`Character history for ${seatLabel}`}>
-	<ol class="changes" data-testid="seat-changes">
-		{#each changes as change, i (i)}
-			<li>
-				{#if change.kind === 'character'}
-					<CharacterBadge characterId={change.from} character={characters.get(change.from)} />
-					→
-					<CharacterBadge characterId={change.to} character={characters.get(change.to)} />
-				{:else}
-					{@render team(change.from)} → {@render team(change.to)}
-				{/if}
-			</li>
-		{/each}
-	</ol>
-</Dialog>
+<CharacterHistoryDialog bind:open={changesOpen} {grimoire} {seatId} />
 
 <!-- How the change affects the table: players (Travellers not counted) and the setup sheet. -->
 {#snippet table(kind: 'remove-seat' | 'remove-character', id: SeatId)}
@@ -759,12 +741,12 @@
 		{@const next = seat?.alignment === 'evil' ? 'good' : 'evil'}
 		<dl class="change">
 			<dt>Now</dt>
-			<dd>{@render seatBadge(seatId)} is {@render team(seat?.alignment)}</dd>
+			<dd>{@render seatBadge(seatId)} is <AlignmentPill alignment={seat?.alignment} /></dd>
 			<dt>Becomes</dt>
 			<dd>
-				{#if seat?.alignment === undefined}{@render team('good')} or {@render team(
-						'evil'
-					)}{:else}{@render team(next)}{/if}
+				{#if seat?.alignment === undefined}<AlignmentPill alignment="good" /> or <AlignmentPill
+						alignment="evil"
+					/>{:else}<AlignmentPill alignment={next} />{/if}
 			</dd>
 		</dl>
 		<div class="choices">
@@ -912,21 +894,6 @@
 	.change dd {
 		margin: 0;
 	}
-	.team {
-		display: inline-block;
-		padding: 0 var(--space-2);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-	}
-	.team[data-team='good'] {
-		background: var(--good);
-		color: var(--on-good);
-	}
-	.team[data-team='evil'] {
-		background: var(--evil);
-		color: var(--on-evil);
-	}
 	.off {
 		color: var(--evil);
 	}
@@ -979,15 +946,7 @@
 		font-size: 0.8rem;
 	}
 	.dropped,
-	.changes {
-		display: grid;
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.dropped li,
-	.changes li {
+	.dropped li {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;

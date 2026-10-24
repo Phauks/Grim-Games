@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AlignmentPill from './AlignmentPill.svelte';
 	import { untrack } from 'svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
@@ -194,7 +195,7 @@
 					{:else if end.characterId}
 						{@render character(end.characterId)}: no execution on day {end.day}.
 					{/if}
-					<strong class="team" data-team={end.winner}>{teamText(end.winner)}</strong>
+					<AlignmentPill alignment={end.winner} text={teamText(end.winner)} />
 					{#if end.flippedBy?.seatId && OWN_WORDING}
 						({@render seat(end.flippedBy.seatId)} flips it)
 					{/if}
@@ -242,21 +243,6 @@
 	}
 	.rule {
 		font-weight: 600;
-	}
-	.team {
-		display: inline-block;
-		padding: 0 var(--space-2);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-	}
-	.team[data-team='good'] {
-		background: var(--good);
-		color: var(--on-good);
-	}
-	.team[data-team='evil'] {
-		background: var(--evil);
-		color: var(--on-evil);
 	}
 	.winner {
 		margin-top: var(--space-2);
