@@ -20,6 +20,7 @@ import type { Reminder, ReminderId } from '#lib/core/model/index.ts';
 import {
 	bankCopies,
 	forgetUpsideDownMarks,
+	nightUnderway,
 	nightViews,
 	pastNames,
 	reminderCopyIds,
@@ -130,11 +131,7 @@ export class Grimoire {
 	 * Start game or End day.
 	 */
 	get nightUnderway(): boolean {
-		const today = `${this.game.pastDays.length}:`;
-		return (
-			this.nightDay === this.game.pastDays.length &&
-			this.nightDone.some((key) => key.startsWith(today))
-		);
+		return nightUnderway({ day: this.nightDay, done: this.nightDone }, this.game.pastDays.length);
 	}
 
 	/**

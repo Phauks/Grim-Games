@@ -33,7 +33,9 @@
 		rootFont: number;
 		/** The night or day in play, or Setup before the game starts; none on a player's grim. */
 		phase?: string;
-		/** When the game started and ended, for Game time. */
+		/** The first night has begun (gamePhase): Game time says Setup until it has. */
+		begun?: boolean;
+		/** When the game started and ended, for Game time; none for a game begun elsewhere. */
 		startedAt?: number;
 		endedAt?: number;
 		onEdit?: (changes: GameInfoChanges) => void;
@@ -56,6 +58,7 @@
 		width,
 		rootFont,
 		phase,
+		begun = false,
 		startedAt,
 		endedAt,
 		onEdit,
@@ -96,9 +99,7 @@
 	 * game starts Game time already says Setup, so the phase waits for the first night.
 	 */
 	const showPhase = $derived(
-		phase !== undefined &&
-			preferences.current.assistance.boardPhase &&
-			!(showGameClock && startedAt === undefined)
+		phase !== undefined && preferences.current.assistance.boardPhase && !(showGameClock && !begun)
 	);
 	/** The phase and Game time share one line, so the day or night never costs the corner one. */
 	const showClockLine = $derived(showGameClock || showPhase);
@@ -110,9 +111,11 @@
 		return () => clearInterval(tick);
 	});
 	const gameLengthText = $derived(
-		startedAt === undefined
+		!begun
 			? t('day.setup')
-			: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, endedAt))
+			: startedAt === undefined
+				? t('common.none')
+				: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, endedAt))
 	);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").

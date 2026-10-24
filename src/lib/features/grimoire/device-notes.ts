@@ -272,6 +272,17 @@ export interface NightView {
 	guided?: { night: 'first' | 'other'; stepId: string };
 }
 
+/**
+ * Tonight's night has begun on this device: a step of it is ticked and no new day has started
+ * since. The board and the saved games list both read it (gamePhase).
+ */
+export function nightUnderway(
+	view: { done: readonly string[]; day?: number },
+	days: number
+): boolean {
+	return (view.day ?? days) === days && view.done.some((key) => key.startsWith(`${days}:`));
+}
+
 const isNight = (v: unknown): v is 'first' | 'other' => v === 'first' || v === 'other';
 
 export function parseNightView(raw: unknown): NightView {
