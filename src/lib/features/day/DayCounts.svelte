@@ -22,7 +22,7 @@
 	const block = $derived(blockThreshold(g));
 	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
 	const teams = $derived(livingByTeam(g));
-	const ghostVotes = $derived(ghostVotesLeft(g));
+	const ghostVotes = $derived(ghostVotesLeft(g, game.characters));
 	const aliveLabel = $derived(t('day.aliveLabel', { count: teams.alive, total: g.seating.length }));
 	const goodLabel = $derived(t('day.goodLabel', { count: teams.good }));
 	const evilLabel = $derived(t('day.evilLabel', { count: teams.evil }));
@@ -100,7 +100,13 @@
 	>
 </div>
 
-<CountDialog bind:open={countOpen} game={g} count={countShown} title={countTitle} />
+<CountDialog
+	bind:open={countOpen}
+	game={g}
+	characters={game.characters}
+	count={countShown}
+	title={countTitle}
+/>
 
 <style>
 	/*
