@@ -11,7 +11,7 @@
  *
  * Tokens are the source of truth: a Poisoned token means poisoned until the Storyteller
  * removes it. The exceptions are effects whose own wiki page ties them to another
- * character's state (the Preacher, below).
+ * character's state (the Preacher's No Ability and the Pukka's Poisoned, below).
  *
  * Everything here is a suggestion: the Storyteller can override any of it.
  */
@@ -114,7 +114,9 @@ function impairmentsOf(
 		if (rule?.on === 'others') continue;
 		if (rule) {
 			// A token that impairs its carrier only while its character's ability works (the
-			// Preacher's: https://wiki.bloodontheclocktower.com/Preacher), and only a `type`
+			// Preacher's: https://wiki.bloodontheclocktower.com/Preacher; the Pukka's, whose
+			// marked player is unaffected while the Pukka is drunk, poisoned, dead or no longer
+			// the Pukka: https://wiki.bloodontheclocktower.com/Pukka), and only a `type`
 			// carrier. Otherwise it does nothing.
 			if (rule.type && typeOf(game, seatId, characters) !== rule.type) continue;
 			const source = rule.whileWorks

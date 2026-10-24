@@ -143,6 +143,17 @@ export interface CharacterRules {
 	reminderPlaceholders?: ReminderPlaceholderRules;
 	/** Our own night text in place of the original (`rules/night-text.ts`). */
 	nightText?: NightTextRules;
+	/**
+	 * Its reminder token on a player stops that player waking for their own ability tonight,
+	 * only a `type` player when given (the Exorcist's Chosen on the Demon,
+	 * https://wiki.bloodontheclocktower.com/Exorcist). Shown at the stopped step (`rules/night-alerts.ts`).
+	 */
+	stopsWaking?: StopsWaking;
+}
+
+export interface StopsWaking {
+	token: ReminderLabel;
+	type?: CharacterType;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -289,7 +300,8 @@ export const RULE_KEYS = [
 	'deathCause',
 	'reminderMovement',
 	'reminderPlaceholders',
-	'nightText'
+	'nightText',
+	'stopsWaking'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -461,6 +473,18 @@ export function parseCharacterRules(
 	if (raw.nightText !== undefined) {
 		const nightText = readNightText(raw.nightText, `${path}.nightText`, issues);
 		if (nightText) rules.nightText = nightText;
+	}
+	if (raw.stopsWaking !== undefined) {
+		const at = `${path}.stopsWaking`;
+		if (!isObject(raw.stopsWaking)) {
+			issues.add(at, `expected object, got ${describe(raw.stopsWaking)}`);
+		} else {
+			checkKeys(raw.stopsWaking, ['token', 'type'], at, issues);
+			const token = readToken(raw.stopsWaking, 'token', at, issues, reminders);
+			const type = readEnum(raw.stopsWaking, 'type', CHARACTER_TYPES, at, issues, false);
+			if (raw.stopsWaking.token === undefined) issues.add(`${at}.token`, 'missing');
+			else if (token) rules.stopsWaking = { token, ...(type ? { type } : {}) };
+		}
 	}
 	return issues.list.length > before ? undefined : rules;
 }
