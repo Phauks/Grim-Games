@@ -11,11 +11,11 @@ test('the board shows how long the game has run since the first night began', as
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	const clock = page.getByTestId('board-game-clock');
-	// In place before the first night, so nothing moves when it starts.
-	await expect(clock).toHaveText(/Game time\s*None/);
-	// The night or day in play (Trevor, 2026-10-23): Setup until the game starts.
+	// In place before the first night, so nothing moves when it starts: Game time says Setup
+	// (Trevor, 2026-10-24), so the night or day in play waits for the first night.
+	await expect(clock).toHaveText(/^\s*Game time:\s*Setup\s*$/);
 	const phase = page.getByTestId('board-phase');
-	await expect(phase).toHaveText('Setup');
+	await expect(phase).toHaveCount(0);
 	const corner = page.getByTestId('script-title');
 	const height = (await corner.boundingBox())?.height;
 
@@ -39,10 +39,10 @@ test('the board shows how long the game has run since the first night began', as
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 
-	await expect(clock).toHaveText(/Game time\s*0:00/);
+	await expect(clock).toHaveText(/Game time:?\s*0:00/);
 	await expect(phase).toHaveText('Night 1');
 	await page.clock.runFor(65_000);
-	await expect(clock).toHaveText(/Game time\s*1:05/);
+	await expect(clock).toHaveText(/Game time:?\s*1:05/);
 	// The corner never grows (the night's strip may move the whole board). Where the smaller
 	// board leaves no room for a line of its own, Game time shares the join code's line.
 	expect((await corner.boundingBox())!.height).toBeLessThanOrEqual(height!);
@@ -50,5 +50,5 @@ test('the board shows how long the game has run since the first night began', as
 	// A reload keeps the start: the clock carries on from it.
 	await page.reload();
 	await page.clock.runFor(10_000);
-	await expect(page.getByTestId('board-game-clock')).toHaveText(/Game time\s*1:1\d/);
+	await expect(page.getByTestId('board-game-clock')).toHaveText(/Game time:?\s*1:1\d/);
 });

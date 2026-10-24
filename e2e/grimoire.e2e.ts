@@ -781,59 +781,6 @@ test('the name is edited in place; Done saves and closes the keyboard', async ({
 	await expect(sheet).toBeVisible();
 });
 
-test('a dragged reminder names whose it is beside the token, or in the bank', async ({ page }) => {
-	// Trevor (2026-10-23): A, a pill beside the token, and C, the bank's caption, both built
-	// to try; a Board setting picks one. Both work for a token from the bank or from a seat.
-	await startGame(page, 'Bad Moon Rising');
-	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
-	await page
-		.getByRole('dialog', { name: 'Character for Seat 1' })
-		.getByRole('button', { name: 'Sailor', exact: true })
-		.tap();
-	await closeSheet(page);
-	const tray = page.getByRole('list', { name: 'Reminder bank' });
-	const source = page.getByTestId('drag-source');
-	const lift = async (token: ReturnType<Page['getByRole']>) => {
-		const box = (await token.boundingBox())!;
-		const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-		await page.mouse.move(from.x, from.y);
-		await page.mouse.down();
-		await page.mouse.move(from.x + 20, from.y - 80, { steps: 4 });
-		return async () => {
-			await page.mouse.move(from.x, from.y, { steps: 2 });
-			await page.mouse.up();
-		};
-	};
-
-	// A: the pill, over the board by the token, for a token from the bank.
-	let drop = await lift(tray.getByRole('button', { name: 'Drunk reminder' }));
-	await expect(source).toHaveText(/^\s*Sailor\s*· Seat 1\s*$/);
-	await expect(page.locator('.board [data-testid="drag-source"]')).toBeVisible();
-	await drop();
-	await expect(source).toHaveCount(0);
-	const captions = page.locator('[data-tray] [data-testid^="bank-"]');
-	expect(await captions.count()).toBeGreaterThan(0);
-
-	// C: the bank's caption says it in the captions' place.
-	await openSettingsDialog(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board' })
-		.tap();
-	await settings.getByRole('button', { name: /Advanced/ }).tap();
-	await settings.getByText("Dragged reminder's source in the bank", { exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(settings).toBeHidden();
-	drop = await lift(tray.getByRole('button', { name: 'Drunk reminder' }));
-	await expect(source).toHaveText(/^\s*Drunk\s*, from\s*Sailor\s*· Seat 1\s*$/);
-	await expect(page.locator('[data-tray] [data-testid="drag-source"]')).toBeVisible();
-	await expect(captions).toHaveCount(0);
-	await drop();
-	await expect(source).toHaveCount(0);
-});
-
 test('a reminder on the board drags to another seat (the Sailor picks again)', async ({ page }) => {
 	await startGame(page, 'Bad Moon Rising');
 	const sheet = await openSeat(page, 1);
@@ -870,9 +817,8 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		await page.mouse.move(from.x, from.y);
 		await page.mouse.down();
 		await page.mouse.move(from.x + 30, from.y + 30, { steps: 4 });
-		// Whose it is: the character with its player, in a pill beside the token (Trevor,
-		// 2026-10-23, option A).
-		await expect(page.getByTestId('drag-source')).toHaveText(/^\s*Sailor\s*· Seat 1\s*$/);
+		// Nothing names where it came from: tapping the reminder says (Trevor, 2026-10-24).
+		await expect(page.getByTestId('drag-source')).toHaveCount(0);
 		// The seat it comes from is marked unlike the others (Trevor, 2026-10-20).
 		await expect(page.locator('[data-testid="seat"][data-from]')).toHaveCount(1);
 		await expect(seatLabelled(page, 'Seat 1:')).toHaveAttribute('data-from', 'true');
@@ -1109,9 +1055,7 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 });
 
 // Trevor (2026-10-22): the join code in the board's corner, to read without opening Share.
-test('the join code shows under the script name, a Board setting, and opens Share', async ({
-	page
-}) => {
+test('the join code shows under the script name, a Board setting, read only', async ({ page }) => {
 	await startGame(page);
 	const corner = page.getByTestId('board-room-code');
 	await expect(corner).toContainText('Join code');
@@ -1127,14 +1071,10 @@ test('the join code shows under the script name, a Board setting, and opens Shar
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	// The day or night and Game time join the code's line where a phone's corner has no line
 	// to spare for them.
-	const codeLine = new RegExp(`^Join code ${shown}(\\s*·\\s*Setup\\s*·\\s*Game time None)?$`);
+	const codeLine = new RegExp(`^Join code ${shown}(\\s*·\\s*Game time Setup)?$`);
 	await expect(corner).toHaveText(codeLine);
-	// A tap on it opens Share. The corner waits while a phone's seats leave it no room.
-	if (await page.getByTestId('script-title').isVisible()) {
-		await corner.tap();
-		await expect(share).toBeVisible();
-		await share.getByRole('button', { name: 'Close', exact: true }).tap();
-	}
+	// Only read: Share is the toolbar's button, not the corner (Trevor, 2026-10-24).
+	await expect(page.getByRole('button', { name: /Join code/ })).toHaveCount(0);
 
 	await menu(page, 'Board');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
@@ -5903,6 +5843,22 @@ test('reminders keep a line back to their seat, and all of them stay on the boar
 	// One line per reminder, from the seat's rim.
 	await expect(page.locator('line[data-tether="1"]')).toHaveCount(4);
 	await expect(page.locator('line[data-tether="2"]')).toHaveCount(0);
+	// The lines draw under everything but the logo and background (Trevor, 2026-10-24): the
+	// seats, with their names, ghost votes and marks, and the reminders paint over them.
+	const under = await page.evaluate(() => {
+		const lines = document.querySelector('svg.tethers')!;
+		const zOf = (el: Element) => getComputedStyle(el).zIndex;
+		return (
+			[...lines.parentElement!.children]
+				.filter((el) => el.matches('.slot, .chip-slot'))
+				.every(
+					(el) =>
+						lines.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING &&
+						(zOf(el) === 'auto' || Number(zOf(el)) >= 0)
+				) && zOf(lines) === 'auto'
+		);
+	});
+	expect(under).toBe(true);
 
 	await menu(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
