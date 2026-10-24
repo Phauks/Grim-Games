@@ -44,6 +44,7 @@ import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
+import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 
 const STORAGE_KEY = 'grim-games-room-host';
 
@@ -275,7 +276,8 @@ export class RoomHost {
 					publicTravellerTest(game.game.gameId, game.characters),
 					layout,
 					corner,
-					game.characters
+					game.characters,
+					gameSheetRules(game.game.gameId)
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});

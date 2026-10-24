@@ -6,6 +6,7 @@
 import type { Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { ROOM_PROTOCOL, type PlayerView, type SharedGrimoire } from '#lib/core/sync/room.ts';
+import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
 import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
@@ -42,12 +43,14 @@ const TABLE_KEY = 'grim-games-room-table';
 export interface RoomTable {
 	storyteller?: string;
 	travellers?: TravellerInPlay[];
+	/** The game mode and special rules, for the Script tab (Trevor, 2026-10-24). */
+	rules?: PublicRule[];
 }
 
 function storedTable(code: string | undefined): RoomTable {
 	const stored = readStored<RoomTable & { code: string }>(TABLE_KEY);
 	if (!code || stored?.code !== code) return {};
-	return { storyteller: stored.storyteller, travellers: stored.travellers };
+	return { storyteller: stored.storyteller, travellers: stored.travellers, rules: stored.rules };
 }
 
 /** The last room's table, while it is remembered. */
@@ -57,7 +60,8 @@ function setTable(code: string, table: RoomTable): void {
 	if (JSON.stringify(table) === JSON.stringify($state.snapshot(roomTable))) return;
 	roomTable.storyteller = table.storyteller;
 	roomTable.travellers = table.travellers;
-	const empty = !table.storyteller && !table.travellers?.length;
+	roomTable.rules = table.rules;
+	const empty = !table.storyteller && !table.travellers?.length && !table.rules?.length;
 	writeStored(TABLE_KEY, empty ? undefined : { code, ...table });
 }
 
@@ -92,9 +96,11 @@ export class RoomPlayer {
 					if (!m.ended) this.revealed = undefined;
 					const storyteller = m.public?.storytellerName?.trim();
 					const travellers = travellersInPlay(m.public?.seats ?? []);
+					const rules = m.public?.rules;
 					setTable(code, {
 						...(storyteller ? { storyteller } : {}),
-						...(travellers.length ? { travellers } : {})
+						...(travellers.length ? { travellers } : {}),
+						...(rules?.length ? { rules } : {})
 					});
 				} else if (m.type === 'script') this.script = m.script;
 				else if (m.type === 'reveal') {

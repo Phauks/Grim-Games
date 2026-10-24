@@ -98,6 +98,7 @@
 	import { fromScript, scriptLogo, scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
+	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
 	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
 	import PlayerNotes from '#lib/features/player/PlayerNotes.svelte';
@@ -1528,6 +1529,7 @@
 				players={game.seating.length}
 				inPlay={charactersInPlay(game)}
 				travellers={travellersInPlay(town.seats)}
+				rules={gameSheetRules(game.gameId)}
 			>
 				{#snippet grim()}<PlayerGrim
 						script={loadedScript!}

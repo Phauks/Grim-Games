@@ -98,6 +98,16 @@ export interface PublicCorner {
 	watchers?: number;
 }
 
+/**
+ * The game mode, unless Standard, then each special rule, with the words its About shows: the
+ * table plays by them, so every copy of the script lists them (Trevor, 2026-10-24).
+ */
+export interface PublicRule {
+	id: string;
+	name: string;
+	text?: string;
+}
+
 export interface PublicGameState {
 	/** The Storyteller's name, when the game has one: the table already knows who runs it. */
 	storytellerName?: string;
@@ -108,6 +118,8 @@ export interface PublicGameState {
 	layout?: PublicSeatLayout;
 	/** Left out until the Storyteller's board is open. */
 	corner?: PublicCorner;
+	/** Left out for a Standard game with no special rules. */
+	rules?: PublicRule[];
 }
 
 /** The corner's lines only, field by field, like everything else here. */
@@ -157,19 +169,22 @@ function appearsDead(seat: Seat): boolean {
  * @param layout Where the board draws the seats, kept on the Storyteller's device.
  * @param corner What the board's corner shows now, from the Storyteller's board.
  * @param characters The game's characters, for what the town learns of a death (`votes`).
+ * @param rules The game mode and special rules, kept by the game modes feature.
  */
 export function publicProjection(
 	game: Game,
 	publicTraveller?: (characterId: CharacterId) => boolean,
 	layout?: PublicSeatLayout,
 	corner?: PublicCorner,
-	characters?: CharacterLookup
+	characters?: CharacterLookup,
+	rules: readonly PublicRule[] = []
 ): PublicGameState {
 	const drawn = layout && boardLayout(layout);
 	return {
 		...(game.storytellerName ? { storytellerName: game.storytellerName } : {}),
 		...(drawn ? { layout: drawn } : {}),
 		...(corner ? { corner: boardCorner(corner) } : {}),
+		...(rules.length ? { rules: rules.map((r) => ({ ...r })) } : {}),
 		seats: seatsInOrder(game).map((seat, i) => {
 			const view: PublicSeat = {
 				seatId: seat.seatId,

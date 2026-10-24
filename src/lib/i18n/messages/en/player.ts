@@ -32,6 +32,7 @@ export const player = {
 
 	'player.recommendedTravellers': 'Recommended Travellers',
 	'player.jinxes': 'Jinxes',
+	'player.modeAndRules': 'Game mode and special rules',
 	'player.chooseScript': 'Choose a script',
 	'player.findScript': 'Find a script',
 	'player.breakdown': 'Players',

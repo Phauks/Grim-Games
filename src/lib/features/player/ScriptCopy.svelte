@@ -5,6 +5,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { playerJinxes, sheetCharacters } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
+	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 	import ScriptSheet from './ScriptSheet.svelte';
 	import ScriptTitle from './ScriptTitle.svelte';
 	import SheetBackgroundSelect from './SheetBackgroundSelect.svelte';
@@ -28,6 +29,8 @@
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play, with their players (Trevor, 2026-10-19). */
 		travellers?: readonly TravellerInPlay[];
+		/** The game mode and special rules, listed under Jinxes. */
+		rules?: readonly PublicRule[];
 		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
 		showBreakdown?: boolean;
 		/** False where the host's header has the light background switch (PlayerScriptActions). */
@@ -43,6 +46,7 @@
 		byline = true,
 		inPlay,
 		travellers,
+		rules,
 		showBreakdown = true,
 		backgroundChoice = true,
 		title = false
@@ -80,7 +84,7 @@
 				>{/if}
 		</div>{/if}
 	{#if data}
-		<ScriptSheet {characters} {jinxes} {players} {inPlay} {travellers} {showBreakdown} />
+		<ScriptSheet {characters} {jinxes} {players} {inPlay} {travellers} {rules} {showBreakdown} />
 	{:else}
 		<p class="muted">{t('player.loading')}</p>
 	{/if}

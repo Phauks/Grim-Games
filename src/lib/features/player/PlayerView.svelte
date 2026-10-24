@@ -227,7 +227,7 @@
 		<p class="muted">{t('player.loading')}</p>
 	{:else}
 		<!-- The same tabs the board's Script button shows, plus the player's own Notes. -->
-		<PlayerScriptTabs {script} travellers={roomTable.travellers} bind:tab>
+		<PlayerScriptTabs {script} travellers={roomTable.travellers} rules={roomTable.rules} bind:tab>
 			{#snippet grim()}<PlayerGrim {script} />{/snippet}
 			{#snippet notes()}<PlayerNotes notesKey={key} />{/snippet}
 		</PlayerScriptTabs>
