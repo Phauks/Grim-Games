@@ -46,6 +46,8 @@
 		onDeathTrigger,
 		stepNightNumbers,
 		todaysNominations,
+		mayNominate,
+		votesWithoutToken,
 		characterNominationPrompts,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
@@ -116,9 +118,7 @@
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
-	import SeatChooser from './SeatChooser.svelte';
-	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
-	import { recordNomination } from './record-nomination.ts';
+	import NominationChooser from './NominationChooser.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
@@ -126,6 +126,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import BoardCorner from './BoardCorner.svelte';
+	import { cornerLines } from './corner-lines.ts';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
@@ -195,15 +196,17 @@
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	// Who nominated and who was nominated today, for the marks on the seats (Track nominations).
 	/**
-	 * A seat's nomination marks (Trevor, 2026-10-23): on every living player, greyed until
-	 * they happen, as the ghost vote shows on the dead. Not on the dead, unless the player
-	 * was part of a nomination today (they nominated, then died, and the day goes on).
+	 * A seat's nomination marks (Trevor, 2026-10-23): on every player, greyed until they
+	 * happen, as the ghost vote shows on the dead. The dead may still be nominated but not
+	 * nominate (Trevor, 2026-10-24), so they show only the gavel, unless their character may
+	 * (`mayNominate`) or they nominated before they died.
 	 */
-	function seatNominationMarks(seat: { seatId: SeatId; dead: boolean }) {
+	function seatNominationMarks(seat: { seatId: SeatId }) {
 		if (!nominatedToday) return undefined;
 		const made = nominatedToday.made.has(seat.seatId);
 		const received = nominatedToday.received.has(seat.seatId);
-		return !seat.dead || made || received ? { made, received } : undefined;
+		const nominates = made || mayNominate(game, seat.seatId, characters);
+		return { made: nominates ? made : undefined, received };
 	}
 	const nominatedToday = $derived.by(() => {
 		if (!preferences.current.assistance.trackNominations) return undefined;
@@ -625,15 +628,16 @@
 			...characterNominationPrompts(grimoire.game, nomination, characters)
 		];
 	}
-	/** The seat whose nomination marks were tapped: who did they nominate? */
-	let nominatingFrom = $state<SeatId>();
-	function nominateFrom(nominee: SeatId | undefined) {
-		const seatId = nominatingFrom;
-		nominatingFrom = undefined;
-		if (seatId === undefined) return;
-		const pair = recordNomination(grimoire, seatId, 'made', nominee);
-		if (pair) nominated(pair);
+	/**
+	 * The seat whose nomination marks were tapped: who did they nominate? A player who may
+	 * not nominate (the dead) is asked who nominated them instead.
+	 */
+	let nominatingFrom = $state<{ seatId: SeatId; side: 'made' | 'received' }>();
+	function askNomination(seatId: SeatId) {
+		const made = seatNominationMarks({ seatId })?.made;
+		nominatingFrom = { seatId, side: made === undefined ? 'received' : 'made' };
 	}
+
 	let endNightOpen = $state(false);
 	let endDayOpen = $state(false);
 	/**
@@ -873,6 +877,20 @@
 		})
 	);
 	const phase = $derived(phaseText(phaseNow));
+	/** The corner's lines, which the room's phones show too (Trevor, 2026-10-24). */
+	const cornerInfo = $derived(
+		cornerLines({
+			gameId: game.gameId,
+			phase: phaseNow,
+			startedAt,
+			endedAt: ended?.endedAt,
+			watchers: watcherCount,
+			watching
+		})
+	);
+	$effect(() => {
+		if (!watching) roomHost().showCorner(game.gameId, cornerInfo);
+	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -1087,6 +1105,7 @@
 						: undefined}
 					orphan={isOrphan(seat, game.script, characters, offScriptOk)}
 					nominations={seatNominationMarks(seat)}
+					tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
 					dropTarget={seatArr.reorderTarget === seat.seatId ||
 						(remDrag.drag !== undefined &&
 							remDrag.drag.target === seat.seatId &&
@@ -1102,7 +1121,7 @@
 							: part === 'note'
 								? editNote(seat.seatId)
 								: part === 'nominate'
-									? (nominatingFrom = seat.seatId)
+									? askNomination(seat.seatId)
 									: openSeat(seat.seatId))}
 					onHold={seatArr.arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
 					onGhostVote={() =>
@@ -1301,12 +1320,11 @@
 		<BoardCorner
 			{game}
 			{watching}
-			{watcherCount}
+			corner={cornerInfo}
+			gamePhase={phase}
 			fitRoom={fitCorner}
 			{width}
 			{rootFont}
-			{phase}
-			begun={phaseNow.kind !== 'setup'}
 			{startedAt}
 			endedAt={ended?.endedAt}
 			onEdit={editGameInfo}
@@ -1462,17 +1480,7 @@
 />
 
 <!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
-<SeatChooser
-	open={nominatingFrom !== undefined}
-	title={nominatingFrom === undefined
-		? ''
-		: `Who did ${seatLabelFor(game, nominatingFrom)} nominate?`}
-	{game}
-	{characters}
-	exclude={nominatingFrom}
-	onNone={() => nominateFrom(undefined)}
-	onChoose={(nominee) => nominateFrom(nominee)}
-/>
+<NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
@@ -1501,7 +1509,12 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			{@const town = publicProjection(game, publicTravellerTest(game.gameId, characters), layout)}
+			{@const town = publicProjection(
+				game,
+				publicTravellerTest(game.gameId, characters),
+				layout,
+				cornerInfo
+			)}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
 			<PlayerScriptTabs
@@ -1516,6 +1529,7 @@
 							seats: town.seats,
 							layout: town.layout,
 							storytellerName: town.storytellerName,
+							corner: town.corner,
 							gameId: game.gameId,
 							guessKey: `storyteller:${game.gameId}`
 						}}

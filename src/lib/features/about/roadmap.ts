@@ -1,6 +1,6 @@
 /**
  * The roadmap, kept in the repository so it ticks itself off. Each item is a feature, made of
- * the backlog plan's IDs (D1, R1-R7, B1-B6, S1-S19, P1-P2, L1-L58, G1-G13, J1-J23, Q1-Q2, ...):
+ * the backlog plan's IDs (D1, R1-R7, B1-B6, S1-S19, P1-P2, L1-L58, G1-G13, J1-J23, W1-W6, Q1-Q2, ...):
  * a part is finished once a merged change names its ID in brackets in its title, such as
  * "Savant info generator (L2)", and an item is done once all its parts and listed PRs are.
  * Only the features are shown. Add a new plan ID to the feature it belongs to, or a new
@@ -78,7 +78,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: "Player screen: the script, the town's grim, notes, avatars and frames",
-		parts: ['R6', 'R7', 'J10', 'J11', 'J12', 'J13', 'J21', 'L18b']
+		parts: ['R6', 'R7', 'J10', 'J11', 'J12', 'J13', 'J21', 'L18b', ...range('W', 1, 6)]
 	},
 	{
 		title: 'One start flow: New game, then Game info during the game',
@@ -97,7 +97,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: 'Savant information: generated, typed or shown to the player',
-		parts: ['L2', 'L5', 'L41', ...range('L', 46, 50)]
+		parts: ['L2', 'L5', 'L41', ...range('L', 46, 50), 'L62']
 	},
 	{
 		title:
@@ -122,7 +122,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title:
 			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
-		parts: ['D2', 'B2', 'B3', 'B5', 'B1']
+		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',

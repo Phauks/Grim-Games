@@ -13,6 +13,7 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import type { CharacterId, PlayerName } from '#lib/core/data/index.ts';
+import type { GamePhase } from '#lib/core/rules/game-phase.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
 
@@ -68,6 +69,27 @@ export interface PublicSeatLayout {
 	placed: Readonly<Record<string, { x: number; y: number }>>;
 }
 
+/** The night or day in play, or Setup before the first night begins (gamePhase). */
+export type PublicPhase = GamePhase;
+
+/**
+ * The board's lower left corner as the Storyteller shows it (Trevor, 2026-10-24: the player
+ * grim shows "the same information in the bottom left"), so a phone's corner says what the
+ * board's does. Each line is here only while the board shows it; the table can read all of
+ * them off the Storyteller's board anyway.
+ */
+export interface PublicCorner {
+	/** The game's mode, if it isn't Standard, then each special rule, by name. */
+	modes: string[];
+	/** The join code's line: each phone shows the code it joined with. */
+	joinCode?: boolean;
+	phase?: PublicPhase;
+	/** Game time: since the first night began, until End game; Setup until it has begun. */
+	gameTime?: { begun: boolean; startedAt?: number; endedAt?: number };
+	/** Spectators on the view-only link. */
+	watchers?: number;
+}
+
 export interface PublicGameState {
 	/** The Storyteller's name, when the game has one: the table already knows who runs it. */
 	storytellerName?: string;
@@ -76,6 +98,26 @@ export interface PublicGameState {
 	today: PublicDay;
 	/** Left out while the board draws its seats on the plain ring. */
 	layout?: PublicSeatLayout;
+	/** Left out until the Storyteller's board is open. */
+	corner?: PublicCorner;
+}
+
+/** The corner's lines only, field by field, like everything else here. */
+function boardCorner(corner: PublicCorner): PublicCorner {
+	const { modes, joinCode, phase, gameTime, watchers } = corner;
+	const view: PublicCorner = { modes: modes.map(String) };
+	if (joinCode) view.joinCode = true;
+	if (phase)
+		view.phase =
+			phase.kind === 'setup' ? { kind: 'setup' } : { kind: phase.kind, number: phase.number };
+	if (gameTime)
+		view.gameTime = {
+			begun: !!gameTime.begun,
+			...(gameTime.startedAt !== undefined ? { startedAt: gameTime.startedAt } : {}),
+			...(gameTime.endedAt !== undefined ? { endedAt: gameTime.endedAt } : {})
+		};
+	if (watchers) view.watchers = watchers;
+	return view;
 }
 
 /** The layout's three parts only, or nothing when it is the plain oval ring. */
@@ -105,16 +147,19 @@ function appearsDead(seat: Seat): boolean {
  * @param publicTraveller Whether a character is a Traveller the town knows about: the
  *   caller knows the character types and the game's mode. Left out, no character is shown.
  * @param layout Where the board draws the seats, kept on the Storyteller's device.
+ * @param corner What the board's corner shows now, from the Storyteller's board.
  */
 export function publicProjection(
 	game: Game,
 	publicTraveller?: (characterId: CharacterId) => boolean,
-	layout?: PublicSeatLayout
+	layout?: PublicSeatLayout,
+	corner?: PublicCorner
 ): PublicGameState {
 	const drawn = layout && boardLayout(layout);
 	return {
 		...(game.storytellerName ? { storytellerName: game.storytellerName } : {}),
 		...(drawn ? { layout: drawn } : {}),
+		...(corner ? { corner: boardCorner(corner) } : {}),
 		seats: seatsInOrder(game).map((seat, i) => {
 			const view: PublicSeat = {
 				seatId: seat.seatId,

@@ -7,6 +7,8 @@
  */
 
 /** How players vote: one script, any number of them, or all of them in order. */
+import { authorLogo, editionLogo, LOGO_EDITIONS } from '#lib/core/data/script-logo.ts';
+
 export type ScriptVoteKind = 'single' | 'multiple' | 'ranked';
 
 export const SCRIPT_VOTE_KINDS: readonly ScriptVoteKind[] = ['single', 'multiple', 'ranked'];
@@ -21,6 +23,11 @@ export interface ScriptVoteOption {
 	id: string;
 	name: string;
 	author?: string;
+	/**
+	 * The script's logo, shown beside its name on the ballot (Trevor, 2026-10-24: players see
+	 * the logo next to the script's name): TPI's edition logo or the author's https link.
+	 */
+	logo?: string;
 }
 
 /**
@@ -63,6 +70,15 @@ export interface ScriptVoteTally {
 	endsAt?: number;
 }
 
+const MAX_LOGO = 500;
+
+/** A logo as script-logo.ts gives one: a synced edition logo, or an author's https link. */
+function logoOf(value: unknown): string | undefined {
+	if (typeof value !== 'string' || value.length > MAX_LOGO) return undefined;
+	if (LOGO_EDITIONS.some((edition) => editionLogo(edition) === value)) return value;
+	return authorLogo(value);
+}
+
 const text = (value: unknown) =>
 	typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT) : '';
 
@@ -83,13 +99,19 @@ export function newScriptVote(
 	const seen = new Set<string>();
 	const clean: ScriptVoteOption[] = [];
 	for (const raw of options) {
-		const { id, name, author } = (raw ?? {}) as Record<string, unknown>;
+		const { id, name, author, logo } = (raw ?? {}) as Record<string, unknown>;
 		if (typeof id !== 'string' || !id || id.length > MAX_ID || seen.has(id)) continue;
 		const shown = text(name);
 		if (!shown) continue;
 		seen.add(id);
 		const by = text(author);
-		clean.push({ id, name: shown, ...(by ? { author: by } : {}) });
+		const image = logoOf(logo);
+		clean.push({
+			id,
+			name: shown,
+			...(by ? { author: by } : {}),
+			...(image ? { logo: image } : {})
+		});
 	}
 	if (clean.length < MIN_SCRIPT_VOTE_OPTIONS || clean.length > MAX_SCRIPT_VOTE_OPTIONS) return;
 	const vote: ScriptVote = { voteId, kind: kind as ScriptVoteKind, options: clean, ballots: {} };

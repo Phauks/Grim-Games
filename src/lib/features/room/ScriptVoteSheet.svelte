@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { editionLogo, logoInScriptJson } from '#lib/core/data/script-logo.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import {
 		MAX_SCRIPT_VOTE_OPTIONS,
@@ -118,9 +119,16 @@
 				return mode ? [{ id, name: mode.label }] : [];
 			}
 			const choice = choices.find((c) => c.value === id);
-			return choice
-				? [{ id, name: choice.label, ...(choice.author ? { author: choice.author } : {}) }]
-				: [];
+			if (!choice) return [];
+			const logo = editionLogo(choice.value) ?? logoInScriptJson(choice.json);
+			return [
+				{
+					id,
+					name: choice.label,
+					...(choice.author ? { author: choice.author } : {}),
+					...(logo ? { logo } : {})
+				}
+			];
 		});
 		const limit = minutes === NO_LIMIT ? undefined : Number(minutes);
 		if (host.openScriptVote(kind, options, limit, subject)) picked = [];

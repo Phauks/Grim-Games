@@ -10,7 +10,11 @@
  * Design: /mnt/project-files/character-changes/option-1-parameters-spike.md.
  */
 import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rules.ts';
-import { readDayReminders, type DayReminderRules } from './day-reminder-rules.ts';
+import {
+	readDayReminders,
+	type DayReminderRules,
+	type DeathCauseMatch
+} from './day-reminder-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
@@ -108,6 +112,15 @@ export interface CharacterRules {
 	 * Virgin). Once used, the character's "No Ability" reminder marks it spent.
 	 */
 	onNominated?: { by: CharacterType; effect: NominatedEffect };
+	/**
+	 * What its player may still do once dead, when the death's `cause` is one of these ('demon'
+	 * also matches any Demon's id; an unrecorded cause counts): nominate `nominations` times a
+	 * day, and vote `votes` times on every nomination without a vote token. Dead players may not
+	 * nominate otherwise and have one ghost vote (https://wiki.bloodontheclocktower.com/Glossary,
+	 * "Nomination", "Dead Player"); the Banshee killed by the Demon nominates and votes twice
+	 * (https://wiki.bloodontheclocktower.com/Banshee).
+	 */
+	afterDeath?: AfterDeath;
 	/**
 	 * The ability kills at night: the Demon's kill or another ability's (`by`), any player or
 	 * only its own (`targets: self`, the Gambler), and ignoring protection (the Assassin).
@@ -256,6 +269,43 @@ export interface Kills {
 	ignoresProtection?: boolean;
 }
 
+export interface AfterDeath {
+	cause: readonly DeathCauseMatch[];
+	/** Nominations a day (the living make one; the dead none). */
+	nominations?: number;
+	/** Votes on every nomination, needing no vote token. */
+	votes?: number;
+}
+
+function readAfterDeath(raw: unknown, at: string, issues: Issues): AfterDeath | undefined {
+	if (!isObject(raw)) {
+		issues.add(at, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['cause', 'nominations', 'votes'], at, issues);
+	const cause = raw.cause;
+	const causes =
+		Array.isArray(cause) &&
+		cause.length > 0 &&
+		cause.every((c) => typeof c === 'string' && c !== '')
+			? (cause as string[])
+			: undefined;
+	if (!causes) issues.add(`${at}.cause`, 'expected a list of death causes or character ids');
+	const out: Partial<AfterDeath> = {};
+	for (const key of ['nominations', 'votes'] as const) {
+		const n = readNumber(raw, key, at, issues);
+		if (n === undefined) continue;
+		if (!Number.isInteger(n) || n < 1)
+			issues.add(`${at}.${key}`, 'expected a whole number, 1 or more');
+		else out[key] = n;
+	}
+	if (out.nominations === undefined && out.votes === undefined)
+		issues.add(at, 'expected nominations or votes');
+	return causes && (out.nominations !== undefined || out.votes !== undefined)
+		? { cause: causes, ...out }
+		: undefined;
+}
+
 export const PROTECTS_WHO = ['self', 'marked'] as const;
 /**
  * What a protection stops: the Demon's kill, any death, or only an execution (the Devil's
@@ -280,6 +330,7 @@ export const RULE_KEYS = [
 	'learns',
 	'answers',
 	'onNominated',
+	'afterDeath',
 	'dayClaim',
 	'guessLimit',
 	'impairs',
@@ -407,6 +458,10 @@ export function parseCharacterRules(
 			const effect = readEnum(raw.onNominated, 'effect', NOMINATED_EFFECTS, at, issues, true);
 			if (by && effect) rules.onNominated = { by, effect };
 		}
+	}
+	if (raw.afterDeath !== undefined) {
+		const afterDeath = readAfterDeath(raw.afterDeath, `${path}.afterDeath`, issues);
+		if (afterDeath) rules.afterDeath = afterDeath;
 	}
 	const dayClaim = readEnum(raw, 'dayClaim', DAY_CLAIMS, path, issues, false);
 	if (dayClaim) rules.dayClaim = dayClaim;
