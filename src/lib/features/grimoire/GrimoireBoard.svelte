@@ -1350,6 +1350,7 @@
 	onEdit={watching ? undefined : editGameInfo}
 	{startedAt}
 	endedAt={ended?.endedAt}
+	{phase}
 	{watcherCount}
 	onShare={watching ? undefined : () => (phonesOpen = true)}
 />

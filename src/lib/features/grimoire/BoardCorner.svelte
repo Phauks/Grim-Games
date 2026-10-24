@@ -198,6 +198,7 @@
 				onEdit={watching ? undefined : onEdit}
 				{startedAt}
 				{endedAt}
+				{phase}
 				{watcherCount}
 				onShare={watching ? undefined : onShare}
 				><span

@@ -17,7 +17,7 @@ async function openGameInfo(page: Page) {
 	return page.getByRole('dialog', { name: 'Game info', exact: true });
 }
 
-test('Game info shows the join code, Game time and watchers, and the code opens Share', async ({
+test('Game info shows the join code, the day or night with Game time, and watchers; the code opens Share', async ({
 	page
 }) => {
 	await page.clock.install();
@@ -29,7 +29,8 @@ test('Game info shows the join code, Game time and watchers, and the code opens 
 	let info = await openGameInfo(page);
 	const row = (field: string) => info.locator(`tr[data-field="${field}"] td`);
 	await expect(row('join-code')).toHaveText('None');
-	await expect(row('game-time')).toHaveText('None');
+	// The day or night leads Game time, as on the corner (Trevor, 2026-10-24).
+	await expect(row('game-time')).toHaveText('Setup');
 	await expect(row('watchers')).toHaveText('None');
 
 	// The join code opens Share, which opens the room; its code then shows in Game info.
@@ -64,5 +65,5 @@ test('Game info shows the join code, Game time and watchers, and the code opens 
 
 	info = await openGameInfo(page);
 	await expect(row('join-code')).toHaveText(shown);
-	await expect(row('game-time')).toHaveText(/^1:0\d$/);
+	await expect(row('game-time')).toHaveText(/^Night 1 · 1:0\d$/);
 });
