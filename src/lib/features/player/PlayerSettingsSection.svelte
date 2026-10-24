@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import { playerSettings, SHEET_DENSITIES } from './player-settings.svelte.ts';
+	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
@@ -46,11 +47,16 @@
 	onChange={(density) => playerSettings.update({ density })}
 />
 
-<!-- Also at the top of every script sheet (Trevor, 2026-10-23). -->
-<SettingToggle
-	label={t('player.lightSheet')}
-	checked={playerSettings.current.lightSheet}
-	onChange={(lightSheet) => playerSettings.update({ lightSheet })}
+<!-- Also at the top of every script sheet (Trevor, 2026-10-23; colours 2026-10-24). -->
+<SettingSelect
+	label={t('player.sheetBackground')}
+	value={playerSettings.current.sheetBackground}
+	options={SHEET_BACKGROUNDS.map((value) => ({
+		value,
+		label: t(`player.sheetBackground.${value}`)
+	}))}
+	defaultValue="theme"
+	onChange={(sheetBackground) => playerSettings.update({ sheetBackground })}
 />
 
 <!-- Also in Print's own screen (Trevor: every setting in Settings and where it is used). -->

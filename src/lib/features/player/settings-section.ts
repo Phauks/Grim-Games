@@ -16,7 +16,7 @@ registerSettingsSection({
 			frame: undefined,
 			avatar: 'initials',
 			guessesOnTokens: false,
-			lightSheet: false
+			sheetBackground: 'theme'
 		}),
 	order: 37
 });

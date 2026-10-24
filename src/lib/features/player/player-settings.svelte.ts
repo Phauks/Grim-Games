@@ -1,5 +1,6 @@
 import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
 import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
+import { SHEET_BACKGROUNDS, type SheetBackground } from '#lib/ui/themes/sheet-backgrounds.ts';
 
 /**
  * Player view settings, kept in this browser only. Separate from the app's shared
@@ -36,10 +37,10 @@ export interface PlayerSettings {
 	 */
 	guessesOnTokens: boolean;
 	/**
-	 * The script sheet reads dark on light, wherever it shows (Trevor, 2026-10-23: the
-	 * preview is hard to read on the dark theme).
+	 * The script and night order sheets' background, wherever they show (Trevor, 2026-10-24:
+	 * neutral colours in place of 2026-10-23's light switch, whose on reads as parchment).
 	 */
-	lightSheet: boolean;
+	sheetBackground: SheetBackground;
 }
 
 /** `auto` fits each side to one page, as before; the others fix that choice. */
@@ -101,7 +102,7 @@ const DEFAULTS: PlayerSettings = {
 	print: PRINT_DEFAULTS,
 	avatar: 'initials',
 	guessesOnTokens: false,
-	lightSheet: false
+	sheetBackground: 'theme'
 };
 
 /** How an avatar switched off is stored, so it does not come back as the default. */
@@ -117,7 +118,9 @@ function read(): PlayerSettings {
 			frame: parseFrameId(raw.frame),
 			avatar: raw.avatar === NO_AVATAR ? undefined : (parseAvatarId(raw.avatar) ?? DEFAULTS.avatar),
 			guessesOnTokens: raw.guessesOnTokens === true,
-			lightSheet: raw.lightSheet === true
+			sheetBackground:
+				SHEET_BACKGROUNDS.find((b) => b === raw.sheetBackground) ??
+				(raw.lightSheet === true ? 'parchment' : DEFAULTS.sheetBackground)
 		};
 	} catch {
 		return DEFAULTS;
