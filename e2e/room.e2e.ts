@@ -424,7 +424,7 @@ test('New game opens a room for the vote before any game or script', async ({
 	await phoneContext.close();
 });
 
-test('the Storyteller picks what goes in the middle of the QR code', async ({ page }) => {
+test('the Storyteller picks what goes in the middle of the QR code', async ({ page }, testInfo) => {
 	// Trevor, 2026-10-20 (plan R1): a custom QR centre logo, or none.
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
@@ -432,13 +432,21 @@ test('the Storyteller picks what goes in the middle of the QR code', async ({ pa
 	const qr = page.getByRole('img', { name: 'QR code to join the room' });
 	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
 
-	// A dialog with the QR code on top (Trevor, 2026-10-23), which shows each change at once.
+	// A dialog with the QR code beside its settings, or on top of them on a phone (Trevor,
+	// 2026-10-23, 2026-10-24), which shows each change at once.
 	const centre = page.getByRole('dialog', { name: 'QR code settings' });
 	await page.getByRole('button', { name: 'QR code settings' }).first().tap();
 	const preview = centre
 		.getByTestId('qr-preview')
 		.getByRole('img', { name: 'QR code to join the room' });
 	await expect(preview.getByTestId('script-logo')).toBeVisible();
+	const previewBox = (await centre.getByTestId('dialog-aside').boundingBox())!;
+	const settingsBox = (await centre.getByTestId('dialog-pane').boundingBox())!;
+	if (testInfo.project.name === 'tablet') {
+		expect(previewBox.x + previewBox.width).toBeLessThanOrEqual(settingsBox.x);
+	} else {
+		expect(previewBox.y + previewBox.height).toBeLessThanOrEqual(settingsBox.y);
+	}
 	await centre.getByRole('combobox', { name: 'QR code centre' }).tap();
 	await page.getByRole('option', { name: 'None' }).tap();
 	await expect(preview.getByTestId('script-logo')).toHaveCount(0);
@@ -489,10 +497,11 @@ test('the Storyteller picks what goes in the middle of the QR code', async ({ pa
 	await centre.getByRole('combobox', { name: 'QR corner markers' }).tap();
 	await expect(page.getByRole('listbox')).toBeVisible();
 	await page.screenshot({ path: test.info().outputPath('qr-settings-open.png') });
-	const scrolls = await centre.evaluate((el) => el.scrollHeight > el.clientHeight);
+	const settings = centre.getByTestId('dialog-pane');
+	const scrolls = await settings.evaluate((el) => el.scrollHeight > el.clientHeight);
 	if (scrolls) {
 		// Tapping the list scrolled it into view, so scroll whichever way is left.
-		await centre.evaluate((el) => el.scrollTo(0, el.scrollTop > 0 ? 0 : el.scrollHeight));
+		await settings.evaluate((el) => el.scrollTo(0, el.scrollTop > 0 ? 0 : el.scrollHeight));
 		await expect(page.getByRole('listbox')).toHaveCount(0);
 		await page.screenshot({ path: test.info().outputPath('qr-settings-scrolled.png') });
 		await expect(preview).toBeInViewport({ ratio: 1 });

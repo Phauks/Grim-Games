@@ -83,6 +83,7 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'J20', title: 'Every Share opens the same share screen, with the room code in a room' },
 			{ id: 'J21', title: "The board's Script has the players' Grim and Notes tabs" },
 			{ id: 'J22', title: 'QR settings in a dialog with the QR code on top' },
+			{ id: 'J23', title: 'QR settings show the code beside its settings' },
 			{ id: 'R2', title: 'QR codes open the installed app where the platform allows', prs: [320] }
 		]
 	},
