@@ -354,20 +354,6 @@
 				{t('modes.extras.title')}
 			</Button>
 		{/if}
-		<!-- A new script means a new game, never a change mid-game (Trevor, 2026-10-24). -->
-		{#if onEdit}
-			<Button
-				variant="quiet"
-				icon="add"
-				data-testid="game-info-new-game"
-				onclick={() => {
-					open = false;
-					newGameSheet?.begin();
-				}}
-			>
-				{t('setup.newGame')}
-			</Button>
-		{/if}
 		{#if assignment === 'draft' || assignment === 'choose-own'}
 			<Button
 				variant="quiet"
@@ -399,7 +385,17 @@
 		data-testid="game-info-download"
 		onclick={() => void downloadScript()}
 	/>
+	<!-- A new script means a new game, never a change mid-game (Trevor, 2026-10-24). In the
+	     header with the game's other controls, so the popover keeps its height. -->
 	{#if onEdit}<IconButton
+			icon="add"
+			label={t('setup.newGame')}
+			data-testid="game-info-new-game"
+			onclick={() => {
+				open = false;
+				newGameSheet?.begin();
+			}}
+		/><IconButton
 			icon="edit"
 			label={t('modes.info.edit')}
 			data-testid="game-info-edit"
