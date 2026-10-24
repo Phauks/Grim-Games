@@ -12,7 +12,7 @@ import {
 	type Seat,
 	type SeatId
 } from '#lib/core/model/index.ts';
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { CharacterId, PlayerName } from '#lib/core/data/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
 
@@ -20,7 +20,7 @@ export interface PublicSeat {
 	seatId: SeatId;
 	/** 1-based, clockwise. */
 	seatNumber: number;
-	playerName?: string;
+	playerName?: PlayerName;
 	/**
 	 * Dead as the town sees it: also true for a Zombuul after its first death, which
 	 * looks like a death to everyone. Storyteller overrides are private and ignored.

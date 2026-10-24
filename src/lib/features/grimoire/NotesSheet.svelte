@@ -3,7 +3,8 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
-	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
 	import NoteEditor from '#lib/ui/notes/NoteEditor.svelte';
 	import type { TitledNote } from '#lib/ui/notes/note.ts';
@@ -61,10 +62,10 @@
 		});
 	});
 
+	// The dialog's and field's accessible name; the heading shows the player's badge.
 	const editTitle = $derived(
-		editing === undefined
-			? ''
-			: `Note: ${game.seats[editing]?.playerName ?? `Seat ${game.seating.indexOf(editing) + 1}`}`
+		// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
+		editing === undefined ? '' : `Note: ${seatName(game, editing)}`
 	);
 
 	// ── Game notes, in the player's notebook editor (Trevor, 2026-10-23) ──
@@ -141,8 +142,7 @@
 						<CharacterEntry
 							characterId={seat.characterId}
 							alignment={seat.alignment}
-							playerName={label}
-							{label}
+							playerName={seatName(game, seatId)}
 						>
 							<button
 								type="button"
@@ -179,6 +179,9 @@
 	title={editTitle}
 	subtitle={editing === undefined ? undefined : seatCharacter}
 >
+	{#snippet heading()}Note: {#if editing !== undefined}<PlayerBadge
+				name={seatName(game, editing)}
+			/>{/if}{/snippet}
 	<!-- Several lines: Enter starts a new line, and the field grows with them. Kept on
 	     close. Never shown to players. -->
 	<div class="editor">

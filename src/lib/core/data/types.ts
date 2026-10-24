@@ -29,13 +29,15 @@ export type Alignment = (typeof ALIGNMENTS)[number];
 export type CharacterId = string;
 
 /*
- * Character names and reminder token texts are marked so the `grim/names-as-badges` lint
- * can tell them from other strings: wherever one reaches the screen it must be a
- * CharacterBadge or ReminderToken, never plain text (Trevor, 2026-10-16). The marks are
- * type-only (no runtime cost) and optional, so any string still fits either way.
+ * Character names, reminder token texts and player names are marked so the
+ * `grim/names-as-badges` lint can tell them from other strings: wherever one reaches the
+ * screen it must be a CharacterBadge, ReminderToken or PlayerBadge, never plain text
+ * (Trevor, 2026-10-16 and 2026-10-24). The marks are type-only (no runtime cost) and
+ * optional, so any string still fits either way.
  */
 declare const characterNameMark: unique symbol;
 declare const reminderLabelMark: unique symbol;
+declare const playerNameMark: unique symbol;
 /** Marks a character name; the lint looks for this interface by name. */
 export interface CharacterNameMark {
 	readonly [characterNameMark]?: true;
@@ -44,10 +46,20 @@ export interface CharacterNameMark {
 export interface ReminderLabelMark {
 	readonly [reminderLabelMark]?: true;
 }
+/** Marks a player's name; the lint looks for this interface by name. */
+export interface PlayerNameMark {
+	readonly [playerNameMark]?: true;
+}
 /** A character's name, e.g. "Imp". Shown as a CharacterBadge. */
 export type CharacterName = string & CharacterNameMark;
 /** A reminder token's text, e.g. "Is The Drunk". Shown as a ReminderToken. */
 export type ReminderLabel = string & ReminderLabelMark;
+/**
+ * A player's name, e.g. "Ana". Shown as a PlayerBadge, the pill under a seat's token
+ * (Trevor, 2026-10-24: "wherever we invoke a player name, we should use the player name
+ * badge that is on the grim").
+ */
+export type PlayerName = string & PlayerNameMark;
 
 /** `special` vocabulary from `script-schema.json` (botc-release README, "special"). */
 export const SPECIAL_TYPES = [

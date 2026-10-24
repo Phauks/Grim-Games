@@ -1,6 +1,12 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
+	import {
+		defaultAlignment,
+		type Alignment,
+		type Character,
+		type PlayerName
+	} from '#lib/core/data/index.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterDialog from './CharacterDialog.svelte';
@@ -32,8 +38,8 @@
 		info?: boolean | ((character: Character) => void);
 		/** On the name's line; never adds a line. */
 		note?: string;
-		/** The seat's player, after the name as character badges show it ("· Ana"). */
-		playerName?: string;
+		/** The seat's player, a PlayerBadge after the name as character badges show it. */
+		playerName?: PlayerName;
 		/** Keep the note's place even when there is none, so rows line up. */
 		withNote?: boolean;
 		/** Ends the name's line with the tick (the picker's chosen mark). */
@@ -104,7 +110,7 @@
 	<span class="head">
 		<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
 		<span class="name">{character.name}</span>
-		{#if playerName}<span class="player">· {playerName}</span>{/if}
+		{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
 		{#if afterName}{@render afterName()}{/if}
 		{#if withNote || note}<span class="note">{note ?? ''}</span>{/if}
 	</span>
@@ -271,15 +277,10 @@
 		font-weight: var(--font-character-weight);
 		overflow-wrap: anywhere;
 	}
-	/* As in CharacterBadge: the player's font in the name's colour, not a red caption. */
+	/* The player's badge, as in CharacterBadge; a long name ends in "…" inside it. */
 	.player {
+		display: inline-flex;
 		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		font-family: var(--font-player);
-		font-weight: 400;
-		opacity: 0.9;
 	}
 	.note {
 		flex: 0 1 auto;
