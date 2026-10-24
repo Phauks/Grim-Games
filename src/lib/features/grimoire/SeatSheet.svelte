@@ -3,17 +3,13 @@
 	import { recordNomination } from './record-nomination.ts';
 	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import { setupReminders } from '#lib/core/rules/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import { abilityState, seatNominations, type ImpairmentReason } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import ReminderOrigin from './ReminderOrigin.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -34,23 +30,22 @@
 	} from './board.ts';
 	import CauseName from './CauseName.svelte';
 	import SeatStatusDialog from './SeatStatusDialog.svelte';
+	import SeatMenu from './SeatMenu.svelte';
+	import SeatReminderMenu from './SeatReminderMenu.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ReminderPicker from './ReminderPicker.svelte';
-	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { seatChanges } from './history.ts';
 	import DeadBadge from '#lib/ui/seating/DeadBadge.svelte';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import { isGeneric, tokenLabel } from './reminders.ts';
-	import ReminderNoteField from './ReminderNoteField.svelte';
+	import { tokenLabel } from './reminders.ts';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NoteSheet from '#lib/features/day/NoteSheet.svelte';
 	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
 	import { dayClaim } from '#lib/core/rules/index.ts';
-	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 
 	interface Props {
@@ -332,28 +327,6 @@
 		reminderMenuOpen = true;
 	}
 	const movingReminder = $derived(seat?.reminders.find((r) => r.reminderId === moving));
-	/** A setup reminder can go back to the Setup reminders tray (Trevor, 2026-10-16). */
-	const fromSetup = $derived.by(() => {
-		const r = movingReminder;
-		if (!r || !seat || !seatId) return false;
-		// Suggested at setup once this token is off the board again.
-		const without = {
-			...game,
-			seats: {
-				...game.seats,
-				[seatId]: { ...seat, reminders: seat.reminders.filter((x) => x !== r) }
-			}
-		};
-		return setupReminders(without, characters).some(
-			(s) => s.characterId === r.characterId && s.label === r.label
-		);
-	});
-	/** Runs a menu action after closing the menu. */
-	function fromMenu(action: () => void) {
-		menuOpen = false;
-		reminderMenuOpen = false;
-		action();
-	}
 	let removeOpen = $state(false);
 	let showOpen = $state(false);
 	let savantOpen = $state(false);
@@ -828,126 +801,43 @@
 {/snippet}
 
 <!-- The seat's less frequent actions, in an overlay so the sheet stays short. -->
-<Dialog bind:open={menuOpen} {title} description={`Seat ${number}`}>
-	{#snippet lead()}
-		{#if seat?.characterId}
-			<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />
-		{/if}
-	{/snippet}
-	<div class="menu">
-		<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (pickerOpen = true))}>
-			{character ? 'Change character' : 'Choose character'}
-		</Button>
-		{#if apprentice}
-			<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (gainOpen = true))}>
-				Gained ability…
-			</Button>
-		{/if}
-		{#if savant}
-			<Button variant="quiet" icon="random" onclick={() => fromMenu(() => (savantOpen = true))}>
-				Savant information…
-			</Button>
-		{/if}
-		{#if claim}
-			<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => (claimOpen = true))}>
-				{t(claim === 'guesses' ? 'day.guesses' : 'day.statement')}…
-			</Button>
-		{/if}
-		<Button
-			variant="quiet"
-			icon="alignment"
-			disabled={!character}
-			onclick={() =>
-				fromMenu(() => {
-					alignmentFor = undefined;
-					alignmentOpen = true;
-				})}
-		>
-			Change alignment
-		</Button>
-		<!-- The same notes as in ⋯ Notes on the board (Trevor, 2026-10-19). -->
-		<Button
-			variant="quiet"
-			icon="notes"
-			onclick={() =>
-				fromMenu(() => {
-					if (seatId) onNotes?.(seatId);
-				})}
-		>
-			Notes
-		</Button>
-		<!-- Rarely needed, so in here rather than a row of its own (Trevor, 2026-10-18). -->
-		<Button
-			variant="quiet"
-			icon="history"
-			disabled={changes.length === 0}
-			onclick={() => fromMenu(() => (changesOpen = true))}
-		>
-			Character history
-		</Button>
-	</div>
-	{#snippet headActions()}
-		<!-- Beside the close X, as on every sheet (Trevor, 2026-10-17). Removing the character
-		     is "None" in Change character. -->
-		<DeleteButton label="Remove seat" onclick={() => fromMenu(() => (removeOpen = true))} />
-	{/snippet}
-</Dialog>
+<SeatMenu
+	bind:open={menuOpen}
+	{title}
+	{number}
+	{seat}
+	{character}
+	{apprentice}
+	{savant}
+	{claim}
+	hasChanges={changes.length > 0}
+	onChangeCharacter={() => (pickerOpen = true)}
+	onGain={() => (gainOpen = true)}
+	onSavant={() => (savantOpen = true)}
+	onClaim={() => (claimOpen = true)}
+	onAlignment={() => {
+		alignmentFor = undefined;
+		alignmentOpen = true;
+	}}
+	onNotes={() => {
+		if (seatId) onNotes?.(seatId);
+	}}
+	onHistory={() => (changesOpen = true)}
+	onRemove={() => (removeOpen = true)}
+/>
 
-<Dialog bind:open={reminderMenuOpen} title="Reminder">
-	{#snippet heading()}
-		{#if movingReminder}<ReminderToken
-				label={tokenLabel(movingReminder)}
-				character={characters.get(movingReminder.characterId)}
-				alignment={placingAlignment(game, movingReminder, characters)}
-			/>{:else}Reminder{/if}
-	{/snippet}
-	{#snippet subtitle()}
-		{#if movingReminder && seatId}From <ReminderOrigin
-				{game}
-				{characters}
-				characterId={movingReminder.characterId}
-				on={seatId}
-			/>{/if}
-	{/snippet}
-	<!-- Whose ability it comes from, first, so an unfamiliar reminder makes sense (Trevor,
-	     2026-10-17); "From" above already names it (Trevor, 2026-10-18). -->
-	{#if movingReminder && isGeneric(movingReminder)}
-		<ReminderNoteField {grimoire} reminder={movingReminder} />
-	{/if}
-	{#if movingReminder}
-		{@const source = characters.get(movingReminder.characterId)}
-		{#if source}<CharacterSummary character={source} reminders={false} />{/if}
-	{/if}
-	<div class="menu">
-		<Button variant="quiet" icon="move" onclick={() => fromMenu(() => (moveOpen = true))}>
-			Move to another seat
-		</Button>
-		<Button
-			variant="quiet"
-			icon="reminder"
-			disabled={!fromSetup}
-			onclick={() =>
-				fromMenu(() => {
-					// Taken off the seat, it waits in the reminder bank again.
-					if (moving) moveConfirm?.requestReturn(moving);
-					moving = undefined;
-				})}
-		>
-			Return to reminder bank
-		</Button>
-	</div>
-	{#snippet headActions()}
-		<ReminderMoreButton {grimoire} reminderId={moving} onDone={() => (reminderMenuOpen = false)} />
-		<DeleteButton
-			label="Remove reminder"
-			onclick={() =>
-				fromMenu(() => {
-					if (moving) moveConfirm?.requestReturn(moving);
-					moving = undefined;
-				})}
-		/>
-	{/snippet}
-</Dialog>
+<SeatReminderMenu
+	bind:open={reminderMenuOpen}
+	{grimoire}
+	{seatId}
+	reminderId={moving}
+	onMove={() => (moveOpen = true)}
+	onReturn={() => {
+		// Taken off the seat, it waits in the reminder bank again.
+		if (moving) moveConfirm?.requestReturn(moving);
+		moving = undefined;
+	}}
+/>
 
 <SeatChooser
 	open={nominating !== undefined}
@@ -1047,11 +937,6 @@
 	.note {
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
-	}
-	.menu {
-		display: grid;
-		gap: var(--space-2);
-		margin-top: var(--space-3);
 	}
 	.name-form {
 		display: contents;
