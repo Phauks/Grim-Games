@@ -41,7 +41,17 @@ test('Demon voted feeds the Flowergirl, and there is no New day button', async (
 		.locator('li[data-character="flowergirl"]')
 		.getByRole('button', { name: 'Demon voted' });
 	await voted.tap();
+	// It asks first, showing the token that swaps on her seat (Trevor, 2026-10-24).
+	const confirm = page.getByRole('alertdialog', { name: 'Demon voted' });
+	await expect(confirm).toContainText('Mark that the Demon voted today?');
+	await expect(confirm).toContainText('Not marked yet today.');
+	await expect(confirm.getByTestId('reminder-token')).toHaveText('Demon Voted');
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(voted).toHaveAttribute('aria-pressed', 'true');
+	// The Town Crier has the same button for whether a Minion nominated.
+	await expect(
+		page.locator('li[data-character="towncrier"]').getByRole('button', { name: 'Minion nominated' })
+	).toHaveAttribute('aria-pressed', 'false');
 	await expect(
 		page.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })
 	).toHaveCount(0);

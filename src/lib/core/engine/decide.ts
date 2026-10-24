@@ -71,6 +71,7 @@ export type ErrorCode =
 	| 'wrong-entry-kind'
 	| 'invalid-abnormal'
 	| 'invalid-prep-value'
+	| 'invalid-day-mark'
 	| 'invalid-symbol'
 	| 'invalid-colour';
 

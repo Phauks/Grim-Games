@@ -13,6 +13,7 @@ import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rul
 import { readDayReminders, type DayReminderRules } from './day-reminder-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
+import { readDayMark, type DayMarkRule } from './day-mark-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
 	readReminderPlaceholders,
@@ -145,6 +146,8 @@ export interface CharacterRules {
 	reminderPlaceholders?: ReminderPlaceholderRules;
 	/** Our own night text in place of the original (`rules/night-text.ts`). */
 	nightText?: NightTextRules;
+	/** A fact about today the Storyteller marks for its night answer (`rules/day-marks.ts`). */
+	dayMark?: DayMarkRule;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -292,7 +295,8 @@ export const RULE_KEYS = [
 	'deathCause',
 	'reminderMovement',
 	'reminderPlaceholders',
-	'nightText'
+	'nightText',
+	'dayMark'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -469,6 +473,10 @@ export function parseCharacterRules(
 	if (raw.nightText !== undefined) {
 		const nightText = readNightText(raw.nightText, `${path}.nightText`, issues);
 		if (nightText) rules.nightText = nightText;
+	}
+	if (raw.dayMark !== undefined) {
+		const dayMark = readDayMark(raw.dayMark, `${path}.dayMark`, issues, reminders);
+		if (dayMark) rules.dayMark = dayMark;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

@@ -5,6 +5,7 @@
  */
 import { parseAvatarId } from '#lib/core/avatars/index.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
+import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import type { Game, GameNote, ReminderInstance, Seat, SeatId } from '#lib/core/model/index.ts';
 import type { GameEvent } from './events.ts';
 
@@ -541,13 +542,9 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return entries === game.today.entries ? game : { ...game, today: { ...game.today, entries } };
 		}
 		case 'DemonVotedSet':
-			return {
-				...game,
-				today:
-					event.voted === undefined
-						? omit(game.today, 'demonVoted')
-						: { ...game.today, demonVoted: event.voted }
-			};
+			return setDayMark(game, 'demon-voted', event.voted);
+		case 'DayMarkSet':
+			return setDayMark(game, event.mark, event.value);
 		case 'PrepValueSet': {
 			const prepValues = { ...game.prepValues };
 			if (event.value === undefined) delete prepValues[event.key];
@@ -584,4 +581,13 @@ export function applyEvents(
 	events: readonly GameEvent[]
 ): Game | undefined {
 	return events.reduce<Game | undefined>((g, e) => applyEvent(g, e), game);
+}
+
+function setDayMark(game: Game, mark: DayMark, value: boolean | undefined): Game {
+	const marks = { ...game.today.marks };
+	if (value === undefined) delete marks[mark];
+	else marks[mark] = value;
+	const today =
+		Object.keys(marks).length > 0 ? { ...game.today, marks } : omit(game.today, 'marks');
+	return { ...game, today };
 }

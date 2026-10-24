@@ -35,7 +35,8 @@ function entriesOf<K extends DayEntry['kind']>(game: Game, kind: K) {
  * (https://wiki.bloodontheclocktower.com/Town_Crier). Uses each nominator's true character;
  * a Recluse who nominated might register as a Minion and a Spy might not (`possible`).
  *
- * The answer comes from the nominations recorded today (seat sheet or day view). With none
+ * The Storyteller's Minion nominated mark (`dayMark`), when set and not the same as the
+ * nominations recorded, is the answer. Otherwise it comes from the nominations recorded today (seat sheet or day view). With none
  * recorded the app can't tell a day without nominations from one nobody recorded, so it
  * gives no answer rather than "no" (Trevor, 2026-10-23).
  */
@@ -48,6 +49,22 @@ function minionNominated(
 	const nominators = entriesOf(game, 'nomination')
 		.map((e) => e.nominator)
 		.filter((s, i, all) => all.indexOf(s) === i);
+	const marked = game.today.marks?.['minion-nominated'];
+	// A mark that agrees with the nominations recorded (a Minion's nomination marks it) keeps
+	// the answer from those nominations, with who might register otherwise.
+	const recorded = nominators.some((s) => typeOf(game, s, characters) === 'minion');
+	if (marked !== undefined && (nominators.length === 0 || marked !== recorded)) {
+		const minions = game.seating.filter((s) => typeOf(game, s, characters) === 'minion');
+		return answer(
+			game,
+			seatId,
+			characterId,
+			characters,
+			{ kind: 'yes-no', value: marked },
+			marked ? minions.filter((s) => nominators.includes(s)) : [],
+			{ facts: minions.map((s) => fact(game, s, characters)) }
+		);
+	}
 	if (nominators.length === 0) {
 		return answer(
 			game,
@@ -92,7 +109,7 @@ function demonVoted(
 	characters: CharacterLookup
 ): NightAnswer {
 	const demons = game.seating.filter((s) => typeOf(game, s, characters) === 'demon');
-	const voted = game.today.demonVoted;
+	const voted = game.today.marks?.['demon-voted'];
 	return answer(
 		game,
 		seatId,

@@ -3,11 +3,22 @@ import {
 	getSeat,
 	isTraveller,
 	trueCharacter,
+	typeOf,
 	type AbnormalCause,
 	type DayEntry,
+	type Game,
 	type Reminder
 } from '#lib/core/model/index.ts';
-import { protection } from '#lib/core/rules/index.ts';
+import {
+	DAY_MARKS,
+	dayMarkSeats,
+	dayMarkValue,
+	markTokenSwap,
+	marksInPlay,
+	protection,
+	type DayMark
+} from '#lib/core/rules/index.ts';
+import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	NO_ABILITY_LABEL,
@@ -29,7 +40,7 @@ import {
 export const DAY_DECIDERS: Deciders<
 	| 'Nominate'
 	| 'EditNomination'
-	| 'SetDemonVoted'
+	| 'SetDayMark'
 	| 'SetPrepValue'
 	| 'Execute'
 	| 'Exile'
@@ -44,12 +55,23 @@ export const DAY_DECIDERS: Deciders<
 		const nominator = seatOf(game, command.nominator).seatId;
 		const nominee = seatOf(game, command.nominee).seatId;
 		checkNomination(game, nominator, nominee, warn);
-		return [
+		const events: GameEvent[] = [
 			{
 				type: 'DayEntryAdded',
 				entry: { kind: 'nomination', entryId: ctx.newId(), nominator, nominee }
 			}
 		];
+		// A Minion's recorded nomination marks it for the Town Crier, tokens and all (Trevor,
+		// 2026-10-24: use the nominations recorded; https://wiki.bloodontheclocktower.com/Town_Crier).
+		const mark = 'minion-nominated';
+		if (
+			dayMarkValue(game, mark) !== true &&
+			dayMarkSeats(game, ctx.characters, mark).length > 0 &&
+			typeOf(game, nominator, ctx.characters) === 'minion'
+		) {
+			events.push(...markEvents(game, mark, true, ctx));
+		}
+		return events;
 	},
 
 	EditNomination(game, command, ctx, warn) {
@@ -64,14 +86,15 @@ export const DAY_DECIDERS: Deciders<
 		return [{ type: 'DayEntryReplaced', entry: { ...entry, nominator, nominee } }];
 	},
 
-	SetDemonVoted(game, command, ctx, warn) {
-		if (command.voted === game.today.demonVoted) {
+	SetDayMark(game, command, ctx, warn) {
+		if (!(DAY_MARKS as readonly string[]).includes(command.mark)) {
+			refuse('invalid-day-mark', `unknown day mark ${String(command.mark)}`);
+		}
+		if (command.value === dayMarkValue(game, command.mark)) {
 			warn('no-change', 'already marked');
 			return [];
 		}
-		const event: GameEvent = { type: 'DemonVotedSet' };
-		if (command.voted !== undefined) event.voted = command.voted;
-		return [event];
+		return markEvents(game, command.mark, command.value, ctx);
 	},
 
 	SetPrepValue(game, command, ctx, warn) {
@@ -285,9 +308,45 @@ export const DAY_DECIDERS: Deciders<
 	},
 
 	NewDay(game, command, ctx, warn) {
-		if (game.today.entries.length === 0 && game.today.demonVoted === undefined) {
+		if (game.today.entries.length === 0 && game.today.marks === undefined) {
 			warn('empty-day', 'nothing was logged since the last new day');
 		}
-		return [{ type: 'DayStarted', at: ctx.now() }];
+		// Each dawn the "no" token goes on and the "yes" one comes off; the mark itself stays
+		// unset until the Storyteller marks it (wiki How to Run:
+		// https://wiki.bloodontheclocktower.com/Flowergirl, /Town_Crier).
+		const tokens = marksInPlay(game, ctx.characters).flatMap((mark) =>
+			tokenEvents(game, mark, false, ctx)
+		);
+		return [{ type: 'DayStarted', at: ctx.now() }, ...tokens];
 	}
 };
+
+/** Marks one of today's facts and swaps the tokens that show it. */
+function markEvents(
+	game: Game,
+	mark: DayMark,
+	value: boolean | undefined,
+	ctx: EngineContext
+): GameEvent[] {
+	const event: GameEvent = { type: 'DayMarkSet', mark };
+	if (value !== undefined) event.value = value;
+	return [event, ...tokenEvents(game, mark, value, ctx)];
+}
+
+/** The token swap on each seat that shows `mark` as `value`. */
+function tokenEvents(
+	game: Game,
+	mark: DayMark,
+	value: boolean | undefined,
+	ctx: EngineContext
+): GameEvent[] {
+	const swap = markTokenSwap(game, mark, value, ctx.characters);
+	return [
+		...swap.remove.map((reminderId): GameEvent => ({ type: 'ReminderRemoved', reminderId })),
+		...swap.add.map((p): GameEvent => ({
+			type: 'ReminderAdded',
+			seatId: p.seatId,
+			reminder: { reminderId: ctx.newId(), characterId: p.characterId, label: p.label }
+		}))
+	];
+}

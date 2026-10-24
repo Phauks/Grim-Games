@@ -125,6 +125,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Nomination abilities (`rules/nominations.ts`)                                                       | `onNominated`                         | moved |
 | Acts when dead (`dead-characters.ts`)                                                               | `actsWhenDead`                        | moved |
 | Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56)                | `dayClaim`, `guessLimit`              | moved |
+| Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new)             | `dayMark`                             | moved |
 | Night information and answers (`night-info.ts`)                                                     | `learns`, `answers`                   | moved |
 | Game end (`game-end.ts`, `end-reason.ts`)                                                           | `gameEnd`                             | moved |
 

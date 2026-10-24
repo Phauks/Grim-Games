@@ -5,6 +5,7 @@
  */
 import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { applyEvents, type GameEvent, type LogEntry } from '#lib/core/engine/index.ts';
+import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import type { CharacterLookup, DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 import { describeEntry as describeDayEntry } from '#lib/features/day/day-port.ts';
 import { slot, splitSlots } from '#lib/features/characters/slots.ts';
@@ -353,15 +354,9 @@ function describeEvent(
 		case 'DayEntryRemoved':
 			return [text('Removed from the day log')];
 		case 'DemonVotedSet':
-			return [
-				text(
-					event.voted === undefined
-						? 'Cleared Demon voted'
-						: event.voted
-							? 'Demon voted'
-							: 'Demon did not vote'
-				)
-			];
+			return [text(dayMarkLine('demon-voted', event.voted))];
+		case 'DayMarkSet':
+			return [text(dayMarkLine(event.mark, event.value))];
 		default:
 			return [text('Changed the day log')];
 	}
@@ -493,4 +488,22 @@ export function itemSeats(item: HistoryItem): SeatId[] {
 			)
 		)
 	];
+}
+
+/** A day mark's History line: marked yes, marked no, or cleared. */
+const DAY_MARK_LINES: Record<DayMark, { yes: string; no: string; cleared: string }> = {
+	'demon-voted': {
+		yes: 'Demon voted',
+		no: 'Demon did not vote',
+		cleared: 'Cleared Demon voted'
+	},
+	'minion-nominated': {
+		yes: 'Minion nominated',
+		no: 'No Minion nominated',
+		cleared: 'Cleared Minion nominated'
+	}
+};
+function dayMarkLine(mark: DayMark, value: boolean | undefined): string {
+	const lines = DAY_MARK_LINES[mark];
+	return value === undefined ? lines.cleared : value ? lines.yes : lines.no;
 }

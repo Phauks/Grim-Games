@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
-	import type { NightStep } from '#lib/core/rules/index.ts';
+	import type { DayMark, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
@@ -666,7 +666,12 @@
 		endDayOpen = true;
 		return true;
 	}
-	function executeAndEndDay(seatId: SeatId | undefined): void {
+	function executeAndEndDay(
+		seatId: SeatId | undefined,
+		marks: Partial<Record<DayMark, boolean>>
+	): void {
+		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
+			grimoire.run({ type: 'SetDayMark', mark, value });
 		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
 		if (seatId && !logged) grimoire.run({ type: 'Execute', seatId });
 		endDay();

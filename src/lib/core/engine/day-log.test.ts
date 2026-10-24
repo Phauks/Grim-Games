@@ -11,6 +11,7 @@ import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import type { Command } from './commands.ts';
 import type { EngineContext } from './context.ts';
 import { dispatch, undo, type GameSession } from './log.ts';
+import { applyEvent } from './reducer.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
 
@@ -100,19 +101,89 @@ describe('Nominate', () => {
 	});
 });
 
-describe('SetDemonVoted', () => {
+describe('SetDayMark', () => {
 	it('marks and clears whether the Demon voted, with undo', () => {
 		const { session, ctx } = setup();
-		const s = run(session, ctx, { type: 'SetDemonVoted', voted: true });
-		expect(s.game.today.demonVoted).toBe(true);
-		const cleared = run(s, ctx, { type: 'SetDemonVoted' });
-		expect('demonVoted' in cleared.game.today).toBe(false);
-		expect(undo(s).game.today.demonVoted).toBeUndefined();
+		const s = run(session, ctx, { type: 'SetDayMark', mark: 'demon-voted', value: true });
+		expect(s.game.today.marks?.['demon-voted']).toBe(true);
+		const cleared = run(s, ctx, { type: 'SetDayMark', mark: 'demon-voted' });
+		expect('marks' in cleared.game.today).toBe(false);
+		expect(undo(s).game.today.marks?.['demon-voted']).toBeUndefined();
+	});
+
+	// https://wiki.bloodontheclocktower.com/Flowergirl (How to Run: swap the two tokens)
+	it('swaps the Flowergirl’s Demon Not Voted and Demon Voted tokens with the mark', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[4],
+			characterId: 'flowergirl'
+		});
+		const labels = (g: GameSession) => g.game.seats[seats[4]].reminders.map((r) => r.label);
+		const no = run(s, ctx, { type: 'SetDayMark', mark: 'demon-voted', value: false });
+		expect(labels(no)).toEqual(['Demon Not Voted']);
+		const yes = run(no, ctx, { type: 'SetDayMark', mark: 'demon-voted', value: true });
+		expect(labels(yes)).toEqual(['Demon Voted']);
+		expect(labels(run(yes, ctx, { type: 'SetDayMark', mark: 'demon-voted' }))).toEqual([]);
+		expect(labels(undo(yes))).toEqual(['Demon Not Voted']);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Town_Crier (How to Run: swap the two tokens)
+	it('marks whether a Minion nominated with the Town Crier’s tokens', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[4], characterId: 'towncrier' },
+			{ type: 'SetDayMark', mark: 'minion-nominated', value: true }
+		);
+		expect(s.game.today.marks).toEqual({ 'minion-nominated': true });
+		expect(s.game.seats[seats[4]].reminders.map((r) => r.label)).toEqual(['Minion Nominated']);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Town_Crier: a Minion's nomination is a yes.
+	it('marks a Minion nominated when a Minion’s nomination is recorded', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[4],
+			characterId: 'towncrier'
+		});
+		// The Slayer's nomination changes nothing; the Poisoner's marks it, tokens and all.
+		const good = run(s, ctx, { type: 'Nominate', nominator: seats[1], nominee: seats[2] });
+		expect(good.game.today.marks).toBeUndefined();
+		const minion = run(good, ctx, { type: 'Nominate', nominator: seats[3], nominee: seats[0] });
+		expect(minion.game.today.marks).toEqual({ 'minion-nominated': true });
+		expect(minion.game.seats[seats[4]].reminders.map((r) => r.label)).toEqual(['Minion Nominated']);
+		// One undo takes back the nomination and its mark together.
+		expect(undo(minion).game.today.marks).toBeUndefined();
+	});
+
+	it('leaves the mark alone without a Town Crier in play', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, { type: 'Nominate', nominator: seats[3], nominee: seats[0] });
+		expect(s.game.today.marks).toBeUndefined();
+	});
+
+	it("replays an older game's Demon voted as the demon-voted mark", () => {
+		const { session } = setup();
+		const game = applyEvent(session.game, { type: 'DemonVotedSet', voted: true });
+		expect(game.today.marks).toEqual({ 'demon-voted': true });
+		expect('marks' in applyEvent(game, { type: 'DemonVotedSet' }).today).toBe(false);
+	});
+
+	it('refuses a mark it does not know', () => {
+		const { session, ctx } = setup();
+		expect(
+			refused(session, ctx, { type: 'SetDayMark', mark: 'bad' as 'demon-voted', value: true })
+		).toBe('invalid-day-mark');
 	});
 
 	it('changes nothing when the mark is the same', () => {
 		const { session, ctx } = setup();
-		expect(warned(session, ctx, { type: 'SetDemonVoted' })).toEqual(['no-change']);
+		expect(warned(session, ctx, { type: 'SetDayMark', mark: 'demon-voted' })).toEqual([
+			'no-change'
+		]);
 	});
 });
 
@@ -487,7 +558,7 @@ describe('NewDay', () => {
 			session,
 			ctx,
 			{ type: 'Nominate', nominator: seats[3], nominee: seats[1] },
-			{ type: 'SetDemonVoted', voted: false }
+			{ type: 'SetDayMark', mark: 'demon-voted', value: false }
 		);
 		const day = s.game.today;
 		const next = run(s, ctx, { type: 'NewDay' });
@@ -502,5 +573,24 @@ describe('NewDay', () => {
 	it('warns, but goes ahead, when nothing was logged', () => {
 		const { session, ctx } = setup();
 		expect(warned(session, ctx, { type: 'NewDay' })).toEqual(['empty-day']);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Flowergirl and /Town_Crier (How to Run: each dawn,
+	// the "not" token goes on and the other comes off).
+	it('puts each day mark’s "no" token on at dawn, leaving the mark unset', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[2], characterId: 'flowergirl' },
+			{ type: 'AssignCharacter', seatId: seats[4], characterId: 'towncrier' },
+			{ type: 'SetDayMark', mark: 'demon-voted', value: true }
+		);
+		const next = run(s, ctx, { type: 'NewDay' });
+		const labels = (seat: string) => next.game.seats[seat].reminders.map((r) => r.label);
+		expect(labels(seats[2])).toEqual(['Demon Not Voted']);
+		expect(labels(seats[4])).toEqual(['Minions Not Nominated']);
+		expect(next.game.today).toEqual({ entries: [] });
+		expect(undo(next).game.seats[seats[2]].reminders.map((r) => r.label)).toEqual(['Demon Voted']);
 	});
 });
