@@ -1132,9 +1132,22 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 		.tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	await expect(seats.nth(1)).toHaveAttribute('data-guess', 'true');
+	// Or only a type, or only good or evil (Trevor, 2026-10-24).
+	await seats.nth(2).tap();
+	const guessSheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
+	await guessSheet.getByRole('button', { name: 'Minion', exact: true }).tap();
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
+	await expect(seats.nth(2).getByRole('img', { name: 'Minion' })).toBeVisible();
+	await seats.nth(3).tap();
+	await phone
+		.getByRole('dialog', { name: 'Seat 4 · Seat 4' })
+		.getByRole('button', { name: 'Good', exact: true })
+		.tap();
+	await expect(seats.nth(3)).toHaveAttribute('aria-label', 'Seat 4: Seat 4, your guess: Good');
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
 	await phoneContext.close();
 });
 
@@ -1225,8 +1238,19 @@ test("on a laptop the player's screen shows the script's logo, and the guess she
 	const start = (await scrolled())!;
 	expect(start).toEqual({ top: 0, max: expect.any(Number) });
 	expect(start.max).toBeGreaterThan(0);
+	// From the foot of the screen, over the character list, which runs on below it (the rows
+	// above the list can push Empath itself out of view).
 	const at = (await empath.boundingBox())!;
-	await phone.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
+	const foot = phone.viewportSize()!.height * 0.95;
+	await expect
+		.poll(() =>
+			phone.evaluate(
+				([x, y]) => !!document.elementFromPoint(x, y)?.closest('[role="dialog"] button'),
+				[at.x + at.width / 2, foot]
+			)
+		)
+		.toBe(true);
+	await phone.mouse.move(at.x + at.width / 2, foot);
 	await phone.mouse.wheel(0, start.max + 200);
 	await expect.poll(async () => (await scrolled())!.top).toBeGreaterThanOrEqual(start.max - 1);
 	await laptop.close();
