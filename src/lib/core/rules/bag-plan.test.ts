@@ -187,10 +187,37 @@ describe('analyseSelection', () => {
 		expect(result.warnings).toEqual([]);
 	});
 
-	it('selected Travellers are not dealt', () => {
+	// https://wiki.bloodontheclocktower.com/Travellers: a Traveller joins on top of the players
+	// and leaves the setup counts alone.
+	it('a selected Traveller is one more player, leaving the counts as they are', () => {
+		const without = analyse(7, pick('chef', 'empath', 'monk', 'poisoner', 'imp'));
 		const result = analyse(7, pick('chef', 'empath', 'monk', 'poisoner', 'imp', 'gunslinger'));
-		expect(result.dealt).toBe(6);
+		expect(result.dealt).toBe(7);
 		expect(result.travellers).toBe(1);
+		expect(result.players).toBe(8);
+		expect(result.expected).toEqual(without.expected);
+	});
+
+	it('players beyond 15 are the Travellers, and only extra Travellers add players', () => {
+		const travellers = pick('gunslinger', 'beggar', 'thief');
+		expect(analyse(17, travellers)).toMatchObject({ dealt: 15, travellers: 3, players: 18 });
+		expect(analyse(17, pick('gunslinger'))).toMatchObject({
+			dealt: 15,
+			travellers: 2,
+			players: 17
+		});
+	});
+
+	// https://beardytas.com/garden-of-djinn/stowed-away/: Travellers in the bag lower the count.
+	it('with Stowed Away, selected Travellers are counted among the players', () => {
+		const result = analyseSelection({
+			players: 8,
+			selection: pick('chef', 'empath', 'monk', 'poisoner', 'imp', 'gunslinger'),
+			scriptOrder: TB.map((c) => c.id),
+			lookup,
+			travellersInBag: 2
+		});
+		expect(result).toMatchObject({ dealt: 7, travellers: 1, players: 8 });
 	});
 
 	// https://wiki.bloodontheclocktower.com/Bootlegger: the script's rules can change setup, as
@@ -271,13 +298,13 @@ describe('randomSelection', () => {
 		const input = {
 			players: 8,
 			scriptOrder: withTravellers.map((c) => c.id),
-			lookup
+			lookup,
+			travellersInBag: 2
 		};
 		const selection = randomSelection({
 			...input,
 			selection: {},
 			scriptCharacters: withTravellers,
-			travellersInBag: 2,
 			random: sequence(first, 0.3, 0.6)
 		});
 		const travellers = Object.keys(selection).filter((id) => lookup(id)?.type === 'traveller');
