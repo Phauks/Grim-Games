@@ -37,7 +37,18 @@
 		seatPoints,
 		seatTokenSize
 	} from '#lib/ui/seating/seat-layout.ts';
-	import { readGuesses, withGuess, writeGuesses, type Guesses } from './grim-guesses.ts';
+	import {
+		GENERIC_GUESSES,
+		genericGuess,
+		readGuesses,
+		withGuess,
+		writeGuesses,
+		type GenericGuess,
+		type Guesses
+	} from './grim-guesses.ts';
+	import GenericGuessToken from './GenericGuessToken.svelte';
+	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
+	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -161,6 +172,14 @@
 		chosen = seat;
 		open = true;
 	}
+	/** A generic guess's word: its character type, or Good or Evil. */
+	const genericLabel = (g: GenericGuess) =>
+		g.type ? TYPE_LABELS[g.type] : g.team === 'good' ? 'Good' : 'Evil';
+	const guessName = (value: string | undefined) => {
+		const generic = genericGuess(value);
+		return generic ? genericLabel(generic) : characterOf(value)?.name;
+	};
+
 	function guess(characterId?: CharacterId) {
 		if (!code || !chosen) return;
 		guesses = withGuess(guesses, chosen.seatId, characterId);
@@ -179,8 +198,8 @@
 		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
 		const traveller = characterOf(seat.traveller);
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
-		const guessed = characterOf(guesses[seat.seatId]);
-		if (guessed) parts.push(t('player.grim.guess', { name: guessed.name }));
+		const guessed = guessName(guesses[seat.seatId]);
+		if (guessed) parts.push(t('player.grim.guess', { name: guessed }));
 		return parts.join(', ');
 	}
 	/* eslint-enable grim/names-as-badges */
@@ -230,7 +249,8 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
-			{@const guessed = characterOf(guesses[seat.seatId])}
+			{@const generic = genericGuess(guesses[seat.seatId])}
+			{@const guessed = generic ?? characterOf(guesses[seat.seatId])}
 			<!-- The player's avatar unless their own guess is set to show over it (plan R6). -->
 			{@const shown =
 				known ?? (seat.avatar && !playerSettings.current.guessesOnTokens ? undefined : guessed)}
@@ -257,7 +277,11 @@
 					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
 				/>
 				{#snippet face()}
-					{#if shown}<CharacterToken character={shown} {size} />{/if}
+					{#if shown && 'key' in shown}<GenericGuessToken
+							guess={shown}
+							label={genericLabel(shown)}
+							{size}
+						/>{:else if shown}<CharacterToken character={shown} {size} />{/if}
 				{/snippet}
 			</button>
 		{/each}
@@ -287,6 +311,21 @@
 		checked={playerSettings.current.guessesOnTokens}
 		onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
 	/>
+	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
+	     characters. -->
+	<ul class="generic" aria-label={t('player.grim.generic')}>
+		{#each GENERIC_GUESSES as g (g.key)}
+			<li>
+				<button
+					type="button"
+					aria-pressed={!!chosen && guesses[chosen.seatId] === g.key}
+					data-guess-key={g.key}
+					onclick={() => guess(g.key)}
+					><AlignmentPill alignment={g.team} text={genericLabel(g)} /></button
+				>
+			</li>
+		{/each}
+	</ul>
 	<CharacterPicker
 		characters={script.characters}
 		selected={chosen && guesses[chosen.seatId] ? [guesses[chosen.seatId]] : []}
@@ -296,6 +335,32 @@
 </BottomSheet>
 
 <style>
+	/* Two rows of three on a phone, one row where there is room. */
+	.generic {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(30%, calc(7 * var(--u))), 1fr));
+		gap: var(--space-1);
+		margin: 0 0 var(--space-2);
+		padding: 0;
+		list-style: none;
+	}
+	.generic button {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-1);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		background: var(--surface-raised);
+		font: inherit;
+		touch-action: manipulation;
+		cursor: pointer;
+	}
+	.generic button[aria-pressed='true'] {
+		border-color: var(--accent);
+		background: var(--surface-selected);
+	}
 	.tools {
 		display: flex;
 		justify-content: flex-end;

@@ -22,6 +22,7 @@ export const player = {
 	},
 	'player.grim.traveller': 'Traveller: {name}',
 	'player.grim.guess': 'your guess: {name}',
+	'player.grim.generic': 'Guess a type or alignment',
 	'player.sharedLinkFailed': 'Could not open the shared script',
 	'player.cannotSave': 'This browser cannot save',
 	'player.cannotSaveDetail': 'Notes are lost when the page closes.',
