@@ -16,6 +16,10 @@ export const player = {
 	'player.grim.dead': 'dead',
 	'player.grim.voteUnused': 'ghost vote not used',
 	'player.grim.voteUsed': 'ghost vote used',
+	'player.grim.votes': {
+		one: '{count} vote per nomination',
+		other: '{count} votes per nomination'
+	},
 	'player.grim.traveller': 'Traveller: {name}',
 	'player.grim.guess': 'your guess: {name}',
 	'player.sharedLinkFailed': 'Could not open the shared script',

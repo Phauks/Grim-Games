@@ -1513,7 +1513,8 @@
 				game,
 				publicTravellerTest(game.gameId, characters),
 				layout,
-				cornerInfo
+				cornerInfo,
+				characters
 			)}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->

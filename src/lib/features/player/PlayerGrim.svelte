@@ -159,6 +159,8 @@
 		if (seat.dead) parts.push(t('player.grim.dead'));
 		if (seat.ghostVote === 'unused') parts.push(t('player.grim.voteUnused'));
 		if (seat.ghostVote === 'used') parts.push(t('player.grim.voteUsed'));
+		// No ghost vote to spend (the Banshee killed by the Demon), as the board says.
+		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
 		const traveller = characterOf(seat.traveller);
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
 		const guessed = characterOf(guesses[seat.seatId]);
