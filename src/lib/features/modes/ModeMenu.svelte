@@ -33,6 +33,7 @@
 	import { seedInPlay } from './in-play.ts';
 	import GameInfoEditDialog, { type GameInfoChanges } from './GameInfoEditDialog.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
+	import NewGameSheet from './NewGameSheet.svelte';
 	import { hasSpectatorVote } from './specters.ts';
 	import SpectersSheet from './SpectersSheet.svelte';
 	import { townGroupOf } from './town-groups.ts';
@@ -85,6 +86,7 @@
 		onShare
 	}: Props = $props();
 	let editing = $state(false);
+	let newGameSheet = $state<NewGameSheet>();
 	const gameId = $derived(game.gameId);
 	// The corner's popover closes when a seat's sheet or another overlay opens over the board
 	// (Trevor, 2026-10-19: "Game info popup should close if other item is opened like a
@@ -352,6 +354,20 @@
 				{t('modes.extras.title')}
 			</Button>
 		{/if}
+		<!-- A new script means a new game, never a change mid-game (Trevor, 2026-10-24). -->
+		{#if onEdit}
+			<Button
+				variant="quiet"
+				icon="add"
+				data-testid="game-info-new-game"
+				onclick={() => {
+					open = false;
+					newGameSheet?.begin();
+				}}
+			>
+				{t('setup.newGame')}
+			</Button>
+		{/if}
 		{#if assignment === 'draft' || assignment === 'choose-own'}
 			<Button
 				variant="quiet"
@@ -401,12 +417,10 @@
 	<Dialog bind:open title={t('modes.info.title')} headActions={edit}>{@render actions()}</Dialog>
 {/if}
 {#if onEdit}
+	<NewGameSheet bind:this={newGameSheet} {game} started={startedAt !== undefined} />
 	<GameInfoEditDialog
 		bind:open={editing}
-		initial={{
-			storytellerName: game.storytellerName ?? '',
-			script: scriptEdition(game.script)?.id ?? savedChoice?.value
-		}}
+		initial={{ storytellerName: game.storytellerName ?? '' }}
 		onsave={onEdit}
 	/>
 {/if}
