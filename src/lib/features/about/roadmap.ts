@@ -123,6 +123,14 @@ export const ROADMAP: readonly RoadmapArea[] = [
 				prs: [321]
 			},
 			{ id: 'L18a', title: 'Night order position ("1 of 8") as a badge', prs: [321] },
+			{
+				id: 'L59',
+				title: 'Night steps fill in the character an info token always shows, such as the Harpy'
+			},
+			{
+				id: 'L60',
+				title: "The Dreamer's info token shows the player's character and one you pick, shuffled"
+			},
 			{ id: 'B2', title: 'Duplicate a reminder from the reminder bank' },
 			{ id: 'B3', title: 'Mark the seat a reminder is dragged from' },
 			{ id: 'L22', title: 'Rotating players: every name moves with its player' },

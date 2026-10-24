@@ -114,6 +114,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Reminder movement (`reminder-movement.ts`: tokens that stay put, and characters that relocate them) | `reminderMovement`                    | moved |
 | Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means)             | `reminderPlaceholders`                | moved |
 | Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text)          | `nightText`                           | moved |
+| Info token characters (`info-token-characters.ts`: the character a night step's card always shows)  | `infoTokenCharacters`                 | new   |
 | On-death triggers (`night-alerts.ts` `ON_DEATH`)                                                    | `onDeath`                             | moved |
 | Protection (`ability.ts`, `night-alerts.ts`)                                                        | `protects`                            | moved |
 | Impairments (`ability.ts`: the Drunk, Witch, Minstrel and Preacher)                                 | `impairs`                             | moved |

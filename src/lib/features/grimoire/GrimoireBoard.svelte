@@ -1545,9 +1545,9 @@
 			if (i >= 0) nw.walk = { ...nw.walk, index: i };
 		}
 	}}
-	onInfoTokens={(token) => {
+	onInfoTokens={(token, filled) => {
 		// A card the step's text names opens over the step, which stays open under it.
-		if (token && infoSheet) return infoSheet.openWith(token);
+		if (token && infoSheet) return infoSheet.openWith(token, filled);
 		// The sheet opens over the step, which stays open under it (Trevor, 2026-10-20).
 		infoReturn = undefined;
 		infoOpen = true;

@@ -26,5 +26,10 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each night."
+	},
+	"infoTokenCharacters": {
+		"this-player-is": {
+			"characters": ["self"]
+		}
 	}
 }

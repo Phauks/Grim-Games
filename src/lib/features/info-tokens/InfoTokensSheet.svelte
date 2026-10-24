@@ -3,6 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
+	import type { FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 	import type { ShowableBluffSet } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -50,7 +51,7 @@
 
 	type View =
 		| { kind: 'list' }
-		| { kind: 'characters'; token: InfoToken }
+		| { kind: 'characters'; token: InfoToken; max: number }
 		| { kind: 'sets'; token: InfoToken };
 
 	let view = $state<View>({ kind: 'list' });
@@ -114,7 +115,7 @@
 	/** What was filled into a fill-in custom card, kept while its characters are chosen. */
 	let pendingDetail: string | undefined;
 
-	function choose(token: InfoToken, add = false, detail?: string) {
+	function choose(token: InfoToken, add = false, detail?: string, filled?: FilledInfoToken) {
 		adding = add;
 		pendingDetail = detail;
 		if (token.id === 'not-in-play' && bluffSets) {
@@ -130,9 +131,17 @@
 				return;
 			}
 		}
+		if (filled) {
+			// Every place filled shows at once; with room left the picker opens with them
+			// picked, to add to or change (Trevor, 2026-10-24).
+			if (filled.characterIds.length >= filled.upTo) return use(token.text, filled.characterIds);
+			picked = [...filled.characterIds];
+			view = { kind: 'characters', token, max: filled.upTo };
+			return;
+		}
 		if (token.asks?.characters) {
 			picked = [];
-			view = { kind: 'characters', token };
+			view = { kind: 'characters', token, max: token.asks.characters };
 			return;
 		}
 		// "This is the Demon", "These are your Minions" and the rest: the Storyteller points.
@@ -141,11 +150,12 @@
 
 	/**
 	 * Opens the sheet straight at one card, as tapped in the list: a night step's own cards
-	 * (Trevor, 2026-10-19). Closing goes back to the list.
+	 * (Trevor, 2026-10-19), with the characters the step fills in (Trevor, 2026-10-24).
+	 * Closing goes back to the list.
 	 */
-	export function openWith(token: InfoToken) {
+	export function openWith(token: InfoToken, filled?: FilledInfoToken) {
 		open = true;
-		choose(token);
+		choose(token, false, undefined, filled);
 	}
 
 	/** Shows the card now, or adds it to the cards to show together. */
@@ -205,7 +215,7 @@
 			<CharacterPicker
 				{characters}
 				bind:selected={picked}
-				max={token.asks?.characters ?? 1}
+				max={view.max}
 				label={t('info-tokens.characters')}
 				inPlay={inPlay && new Set(inPlay)}
 				notInPlay={token.asks?.notInPlay === true}

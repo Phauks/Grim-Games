@@ -65,5 +65,11 @@
 				"reason": "Says last night’s Mad token comes off."
 			}
 		}
+	},
+	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"],
+			"upTo": 2
+		}
 	}
 }

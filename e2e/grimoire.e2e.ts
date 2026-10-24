@@ -1018,17 +1018,45 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	const step = page.getByRole('dialog', { name: 'Imp' });
 	const tiles = step.getByTestId('step-info-tokens');
 	await expect(tiles.getByRole('button')).toHaveCount(1);
-	// The card asks which character first, as on the info tokens sheet.
-	await tiles.getByRole('button', { name: 'You are', exact: true }).tap();
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Imp');
-	await page.getByRole('button', { name: 'Imp, In play', exact: true }).tap();
-	await page.getByRole('button', { name: 'Confirm' }).tap();
+	// The Imp's rules fill in its own token (Trevor, 2026-10-24), so the card shows at once.
+	await tiles.getByRole('button', { name: 'You are (Imp)', exact: true }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
 	// The step stays open under the sheet, for the rest of the Imp's turn.
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(step).toBeVisible();
+});
+
+test('a filled-in info token with room left opens its picker with the filled ones picked', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Cerenovus : the target learns the Cerenovus chose
+	// them and which character to be mad about (Trevor, 2026-10-24: its own token is filled in).
+	await startGame(page, 'Sects & Violets');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Cerenovus', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	await (await walkTo(page, 'Cerenovus')).locator('button.step .count').tap();
+	const step = page.getByRole('dialog', { name: 'Cerenovus' });
+	await step
+		.getByTestId('step-info-tokens')
+		.getByRole('button', { name: 'This character selected you (Cerenovus)', exact: true })
+		.tap();
+	// The Cerenovus is already picked; the Storyteller adds the madness character.
+	const confirm = page.getByRole('button', { name: 'Confirm' });
+	await expect(confirm).toBeEnabled();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Clockmaker');
+	await page.getByRole('button', { name: /^Clockmaker/ }).tap();
+	await confirm.tap();
+	await expect(
+		page.getByRole('dialog', { name: 'This character selected you: Cerenovus: Clockmaker' })
+	).toBeVisible();
 });
 
 test('Share in the toolbar shows the room code, QR and join link, never the game', async ({

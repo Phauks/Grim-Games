@@ -11,5 +11,10 @@
 	},
 	"reminderMovement": {
 		"relocates": "makes a good player a Farmer"
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["self"]
+		}
 	}
 }

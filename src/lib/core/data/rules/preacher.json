@@ -65,5 +65,10 @@
 				"reason": "Only one Preacher token is shown: “token”, not “tokens” (Trevor’s review)."
 			}
 		}
+	},
+	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"]
+		}
 	}
 }
