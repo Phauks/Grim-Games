@@ -187,6 +187,24 @@ export class Grimoire {
 		bankCopies.write(this.game.gameId, next);
 	}
 
+	/** Copies of a reminder Duplicate added to the bank, still there. */
+	bankCopyCount(reminder: Reminder): number {
+		return this.bankCopies.get(reminderKey(reminder)) ?? 0;
+	}
+
+	/** Takes one Duplicate copy back out of the bank (Trevor, 2026-10-24). */
+	removeBankCopy(reminder: Reminder): void {
+		const key = reminderKey(reminder);
+		const n = this.bankCopies.get(key) ?? 0;
+		if (n <= 0) return;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const next = new Map(this.bankCopies);
+		if (n === 1) next.delete(key);
+		else next.set(key, n - 1);
+		this.bankCopies = next;
+		bankCopies.write(this.game.gameId, next);
+	}
+
 	setReminderSpot(reminderId: ReminderId, at: SeatPoint): void {
 		this.reminderSpots = { ...this.reminderSpots, [reminderId]: at };
 		reminderSpots.write(this.game.gameId, this.reminderSpots);

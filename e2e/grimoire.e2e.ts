@@ -4403,13 +4403,23 @@ test("a reminder's ⋯ duplicates it into the bank, from the board or the bank",
 	await expect(put).toBeHidden();
 	await expect(inBank).toHaveCount(3);
 	await expect(bankExtras).toHaveCount(2);
+	// A copy in the bank is removed with the red trash, as on the board (Trevor, 2026-10-24);
+	// the game's own token has none.
+	await inBank.first().tap();
+	await expect(put.getByRole('button', { name: 'Remove reminder' })).toHaveCount(0);
+	await put.getByRole('button', { name: 'Close' }).tap();
+	await bankExtras.getByRole('button', { name: 'Poisoned reminder' }).first().tap();
+	await put.getByRole('button', { name: 'Remove reminder' }).tap();
+	await expect(put).toBeHidden();
+	await expect(inBank).toHaveCount(2);
+	await expect(bankExtras).toHaveCount(1);
 	// Placed, an added copy is marked as more than the game gives.
-	for (let n = 0; n < 3; n++) {
+	for (let n = 0; n < 2; n++) {
 		await inBank.first().tap();
 		await put.getByRole('button', { name: /Seat 2$/ }).tap();
 	}
 	await expect(inBank).toHaveCount(0);
-	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(2);
+	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(1);
 });
 
 test('"+ New token" makes a reusable ∞ token whose copies carry its look', async ({ page }) => {
