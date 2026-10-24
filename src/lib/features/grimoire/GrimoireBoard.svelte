@@ -126,6 +126,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import BoardCorner from './BoardCorner.svelte';
+	import { cornerLines } from './corner-lines.ts';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
@@ -876,6 +877,20 @@
 		})
 	);
 	const phase = $derived(phaseText(phaseNow));
+	/** The corner's lines, which the room's phones show too (Trevor, 2026-10-24). */
+	const cornerInfo = $derived(
+		cornerLines({
+			gameId: game.gameId,
+			phase: phaseNow,
+			startedAt,
+			endedAt: ended?.endedAt,
+			watchers: watcherCount,
+			watching
+		})
+	);
+	$effect(() => {
+		if (!watching) roomHost().showCorner(game.gameId, cornerInfo);
+	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -1305,12 +1320,11 @@
 		<BoardCorner
 			{game}
 			{watching}
-			{watcherCount}
+			corner={cornerInfo}
+			gamePhase={phase}
 			fitRoom={fitCorner}
 			{width}
 			{rootFont}
-			{phase}
-			begun={phaseNow.kind !== 'setup'}
 			{startedAt}
 			endedAt={ended?.endedAt}
 			onEdit={editGameInfo}
@@ -1495,7 +1509,12 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			{@const town = publicProjection(game, publicTravellerTest(game.gameId, characters), layout)}
+			{@const town = publicProjection(
+				game,
+				publicTravellerTest(game.gameId, characters),
+				layout,
+				cornerInfo
+			)}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
 			<PlayerScriptTabs
@@ -1510,6 +1529,7 @@
 							seats: town.seats,
 							layout: town.layout,
 							storytellerName: town.storytellerName,
+							corner: town.corner,
 							gameId: game.gameId,
 							guessKey: `storyteller:${game.gameId}`
 						}}

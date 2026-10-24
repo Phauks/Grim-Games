@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId, LoadedScript } from '#lib/core/data/index.ts';
-	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
+	import type { PublicCorner, PublicSeat } from '#lib/core/sync/public-projection.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -55,6 +56,7 @@
 			seats: readonly PublicSeat[];
 			layout?: PublicSeatLayout;
 			storytellerName?: string;
+			corner?: PublicCorner;
 			/** The board's own game, whose background this town shows. */
 			gameId: string;
 			guessKey: string;
@@ -234,10 +236,14 @@
 				{/snippet}
 			</button>
 		{/each}
-		<!-- The corner's script name, author and Storyteller; nothing to open or share here. -->
+		<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
+		     2026-10-24); nothing to open or share here. -->
 		<BoardCorner
 			meta={script.meta}
 			storytellerName={table?.storytellerName}
+			corner={table?.corner}
+			roomCode={town ? roomHost().code : code}
+			logo={logo && !logoFailed ? logo : undefined}
 			watching
 			fitRoom={fitCorner}
 			{width}

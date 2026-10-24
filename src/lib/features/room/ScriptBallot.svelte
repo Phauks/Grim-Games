@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import VoteChoice from './VoteChoice.svelte';
 	import VoteTimeLeft from './VoteTimeLeft.svelte';
@@ -75,7 +76,10 @@
 					pressed={place >= 0}
 					disabled={offline}
 					onclick={() => tap(option.id)}
-					>{option.name}{#if option.author}<span class="author">, {option.author}</span
+					>{#if option.logo}<ScriptLogo
+							src={option.logo}
+							class="ballot-logo"
+						/>{/if}{option.name}{#if option.author}<span class="author">, {option.author}</span
 						>{/if}</VoteChoice
 				>
 			</li>
@@ -102,5 +106,12 @@
 	}
 	.author {
 		color: var(--on-surface-muted);
+	}
+	/* The script's logo before its name (Trevor, 2026-10-24). */
+	.vote :global(.ballot-logo) {
+		width: 1.5em;
+		height: 1.5em;
+		margin-inline-end: var(--space-1);
+		vertical-align: middle;
 	}
 </style>
