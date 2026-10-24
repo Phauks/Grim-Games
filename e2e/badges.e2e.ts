@@ -192,6 +192,8 @@ test("a character's own badge inside its details brings them back into view", as
 	await expect(summary).not.toHaveAttribute('data-pulse');
 	await own.tap();
 	await expect(summary).toHaveAttribute('data-pulse', '');
+	// Drawn inside the box, so the dialog's edges can't clip it (Trevor, 2026-10-24).
+	await expect(summary).toHaveCSS('box-shadow', /inset/);
 	await expect(page.getByRole('dialog', { name: 'Alchemist' })).toHaveCount(1);
 	await expect(dialog.locator('p .badge[data-character-id="boffin"]').first()).toHaveAttribute(
 		'aria-haspopup',
@@ -233,7 +235,15 @@ test('the sections list counts tips, examples and jinxes, with lines between', a
 	const entry = sections.getByRole('button', { name: 'Examples' });
 	await expect(entry).not.toHaveCSS('border-bottom-width', '0px');
 	const wide = (await dialog.boundingBox())!.width >= 40 * 16;
-	if (wide) await expect(sections).not.toHaveCSS('border-right-width', '0px');
+	if (wide) {
+		await expect(sections).not.toHaveCSS('border-right-width', '0px');
+		// The side line meets the line under the character, with no line of the list's own
+		// above the first entry (Trevor, 2026-10-24).
+		await expect(sections.locator('ul')).toHaveCSS('border-top-width', '0px');
+		const top = (await sections.boundingBox())!.y;
+		const summary = (await dialog.getByTestId('own-summary').boundingBox())!;
+		expect(Math.abs(top - (summary.y + summary.height))).toBeLessThan(2);
+	}
 
 	// The wiki link is an icon button, like the X beside it.
 	const wiki = dialog.getByRole('link', { name: 'Open wiki' });

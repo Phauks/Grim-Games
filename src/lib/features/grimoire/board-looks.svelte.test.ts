@@ -17,10 +17,11 @@ describe('board looks', () => {
 				reminders: 'free',
 				usedGhostVote: 'struck',
 				defaultFrame: 'laurel',
-				dragSource: 'bank',
 				holdLights: 'seat',
 				// Every reminder is always on the board now (Trevor, 2026-10-23).
 				reminderStacks: true,
+				// A dragged reminder no longer names its source (Trevor, 2026-10-24).
+				dragSource: 'bank',
 				// The script's name is only in the lower left corner now (Trevor, 2026-10-18).
 				titleAt: 'corner'
 			})
@@ -36,7 +37,6 @@ describe('board looks', () => {
 			reminders: 'free',
 			usedGhostVote: 'struck',
 			defaultFrame: 'laurel',
-			dragSource: 'bank',
 			holdLights: 'seat'
 		});
 		expect(

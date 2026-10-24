@@ -61,7 +61,6 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import ReminderOrigin from './ReminderOrigin.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
 		followSeating,
@@ -75,7 +74,7 @@
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import type { Box } from './name-placement.ts';
 	import { SeatArranging } from './seat-arranging.svelte.ts';
-	import { ReminderDragging, type DraggedReminder } from './reminder-drag.svelte.ts';
+	import { ReminderDragging } from './reminder-drag.svelte.ts';
 	import {
 		avoidBoxes,
 		cornerObstacles,
@@ -125,20 +124,14 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import BoardCorner from './BoardCorner.svelte';
-	import { boardPhase, cornerLines } from './corner-lines.ts';
+	import { boardPhase, cornerLines, phaseText } from './corner-lines.ts';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
 	import RuleCharacters from './RuleCharacters.svelte';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
-	import {
-		extraReminders,
-		isGeneric,
-		isSeatsReminder,
-		reminderWords,
-		tokenLabel
-	} from './reminders.ts';
+	import { extraReminders, isGeneric, isSeatsReminder, reminderWords } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
@@ -396,37 +389,6 @@
 	}));
 	const dragOrigin = $derived(remDrag.origin);
 	const heldDrag = $derived(remDrag.held);
-	/** A reminder dragged on the board: whose it is, its words and where it is. */
-	const boardDrag = $derived.by((): DraggedReminder | undefined => {
-		const r = dragOrigin?.reminder ?? heldDrag;
-		return remDrag.drag && r
-			? {
-					characterId: r.characterId,
-					label: tokenLabel(r),
-					ownerSeatId: r.ownerSeatId,
-					at: remDrag.drag.at
-				}
-			: undefined;
-	});
-	/** A token dragged from the bank (ReminderBank's onDrag). */
-	let bankDrag = $state<DraggedReminder | undefined>();
-	/**
-	 * Where a dragged reminder came from, in a pill beside the token (boardLooks.dragSource
-	 * 'pill', Trevor 2026-10-23): above it, or below it near the board's top. Its left edge
-	 * moves across it as the token crosses the board, so it never runs off either side.
-	 */
-	const sourcePill = $derived.by(() => {
-		const dragged = boardDrag ?? bankDrag;
-		if (!dragged || boardLooks.current.dragSource !== 'pill' || height <= 0) return undefined;
-		const lift = ((chip * 0.7) / height) * 100;
-		const below = dragged.at.y - lift < 12;
-		return {
-			dragged,
-			x: Math.min(100, Math.max(0, dragged.at.x)),
-			y: below ? dragged.at.y + lift : dragged.at.y - lift,
-			below
-		};
-	});
 
 	// ── Arranging seats (seat-arranging.svelte.ts) ──
 	const seatArr = new SeatArranging(() => ({
@@ -1070,6 +1032,31 @@
 				--logo-h={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
+		<!--
+			A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to
+			their seat's line, with a line back when they have to sit further out), so whose a
+			reminder is reads at a glance on a crowded board. First on the board, so every token,
+			name, ghost vote and mark draws over them (Trevor, 2026-10-24); only the logo and the
+			background are under them.
+		-->
+		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+			{#each seats as seat, i (seat.seatId)}
+				{#if !looseMode && remDrag.drag === undefined}
+					{#each fan[i] ?? [] as p, k (k)}
+						{@const from = rimToward(shown[i], p, boardSize, size)}
+						<line
+							x1={from.x}
+							y1={from.y}
+							x2={p.x}
+							y2={p.y}
+							data-tether={i + 1}
+							vector-effect="non-scaling-stroke"
+						/>
+					{/each}
+				{/if}
+			{/each}
+		</svg>
+
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = shown[i]}
 			<div
@@ -1127,29 +1114,6 @@
 				/>
 			</div>
 		{/each}
-
-		<!--
-			A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to
-			their seat's line, with a line back when they have to sit further out), so whose a
-			reminder is reads at a glance on a crowded board. Under the tokens.
-		-->
-		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-			{#each seats as seat, i (seat.seatId)}
-				{#if !looseMode && remDrag.drag === undefined}
-					{#each fan[i] ?? [] as p, k (k)}
-						{@const from = rimToward(shown[i], p, boardSize, size)}
-						<line
-							x1={from.x}
-							y1={from.y}
-							x2={p.x}
-							y2={p.y}
-							data-tether={i + 1}
-							vector-effect="non-scaling-stroke"
-						/>
-					{/each}
-				{/if}
-			{/each}
-		</svg>
 
 		{#each seats as seat, i (seat.seatId)}
 			{@const count = seat.reminders.length}
@@ -1263,24 +1227,6 @@
 				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
 			>
 		{/each}
-		{#if sourcePill}
-			<p
-				class="source-pill"
-				class:below={sourcePill.below}
-				role="status"
-				data-testid="drag-source"
-				style:left="{sourcePill.x}%"
-				style:top="{sourcePill.y}%"
-				style:--across="{-sourcePill.x}%"
-			>
-				<ReminderOrigin
-					{game}
-					{characters}
-					characterId={sourcePill.dragged.characterId}
-					interactive={false}
-				/>
-			</p>
-		{/if}
 		{#if nw.walk}
 			<NightStrip
 				{grimoire}
@@ -1334,8 +1280,6 @@
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
-				onDrag={(d) => (bankDrag = d)}
-				dragged={boardDrag}
 				run={bankRun}
 				disabled={watching}
 				lit={holding === undefined ? undefined : lit}
@@ -1357,6 +1301,7 @@
 			{game}
 			{watching}
 			corner={cornerInfo}
+			gamePhase={phaseText(phase)}
 			fitRoom={fitCorner}
 			{width}
 			{rootFont}
@@ -1417,6 +1362,7 @@
 	onEdit={watching ? undefined : editGameInfo}
 	{startedAt}
 	endedAt={ended?.endedAt}
+	phase={phaseText(phase)}
 	{watcherCount}
 	onShare={watching ? undefined : () => (phonesOpen = true)}
 />
@@ -1731,27 +1677,6 @@
 	}
 	.place-spot:hover {
 		background: var(--surface-selected);
-	}
-	/* Beside a dragged reminder: whose it is, as a name on the board (a translucent pill). */
-	.source-pill {
-		position: absolute;
-		z-index: 5;
-		max-width: 70%;
-		margin: 0;
-		padding: var(--space-1) var(--space-2);
-		translate: var(--across) -100%;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: var(--board-bar-background);
-		color: var(--on-surface);
-		font-size: 0.8rem;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		pointer-events: none;
-	}
-	.source-pill.below {
-		translate: var(--across) 0;
 	}
 	.tethers {
 		position: absolute;

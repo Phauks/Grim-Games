@@ -1038,9 +1038,9 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	const corner = phone.getByTestId('player-grim').getByTestId('script-title');
 	await expect(corner).toContainText('Trouble Brewing');
 	await expect(corner.getByTestId('board-room-code')).toContainText(code.slice(3));
-	const boardPhase = await page.getByTestId('board-phase').textContent();
-	await expect(corner.getByTestId('board-phase')).toHaveText(boardPhase!);
-	await expect(corner.getByTestId('board-game-clock')).toBeVisible();
+	// Game time ticks, so it is read as the board shows it, not to the second.
+	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
+	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();

@@ -60,7 +60,7 @@
 	level={3}
 	storageKey="settings-board-advanced"
 	defaultOpen={false}
-	count={3}
+	count={2}
 >
 	<SettingRow label={REMINDER_MODE_LABEL} warning={t('settings.reminderModeWarning')}>
 		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
@@ -70,13 +70,6 @@
 		description={t('settings.holdLightsSeatDescription')}
 		checked={boardLooks.current.holdLights === 'seat'}
 		onChange={(on) => boardLooks.update({ holdLights: on ? 'seat' : 'character' })}
-	/>
-	<!-- Both ways built so Trevor can pick after trying them (2026-10-23). -->
-	<SettingToggle
-		label={t('settings.dragSourceBank')}
-		description={t('settings.dragSourceBankDescription')}
-		checked={boardLooks.current.dragSource === 'bank'}
-		onChange={(on) => boardLooks.update({ dragSource: on ? 'bank' : 'pill' })}
 	/>
 </Collapsible>
 

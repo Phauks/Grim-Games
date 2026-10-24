@@ -30,7 +30,7 @@ export function phaseText(phase: PublicPhase): string {
 
 /**
  * The corner's lines as this device's Board settings show them. A spectator's board
- * (`watching`) has no join code or Game time of its own.
+ * (`watching`) has no join code, phase or Game time of its own.
  */
 export function cornerLines(options: {
 	gameId: GameId;
@@ -45,7 +45,8 @@ export function cornerLines(options: {
 	return {
 		modes: gameModeNames(options.gameId),
 		...(own && assistance.roomCode ? { joinCode: true } : {}),
-		...(assistance.boardPhase ? { phase: options.phase } : {}),
+		// A watched board can't tell when the game started, so its phase would read Setup.
+		...(own && assistance.boardPhase ? { phase: options.phase } : {}),
 		...(own && assistance.gameClock
 			? {
 					gameTime: {

@@ -109,6 +109,26 @@ test("the players' Grim is drawn as the board: its seats where the board has the
 	// The board's corner line for line (Trevor, 2026-10-24), and its vignette under the seats.
 	await expect(town.getByTestId('script-title')).toContainText('Trouble Brewing');
 	await expect(town.getByTestId('board-room-code')).toBeVisible();
-	await expect(town.getByTestId('board-phase')).toHaveText('Setup');
+	await expect(town.getByTestId('board-game-clock')).toContainText('Setup');
 	await expect(town.getByTestId('preview-vignette')).toBeAttached();
+});
+
+test("a seat's focus ring in the players' Grim is round, around its token", async ({ page }) => {
+	// Trevor (2026-10-24): it was a square around the seat, as tokens were before.
+	await startGame(page);
+	const sheet = await openScript(page);
+	await sheet.getByRole('tab', { name: 'Grim' }).tap();
+	const seat = sheet.getByTestId('grim-seat').first();
+	await seat.tap();
+	await page.keyboard.press('Escape');
+	await expect(seat).toBeFocused();
+	expect(await seat.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('none');
+	const ring = await seat
+		.locator('[data-token-face]')
+		.first()
+		.evaluate((el) => {
+			const style = getComputedStyle(el);
+			return { outline: style.outlineStyle, radius: style.borderRadius };
+		});
+	expect(ring).toEqual({ outline: 'solid', radius: '50%' });
 });
