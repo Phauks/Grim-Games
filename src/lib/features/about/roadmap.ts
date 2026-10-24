@@ -164,7 +164,11 @@ export const ROADMAP: readonly RoadmapArea[] = [
 			{ id: 'L50', title: 'Savant information: a spoiler-free view to show' },
 			{ id: 'L56', title: 'Player claims in town: one way to log them' },
 			{ id: 'L57', title: 'Juggler claims: log the guesses' },
-			{ id: 'L58', title: 'Gossip claims: log the statement, true or false' }
+			{ id: 'L58', title: 'Gossip claims: log the statement, true or false' },
+			{
+				id: 'L61',
+				title: 'Execution: choose what saved the player, such as the Pacifist or Devil’s Advocate'
+			}
 		]
 	},
 	{

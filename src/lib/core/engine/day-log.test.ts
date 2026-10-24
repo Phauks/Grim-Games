@@ -203,6 +203,58 @@ describe('Execute', () => {
 		expect(s.game.seats[seats[3]].dead).toBe(true);
 	});
 
+	it("applies the Pacifist's save when the Storyteller picks it for a good player", () => {
+		// https://wiki.bloodontheclocktower.com/Pacifist: the Storyteller decides whether an
+		// executed good player dies, so the grimoire never applies it unasked.
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[1],
+			characterId: 'pacifist'
+		});
+		const plain = run(s, ctx, { type: 'Execute', seatId: seats[4] });
+		expect(plain.game.seats[seats[4]].dead).toBe(true);
+		expect(warned(s, ctx, { type: 'Execute', seatId: seats[4], savedBy: 'pacifist' })).toEqual([
+			'survives-execution'
+		]);
+		const saved = run(s, ctx, { type: 'Execute', seatId: seats[4], savedBy: 'pacifist' });
+		expect(saved.game.seats[seats[4]].dead).toBe(false);
+		expect(saved.game.today.entries[0]).toMatchObject({
+			died: false,
+			savedBy: { characterId: 'pacifist', seatId: seats[1] }
+		});
+	});
+
+	it('warns, but still saves, when the pick does not cover the player', () => {
+		// https://wiki.bloodontheclocktower.com/Pacifist: only good players; the Storyteller
+		// may still rule otherwise (warn, never lock).
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[1],
+			characterId: 'pacifist'
+		});
+		expect(warned(s, ctx, { type: 'Execute', seatId: seats[3], savedBy: 'pacifist' })).toEqual([
+			'save-may-not-apply',
+			'survives-execution'
+		]);
+		const saved = run(s, ctx, { type: 'Execute', seatId: seats[3], savedBy: 'pacifist' });
+		expect(saved.game.seats[seats[3]].dead).toBe(false);
+	});
+
+	it('keeps the executed Vizier alive unasked', () => {
+		// https://wiki.bloodontheclocktower.com/Vizier: cannot die during the day.
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[3],
+			characterId: 'vizier'
+		});
+		const after = run(s, ctx, { type: 'Execute', seatId: seats[3] });
+		expect(after.game.seats[seats[3]].dead).toBe(false);
+		expect(after.game.today.entries[0]).toMatchObject({ savedBy: { characterId: 'vizier' } });
+	});
+
 	it('warns about a second execution in one day', () => {
 		const { session, ctx, seats } = setup();
 		const s = run(session, ctx, { type: 'Execute', seatId: seats[3] });

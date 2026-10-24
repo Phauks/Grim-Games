@@ -659,9 +659,14 @@
 		endDayOpen = true;
 		return true;
 	}
-	function executeAndEndDay(seatId: SeatId | undefined): void {
+	function executeAndEndDay(seatId: SeatId | undefined, save?: CharacterId | 'dies'): void {
 		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
-		if (seatId && !logged) grimoire.run({ type: 'Execute', seatId });
+		if (seatId && !logged)
+			grimoire.run({
+				type: 'Execute',
+				seatId,
+				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {})
+			});
 		endDay();
 	}
 	/**

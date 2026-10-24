@@ -105,6 +105,7 @@ export type WarningCode =
 	| 'not-traveller'
 	| 'already-dead'
 	| 'survives-execution'
+	| 'save-may-not-apply'
 	| 'not-seat-character'
 	| 'already-used'
 	| 'empty-day'
