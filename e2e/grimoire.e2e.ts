@@ -1175,6 +1175,11 @@ test('the board can go full screen from its toolbar, and back', async ({ page })
 	await startGame(page);
 	const button = page.getByRole('button', { name: 'Full screen', exact: true });
 	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	// Its symbol alone, last on the toolbar after ⋯ (Trevor, 2026-10-24).
+	await expect(button).toHaveText('');
+	await expect(
+		page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button').last()
+	).toHaveAccessibleName('Full screen');
 	await button.tap();
 	await expect(button).toHaveAttribute('aria-pressed', 'true');
 	expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(true);
