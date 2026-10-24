@@ -906,3 +906,37 @@ test('the corner, the day view and Resume agree on the night or day, without a s
 	await resumed('Day 2');
 	await expect(phase).toHaveText('Day 2');
 });
+
+test('a game that ends at an Execution ends on that day', async ({ page }) => {
+	test.setTimeout(90_000);
+	await startGame(page);
+	await chooseCharacter(page, 3, 'Imp');
+	const phase = page.getByTestId('board-phase');
+	await (await openDay(page)).getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page);
+	await page
+		.getByRole('list', { name: 'Reminder bank' })
+		.locator('..')
+		.getByRole('button', { name: 'End night', exact: true })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	if (await daySheet(page).isVisible()) await closeDay(page);
+	await expect(phase).toHaveText('Day 1');
+
+	// Day 1's Execution ticks Dusk, then End game: the game ended on Day 1 (Trevor, 2026-10-24).
+	await (await openDay(page)).getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page, 'Seat 3');
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(end).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('game-over')).toBeVisible();
+	await expect(phase).toHaveText('Day 1');
+	await page.reload();
+	await expect(page.getByTestId('board-phase')).toHaveText('Day 1');
+});

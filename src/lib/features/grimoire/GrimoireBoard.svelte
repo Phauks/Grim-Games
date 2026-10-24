@@ -10,7 +10,7 @@
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames, gameStarts } from './device-notes.ts';
+	import { endedGames, gameStarts, nightUnderway } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -863,7 +863,13 @@
 	const phaseNow = $derived(
 		gamePhase(game.pastDays.length, {
 			begun: startedAt !== undefined,
-			nightUnderway: grimoire.nightRunning || grimoire.nightUnderway
+			nightUnderway: ended
+				? nightUnderway(
+						{ day: grimoire.nightDay, done: grimoire.nightDone },
+						game.pastDays.length,
+						true
+					)
+				: grimoire.nightRunning || grimoire.nightUnderway
 		})
 	);
 	const phase = $derived(phaseText(phaseNow));
