@@ -97,14 +97,18 @@ test('the menu links the changelog page, which lists merged changes by day', asy
 	if ((await rows.count()) > 1) await expect(rows.nth(1)).not.toHaveCSS('border-top-width', '0px');
 });
 
-test('the menu links the roadmap, which lists planned items by area', async ({ page }) => {
+test('the menu links the roadmap, which lists features as done, next and later', async ({
+	page
+}) => {
 	await page.goto('/');
 	await (await theMenu(page)).getByRole('link', { name: 'Roadmap' }).tap();
 	await expect(page).toHaveURL(/\/roadmap$/);
 	await expect(page.getByRole('heading', { name: 'Roadmap', level: 1 })).toBeVisible();
 	const main = page.getByRole('main');
-	await expect(main.getByRole('heading', { name: 'Rooms and sharing', level: 2 })).toBeVisible();
-	await expect(main.getByTestId('roadmap-item').first()).toContainText('D1');
+	// Done is filled only from full history; Next and Later have features either way.
+	await expect(main.getByRole('heading', { name: 'Next', level: 2 })).toBeVisible();
+	await expect(main.getByRole('heading', { name: 'Later', level: 2 })).toBeVisible();
+	await expect(main.getByTestId('roadmap-later')).toContainText('Achievements');
 	// Done items link the change that finished them; CI's one-commit history has none.
 	for (const done of await main.locator('[data-testid="roadmap-item"][data-done] a').all())
 		await expect(done).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\//);
