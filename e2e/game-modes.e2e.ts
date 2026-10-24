@@ -142,8 +142,11 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 		dialog.getByRole('button', { name: 'Download mode file' }).tap()
 	]);
 	expect(download.suggestedFilename()).toBe('whale-buffet.json');
-	// Our own wording is off by default (no authored content, Trevor 2026-10-15).
-	await expect(dialog.getByTestId('inspect-about')).toHaveText('None');
+	// Our own wording is off by default (no authored content, Trevor 2026-10-15); this
+	// description shows anyway, since Trevor approved it (2026-10-24).
+	await expect(dialog.getByTestId('inspect-about')).toContainText(
+		'Every character is on the script'
+	);
 	// The dialog's content scrolls to its last part (Trevor, 2026-10-18).
 	const scroll = dialog.getByTestId('mode-inspect-scroll');
 	const sizes = await scroll.evaluate((el) => ({
