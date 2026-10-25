@@ -573,7 +573,6 @@
 	{ruleIds}
 	onChange={(ids) => (ruleIds = ids)}
 	choices={switchChoices}
-	onSwitch={(c) => (switchChoices = c)}
 	onadd={() => (adding = true)}
 />
 <AddModeDialog

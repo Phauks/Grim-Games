@@ -1638,25 +1638,19 @@ test('Special rules has a search box', async ({ page }) => {
 	await noSidewaysScroll(page);
 });
 
-test('+1 has a switch for naming its character, shown in its instructions', async ({ page }) => {
-	// Trevor (2026-10-22): "add setting for +1", with his two instructions.
+test('+1 has a switch for naming its character on the Start game screen, shown in its instructions', async ({
+	page
+}) => {
+	// Trevor (2026-10-22): "add setting for +1", with his two instructions. Its switch is set
+	// only on Special rules in this game, keeping New game's rule list clean (Trevor, 2026-10-24).
 	await page.goto('/new');
-	await modesPanel(page)
-		.getByRole('button', { name: /^Special rules/ })
-		.tap();
+	const panel = modesPanel(page);
+	await panel.getByRole('button', { name: /^Special rules/ }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
-	const plusOne = dialog
-		.getByTestId('special-rules')
-		.locator('li')
-		.filter({ has: page.getByText('+1', { exact: true }) });
-	const named = plusOne.getByRole('checkbox', {
-		name: 'Storyteller announces character',
-		includeHidden: true
-	});
-	// Always there, so nothing moves; usable once +1 is on.
-	await expect(named).toBeDisabled();
-	await plusOne.getByText('+1', { exact: true }).tap();
-	await expect(named).toBeEnabled();
+	await expect(
+		dialog.getByRole('checkbox', { name: 'Storyteller announces character', includeHidden: true })
+	).toHaveCount(0);
+	await dialog.getByTestId('special-rules').getByText('+1', { exact: true }).tap();
 	const inspectPlusOne = async (text: string) => {
 		await dialog.getByRole('button', { name: 'Inspect +1' }).tap();
 		const inspect = page.getByRole('dialog', { name: '+1' });
@@ -1665,10 +1659,23 @@ test('+1 has a switch for naming its character, shown in its instructions', asyn
 		await expect(inspect).toBeHidden();
 	};
 	await inspectPlusOne('Tell the table that one character from off the script is in play.');
-	await plusOne.getByText('Storyteller announces character', { exact: true }).tap();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
+
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	const recap = page.getByRole('dialog', { name: 'Special rules in this game' });
+	const named = recap.getByRole('checkbox', {
+		name: 'Storyteller announces character',
+		includeHidden: true
+	});
+	await expect(named).not.toBeChecked();
+	await recap.getByText('Storyteller announces character', { exact: true }).tap();
 	await expect(named).toBeChecked();
-	await inspectPlusOne('Tell the table which character from off the script is in play.');
 	await noSidewaysScroll(page);
+	await recap.getByRole('button', { name: 'Back' }).tap();
+	await expect(recap).toBeHidden();
+	await panel.getByRole('button', { name: /^Special rules/ }).tap();
+	await inspectPlusOne('Tell the table which character from off the script is in play.');
 });
 
 test('Binary Supernovae asks for one more Demon, and an executed Demon wins it for good', async ({
