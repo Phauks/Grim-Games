@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 import { openSettingsDialog } from './shell.ts';
 
 // Settings profiles (plan S18, Trevor 2026-10-23): named sets of settings, made in Settings,
@@ -31,7 +31,7 @@ async function startGame(page: Page, profile?: string) {
 	await pickScript(page, 'Trouble Brewing');
 	if (profile) await pickProfile(page, page, profile);
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	return page.url();
 }
