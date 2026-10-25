@@ -4,6 +4,7 @@
  * secret, kept on the device, so it is the same member when it comes back.
  */
 import type { Script } from '#lib/core/data/index.ts';
+import type { GameFeedback } from '#lib/core/feedback/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { ROOM_PROTOCOL, type PlayerView, type SharedGrimoire } from '#lib/core/sync/room.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
@@ -171,6 +172,12 @@ export class RoomPlayer {
 	scriptBallot(choices: string[]): boolean {
 		const voteId = this.view?.scriptVote?.voteId;
 		return voteId ? this.#socket.send({ type: 'script-ballot', voteId, choices }) : false;
+	}
+
+	/** Feedback on the game that ended (plan R4); a new one replaces the last. */
+	sendFeedback(feedback: GameFeedback): boolean {
+		const gameId = this.view?.endedGameId;
+		return gameId ? this.#socket.send({ type: 'feedback', gameId, feedback }) : false;
 	}
 
 	stop(): void {
