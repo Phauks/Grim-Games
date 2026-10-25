@@ -177,6 +177,35 @@ describe('the live room', () => {
 		expect(join(room, 'm0')).toBe(room);
 	});
 
+	it('lets a full room take a new phone by dropping phones from earlier games', () => {
+		// The room keeps every phone that ever joined (2026-10-25). Once full, members with no
+		// seat, no request and no phone connected make way; seated, asking and present stay.
+		let room = publish(newRoom('hash'), 'g1', table('a', 'b'));
+		for (let i = 0; i < MAX_MEMBERS; i++) room = join(room, `m${i}`)!;
+		room = request(room, 'm0', { name: 'Sam', seatId: 'a' }, 1, 'r0');
+		room = resolve(room, 'r0', true);
+		room = request(room, 'm1', { name: 'Ash' }, 1, 'r1');
+		const present = new Set(['m2']);
+		const joined = join(room, 'new', present)!;
+		expect(joined.members.map((m) => m.memberId)).toEqual(['m0', 'm1', 'm2', 'new']);
+		// With everyone here, a full room still says so.
+		const everyone = new Set(room.members.map((m) => m.memberId));
+		expect(join(room, 'new', everyone)).toBeNull();
+	});
+
+	it('tells the Storyteller who is here now, and counts only them', () => {
+		let room = roomWith('here', 'gone', 'voted');
+		room = openVote(room, 'v1', ['a']);
+		room = castVote(room, 'voted', 'v1', 'a');
+		const view = hostView(room, new Set(['here']));
+		expect(view.present).toEqual(['here']);
+		// A phone that left after voting still counts; one that just left does not.
+		expect(view.vote).toMatchObject({ voted: 1, spectators: 2 });
+		// From a room with nobody known to be here, the list is empty, not absent.
+		expect(hostView(room, new Set()).present).toEqual([]);
+		expect(hostView(room).present).toBeUndefined();
+	});
+
 	it('ignores malformed messages', () => {
 		expect(parseClientMessage('not json')).toBeNull();
 		expect(parseClientMessage('[1]')).toBeNull();
@@ -269,6 +298,9 @@ describe('feedback after a game', () => {
 		// Anonymous feedback carries a room-made id, never the member id.
 		expect(JSON.stringify(hostView(room).feedback)).not.toContain('sam');
 		expect(playerView(room, 'sam').feedback).toEqual(anonymous);
+		// The phone sends feedback for the game that ended.
+		expect(playerView(room, 'sam').endedGameId).toBe('g1');
+		expect(playerView(roomWith('sam'), 'sam').endedGameId).toBeUndefined();
 		expect(playerView(room, 'alex').feedback).toEqual(rated);
 	});
 

@@ -4,6 +4,8 @@
  *
  * For the waking character, `nightStepAlerts` lists:
  * - `impaired`: a waking player is drunk, poisoned or has no ability (from `abilityState`);
+ * - `blocked`: another ability's token stops them waking tonight (`stopsWaking`: the
+ *   Exorcist's Chosen on the Demon, https://wiki.bloodontheclocktower.com/Exorcist);
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
@@ -25,7 +27,7 @@ import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
+import { getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import {
 	abilityState,
@@ -93,7 +95,7 @@ export const ON_DEATH: Readonly<Record<CharacterId, { by: KillBy | 'any' }>> = O
 );
 
 export type NightAlertKind =
-	'impaired' | 'protected' | 'may-bounce' | 'survives-first-death' | 'on-death';
+	'impaired' | 'blocked' | 'protected' | 'may-bounce' | 'survives-first-death' | 'on-death';
 
 export interface NightAlert {
 	kind: NightAlertKind;
@@ -138,6 +140,31 @@ export function nightStepAlerts(
 			works: false,
 			impairments: state.impairments
 		});
+	}
+	for (const seatId of actors) {
+		for (const r of game.seats[seatId].reminders) {
+			const stops = rulesOf(r.characterId, characters)?.stopsWaking;
+			if (stops?.token !== r.label) continue;
+			if (stops.type && typeOf(game, seatId, characters) !== stops.type) continue;
+			const source = game.seating.find(
+				(s) => s !== seatId && trueCharacter(game, s, characters) === r.characterId
+			);
+			const character = characters.get(r.characterId);
+			out.push(
+				sourceAlert(
+					game,
+					'blocked',
+					seatId,
+					{
+						characterId: r.characterId,
+						...(source ? { seatId: source } : {}),
+						reminderId: r.reminderId
+					},
+					characters,
+					character && wikiUrl(character)
+				)
+			);
+		}
 	}
 
 	const killer = nightKiller(characterId, characters);

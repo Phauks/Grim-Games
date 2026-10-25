@@ -90,8 +90,10 @@
 	);
 
 	const name = $derived(seat.playerName ?? `Seat ${number}`);
+	// The seat's accessible name, plain text; the board shows the name as its pill.
 	const label = $derived(
 		[
+			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 			`Seat ${number}: ${seat.playerName ?? 'no name'}`,
 			character?.name ?? 'no character',
 			seat.dead

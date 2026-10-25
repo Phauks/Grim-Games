@@ -20,6 +20,9 @@
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 
 	interface Props {
 		game: OpenGame;
@@ -56,9 +59,11 @@
 		if (i < 0) return t('room.noSeat');
 		const name = seats[i].playerName;
 		return name
-			? t('room.seatWithName', { number: i + 1, name })
+			? // eslint-disable-next-line grim/names-as-badges -- plain text for the seat drop-down and the row's aria label; the row shows a PlayerBadge
+				t('room.seatWithName', { number: i + 1, name })
 			: t('common.seat', { number: i + 1 });
 	};
+	const seatPlayer = (seatId?: SeatId) => seats.find((s) => s.seatId === seatId)?.playerName;
 	const seatNumberLabel = (seatId?: SeatId) => {
 		const i = seats.findIndex((s) => s.seatId === seatId);
 		return i < 0 ? t('room.noSeat') : t('common.seat', { number: i + 1 });
@@ -77,7 +82,13 @@
 			? `${location.origin}${resolve('/watch/[code]', { code: host.code })}#${host.viewerKey}`
 			: ''
 	);
-	const seated = $derived(host.members.filter((m) => m.name !== undefined));
+	// Seated players stay listed while their phone sleeps; others only while they are here, as
+	// the room keeps phones from earlier games (2026-10-25).
+	const seated = $derived(
+		host.members.filter(
+			(m) => m.name !== undefined && (m.seatId !== undefined || host.isHere(m.memberId))
+		)
+	);
 	const statusText = $derived(
 		!host.code
 			? host.problem
@@ -311,9 +322,15 @@
 							<p class="who">
 								<strong>{request.name}</strong>
 								<span>
-									{request.seatId
-										? t('room.asksForSeat', { seat: seatLabel(request.seatId) })
-										: t('room.asksForAnySeat')}
+									{#if request.seatId}
+										{@const name = seatPlayer(request.seatId)}
+										<Sentence text={t('room.asksForSeat', { seat: slot('seat') })}
+											>{#snippet fill()}{seatNumberLabel(request.seatId)}{#if name}
+													<PlayerBadge {name} />{/if}{/snippet}</Sentence
+										>
+									{:else}
+										{t('room.asksForAnySeat')}
+									{/if}
 								</span>
 							</p>
 							<Select

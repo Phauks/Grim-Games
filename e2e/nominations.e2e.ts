@@ -96,7 +96,7 @@ test('the nomination chooser opens again after it is closed without a choice', a
 	const seat = await openSeat(page, 2);
 	for (let i = 0; i < 2; i++) {
 		await seat.getByTestId('sheet-nominated-by').tap();
-		const by = page.getByRole('dialog', { name: 'Who nominated Seat 2?' });
+		const by = page.getByRole('dialog', { name: /^Who nominated Seat 2\s?\?$/ });
 		await expect(by).toBeVisible();
 		await page.keyboard.press('Escape');
 		await expect(by).toBeHidden();
@@ -142,14 +142,14 @@ test('a dead player may be nominated but is not offered as a nominator', async (
 	await expect(dead.getByTestId('nominated-mark')).toHaveCount(1);
 	// Their marks ask who nominated them.
 	await dead.getByTestId('nomination-marks').tap();
-	const by = page.getByRole('dialog', { name: 'Who nominated Seat 4?' });
+	const by = page.getByRole('dialog', { name: /^Who nominated Seat 4\s?\?$/ });
 	await expect(by).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(by).toBeHidden();
 	// Not offered as the nominator of anyone else.
 	const other = await openSeat(page, 6);
 	await other.getByTestId('sheet-nominated-by').tap();
-	const chooser = page.getByRole('dialog', { name: 'Who nominated Seat 6?' });
+	const chooser = page.getByRole('dialog', { name: /^Who nominated Seat 6\s?\?$/ });
 	await expect(chooser.getByText('Seat 5', { exact: true })).toBeVisible();
 	await expect(chooser.getByText('Seat 4', { exact: true })).toHaveCount(0);
 	// But they may be nominated.

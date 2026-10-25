@@ -40,6 +40,10 @@
 			}
 		}
 	},
+	"stopsWaking": {
+		"token": "Chosen",
+		"type": "demon"
+	},
 	"infoTokenCharacters": {
 		"selected-you": {
 			"characters": ["self"]

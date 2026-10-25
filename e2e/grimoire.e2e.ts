@@ -1028,6 +1028,47 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	await expect(step).toBeVisible();
 });
 
+test("the Demon's step says when the Exorcist's choice stops it waking", async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Exorcist : a chosen Demon doesn't wake tonight
+	// (Trevor's Pukka flowchart, 2026-10-24).
+	await startGame(page, 'Bad Moon Rising');
+	for (const [seat, name] of [
+		[1, 'Pukka'],
+		[2, 'Exorcist']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await walkTo(page, 'Dusk');
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+
+	// Steps open at their count: their text has glossary words with their own popovers.
+	await (await walkTo(page, 'Exorcist')).locator('button.step .count').tap();
+	const exorcist = page.getByRole('dialog', { name: 'Exorcist' });
+	await exorcist.getByRole('button', { name: 'Place' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Put Chosen on' })
+		.getByRole('button', { name: /Pukka Seat 1/ })
+		.tap();
+	await expect(exorcist).toContainText('On Seat 1');
+	await exorcist.getByRole('button', { name: 'Close' }).tap();
+
+	await (await walkTo(page, 'Pukka')).locator('button.step .count').tap();
+	const pukka = page.getByRole('dialog', { name: 'Pukka' });
+	await expect(pukka.getByTestId('night-alerts')).toContainText(
+		/Seat 1: chosen by\s*Exorcist\s*, doesn't\s+wake\s+tonight/
+	);
+});
+
 test('a filled-in info token with room left opens its picker with the filled ones picked', async ({
 	page
 }) => {
@@ -5821,7 +5862,7 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	// None clears it.
 	await sheet.getByTestId('sheet-nominated-by').tap();
 	await page
-		.getByRole('dialog', { name: 'Who nominated Seat 3?' })
+		.getByRole('dialog', { name: /^Who nominated Seat 3\s?\?$/ })
 		.getByRole('button', { name: 'None', exact: true })
 		.tap();
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');

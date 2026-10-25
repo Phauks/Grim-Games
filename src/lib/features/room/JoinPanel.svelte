@@ -25,7 +25,9 @@
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import ScriptBallot from './ScriptBallot.svelte';
+	import FeedbackSheet from './FeedbackSheet.svelte';
 	import VoteChoice from './VoteChoice.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 	import { followRoomScript } from './room-script.svelte.ts';
@@ -150,6 +152,7 @@
 	// Specters: a spectators' vote opens over the page, once for each new vote.
 	const vote = $derived(view?.vote);
 	let voting = $state(false);
+	let rating = $state(false);
 	let seenVote: string | undefined;
 	$effect(() => {
 		const id = vote?.voteId;
@@ -361,18 +364,24 @@
 	</Dialog>
 	{#if code === undefined}<YourGames onOpen={openRoom} />{/if}
 {:else if inRoom}
-	<!-- One tap target, the whole row (Trevor: whole-row tap), with the pencil it opens by. -->
-	<button
-		type="button"
-		class="you"
-		data-testid="you-row"
-		aria-haspopup="dialog"
-		onclick={() => (editing = true)}
-	>
-		<span class="summary" role="status" data-testid="join-status">{summary}</span>
-		<Icon name="edit" />
-		<span class="visually-hidden">{t('room.editYou')}</span>
-	</button>
+	<div class="you-line">
+		<!-- One tap target, the whole row (Trevor: whole-row tap), with the pencil it opens by. -->
+		<button
+			type="button"
+			class="you"
+			data-testid="you-row"
+			aria-haspopup="dialog"
+			onclick={() => (editing = true)}
+		>
+			<span class="summary" role="status" data-testid="join-status">{summary}</span>
+			<Icon name="edit" />
+			<span class="visually-hidden">{t('room.editYou')}</span>
+		</button>
+		<!-- Always here; usable once the game is over (plan R4), so nothing moves. -->
+		<Button disabled={!view?.endedGameId} aria-haspopup="dialog" onclick={() => (rating = true)}
+			>{t('room.feedback.open')}</Button
+		>
+	</div>
 	<Dialog bind:open={editing} title={t('room.you')}>
 		<form onsubmit={ask}>
 			<label for="player-name">{t('room.yourName')}</label>
@@ -408,14 +417,16 @@
 					pressed={vote?.choice === option}
 					disabled={status !== 'open'}
 					onclick={() => player?.vote(option)}
-					>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</VoteChoice
+					>{#if s?.playerName}<PlayerBadge name={s.playerName} />{:else}{t('common.seat', {
+							number: s?.seatNumber ?? 0
+						})}{/if}</VoteChoice
 				>
 			</li>
 		{/each}
 	</ul>
 </Dialog>
 
-{#if player}<ScriptBallot {player} />{/if}
+{#if player}<ScriptBallot {player} /><FeedbackSheet {player} bind:open={rating} />{/if}
 
 <style>
 	form {
@@ -497,14 +508,20 @@
 		color: var(--on-surface-muted);
 	}
 	/* Where this phone sits, and the pencil for its sheet, in one row over the tabs. */
+	.you-line {
+		display: flex;
+		align-items: stretch;
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
+	}
 	.you {
 		display: flex;
+		flex: 1;
 		align-items: center;
 		gap: var(--space-2);
 		box-sizing: border-box;
-		width: 100%;
+		min-width: 0;
 		min-height: var(--tap-target);
-		margin-bottom: var(--space-2);
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);

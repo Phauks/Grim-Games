@@ -1263,6 +1263,29 @@ test("the page's end clears the bottom bar on the setup steps", async ({ page })
 	expect(end && bar && end.y + end.height).toBeLessThanOrEqual(bar!.y + 1);
 });
 
+// Trevor (2026-10-25, Pixel): a back swipe on the locked draw previewed Characters, which
+// shows who is in the bag. The locked draw keeps an entry of its own on top, so Back (and the
+// swipe's preview) lands on the draw again and asks for the PIN.
+test('Back on a locked draw stays on the draw and asks for the PIN', async ({ page }) => {
+	await lockedDraw(page);
+	const draw = page.url();
+	await page.goBack();
+	expect(page.url()).toBe(draw);
+	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
+	await expect(pin).toBeVisible();
+	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
+	// Back again while asking still stays.
+	await pin.getByRole('button', { name: 'Cancel' }).tap();
+	await page.goBack();
+	expect(page.url()).toBe(draw);
+	await expect(pin).toBeVisible();
+	// The right PIN unlocks and stays on the draw.
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'false');
+	expect(page.url()).toBe(draw);
+});
+
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
 	page
 }) => {

@@ -6,7 +6,8 @@
 		seatNominations,
 		todaysNominations
 	} from '#lib/core/rules/index.ts';
-	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { recordNomination } from './record-nomination.ts';
@@ -51,16 +52,22 @@
 		const pair = recordNomination(grimoire, ask.seatId, ask.side, other, another);
 		if (pair) onNominated?.(pair);
 	}
+	// The chooser's accessible name; its heading shows the player's badge.
+	const title = $derived(
+		asking === undefined
+			? ''
+			: asking.side === 'received'
+				? // eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
+					`Who nominated ${seatLabel(game, asking.seatId)}?`
+				: // eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
+					`Who did ${seatLabel(game, asking.seatId)} nominate?`
+	);
 </script>
 
 <!-- Bound both ways, so closing it with ✕ or Escape lets the same marks open it again. -->
 <SeatChooser
 	bind:open={() => asking !== undefined, (open) => !open && (asking = undefined)}
-	title={asking === undefined
-		? ''
-		: asking.side === 'received'
-			? `Who nominated ${seatLabel(game, asking.seatId)}?`
-			: `Who did ${seatLabel(game, asking.seatId)} nominate?`}
+	{title}
 	{game}
 	{characters}
 	exclude={asking?.seatId}
@@ -70,6 +77,12 @@
 	onNone={() => choose(undefined)}
 	onChoose={(other) => choose(other)}
 >
+	{#snippet heading()}{#if asking}{@const who = seatName(
+				game,
+				asking.seatId
+			)}{#if asking.side === 'received'}Who nominated <PlayerBadge name={who} />?{:else}Who did <PlayerBadge
+					name={who}
+				/> nominate?{/if}{/if}{/snippet}
 	{#snippet rowMarks(seatId: SeatId)}
 		{@const made = today.made.has(seatId)}
 		{@const received = today.received.has(seatId)}
