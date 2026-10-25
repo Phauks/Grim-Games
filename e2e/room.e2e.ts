@@ -1332,9 +1332,8 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	await phone.goto(`/join/${code}`);
 	const you = await seatSheet(phone);
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex Kim');
-	const initials = you.getByRole('checkbox', { name: 'Initials on your seat' });
-	await expect(initials).toBeChecked();
-	const initialsSwitch = you.getByText('Initials on your seat', { exact: true });
+	// Initials are always on, with no switch (Trevor, 2026-10-25).
+	await expect(you.getByText('Initials on your seat', { exact: true })).toHaveCount(0);
 	await you.getByText('Seat 3', { exact: true }).tap();
 	await you.getByRole('button', { name: 'Ask the Storyteller' }).tap();
 	await page
@@ -1356,15 +1355,7 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	});
 	await phone.reload();
 	await expect(seat.locator('svg[data-frame="clock"]')).toBeAttached();
-	// Switching the initials off and on, in the same sheet, changes the seat without asking.
-	await seatSheet(phone);
-	await initialsSwitch.tap();
-	await expect(initials).not.toBeChecked();
-	await expect(seat.getByTestId('avatar-face')).toHaveCount(0);
-	await expect(seat).toContainText('3');
-	await initialsSwitch.tap();
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
-	await phone.keyboard.press('Escape');
 
 	// Every phone at the table sees it; a guess shows over it only once that is switched on.
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
