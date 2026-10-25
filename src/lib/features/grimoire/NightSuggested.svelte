@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import type {
@@ -45,7 +46,6 @@
 	const assistance = $derived(preferences.current.assistance);
 	const info = $derived(step.info);
 	const name = (seatId: SeatId) => seatName(game, seatId);
-	const names = (seats: readonly SeatId[]) => seats.map(name).join(', ');
 
 	/** "poisoned", or the Preacher's reminder "No Ability" (TPI). */
 	const reason = (i: Impairment) => (i.reason === 'no-ability' ? 'No Ability' : i.reason);
@@ -103,14 +103,14 @@
 	 * The valid numbers themselves, in brackets (Trevor, 2026-10-22: "1 valid" read as if 1
 	 * were the number to give; the closed step should be enough to run the night).
 	 */
-	const validText = $derived(
-		numberPickers
-			.map((p) => {
-				const options = valid(p).map((v) => (v.number === undefined ? 'Any other' : v.number));
-				const list = `(${options.join(', ')})`;
-				return numberPickers.length > 1 ? `${name(p.seatId)} ${list}` : list;
-			})
-			.join(', ')
+	const validLists = $derived(
+		numberPickers.map((p) => {
+			const options = valid(p).map((v) => (v.number === undefined ? 'Any other' : v.number));
+			return {
+				seatId: numberPickers.length > 1 ? p.seatId : undefined,
+				list: `(${options.join(', ')})`
+			};
+		})
 	);
 
 	/**
@@ -141,22 +141,32 @@
 				info.checks.some((c) => c.verdict && c.verdict.kind !== 'choose'))
 	);
 
-	/** The strip's one line: the first answer, or how many are valid; a character as a badge. */
-	const line = $derived.by((): { characterId?: CharacterId; text: string } => {
-		if (!info || !has) return { text: '' };
-		if (info.kind === 'answer') {
-			const a = info.answers[0];
-			const note = a.unreliable ? ' (not reliable)' : '';
-			return a.kind === 'character'
-				? { characterId: a.value, text: note }
-				: { text: `${valueText(a)}${note}` };
+	/**
+	 * The strip's one line: the first answer, or how many are valid; a character as a badge,
+	 * players as their name badges (`seats` after the text, `valid` each before its numbers).
+	 */
+	const line = $derived.by(
+		(): {
+			characterId?: CharacterId;
+			text: string;
+			seats?: readonly SeatId[];
+			valid?: typeof validLists;
+		} => {
+			if (!info || !has) return { text: '' };
+			if (info.kind === 'answer') {
+				const a = info.answers[0];
+				const note = a.unreliable ? ' (not reliable)' : '';
+				return a.kind === 'character'
+					? { characterId: a.value, text: note }
+					: { text: `${valueText(a)}${note}` };
+			}
+			if (info.kind === 'picker') return { text: '', valid: validLists };
+			const v = info.checks.find((c) => c.verdict && c.verdict.kind !== 'choose')?.verdict;
+			if (v?.kind === 'dies') return { text: 'Dead: ', seats: v.seatIds };
+			if (v?.kind === 'ask') return { text: 'Dead? ', seats: v.ifYes };
+			return { text: v?.kind === 'no-death' ? 'No death' : '' };
 		}
-		if (info.kind === 'picker') return { text: validText };
-		const v = info.checks.find((c) => c.verdict && c.verdict.kind !== 'choose')?.verdict;
-		if (v?.kind === 'dies') return { text: `Dead: ${names(v.seatIds)}` };
-		if (v?.kind === 'ask') return { text: `Dead? ${names(v.ifYes)}` };
-		return { text: v?.kind === 'no-death' ? 'No death' : '' };
-	});
+	);
 </script>
 
 <!-- A player as their name pill and their character's badge (Trevor, 2026-10-17). -->
@@ -164,7 +174,7 @@
 	seatId: SeatId,
 	characterId: CharacterId | undefined = trueCharacter(game, seatId, characters)
 )}<span class="player"
-		><span class="pill">{name(seatId)}</span>{#if characterId}<CharacterBadge
+		><PlayerBadge name={name(seatId)} />{#if characterId}<CharacterBadge
 				{characterId}
 				character={characters.get(characterId)}
 			/>{/if}</span
@@ -228,7 +238,12 @@
 					characterId={line.characterId}
 					character={characters.get(line.characterId)}
 					interactive={false}
-				/>{/if}{line.text}</span
+				/>{/if}{line.text}{#each line.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
+					name={name(seatId)}
+				/>{/each}{#each line.valid ?? [] as v, n (n)}{n ? ', ' : ''}{#if v.seatId}<PlayerBadge
+						name={name(v.seatId)}
+					/>
+				{/if}{v.list}{/each}</span
 		>{/if}
 {:else if has && info}
 	<!-- A plain section under its heading, like the step's others (Trevor, 2026-10-19). -->
@@ -255,7 +270,7 @@
 												characterId={id}
 												character={characters.get(id)}
 											/>{/each}
-										{#if v.target}<span class="pill">{name(v.target)}</span>
+										{#if v.target}<PlayerBadge name={name(v.target)} />
 											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
 										{@render players(v.seats)}
 									</span>
@@ -363,16 +378,6 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1);
-	}
-	/* The same neutral pill as the name under a seat. */
-	.pill {
-		padding: 0 var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font-family: var(--font-player);
-		font-weight: 600;
 	}
 	.fact {
 		display: inline-flex;

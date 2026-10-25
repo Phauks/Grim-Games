@@ -1,4 +1,4 @@
-import type { CharacterId, CharacterName } from '#lib/core/data/index.ts';
+import type { CharacterId, CharacterName, PlayerName } from '#lib/core/data/index.ts';
 import type { Command, GameLog } from '#lib/core/engine/index.ts';
 import { seatNumber, type CharacterLookup, type Game, type SeatId } from '#lib/core/model/index.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -39,7 +39,7 @@ export class LiveDay implements DayPort {
 		return true;
 	}
 
-	seatName(seatId: SeatId | undefined): string {
+	seatName(seatId: SeatId | undefined): PlayerName {
 		if (seatId === undefined) return '';
 		const name = this.game.seats[seatId]?.playerName;
 		const number = seatNumber(this.game, seatId);

@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { NominationPrompt } from '#lib/core/modes/index.ts';
 	import type { CharacterNominationPrompt } from '#lib/core/rules/index.ts';
-	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
+	import type { SeatId } from '#lib/core/model/index.ts';
+	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import RuleHeader from '#lib/features/modes/RuleHeader.svelte';
 	import { spawnedBy } from '#lib/features/modes/spawned-by.ts';
@@ -38,11 +40,7 @@
 			: []
 	);
 
-	function label(seatId: SeatId): string {
-		const n = seatNumber(game, seatId);
-		const name = game.seats[seatId]?.playerName;
-		return name ? `Seat ${n} (${name})` : `Seat ${n}`;
-	}
+	const label = (seatId: SeatId) => seatLabel(game, seatId);
 
 	let open = $state(false);
 	$effect(() => {
@@ -84,6 +82,8 @@
 	const source = $derived(
 		!ask ? '' : 'rule' in ask ? ask.rule : (characters.get(ask.characterId)?.name ?? '')
 	);
+	// The dialog's accessible name; its heading shows the players as badges.
+	/* eslint-disable grim/names-as-badges -- an accessible name, see above */
 	const title = $derived(
 		ask?.kind === 'execute-nominator'
 			? `${source}: execute ${label(ask.nominator)}?`
@@ -93,9 +93,15 @@
 					? `${source}: did ${label(ask.nominator)} choose to die?`
 					: ''
 	);
+	/* eslint-enable grim/names-as-badges */
 </script>
 
 <ConfirmDialog bind:open {title} onConfirm={confirm}>
+	{#snippet heading()}{#if ask?.kind === 'execute-nominator'}{source}: execute {@render player(
+				ask.nominator
+			)}?{:else if ask?.kind === 'evil-swap'}{source}: swap characters?{:else if ask}{source}: did {@render player(
+				ask.nominator
+			)} choose to die?{/if}{/snippet}
 	{#if ask}
 		<RuleHeader rules={spawning} />
 		<dl class="change">
@@ -104,24 +110,26 @@
 				{@const character = id ? characters.get(id) : undefined}
 				<dt>{what}</dt>
 				<dd>
-					<strong>{label(seatId)}</strong>
+					{@render player(seatId)}
 					{#if id && character}<CharacterBadge characterId={id} {character} />{/if}
 				</dd>
 			{/each}
 			<dt>Then</dt>
 			<dd>
 				{#if ask.kind === 'execute-nominator'}
-					{label(ask.nominator)} is executed, and the {source}’s ability is used.
+					{@render player(ask.nominator)} is executed, and the {source}’s ability is used.
 				{:else if ask.kind === 'evil-swap'}
 					They swap character tokens and learn their new characters tonight.
 				{:else}
-					{label(ask.nominator)} dies. {label(ask.nominee)}’s ability works twice until dusk
-					tomorrow.
+					{@render player(ask.nominator)} dies. {@render player(ask.nominee)}’s ability works twice
+					until dusk tomorrow.
 				{/if}
 			</dd>
 		</dl>
 	{/if}
 </ConfirmDialog>
+
+{#snippet player(seatId: SeatId)}<PlayerBadge name={seatName(game, seatId)} />{/snippet}
 
 <style>
 	.change {

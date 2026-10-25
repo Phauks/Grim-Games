@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterGuess, DayEntry, SeatId } from '#lib/core/model/index.ts';
@@ -114,7 +115,7 @@
 			? target.seatId
 				? t('day.noteTitleSeat', {
 						character: slot('character'),
-						seat: game.seatName(target.seatId)
+						seat: slot('seat')
 					})
 				: t('day.noteTitle', { character: slot('character') })
 			: t('day.note')
@@ -124,7 +125,9 @@
 <BottomSheet bind:open title={t('day.note')} height="85dvh">
 	{#snippet heading()}
 		<Sentence text={noteTitle}
-			>{#snippet fill()}{#if target}<CharacterBadge
+			>{#snippet fill(name)}{#if name === 'seat'}{#if target?.seatId}<PlayerBadge
+							name={game.seatName(target.seatId)}
+						/>{/if}{:else if target}<CharacterBadge
 						characterId={target.characterId}
 						character={game.characters.get(target.characterId)}
 					/>{/if}{/snippet}</Sentence

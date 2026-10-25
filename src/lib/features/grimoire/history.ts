@@ -3,7 +3,7 @@
  * badges, newest first, worked out from the events it recorded and the game just before
  * and after it. UI wording only; the log itself is the engine's.
  */
-import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
+import type { Alignment, CharacterId, PlayerName, ReminderLabel } from '#lib/core/data/index.ts';
 import { applyEvents, type GameEvent, type LogEntry } from '#lib/core/engine/index.ts';
 import type { CharacterLookup, DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 import { describeEntry as describeDayEntry } from '#lib/features/day/day-port.ts';
@@ -13,11 +13,12 @@ import { causeCharacter, causeLabel } from './board.ts';
 export type HistoryPart =
 	/** Words; `seats` are the seats they name (History's filter, Trevor 2026-10-19). */
 	| { kind: 'text'; text: string; seats?: SeatId[] }
-	/** A seat as it was at the time: its character as a badge, or its name. */
+	/** A seat as it was at the time: its character as a badge with its name, or its name. */
 	| {
 			kind: 'seat';
 			seatId: SeatId;
-			name: string;
+			/** The seat's PlayerBadge text: the player's name, or "Seat 3". */
+			name: PlayerName;
 			characterId?: CharacterId;
 			alignment?: Alignment;
 	  }
@@ -44,10 +45,10 @@ function seatPart(game: Game | undefined, seatId: SeatId): HistoryPart {
 		: { kind: 'seat', seatId, name };
 }
 
-/** A seat by its name only, for lines where its character is the news. */
+/** A seat by its name only (a PlayerBadge), for lines where its character is the news. */
 function seatName(game: Game | undefined, seatId: SeatId): HistoryPart {
 	const part = seatPart(game, seatId);
-	return part.kind === 'seat' ? { kind: 'text', text: part.name, seats: [seatId] } : part;
+	return part.kind === 'seat' ? { kind: 'seat', seatId, name: part.name } : part;
 }
 
 function reminderOn(
@@ -118,7 +119,11 @@ function describeEvent(
 				: [text('Cleared the Storyteller’s name')];
 		case 'SeatRenamed':
 			return event.playerName
-				? [seatName(before, event.seatId), text(` renamed ${event.playerName}`)]
+				? [
+						seatName(before, event.seatId),
+						text(' renamed '),
+						{ kind: 'seat', seatId: event.seatId, name: event.playerName }
+					]
 				: [text('Cleared the name of '), seatName(before, event.seatId)];
 		case 'CharacterAssigned':
 			return [
@@ -329,25 +334,28 @@ function describeEvent(
 			return [text('Changed the setup notes')];
 		case 'DayEntryAdded':
 		case 'DayEntryReplaced': {
+			// Seats and characters go in as slots and come back out as badges.
 			const seats: SeatId[] = [];
 			const name = (seatId: SeatId | undefined) => {
 				if (seatId === undefined) return 'None';
 				seats.push(seatId);
-				const part = seatName(after, seatId);
-				return part.kind === 'text' ? part.text : 'A seat';
+				return slot(`s${seats.length - 1}`);
 			};
-			// Characters go in as slots and come back out as badges.
 			const ids: CharacterId[] = [];
 			const line = describeDayEntry(event.entry, name, (id) => {
 				if (!id) return 'None';
 				ids.push(id);
 				return slot(`c${ids.length - 1}`);
 			});
-			const parts = splitSlots(line).map((part, i): HistoryPart =>
-				i % 2 === 1 ? { kind: 'character', characterId: ids[Number(part.slice(1))] } : text(part)
-			);
-			// The seats named in the line's words go on its first words.
-			if (seats.length && parts[0]?.kind === 'text') parts[0] = { ...parts[0], seats };
+			const parts = splitSlots(line).flatMap((part, i): HistoryPart[] => {
+				if (i % 2 === 0) return part ? [text(part)] : [];
+				const index = Number(part.slice(1));
+				return [
+					part.startsWith('s')
+						? seatName(after, seats[index])
+						: { kind: 'character', characterId: ids[index] }
+				];
+			});
 			return event.type === 'DayEntryReplaced' ? [text('Changed: '), ...parts] : parts;
 		}
 		case 'DayEntryRemoved':
