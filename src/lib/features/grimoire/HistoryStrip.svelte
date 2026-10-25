@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { historyItems } from './history.ts';
@@ -12,14 +11,9 @@
 	 */
 	interface Props {
 		grimoire: Grimoire;
-		/**
-		 * The board's game over notice, inside the strip after Previous: the strip takes the
-		 * bank's place exactly, so ending a game moves nothing (Trevor, 2026-10-24).
-		 */
-		notice?: Snippet;
 	}
 
-	let { grimoire, notice }: Props = $props();
+	let { grimoire }: Props = $props();
 
 	const open = $derived(grimoire.open);
 	const cursor = $derived(open.session.log.cursor);
@@ -41,7 +35,6 @@
 		disabled={previous === undefined}
 		onclick={() => previous !== undefined && open.goTo(previous)}
 	/>
-	{@render notice?.()}
 	<p class="line" aria-live="polite">
 		<span class="count">{position} of {stops.length}</span>
 		{#if item}<HistoryLine parts={item.parts} characters={open.characters} />{/if}

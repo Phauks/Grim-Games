@@ -894,15 +894,15 @@ test('ending the game at an Execution closes the walk-through and moves nothing'
 	await expect(end).toBeHidden();
 	await page.keyboard.press('Escape');
 
-	// One strip at the bottom (Trevor, 2026-10-24): History's, with the game over notice in it;
-	// the night's walk-through closes once the game is over.
+	// One strip at the bottom (Trevor, 2026-10-24): History's; the night's walk-through closes
+	// once the game is over. Game over is a status above Game info (the corner), out of the
+	// strip (Trevor, 2026-10-25).
 	const over = page.getByTestId('game-over');
 	await expect(over).toHaveText('Game over: Good won');
 	await expect(page.getByTestId('night-strip')).toHaveCount(0);
-	const strip = (await page.getByTestId('history-strip').boundingBox())!;
+	await expect(page.getByTestId('history-strip').getByTestId('game-over')).toHaveCount(0);
 	const pill = (await over.boundingBox())!;
-	expect(pill.y).toBeGreaterThanOrEqual(strip.y);
-	expect(pill.y + pill.height).toBeLessThanOrEqual(strip.y + strip.height + 1);
+	expect(pill.y + pill.height).toBeLessThanOrEqual(before.corner!.y + 1);
 	// Nothing moves when the game ends: the corner and the seats stay where they were.
 	for (const [box, was] of [
 		[await corner.boundingBox(), before.corner],
