@@ -11,7 +11,16 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import type { Command } from '#lib/core/engine/index.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import {
+	newGame,
+	run,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Pukka', () => {
@@ -48,5 +57,131 @@ describe('Pukka', () => {
 		it.todo("Example 2: Drunk Pukka's miss delays Gossip's death");
 		it.todo('Example 3: Exorcist blocks Pukka while poisoned Pacifist dies');
 		it.todo("Example 4: Poisoned Moonchild's curse target is spared");
+	});
+
+	/**
+	 * Trevor's Pukka night flowchart (2026-10-24, sent in the Night walk-through thread), one
+	 * test per branch, read against https://wiki.bloodontheclocktower.com/Pukka. The app
+	 * doesn't run the Pukka's turn itself: the Storyteller moves the tokens, and the app reads
+	 * them (who is poisoned, what the Pukka's step warns about).
+	 */
+	describe('night flowchart', () => {
+		const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay'];
+		// Seat 0 Pukka, 1 Exorcist, 2 Goon, 3 Ravenkeeper, 4 Monk, 5 Poisoner.
+		const cast = ['pukka', 'exorcist', 'goon', 'ravenkeeper', 'monk', 'poisoner'];
+		const PUKKA = 0;
+		const MARKED = 3;
+		function game(...extra: ((seats: string[]) => Command)[]) {
+			const { session, ctx, seats } = newGame(names);
+			const s = run(
+				session,
+				ctx,
+				...cast.map((characterId, i): Command => ({
+					type: 'AssignCharacter',
+					seatId: seats[i],
+					characterId
+				})),
+				...extra.map((f) => f(seats))
+			);
+			return { game: s.game, seats };
+		}
+		const add =
+			(i: number, characterId: string, label: string) =>
+			(s: string[]): Command => ({
+				type: 'AddReminder',
+				seatId: s[i],
+				reminder: { characterId, label }
+			});
+		const dead =
+			(i: number) =>
+			(s: string[]): Command => ({ type: 'SetDead', seatId: s[i], dead: true });
+		const marked = add(MARKED, 'pukka', 'Poisoned');
+		const alerts = (g: ReturnType<typeof game>) => nightStepAlerts(g.game, 'pukka', characters);
+		const poisonedByPukka = (g: ReturnType<typeof game>, seat = MARKED) =>
+			abilityState(g.game, g.seats[seat], characters).impairments.some(
+				(i) => i.reason === 'poisoned' && i.source.characterId === 'pukka'
+			);
+
+		it('chosen by the Exorcist: the Pukka’s step says it does not wake to choose', () => {
+			// https://wiki.bloodontheclocktower.com/Exorcist : a chosen Demon doesn't wake tonight.
+			const g = game(add(PUKKA, 'exorcist', 'Chosen'));
+			expect(alerts(g)).toContainEqual(
+				expect.objectContaining({
+					kind: 'blocked',
+					seatId: g.seats[PUKKA],
+					source: expect.objectContaining({ characterId: 'exorcist', seatId: g.seats[1] }),
+					works: true
+				})
+			);
+		});
+
+		it('chosen by a poisoned Exorcist: the block shows as not working', () => {
+			const g = game(add(PUKKA, 'exorcist', 'Chosen'), add(1, 'poisoner', 'Poisoned'));
+			expect(alerts(g)).toContainEqual(expect.objectContaining({ kind: 'blocked', works: false }));
+		});
+
+		it('the Exorcist on someone else: no block', () => {
+			const g = game(add(MARKED, 'exorcist', 'Chosen'));
+			expect(alerts(g).some((a) => a.kind === 'blocked')).toBe(false);
+		});
+
+		it('a drunk or poisoned Pukka is flagged at its step, so its choice poisons nobody', () => {
+			const poisoned = game(add(PUKKA, 'poisoner', 'Poisoned'));
+			expect(alerts(poisoned)).toContainEqual(
+				expect.objectContaining({ kind: 'impaired', seatId: poisoned.seats[PUKKA] })
+			);
+			// The first player tonight to choose the Goon is drunk: https://wiki.bloodontheclocktower.com/Goon
+			const goon = game(add(PUKKA, 'goon', 'Drunk'));
+			expect(alerts(goon)).toContainEqual(
+				expect.objectContaining({
+					kind: 'impaired',
+					seatId: goon.seats[PUKKA],
+					impairments: [expect.objectContaining({ reason: 'drunk' })]
+				})
+			);
+		});
+
+		it('a sober, healthy Pukka’s choice is poisoned', () => {
+			expect(poisonedByPukka(game(marked))).toBe(true);
+		});
+
+		it('while the Pukka is drunk or poisoned, its marked player is not affected', () => {
+			expect(poisonedByPukka(game(marked, add(PUKKA, 'poisoner', 'Poisoned')))).toBe(false);
+			expect(poisonedByPukka(game(marked, add(PUKKA, 'goon', 'Drunk')))).toBe(false);
+		});
+
+		it('the attack: the marked player’s protection and death triggers are flagged', () => {
+			const g = game(marked, add(MARKED, 'monk', 'Safe'));
+			expect(alerts(g)).toContainEqual(
+				expect.objectContaining({ kind: 'protected', seatId: g.seats[MARKED] })
+			);
+			// A trigger at the moment of death is still poisoned: the Ravenkeeper wakes for nothing.
+			expect(alerts(g)).toContainEqual(
+				expect.objectContaining({ kind: 'on-death', seatId: g.seats[MARKED], works: false })
+			);
+		});
+
+		it('the poison comes off the marked player whether or not they died', () => {
+			// Other nights: tonight's choice is poisoned; last night's gets Dead and loses Poisoned.
+			expect(placeholdersFor(character, 'other')).toEqual([
+				{ tokens: [{ label: 'Poisoned', action: 'place' }] },
+				{
+					tokens: [
+						{ label: 'Dead', action: 'place' },
+						{ label: 'Poisoned', action: 'remove' }
+					]
+				}
+			]);
+		});
+
+		it('once the Pukka dies or changes character, its markers poison nobody', () => {
+			expect(poisonedByPukka(game(marked, dead(PUKKA)))).toBe(false);
+			const changed = game(marked, (s) => ({
+				type: 'AssignCharacter',
+				seatId: s[PUKKA],
+				characterId: 'imp'
+			}));
+			expect(poisonedByPukka(changed)).toBe(false);
+		});
 	});
 });

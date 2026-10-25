@@ -19,6 +19,8 @@ import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readDayMark, type DayMarkRule } from './day-mark-rules.ts';
 import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
+import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
+import { ownReminder, readToken } from './reminder-fields.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
 	readReminderPlaceholders,
@@ -163,6 +165,8 @@ export interface CharacterRules {
 	nightText?: NightTextRules;
 	/** A fact about today the Storyteller marks for its night answer (`rules/day-marks.ts`). */
 	dayMark?: DayMarkRule;
+	/** Its token on a player stops them waking tonight (`stops-waking-rules.ts`). */
+	stopsWaking?: StopsWaking;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 }
@@ -358,6 +362,7 @@ export const RULE_KEYS = [
 	'reminderPlaceholders',
 	'nightText',
 	'dayMark',
+	'stopsWaking',
 	'infoTokenCharacters'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
@@ -543,6 +548,11 @@ export function parseCharacterRules(
 	if (raw.dayMark !== undefined) {
 		const dayMark = readDayMark(raw.dayMark, `${path}.dayMark`, issues, reminders);
 		if (dayMark) rules.dayMark = dayMark;
+	}
+	if (raw.stopsWaking !== undefined) {
+		const at = `${path}.stopsWaking`;
+		const stops = readStopsWaking(raw.stopsWaking, at, issues, reminders);
+		if (stops) rules.stopsWaking = stops;
 	}
 	if (raw.infoTokenCharacters !== undefined) {
 		const at = `${path}.infoTokenCharacters`;
@@ -736,28 +746,6 @@ function readProtects(
 		return undefined;
 	}
 	return { who, token, from, ...flags };
-}
-
-/** Whether `token` is one of the character's reminders; true when they are not given. */
-function ownReminder(token: string, reminders: readonly ReminderLabel[] | undefined): boolean {
-	return !reminders || reminders.some((r) => r.toLowerCase() === token.toLowerCase());
-}
-
-/** An optional reminder label field, which must be one of the character's reminders. */
-function readToken(
-	raw: Record<string, unknown>,
-	key: string,
-	path: string,
-	issues: Issues,
-	reminders: readonly ReminderLabel[] | undefined
-): ReminderLabel | undefined {
-	const token = readString(raw, key, path, issues, false);
-	if (token === undefined) return undefined;
-	if (!ownReminder(token, reminders)) {
-		issues.add(`${path}.${key}`, 'not one of this character’s reminders');
-		return undefined;
-	}
-	return token;
 }
 
 function readLearns(
