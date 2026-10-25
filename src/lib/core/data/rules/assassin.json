@@ -1,0 +1,58 @@
+{
+	"kills": {
+		"by": "other",
+		"ignoresProtection": true
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player the Assassin picks, possibly the Assassin itself."
+		},
+		"No Ability": {
+			"seat": "self",
+			"note": "The Assassin once they have used their ability."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"note": "Kills through protection; once per game.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Assassin might choose a player. If so, they die even if protected: mark them *DEAD*, and mark the Assassin *NO ABILITY*.",
+				"reason": "Says which token goes on whom."
+			}
+		}
+	}
+}

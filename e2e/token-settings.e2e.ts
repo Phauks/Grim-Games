@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openSettingsDialog } from './shell.ts';
 
@@ -194,7 +195,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
@@ -349,7 +350,7 @@ test('night order badges sit on the side leaves, counting this game’s characte
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	for (const [n, name] of [
 		[1, 'Empath'],
@@ -419,7 +420,7 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
@@ -542,7 +543,9 @@ test('the character name and reminder fonts are set beside their token previews'
 	await expect(dialog.getByRole('combobox', { name: 'Reminder tokens' })).toHaveCount(0);
 });
 
-test('reminder highlight and owner icon can be switched and restyled', async ({ page }) => {
+test('reminder highlight can be switched and restyled, and the owner icon recoloured', async ({
+	page
+}) => {
 	// Trevor (2026-10-20): settings for reminder glow effects (on/off and how they look) and
 	// for the reminder's source mark (the owning character's icon): on/off and colour.
 	await page.goto('/');
@@ -564,36 +567,44 @@ test('reminder highlight and owner icon can be switched and restyled', async ({ 
 
 	const icon = lit.locator('img');
 	await expect(icon).toBeVisible();
-	await dialog.getByRole('combobox', { name: "Owner's icon colour", exact: true }).tap();
-	await page.getByRole('option', { name: 'Plain', exact: true }).tap();
-	await expect(icon).toHaveAttribute('data-plain', 'true');
-	await dialog.getByText("Owner's icon on reminders", { exact: true }).tap();
-	await expect(icon).toHaveCount(0);
+	// The owner's icon is always shown, in its owner's alignment (Trevor, 2026-10-23): no
+	// switch to hide it and no colour to pick.
+	await expect(dialog.getByText("Owner's icon on reminders", { exact: true })).toHaveCount(0);
+	await expect(dialog.getByText("Owner's icon colour", { exact: true })).toHaveCount(0);
 	const saved = await page.evaluate(
 		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
 	);
 	expect(saved).toMatchObject({
 		reminderHighlight: false,
-		reminderHighlightLook: 'glow',
-		reminderIcon: false,
-		reminderIconColour: 'plain'
+		reminderHighlightLook: 'glow'
 	});
 });
 
-test('∞ token symbols can be drawn filled', async ({ page }) => {
-	// Trevor (2026-10-23): "for infinite tokens, allow setting to turn on fill for the icons".
+test('character icon size is set for character tokens and reminder tokens apart', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): "character icon size should be a setting on character tokens and
+	// reminder tokens". Each preview shows its own.
 	await page.goto('/');
 	const dialog = await openTokens(page);
-	const star = dialog
-		.getByTestId('reminder-preview')
-		.locator('[data-symbol="ph:star"] [data-icon]');
-	await expect(star).toHaveAttribute('data-icon', /^ph:star(?!-fill)/);
-	await dialog.getByText('Filled ∞ token symbols', { exact: true }).tap();
-	await expect(star).toHaveAttribute('data-icon', 'ph:star-fill');
+	const tokenIcon = dialog.getByTestId('token-preview').locator('img').first();
+	const reminderIcon = dialog.getByTestId('reminder-preview').locator('img').first();
+	const width = async (icon: typeof tokenIcon) => (await icon.boundingBox())!.width;
+	const tokenBefore = await width(tokenIcon);
+	const reminderBefore = await width(reminderIcon);
+	const sliders = dialog.getByRole('slider', { name: 'Character icon size' });
+	await expect(sliders).toHaveCount(2);
+	await sliders.first().fill('0.5');
+	await expect.poll(() => width(tokenIcon)).toBeCloseTo(tokenBefore / 2, 0);
+	expect(await width(reminderIcon)).toBeCloseTo(reminderBefore, 0);
+	await sliders.last().fill('1.25');
+	await expect.poll(() => width(reminderIcon)).toBeCloseTo(reminderBefore * 1.25, 0);
 	const saved = await page.evaluate(
 		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
 	);
-	expect(saved.genericIconFill).toBe(true);
+	expect(saved).toMatchObject({ tokenIconScale: 0.5, reminderIconScale: 1.25 });
+	// The fill of ∞ symbols is each token's own now, not a setting here.
+	await expect(dialog.getByText('Filled ∞ token symbols', { exact: true })).toHaveCount(0);
 });
 
 test('night leaves can be switched off, or carry night order numbers', async ({ page }) => {

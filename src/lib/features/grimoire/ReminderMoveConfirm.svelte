@@ -61,7 +61,7 @@
 	/** Moves the reminder onto a seat, or asks first when it normally stays put. */
 	export function request(reminderId: ReminderId, toSeatId: SeatId): void {
 		const run = () => grimoire.run({ type: 'MoveReminder', reminderId, toSeatId });
-		const move = fixedReminderMove(game, reminderId, toSeatId);
+		const move = fixedReminderMove(game, reminderId, toSeatId, characters);
 		if (!move) return void run();
 		ask({
 			reminder: move.reminder,
@@ -76,7 +76,8 @@
 	/** Asks first when a reminder that stays put leaves its seat. */
 	function fromSeat(reminderId: ReminderId, to: Place, run: () => void): void {
 		const found = find(reminderId);
-		const why = found && 'seatId' in found.from ? fixedReminderReason(found.reminder) : undefined;
+		const why =
+			found && 'seatId' in found.from ? fixedReminderReason(found.reminder, characters) : undefined;
 		if (!found || why === undefined) return void run();
 		ask({ ...found, to, why, relocators: [], run });
 	}
@@ -116,7 +117,8 @@
 				? grimoire.run({ type: 'MoveReminderToRuleCharacter', reminderId: what, characterId })
 				: grimoire.run({ type: 'AddRuleReminder', characterId, reminder: what, tokenId });
 		const type = characters.get(found.reminder.characterId)?.type;
-		const seatWhy = 'seatId' in found.from ? fixedReminderReason(found.reminder) : undefined;
+		const seatWhy =
+			'seatId' in found.from ? fixedReminderReason(found.reminder, characters) : undefined;
 		if (type === 'fabled' || type === 'loric') {
 			if (seatWhy === undefined) return void run();
 			return ask({ ...found, to: { characterId }, why: seatWhy, relocators: [], run });

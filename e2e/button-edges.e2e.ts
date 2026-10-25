@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // Trevor (2026-10-22): a button whose fill is the colour of the surface around it has no
 // edge, "a source of ui pain i have had to address". A static lint can't know what a button
@@ -123,7 +124,7 @@ test('no filled button blends into the surface behind it', async ({ page }) => {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	seen.push(...(await check(page, 'board')));
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeVisible();

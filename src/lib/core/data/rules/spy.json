@@ -1,3 +1,28 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"registersAs": {
+		"self": {
+			"alignments": ["good"],
+			"types": ["townsfolk", "outsider"]
+		}
+	},
+	"dayReminders": {
+		"interactions": [
+			{
+				"other": "virgin",
+				"group": "nomination",
+				"text": "may register as a Townsfolk if they nominate",
+				"otherNoReminder": "No Ability"
+			},
+			{
+				"other": "towncrier",
+				"group": "nomination",
+				"text": "may register as not a Minion when nominating, for"
+			}
+		],
+		"none": "night action"
+	},
+	"deathCause": {
+		"none": "info; registration"
+	}
 }

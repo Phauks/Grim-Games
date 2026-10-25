@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
+	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
+	import { fitWords } from '#lib/ui/fit-words.ts';
 
 	interface Props {
 		/** The page's one `<h1>`; every page has one, so screen readers can find it. */
@@ -19,11 +20,6 @@
 		 * at every width (Trevor, 2026-10-19: the bag's cog and Share beside "Draw").
 		 */
 		iconActions?: boolean;
-		/**
-		 * Before the heading, on its line and outside it, in place of the hamburger the app's
-		 * pages put there (Player view mounts its own, as the board has; 2026-10-19).
-		 */
-		start?: Snippet;
 		/** One muted line under the title (an author, a date, the script in play). */
 		subtitle?: Snippet;
 		/** One row under the title for search, filters and view switches. */
@@ -51,7 +47,6 @@
 		width = 'page',
 		actions,
 		iconActions = false,
-		start,
 		subtitle,
 		toolbar,
 		side,
@@ -62,10 +57,8 @@
 
 	// Before the title: the page's own `start`, else the hamburger while no sidebar shows
 	// (phones, tablets, a closed sidebar), since there is no app header (2026-10-22).
-	const before = $derived(start ?? (navDrawer.pageButton ? menuButton : undefined));
+	const showMenu = $derived(navDrawer.pageButton);
 </script>
-
-{#snippet menuButton()}<NavMenuButton />{/snippet}
 
 <!--
 	The frame of every page reached from the sidebar (Trevor, 2026-10-17): one width and gutter,
@@ -74,19 +67,23 @@
 	No Back button: the sidebar navigates. Overlays (dialogs, sheets) go beside it, not inside.
 -->
 <main class="page" data-width={width}>
-	{#if hideTitle && before}<div class="start">{@render before()}</div>{/if}
+	<PageMenuButton />
 	<header class="head" class:visually-hidden={hideTitle}>
 		<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
-			{#if before && !hideTitle}
+			{#if showMenu && !hideTitle}
 				<div class="start">
-					{@render before()}
+					<span class="menu-room" aria-hidden="true"></span>
 					<h1>
-						{#if lead}{@render lead()}{/if}{title}
+						{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}
+							>{title}</span
+						>
 					</h1>
 				</div>
 			{:else}
 				<h1>
-					{#if lead}{@render lead()}{/if}{title}
+					{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}
+						>{title}</span
+					>
 				</h1>
 			{/if}
 			{#if actions}<div class="actions">{@render actions()}</div>{/if}
@@ -111,7 +108,13 @@
 		gap: var(--space-4);
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-5) var(--page-gutter) var(--space-6);
+		/* The title row starts level with the hamburger and the sidebar's name row. */
+		padding: var(--menu-inset) var(--page-gutter) var(--space-6);
+	}
+	/* Keeps the title clear of the hamburger, one spacing step after it. */
+	.menu-room {
+		flex: none;
+		width: max(0rem, calc(var(--menu-inset) + var(--tap-target) - var(--page-gutter)));
 	}
 	.page[data-width='text'] {
 		max-width: calc(var(--measure) + 2 * var(--page-gutter));
@@ -136,12 +139,18 @@
 		align-items: center;
 		gap: var(--space-2);
 		min-width: 0;
+		/* As tall as the hamburger, so the two centre on one line. */
+		min-height: var(--tap-target);
 		margin: 0;
 		font-size: var(--page-title-size);
-		/* The narrowest phone at the largest text, with the hamburger beside it: a long title
-		   breaks (hyphenated where the browser can) rather than push the page sideways. */
-		overflow-wrap: anywhere;
-		hyphens: auto;
+	}
+	/* A word never breaks in the middle (2026-10-23): the title shrinks until its longest word
+	   fits (fitWords). Only below that, on the narrowest phone at the largest text, does a
+	   word break, rather than push the page sideways. */
+	.title-text {
+		min-width: 0;
+		font-size: calc(1em * var(--fit, 1));
+		overflow-wrap: break-word;
 	}
 	.start {
 		display: flex;

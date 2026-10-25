@@ -16,7 +16,13 @@ function check(
 	const selection: Record<string, number> = {};
 	for (const id of ids) selection[id] = (selection[id] ?? 0) + 1;
 	const scriptOrder = [...new Set(ids)];
-	const analysis = analyseSelection({ players, selection, scriptOrder, lookup });
+	const analysis = analyseSelection({
+		players,
+		selection,
+		scriptOrder,
+		lookup,
+		travellersInBag: travellerMax
+	});
 	const plan = planBag({
 		selection,
 		scriptCharacters: scriptOrder.map((id) => lookup(id)!),
@@ -123,5 +129,10 @@ describe('uncuratedReminderCharacters', () => {
 			custom('quiet', [])
 		];
 		expect(uncuratedReminderCharacters(inPlay)).toEqual(['lamp']);
+	});
+
+	it('leaves out a custom character whose rules say what it places at setup', () => {
+		const lamp = { ...custom('lamp', ['Lit']), rules: { setupPrep: { none: 'lit later' } } };
+		expect(uncuratedReminderCharacters([lamp])).toEqual([]);
 	});
 });

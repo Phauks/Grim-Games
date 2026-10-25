@@ -1,5 +1,5 @@
 import type { CombinedParts } from '#lib/core/modes/index.ts';
-import { DJINN_THREE_ALIVE, PLUS_ONE_NAMED } from './rule-switches.ts';
+import { DJINN_THREE_ALIVE, INFINITE_NAMED, PLUS_ONE_NAMED } from './rule-switches.ts';
 
 /**
  * Built-in mode and special rule descriptions Trevor has approved (2026-10-18: "You write game mode
@@ -41,7 +41,14 @@ export const APPROVED_ABOUT: Readonly<Record<string, string>> = {
 	warrens:
 		'While 5 or more players are alive, an evil player who nominates another living evil player swaps characters with them at once. Travellers are left out.',
 	'djinns-bargain':
-		'A player who nominates may choose to die. If they do, the player they nominated has their ability work twice until dusk the next day.'
+		'A player who nominates may choose to die. If they do, the player they nominated has their ability work twice until dusk the next day.',
+	// Approved 2026-10-24 ("Approved"), after reading the drafts in the World Cup thread.
+	'flesh-and-bone':
+		'A campaign of games with the Flesh and Bone Fabled. Characters executed in one game are out for the rest of the campaign and replaced on the next script.',
+	'two-games-at-once':
+		'The same players play two scripts at the same time, with a character in each game. No one may be the Demon in both.',
+	'whale-buffet':
+		'Every character is on the script. Each player draws only a character type, then chooses any character of that type to play.'
 };
 
 /** Whether a built-in mode's description is the text Trevor approved. */
@@ -106,6 +113,8 @@ export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly st
 		'Tell the table that one character from off the script is in play.',
 		PLUS_ONE_NAMED
 	],
+	// Approved 2026-10-23 (decision card): the same switch's text for Infinite Possibilities.
+	'infinite-possibilities:parts.information[0]': INFINITE_NAMED,
 	// Approved 2026-10-23 ("instructions and about are fine"); the Djinn's Bargain's second text
 	// is with its 3-player switch on (rule-switches.ts).
 	'warrens:parts.ruleChanges[0]':

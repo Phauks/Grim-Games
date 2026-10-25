@@ -4,7 +4,7 @@
  * Fails when a character in static/data/roles.json or a jinx pair in jinxes.json has no test
  * file, when a test file does not cite the character's wiki page, or when a test file is left
  * over for a character or jinx that no longer exists, or when a `:reminder:` in TPI's night
- * text has no explicit token mapping (`src/lib/core/rules/reminder-placeholders.data.ts`). Prints how many scenario `todo`s remain:
+ * text has no explicit token mapping (each rules file's `reminderPlaceholders`). Prints how many scenario `todo`s remain:
  * the roadmap tracks that count to zero for 1.0.
  *
  * Fix a missing file with `npm run scaffold:rules-tests`.
@@ -32,7 +32,7 @@ console.log(
 	].join('\n')
 );
 
-// Every `:reminder:` in TPI's night text says which token it means (`REMINDER_PLACEHOLDERS`).
+// Every `:reminder:` in TPI's night text says which token it means (`reminderPlaceholders`).
 report.problems.push(...placeholderProblems(data.characters));
 
 if (report.problems.length) {

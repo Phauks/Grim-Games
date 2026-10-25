@@ -1,0 +1,23 @@
+{
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is in play"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	}
+}

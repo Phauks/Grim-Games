@@ -2,5 +2,14 @@
 	"actsWhenDead": true,
 	"onDeath": {
 		"by": "any"
+	},
+	"dayReminders": {
+		"none": "triggers on night death"
+	},
+	"deathCause": {
+		"none": "makes a Farmer when it dies"
+	},
+	"reminderMovement": {
+		"relocates": "makes a good player a Farmer"
 	}
 }

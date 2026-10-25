@@ -1,0 +1,68 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "On the player who dies: the chosen target, or the Fang Gu itself when it jumps into an Outsider."
+		},
+		"Once": {
+			"note": "On the Fang Gu after the first Outsider jump; stays all game.",
+			"seat": "self"
+		}
+	},
+	"gameEnd": {
+		"holds": [
+			{
+				"kind": "death-passes",
+				"to": "outsider",
+				"spentToken": "Once"
+			}
+		]
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"setupModifier": {
+		"summary": "+1 Outsider",
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "outsider",
+				"values": [1]
+			}
+		]
+	},
+	"dayReminders": {
+		"none": "night kills; setup change"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["Once"],
+		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"note": "A kill; the Fang Gu's jump happens once only.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Once",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

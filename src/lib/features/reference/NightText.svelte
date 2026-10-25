@@ -12,7 +12,7 @@
 		character: Character;
 		/**
 		 * Which night the text is for: TPI's `:reminder:`s are then drawn as the tokens they
-		 * mean (`REMINDER_PLACEHOLDERS`), and Trevor's reviewed edits replace TPI's text.
+		 * mean (`reminderPlaceholders`), and Trevor's reviewed edits replace TPI's text.
 		 */
 		night?: 'first' | 'other';
 	}

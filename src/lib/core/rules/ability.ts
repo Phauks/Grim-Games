@@ -16,7 +16,9 @@
  * Everything here is a suggestion: the Storyteller can override any of it.
  */
 import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
+import type { ImpairmentReason, TokenImpairment } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
@@ -29,8 +31,7 @@ import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
-/** Why an ability does not work. `no-ability`: an effect such as the Preacher's. */
-export type ImpairmentReason = 'drunk' | 'poisoned' | 'no-ability';
+export type { ImpairmentReason };
 
 /** The character (and seat, when one holds it) whose ability causes an effect. */
 export interface AbilitySource {
@@ -65,15 +66,19 @@ export function impairmentOfLabel(label: string): 'poisoned' | 'drunk' | undefin
 	return undefined;
 }
 
-/**
- * Reminder tokens whose label mentions drunk but that do not make their carrier drunk.
- * The Minstrel's "Everyone Is Drunk" makes every *other* player drunk except Travellers
- * (https://wiki.bloodontheclocktower.com/Minstrel); it is handled as a global effect.
- */
-const GLOBAL_DRUNK = { characterId: 'minstrel', label: 'Everyone Is Drunk' } as const;
+/** What a reminder token does to its carrier or the other players (`impairs.tokens`). */
+function tokenImpairment(
+	r: { characterId: CharacterId; label: ReminderLabel },
+	characters: CharacterLookup
+): TokenImpairment | undefined {
+	return rulesOf(r.characterId, characters)?.impairs?.tokens?.[r.label];
+}
 
-/** The Preacher's token on a chosen Minion (https://wiki.bloodontheclocktower.com/Preacher). */
-export const PREACHED = { characterId: 'preacher', label: 'No Ability' } as const;
+/** The character's wiki page, or the Glossary for a homebrew character. */
+function wikiOf(characterId: CharacterId, characters: CharacterLookup): string {
+	const character = characters.get(characterId);
+	return (character && wikiUrl(character)) ?? `${W}Glossary`;
+}
 
 const ORDER: Record<ImpairmentReason, number> = { 'no-ability': 0, poisoned: 1, drunk: 2 };
 
@@ -105,25 +110,32 @@ function impairmentsOf(
 	const characterId = trueCharacter(game, seatId, characters);
 
 	for (const r of seat.reminders) {
-		if (r.characterId === GLOBAL_DRUNK.characterId && r.label === GLOBAL_DRUNK.label) continue;
-		if (r.characterId === PREACHED.characterId && r.label === PREACHED.label) {
-			// A chosen Minion has no ability while the Preacher lives and is sober and healthy
-			// (https://wiki.bloodontheclocktower.com/Preacher). Choosing a non-Minion does nothing.
-			if (typeOf(game, seatId, characters) !== 'minion') continue;
-			const preacher = game.seating.find(
-				(s) =>
-					s !== seatId &&
-					trueCharacter(game, s, characters) === 'preacher' &&
-					!visiting.has(s) &&
-					abilityWorks(game, s, characters, visiting)
-			);
-			if (preacher) {
-				out.push({
-					reason: 'no-ability',
-					source: { characterId: 'preacher', seatId: preacher, reminderId: r.reminderId },
-					wiki: `${W}Preacher`
-				});
-			}
+		const rule = tokenImpairment(r, characters);
+		if (rule?.on === 'others') continue;
+		if (rule) {
+			// A token that impairs its carrier only while its character's ability works (the
+			// Preacher's: https://wiki.bloodontheclocktower.com/Preacher), and only a `type`
+			// carrier. Otherwise it does nothing.
+			if (rule.type && typeOf(game, seatId, characters) !== rule.type) continue;
+			const source = rule.whileWorks
+				? game.seating.find(
+						(s) =>
+							s !== seatId &&
+							trueCharacter(game, s, characters) === r.characterId &&
+							!visiting.has(s) &&
+							abilityWorks(game, s, characters, visiting)
+					)
+				: seatOfCharacter(game, r.characterId, characters, seatId);
+			if (rule.whileWorks && !source) continue;
+			out.push({
+				reason: rule.reason,
+				source: {
+					characterId: r.characterId,
+					...(source ? { seatId: source } : {}),
+					reminderId: r.reminderId
+				},
+				wiki: wikiOf(r.characterId, characters)
+			});
 			continue;
 		}
 		const reason = impairmentOfLabel(r.label);
@@ -143,44 +155,41 @@ function impairmentsOf(
 		});
 	}
 
-	// The Drunk is drunk whether or not an "Is The Drunk" token says so
-	// (https://wiki.bloodontheclocktower.com/Drunk).
-	if (characterId === 'drunk' && !out.some((i) => i.source.characterId === 'drunk')) {
-		out.push({
-			reason: 'drunk',
-			source: { characterId: 'drunk', seatId },
-			wiki: `${W}Drunk`
-		});
-	}
-
-	// The Minstrel's "Everyone Is Drunk": every other player but Travellers is drunk.
-	const traveller = isTraveller(game, seatId, characters);
-	for (const other of traveller ? [] : game.seating) {
-		if (other === seatId) continue;
-		const token = game.seats[other].reminders.find(
-			(r) => r.characterId === GLOBAL_DRUNK.characterId && r.label === GLOBAL_DRUNK.label
-		);
-		if (!token) continue;
-		const minstrel = seatOfCharacter(game, 'minstrel', characters) ?? other;
-		if (minstrel === seatId) continue;
-		out.push({
-			reason: 'drunk',
-			source: { characterId: 'minstrel', seatId: minstrel, reminderId: token.reminderId },
-			wiki: `${W}Minstrel`
-		});
-		break;
-	}
-
-	// The Witch loses her ability when just 3 players live
-	// (https://wiki.bloodontheclocktower.com/Witch).
-	if (characterId === 'witch') {
+	// Its own player is impaired: always (the Drunk, whether or not an "Is The Drunk" token
+	// says so: https://wiki.bloodontheclocktower.com/Drunk), or once few enough players live
+	// (the Witch: https://wiki.bloodontheclocktower.com/Witch).
+	const self = characterId ? rulesOf(characterId, characters)?.impairs?.self : undefined;
+	if (characterId && self) {
 		const alive = game.seating.filter((s) => !game.seats[s].dead).length;
-		if (alive <= 3) {
+		const applies =
+			self.aliveAtMost !== undefined
+				? alive <= self.aliveAtMost
+				: !out.some((i) => i.source.characterId === characterId);
+		if (applies) {
 			out.push({
-				reason: 'no-ability',
-				source: { characterId: 'witch', seatId },
-				wiki: `${W}Witch`
+				reason: self.reason,
+				source: { characterId, seatId },
+				wiki: wikiOf(characterId, characters)
 			});
+		}
+	}
+
+	// A token that impairs every other player but Travellers while it is on the board (the
+	// Minstrel's "Everyone Is Drunk": https://wiki.bloodontheclocktower.com/Minstrel).
+	const traveller = isTraveller(game, seatId, characters);
+	others: for (const other of traveller ? [] : game.seating) {
+		if (other === seatId) continue;
+		for (const token of game.seats[other].reminders) {
+			const rule = tokenImpairment(token, characters);
+			if (rule?.on !== 'others') continue;
+			const source = seatOfCharacter(game, token.characterId, characters) ?? other;
+			if (source === seatId) continue;
+			out.push({
+				reason: rule.reason,
+				source: { characterId: token.characterId, seatId: source, reminderId: token.reminderId },
+				wiki: wikiOf(token.characterId, characters)
+			});
+			break others;
 		}
 	}
 
@@ -235,7 +244,8 @@ export interface Registration {
 }
 
 /**
- * Players whose registration is the Storyteller's choice, or fixed by an ability:
+ * Players whose registration is the Storyteller's choice, or fixed by an ability, as each
+ * character's `registersAs` rules say:
  * - the Recluse might register as evil and as a Minion or Demon, even if dead
  *   (https://wiki.bloodontheclocktower.com/Recluse);
  * - the Spy might register as good and as a Townsfolk or Outsider, even if dead
@@ -251,43 +261,42 @@ export function registrations(game: Game, characters: CharacterLookup): Registra
 		const alignment = alignmentOf(game, seatId);
 		const type = typeOf(game, seatId, characters);
 		if (!alignment || !type) continue;
-		if ((id === 'recluse' || id === 'spy') && abilityState(game, seatId, characters).works) {
-			const recluse = id === 'recluse';
+		const self = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
+		if (id && self && abilityState(game, seatId, characters).works) {
 			out.push({
 				seatId,
-				alignments: [alignment, recluse ? 'evil' : 'good'].filter(
+				alignments: [alignment, ...(self.alignments ?? [])].filter(
 					(a, i, all): a is Alignment => all.indexOf(a) === i
 				),
-				types: [type, ...(recluse ? ['minion', 'demon'] : ['townsfolk', 'outsider'])].filter(
+				types: [type, ...(self.types ?? [])].filter(
 					(t, i, all): t is CharacterType => all.indexOf(t) === i
 				),
 				source: { characterId: id, seatId },
-				wiki: `${W}${recluse ? 'Recluse' : 'Spy'}`
+				wiki: wikiOf(id, characters)
 			});
 			continue;
 		}
-		const pawToken = game.seats[seatId].reminders.find(
-			(r) => r.characterId === 'lycanthrope' && r.label === 'Faux Paw'
-		);
-		if (pawToken && alignment === 'good') {
-			const lycanthrope = game.seating.find(
+		for (const token of game.seats[seatId].reminders) {
+			const rule = rulesOf(token.characterId, characters)?.registersAs?.tokens?.[token.label];
+			if (!rule || (rule.carrierAlignment && rule.carrierAlignment !== alignment)) continue;
+			const source = game.seating.find(
 				(s) =>
-					trueCharacter(game, s, characters) === 'lycanthrope' &&
+					trueCharacter(game, s, characters) === token.characterId &&
 					abilityState(game, s, characters).works
 			);
-			if (lycanthrope) {
-				out.push({
-					seatId,
-					alignments: ['evil'],
-					types: [type],
-					source: {
-						characterId: 'lycanthrope',
-						seatId: lycanthrope,
-						reminderId: pawToken.reminderId
-					},
-					wiki: `${W}Lycanthrope`
-				});
-			}
+			if (!source) continue;
+			out.push({
+				seatId,
+				alignments: (rule.alignments ?? [alignment]).filter(
+					(a, i, all): a is Alignment => all.indexOf(a) === i
+				),
+				types: (rule.types ?? [type]).filter(
+					(t, i, all): t is CharacterType => all.indexOf(t) === i
+				),
+				source: { characterId: token.characterId, seatId: source, reminderId: token.reminderId },
+				wiki: wikiOf(token.characterId, characters)
+			});
+			break;
 		}
 	}
 	return out;
@@ -376,36 +385,42 @@ export function registrationWorlds(
 /** One ability that protects a player from a kill, and the reminder that says so if any. */
 export interface Protector {
 	source: AbilitySource;
-	/** Against the Demon's kill only, or any kill. */
-	from: 'demon' | 'any';
+	/** Against the Demon's kill only, any death, or an execution only. */
+	from: 'demon' | 'any' | 'execution';
 }
+
+/** What a death is from: the Demon's kill, another ability's, or the day's execution. */
+export type DeathBy = 'demon' | 'other' | 'execution';
 
 /**
  * Every ability that would stop `seatId` dying to a kill `by` the Demon or another ability,
  * in this order: its own (`protects.who: self`, the Sailor, the Soldier), then each reminder
  * on the seat whose character's rules say it protects the player it marks (the Tea Lady's
- * "Cannot Die", the Innkeeper's and Monk's "Safe"). From the rules blocks (`protects`), so a
- * custom character can protect too. Whether each ability works is the caller's to check.
+ * "Cannot Die", the Innkeeper's and Monk's "Safe", the Devil's Advocate's "Survives
+ * Execution"). From the rules blocks (`protects`), so a custom character can protect too. An
+ * execution is never stopped by a protection that lasts only the night (`night`). Whether
+ * each ability works is the caller's to check.
  */
 export function protectors(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup,
-	by: 'demon' | 'other'
+	by: DeathBy
 ): Protector[] {
 	const seat = getSeat(game, seatId);
 	if (!seat) return [];
-	const against = (from: 'demon' | 'any') => from === 'any' || by === 'demon';
+	const against = ({ from, night }: { from: Protector['from']; night?: true }) =>
+		(from === 'any' || from === by) && !(night && by === 'execution');
 	const out: Protector[] = [];
 	const id = trueCharacter(game, seatId, characters);
 	const own = id ? rulesOf(id, characters)?.protects : undefined;
-	if (id && own?.who === 'self' && against(own.from)) {
+	if (id && own?.who === 'self' && against(own)) {
 		out.push({ source: { characterId: id, seatId }, from: own.from });
 	}
 	for (const r of seat.reminders) {
 		const rule = rulesOf(r.characterId, characters)?.protects;
 		if (rule?.who !== 'marked' || rule.token.toLowerCase() !== r.label.toLowerCase()) continue;
-		if (!against(rule.from)) continue;
+		if (!against(rule)) continue;
 		const from = seatOfCharacter(game, r.characterId, characters);
 		out.push({
 			source: {
@@ -429,7 +444,7 @@ export function protection(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup,
-	by: 'demon' | 'other'
+	by: DeathBy
 ): AbilitySource | 'override' | undefined {
 	const seat = getSeat(game, seatId);
 	if (!seat) return undefined;

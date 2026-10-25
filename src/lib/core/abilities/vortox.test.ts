@@ -55,7 +55,7 @@ describe('Vortox', () => {
 				type: 'NewDay'
 			});
 			expect(gameEnds(session.game, testCharacters, { dayEnded: true })).toMatchObject([
-				{ rule: 'vortox', winner: 'evil' }
+				{ rule: 'day-without-execution', winner: 'evil' }
 			]);
 		});
 	});

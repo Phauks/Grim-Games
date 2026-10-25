@@ -30,6 +30,13 @@ export function describeEntry(
 				nominee: seatName(entry.nominee)
 			});
 		case 'execution':
+			if (entry.savedBy)
+				return entry.savedBy.characterId
+					? t('day.logExecutedSavedBy', {
+							name: seatName(entry.seatId),
+							character: characterName(entry.savedBy.characterId)
+						})
+					: t('day.logExecutedSurvived', { name: seatName(entry.seatId) });
 			return t(entry.died ? 'day.logExecuted' : 'day.logExecutedDead', {
 				name: seatName(entry.seatId)
 			});

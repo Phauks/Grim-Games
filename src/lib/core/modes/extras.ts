@@ -4,7 +4,7 @@
  * know about; the Storyteller may tell the table a range of how many there are
  * (https://chillclocktower.com/2024/04/28/a-script-of-infinite-possibilities/).
  */
-import type { Character } from '#lib/core/data/types.ts';
+import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { SEATED_TYPES, type SeatedType } from '#lib/core/rules/distribution.ts';
 import { bannedIn, type StorytellerRestrictions } from './pool.ts';
 import type { GameMode } from './types.ts';
@@ -13,6 +13,19 @@ import type { GameMode } from './types.ts';
 export function extraCounts(mode: GameMode): Partial<Record<SeatedType, number>> {
 	const pool = mode.parts.pool;
 	return pool?.kind === 'script-plus-hidden' ? pool.extras : {};
+}
+
+/**
+ * The characters a game's rules put in play from off the script: its hidden extras, when its
+ * mode or a rule adds them (+1, A Script of Infinite Possibilities). These are not flagged as
+ * off the script (Trevor, 2026-10-23); with no such rule, none are, so extras kept from
+ * before the rule was turned off count for nothing.
+ */
+export function allowedOffScript(
+	mode: GameMode,
+	extras: readonly CharacterId[]
+): ReadonlySet<CharacterId> {
+	return new Set(mode.parts.pool?.kind === 'script-plus-hidden' ? extras : []);
 }
 
 /** Off-script official characters a type's extra can be: not restricted, not on the script. */

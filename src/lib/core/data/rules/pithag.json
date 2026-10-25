@@ -1,0 +1,11 @@
+{
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"none": "changes characters"
+	},
+	"reminderMovement": {
+		"relocates": "changes a player’s character"
+	}
+}

@@ -1,0 +1,34 @@
+{
+	"reminderTargets": {
+		"Not Me": {
+			"seat": "any",
+			"note": "The player the Cacklejack chooses that day.",
+			"ambiguous": "The wiki doesn't say whether the Cacklejack may choose themself or a dead player."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may choose a player"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "changes a character"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each day."
+	}
+}

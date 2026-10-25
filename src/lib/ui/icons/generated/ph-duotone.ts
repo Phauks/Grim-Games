@@ -11,6 +11,7 @@ import ph_arrow_square_out_duotone from '~icons/ph/arrow-square-out-duotone';
 import ph_arrow_u_up_left_duotone from '~icons/ph/arrow-u-up-left-duotone';
 import ph_arrow_u_up_right_duotone from '~icons/ph/arrow-u-up-right-duotone';
 import ph_arrows_down_up_duotone from '~icons/ph/arrows-down-up-duotone';
+import ph_arrows_in_duotone from '~icons/ph/arrows-in-duotone';
 import ph_arrows_left_right_duotone from '~icons/ph/arrows-left-right-duotone';
 import ph_arrows_out_duotone from '~icons/ph/arrows-out-duotone';
 import ph_arrows_out_cardinal_duotone from '~icons/ph/arrows-out-cardinal-duotone';
@@ -28,6 +29,7 @@ import ph_bookmarks_simple_duotone from '~icons/ph/bookmarks-simple-duotone';
 import ph_books_duotone from '~icons/ph/books-duotone';
 import ph_bug_duotone from '~icons/ph/bug-duotone';
 import ph_calculator_duotone from '~icons/ph/calculator-duotone';
+import ph_camera_duotone from '~icons/ph/camera-duotone';
 import ph_caret_circle_down_duotone from '~icons/ph/caret-circle-down-duotone';
 import ph_caret_down_duotone from '~icons/ph/caret-down-duotone';
 import ph_caret_left_duotone from '~icons/ph/caret-left-duotone';
@@ -46,6 +48,7 @@ import ph_club_duotone from '~icons/ph/club-duotone';
 import ph_coin_duotone from '~icons/ph/coin-duotone';
 import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
+import ph_corners_in_duotone from '~icons/ph/corners-in-duotone';
 import ph_corners_out_duotone from '~icons/ph/corners-out-duotone';
 import ph_cross_duotone from '~icons/ph/cross-duotone';
 import ph_crown_duotone from '~icons/ph/crown-duotone';
@@ -141,6 +144,7 @@ import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
 import ph_scales_duotone from '~icons/ph/scales-duotone';
+import ph_scan_duotone from '~icons/ph/scan-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
 import ph_shapes_duotone from '~icons/ph/shapes-duotone';
 import ph_share_network_duotone from '~icons/ph/share-network-duotone';
@@ -209,6 +213,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-left-duotone': ph_arrow_u_up_left_duotone,
 	'ph:arrow-u-up-right-duotone': ph_arrow_u_up_right_duotone,
 	'ph:arrows-down-up-duotone': ph_arrows_down_up_duotone,
+	'ph:arrows-in-duotone': ph_arrows_in_duotone,
 	'ph:arrows-left-right-duotone': ph_arrows_left_right_duotone,
 	'ph:arrows-out-duotone': ph_arrows_out_duotone,
 	'ph:arrows-out-cardinal-duotone': ph_arrows_out_cardinal_duotone,
@@ -226,6 +231,7 @@ const icons: IconMap = {
 	'ph:books-duotone': ph_books_duotone,
 	'ph:bug-duotone': ph_bug_duotone,
 	'ph:calculator-duotone': ph_calculator_duotone,
+	'ph:camera-duotone': ph_camera_duotone,
 	'ph:caret-circle-down-duotone': ph_caret_circle_down_duotone,
 	'ph:caret-down-duotone': ph_caret_down_duotone,
 	'ph:caret-left-duotone': ph_caret_left_duotone,
@@ -244,6 +250,7 @@ const icons: IconMap = {
 	'ph:coin-duotone': ph_coin_duotone,
 	'ph:copy-duotone': ph_copy_duotone,
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
+	'ph:corners-in-duotone': ph_corners_in_duotone,
 	'ph:corners-out-duotone': ph_corners_out_duotone,
 	'ph:cross-duotone': ph_cross_duotone,
 	'ph:crown-duotone': ph_crown_duotone,
@@ -339,6 +346,7 @@ const icons: IconMap = {
 	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
 	'ph:scales-duotone': ph_scales_duotone,
+	'ph:scan-duotone': ph_scan_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,
 	'ph:shapes-duotone': ph_shapes_duotone,
 	'ph:share-network-duotone': ph_share_network_duotone,

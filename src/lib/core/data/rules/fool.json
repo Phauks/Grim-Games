@@ -1,3 +1,40 @@
 {
-	"survivesFirstDeath": { "spentToken": "No Ability" }
+	"survivesFirstDeath": {
+		"spentToken": "No Ability"
+	},
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Fool once they have survived their first death."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has not died yet"
+					}
+				],
+				"when": {
+					"noReminder": "No Ability"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "survives a death"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
+	}
 }

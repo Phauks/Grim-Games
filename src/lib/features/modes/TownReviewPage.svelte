@@ -83,7 +83,7 @@
 							})}
 						</h2>
 						<Button
-							icon="rename"
+							icon="edit"
 							onclick={() =>
 								void goto(resolve('/grimoire/[gameId]/setup', { gameId: open.game.gameId }))}
 						>

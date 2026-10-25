@@ -32,3 +32,16 @@ export async function nameStoryteller(page: Page, name: string): Promise<void> {
 	await page.goto(board);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 }
+
+/**
+ * After Start game: every start goes on to Character selection (Trevor, 2026-10-23); this
+ * goes on from there to the board without building a bag.
+ */
+export async function toBoard(page: Page): Promise<void> {
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	// A tap on touch screens: a click would leave the mouse over the board, pausing its toasts.
+	const shortcut = page.getByTestId('setup-to-board');
+	if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await shortcut.tap();
+	else await shortcut.click();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+}

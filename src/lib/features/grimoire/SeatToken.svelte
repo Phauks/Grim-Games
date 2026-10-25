@@ -33,8 +33,11 @@
 		misfit?: boolean;
 		/** Night order numbers for the leaf badges, when that setting is on. */
 		nightNumbers?: { first?: number; other?: number };
-		/** `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat). */
-		onTap: (part?: 'note') => void;
+		/**
+		 * `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat),
+		 * `nominate` on the nomination marks (it asks who this player nominated).
+		 */
+		onTap: (part?: 'note' | 'nominate') => void;
 		/** A tap on a dead player's badge: marks their ghost vote used, or gives it back. */
 		onGhostVote?: () => void;
 		/**
@@ -43,10 +46,17 @@
 		 */
 		onHold?: (holding: boolean) => void;
 		/**
-		 * Today's nominations (Trevor, 2026-10-23, option A), only while Track nominations is on:
-		 * whether this player has nominated, and whether they were nominated.
+		 * Today's nominations (Trevor, 2026-10-23), while Track nominations is on: whether this
+		 * player has nominated, and was nominated. A mark not yet earned shows greyed, as the
+		 * ghost vote shows on the dead. `made` undefined: they may not nominate (the dead), so
+		 * only the gavel shows.
 		 */
-		nominations?: { made: boolean; received: boolean };
+		nominations?: { made?: boolean; received: boolean };
+		/**
+		 * Dead, but voting this many times on every nomination with no vote token (the Banshee
+		 * killed by the Demon): the badge is a plain skull, with no ghost vote to spend.
+		 */
+		tokenFreeVotes?: number;
 	}
 
 	let {
@@ -63,7 +73,8 @@
 		onTap,
 		onGhostVote,
 		onHold,
-		nominations
+		nominations,
+		tokenFreeVotes
 	}: Props = $props();
 
 	// The player's alignment is not the one their character type starts with (a good Minion,
@@ -79,7 +90,13 @@
 		[
 			`Seat ${number}: ${seat.playerName ?? 'no name'}`,
 			character?.name ?? 'no character',
-			seat.dead ? (seat.ghostVoteUsed ? 'dead, ghost vote used' : 'dead') : '',
+			seat.dead
+				? tokenFreeVotes !== undefined
+					? `dead, ${tokenFreeVotes} vote${tokenFreeVotes === 1 ? '' : 's'} per nomination`
+					: seat.ghostVoteUsed
+						? 'dead, ghost vote used'
+						: 'dead'
+				: '',
 			// A Traveller has no starting alignment: always say it, or that it is not set yet.
 			character?.type === 'traveller'
 				? (seat.alignment ?? 'alignment not set')
@@ -136,8 +153,20 @@
 			swallowNextClick(event.currentTarget);
 			const target = event.target instanceof Element ? event.target : null;
 			// The dead badge is the ghost vote's own switch (Trevor, 2026-10-19).
-			if (target?.closest('[data-testid="dead-mark"]') && onGhostVote) onGhostVote();
-			else onTap(target?.closest('.mark.note') ? 'note' : undefined);
+			if (
+				target?.closest('[data-testid="dead-mark"]') &&
+				onGhostVote &&
+				tokenFreeVotes === undefined
+			)
+				onGhostVote();
+			else
+				onTap(
+					target?.closest('.mark.note')
+						? 'note'
+						: target?.closest('.nominations')
+							? 'nominate'
+							: undefined
+				);
 		}
 		down = null;
 	}
@@ -160,23 +189,32 @@
 	{#if orphan}<span class="mark orphan" title="Not on the script"><Icon name="warning" /></span
 		>{/if}
 	<!-- The player's own avatar (plan R6), upper left, while a character covers the face. -->
-	{#if character && seat.avatar}<span class="mark avatar" data-testid="avatar-mark"
-			><AvatarFace avatar={seat.avatar} {name} /></span
+	{#if character && seat.avatar}<span
+			class="mark avatar"
+			data-testid="avatar-mark"
+			data-shifted={nominations ? '' : undefined}><AvatarFace avatar={seat.avatar} {name} /></span
 		>{/if}
-	<!-- Today's nominations: one pill on the left rim, a fixed slot for each mark, so the pill
-	     never changes size. Every corner already has its mark. -->
-	{#if nominations && (nominations.made || nominations.received)}<span
-			class="nominations"
-			data-testid="nomination-marks"
-			><span class="slot nominator" data-testid="nominator-mark" title="Has nominated today"
-				>{#if nominations.made}<Icon name="nominator" />{/if}</span
-			><span class="slot nominated" data-testid="nominated-mark" title="Was nominated today"
-				>{#if nominations.received}<Icon name="nominated" />{/if}</span
+	<!-- Today's nominations: two marks side by side in one pill over the top-left rim, each
+	     greyed until it happens (Trevor, 2026-10-23), clear of the first-night number on the
+	     left leaf (Trevor, 2026-10-24). A tap asks who this player nominated. -->
+	{#if nominations}<span class="nominations" data-testid="nomination-marks"
+			>{#if nominations.made !== undefined}<span
+					class="slot"
+					data-testid="nominator-mark"
+					data-on={nominations.made || undefined}
+					title={nominations.made ? 'Has nominated today' : 'Has not nominated today'}
+					><Icon name="nominator" /></span
+				>{/if}<span
+				class="slot"
+				data-testid="nominated-mark"
+				data-on={nominations.received || undefined}
+				title={nominations.received ? 'Was nominated today' : 'Not nominated today'}
+				><Icon name="nominated" /></span
 			></span
 		>{/if}
 	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
 	{#if seat.note}<span class="mark note" data-testid="note-mark" title="Note"
-			><Icon name="pen" /></span
+			><Icon name="notes" /></span
 		>{/if}
 {/snippet}
 
@@ -208,7 +246,11 @@
 		{number}
 		face={character ? face : undefined}
 		{marks}
-		vote={seat.dead ? (seat.ghostVoteUsed ? 'used' : 'unused') : undefined}
+		vote={seat.dead && tokenFreeVotes === undefined
+			? seat.ghostVoteUsed
+				? 'used'
+				: 'unused'
+			: undefined}
 		usedVote={boardLooks.current.usedGhostVote}
 		frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
 		avatar={seat.avatar}
@@ -292,10 +334,15 @@
 		background: var(--accent);
 		color: var(--on-accent);
 	}
-	/* Upper left. */
+	/* Upper left; top middle while the nomination marks take the upper left. */
 	.avatar {
 		left: -4%;
 		top: -4%;
+	}
+	.avatar[data-shifted] {
+		left: 50%;
+		top: -10%;
+		translate: -50% 0;
 	}
 	/* Lower right: the dead skull keeps the lower left. */
 	.note {
@@ -304,33 +351,45 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 	}
-	/* Left rim, middle: a column of two fixed slots, the finger above the gavel. */
+	/* Over the top-left rim, half outside the token: the left leaf's first-night number, at the
+	   middle of the left rim, stays clear (Trevor, 2026-10-24). */
 	.nominations {
 		position: absolute;
-		left: -10%;
-		top: 50%;
-		translate: 0 -50%;
-		display: grid;
+		right: 64%;
+		top: -8%;
+		display: flex;
 		gap: calc(0.125 * var(--u));
 		padding: calc(0.125 * var(--u));
 		border-radius: var(--radius-full);
 		background: var(--surface-raised);
 		box-shadow: var(--shadow);
-		pointer-events: none;
+		--slot: max(1.25 * var(--u), calc(var(--size) * 0.3));
+	}
+	/* A tap target of its own, however small the token. */
+	.nominations::after {
+		content: '';
+		position: absolute;
+		inset: 50% auto auto 50%;
+		width: max(100%, var(--tap-target));
+		height: max(100%, var(--tap-target));
+		translate: -50% -50%;
 	}
 	.nominations .slot {
 		display: grid;
 		place-items: center;
-		width: max(var(--u), calc(var(--size) * 0.24));
-		height: max(var(--u), calc(var(--size) * 0.24));
+		width: var(--slot);
+		height: var(--slot);
 		border-radius: 50%;
-		--icon-size: calc(max(var(--u), calc(var(--size) * 0.24)) * 0.7);
+		color: var(--on-surface-muted);
+		opacity: 0.5;
+		--icon-size: calc(var(--slot) * 0.7);
 	}
-	.nominations .slot:has(:global(svg)) {
-		/* One neutral fill for both: the icon tells them apart, and red or blue would read as
-		   an alignment (the accent is red in some themes). */
+	/* One neutral fill for both: the icon tells them apart, and red or blue would read as an
+	   alignment (the accent is red in some themes). */
+	.nominations .slot[data-on] {
 		background: var(--on-surface);
 		color: var(--surface);
+		opacity: 1;
 	}
 	/* A tap target bigger than the mark it shows (Trevor, 2026-10-19: tap it for the notes). */
 	.note::after {

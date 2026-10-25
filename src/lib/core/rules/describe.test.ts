@@ -1,7 +1,7 @@
 /**
  * Plain-words conditions for the Character reference page. They describe the conditions
- * `day-reminders.ts` evaluates; the reminders themselves cite their wiki pages in
- * `day-reminders.data.ts` (e.g. https://wiki.bloodontheclocktower.com/Banshee).
+ * `day-reminders.ts` evaluates; the reminders themselves are each character's `dayReminders` in
+ * `data/rules/<id>.json`, linked to its wiki page (e.g. https://wiki.bloodontheclocktower.com/Banshee).
  */
 import { describe, expect, it } from 'vitest';
 import { describeCause, describeImpairable, describeWhen } from './describe.ts';
@@ -26,7 +26,7 @@ describe('describeWhen', () => {
 		expect(describeWhen({ template: [self], when: { reminder: 'Day 3' } }, witch)).toBe(
 			'Witch is alive; a player has Witch’s “Day 3” reminder'
 		);
-		// Pixie: only while the Mad player is alive (day-reminders.data.ts `targetAlive`).
+		// Pixie: only while the Mad player is alive (pixie.json `targetAlive`).
 		expect(
 			describeWhen({ template: [self], when: { reminder: 'Mad', targetAlive: true } }, witch)
 		).toBe('Witch is alive; an alive player has Witch’s “Mad” reminder');

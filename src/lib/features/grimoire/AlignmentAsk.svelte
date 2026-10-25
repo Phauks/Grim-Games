@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AlignmentPill from './AlignmentPill.svelte';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -81,12 +82,10 @@
 			</dd>
 			<dt>Current alignment</dt>
 			<dd>
-				<strong class="team" data-team={seat.alignment ?? 'neutral'}
-					>{seat.alignment === 'good' ? 'Good' : 'Not set'}</strong
-				>
+				<AlignmentPill alignment={seat.alignment} />
 			</dd>
 			<dt>New alignment</dt>
-			<dd><strong class="team" data-team="evil">Evil</strong></dd>
+			<dd><AlignmentPill alignment="evil" /></dd>
 		</dl>
 	{/if}
 </ConfirmDialog>
@@ -116,7 +115,7 @@
 				/>
 			</dd>
 			<dt>Alignment</dt>
-			<dd><strong class="team" data-team="evil">Evil</strong></dd>
+			<dd><AlignmentPill alignment="evil" /></dd>
 		</dl>
 	{/if}
 </ConfirmDialog>
@@ -135,20 +134,5 @@
 	}
 	.change dd {
 		margin: 0;
-	}
-	.team {
-		display: inline-block;
-		padding: 0 var(--space-2);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-	}
-	.team[data-team='good'] {
-		background: var(--good);
-		color: var(--on-good);
-	}
-	.team[data-team='evil'] {
-		background: var(--evil);
-		color: var(--on-evil);
 	}
 </style>

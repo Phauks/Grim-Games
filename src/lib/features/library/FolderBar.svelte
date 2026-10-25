@@ -184,7 +184,7 @@
 		/>
 		<!-- Always rendered, so nothing moves when a folder opens; usable inside a folder only. -->
 		<IconButton
-			icon="rename"
+			icon="edit"
 			label={here ? t('library.renameNamed', { name: here.name }) : t('library.renameTitle')}
 			disabled={!here || searching}
 			onclick={rename}
@@ -208,7 +208,7 @@
 	<Icon name="home" /><span class="visually-hidden">{t('library.home')}</span>
 {/snippet}
 
-<FolderNameDialog bind:open={nameOpen} folder={naming?.folder} parent={here?.id} />
+<FolderNameDialog bind:open={nameOpen} folder={naming?.folder} />
 
 <Dialog bind:open={moveOpen} title={here ? t('library.moveNamed', { name: here.name }) : ''}>
 	<Select

@@ -1,6 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 import { menuButton, theMenu } from './shell.ts';
 
 async function signIn(page: Page, email: string) {
@@ -198,6 +198,7 @@ test('a report sent from the board carries its script, for its sender and the ad
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page

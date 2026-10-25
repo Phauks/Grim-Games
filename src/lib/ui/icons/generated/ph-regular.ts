@@ -5,6 +5,7 @@ import ph_arrow_clockwise from '~icons/ph/arrow-clockwise';
 import ph_arrow_counter_clockwise from '~icons/ph/arrow-counter-clockwise';
 import ph_arrow_square_out from '~icons/ph/arrow-square-out';
 import ph_arrows_down_up from '~icons/ph/arrows-down-up';
+import ph_arrows_in from '~icons/ph/arrows-in';
 import ph_arrows_left_right from '~icons/ph/arrows-left-right';
 import ph_arrows_out from '~icons/ph/arrows-out';
 import ph_arrows_out_cardinal from '~icons/ph/arrows-out-cardinal';
@@ -14,6 +15,7 @@ import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_bookmarks_simple from '~icons/ph/bookmarks-simple';
 import ph_books from '~icons/ph/books';
 import ph_bug from '~icons/ph/bug';
+import ph_camera from '~icons/ph/camera';
 import ph_caret_down from '~icons/ph/caret-down';
 import ph_caret_left from '~icons/ph/caret-left';
 import ph_caret_right from '~icons/ph/caret-right';
@@ -58,6 +60,7 @@ import ph_lock_simple from '~icons/ph/lock-simple';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_minus from '~icons/ph/minus';
+import ph_moon from '~icons/ph/moon';
 import ph_moon_stars from '~icons/ph/moon-stars';
 import ph_note_pencil from '~icons/ph/note-pencil';
 import ph_palette from '~icons/ph/palette';
@@ -105,6 +108,7 @@ const icons: IconMap = {
 	'ph:arrow-counter-clockwise': ph_arrow_counter_clockwise,
 	'ph:arrow-square-out': ph_arrow_square_out,
 	'ph:arrows-down-up': ph_arrows_down_up,
+	'ph:arrows-in': ph_arrows_in,
 	'ph:arrows-left-right': ph_arrows_left_right,
 	'ph:arrows-out': ph_arrows_out,
 	'ph:arrows-out-cardinal': ph_arrows_out_cardinal,
@@ -114,6 +118,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple': ph_bookmarks_simple,
 	'ph:books': ph_books,
 	'ph:bug': ph_bug,
+	'ph:camera': ph_camera,
 	'ph:caret-down': ph_caret_down,
 	'ph:caret-left': ph_caret_left,
 	'ph:caret-right': ph_caret_right,
@@ -158,6 +163,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-sad': ph_mask_sad,
 	'ph:minus': ph_minus,
+	'ph:moon': ph_moon,
 	'ph:moon-stars': ph_moon_stars,
 	'ph:note-pencil': ph_note_pencil,
 	'ph:palette': ph_palette,

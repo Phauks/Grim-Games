@@ -1,0 +1,65 @@
+{
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "any",
+			"characters": ["villageidiot"],
+			"note": "One of the Village Idiots, marking the extra one who is drunk; only while 2 or more are in play.",
+			"minOwners": 2
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Drunk",
+				"text": "If multiple Village Idiots, mark one as [Drunk] on them",
+				"target": {
+					"choose": "copies",
+					"choice": "one of the Village Idiots"
+				},
+				"reason": "With more than one Village Idiot, one of them is drunk",
+				"when": {
+					"minCopies": 2
+				}
+			}
+		]
+	},
+	"setupModifier": {
+		"summary": "+0 to +2 Village Idiots",
+		"ops": [],
+		"notes": [
+			"Up to 2 more Village Idiots replace Townsfolk.",
+			"If there are extras, choose one Village Idiot to be drunk."
+		]
+	},
+	"dayReminders": {
+		"none": "night info; setup change"
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["Drunk"],
+		"why": "The drunk Village Idiot is decided at setup."
+	},
+	"reminderPlaceholders": {
+		"note": "With more than one Village Idiot, one is drunk.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"first": {
+			"reviewed": {
+				"text": "If there are multiple Village Idiots, mark one as *DRUNK*. Wake the Village Idiots one at a time to choose a player. Give a thumb signal.",
+				"reason": "The Drunk token is named once, not again as an unnamed reminder (Trevor’s review)."
+			}
+		}
+	}
+}

@@ -10,6 +10,7 @@
 	import { startAccount } from '#lib/features/account/start.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
+	import { loadAfresh, staleBuild } from '#lib/features/offline/stale-build.svelte.ts';
 	import { keepData } from '#lib/features/settings/data/keep-data.ts';
 	import { installApp } from '#lib/features/settings/install-app.svelte.ts';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
@@ -85,11 +86,18 @@
 	// A game in progress or a bag draw asks before any navigation leaves it (shell.ts).
 	beforeNavigate((navigation) => {
 		const to = navigation.to?.url ?? null;
-		if (!to || !mustAskBeforeLeaving(new URL(to.href), navigation.type, new URL(page.url.href)))
+		if (!to) return;
+		if (mustAskBeforeLeaving(new URL(to.href), navigation.type, new URL(page.url.href))) {
+			navigation.cancel();
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- an app URL SvelteKit resolved
+			leaveTo(() => void goto(to.href));
 			return;
-		navigation.cancel();
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- an app URL SvelteKit resolved
-		leaveTo(() => void goto(to.href));
+		}
+		// This build's files are gone (a newer build replaced them): the page loads afresh, on the
+		// build the service worker holds, instead of failing (stale-build.svelte.ts).
+		if (staleBuild.current && navigation.type !== 'leave' && loadAfresh(to.href)) {
+			navigation.cancel();
+		}
 	});
 
 	// A game in progress hides the sidebar (src/lib/features/shell/shell.ts), and so

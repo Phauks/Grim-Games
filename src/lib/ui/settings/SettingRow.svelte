@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
 
 	interface Props {
 		label: string;
@@ -19,6 +20,11 @@
 		 * long control (sliders), stacked on phones.
 		 */
 		layout?: 'inline' | 'inline-wide' | 'stacked';
+		/**
+		 * A setting that turns other things off: a warning mark after the name, seen before the
+		 * control is touched, whose tap says what it costs (Trevor, 2026-10-23).
+		 */
+		warning?: string;
 	}
 
 	let {
@@ -27,7 +33,8 @@
 		control,
 		onReset,
 		isDefault = false,
-		layout = 'inline'
+		layout = 'inline',
+		warning
 	}: Props = $props();
 	const labelId = $props.id();
 </script>
@@ -38,6 +45,16 @@
 	<div class="grid">
 		<div class="head">
 			<span class="label" id={labelId}>{label}</span>
+			{#if warning}
+				<button
+					class="reset warning"
+					type="button"
+					aria-label={t('settings.warning')}
+					title={warning}
+					aria-describedby={labelId}
+					onclick={() => toast(label, warning)}><Icon name="warning" /></button
+				>
+			{/if}
 			{#if onReset}
 				<button
 					class="reset"
@@ -143,6 +160,9 @@
 	.reset :global(.icon) {
 		width: 1em;
 		height: 1em;
+	}
+	.warning {
+		color: var(--evil);
 	}
 	.reset:disabled {
 		opacity: 0.35;

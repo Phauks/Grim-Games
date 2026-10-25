@@ -1,0 +1,63 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player the No Dashii kills that night."
+		},
+		"Poisoned": {
+			"seat": "other",
+			"types": ["townsfolk"],
+			"neighbour": {
+				"of": "self",
+				"type": "townsfolk"
+			},
+			"note": "The nearest Townsfolk each way round from the No Dashii, alive or dead."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Poisoned",
+				"text": "Put [Poisoned] on the nearest Townsfolk anticlockwise from the No Dashii",
+				"target": {
+					"choose": "nearest-townsfolk-anticlockwise",
+					"choice": "the nearest Townsfolk anticlockwise"
+				},
+				"reason": "The No Dashii’s Townsfolk neighbour is poisoned"
+			},
+			{
+				"label": "Poisoned",
+				"text": "Put [Poisoned] on the nearest Townsfolk clockwise from the No Dashii",
+				"target": {
+					"choose": "nearest-townsfolk-clockwise",
+					"choice": "the nearest Townsfolk clockwise"
+				},
+				"reason": "The No Dashii’s Townsfolk neighbour is poisoned"
+			}
+		]
+	},
+	"dayReminders": {
+		"none": "night kills"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Follows the No Dashii’s nearest Townsfolk neighbours."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

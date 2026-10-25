@@ -1,0 +1,45 @@
+{
+	"reminderTargets": {
+		"Is The Demon": {
+			"seat": "self",
+			"note": "The Scarlet Woman after she becomes the Demon."
+		}
+	},
+	"gameEnd": {
+		"holds": [
+			{
+				"kind": "becomes-demon",
+				"aliveAtLeast": 4
+			}
+		]
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				],
+				"when": {
+					"minAlive": 5
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "becomes the Demon"
+	},
+	"reminderMovement": {
+		"fixed": ["Is The Demon"],
+		"why": "Marks that the Scarlet Woman became the Demon."
+	}
+}

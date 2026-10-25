@@ -12,7 +12,8 @@ import { DEFAULT_FRAME, parseFrameId, type FrameId } from '#lib/core/frames/inde
  * - how big each seat's player name badge is, and how far below the token it sits;
  * - whether reminders are held by their seat or stay where they are dropped;
  * - how a dead player's used ghost vote looks on their badge;
- * - the frame round seat tokens whose player has not picked their own (L4).
+ * - the frame round seat tokens whose player has not picked their own (L4);
+ * - which reminders light up while a seat's token is held.
  */
 export interface BoardLooks {
 	vignette: boolean;
@@ -48,14 +49,12 @@ export interface BoardLooks {
 	 */
 	defaultFrame: FrameId;
 	/**
-	 * A seat with more than `STACK_AT` reminders shows the first few and a "+N" token that opens
-	 * the seat (Trevor, 2026-10-22: a Board setting, off by default).
+	 * Holding a seat's token lights its character's reminders, wherever they are ('character',
+	 * Trevor 2026-10-19), or the reminders placed on that seat, whoever's they are ('seat',
+	 * Trevor 2026-10-23).
 	 */
-	reminderStacks: boolean;
+	holdLights: 'character' | 'seat';
 }
-
-/** How many reminder places a stacked seat uses: the first ones, then "+N" in the last. */
-export const STACK_AT = 3;
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
 export const NAME_SIZE = { min: 0.6, max: 1.6, step: 0.1 } as const;
@@ -77,7 +76,7 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	reminders: 'seat',
 	usedGhostVote: 'hollow',
 	defaultFrame: DEFAULT_FRAME,
-	reminderStacks: false
+	holdLights: 'character'
 };
 const KEY = 'grim.boardLooks';
 
@@ -108,8 +107,11 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 			: DEFAULT_BOARD_LOOKS.nameOffset,
 		reminders: value.reminders === 'free' ? 'free' : 'seat',
 		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
+		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the
+		// board (Trevor, 2026-10-23). So is `dragSource`: a dragged reminder no longer names
+		// where it came from (Trevor, 2026-10-24).
 		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME,
-		reminderStacks: value.reminderStacks === true
+		holdLights: value.holdLights === 'seat' ? 'seat' : 'character'
 	};
 }
 

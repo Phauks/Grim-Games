@@ -1,0 +1,71 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Poisoned": {
+			"seat": "any",
+			"note": "On the player the Pukka chose tonight."
+		},
+		"Dead": {
+			"seat": "any",
+			"withLabel": "Poisoned",
+			"note": "On last night's poisoned player when they die."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"none": "night kills"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "Tonight's target is poisoned; last night's target dies and becomes healthy.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					},
+					{
+						"label": "Poisoned",
+						"action": "remove"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Pukka chooses a player: mark them *POISONED*. The player poisoned last night dies: mark them *DEAD* and remove their *POISONED*.",
+				"reason": "Says the new target is poisoned and last night’s target dies, then is healthy."
+			}
+		}
+	}
+}

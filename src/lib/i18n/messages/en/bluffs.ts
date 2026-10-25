@@ -6,6 +6,7 @@ export const bluffs = {
 	'bluffs.set.lunatic': 'Lunatic',
 	'bluffs.set.numbered': 'Set {number}',
 	'bluffs.inPlayReplace': 'In play: replace',
+	'bluffs.alsoInPlay': 'Also in play',
 	'bluffs.choose': 'Choose',
 	'bluffs.change': 'Change',
 	'bluffs.clearNamed': 'Clear the {set} bluffs',

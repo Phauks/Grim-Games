@@ -1,0 +1,45 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Virgin the first time they are nominated."
+		}
+	},
+	"onNominated": {
+		"by": "townsfolk",
+		"effect": "execute-nominator"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has not been nominated"
+					}
+				],
+				"when": {
+					"noReminder": "No Ability"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "execution",
+		"victim": {
+			"who": "registers",
+			"as": "townsfolk"
+		}
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
+	}
+}

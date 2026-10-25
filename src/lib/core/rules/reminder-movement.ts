@@ -1,29 +1,36 @@
 /**
  * Token integrity: whether a reminder should stay on the seat it was first placed on,
- * and what to say when the Storyteller moves one anyway. Curated in
- * `reminder-movement.data.ts`.
+ * and what to say when the Storyteller moves one anyway. Each character's
+ * `reminderMovement` rule (`data/reminder-movement-rules.ts`) says which of its tokens stay.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
+import type { ReminderMovementRules } from '#lib/core/data/reminder-movement-rules.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, Reminder, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { charactersInPlay } from '#lib/core/model/selectors.ts';
-import {
-	FIXED_REMINDERS,
-	MOVING_REMINDERS,
-	REMINDER_RELOCATORS,
-	type FixedReminders
-} from './reminder-movement.data.ts';
 
-export { FIXED_REMINDERS, MOVING_REMINDERS, REMINDER_RELOCATORS };
-export type { FixedReminders };
+export type { ReminderMovementRules };
 
-/** Why this reminder should stay where it was first placed, or undefined if it may move. */
-export function fixedReminderReason(reminder: Reminder): string | undefined {
-	const entry = FIXED_REMINDERS[reminder.characterId];
-	return entry?.labels.includes(reminder.label) ? entry.why : undefined;
+/** A character's `reminderMovement` rule: its own (a custom character's) or our overlay file's. */
+export function reminderMovementOf(
+	characterId: CharacterId,
+	characters?: CharacterLookup
+): ReminderMovementRules | undefined {
+	return rulesOf(characterId, characters)?.reminderMovement;
 }
 
-export function isFixedReminder(reminder: Reminder): boolean {
-	return fixedReminderReason(reminder) !== undefined;
+/** Why this reminder should stay where it was first placed, or undefined if it may move. */
+export function fixedReminderReason(
+	reminder: Reminder,
+	characters?: CharacterLookup
+): string | undefined {
+	const rule = reminderMovementOf(reminder.characterId, characters);
+	return rule?.fixed?.includes(reminder.label) ? rule.why : undefined;
+}
+
+export function isFixedReminder(reminder: Reminder, characters?: CharacterLookup): boolean {
+	return fixedReminderReason(reminder, characters) !== undefined;
 }
 
 /** In-play characters whose abilities can legitimately carry a fixed token elsewhere. */
@@ -49,18 +56,19 @@ export interface FixedReminderMove {
 export function fixedReminderMove(
 	game: Game,
 	reminderId: ReminderId,
-	toSeatId: SeatId
+	toSeatId: SeatId,
+	characters?: CharacterLookup
 ): FixedReminderMove | undefined {
 	for (const seatId of game.seating) {
 		const reminder = game.seats[seatId].reminders.find((r) => r.reminderId === reminderId);
 		if (!reminder) continue;
 		if (seatId === toSeatId) return undefined;
-		const why = fixedReminderReason(reminder);
+		const why = fixedReminderReason(reminder, characters);
 		if (why === undefined) return undefined;
-		const inPlay = new Set(charactersInPlay(game));
-		const relocators = Object.entries(REMINDER_RELOCATORS)
-			.filter(([id]) => inPlay.has(id))
-			.map(([characterId, does]) => ({ characterId, does }));
+		const relocators = [...new Set(charactersInPlay(game))].flatMap((characterId) => {
+			const does = reminderMovementOf(characterId, characters)?.relocates;
+			return does === undefined ? [] : [{ characterId, does }];
+		});
 		return {
 			reminder: { characterId: reminder.characterId, label: reminder.label },
 			fromSeatId: seatId,

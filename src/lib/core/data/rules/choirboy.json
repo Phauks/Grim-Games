@@ -1,0 +1,14 @@
+{
+	"setupModifier": {
+		"summary": "+the King",
+		"ops": [],
+		"requires": "king",
+		"notes": ["If the King is not already in play, swap a Townsfolk for the King."]
+	},
+	"dayReminders": {
+		"none": "triggers on Demon kill"
+	},
+	"deathCause": {
+		"none": "info"
+	}
+}

@@ -1,3 +1,69 @@
 {
-	"reminderPrompts": { "Alive": "revive" }
+	"reminderPrompts": {
+		"Alive": "revive"
+	},
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "On each of the two players the Shabaloth chose, alive or already dead."
+		},
+		"Alive": {
+			"seat": "other",
+			"life": "dead",
+			"withLabel": "Dead",
+			"note": "Replaces Dead on a player the Shabaloth chose last night who is regurgitated."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night kills"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"note": "A player killed last night may come back; then 2 kills.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Alive",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "A player the Shabaloth killed last night might be resurrected: remove their *DEAD* and mark them *ALIVE*. The Shabaloth chooses 2 players: mark each *DEAD*.",
+				"reason": "Says which tokens go on and come off."
+			}
+		}
+	}
 }

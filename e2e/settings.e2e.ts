@@ -219,7 +219,7 @@ test('the board looks and background are in Board, saved with the board', async 
 		reminders: 'seat',
 		usedGhostVote: 'hollow',
 		defaultFrame: 'none',
-		reminderStacks: false
+		holdLights: 'character'
 	});
 
 	await page.reload();
@@ -360,7 +360,8 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Night',
 		'Bag draw',
 		'Day',
-		'Share'
+		'Share',
+		'QR codes'
 	]);
 });
 
@@ -654,9 +655,11 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	if (!(await joinCode.isChecked()))
 		await dialog.getByText('Join code on the board', { exact: true }).tap();
 	await expect(preview.getByTestId('preview-room-code')).toHaveText('Join code 482 913');
-	await dialog.getByText('Script name on the board', { exact: true }).tap();
-	await expect(preview.getByTestId('preview-script-title')).toHaveCount(0);
-	await expect(joinCode).toBeDisabled();
+	// The script's name is always on the board (Trevor, 2026-10-23), so the join code never waits
+	// on it.
+	await expect(dialog.getByText('Script name on the board', { exact: true })).toHaveCount(0);
+	await expect(preview.getByTestId('preview-script-title')).toBeVisible();
+	await expect(joinCode).toBeEnabled();
 
 	// Duplicate reminders in the bank, one token with a count when stacked.
 	const bank = preview.getByTestId('preview-bank');
@@ -675,6 +678,8 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	// A seat's reminder beside its seat, or where it was dropped.
 	const seatReminder = preview.getByTestId('preview-seat-reminder');
 	await expect(seatReminder).not.toHaveClass(/loose/);
+	// In Board's closed Advanced part (Trevor, 2026-10-23).
+	await dialog.getByRole('button', { name: /^Advanced/ }).tap();
 	await choose('Reminders', 'Stay where dropped');
 	await page
 		.getByRole('alertdialog', { name: 'Reminders stay where dropped?' })

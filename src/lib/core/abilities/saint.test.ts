@@ -52,7 +52,7 @@ describe('Saint', () => {
 				seatId: s[0]
 			}));
 			expect(gameEnds(session.game, testCharacters)).toMatchObject([
-				{ rule: 'saint', winner: 'evil' }
+				{ rule: 'executed-loses', winner: 'evil' }
 			]);
 		});
 		it('Example 2: Gunslinger kills Saint; game continues', () => {

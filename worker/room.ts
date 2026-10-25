@@ -301,7 +301,8 @@ export class Room extends DurableObject<RoomEnv> {
 					message.kind,
 					message.options,
 					message.minutes,
-					Date.now()
+					Date.now(),
+					message.subject
 				);
 				break;
 			case 'close-script-vote':

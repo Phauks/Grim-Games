@@ -1,0 +1,43 @@
+{
+	"reminderTargets": {
+		"Chosen": {
+			"seat": "any",
+			"note": "The player the Exorcist chooses, not last night's pick.",
+			"ambiguous": "The wiki doesn't say whether the Exorcist may choose themself.",
+			"differsFromLastNight": "player"
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"none": "stops the Demon waking"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "Marks the chosen player, who can't be chosen again the next night.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Chosen",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Exorcist chooses a player (different to last night): move *CHOSEN* to them. Put the Exorcist to sleep. If they chose the Demon: wake the Demon, show the *THIS CHARACTER SELECTED YOU* & Exorcist tokens and point to the Exorcist. The Demon does not act tonight.",
+				"reason": "Says the Chosen token moves each night and what it stops."
+			}
+		}
+	}
+}

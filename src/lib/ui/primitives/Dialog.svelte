@@ -35,6 +35,17 @@
 		 */
 		scroll?: boolean;
 		/**
+		 * A second pane: on the left once the dialog is wide enough, and on top on a phone,
+		 * e.g. a preview beside the settings it shows (Trevor, 2026-10-24: the QR settings).
+		 * Each pane scrolls on its own; the dialog itself doesn't.
+		 */
+		aside?: Snippet;
+		/**
+		 * On a phone, the aside stays on top while the rest scrolls under it (the default, for
+		 * a preview that has to stay in view); false scrolls the two together (a tall aside).
+		 */
+		pinAside?: boolean;
+		/**
 		 * Asked when ✕, Escape or a tap outside would close it; false keeps it open (a form
 		 * with unsaved changes asks first).
 		 */
@@ -55,6 +66,8 @@
 		headActions,
 		closeButton = true,
 		scroll = true,
+		aside,
+		pinAside = true,
 		beforeClose
 	}: Props = $props();
 
@@ -95,7 +108,7 @@
 	<Portal>
 		<Dialog.Backdrop style={layerStyle(layer, 'backdrop')} />
 		<Dialog.Positioner style={layerStyle(layer, 'content')}>
-			<Dialog.Content data-size={size}>
+			<Dialog.Content data-size={size} data-panes={aside ? '' : undefined}>
 				<div class="head">
 					<div class="titled" class:with-lead={!!lead}>
 						{#if lead}<span class="lead">{@render lead()}</span>{/if}
@@ -120,7 +133,12 @@
 				</div>
 				{#if subtitle}<Dialog.Description>{@render subtitle()}</Dialog.Description
 					>{:else if description}<Dialog.Description>{description}</Dialog.Description>{/if}
-				{#if size === 'full' || size === 'max'}
+				{#if aside}
+					<div class="panes" data-pin={pinAside || undefined}>
+						<div class="aside" data-testid="dialog-aside">{@render aside()}</div>
+						<div class="pane" data-testid="dialog-pane">{@render children()}</div>
+					</div>
+				{:else if size === 'full' || size === 'max'}
 					<div class="body" data-scroll={scroll || undefined}>{@render children()}</div>
 				{:else}
 					{@render children()}
@@ -132,6 +150,13 @@
 </Dialog.Root>
 
 <style>
+	/* Over the grimoire board, the board behind is blurred as well as dimmed, so nothing on it
+	   can be read while it isn't the main screen (Trevor, 2026-10-23: "for game integrity").
+	   GrimoireBoard marks the page while it is shown (board-cover.ts). */
+	:global(:root[data-board-shown] [data-scope='dialog'][data-part='backdrop']) {
+		-webkit-backdrop-filter: blur(var(--u));
+		backdrop-filter: blur(var(--u));
+	}
 	:global([data-scope='dialog'][data-part='backdrop']) {
 		position: fixed;
 		inset: 0;
@@ -156,6 +181,14 @@
 		background: var(--dialog-background);
 		color: var(--dialog-color);
 		box-shadow: var(--shadow);
+	}
+	/* Two panes (`aside`): wider than a plain dialog, its panes scrolling inside it. */
+	:global([data-scope='dialog'][data-part='content'][data-panes]) {
+		display: flex;
+		flex-direction: column;
+		width: min(100%, calc(48 * var(--u)));
+		overflow: hidden;
+		container: dialog-panes / inline-size;
 	}
 	:global([data-scope='dialog'][data-part='content'][data-size='full']) {
 		display: flex;
@@ -199,8 +232,9 @@
 		border: 0;
 		border-right: var(--card-border);
 		border-radius: 0;
-		padding-top: calc(var(--space-4) + env(safe-area-inset-top));
-		padding-left: calc(var(--space-4) + env(safe-area-inset-left));
+		/* Its hamburger in the spot every screen's is (--menu-inset), so it closes where it opened. */
+		padding-top: calc(var(--menu-inset) + env(safe-area-inset-top));
+		padding-left: calc(var(--menu-inset) + env(safe-area-inset-left));
 	}
 	:global([data-scope='dialog'][data-part='content'][data-size='side'][data-state='open']) {
 		animation: side-in var(--duration-normal) var(--ease-out);
@@ -240,6 +274,11 @@
 		flex: none;
 		display: flex;
 		align-items: center;
+	}
+	/* Close sits as close to the last icon as the icons sit to each other (Trevor, 2026-10-23:
+	   uneven gaps); the head's gap stays between the title and the icons. */
+	.head-actions + :global([data-part='close-trigger']) {
+		margin-left: calc(var(--space-3) * -1);
 	}
 	.titled {
 		flex: 1;
@@ -282,6 +321,43 @@
 	.body[data-scroll] {
 		overflow-y: auto;
 		overscroll-behavior: contain;
+	}
+	/*
+	 * Two panes: stacked on a phone, the aside on top (held there while the other scrolls,
+	 * unless `pinAside` is false), and side by side, the aside first, once there is room.
+	 */
+	.panes {
+		display: grid;
+		flex: 1;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: auto minmax(0, 1fr);
+		gap: var(--space-3);
+		min-height: 0;
+		margin-top: var(--space-3);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	.panes[data-pin] {
+		overflow: hidden;
+	}
+	.panes[data-pin] > .pane {
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	@container dialog-panes (min-width: 36rem) {
+		.panes,
+		.panes[data-pin] {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+			grid-template-rows: minmax(0, 1fr);
+			gap: var(--space-4);
+			overflow: hidden;
+		}
+		.aside,
+		.pane,
+		.panes[data-pin] > .pane {
+			overflow-y: auto;
+			overscroll-behavior: contain;
+		}
 	}
 	/* Bottom right, and in view at the bottom of a long dialog (Trevor, 2026-10-17). */
 	.actions {

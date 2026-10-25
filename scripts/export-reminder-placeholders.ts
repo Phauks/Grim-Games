@@ -2,7 +2,8 @@
  * Writes what every `:reminder:` in TPI's night text means as JSON, for review outside the
  * app: `[{ id, name, night, index, tokens: [{ label, action }], either, text }]`, one row per
  * `:reminder:` in text order (`index` is 0-based within that night's text). Generated from
- * `src/lib/core/rules/reminder-placeholders.data.ts`, so edit that file, not the output.
+ * each rules file's `reminderPlaceholders` (`src/lib/core/data/rules/<id>.json`), so edit
+ * those, not the output.
  *
  *   npm run export:reminder-placeholders -- <output.json>
  */
@@ -23,7 +24,7 @@ if (problems.length) {
 }
 const rows = characters.flatMap((c) =>
 	(['first', 'other'] as const).flatMap((night) =>
-		(placeholdersFor(c.id, night) ?? []).map((p, index) => ({
+		(placeholdersFor(c, night) ?? []).map((p, index) => ({
 			id: c.id,
 			name: c.name,
 			night,

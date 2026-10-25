@@ -95,8 +95,10 @@ export function buildRecap(source: RecapSource): GameRecap {
 	}
 
 	const notes: GameRecap['notes'] = [];
-	const general = game.notes?.trim();
-	if (general) notes.push({ about: 'Game', text: general });
+	// Each game note under its title, as the Notes sheet lists them (Trevor, 2026-10-23).
+	for (const note of game.notes ?? []) {
+		if (note.text.trim()) notes.push({ about: note.title.trim() || 'Game', text: note.text });
+	}
 	for (const seatId of game.seating) {
 		const note = game.seats[seatId].note?.trim();
 		if (note) notes.push({ about: seatName(game, seatId), text: note });

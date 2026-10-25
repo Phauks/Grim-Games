@@ -1,0 +1,13 @@
+{
+	"setupModifier": {
+		"summary": "Storyteller assigns characters",
+		"ops": [],
+		"notes": ["No bag: the Storyteller chooses each player’s character."]
+	},
+	"dayReminders": {
+		"none": "setup only"
+	},
+	"deathCause": {
+		"none": "setup"
+	}
+}

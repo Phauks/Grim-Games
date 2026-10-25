@@ -1,0 +1,77 @@
+{
+	"protects": {
+		"who": "marked",
+		"token": "Survives Execution",
+		"from": "execution"
+	},
+	"reminderTargets": {
+		"Survives Execution": {
+			"seat": "any",
+			"life": "alive",
+			"note": "On the player chosen tonight, which may be the Devil's Advocate but not last night's choice.",
+			"ambiguous": "The ability and summary say a living player, but How to Run says any player.",
+			"differsFromLastNight": "player"
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has protected"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Survives Execution"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "executed player survives"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Survives Execution",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Survives Execution",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Devil’s Advocate chooses a living player (different to last night): move *SURVIVES EXECUTION* to them.",
+				"reason": "Says the token moves and the same player can’t be chosen twice in a row."
+			}
+		}
+	}
+}

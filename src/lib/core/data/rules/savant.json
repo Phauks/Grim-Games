@@ -1,0 +1,22 @@
+{
+	"dayClaim": "statements",
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may visit you"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "info"
+	}
+}

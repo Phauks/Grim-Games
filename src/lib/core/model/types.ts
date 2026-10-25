@@ -56,10 +56,15 @@ export interface ReminderInstance extends Reminder {
 	 * own ink. An emoji keeps its own colours.
 	 */
 	symbolColour?: SymbolColour;
+	/**
+	 * The generic reminder's icon symbol drawn filled instead of as an outline, chosen per
+	 * token (Trevor, 2026-10-23). An emoji is unaffected.
+	 */
+	symbolFill?: true;
 }
 
-/** What a generic reminder looks like: its text, its symbol and the symbol's colour. */
-export type GenericLook = Pick<ReminderInstance, 'note' | 'symbol' | 'symbolColour'>;
+/** What a generic reminder looks like: its text, its symbol and how the symbol is drawn. */
+export type GenericLook = Pick<ReminderInstance, 'note' | 'symbol' | 'symbolColour' | 'symbolFill'>;
 
 /**
  * A reusable ∞ token in the reminder bank (plan B9, Trevor 2026-10-23: "Tokens only"): made
@@ -209,7 +214,18 @@ export interface CharacterGuess {
  */
 export type DayEntry =
 	| { kind: 'nomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
-	| { kind: 'execution'; entryId: DayEntryId; seatId: SeatId; died: boolean }
+	| {
+			kind: 'execution';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			died: boolean;
+			/**
+			 * Executed and does not die (Trevor, 2026-10-23): the ability that saved them, or no
+			 * `characterId` for the Storyteller's "can't die" override. Absent when they died or
+			 * were already dead.
+			 */
+			savedBy?: { characterId?: CharacterId; seatId?: SeatId };
+	  }
 	| { kind: 'exile'; entryId: DayEntryId; seatId: SeatId; died: boolean }
 	| {
 			kind: 'ability';
@@ -225,6 +241,8 @@ export type DayEntry =
 			seatId?: SeatId;
 			text: string;
 			guesses?: CharacterGuess[];
+			/** For a statement (the Gossip's): whether it is true, as the Storyteller marked it. */
+			holds?: boolean;
 	  }
 	| {
 			kind: 'info';
@@ -277,6 +295,19 @@ export interface DayLog {
 	closedAt?: number;
 }
 
+/**
+ * One of the Storyteller's notes on the game (Trevor, 2026-10-23: "allow for multiple notes,
+ * each gets a title", as the player's notebook does).
+ */
+export interface GameNote {
+	noteId: string;
+	/** Empty until the Storyteller names it. */
+	title: string;
+	text: string;
+	/** The list shows the title only; the text shows when the note is opened. */
+	hidden: boolean;
+}
+
 export interface Game {
 	gameId: GameId;
 	/** Milliseconds since the epoch. */
@@ -318,10 +349,11 @@ export interface Game {
 	 */
 	prepValues?: Record<string, string>;
 	/**
-	 * The Storyteller's notes on the game as a whole (Trevor, 2026-10-19), beside each seat's
-	 * own note. Private: never in the public projection. Absent until written.
+	 * The Storyteller's titled notes on the game as a whole (Trevor, 2026-10-19; several since
+	 * 2026-10-23, like a player's notebook), beside each seat's own note, oldest first.
+	 * Private: never in the public projection. Absent until one is written.
 	 */
-	notes?: string;
+	notes?: GameNote[];
 	/** The current day log, since the last "New day". */
 	today: DayLog;
 	/** Earlier day logs, oldest first, closed by "New day". */

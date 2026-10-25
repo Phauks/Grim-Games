@@ -1,0 +1,24 @@
+{
+	"reminderTargets": {
+		"Abnormal": {
+			"seat": "any",
+			"note": "Any player whose ability misfired because of another character's ability since dawn."
+		}
+	},
+	"answers": {
+		"question": "abnormal-abilities",
+		"token": "Abnormal"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night info"
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"why": "Marks this night’s malfunctioning players."
+	}
+}

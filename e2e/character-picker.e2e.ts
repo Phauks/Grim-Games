@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // The shared character picker: type groups close from their header like a caret menu.
 
@@ -8,7 +9,7 @@ test('the seat character picker has collapsible type groups; search shows every 
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();

@@ -4,6 +4,7 @@
  * If a code can't be made (offline, or the Worker refuses), the long `#s=` link still
  * works. Design: 08-script-loading.md §5.5 and §5.7.
  */
+import { scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import {
@@ -25,6 +26,21 @@ import {
 
 /** What a link is made from: a saved script, or an edition shown before one is chosen. */
 export type Shareable = Pick<SavedScript, 'edition' | 'json' | 'source'>;
+
+/**
+ * What a script's Share links to, the same on /play and the board's Script sheet (Trevor,
+ * 2026-10-23: "parity"): the saved script when there is one, so a BotC Scripts script keeps
+ * its own link, otherwise the edition or the script itself.
+ */
+export function scriptShareable(script: LoadedScript, saved?: Shareable): Shareable {
+	return (
+		saved ?? {
+			edition: script.edition,
+			json: script.edition ? [script.edition] : scriptToJson(script),
+			source: { kind: 'edition' }
+		}
+	);
+}
 
 /** A link ready to share, and its share code when it has one. */
 export interface ShareTarget {

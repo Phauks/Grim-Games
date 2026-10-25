@@ -95,10 +95,32 @@ export interface Preferences {
 	 * logo (or its name), the Storyteller's own picture, or nothing.
 	 */
 	qrCentre: QrCentre;
+	/**
+	 * How the Storyteller's picture sits in the QR's middle (Trevor, 2026-10-23: "allow some
+	 * controls to help the user shape how they want their logo to appear"): the whole picture
+	 * or filling the square, how far it is zoomed in, and its corners.
+	 */
+	qrPictureWhole: boolean;
+	qrPictureZoom: number;
+	qrPictureCorners: QrPictureCorners;
+	/**
+	 * The shape of the QR code's squares and of its three corner markers (Trevor, 2026-10-23:
+	 * "options for circles or dots and the like"). Dark on light whatever the shape.
+	 */
+	qrModules: QrModules;
+	qrFinders: QrFinders;
 }
 
 export const QR_CENTRES = ['script', 'picture', 'none'] as const;
 export type QrCentre = (typeof QR_CENTRES)[number];
+export const QR_PICTURE_CORNERS = ['square', 'rounded', 'circle'] as const;
+export type QrPictureCorners = (typeof QR_PICTURE_CORNERS)[number];
+/** The picture's zoom, from the whole square to twice as close. */
+export const QR_PICTURE_ZOOM: ScaleRange = { min: 1, max: 2, step: 0.05 };
+export const QR_MODULES = ['square', 'rounded', 'dot'] as const;
+export type QrModules = (typeof QR_MODULES)[number];
+export const QR_FINDERS = ['square', 'rounded', 'circle'] as const;
+export type QrFinders = (typeof QR_FINDERS)[number];
 
 export const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
@@ -177,8 +199,20 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerVibrate: true,
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
-	qrCentre: 'script'
+	qrCentre: 'script',
+	qrPictureWhole: false,
+	qrPictureZoom: 1,
+	qrPictureCorners: 'rounded',
+	qrModules: 'square',
+	qrFinders: 'square'
 };
+
+function oneOf<T extends string>(values: readonly T[], input: unknown, fallback: T): T {
+	return (values as readonly unknown[]).includes(input) ? (input as T) : fallback;
+}
+
+/** Icon slots saved under an older name: new name -> old name. */
+const RENAMED_SLOTS: Partial<Record<IconSlot, string>> = { edit: 'rename' };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
 export function parsePreferences(raw: unknown): Preferences {
@@ -188,7 +222,7 @@ export function parsePreferences(raw: unknown): Preferences {
 	) as Record<string, unknown>;
 	const iconOverrides: Preferences['iconOverrides'] = {};
 	for (const slot of iconSlots) {
-		const id = overrides[slot];
+		const id = overrides[slot] ?? overrides[RENAMED_SLOTS[slot] ?? ''];
 		if (isIconChoice(slot, id)) iconOverrides[slot] = id;
 	}
 	const iconScale = parseScale(input.iconScale, ICON_SCALE, DEFAULT_PREFERENCES.iconScale);
@@ -233,6 +267,14 @@ export function parsePreferences(raw: unknown): Preferences {
 		qrCentre: (QR_CENTRES as readonly unknown[]).includes(input.qrCentre)
 			? (input.qrCentre as QrCentre)
 			: DEFAULT_PREFERENCES.qrCentre,
+		qrPictureWhole:
+			typeof input.qrPictureWhole === 'boolean'
+				? input.qrPictureWhole
+				: DEFAULT_PREFERENCES.qrPictureWhole,
+		qrPictureZoom: parseScale(input.qrPictureZoom, QR_PICTURE_ZOOM),
+		qrPictureCorners: oneOf(QR_PICTURE_CORNERS, input.qrPictureCorners, 'rounded'),
+		qrModules: oneOf(QR_MODULES, input.qrModules, 'square'),
+		qrFinders: oneOf(QR_FINDERS, input.qrFinders, 'square'),
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,

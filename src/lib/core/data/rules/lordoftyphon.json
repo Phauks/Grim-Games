@@ -1,0 +1,55 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player the Lord of Typhon picks to kill."
+		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "Check the evil players sit in a line with the Lord of Typhon in the middle"
+			}
+		],
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"setupModifier": {
+		"summary": "+1 Minion; −? to +? Outsiders",
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "minion",
+				"values": [1]
+			},
+			{
+				"kind": "any",
+				"type": "outsider"
+			}
+		],
+		"notes": ["Seat all evil players in a row with the Lord of Typhon inside it, not at an end."]
+	},
+	"dayReminders": {
+		"none": "night kills; setup change"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

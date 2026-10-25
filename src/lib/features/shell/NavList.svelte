@@ -9,7 +9,6 @@
 	import {
 		ACCOUNT_ITEM,
 		APP_ITEMS,
-		REPORT_ISSUE_ICON,
 		HOME_ITEM,
 		isCurrent,
 		NAV_SECTIONS,
@@ -18,7 +17,7 @@
 	} from './nav.ts';
 	import { openSettings } from './shell.ts';
 	import BuildLine from '#lib/features/about/BuildLine.svelte';
-	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
+	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 
 	interface Props {
 		/** Called after a choice, e.g. to close the drawer. */
@@ -83,23 +82,22 @@
 			</button>
 		</li>
 	</ul>
-	<!-- The app's own pages and Report an issue, where the footer had them (2026-10-23). -->
+	<!-- The app's own pages, where the footer had them (2026-10-23). -->
 	<h3 id="{listId}-app">{t('shell.navSectionApp')}</h3>
 	<ul aria-labelledby="{listId}-app">
 		{#each APP_ITEMS as item (item.id)}{@render link(item)}{/each}
-		<li>
-			<button
-				type="button"
-				onclick={() => {
-					onChoose?.();
-					reportDialog.show();
-				}}
-			>
-				<Icon name={REPORT_ISSUE_ICON} />
-				<span>{t('shell.reportIssue')}</span>
-			</button>
-		</li>
 	</ul>
+	<!-- Report an issue opens a form, not a page, so it reads as small text like the build line
+	     under it rather than as a link in the menu (Trevor, 2026-10-23). -->
+	<p class="report">
+		<button
+			type="button"
+			onclick={() => {
+				onChoose?.();
+				void reportWithDiagnostics();
+			}}>{t('shell.reportIssue')}</button
+		>
+	</p>
 	<BuildLine />
 </div>
 
@@ -152,6 +150,24 @@
 		background: var(--surface-raised);
 		color: var(--heading);
 		box-shadow: inset 3px 0 0 var(--accent-edge);
+	}
+	/* As BuildLine's text: small, muted and underlined. */
+	.report {
+		margin: var(--space-2) 0 0;
+		padding: 0 var(--space-3);
+		font-size: 0.8rem;
+	}
+	.report button {
+		display: inline-flex;
+		width: auto;
+		padding: 0;
+		color: var(--on-surface-muted);
+		font-family: inherit;
+		font-weight: inherit;
+		text-decoration: underline;
+	}
+	.report button:hover {
+		background: none;
 	}
 	@media (hover: hover) and (pointer: fine) {
 		a:not([aria-current='page']):hover,

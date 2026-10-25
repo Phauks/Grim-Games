@@ -242,7 +242,10 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		overscroll-behavior: contain;
+		/* No overscroll-behavior: contain here. When the list fits, the sheet or page around it
+		   scrolls instead, and Chrome stops a wheel or trackpad scroll at a contained box even
+		   when it has nothing to scroll (Trevor's laptop, 2026-10-23). The sheet or dialog
+		   around a picker already keeps scrolls from reaching the page. */
 	}
 	/* In a sheet or dialog the headings take the panel's own text colour. */
 	.picker[data-surface='sheet'] {

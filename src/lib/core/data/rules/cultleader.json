@@ -1,0 +1,24 @@
+{
+	"gameEnd": {
+		"decidedByStoryteller": true
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may call a cult vote"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "changes alignment; win condition"
+	}
+}

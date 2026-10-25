@@ -1,18 +1,24 @@
 /**
- * Setup reminders. Each curated entry cites its character's wiki page in
- * `setup-reminders.data.ts`; the behaviour tests below cite the pages they encode.
+ * Setup reminders. Each official character's tokens are the `setupPrep` key of its rules file
+ * (linked to its wiki page); the behaviour tests below cite the pages they encode.
  */
 import { describe, expect, it } from 'vitest';
-import { newGame, run, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	newGame,
+	run,
+	testCharacters,
+	testContext
+} from '#lib/core/model/fixtures.test-support.ts';
 import type { Command } from '#lib/core/engine/commands.ts';
 import { dispatch, redo, undo, type GameSession } from '#lib/core/engine/log.ts';
 import type { EngineContext } from '#lib/core/engine/context.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { Issues } from '#lib/core/data/validate.ts';
+import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { characterNames } from './character-names.ts';
 import {
-	NO_SETUP_REMINDERS,
-	SETUP_NOTES,
-	SETUP_REMINDER_ENTRIES,
 	placeableSetupReminders,
 	prepTextSegments,
 	prepTokens,
@@ -22,6 +28,17 @@ import {
 } from './setup-reminders.ts';
 
 const data = committedGameData();
+
+const PREP = [...OFFICIAL_RULES].flatMap(([id, r]) =>
+	r.setupPrep ? [{ id, ...r.setupPrep }] : []
+);
+const SETUP_REMINDER_ENTRIES = PREP.flatMap((p) =>
+	p.reminders ? [{ id: p.id, wiki: wikiUrl(data.byId.get(p.id)!), reminders: p.reminders }] : []
+);
+const SETUP_NOTES = Object.fromEntries(PREP.flatMap((p) => (p.notes ? [[p.id, p.notes]] : [])));
+const NO_SETUP_REMINDERS = Object.fromEntries(
+	PREP.flatMap((p) => (p.none ? [[p.id, p.none]] : []))
+);
 
 /**
  * A game whose seats hold these characters, in order. A `drunk:empath` entry is the Drunk
@@ -64,13 +81,15 @@ function brief(characters: string[], options?: SetupReminderOptions, extra: Comm
 }
 
 describe('coverage', () => {
-	it('considers every official character exactly once', () => {
+	it('considers every official character with reminder tokens', () => {
 		const curated = SETUP_REMINDER_ENTRIES.map((e) => e.id);
 		const quiet = Object.keys(NO_SETUP_REMINDERS);
-		expect(new Set(curated).size).toBe(curated.length);
 		expect(curated.filter((id) => quiet.includes(id))).toEqual([]);
-		const all = new Set([...curated, ...quiet]);
-		expect(data.characters.filter((c) => !all.has(c.id)).map((c) => c.id)).toEqual([]);
+		const all = new Set(PREP.map((p) => p.id));
+		const withTokens = data.characters.filter(
+			(c) => c.reminders.length + c.remindersGlobal.length > 0
+		);
+		expect(withTokens.filter((c) => !all.has(c.id)).map((c) => c.id)).toEqual([]);
 		expect([...all].filter((id) => !data.byId.has(id))).toEqual([]);
 	});
 
@@ -346,6 +365,58 @@ describe('tokens on a player the Storyteller picks', () => {
 	it('suggests nothing for characters that need no setup tokens', () => {
 		expect(brief(['lunatic', 'sailor', 'huntsman', 'damsel', 'imp'])).toEqual([]);
 		expect(NO_SETUP_REMINDERS.lunatic).toBeDefined();
+	});
+});
+
+describe('custom characters', () => {
+	// A homebrew Townsfolk told about a Minion at setup, as the Investigator is
+	// (https://wiki.bloodontheclocktower.com/Investigator).
+	it('get setup tokens and prep notes from their rules block', () => {
+		const issues = new Issues();
+		const scout = parseCharacter(
+			{
+				id: 'scout',
+				name: 'Scout',
+				team: 'townsfolk',
+				ability: 'You start knowing a Minion.',
+				reminders: ['Spotted'],
+				rules: {
+					setupPrep: {
+						reminders: [
+							{
+								label: 'Spotted',
+								text: 'Choose a Minion: put [Spotted] on them',
+								target: { choose: 'minion', choice: 'a Minion player' },
+								reason: 'Marks the Minion the Scout learns about'
+							}
+						],
+						notes: [{ text: 'Choose a fake Minion to show alongside' }]
+					}
+				}
+			},
+			'[0]',
+			issues,
+			{ strict: false, scriptFields: true }
+		);
+		expect(issues.list).toEqual([]);
+		const all = new Map([...testCharacters, [scout!.id, scout!]]);
+		const { session, ctx, seats } = newGame(3, { ctx: testContext({ characters: all }) });
+		const game = run(
+			session,
+			ctx,
+			...['scout', 'poisoner', 'imp'].map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			}))
+		).game;
+		expect(setupReminders(game, all)).toMatchObject([
+			{ characterId: 'scout', label: 'Spotted', seatId: seats[1] }
+		]);
+		expect(setupPrep('scout', 'Scout', all).map((s) => s.text)).toEqual([
+			'Choose a Minion: put [Spotted] on them',
+			'Choose a fake Minion to show alongside'
+		]);
 	});
 });
 
