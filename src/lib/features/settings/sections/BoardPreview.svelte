@@ -21,6 +21,9 @@
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
+	import { GAME_MODES, SPECIAL_RULES, STANDARD } from '#lib/core/modes/index.ts';
+	import { standardPlayersLine } from '#lib/features/modes/players-line.ts';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 
 	/**
 	 * A small board for every Board setting (Trevor, 2026-10-20: "you can't really see changes
@@ -106,9 +109,27 @@
 	);
 	// The board's reminder size for this token: half of it, kept between 30 and 48px.
 	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5))));
-	const storyteller = $derived(storytellerName.current.trim());
+	const storyteller = $derived(storytellerName.current.trim() || t('settings.previewStoryteller'));
+	/**
+	 * Sample lines for the rest of the corner: the app's own mode and special rule with the
+	 * shortest names, so both fit the preview's one mode line.
+	 */
+	const shortest = (names: string[]) =>
+		names.reduce<string | undefined>(
+			(a, b) => (a === undefined || b.length < a.length ? b : a),
+			undefined
+		);
+	const SAMPLE_MODE = shortest(GAME_MODES.filter((m) => m.id !== STANDARD.id).map((m) => m.name));
+	const SAMPLE_RULE = shortest(SPECIAL_RULES.map((r) => r.name));
+	const SAMPLE_PLAYERS = standardPlayersLine(8);
 	/** The corner's lines, as their eyes in Game info and Settings choose. */
 	const lines = $derived(preferences.current.cornerLines);
+	const modeLine = $derived(
+		[
+			...(lines.mode && SAMPLE_MODE ? [SAMPLE_MODE] : []),
+			...(lines.rules && SAMPLE_RULE ? [SAMPLE_RULE] : [])
+		].join(' + ')
+	);
 	const loose = $derived(boardLooks.current.reminders === 'free');
 	const rulesSize = $derived(
 		boardLooks.current.rulesAt === 'middle' ? Math.round(size * 0.6) : Math.round(size * 0.4)
@@ -195,11 +216,23 @@
 	</div>
 
 	<p class="preview-title" data-testid="preview-script-title">
-		{scriptName}
+		<!-- Who watches, before the name here (above it on the board); a sample count. -->
+		{#if lines.watchers}<span class="preview-watchers" data-testid="preview-watchers"
+				><Icon name="watchers" /><span>2</span></span
+			>{/if}{scriptName}
+		<!-- The mode and rules take the author's line, joined as on a board short of room. -->
+		{#if modeLine}<span class="preview-mode" data-testid="preview-mode">{modeLine}</span>{/if}
+		{#if lines.author && !modeLine}<span class="preview-room-code" data-testid="preview-author"
+				>by {t('settings.previewAuthor')}</span
+			>{/if}
+		{#if lines.version}<span class="preview-room-code" data-testid="preview-version"
+				>{t('modes.info.version')}: 1.0</span
+			>{/if}
+		{#if lines.players}<span class="preview-room-code" data-testid="preview-players"
+				>{t('modes.info.players')}: {SAMPLE_PLAYERS}</span
+			>{/if}
 		<!-- Who runs the game, as on the board (Trevor, 2026-10-23): this device's name. -->
-		{#if storyteller && lines.storyteller}<span
-				class="preview-room-code"
-				data-testid="preview-storyteller"
+		{#if lines.storyteller}<span class="preview-room-code" data-testid="preview-storyteller"
 				>{t('settings.storytellerLine', { name: storyteller })}</span
 			>{/if}
 		<!-- The join code under the name, as on the board; a sample code here. -->
@@ -313,14 +346,33 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		font-family: var(--font-heading);
-		font-size: 0.9rem;
+		/* Sized to the preview's tokens, so every corner line fits beside the seats. */
+		font-size: calc(0.24 * var(--size));
 		line-height: 1.15;
 		color: var(--heading);
+	}
+	.preview-mode {
+		display: block;
+		font-family: var(--font-control);
+		font-size: 0.75em;
+		font-variant: small-caps;
+		letter-spacing: 0.08em;
+		color: var(--accent);
+	}
+	.preview-watchers {
+		--icon-size: 1em;
+		display: inline-flex;
+		margin-inline-end: var(--space-1);
+		align-items: center;
+		gap: var(--space-1);
+		font-family: var(--font-control);
+		font-size: 0.75em;
+		color: var(--on-surface-muted);
 	}
 	.preview-room-code {
 		display: block;
 		font-family: var(--font-control);
-		font-size: 0.7rem;
+		font-size: 0.75em;
 		color: var(--on-surface-muted);
 	}
 	.preview-room-code .code {

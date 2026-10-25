@@ -113,6 +113,8 @@ export const settings = {
 	'settings.previewDeadPlayer': 'Alex',
 	'settings.boardPreview': 'Board preview',
 	'settings.previewScript': 'Example script',
+	'settings.previewAuthor': 'Example author',
+	'settings.previewStoryteller': 'Jo',
 	'settings.previewBank': 'Reminder bank',
 	'settings.nameOffset': 'Player name distance',
 	'settings.strikeUsedGhostVote': 'Strike through used ghost votes',

@@ -19,6 +19,13 @@ const NEEDS: Record<string, string> = {
 	// Also the seat numbers, bag tiles and more; on the token it is the character's name.
 	'Token text': 'Show character names on tokens'
 };
+/**
+ * Settings whose line another one takes on the board: the switches turned off before they
+ * are measured (the mode and rules take the author's line in the board's corner).
+ */
+const HIDDEN_BY: Record<string, string[]> = {
+	'Author on the board': ['Game mode on the board', 'Special rules on the board']
+};
 /** Kinds of control a setting row holds, as their roles and inputs. */
 const CONTROLS = [
 	'input[type="checkbox"]',
@@ -117,6 +124,14 @@ for (const section of SECTIONS) {
 				const needs = NEEDS[name] && group.getByRole('checkbox', { name: NEEDS[name] });
 				const switchOn = needs && !(await needs.isChecked());
 				if (switchOn) await needs.dispatchEvent('click');
+				const hiders = [];
+				for (const other of HIDDEN_BY[name] ?? []) {
+					const hider = group.getByRole('checkbox', { name: other });
+					if (await hider.isChecked()) {
+						await hider.dispatchEvent('click');
+						hiders.push(hider);
+					}
+				}
 				const before = await box.screenshot({ animations: 'disabled' });
 				const undo = await change(page, control);
 				const changed = await expect
@@ -133,6 +148,7 @@ for (const section of SECTIONS) {
 				}
 				await undo?.();
 				if (switchOn) await needs.dispatchEvent('click');
+				for (const hider of hiders) await hider.dispatchEvent('click');
 			}
 		}
 		expect(missing, 'settings that do not change their preview').toEqual([]);
