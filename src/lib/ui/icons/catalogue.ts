@@ -58,6 +58,7 @@ export const ICON_SLOTS = {
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
 	appearance: { label: 'Appearance', choices: ['ph:palette', 'ph:paint-brush'] },
+	language: { label: 'Language', choices: ['ph:translate', 'ph:globe'] },
 	fonts: { label: 'Fonts', choices: ['ph:text-aa', 'ph:text-t'] },
 	icons: { label: 'Icons', choices: ['ph:shapes', 'ph:smiley'] },
 	/** Board and Tokens settings, each its own (Trevor, 2026-10-19). */

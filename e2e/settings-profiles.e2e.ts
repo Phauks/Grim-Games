@@ -86,3 +86,21 @@ test('profiles are made in Settings, chosen on New game and switched on the boar
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	await expect.poll(() => ghostVote(page)).toBe('struck');
 });
+
+test('each profile shows what tells it apart', async ({ page }) => {
+	// Trevor (2026-10-25): players need more in a profile to choose which one to use.
+	await page.goto('/');
+	const settings = await openSection(page, 'Profiles');
+	const row = settings.getByTestId('profile-row');
+	await expect(row.getByTestId('profile-looks')).toHaveText(
+		'No background · Text 100% · 0 changes'
+	);
+	await expect(row.getByTestId('profile-games')).toHaveText('No saved games');
+	await settings.getByRole('button', { name: 'Close' }).tap();
+
+	await startGame(page);
+	await page.goto('/');
+	// The same dialog opens again, so the row's locator still finds it.
+	await openSection(page, 'Profiles');
+	await expect(row.getByTestId('profile-games')).toHaveText(/^1 saved game, last /);
+});
