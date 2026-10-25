@@ -72,6 +72,7 @@ export const infoTokens = {
 	'info-tokens.deleteConfirm': 'Delete info token?',
 	'info-tokens.characters': 'Characters',
 	'info-tokens.addNamed': 'Add {name} to the cards to show',
+	'info-tokens.addToShow': 'Add to cards',
 	'info-tokens.toShow': 'Cards to show',
 	'info-tokens.moveUp': 'Move {name} up',
 	'info-tokens.moveDown': 'Move {name} down',
