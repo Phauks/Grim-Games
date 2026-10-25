@@ -2,7 +2,7 @@
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { DEFAULT_PREFERENCES } from '#lib/ui/preferences.ts';
-	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingChoice from '#lib/ui/settings/SettingChoice.svelte';
 	import SettingColor from '#lib/ui/settings/SettingColor.svelte';
 	import {
@@ -48,9 +48,8 @@
 	onChange={(themeId) => preferences.update({ themeId })}
 />
 {#each groups as [group, tokens] (group)}
-	<Collapsible
+	<SettingCollapsible
 		title={t(`settings.colorGroup.${group}`)}
-		level={3}
 		storageKey="settings-colors-{group}"
 		defaultOpen={false}
 	>
@@ -64,5 +63,5 @@
 				onReset={() => setColor(token, undefined)}
 			/>
 		{/each}
-	</Collapsible>
+	</SettingCollapsible>
 {/each}

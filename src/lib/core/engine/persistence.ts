@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 17;
+export const SAVED_GAME_VERSION = 18;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -201,6 +201,14 @@ const migrateV15toV16: Migration = (doc) => ({ ...doc, schemaVersion: 16 });
  */
 const migrateV16toV17: Migration = (doc) => ({ ...doc, schemaVersion: 17 });
 
+/**
+ * Version 18 (2026-10-24) made the Flowergirl's Demon voted one of several day marks
+ * (`DayLog.marks`, the `DayMarkSet` event), adding the Town Crier's Minion nominated. The log
+ * needs no change: an older game's `DemonVotedSet` replays as the `demon-voted` mark. The bump
+ * makes older builds refuse a version 18 save instead of failing on the unknown event.
+ */
+const migrateV17toV18: Migration = (doc) => ({ ...doc, schemaVersion: 18 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -218,7 +226,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	13: migrateV13toV14,
 	14: migrateV14toV15,
 	15: migrateV15toV16,
-	16: migrateV16toV17
+	16: migrateV16toV17,
+	17: migrateV17toV18
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {

@@ -103,6 +103,7 @@
 			number: (seatId && seatNumber(games[0], seatId)) ?? seat + 1
 		});
 		const name = seatId && games[0].seats[seatId]?.playerName;
+		// eslint-disable-next-line grim/names-as-badges -- the tile's accessible name and the reveal's seat line, where the name is edited in its field
 		return name ? `${number} · ${name}` : number;
 	}
 

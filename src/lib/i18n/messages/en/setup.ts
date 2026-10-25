@@ -228,6 +228,7 @@ export const setup = {
 		other: 'Try again in {count} seconds.'
 	},
 	'setup.lock.forgot': 'Forgot PIN',
+	'setup.lock.more': 'PIN options',
 	'setup.lock.forgotCountdown': {
 		one: 'Unlocking in {count} second.',
 		other: 'Unlocking in {count} seconds.'

@@ -45,6 +45,22 @@ describe('parseCharacterRules', () => {
 		expect(parse({ onNominated: { ...onNominated, effect: 'swap' } }).issues).toHaveLength(1);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Flowergirl (two tokens show whether the Demon voted)
+	it('reads a day mark with its two tokens, and rejects an unknown mark or token', () => {
+		const dayMark = { mark: 'demon-voted', yes: 'Voted', no: 'Not Voted' };
+		expect(parse({ dayMark }, ['Voted', 'Not Voted']).rules).toEqual({ dayMark });
+		expect(
+			parse({ dayMark: { ...dayMark, mark: 'slept' } }, ['Voted', 'Not Voted']).issues
+		).toEqual(['rules.dayMark.mark: unknown value "slept"']);
+		expect(parse({ dayMark }).issues).toEqual([
+			'rules.dayMark.yes: not one of this character’s reminders',
+			'rules.dayMark.no: not one of this character’s reminders'
+		]);
+		expect(parse({ dayMark: { ...dayMark, no: 'Voted' } }, ['Voted']).issues).toEqual([
+			'rules.dayMark.no: the same token as yes'
+		]);
+	});
+
 	it('reads what a player may still do once dead, and rejects a bad cause or count', () => {
 		const afterDeath = { cause: ['demon'], nominations: 2, votes: 2 };
 		expect(parse({ afterDeath }).rules).toEqual({ afterDeath });

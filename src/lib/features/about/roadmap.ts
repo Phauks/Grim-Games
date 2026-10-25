@@ -126,7 +126,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: 'One consistent look: one badge, theme colours only, one icon per meaning',
-		parts: ['S4', 'S6', 'S12', 'S17', 'S19']
+		parts: ['S4', 'S6', 'S12', 'S17', 'S19', 'S20']
 	},
 	{ title: 'Install as an app', parts: ['S1'] },
 	{

@@ -41,7 +41,17 @@ test('Demon voted feeds the Flowergirl, and there is no New day button', async (
 		.locator('li[data-character="flowergirl"]')
 		.getByRole('button', { name: 'Demon voted' });
 	await voted.tap();
+	// It asks first, showing the token that swaps on her seat (Trevor, 2026-10-24).
+	const confirm = page.getByRole('alertdialog', { name: 'Demon voted' });
+	await expect(confirm).toContainText('Mark that the Demon voted today?');
+	await expect(confirm).toContainText('Not marked yet today.');
+	await expect(confirm.getByTestId('reminder-token')).toHaveText('Demon Voted');
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(voted).toHaveAttribute('aria-pressed', 'true');
+	// The Town Crier has the same button for whether a Minion nominated.
+	await expect(
+		page.locator('li[data-character="towncrier"]').getByRole('button', { name: 'Minion nominated' })
+	).toHaveAttribute('aria-pressed', 'false');
 	await expect(
 		page.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })
 	).toHaveCount(0);
@@ -65,7 +75,7 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	const used = page.getByRole('button', { name: 'Used: Slayer (Ben)' });
 	const before = await place(used);
 	await used.tap();
-	const confirm = page.getByRole('alertdialog', { name: 'Mark Slayer (Ben) as used?' });
+	const confirm = page.getByRole('alertdialog', { name: /^Mark Slayer \(\s?Ben\s?\) as used\?$/ });
 	await expect(confirm).toContainText('Slayer (Ben) has not used their ability.');
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
@@ -73,7 +83,7 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	expect(await place(used)).toEqual(before);
 	// Tapping it again unmarks it, after its own confirm (Trevor, 2026-10-17).
 	await used.tap();
-	const undo = page.getByRole('alertdialog', { name: 'Mark Slayer (Ben) as not used?' });
+	const undo = page.getByRole('alertdialog', { name: /^Mark Slayer \(\s?Ben\s?\) as not used\?$/ });
 	await expect(undo).toContainText('has used their ability and has the No Ability reminder.');
 	await undo.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'false');

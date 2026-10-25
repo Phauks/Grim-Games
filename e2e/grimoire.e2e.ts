@@ -5862,7 +5862,7 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	// None clears it.
 	await sheet.getByTestId('sheet-nominated-by').tap();
 	await page
-		.getByRole('dialog', { name: 'Who nominated Seat 3?' })
+		.getByRole('dialog', { name: /^Who nominated Seat 3\s?\?$/ })
 		.getByRole('button', { name: 'None', exact: true })
 		.tap();
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
@@ -5926,7 +5926,8 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 
 // Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented
 // nomination tracking". The Town Crier's answer comes from the nominations recorded today
-// (https://wiki.bloodontheclocktower.com/Town_Crier), and is unknown until one is.
+// (https://wiki.bloodontheclocktower.com/Town_Crier): a Minion's recorded nomination marks
+// Minion nominated and swaps his tokens (Trevor, 2026-10-24).
 test("the Town Crier's step reads today's recorded nominations", async ({ page }) => {
 	await startGame(page, 'Sects & Violets');
 	for (const [number, name] of [
@@ -5948,12 +5949,13 @@ test("the Town Crier's step reads today's recorded nominations", async ({ page }
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	await day.getByRole('button', { name: 'Close' }).tap();
 	await expect(day).toBeHidden();
-
-	const step = await openStep(page, 'Town Crier');
-	let suggested = step.getByTestId('night-suggested');
-	await expect(suggested).toContainText('No nominations recorded today');
-	await step.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(step).toBeHidden();
+	// Dawn puts his "not nominated" token on (wiki How to Run).
+	const token = (label: string) =>
+		// Placed on the board, not waiting in the reminder bank.
+		page.locator(
+			`[data-testid="board-reminder"][aria-label="${label} reminder"]:not([aria-label="Reminder bank"] *)`
+		);
+	await expect(token('Minions Not Nominated')).toHaveCount(1);
 
 	// The Witch (a Minion) nominates the Fang Gu.
 	await trackNominations(page);
@@ -5961,7 +5963,9 @@ test("the Town Crier's step reads today's recorded nominations", async ({ page }
 	await sheet.getByTestId('sheet-nominated').tap();
 	await page.getByRole('dialog', { name: 'Who did Seat 2 nominate?' }).getByText('Seat 3').tap();
 	await closeSheet(page);
-	suggested = (await openStep(page, 'Town Crier')).getByTestId('night-suggested');
+	await expect(token('Minion Nominated')).toHaveCount(1);
+	await expect(token('Minions Not Nominated')).toHaveCount(0);
+	const suggested = (await openStep(page, 'Town Crier')).getByTestId('night-suggested');
 	await expect(suggested).not.toContainText('No nominations recorded today');
 	await expect(suggested).toContainText('Yes');
 	await expect(suggested.locator('.because')).toContainText('Seat 2');

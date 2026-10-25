@@ -653,6 +653,34 @@ test('Execution ends the day and walks through tonight from Dusk', async ({ page
 	).toBeEnabled();
 });
 
+// https://wiki.bloodontheclocktower.com/Flowergirl and /Town_Crier (How to Run: each day ends
+// with one of the two tokens on them).
+test('Execution asks whether the Demon voted and a Minion nominated, and places their tokens', async ({
+	page
+}) => {
+	await startGame(page, 8, 'Sects & Violets');
+	await chooseCharacter(page, 3, 'Flowergirl');
+	await chooseCharacter(page, 4, 'Town Crier');
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Execution' }).tap();
+	// Trevor (2026-10-24): "On day end, it should confirm demon did not vote".
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	const voted = ask.getByRole('checkbox', { name: 'Demon voted', includeHidden: true });
+	const nominated = ask.getByRole('checkbox', { name: 'Minion nominated', includeHidden: true });
+	await expect(voted).not.toBeChecked();
+	await expect(nominated).not.toBeChecked();
+	await ask.getByText('Minion nominated', { exact: true }).tap();
+	await expect(nominated).toBeChecked();
+	await endTheDay(page);
+	const token = (label: string) =>
+		// Placed on the board, not waiting in the reminder bank.
+		page.locator(
+			`[data-testid="board-reminder"][aria-label="${label} reminder"]:not([aria-label="Reminder bank"] *)`
+		);
+	await expect(token('Demon Not Voted')).toHaveCount(1);
+	await expect(token('Minion Nominated')).toHaveCount(1);
+});
+
 test('Execution names the player executed, who dies before tonight', async ({ page }) => {
 	await startGame(page);
 	await chooseCharacter(page, 3, 'Slayer');

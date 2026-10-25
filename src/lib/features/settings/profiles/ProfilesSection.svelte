@@ -79,7 +79,7 @@
 
 <ul class="profiles">
 	{#each settingsProfiles.list as profile (profile.id)}
-		<li data-testid="profile-row">
+		<li data-setting data-testid="profile-row">
 			<div class="controls">
 				<div class="name">
 					<TextField
@@ -153,8 +153,8 @@
 	li {
 		display: grid;
 		gap: var(--space-2);
+		/* The line between profiles is every setting's line (ui/base.css, S20). */
 		padding: var(--space-2) 0;
-		border-bottom: 1px solid var(--border);
 	}
 	.controls,
 	.about {
