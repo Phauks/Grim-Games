@@ -46,11 +46,17 @@
 		 */
 		onHold?: (holding: boolean) => void;
 		/**
-		 * Today's nominations (Trevor, 2026-10-23), while Track nominations is on and the board
-		 * shows them for this seat: whether this player has nominated, and was nominated. A
-		 * mark not yet earned shows greyed, as the ghost vote shows on the dead.
+		 * Today's nominations (Trevor, 2026-10-23), while Track nominations is on: whether this
+		 * player has nominated, and was nominated. A mark not yet earned shows greyed, as the
+		 * ghost vote shows on the dead. `made` undefined: they may not nominate (the dead), so
+		 * only the gavel shows.
 		 */
-		nominations?: { made: boolean; received: boolean };
+		nominations?: { made?: boolean; received: boolean };
+		/**
+		 * Dead, but voting this many times on every nomination with no vote token (the Banshee
+		 * killed by the Demon): the badge is a plain skull, with no ghost vote to spend.
+		 */
+		tokenFreeVotes?: number;
 	}
 
 	let {
@@ -67,7 +73,8 @@
 		onTap,
 		onGhostVote,
 		onHold,
-		nominations
+		nominations,
+		tokenFreeVotes
 	}: Props = $props();
 
 	// The player's alignment is not the one their character type starts with (a good Minion,
@@ -83,7 +90,13 @@
 		[
 			`Seat ${number}: ${seat.playerName ?? 'no name'}`,
 			character?.name ?? 'no character',
-			seat.dead ? (seat.ghostVoteUsed ? 'dead, ghost vote used' : 'dead') : '',
+			seat.dead
+				? tokenFreeVotes !== undefined
+					? `dead, ${tokenFreeVotes} vote${tokenFreeVotes === 1 ? '' : 's'} per nomination`
+					: seat.ghostVoteUsed
+						? 'dead, ghost vote used'
+						: 'dead'
+				: '',
 			// A Traveller has no starting alignment: always say it, or that it is not set yet.
 			character?.type === 'traveller'
 				? (seat.alignment ?? 'alignment not set')
@@ -140,7 +153,12 @@
 			swallowNextClick(event.currentTarget);
 			const target = event.target instanceof Element ? event.target : null;
 			// The dead badge is the ghost vote's own switch (Trevor, 2026-10-19).
-			if (target?.closest('[data-testid="dead-mark"]') && onGhostVote) onGhostVote();
+			if (
+				target?.closest('[data-testid="dead-mark"]') &&
+				onGhostVote &&
+				tokenFreeVotes === undefined
+			)
+				onGhostVote();
 			else
 				onTap(
 					target?.closest('.mark.note')
@@ -171,20 +189,22 @@
 	{#if orphan}<span class="mark orphan" title="Not on the script"><Icon name="warning" /></span
 		>{/if}
 	<!-- The player's own avatar (plan R6), upper left, while a character covers the face. -->
-	{#if character && seat.avatar}<span class="mark avatar" data-testid="avatar-mark"
-			><AvatarFace avatar={seat.avatar} {name} /></span
+	{#if character && seat.avatar}<span
+			class="mark avatar"
+			data-testid="avatar-mark"
+			data-shifted={nominations ? '' : undefined}><AvatarFace avatar={seat.avatar} {name} /></span
 		>{/if}
-	<!-- Today's nominations: two marks side by side in one pill on the left rim, each greyed
-	     until it happens (Trevor, 2026-10-23), so the pill never changes. Every corner already
-	     has its mark. A tap asks who this player nominated. -->
+	<!-- Today's nominations: two marks side by side in one pill over the top-left rim, each
+	     greyed until it happens (Trevor, 2026-10-23), clear of the first-night number on the
+	     left leaf (Trevor, 2026-10-24). A tap asks who this player nominated. -->
 	{#if nominations}<span class="nominations" data-testid="nomination-marks"
-			><span
-				class="slot"
-				data-testid="nominator-mark"
-				data-on={nominations.made || undefined}
-				title={nominations.made ? 'Has nominated today' : 'Has not nominated today'}
-				><Icon name="nominator" /></span
-			><span
+			>{#if nominations.made !== undefined}<span
+					class="slot"
+					data-testid="nominator-mark"
+					data-on={nominations.made || undefined}
+					title={nominations.made ? 'Has nominated today' : 'Has not nominated today'}
+					><Icon name="nominator" /></span
+				>{/if}<span
 				class="slot"
 				data-testid="nominated-mark"
 				data-on={nominations.received || undefined}
@@ -226,7 +246,11 @@
 		{number}
 		face={character ? face : undefined}
 		{marks}
-		vote={seat.dead ? (seat.ghostVoteUsed ? 'used' : 'unused') : undefined}
+		vote={seat.dead && tokenFreeVotes === undefined
+			? seat.ghostVoteUsed
+				? 'used'
+				: 'unused'
+			: undefined}
 		usedVote={boardLooks.current.usedGhostVote}
 		frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
 		avatar={seat.avatar}
@@ -310,10 +334,15 @@
 		background: var(--accent);
 		color: var(--on-accent);
 	}
-	/* Upper left. */
+	/* Upper left; top middle while the nomination marks take the upper left. */
 	.avatar {
 		left: -4%;
 		top: -4%;
+	}
+	.avatar[data-shifted] {
+		left: 50%;
+		top: -10%;
+		translate: -50% 0;
 	}
 	/* Lower right: the dead skull keeps the lower left. */
 	.note {
@@ -322,12 +351,12 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 	}
-	/* Left rim, middle: the finger beside the gavel, half outside the token. */
+	/* Over the top-left rim, half outside the token: the left leaf's first-night number, at the
+	   middle of the left rim, stays clear (Trevor, 2026-10-24). */
 	.nominations {
 		position: absolute;
-		right: 72%;
-		top: 50%;
-		translate: 0 -50%;
+		right: 64%;
+		top: -8%;
 		display: flex;
 		gap: calc(0.125 * var(--u));
 		padding: calc(0.125 * var(--u));

@@ -475,7 +475,10 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 	expect(Math.abs(t!.y + t!.height / 2 - (f!.y + f!.height / 2))).toBeLessThan(2);
 
 	// A dropdown, not a switch (Trevor, 2026-10-16).
-	await page.getByRole('button', { name: 'Settings', exact: true }).tap();
+	// One cog: Bag draw, with All settings inside (Trevor, 2026-10-24).
+	await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await page.getByTestId('bag-settings').getByRole('button', { name: 'All settings' }).tap();
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
 	await page.getByRole('option', { name: 'Letters' }).tap();
@@ -533,7 +536,10 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 test('with Require a name, the token stays hidden until a name is typed', async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
-	await page.getByRole('button', { name: 'Settings', exact: true }).tap();
+	// One cog: Bag draw, with All settings inside (Trevor, 2026-10-24).
+	await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await page.getByTestId('bag-settings').getByRole('button', { name: 'All settings' }).tap();
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByText('Require a name before drawing', { exact: true }).tap();
 	await page.keyboard.press('Escape');

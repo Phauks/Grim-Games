@@ -99,6 +99,8 @@ test('the Savant seat offers one true and one false statement, each cycled or wr
 });
 
 test('the day view recommends Savant information until it is set for today', async ({ page }) => {
+	// Eight character picks first: past 30s on a loaded runner, as in the tests below.
+	test.setTimeout(90_000);
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
 	await page.getByRole('button', { name: 'Start game' }).tap();
@@ -213,4 +215,76 @@ test('Use these saves the statements: reopening shows them, true or false as giv
 		await savant.getByRole('button', { name: 'Use these' }).tap();
 		await expect(savant).toBeHidden();
 	}
+});
+
+test('earlier days’ Savant information sits beside today’s, which is edited on its own', async ({
+	page
+}) => {
+	test.setTimeout(120_000);
+	await page.goto('/new');
+	await pickScript(page, 'Sects & Violets');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	for (const [i, name] of CAST.entries()) {
+		const sheet = await openSeat(page, i + 1);
+		await sheet.getByRole('button', { name: 'Choose' }).tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${i + 1}` });
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await expect(picker).toBeHidden();
+		await closeSheet(page);
+	}
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	const endNight = async () => {
+		await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+		await page
+			.getByRole('alertdialog', { name: 'End the night?' })
+			.getByRole('button', { name: 'Confirm' })
+			.tap();
+		await page
+			.getByRole('alertdialog', { name: 'Set the Savant’s information for today?' })
+			.getByRole('button', { name: 'Confirm' })
+			.tap();
+	};
+	const savant = page.getByRole('dialog', { name: /^Savant information/ });
+	const earlier = savant.getByRole('region', { name: 'Earlier days' });
+	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
+	await endNight();
+	// Day 1: nothing earlier yet. Today's lines are written in the shared text field.
+	await expect(earlier).toContainText('None');
+	await savant.getByRole('button', { name: 'Write statement 1 yourself' }).tap();
+	await savant.getByRole('textbox', { name: 'Statement 1, your words' }).fill('Seat 4 is good.');
+	await savant.getByRole('button', { name: 'Write statement 2 yourself' }).tap();
+	await savant.getByRole('textbox', { name: 'Statement 2, your words' }).fill('Seat 6 is good.');
+	const lines = savant.getByTestId('savant-line');
+	const truths: string[] = [];
+	for (const i of [0, 1]) {
+		const truth = await lines.nth(i).locator('[data-truth]').getAttribute('data-truth');
+		truths.push(truth === 'true' ? 'True' : 'False');
+	}
+	await savant.getByRole('button', { name: 'Use these' }).tap();
+	await expect(savant).toBeHidden();
+
+	await page.keyboard.press('Escape');
+	await bank.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^No execution(\s|$)/ }).tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await endNight();
+
+	// Day 2: Day 1's pair on the left, true or false as given; today's is a fresh pair.
+	const day1 = earlier.getByTestId('savant-earlier').getByRole('listitem');
+	await expect(day1).toHaveCount(1);
+	await expect(day1).toContainText('Day 1');
+	await expect(day1).toContainText(`${truths[0]} Seat 4 is good.`);
+	await expect(day1).toContainText(`${truths[1]} Seat 6 is good.`);
+	await expect(savant.getByTestId('savant-line')).toHaveCount(2);
+	await expect(savant.getByRole('textbox')).toHaveCount(0);
+
+	// Side by side where there's room; stacked, earlier days on top, on a phone.
+	const today = await savant.getByTestId('savant-line').first().boundingBox();
+	const left = await earlier.boundingBox();
+	const wide = (page.viewportSize()?.width ?? 0) >= 700;
+	if (wide) expect(left!.x + left!.width).toBeLessThanOrEqual(today!.x);
+	else expect(left!.y + left!.height).toBeLessThanOrEqual(today!.y);
 });

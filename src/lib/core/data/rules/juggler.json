@@ -9,6 +9,7 @@
 		"question": "correct-guesses"
 	},
 	"dayClaim": "guesses",
+	"guessLimit": 5,
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
 	},

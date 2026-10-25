@@ -11,7 +11,7 @@ import {
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
-import { correctGuesses, dayClaim } from './day-claims.ts';
+import { correctGuesses, dayClaim, distinctGuesses, guessLimit } from './day-claims.ts';
 
 describe('dayClaim', () => {
 	it('reads each character’s claim from its rules block', () => {
@@ -53,6 +53,38 @@ describe('correctGuesses', () => {
 				],
 				characters
 			)
-		).toEqual([seats[2]]);
+		).toEqual([{ seatId: seats[2], characterId: 'witch' }]);
+	});
+
+	// Wiki Juggler example 2, paraphrased: one player guessed as two characters, and a second
+	// player as one of the same characters; only one of the three is right.
+	it('takes several guesses of one player, and counts the same guess once', () => {
+		const { session, ctx, seats } = newGame(['Ana', 'Ben', 'Cat']);
+		const s = run(
+			session,
+			ctx,
+			...(['juggler', 'pithag', 'chef'] as const).map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			}))
+		);
+		const guesses = [
+			{ seatId: seats[1], characterId: 'pithag' },
+			{ seatId: seats[1], characterId: 'witch' },
+			{ seatId: seats[2], characterId: 'pithag' },
+			{ seatId: seats[1], characterId: 'pithag' }
+		];
+		expect(correctGuesses(s.game, guesses, characters)).toEqual([
+			{ seatId: seats[1], characterId: 'pithag' }
+		]);
+		expect(distinctGuesses(guesses)).toHaveLength(3);
+	});
+});
+
+describe('guessLimit', () => {
+	it('is 5 for the Juggler, from its rules block', () => {
+		expect(guessLimit('juggler')).toBe(5);
+		expect(guessLimit('gossip')).toBeUndefined();
 	});
 });

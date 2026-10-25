@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseGuesses, withGuess } from './grim-guesses.ts';
+import { GENERIC_GUESSES, genericGuess, parseGuesses, withGuess } from './grim-guesses.ts';
 
 describe("a player's guesses on their Grim tab", () => {
 	it('sets, replaces and clears one seat at a time', () => {
@@ -22,5 +22,23 @@ describe("a player's guesses on their Grim tab", () => {
 		expect(parseGuesses('x')).toEqual({});
 		expect(parseGuesses(['chef'])).toEqual({});
 		expect(parseGuesses({ s1: 3, s2: '', s3: 'imp' })).toEqual({ s3: 'imp' });
+	});
+});
+
+describe('generic guesses (Trevor, 2026-10-24)', () => {
+	it('a seat can be any Townsfolk, Outsider, Minion or Demon, or just Good or Evil', () => {
+		const guesses = withGuess(withGuess({}, 's1', 'type:minion'), 's2', 'team:good');
+		expect(parseGuesses(guesses)).toEqual({ s1: 'type:minion', s2: 'team:good' });
+		expect(genericGuess(guesses.s1)).toEqual({ key: 'type:minion', type: 'minion', team: 'evil' });
+		expect(genericGuess(guesses.s2)).toEqual({ key: 'team:good', team: 'good' });
+		expect(genericGuess('imp')).toBeUndefined();
+		expect(GENERIC_GUESSES.map((g) => g.key)).toEqual([
+			'type:townsfolk',
+			'type:outsider',
+			'type:minion',
+			'type:demon',
+			'team:good',
+			'team:evil'
+		]);
 	});
 });
