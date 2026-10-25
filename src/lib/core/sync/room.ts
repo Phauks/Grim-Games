@@ -254,6 +254,8 @@ export interface PlayerView {
 	ended?: Omit<GameOver, 'gameId'>;
 	/** The feedback this phone sent on the ended game. */
 	feedback?: GameFeedback;
+	/** The game that ended, for the feedback a phone sends on it. */
+	endedGameId?: string;
 	/** The Storyteller is choosing the next script. */
 	choosing?: true;
 	/** The script vote, while one is open, with this phone's own ballot. */
@@ -453,6 +455,7 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
 		view.ended = ended;
+		view.endedGameId = room.ended.gameId;
 		const mine = room.feedback?.find((f) => f.memberId === memberId);
 		if (mine) view.feedback = mine.feedback;
 	}
