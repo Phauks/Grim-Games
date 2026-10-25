@@ -1065,7 +1065,7 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 	await (await walkTo(page, 'Pukka')).locator('button.step .count').tap();
 	const pukka = page.getByRole('dialog', { name: 'Pukka' });
 	await expect(pukka.getByTestId('night-alerts')).toContainText(
-		/Seat 1: chosen by\s*Exorcist\s*, doesn't\s+wake tonight/
+		/Seat 1: chosen by\s*Exorcist\s*, doesn't\s+wake\s+tonight/
 	);
 });
 

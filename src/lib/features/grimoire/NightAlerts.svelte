@@ -89,8 +89,8 @@
 							alert.impairments
 						)}
 					{:else if alert.kind === 'blocked'}
-						{seatLabel(game, alert.seatId)}: chosen by {@render badge(sourceId(alert))}, doesn't
-						wake tonight
+						{@render player(alert.seatId)}: chosen by {@render badge(sourceId(alert))}, doesn't wake
+						tonight
 					{:else if alert.kind === 'protected'}
 						{@render player(alert.seatId)} can't die{#if alert.source === 'override'}
 							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}

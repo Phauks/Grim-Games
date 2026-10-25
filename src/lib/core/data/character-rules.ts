@@ -18,6 +18,7 @@ import {
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
+import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
 	readReminderPlaceholders,
@@ -159,19 +160,10 @@ export interface CharacterRules {
 	reminderPlaceholders?: ReminderPlaceholderRules;
 	/** Our own night text in place of the original (`rules/night-text.ts`). */
 	nightText?: NightTextRules;
-	/**
-	 * Its reminder token on a player stops that player waking for their own ability tonight,
-	 * only a `type` player when given (the Exorcist's Chosen on the Demon,
-	 * https://wiki.bloodontheclocktower.com/Exorcist). Shown at the stopped step (`rules/night-alerts.ts`).
-	 */
+	/** Its token on a player stops them waking tonight (`stops-waking-rules.ts`). */
 	stopsWaking?: StopsWaking;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
-}
-
-export interface StopsWaking {
-	token: ReminderLabel;
-	type?: CharacterType;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -543,15 +535,8 @@ export function parseCharacterRules(
 	}
 	if (raw.stopsWaking !== undefined) {
 		const at = `${path}.stopsWaking`;
-		if (!isObject(raw.stopsWaking)) {
-			issues.add(at, `expected object, got ${describe(raw.stopsWaking)}`);
-		} else {
-			checkKeys(raw.stopsWaking, ['token', 'type'], at, issues);
-			const token = readToken(raw.stopsWaking, 'token', at, issues, reminders);
-			const type = readEnum(raw.stopsWaking, 'type', CHARACTER_TYPES, at, issues, false);
-			if (raw.stopsWaking.token === undefined) issues.add(`${at}.token`, 'missing');
-			else if (token) rules.stopsWaking = { token, ...(type ? { type } : {}) };
-		}
+		const stops = readStopsWaking(raw.stopsWaking, at, issues, reminders);
+		if (stops) rules.stopsWaking = stops;
 	}
 	if (raw.infoTokenCharacters !== undefined) {
 		const at = `${path}.infoTokenCharacters`;
