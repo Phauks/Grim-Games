@@ -1,6 +1,6 @@
 /**
  * The roadmap, kept in the repository so it ticks itself off. Each item is a feature, made of
- * the backlog plan's IDs (D1, R1-R7, B1-B6, S1-S19, P1-P2, L1-L58, G1-G16, J1-J23, W1-W6, Q1-Q2, ...):
+ * the backlog plan's IDs (D1, R1-R7, B1-B6, S1-S22, P1-P2, L1-L58, G1-G16, J1-J23, W1-W6, Q1-Q2, ...):
  * a part is finished once a merged change names its ID in brackets in its title, such as
  * "Savant info generator (L2)", and an item is done once all its parts and listed PRs are.
  * Only the features are shown. Add a new plan ID to the feature it belongs to, or a new
@@ -131,8 +131,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Install as an app', parts: ['S1'] },
 	{
 		title: 'Settings profiles: save your board and settings, and pick one for each game',
-		parts: ['S18']
+		parts: ['S18', 'S21']
 	},
+	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
 	{
 		title: 'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover',
 		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24']

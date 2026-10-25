@@ -91,6 +91,7 @@ import ph_tag from '~icons/ph/tag';
 import ph_text_aa from '~icons/ph/text-aa';
 import ph_text_t from '~icons/ph/text-t';
 import ph_timer from '~icons/ph/timer';
+import ph_translate from '~icons/ph/translate';
 import ph_trash from '~icons/ph/trash';
 import ph_upload_simple from '~icons/ph/upload-simple';
 import ph_user_circle from '~icons/ph/user-circle';
@@ -193,6 +194,7 @@ const icons: IconMap = {
 	'ph:text-aa': ph_text_aa,
 	'ph:text-t': ph_text_t,
 	'ph:timer': ph_timer,
+	'ph:translate': ph_translate,
 	'ph:trash': ph_trash,
 	'ph:upload-simple': ph_upload_simple,
 	'ph:user-circle': ph_user_circle,

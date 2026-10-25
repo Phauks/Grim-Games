@@ -6,6 +6,7 @@ import TokensSection from './TokensSection.svelte';
 import { resets } from './resets.ts';
 import IconsSection from './IconsSection.svelte';
 import DataSection from './DataSection.svelte';
+import LanguageSection from './LanguageSection.svelte';
 import BoardSection from './BoardSection.svelte';
 import ProfilesSection from '../profiles/ProfilesSection.svelte';
 import NewProfileButton from '../profiles/NewProfileButton.svelte';
@@ -81,6 +82,14 @@ registerSettingsSection({
 	reset: resets.assistance,
 	profile: true,
 	order: 35
+});
+registerSettingsSection({
+	// The interface language, per device (Trevor, 2026-10-25: English only for now).
+	id: 'language',
+	label: { key: 'settings.sectionLanguage' },
+	icon: 'language',
+	component: LanguageSection,
+	order: 80
 });
 registerSettingsSection({
 	id: 'data',

@@ -83,6 +83,7 @@ import ph_gavel_thin from '~icons/ph/gavel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
+import ph_globe_thin from '~icons/ph/globe-thin';
 import ph_hammer_thin from '~icons/ph/hammer-thin';
 import ph_hand_fist_thin from '~icons/ph/hand-fist-thin';
 import ph_hand_grabbing_thin from '~icons/ph/hand-grabbing-thin';
@@ -179,6 +180,7 @@ import ph_text_t_thin from '~icons/ph/text-t-thin';
 import ph_textbox_thin from '~icons/ph/textbox-thin';
 import ph_timer_thin from '~icons/ph/timer-thin';
 import ph_tote_thin from '~icons/ph/tote-thin';
+import ph_translate_thin from '~icons/ph/translate-thin';
 import ph_trash_thin from '~icons/ph/trash-thin';
 import ph_trash_simple_thin from '~icons/ph/trash-simple-thin';
 import ph_tree_thin from '~icons/ph/tree-thin';
@@ -285,6 +287,7 @@ const icons: IconMap = {
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
 	'ph:ghost-thin': ph_ghost_thin,
+	'ph:globe-thin': ph_globe_thin,
 	'ph:hammer-thin': ph_hammer_thin,
 	'ph:hand-fist-thin': ph_hand_fist_thin,
 	'ph:hand-grabbing-thin': ph_hand_grabbing_thin,
@@ -381,6 +384,7 @@ const icons: IconMap = {
 	'ph:textbox-thin': ph_textbox_thin,
 	'ph:timer-thin': ph_timer_thin,
 	'ph:tote-thin': ph_tote_thin,
+	'ph:translate-thin': ph_translate_thin,
 	'ph:trash-thin': ph_trash_thin,
 	'ph:trash-simple-thin': ph_trash_simple_thin,
 	'ph:tree-thin': ph_tree_thin,

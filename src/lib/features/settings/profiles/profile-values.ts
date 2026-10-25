@@ -166,3 +166,48 @@ export function parseGameProfiles(raw: unknown): Record<string, string> {
 		if (typeof profileId === 'string' && profileId) out[gameId] = profileId;
 	return out;
 }
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+	!!value && typeof value === 'object' && !Array.isArray(value);
+
+function countChanges(value: unknown, base: unknown): number {
+	if (isObject(value) && isObject(base)) {
+		let changes = 0;
+		for (const key of new Set([...Object.keys(value), ...Object.keys(base)]))
+			changes += countChanges(value[key], base[key]);
+		return changes;
+	}
+	return JSON.stringify(value) === JSON.stringify(base) ? 0 : 1;
+}
+
+/**
+ * How many settings a profile has changed from the app's defaults (Trevor, 2026-10-25: players
+ * need more in a profile to choose one): each setting, custom colour or font counts once.
+ */
+export function changedSettings(values: ProfileValues): number {
+	// The background is one choice, not a kind and an id.
+	const { background, ...settings } = values;
+	const { background: noBackground, ...defaults } = parseProfileValues(null);
+	return countChanges(settings, defaults) + countChanges([background], [noBackground]);
+}
+
+/** The saved games a profile was used for, and when the newest was last saved. */
+export interface ProfileUse {
+	games: number;
+	lastSaved?: number;
+}
+
+/** Counts only games still saved on the device, so a deleted game isn't counted. */
+export function profileUse(
+	profileId: string,
+	gameProfiles: Readonly<Record<string, string>>,
+	saved: readonly { gameId: string; savedAt: number }[]
+): ProfileUse {
+	const use: ProfileUse = { games: 0 };
+	for (const game of saved) {
+		if (gameProfiles[game.gameId] !== profileId) continue;
+		use.games++;
+		use.lastSaved = Math.max(use.lastSaved ?? 0, game.savedAt);
+	}
+	return use;
+}

@@ -43,6 +43,7 @@ import ph_flower from '~icons/ph/flower';
 import ph_folder_simple from '~icons/ph/folder-simple';
 import ph_frame_corners from '~icons/ph/frame-corners';
 import ph_gear_six from '~icons/ph/gear-six';
+import ph_globe from '~icons/ph/globe';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
@@ -145,6 +146,7 @@ const icons: IconMap = {
 	'ph:folder-simple': ph_folder_simple,
 	'ph:frame-corners': ph_frame_corners,
 	'ph:gear-six': ph_gear_six,
+	'ph:globe': ph_globe,
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,

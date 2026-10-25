@@ -3,12 +3,14 @@ import { DEFAULT_BOARD_LOOKS } from '#lib/features/grimoire/board-looks.svelte.t
 import { DEFAULT_PREFERENCES } from '#lib/ui/preferences.ts';
 import {
 	backgroundRef,
+	changedSettings,
 	freeName,
 	parseGameProfiles,
 	parseProfileBody,
 	parseProfilesState,
 	parseProfileValues,
 	profileBody,
+	profileUse,
 	withoutDevicePreferences,
 	withoutProfile,
 	type ProfilesState,
@@ -103,5 +105,28 @@ describe('the profiles on a device', () => {
 	it('remember which profile each game uses', () => {
 		expect(parseGameProfiles({ g1: 'a', g2: 3, g3: '' })).toEqual({ g1: 'a' });
 		expect(parseGameProfiles(null)).toEqual({});
+	});
+});
+
+describe('what a profile shows to tell it apart', () => {
+	it('counts each setting changed from the defaults once', () => {
+		expect(changedSettings(values)).toBe(0);
+		const changed = parseProfileValues({
+			preferences: { textScale: 1.25, requireName: true },
+			boardLooks: { vignette: false, logo: false },
+			background: { kind: 'preset', id: 'felt' }
+		});
+		expect(changedSettings(changed)).toBe(5);
+	});
+
+	it('counts only saved games that used the profile, with the newest save', () => {
+		const games = { g1: 'a', g2: 'b', g3: 'a', gone: 'a' };
+		const saved = [
+			{ gameId: 'g1', savedAt: 100 },
+			{ gameId: 'g2', savedAt: 300 },
+			{ gameId: 'g3', savedAt: 200 }
+		];
+		expect(profileUse('a', games, saved)).toEqual({ games: 2, lastSaved: 200 });
+		expect(profileUse('c', games, saved)).toEqual({ games: 0 });
 	});
 });
