@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import type { Alignment, Character, CharacterId } from '#lib/core/data/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -33,6 +33,12 @@
 		 * hold characters in play, such as the Lunatic's.
 		 */
 		hideInPlayFirst?: boolean;
+		/**
+		 * Lists only this alignment's characters, by character type, behind a switch that starts
+		 * on: the Dreamer's other token is of the other alignment (Trevor, 2026-10-24). Off, every
+		 * character is listed: the Storyteller decides.
+		 */
+		onlyAlignment?: Alignment;
 	}
 
 	let {
@@ -43,14 +49,16 @@
 		inPlay,
 		warnInPlay = false,
 		notInPlay = false,
-		hideInPlayFirst = true
+		hideInPlayFirst = true,
+		onlyAlignment
 	}: Props = $props();
 
 	// Read once: the Storyteller's own choice is kept while the picker is open.
 	let hideInPlay = $state(untrack(() => hideInPlayFirst));
 	/** Good characters only; with the toggle on, none in play unless already chosen. */
+	let alignmentOnly = $state(true);
 	const choices = $derived(
-		notInPlay
+		(notInPlay
 			? characters.filter(
 					(c) =>
 						defaultAlignment(c.type) === 'good' &&
@@ -58,6 +66,7 @@
 						(!hideInPlay || !inPlay?.has(c.id) || selected.includes(c.id))
 				)
 			: characters
+		).filter((c) => !onlyAlignment || !alignmentOnly || defaultAlignment(c.type) === onlyAlignment)
 	);
 
 	/** A fresh random pick on every tap, from the characters listed. */
@@ -111,6 +120,15 @@
 					<span class="ink"
 						><IconButton icon="random" label={t('show.random')} onclick={random} /></span
 					>
+				</div>
+			{/if}
+			{#if onlyAlignment}
+				<div class="filter">
+					<Toggle
+						label={t(onlyAlignment === 'good' ? 'show.goodOnly' : 'show.evilOnly')}
+						checked={alignmentOnly}
+						onChange={(checked) => (alignmentOnly = checked)}
+					/>
 				</div>
 			{/if}
 			<!-- One place per character that can be chosen, kept while empty (Trevor, 2026-10-20). -->

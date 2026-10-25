@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
@@ -105,7 +106,7 @@
 						characterId={seat.characterId}
 						character={characters.get(seat.characterId)}
 						playerName={seatName(game, seatId)}
-					/>{:else}{seatName(game, seatId)}{/if}
+					/>{:else}<PlayerBadge name={seatName(game, seatId)} />{/if}
 			</p>
 			<!--
 				One line with the mix and each side's chance (Trevor, 2026-10-19): Good on the left,

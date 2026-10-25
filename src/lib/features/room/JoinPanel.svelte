@@ -25,7 +25,6 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
-	import SettingAvatar from '#lib/ui/settings/SettingAvatar.svelte';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import ScriptBallot from './ScriptBallot.svelte';
@@ -404,12 +403,6 @@
 					onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
 				/>
 			</ClearableField>
-			<!-- Goes on the seat without asking (plan R6); also in Settings > Player. -->
-			<SettingAvatar
-				value={playerSettings.current.avatar}
-				onChange={(avatar) => playerSettings.update({ avatar })}
-				testid="join-avatar"
-			/>
 			<fieldset>
 				<legend>{t('room.yourSeat')}</legend>
 				<div class="seats">

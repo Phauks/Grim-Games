@@ -137,6 +137,8 @@ export type DuplicatesRule = Cited &
 				kind: 'allowed';
 				/** Extra copies may be drunk. */
 				extrasMayBeDrunk: boolean;
+				/** Types that still have one copy each; every type repeats when left out (revision 14). */
+				notTypes?: CharacterType[];
 		  }
 	);
 

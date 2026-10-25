@@ -1,4 +1,4 @@
-import type { CharacterId, CharacterName } from '#lib/core/data/index.ts';
+import type { CharacterId, CharacterName, PlayerName } from '#lib/core/data/index.ts';
 import type { Command, GameLog } from '#lib/core/engine/index.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import type { CharacterLookup, DayEntry, Game, SeatId } from '#lib/core/model/index.ts';
@@ -13,7 +13,8 @@ export interface DayPort {
 	readonly log: GameLog;
 	readonly characters: CharacterLookup;
 	run(command: Command): boolean;
-	seatName(seatId: SeatId | undefined): string;
+	/** The seat's PlayerBadge text: the player's name, or "Seat 3". */
+	seatName(seatId: SeatId | undefined): PlayerName;
 	characterName(id: CharacterId | undefined): CharacterName;
 }
 

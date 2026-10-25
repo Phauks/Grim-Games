@@ -1018,17 +1018,86 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	const step = page.getByRole('dialog', { name: 'Imp' });
 	const tiles = step.getByTestId('step-info-tokens');
 	await expect(tiles.getByRole('button')).toHaveCount(1);
-	// The card asks which character first, as on the info tokens sheet.
-	await tiles.getByRole('button', { name: 'You are', exact: true }).tap();
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Imp');
-	await page.getByRole('button', { name: 'Imp, In play', exact: true }).tap();
-	await page.getByRole('button', { name: 'Confirm' }).tap();
+	// The Imp's rules fill in its own token (Trevor, 2026-10-24), so the card shows at once.
+	await tiles.getByRole('button', { name: 'You are (Imp)', exact: true }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
 	// The step stays open under the sheet, for the rest of the Imp's turn.
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(step).toBeVisible();
+});
+
+test('a filled-in info token with room left opens its picker with the filled ones picked', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Cerenovus : the target learns the Cerenovus chose
+	// them and which character to be mad about (Trevor, 2026-10-24: its own token is filled in).
+	await startGame(page, 'Sects & Violets');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Cerenovus', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	await (await walkTo(page, 'Cerenovus')).locator('button.step .count').tap();
+	const step = page.getByRole('dialog', { name: 'Cerenovus' });
+	await step
+		.getByTestId('step-info-tokens')
+		.getByRole('button', { name: 'This character selected you (Cerenovus)', exact: true })
+		.tap();
+	// The Cerenovus is already picked; the Storyteller adds the madness character.
+	const confirm = page.getByRole('button', { name: 'Confirm' });
+	await expect(confirm).toBeEnabled();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Clockmaker');
+	await page.getByRole('button', { name: /^Clockmaker/ }).tap();
+	await confirm.tap();
+	await expect(
+		page.getByRole('dialog', { name: 'This character selected you: Cerenovus: Clockmaker' })
+	).toBeVisible();
+});
+
+test("the Dreamer's card shows the chosen player's character and one of the other alignment", async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Dreamer : one good and one evil character, one of
+	// which is the chosen player's (Trevor, 2026-10-24: filled in, then shown in random order).
+	await startGame(page, 'Sects & Violets');
+	for (const [seat, name] of [
+		[1, 'Dreamer'],
+		[2, 'Clockmaker']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+
+	await (await walkTo(page, 'Dreamer')).locator('button.step .count').tap();
+	const step = page.getByRole('dialog', { name: 'Dreamer' });
+	await step
+		.getByTestId('step-info-tokens')
+		.getByRole('button', { name: 'This player is', exact: true })
+		.tap();
+	// Which player the Dreamer chose, then the picker with their character already picked.
+	await page
+		.getByRole('dialog', { name: 'Dreamer chose' })
+		.getByRole('button', { name: /Clockmaker Seat 2/ })
+		.tap();
+	await expect(page.getByRole('checkbox', { name: 'Evil only' })).toBeChecked();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('No Dashii');
+	await page.getByRole('button', { name: /^No Dashii/ }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(
+		page.getByRole('dialog', {
+			name: /^This player is: (Clockmaker: No Dashii|No Dashii: Clockmaker)$/
+		})
+	).toBeVisible();
 });
 
 test('Share in the toolbar shows the room code, QR and join link, never the game', async ({
@@ -1513,7 +1582,7 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	const sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
 	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
-	await expect(actions).toContainText(/From\s*Washerwoman\s*· Seat 1\s*on\s*\S+\s*· Seat 2/);
+	await expect(actions).toContainText(/From\s*Washerwoman\s*Seat 1\s*on\s*\S+\s*Seat 2/);
 	// In the seat sheet a reminder is just its token, tapped for these actions, delete among
 	// them (Trevor, 2026-10-19): no tick box, no owner, no ⋯.
 	await expect(actions.getByRole('button', { name: 'Remove reminder' })).toBeVisible();
@@ -1976,7 +2045,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	// In its own Afflictions section, not at the top (Trevor, 2026-10-17).
 	const empath = await openStep(page, 'Empath');
 	await expect(empath.getByTestId('step-afflictions')).toContainText(
-		/Poisoned\s*Empath\s*· Seat 2\s*by\s*Poisoner\s*· Seat 1/
+		/Poisoned\s*Empath\s*Seat 2\s*by\s*Poisoner\s*Seat 1/
 	);
 	await expect(empath.getByTestId('night-alerts')).toHaveCount(0);
 	await empath.getByRole('button', { name: 'Close' }).tap();
@@ -5737,7 +5806,7 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 		.getByRole('dialog', { name: 'Who did Seat 2 nominate?' })
 		.getByText('Seat 1', { exact: true })
 		.tap();
-	const ask = page.getByRole('alertdialog', { name: 'Virgin: execute Seat 2?' });
+	const ask = page.getByRole('alertdialog', { name: /^Virgin: execute Seat 2\s?\?$/ });
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await expect(seatLabelled(page, 'Seat 2: no name, Chef, dead')).toBeAttached();
@@ -5865,7 +5934,7 @@ test("with The Djinn's Bargain, a nomination asks whether the nominator chose to
 	await trackNominations(page);
 	await nominate(page, 1, 2);
 	const ask = page.getByRole('alertdialog', {
-		name: 'The Djinn’s Bargain: did Seat 1 choose to die?'
+		name: /^The Djinn’s Bargain: did Seat 1\s?choose to die\?$/
 	});
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();

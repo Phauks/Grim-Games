@@ -18,6 +18,7 @@ import {
 	parseClientMessage,
 	playerView,
 	publish,
+	receiveFeedback,
 	reopenGame,
 	request,
 	resolve,
@@ -194,6 +195,11 @@ describe('the live room', () => {
 });
 
 describe('the end of a game', () => {
+	it('tells each phone which game is on the table, so its notes are kept per game', () => {
+		expect(playerView(roomWith('alex'), 'alex').gameId).toBe('g1');
+		expect(playerView(publish(roomWith('alex'), 'g2', table('a')), 'alex').gameId).toBe('g2');
+	});
+
 	it('tells every phone the game is over, with who won and how', () => {
 		const room = gameOver(roomWith('alex'), 'g1', 'evil', 'two-alive');
 		expect(playerView(room, 'alex').ended).toEqual({ winner: 'evil', reason: 'two-alive' });
@@ -241,6 +247,52 @@ describe('the end of a game', () => {
 	it('needs protocol 2, so an older app is told to update rather than miss the end', () => {
 		expect(ROOM_PROTOCOL).toBeGreaterThanOrEqual(2);
 		expect(supportsProtocol(1)).toBe(false);
+	});
+});
+
+describe('feedback after a game', () => {
+	const rated = { version: 1, rating: 4.5, accolades: ['pacing'], anonymous: false };
+	const anonymous = { version: 1, comment: 'Great night', accolades: [], anonymous: true };
+	function ended(): RoomState {
+		let room = roomWith('alex', 'sam');
+		room = resolve(request(room, 'alex', { name: 'Alex', seatId: s('a') }, 0, 'r1'), 'r1', true);
+		return gameOver(room, 'g1', 'good');
+	}
+
+	it('passes it to the Storyteller, with the name only when the player gave it', () => {
+		let room = receiveFeedback(ended(), 'alex', 'g1', rated, 'f1');
+		room = receiveFeedback(room, 'sam', 'g1', anonymous, 'f2');
+		expect(hostView(room).feedback).toEqual([
+			{ id: 'f1', name: 'Alex', seatId: 'a', feedback: rated },
+			{ id: 'f2', feedback: anonymous }
+		]);
+		// Anonymous feedback carries a room-made id, never the member id.
+		expect(JSON.stringify(hostView(room).feedback)).not.toContain('sam');
+		expect(playerView(room, 'sam').feedback).toEqual(anonymous);
+		expect(playerView(room, 'alex').feedback).toEqual(rated);
+	});
+
+	it('keeps one per player, the latest', () => {
+		let room = receiveFeedback(ended(), 'alex', 'g1', rated, 'f1');
+		room = receiveFeedback(room, 'alex', 'g1', { ...rated, rating: 2 }, 'f9');
+		expect(hostView(room).feedback).toEqual([
+			{ id: 'f1', name: 'Alex', seatId: 'a', feedback: { ...rated, rating: 2 } }
+		]);
+	});
+
+	it('takes it only for the game that ended, from someone in the room', () => {
+		const room = ended();
+		expect(receiveFeedback(roomWith('alex'), 'alex', 'g1', rated, 'f1').feedback).toBeUndefined();
+		expect(receiveFeedback(room, 'alex', 'g2', rated, 'f1')).toBe(room);
+		expect(receiveFeedback(room, 'stranger', 'g1', rated, 'f1')).toBe(room);
+		expect(receiveFeedback(room, 'alex', 'g1', { version: 1, accolades: [] }, 'f1')).toBe(room);
+		expect(receiveFeedback(room, 'alex', 'g1', 'five stars', 'f1')).toBe(room);
+	});
+
+	it('goes with the ended game when it is reopened or a new game starts', () => {
+		const room = receiveFeedback(ended(), 'alex', 'g1', rated, 'f1');
+		expect(hostView(reopenGame(room, 'g1')).feedback).toBeUndefined();
+		expect(hostView(publish(room, 'g2', table('a'))).feedback).toBeUndefined();
 	});
 });
 

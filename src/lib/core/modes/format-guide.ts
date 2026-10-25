@@ -21,7 +21,7 @@ import {
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 13;
+export const GAME_MODE_REVISION = 14;
 
 export interface GuideField {
 	name: string;
@@ -350,6 +350,13 @@ export const GUIDE_PARTS: GuidePart[] = [
 						type: 'true or false',
 						required: true,
 						about: 'Extra copies may be drunk.'
+					},
+					{
+						name: 'notTypes',
+						type: 'list of character types',
+						required: false,
+						about: 'These types still have one copy each. Every type repeats when left out.',
+						values: SEATED
 					}
 				]
 			}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
+	import type { Alignment, CharacterId, PlayerName } from '#lib/core/data/index.ts';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 
 	/**
@@ -13,14 +13,16 @@
 		alignment?: Alignment;
 		/** "Seat 3: Ana", or the seat alone while unnamed. */
 		label: string;
+		/** The player's badge text ("Ana", or "Seat 3"); the label when not given. */
+		playerName?: PlayerName;
 		note: string | undefined;
 		onOpen: () => void;
 	}
 
-	let { characterId, alignment, label, note, onOpen }: Props = $props();
+	let { characterId, alignment, label, playerName = label, note, onOpen }: Props = $props();
 </script>
 
-<CharacterEntry {characterId} {alignment} playerName={label} {label}>
+<CharacterEntry {characterId} {alignment} {playerName} {label}>
 	<button
 		type="button"
 		class="note"

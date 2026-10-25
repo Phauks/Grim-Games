@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AlignmentPill from './AlignmentPill.svelte';
-	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -21,12 +22,6 @@
 
 	const ask = $derived(grimoire.alignmentAsk);
 	const seat = $derived(ask ? grimoire.game.seats[ask.seatId] : undefined);
-	function seatName(seatId: SeatId): string {
-		const n = seatNumber(grimoire.game, seatId);
-		const name = grimoire.game.seats[seatId]?.playerName;
-		return name ? `Seat ${n} (${name})` : `Seat ${n}`;
-	}
-	const label = $derived(ask ? seatName(ask.seatId) : '');
 
 	const demon = $derived(grimoire.demonAsk);
 	const demonSeat = $derived(demon ? grimoire.game.seats[demon.seatId] : undefined);
@@ -72,7 +67,9 @@
 	{#if ask && seat}
 		<dl class="change">
 			<dt>Player</dt>
-			<dd><strong>{label}</strong></dd>
+			<dd>
+				{#if ask}<PlayerBadge name={seatName(grimoire.game, ask.seatId)} />{/if}
+			</dd>
 			<dt>Character</dt>
 			<dd>
 				<CharacterBadge
@@ -99,7 +96,7 @@
 	{#if demon && demonSeat}
 		<dl class="change">
 			<dt>Player</dt>
-			<dd><strong>{seatName(demon.seatId)}</strong></dd>
+			<dd><PlayerBadge name={seatName(grimoire.game, demon.seatId)} /></dd>
 			<dt>Current character</dt>
 			<dd>
 				{#if demonSeat.characterId}<CharacterBadge

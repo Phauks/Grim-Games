@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import {
 		trueCharacter,
@@ -91,7 +92,7 @@
 <!-- A player as their name pill and their character's badge, as in the night suggestions. -->
 {#snippet player(seatId: SeatId)}{@const id = trueCharacter(game, seatId, characters)}<span
 		class="player"
-		><span class="pill">{seatName(game, seatId)}</span>{#if id}<CharacterBadge
+		><PlayerBadge name={seatName(game, seatId)} />{#if id}<CharacterBadge
 				characterId={id}
 				character={characters.get(id)}
 			/>{/if}</span
@@ -205,14 +206,5 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-1);
-	}
-	.pill {
-		padding: 0 var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font-family: var(--font-player);
-		font-weight: 600;
 	}
 </style>

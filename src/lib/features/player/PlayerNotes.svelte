@@ -8,7 +8,7 @@
 	import NoteEditor from '#lib/ui/notes/NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
-	import { lastRoom } from '#lib/features/room/player.svelte.ts';
+	import { gameKey, lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import SeatNoteDialog from '#lib/ui/notes/SeatNoteDialog.svelte';
 	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
@@ -40,12 +40,18 @@
 		if (player) releaseRoom(player);
 	});
 	const seats = $derived(town?.seats ?? player?.view?.public?.seats ?? []);
-	// Read here, not inside the derived, so the derived follows the notes it reads.
-	const book = room ? seatNotes(room) : undefined;
+	/** Where this game's seat notes and guesses are kept: per game (`gameKey`), as the Grim tab. */
+	const kept = $derived(town ? town.guessKey : room ? gameKey(room) : undefined);
+	// Set in an effect, not a derived, so the derived below follows the notes it reads.
+	// eslint-disable-next-line svelte/prefer-writable-derived -- a store made inside a derived is not followed
+	let book = $state<ReturnType<typeof seatNotes>>();
+	$effect.pre(() => {
+		book = kept ? seatNotes(kept) : undefined;
+	});
 	const notesOnSeats = $derived(book?.notes ?? {});
 	const nameOf = (seat: PublicSeat) =>
 		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
-	const guesses = $derived(room ? readGuesses(room) : {});
+	const guesses = $derived(kept ? readGuesses(kept) : {});
 	const characterGuess = (seatId: string) => {
 		const guess = guesses[seatId];
 		return guess && !genericGuess(guess) ? guess : undefined;
@@ -139,7 +145,7 @@
 	bind:open={seatOpen}
 	title={seat ? t('player.grim.noteTitle', { name: nameOf(seat) }) : ''}
 	value={(seat && notesOnSeats[seat.seatId]) || ''}
-	onSave={(note) => room && seat && setSeatNote(room, seat.seatId, note)}
+	onSave={(note) => kept && seat && setSeatNote(kept, seat.seatId, note)}
 />
 {#if scratch && scratchPad}
 	<ErrorBoundary area="play">

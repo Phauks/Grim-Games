@@ -62,6 +62,10 @@
 		}
 	});
 
+	function focusAgain() {
+		document.getElementById('draw-pin-again')?.focus();
+	}
+
 	function finish() {
 		open = false;
 		onDone?.();
@@ -110,12 +114,19 @@
 >
 	<form class="pin" onsubmit={(e) => void submit(e)} data-testid="pin-dialog">
 		<label for="draw-pin">{t('setup.lock.pin')}</label>
+		<!-- On a phone: the 4th digit or Next moves on to PIN again, Enter there commits, as
+		     the keyboard's action key can't reach a Confirm it covers (Trevor, 2026-10-25). -->
 		<CodeField
 			id="draw-pin"
 			bind:value={pin}
 			length={PIN_LENGTH}
 			centred
 			clearLabel={t('setup.lock.clear')}
+			enterkeyhint={mode === 'set' ? 'next' : 'done'}
+			onenter={() => (mode === 'set' ? focusAgain() : void submit())}
+			oncomplete={() => {
+				if (mode === 'set') focusAgain();
+			}}
 		/>
 		{#if mode === 'set'}
 			<label for="draw-pin-again">{t('setup.lock.again')}</label>
@@ -125,6 +136,8 @@
 				length={PIN_LENGTH}
 				centred
 				clearLabel={t('setup.lock.clear')}
+				enterkeyhint="done"
+				onenter={() => void submit()}
 			/>
 		{/if}
 		<p class="message" role="status" data-testid="pin-message">{message}</p>

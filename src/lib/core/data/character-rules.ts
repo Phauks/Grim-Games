@@ -17,6 +17,7 @@ import {
 } from './day-reminder-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
+import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
 	readReminderPlaceholders,
@@ -96,8 +97,9 @@ export interface CharacterRules {
 	/** The ability is set off by its player's death, by `by` (the Ravenkeeper, the Sage). */
 	onDeath?: { by: KilledBy };
 	/**
-	 * The ability stops a death: its own player's (`self`, the Soldier) or the player marked
-	 * with its `token` (the Monk's "Safe"), against the Demon's kill only or any kill.
+	 * The ability stops a death: its own player's (`self`, the Soldier), the player marked
+	 * with its `token` (the Monk's "Safe") or any good player's (`good`, the Pacifist), against
+	 * the Demon's kill only, any kill, or an execution only.
 	 */
 	protects?: Protects;
 	/** A kill on its player, by `from`, may land on another player instead (the Mayor). */
@@ -158,6 +160,8 @@ export interface CharacterRules {
 	reminderPlaceholders?: ReminderPlaceholderRules;
 	/** Our own night text in place of the original (`rules/night-text.ts`). */
 	nightText?: NightTextRules;
+	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
+	infoTokenCharacters?: InfoTokenCharacterRules;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -306,16 +310,22 @@ function readAfterDeath(raw: unknown, at: string, issues: Issues): AfterDeath | 
 		: undefined;
 }
 
-export const PROTECTS_WHO = ['self', 'marked'] as const;
+export const PROTECTS_WHO = ['self', 'marked', 'good'] as const;
 /**
  * What a protection stops: the Demon's kill, any death, or only an execution (the Devil's
  * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate).
  */
 export const PROTECTS_FROM = ['demon', 'any', 'execution'] as const;
-/** `night`: it lasts only the night it is given ("can't die tonight"), so never stops an execution. */
-export type Protects =
-	| { who: 'self'; from: (typeof PROTECTS_FROM)[number]; night?: true }
-	| { who: 'marked'; token: ReminderLabel; from: (typeof PROTECTS_FROM)[number]; night?: true };
+/**
+ * `night`: it lasts only the night it is given ("can't die tonight"), so never stops an
+ * execution. `storytellerDecides`: the player only "might not die" (the Pacifist, the
+ * Psychopath's roshambo), so the grimoire never applies it; the Storyteller picks it in the
+ * Execution sheet's Saved by.
+ */
+export type Protects = (
+	| { who: 'self' | 'good'; from: (typeof PROTECTS_FROM)[number] }
+	| { who: 'marked'; token: ReminderLabel; from: (typeof PROTECTS_FROM)[number] }
+) & { night?: true; storytellerDecides?: true };
 
 /** Every key a rules block may have; one more per migrated table. */
 export const RULE_KEYS = [
@@ -343,7 +353,8 @@ export const RULE_KEYS = [
 	'deathCause',
 	'reminderMovement',
 	'reminderPlaceholders',
-	'nightText'
+	'nightText',
+	'infoTokenCharacters'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -525,6 +536,11 @@ export function parseCharacterRules(
 		const nightText = readNightText(raw.nightText, `${path}.nightText`, issues);
 		if (nightText) rules.nightText = nightText;
 	}
+	if (raw.infoTokenCharacters !== undefined) {
+		const at = `${path}.infoTokenCharacters`;
+		const filled = readInfoTokenCharacters(raw.infoTokenCharacters, at, issues);
+		if (filled) rules.infoTokenCharacters = filled;
+	}
 	return issues.list.length > before ? undefined : rules;
 }
 
@@ -691,14 +707,19 @@ function readProtects(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['who', 'token', 'from', 'night'], path, issues);
+	checkKeys(raw, ['who', 'token', 'from', 'night', 'storytellerDecides'], path, issues);
 	const who = readEnum(raw, 'who', PROTECTS_WHO, path, issues, true);
 	const from = readEnum(raw, 'from', PROTECTS_FROM, path, issues, true);
-	const night = readBoolean(raw, 'night', path, issues) ? { night: true as const } : {};
+	const flags = {
+		...(readBoolean(raw, 'night', path, issues) ? { night: true as const } : {}),
+		...(readBoolean(raw, 'storytellerDecides', path, issues)
+			? { storytellerDecides: true as const }
+			: {})
+	};
 	if (!who || !from) return undefined;
-	if (who === 'self') {
+	if (who !== 'marked') {
 		if (raw.token !== undefined) issues.add(`${path}.token`, 'only a marked player has a token');
-		return { who, from, ...night };
+		return { who, from, ...flags };
 	}
 	const token = readString(raw, 'token', path, issues, true);
 	if (token === undefined) return undefined;
@@ -706,7 +727,7 @@ function readProtects(
 		issues.add(`${path}.token`, 'not one of this character’s reminders');
 		return undefined;
 	}
-	return { who, token, from, ...night };
+	return { who, token, from, ...flags };
 }
 
 /** Whether `token` is one of the character's reminders; true when they are not given. */
