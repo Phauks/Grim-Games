@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
+	import type { Alignment, CharacterId, PlayerName } from '#lib/core/data/index.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CharacterBadge from './CharacterBadge.svelte';
 
 	/**
@@ -15,8 +16,11 @@
 	interface Props {
 		characterId?: CharacterId;
 		alignment?: Alignment;
-		playerName?: string;
-		/** The bar's words when there is no character (a player with none yet). */
+		playerName?: PlayerName;
+		/**
+		 * The bar's words when there is no character and no `playerName`; with a `playerName`
+		 * and no character, the bar is the player's badge.
+		 */
 		label?: string;
 		/** Controls on the bar's own line, after the badge (the day's Used button). */
 		end?: Snippet;
@@ -30,8 +34,12 @@
 
 <div class="entry" data-card={footer ? '' : undefined}>
 	<span class="bar"
-		>{#if characterId}<CharacterBadge {characterId} {alignment} {playerName} />{:else}<span
-				class="plain">{label}</span
+		>{#if characterId}<CharacterBadge
+				{characterId}
+				{alignment}
+				{playerName}
+			/>{:else if playerName}<PlayerBadge name={playerName} />{:else}<span class="plain"
+				>{label}</span
 			>{/if}{#if end}{@render end()}{/if}</span
 	>
 	<div class="body">{@render children()}</div>

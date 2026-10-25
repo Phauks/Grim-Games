@@ -5,7 +5,7 @@
  * Saved games store events, so changing an event's shape needs a saved-game migration
  * (`#lib/core/engine/persistence.ts`).
  */
-import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
+import type { Alignment, CharacterId, Script, PlayerName } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
@@ -32,9 +32,9 @@ export type GameEvent =
 	| { type: 'GameCreated'; gameId: GameId; createdAt: number; script: Script; seatIds: SeatId[] }
 	/** Replaces `Game.script`; nothing else changes. */
 	| { type: 'ScriptChanged'; script: Script }
-	| { type: 'SeatAdded'; seatId: SeatId; position: number; playerName?: string }
+	| { type: 'SeatAdded'; seatId: SeatId; position: number; playerName?: PlayerName }
 	| { type: 'SeatRemoved'; seatId: SeatId }
-	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: string }
+	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: PlayerName }
 	/** No `note` clears it. */
 	| { type: 'SeatNoteSet'; seatId: SeatId; note?: string }
 	/** The seat's avatar and frame; a missing one clears it. */

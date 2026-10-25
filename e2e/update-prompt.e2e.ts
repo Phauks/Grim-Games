@@ -380,6 +380,12 @@ test('About offers Update once a build is ready, and it moves onto the new build
 	// It shares the version's line, so nothing below moves.
 	expect(await check.boundingBox()).toEqual(before);
 	expect((await refresh.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+	// Trevor (2026-10-25): on a phone it ran off the screen. It stays inside the page's width.
+	const box = (await refresh.boundingBox())!;
+	expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+		page.viewportSize()!.width
+	);
 
 	await page.evaluate(() => sessionStorage.setItem('refreshed', '1'));
 	const reloaded = page.waitForEvent('load');

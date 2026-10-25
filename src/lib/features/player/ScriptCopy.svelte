@@ -6,9 +6,10 @@
 	import { playerJinxes, sheetCharacters } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
-	import LightSheetSwitch from './LightSheetSwitch.svelte';
+	import ScriptTitle from './ScriptTitle.svelte';
+	import SheetBackgroundSelect from './SheetBackgroundSelect.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
-	import { LIGHT_SHEET_STYLE } from '#lib/ui/themes/print.ts';
+	import { sheetStyle } from '#lib/ui/themes/sheet-backgrounds.ts';
 
 	/**
 	 * The players' copy of a script: the /play Script tab, as one component. The Storyteller's
@@ -30,7 +31,9 @@
 		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
 		showBreakdown?: boolean;
 		/** False where the host's header has the light background switch (PlayerScriptActions). */
-		lightSwitch?: boolean;
+		backgroundChoice?: boolean;
+		/** The script's name above the author, as /play's title shows it (New game's preview). */
+		title?: boolean;
 	}
 
 	let {
@@ -41,7 +44,8 @@
 		inPlay,
 		travellers,
 		showBreakdown = true,
-		lightSwitch = true
+		backgroundChoice = true,
+		title = false
 	}: Props = $props();
 
 	$effect(() => {
@@ -61,17 +65,19 @@
 	const jinxes = $derived(data ? playerJinxes(script, data) : []);
 </script>
 
-<!-- The light background switch sits at the top of every copy, unless its host's header has
-     it, and in Settings > Player (Trevor, 2026-10-23). -->
+<!-- The background choice sits at the top of every copy, unless its host's header has it,
+     and in Settings > Player (Trevor, 2026-10-23, colours 2026-10-24). -->
 <div
 	class="copy"
-	class:light={playerSettings.current.lightSheet}
-	style={playerSettings.current.lightSheet ? LIGHT_SHEET_STYLE : undefined}
+	class:painted={playerSettings.current.sheetBackground !== 'theme'}
+	style={sheetStyle(playerSettings.current.sheetBackground)}
 	data-testid="script-copy"
 >
-	{#if byline || lightSwitch}<div class="head">
+	{#if title}<ScriptTitle {script} />{/if}
+	{#if byline || backgroundChoice}<div class="head">
 			{#if byline && data}<ScriptByline author={script.meta.author} {version} />{/if}
-			{#if lightSwitch}<span class="light-switch"><LightSheetSwitch /></span>{/if}
+			{#if backgroundChoice}<span class="background-choice"><SheetBackgroundSelect compact /></span
+				>{/if}
 		</div>{/if}
 	{#if data}
 		<ScriptSheet {characters} {jinxes} {players} {inPlay} {travellers} {showBreakdown} />
@@ -96,11 +102,11 @@
 		justify-content: space-between;
 		gap: var(--space-2) var(--space-4);
 	}
-	.light-switch {
+	.background-choice {
 		margin-left: auto;
 	}
-	/* The colours themselves are LIGHT_SHEET (themes/print.ts), set on the element. */
-	.light {
+	/* The colours themselves are the chosen background's (themes/sheet-backgrounds.ts), set on the element. */
+	.painted {
 		background: var(--surface);
 		color: var(--on-surface);
 	}

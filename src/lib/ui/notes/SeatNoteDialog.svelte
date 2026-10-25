@@ -13,6 +13,8 @@
 		open: boolean;
 		/** "Note: Ana"; also the field's accessible name. */
 		title: string;
+		/** Replaces the title's text, such as "Note:" and the player's badge. */
+		heading?: Snippet;
 		/** Under the title, such as the seat's character. */
 		subtitle?: Snippet;
 		/** The note when the dialog opens. */
@@ -22,7 +24,15 @@
 		onSave: (text: string) => void;
 	}
 
-	let { open = $bindable(), title, subtitle, value, readonly = false, onSave }: Props = $props();
+	let {
+		open = $bindable(),
+		title,
+		heading,
+		subtitle,
+		value,
+		readonly = false,
+		onSave
+	}: Props = $props();
 
 	let draft = $state('');
 	let saved = '';
@@ -54,7 +64,7 @@
 	}}
 />
 
-<Dialog bind:open {title} {subtitle}>
+<Dialog bind:open {title} {heading} {subtitle}>
 	<!-- Several lines: Enter starts a new line, and the field grows with them. -->
 	<div class="editor">
 		<TextField

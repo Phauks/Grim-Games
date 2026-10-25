@@ -112,3 +112,31 @@ test('before anything happens, New game opens straight away and closing it chang
 	await more.getByRole('button', { name: 'Character selection' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 });
+
+test('players carry only into the game started from that sheet, never a later one', async ({
+	page
+}) => {
+	await startTroubleBrewing(page);
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
+	await sheet.getByRole('textbox', { name: 'Player name' }).fill('Ana');
+	await sheet.getByRole('textbox', { name: 'Player name' }).press('Enter');
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	const board = page.url();
+
+	// The sheet is left without starting or closing it: a reload, or leaving the board.
+	const info = await openGameInfo(page);
+	await info.getByTestId('game-info-new-game').tap();
+	await expect(page.getByRole('dialog', { name: 'New game' })).toBeVisible();
+	await page.reload();
+
+	// A brand-new game from New game starts with no names, and the old game runs on.
+	await startTroubleBrewing(page);
+	expect(page.url()).not.toBe(board);
+	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 1:"]')).toBeAttached();
+	await expect(page.locator('[data-testid="seat"][aria-label*="Ana"]')).toHaveCount(0);
+	await page.goto(board);
+	await expect(page.getByTestId('game-over')).toHaveCount(0);
+});

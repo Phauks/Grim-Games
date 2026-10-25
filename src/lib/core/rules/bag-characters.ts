@@ -3,7 +3,7 @@
  * characters are covered too. Imports neither the setup check nor the bag plan, so both can
  * use it (https://wiki.bloodontheclocktower.com/Setup).
  */
-import type { Character, CharacterId, Script } from '#lib/core/data/types.ts';
+import type { Character, CharacterId, CharacterType, Script } from '#lib/core/data/types.ts';
 import type { Reminder } from '#lib/core/model/types.ts';
 import { setupModifierFor } from './setup-modifiers.ts';
 
@@ -51,9 +51,21 @@ export function isNotDealt(character: Character): boolean {
  *   characters repeat: the Pope (https://wiki.bloodontheclocktower.com/Pope) and the
  *   Atheist (https://wiki.bloodontheclocktower.com/Atheist);
  * - a homebrew setup bracket that adds copies of the character itself ("[+1 Hannibal]").
- * `inPlay` is everything selected plus the Fabled and Loric in play.
+ * `inPlay` is everything selected plus the Fabled and Loric in play. `anyCharacter` is a
+ * game rule that lets every character repeat (Duplicate Characters, Whale Buffet), except
+ * those of the types it names.
  */
-export function canDuplicate(character: Character, inPlay: readonly Character[]): boolean {
+/** A game rule that lets characters repeat: every type but `notTypes`. */
+export interface AnyDuplicates {
+	notTypes?: readonly CharacterType[];
+}
+
+export function canDuplicate(
+	character: Character,
+	inPlay: readonly Character[],
+	anyCharacter?: AnyDuplicates
+): boolean {
+	if (anyCharacter && !anyCharacter.notTypes?.includes(character.type)) return true;
 	if (hasSpecial(character, 'selection', 'bag-duplicate')) return true;
 	if (setupModifierFor(character)?.copies?.some((n) => n > 0)) return true;
 	const good = character.type === 'townsfolk' || character.type === 'outsider';

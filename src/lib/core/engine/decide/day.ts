@@ -15,6 +15,7 @@ import {
 	dayMarkValue,
 	markTokenSwap,
 	marksInPlay,
+	executionSavers,
 	protection,
 	type DayMark
 } from '#lib/core/rules/index.ts';
@@ -127,10 +128,23 @@ export const DAY_DECIDERS: Deciders<
 			warn('already-dead', 'the player was already dead, so the execution is only logged');
 			return [{ type: 'DayEntryAdded', entry }];
 		}
+		// The Storyteller's own pick of what saved them (the Pacifist), applied even when the
+		// grimoire says it should not (warn, never lock).
+		const chosen =
+			command.savedBy === undefined
+				? undefined
+				: executionSavers(game, seat.seatId, ctx.characters).find(
+						(s) => s.source.characterId === command.savedBy
+					);
+		if (command.savedBy !== undefined && (!chosen || chosen.problem)) {
+			warn('save-may-not-apply', 'that character may not save this player from execution');
+		}
 		const saved =
 			command.dies === true
 				? undefined
-				: protection(game, seat.seatId, ctx.characters, 'execution');
+				: command.savedBy !== undefined
+					? (chosen?.source ?? { characterId: command.savedBy })
+					: protection(game, seat.seatId, ctx.characters, 'execution');
 		if (saved) {
 			warn('survives-execution', 'the player is executed and does not die');
 			const savedBy =

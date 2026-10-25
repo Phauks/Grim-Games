@@ -12,6 +12,7 @@
 	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import type { DayPort } from './day-port.ts';
 	import PreventedSheet from './PreventedSheet.svelte';
@@ -36,14 +37,14 @@
 	 */
 	function spokenDeath(seatId: SeatId): string {
 		const seat = g.seating.indexOf(seatId) + 1;
-		const name = g.seats[seatId].playerName;
-		return name ? t('day.announce.died', { name, seat }) : t('day.announce.diedUnnamed', { seat });
+		return g.seats[seatId].playerName
+			? t('day.announce.died', { name: slot('player'), seat })
+			: t('day.announce.diedUnnamed', { seat });
 	}
 	function spokenRevival(seatId: SeatId): string {
 		const seat = g.seating.indexOf(seatId) + 1;
-		const name = g.seats[seatId].playerName;
-		return name
-			? t('day.announce.revived', { name, seat })
+		return g.seats[seatId].playerName
+			? t('day.announce.revived', { name: slot('player'), seat })
 			: t('day.announce.revivedUnnamed', { seat });
 	}
 	function privateDeath(cause: DeathCause | undefined): string {
@@ -133,7 +134,9 @@
 				{#if privateDeaths}
 					<span class="dont-announce" data-testid="dont-announce">{t('day.announce.dont')}</span>
 				{:else}
-					<span class="spoken" data-testid="spoken">{spokenDeath(death.seatId)}</span>
+					<span class="spoken" data-testid="spoken"
+						>{@render spoken(spokenDeath(death.seatId), death.seatId)}</span
+					>
 				{/if}
 				<em class="private" data-testid="storyteller-only"
 					><Sentence text={privateDeath(death.cause)}
@@ -153,7 +156,7 @@
 				{#if privateDeaths}
 					<span class="dont-announce">{t('day.announce.dont')}</span>
 				{:else}
-					<span class="spoken">{spokenRevival(seatId)}</span>
+					<span class="spoken">{@render spoken(spokenRevival(seatId), seatId)}</span>
 				{/if}
 				<em class="private"
 					><Sentence
@@ -192,6 +195,11 @@
 </Collapsible>
 
 <PreventedSheet bind:open={preventedOpen} {game} {prevented} />
+
+<!-- What to say aloud, the player's name as their badge. -->
+{#snippet spoken(text: string, seatId: SeatId)}<Sentence {text}
+		>{#snippet fill()}<PlayerBadge name={game.seatName(seatId)} />{/snippet}</Sentence
+	>{/snippet}
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
 {#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge

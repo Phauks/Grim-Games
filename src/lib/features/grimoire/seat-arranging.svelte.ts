@@ -29,6 +29,11 @@ export interface ArrangeContext {
 	board: BoardSize;
 	/** The board element, for turning a pointer into a point on it. */
 	element: HTMLElement | undefined;
+	/**
+	 * Holding a seat, then dragging, moves it outside Arrange seats too (Settings > Board,
+	 * boardLooks.holdMoves; Trevor 2026-10-25, to try with Storytellers).
+	 */
+	holdMoves?: boolean;
 }
 
 interface Drag {
@@ -52,6 +57,8 @@ export class SeatArranging {
 	 */
 	front = $state<SeatId | undefined>();
 	#pressedAt = { x: 0, y: 0 };
+	/** A press outside Arrange seats that becomes a drag once it is a hold (holdMoves). */
+	#pressed: (Drag & { target: HTMLElement }) | undefined;
 	#context: () => ArrangeContext;
 
 	constructor(context: () => ArrangeContext) {
@@ -126,18 +133,46 @@ export class SeatArranging {
 
 	dragStart(event: PointerEvent, seatId: SeatId, at: SeatPoint) {
 		this.front = seatId;
-		const { element } = this.#context();
-		if (!this.arranging || this.drag || !element) return;
-		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		const { element, holdMoves } = this.#context();
+		this.#pressed = undefined;
+		if (this.drag || !element) return;
+		if (!this.arranging && !holdMoves) return;
 		const p = this.#boardPoint(event, element);
 		this.#pressedAt = { x: event.clientX, y: event.clientY };
-		this.drag = {
+		const drag = {
 			seatId,
 			pointerId: event.pointerId,
 			offset: { x: at.x - p.x, y: at.y - p.y },
 			at,
 			moved: false
 		};
+		if (!this.arranging) {
+			// Not yet: a tap opens the seat and a short press lights its reminders, as before.
+			// The token itself takes the pointer once held, so its own release (ending the hold,
+			// swallowing the click) still runs as the event bubbles up to this slot.
+			const token = (event.target as HTMLElement | null)?.closest?.<HTMLElement>(
+				'[data-testid="seat"]'
+			);
+			this.#pressed = { ...drag, target: token ?? (event.currentTarget as HTMLElement) };
+			return;
+		}
+		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		this.drag = drag;
+	}
+
+	/** The seat pressed is now held (SeatToken's onHold): with holdMoves, dragging moves it. */
+	held(seatId: SeatId) {
+		const pressed = this.#pressed;
+		this.#pressed = undefined;
+		if (!pressed || pressed.seatId !== seatId || this.drag) return;
+		const { target, ...drag } = pressed;
+		try {
+			target.setPointerCapture(drag.pointerId);
+		} catch {
+			// The pointer is already up: nothing to drag.
+			return;
+		}
+		this.drag = drag;
 	}
 
 	dragMove(event: PointerEvent) {
@@ -152,6 +187,7 @@ export class SeatArranging {
 	}
 
 	dragEnd(event: PointerEvent) {
+		this.#pressed = undefined;
 		const drag = this.drag;
 		if (!drag || event.pointerId !== drag.pointerId) return;
 		const { grimoire, seating, layout } = this.#context();
@@ -167,6 +203,7 @@ export class SeatArranging {
 	}
 
 	dragCancel() {
+		this.#pressed = undefined;
 		this.drag = undefined;
 	}
 

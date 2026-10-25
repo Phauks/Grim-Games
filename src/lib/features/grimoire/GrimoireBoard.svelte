@@ -18,6 +18,7 @@
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import GameBackdrop from './GameBackdrop.svelte';
+	import { settingsProfiles } from '#lib/features/settings/profiles/settings-profiles.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
@@ -166,6 +167,12 @@
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
 	const game = $derived(grimoire.game);
+	/** The game's settings profile: the one it was started or last played with (plan S18). */
+	const profileGameId = $derived(game.gameId);
+	$effect(() => {
+		const gameId = profileGameId;
+		if (!watching) untrack(() => settingsProfiles.openGame(gameId));
+	});
 	/** Characters a special rule put in play from off the script, not flagged (+1). */
 	const offScriptOk = $derived(allowedOffScriptIn(game.gameId));
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
@@ -407,7 +414,8 @@
 		points,
 		size,
 		board: boardSize,
-		element: board
+		element: board,
+		holdMoves: boardLooks.current.holdMoves && !watching
 	}));
 	const shown = $derived(seatArr.shown);
 
@@ -677,12 +685,18 @@
 	}
 	function executeAndEndDay(
 		seatId: SeatId | undefined,
+		save: CharacterId | 'dies' | undefined,
 		marks: Partial<Record<DayMark, boolean>>
 	): void {
 		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
 			grimoire.run({ type: 'SetDayMark', mark, value });
 		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
-		if (seatId && !logged) grimoire.run({ type: 'Execute', seatId });
+		if (seatId && !logged)
+			grimoire.run({
+				type: 'Execute',
+				seatId,
+				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {})
+			});
 		endDay();
 	}
 	/**
@@ -1133,7 +1147,13 @@
 								: part === 'nominate'
 									? askNomination(seat.seatId)
 									: openSeat(seat.seatId))}
-					onHold={seatArr.arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
+					onHold={seatArr.arranging
+						? undefined
+						: (on) => {
+								holding = on ? seat.seatId : undefined;
+								if (on) seatArr.held(seat.seatId);
+							}}
+					holdMoves={boardLooks.current.holdMoves && !watching}
 					onGhostVote={() =>
 						!seatArr.arranging &&
 						!watching &&
@@ -1590,9 +1610,9 @@
 			if (i >= 0) nw.walk = { ...nw.walk, index: i };
 		}
 	}}
-	onInfoTokens={(token) => {
+	onInfoTokens={(token, filled) => {
 		// A card the step's text names opens over the step, which stays open under it.
-		if (token && infoSheet) return infoSheet.openWith(token);
+		if (token && infoSheet) return infoSheet.openWith(token, filled);
 		// The sheet opens over the step, which stays open under it (Trevor, 2026-10-20).
 		infoReturn = undefined;
 		infoOpen = true;

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { parseSpecialRule, specialRuleById } from '#lib/core/modes/index.ts';
-import { DJINN_THREE_ALIVE, INFINITE_NAMED, PLUS_ONE_NAMED, switched } from './rule-switches.ts';
+import {
+	DJINN_THREE_ALIVE,
+	DUPLICATE_DEMONS,
+	INFINITE_NAMED,
+	PLUS_ONE_NAMED,
+	switched
+} from './rule-switches.ts';
 
 describe('rule switches', () => {
 	const plusOne = specialRuleById('plus-one')!;
@@ -32,5 +38,18 @@ describe('rule switches', () => {
 		);
 		expect(limited.parts.nominations).toEqual([{ kind: 'nominator-may-die', minAlive: 4 }]);
 		expect(parseSpecialRule(limited).ok).toBe(true);
+	});
+
+	// Trevor (2026-10-24): "allow duplicate demons could be a setting".
+	it('let Demons repeat too under Duplicate Characters', () => {
+		const rule = specialRuleById('duplicate-characters')!;
+		expect(switched(rule, {})).toEqual(rule);
+		const demons = switched(rule, { 'duplicate-characters:demons': true });
+		expect(demons.parts.duplicates).toMatchObject({
+			kind: 'allowed',
+			notTypes: [],
+			instructions: DUPLICATE_DEMONS
+		});
+		expect(parseSpecialRule(demons).ok).toBe(true);
 	});
 });

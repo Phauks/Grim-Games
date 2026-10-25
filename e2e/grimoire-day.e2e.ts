@@ -744,6 +744,33 @@ test("Executed in a seat's status during the day asks as Execution does; a Sailo
 	);
 });
 
+test("Execution's Saved by applies the Pacifist the Storyteller picks", async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Pacifist: an executed good player might not die,
+	// the Storyteller's choice (Trevor, 2026-10-24: a modifier slot in the execution area).
+	await startGame(page, 8, 'Bad Moon Rising');
+	await chooseCharacter(page, 3, 'Pacifist');
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	// Disabled until a living player is chosen, so nothing moves (no reflow).
+	const savedBy = ask.getByRole('combobox', { name: 'Saved by' });
+	await expect(savedBy).toBeDisabled();
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 3\b/ }).tap();
+	// The grimoire never applies the Pacifist unasked: None until the Storyteller picks it.
+	await expect(savedBy).toContainText('None');
+	await expect(ask.getByTestId('execution-saved')).not.toContainText('does not die');
+	await savedBy.tap();
+	await page.getByRole('option', { name: /Pacifist/ }).tap();
+	await expect(ask.getByTestId('execution-saved')).toContainText(
+		'Seat 3 has been executed and does not die'
+	);
+	await expect(ask.getByTestId('execution-saved')).toContainText('Pacifist');
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(boardSeat(page, 'Seat 3')).not.toHaveAccessibleName(/dead/);
+});
+
 test('an unnamed seat is named by its number in the day view', async ({ page }) => {
 	await startGame(page);
 	await chooseCharacter(page, 3, 'Slayer');

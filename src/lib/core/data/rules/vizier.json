@@ -1,4 +1,8 @@
 {
+	"protects": {
+		"who": "self",
+		"from": "execution"
+	},
 	"dayReminders": {
 		"impairable": true,
 		"reminders": [

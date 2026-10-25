@@ -31,8 +31,3 @@ export const LIGHT_SHEET: Readonly<Record<`--${string}`, string>> = {
 	'--traveller-text': '#5c2f6e',
 	'--loric-text': '#2e6b34'
 };
-
-/** LIGHT_SHEET as an inline `style` value. */
-export const LIGHT_SHEET_STYLE = Object.entries(LIGHT_SHEET)
-	.map(([name, value]) => `${name}: ${value}`)
-	.join('; ');

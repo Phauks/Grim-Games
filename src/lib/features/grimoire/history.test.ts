@@ -52,14 +52,14 @@ describe('historyItems', () => {
 		const items = historyItems(session.log.entries, session.log.cursor, characters);
 		expect(items.map((i) => i.cursor)).toEqual([4, 2, 1]);
 		expect(items[0].parts).toEqual([
-			{ kind: 'text', text: 'Seat 1', seats: [first(session)] },
+			{ kind: 'seat', seatId: first(session), name: 'Seat 1' },
 			{ kind: 'text', text: ' drew ' },
 			{ kind: 'character', characterId: 'chef' }
 		]);
 		// Not yet confirmed: the draw has its own line.
 		const drawn = historyItems(session.log.entries.slice(0, 3), 3, characters);
 		expect(drawn[0].parts).toEqual([
-			{ kind: 'text', text: 'Seat 1', seats: [first(session)] },
+			{ kind: 'seat', seatId: first(session), name: 'Seat 1' },
 			{ kind: 'text', text: ' drew a token' }
 		]);
 	});
@@ -79,7 +79,7 @@ describe('historyItems', () => {
 			{ kind: 'seat', seatId: first(session), name: 'Seat 2' }
 		]);
 		expect(items[1].parts).toEqual([
-			{ kind: 'text', text: 'Ana', seats: [ana] },
+			{ kind: 'seat', seatId: ana, name: 'Ana' },
 			{ kind: 'text', text: ' is ' },
 			{ kind: 'character', characterId: 'imp' }
 		]);
@@ -118,7 +118,9 @@ describe('historyItems', () => {
 		);
 		const [voted, nominated] = historyItems(session.log.entries, session.log.cursor, characters);
 		expect(nominated.parts).toEqual([
-			{ kind: 'text', text: 'Ana nominated Ben', seats: [first(session), second(session)] }
+			{ kind: 'seat', seatId: first(session), name: 'Ana' },
+			{ kind: 'text', text: ' nominated ' },
+			{ kind: 'seat', seatId: second(session), name: 'Ben' }
 		]);
 		expect(voted.parts).toEqual([{ kind: 'text', text: 'Demon voted' }]);
 	});

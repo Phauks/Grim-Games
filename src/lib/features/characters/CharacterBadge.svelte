@@ -5,8 +5,10 @@
 		type Alignment,
 		type Character,
 		type CharacterId,
-		type CharacterName
+		type CharacterName,
+		type PlayerName
 	} from '#lib/core/data/index.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import CharacterDialog from './CharacterDialog.svelte';
@@ -18,8 +20,8 @@
 		characterId: CharacterId;
 		/** The seat's alignment; defaults from the character's type. */
 		alignment?: Alignment;
-		/** Shown after the role when the seat has a player name. */
-		playerName?: string;
+		/** Shown after the role, as a PlayerBadge inside the pill, when the seat has a name. */
+		playerName?: PlayerName;
 		/** The words as written ("Village Idiots"); defaults to the character's name. */
 		text?: CharacterName;
 		/**
@@ -88,7 +90,7 @@
 			/>{/if}</span
 	>
 	<span class="name">{label}</span>
-	{#if playerName}<span class="player">· {playerName}</span>{/if}
+	{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
 {/snippet}
 
 {#if interactive}<button
@@ -217,9 +219,9 @@
 		font-weight: var(--font-character-weight);
 		font-size: calc(1em * var(--inline-name-text, 1));
 	}
+	/* The player's own badge, a little smaller so it sits inside the character's pill. */
 	.player {
-		font-family: var(--font-player);
-		font-weight: 400;
-		opacity: 0.9;
+		display: inline-flex;
+		font-size: 0.85em;
 	}
 </style>

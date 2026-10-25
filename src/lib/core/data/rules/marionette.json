@@ -40,5 +40,10 @@
 	"reminderMovement": {
 		"fixed": ["Is The Marionette"],
 		"why": "Marks which player is the Marionette."
+	},
+	"infoTokenCharacters": {
+		"this-player-is": {
+			"characters": ["self"]
+		}
 	}
 }

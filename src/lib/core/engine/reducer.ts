@@ -4,12 +4,12 @@
  * carry. Events that refer to something missing (a seat removed since) change nothing.
  */
 import { parseAvatarId } from '#lib/core/avatars/index.ts';
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { CharacterId, PlayerName } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import type { Game, GameNote, ReminderInstance, Seat, SeatId } from '#lib/core/model/index.ts';
 import type { GameEvent } from './events.ts';
 
-function newSeat(seatId: SeatId, playerName?: string): Seat {
+function newSeat(seatId: SeatId, playerName?: PlayerName): Seat {
 	const seat: Seat = { seatId, dead: false, ghostVoteUsed: false, overrides: [], reminders: [] };
 	if (playerName !== undefined) seat.playerName = playerName;
 	return seat;

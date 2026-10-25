@@ -1,4 +1,9 @@
 {
+	"protects": {
+		"who": "self",
+		"from": "execution",
+		"storytellerDecides": true
+	},
 	"kills": {
 		"by": "demon"
 	},

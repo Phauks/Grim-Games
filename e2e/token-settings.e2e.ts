@@ -444,9 +444,12 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 		.getByRole('button', { name: 'Tokens' })
 		.tap();
 	const preview = dialog.getByTestId('token-preview').locator('.token');
-	await expect.poll(() => width(preview)).toBe(await width(onBoard));
+	const before = await width(onBoard);
+	await expect.poll(() => width(preview)).toBe(before);
 
 	await dialog.getByRole('slider', { name: 'Character token size' }).fill('1.25');
+	// The preview redraws after the slider moves: read it once it has grown, not before.
+	await expect.poll(() => width(preview)).toBeGreaterThan(before);
 	const previewed = await width(preview);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect.poll(() => width(onBoard)).toBe(previewed);

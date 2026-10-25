@@ -1,12 +1,15 @@
 /* eslint-disable-next-line @typescript-eslint/ban-ts-comment -- see the next line */
 // @ts-nocheck -- ESLint AST nodes from svelte-eslint-parser have no usable types here.
 /**
- * Lint `grim/names-as-badges`: a character name or reminder token text never reaches the
- * screen as plain text. It is shown as a CharacterBadge or ReminderToken (Trevor,
- * 2026-10-16: "when reminder or character names are invoked, they should always show").
+ * Lint `grim/names-as-badges`: a character name, reminder token text or player name never
+ * reaches the screen as plain text. It is shown as a CharacterBadge, ReminderToken or
+ * PlayerBadge (Trevor, 2026-10-16: "when reminder or character names are invoked, they
+ * should always show"; 2026-10-24: "wherever we invoke a player name, we should use the
+ * player name badge that is on the grim").
  *
- * Type-aware. `Character.name` is a `CharacterName` and reminder texts (`Reminder.label`,
- * `Character.reminders`) are `ReminderLabel`, both marked strings (#lib/core/data/types.ts),
+ * Type-aware. `Character.name` is a `CharacterName`, reminder texts (`Reminder.label`,
+ * `Character.reminders`) are `ReminderLabel` and `Seat.playerName` is a `PlayerName`, all
+ * marked strings (#lib/core/data/types.ts),
  * so the mark follows a name through variables, `{#each}` blocks and function returns.
  * The rule reports a marked value where it turns into plain text:
  * - `{name}` as text in a Svelte template;
@@ -28,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 const LIB = fileURLToPath(new URL('../../src/lib/', import.meta.url));
-/** Props typed `CharacterName` or `ReminderLabel` in a component file, by path. */
+/** Props typed `CharacterName`, `ReminderLabel` or `PlayerName` in a component file, by path. */
 const markedPropsCache = new Map();
 function markedProps(file) {
 	let props = markedPropsCache.get(file);
@@ -36,7 +39,9 @@ function markedProps(file) {
 	props = new Set();
 	try {
 		const source = readFileSync(file, 'utf8');
-		for (const match of source.matchAll(/(\w+)\??:\s*(?:CharacterName|ReminderLabel)\b/g))
+		for (const match of source.matchAll(
+			/(\w+)\??:\s*(?:CharacterName|ReminderLabel|PlayerName)\b/g
+		))
 			props.add(match[1]);
 	} catch {
 		// Unreadable component: no marked props, so names passed to it are reported.
@@ -45,10 +50,20 @@ function markedProps(file) {
 	return props;
 }
 
-const MARKS = { CharacterNameMark: 'character name', ReminderLabelMark: 'reminder name' };
+const MARKS = {
+	CharacterNameMark: 'character name',
+	ReminderLabelMark: 'reminder name',
+	PlayerNameMark: 'player name'
+};
 const FIX = {
 	'character name': 'a <CharacterBadge>',
-	'reminder name': 'a <ReminderToken>'
+	'reminder name': 'a <ReminderToken>',
+	'player name': 'a <PlayerBadge>'
+};
+const TYPES = {
+	'character name': 'CharacterName',
+	'reminder name': 'ReminderLabel',
+	'player name': 'PlayerName'
 };
 
 /** Attributes that only ever hold plain text (accessible names, tooltips, inputs). */
@@ -115,24 +130,28 @@ function inPlainContext(node, isBadgeProp) {
 export const namesAsBadges = {
 	meta: {
 		type: 'problem',
-		docs: { description: 'Character and reminder names are shown as badges, not plain text.' },
+		docs: {
+			description: 'Character, reminder and player names are shown as badges, not plain text.'
+		},
 		messages: {
 			plain:
 				'A {{kind}} shown as plain text. Render it as {{fix}} (Trevor: names always show as badges).',
 			lost: 'This type drops the {{kind}} mark, so the lint loses track of it. Type it as {{type}}.'
 		},
 		// `{ plainText: false }` (core): only check that fields keep the marks, since core
-		// builds no screen text of its own beyond rule sentences.
+		// builds no screen text of its own beyond rule sentences. `{ playerNames: false }`:
+		// files on eslint.config.js's PLAYER_BADGE_TODO, not yet showing player names as badges.
 		schema: [
 			{
 				type: 'object',
-				properties: { plainText: { type: 'boolean' } },
+				properties: { plainText: { type: 'boolean' }, playerNames: { type: 'boolean' } },
 				additionalProperties: false
 			}
 		]
 	},
 	create(context) {
 		const plainText = context.options[0]?.plainText !== false;
+		const playerNames = context.options[0]?.playerNames !== false;
 		const services = context.sourceCode.parserServices;
 		if (!services?.program || !services.esTreeNodeToTSNodeMap) return {};
 		const checker = services.program.getTypeChecker();
@@ -151,20 +170,25 @@ export const namesAsBadges = {
 			return undefined;
 		}
 
-		/** The mark on the node's type, if any. */
-		function mark(node, depth = 0) {
+		/** The mark on the node's type, if any, unless player names are switched off. */
+		function mark(node) {
+			const found = anyMark(node);
+			return found === 'player name' && !playerNames ? undefined : found;
+		}
+
+		function anyMark(node, depth = 0) {
 			// `character?.name ?? id` is typed `string` (the union absorbs the mark), but it
 			// is still a name on screen: follow either branch.
 			if (node.type === 'LogicalExpression')
-				return mark(node.left, depth) ?? mark(node.right, depth);
+				return anyMark(node.left, depth) ?? anyMark(node.right, depth);
 			if (node.type === 'ConditionalExpression')
-				return mark(node.consequent, depth) ?? mark(node.alternate, depth);
-			if (node.type === 'ChainExpression') return mark(node.expression);
+				return anyMark(node.consequent, depth) ?? anyMark(node.alternate, depth);
+			if (node.type === 'ChainExpression') return anyMark(node.expression);
 			// …and through a `const` holding one (`const who = character?.name ?? id`).
 			if (node.type === 'Identifier' && depth < 4) {
 				const init = constInit(node);
 				if (init) {
-					const found = mark(init, depth + 1);
+					const found = anyMark(init, depth + 1);
 					if (found) return found;
 				}
 			}
@@ -217,8 +241,7 @@ export const namesAsBadges = {
 			const target = tsNode && checker.getContextualType(tsNode);
 			if (!target || markOf(target)) return;
 			if (!(target.flags & ts.TypeFlags.String)) return;
-			const type = kind === 'character name' ? 'CharacterName' : 'ReminderLabel';
-			context.report({ node, messageId: 'lost', data: { kind, type } });
+			context.report({ node, messageId: 'lost', data: { kind, type: TYPES[kind] } });
 		}
 
 		const fields = {
@@ -278,7 +301,8 @@ export const namesAsBadges = {
 					const tsNode = services.esTreeNodeToTSNodeMap.get(joined);
 					const type = tsNode && checker.getTypeAtLocation(tsNode);
 					const element = type && checker.isArrayType(type) && checker.getTypeArguments(type)[0];
-					const kind = element && markOf(element);
+					const marked = element && markOf(element);
+					const kind = marked === 'player name' && !playerNames ? undefined : marked;
 					if (kind && !inPlainContext(node, propIsMarked))
 						context.report({ node, messageId: 'plain', data: { kind, fix: FIX[kind] } });
 					return;

@@ -5,7 +5,7 @@
  * every player in both, never the Demon in both (Trevor, 2026-10-17). Each town is an
  * ordinary saved game; these helpers only plan and check across them.
  */
-import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import type { CharacterId, CharacterType, PlayerName } from '#lib/core/data/types.ts';
 import type { SeatedType } from '#lib/core/rules/distribution.ts';
 import type { Command } from '#lib/core/engine/commands.ts';
 import type { Bag, Game, Seat, SeatId, TileId } from '#lib/core/model/types.ts';
@@ -27,7 +27,7 @@ export function movesOnDay(mode: GameMode, day: number): number {
 
 /** One player's characters, town by town (undefined where they have none yet). */
 export interface PlayerAcrossTowns {
-	playerName: string;
+	playerName: PlayerName;
 	characters: ({ id: CharacterId; type: CharacterType } | undefined)[];
 }
 
@@ -38,10 +38,10 @@ export interface PlayerAcrossTowns {
 export function inEveryTown(
 	mode: GameMode,
 	players: readonly PlayerAcrossTowns[]
-): { playerName: string; type: SeatedType }[] {
+): { playerName: PlayerName; type: SeatedType }[] {
 	const types = mode.parts.towns?.notInEveryTown ?? [];
 	const towns = mode.parts.towns?.count ?? 1;
-	const out: { playerName: string; type: SeatedType }[] = [];
+	const out: { playerName: PlayerName; type: SeatedType }[] = [];
 	for (const p of players) {
 		if (p.characters.length < towns) continue;
 		for (const type of types) {

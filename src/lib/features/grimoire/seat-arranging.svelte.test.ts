@@ -12,7 +12,7 @@ const points = [
 ];
 
 /** A board 200px square, its element at the page's top left. */
-function setup() {
+function setup({ holdMoves = false } = {}) {
 	const runs: unknown[] = [];
 	const layouts: SeatLayout[] = [];
 	const grimoire = {
@@ -30,9 +30,10 @@ function setup() {
 		points,
 		size: 40,
 		board: { width: 200, height: 200 },
-		element
+		element,
+		holdMoves
 	}));
-	arrange.arranging = true;
+	arrange.arranging = !holdMoves;
 	return { arrange, runs, layouts };
 }
 
@@ -46,6 +47,25 @@ function pointer(x: number, y: number): PointerEvent {
 }
 
 describe('SeatArranging', () => {
+	it('with holdMoves, drags a seat only once it is held (Trevor, 2026-10-25)', () => {
+		const { arrange, layouts } = setup({ holdMoves: true });
+		arrange.dragStart(pointer(40, 100), seating[0], points[0]);
+		arrange.dragMove(pointer(60, 120));
+		expect(arrange.drag).toBeUndefined();
+		arrange.dragEnd(pointer(60, 120));
+		expect(layouts).toEqual([]);
+
+		arrange.dragStart(pointer(40, 100), seating[0], points[0]);
+		arrange.held(seating[0]);
+		arrange.dragMove(pointer(60, 120));
+		arrange.dragEnd(pointer(60, 120));
+		expect(layouts).toHaveLength(1);
+		// A hold on another seat than the one pressed moves nothing.
+		arrange.dragStart(pointer(40, 100), seating[0], points[0]);
+		arrange.held(seating[1]);
+		expect(arrange.drag).toBeUndefined();
+	});
+
 	it('draws a dragged seat under the finger, keeping where it was grabbed', () => {
 		const { arrange } = setup();
 		// Grabbed 2px right of seat a's centre (40, 100).

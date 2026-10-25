@@ -38,7 +38,7 @@
 	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
 	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
 	import PlayerRoom from './PlayerRoom.svelte';
-	import { lastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
+	import { gameKey, lastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
 	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -149,9 +149,12 @@
 			? [joining || undefined, lastRoom()].find((c) => c && roomScript(c) === script)
 			: undefined
 	);
-	// One notebook per script: official editions by id, saved scripts by their library id.
+	// One notebook per game in a room (Trevor, 2026-10-25: a new game kept the last one's
+	// scratch pads); otherwise per script: official editions by id, saved scripts by their
+	// library id.
 	const key = $derived.by(() => {
 		if (!script) return undefined;
+		if (inRoom && inRoom === lastRoom() && roomTable.gameId) return `game:${gameKey(inRoom)}`;
 		const saved = currentScript.current === script ? currentScript.saved : undefined;
 		return !script.edition && saved && saved.scriptId !== 'unsaved'
 			? `saved:${saved.scriptId}`

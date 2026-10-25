@@ -136,7 +136,8 @@ test("day notes are gone; a player's day button sits in their ability row", asyn
 	// with the state and the button at its end (Trevor, 2026-10-23).
 	const band = row.locator('.bar .badge');
 	await expect(band).toContainText('Slayer');
-	await expect(band).toContainText('· Ben');
+	// The player's name badge inside the character's (Trevor, 2026-10-24).
+	await expect(band.getByTestId('player-badge')).toHaveText('Ben');
 	const bar = await place(row.locator('.bar'));
 	const ability = await place(row.locator('.ability'));
 	const footer = await place(row.locator('.footer'));
@@ -267,7 +268,7 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 	const poisoner = page.locator('li[data-character="poisoner"]');
 	await expect(poisoner).toHaveCount(1);
 	await expect(poisoner).toContainText('Has no ability');
-	await expect(poisoner).toContainText('Preacher · Gus');
+	await expect(poisoner).toContainText(/Preacher\s*Gus/);
 
 	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('combobox', { name: 'Which night' }).tap();
