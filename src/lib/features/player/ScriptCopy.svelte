@@ -6,6 +6,7 @@
 	import { playerJinxes, sheetCharacters } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
+	import ScriptTitle from './ScriptTitle.svelte';
 	import LightSheetSwitch from './LightSheetSwitch.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { LIGHT_SHEET_STYLE } from '#lib/ui/themes/print.ts';
@@ -31,6 +32,8 @@
 		showBreakdown?: boolean;
 		/** False where the host's header has the light background switch (PlayerScriptActions). */
 		lightSwitch?: boolean;
+		/** The script's name above the author, as /play's title shows it (New game's preview). */
+		title?: boolean;
 	}
 
 	let {
@@ -41,7 +44,8 @@
 		inPlay,
 		travellers,
 		showBreakdown = true,
-		lightSwitch = true
+		lightSwitch = true,
+		title = false
 	}: Props = $props();
 
 	$effect(() => {
@@ -69,6 +73,7 @@
 	style={playerSettings.current.lightSheet ? LIGHT_SHEET_STYLE : undefined}
 	data-testid="script-copy"
 >
+	{#if title}<ScriptTitle {script} />{/if}
 	{#if byline || lightSwitch}<div class="head">
 			{#if byline && data}<ScriptByline author={script.meta.author} {version} />{/if}
 			{#if lightSwitch}<span class="light-switch"><LightSheetSwitch /></span>{/if}
