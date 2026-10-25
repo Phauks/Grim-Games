@@ -75,7 +75,7 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	const used = page.getByRole('button', { name: 'Used: Slayer (Ben)' });
 	const before = await place(used);
 	await used.tap();
-	const confirm = page.getByRole('alertdialog', { name: 'Mark Slayer (Ben) as used?' });
+	const confirm = page.getByRole('alertdialog', { name: /^Mark Slayer \(\s?Ben\s?\) as used\?$/ });
 	await expect(confirm).toContainText('Slayer (Ben) has not used their ability.');
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
@@ -83,7 +83,7 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	expect(await place(used)).toEqual(before);
 	// Tapping it again unmarks it, after its own confirm (Trevor, 2026-10-17).
 	await used.tap();
-	const undo = page.getByRole('alertdialog', { name: 'Mark Slayer (Ben) as not used?' });
+	const undo = page.getByRole('alertdialog', { name: /^Mark Slayer \(\s?Ben\s?\) as not used\?$/ });
 	await expect(undo).toContainText('has used their ability and has the No Ability reminder.');
 	await undo.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'false');

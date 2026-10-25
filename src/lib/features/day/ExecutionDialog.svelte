@@ -9,7 +9,10 @@
 		type DayMark
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -136,7 +139,8 @@
 	{#if seat}
 		{@const character = seat.characterId ? characters.get(seat.characterId) : undefined}
 		<span class="candidate"
-			><span class="who">{option.label}</span>{#if character}<CharacterBadge
+			><span class="who"><PlayerBadge name={seatName(game, seat.seatId)} /></span
+			>{#if character}<CharacterBadge
 					characterId={character.id}
 					{character}
 					alignment={seat.alignment}
@@ -207,9 +211,11 @@
 		<!-- Its line is always there, so choosing never moves the buttons (no reflow). -->
 		<p class="saved" data-testid="execution-saved">
 			{#if savedByNow && choice}
-				{t('day.logExecutedSurvived', {
-					name: seatLabel(game, choice as SeatId)
-				})}{#if savedByNow !== OVERRIDE}{@const by =
+				<Sentence text={t('day.logExecutedSurvived', { name: slot('player') })}
+					>{#snippet fill()}<PlayerBadge
+							name={seatName(game, choice as SeatId)}
+						/>{/snippet}</Sentence
+				>{#if savedByNow !== OVERRIDE}{@const by =
 						characters.get(savedByNow)}{#if by}<CharacterBadge
 							characterId={by.id}
 							character={by}
@@ -236,7 +242,8 @@
 		min-width: 0;
 	}
 	.who {
-		font-family: var(--font-player);
+		display: inline-flex;
+		min-width: 0;
 	}
 	.state {
 		display: inline-flex;

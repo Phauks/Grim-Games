@@ -9,7 +9,8 @@
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
 	/**
@@ -79,7 +80,7 @@
 				{#each seats as seatId (seatId)}
 					{@const seat = game.seats[seatId]}
 					<tr data-seat={seatId} data-counts={counts(game, count, seatId, characters) || undefined}>
-						<td>{seatLabel(game, seatId)}</td>
+						<td><PlayerBadge name={seatName(game, seatId)} /></td>
 						<td
 							>{#if seat.characterId}<CharacterBadge
 									characterId={seat.characterId}

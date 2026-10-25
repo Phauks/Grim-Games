@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Snippet } from 'svelte';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -66,9 +68,8 @@
 									interactive={false}
 								/>{:else}None{/if}</span
 						>
-						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>{#if rowMarks}<span
-								class="marks">{@render rowMarks(seat.seatId)}</span
-							>{/if}
+						<span class="name"><PlayerBadge name={seatName(game, seat.seatId)} /></span
+						>{#if rowMarks}<span class="marks">{@render rowMarks(seat.seatId)}</span>{/if}
 					</button>
 				</li>
 			{/if}
@@ -120,13 +121,8 @@
 	}
 	.role,
 	.name {
+		display: flex;
 		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.name {
-		font-family: var(--font-player);
 	}
 	.role {
 		font-family: var(--font-character);

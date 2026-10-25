@@ -926,6 +926,14 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await phone.goto(`/join/${code}`);
 	await expect(phone.getByTestId('join-status')).toBeVisible();
 	await expect(page.getByTestId('specters-room')).toHaveText('0/1 spectators voted');
+	// Only phones connected now count: the room keeps every phone that joined (2026-10-25).
+	const leaverContext = await browser.newContext({ ...testInfo.project.use });
+	const leaver = await leaverContext.newPage();
+	await leaver.goto(`/join/${code}`);
+	await expect(leaver.getByTestId('join-status')).toBeVisible();
+	await expect(page.getByTestId('specters-room')).toHaveText('0/2 spectators voted');
+	await leaverContext.close();
+	await expect(page.getByTestId('specters-room')).toHaveText('0/1 spectators voted');
 
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
 	const vote = phone.getByRole('dialog', { name: 'Spectators’ vote' });
