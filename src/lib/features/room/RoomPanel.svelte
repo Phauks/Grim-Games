@@ -114,8 +114,15 @@
 	const logo = $derived(loadedScript && scriptLogo(loadedScript));
 	let logoFailed = $state(false);
 
+	/**
+	 * Players no longer pick a seat (Trevor, 2026-10-25: "only player interaction should be what
+	 * name shows up"), so a request for any seat starts on the first seat nobody holds or names.
+	 */
+	const freeSeat = $derived(
+		seats.find((s) => !s.playerName && !host.members.some((m) => m.seatId === s.seatId))?.seatId
+	);
 	function seatFor(request: RoomRequest): SeatId | '' {
-		return chosen[request.requestId] ?? request.seatId ?? '';
+		return chosen[request.requestId] ?? request.seatId ?? freeSeat ?? '';
 	}
 
 	function holder(seatId: SeatId | ''): RoomMember | undefined {
@@ -309,7 +316,7 @@
 							class="request"
 							aria-label={t('room.asksFor', {
 								name: request.name,
-								seat: seatLabel(request.seatId)
+								seat: request.seatId ? seatLabel(request.seatId) : t('room.anySeatLower')
 							})}
 						>
 							<p class="who">
