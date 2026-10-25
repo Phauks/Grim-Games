@@ -1424,6 +1424,13 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
 	const hold = reveal.getByTestId('reveal-hold');
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	// No long-press buzz half a second in (Trevor, 2026-10-25): the touch's default is cancelled.
+	const buzzless = await hold.evaluate((el) => {
+		const touch = new TouchEvent('touchstart', { cancelable: true, bubbles: true });
+		el.dispatchEvent(touch);
+		return touch.defaultPrevented;
+	});
+	expect(buzzless).toBe(true);
 	// Closed before the character was seen, the tile stays held for that seat.
 	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Tile 1, held by Seat 1' }).tap();
