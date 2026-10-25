@@ -5,8 +5,9 @@ describe('assistance', () => {
 	it('has a label for every switch and turns every kind of help on by default', () => {
 		for (const key of ASSIST_KEYS) {
 			expect(ASSIST_LABELS[key].label).toBeTruthy();
-			// Stacking duplicate reminders is a display choice, off until asked for.
-			expect(DEFAULT_ASSISTANCE[key]).toBe(key !== 'stackReminders');
+			// Stacking duplicate reminders is a display choice, and tracking nominations extra
+			// record-keeping: both off until asked for.
+			expect(DEFAULT_ASSISTANCE[key]).toBe(key !== 'stackReminders' && key !== 'trackNominations');
 		}
 		expect(ASSIST_LABELS.nightGuide.label).toBe('Guide night steps');
 		expect(ASSIST_LABELS.explainTerms.label).toBe(

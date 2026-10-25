@@ -1,0 +1,54 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Huntsman once they have used their ability."
+		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "If the Damsel is not in play, add her in place of a Townsfolk"
+			}
+		],
+		"none": "No Ability goes on only when the Huntsman uses their ability"
+	},
+	"setupModifier": {
+		"summary": "+the Damsel",
+		"ops": [],
+		"requires": "damsel",
+		"notes": ["If the Damsel is not already in play, swap a Townsfolk for the Damsel."]
+	},
+	"dayReminders": {
+		"none": "night action; setup change"
+	},
+	"deathCause": {
+		"none": "changes the Damsel"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

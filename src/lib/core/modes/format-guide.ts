@@ -21,7 +21,7 @@ import {
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 10;
+export const GAME_MODE_REVISION = 13;
 
 export interface GuideField {
 	name: string;
@@ -361,7 +361,7 @@ export const GUIDE_PARTS: GuidePart[] = [
 		about:
 			'Characters always in the game. Those in play are put in setup’s selection; the Storyteller can still take one out.',
 		fields: [
-			{ name: 'inPlay', type: IDS, required: true, about: 'Always dealt to a player. May be [].' },
+			{ name: 'inPlay', type: IDS, required: false, about: 'Always dealt to a player.' },
 			{
 				name: 'onScript',
 				type: IDS,
@@ -389,18 +389,14 @@ export const GUIDE_PARTS: GuidePart[] = [
 		list: true,
 		about:
 			'Characters whose rules the mode changes. The Storyteller runs them from the linked page.',
-		fields: [
-			{ name: 'characters', type: IDS, required: true, about: 'The characters. May be [].' }
-		],
+		fields: [{ name: 'characters', type: IDS, required: false, about: 'The characters, if any.' }],
 		kinds: []
 	},
 	{
 		part: 'information',
 		list: true,
 		about: 'Extra information the mode gives. The Storyteller runs it from the linked page.',
-		fields: [
-			{ name: 'characters', type: IDS, required: true, about: 'The characters. May be [].' }
-		],
+		fields: [{ name: 'characters', type: IDS, required: false, about: 'The characters, if any.' }],
 		kinds: []
 	},
 	{
@@ -770,7 +766,13 @@ export const RULE_GUIDE_PARTS: GuidePart[] = [
 						type: 'text',
 						required: true,
 						about: 'Which nights.',
-						values: ['each-night', 'each-night-except-first']
+						values: ['each-night', 'each-night-except-first', 'one-night']
+					},
+					{
+						name: 'night',
+						type: 'whole number',
+						required: false,
+						about: 'For one-night: which night (1 is the first night).'
 					},
 					{ name: 'characters', type: IDS, required: false, about: 'Who wakes.' },
 					{
@@ -779,8 +781,91 @@ export const RULE_GUIDE_PARTS: GuidePart[] = [
 						required: false,
 						about: 'Every character of these types wakes.',
 						values: SEATED
+					},
+					{
+						name: 'dead',
+						type: 'true or false',
+						required: false,
+						about: 'Every dead player wakes, together. The app adds this step to that night.'
+					},
+					{
+						name: 'minutes',
+						type: 'whole number',
+						required: false,
+						about: 'How long they wake for.'
 					}
 				]
+			}
+		]
+	},
+	{
+		part: 'abilities',
+		list: false,
+		about: 'Who has an ability, alive or dead.',
+		fields: [],
+		kinds: [
+			{
+				kind: 'dead-keep',
+				about:
+					'Dead players keep their abilities. Run Night Order wakes whoever has one under the rule.',
+				fields: [
+					{
+						name: 'deadLose',
+						type: 'list of character types',
+						required: true,
+						about: 'Dead players of these types lose their abilities as usual.',
+						values: SEATED
+					},
+					{
+						name: 'livingLose',
+						type: 'list of character types',
+						required: true,
+						about: 'Living players of these types have no ability until they die.',
+						values: SEATED
+					}
+				]
+			}
+		]
+	},
+	{
+		part: 'demonAttacks',
+		list: false,
+		about: 'Who the Demon attacks each night.',
+		fields: [],
+		kinds: [
+			{
+				kind: 'script-order',
+				about:
+					'The next living in-play character in script order, after the last one the Demon killed. The walk-through names it on the Demon’s step.',
+				fields: []
+			}
+		]
+	},
+	{
+		part: 'nominations',
+		list: true,
+		about:
+			'What a nomination sets off. When a nomination is recorded, the board offers it to the Storyteller.',
+		fields: [
+			{
+				name: 'minAlive',
+				type: 'whole number',
+				required: false,
+				about: 'Only while at least this many players are alive.'
+			}
+		],
+		kinds: [
+			{
+				kind: 'evil-swap',
+				about:
+					'An evil player who nominates a living evil player swaps characters with them. Travellers are left out.',
+				fields: []
+			},
+			{
+				kind: 'nominator-may-die',
+				about:
+					'The nominator may choose to die; the nominee’s ability then works twice until the next dusk.',
+				fields: []
 			}
 		]
 	}

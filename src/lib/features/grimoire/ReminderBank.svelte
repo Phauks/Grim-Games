@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
+	import type { GenericToken, Reminder, SeatId } from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import { deadCharacters, prepTextSegments } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -11,6 +11,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
+	import ReminderCount from './ReminderCount.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
@@ -24,6 +25,10 @@
 	} from './reminders.ts';
 	import { GENERIC_REMINDER_ID, scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
+	import ReminderMoreButton from './ReminderMoreButton.svelte';
+	import GenericTokenDialog from './GenericTokenDialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { pendingSetup, traySeats, type TrayItem } from './setup-tray.ts';
 
 	/**
@@ -48,8 +53,11 @@
 		spotAllowed: (x: number, y: number) => boolean;
 		/** The Fabled or Loric under a client point, if any. */
 		ruleAt: (x: number, y: number, reminder: Reminder) => CharacterId | undefined;
-		/** Gives a Fabled or Loric a new reminder (asking first when it isn't theirs). */
-		onRule: (reminder: Reminder, characterId: CharacterId) => void;
+		/**
+		 * Gives a Fabled or Loric a new reminder (asking first when it isn't theirs); `tokenId`
+		 * when it is a copy of one of the bank's ∞ tokens.
+		 */
+		onRule: (reminder: Reminder, characterId: CharacterId, tokenId?: string) => void;
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
@@ -124,6 +132,12 @@
 		now?: boolean;
 		/** Its stretch of the bank, each set off by a line. */
 		group: Group;
+		/** A copy beyond what the game gives, dashed as on the board (Trevor, 2026-10-22). */
+		extra?: boolean;
+		/** One of the bank's reusable ∞ tokens (plan B9): its copies start with its look. */
+		token?: GenericToken;
+		/** The "+ New token" cell at the end of the ∞ tokens (plan B9). */
+		makesToken?: boolean;
 	}
 
 	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list.
@@ -171,21 +185,22 @@
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
-		const dead = deadCharacters(game);
+		const dead = deadCharacters(game, characters);
 		const rest = bankReminders(
 			game,
 			characters,
 			focus,
 			focusMode === 'front',
-			grimoire.copies
-		).flatMap(({ characterId, label, left, now }) => {
+			grimoire.copies,
+			grimoire.bankCopies
+		).flatMap(({ characterId, label, left, extra, now }) => {
 			const key = `${characterId}:${label}`;
 			const n = left - (pending[key] ?? 0);
 			if (n <= 0) return [];
 			const group: Group = dead.has(characterId) ? 'dead' : 'reminders';
 			// Each seat's own copies, when the character is on more than one (Trevor, 2026-10-19).
 			const owners = bankOwners(game, characters, { characterId, label }, n, grimoire.copies);
-			return owners.flatMap(({ ownerSeatId, count }) => {
+			const list: Item[] = owners.flatMap(({ ownerSeatId, count }) => {
 				const k = ownerSeatId === undefined ? key : `${key}:${ownerSeatId}`;
 				// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
 				if (stack)
@@ -200,6 +215,13 @@
 					group
 				}));
 			});
+			// The extras are the last copies placed, so the last in the bank.
+			let extras = Math.min(extra, n);
+			for (let j = list.length - 1; j >= 0 && extras > 0; j--) {
+				list[j].extra = true;
+				extras -= list[j].count;
+			}
+			return list;
 		});
 		// The generic ∞ reminder, as many as needed (Trevor, 2026-10-18), after the reminders.
 		const generic: Item = {
@@ -209,16 +231,40 @@
 			count: 1,
 			group: 'generic'
 		};
+		// The game's own ∞ tokens, then "+ New token" (plan B9, Trevor 2026-10-23: "Tokens only").
+		const tokens: Item[] = (game.genericTokens ?? []).map((token) => ({
+			key: `token:${token.tokenId}`,
+			characterId: GENERIC_REMINDER_ID,
+			label: (token.note ?? '') as ReminderLabel,
+			count: 1,
+			group: 'generic',
+			token
+		}));
+		const makes: Item = {
+			key: 'new-token',
+			characterId: GENERIC_REMINDER_ID,
+			label: '',
+			count: 1,
+			group: 'generic',
+			makesToken: true
+		};
 		return only([
 			...setup,
 			...rest.filter((i) => i.group === 'reminders'),
 			generic,
+			...tokens,
+			makes,
 			...rest.filter((i) => i.group === 'dead')
 		]);
 	});
-	/** "Only this character": the step's reminders alone, while a step is walked through. */
+	/**
+	 * "Only this character": the step's reminders, while a step is walked through, then the ∞
+	 * tokens, which any step can use (Trevor, 2026-10-23).
+	 */
 	function only(list: Item[]): Item[] {
-		return focus && focusMode === 'only' ? list.filter((i) => i.now) : list;
+		return focus && focusMode === 'only'
+			? list.filter((i) => i.now || i.group === 'generic')
+			: list;
 	}
 	const dimRest = $derived(focusMode === 'highlight' && items.some((i) => i.now));
 	/** A solid line goes before each stretch but the first. */
@@ -235,8 +281,27 @@
 	const dividers = $state<Partial<Record<Group, HTMLElement>>>({});
 	const captionW = $state<Partial<Record<Group, number>>>({});
 	let scrolled = $state(0);
-	const captions = $derived.by((): { group: Group; text: string; left: number }[] => {
+	/**
+	 * Measured after the bank is drawn (Trevor, 2026-10-22: the ∞ sat over the Reminders, not
+	 * its own token): a stretch's line moves once the spacers and token widths are known, so
+	 * the captions are placed again whenever those or the bank's size change.
+	 */
+	let captions = $state<{ group: Group; text: string; left: number }[]>([]);
+	let resized = $state(0);
+	$effect(() => {
+		if (!bankEl || !list) return;
+		const observer = new ResizeObserver(() => resized++);
+		observer.observe(bankEl);
+		observer.observe(list);
+		return () => observer.disconnect();
+	});
+	$effect(() => {
 		void items;
+		void spacers;
+		void resized;
+		captions = placeCaptions();
+	});
+	function placeCaptions(): { group: Group; text: string; left: number }[] {
 		const row = list;
 		if (!bankEl || !row) return [];
 		const width = bankEl.clientWidth || 1;
@@ -266,7 +331,7 @@
 			const next = placed[i + 1];
 			return !next || next.left >= c.left + pct(gap + (captionW[c.group] ?? 0));
 		});
-	});
+	}
 	/** The tray's gap, which is also each caption's inset from its line (both `--space-2`). */
 	const gap = $derived(list ? parseFloat(getComputedStyle(list).columnGap) || 0 : 0);
 	/** Each token's width in the bank, to size its stretch. */
@@ -316,12 +381,18 @@
 		game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
 	const seatsFor = (item: Item) => (item.setup ? traySeats(item.setup.suggestion) : []);
 
-	function place(item: Pick<Item, 'characterId' | 'label' | 'ownerSeatId'>, seatId: SeatId) {
-		const { characterId, label, ownerSeatId } = item;
+	function place(
+		item: Pick<Item, 'characterId' | 'label' | 'ownerSeatId' | 'token'>,
+		seatId: SeatId
+	) {
+		const { characterId, ownerSeatId, token } = item;
+		// A copy of an ∞ token takes its words from the token's look, not as a label.
+		const label = token ? ('' as ReminderLabel) : item.label;
 		return grimoire.run({
 			type: 'AddReminder',
 			seatId,
-			reminder: { characterId, label, ownerSeatId }
+			reminder: { characterId, label, ownerSeatId },
+			tokenId: token?.tokenId
 		});
 	}
 
@@ -370,18 +441,19 @@
 		}
 		drag = undefined;
 		onHints({ seats: [] });
+		const tokenId = item.token?.tokenId;
 		const reminder = {
 			characterId: item.characterId,
-			label: item.label,
+			label: tokenId ? ('' as ReminderLabel) : item.label,
 			ownerSeatId: item.ownerSeatId
 		};
 		// On a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
 		const rule = ruleAt(x, y, reminder);
-		if (rule) return onRule(reminder, rule);
+		if (rule) return onRule(reminder, rule, tokenId);
 		const free = loose && spotAllowed(x, y);
 		// Loose mode: anywhere in the board's open area, seats too; it belongs to no one.
 		if (loose) {
-			if (free && grimoire.run({ type: 'PlaceLooseReminder', reminder })) {
+			if (free && grimoire.run({ type: 'PlaceLooseReminder', reminder, tokenId })) {
 				const added = grimoire.game.looseReminders?.at(-1);
 				if (added) grimoire.setReminderSpot(added.reminderId, at);
 			}
@@ -402,6 +474,7 @@
 	let choosing = $state<Item | undefined>();
 	let chooserOpen = $state(false);
 	function tap(item: Item) {
+		if (item.makesToken) return makeToken();
 		if (item.setup) {
 			shown = item.setup;
 			shownOpen = true;
@@ -418,6 +491,16 @@
 	$effect(() => {
 		if (!shownOpen && !drag) onHints({ seats: [] });
 	});
+
+	// ── The bank's reusable ∞ tokens (plan B9) ──
+	let editing = $state<string | undefined>();
+	let editorOpen = $state(false);
+	/** A new ∞ token at the end of the others, opened to set its look. */
+	function makeToken() {
+		if (!grimoire.run({ type: 'AddGenericToken' })) return;
+		editing = grimoire.game.genericTokens?.at(-1)?.tokenId;
+		editorOpen = true;
+	}
 	function placeShown(seatId: SeatId) {
 		if (shown) place(shown.suggestion, seatId);
 		shownOpen = false;
@@ -429,11 +512,19 @@
 </script>
 
 <div class="bank" data-tray bind:this={bankEl}>
+	<!-- Every caption measured from the start, hidden, so each stretch has its room before its
+	     caption first shows (a caption measured only once shown widened the row as it was
+	     scrolled to its end). -->
+	{#each Object.entries(CAPTIONS) as [group, text] (group)}<span
+			class="caption measure"
+			data-group={group}
+			aria-hidden="true"
+			bind:offsetWidth={captionW[group as Group]}>{text}</span
+		>{/each}
 	{#each captions as caption (caption.group)}<span
 			class="caption"
 			data-group={caption.group}
 			data-testid="bank-{caption.group}"
-			bind:offsetWidth={captionW[caption.group]}
 			style:left="{caption.left}%">{caption.text}</span
 		>{/each}
 	<ul
@@ -456,6 +547,8 @@
 			<li
 				bind:offsetWidth={itemW[item.key]}
 				class:lifted={drag?.item.key === item.key && item.count === 1}
+				class:extra={item.extra}
+				data-extra={item.extra ? '' : undefined}
 				class:now={item.now || lit?.(item)}
 				class:dim={lit ? !lit(item) : dimRest && !item.now}
 				data-lit={lit?.(item) || undefined}
@@ -463,21 +556,36 @@
 					? `${spacers[item.group]}px`
 					: undefined}
 			>
-				{#if item.count > 1}<span class="count" aria-label={`${item.count} copies`}
-						>×{item.count}</span
-					>{/if}
-				<BoardReminder
-					label={item.label}
-					character={characters.get(item.characterId)}
-					alignment={placingAlignment(game, item, characters)}
-					infinite={isGeneric(item)}
-					{size}
-					{disabled}
-					onTap={() => tap(item)}
-					onDrag={(x, y, end) => dragItem(item, x, y, end)}
-					onCancel={cancelDrag}
-					panX
-				/>
+				{#if item.makesToken}
+					<!-- Hollow, so it reads as a place to make one, not a token (plan B9). -->
+					<button
+						type="button"
+						class="new-token"
+						style:--size="{size}px"
+						aria-label="New token"
+						{disabled}
+						onclick={makeToken}
+					>
+						<Icon name="add" />
+					</button>
+				{:else}
+					{#if item.count > 1}<ReminderCount count={item.count} />{/if}
+					<BoardReminder
+						label={item.label}
+						character={characters.get(item.characterId)}
+						alignment={placingAlignment(game, item, characters)}
+						infinite={isGeneric(item)}
+						symbol={item.token?.symbol}
+						symbolColour={item.token?.symbolColour}
+						symbolFill={item.token?.symbolFill}
+						{size}
+						{disabled}
+						onTap={() => tap(item)}
+						onDrag={(x, y, end) => dragItem(item, x, y, end)}
+						onCancel={cancelDrag}
+						panX
+					/>
+				{/if}
 			</li>
 		{:else}
 			<li class="none">None</li>
@@ -506,6 +614,9 @@
 			character={characters.get(drag.item.characterId)}
 			alignment={placingAlignment(game, drag.item, characters)}
 			infinite={isGeneric(drag.item)}
+			symbol={drag.item.token?.symbol}
+			symbolColour={drag.item.token?.symbolColour}
+			symbolFill={drag.item.token?.symbolFill}
 			{size}
 			disabled
 			onTap={() => {}}
@@ -526,11 +637,50 @@
 >
 	{#snippet heading()}
 		Put {#if choosing}<ReminderToken
-				label={isGeneric(choosing) ? '∞' : choosing.label}
+				label={isGeneric(choosing) ? choosing.label || '∞' : choosing.label}
 				character={characters.get(choosing.characterId)}
 			/>{/if} on
 	{/snippet}
+	{#snippet headActions()}
+		<!-- Duplicate from the bank too; the copy stays in the bank (Trevor, 2026-10-20). -->
+		{#if choosing && !isGeneric(choosing)}
+			<!-- A Duplicate copy goes back out of the bank, as one on the board does (Trevor,
+			     2026-10-24). -->
+			{#if choosing.extra && grimoire.bankCopyCount(choosing) > 0}
+				{@const copy = choosing}
+				<DeleteButton
+					label="Remove reminder"
+					onclick={() => {
+						grimoire.removeBankCopy(copy);
+						chooserOpen = false;
+						choosing = undefined;
+					}}
+				/>
+			{/if}
+			<ReminderMoreButton
+				{grimoire}
+				reminder={choosing}
+				onDone={() => {
+					chooserOpen = false;
+					choosing = undefined;
+				}}
+			/>
+		{:else if choosing?.token}
+			{@const tokenId = choosing.token.tokenId}
+			<IconButton
+				icon="edit"
+				label="Edit token"
+				onclick={() => {
+					chooserOpen = false;
+					editing = tokenId;
+					editorOpen = true;
+				}}
+			/>
+		{/if}
+	{/snippet}
 </SeatChooser>
+
+<GenericTokenDialog {grimoire} bind:open={editorOpen} tokenId={editing} />
 
 <Dialog bind:open={shownOpen} title="Setup reminder">
 	{#snippet heading()}
@@ -646,6 +796,8 @@
 		border-start-end-radius: calc(var(--radius-md) - 1px);
 		border-end-end-radius: calc(var(--radius-md) - 1px);
 		background: var(--accent);
+		/* The buttons' edge, so it never blends into the bank (Trevor, 2026-10-22). */
+		box-shadow: inset 0 0 0 1px var(--accent-edge);
 		color: var(--on-accent);
 		font: 600 0.8rem var(--font-control);
 		cursor: pointer;
@@ -672,14 +824,20 @@
 		color: var(--on-surface-muted);
 		cursor: default;
 	}
-	/* Cut into the bank's top edge, like the day timer's mode (DayTimer .caption). */
+	/*
+	 * On the bank's top edge, half over the board, so it is the seat name's pill (PlayerNameMark):
+	 * a band of the bank's own see-through colour didn't match every board background (Trevor,
+	 * 2026-10-23).
+	 */
 	.caption {
 		position: absolute;
 		top: 0;
 		z-index: 3;
 		margin-left: var(--space-2);
-		padding: 0 var(--space-1);
-		background: var(--board-bar-background);
+		padding: 0 var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
 		color: var(--on-surface-muted);
 		font: 600 0.65rem / 1 var(--font-control);
 		letter-spacing: 0.08em;
@@ -692,6 +850,10 @@
 	 * The ∞ as tall as the other captions' capitals (Trevor, 2026-10-19). Measured in Cinzel:
 	 * its ink is about 0.62 of a capital's height, so 1.6 times the size matches them.
 	 */
+	.caption.measure {
+		left: 0;
+		visibility: hidden;
+	}
 	.caption[data-group='generic'] {
 		font-size: calc(0.65rem * 1.6);
 		letter-spacing: 0;
@@ -738,8 +900,10 @@
 	}
 	/* The walked-through step's reminders, at the front: a ring that hugs the round token. */
 	li.now > :global(.reminder) {
-		outline: 0.2rem solid var(--accent);
+		/* A ring, glow or both, as set in Settings > Tokens (Trevor, 2026-10-20). */
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
 	}
 	.tray > li {
 		flex: none;
@@ -755,6 +919,12 @@
 	li.lifted {
 		opacity: 0.3;
 	}
+	/* A copy beyond what the game gives, as the board marks it (GrimoireBoard .chip-slot.extra). */
+	li.extra > :global(.reminder) {
+		outline: 0.15rem dashed var(--on-surface);
+		outline-offset: 0.15rem;
+		opacity: 0.75;
+	}
 	/* Highlight: everything but the step's reminders fades back. */
 	li.dim {
 		opacity: 0.4;
@@ -762,25 +932,40 @@
 	.tray > li {
 		position: relative;
 	}
-	.count {
-		position: absolute;
-		top: 0;
-		right: 0;
-		z-index: 1;
-		min-width: 1.4em;
-		padding: 0 calc(0.1875 * var(--u));
-		border-radius: var(--radius-full);
-		background: var(--accent);
-		color: var(--on-accent);
-		font: 700 0.75rem / 1.4 var(--font-control);
-		text-align: center;
-		pointer-events: none;
-	}
 	/* Between the setup reminders and the rest, in All: a solid line (Trevor, 2026-10-16). */
 	.tray > li.divider {
 		align-self: stretch;
 		padding: 0;
 		border-inline-start: 1px solid var(--on-surface-muted);
+	}
+	/* "+ New token" (plan B9): a hollow token, so it reads as a place to make one. */
+	.new-token {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: var(--size);
+		height: var(--size);
+		/* A circle at the tokens' own size, as BoardReminder; the ::after keeps the target. */
+		min-width: 0;
+		min-height: 0;
+		padding: 0;
+		border: 0.125rem dashed var(--on-surface-muted);
+		border-radius: 50%;
+		background: none;
+		color: var(--on-surface);
+	}
+	.new-token::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: max(100%, var(--tap-target));
+		height: max(100%, var(--tap-target));
+		translate: -50% -50%;
+		border-radius: 50%;
+	}
+	.new-token:disabled {
+		opacity: 0.5;
 	}
 	.none {
 		color: var(--on-surface-muted);

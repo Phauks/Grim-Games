@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // With a mouse and keyboard: hover and focus effects show once, and never hide a control.
 test.use({ viewport: { width: 1280, height: 720 }, hasTouch: false, isMobile: false });
@@ -13,6 +14,7 @@ test('hovering a drop-down keeps its fill', async ({ page }) => {
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
 	await page.getByRole('button', { name: 'Start game' }).click();
+	await toBoard(page);
 	await page.getByRole('button', { name: /^Day timer, .*open its controls$/ }).click();
 
 	const trigger = page
@@ -94,6 +96,7 @@ test('hovered buttons keep their labels readable', async ({ page }) => {
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
 	await page.getByRole('button', { name: 'Start game' }).click();
+	await toBoard(page);
 	await page.getByRole('button', { name: 'More', exact: true }).click();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	const history = menu.getByRole('button', { name: 'History' });
@@ -118,6 +121,7 @@ test('the day timer sheet and Info tokens read on their panel', async ({ page })
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
 	await page.getByRole('button', { name: 'Start game' }).click();
+	await toBoard(page);
 	await page.getByRole('button', { name: /^Day timer, .*open its controls$/ }).click();
 	const sheet = page.getByTestId('timer-sheet');
 	await expect(sheet).toBeVisible();
@@ -151,6 +155,7 @@ test('the board timer shows one ring round the whole pill', async ({ page }) => 
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
 	await page.getByRole('button', { name: 'Start game' }).click();
+	await toBoard(page);
 	const timer = page.getByTestId('day-timer').first();
 	const open = timer.getByRole('button', { name: /open its controls$/ });
 	const ring = (el: typeof timer) => el.evaluate((node) => getComputedStyle(node).outlineStyle);
@@ -196,6 +201,7 @@ test('close buttons are round and tint the same on hover', async ({ page }) => {
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
 	await page.getByRole('button', { name: 'Start game' }).click();
+	await toBoard(page);
 	await page.getByRole('button', { name: 'More', exact: true }).click();
 	const sheet = page.getByRole('dialog', { name: 'Grimoire' });
 	const sheetTint = await roundTint(sheet.getByRole('button', { name: 'Close' }));

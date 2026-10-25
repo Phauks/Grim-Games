@@ -12,7 +12,7 @@
 </svelte:head>
 
 {#key params.gameId}
-	<WithGame gameId={params.gameId} title={t('modes.extras.title')}>
+	<WithGame gameId={params.gameId} title={t('modes.extras.title')} inGame>
 		{#snippet children(port)}<ExtrasPage {port} />{/snippet}
 	</WithGame>
 {/key}

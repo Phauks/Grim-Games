@@ -1,0 +1,40 @@
+{
+	"reminderTargets": {
+		"?": {
+			"seat": "any",
+			"note": "A general-purpose marker for whatever the Amnesiac's hidden ability tracks.",
+			"ambiguous": "The wiki says the token can be used if needed but gives no placement, since it depends on the ability chosen."
+		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "Decide what the Amnesiac’s ability is; note it with [?]",
+				"tokens": ["?"]
+			}
+		],
+		"none": "the ? tokens are optional notes on the Amnesiac’s ability"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may guess their ability"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "The Storyteller decides what these mean."
+	}
+}

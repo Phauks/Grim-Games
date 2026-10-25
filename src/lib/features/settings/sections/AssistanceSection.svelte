@@ -11,6 +11,17 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
+	import QrCentreSetting from '#lib/ui/share/QrCentreSetting.svelte';
+	import QrPicture from '#lib/ui/share/QrPicture.svelte';
+	import { qrPicture } from '#lib/ui/share/qr-picture.svelte.ts';
+	import QrCode from '#lib/ui/primitives/QrCode.svelte';
+	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
+	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
+
+	/** A room's join link, as the share screen's QR carries, for the preview only. */
+	const SAMPLE_LINK = 'https://grimbinder.com/join/123456';
+	const centre = $derived(preferences.current.qrCentre);
+	const picture = $derived(centre === 'picture' && !!qrPicture.current);
 
 	const assistance = $derived(preferences.current.assistance);
 </script>
@@ -38,6 +49,13 @@
 	onChange={(tileFace) => preferences.update({ tileFace })}
 />
 <SettingToggle
+	label={t('settings.tileOrderRandom')}
+	description={t('settings.tileOrderRandomHelp')}
+	checked={preferences.current.tileOrderRandom}
+	disabled={preferences.current.tileFace === 'random' || preferences.current.tileFace === 'none'}
+	onChange={(tileOrderRandom) => preferences.update({ tileOrderRandom })}
+/>
+<SettingToggle
 	label={t('settings.requireName')}
 	description={t('settings.requireNameHelp')}
 	checked={preferences.current.requireName}
@@ -48,6 +66,12 @@
 	description={t('settings.holdToRevealHelp')}
 	checked={preferences.current.holdToReveal}
 	onChange={(holdToReveal) => preferences.update({ holdToReveal })}
+/>
+<SettingToggle
+	label={t('settings.slotMachine')}
+	description={t('settings.slotMachineHelp')}
+	checked={preferences.current.slotMachine}
+	onChange={(slotMachine) => preferences.update({ slotMachine })}
 />
 <SettingToggle
 	label={t('settings.ownWording')}
@@ -64,6 +88,7 @@
 	value={preferences.current.timerSound}
 	options={TIMER_SOUNDS.map((sound) => ({ value: sound, label: t(`day.timerSound.${sound}`) }))}
 	defaultValue="bell"
+	disabled={preferences.current.timerMode === 'up'}
 	onChange={(timerSound) => {
 		preferences.update({ timerSound });
 		playTimerSound(timerSound);
@@ -99,15 +124,39 @@
 <TimerPerPlayerRow />
 
 <h3>{t('settings.groupShare')}</h3>
-<!-- Also on Share's View grimoire tab, where it is used. -->
+<!-- Also on Share, beside the view-only link, where it is used. -->
 <SettingToggle
 	label={t('settings.hideWatchLink')}
 	description={t('settings.hideWatchLinkHelp')}
 	checked={preferences.current.hideWatchLink}
 	onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
 />
+<!-- Every QR code setting beside a live QR (CLAUDE.md: a setting beside a preview changes it). -->
+<SettingGroup title={t('share.qrPreview')} testid="qr-preview">
+	{#snippet preview()}
+		<div class="qr-preview">
+			<QrCode
+				value={SAMPLE_LINK}
+				label=""
+				center={centre === 'none' ? undefined : centre === 'picture' ? pictureMiddle : scriptMiddle}
+				centerShape={centre === 'picture' ? 'square' : 'wide'}
+				modules={preferences.current.qrModules}
+				finders={preferences.current.qrFinders}
+			/>
+		</div>
+	{/snippet}
+	<QrCentreSetting />
+</SettingGroup>
+
+<!-- Your picture's square, empty until one is chosen. -->
+{#snippet pictureMiddle()}{#if picture}<QrPicture />{/if}{/snippet}
+{#snippet scriptMiddle()}<ScriptQrCenter logo={undefined} name="Trouble Brewing" />{/snippet}
 
 <style>
+	.qr-preview {
+		width: min(100%, calc(12 * var(--u)));
+		margin-inline: auto;
+	}
 	h3 {
 		margin: var(--space-5) 0 var(--space-1);
 		font-family: var(--font-control);

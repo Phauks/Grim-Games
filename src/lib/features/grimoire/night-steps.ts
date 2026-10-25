@@ -25,6 +25,7 @@ import {
 	type Night,
 	type NightStep
 } from '#lib/core/rules/index.ts';
+import type { SpecialRule } from '#lib/core/modes/index.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 
 export function boardNightSteps(
@@ -39,7 +40,9 @@ export function boardNightSteps(
 	today: {
 		changes?: readonly { seatId: SeatId; characterId: CharacterId }[];
 		died?: readonly SeatId[];
-	} = {}
+	} = {},
+	/** The game's special rules, for the steps they add to a night (Council of the Dead). */
+	rules: readonly SpecialRule[] = []
 ): NightStep[] {
 	// Players wake by the token they hold (a Drunk wakes as their Townsfolk).
 	const inPlay: Character[] = [];
@@ -65,7 +68,36 @@ export function boardNightSteps(
 	// count after the first New day, so only other nights have them.
 	const woken =
 		night === 'other' ? withCharacterChangeSteps(steps, today.changes ?? [], characters) : steps;
-	return duskToDawn(withNightInfo(woken, game, characters, night, { died: today.died ?? [] }));
+	const number = night === 'first' ? 1 : game.pastDays.length + 1;
+	return duskToDawn([
+		...ruleNightSteps(rules, number),
+		...withNightInfo(woken, game, characters, night, { died: today.died ?? [] })
+	]);
+}
+
+/**
+ * The steps special rules add to night `number`, right after Dusk: a rule's one-night step
+ * for the dead (Council of the Dead, https://beardytas.com/garden-of-djinn/council-of-the-dead/),
+ * headed by the rule's name, with the rule's own lines as its text.
+ */
+export function ruleNightSteps(rules: readonly SpecialRule[], number: number): NightStep[] {
+	return rules.flatMap((rule) =>
+		(rule.parts.nightSteps ?? []).flatMap((step, i) =>
+			step.when === 'one-night' && step.night === number && step.dead
+				? [
+						{
+							id: `rule:${rule.id}:${i}`,
+							kind: 'custom' as const,
+							title: rule.name,
+							reminder: (rule.parts.text ?? []).join(' ') || undefined,
+							afterDawn: false,
+							placement: 'marker' as const,
+							notes: []
+						}
+					]
+				: []
+		)
+	);
 }
 
 /**

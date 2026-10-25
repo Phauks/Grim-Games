@@ -1,0 +1,39 @@
+{
+	"reminderTargets": {
+		"Guess Used": {
+			"seat": "self",
+			"note": "On the Damsel after a Minion's guess has been spent."
+		}
+	},
+	"gameEnd": {
+		"decidedByStoryteller": true
+	},
+	"setupPrep": {
+		"none": "Minions are shown the Damsel token; Guess Used is only for a wrong guess"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "announcement",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has not been guessed"
+					}
+				],
+				"when": {
+					"noReminder": "Guess Used"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "loss condition"
+	},
+	"reminderMovement": {
+		"fixed": ["Guess Used"],
+		"why": "Marks that this character has used its once-per-game ability."
+	}
+}

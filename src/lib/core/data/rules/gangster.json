@@ -1,0 +1,24 @@
+{
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may kill a neighbour"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills",
+		"victim": {
+			"who": "alive-neighbour"
+		}
+	}
+}

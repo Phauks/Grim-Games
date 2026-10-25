@@ -24,3 +24,30 @@ export function makeRoomCode(random: () => number = Math.random): string {
 	for (let i = 0; i < ROOM_CODE_LENGTH; i++) code += Math.floor(random() * 10);
 	return code;
 }
+
+/** Where a scanned code leads: a room to join, or its view-only grimoire with the key. */
+export type ScannedRoom =
+	{ kind: 'join'; code: string } | { kind: 'watch'; code: string; key: string };
+
+/**
+ * Reads what a phone's camera found (plan J2): a room code on its own, or a link from the
+ * Storyteller's Share screen (/join/<code>, or /watch/<code>#<key> for Grim view), from any
+ * copy of the app, so a production phone can scan a beta table's code. Anything else is null.
+ */
+export function scannedRoom(text: string): ScannedRoom | null {
+	const bare = normaliseRoomCode(text.trim());
+	if (bare) return { kind: 'join', code: bare };
+	let url: URL;
+	try {
+		url = new URL(text.trim());
+	} catch {
+		return null;
+	}
+	if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+	const match = /\/(join|watch)\/([^/]+)\/?$/.exec(url.pathname);
+	const code = match && normaliseRoomCode(decodeURIComponent(match[2]));
+	if (!match || !code) return null;
+	if (match[1] === 'join') return { kind: 'join', code };
+	const key = url.hash.slice(1);
+	return key ? { kind: 'watch', code, key } : null;
+}

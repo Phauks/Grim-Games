@@ -11,6 +11,7 @@ import ph_arrow_square_out_thin from '~icons/ph/arrow-square-out-thin';
 import ph_arrow_u_up_left_thin from '~icons/ph/arrow-u-up-left-thin';
 import ph_arrow_u_up_right_thin from '~icons/ph/arrow-u-up-right-thin';
 import ph_arrows_down_up_thin from '~icons/ph/arrows-down-up-thin';
+import ph_arrows_in_thin from '~icons/ph/arrows-in-thin';
 import ph_arrows_left_right_thin from '~icons/ph/arrows-left-right-thin';
 import ph_arrows_out_thin from '~icons/ph/arrows-out-thin';
 import ph_arrows_out_cardinal_thin from '~icons/ph/arrows-out-cardinal-thin';
@@ -18,6 +19,7 @@ import ph_bag_simple_thin from '~icons/ph/bag-simple-thin';
 import ph_beer_bottle_thin from '~icons/ph/beer-bottle-thin';
 import ph_beer_stein_thin from '~icons/ph/beer-stein-thin';
 import ph_bell_thin from '~icons/ph/bell-thin';
+import ph_binoculars_thin from '~icons/ph/binoculars-thin';
 import ph_bird_thin from '~icons/ph/bird-thin';
 import ph_book_bookmark_thin from '~icons/ph/book-bookmark-thin';
 import ph_book_open_thin from '~icons/ph/book-open-thin';
@@ -27,6 +29,7 @@ import ph_bookmarks_simple_thin from '~icons/ph/bookmarks-simple-thin';
 import ph_books_thin from '~icons/ph/books-thin';
 import ph_bug_thin from '~icons/ph/bug-thin';
 import ph_calculator_thin from '~icons/ph/calculator-thin';
+import ph_camera_thin from '~icons/ph/camera-thin';
 import ph_caret_circle_down_thin from '~icons/ph/caret-circle-down-thin';
 import ph_caret_down_thin from '~icons/ph/caret-down-thin';
 import ph_caret_left_thin from '~icons/ph/caret-left-thin';
@@ -45,6 +48,7 @@ import ph_club_thin from '~icons/ph/club-thin';
 import ph_coin_thin from '~icons/ph/coin-thin';
 import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
+import ph_corners_in_thin from '~icons/ph/corners-in-thin';
 import ph_corners_out_thin from '~icons/ph/corners-out-thin';
 import ph_cross_thin from '~icons/ph/cross-thin';
 import ph_crown_thin from '~icons/ph/crown-thin';
@@ -75,6 +79,7 @@ import ph_folder_open_thin from '~icons/ph/folder-open-thin';
 import ph_folder_simple_thin from '~icons/ph/folder-simple-thin';
 import ph_frame_corners_thin from '~icons/ph/frame-corners-thin';
 import ph_funnel_thin from '~icons/ph/funnel-thin';
+import ph_gavel_thin from '~icons/ph/gavel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
@@ -112,6 +117,7 @@ import ph_lock_thin from '~icons/ph/lock-thin';
 import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
+import ph_megaphone_thin from '~icons/ph/megaphone-thin';
 import ph_minus_thin from '~icons/ph/minus-thin';
 import ph_minus_circle_thin from '~icons/ph/minus-circle-thin';
 import ph_moon_thin from '~icons/ph/moon-thin';
@@ -138,6 +144,7 @@ import ph_push_pin_thin from '~icons/ph/push-pin-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
 import ph_scales_thin from '~icons/ph/scales-thin';
+import ph_scan_thin from '~icons/ph/scan-thin';
 import ph_scroll_thin from '~icons/ph/scroll-thin';
 import ph_shapes_thin from '~icons/ph/shapes-thin';
 import ph_share_network_thin from '~icons/ph/share-network-thin';
@@ -206,6 +213,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-left-thin': ph_arrow_u_up_left_thin,
 	'ph:arrow-u-up-right-thin': ph_arrow_u_up_right_thin,
 	'ph:arrows-down-up-thin': ph_arrows_down_up_thin,
+	'ph:arrows-in-thin': ph_arrows_in_thin,
 	'ph:arrows-left-right-thin': ph_arrows_left_right_thin,
 	'ph:arrows-out-thin': ph_arrows_out_thin,
 	'ph:arrows-out-cardinal-thin': ph_arrows_out_cardinal_thin,
@@ -213,6 +221,7 @@ const icons: IconMap = {
 	'ph:beer-bottle-thin': ph_beer_bottle_thin,
 	'ph:beer-stein-thin': ph_beer_stein_thin,
 	'ph:bell-thin': ph_bell_thin,
+	'ph:binoculars-thin': ph_binoculars_thin,
 	'ph:bird-thin': ph_bird_thin,
 	'ph:book-bookmark-thin': ph_book_bookmark_thin,
 	'ph:book-open-thin': ph_book_open_thin,
@@ -222,6 +231,7 @@ const icons: IconMap = {
 	'ph:books-thin': ph_books_thin,
 	'ph:bug-thin': ph_bug_thin,
 	'ph:calculator-thin': ph_calculator_thin,
+	'ph:camera-thin': ph_camera_thin,
 	'ph:caret-circle-down-thin': ph_caret_circle_down_thin,
 	'ph:caret-down-thin': ph_caret_down_thin,
 	'ph:caret-left-thin': ph_caret_left_thin,
@@ -240,6 +250,7 @@ const icons: IconMap = {
 	'ph:coin-thin': ph_coin_thin,
 	'ph:copy-thin': ph_copy_thin,
 	'ph:copy-simple-thin': ph_copy_simple_thin,
+	'ph:corners-in-thin': ph_corners_in_thin,
 	'ph:corners-out-thin': ph_corners_out_thin,
 	'ph:cross-thin': ph_cross_thin,
 	'ph:crown-thin': ph_crown_thin,
@@ -270,6 +281,7 @@ const icons: IconMap = {
 	'ph:folder-simple-thin': ph_folder_simple_thin,
 	'ph:frame-corners-thin': ph_frame_corners_thin,
 	'ph:funnel-thin': ph_funnel_thin,
+	'ph:gavel-thin': ph_gavel_thin,
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
 	'ph:ghost-thin': ph_ghost_thin,
@@ -307,6 +319,7 @@ const icons: IconMap = {
 	'ph:lock-simple-thin': ph_lock_simple_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
+	'ph:megaphone-thin': ph_megaphone_thin,
 	'ph:minus-thin': ph_minus_thin,
 	'ph:minus-circle-thin': ph_minus_circle_thin,
 	'ph:moon-thin': ph_moon_thin,
@@ -333,6 +346,7 @@ const icons: IconMap = {
 	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
 	'ph:scales-thin': ph_scales_thin,
+	'ph:scan-thin': ph_scan_thin,
 	'ph:scroll-thin': ph_scroll_thin,
 	'ph:shapes-thin': ph_shapes_thin,
 	'ph:share-network-thin': ph_share_network_thin,

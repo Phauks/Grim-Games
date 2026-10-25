@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 /** The Poisoner's row in the Character reference table. */
 async function poisonerCard(page: Page) {
@@ -61,7 +62,7 @@ test('tapping a rules term shows the wiki Glossary wording and button, without m
 
 test('with rules term underlines off the terms are plain text', async ({ page }) => {
 	await page.goto('/reference');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -86,7 +87,9 @@ test('terms in the character dialog open above it', async ({ page }) => {
 	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
 	await page
 		.locator('li[data-character="slayer"]')
-		.getByRole('button', { name: 'About the Slayer' })
+		// The character's band opens its details (Trevor, 2026-10-23: day rows as cards).
+		.locator('.bar')
+		.getByRole('button', { name: /^Slayer/ })
 		.first()
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Slayer' });
@@ -284,4 +287,44 @@ test('the Glossary keeps its text and boxes clear of the scrollbar', async ({ pa
 	// The search box and the entries' boxes.
 	expect(await room('nav input')).toBeGreaterThanOrEqual(6);
 	expect(await room('nav li button')).toBeGreaterThanOrEqual(6);
+});
+
+test('the Glossary links the current script’s almanac when it has one', async ({ page }) => {
+	// Trevor, backlog P1: an almanac link in the Glossary, from the script's own `_meta`.
+	await mockWiki(page);
+	const openGlossary = async () => {
+		const card = await poisonerCard(page);
+		await card.getByRole('button', { name: 'poisoned: explain rules term' }).tap();
+		await page
+			.getByRole('dialog', { name: 'Poisoned' })
+			.getByRole('button', { name: 'Open Glossary' })
+			.tap();
+		return page.getByRole('dialog', { name: 'Glossary' });
+	};
+	// Without one, the button is there but unusable, so the header never moves.
+	let glossary = await openGlossary();
+	await expect(glossary.getByRole('button', { name: 'Open the script’s almanac' })).toBeDisabled();
+
+	await page.goto('/library');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'almanac.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(
+			JSON.stringify([
+				{ id: '_meta', name: 'Almanac Test', almanac: 'https://example.com/almanac-test' },
+				'washerwoman',
+				'imp'
+			])
+		)
+	});
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Almanac Test' })
+			.or(page.getByRole('region', { name: 'Almanac Test' }))
+	).toBeVisible();
+	glossary = await openGlossary();
+	await expect(glossary.getByRole('link', { name: 'Open the script’s almanac' })).toHaveAttribute(
+		'href',
+		'https://example.com/almanac-test'
+	);
 });

@@ -51,7 +51,6 @@ export const TWO_TOWNS: GameMode = {
 		],
 		information: [
 			{
-				characters: [],
 				instructions:
 					'When evil outnumber the living good in a town, a good player in that town learns it.'
 			}

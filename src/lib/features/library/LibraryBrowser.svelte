@@ -48,6 +48,8 @@
 	import ScriptPane, { type ScriptRow } from './ScriptPane.svelte';
 	import { dragToFolder, type DragSource } from './drag-to-folder.ts';
 	import { characterCollections } from './library-collections.svelte.ts';
+	import { emptyCollections } from './library-collections.ts';
+	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
 	import {
 		characterKey,
 		collectionKey,
@@ -63,7 +65,9 @@
 		childFolders,
 		folderMoveProblem,
 		folderPath,
-		libraryKey
+		freeName,
+		libraryKey,
+		siblings
 	} from './library-labels.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
@@ -427,6 +431,30 @@
 	/** A selected folder row in the list as it stands (not one left behind in another folder). */
 	const selectedFolder = $derived(rows.find((r) => r.key === selectedKey)?.folderId);
 
+	// ---- Download (Trevor, 2026-10-22: "add a download button to the library") ----
+
+	/** The selected row's file: a script in TPI's format, a character, or a collection. */
+	const download = $derived.by(() => {
+		const row = rows.find((r) => r.key === selectedKey);
+		if (!row || row.kind === 'folder') return undefined;
+		let json: unknown;
+		if (row.kind === 'script') json = scripts.find((s) => s.key === row.key)?.shareable.json;
+		else if (row.kind === 'character') {
+			json = characters.find(({ saved }) => characterKey(saved.savedId) === row.key)?.saved.entry;
+		} else {
+			const collection = characterCollections.list.find((c) => collectionKey(c.id) === row.key);
+			json = collection && { ...emptyCollections(), collections: [collection] };
+		}
+		return json === undefined ? undefined : { json, fileName: fileNameFor(row.name, row.kind) };
+	});
+	/** Whether the selected row can be saved as a file (the page's Download button). */
+	export function canDownload() {
+		return !!download;
+	}
+	export function downloadSelected() {
+		if (download) downloadJson(download.fileName, download.json);
+	}
+
 	function tapRow(row: Row, event: MouseEvent) {
 		const now = event.timeStamp;
 		const double = lastTap?.key === row.key && now - lastTap.at < DOUBLE_MS;
@@ -492,23 +520,33 @@
 	 * A script just added opens straight away, so its folder and tags can be set. Added while a
 	 * folder is open, it goes in that folder, as a file saved there would.
 	 */
-	export function openAdded() {
+	export function openAdded(key?: string) {
+		if (key) return openNew(key);
 		let newest: (typeof scripts)[number] | undefined;
 		for (const row of scripts) {
 			const used = row.listing.saved?.lastUsedAt ?? -1;
 			if (used > (newest?.listing.saved?.lastUsedAt ?? -1)) newest = row;
 		}
-		if (!newest) return;
-		if (folder && !libraryLabels.for(newest.key).folder) {
-			libraryLabels.setFolder(newest.key, folder);
-		}
-		openKey = newest.key;
-		selectedKey = newest.key;
+		if (newest) openNew(newest.key);
+	}
+
+	function openNew(key: string) {
+		if (folder && !libraryLabels.for(key).folder) libraryLabels.setFolder(key, folder);
+		openKey = key;
+		selectedKey = key;
 	}
 
 	// ---- New folder, new collection ----
 
-	let folderNaming = $state(false);
+	/**
+	 * A new folder is made at once, named "New folder" (numbered when taken) and selected, so
+	 * Rename or F2 names it (Trevor, 2026-10-23: "just create, and name new folder").
+	 */
+	function newFolder() {
+		const name = freeName(siblings(labels, 'folders', folder), t('library.newFolder'));
+		const id = libraryLabels.add('folders', name, folder);
+		if (id) selectedKey = `folder:${id}`;
+	}
 	let collectionNaming = $state(false);
 	export function newCollection() {
 		collectionNaming = true;
@@ -538,7 +576,7 @@
 					bind:place
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
-					onnewfolder={() => (folderNaming = true)}
+					onnewfolder={newFolder}
 					onmove={move}
 					onrename={renameFolder}
 				/>
@@ -552,7 +590,7 @@
 					bind:place
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
-					onnewfolder={() => (folderNaming = true)}
+					onnewfolder={newFolder}
 					onmove={move}
 					onrename={renameFolder}
 				/>
@@ -690,7 +728,6 @@
 {/snippet}
 
 <!-- The new folder isn't opened (Trevor, 2026-10-18); it is listed in the folder made in. -->
-<FolderNameDialog bind:open={folderNaming} parent={folder} />
 <FolderNameDialog bind:open={renameOpen} folder={renaming} />
 
 <NameDialog
@@ -751,13 +788,13 @@
 	:global(.sided tr.selected) .pick {
 		box-shadow: inset 0.25rem 0 0 var(--accent);
 	}
-	/* The sidebar and pane stay in view beside the list, just below the app header (not in a
+	/* The sidebar and pane stay in view beside the list, at the top of the screen (not in a
 	   picker's dialog, which scrolls itself). */
 	.manager:not(.picking) .side,
 	.pane {
 		position: sticky;
-		top: calc(var(--tap-target) + env(safe-area-inset-top) + var(--space-2));
-		max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+		top: calc(var(--app-top) + var(--space-2));
+		max-height: calc(100dvh - var(--app-top) - var(--space-4));
 		min-width: 0;
 	}
 	.side {
@@ -765,7 +802,7 @@
 	}
 	.pane {
 		display: grid;
-		height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+		height: calc(100dvh - var(--app-top) - var(--space-4));
 	}
 	.files {
 		display: grid;

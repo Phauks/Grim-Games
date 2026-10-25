@@ -1,0 +1,41 @@
+{
+	"reminderTargets": {
+		"May Not Nominate": {
+			"seat": "self",
+			"note": "The Golem after they have nominated."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has not nominated"
+					}
+				],
+				"when": {
+					"noReminder": "May Not Nominate"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills",
+		"victim": {
+			"who": "registers",
+			"as": "not-demon"
+		}
+	},
+	"reminderMovement": {
+		"fixed": ["May Not Nominate"],
+		"why": "Marks that this character has used its once-per-game ability."
+	}
+}

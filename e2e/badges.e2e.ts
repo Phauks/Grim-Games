@@ -192,6 +192,8 @@ test("a character's own badge inside its details brings them back into view", as
 	await expect(summary).not.toHaveAttribute('data-pulse');
 	await own.tap();
 	await expect(summary).toHaveAttribute('data-pulse', '');
+	// Drawn inside the box, so the dialog's edges can't clip it (Trevor, 2026-10-24).
+	await expect(summary).toHaveCSS('box-shadow', /inset/);
 	await expect(page.getByRole('dialog', { name: 'Alchemist' })).toHaveCount(1);
 	await expect(dialog.locator('p .badge[data-character-id="boffin"]').first()).toHaveAttribute(
 		'aria-haspopup',
@@ -233,7 +235,15 @@ test('the sections list counts tips, examples and jinxes, with lines between', a
 	const entry = sections.getByRole('button', { name: 'Examples' });
 	await expect(entry).not.toHaveCSS('border-bottom-width', '0px');
 	const wide = (await dialog.boundingBox())!.width >= 40 * 16;
-	if (wide) await expect(sections).not.toHaveCSS('border-right-width', '0px');
+	if (wide) {
+		await expect(sections).not.toHaveCSS('border-right-width', '0px');
+		// The side line meets the line under the character, with no line of the list's own
+		// above the first entry (Trevor, 2026-10-24).
+		await expect(sections.locator('ul')).toHaveCSS('border-top-width', '0px');
+		const top = (await sections.boundingBox())!.y;
+		const summary = (await dialog.getByTestId('own-summary').boundingBox())!;
+		expect(Math.abs(top - (summary.y + summary.height))).toBeLessThan(2);
+	}
 
 	// The wiki link is an icon button, like the X beside it.
 	const wiki = dialog.getByRole('link', { name: 'Open wiki' });
@@ -245,6 +255,45 @@ test('the sections list counts tips, examples and jinxes, with lines between', a
 
 	await sections.getByRole('button', { name: 'Jinxes' }).tap();
 	await expect(dialog.getByTestId('jinx-section').locator('.entry')).toHaveCount(jinxes);
+});
+
+test("a character's type and source open every character of that group", async ({ page }) => {
+	// Trevor, 2026-10-20: a page of all the characters of one source script or the Carousel
+	// and one character type.
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({ json: { parse: { text: '<h2>Summary</h2><p>Sample.</p>' } } })
+	);
+	await page.goto('/reference');
+	await page.getByRole('searchbox').fill('Witch');
+	await page.getByRole('button', { name: 'About the Witch' }).tap();
+	const witch = page.getByRole('dialog', { name: 'Witch' });
+	const line = witch.getByRole('button', { name: 'Minion · Sects & Violets' });
+	await expect(line).toHaveAttribute('title', 'Every Minion from Sects & Violets');
+	await line.tap();
+
+	await expect(page.getByRole('dialog', { name: 'Sects & Violets Minions' })).toBeVisible();
+	// The title follows the choices below.
+	const group = page.getByRole('dialog').filter({ has: page.getByTestId('character-group') });
+	const entries = group.getByTestId('character-group').locator('.entry');
+	await expect(entries).toHaveCount(4);
+	await expect(entries.locator('.badge[data-character-id="witch"]')).toHaveCount(1);
+	// Each with its ability.
+	await expect(
+		entries.locator('.badge[data-character-id="witch"]').locator('xpath=../..')
+	).toContainText('if they nominate tomorrow');
+
+	// The type and source can be changed here.
+	await group.getByRole('combobox', { name: 'Character type' }).tap();
+	await page.getByRole('option', { name: 'Demon', exact: true }).tap();
+	await expect(page.getByRole('dialog', { name: 'Sects & Violets Demons' })).toBeVisible();
+	await expect(entries).toHaveCount(4);
+	await group.getByRole('combobox', { name: 'Source' }).tap();
+	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
+	await expect(entries.locator('.bar .badge')).toHaveAttribute('data-character-id', 'imp');
+
+	// A character there opens its own details, over the list.
+	await entries.locator('.bar .badge').tap();
+	await expect(page.getByRole('dialog', { name: 'Imp' })).toBeVisible();
 });
 
 test('a badge on its own line keeps the in-line height, with a 44px tap area', async ({ page }) => {

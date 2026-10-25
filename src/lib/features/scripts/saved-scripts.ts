@@ -11,6 +11,7 @@ import { HOMEBREW_ORIGIN } from './homebrew-scripts-api.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import {
 	editionScript,
+	editionWikiUrl,
 	loadScript,
 	type GameData,
 	type LoadedScript
@@ -138,10 +139,13 @@ export function describeSource(source: ScriptSource): string {
  * The script's own page where it came from (Trevor, 2026-10-16: every script links to its
  * source page, never just a site): its BotC Scripts page, its section of a collection doc,
  * the official page that lists it, or the link it was loaded from. Undefined for pasted,
- * file, shared and built-in scripts, which have no page.
+ * file, shared and built-in scripts, which have no page. A base script (`edition`) links its
+ * wiki page (Trevor, 2026-10-23).
  */
-export function sourcePage(source: ScriptSource): string | undefined {
+export function sourcePage(source: ScriptSource, edition?: string): string | undefined {
 	switch (source.kind) {
+		case 'edition':
+			return editionWikiUrl(edition);
 		case 'link':
 			return source.page ?? (isSpecificPage(source.url) ? source.url : undefined);
 		case 'botcscripts':
@@ -149,6 +153,23 @@ export function sourcePage(source: ScriptSource): string | undefined {
 		default:
 			return undefined;
 	}
+}
+
+/**
+ * The script's almanac page (Trevor, backlog P1: an almanac link in the Glossary): the one
+ * its own `_meta` names, else a Bloodstar script's, which sits beside its `script.json` as
+ * `almanac.html`. Undefined when it has none.
+ */
+export function almanacPage(
+	meta: { almanac?: string } | undefined,
+	source: ScriptSource | undefined
+): string | undefined {
+	const own = meta?.almanac?.trim();
+	if (own && isSpecificPage(own)) return own;
+	const page = source?.kind === 'link' ? source.page : undefined;
+	return page?.startsWith(`${BLOODSTAR_ORIGIN}/`) && page.endsWith('/almanac.html')
+		? page
+		: undefined;
 }
 
 /** An http(s) address that points somewhere on a site, not only at the site itself. */

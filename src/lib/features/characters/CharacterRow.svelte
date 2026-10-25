@@ -32,6 +32,8 @@
 		info?: boolean | ((character: Character) => void);
 		/** On the name's line; never adds a line. */
 		note?: string;
+		/** The seat's player, after the name as character badges show it ("· Ana"). */
+		playerName?: string;
 		/** Keep the note's place even when there is none, so rows line up. */
 		withNote?: boolean;
 		/** Ends the name's line with the tick (the picker's chosen mark). */
@@ -68,6 +70,7 @@
 		info,
 		note,
 		withNote = false,
+		playerName,
 		withCheck = false,
 		checked = false,
 		pressed,
@@ -101,6 +104,7 @@
 	<span class="head">
 		<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
 		<span class="name">{character.name}</span>
+		{#if playerName}<span class="player">· {playerName}</span>{/if}
 		{#if afterName}{@render afterName()}{/if}
 		{#if withNote || note}<span class="note">{note ?? ''}</span>{/if}
 	</span>
@@ -266,6 +270,16 @@
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
 		overflow-wrap: anywhere;
+	}
+	/* As in CharacterBadge: the player's font in the name's colour, not a red caption. */
+	.player {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-family: var(--font-player);
+		font-weight: 400;
+		opacity: 0.9;
 	}
 	.note {
 		flex: 0 1 auto;

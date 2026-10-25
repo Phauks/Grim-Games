@@ -1,0 +1,42 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"info": true,
+			"seat": "any",
+			"alignment": "evil",
+			"note": "The evil player the Bounty Hunter currently knows, who may be the Bounty Hunter; moves to a new evil player when they die."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Know",
+				"text": "Choose an evil player to show the Bounty Hunter: put [Know] on them",
+				"target": {
+					"choose": "evil",
+					"choice": "an evil player"
+				},
+				"reason": "The evil player the Bounty Hunter is shown"
+			}
+		],
+		"notes": [
+			{
+				"text": "Choose a Townsfolk player who is evil; turn their token upside down"
+			}
+		]
+	},
+	"setupModifier": {
+		"summary": "1 Townsfolk is evil",
+		"ops": [],
+		"notes": ["Turn one Townsfolk evil during setup."]
+	},
+	"dayReminders": {
+		"none": "night info; setup change"
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"why": "A new evil player is shown when the last one dies."
+	}
+}

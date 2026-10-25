@@ -3,6 +3,7 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
 	cancelRequest,
+	canReveal,
 	castVote,
 	closeVote,
 	gameOver,
@@ -23,9 +24,14 @@ import {
 	resolve,
 	ROOM_PROTOCOL,
 	roomPreview,
+	setLook,
 	setViewers,
 	supportsProtocol,
 	unseat,
+	viewerFailed,
+	viewersLocked,
+	MAX_VIEWER_FAILS,
+	VIEWER_FAIL_WINDOW_MS,
 	type RoomState
 } from './room.ts';
 
@@ -131,6 +137,39 @@ describe('the live room', () => {
 		expect(next.gameId).toBe('g2');
 	});
 
+	it("keeps each phone's avatar and frame, without asking, through seat changes (plan R6)", () => {
+		let room = roomWith('alex', 'sam');
+		room = setLook(room, 'alex', { avatar: 'initials', frame: 'ring' });
+		expect(room.members[0]).toEqual({ memberId: 'alex', avatar: 'initials', frame: 'ring' });
+		expect(hostView(room).members[0]).toMatchObject({ avatar: 'initials', frame: 'ring' });
+		expect(setLook(room, 'alex', { avatar: 'initials', frame: 'ring' })).toBe(room);
+		expect(setLook(room, 'nobody', { avatar: 'initials' })).toBe(room);
+		// Unknown pictures and frames are dropped, as if none were picked.
+		expect(setLook(room, 'alex', { avatar: 'skull', frame: 3 }).members[0]).toEqual({
+			memberId: 'alex'
+		});
+
+		room = resolve(request(room, 'alex', { name: 'Alex', seatId: 'a' }, 1, 'r1'), 'r1', true);
+		room = resolve(request(room, 'sam', { name: 'Sam', seatId: 'a' }, 2, 'r2'), 'r2', true);
+		expect(room.members[0]).toEqual({
+			memberId: 'alex',
+			name: 'Alex',
+			avatar: 'initials',
+			frame: 'ring'
+		});
+		room = resolve(request(room, 'alex', { name: 'Alex', seatId: 'b' }, 3, 'r3'), 'r3', true);
+		expect(publish(room, 'g2', table('a', 'b')).members[0]).toEqual({
+			memberId: 'alex',
+			name: 'Alex',
+			avatar: 'initials',
+			frame: 'ring'
+		});
+		expect(parseClientMessage('{"type":"look","avatar":"initials"}')).toEqual({
+			type: 'look',
+			avatar: 'initials'
+		});
+	});
+
 	it('turns phones away once the room is full', () => {
 		let room = newRoom('hash');
 		for (let i = 0; i < MAX_MEMBERS; i++) room = join(room, `m${i}`)!;
@@ -186,6 +225,18 @@ describe('the end of a game', () => {
 		const next = publish(over, 'g2', table('a', 'b', 'c'));
 		expect(next.ended).toBeUndefined();
 		expect(playerView(next, 'alex').ended).toBeUndefined();
+	});
+
+	it('lets the Storyteller share the finished grimoire only for the game that ended', () => {
+		const room = roomWith('alex');
+		expect(canReveal(room, 'g1')).toBe(false);
+		const over = gameOver(room, 'g1', 'good');
+		expect(canReveal(over, 'g1')).toBe(true);
+		expect(canReveal(over, 'g2')).toBe(false);
+		expect(canReveal(over, 7)).toBe(false);
+		// Reopened, or a new game: the grimoire is private again.
+		expect(canReveal(reopenGame(over, 'g1'), 'g1')).toBe(false);
+		expect(canReveal(publish(over, 'g2', table('a')), 'g1')).toBe(false);
 	});
 
 	it('needs protocol 2, so an older app is told to update rather than miss the end', () => {
@@ -384,6 +435,31 @@ describe('the view-only grimoire link', () => {
 		expect(JSON.stringify(roomPreview(room))).not.toContain(hash);
 		expect(JSON.stringify(playerView(room, 'alex'))).not.toContain(hash);
 		expect(JSON.stringify(hostView(room))).not.toContain(hash);
+	});
+
+	it('says when its key is made from a Grim view password, and nothing else of it', () => {
+		const room = setViewers(roomWith('alex'), hash, true);
+		expect(room.viewerPassword).toBe(true);
+		expect(roomPreview(room).grimView).toBe(true);
+		// A link with no password, or no link at all, offers no Grim view.
+		expect(roomPreview(setViewers(room, hash)).grimView).toBeUndefined();
+		expect(setViewers(room, hash).viewerPassword).toBeUndefined();
+		expect(roomPreview(setViewers(room, null)).grimView).toBeUndefined();
+	});
+
+	it('slows guessing: too many wrong keys stop viewers for a while', () => {
+		let fails = viewerFailed(undefined, 0);
+		for (let i = 1; i < MAX_VIEWER_FAILS; i++) {
+			expect(viewersLocked(fails, 1)).toBe(false);
+			fails = viewerFailed(fails, 1);
+		}
+		expect(viewersLocked(fails, 1)).toBe(true);
+		expect(viewersLocked(fails, VIEWER_FAIL_WINDOW_MS)).toBe(false);
+		// The next window starts the count again.
+		expect(viewerFailed(fails, VIEWER_FAIL_WINDOW_MS)).toEqual({
+			count: 1,
+			since: VIEWER_FAIL_WINDOW_MS
+		});
 	});
 
 	it('relays a grimoire only when it carries a saved game', () => {

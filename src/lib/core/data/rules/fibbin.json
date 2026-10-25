@@ -1,0 +1,21 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"global": true,
+			"note": "Beside the Fibbin token in the Grimoire once it has been used."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "changes night info"
+	},
+	"deathCause": {
+		"none": "false info"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
+	}
+}

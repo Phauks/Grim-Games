@@ -1,0 +1,47 @@
+{
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "self",
+			"note": "On the Tinker when they die at night."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "own-death"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

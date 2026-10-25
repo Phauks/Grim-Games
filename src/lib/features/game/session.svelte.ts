@@ -33,8 +33,10 @@ import {
 	type GameId
 } from '#lib/core/model/index.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
-import { endedGames } from '#lib/features/grimoire/device-notes.ts';
+import { endedGames, seatLayouts } from '#lib/features/grimoire/device-notes.ts';
+import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 import { IdbGameStore } from './idb-store.ts';
+import { markReplaced, takeNextGame } from './next-game.ts';
 
 let defaultStore: GameStore | undefined;
 
@@ -47,8 +49,11 @@ export function gameStore(): GameStore {
 export type RunResult = { ok: true; warnings: EngineWarning[] } | { ok: false; error: EngineError };
 
 export class OpenGame {
-	session = $state.raw<GameSession>() as GameSession;
-	readonly characters: CharacterLookup;
+	#session = $state.raw<GameSession>() as GameSession;
+	readonly #characters: CharacterLookup;
+	/** Bumped when the script's own characters change, so what reads `characters` updates. */
+	#charactersVersion = $state(0);
+	#script: unknown;
 	readonly #ctx: EngineContext;
 	readonly #store: GameStore;
 	#saving: Promise<void> = Promise.resolve();
@@ -59,8 +64,9 @@ export class OpenGame {
 		store: GameStore,
 		ctx?: EngineContext
 	) {
+		this.#characters = characters;
+		this.#script = session.game.script;
 		this.session = session;
-		this.characters = characters;
 		this.#ctx = ctx ?? systemContext(characters);
 		this.#store = store;
 	}
@@ -86,7 +92,27 @@ export class OpenGame {
 		if (!created.ok) throw new Error(created.error.message);
 		const game = new OpenGame(created.session, characters, store, context);
 		await game.save();
+		await game.#takePlayers(store);
 		return game;
+	}
+
+	/**
+	 * A game started from Game info's New game seats the players from the game it replaces,
+	 * in their order, and ends that game (to History) or drops it if it never began.
+	 */
+	async #takePlayers(store: GameStore): Promise<void> {
+		const next = takeNextGame();
+		if (!next || next.from === this.game.gameId) return;
+		markReplaced(next.from);
+		this.game.seating.forEach((seatId, i) => {
+			const playerName = next.names[i];
+			if (playerName) this.run({ type: 'RenameSeat', seatId, playerName });
+		});
+		if (next.drop) {
+			await store.delete(next.from);
+			seatLayouts.forget(next.from);
+			endedGames.reopen(next.from);
+		} else endedGames.end(next.from);
 	}
 
 	/** Opens a saved game; undefined when there is no such game. Throws `SavedGameError`. */
@@ -119,6 +145,36 @@ export class OpenGame {
 		game.watching = true;
 		game.setViewOnly(true);
 		return game;
+	}
+
+	get session(): GameSession {
+		return this.#session;
+	}
+
+	set session(next: GameSession) {
+		this.#session = next;
+		this.#followScript(next.game.script);
+	}
+
+	/** Characters for the game: official ones plus its script's own. */
+	get characters(): CharacterLookup {
+		void this.#charactersVersion;
+		return this.#characters;
+	}
+
+	/**
+	 * Keeps the lookup on the script's own characters when the script changes during the game
+	 * (the Storyteller setting how one goes in the bag, backlog L25). The same map, so the
+	 * engine context built on it sees the change too.
+	 */
+	#followScript(script: Game['script']): void {
+		if (script === this.#script) return;
+		this.#script = script;
+		if (!(this.#characters instanceof Map)) return;
+		for (const entry of script.entries) {
+			if (entry.kind === 'custom') this.#characters.set(entry.character.id, entry.character);
+		}
+		this.#charactersVersion++;
 	}
 
 	watching = false;
@@ -180,7 +236,18 @@ export class OpenGame {
 			this.session = result.session;
 			void this.save();
 		}
-		return { ok: true, warnings: result.warnings };
+		// A character a special rule put in play from off the script is not flagged (Trevor,
+		// 2026-10-23).
+		const allowed = allowedOffScriptIn(this.game.gameId);
+		const warnings = result.warnings.filter(
+			(w) =>
+				!(
+					w.code === 'not-on-script' &&
+					w.characters?.length &&
+					w.characters.every((id) => allowed.has(id))
+				)
+		);
+		return { ok: true, warnings };
 	}
 
 	get canUndo(): boolean {

@@ -22,6 +22,13 @@
 		locked?: boolean;
 		/** Locks or unlocks it; without it there is no lock (Fabled and Loric). */
 		onLock?: () => void;
+		/**
+		 * Adds it to the Demon's bluffs or takes it out (Trevor, 2026-10-22). Without it the row
+		 * keeps the button's place empty (Travellers), so the rows line up.
+		 */
+		onBluff?: () => void;
+		/** Why the bluff button can't be used now, e.g. "3 bluffs chosen"; undefined when it can. */
+		bluffBlocked?: string;
 		onToggle: () => void;
 		onAddCopy: () => void;
 	}
@@ -35,6 +42,8 @@
 		bluff = false,
 		locked = false,
 		onLock,
+		onBluff,
+		bluffBlocked,
 		onToggle,
 		onAddCopy
 	}: Props = $props();
@@ -90,6 +99,7 @@
 						{src}
 						alt=""
 						data-partner={p.id}
+						referrerpolicy="no-referrer"
 						{@attach iconFallback(fallbackIconUrl(p))}
 					/>{:else}<span class="dot" data-partner={p.id}></span>{/if}{/each}</span
 		>
@@ -108,6 +118,21 @@
 		>
 	{/snippet}
 	{#snippet end()}
+		<!-- A bluff may also be chosen for the bag: the tag warns, never locks. -->
+		{#if onBluff}
+			<button
+				type="button"
+				class="toggle bluff-toggle"
+				aria-pressed={bluff}
+				aria-label={t('setup.bluffFor', { name: character.name })}
+				title={bluffBlocked || t('setup.bluffFor', { name: character.name })}
+				disabled={bluffBlocked !== undefined}
+				data-testid="bluff-character"
+				onclick={onBluff}><Icon name="demon" /></button
+			>
+		{:else if onLock}
+			<span class="toggle-slot" aria-hidden="true"></span>
+		{/if}
 		<!-- Always in place and usable: on an unselected character it chooses it too. -->
 		{#if onLock}
 			<button
@@ -200,6 +225,8 @@
 		inset-inline-end: 1.4em;
 	}
 	.lock,
+	.toggle,
+	.toggle-slot,
 	.add {
 		display: grid;
 		place-items: center;
@@ -209,7 +236,8 @@
 	.add {
 		border-inline-start: 1px solid var(--border);
 	}
-	.lock {
+	.lock,
+	.toggle {
 		color: var(--on-surface-muted);
 		opacity: 0.45;
 	}
@@ -217,9 +245,18 @@
 		color: var(--focus);
 		opacity: 1;
 	}
+	.bluff-toggle[aria-pressed='true'] {
+		color: var(--evil);
+		opacity: 1;
+	}
+	.toggle:disabled {
+		opacity: 0.2;
+		cursor: default;
+	}
 	/* The row's hover covers the lock; the lock only brightens (Trevor: one hover). */
 	@media (hover: hover) {
-		.lock:hover {
+		.lock:hover,
+		.toggle:hover:not(:disabled) {
 			opacity: 1;
 		}
 	}

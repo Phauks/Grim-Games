@@ -1,0 +1,64 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"seat": "any",
+			"note": "The player shown tonight; after the first night their character type must differ from the previous night's pick.",
+			"differsFromLastNight": "type"
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Know",
+				"text": "Choose any player to show the Balloonist: put [Know] on them",
+				"target": {
+					"choose": "any",
+					"choice": "any player"
+				},
+				"reason": "The player the Balloonist is shown on the first night"
+			}
+		]
+	},
+	"setupModifier": {
+		"summary": "+0 or +1 Outsider",
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "outsider",
+				"values": [0, 1]
+			}
+		]
+	},
+	"dayReminders": {
+		"none": "night info; setup change"
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "Marks the player shown, so the next one has a different character type.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Know",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Know",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

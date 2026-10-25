@@ -1,0 +1,37 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Artist once their question is answered."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may ask a question"
+					}
+				],
+				"when": {
+					"noReminder": "No Ability"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
+	}
+}

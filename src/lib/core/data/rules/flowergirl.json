@@ -1,0 +1,40 @@
+{
+	"reminderTargets": {
+		"Demon Not Voted": {
+			"seat": "self",
+			"note": "Kept on the Flowergirl from dawn until the Demon votes."
+		},
+		"Demon Voted": {
+			"seat": "self",
+			"note": "Replaces the other token on the Flowergirl once the Demon has voted today."
+		}
+	},
+	"answers": {
+		"question": "demon-voted"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is watching for a Demon vote"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["Demon Voted", "Demon Not Voted"],
+		"why": "Marks this character’s own state, so it stays on its seat."
+	}
+}

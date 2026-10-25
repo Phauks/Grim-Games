@@ -1,0 +1,28 @@
+{
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "extra-day"
+			}
+		]
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "one more day; executions are normal"
+	}
+}

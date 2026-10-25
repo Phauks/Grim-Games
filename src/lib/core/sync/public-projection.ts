@@ -13,6 +13,11 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
+import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { publicVotesWithoutToken } from '#lib/core/rules/voting.ts';
+import type { GamePhase } from '#lib/core/rules/game-phase.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
+import type { FrameId } from '#lib/core/frames/index.ts';
 
 export interface PublicSeat {
 	seatId: SeatId;
@@ -30,12 +35,21 @@ export interface PublicSeat {
 	 */
 	ghostVote?: 'unused' | 'used';
 	/**
+	 * Dead, but voting this many times on each nomination with no ghost vote to spend, as the
+	 * town learned (the Banshee killed by the Demon, `publicVotesWithoutToken`). Set in place of
+	 * `ghostVote`.
+	 */
+	votes?: number;
+	/**
 	 * A Traveller's character: Travellers tell the town who they are
 	 * (https://wiki.bloodontheclocktower.com/Travellers), so the players' script can show it
 	 * in play (Trevor, 2026-10-19). Never set for any other character, nor when the game's
 	 * mode keeps Travellers secret (Stowed Away).
 	 */
 	traveller?: CharacterId;
+	/** The avatar and frame the seat's player picked on their phone (plan R6): theirs to show. */
+	avatar?: AvatarId;
+	frame?: FrameId;
 }
 
 /**
@@ -51,12 +65,79 @@ export interface PublicDay {
 	executions: SeatId[];
 }
 
+/**
+ * Where the Storyteller's board draws the seats (plan J13): its ring's shape, the gaps, and
+ * the seats placed by hand, by seat id, as percentages of the board. Where people sit is
+ * plain to the whole table, so phones draw the town the same way. Phones parse it before
+ * use (parseSeatLayout), as they would a saved layout.
+ */
+export interface PublicSeatLayout {
+	shape: string;
+	gaps: Readonly<Record<string, number>>;
+	placed: Readonly<Record<string, { x: number; y: number }>>;
+}
+
+/** The night or day in play, or Setup before the first night begins (gamePhase). */
+export type PublicPhase = GamePhase;
+
+/**
+ * The board's lower left corner as the Storyteller shows it (Trevor, 2026-10-24: the player
+ * grim shows "the same information in the bottom left"), so a phone's corner says what the
+ * board's does. Each line is here only while the board shows it; the table can read all of
+ * them off the Storyteller's board anyway.
+ */
+export interface PublicCorner {
+	/** The game's mode, if it isn't Standard, then each special rule, by name. */
+	modes: string[];
+	/** The join code's line: each phone shows the code it joined with. */
+	joinCode?: boolean;
+	phase?: PublicPhase;
+	/** Game time: since the first night began, until End game; Setup until it has begun. */
+	gameTime?: { begun: boolean; startedAt?: number; endedAt?: number };
+	/** Spectators on the view-only link. */
+	watchers?: number;
+}
+
 export interface PublicGameState {
 	/** The Storyteller's name, when the game has one: the table already knows who runs it. */
 	storytellerName?: string;
 	/** In clockwise seating order. */
 	seats: PublicSeat[];
 	today: PublicDay;
+	/** Left out while the board draws its seats on the plain ring. */
+	layout?: PublicSeatLayout;
+	/** Left out until the Storyteller's board is open. */
+	corner?: PublicCorner;
+}
+
+/** The corner's lines only, field by field, like everything else here. */
+function boardCorner(corner: PublicCorner): PublicCorner {
+	const { modes, joinCode, phase, gameTime, watchers } = corner;
+	const view: PublicCorner = { modes: modes.map(String) };
+	if (joinCode) view.joinCode = true;
+	if (phase)
+		view.phase =
+			phase.kind === 'setup' ? { kind: 'setup' } : { kind: phase.kind, number: phase.number };
+	if (gameTime)
+		view.gameTime = {
+			begun: !!gameTime.begun,
+			...(gameTime.startedAt !== undefined ? { startedAt: gameTime.startedAt } : {}),
+			...(gameTime.endedAt !== undefined ? { endedAt: gameTime.endedAt } : {})
+		};
+	if (watchers) view.watchers = watchers;
+	return view;
+}
+
+/** The layout's three parts only, or nothing when it is the plain oval ring. */
+function boardLayout(layout: PublicSeatLayout): PublicSeatLayout | undefined {
+	const { shape, gaps, placed } = layout;
+	if (shape === 'oval' && Object.keys(gaps).length === 0 && Object.keys(placed).length === 0)
+		return undefined;
+	return {
+		shape,
+		gaps: { ...gaps },
+		placed: Object.fromEntries(Object.entries(placed).map(([id, p]) => [id, { x: p.x, y: p.y }]))
+	};
 }
 
 function appearsDead(seat: Seat): boolean {
@@ -73,13 +154,22 @@ function appearsDead(seat: Seat): boolean {
 /**
  * @param publicTraveller Whether a character is a Traveller the town knows about: the
  *   caller knows the character types and the game's mode. Left out, no character is shown.
+ * @param layout Where the board draws the seats, kept on the Storyteller's device.
+ * @param corner What the board's corner shows now, from the Storyteller's board.
+ * @param characters The game's characters, for what the town learns of a death (`votes`).
  */
 export function publicProjection(
 	game: Game,
-	publicTraveller?: (characterId: CharacterId) => boolean
+	publicTraveller?: (characterId: CharacterId) => boolean,
+	layout?: PublicSeatLayout,
+	corner?: PublicCorner,
+	characters?: CharacterLookup
 ): PublicGameState {
+	const drawn = layout && boardLayout(layout);
 	return {
 		...(game.storytellerName ? { storytellerName: game.storytellerName } : {}),
+		...(drawn ? { layout: drawn } : {}),
+		...(corner ? { corner: boardCorner(corner) } : {}),
 		seats: seatsInOrder(game).map((seat, i) => {
 			const view: PublicSeat = {
 				seatId: seat.seatId,
@@ -87,8 +177,15 @@ export function publicProjection(
 				dead: appearsDead(seat)
 			};
 			if (seat.playerName !== undefined) view.playerName = seat.playerName;
+			if (seat.avatar !== undefined) view.avatar = seat.avatar;
+			if (seat.frame !== undefined) view.frame = seat.frame;
 			// Every seat that looks dead shows a vote the same way, so a Zombuul looks no different.
-			if (view.dead) view.ghostVote = seat.ghostVoteUsed ? 'used' : 'unused';
+			const votes =
+				view.dead && characters
+					? publicVotesWithoutToken(game, seat.seatId, characters)
+					: undefined;
+			if (votes !== undefined) view.votes = votes;
+			else if (view.dead) view.ghostVote = seat.ghostVoteUsed ? 'used' : 'unused';
 			if (seat.characterId && publicTraveller?.(seat.characterId))
 				view.traveller = seat.characterId;
 			return view;

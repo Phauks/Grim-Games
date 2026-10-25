@@ -1,0 +1,59 @@
+{
+	"reminderPrompts": {
+		"Alive": "revive"
+	},
+	"reminderTargets": {
+		"Alive": {
+			"seat": "other",
+			"types": ["townsfolk"],
+			"life": "dead",
+			"note": "A dead Townsfolk the Professor brings back to life."
+		},
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Professor after they use their ability."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"none": "resurrects"
+	},
+	"reminderMovement": {
+		"fixed": ["Alive", "No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"note": "A resurrected Townsfolk; the ability is used either way.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Alive",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Professor might choose a dead player. If they do, mark the Professor *NO ABILITY*. If that player is a Townsfolk, they are resurrected: mark them *ALIVE*.",
+				"reason": "Says which token goes on whom."
+			}
+		}
+	}
+}

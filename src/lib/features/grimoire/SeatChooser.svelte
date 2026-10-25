@@ -9,24 +9,49 @@
 		title: string;
 		/** Replaces the title's text, e.g. "Put [reminder] on" with the reminder's token. */
 		heading?: Snippet;
+		/** Beside the X, e.g. a bank token's ⋯ (Trevor, 2026-10-20). */
+		headActions?: Snippet;
 		game: Game;
 		characters: CharacterLookup;
 		/** Left out of the list (the seat the choice starts from). */
 		exclude?: SeatId;
 		onChoose: (seatId: SeatId) => void;
+		/** A first "None" row, for a choice that can be cleared (a nomination). */
+		onNone?: () => void;
+		/** Only these seats are offered (a nomination's nominator: not the dead). */
+		offer?: (seatId: SeatId) => boolean;
+		/** Marks at the end of each row, in a column of their own (today's nominations). */
+		rowMarks?: Snippet<[SeatId]>;
 	}
 
-	let { open = $bindable(), title, heading, game, characters, exclude, onChoose }: Props = $props();
+	let {
+		open = $bindable(),
+		title,
+		heading,
+		headActions,
+		game,
+		characters,
+		exclude,
+		onChoose,
+		onNone,
+		offer,
+		rowMarks
+	}: Props = $props();
 
 	const seats = $derived(
 		game.seating.map((seatId, i) => ({ seat: game.seats[seatId], number: i + 1 }))
 	);
 </script>
 
-<Dialog bind:open {title} {heading}>
-	<ul>
+<Dialog bind:open {title} {heading} {headActions}>
+	<ul data-marks={rowMarks ? '' : undefined}>
+		{#if onNone}
+			<li>
+				<button type="button" class="none" onclick={() => onNone?.()}>None</button>
+			</li>
+		{/if}
 		{#each seats as { seat, number } (seat.seatId)}
-			{#if seat.seatId !== exclude}
+			{#if seat.seatId !== exclude && (offer?.(seat.seatId) ?? true)}
 				{@const character = seat.characterId ? characters.get(seat.characterId) : undefined}
 				<li>
 					<!-- Number, character, player (Trevor, 2026-10-20): the character once, as its
@@ -41,7 +66,9 @@
 									interactive={false}
 								/>{:else}None{/if}</span
 						>
-						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>
+						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>{#if rowMarks}<span
+								class="marks">{@render rowMarks(seat.seatId)}</span
+							>{/if}
 					</button>
 				</li>
 			{/if}
@@ -70,6 +97,16 @@
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
+	}
+	ul[data-marks] button {
+		grid-template-columns: 1.5em minmax(0, 1fr) minmax(0, 1fr) auto;
+	}
+	.none {
+		display: flex;
+	}
+	.marks {
+		display: flex;
+		gap: var(--space-1);
 	}
 	button:hover {
 		background: var(--surface-selected);

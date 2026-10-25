@@ -5,13 +5,19 @@
  *
  * While a game is attached, its public projection is published on every change. Nothing a
  * phone sends changes the grimoire until the Storyteller approves it, and approving runs an
- * ordinary command, so it shows in History and can be rolled back.
+ * ordinary command, so it shows in History and can be rolled back. The one exception is a
+ * seated player's avatar and frame (plan R6), which are decorative and go on their seat as
+ * they pick them, also as an ordinary command.
  */
 import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import { toSavedGame } from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
-import { publicProjection, type PublicGameState } from '#lib/core/sync/public-projection.ts';
+import {
+	publicProjection,
+	type PublicCorner,
+	type PublicGameState
+} from '#lib/core/sync/public-projection.ts';
 import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
@@ -21,6 +27,12 @@ import {
 	type SharedGrimoire,
 	type VoteTally
 } from '#lib/core/sync/room.ts';
+import type {
+	ScriptVoteKind,
+	ScriptVoteOption,
+	ScriptVoteTally,
+	VoteSubject
+} from '#lib/core/sync/script-vote.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import {
@@ -28,8 +40,10 @@ import {
 	reminderSpots,
 	seatLayouts
 } from '#lib/features/grimoire/device-notes.ts';
+import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
+import { viewerKeyFromPassword } from './viewer.svelte.ts';
 
 const STORAGE_KEY = 'grim-games-room-host';
 
@@ -38,6 +52,8 @@ interface StoredRoom {
 	key: string;
 	/** The key in the view-only grimoire link, while it is on. */
 	viewerKey?: string;
+	/** The Grim view password that key was made from, if the Storyteller set one. */
+	viewerPassword?: string;
 }
 
 /** The board's own notes a viewer needs to draw the grimoire as this device does. */
@@ -60,6 +76,8 @@ export class RoomHost {
 	requests = $state.raw<RoomRequest[]>([]);
 	/** The spectators' open vote and its count (Specters), if one is open. */
 	vote = $state.raw<VoteTally>();
+	/** The room's vote on the next script and its count (plan R1), if one is open. */
+	scriptVote = $state.raw<ScriptVoteTally>();
 	/** True when opening a room failed, e.g. offline. */
 	problem = $state(false);
 	/** True while a room is being opened. */
@@ -70,6 +88,8 @@ export class RoomHost {
 	 * it on again makes a new link.
 	 */
 	viewerKey = $state<string>();
+	/** The Grim view password, while the link is on with one (plan D1). */
+	viewerPassword = $state<string>();
 	/** True when the grimoire is too large to send to viewers. */
 	grimoireTooLarge = $state(false);
 	/** How many are watching through the view-only link now (Trevor, 2026-10-20). */
@@ -78,6 +98,9 @@ export class RoomHost {
 	#grimoire: SharedGrimoire | undefined;
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
+	#choosing = false;
+	/** What the open board's corner shows, for the phones' corners (showCorner). */
+	#corner = $state<{ gameId: string; corner: PublicCorner }>();
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -90,6 +113,7 @@ export class RoomHost {
 	constructor() {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
 		if (stored?.code && stored.key) {
+			this.viewerPassword = stored.viewerKey ? stored.viewerPassword : undefined;
 			if (stored.viewerKey) void this.#useViewerKey(stored.viewerKey);
 			this.#connect(stored);
 		}
@@ -151,10 +175,12 @@ export class RoomHost {
 			writeStored(STORAGE_KEY, { ...stored, viewerKey: key });
 			await this.#useViewerKey(key);
 		} else {
-			const { viewerKey: _off, ...rest } = stored;
+			const { viewerKey: _off, viewerPassword: _password, ...rest } = stored;
 			void _off;
+			void _password;
 			writeStored(STORAGE_KEY, rest);
 			this.viewerKey = undefined;
+			this.viewerPassword = undefined;
 			this.#viewerKeyHash = undefined;
 			this.#socket?.send({ type: 'viewers', keyHash: null });
 		}
@@ -165,10 +191,27 @@ export class RoomHost {
 	 * anyone watching with it is let go.
 	 */
 	async refreshViewers(): Promise<void> {
+		await this.setViewerPassword('');
+	}
+
+	/**
+	 * Makes the link's key from a Grim view password (plan D1), so the room code and the
+	 * password open the grimoire too; '' goes back to a random key. Either way the old link
+	 * stops working and anyone watching with it is let go.
+	 */
+	async setViewerPassword(password: string): Promise<void> {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
 		if (!stored || !this.viewerKey) return;
-		const key = randomKey();
-		writeStored(STORAGE_KEY, { ...stored, viewerKey: key });
+		const clean = password.trim();
+		const key = clean ? await viewerKeyFromPassword(stored.code, clean) : randomKey();
+		const { viewerPassword: _old, ...rest } = stored;
+		void _old;
+		writeStored(STORAGE_KEY, {
+			...rest,
+			viewerKey: key,
+			...(clean ? { viewerPassword: clean } : {})
+		});
+		this.viewerPassword = clean || undefined;
 		await this.#useViewerKey(key);
 	}
 
@@ -177,7 +220,7 @@ export class RoomHost {
 		const hash = await sha256Hex(key);
 		if (this.viewerKey !== key) return;
 		this.#viewerKeyHash = hash;
-		this.#socket?.send({ type: 'viewers', keyHash: hash });
+		this.#sendViewers();
 		this.#sendGrimoire();
 	}
 
@@ -187,9 +230,14 @@ export class RoomHost {
 	 */
 	async refreshRoom(): Promise<void> {
 		const watching = !!this.viewerKey;
+		// The password stays; its key is made with the new code.
+		const password = this.viewerPassword;
 		this.close();
 		await this.open();
-		if (watching && this.code) await this.setViewers(true);
+		if (watching && this.code) {
+			await this.setViewers(true);
+			if (password) await this.setViewerPassword(password);
+		}
 	}
 
 	/** Deletes the room for everyone in it. */
@@ -219,9 +267,15 @@ export class RoomHost {
 				});
 			});
 			$effect(() => {
+				// Where the board draws the seats, so phones draw the town the same way (plan J13).
+				const layout = notes ? parseSeatLayout(notes().layout) : seatLayouts.read(game.game.gameId);
+				const corner = this.#corner?.gameId === game.game.gameId ? this.#corner.corner : undefined;
 				const state = publicProjection(
 					game.game,
-					publicTravellerTest(game.game.gameId, game.characters)
+					publicTravellerTest(game.game.gameId, game.characters),
+					layout,
+					corner,
+					game.characters
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
@@ -232,6 +286,15 @@ export class RoomHost {
 				this.#socket?.send({ type: 'script', script });
 			});
 		});
+	}
+
+	/**
+	 * The lines the board's corner shows now (corner-lines.ts), so each phone's grim shows the
+	 * same corner (Trevor, 2026-10-24). Sent with the game's public state.
+	 */
+	showCorner(gameId: string, corner: PublicCorner): void {
+		const shown = { gameId, corner: $state.snapshot(corner) as PublicCorner };
+		if (JSON.stringify(shown) !== JSON.stringify(this.#corner)) this.#corner = shown;
 	}
 
 	/** Approves a request, optionally into a different seat, naming that seat in the grimoire. */
@@ -266,12 +329,79 @@ export class RoomHost {
 		this.#socket?.send({ type: 'close-vote' });
 	}
 
+	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */
+	endedGame = $state<string>();
+	/** The game whose final grimoire the room's phones were sent (Share grim, R5). */
+	revealedGame = $state<string>();
+
+	/**
+	 * Share grim (R5): sends the whole grimoire to the room's phones once the game is over.
+	 * False when it is too large or the room is offline.
+	 */
+	reveal(game: OpenGame, notes?: BoardNotes): boolean {
+		const gameId = game.game.gameId;
+		const saved = toSavedGame(game.session, Date.now());
+		const message = {
+			type: 'reveal',
+			gameId,
+			grimoire: {
+				saved: saved as unknown as Record<string, unknown>,
+				...(notes ?? storedNotes(gameId))
+			}
+		} as const;
+		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;
+		if (!this.#socket?.send(message)) return false;
+		this.revealedGame = gameId;
+		return true;
+	}
+
+	/**
+	 * Phones show the Storyteller is choosing the next script while New game is open, once
+	 * the game on the table is over (or before there is one), never in the middle of one.
+	 */
+	setChoosing(on: boolean): void {
+		const between =
+			!this.#published || (this.#ended?.gameId === this.#published.gameId && !!this.#ended.ended);
+		if (on && !between) return;
+		this.#choosing = on;
+		this.#socket?.send({ type: 'choosing', on });
+	}
+
+	/**
+	 * Opens a vote on the next script, replacing any open one, with a time limit in minutes
+	 * if given. False when offline.
+	 */
+	openScriptVote(
+		kind: ScriptVoteKind,
+		options: ScriptVoteOption[],
+		minutes?: number,
+		subject: VoteSubject = 'script'
+	): boolean {
+		return (
+			this.#socket?.send({
+				type: 'open-script-vote',
+				voteId: crypto.randomUUID(),
+				kind,
+				options,
+				...(minutes !== undefined ? { minutes } : {}),
+				...(subject === 'mode' ? { subject } : {})
+			}) ?? false
+		);
+	}
+
+	closeScriptVote(): void {
+		this.#socket?.send({ type: 'close-script-vote' });
+	}
+
 	/**
 	 * Tells the room the game is over (End game), or running again (`undefined`, Reopen). The
 	 * room stays open, so its phones see the end; kept and sent again after a reconnect.
 	 */
 	setEnded(gameId: GameId, ended: { winner?: 'good' | 'evil'; reason?: string } | undefined): void {
 		this.#ended = { gameId, ended };
+		this.endedGame = ended ? gameId : undefined;
+		// Reopen takes the shared grimoire back (the room drops it too).
+		if (!ended && this.revealedGame === gameId) this.revealedGame = undefined;
 		this.#sendEnded();
 	}
 
@@ -296,9 +426,11 @@ export class RoomHost {
 
 	#receive(message: ServerMessage): void {
 		if (message.type === 'host-view') {
+			this.#applyLooks(this.members, message.members);
 			this.members = message.members;
 			this.requests = message.requests;
 			this.vote = message.vote;
+			this.scriptVote = message.scriptVote;
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
 		} else if (message.type === 'refused' && message.reason === 'too-old') {
@@ -306,6 +438,29 @@ export class RoomHost {
 		} else if (message.type === 'refused' || message.type === 'closed') {
 			// The room expired or this device no longer owns it.
 			this.#forget();
+		}
+	}
+
+	/**
+	 * Puts each seated player's avatar and frame on their seat (plan R6). They are decorative,
+	 * so they need no approval, but only a change is applied: a seat the Storyteller has since
+	 * changed back (by undoing) stays as it is until the player picks again or moves seat.
+	 */
+	#applyLooks(before: RoomMember[], after: RoomMember[]): void {
+		const game = this.#game;
+		if (!game) return;
+		const key = (m: RoomMember) => `${m.seatId}|${m.avatar ?? ''}|${m.frame ?? ''}`;
+		const was: Record<string, string> = Object.fromEntries(before.map((m) => [m.memberId, key(m)]));
+		for (const member of after) {
+			const seat = member.seatId && game.game.seats[member.seatId];
+			if (!seat || was[member.memberId] === key(member)) continue;
+			if (seat.avatar === member.avatar && seat.frame === member.frame) continue;
+			game.run({
+				type: 'SetSeatLook',
+				seatId: seat.seatId,
+				...(member.avatar ? { avatar: member.avatar } : {}),
+				...(member.frame ? { frame: member.frame } : {})
+			});
 		}
 	}
 
@@ -323,6 +478,8 @@ export class RoomHost {
 	}
 
 	#publish(published: { gameId: string; state: PublicGameState }): void {
+		// The board's notes change with every reminder moved; the table only when it does.
+		if (JSON.stringify(published) === JSON.stringify(this.#published)) return;
 		this.#published = published;
 		this.#resend();
 	}
@@ -330,13 +487,23 @@ export class RoomHost {
 	#resend(): void {
 		if (this.#published) this.#socket?.send({ type: 'publish', ...this.#published });
 		this.#sendEnded();
+		if (this.#choosing) this.#socket?.send({ type: 'choosing', on: true });
 		if (this.#script) this.#socket?.send({ type: 'script', script: this.#script });
 		// While a stored key's hash is still being worked out, say nothing about viewers.
 		if (!this.viewerKey) this.#socket?.send({ type: 'viewers', keyHash: null });
 		else if (this.#viewerKeyHash) {
-			this.#socket?.send({ type: 'viewers', keyHash: this.#viewerKeyHash });
+			this.#sendViewers();
 			this.#sendGrimoire();
 		}
+	}
+
+	#sendViewers(): void {
+		if (!this.#viewerKeyHash) return;
+		this.#socket?.send({
+			type: 'viewers',
+			keyHash: this.#viewerKeyHash,
+			...(this.viewerPassword ? { password: true } : {})
+		});
 	}
 
 	#forget(): void {
@@ -347,7 +514,10 @@ export class RoomHost {
 		this.members = [];
 		this.requests = [];
 		this.vote = undefined;
+		this.scriptVote = undefined;
 		this.viewerKey = undefined;
+		this.viewerPassword = undefined;
+		this.revealedGame = undefined;
 		this.#viewerKeyHash = undefined;
 		this.#grimoire = undefined;
 		clearTimeout(this.#grimoireTimer);

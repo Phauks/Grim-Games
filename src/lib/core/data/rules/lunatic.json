@@ -1,0 +1,30 @@
+{
+	"reminderTargets": {
+		"Chosen": {
+			"seat": "any",
+			"note": "Each player the Lunatic chooses at night."
+		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "Choose the Demon the Lunatic thinks they are; with 7 or more players, also choose fake Minions and 3 bluffs to show them"
+			}
+		],
+		"none": "the Lunatic’s character token is in the grimoire; Chosen marks their later night attacks"
+	},
+	"setupModifier": {
+		"summary": "Shown a Demon",
+		"ops": [],
+		"notes": ["The Lunatic is shown a Demon token, not the Lunatic."]
+	},
+	"dayReminders": {
+		"none": "night effect"
+	},
+	"deathCause": {
+		"none": "thinks it is the Demon"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	}
+}

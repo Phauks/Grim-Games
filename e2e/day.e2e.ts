@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 // Spike: the day log and the night answers it feeds (/spikes/day), touch only.
 
@@ -34,8 +35,11 @@ test('Demon voted feeds the Flowergirl, and there is no New day button', async (
 	// Nominations happen off the grimoire, so there is nothing to tap for them.
 	await expect(page.getByRole('radiogroup', { name: 'Tapping a player' })).toHaveCount(0);
 
-	// One tap in the pinned toolbar (Trevor, 2026-10-19), pressed until tapped again.
-	const voted = page.getByTestId('day-toolbar').getByRole('button', { name: 'Demon voted' });
+	// One tap on the Flowergirl's own row (Trevor, 2026-10-23: L43), pressed until tapped again.
+	await expect(page.getByTestId('day-toolbar').getByTestId('demon-voted')).toHaveCount(0);
+	const voted = page
+		.locator('li[data-character="flowergirl"]')
+		.getByRole('button', { name: 'Demon voted' });
 	await voted.tap();
 	await expect(voted).toHaveAttribute('aria-pressed', 'true');
 	await expect(
@@ -118,20 +122,32 @@ test("day notes are gone; a player's day button sits in their ability row", asyn
 	await expect(button).toHaveCount(1);
 	const row = page.locator('li[data-character="slayer"]').filter({ has: button });
 	await expect(row).toHaveCount(1);
-	// Drawn like character selection (Trevor, 2026-10-20): the button at the row's end,
-	// after the name, the player and the ability.
-	await expect(row.locator('.head')).toContainText('Slayer');
-	await expect(row.locator('.head .note')).toHaveText('Ben');
-	const text = await place(row.locator('.main'));
+	// The character's band across the row, the ability under it, then a strip joined below
+	// with the state and the button at its end (Trevor, 2026-10-23).
+	const band = row.locator('.bar .badge');
+	await expect(band).toContainText('Slayer');
+	await expect(band).toContainText('· Ben');
+	const bar = await place(row.locator('.bar'));
+	const ability = await place(row.locator('.ability'));
+	const footer = await place(row.locator('.footer'));
 	const used = await place(button);
-	const box = await place(row.locator('.row'));
-	expect(used.x).toBeGreaterThanOrEqual(text.x + text.width - 1);
-	expect(used.y).toBeGreaterThanOrEqual(box.y - 1);
-	expect(used.y + used.height).toBeLessThanOrEqual(box.y + box.height + 1);
+	expect(ability.y).toBeGreaterThanOrEqual(bar.y + bar.height - 1);
+	expect(footer.y).toBeGreaterThanOrEqual(ability.y + ability.height - 1);
+	expect(used.y).toBeGreaterThanOrEqual(footer.y - 1);
+	expect(used.x + used.width).toBeGreaterThan(footer.x + footer.width * 0.6);
+	// The button is the strip's square end, its full height, and the state reads at the
+	// ability's size (Trevor, 2026-10-24: option A).
+	expect(Math.abs(used.x + used.width - (footer.x + footer.width))).toBeLessThan(2);
+	expect(used.height).toBeGreaterThanOrEqual(footer.height - 2);
+	await expect(button).toHaveCSS('border-top-left-radius', '0px');
+	const size = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontSize);
+	expect(await size(row.getByTestId('day-state'))).toBe(await size(row.locator('.ability')));
 	await row.screenshot({ path: `test-results/day-used-row-${test.info().project.name}.png` });
 });
 
-test("the Juggler's note keeps a guess for each player", async ({ page }) => {
+test("the Juggler's note has 5 guess slots, and a player may be guessed twice", async ({
+	page
+}) => {
 	await loaded(page);
 	await sampleGame(page, 'Sects & Violets');
 	// His guesses have their own button on his row (Trevor, 2026-10-19).
@@ -140,22 +156,57 @@ test("the Juggler's note keeps a guess for each player", async ({ page }) => {
 	).toHaveCount(1);
 	await page.getByRole('button', { name: /^Guesses: Juggler/ }).tap();
 	const sheet = page.getByRole('dialog', { name: /^Note: Juggler/ });
-	const guess = sheet.getByRole('combobox', { name: 'Guess for Ana' });
-	await expect(guess).toHaveText('No guess');
-	await guess.tap();
-	await page.getByRole('option', { name: 'Witch', exact: true }).tap();
-	await expect(guess).toHaveText('Witch');
+	// Up to 5 guesses, each a player and a character (https://wiki.bloodontheclocktower.com/Juggler;
+	// Trevor, 2026-10-24: free slots, not one per player).
+	await expect(sheet.getByTestId('guess-slot')).toHaveCount(5);
+	const pick = async (name: string, option: string) => {
+		await sheet.getByRole('combobox', { name }).tap();
+		await page.getByRole('option', { name: option, exact: true }).tap();
+	};
+	const correct = sheet.getByTestId('correct-guesses');
+	await expect(sheet.getByRole('combobox', { name: 'Character for guess 1' })).toHaveText(
+		'No guess'
+	);
+	// Eve is the Witch: guessing her as the Cerenovus and then the Witch is one right of two.
+	await pick('Player for guess 1', 'Eve');
+	await pick('Character for guess 1', 'Cerenovus');
+	await expect(correct).toHaveText('0 correct');
+	await pick('Player for guess 2', 'Eve');
+	await pick('Character for guess 2', 'Witch');
+	await expect(correct).toHaveText('1 correct');
 	await sheet.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(sheet).toBeHidden();
 	await page.getByRole('button', { name: /^Guesses: Juggler/ }).tap();
-	await expect(guess).toHaveText('Witch');
+	await expect(sheet.getByRole('combobox', { name: 'Player for guess 2' })).toHaveText('Eve');
+	await expect(sheet.getByRole('combobox', { name: 'Character for guess 2' })).toHaveText('Witch');
+	await expect(sheet.getByTestId('guess-slot')).toHaveCount(5);
+	await sheet.screenshot({ path: `test-results/juggler-slots-${test.info().project.name}.png` });
+});
+
+test('the Gossip’s statement, marked true, is a yes on her night step (L58)', async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Gossip: a true public statement means a death tonight.
+	await loaded(page);
+	await sampleGame(page, 'Sects & Violets');
+	const button = page
+		.locator('li[data-character="gossip"]')
+		.getByRole('button', { name: /^Statement: Gossip/ });
+	await expect(button).toHaveCount(1);
+	await button.tap();
+	const sheet = page.getByRole('dialog', { name: /^Note: Gossip/ });
+	await sheet.getByRole('textbox', { name: 'Statement' }).fill('Fay is the Demon');
+	await sheet.getByText('The statement is true', { exact: true }).tap();
+	await sheet.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(sheet).toBeHidden();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
+	const gossip = await walkTo(page, 'Gossip');
+	await expect(gossip.getByRole('group', { name: 'Gossip answer' })).toContainText('Yes');
 });
 
 test('with help switched off the night is a checklist with no worked-out answers', async ({
 	page
 }) => {
 	await loaded(page);
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -247,4 +298,18 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 	// Ana is counted dead in the day view's living players.
 	await page.getByTestId('alive-count').tap();
 	await expect(anaRow).toContainText('Dead');
+});
+
+test('character rows read as one list split by dividers', async ({ page }) => {
+	await loaded(page);
+	// No boxes with the background showing between them (Trevor, 2026-10-23: L44).
+	const list = page
+		.locator('ul.rows')
+		.filter({ has: page.locator('li + li') })
+		.first();
+	const rows = list.locator(':scope > li');
+	const first = await place(rows.nth(0));
+	const second = await place(rows.nth(1));
+	expect(second.y - (first.y + first.height)).toBeLessThan(1);
+	await expect(rows.nth(1)).toHaveCSS('border-top-style', 'solid');
 });

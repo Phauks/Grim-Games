@@ -1,0 +1,76 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "The Mezepheles once someone has turned evil."
+		},
+		"Turns Evil": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "The first good player to say the secret word, who may be the Mezepheles if it is good."
+		}
+	},
+	"setupPrep": {
+		"notes": [
+			{
+				"text": "Choose the Mezepheles’ secret word"
+			}
+		],
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has a secret word"
+					}
+				],
+				"when": {
+					"noReminder": "Turns Evil"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "changes alignment"
+	},
+	"reminderMovement": {
+		"fixed": ["Turns Evil", "No Ability"],
+		"why": "Only the first player to say the word turns evil."
+	},
+	"reminderPlaceholders": {
+		"note": "The player who said the word turns evil; the Mezepheles' ability is used.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Turns Evil",
+						"action": "remove"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "If a good player said the secret word today (*TURNS EVIL*), wake them, show the *YOU ARE* info token & give a thumbs-down: they are now evil. Remove *TURNS EVIL* and mark the Mezepheles *NO ABILITY*.",
+				"reason": "Says when the Turns Evil token comes off and the ability is used."
+			}
+		}
+	}
+}

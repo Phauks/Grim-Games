@@ -240,9 +240,20 @@
 			display: block;
 		}
 		/* A line between the list and the text, and between entries, as on a phone (Trevor,
-		   2026-10-20). */
+		   2026-10-20). The side line runs up to the line above the layout, and the list has no
+		   line of its own on top (Trevor, 2026-10-24): the space above moves into each side. */
+		.layout:has(.nav) {
+			padding-top: 0;
+		}
+		.layout:has(.nav) .nav,
+		.layout:has(.nav) .pane {
+			padding-top: var(--space-3);
+		}
 		.layout:has(.nav) .nav {
 			border-inline-end: var(--card-border);
+		}
+		.nav ul {
+			border-top: 0;
 		}
 		.chevron,
 		.view > :global(.back) {

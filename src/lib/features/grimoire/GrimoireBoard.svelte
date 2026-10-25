@@ -1,41 +1,35 @@
 <script lang="ts">
-	import type { EndReason, Night, NightStep } from '#lib/core/rules/index.ts';
+	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
+	import type { NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
-	import { gameModeNames } from './game-mode-name.ts';
+	import { phaseText } from './phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames } from './device-notes.ts';
-	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
+	import { endedGames, gameStarts, nightUnderway, type EndedGame } from './device-notes.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
-	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
-	import { boardBackground } from './board-background.svelte.ts';
+	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
+	import GameBackdrop from './GameBackdrop.svelte';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
-	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
-	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
-	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
-	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
-	import { goto, pushState, replaceState } from '$app/navigation';
-	import { page } from '$app/state';
-	import { onMount, untrack } from 'svelte';
+	import { goto, replaceState } from '$app/navigation';
+	import { onMount, tick, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
-	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		charactersInPlay,
 		looseReminders,
 		ruleReminders,
 		scriptCharacterIds,
-		seatNumber,
 		trueCharacter,
 		type Reminder,
 		type ReminderInstance,
@@ -45,31 +39,32 @@
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import {
 		dayNumber,
+		gamePhase,
 		livingByTeam,
-		promptApplies,
-		reminderOwnerDead,
-		reminderPrompt,
-		type ReminderPrompt,
 		setupComplete,
 		diedSinceNewDay,
-		ON_DEATH,
-		abilityState,
-		stepNightNumbers
+		onDeathTrigger,
+		stepNightNumbers,
+		todaysNominations,
+		mayNominate,
+		votesWithoutToken,
+		characterNominationPrompts,
+		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
+	import {
+		nominationPrompts,
+		seatHasAbility,
+		type NominationPrompt
+	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import ReminderOrigin from './ReminderOrigin.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
 		followSeating,
@@ -78,25 +73,37 @@
 		keepInside,
 		seatPoints,
 		seatTokenSize,
-		spreadEvenly,
-		orderAround,
-		withPlaced,
-		withoutPlaced,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
-	import { nameBox, placeNames, type Box } from './name-placement.ts';
+	import type { Box } from './name-placement.ts';
+	import { SeatArranging } from './seat-arranging.svelte.ts';
+	import { ReminderDragging } from './reminder-drag.svelte.ts';
+	import {
+		avoidBoxes,
+		cornerObstacles,
+		keepClear,
+		nameBoxes as boardNameBoxes,
+		rimToward,
+		toPercent as boardToPercent,
+		toPx as boardToPx
+	} from './board-geometry.ts';
 	import { cornerRoom } from './corner-room.ts';
+	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
-	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { fromScript, scriptLogo, scriptToJson } from '#lib/core/data/index.ts';
+	import { fromScript, scriptLogo, scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
+	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
+	import PlayerNotes from '#lib/features/player/PlayerNotes.svelte';
+	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
+	import { currentScript } from '#lib/features/scripts/current-script.svelte.ts';
+	import { scriptKey } from '#lib/features/player/notebook.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import {
@@ -106,36 +113,37 @@
 	import { publicProjection } from '#lib/core/sync/public-projection.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
+	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
+	import NominationChooser from './NominationChooser.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
-	import RulesAtSetting from './RulesAtSetting.svelte';
-	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
+	import BoardCorner from './BoardCorner.svelte';
+	import { cornerLines } from './corner-lines.ts';
+	import LeaveGuard from './LeaveGuard.svelte';
+	import BoardMenu from './BoardMenu.svelte';
+	import BoardToolbar from './BoardToolbar.svelte';
+	import RuleCharacters from './RuleCharacters.svelte';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
-	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
-	import {
-		extraReminders,
-		isGeneric,
-		isSeatsReminder,
-		onBoard,
-		reminderWords,
-		tokenLabel
-	} from './reminders.ts';
+	import { extraReminders, isGeneric, isSeatsReminder, reminderWords } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
-	import EndGameFields from './EndGameFields.svelte';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
-	import GameEndPrompt from './GameEndPrompt.svelte';
+	import EndGameDialogs from './EndGameDialogs.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
-	import FoolAsk from './FoolAsk.svelte';
+	import FirstDeathAsk from './FirstDeathAsk.svelte';
+	import ReminderAsk from './ReminderAsk.svelte';
+	import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
+	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -146,11 +154,20 @@
 		watching?: boolean;
 		/** The Storyteller's day timer, on a spectator's board. */
 		watchedTimer?: WatchedTimer;
+		/**
+		 * A watched game the room says is over (the final grimoire on a phone, Trevor
+		 * 2026-10-24): its History steps through on this device only.
+		 */
+		over?: EndedGame;
 	}
 
-	let { grimoire, watching = false, watchedTimer }: Props = $props();
+	let { grimoire, watching = false, watchedTimer, over }: Props = $props();
+	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
+	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
 	const game = $derived(grimoire.game);
+	/** Characters a special rule put in play from off the script, not flagged (+1). */
+	const offScriptOk = $derived(allowedOffScriptIn(game.gameId));
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
 	const setUp = $derived(setupComplete(game));
 	const characters = $derived(grimoire.open.characters);
@@ -182,7 +199,39 @@
 	// sizes the board only (Trevor, 2026-10-19): tokens elsewhere keep their own size.
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
-	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
+	// Who nominated and who was nominated today, for the marks on the seats (Track nominations).
+	/**
+	 * A seat's nomination marks (Trevor, 2026-10-23): on every player, greyed until they
+	 * happen, as the ghost vote shows on the dead. The dead may still be nominated but not
+	 * nominate (Trevor, 2026-10-24), so they show only the gavel, unless their character may
+	 * (`mayNominate`) or they nominated before they died.
+	 */
+	function seatNominationMarks(seat: { seatId: SeatId }) {
+		if (!nominatedToday) return undefined;
+		const made = nominatedToday.made.has(seat.seatId);
+		const received = nominatedToday.received.has(seat.seatId);
+		const nominates = made || mayNominate(game, seat.seatId, characters);
+		return { made: nominates ? made : undefined, received };
+	}
+	const nominatedToday = $derived.by(() => {
+		if (!preferences.current.assistance.trackNominations) return undefined;
+		const today = todaysNominations(game);
+		return {
+			made: new Set(today.map((n) => n.nominator)),
+			received: new Set(today.map((n) => n.nominee))
+		};
+	});
+	/**
+	 * The walk-through strip under the board takes this much of its height (measured, as it
+	 * scales with text). Tokens are sized as if it weren't there, so starting the night only
+	 * draws the seats closer together and never shrinks them (Trevor, 2026-10-23).
+	 */
+	const STRIP_H = '7.5rem';
+	let stripReserve = $state(0);
+	const sizingHeight = $derived.by(() => (nw.walk ? height + stripReserve : height));
+	const size = $derived(
+		seatTokenSize(game.seating, layout, { width, height: sizingHeight }, tokenScale)
+	);
 	// The Token size preview in Settings draws at this board's size.
 	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
@@ -206,64 +255,26 @@
 		void preferences.current;
 		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 	});
-	const toPx = (p: SeatPoint) => ({ x: (p.x / 100) * width, y: (p.y / 100) * height });
-	const toPercent = (p: { x: number; y: number }): SeatPoint => ({
-		x: (p.x / width) * 100,
-		y: (p.y / height) * 100
-	});
-	/** Each seat's name, its box in px (the badge: 0.8rem text, padding and border). */
-	const nameBoxes = $derived.by(() => {
-		if (width <= 0 || height <= 0) return [];
-		const font = rootFont * 0.8;
-		const lineHeight = Math.ceil(font * 1.2 + font * 0.3 + 2);
-		const widths = seats.map((seat, i) => {
-			const name = seat.playerName ?? `Seat ${i + 1}`;
-			return Math.min(size + 2 * unit, name.length * font * 0.55 + font + 2);
-		});
-		const centres = shown.map(toPx);
-		const places = placeNames({
-			seats: centres,
+	const boardSize = $derived({ width, height });
+	const toPx = (p: SeatPoint) => boardToPx(p, boardSize);
+	const toPercent = (p: { x: number; y: number }): SeatPoint => boardToPercent(p, boardSize);
+	const nameBoxes = $derived.by(() =>
+		boardNameBoxes({
+			names: seats.map((seat, i) => seat.playerName ?? `Seat ${i + 1}`),
+			seats: shown,
 			size,
-			widths,
-			height: lineHeight,
-			obstacles: [],
-			board: { width, height }
-		});
-		return places.map((place, i) => ({
-			place,
-			box: nameBox(centres[i], place, size, widths[i], lineHeight)
-		}));
-	});
-	/**
-	 * The script's name in the corner keeps clear of every seat and name (Trevor, 2026-10-18),
-	 * cut short with an ellipsis where it would reach one (always the lower left).
-	 */
-	const cornerFit = $derived.by(() => {
-		const boxes = shown.flatMap((p, i) => {
-			const c = toPx(p);
-			const name = nameBoxes[i]?.box;
-			// The token, with the name pill straddling its lower rim (PlayerNameMark).
-			const off = boardLooks.current.nameOffset;
-			const token = { x: c.x, y: c.y + (0.05 + off / 2) * size, w: size, h: (1.1 + off) * size };
-			return name ? [token, name] : [token];
-		});
-		// The name sits 4px (--space-1) in from the edges.
-		const room = (h: number) => cornerRoom(boxes, { width, height }, h + 4, 4 + 8);
-		// A line per special rule (Trevor, 2026-10-19) when they all fit; otherwise one line,
-		// as before. Both heights come from what is shown now, so the choice never flip-flops.
-		const extra = Math.max(0, modeLines.length - 1) * (lineHs[0] ?? 0);
-		const stackedH = stackRules ? titleH : titleH + extra;
-		const stacked = room(stackedH);
-		if (extra > 0 && stacked >= 2 * rootFont) return { room: stacked, stack: true };
-		return { room: room(stackRules ? titleH - extra : titleH), stack: false };
-	});
-	/** Whether the rules show a line each now; follows cornerFit once the lines are measured. */
-	// eslint-disable-next-line svelte/prefer-writable-derived -- cornerFit reads it back, so a derived would be circular
-	let stackRules = $state(false);
-	$effect(() => {
-		stackRules = cornerFit.stack;
-	});
-	const corner = $derived(cornerFit.room);
+			unit,
+			rootFont,
+			board: boardSize
+		})
+	);
+	/** How wide the corner may be for a given height (corner-room.ts); the name sits 4px in. */
+	const cornerBoxes = $derived.by(() =>
+		cornerObstacles(shown, nameBoxes, size, boardLooks.current.nameOffset, boardSize)
+	);
+	const fitCorner = (h: number) => cornerRoom(cornerBoxes, { width, height }, h + 4, 4 + 8);
+	/** How wide the corner may be now (BoardCorner). */
+	let corner = $state(0);
 	/**
 	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
 	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
@@ -284,47 +295,51 @@
 		const { entries, cursor } = grimoire.open.session.log;
 		return diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
 	});
+	/** The game's special rules, kept whole with the game (game-mode-store.ts). */
+	const gameRules = $derived(readGameMode(game.gameId)?.rules ?? []);
+	/**
+	 * Who has an ability under a special rule, when one changes it (The Phantom Detectives:
+	 * the dead keep theirs, living Townsfolk have none).
+	 */
+	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
 	function wakes(step: NightStep): boolean {
 		const holders = stepHolders(game, step, characters);
 		const id = step.character?.id;
 		return (
 			holders.length === 0 ||
 			holders.some(
-				(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && diedTonight.has(s))
+				(s) =>
+					seatHasAbility(abilitiesRule, game, s, characters) ||
+					(id !== undefined && !!onDeathTrigger(id, characters) && diedTonight.has(s))
 			)
 		);
 	}
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
-		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
+		if (!data || preferences.current.tokenAppearance.nightLeaves !== 'numbers') return undefined;
 		const counts = wakes;
 		return {
-			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data, today), counts),
-			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data, today), counts)
+			first: stepNightNumbers(
+				boardNightSteps(game, characters, 'first', data, today, gameRules),
+				counts
+			),
+			other: stepNightNumbers(
+				boardNightSteps(game, characters, 'other', data, today, gameRules),
+				counts
+			)
 		};
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
 	function avoidFor(i: number): Box[] {
-		const out: Box[] = [];
-		const c = toPx(shown[i]);
-		const hasFace = seats[i]?.characterId !== undefined;
-		if (!hasFace) {
-			const name = nameBoxes[i]?.box;
-			if (name) out.push(name);
-		} else {
-			// The badge pill straddles the token's lower rim (PlayerNameMark).
-			// Lower by the badge offset (Board and tokens).
-			const off = boardLooks.current.nameOffset;
-			out.push({ x: c.x, y: c.y + (0.5 + off) * size, w: 0.9 * size, h: 0.18 * size });
-		}
-		if (seats[i]?.dead) {
-			out.push({ x: c.x - 0.41 * size, y: c.y + 0.37 * size, w: 0.38 * size, h: 0.38 * size });
-		}
-		// The note mark, lower right (SeatToken).
-		if (seats[i]?.note) {
-			out.push({ x: c.x + 0.39 * size, y: c.y + 0.39 * size, w: 0.3 * size, h: 0.3 * size });
-		}
-		return out;
+		return avoidBoxes({
+			centre: toPx(shown[i]),
+			size,
+			hasFace: seats[i]?.characterId !== undefined,
+			name: nameBoxes[i]?.box,
+			dead: !!seats[i]?.dead,
+			note: !!seats[i]?.note,
+			nameOffset: boardLooks.current.nameOffset
+		});
 	}
 	/**
 	 * Every seat's reminders, laid out together so one seat's never cover another's (Trevor,
@@ -337,13 +352,12 @@
 	let timerW = $state(0);
 	let titleW = $state(0);
 	let titleH = $state(0);
-	/** The heights of the mode and rule lines under the script's name. */
-	let lineHs = $state<number[]>([]);
 	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
 	const fan = $derived.by(() => {
-		if (width <= 0 || height <= 0) return seats.map((s, i) => s.reminders.map(() => shown[i]));
+		if (width <= 0 || height <= 0)
+			return seats.map((s, i) => Array.from({ length: s.reminders.length }, () => shown[i]));
 		const fitted = fitReminders(
 			seats.map((s, i) => ({
 				seat: toPx(shown[i]),
@@ -353,195 +367,49 @@
 				chip: Math.max(chip, tapPx),
 				avoid: avoidFor(i)
 			})),
-			// The Set up button and the Fabled and Loric in the middle stay clear and tappable.
-			[
-				...(centreW > 0 ? [{ x: width / 2, y: height / 2, w: centreW + 12, h: centreH + 12 }] : []),
-				// Fabled and Loric along the edge or grouped, in the top left corner.
-				...(edgeW > 0 && boardLooks.current.rulesAt !== 'middle'
-					? [{ x: edgeW / 2, y: edgeH / 2, w: edgeW + 12, h: edgeH + 12 }]
-					: []),
-				// The day timer, in the top right corner.
-				...(timerW > 0 && showTimer
-					? [{ x: width - timerW / 2, y: timerH / 2, w: timerW + 12, h: timerH + 12 }]
-					: []),
-				// The script's name in a lower corner.
-				...(titleW > 0
-					? [
-							{
-								x: titleW / 2,
-								y: height - titleH / 2,
-								w: titleW + 12,
-								h: titleH + 12
-							}
-						]
-					: [])
-			],
-			{ width, height }
+			// The Set up button and the Fabled and Loric in the middle, the Fabled and Loric along
+			// the edge, the day timer and the script's name stay clear and tappable.
+			keepClear({
+				centre: { w: centreW, h: centreH },
+				edge: boardLooks.current.rulesAt !== 'middle' ? { w: edgeW, h: edgeH } : undefined,
+				timer: showTimer ? { w: timerW, h: timerH } : undefined,
+				title: { w: titleW, h: titleH },
+				board: boardSize
+			}),
+			boardSize
 		);
 		return fitted.at.map((points) => points.map(toPercent));
 	});
 
-	interface ReminderDrag {
-		reminderId: ReminderId;
-		/** The seat it is on; none for a loose reminder or one a Fabled or Loric holds. */
-		from: SeatId | undefined;
-		/** Where the token is, in % of the board. */
-		at: SeatPoint;
-		target?: SeatId;
-	}
-	let reminderDrag = $state<ReminderDrag | undefined>();
-	/**
-	 * Where a dragged reminder came from (Trevor, 2026-10-16): its character, the seats that
-	 * hold that character (marked on the board) and the seat it is on now.
-	 */
-	const dragOrigin = $derived.by(() => {
-		if (!reminderDrag) return undefined;
-		const id = reminderDrag.reminderId;
-		const reminder = onBoard(game).find((r) => r.reminderId === id);
-		if (!reminder) return undefined;
-		const holders = game.seating.filter(
-			(s) =>
-				game.seats[s].characterId === reminder.characterId ||
-				trueCharacter(game, s, characters) === reminder.characterId
-		);
-		return { holders, reminder };
-	});
-
-	/** The seat under a point (in % of the board), if it is within reach of a token. */
-	function seatAt(at: SeatPoint): SeatId | undefined {
-		let best: SeatId | undefined;
-		let bestDistance = size * 0.75;
-		game.seating.forEach((id, i) => {
-			const d = Math.hypot(
-				((points[i].x - at.x) / 100) * width,
-				((points[i].y - at.y) / 100) * height
-			);
-			if (d < bestDistance) {
-				best = id;
-				bestDistance = d;
-			}
-		});
-		return best;
-	}
-
+	// ── Dragging reminders (reminder-drag.svelte.ts) ──
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
-	/**
-	 * Where a free reminder may stay: on the board, but not over the reminder bank, the night
-	 * walk-through, the middle's buttons, the timer or the Fabled and Loric (Trevor, 2026-10-17).
-	 */
-	function spotAllowed(x: number, y: number): boolean {
-		if (!board) return false;
-		const inside = (r: DOMRect | undefined) =>
-			!!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-		if (!inside(board.getBoundingClientRect())) return false;
-		const blocked = board.querySelectorAll(
-			'[data-tray], [data-testid="night-strip"], .centre > *, .board-timer, .rules-edge'
-		);
-		return ![...blocked].some((el) => inside(el.getBoundingClientRect()));
-	}
-	/**
-	 * The Fabled or Loric under a client point, if any: its own token, or the grouped stack
-	 * (then the one whose reminder it is, else the first) (Trevor, 2026-10-17).
-	 */
-	function ruleAt(x: number, y: number, reminder: Reminder): CharacterId | undefined {
-		const hit = document
-			.elementsFromPoint(x, y)
-			.map((el) => el.closest<HTMLElement>('[data-rule], [data-rule-stack]'))
-			.find((el) => el !== null);
-		if (!hit) return undefined;
-		if (hit.dataset.rule) return hit.dataset.rule;
-		return game.ruleCharacters.includes(reminder.characterId)
-			? reminder.characterId
-			: game.ruleCharacters[0];
-	}
 	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
-	/** A Fabled or Loric's reminder being dragged off it. */
-	const heldDrag = $derived.by(() => {
-		const id = reminderDrag?.reminderId;
-		if (!id) return undefined;
-		return Object.values(game.ruleReminders ?? {})
-			.flat()
-			.find((r) => r.reminderId === id);
-	});
 	const heldLabel = (name: string) => `${name}'s reminders`;
-	/** Gives a dropped spot to a reminder now loose on the board. */
-	function looseAt(reminderId: ReminderId, at: SeatPoint) {
-		grimoire.setReminderSpot(reminderId, at);
-	}
-	function dragReminder(
-		reminderId: ReminderId,
-		from: SeatId | undefined,
-		x: number,
-		y: number,
-		end: boolean
-	) {
-		if (!board) return;
-		const rect = board.getBoundingClientRect();
-		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
-		const target = seatAt(at);
-		if (!end) {
-			reminderDrag = {
-				reminderId,
-				from,
-				at,
-				target: boardLooks.current.reminders === 'free' ? undefined : target
-			};
-			return;
-		}
-		reminderDrag = undefined;
-		// Dropped back on the setup reminders tray: it waits there again (History has it).
-		const tray = board.querySelector('[data-tray]')?.getBoundingClientRect();
-		if (tray && x >= tray.left && x <= tray.right && y >= tray.top && y <= tray.bottom) {
-			moveConfirm?.requestReturn(reminderId);
-			return;
-		}
-		const reminder = onBoard(game).find((r) => r.reminderId === reminderId);
-		if (!reminder) return;
-		// Dropped on a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
-		const rule = ruleAt(x, y, reminder);
-		if (rule) {
-			if (!ruleReminders(game, rule).some((r) => r.reminderId === reminderId))
-				moveConfirm?.requestRule(reminderId, rule);
-			return;
-		}
-		// Loose mode (Trevor, 2026-10-18): nothing is given to a seat. A reminder goes where it
-		// is dropped, seats included; one still on a seat from before comes off it.
-		if (boardLooks.current.reminders === 'free') {
-			if (!spotAllowed(x, y)) return;
-			if (looseReminders(game).some((r) => r.reminderId === reminderId))
-				grimoire.setReminderSpot(reminderId, at);
-			else moveConfirm?.requestLoose(reminderId, () => looseAt(reminderId, at));
-			return;
-		}
-		// Dropped on another seat: moved (one History entry).
-		if (target && target !== from) moveConfirm?.request(reminderId, target);
-	}
+	const remDrag = new ReminderDragging(() => ({
+		grimoire,
+		game,
+		characters,
+		points,
+		size,
+		board: boardSize,
+		element: board,
+		free: boardLooks.current.reminders === 'free',
+		confirm: moveConfirm
+	}));
+	const dragOrigin = $derived(remDrag.origin);
+	const heldDrag = $derived(remDrag.held);
 
-	// ── Arranging seats ──
-	// Seats can be dragged anywhere (people on a couch, a gap by the door) and gaps left
-	// between neighbours. Only where seats are drawn changes; the seating order does not.
-	let arranging = $state(false);
-	function startArranging() {
-		arranging = true;
-		toast(
-			'Arrange seats',
-			'Drag a seat anywhere to space the table, or onto another seat to change the seating order.'
-		);
-	}
-
-	interface Drag {
-		seatId: SeatId;
-		pointerId: number;
-		/** From the pointer to the seat's centre, so the seat does not jump under a finger. */
-		offset: SeatPoint;
-		at: SeatPoint;
-		moved: boolean;
-	}
-	let drag = $state<Drag | undefined>();
-	/** Where seats are drawn now: a dragged seat follows the finger, with its reminders. */
-	const shown = $derived(
-		drag ? points.map((p, i) => (game.seating[i] === drag!.seatId ? drag!.at : p)) : points
-	);
+	// ── Arranging seats (seat-arranging.svelte.ts) ──
+	const seatArr = new SeatArranging(() => ({
+		grimoire,
+		seating: game.seating,
+		layout,
+		points,
+		size,
+		board: boardSize,
+		element: board
+	}));
+	const shown = $derived(seatArr.shown);
 
 	// Rotating moves the players, not the places: a hand-placed spot or a gap stays where it
 	// is and whoever now sits there takes it. Also after History restores a rotation.
@@ -553,111 +421,19 @@
 		lastSeating = seating;
 	});
 	/**
-	 * Spread evenly keeps hand moves (Trevor, 2026-10-16): the seating order is first read from
-	 * where seats sit around the circle, so seats renumber to match (each move is in History),
-	 * then they are spaced evenly in that order.
-	 */
-	function spreadSeats() {
-		const even = seatPoints(game.seating, spreadEvenly(layout), { width, height });
-		const target = orderAround(
-			game.seating,
-			shown.map(toPx),
-			{ x: width / 2, y: height / 2 },
-			even.map(toPx)
-		);
-		for (let i = 0; i < target.length; i++) {
-			if (game.seating[i] !== target[i])
-				grimoire.run({ type: 'MoveSeat', seatId: target[i], position: i });
-		}
-		grimoire.setLayout(spreadEvenly(grimoire.layout));
-	}
-	/** Pointer movement, in pixels, before a press counts as a drag. */
-	const DRAG_SLOP = 6;
-	let pressedAt = { x: 0, y: 0 };
-
-	function boardPoint(event: PointerEvent): SeatPoint {
-		const rect = board!.getBoundingClientRect();
-		return {
-			x: ((event.clientX - rect.left) / rect.width) * 100,
-			y: ((event.clientY - rect.top) / rect.height) * 100
-		};
-	}
-	/**
-	 * The seat last touched draws over the others where tokens overlap, its name included
-	 * (Trevor, 2026-10-19). Only for this visit to the board: a reload goes back to seat order.
-	 */
-	let front = $state<SeatId | undefined>();
-	function dragStart(event: PointerEvent, seatId: SeatId, at: SeatPoint) {
-		front = seatId;
-		if (!arranging || drag || !board) return;
-		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-		const p = boardPoint(event);
-		pressedAt = { x: event.clientX, y: event.clientY };
-		drag = {
-			seatId,
-			pointerId: event.pointerId,
-			offset: { x: at.x - p.x, y: at.y - p.y },
-			at,
-			moved: false
-		};
-	}
-	function dragMove(event: PointerEvent) {
-		if (!drag || event.pointerId !== drag.pointerId) return;
-		const moved =
-			drag.moved ||
-			Math.hypot(event.clientX - pressedAt.x, event.clientY - pressedAt.y) >= DRAG_SLOP;
-		const p = boardPoint(event);
-		drag = { ...drag, moved, at: { x: p.x + drag.offset.x, y: p.y + drag.offset.y } };
-	}
-	/** The other seat a dragged seat is over, if any: dropping there changes the order. */
-	const reorderTarget = $derived.by(() => {
-		if (!drag?.moved) return undefined;
-		const dragged = drag.seatId;
-		let best: SeatId | undefined;
-		let bestDistance = size * 0.6;
-		game.seating.forEach((id, i) => {
-			if (id === dragged) return;
-			const d = Math.hypot(
-				((points[i].x - drag!.at.x) / 100) * width,
-				((points[i].y - drag!.at.y) / 100) * height
-			);
-			if (d < bestDistance) {
-				best = id;
-				bestDistance = d;
-			}
-		});
-		return best;
-	});
-	function dragEnd(event: PointerEvent) {
-		if (!drag || event.pointerId !== drag.pointerId) return;
-		const target = reorderTarget;
-		if (target) {
-			// Onto another seat: the player takes that place in the seating order (one History
-			// entry), and follows the ring rather than a hand-placed spot.
-			const position = game.seating.indexOf(target);
-			if (grimoire.run({ type: 'MoveSeat', seatId: drag.seatId, position }))
-				grimoire.setLayout(withoutPlaced(layout, drag.seatId));
-		} else if (drag.moved) grimoire.setLayout(withPlaced(layout, drag.seatId, drag.at));
-		drag = undefined;
-	}
-	/** Arrow keys move a seat while arranging, for keyboards and switch access. */
-	function nudge(event: KeyboardEvent, seatId: SeatId, at: SeatPoint) {
-		if (!arranging) return;
-		const step = { ArrowLeft: [-2, 0], ArrowRight: [2, 0], ArrowUp: [0, -2], ArrowDown: [0, 2] }[
-			event.key
-		];
-		if (!step) return;
-		event.preventDefault();
-		grimoire.setLayout(withPlaced(layout, seatId, { x: at.x + step[0], y: at.y + step[1] }));
-	}
-
-	/**
 	 * The seat whose token is held down (Trevor, 2026-10-19): its character's reminders light
-	 * up, on the board and in the bank, and everything else dims until it is let go.
+	 * up, on the board and in the bank, and everything else dims until it is let go. With
+	 * Board > Advanced's switch (Trevor, 2026-10-23), the reminders placed on that seat light
+	 * instead, whoever's they are; none in the bank is on a seat.
 	 */
 	let holding = $state<SeatId | undefined>();
-	function lit(reminder: Pick<Reminder, 'characterId' | 'ownerSeatId'>): boolean {
-		return holding !== undefined && isSeatsReminder(game, reminder, holding, characters);
+	function lit(
+		reminder: Pick<Reminder, 'characterId' | 'ownerSeatId'> & { reminderId?: ReminderId }
+	): boolean {
+		if (holding === undefined) return false;
+		if (boardLooks.current.holdLights === 'seat')
+			return game.seats[holding].reminders.some((r) => r.reminderId === reminder.reminderId);
+		return isSeatsReminder(game, reminder, holding, characters);
 	}
 
 	// ── Seat sheet ──
@@ -675,8 +451,7 @@
 	function readCharacter(id: CharacterId | undefined) {
 		const character = id ? characters.get(id) : undefined;
 		if (!character) return;
-		ruleDetails = character;
-		ruleDetailsOpen = true;
+		rules?.details(character);
 	}
 
 	// ── Notes (Trevor, 2026-10-19): the game's and every player's in ⋯ Notes ──
@@ -746,7 +521,9 @@
 		const reminder = looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder);
 		if (!reminder) return new Set<SeatId>();
 		return new Set(
-			game.seating.filter((id) => seatMisses(game, reminder, id, characters).length > 0)
+			game.seating.filter(
+				(id) => seatMisses(game, reminder, id, characters, grimoire.atDawn).length > 0
+			)
 		);
 	});
 	/**
@@ -762,7 +539,7 @@
 	);
 	const sourceSeats = $derived.by(() => {
 		const id = handReminder?.characterId;
-		if (id === undefined) return walkHolders;
+		if (id === undefined) return nw.holders;
 		return game.seating.filter(
 			(s) => game.seats[s].characterId === id || trueCharacter(game, s, characters) === id
 		);
@@ -788,7 +565,7 @@
 
 	/** This game's ending, if it has ended (End game below). */
 	let endedRead = $state(0);
-	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
+	const ended = $derived(over ?? (void endedRead, endedGames.read()[game.gameId]));
 	/**
 	 * Tokens are still to be handed out (Trevor, 2026-10-19: "if there are tokens still in the
 	 * bag ... it should be Set Up"): no character chosen yet, or a bag not fully drawn. The
@@ -800,134 +577,72 @@
 		!ended &&
 			!grimoire.open.viewOnly &&
 			!setUp &&
-			!arranging &&
-			!placing &&
+			// Arranging or placing a token keeps Set up, disabled (Trevor, 2026-10-22: arranging
+			// turned it into Start game).
 			(Object.keys(game.bag?.tiles ?? {}).length > 0 ||
 				!game.seating.some((id) => game.seats[id].characterId !== undefined))
 	);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
-	// The walk-through and the open step come back after a reload or an update (Trevor,
-	// 2026-10-16), from what this device saved. The night order sheet left the board (Trevor,
-	// 2026-10-18): the bank's Run night runs it, and the Script screen lists it.
-	const saved = untrack(() => grimoire.nightView);
 	/** The day sheet; the old /day route lands here with `#day` to open it. */
 	let dayOpen = $state(false);
-	// ── Assisted night order (Trevor, 2026-10-16) ──
-	let guided = $state<{ step: NightStep; night: Night } | undefined>();
-	let guideOpen = $state(false);
-	/** Walking through the night under the board: which night and which step. */
-	let walk = $state<{ night: Night; index: number } | undefined>(saved.walk);
-	// Run Night Order leaves out dead players (Trevor, 2026-10-18) unless their ability is set
-	// off by dying tonight; the night order sheet still lists every step, to open by hand.
-	const walkSteps = $derived.by(() => {
-		const data = officialData.current;
-		return walk && data
-			? boardNightSteps(game, characters, walk.night, data, today).filter(wakes)
-			: [];
-	});
-	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
-	const guidedSteps = $derived.by(() => {
-		const data = officialData.current;
-		if (!guided || !data) return [];
-		const open = guided.step.id;
-		return boardNightSteps(game, characters, guided.night, data, today).filter(
-			(s) => s.id === open || wakes(s)
+	/** The Savant sheet, from the day view's Savant info button (L5). */
+	let savantSeat = $state<SeatId | undefined>();
+	let savantOpen = $state(false);
+	/**
+	 * At the end of the night, a living Savant's information is offered (Trevor, 2026-10-23:
+	 * L46): a question, never a block.
+	 */
+	let savantAskOpen = $state(false);
+	function offerSavant() {
+		if (!preferences.current.assistance.savantInfo || grimoire.open.viewOnly) return;
+		const seatId = game.seating.find(
+			(id) => game.seats[id].characterId === 'savant' && !game.seats[id].dead
 		);
-	});
-	// The saved step dialog opens once the night order can be worked out.
-	let guidedPending = $state(saved.guided);
-	$effect(() => {
-		const data = officialData.current;
-		if (!guidedPending || !data) return;
-		const { night, stepId } = guidedPending;
-		guidedPending = undefined;
-		const step = boardNightSteps(game, characters, night, data, today).find((s) => s.id === stepId);
-		if (step) {
-			guided = { step, night };
-			guideOpen = true;
-		}
-	});
-	$effect(() => {
-		grimoire.saveNightView({
-			walk: walk ? { ...walk } : undefined,
-			guided: guideOpen && guided ? { night: guided.night, stepId: guided.step.id } : guidedPending
-		});
-	});
-	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
-	/**
-	 * The rule that keeps poisoned players asleep, if the game has one (I See Dead People,
-	 * https://beardytas.com/garden-of-djinn/i-see-dead-people/), and whether it applies to the
-	 * walk-through's step: every player who wakes for it is poisoned.
-	 */
-	const poisonedSleepRule = $derived(
-		readGameMode(game.gameId)?.rules.find((rule) => rule.parts.deaths?.kind === 'private')?.name
-	);
-	const walkAsleep = $derived.by(() => {
-		if (!poisonedSleepRule || !walkStep) return false;
-		const holders = stepHolders(game, walkStep, characters);
-		return (
-			holders.length > 0 &&
-			holders.every((seatId) =>
-				abilityState(game, seatId, characters).impairments.some((i) => i.reason === 'poisoned')
-			)
+		if (seatId === undefined) return;
+		savantSeat = seatId;
+		// After the day view has opened, if it opens too, so the question is above it.
+		void tick().then(() =>
+			requestAnimationFrame(() => requestAnimationFrame(() => (savantAskOpen = true)))
 		);
-	});
-	/**
-	 * The rule that leaves seat 7 to no one, if the game has one (The Ballad of Seat 7,
-	 * https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/), and whether that seat wakes
-	 * for the walk-through's step: the Storyteller makes its choices.
-	 */
-	const emptySeatRule = $derived(
-		readGameMode(game.gameId)?.rules.find(
-			(rule) => rule.parts.seats?.kind === 'storyteller-seat' && rule.parts.seats.count > 0
-		)?.name
-	);
-	const walkEmptySeat = $derived(
-		!!emptySeatRule &&
-			!!walkStep &&
-			stepHolders(game, walkStep, characters).some((seatId) => seatNumber(game, seatId) === 7)
-	);
-	/**
-	 * Run Night Order in one tap, from the right end of the reminder bank (Trevor, 2026-10-18:
-	 * a change on the board itself, not a toolbar page). Always there while the walk-through
-	 * setting is on, so the bank never moves; usable once a seat has a character, empty seats
-	 * or not (warn, never lock: it is the only way into the night steps on the board). It
-	 * starts tonight's walk-through at the first step not yet done.
-	 */
-	const canRun = $derived(
-		!ended &&
-			!grimoire.open.viewOnly &&
-			!walk &&
-			!arranging &&
-			!placing &&
-			game.seating.some((id) => game.seats[id].characterId !== undefined)
-	);
-	function runNight(): void {
-		walkNight(false);
 	}
-	/** From Dusk when the night starts (Trevor, 2026-10-20), else at the first step not done. */
-	function walkNight(fromDusk: boolean): void {
-		const data = officialData.current;
-		if (!data) return;
-		grimoire.beginNight();
-		const night = tonight(game);
-		const steps = boardNightSteps(game, characters, night, data, today).filter(wakes);
-		const next = fromDusk ? 0 : steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
-		walk = { night, index: Math.max(0, next) };
+	// ── Assisted night order (Trevor, 2026-10-16): night-walk.svelte.ts ──
+	// Typed, as seat sizes depend on whether the walk-through is open.
+	const nw: NightWalk = new NightWalk((): NightWalkContext => ({
+		grimoire,
+		game,
+		characters,
+		data: officialData.current,
+		today,
+		rules: gameRules,
+		wakes,
+		ended: !!ended,
+		busy: seatArr.arranging || !!placing
+	}));
+	// Ending the game (often at the dusk an Execution starts) closes the night's walk-through:
+	// History's strip has the bottom of the board then (Trevor, 2026-10-24).
+	$effect(() => {
+		if (ended) nw.walk = undefined;
+	});
+	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
+	let nominationAsks = $state<(NominationPrompt | CharacterNominationPrompt)[]>([]);
+	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
+	function nominated(nomination: { nominator: SeatId; nominee: SeatId }) {
+		nominationAsks = [
+			...nominationPrompts(grimoire.game, nomination, gameRules, characters),
+			...characterNominationPrompts(grimoire.game, nomination, characters)
+		];
 	}
 	/**
-	 * While the night is walked through, the bank's button is End night, which replaces
-	 * ticking Dawn (Trevor, 2026-10-18). A walk-through stopped mid-night shows Run night
-	 * again, to pick it up at the first step not done: with the night order sheet gone it is
-	 * the only way back to the steps. With the walk-through switched off it is End night all
-	 * the time, usable while a night runs (Dusk ticked by End day).
+	 * The seat whose nomination marks were tapped: who did they nominate? A player who may
+	 * not nominate (the dead) is asked who nominated them instead.
 	 */
-	const nightOn = $derived(
-		!ended &&
-			(walk !== undefined ||
-				(grimoire.nightRunning && !preferences.current.assistance.nightWalkthrough))
-	);
+	let nominatingFrom = $state<{ seatId: SeatId; side: 'made' | 'received' }>();
+	function askNomination(seatId: SeatId) {
+		const made = seatNominationMarks({ seatId })?.made;
+		nominatingFrom = { seatId, side: made === undefined ? 'received' : 'made' };
+	}
+
 	let endNightOpen = $state(false);
 	let endDayOpen = $state(false);
 	/**
@@ -936,12 +651,34 @@
 	 * starts on the board, where it is on.
 	 */
 	function endDay(): void {
+		dayOpen = false;
 		if (liveDayTimer.running) liveDayTimer.toggle();
 		grimoire.beginNight();
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
-		if (preferences.current.assistance.nightWalkthrough) walkNight(true);
+		if (preferences.current.assistance.nightWalkthrough) nw.run(true);
+	}
+	/**
+	 * Execution ends the day (Trevor, 2026-10-22): the player chosen is executed first, unless
+	 * that execution is already logged, so the rules checked at dusk see it.
+	 */
+	/** A seat's status chose Executed: during the day, the day's Execution asks with them chosen. */
+	let executeChosen = $state<SeatId>();
+	$effect(() => {
+		if (!endDayOpen) executeChosen = undefined;
+	});
+	function executeFromSeat(seatId: SeatId): boolean {
+		if (bankRun.label !== t('day.execution') || bankRun.disabled) return false;
+		sheetOpen = false;
+		executeChosen = seatId;
+		endDayOpen = true;
+		return true;
+	}
+	function executeAndEndDay(seatId: SeatId | undefined): void {
+		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
+		if (seatId && !logged) grimoire.run({ type: 'Execute', seatId });
+		endDay();
 	}
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
@@ -959,7 +696,9 @@
 		beginGame();
 	}
 	function beginGame() {
-		if (preferences.current.assistance.nightWalkthrough) runNight();
+		gameStarts.start(game.gameId);
+		startedRead += 1;
+		if (preferences.current.assistance.nightWalkthrough) nw.run();
 		else endDay();
 	}
 	/** Setup's next step: Characters, or the bag draw once they are chosen. */
@@ -977,7 +716,7 @@
 	 * during a day; a walk-through stopped mid-night offers Run night to pick it up again.
 	 */
 	const bankRun = $derived.by(() => {
-		if (nightOn)
+		if (nw.nightOn)
 			return {
 				label: 'End night',
 				text: 'End night',
@@ -994,8 +733,8 @@
 				label: 'Run Night Order',
 				text: 'Run night',
 				icon: 'night' as const,
-				disabled: !canRun,
-				onclick: runNight
+				disabled: !nw.canRun,
+				onclick: () => nw.run()
 			};
 		// Set up stands in for Start game only: once a night or day is under way, the bank
 		// ends it, characters or not.
@@ -1004,7 +743,7 @@
 				label: 'Set up',
 				text: 'Set up',
 				icon: 'bag' as const,
-				disabled: false,
+				disabled: seatArr.arranging || !!placing,
 				onclick: openSetup
 			};
 		if (game.pastDays.length === 0)
@@ -1012,150 +751,34 @@
 				label: 'Start game',
 				text: 'Start game',
 				icon: 'night' as const,
-				disabled: !canRun,
+				disabled: !nw.canRun,
 				onclick: startGame
 			};
+		// Execution in place of End day (Trevor, 2026-10-22): ending a day asks who was executed.
 		return {
-			label: 'End day',
-			text: 'End day',
+			label: t('day.execution'),
+			text: t('day.execution'),
 			icon: 'night' as const,
-			disabled: !!ended || grimoire.open.viewOnly || arranging || !!placing,
+			disabled: !!ended || grimoire.open.viewOnly || seatArr.arranging || !!placing,
 			onclick: () => {
 				endDayOpen = true;
 			}
 		};
 	});
 
-	// ── Reminders that ask (Trevor, 2026-10-19) ──
-	// A reminder placed by any route (bank, sheet, drag) whose words change a player's state
-	// asks first: "Dead" or "Died Today" on a living player asks to mark them dead; "Alive" on a
-	// dead one asks to revive them. Which reminders ask is data (REMINDER_PROMPTS); each kind of
-	// question has its words and setting below. Moving one to another seat asks too.
-	// Reminders already where they were when the board opened never ask.
-	const PROMPTS: Record<
-		ReminderPrompt,
-		{ title: string; verb: string; after: string; setting: AssistKey; dead: boolean }
-	> = {
-		markDead: {
-			title: 'Mark dead?',
-			verb: 'Mark',
-			after: ' dead?',
-			setting: 'deathReminderAsk',
-			dead: true
-		},
-		revive: {
-			title: 'Revive?',
-			verb: 'Revive',
-			after: '?',
-			setting: 'reviveReminderAsk',
-			dead: false
-		}
-	};
-	let promptSeen: Set<string> | undefined;
-	let promptAsk = $state<{ seatId: SeatId; prompt: ReminderPrompt }>();
-	let promptAskOpen = $state(false);
-	/** Where each reminder on a seat was at the last look, so a cancelled move goes back. */
-	let lastSeat: Record<ReminderId, SeatId> = {};
-	/**
-	 * A reminder of a character whose player is dead asks first (Trevor, 2026-10-20); Cancel
-	 * takes it back off, or back where it was moved from. Any other question waits for it.
-	 */
-	let deadAsk = $state<{ reminder: ReminderInstance; seatId: SeatId; from?: SeatId }>();
-	let deadAskOpen = $state(false);
-	let afterDeadAsk: { seatId: SeatId; prompt: ReminderPrompt } | undefined;
-	$effect(() => {
-		const fresh: { seatId: SeatId; prompt: ReminderPrompt }[] = [];
-		const freshDead: { reminder: ReminderInstance; seatId: SeatId; from?: SeatId }[] = [];
-		const now: string[] = [];
-		const where: Record<ReminderId, SeatId> = {};
-		for (const seatId of game.seating) {
-			const seat = game.seats[seatId];
-			for (const reminder of seat.reminders) {
-				const key = `${reminder.reminderId}@${seatId}`;
-				now.push(key);
-				where[reminder.reminderId] = seatId;
-				if (!promptSeen || promptSeen.has(key)) continue;
-				if (reminderOwnerDead(game, reminder))
-					freshDead.push({ reminder, seatId, from: lastSeat[reminder.reminderId] });
-				const prompt = reminderPrompt(reminder.label);
-				if (prompt && promptApplies(prompt, !!seat.dead)) fresh.push({ seatId, prompt });
-			}
-		}
-		promptSeen = new Set(now);
-		lastSeat = where;
-		if (grimoire.open.viewOnly) return;
-		const assistance = untrack(() => preferences.current.assistance);
-		const ask = fresh.find(({ prompt }) => assistance[PROMPTS[prompt].setting]);
-		if (assistance.deadReminderAsk && freshDead.length > 0) {
-			deadAsk = freshDead[0];
-			afterDeadAsk = ask;
-			deadAskOpen = true;
-			return;
-		}
-		if (!ask) return;
-		promptAsk = ask;
-		promptAskOpen = true;
-	});
-	function keepDeadReminder() {
-		const next = afterDeadAsk;
-		afterDeadAsk = undefined;
-		if (!next) return;
-		promptAsk = next;
-		promptAskOpen = true;
-	}
-	function undoDeadReminder() {
-		afterDeadAsk = undefined;
-		if (!deadAsk) return;
-		const { reminder, from } = deadAsk;
-		if (from) {
-			// Back where it was is not a new placing: it doesn't ask again.
-			promptSeen = new Set([...(promptSeen ?? []), `${reminder.reminderId}@${from}`]);
-			grimoire.run({ type: 'MoveReminder', reminderId: reminder.reminderId, toSeatId: from });
-		} else grimoire.run({ type: 'RemoveReminder', reminderId: reminder.reminderId });
-	}
-	/** The dead seat a reminder belongs to, for the question's words. */
-	function deadOwner(reminder: ReminderInstance): SeatId | undefined {
-		if (reminder.ownerSeatId && game.seats[reminder.ownerSeatId]) return reminder.ownerSeatId;
-		return game.seating.find(
-			(id) => game.seats[id].characterId === reminder.characterId && game.seats[id].dead
-		);
-	}
 	function endNight() {
 		if (!grimoire.endNight()) return;
-		walk = undefined;
+		nw.walk = undefined;
 		// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
 		if (preferences.current.assistance.dayAfterNight) dayOpen = true;
+		offerSavant();
 	}
-	/**
-	 * The step's reminders already on the board are ringed too, on any night (Trevor,
-	 * 2026-10-18: the Butler's Master placed on the first night).
-	 */
-	const walkLabels = $derived(
-		walk && walkStep?.character
-			? new Set([
-					...stepReminders(walkStep.character.id, walk.night, walkStep.character).labels,
-					...walkStep.character.reminders
-				])
-			: undefined
-	);
-	const walkOn = (r: { characterId: CharacterId; label: string }) =>
-		walkStep?.character?.id === r.characterId && (walkLabels?.has(r.label) ?? false);
-	/** Who wakes for the current walk-through step, marked on the board. */
-	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
 	// ── End game (Trevor, 2026-10-16): the game moves to History ──
 	// The Storyteller stays on the board, which says the game is over (Trevor, 2026-10-17).
 	// The live room stays open and tells its phones the game is over, so the table can see the
 	// finished grimoire and play again in the same room (plan R1, R4, R5).
 	let endOpen = $state(false);
-	let winner = $state<'good' | 'evil' | undefined>();
-	let endReason = $state<EndReason | undefined>();
-	function endGame() {
-		endOpen = false;
-		endedGames.end(game.gameId, winner, endReason);
-		grimoire.open.setViewOnly(true);
-		endedRead += 1;
-	}
 	$effect(() => {
 		const over = ended && {
 			...(ended.winner ? { winner: ended.winner } : {}),
@@ -1182,11 +805,6 @@
 	};
 	// Reopening puts it back in Resume game.
 	let reopenOpen = $state(false);
-	function reopenGame() {
-		endedGames.reopen(game.gameId);
-		grimoire.open.setViewOnly(false);
-		endedRead += 1;
-	}
 	const endedText = $derived(
 		ended?.winner === 'good'
 			? 'Good won'
@@ -1210,6 +828,9 @@
 		drawOpen = true;
 	}
 
+	// Sheets and dialogs over the board blur it (Trevor, 2026-10-23: game integrity).
+	$effect(() => markBoardShown());
+
 	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
 	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
@@ -1218,7 +839,17 @@
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
+	// A report sent from the board carries the game's script, never the game (Trevor, 2026-10-22).
+	offerScriptToReports(() => loadedScript);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
+	/** Share links to the saved script when it is the game's, as /play's does (parity). */
+	const scriptShare = $derived.by(() => {
+		if (!scriptOpen || !loadedScript) return undefined;
+		const json = (s: LoadedScript) => JSON.stringify(scriptToJson(s));
+		const current = currentScript.current;
+		const same = current && json(current) === json(loadedScript);
+		return scriptShareable(loadedScript, same ? currentScript.saved : undefined);
+	});
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
@@ -1230,128 +861,44 @@
 	);
 	// "These characters are not in play" shows a bluff set (Trevor, 2026-10-16).
 	const infoBluffSets = $derived(showableBluffSets(game, characters));
-	// ── Leaving: the navigation menu (or Back) asks first; the game stays saved ──
-	let exitOpen = $state(false);
-	let pendingLeave: (() => void) | undefined;
-	let releaseGuard: (() => void) | undefined;
-	$effect(() => {
-		if (watching) return;
-		const gameId = game.gameId;
-		const release = setLeaveGuard(
-			(leave) => {
-				pendingLeave = leave;
-				exitOpen = true;
-			},
-			// This board's screens, and the other boards and pages of its mode.
-			(url) => url.pathname.startsWith(`/grimoire/${gameId}`) || withinModeSession(gameId, url)
-		);
-		releaseGuard = release;
-		return release;
-	});
-	// ── Back (Trevor, 2026-10-17): the browser's Back, a back swipe or Android's Back button ──
-	// The board adds one history entry of its own. Back first lands on the entry under it,
-	// still this page: an open sheet or dialog closes, or else the board asks as for any other
-	// way out. The browser runs no code for a Back that leaves the app, so the extra entry is
-	// what lets it ask.
-	let trapped = false;
-	// After the setup and day hash handling below, which replaces the entry's state.
-	onMount(() => {
-		if (watching) return;
-		setTimeout(() => {
-			if (!page.state.inGame) pushState('', { inGame: true });
-			trapped = true;
-		});
-	});
-	$effect(() => {
-		const inGame = page.state.inGame;
-		// Only the entry's state is watched: closing an overlay below reads other state.
-		untrack(() => {
-			if (inGame || !trapped) return;
-			trapped = false;
-			const overlay = document.querySelector(
-				'[data-part="content"][data-state="open"]:is([data-scope="dialog"], [data-scope="drawer"])'
-			);
-			pushState('', { inGame: true });
-			trapped = true;
-			if (overlay) {
-				// Escape closes the newest overlay (Ark's layer stack), as Back should.
-				overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-				return;
-			}
-			// Past the board's own entry and the page under it, to wherever the game was opened from.
-			pendingLeave = () => history.go(-2);
-			exitOpen = true;
-		});
-	});
-	function confirmLeave() {
-		exitOpen = false;
-		const leave = pendingLeave;
-		pendingLeave = undefined;
-		// Confirmed: nothing more to ask on the way out.
-		releaseGuard?.();
-		leave?.();
-	}
-
-	// ── Background: an image of the Storyteller's own, kept on this device ──
-	let background = $state<BackgroundChoice>({ kind: 'none' });
-	let backgroundRead = $state(0);
-	$effect(() => {
-		void backgroundRead;
-		const gameId = game.gameId;
-		backgroundFor(gameId)
-			.then((choice) => {
-				if (game.gameId === gameId) background = choice;
-			})
-			.catch(() => (background = { kind: 'none' }));
-	});
-	/** The script's own background, only when it is a web link. */
-	const scriptBackground = $derived(
-		/^https:\/\//.test(game.script.meta?.background ?? '')
-			? game.script.meta?.background
-			: undefined
-	);
-	// Chosen in Board and tokens, for this game or all (Trevor, 2026-10-18).
-	$effect(() =>
-		boardBackground.set({
-			get gameId() {
-				return game.gameId;
-			},
-			get scriptImage() {
-				return scriptBackground;
-			},
-			get current() {
-				return background;
-			},
-			onChange: () => (backgroundRead += 1)
+	/** When Start game was tapped, for Game time in the corner; read again when it is. */
+	let startedRead = $state(0);
+	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
+	/**
+	 * The night or day in play, for the corner (Trevor, 2026-10-23): Setup until Start game,
+	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day. A game
+	 * with days played is past Setup even where this device has no start time (gamePhase).
+	 */
+	const phaseNow = $derived(
+		gamePhase(game.pastDays.length, {
+			begun: startedAt !== undefined,
+			nightUnderway: ended
+				? nightUnderway(
+						{ day: grimoire.nightDay, done: grimoire.nightDone },
+						game.pastDays.length,
+						true
+					)
+				: grimoire.nightRunning || grimoire.nightUnderway
 		})
 	);
-	let backgroundUrl = $state<string | undefined>();
+	const phase = $derived(phaseText(phaseNow));
+	/** The corner's lines, which the room's phones show too (Trevor, 2026-10-24). */
+	const cornerInfo = $derived(
+		cornerLines({
+			gameId: game.gameId,
+			phase: phaseNow,
+			startedAt,
+			endedAt: ended?.endedAt,
+			watchers: watcherCount,
+			watching
+		})
+	);
 	$effect(() => {
-		if (background.kind === 'image') {
-			const url = URL.createObjectURL(background.image);
-			backgroundUrl = url;
-			return () => URL.revokeObjectURL(url);
-		}
-		backgroundUrl = background.kind === 'script' ? scriptBackground : undefined;
+		if (!watching) roomHost().showCorner(game.gameId, cornerInfo);
 	});
-	/**
-	 * A game played in an alternative mode says so where the script's name is (Trevor,
-	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
-	 */
-	const modeNames = $derived(gameModeNames(game.gameId));
-	/**
-	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
-	 * says it once, in the mode's colour, rather than twice (Trevor, 2026-10-18).
-	 */
-	const modeInName = $derived(
-		modeNames.length > 0 &&
-			(game.script.meta?.name ?? '').toLowerCase().startsWith(modeNames[0].toLowerCase())
-	);
-	/** The mode, then each special rule, a line each under the name (Trevor, 2026-10-19). */
-	const modeLines = $derived(modeInName ? modeNames.slice(1) : modeNames);
-	const showTitle = $derived(
-		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
-	);
+	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
+	// script name and author on board, remove as an option").
+	const showTitle = $derived(!game.script.meta?.hideTitle);
 	/**
 	 * The corner name is hidden (switched off, or no room beside the seats): Game info is
 	 * then on the ⋯ menu instead, so a mode's actions stay in reach. Otherwise only the corner
@@ -1368,23 +915,9 @@
 	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
-	function fromMenu(action: () => void) {
-		menuOpen = false;
-		action();
-	}
 
-	// ── Fabled and Loric ──
-	let ruleOpen = $state(false);
-	let ruleShown = $state<CharacterId | undefined>();
-	let ruleShownOpen = $state(false);
-	/** Every Fabled and Loric at once, from the corner stack. */
-	let rulesGroupOpen = $state(false);
-	const removeRuleLabel = (name: string) => `Remove ${name} from the game`;
-	let ruleRemoveOpen = $state(false);
-	const ruleShownCharacter = $derived(ruleShown ? characters.get(ruleShown) : undefined);
-	// Tapping a Fabled or Loric token opens its entry, as a seat's token does (Trevor, 2026-10-18).
-	let ruleDetails = $state<Character | undefined>();
-	let ruleDetailsOpen = $state(false);
+	// ── Fabled and Loric: their dialogs (RuleCharacters) ──
+	let rules = $state<ReturnType<typeof RuleCharacters>>();
 </script>
 
 <!-- Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
@@ -1397,7 +930,7 @@
 			class="rules-stack"
 			data-rule-stack
 			aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
-			onclick={() => (rulesGroupOpen = true)}
+			onclick={() => rules?.showAll()}
 		>
 			{#each game.ruleCharacters.slice(0, 3) as id (id)}
 				{@const character = characters.get(id)}
@@ -1410,7 +943,7 @@
 		{@render heldCluster(
 			Object.values(game.ruleReminders ?? {}).flat(),
 			'Fabled and Loric reminders',
-			() => (rulesGroupOpen = true)
+			() => rules?.showAll()
 		)}
 	</span>
 {/snippet}
@@ -1423,18 +956,20 @@
 	{@const last = held.at(-1)}
 	{#if last}
 		<span class="held" role="group" aria-label={label}>
-			<span class:lifted={reminderDrag?.reminderId === last.reminderId}>
+			<span class:lifted={remDrag.drag?.reminderId === last.reminderId}>
 				<BoardReminder
 					label={reminderWords(last)}
 					infinite={isGeneric(last)}
 					symbol={last.symbol}
+					symbolColour={last.symbolColour}
+					symbolFill={last.symbolFill}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
-					disabled={arranging || watching}
+					disabled={seatArr.arranging || watching}
 					onTap={() => heldDialog?.show(last.reminderId)}
-					onDrag={(x, y, end) => dragReminder(last.reminderId, undefined, x, y, end)}
-					onCancel={() => (reminderDrag = undefined)}
+					onDrag={(x, y, end) => remDrag.move(last.reminderId, undefined, x, y, end)}
+					onCancel={() => remDrag.cancel()}
 				/>
 			</span>
 			{#if held.length > 1}
@@ -1444,50 +979,13 @@
 						character={undefined}
 						more={held.length - 1}
 						size={Math.round(chip * 0.7)}
-						disabled={arranging || watching}
+						disabled={seatArr.arranging || watching}
 						onTap={onMore}
 					/>
 				</span>
 			{/if}
 		</span>
 	{/if}
-{/snippet}
-
-<!-- A Fabled or Loric's reminders in its dialog; a tap opens one. -->
-{#snippet heldList(id: CharacterId)}
-	<!-- Nothing when it holds none; placed ones under a Reminders header (Trevor, 2026-10-18). -->
-	{#if ruleReminders(game, id).length > 0}<h3 class="held-head">Reminders</h3>{/if}
-	<div class="held-list" role="group" aria-label="Reminders">
-		{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
-			<button
-				type="button"
-				class="held-chip"
-				aria-label={reminder.label}
-				disabled={watching}
-				onclick={() => heldDialog?.show(reminder.reminderId)}
-			>
-				<ReminderToken
-					label={tokenLabel(reminder)}
-					character={characters.get(reminder.characterId)}
-					alignment={placingAlignment(game, reminder, characters)}
-				/>
-			</button>
-		{/each}
-	</div>
-{/snippet}
-
-{#snippet ruleToken(character: Character)}
-	<button
-		type="button"
-		class="rule-token"
-		aria-label={`About the ${character.name}`}
-		onclick={() => {
-			ruleDetails = character;
-			ruleDetailsOpen = true;
-		}}
-	>
-		<CharacterToken {character} size={64} />
-	</button>
 {/snippet}
 
 {#snippet rulesList(tokenSize: number)}
@@ -1501,19 +999,15 @@
 						class="rule"
 						data-rule={id}
 						aria-label={character.name}
-						onclick={() => {
-							ruleShown = id;
-							ruleShownOpen = true;
-						}}
+						onclick={() => rules?.show(id)}
 					>
 						<CharacterToken {character} size={tokenSize} />
 					</button>
 					<!-- Its reminders, tight to its top right: parked there, out of play (Trevor,
 					     2026-10-18). -->
-					{@render heldCluster(ruleReminders(game, id), heldLabel(character.name), () => {
-						ruleShown = id;
-						ruleShownOpen = true;
-					})}
+					{@render heldCluster(ruleReminders(game, id), heldLabel(character.name), () =>
+						rules?.show(id)
+					)}
 				</li>
 			{/if}
 		{/each}
@@ -1521,112 +1015,34 @@
 {/snippet}
 
 <div class="grimoire">
-	<!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
-	{#if backgroundUrl}
-		<div
-			class="backdrop"
-			data-testid="board-background"
-			style:background-image={`url("${backgroundUrl}")`}
-		></div>
-	{:else if background.kind === 'preset'}
-		<div
-			class="backdrop preset"
-			data-testid="board-background"
-			data-preset={background.id}
-			style:background={PRESETS[background.id].css}
-		></div>
-	{/if}
-	<!-- The vignette darkens the background towards the screen's edges, on every background
-	     (Trevor, 2026-10-17: its own switch and strength; 2026-10-18: noticeable, and over the
-	     whole screen like the background, not just the board). -->
-	{#if boardLooks.current.vignette}
-		<div
-			class="vignette"
-			data-testid="vignette"
-			style:--vignette={boardLooks.current.vignetteStrength}
-			aria-hidden="true"
-		></div>
-	{/if}
-	<div class="toolbar" role="toolbar" aria-label="Grimoire">
-		{#if arranging}
-			<span class="title arranging-title">Arrange seats</span>
-			<span class="spacer"></span>
-			<IconButton
-				icon="undo"
-				label="Rotate players anticlockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
-			/>
-			<IconButton
-				icon="redo"
-				label="Rotate players clockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
-			/>
-			<Button
-				variant="quiet"
-				disabled={Object.keys(layout.placed).length === 0 && Object.keys(layout.gaps).length === 0}
-				onclick={spreadSeats}>Spread evenly</Button
-			>
-			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
-		{:else if placing}
-			<span class="title">Add a seat</span>
-			<Button variant="quiet" icon="close" onclick={() => (placing = undefined)}>Cancel</Button>
-		{:else}
-			<!-- The app's navigation; on the narrowest phones it is in More instead. -->
-			<span class="nav-menu" class:watching><NavMenuButton /></span>
-			<!-- Icons on phones; with their words on wider screens, where there is room. A
-			     spectator's board says what it is in that room (Trevor, 2026-10-19). -->
-			<span class="spacer"
-				>{#if watching}<span class="view-only" data-testid="view-only">View-Only</span>{/if}</span
-			>
-			<!-- A spectator sees every control the Storyteller does, disabled (Trevor, 2026-10-19):
-			     nothing opens, so nothing invites a try. Script only shows the players' copy. -->
-			<Button
-				variant="quiet"
-				icon="day"
-				aria-label="Day"
-				disabled={watching}
-				onclick={() => (dayOpen = true)}><span class="tool-label">Day</span></Button
-			>
-			<Button
-				variant="quiet"
-				icon="info"
-				aria-label="Info tokens"
-				disabled={watching}
-				onclick={() => (infoOpen = true)}><span class="tool-label">Info tokens</span></Button
-			>
-			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). Pointing at, focusing or
-			     pressing it starts opening the room, so the code and QR are ready. -->
-			<Button
-				variant="quiet"
-				icon="share"
-				aria-label="Share"
-				disabled={watching}
-				onpointerenter={prepareRoom}
-				onfocus={prepareRoom}
-				onpointerdown={prepareRoom}
-				onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
-			>
-			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16). -->
-			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
-				><span class="tool-label">Script</span></Button
-			>
-			<Button
-				variant="quiet"
-				icon="more"
-				aria-label="More"
-				disabled={watching}
-				onclick={() => (menuOpen = true)}><span class="tool-label">More</span></Button
-			>
-		{/if}
-	</div>
+	<!-- The strip's share of the board's height, to size tokens without it (sizingHeight). -->
+	<div
+		class="strip-measure"
+		aria-hidden="true"
+		style:--strip-h={STRIP_H}
+		bind:clientHeight={stripReserve}
+	></div>
+	<GameBackdrop {game} logo={boardLogo || undefined} />
+	<BoardToolbar
+		{grimoire}
+		{watching}
+		{seatArr}
+		placing={!!placing}
+		onCancelPlacing={() => (placing = undefined)}
+		onDay={() => (dayOpen = true)}
+		onInfo={() => (infoOpen = true)}
+		onScript={() => (scriptOpen = true)}
+		onShare={() => (phonesOpen = true)}
+		onMore={() => (menuOpen = true)}
+	/>
 
 	<div
 		class="board"
-		class:arranging
-		class:walking={walk !== undefined}
+		class:arranging={seatArr.arranging}
+		class:walking={nw.walk !== undefined}
 		class:ended={!!ended}
 		style:--tray-h="{chip + 30}px"
-		style:--strip-h={walk ? '7.5rem' : undefined}
+		style:--strip-h={nw.walk ? STRIP_H : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
 		style:--name-offset={boardLooks.current.nameOffset}
 		bind:this={board}
@@ -1637,22 +1053,48 @@
 				src={boardLogo}
 				class="board-logo"
 				--logo-opacity={boardLooks.current.logoOpacity}
+				--logo-h={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
+		<!--
+			A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to
+			their seat's line, with a line back when they have to sit further out), so whose a
+			reminder is reads at a glance on a crowded board. First on the board, so every token,
+			name, ghost vote and mark draws over them (Trevor, 2026-10-24); only the logo and the
+			background are under them.
+		-->
+		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+			{#each seats as seat, i (seat.seatId)}
+				{#if !looseMode && remDrag.drag === undefined}
+					{#each fan[i] ?? [] as p, k (k)}
+						{@const from = rimToward(shown[i], p, boardSize, size)}
+						<line
+							x1={from.x}
+							y1={from.y}
+							x2={p.x}
+							y2={p.y}
+							data-tether={i + 1}
+							vector-effect="non-scaling-stroke"
+						/>
+					{/each}
+				{/if}
+			{/each}
+		</svg>
+
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = shown[i]}
 			<div
 				class="slot"
-				class:dragging={drag?.seatId === seat.seatId}
-				class:front={front === seat.seatId}
+				class:dragging={seatArr.drag?.seatId === seat.seatId}
+				class:front={seatArr.front === seat.seatId}
 				class:dim={holding !== undefined && holding !== seat.seatId}
 				style:left="{at.x}%"
 				style:top="{at.y}%"
-				onpointerdown={(event) => dragStart(event, seat.seatId, at)}
-				onpointermove={dragMove}
-				onpointerup={dragEnd}
-				onpointercancel={() => (drag = undefined)}
-				onkeydown={(event) => nudge(event, seat.seatId, at)}
+				onpointerdown={(event) => seatArr.dragStart(event, seat.seatId, at)}
+				onpointermove={(event) => seatArr.dragMove(event)}
+				onpointerup={(event) => seatArr.dragEnd(event)}
+				onpointercancel={() => seatArr.dragCancel()}
+				onkeydown={(event) => seatArr.nudge(event, seat.seatId, at)}
 				role="presentation"
 			>
 				<SeatToken
@@ -1666,24 +1108,29 @@
 								other: nightNumbers.other.get(seat.characterId)
 							}
 						: undefined}
-					orphan={isOrphan(seat, game.script, characters)}
-					dropTarget={reorderTarget === seat.seatId ||
-						(reminderDrag !== undefined &&
-							reminderDrag.target === seat.seatId &&
-							reminderDrag.from !== seat.seatId) ||
+					orphan={isOrphan(seat, game.script, characters, offScriptOk)}
+					nominations={seatNominationMarks(seat)}
+					tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
+					dropTarget={seatArr.reorderTarget === seat.seatId ||
+						(remDrag.drag !== undefined &&
+							remDrag.drag.target === seat.seatId &&
+							remDrag.drag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
+					dragFrom={remDrag.drag !== undefined && remDrag.drag.from === seat.seatId}
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
 					onTap={(part) =>
-						!arranging &&
+						!seatArr.arranging &&
 						(watching
 							? readCharacter(seat.characterId)
 							: part === 'note'
 								? editNote(seat.seatId)
-								: openSeat(seat.seatId))}
-					onHold={arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
+								: part === 'nominate'
+									? askNomination(seat.seatId)
+									: openSeat(seat.seatId))}
+					onHold={seatArr.arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
 					onGhostVote={() =>
-						!arranging &&
+						!seatArr.arranging &&
 						!watching &&
 						grimoire.run({
 							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
@@ -1698,19 +1145,19 @@
 			{#if count > 0}
 				{@const at = fan[i]}
 				{#each seat.reminders as reminder, k (reminder.reminderId)}
-					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
+					{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 					{@const spot =
 						boardLooks.current.reminders === 'free'
 							? grimoire.reminderSpots[reminder.reminderId]
 							: undefined}
-					{@const p = dragged ? reminderDrag!.at : (spot ?? at[k])}
+					{@const p = dragged ? remDrag.drag!.at : (spot ?? at[k])}
 					<div
 						class="chip-slot"
 						data-seat={i + 1}
 						class:dragging={dragged}
 						class:extra={extras.has(reminder.reminderId)}
 						data-extra={extras.has(reminder.reminderId) ? '' : undefined}
-						class:now={walkOn(reminder)}
+						class:now={nw.isStepReminder(reminder)}
 						class:lit={lit(reminder)}
 						class:dim={holding !== undefined && !lit(reminder)}
 						data-lit={lit(reminder) || undefined}
@@ -1721,13 +1168,15 @@
 							label={reminderWords(reminder)}
 							infinite={isGeneric(reminder)}
 							symbol={reminder.symbol}
+							symbolColour={reminder.symbolColour}
+							symbolFill={reminder.symbolFill}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
-							disabled={arranging || watching}
+							disabled={seatArr.arranging || watching}
 							onTap={() => openReminder(seat.seatId, reminder.reminderId)}
-							onDrag={(x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
-							onCancel={() => (reminderDrag = undefined)}
+							onDrag={(x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
+							onCancel={() => remDrag.cancel()}
 						/>
 					</div>
 				{/each}
@@ -1736,9 +1185,9 @@
 
 		<!-- Reminders that belong to no one, where they were put down (Trevor, 2026-10-17). -->
 		{#each looseReminders(game) as reminder, k (reminder.reminderId)}
-			{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
+			{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 			{@const p = dragged
-				? reminderDrag!.at
+				? remDrag.drag!.at
 				: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
 			<div
 				class="chip-slot"
@@ -1748,7 +1197,7 @@
 				data-extra={extras.has(reminder.reminderId) ? '' : undefined}
 				class:unassigned={!looseMode}
 				data-unassigned={looseMode ? undefined : ''}
-				class:now={walkOn(reminder)}
+				class:now={nw.isStepReminder(reminder)}
 				class:lit={lit(reminder)}
 				class:dim={holding !== undefined && !lit(reminder)}
 				data-lit={lit(reminder) || undefined}
@@ -1759,13 +1208,15 @@
 					label={reminderWords(reminder)}
 					infinite={isGeneric(reminder)}
 					symbol={reminder.symbol}
+					symbolColour={reminder.symbolColour}
+					symbolFill={reminder.symbolFill}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
-					disabled={arranging || watching}
+					disabled={seatArr.arranging || watching}
 					onTap={() => heldDialog?.show(reminder.reminderId)}
-					onDrag={(x, y, end) => dragReminder(reminder.reminderId, undefined, x, y, end)}
-					onCancel={() => (reminderDrag = undefined)}
+					onDrag={(x, y, end) => remDrag.move(reminder.reminderId, undefined, x, y, end)}
+					onCancel={() => remDrag.cancel()}
 				/>
 			</div>
 		{/each}
@@ -1773,14 +1224,16 @@
 		{#if heldDrag}
 			<div
 				class="chip-slot dragging"
-				style:left="{reminderDrag!.at.x}%"
-				style:top="{reminderDrag!.at.y}%"
+				style:left="{remDrag.drag!.at.x}%"
+				style:top="{remDrag.drag!.at.y}%"
 				aria-hidden="true"
 			>
 				<BoardReminder
 					label={reminderWords(heldDrag)}
 					infinite={isGeneric(heldDrag)}
 					symbol={heldDrag.symbol}
+					symbolColour={heldDrag.symbolColour}
+					symbolFill={heldDrag.symbolFill}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled
@@ -1799,45 +1252,30 @@
 				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
 			>
 		{/each}
-		{#if reminderDrag && dragOrigin}
-			{@const r = dragOrigin.reminder}
-			<p class="origin" role="status">
-				<ReminderToken
-					label={tokenLabel(r)}
-					character={characters.get(r.characterId)}
-					alignment={placingAlignment(game, r, characters)}
-				/>, from <ReminderOrigin
-					{game}
-					{characters}
-					characterId={r.characterId}
-					on={reminderDrag.from}
-					interactive={false}
-				/>
-			</p>
-		{/if}
-		{#if walk}
+		{#if nw.walk && !ended}
 			<NightStrip
 				{grimoire}
-				steps={walkSteps}
-				night={walk.night}
-				index={walk.index}
-				onIndex={(index) => walk && (walk = { ...walk, index })}
+				steps={nw.steps}
+				night={nw.walk.night}
+				index={nw.walk.index}
+				onIndex={(index) => nw.walk && (nw.walk = { ...nw.walk, index })}
 				onPastEnd={() => endHint++}
-				asleepBy={walkAsleep ? poisonedSleepRule : undefined}
-				emptySeatBy={walkEmptySeat ? emptySeatRule : undefined}
+				asleepBy={nw.asleepRule}
+				emptySeatBy={nw.emptySeatRule}
+				attack={nw.attack}
 				onOpen={(step) => {
-					if (!walk) return;
-					guided = { step, night: walk.night };
-					guideOpen = true;
+					if (!nw.walk) return;
+					nw.guided = { step, night: nw.walk.night };
+					nw.guideOpen = true;
 				}}
-				onClose={() => (walk = undefined)}
+				onClose={() => (nw.walk = undefined)}
 			/>
 		{/if}
 		{#if ended}
 			<HistoryStrip {grimoire}>
 				{#snippet notice()}
-					<!-- Above History's Previous and Next, out of the circle (Trevor, 2026-10-18).
-					     Tapping it offers to reopen the game. -->
+					<!-- In History's strip, out of the circle (Trevor, 2026-10-18); in the strip so
+					     ending the game moves nothing (2026-10-24). Tapping it offers to reopen. -->
 					<button
 						type="button"
 						class="game-over"
@@ -1857,14 +1295,15 @@
 				{grimoire}
 				{board}
 				size={chip}
-				focus={walk && walkStep?.character
-					? stepReminders(walkStep.character.id, walk.night, walkStep.character)
+				focus={nw.walk && nw.step?.character
+					? stepReminders(nw.step.character.id, nw.walk.night, nw.step.character)
 					: undefined}
 				focusMode={stepFocus.current.mode}
-				{seatAt}
-				{spotAllowed}
-				{ruleAt}
-				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
+				seatAt={remDrag.seatAt}
+				spotAllowed={remDrag.spotAllowed}
+				ruleAt={remDrag.ruleAt}
+				onRule={(reminder, characterId, tokenId) =>
+					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
 				run={bankRun}
 				disabled={watching}
@@ -1883,35 +1322,22 @@
 				{/if}
 			</div>
 		{/if}
-		{#if showTitle && game.script.meta?.name}
-			<!-- Small in the lower left corner, clear of the seats (Trevor, 2026-10-17). -->
-			<p
-				class="corner-title"
-				style:max-width={width > 0 ? `${(corner / width) * 100}%` : undefined}
-				class:no-room={width > 0 && corner < 2 * rootFont}
-				data-testid="script-title"
-				bind:clientWidth={titleW}
-				bind:clientHeight={titleH}
-			>
-				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
-				<ModeMenu {game} onEdit={watching ? undefined : editGameInfo}
-					><span
-						class="script-name"
-						class:mode={modeInName}
-						data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
-					></ModeMenu
-				>
-				<!-- The mode and rules take the author's line: a line each where the corner has room
-				     for them all (corner-room.ts), else one line joined with " + ". -->
-				{#each stackRules ? modeLines : modeLines.length ? [modeLines.join(' + ')] : [] as line, i (i)}<span
-						class="mode"
-						data-testid="game-mode"
-						bind:clientHeight={lineHs[i]}>{line}</span
-					>{:else}{#if game.script.meta?.author}<span class="author"
-							>by {game.script.meta.author}</span
-						>{/if}{/each}
-			</p>
-		{/if}
+		<BoardCorner
+			{game}
+			{watching}
+			corner={cornerInfo}
+			gamePhase={phase}
+			fitRoom={fitCorner}
+			{width}
+			{rootFont}
+			{startedAt}
+			endedAt={ended?.endedAt}
+			onEdit={editGameInfo}
+			onShare={() => (phonesOpen = true)}
+			bind:titleW
+			bind:titleH
+			bind:room={corner}
+		/>
 		{#if showTimer}
 			<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. -->
 			<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
@@ -1937,87 +1363,37 @@
 </div>
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
-<Dialog bind:open={menuOpen} title="Grimoire">
-	<div class="menu">
-		<Button variant="quiet" icon="history" onclick={() => fromMenu(() => (historyOpen = true))}>
-			History
-		</Button>
-		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
-			Demon bluffs
-		</Button>
-		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => (notesOpen = true))}
-			>Notes</Button
-		>
-		{#if cornerHidden}
-			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
-				Game info
-			</Button>
-		{/if}
-		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
-		     apart at the bottom (Trevor, 2026-10-18). -->
-		<hr class="menu-rule" />
-		<Button
-			variant="quiet"
-			icon="add"
-			onclick={() =>
-				fromMenu(() =>
-					// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
-					startPlacing((position) => void grimoire.addSeat(position))
-				)}
-		>
-			Add seat
-		</Button>
-		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(() => (ruleOpen = true))}>
-			Add Fabled or Loric
-		</Button>
-		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
-			Arrange seats
-		</Button>
-		<hr class="menu-rule" />
-		<!-- Board and token settings over the board (Trevor, 2026-10-17); two sections since
-		     2026-10-18. -->
-		<Button
-			variant="quiet"
-			icon="boardSettings"
-			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
-		>
-			Board
-		</Button>
-		<Button
-			variant="quiet"
-			icon="tokenSettings"
-			onclick={() => fromMenu(() => settingsDialog.showOnly('tokens'))}
-		>
-			Tokens
-		</Button>
-		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
-		<span class="menu-nav">
-			<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
-				Navigation
-			</Button>
-		</span>
-		<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
-		<Button variant="quiet" icon="report" onclick={() => fromMenu(() => reportDialog.show())}>
-			{t('shell.reportIssue')}
-		</Button>
-		<hr class="menu-rule" />
-		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
-		{#if ended}
-			<Button variant="quiet" icon="download" onclick={() => fromMenu(() => (exportOpen = true))}>
-				Export game
-			</Button>
-			<Button variant="quiet" icon="undo" onclick={() => fromMenu(() => (reopenOpen = true))}>
-				Reopen game
-			</Button>
-		{:else}
-			<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
-				End game
-			</Button>
-		{/if}
-	</div>
-</Dialog>
+<BoardMenu
+	bind:open={menuOpen}
+	gameInfo={cornerHidden}
+	ended={!!ended}
+	onHistory={() => (historyOpen = true)}
+	onBluffs={() => (bluffsOpen = true)}
+	onNotes={() => (notesOpen = true)}
+	onGameInfo={() => (modeMenuOpen = true)}
+	onCharacterSelection={startedAt === undefined && !watching
+		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
+		: undefined}
+	onAddSeat={() =>
+		// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
+		startPlacing((position) => void grimoire.addSeat(position))}
+	onAddRule={() => rules?.add()}
+	onArrange={() => seatArr.start()}
+	onExport={() => (exportOpen = true)}
+	onReopen={() => (reopenOpen = true)}
+	onEnd={() => (endOpen = true)}
+/>
 
-<ModeMenu {game} bind:open={modeMenuOpen} onEdit={watching ? undefined : editGameInfo} />
+<ModeMenu
+	{game}
+	bind:open={modeMenuOpen}
+	onEdit={watching ? undefined : editGameInfo}
+	{startedAt}
+	endedAt={ended?.endedAt}
+	{phase}
+	{watcherCount}
+	onShare={watching ? undefined : () => (phonesOpen = true)}
+/>
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 <HeldReminderDialog
 	bind:this={heldDialog}
@@ -2027,15 +1403,15 @@
 />
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
-<FoolAsk {grimoire} />
-<GameEndPrompt
+<FirstDeathAsk {grimoire} />
+<NominationAsk {grimoire} bind:asks={nominationAsks} />
+<EndGameDialogs
 	{grimoire}
-	active={!ended && !grimoire.open.viewOnly}
-	onEnd={(team, reason) => {
-		winner = team;
-		endReason = reason;
-		endGame();
-	}}
+	{ended}
+	{endedText}
+	bind:endOpen
+	bind:reopenOpen
+	onChange={() => (endedRead += 1)}
 />
 
 <InfoTokensSheet
@@ -2055,77 +1431,7 @@
 	}}
 />
 
-<!-- Like the day's End day, with its setting where it is used (Trevor, 2026-10-18). -->
-{#if promptAsk && game.seats[promptAsk.seatId]}
-	{@const { seatId, prompt } = promptAsk}
-	{@const ui = PROMPTS[prompt]}
-	{@const asked = game.seats[seatId]}
-	{@const askedId = asked.characterId}
-	{@const name = asked.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`}
-	<ConfirmDialog
-		bind:open={promptAskOpen}
-		title={ui.title}
-		onConfirm={() => grimoire.run({ type: 'SetDead', seatId, dead: ui.dead })}
-	>
-		{#snippet heading()}
-			{ui.verb}
-			{#if askedId}<CharacterBadge
-					characterId={askedId}
-					character={characters.get(askedId)}
-					alignment={asked.alignment}
-					playerName={name}
-				/>{:else}{name}{/if}{ui.after}
-		{/snippet}
-		<SettingToggle
-			label={ASSIST_LABELS[ui.setting].label}
-			description={ASSIST_LABELS[ui.setting].description}
-			checked={preferences.current.assistance[ui.setting]}
-			onChange={(on) =>
-				preferences.update({
-					assistance: { ...preferences.current.assistance, [ui.setting]: on }
-				})}
-		/>
-	</ConfirmDialog>
-{/if}
-
-{#if deadAsk}
-	{@const { reminder } = deadAsk}
-	{@const ownerId = deadOwner(reminder)}
-	{@const owner = ownerId ? game.seats[ownerId] : undefined}
-	<ConfirmDialog
-		bind:open={deadAskOpen}
-		title="Place reminder?"
-		onConfirm={keepDeadReminder}
-		onCancel={undoDeadReminder}
-	>
-		{#snippet heading()}
-			Place <ReminderToken
-				label={tokenLabel(reminder)}
-				character={characters.get(reminder.characterId)}
-				alignment={placingAlignment(game, reminder, characters)}
-			/>?
-		{/snippet}
-		<p class="dead-owner">
-			<CharacterBadge
-				characterId={reminder.characterId}
-				character={characters.get(reminder.characterId)}
-				alignment={owner?.alignment}
-				playerName={ownerId
-					? (owner?.playerName ?? `Seat ${game.seating.indexOf(ownerId) + 1}`)
-					: undefined}
-			/> is dead.
-		</p>
-		<SettingToggle
-			label={ASSIST_LABELS.deadReminderAsk.label}
-			description={ASSIST_LABELS.deadReminderAsk.description}
-			checked={preferences.current.assistance.deadReminderAsk}
-			onChange={(on) =>
-				preferences.update({
-					assistance: { ...preferences.current.assistance, deadReminderAsk: on }
-				})}
-		/>
-	</ConfirmDialog>
-{/if}
+<ReminderAsk {grimoire} />
 
 <ConfirmDialog bind:open={startAskOpen} title="Start the game?" onConfirm={beginGame}>
 	<p class="ask-note">Setup reminders not yet placed:</p>
@@ -2153,38 +1459,16 @@
 	/>
 </ConfirmDialog>
 
-<!-- The same question as the day view's End day. -->
-<ConfirmDialog bind:open={endDayOpen} title={t('day.endDayConfirm')} onConfirm={endDay} />
+<!-- The same question as the day view's Execution. -->
+<ExecutionDialog
+	bind:open={endDayOpen}
+	{game}
+	characters={grimoire.open.characters}
+	chosen={executeChosen}
+	onConfirm={executeAndEndDay}
+/>
 
-<ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>In the grimoire for {game.script.meta?.name ?? 'this game'}</dd>
-		<dt>Becomes</dt>
-		<dd>The game stays saved and opens again from Resume game.</dd>
-	</dl>
-</ConfirmDialog>
-
-<ConfirmDialog bind:open={reopenOpen} title="Reopen game?" onConfirm={reopenGame}>
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>Ended, in History: {endedText}</dd>
-		<dt>Becomes</dt>
-		<dd>In Resume game</dd>
-	</dl>
-</ConfirmDialog>
-
-<ConfirmDialog bind:open={endOpen} title="End game?" danger onConfirm={endGame}>
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>In Resume game</dd>
-		<dt>Becomes</dt>
-		<dd>Ended, in History</dd>
-	</dl>
-	<div class="winner">
-		<EndGameFields {grimoire} bind:winner bind:reason={endReason} />
-	</div>
-</ConfirmDialog>
+<LeaveGuard {game} {watching} />
 
 <SeatSheet
 	bind:this={seatSheet}
@@ -2196,7 +1480,12 @@
 		onDraw(id);
 	}}
 	onNotes={(id) => notesSheet?.edit(id)}
+	onNominated={nominated}
+	onExecute={executeFromSeat}
 />
+
+<!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
+<NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
@@ -2210,11 +1499,8 @@
 		<PlayerScriptActions
 			script={loadedScript}
 			version={scriptVersion(undefined, loadedScript?.meta)}
-			share={loadedScript && {
-				edition: loadedScript.edition,
-				json: loadedScript.edition ? [loadedScript.edition] : scriptToJson(loadedScript),
-				source: { kind: 'edition' }
-			}}
+			share={scriptShare}
+			room={watching ? undefined : roomHost().code}
 		/>
 	{/snippet}
 	{#snippet subtitle()}
@@ -2228,14 +1514,37 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
+			{@const town = publicProjection(
+				game,
+				publicTravellerTest(game.gameId, characters),
+				layout,
+				cornerInfo,
+				characters
+			)}
+			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
+			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
 			<PlayerScriptTabs
 				script={loadedScript}
 				players={game.seating.length}
 				inPlay={charactersInPlay(game)}
-				travellers={travellersInPlay(
-					publicProjection(game, publicTravellerTest(game.gameId, characters)).seats
-				)}
-			/>
+				travellers={travellersInPlay(town.seats)}
+			>
+				{#snippet grim()}<PlayerGrim
+						script={loadedScript!}
+						town={{
+							seats: town.seats,
+							layout: town.layout,
+							storytellerName: town.storytellerName,
+							corner: town.corner,
+							gameId: game.gameId,
+							guessKey: `storyteller:${game.gameId}`
+						}}
+					/>{/snippet}
+				{#snippet notes()}<PlayerNotes
+						notesKey={scriptKey(loadedScript!)}
+						town={{ seats: town.seats, guessKey: `storyteller:${game.gameId}` }}
+					/>{/snippet}
+			</PlayerScriptTabs>
 		{/if}
 	</div>
 </Dialog>
@@ -2245,21 +1554,35 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={endDay} />
+<DaySheet
+	bind:open={dayOpen}
+	game={grimoire.open}
+	onEndDay={() => (endDayOpen = true)}
+	onSavant={(seatId) => {
+		savantSeat = seatId;
+		savantOpen = true;
+	}}
+/>
+<SavantSheet bind:open={savantOpen} {grimoire} seatId={savantSeat} />
+<ConfirmDialog
+	bind:open={savantAskOpen}
+	title={t('day.savantAsk')}
+	onConfirm={() => (savantOpen = true)}
+/>
 
 <GuidedStep
-	bind:open={guideOpen}
+	bind:open={nw.guideOpen}
 	{grimoire}
-	step={guided?.step}
-	night={guided?.night ?? 'first'}
-	steps={guidedSteps}
+	step={nw.guided?.step}
+	night={nw.guided?.night ?? 'first'}
+	steps={nw.guidedSteps}
 	onStep={(step) => {
-		if (!guided) return;
-		guided = { step, night: guided.night };
+		if (!nw.guided) return;
+		nw.guided = { step, night: nw.guided.night };
 		// The walk-through under the board follows.
-		if (walk && walk.night === guided.night) {
-			const i = walkSteps.findIndex((s) => s.id === step.id);
-			if (i >= 0) walk = { ...walk, index: i };
+		if (nw.walk && nw.walk.night === nw.guided.night) {
+			const i = nw.steps.findIndex((s) => s.id === step.id);
+			if (i >= 0) nw.walk = { ...nw.walk, index: i };
 		}
 	}}
 	onInfoTokens={(token) => {
@@ -2282,90 +1605,7 @@
 	dispatch={(command) => grimoire.open.run(command)}
 />
 
-<CharacterPicker
-	bind:open={ruleOpen}
-	title="Add Fabled or Loric"
-	{characters}
-	script={game.script}
-	types={['fabled', 'loric']}
-	alwaysAll
-	onPick={(characterId) => {
-		ruleOpen = false;
-		grimoire.run({ type: 'AddRuleCharacter', characterId });
-	}}
-/>
-
-<!-- eslint-disable-next-line grim/names-as-badges -- the rule character's own details, under its token -->
-<Dialog bind:open={ruleShownOpen} title={ruleShownCharacter?.name ?? ''}>
-	{#if ruleShownCharacter}
-		<div class="rule-detail">
-			{@render ruleToken(ruleShownCharacter)}
-			<p>{ruleShownCharacter.ability}</p>
-		</div>
-		{@render heldList(ruleShownCharacter.id)}
-	{/if}
-	<RulesAtSetting />
-	{#snippet headActions()}
-		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
-		<DeleteButton
-			label="Remove from the game"
-			disabled={watching}
-			onclick={() => (ruleRemoveOpen = true)}
-		/>
-	{/snippet}
-</Dialog>
-
-{#if ruleDetails}<CharacterDialog bind:open={ruleDetailsOpen} character={ruleDetails} />{/if}
-
-<Dialog bind:open={rulesGroupOpen} title="Fabled and Loric">
-	<ul class="rules-group">
-		{#each game.ruleCharacters as id (id)}
-			{@const character = characters.get(id)}
-			{#if character}
-				<li class="rule-detail">
-					{@render ruleToken(character)}
-					<div>
-						<CharacterBadge characterId={id} {character} />
-						<p>{character.ability}</p>
-						{@render heldList(id)}
-					</div>
-					<DeleteButton
-						label={removeRuleLabel(character.name)}
-						disabled={watching}
-						onclick={() => {
-							ruleShown = id;
-							ruleRemoveOpen = true;
-						}}
-					/>
-				</li>
-			{/if}
-		{:else}
-			<li class="none">None</li>
-		{/each}
-	</ul>
-	<RulesAtSetting />
-</Dialog>
-
-<ConfirmDialog
-	bind:open={ruleRemoveOpen}
-	title="Remove from the game?"
-	danger
-	onConfirm={() => {
-		ruleShownOpen = false;
-		if (ruleShown) grimoire.run({ type: 'RemoveRuleCharacter', characterId: ruleShown });
-	}}
->
-	{#if ruleShown}
-		<dl class="change">
-			<dt>Now</dt>
-			<dd>
-				<CharacterBadge characterId={ruleShown} character={ruleShownCharacter} /> in play
-			</dd>
-			<dt>Becomes</dt>
-			<dd>Not in play</dd>
-		</dl>
-	{/if}
-</ConfirmDialog>
+<RuleCharacters bind:this={rules} {grimoire} {watching} onReminder={(id) => heldDialog?.show(id)} />
 
 <style>
 	/* Start game's question: the setup reminders still to place (Trevor, 2026-10-20). */
@@ -2386,39 +1626,16 @@
 		isolation: isolate;
 		display: flex;
 		flex-direction: column;
-		/* Fills the screen: a game hides the app header and footer (route data). */
+		/* Fills the screen: a game hides the sidebar (route data). */
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}
-	.toolbar {
-		/* A fixed height, so swapping in the arranging controls never moves the board. */
-		flex: none;
-		box-sizing: border-box;
-		height: calc(var(--tap-target) + var(--space-2));
-		display: flex;
-		align-items: center;
-		/* One spacing step everywhere (Trevor, 2026-10-16): the same inset from the screen's
-		   top and sides as the board's margin, and between buttons, narrowing only on the
-		   smallest phones so six buttons still fit at 320px. No dividing line: the dashed
-		   outline shows the board's edge while arranging. */
-		gap: min(var(--space-2), 1.5vw);
-		padding: var(--space-2) var(--space-2) 0;
-	}
-	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
-	   on any image (Trevor, 2026-10-18). */
-	.grimoire:has(> .backdrop)
-		.toolbar
-		:global(button:not([data-variant='accent']):not([data-variant='danger'])) {
-		background: var(--board-bar-background);
-	}
-	.title {
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
-		font-family: var(--font-heading);
-		color: var(--heading);
-		white-space: nowrap;
-		text-overflow: ellipsis;
+	.strip-measure {
+		position: absolute;
+		visibility: hidden;
+		pointer-events: none;
+		/* What .board.walking adds to the bottom margin. */
+		height: calc(var(--strip-h) + var(--space-2));
 	}
 	.board {
 		position: relative;
@@ -2431,10 +1648,6 @@
 	/* Room under the board for the docked reminder bank, and the walk-through strip. */
 	.board {
 		margin-bottom: calc(var(--tray-h) + 2 * var(--space-2));
-	}
-	/* An ended game: the game over line sits above History's Previous and Next. */
-	.board.ended {
-		margin-bottom: calc(var(--tray-h) + var(--tap-target) + 3 * var(--space-2));
 	}
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
@@ -2483,24 +1696,18 @@
 	.place-spot:hover {
 		background: var(--surface-selected);
 	}
-	/* Over the top of the board while a reminder is dragged: where it came from. */
-	.origin {
+	.tethers {
 		position: absolute;
-		top: var(--space-1);
-		left: 50%;
-		z-index: 4;
-		max-width: calc(100% - 2 * var(--space-2));
-		margin: 0;
-		padding: var(--space-1) var(--space-2);
-		translate: -50% 0;
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font-size: 0.85rem;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
 		pointer-events: none;
+	}
+	.tethers line {
+		stroke: var(--on-surface);
+		stroke-opacity: 0.35;
+		stroke-width: 1.5;
 	}
 	.chip-slot {
 		position: absolute;
@@ -2520,15 +1727,13 @@
 		outline: 0.15rem dashed var(--on-surface);
 		outline-offset: 0.15rem;
 	}
-	/* The walked-through step's reminders already on the board: the bank's ring. */
-	.chip-slot.now > :global(.reminder) {
-		outline: 0.2rem solid var(--accent);
-		outline-offset: 0.15rem;
-	}
-	/* A held seat's reminders (Trevor, 2026-10-19): the step ring; the rest fade. */
+	/* The walked-through step's reminders already on the board, and a held seat's (Trevor,
+	   2026-10-19; the rest fade): the bank's highlight, a ring, glow or both (Settings > Tokens). */
+	.chip-slot.now > :global(.reminder),
 	.chip-slot.lit > :global(.reminder) {
-		outline: 0.2rem solid var(--accent);
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
 	}
 	.slot.dim,
 	.chip-slot.dim {
@@ -2561,24 +1766,9 @@
 		overscroll-behavior: contain;
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
-	.backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: -1;
-		background: center / cover no-repeat;
-		filter: brightness(0.45) saturate(0.85);
-		pointer-events: none;
-	}
-	/* Built-in backgrounds are drawn for the board already: only dimmed a little. */
-	.backdrop.preset {
-		filter: brightness(0.8);
-	}
-	/* Light parchment would wash out the seat names: dimmed like an image. */
-	.backdrop.preset[data-preset='parchment'] {
-		filter: brightness(0.5);
-	}
 	.game-over {
-		max-width: 100%;
+		flex: none;
+		max-width: 50%;
 		min-height: var(--tap-target);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -2589,7 +1779,7 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font-family: var(--font-heading);
-		font-size: 1.1rem;
+		font-size: 0.9rem;
 		pointer-events: auto;
 	}
 	.game-over[data-team='good'] {
@@ -2607,131 +1797,12 @@
 		left: 50%;
 		top: 50%;
 		width: 42%;
-		height: 42%;
+		/* The board's height without the walk-through strip (sizingHeight), so the logo keeps
+		   its size when the night starts (Trevor, 2026-10-23: "flexes for a second"). */
+		height: var(--logo-h, 42%);
 		translate: -50% -50%;
 		opacity: var(--logo-opacity);
 		pointer-events: none;
-	}
-	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
-	.vignette {
-		position: fixed;
-		inset: 0;
-		z-index: -1;
-		/* Clear in the middle, darkening to the strength at the corners. */
-		/* The two shades are darkness, not theme colours. */
-		--vignette-mid: rgb(0 0 0 / calc(var(--vignette) * 0.6)); /* colour-ok: shadow */
-		--vignette-edge: rgb(0 0 0 / var(--vignette)); /* colour-ok: shadow */
-		background: radial-gradient(
-			ellipse 75% 75% at center,
-			transparent 40%,
-			var(--vignette-mid) 75%,
-			var(--vignette-edge) 100%
-		);
-		pointer-events: none;
-	}
-	/* The game mode, apart from the script: small capitals in the accent colour. */
-	.mode {
-		color: var(--accent);
-		font-family: var(--font-control);
-		font-variant: small-caps;
-		letter-spacing: 0.08em;
-	}
-	.corner-title .mode {
-		font-size: 0.8em;
-	}
-	.spacer {
-		flex: 1;
-		min-width: 0;
-		text-align: center;
-	}
-	.view-only {
-		display: block;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		color: var(--evil);
-		font-family: var(--font-heading);
-		font-weight: 700;
-	}
-	.corner-title {
-		position: absolute;
-		left: var(--space-1);
-		bottom: var(--space-1);
-		z-index: 1;
-		display: grid;
-		/* Until the board is measured; then as wide as the corner's room (corner-room.ts). */
-		max-width: 32%;
-		margin: 0;
-		font-family: var(--font-heading);
-		line-height: 1.15;
-		color: var(--heading);
-		pointer-events: none;
-	}
-	.corner-title.no-room {
-		visibility: hidden;
-	}
-	/* One line each, cut short rather than wrapping up into the seats (Trevor, 2026-10-18). */
-	.corner-title > span {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.corner-title .script-name {
-		font-size: 0.9rem;
-	}
-	.corner-title .author {
-		font-size: 0.7rem;
-		color: var(--on-surface-muted);
-	}
-	.change {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-1) var(--space-3);
-		margin: 0;
-	}
-	.change dt {
-		color: var(--on-surface-muted);
-		font-size: 0.85rem;
-	}
-	.change dd {
-		margin: 0;
-	}
-	.winner {
-		margin-top: var(--space-3);
-	}
-	/* On a phone the arranging controls need the whole bar. */
-	.menu-nav {
-		display: none;
-	}
-	@media (max-width: 359.98px) {
-		/* Without More, a viewer's navigation stays on the toolbar. */
-		.nav-menu:not(.watching) {
-			display: none;
-		}
-		.menu-nav {
-			display: contents;
-		}
-	}
-	@media (max-width: 479.98px) {
-		.arranging-title {
-			display: none;
-		}
-	}
-	/* Phones show the toolbar's icons only; wider screens add the words. */
-	.toolbar :global(.tool-label) {
-		display: none;
-	}
-	@media (max-width: 719.98px) {
-		.toolbar :global(.button:has(.tool-label)) {
-			min-width: var(--tap-target);
-			padding: 0;
-			gap: 0;
-		}
-	}
-	@media (min-width: 720px) {
-		.toolbar :global(.tool-label) {
-			display: inline;
-		}
 	}
 	.rules {
 		display: flex;
@@ -2784,27 +1855,6 @@
 	.held .lifted {
 		opacity: 0.3;
 	}
-	.held-head {
-		margin: var(--space-2) 0 0;
-		font-size: 0.8rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--on-surface-muted);
-	}
-	.held-list {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-1);
-		margin-top: var(--space-2);
-	}
-	.held-chip {
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		cursor: pointer;
-	}
 	.rule {
 		/* Sized from the seats, which already follow the token size setting. */
 		padding: 0;
@@ -2812,47 +1862,6 @@
 		border-radius: 50%;
 		background: none;
 		cursor: pointer;
-	}
-	.menu {
-		display: grid;
-		gap: var(--space-2);
-		margin-top: var(--space-3);
-	}
-	.menu-rule {
-		width: 100%;
-		margin: 0;
-		border: 0;
-		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
-		   2026-10-19). */
-		border-top: 0.125rem solid var(--border);
-	}
-	.rule-detail {
-		display: flex;
-		gap: var(--space-3);
-		align-items: flex-start;
-	}
-	.rule-token {
-		flex: none;
-		padding: 0;
-		border: 0;
-		border-radius: 50%;
-		background: none;
-		cursor: pointer;
-	}
-	.rule-detail p {
-		margin: 0;
-		font-family: var(--font-ability);
-	}
-	.rule-detail > div {
-		flex: 1;
-		min-width: 0;
-	}
-	.rules-group {
-		display: grid;
-		gap: var(--space-3);
-		margin: 0 0 var(--space-3);
-		padding: 0;
-		list-style: none;
 	}
 	/* The corner stack: tokens overlapping, with how many there are. */
 	.rules-stack {

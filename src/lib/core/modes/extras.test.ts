@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
+	allowedOffScript,
 	announceBounds,
 	announcedRange,
 	extraCandidates,
@@ -14,7 +15,7 @@ import {
 import { NO_RESTRICTIONS, runsPart } from './pool.ts';
 import { withRules } from './combine.ts';
 import { STANDARD } from './registry.ts';
-import { INFINITE_POSSIBILITIES } from './rules/index.ts';
+import { INFINITE_POSSIBILITIES, specialRuleById, SPECTERS } from './rules/index.ts';
 
 const data = committedGameData();
 const tb = data.characters.filter((c) => c.edition === 'tb');
@@ -77,5 +78,26 @@ describe('announcedRange', () => {
 describe('runsPart', () => {
 	it('runs the hidden extras pool itself', () => {
 		expect(runsPart(infinite, 'pool')).toBe(true);
+	});
+});
+
+// Trevor, 2026-10-23: "Not in the script error should consider if special rule is in play".
+describe('allowedOffScript', () => {
+	const extras = ['goon', 'witch'];
+
+	// +1: the chosen script plus exactly one off-script character (Trevor, 2026-10-22).
+	it('lets +1’s character be off the script', () => {
+		const plusOne = withRules(STANDARD, [specialRuleById('plus-one')!]);
+		expect([...allowedOffScript(plusOne, ['goon'])]).toEqual(['goon']);
+	});
+
+	// https://chillclocktower.com/2024/04/28/a-script-of-infinite-possibilities/
+	it('lets A Script of Infinite Possibilities’ characters be off the script', () => {
+		expect([...allowedOffScript(infinite, extras)]).toEqual(extras);
+	});
+
+	it('lets none be off the script without a rule that adds them', () => {
+		expect(allowedOffScript(STANDARD, extras).size).toBe(0);
+		expect(allowedOffScript(withRules(STANDARD, [SPECTERS]), extras).size).toBe(0);
 	});
 });

@@ -11,6 +11,7 @@ import ph_arrow_square_out_fill from '~icons/ph/arrow-square-out-fill';
 import ph_arrow_u_up_left_fill from '~icons/ph/arrow-u-up-left-fill';
 import ph_arrow_u_up_right_fill from '~icons/ph/arrow-u-up-right-fill';
 import ph_arrows_down_up_fill from '~icons/ph/arrows-down-up-fill';
+import ph_arrows_in_fill from '~icons/ph/arrows-in-fill';
 import ph_arrows_left_right_fill from '~icons/ph/arrows-left-right-fill';
 import ph_arrows_out_fill from '~icons/ph/arrows-out-fill';
 import ph_arrows_out_cardinal_fill from '~icons/ph/arrows-out-cardinal-fill';
@@ -18,6 +19,7 @@ import ph_bag_simple_fill from '~icons/ph/bag-simple-fill';
 import ph_beer_bottle_fill from '~icons/ph/beer-bottle-fill';
 import ph_beer_stein_fill from '~icons/ph/beer-stein-fill';
 import ph_bell_fill from '~icons/ph/bell-fill';
+import ph_binoculars_fill from '~icons/ph/binoculars-fill';
 import ph_bird_fill from '~icons/ph/bird-fill';
 import ph_book_bookmark_fill from '~icons/ph/book-bookmark-fill';
 import ph_book_open_fill from '~icons/ph/book-open-fill';
@@ -27,6 +29,7 @@ import ph_bookmarks_simple_fill from '~icons/ph/bookmarks-simple-fill';
 import ph_books_fill from '~icons/ph/books-fill';
 import ph_bug_fill from '~icons/ph/bug-fill';
 import ph_calculator_fill from '~icons/ph/calculator-fill';
+import ph_camera_fill from '~icons/ph/camera-fill';
 import ph_caret_circle_down_fill from '~icons/ph/caret-circle-down-fill';
 import ph_caret_down_fill from '~icons/ph/caret-down-fill';
 import ph_caret_left_fill from '~icons/ph/caret-left-fill';
@@ -45,6 +48,7 @@ import ph_club_fill from '~icons/ph/club-fill';
 import ph_coin_fill from '~icons/ph/coin-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
+import ph_corners_in_fill from '~icons/ph/corners-in-fill';
 import ph_corners_out_fill from '~icons/ph/corners-out-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
 import ph_crown_fill from '~icons/ph/crown-fill';
@@ -75,6 +79,7 @@ import ph_folder_open_fill from '~icons/ph/folder-open-fill';
 import ph_folder_simple_fill from '~icons/ph/folder-simple-fill';
 import ph_frame_corners_fill from '~icons/ph/frame-corners-fill';
 import ph_funnel_fill from '~icons/ph/funnel-fill';
+import ph_gavel_fill from '~icons/ph/gavel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
@@ -112,6 +117,7 @@ import ph_lock_fill from '~icons/ph/lock-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
+import ph_megaphone_fill from '~icons/ph/megaphone-fill';
 import ph_minus_fill from '~icons/ph/minus-fill';
 import ph_minus_circle_fill from '~icons/ph/minus-circle-fill';
 import ph_moon_fill from '~icons/ph/moon-fill';
@@ -138,6 +144,7 @@ import ph_push_pin_fill from '~icons/ph/push-pin-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
 import ph_scales_fill from '~icons/ph/scales-fill';
+import ph_scan_fill from '~icons/ph/scan-fill';
 import ph_scroll_fill from '~icons/ph/scroll-fill';
 import ph_shapes_fill from '~icons/ph/shapes-fill';
 import ph_share_network_fill from '~icons/ph/share-network-fill';
@@ -206,6 +213,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-left-fill': ph_arrow_u_up_left_fill,
 	'ph:arrow-u-up-right-fill': ph_arrow_u_up_right_fill,
 	'ph:arrows-down-up-fill': ph_arrows_down_up_fill,
+	'ph:arrows-in-fill': ph_arrows_in_fill,
 	'ph:arrows-left-right-fill': ph_arrows_left_right_fill,
 	'ph:arrows-out-fill': ph_arrows_out_fill,
 	'ph:arrows-out-cardinal-fill': ph_arrows_out_cardinal_fill,
@@ -213,6 +221,7 @@ const icons: IconMap = {
 	'ph:beer-bottle-fill': ph_beer_bottle_fill,
 	'ph:beer-stein-fill': ph_beer_stein_fill,
 	'ph:bell-fill': ph_bell_fill,
+	'ph:binoculars-fill': ph_binoculars_fill,
 	'ph:bird-fill': ph_bird_fill,
 	'ph:book-bookmark-fill': ph_book_bookmark_fill,
 	'ph:book-open-fill': ph_book_open_fill,
@@ -222,6 +231,7 @@ const icons: IconMap = {
 	'ph:books-fill': ph_books_fill,
 	'ph:bug-fill': ph_bug_fill,
 	'ph:calculator-fill': ph_calculator_fill,
+	'ph:camera-fill': ph_camera_fill,
 	'ph:caret-circle-down-fill': ph_caret_circle_down_fill,
 	'ph:caret-down-fill': ph_caret_down_fill,
 	'ph:caret-left-fill': ph_caret_left_fill,
@@ -240,6 +250,7 @@ const icons: IconMap = {
 	'ph:coin-fill': ph_coin_fill,
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
+	'ph:corners-in-fill': ph_corners_in_fill,
 	'ph:corners-out-fill': ph_corners_out_fill,
 	'ph:cross-fill': ph_cross_fill,
 	'ph:crown-fill': ph_crown_fill,
@@ -270,6 +281,7 @@ const icons: IconMap = {
 	'ph:folder-simple-fill': ph_folder_simple_fill,
 	'ph:frame-corners-fill': ph_frame_corners_fill,
 	'ph:funnel-fill': ph_funnel_fill,
+	'ph:gavel-fill': ph_gavel_fill,
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,
 	'ph:ghost-fill': ph_ghost_fill,
@@ -307,6 +319,7 @@ const icons: IconMap = {
 	'ph:lock-simple-fill': ph_lock_simple_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
+	'ph:megaphone-fill': ph_megaphone_fill,
 	'ph:minus-fill': ph_minus_fill,
 	'ph:minus-circle-fill': ph_minus_circle_fill,
 	'ph:moon-fill': ph_moon_fill,
@@ -333,6 +346,7 @@ const icons: IconMap = {
 	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
 	'ph:scales-fill': ph_scales_fill,
+	'ph:scan-fill': ph_scan_fill,
 	'ph:scroll-fill': ph_scroll_fill,
 	'ph:shapes-fill': ph_shapes_fill,
 	'ph:share-network-fill': ph_share_network_fill,

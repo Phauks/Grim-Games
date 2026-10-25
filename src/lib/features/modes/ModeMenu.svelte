@@ -11,6 +11,10 @@
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
+	import { gameClock } from '#lib/core/rules/index.ts';
+	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import { editionWikiUrl, fromScript, scriptEdition, scriptToJson } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -21,12 +25,15 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { onLayerOpen } from '#lib/ui/primitives/layers.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import SharePanel from '#lib/ui/share/SharePanel.svelte';
+	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
 	import { campaignOf } from './campaigns.ts';
 	import { findMode } from './custom-modes.svelte.ts';
 	import { readGameMode } from './game-mode-store.ts';
 	import { seedInPlay } from './in-play.ts';
 	import GameInfoEditDialog, { type GameInfoChanges } from './GameInfoEditDialog.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
+	import NewGameSheet from './NewGameSheet.svelte';
 	import { hasSpectatorVote } from './specters.ts';
 	import SpectersSheet from './SpectersSheet.svelte';
 	import { townGroupOf } from './town-groups.ts';
@@ -52,10 +59,34 @@
 		/** Renames the Storyteller: their row is then tappable (Trevor, 2026-10-19: "edit storyteller name in bottom left"). */
 		/** Saves the Game info pencil's changes; without it Game info has no pencil. */
 		onEdit?: (changes: GameInfoChanges) => void;
+		/**
+		 * The board corner's other lines, so Game info has all of them where the corner can't
+		 * show them (Trevor, 2026-10-23: "on mobile I can't see the join code or game time").
+		 * When the game started and ended, for Game time.
+		 */
+		startedAt?: number;
+		endedAt?: number;
+		/** The night or day in play, as the corner shows it ("Setup", "Night 2", "Day 1"). */
+		phase?: string;
+		/** Spectators on the view-only link. */
+		watcherCount?: number;
+		/** The join code opens Share; without it (a spectator's board) there is no join code row. */
+		onShare?: () => void;
 	}
 
-	let { game, children, open = $bindable(false), onEdit }: Props = $props();
+	let {
+		game,
+		children,
+		open = $bindable(false),
+		onEdit,
+		startedAt,
+		endedAt,
+		phase,
+		watcherCount = 0,
+		onShare
+	}: Props = $props();
 	let editing = $state(false);
+	let newGameSheet = $state<NewGameSheet>();
 	const gameId = $derived(game.gameId);
 	// The corner's popover closes when a seat's sheet or another overlay opens over the board
 	// (Trevor, 2026-10-19: "Game info popup should close if other item is opened like a
@@ -81,7 +112,24 @@
 	// The saved script the game started from: its name links its source page, and its version
 	// shows when the game's own script names none (Trevor, backlog L14).
 	const savedChoice = $derived(savedChoiceFor(game.script));
-	const scriptPage = $derived(savedChoice?.source ? sourcePage(savedChoice.source) : undefined);
+	const scriptPage = $derived(
+		(savedChoice?.source && sourcePage(savedChoice.source)) ??
+			editionWikiUrl(scriptEdition(game.script)?.id)
+	);
+	const roomCode = $derived(roomHost().code);
+	/** Game time ticks while the sheet is open, as the corner's does. */
+	let clockNow = $state(Date.now());
+	$effect(() => {
+		if (!open || startedAt === undefined || endedAt !== undefined) return;
+		clockNow = Date.now();
+		const tick = setInterval(() => (clockNow = Date.now()), 1000);
+		return () => clearInterval(tick);
+	});
+	const gameLength = $derived(
+		startedAt === undefined
+			? undefined
+			: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, endedAt))
+	);
 	const info = $derived([
 		{
 			key: 'script',
@@ -108,8 +156,34 @@
 			key: 'rules',
 			label: t('modes.info.rules'),
 			value: rules.map((r) => r.name).join(', ')
+		},
+		...(onShare
+			? [
+					{
+						key: 'join-code',
+						label: t('room.joinCode'),
+						value: roomCode ? formatRoomCode(roomCode) : undefined,
+						action: onShare
+					}
+				]
+			: []),
+		// The day or night before the length, as on the corner's line (Trevor, 2026-10-24).
+		{
+			key: 'game-time',
+			label: t('history.gameLength'),
+			value: phase && gameLength ? `${phase} · ${gameLength}` : (phase ?? gameLength)
+		},
+		{
+			key: 'watchers',
+			label: t('modes.info.watchers'),
+			value: watcherCount > 0 ? String(watcherCount) : undefined
 		}
 	]);
+	/** What the mode and rules rows open when tapped: each one's whole Inspect (plan G5). */
+	const inspectable = $derived<Record<string, readonly (GameMode | SpecialRule)[]>>({
+		mode: base ? [base] : [],
+		rules
+	});
 	const campaign = $derived(campaignOf(gameId));
 	const specters = $derived(hasSpectatorVote(gameId));
 	const assignment = $derived(mode?.parts.assignment?.kind);
@@ -149,6 +223,30 @@
 		);
 	}
 
+	function inspect(item: GameMode | SpecialRule) {
+		open = false;
+		inspected = item;
+		inspecting = true;
+	}
+
+	/** The game's script as a file in TPI's format (Trevor, 2026-10-22, plan G3). */
+	async function downloadScript() {
+		try {
+			const data = await loadOfficialData();
+			const name = game.script.meta?.name ?? '';
+			downloadJson(fileNameFor(name, 'script'), scriptToJson(fromScript(game.script, data).script));
+		} catch (e) {
+			reportError(e, { area: 'grimoire' });
+		}
+	}
+
+	/**
+	 * Where the script came from, on the one share screen (plan G3; Trevor, 2026-10-23: every
+	 * Share the same), with its QR code, Copy and Share.
+	 */
+	let sharingSource = $state(false);
+	const sourceTitle = $derived(game.script.meta?.name ?? t('modes.info.script'));
+
 	function go(path: Parameters<typeof goto>[0]) {
 		open = false;
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- every caller passes a resolved path
@@ -172,7 +270,25 @@
 				<tr data-field={row.key}>
 					<th scope="row">{row.label}</th>
 					<td>
-						{#if 'href' in row && row.href && row.value?.trim()}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site's page -->
+						{#if inspectable[row.key]?.length}<!-- Tapped for its full details (Trevor,
+							2026-10-22: "allow clicking game mode or special rules in game info to see
+							exact details"). -->{#each inspectable[row.key] as item, i (item.id)}{#if i > 0},
+								{/if}<button
+									type="button"
+									class="inspect-link"
+									aria-label={t('modes.inspect', { name: item.name })}
+									onclick={() => inspect(item)}>{item.name}</button
+								>{/each}{:else if 'action' in row && row.action}<!-- The join code opens
+							Share, as the corner's does; before a room opens it is None and opens Share
+							to start one. --><button
+								type="button"
+								class="inspect-link"
+								data-testid="info-join-code"
+								onclick={() => {
+									open = false;
+									row.action?.();
+								}}>{row.value || none}</button
+							>{:else if 'href' in row && row.href && row.value?.trim()}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site's page -->
 							<a href={row.href} target="_blank" rel="noopener noreferrer">{row.value}</a
 							>{:else}{row.value?.trim() || none}{/if}{#if 'extra' in row && row.extra}<span
 								class="extra"
@@ -247,24 +363,40 @@
 				{t('modes.deal.menu')}
 			</Button>
 		{/if}
-		{#each [...(base ? [base] : []), ...rules] as item (item.id)}
-			<Button
-				variant="quiet"
-				icon="info"
-				onclick={() => {
-					open = false;
-					inspected = item;
-					inspecting = true;
-				}}
-			>
-				{t('modes.inspect', { name: item.name })}
-			</Button>
-		{/each}
 	</div>
 {/snippet}
 {#snippet edit()}
+	<!-- Share and download sit with Edit in the header, so the script's name has its line to
+	     itself (Trevor, 2026-10-23: the name sat oddly beside an inline button). -->
+	<IconButton
+		icon="share"
+		label={t('modes.info.shareSource')}
+		title={scriptPage ? t('modes.info.shareSource') : t('modes.info.noSource')}
+		disabled={!scriptPage}
+		data-testid="share-source"
+		onclick={() => {
+			open = false;
+			sharingSource = true;
+		}}
+	/>
+	<IconButton
+		icon="download"
+		label={t('modes.info.download')}
+		data-testid="game-info-download"
+		onclick={() => void downloadScript()}
+	/>
+	<!-- A new script means a new game, never a change mid-game (Trevor, 2026-10-24). In the
+	     header with the game's other controls, so the popover keeps its height. -->
 	{#if onEdit}<IconButton
-			icon="rename"
+			icon="add"
+			label={t('setup.newGame')}
+			data-testid="game-info-new-game"
+			onclick={() => {
+				open = false;
+				newGameSheet?.begin();
+			}}
+		/><IconButton
+			icon="edit"
 			label={t('modes.info.edit')}
 			data-testid="game-info-edit"
 			onclick={() => {
@@ -281,16 +413,30 @@
 	<Dialog bind:open title={t('modes.info.title')} headActions={edit}>{@render actions()}</Dialog>
 {/if}
 {#if onEdit}
+	<NewGameSheet bind:this={newGameSheet} {game} started={startedAt !== undefined} />
 	<GameInfoEditDialog
 		bind:open={editing}
 		initial={{ storytellerName: game.storytellerName ?? '' }}
 		onsave={onEdit}
 	/>
 {/if}
+<Dialog bind:open={sharingSource} title={t('scripts.share.title', { title: sourceTitle })}>
+	<div class="share-source">
+		<SharePanel
+			url={scriptPage}
+			title={sourceTitle}
+			qrLabel={t('modes.info.sourceQr')}
+			pending={t('modes.info.noSource')}
+		/>
+	</div>
+</Dialog>
 {#if inspected}<ModeInspectDialog bind:open={inspecting} mode={inspected} />{/if}
 {#if specters && mode}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
 
 <style>
+	.share-source {
+		margin-top: var(--space-3);
+	}
 	.extra {
 		display: block;
 	}
@@ -302,6 +448,9 @@
 		gap: 0.2em;
 		min-width: 0;
 		max-width: 100%;
+		/* Text high, not a button's 44px: the corner's room is measured from its height
+		   (corner-room.ts); the ::before below keeps the tap target. */
+		min-height: 0;
 		padding: 0;
 		/* The corner title lets taps through to the board; its town name takes them. */
 		pointer-events: auto;
@@ -347,6 +496,29 @@
 	.info td {
 		padding-block: var(--space-1);
 		vertical-align: top;
+	}
+	/* The mode and each rule read as text and open their details; the tap target is
+	   widened without moving the row, as the corner name's is. */
+	.inspect-link {
+		position: relative;
+		/* Inline in the row like the script's link; the ::before below is its tap target. */
+		min-height: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--heading);
+		font: inherit;
+		text-align: inherit;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+	.inspect-link::before {
+		content: '';
+		position: absolute;
+		inset: 50% auto auto 50%;
+		min-width: max(100%, var(--tap-target));
+		min-height: max(100%, var(--tap-target));
+		transform: translate(-50%, -50%);
 	}
 	/* The Storyteller's row is a button: its name, tapped to rename them. */
 	.actions:empty {

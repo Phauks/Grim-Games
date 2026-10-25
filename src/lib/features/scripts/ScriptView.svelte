@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -16,9 +17,10 @@
 		type SourcePrint
 	} from '#lib/features/player/PrintScriptButton.svelte';
 	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Spinner from '#lib/ui/primitives/Spinner.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import ScriptSourceButton from './ScriptSourceButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { compareVersions, scriptPageUrl } from './botcscripts-api.ts';
 	import { fetchRemote, isRemote, remotePreviews } from './remote-previews.svelte.ts';
@@ -171,6 +173,8 @@
 			}
 		}
 	});
+	// A report sent from here carries the script shown (Trevor, 2026-10-22).
+	offerScriptToReports(() => preview);
 
 	const previewPending = $derived.by(() => {
 		const l = shownListing;
@@ -213,9 +217,9 @@
 		await goto(resolve('/new'));
 	}
 
-	const facts = $derived.by((): ScriptFact[] => {
+	/** Where the shown script came from, and its own page there (Trevor, 2026-10-16). */
+	const origin = $derived.by(() => {
 		const row = shownListing?.row;
-		const none = t('common.none');
 		const rowSource: ScriptSource | undefined =
 			row?.source === 'botc' && row.number !== undefined
 				? { kind: 'botcscripts', scriptId: row.number, version: row.version ?? '' }
@@ -224,19 +228,25 @@
 		// already shows it is saved); a Library row shows where its script came from.
 		const fromLibrary = !row || row.source === 'recent' || row.source === 'profile';
 		const source = fromLibrary ? (shownSaved?.source ?? rowSource) : rowSource;
-		// The Source opens the script's own page where it came from (Trevor, 2026-10-16).
-		const page = (source && sourcePage(source)) ?? row?.page;
+		const page = (source && sourcePage(source, shownSaved?.edition)) ?? row?.page;
+		const label = source
+			? describeSource(source)
+			: row
+				? row.note || t(`scripts.sourceLabel.${row.source}`)
+				: undefined;
+		return { page, label };
+	});
+
+	const facts = $derived.by((): ScriptFact[] => {
+		const row = shownListing?.row;
+		const none = t('common.none');
 		return [
 			{ label: t('scripts.current.author'), value: row ? row.author || none : none },
 			{ label: t('scripts.column.type'), value: row ? t(`scripts.kind.${row.kind}`) : none },
 			{
 				label: t('scripts.current.source'),
-				value: source
-					? describeSource(source)
-					: row
-						? row.note || t(`scripts.sourceLabel.${row.source}`)
-						: none,
-				href: page
+				value: origin.label ?? none,
+				href: origin.page
 			}
 		];
 	});
@@ -305,7 +315,7 @@
 		<!-- Never blank while a script or version loads (Trevor, 2026-10-17); it holds the
 		     sheet's place, which only grows downward when the abilities arrive. -->
 		<p class="loading" role="status" aria-busy="true" data-testid="script-loading">
-			<span class="spin"><Icon name="loading" /></span>
+			<span class="spin"><Spinner /></span>
 			<span>{t('scripts.details.loading')}</span>
 		</p>
 	{/if}
@@ -341,6 +351,7 @@
 			logo={shownListing?.row.logo}
 			target={shareTarget}
 		/>
+		<ScriptSourceButton page={origin.page} source={origin.label} />
 		{@render extraActions?.()}
 	{/snippet}
 </ScriptDetails>
@@ -366,16 +377,5 @@
 	.spin {
 		display: inline-grid;
 		font-size: 1.5rem;
-		animation: spin 1s linear infinite;
-	}
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.spin {
-			animation-duration: 3s;
-		}
 	}
 </style>

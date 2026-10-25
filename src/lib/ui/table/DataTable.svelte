@@ -521,7 +521,10 @@
 		<FilterOptions
 			legend={column.label}
 			hideLegend
-			options={pickOptions(values).map((v) => ({ value: v, label: v === EMPTY ? empty : v }))}
+			options={pickOptions(values, ticked).map((v) => ({
+				value: v,
+				label: v === EMPTY ? empty : v
+			}))}
 			values={ticked}
 			ontoggle={(v, on) =>
 				setFilter(column.id, {
@@ -810,8 +813,8 @@
 		min-width: 100%;
 	}
 	.boxed .scroll {
-		/* The screen below the app header: the sideways scrollbar is always on screen. */
-		max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+		/* The screen's height: the sideways scrollbar is always on screen. */
+		max-height: calc(100dvh - var(--app-top) - var(--space-4));
 		overflow: auto;
 		/* Sideways stays in the box; at the top or bottom, the page carries on scrolling. */
 		overscroll-behavior: contain auto;

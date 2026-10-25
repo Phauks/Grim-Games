@@ -1,0 +1,21 @@
+{
+	"reminderTargets": {
+		"No More Evil": {
+			"global": true,
+			"note": "Sits on the Spirit of Ivory once the extra evil player has been made."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "Storyteller limit"
+	},
+	"deathCause": {
+		"none": "setup"
+	},
+	"reminderMovement": {
+		"fixed": ["No More Evil"],
+		"why": "Marks this character’s own state, so it stays on its seat."
+	}
+}

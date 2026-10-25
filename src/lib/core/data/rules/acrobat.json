@@ -1,0 +1,52 @@
+{
+	"kills": {
+		"by": "other",
+		"targets": "self"
+	},
+	"reminderTargets": {
+		"Chosen": {
+			"seat": "any",
+			"note": "The player the Acrobat picks tonight."
+		},
+		"Dead": {
+			"seat": "self",
+			"note": "The Acrobat, when their pick is or becomes drunk or poisoned tonight."
+		}
+	},
+	"deathCheck": {
+		"kind": "chose-impaired"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"kind": "own-death"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "Marks the chosen player; the Acrobat's death is only if they are drunk or poisoned.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Chosen",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "Move *CHOSEN* to the player the Acrobat chooses. If that player is or becomes drunk or poisoned tonight, the Acrobat dies: mark them *DEAD*.",
+				"reason": "Says when the Dead token is used (Trevor’s review)."
+			}
+		}
+	}
+}

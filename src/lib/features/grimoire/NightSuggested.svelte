@@ -15,7 +15,6 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
@@ -100,21 +99,27 @@
 			? info.pickers.filter((p) => valid(p).some((v) => v.number !== undefined))
 			: []
 	);
-	const validCount = $derived(numberPickers.reduce((n, p) => n + valid(p).length, 0));
+	/**
+	 * The valid numbers themselves, in brackets (Trevor, 2026-10-22: "1 valid" read as if 1
+	 * were the number to give; the closed step should be enough to run the night).
+	 */
+	const validText = $derived(
+		numberPickers
+			.map((p) => {
+				const options = valid(p).map((v) => (v.number === undefined ? 'Any other' : v.number));
+				const list = `(${options.join(', ')})`;
+				return numberPickers.length > 1 ? `${name(p.seatId)} ${list}` : list;
+			})
+			.join(', ')
+	);
 
 	/**
 	 * The logic behind a suggestion (Trevor, 2026-10-17: "show the logic"): the players it is
-	 * worked out from and what it becomes if one registers otherwise. In a dialog, so the
-	 * step never grows under the Storyteller's finger.
+	 * worked out from and what it becomes if one registers otherwise. Beside the information
+	 * in the opened step, with no Why button to press (Trevor, 2026-10-22).
 	 */
-	let whyOpen = $state(false);
-	let whyShown = $state.raw<{ why: Why; flags: Flag[] }>();
-	const hasWhy = (why: Why | undefined) =>
+	const hasWhy = (why: Why | undefined): why is Why =>
 		!!why && (why.facts.length > 0 || why.alternatives.length > 0);
-	function openWhy(why: Why, r: Reliability & { possible?: AnswerValue[] }) {
-		whyShown = { why, flags: flags(r) };
-		whyOpen = true;
-	}
 	const TYPE: Record<string, string> = {
 		townsfolk: 'Townsfolk',
 		outsider: 'Outsider',
@@ -146,8 +151,7 @@
 				? { characterId: a.value, text: note }
 				: { text: `${valueText(a)}${note}` };
 		}
-		// A count, never one answer: the full list is in the step (Trevor, 2026-10-18).
-		if (info.kind === 'picker') return { text: `${validCount} valid` };
+		if (info.kind === 'picker') return { text: validText };
 		const v = info.checks.find((c) => c.verdict && c.verdict.kind !== 'choose')?.verdict;
 		if (v?.kind === 'dies') return { text: `Dead: ${names(v.seatIds)}` };
 		if (v?.kind === 'ask') return { text: `Dead? ${names(v.ifYes)}` };
@@ -207,9 +211,7 @@
 				{#if a.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
 			</span>
 		{/each}
-		{#if hasWhy(a.why)}
-			<Button variant="quiet" onclick={() => openWhy(a.why, a)}>Why</Button>
-		{/if}
+		{#if hasWhy(a.why)}{@render whyBlock(a.why)}{/if}
 		{#if a.kind === 'character' && onShow}
 			{@const id = a.value}
 			<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
@@ -274,9 +276,7 @@
 								{#if p.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
 							</span>
 						{/each}
-						{#if hasWhy(p.why)}
-							<Button variant="quiet" onclick={() => openWhy(p.why, p)}>Why</Button>
-						{/if}
+						{#if hasWhy(p.why)}{@render whyBlock(p.why)}{/if}
 					</li>
 				{/each}
 			{:else}
@@ -297,14 +297,14 @@
 	</section>
 {/if}
 
-<Dialog bind:open={whyOpen} title="Why">
-	{#if whyShown}
-		<h3 class="why-head">From</h3>
-		{#if whyShown.why.facts.length === 0}
-			<p class="none">None</p>
-		{:else}
+<!-- Why, beside the information; its reliability is already in the flags above it. -->
+{#snippet whyBlock(why: Why)}
+	<div class="why-block" data-testid="why">
+		{#if why.facts.length > 0}
+			<span class="why-head">From</span>
 			<ul class="why" data-testid="why-facts">
-				{#each whyShown.why.facts as f (f.seatId)}
+				<!-- By position: the Juggler's facts name a player once per guess. -->
+				{#each why.facts as f, i (i)}
 					<li>
 						{@render player(f.seatId, f.characterId)}
 						{#if f.type}<span class="fact">{TYPE[f.type] ?? f.type}</span>{/if}
@@ -322,12 +322,10 @@
 				{/each}
 			</ul>
 		{/if}
-		<h3 class="why-head">If someone registers otherwise</h3>
-		{#if whyShown.why.alternatives.length === 0}
-			<p class="none">None</p>
-		{:else}
+		{#if why.alternatives.length > 0}
+			<span class="why-head">If someone registers otherwise</span>
 			<ul class="why" data-testid="why-alternatives">
-				{#each whyShown.why.alternatives as alt (alt.seatId)}
+				{#each why.alternatives as alt (alt.seatId)}
 					{#each alt.as as way, n (n)}
 						<li>
 							{@render player(alt.seatId, alt.source)}
@@ -343,21 +341,22 @@
 				{/each}
 			</ul>
 		{/if}
-		{#if whyShown.flags.length > 0}
-			<h3 class="why-head">Reliability</h3>
-			<ul class="why">
-				{#each whyShown.flags as flag (flag.text)}<li>{@render flagBody(flag)}</li>{/each}
-			</ul>
-		{/if}
-	{/if}
-</Dialog>
+	</div>
+{/snippet}
 
 <style>
+	.why-block {
+		display: grid;
+		gap: var(--space-1);
+		width: 100%;
+		font-size: 0.85rem;
+	}
 	.why {
 		gap: var(--space-1);
 	}
 	.why-head {
-		margin-top: var(--space-2);
+		color: var(--on-surface-muted);
+		font-weight: 600;
 	}
 	.player {
 		display: inline-flex;
@@ -380,9 +379,6 @@
 		align-items: center;
 		gap: var(--space-1);
 		color: var(--on-surface-muted);
-	}
-	.none {
-		margin: 0;
 	}
 	/* The same heading as the step's Info token and Reminders (GuidedStep). */
 	h3 {

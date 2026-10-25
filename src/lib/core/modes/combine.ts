@@ -38,7 +38,9 @@ const SINGLE = [
 	'participants',
 	'travellers',
 	'seats',
-	'deaths'
+	'deaths',
+	'abilities',
+	'demonAttacks'
 ] as const satisfies readonly (keyof CombinedParts)[];
 
 /** Parts that are lists: every file's items, in order. */
@@ -48,7 +50,8 @@ const LISTS = [
 	'daySteps',
 	'nightSteps',
 	'text',
-	'countChanges'
+	'countChanges',
+	'nominations'
 ] as const satisfies readonly (keyof CombinedParts)[];
 
 export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Combined {

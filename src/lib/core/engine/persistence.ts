@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 12;
+export const SAVED_GAME_VERSION = 17;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -36,10 +36,10 @@ export interface SavedGameSummary {
 	scriptLogo?: string;
 	seatCount: number;
 	/**
-	 * How far the game has got, for the saved games list: `setup` until a seat has a
-	 * character, then the day it is on (1 from the first night; each New day adds one).
+	 * How many days have begun (each New day adds one), as `game.pastDays.length`: the saved
+	 * games list's phase (gamePhase) with what the device knows of the night.
 	 */
-	stage: { kind: 'setup' } | { kind: 'day'; day: number };
+	days: number;
 }
 
 /** A saved game that could not be read, so a list can still offer to delete it. */
@@ -162,6 +162,45 @@ const migrateV10toV11: Migration = (doc) => ({ ...doc, schemaVersion: 11 });
  */
 const migrateV11toV12: Migration = (doc) => ({ ...doc, schemaVersion: 12 });
 
+/**
+ * Version 13 (2026-10-20) added the colour of the generic reminder's symbol
+ * (`ReminderInstance.symbolColour`, the `ReminderSymbolColourSet` event). The log needs no
+ * change: an older reminder has none. The bump makes older builds refuse a version 13 save
+ * instead of failing on the unknown event.
+ */
+const migrateV12toV13: Migration = (doc) => ({ ...doc, schemaVersion: 13 });
+
+/**
+ * Version 14 (2026-10-23) added the avatar and frame a player picked on their phone
+ * (`Seat.avatar`, `Seat.frame`, the `SeatLookSet` event, plan R6). The log needs no change:
+ * an older seat has neither. The bump makes older builds refuse a version 14 save instead of
+ * failing on the unknown event.
+ */
+const migrateV13toV14: Migration = (doc) => ({ ...doc, schemaVersion: 14 });
+
+/**
+ * Version 15 (2026-10-23) added the bank's reusable ∞ tokens (`Game.genericTokens`, the
+ * `GenericToken…` events, plan B9). The log needs no change: an older game has none. The bump
+ * makes older builds refuse a version 15 save instead of failing on the unknown events.
+ */
+const migrateV14toV15: Migration = (doc) => ({ ...doc, schemaVersion: 15 });
+
+/**
+ * Version 16 (2026-10-23) added the filled symbol of a generic reminder or bank ∞ token
+ * (`symbolFill`, the `ReminderSymbolFillSet` event). The log needs no change: an older
+ * reminder has none. The bump makes older builds refuse a version 16 save instead of failing
+ * on the unknown event.
+ */
+const migrateV15toV16: Migration = (doc) => ({ ...doc, schemaVersion: 16 });
+
+/**
+ * Version 17 (2026-10-23) gave the Storyteller several titled game notes (`Game.notes` as a
+ * list, the `GameNoteSet` and `GameNoteDeleted` events). The log needs no change: an older
+ * game's `GameNotesSet` replays as the untitled first note. The bump makes older builds
+ * refuse a version 17 save instead of failing on the unknown events.
+ */
+const migrateV16toV17: Migration = (doc) => ({ ...doc, schemaVersion: 17 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -174,7 +213,12 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	8: migrateV8toV9,
 	9: migrateV9toV10,
 	10: migrateV10toV11,
-	11: migrateV11toV12
+	11: migrateV11toV12,
+	12: migrateV12toV13,
+	13: migrateV13toV14,
+	14: migrateV14toV15,
+	15: migrateV15toV16,
+	16: migrateV16toV17
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
@@ -260,10 +304,8 @@ export function summariseSavedGame(saved: SavedGame): SavedGameSummary {
 		savedAt: saved.savedAt,
 		createdAt: created?.createdAt ?? saved.savedAt,
 		seatCount: 0,
-		stage: { kind: 'setup' }
+		days: 0
 	};
-	let assigned = false;
-	let days = 0;
 	// Script and seat count at the cursor, without replaying the whole game.
 	let script = created?.script;
 	let seats = created?.seatIds.length ?? 0;
@@ -272,11 +314,9 @@ export function summariseSavedGame(saved: SavedGame): SavedGameSummary {
 			if (event.type === 'SeatAdded') seats++;
 			else if (event.type === 'SeatRemoved') seats--;
 			else if (event.type === 'ScriptChanged') script = event.script;
-			else if (event.type === 'CharacterAssigned') assigned = true;
-			else if (event.type === 'DayStarted') days++;
+			else if (event.type === 'DayStarted') summary.days++;
 		}
 	}
-	if (assigned || days > 0) summary.stage = { kind: 'day', day: days + 1 };
 	if (script?.meta?.name) summary.scriptName = script.meta.name;
 	const logo =
 		script &&

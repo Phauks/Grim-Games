@@ -1,0 +1,33 @@
+{
+	"actsWhenDead": true,
+	"redirectsKill": {
+		"from": "demon"
+	},
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "alive-at-dusk",
+				"alive": 3
+			}
+		]
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "win condition; the Demon kills whoever dies instead"
+	}
+}

@@ -1,0 +1,21 @@
+{
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may swap seats"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "swaps seats"
+	}
+}

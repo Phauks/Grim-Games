@@ -1,0 +1,82 @@
+{
+	"kills": {
+		"by": "other"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "A living good player the Lycanthrope chose, who dies.",
+			"ambiguous": "Neither the How to Run nor the summary says whether the Lycanthrope may choose themselves."
+		},
+		"Faux Paw": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "The one good player set up to register as evil.",
+			"ambiguous": "The wiki does not say whether the Lycanthrope itself can be the Faux Paw player."
+		}
+	},
+	"registersAs": {
+		"tokens": {
+			"Faux Paw": {
+				"alignments": ["evil"],
+				"carrierAlignment": "good"
+			}
+		}
+	},
+	"deathCheck": {
+		"kind": "chosen-good-dies"
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Faux Paw",
+				"text": "Choose a good player who registers as evil: put [Faux Paw] on them",
+				"target": {
+					"choose": "good",
+					"choice": "a good player"
+				},
+				"reason": "This good player registers as evil"
+			}
+		]
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"kind": "kills",
+		"victim": {
+			"who": "registers",
+			"as": "good"
+		}
+	},
+	"reminderMovement": {
+		"fixed": ["Faux Paw"],
+		"why": "The good player who registers as evil is chosen once."
+	},
+	"reminderPlaceholders": {
+		"note": "A good chosen player who is not the Faux Paw dies.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"reviewed": {
+				"text": "The Lycanthrope chooses a player. *DEAD*",
+				"reason": "The chosen player is marked with the death marker, not an unnamed reminder (Trevor’s review)."
+			},
+			"full": {
+				"text": "The Lycanthrope chooses a living player. If they are good and not marked *FAUX PAW*, they die: mark them *DEAD*, and the Demon kills no one tonight.",
+				"reason": "Says when the Dead token is used (Trevor’s review: TPI’s text is not enough to use it)."
+			}
+		}
+	}
+}

@@ -71,7 +71,7 @@
 			onclick={() => (choosing = true)}
 		/>
 		<IconButton
-			icon="rename"
+			icon="edit"
 			label={t('library.renameNamed', { name: collection.name })}
 			onclick={() => (renaming = true)}
 		/>

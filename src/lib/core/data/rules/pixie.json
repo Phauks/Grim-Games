@@ -1,0 +1,72 @@
+{
+	"reminderTargets": {
+		"Mad": {
+			"seat": "other",
+			"types": ["townsfolk"],
+			"note": "An in-play Townsfolk the Storyteller picks to show the Pixie.",
+			"ambiguous": "The wiki doesn't say whether the shown Townsfolk could be the Pixie itself."
+		},
+		"Has Ability": {
+			"seat": "other",
+			"types": ["townsfolk"],
+			"life": "dead",
+			"withLabel": "Mad",
+			"note": "Replaces Mad on that Townsfolk once they die, when the Pixie gains their ability.",
+			"ambiguous": "The wiki says to swap Mad for Has Ability but doesn't name whose token it sits by; the swap implies the dead Townsfolk."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Mad",
+				"text": "Choose an in-play Townsfolk to show the Pixie: put [Mad] on them",
+				"target": {
+					"choose": "townsfolk",
+					"choice": "an in-play Townsfolk",
+					"notSelf": true
+				},
+				"reason": "The Townsfolk the Pixie is shown and must be mad about"
+			}
+		]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "madness",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "must be mad as"
+					},
+					{
+						"target": true
+					},
+					{
+						"text": "to gain their ability when they die."
+					}
+				],
+				"when": {
+					"reminder": "Mad",
+					"targetAlive": true
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "gained-ability"
+	},
+	"reminderMovement": {
+		"fixed": ["Mad", "Has Ability"],
+		"why": "The Townsfolk shown is chosen once at the start."
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "Show the Townsfolk character token marked *MAD*. If the Pixie later gains that ability (*HAS ABILITY*), wake them when that character would wake.",
+				"reason": "Says when the Has Ability token goes on and that the Pixie then wakes as that character."
+			}
+		}
+	}
+}

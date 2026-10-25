@@ -23,9 +23,11 @@
 		logo?: string;
 		/** Makes the link; undefined disables the control (nothing to share yet). */
 		target: (() => Promise<ShareTarget>) | undefined;
+		/** The live room this device is in: Share hands on its link and join code instead. */
+		room?: string;
 	}
 
-	let { what, title, author, version, logo, target }: Props = $props();
+	let { what, title, author, version, logo, target, room }: Props = $props();
 	let open = $state(false);
 
 	/**
@@ -35,7 +37,7 @@
 	 */
 	let made: { for: () => Promise<ShareTarget>; link: Promise<ShareTarget> } | undefined;
 	function warm(): Promise<ShareTarget> | undefined {
-		if (!target) return undefined;
+		if (!target || room) return undefined;
 		if (made?.for !== target) {
 			const link = target();
 			made = { for: target, link };
@@ -60,13 +62,13 @@
 			void warm();
 			open = true;
 		}}
-		disabled={!target}
+		disabled={!target && !room}
 	/>
 </div>
 
 <Dialog bind:open title={t('scripts.share.title', { title })}>
-	{#if target}
-		<SharePanel {title} {author} {version} {logo} target={madeTarget} />
+	{#if target || room}
+		<SharePanel {title} {author} {version} {logo} target={madeTarget} {room} />
 	{/if}
 </Dialog>
 

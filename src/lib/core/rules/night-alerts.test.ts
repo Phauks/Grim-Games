@@ -8,8 +8,16 @@ import {
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { NIGHT_KILLERS, ON_DEATH, nightStepAlerts, type NightAlert } from './night-alerts.ts';
+import {
+	NIGHT_KILLERS,
+	ON_DEATH,
+	nightKiller,
+	nightStepAlerts,
+	type NightAlert
+} from './night-alerts.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
@@ -45,12 +53,11 @@ function short(alerts: NightAlert[], seats: string[]): string[] {
 }
 
 describe('data', () => {
-	it('names only real characters, each citing its wiki page', () => {
+	it('names only real characters', () => {
 		const data = committedGameData();
-		for (const [id, entry] of [...Object.entries(NIGHT_KILLERS), ...Object.entries(ON_DEATH)]) {
-			expect(data.byId.has(id), id).toBe(true);
-			expect(entry.wiki, id).toMatch(/^https:\/\/wiki\.bloodontheclocktower\.com\/\S+$/);
-		}
+		// Night killers and on-death triggers come from the rules files.
+		for (const id of Object.keys(NIGHT_KILLERS)) expect(data.byId.has(id), id).toBe(true);
+		for (const id of Object.keys(ON_DEATH)) expect(data.byId.has(id), id).toBe(true);
 	});
 
 	it('lists every Demon that kills at night (all but the Riot and the Leviathan)', () => {
@@ -182,5 +189,35 @@ describe('other kills', () => {
 		expect(short(nightStepAlerts(g, 'godfather', characters), seats)).toEqual([
 			'protected override→1'
 		]);
+	});
+});
+
+// A homebrew Demon that kills each night, as the Imp does
+// (https://wiki.bloodontheclocktower.com/Imp): its rules block alone gives its step the alerts.
+describe('custom characters', () => {
+	it('kill at night through their rules block', () => {
+		const issues = new Issues();
+		const crow = parseCharacter(
+			{
+				id: 'nightcrow',
+				name: 'Night Crow',
+				team: 'demon',
+				ability: 'Each night*, choose a player: they die.',
+				rules: { kills: { by: 'demon' } }
+			},
+			'[0]',
+			issues,
+			{ strict: false, scriptFields: true }
+		);
+		expect(issues.list).toEqual([]);
+		const all = new Map([...characters, [crow!.id, crow!]]);
+		expect(nightKiller('nightcrow', all)).toEqual({
+			by: 'demon',
+			targets: 'any',
+			ignoresProtection: false
+		});
+		expect(nightKiller('nightcrow')).toBeUndefined();
+		const { game: g, seats } = game(['soldier', 'chef']);
+		expect(short(nightStepAlerts(g, 'nightcrow', all), seats)).toEqual(['protected soldier→0']);
 	});
 });

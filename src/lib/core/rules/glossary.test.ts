@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { DAY_REMINDER_ENTRIES } from './day-reminders.data.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import fixture from './fixtures/wiki-glossary-entries.json' with { type: 'json' };
 import {
 	GLOSSARY,
@@ -25,8 +25,10 @@ const blocks: string[] = [
 		c.otherNightReminder ?? ''
 	]),
 	...data.jinxes.all.map((j) => j.reason),
-	...DAY_REMINDER_ENTRIES.flatMap((e) =>
-		e.reminders.flatMap((r) => r.template.flatMap((s) => ('text' in s ? [s.text] : [])))
+	...[...OFFICIAL_RULES.values()].flatMap((rules) =>
+		(rules.dayReminders?.reminders ?? []).flatMap((r) =>
+			r.template.flatMap((s) => ('text' in s ? [s.text] : []))
+		)
 	),
 	// The automatic line for an impairable character (describe.ts).
 	'is poisoned',

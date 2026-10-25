@@ -32,6 +32,17 @@ export function iconUrl(character: Character, alignment?: Alignment): string | u
 }
 
 /**
+ * A reminder token's owner icon, always in its owner's alignment (Trevor, 2026-10-23: no
+ * setting): the placing player's, else the character's usual one.
+ */
+export function reminderIconUrl(
+	character: Character,
+	alignment: Alignment | undefined
+): string | undefined {
+	return iconUrl(character, alignment);
+}
+
+/**
  * What to show instead when a homebrew character's own image fails to load (a dead link, or
  * offline): TPI's generic icon for its type, as when it has no image (Trevor, 2026-10-19).
  * Undefined for official characters, whose icons ship with the app.

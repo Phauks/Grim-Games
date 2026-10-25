@@ -1,0 +1,40 @@
+{
+	"reminderPrompts": {
+		"Died Today": "markDead"
+	},
+	"reminderTargets": {
+		"Died Today": {
+			"seat": "any",
+			"life": "dead",
+			"note": "The player who was executed and died today, who may be the Undertaker."
+		}
+	},
+	"answers": {
+		"question": "executed-character",
+		"token": "Died Today"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "will learn today’s executee"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"why": "Marks whoever was executed today."
+	}
+}

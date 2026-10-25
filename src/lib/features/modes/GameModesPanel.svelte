@@ -2,7 +2,14 @@
 	import { onMount, type Snippet } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import type { Character, GameData, LoadedScript } from '#lib/core/data/index.ts';
+	import {
+		fromScript,
+		toScript,
+		type Character,
+		type GameData,
+		type LoadedScript,
+		type Script
+	} from '#lib/core/data/index.ts';
 	import { MAX_PLAYERS, MAX_SEATS, MIN_PLAYERS } from '#lib/core/engine/index.ts';
 	import {
 		bannedIn,
@@ -15,7 +22,8 @@
 		type GameMode,
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
-	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
@@ -39,12 +47,20 @@
 	import ScriptPicker from './ScriptPicker.svelte';
 	import RestrictedDialog from './RestrictedDialog.svelte';
 	import SpecialRulesDialog from './SpecialRulesDialog.svelte';
-	import { loadLinkedScript, loadScriptChoice, scriptChoices } from './script-choices.svelte.ts';
+	import {
+		loadLinkedScript,
+		loadScriptChoice,
+		scriptChoices,
+		type ScriptChoice
+	} from './script-choices.svelte.ts';
 	import { campaigns } from './campaigns.ts';
-	import { continueCampaign, startHref, startInMode, startTowns } from './start.ts';
+	import RulesRecap from './RulesRecap.svelte';
+	import { switched, type SwitchChoices } from './rule-switches.ts';
+	import { continueCampaign, rulesScript, startHref, startInMode, startTowns } from './start.ts';
 	import { townGroup } from './town-groups.ts';
 	import { townSetupHref } from './town-setup.ts';
 	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
+	import { openedByBack, readDraft, saveDraft } from './new-game-draft.ts';
 
 	/**
 	 * New game's Game modes area (Trevor, 2026-10-17: modes are their own area because they
@@ -57,17 +73,60 @@
 		 * New game's own Standard game: script, players and Start (Grimoire board thread), given
 		 * the special rules chosen.
 		 */
-		standard: Snippet<[readonly SpecialRule[]]>;
+		/** Standard's own screen, given the chosen rules and the Start game step that restates them. */
+		standard: Snippet<[readonly SpecialRule[], (go: () => void) => void]>;
+		/** The script Standard's own picker has chosen, for the preview. */
+		standardScript: ScriptChoice;
+		/** Standard's own player count, for the preview's Players breakdown. */
+		standardPlayers: number;
+		/** The mode chosen; New game sets it when the room votes on the mode (Trevor, 2026-10-23). */
+		modeId?: string;
 	}
 
-	let { standard }: Props = $props();
+	let {
+		standard,
+		standardScript,
+		standardPlayers,
+		modeId = $bindable(STANDARD.id)
+	}: Props = $props();
+	/** Start game with special rules on restates them first (RulesRecap). */
+	let recap = $state<(() => void) | undefined>();
+	let recapOpen = $state(false);
+	function startAfterRecap(go: () => void) {
+		// Kept so Back from the next step brings New game back as it is now (Trevor, 2026-10-23).
+		saveDraft(
+			{
+				modeId,
+				ruleIds,
+				switchChoices: { ...switchChoices },
+				banned: restrictions.banned,
+				allowed: restrictions.allowed,
+				modePlayers: players,
+				modeScript: script
+			},
+			true
+		);
+		if (!rules.length) return go();
+		recap = go;
+		recapOpen = true;
+	}
 
-	onMount(() => void restoreScripts());
+	onMount(() => {
+		void restoreScripts();
+		if (!openedByBack()) return;
+		const draft = readDraft();
+		if (draft.modeId && findMode(draft.modeId)) modeId = draft.modeId;
+		if (draft.ruleIds) ruleIds = draft.ruleIds.filter((id) => findRule(id));
+		if (draft.switchChoices) switchChoices = draft.switchChoices;
+		if (draft.banned || draft.allowed)
+			restrictions = { banned: draft.banned ?? [], allowed: draft.allowed ?? [] };
+		if (draft.modePlayers) players = draft.modePlayers;
+		if (draft.modeScript) script = draft.modeScript;
+	});
 
 	// Standard first, then every mode (Trevor, 2026-10-18: one screen, modes in a drop-down).
 	const modes = $derived([STANDARD, ...allModes().filter((m) => m.id !== STANDARD.id)]);
 	const storyteller = $derived(storytellerName.current);
-	let modeId = $state(STANDARD.id);
 	const isStandard = $derived(modeId === STANDARD.id);
 	const custom = $derived(customModes.list.some((m) => m.id === modeId));
 	let adding = $state(false);
@@ -76,7 +135,11 @@
 	/** The special rules chosen, in order (Trevor, 2026-10-18: rules stack on a mode). */
 	let ruleIds = $state<string[]>([]);
 	let choosingRules = $state(false);
-	const rules = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
+	/** Rules whose own switch is on (rule-switches.ts), such as +1 naming its character. */
+	let switchChoices = $state<SwitchChoices>({});
+	const rules = $derived(
+		ruleIds.flatMap((id) => findRule(id) ?? []).map((r) => switched(r, switchChoices))
+	);
 	/** The mode as it plays, with the rules folded in. */
 	const played = $derived(withRules(mode, rules));
 	const pool = $derived(played.parts.pool);
@@ -173,6 +236,46 @@
 	);
 	const restrictedCount = $derived(bannedIn(played, restrictions).size);
 
+	// ── The script preview (Trevor, 2026-10-22): always open, showing the script as the game
+	// will play it, with the mode's and the special rules' changes. ──
+	const data = $derived(officialData.current);
+	/** A mode's own town scripts, which load from their links. */
+	let fixedLoaded = $state.raw<LoadedScript[]>([]);
+	$effect(() => {
+		const links = pool?.kind === 'per-town' ? pool.scripts : [];
+		const d = data;
+		if (!d || links.length === 0) return;
+		let current = true;
+		Promise.all(links.map((link) => loadLinkedScript(link, d)))
+			.then((loaded) => current && (fixedLoaded = loaded))
+			.catch(() => current && (fixedLoaded = []));
+		return () => (current = false);
+	});
+	/** Each town's script as chosen, before the mode and rules change it. */
+	const previewBases = $derived.by((): LoadedScript[] => {
+		if (!data) return [];
+		try {
+			if (isStandard) return [loadScriptChoice(standardScript, data)];
+			if (scriptKind === 'fixed') return fixedLoaded;
+			if (scriptKind === 'per-town')
+				return townScripts.slice(0, towns?.count ?? 2).map((c) => loadScriptChoice(c, data));
+			return [loadScriptChoice(scriptKind === 'none' ? 'tb' : script, data)];
+		} catch {
+			return [];
+		}
+	});
+	const previews = $derived.by((): LoadedScript[] => {
+		if (!data) return [];
+		const campaignScript: Script | undefined = continuing?.games[Number(versionValue)]?.script;
+		const scripts = campaignScript
+			? [campaignScript]
+			: previewBases.map((loaded) =>
+					rulesScript(played, rules, toScript(loaded), loaded.characters, data, restrictions)
+				);
+		return scripts.map((s) => fromScript(s, data).script);
+	});
+	const previewPlayers = $derived(isStandard ? standardPlayers : (sizes?.[0] ?? total));
+
 	async function loadScripts(data: GameData): Promise<LoadedScript[]> {
 		if (pool?.kind === 'per-town' && pool.scripts.length > 0)
 			return Promise.all(pool.scripts.map((link) => loadLinkedScript(link, data)));
@@ -254,6 +357,7 @@
 				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen } : {}),
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
+			saveDraft({ gameId: open.game.gameId });
 			await goto(startHref(modeId, rules, open.game.gameId));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
@@ -263,179 +367,212 @@
 	}
 </script>
 
-<!-- Game mode, About, Game mode settings and Script each sit under the one PageSection
+<!-- The settings, and the script preview beside them on a computer window, under them on a
+	phone (Trevor, 2026-10-22). -->
+<div class="new-game">
+	<!-- Game mode, About, Game mode settings and Script each sit under the one PageSection
 	header (Trevor, 2026-10-19: "should all share the common header"). -->
-<div class="modes">
-	<PageSection title={t('modes.label')}>
-		<div class="pick">
-			<!-- One drop-down for the mode (Trevor, 2026-10-18: "a dropdown, not buttons"). -->
-			<Select
-				label={t('modes.label')}
-				hideLabel
-				value={modeId}
-				options={modes.map((m) => ({ value: m.id, label: m.name }))}
-				onChange={(v) => {
-					modeId = v;
-					restrictions = NO_RESTRICTIONS;
-					roleRecycling = undefined;
-					campaignId = 'new';
-				}}
-			/>
-			<!-- Inspect and Add mode beside the drop-down they act on (Trevor, 2026-10-18). -->
-			<IconButton
-				icon="info"
-				label={t('modes.inspect', { name: mode.name })}
-				onclick={() => (inspecting = true)}
-			/>
-			<IconButton icon="add" label={t('modes.add.button')} onclick={() => (adding = true)} />
-			<!-- Always there, so nothing moves; only a mode added on this device can go. -->
-			<DeleteButton
-				label={t('modes.add.delete', { name: mode.name })}
-				disabled={!custom}
-				onclick={() => (deleting = true)}
-			/>
-		</div>
-		<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18), directly under
-		the mode they stack on (2026-10-19). -->
-		<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
-			{t('modes.specialRulesButton', { count: rules.length })}
-		</Button>
-	</PageSection>
-	<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
-	<PageSection title={t('modes.about')}>
-		<ModeAbout {mode} compact />
-	</PageSection>
-
-	{#if isStandard}
-		{@render standard(rules)}
-	{:else}
-		<div class="settings" data-testid="mode-settings">
-			<PageSection title={t('modes.settings')}>
-				{#if ongoing.length > 0}
-					<SettingSelect
-						label={t('modes.campaign.choose')}
-						description={t('modes.campaign.chooseHint')}
-						value={campaignId}
-						options={[
-							{ value: 'new', label: t('modes.campaign.new') },
-							...ongoing.map((c) => ({
-								value: c.campaignId,
-								label: t('modes.campaign.ongoing', {
-									name: c.games[0]?.script?.meta?.name ?? mode.name,
-									date: new Date(c.createdAt).toLocaleDateString()
-								}),
-								description: t('library.campaignVersions', { count: c.games.length })
-							}))
-						]}
-						onChange={(v) => (campaignId = v)}
-					/>
-				{/if}
-				{#if continuing}
-					<SettingSelect
-						label={t('modes.campaign.version')}
-						value={versionValue}
-						options={versions}
-						onChange={(v) => (version = v)}
-					/>
-				{/if}
-				{#if draft}
-					<SettingToggle
-						label={t('modes.roleRecycling')}
-						description={t('modes.roleRecyclingHint')}
-						checked={roleRecycling ?? draft.recycleUnchosen}
-						onChange={(on) => (roleRecycling = on)}
-					/>
-				{/if}
-				<div class="setting">
-					<Button variant="field" icon="restricted" onclick={openRestricted}>
-						{t('modes.restrictedButton', { count: restrictedCount })}
-					</Button>
-					<p class="description">{t('modes.restrictedHint')}</p>
-				</div>
-			</PageSection>
-		</div>
-
-		{#if continuing}
-			<!-- The campaign's saved version is its script. -->
-		{:else}
-			<PageSection title={t('modes.script')}>
-				{#if scriptKind === 'one'}
-					<ScriptPicker
-						label={t('modes.script')}
-						hideLabel
-						value={script}
-						onChange={(v) => (script = v)}
-					/>
-				{:else if scriptKind === 'per-town'}
-					{#each Array.from({ length: towns?.count ?? 2 }, (_, i) => i) as i (i)}
-						<Select
-							label={t('modes.townScript', { number: i + 1 })}
-							value={townScripts[i] ?? 'tb'}
-							options={choices.map((c) => ({
-								value: c.value,
-								label: c.label,
-								...(c.author || c.version ? { description: byline(c) } : {})
-							}))}
-							onChange={(v) => (townScripts[i] = v)}
-						/>
-					{/each}
-				{:else if scriptKind === 'fixed' && pool?.kind === 'per-town'}
-					<dl class="fixed">
-						{#each pool.scripts as link, i (link.url)}
-							<dt>{t('modes.townScript', { number: i + 1 })}</dt>
-							<dd><ModeValue field="script" value={link} /></dd>
-						{/each}
-					</dl>
-				{:else}
-					<p class="muted">{t('modes.everyCharacter')}</p>
-				{/if}
-			</PageSection>
-		{/if}
-
-		<!-- The same count and setup sheet as Standard (Trevor, 2026-10-18), once per town
-			when the towns have their own players. -->
-		{#if sizes}
-			{#each sizes as count, i (i)}
-				<PlayerCountSheet
-					players={count}
-					min={MIN_PLAYERS}
-					max={MAX_PLAYERS}
-					title={t('modes.townSheet', { number: i + 1 })}
-					storageKey={`setup:sheet:town-${i + 1}`}
-					testid={`town-${i + 1}-player-count`}
-					onChange={(n) => (townPlayers[i] = n)}
+	<div class="modes">
+		<PageSection title={t('modes.label')}>
+			<div class="pick">
+				<!-- One drop-down for the mode (Trevor, 2026-10-18: "a dropdown, not buttons"). -->
+				<Select
+					label={t('modes.label')}
+					hideLabel
+					value={modeId}
+					options={modes.map((m) => ({ value: m.id, label: m.name }))}
+					onChange={(v) => {
+						modeId = v;
+						restrictions = NO_RESTRICTIONS;
+						roleRecycling = undefined;
+						campaignId = 'new';
+					}}
 				/>
-			{/each}
-			<!-- The warning's line is kept, so the page doesn't move when it shows. -->
-			<p
-				class="warn"
-				class:shown={uneven !== undefined}
-				role="status"
-				data-testid="town-sizes-warning"
-			>
-				{t('modes.townsUneven', { count: uneven ?? 0 })}
-			</p>
-		{:else}
-			<PlayerCountSheet
-				players={total}
-				min={minPlayers}
-				max={maxPlayers}
-				onChange={(n) => (players = n)}
-			/>
-		{/if}
+				<!-- Inspect and Add mode beside the drop-down they act on (Trevor, 2026-10-18). -->
+				<IconButton
+					icon="info"
+					label={t('modes.inspect', { name: mode.name })}
+					onclick={() => (inspecting = true)}
+				/>
+				<IconButton icon="add" label={t('modes.add.button')} onclick={() => (adding = true)} />
+				<!-- Always there, so nothing moves; only a mode added on this device can go. -->
+				<DeleteButton
+					label={t('modes.add.delete', { name: mode.name })}
+					disabled={!custom}
+					onclick={() => (deleting = true)}
+				/>
+			</div>
+			<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18), directly under
+		the mode they stack on (2026-10-19). -->
+			<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
+				{t('modes.specialRulesButton', { count: rules.length })}
+			</Button>
+		</PageSection>
+		<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
+		<PageSection title={t('modes.about')}>
+			<ModeAbout {mode} compact />
+		</PageSection>
 
-		<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>
-			{t('modes.start')}
-		</Button>
-	{/if}
+		{#if isStandard}
+			{@render standard(rules, startAfterRecap)}
+		{:else}
+			<div class="settings" data-testid="mode-settings">
+				<PageSection title={t('modes.settings')}>
+					{#if ongoing.length > 0}
+						<SettingSelect
+							label={t('modes.campaign.choose')}
+							description={t('modes.campaign.chooseHint')}
+							value={campaignId}
+							options={[
+								{ value: 'new', label: t('modes.campaign.new') },
+								...ongoing.map((c) => ({
+									value: c.campaignId,
+									label: t('modes.campaign.ongoing', {
+										name: c.games[0]?.script?.meta?.name ?? mode.name,
+										date: new Date(c.createdAt).toLocaleDateString()
+									}),
+									description: t('library.campaignVersions', { count: c.games.length })
+								}))
+							]}
+							onChange={(v) => (campaignId = v)}
+						/>
+					{/if}
+					{#if continuing}
+						<SettingSelect
+							label={t('modes.campaign.version')}
+							value={versionValue}
+							options={versions}
+							onChange={(v) => (version = v)}
+						/>
+					{/if}
+					{#if draft}
+						<SettingToggle
+							label={t('modes.roleRecycling')}
+							description={t('modes.roleRecyclingHint')}
+							checked={roleRecycling ?? draft.recycleUnchosen}
+							onChange={(on) => (roleRecycling = on)}
+						/>
+					{/if}
+					<div class="setting">
+						<Button variant="field" icon="restricted" onclick={openRestricted}>
+							{t('modes.restrictedButton', { count: restrictedCount })}
+						</Button>
+						<p class="description">{t('modes.restrictedHint')}</p>
+					</div>
+				</PageSection>
+			</div>
+
+			{#if continuing}
+				<!-- The campaign's saved version is its script. -->
+			{:else}
+				<PageSection title={t('modes.script')}>
+					{#if scriptKind === 'one'}
+						<ScriptPicker
+							label={t('modes.script')}
+							hideLabel
+							value={script}
+							onChange={(v) => (script = v)}
+						/>
+					{:else if scriptKind === 'per-town'}
+						{#each Array.from({ length: towns?.count ?? 2 }, (_, i) => i) as i (i)}
+							<Select
+								label={t('modes.townScript', { number: i + 1 })}
+								value={townScripts[i] ?? 'tb'}
+								options={choices.map((c) => ({
+									value: c.value,
+									label: c.label,
+									...(c.author || c.version ? { description: byline(c) } : {})
+								}))}
+								onChange={(v) => (townScripts[i] = v)}
+							/>
+						{/each}
+					{:else if scriptKind === 'fixed' && pool?.kind === 'per-town'}
+						<dl class="fixed">
+							{#each pool.scripts as link, i (link.url)}
+								<dt>{t('modes.townScript', { number: i + 1 })}</dt>
+								<dd><ModeValue field="script" value={link} /></dd>
+							{/each}
+						</dl>
+					{:else}
+						<p class="muted">{t('modes.everyCharacter')}</p>
+					{/if}
+				</PageSection>
+			{/if}
+
+			<!-- The same count and setup sheet as Standard (Trevor, 2026-10-18), once per town
+			when the towns have their own players. -->
+			{#if sizes}
+				{#each sizes as count, i (i)}
+					<PlayerCountSheet
+						players={count}
+						min={MIN_PLAYERS}
+						max={MAX_PLAYERS}
+						title={t('modes.townSheet', { number: i + 1 })}
+						storageKey={`setup:sheet:town-${i + 1}`}
+						testid={`town-${i + 1}-player-count`}
+						onChange={(n) => (townPlayers[i] = n)}
+					/>
+				{/each}
+				<!-- The warning's line is kept, so the page doesn't move when it shows. -->
+				<p
+					class="warn"
+					class:shown={uneven !== undefined}
+					role="status"
+					data-testid="town-sizes-warning"
+				>
+					{t('modes.townsUneven', { count: uneven ?? 0 })}
+				</p>
+			{:else}
+				<PlayerCountSheet
+					players={total}
+					min={minPlayers}
+					max={maxPlayers}
+					onChange={(n) => (players = n)}
+				/>
+			{/if}
+
+			<Button
+				variant="accent"
+				icon="grimoire"
+				disabled={starting}
+				onclick={() => startAfterRecap(start)}
+			>
+				{t('modes.start')}
+			</Button>
+		{/if}
+	</div>
+
+	<!-- Always open, never collapsed; it scrolls on its own beside the settings. -->
+	<aside class="preview" aria-label={t('modes.preview')} data-testid="script-preview">
+		<PageSection title={t('modes.preview')}>
+			{#each previews as loaded, i (i)}
+				{#if previews.length > 1}<h3 class="town">
+						{t('modes.townScript', { number: i + 1 })}
+					</h3>{/if}
+				<!-- New game already shows the player counts beside the settings. -->
+				<ScriptCopy script={loaded} players={previewPlayers} showBreakdown={false} />
+			{:else}
+				<p class="muted" aria-busy="true">{t('scripts.details.loading')}</p>
+			{/each}
+		</PageSection>
+	</aside>
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
+<RulesRecap
+	bind:open={recapOpen}
+	{rules}
+	choices={switchChoices}
+	onSwitch={(c) => (switchChoices = c)}
+	onStart={() => recap?.()}
+/>
 <SpecialRulesDialog
 	bind:open={choosingRules}
 	{mode}
 	{ruleIds}
 	onChange={(ids) => (ruleIds = ids)}
+	choices={switchChoices}
+	onSwitch={(c) => (switchChoices = c)}
 	onadd={() => (adding = true)}
 />
 <AddModeDialog
@@ -486,7 +623,36 @@
 	.modes {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
+		align-content: start;
 		gap: var(--space-3);
+	}
+	.new-game {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+	}
+	.town {
+		margin: var(--space-3) 0 0;
+	}
+	/* Rows of the preview are ruled apart, as stacked rows are elsewhere (Trevor, 2026-10-22). */
+	.preview :global(li.character) {
+		padding-top: var(--space-2);
+		border-top: 1px solid var(--border);
+	}
+	/* A computer window: the preview sits to the right and scrolls on its own, held at the
+	   top of the screen as Page's side column is. */
+	@media (min-width: 75rem) {
+		.new-game {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			align-items: start;
+		}
+		.preview {
+			position: sticky;
+			top: calc(var(--app-top) + var(--space-2));
+			max-height: calc(100dvh - var(--app-top) - var(--space-4));
+			overflow-y: auto;
+			padding-bottom: var(--space-4);
+		}
 	}
 	/* The drop-down takes the row, the icon buttons their own size; a long mode name is cut
 	   in the drop-down, never the page. */

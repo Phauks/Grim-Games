@@ -2,17 +2,14 @@ import {
 	isReportStatus,
 	parseReportDraft,
 	parseReportIdPath,
+	parseReportScriptPath,
 	REPORT_OPTIONAL_FIELDS,
-	REPORTS_ADMINS_API,
 	REPORTS_API,
-	type Admin,
-	type AdminList,
 	type CreatedReport,
 	type Report,
 	type ReportList
 } from '../src/lib/features/reports/reports-protocol.ts';
-import { normaliseEmail } from '../src/lib/features/account/account-protocol.ts';
-import { emailStub, userStub, type AccountEnv } from './account/objects.ts';
+import { userStub, type AccountEnv } from './account/objects.ts';
 import { getUser } from './account/routes.ts';
 import { adminSignInTrusted, isAdmin, type AdminsEnv } from './admins.ts';
 import { reportBox, type ReportBox } from './report-box.ts';
@@ -44,7 +41,7 @@ async function reportList(
 ): Promise<ReportList> {
 	const names = new Map<string, string | undefined>();
 	const reports: Report[] = [];
-	for (const { userId, ...report } of await box.list(!reader.admin)) {
+	for (const { userId, ...report } of await box.list(!reader.admin, true)) {
 		if (userId !== undefined) {
 			if (!names.has(userId)) {
 				names.set(userId, (await userStub(env, userId).profile())?.username ?? undefined);
@@ -57,21 +54,11 @@ async function reportList(
 		// Their own reports' details only where sign-in can be trusted (not on other previews).
 		if (!reader.admin && !(report.mine && reader.ownTrusted)) {
 			for (const key of REPORT_OPTIONAL_FIELDS) delete report[key];
+			delete report.hasScript;
 		}
 		reports.push(report);
 	}
 	return { reports, admin: reader.admin };
-}
-
-/** Each admin with the account's current email; accounts deleted since are dropped. */
-async function adminList(env: ReportsEnv, box: DurableObjectStub<ReportBox>): Promise<Admin[]> {
-	const list: Admin[] = [];
-	for (const id of await box.admins()) {
-		const profile = await userStub(env, id).profile();
-		if (profile) list.push({ id, email: profile.email });
-		else await box.removeAdmin(id);
-	}
-	return list;
 }
 
 /** Cookie-signed changes must come from our own pages with a JSON body (as account/routes.ts). */
@@ -116,7 +103,20 @@ export async function handleReports(
 	// account only. Answers 404 otherwise, so the routes don't advertise themselves.
 	const auth = await getUser(request, env);
 	if (!auth) return text('Not found', 404);
-	const admin = await isAdmin(env, url, { userId: auth.userId, email: auth.user.email });
+	const admin = await isAdmin(env, url, auth.user.email);
+	const scriptId = parseReportScriptPath(url.pathname);
+	if (scriptId !== undefined && request.method === 'GET') {
+		// Like the rest of what it was sent with: for the admins and its sender. A data Worker
+		// from before scripts has no `script` method; then there is none to show.
+		const found = await box.script(scriptId).catch(() => undefined);
+		const allowed =
+			found && (admin || (found.userId === auth.userId && adminSignInTrusted(env, url)));
+		return allowed
+			? new Response(found.script, {
+					headers: { ...noStore, 'Content-Type': 'application/json' }
+				})
+			: text('Not found', 404);
+	}
 	if (!admin && url.pathname === REPORTS_API && request.method === 'GET') {
 		const ownTrusted = adminSignInTrusted(env, url);
 		return Response.json(await reportList(env, box, { userId: auth.userId, admin, ownTrusted }), {
@@ -128,29 +128,6 @@ export async function handleReports(
 		return text('This request must come from the app', 403);
 	}
 
-	if (url.pathname === REPORTS_ADMINS_API) {
-		if (request.method === 'GET') {
-			return Response.json({ admins: await adminList(env, box) } satisfies AdminList, {
-				headers: noStore
-			});
-		}
-		const body = (await request.json().catch(() => null)) as {
-			email?: unknown;
-			id?: unknown;
-		} | null;
-		if (request.method === 'POST') {
-			// Named by the email they sign in with today, stored by the account's id.
-			const email = normaliseEmail(body?.email);
-			if (!email) return text('Bad email', 400);
-			const userId = await emailStub(env, email).ownerId();
-			if (!userId) return text('No account', 404);
-			await box.addAdmin(userId, Date.now());
-		} else if (request.method === 'DELETE') {
-			if (typeof body?.id !== 'string') return text('Bad id', 400);
-			await box.removeAdmin(body.id);
-		} else return text('Method not allowed', 405);
-		return new Response(null, { status: 204, headers: noStore });
-	}
 	if (url.pathname === REPORTS_API && request.method === 'GET') {
 		return Response.json(
 			await reportList(env, box, { userId: auth.userId, admin: true, ownTrusted: true }),

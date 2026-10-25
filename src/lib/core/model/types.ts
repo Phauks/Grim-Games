@@ -13,6 +13,8 @@ import type { Alignment, CharacterId, ReminderLabel, Script } from '#lib/core/da
 // the rules that apply them, and stored on the game.
 import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
 import type { NightStepOverride } from '#lib/core/rules/night-order.ts';
+import type { FrameId } from '#lib/core/frames/index.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
 
 export type GameId = string;
 export type SeatId = string;
@@ -49,7 +51,33 @@ export interface ReminderInstance extends Reminder {
 	 * symbol's icon id or an emoji. None shows a blank token.
 	 */
 	symbol?: string;
+	/**
+	 * The colour of the generic reminder's symbol (Trevor, 2026-10-20). None is the reminder's
+	 * own ink. An emoji keeps its own colours.
+	 */
+	symbolColour?: SymbolColour;
+	/**
+	 * The generic reminder's icon symbol drawn filled instead of as an outline, chosen per
+	 * token (Trevor, 2026-10-23). An emoji is unaffected.
+	 */
+	symbolFill?: true;
 }
+
+/** What a generic reminder looks like: its text, its symbol and how the symbol is drawn. */
+export type GenericLook = Pick<ReminderInstance, 'note' | 'symbol' | 'symbolColour' | 'symbolFill'>;
+
+/**
+ * A reusable ∞ token in the reminder bank (plan B9, Trevor 2026-10-23: "Tokens only"): made
+ * with "+ New token", it stays in the bank, and every copy pulled from it starts with its
+ * look. Changing it later leaves the copies already placed as they are.
+ */
+export interface GenericToken extends GenericLook {
+	tokenId: string;
+}
+
+/** Colours a generic reminder's symbol can take, each one of the theme's own colours. */
+export const SYMBOL_COLOURS = ['blue', 'red', 'purple', 'gold', 'green'] as const;
+export type SymbolColour = (typeof SYMBOL_COLOURS)[number];
 
 /**
  * The generic ∞ reminder's `characterId` (Trevor, 2026-10-18: one plain reminder, as many as
@@ -117,6 +145,16 @@ export interface Seat {
 	 * Mezepheles' word or the Amnesiac's ability. Never in the public projection.
 	 */
 	note?: string;
+	/**
+	 * The frame the player picked for their token on their own phone (L4), carried with their
+	 * avatar. Undefined shows the board's default frame. Purely decorative.
+	 */
+	frame?: FrameId;
+	/**
+	 * The picture the player picked on their own phone (plan R6), shown on their seat token.
+	 * Undefined shows none. Purely decorative.
+	 */
+	avatar?: AvatarId;
 	reminders: ReminderInstance[];
 }
 
@@ -176,7 +214,18 @@ export interface CharacterGuess {
  */
 export type DayEntry =
 	| { kind: 'nomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
-	| { kind: 'execution'; entryId: DayEntryId; seatId: SeatId; died: boolean }
+	| {
+			kind: 'execution';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			died: boolean;
+			/**
+			 * Executed and does not die (Trevor, 2026-10-23): the ability that saved them, or no
+			 * `characterId` for the Storyteller's "can't die" override. Absent when they died or
+			 * were already dead.
+			 */
+			savedBy?: { characterId?: CharacterId; seatId?: SeatId };
+	  }
 	| { kind: 'exile'; entryId: DayEntryId; seatId: SeatId; died: boolean }
 	| {
 			kind: 'ability';
@@ -192,6 +241,8 @@ export type DayEntry =
 			seatId?: SeatId;
 			text: string;
 			guesses?: CharacterGuess[];
+			/** For a statement (the Gossip's): whether it is true, as the Storyteller marked it. */
+			holds?: boolean;
 	  }
 	| {
 			kind: 'info';
@@ -244,6 +295,19 @@ export interface DayLog {
 	closedAt?: number;
 }
 
+/**
+ * One of the Storyteller's notes on the game (Trevor, 2026-10-23: "allow for multiple notes,
+ * each gets a title", as the player's notebook does).
+ */
+export interface GameNote {
+	noteId: string;
+	/** Empty until the Storyteller names it. */
+	title: string;
+	text: string;
+	/** The list shows the title only; the text shows when the note is opened. */
+	hidden: boolean;
+}
+
 export interface Game {
 	gameId: GameId;
 	/** Milliseconds since the epoch. */
@@ -265,6 +329,8 @@ export interface Game {
 	 * had it"). Where each one sits is the device's own; optional, so older games read as before.
 	 */
 	looseReminders?: ReminderInstance[];
+	/** The bank's reusable ∞ tokens (plan B9), in the order made; absent until one is made. */
+	genericTokens?: GenericToken[];
 	/** Demon bluffs; more than one set when more than one player gets bluffs. */
 	bluffs: CharacterId[][];
 	/**
@@ -283,10 +349,11 @@ export interface Game {
 	 */
 	prepValues?: Record<string, string>;
 	/**
-	 * The Storyteller's notes on the game as a whole (Trevor, 2026-10-19), beside each seat's
-	 * own note. Private: never in the public projection. Absent until written.
+	 * The Storyteller's titled notes on the game as a whole (Trevor, 2026-10-19; several since
+	 * 2026-10-23, like a player's notebook), beside each seat's own note, oldest first.
+	 * Private: never in the public projection. Absent until one is written.
 	 */
-	notes?: string;
+	notes?: GameNote[];
 	/** The current day log, since the last "New day". */
 	today: DayLog;
 	/** Earlier day logs, oldest first, closed by "New day". */

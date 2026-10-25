@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript, nameStoryteller } from './new-game.ts';
+import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { openMenu, openSettingsDialog } from './shell.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -9,7 +10,7 @@ async function startGame(page: Page, script = 'Trouble Brewing') {
 	await page.goto('/new');
 	await pickScript(page, script);
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 }
 
@@ -71,12 +72,23 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
  */
 const bankNight = (
 	page: Page,
-	name: 'Set up' | 'Start game' | 'Run Night Order' | 'End night' | 'End day'
+	name: 'Set up' | 'Start game' | 'Run Night Order' | 'End night' | 'Execution'
 ) =>
 	page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
 		.getByRole('button', { name, exact: true });
+
+/**
+ * Ending the day asks who was executed (Trevor, 2026-10-22); No execution unless a player
+ * is named.
+ */
+async function chooseExecution(page: Page, choice = 'No execution') {
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: choice, exact: true }).tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+}
 
 /**
  * The walk-through under the board, on this step: the night order left the board (Trevor,
@@ -96,14 +108,10 @@ async function walkTo(page: Page, title: string) {
 		const start = page
 			.getByRole('list', { name: 'Reminder bank' })
 			.locator('..')
-			.getByRole('button', { name: /^(Start game|Run Night Order|End day)$/ });
-		const day = (await start.getAttribute('aria-label')) === 'End day';
+			.getByRole('button', { name: /^(Start game|Run Night Order|Execution)$/ });
+		const day = (await start.getAttribute('aria-label')) === 'Execution';
 		await start.tap();
-		if (day)
-			await page
-				.getByRole('alertdialog', { name: 'End the day?' })
-				.getByRole('button', { name: 'Confirm', exact: true })
-				.tap();
+		if (day) await chooseExecution(page);
 		// Setup reminders still to place: Start game asks first (Trevor, 2026-10-20).
 		const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
 		await expect(strip.or(ask)).toBeVisible();
@@ -161,9 +169,9 @@ test('New game and Resume game are screens of their own', async ({ page }) => {
 	await page.getByRole('button', { name: 'More players' }).tap();
 	await expect(current).toHaveText('9');
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
-	// No Back button (Trevor, 2026-10-16): the app name in the header, or Home in the menu, goes home.
+	// No Back button (Trevor, 2026-10-16): Home in the menu goes home.
 	await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0);
-	await page.getByRole('banner').getByRole('link', { name: APP_NAME }).tap();
+	await (await openMenu(page)).getByRole('link', { name: 'Home' }).tap();
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
 
@@ -276,6 +284,11 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	// The sheet shows the board's badge (Trevor, 2026-10-19: one ghost vote look).
 	const sheetMark = ghost.getByTestId('sheet-ghost-vote');
 	await expect(sheetMark).toHaveAttribute('data-vote', 'unused');
+	// Badge and "Not used" sit in the middle of the button (Trevor, 2026-10-23).
+	const box = (await ghost.boundingBox())!;
+	const mark = (await sheetMark.boundingBox())!;
+	const words = (await ghost.locator('.ghost-text').boundingBox())!;
+	expect(Math.abs(mark.x - box.x - (box.x + box.width - (words.x + words.width)))).toBeLessThan(2);
 	await expect(sheetMark.locator('[data-icon="ph:ghost-fill"]')).toBeAttached();
 	const markBefore = (await sheetMark.boundingBox())!;
 	await ghost.tap();
@@ -300,7 +313,7 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 		.getByRole('dialog', { name: 'Alignment' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(sheet).toContainText(/Imp\s*Good · Seat 1/);
+	await expect(sheet).toContainText(/Imp\s*Demon · Good · Seat 1/);
 	await expect(impIcon).not.toHaveAttribute('src', evilSrc!);
 	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .disc > .face')).toHaveCSS(
 		'rotate',
@@ -330,8 +343,10 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await sheet.getByRole('button', { name: 'About the Imp' }).tap();
 	const details = page.getByRole('dialog', { name: 'Imp' });
 	await expect(details).toContainText('Demon');
+	// Opened from a seat, the details name the seat and its alignment too (plan L26).
+	await expect(details.getByTestId('character-seat')).toHaveText('Seat 1 · Evil');
 	await details.getByRole('button', { name: 'Close' }).tap();
-	await expect(sheet).toContainText(/Imp\s*Evil · Seat 1/);
+	await expect(sheet).toContainText(/Imp\s*Demon · Evil · Seat 1/);
 
 	// The … menu names the character first.
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
@@ -351,7 +366,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(confirm).toContainText('Reminders from the previous character will be removed.');
 	await expect(confirm).toContainText(/Removed\s*None/);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(sheet).toContainText(/Baron\s*Evil · Seat 1/);
+	await expect(sheet).toContainText(/Baron\s*Minion · Evil · Seat 1/);
 	// The seat keeps its changes, in a window of their own from the ⋯ menu (Trevor, 2026-10-18).
 	await seatMenu(page, sheet, 'Character history');
 	const changes = page.getByRole('dialog', { name: 'Character history for Seat 1' });
@@ -365,7 +380,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(alignment).toContainText('Evil');
 	await expect(alignment).toContainText('Becomes');
 	await alignment.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(sheet).toContainText(/Baron\s*Good · Seat 1/);
+	await expect(sheet).toContainText(/Baron\s*Minion · Good · Seat 1/);
 });
 
 test('history, add seat and remove', async ({ page }) => {
@@ -548,6 +563,11 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	// 2026-10-19: "a lot of the game flow comes from that button"), and nowhere else.
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(1);
 	await expect(bankNight(page, 'Start game')).toHaveCount(0);
+	// Arranging seats keeps Set up there, disabled until Done (Trevor, 2026-10-22).
+	await menu(page, 'Arrange seats');
+	await expect(bankNight(page, 'Set up')).toBeDisabled();
+	await expect(bankNight(page, 'Start game')).toHaveCount(0);
+	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
 	await bankNight(page, 'Set up').tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// The last setup step opens the board, whose bank starts with the setup reminders.
@@ -695,7 +715,8 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 
 	// Rotating moves the players, not the places: the hand-placed spot stays put.
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
-	await expect(seatLabelled(page, 'Seat 1: no name')).toBeAttached();
+	// Seat 8's player is in seat 1 now, and keeps the name "Seat 8" (Trevor, 2026-10-22).
+	await expect(seatLabelled(page, 'Seat 1: Seat 8')).toBeAttached();
 	const turned = await centre(1);
 	expect(Math.abs(turned.x - to.x)).toBeLessThan(4);
 	expect(Math.abs(turned.y - to.y)).toBeLessThan(4);
@@ -796,10 +817,11 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		await page.mouse.move(from.x, from.y);
 		await page.mouse.down();
 		await page.mouse.move(from.x + 30, from.y + 30, { steps: 4 });
-		// Whose it is: the character with its player, and the seat it is on (Trevor, 2026-10-17).
-		await expect(page.getByRole('status').filter({ hasText: 'Drunk, from Sailor' })).toContainText(
-			/Sailor\s*· Seat 1\s*on\s*Sailor\s*· Seat 1/
-		);
+		// Nothing names where it came from: tapping the reminder says (Trevor, 2026-10-24).
+		await expect(page.getByTestId('drag-source')).toHaveCount(0);
+		// The seat it comes from is marked unlike the others (Trevor, 2026-10-20).
+		await expect(page.locator('[data-testid="seat"][data-from]')).toHaveCount(1);
+		await expect(seatLabelled(page, 'Seat 1:')).toHaveAttribute('data-from', 'true');
 		await page.mouse.move(from.x, from.y, { steps: 2 });
 		await page.mouse.up();
 	}
@@ -967,10 +989,10 @@ test('the night order is walked through from the bank, and End night starts the 
 	await page.keyboard.press('Escape');
 	await expect(boardTimer).toBeVisible();
 	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
-	// Day has come: the button can't start another day; End day starts the next night
-	// (Trevor, 2026-10-19).
+	// Day has come: the button can't start another day; Execution, in place of End day,
+	// starts the next night (Trevor, 2026-10-19; 2026-10-22).
 	await expect(bankNight(page, 'End night')).toHaveCount(0);
-	await expect(bankNight(page, 'End day')).toBeEnabled();
+	await expect(bankNight(page, 'Execution')).toBeEnabled();
 });
 
 test('a night step offers the info tokens its text names', async ({ page }) => {
@@ -1021,15 +1043,149 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');
 	// The link is the room's: phones that join get the script, names and deaths only. The
-	// view-only grimoire link has its own tab (Trevor, 2026-10-19), off.
-	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
-	await share.getByRole('tab', { name: 'View grimoire' }).tap();
-	await expect(share.getByTestId('watch-link').getByTestId('share-url')).toHaveValue('');
-	await expect(share.getByTestId('share-code')).toBeHidden();
+	// view-only grimoire link sits below it on the same screen (Trevor, 2026-10-22), off.
+	const watch = share.getByTestId('watch-link');
+	await expect(share.getByTestId('share-url').first()).toHaveValue(new RegExp(`/join/${code}$`));
+	await expect(watch.getByTestId('share-url')).toHaveValue('');
+	await expect(watch.getByTestId('share-code')).toHaveCount(0);
 	expect(page.url()).toBe(url);
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	await expect(share).toBeHidden();
 	await expect(seatLabelled(page, 'Seat 1:')).toBeVisible();
+});
+
+// Trevor (2026-10-22): the join code in the board's corner, to read without opening Share.
+test('the join code shows under the script name, a Board setting, read only', async ({ page }) => {
+	await startGame(page);
+	const corner = page.getByTestId('board-room-code');
+	await expect(corner).toContainText('Join code');
+	// Script comes before Share in the toolbar (Trevor, 2026-10-23).
+	const toolbar = page.getByRole('button', { name: /^(Script|Share)$/ });
+	await expect(toolbar).toHaveCount(2);
+	await expect(toolbar.first()).toHaveAccessibleName('Script');
+	await page.getByRole('button', { name: 'Share', exact: true }).tap();
+	const share = page.getByRole('dialog', { name: 'Share' });
+	const code = share.getByTestId('share-code');
+	await expect(code).toHaveText(/^\d{3} \d{3}$/);
+	const shown = (await code.textContent())!;
+	await share.getByRole('button', { name: 'Close', exact: true }).tap();
+	// The day or night and Game time join the code's line where a phone's corner has no line
+	// to spare for them.
+	const codeLine = new RegExp(`^Join code ${shown}(\\s*·\\s*Game time Setup)?$`);
+	await expect(corner).toHaveText(codeLine);
+	// Only read: Share is the toolbar's button, not the corner (Trevor, 2026-10-24).
+	await expect(page.getByRole('button', { name: /Join code/ })).toHaveCount(0);
+
+	await menu(page, 'Board');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings.getByText('Join code on the board', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(corner).toHaveCount(0);
+
+	// The same switch on Share, where the code is (Trevor, 2026-10-23).
+	await page.getByRole('button', { name: 'Share', exact: true }).tap();
+	const onShare = share.getByRole('checkbox', { name: 'Join code on the board' });
+	await expect(onShare).not.toBeChecked();
+	await share.getByText('Join code on the board', { exact: true }).tap();
+	await expect(onShare).toBeChecked();
+	await share.getByRole('button', { name: 'Close', exact: true }).tap();
+	await expect(corner).toHaveText(codeLine);
+});
+
+// Trevor (2026-10-23): the Storyteller's name under the author, in the lower left corner.
+test("the board's corner names the Storyteller under the author, when named", async ({ page }) => {
+	await startGame(page);
+	const corner = page.getByTestId('script-title');
+	await expect(corner).toContainText('by The Pandemonium Institute');
+	await expect(page.getByTestId('board-storyteller')).toHaveCount(0);
+	await nameStoryteller(page, 'Sam');
+	await expect(page.getByTestId('board-storyteller')).toHaveText('Storyteller: Sam');
+	// The Board preview shows it too.
+	await menu(page, 'Board');
+	await expect(
+		page.getByRole('dialog', { name: 'Settings' }).getByTestId('preview-storyteller')
+	).toHaveText('Storyteller: Sam');
+});
+
+// Trevor (2026-10-23): "when grim is not main screen, we should blur out for game integrity".
+test('the board is blurred behind every sheet and dialog over it', async ({ page }) => {
+	await startGame(page);
+	const blur = (scope: 'dialog' | 'drawer') =>
+		page
+			.locator(`[data-scope="${scope}"][data-part="backdrop"]`)
+			.last()
+			.evaluate((el) => getComputedStyle(el).backdropFilter);
+	await openSeat(page, 1);
+	expect(await blur('drawer')).toMatch(/^blur\(/);
+	await closeSheet(page);
+	await page.getByRole('button', { name: 'Share', exact: true }).tap();
+	expect(await blur('dialog')).toMatch(/^blur\(/);
+	await page
+		.getByRole('dialog', { name: 'Share' })
+		.getByRole('button', { name: 'Close', exact: true })
+		.tap();
+	// Away from the board, a dialog only dims what is behind it: the page is no longer marked.
+	await page.goto('/library');
+	await expect(page.locator('html[data-board-shown]')).toHaveCount(0);
+});
+
+// Trevor (2026-10-23): starting the night opens the walk-through strip under the board; the
+// seats close up to make room, but the tokens keep their size.
+test('tokens keep their size when the night walk-through opens', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	const token = page.getByTestId('seat').first();
+	const before = (await token.boundingBox())!.width;
+	// The script's logo behind the seats keeps its size too (Trevor, 2026-10-23).
+	const logo = page.locator('.board-logo');
+	await expect(logo).toBeVisible();
+	const logoBefore = (await logo.boundingBox())!;
+	await bankNight(page, 'Start game').tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect
+		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
+		.toBeLessThan(1);
+	const logoAfter = (await logo.boundingBox())!;
+	expect(Math.abs(logoAfter.width - logoBefore.width)).toBeLessThan(1);
+	expect(Math.abs(logoAfter.height - logoBefore.height)).toBeLessThan(1);
+});
+
+// Trevor (2026-10-23): "change board look to board preview", and its bank looks like the board's.
+test("the Board preview's bank has the board bank's outline and colour", async ({ page }) => {
+	await startGame(page);
+	const look = (el: Element) => {
+		const style = getComputedStyle(el);
+		return [style.borderTopWidth, style.borderTopColor, style.borderRadius, style.backgroundColor];
+	};
+	const board = await page.locator('[data-tray]').evaluate(look);
+	await menu(page, 'Board');
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await expect(dialog.getByRole('heading', { name: 'Board preview' })).toBeVisible();
+	expect(await dialog.getByTestId('preview-bank').evaluate(look)).toEqual(board);
+});
+
+// Trevor (2026-10-23): a full screen button on the board, for those who don't know how.
+test('the board can go full screen from its toolbar, and back', async ({ page }) => {
+	await startGame(page);
+	const button = page.getByRole('button', { name: 'Full screen', exact: true });
+	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	// Its symbol alone, last on the toolbar after ⋯ (Trevor, 2026-10-24).
+	await expect(button).toHaveText('');
+	await expect(
+		page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button').last()
+	).toHaveAccessibleName('Full screen');
+	await button.tap();
+	await expect(button).toHaveAttribute('aria-pressed', 'true');
+	expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+	await button.tap();
+	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(false);
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
@@ -1175,6 +1331,45 @@ test('the bank fades at an end with more tokens past it, and its captions stay i
 	await expect(tray).not.toHaveAttribute('data-more-end');
 	await expect(other).toHaveText('Reminders');
 	expect(await inside()).toBe(true);
+});
+
+// Trevor (2026-10-22, screenshot): with setup reminders and reminders in the bank, the ∞ sat
+// over the Reminders stretch instead of over its own token.
+test('the ∞ caption sits over the generic token, wherever the stretches before it end', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Librarian'],
+		[3, 'Monk'],
+		[4, 'Fortune Teller'],
+		[5, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const tray = page.getByRole('list', { name: 'Reminder bank' });
+	const caption = page.getByTestId('bank-generic');
+	const cell = tray.getByRole('button', { name: 'Generic reminder' });
+	await expect
+		.poll(async () => {
+			const token = (await cell.boundingBox())!;
+			// Off the row's end (a phone), the caption waits until it is scrolled into view.
+			if ((await caption.count()) === 0) {
+				const row = (await tray.boundingBox())!;
+				return token.x > row.x + row.width / 2;
+			}
+			const mark = (await caption.boundingBox())!;
+			// From the stretch's line, as the other captions are, so over the token's start.
+			return mark.x < token.x + token.width / 2 && mark.x + mark.width > token.x - token.width / 2;
+		})
+		.toBe(true);
 });
 
 test('a dead player whose ability has ended moves their reminders to the end of the bank', async ({
@@ -1346,7 +1541,7 @@ test("a seat's character can be searched by name or ability", async ({ page }) =
 	await expect(picker.getByRole('button', { name: 'Poisoner', exact: true })).toBeVisible();
 	await expect(picker.getByRole('button', { name: 'Washerwoman', exact: true })).toBeHidden();
 	await picker.getByRole('button', { name: 'Poisoner', exact: true }).tap();
-	await expect(sheet).toContainText(/Poisoner\s*Evil · Seat 1/);
+	await expect(sheet).toContainText(/Poisoner\s*Minion · Evil · Seat 1/);
 });
 
 test('players rotate one seat, or are dragged to a new place in the order', async ({ page }) => {
@@ -1360,6 +1555,8 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: Ana')).toBeAttached();
+	// Every name moves with its player, a seat number too (Trevor, 2026-10-22).
+	await expect(seatLabelled(page, 'Seat 3: Seat 2')).toBeAttached();
 	await toolbar.getByRole('button', { name: 'Rotate players anticlockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
 
@@ -1387,6 +1584,64 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await page.keyboard.press('Escape');
 	await openSeat(page, 4);
 	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
+});
+
+test("every button in the More menu has an edge, and End game is red with the buttons' text", async ({
+	page
+}) => {
+	// Trevor, 2026-10-22: End game's red text was hard to read, and buttons matched the
+	// surface behind them. Edges reach 3:1 (WCAG 1.4.11); the label keeps the buttons' colour.
+	await startGame(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const grimoireMenu = page.getByRole('dialog', { name: 'Grimoire' });
+	const end = grimoireMenu.getByRole('button', { name: 'End game' });
+	const other = grimoireMenu.getByRole('button', { name: 'Board', exact: true });
+	await expect(end).toBeVisible();
+	const look = (button: Locator) =>
+		button.evaluate((el) => {
+			const rgb = (css: string) => (css.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+			const lum = (css: string) => {
+				const [r, g, b] = rgb(css).map((v) => {
+					const c = v / 255;
+					return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+				});
+				return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+			};
+			const ratio = (a: string, b: string) => {
+				const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+				return (hi + 0.05) / (lo + 0.05);
+			};
+			const style = getComputedStyle(el);
+			// The dialog panel behind the button.
+			let panel = el.parentElement;
+			while (panel && getComputedStyle(panel).backgroundColor === 'rgba(0, 0, 0, 0)')
+				panel = panel.parentElement;
+			const surface = panel ? getComputedStyle(panel).backgroundColor : 'rgb(0, 0, 0)';
+			const edge = style.boxShadow.match(/rgba?\([^)]*\)/)?.[0] ?? style.backgroundColor;
+			return {
+				fill: style.backgroundColor,
+				text: style.color,
+				edge: ratio(edge, surface),
+				label: ratio(
+					style.color,
+					style.backgroundColor === 'rgba(0, 0, 0, 0)' ? surface : style.backgroundColor
+				)
+			};
+		});
+	const ended = await look(end);
+	const board = await look(other);
+	const [r, g, b] = (ended.fill.match(/\d+/g) ?? []).map(Number);
+	expect(r).toBeGreaterThan(g * 2);
+	expect(r).toBeGreaterThan(b * 2);
+	expect(ended.text).toBe(board.text);
+	expect(ended.label).toBeGreaterThanOrEqual(4.5);
+	for (const button of [ended, board]) expect(button.edge).toBeGreaterThanOrEqual(3);
+	await end.scrollIntoViewIfNeeded();
+	await grimoireMenu.screenshot({ path: `test-results/more-menu-${test.info().project.name}.png` });
+	await end.tap();
+	await page
+		.getByRole('alertdialog', { name: 'End game?' })
+		.screenshot({ path: `test-results/end-game-${test.info().project.name}.png` });
 });
 
 test('the game toolbar opens the app menu; leaving the game asks first and keeps it', async ({
@@ -1504,6 +1759,26 @@ test('the board background can be an image from the device, kept after a reload'
 	const backdrop = page.getByTestId('board-background');
 	await expect(backdrop).toHaveAttribute('style', /blob:/);
 	await expect(page.getByTestId('vignette')).toBeAttached();
+	// A change to the game keeps the same image: a new link for it flashed the board as it
+	// loaded again, e.g. on a ghost vote (Trevor, 2026-10-23).
+	const image = await backdrop.getAttribute('style');
+	const node = await backdrop.elementHandle();
+	const sheet = await openSeat(page, 1);
+	await nameSeat(sheet, 'Ana');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Ana' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
+	// Starting the night too, as the seats close up for the walk-through (Trevor, 2026-10-23).
+	const box = await backdrop.boundingBox();
+	await bankNight(page, 'Start game').tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(backdrop).toHaveAttribute('style', image!);
+	expect(await backdrop.boundingBox()).toEqual(box);
+	expect(await node!.evaluate((el) => el.isConnected)).toBe(true);
 
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('style', /blob:/);
@@ -1539,13 +1814,16 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.getByTestId('vignette')).toBeAttached();
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	await expect(page.getByTestId('vignette')).toHaveCount(0);
-	await dialog.getByText('Script name on the board', { exact: true }).tap();
-	await expect(page.locator('.corner-title')).toHaveCount(0);
-	await dialog.getByText('Script name on the board', { exact: true }).tap();
+	// Always shown, with no switch (Trevor, 2026-10-23).
+	await expect(dialog.getByText('Script name on the board', { exact: true })).toHaveCount(0);
 	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
 	// One place only (Trevor, 2026-10-18): no choice of where.
 	await expect(dialog.getByRole('combobox', { name: 'Script name', exact: true })).toHaveCount(0);
-	// The player name badge size is an option (Trevor, 2026-10-17), live on the board.
+	// The player name badge size is an option (Trevor, 2026-10-17), live on the board. It is
+	// set in Tokens, with the character token (Trevor, 2026-10-20).
+	await expect(dialog.getByRole('slider', { name: 'Player name size' })).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await menu(page, 'Tokens');
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
 	await expect(nameSize).toHaveAttribute('aria-valuetext', '140%');
@@ -1895,8 +2173,12 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 		.getByRole('dialog', { name: 'Status of Seat 2' })
 		.getByRole('button', { name: 'Executed' })
 		.tap();
+	// During the day, Executed asks as the day's Execution does (Trevor, 2026-10-23).
+	await page
+		.getByRole('alertdialog', { name: 'End the day?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 	await keepPlaying(page);
-	await closeSheet(page);
 
 	const suggested = (await openStep(page, 'Undertaker')).getByTestId('night-suggested');
 	await expect(suggested.locator('[data-character-id="imp"]').first()).toBeVisible();
@@ -1908,12 +2190,12 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	// Whoever it names shows with their character (Trevor, 2026-10-17).
 	await expect(suggested.locator('.because')).toContainText('Seat 2');
 	await expect(suggested.locator('.because [data-character-id="imp"]').first()).toBeVisible();
-	// The logic behind it: the executed player and their true character.
-	await suggested.getByRole('button', { name: 'Why' }).tap();
-	const why = page.getByRole('dialog', { name: 'Why' });
-	await expect(why.getByTestId('why-facts')).toContainText('Seat 2');
-	await expect(why.getByTestId('why-facts').locator('[data-character-id="imp"]')).toBeVisible();
-	await why.getByRole('button', { name: 'Close' }).tap();
+	// The logic behind it, beside it with no Why button (Trevor, 2026-10-22): the executed
+	// player and their true character.
+	await expect(suggested.getByRole('button', { name: 'Why' })).toHaveCount(0);
+	const why = suggested.getByTestId('why-facts');
+	await expect(why).toContainText('Seat 2');
+	await expect(why.locator('[data-character-id="imp"]')).toBeVisible();
 	await suggested.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('Imp');
 });
@@ -1964,7 +2246,9 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await execute(1);
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(prompt.getByTestId('game-end-prompt')).toContainText('Evil wins');
-	await expect(prompt.locator('[data-rule="saint"] [data-character-id="saint"]')).toBeVisible();
+	await expect(
+		prompt.locator('[data-rule="executed-loses"] [data-character-id="saint"]')
+	).toBeVisible();
 	await expect(prompt.getByRole('combobox', { name: 'Winner' })).toContainText('Evil');
 	// How it ended is preselected from the grimoire (Trevor, 2026-10-18), for History's stats.
 	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toContainText('Saint');
@@ -2058,11 +2342,12 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
 	// Read-only: nothing pops up in the middle (Trevor, 2026-10-18), and the game over line
-	// sits just above Previous and Next, out of the circle.
+	// sits in History's strip, out of the circle, so ending moves nothing (2026-10-24).
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
 	const over = (await page.getByTestId('game-over').boundingBox())!;
 	const strip = (await steps.boundingBox())!;
-	expect(over.y + over.height).toBeLessThanOrEqual(strip.y);
+	expect(over.y).toBeGreaterThanOrEqual(strip.y);
+	expect(over.y + over.height).toBeLessThanOrEqual(strip.y + strip.height + 1);
 	expect(over.y).toBeGreaterThanOrEqual(
 		(await page.locator('.board').boundingBox())!.y +
 			(await page.locator('.board').boundingBox())!.height
@@ -2233,6 +2518,12 @@ test("a finished game is shared to the players' phones, without the notes", asyn
 	const download = phone.waitForEvent('download');
 	await phone.getByRole('button', { name: 'Save', exact: true }).tap();
 	expect((await download).suggestedFilename()).toMatch(/^trouble-brewing-.*\.html$/);
+	// Its Share is the one share screen, with the recap's QR code and link (Trevor, 2026-10-23).
+	await phone.getByRole('button', { name: 'Share', exact: true }).tap();
+	const passOn = phone.getByRole('dialog', { name: /^Share / });
+	await expect(passOn.getByTestId('share-url')).toHaveValue(url);
+	await expect(passOn.getByRole('img', { name: 'QR code for the game recap' })).toBeVisible();
+	await phone.keyboard.press('Escape');
 
 	// Reopening the dialog finds the same share; Stop sharing deletes it.
 	await page.keyboard.press('Escape');
@@ -2291,9 +2582,8 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	for (let i = 0; i < 30 && !(await last.evaluate(inView)); i++) await page.mouse.wheel(0, 600);
 	await expect(last).toBeInViewport();
 	expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-	// The same Script and Night tabs as players' /play, without their private Notes (Trevor,
-	// 2026-10-18: what the Storyteller sees is what players get).
-	await expect(sheet.getByRole('tab')).toHaveText(['Script', 'Night']);
+	// Every tab players' /play has, Grim and Notes too (Trevor, 2026-10-23: "feature parity").
+	await expect(sheet.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
 	await sheet.getByRole('tab', { name: 'Night' }).tap();
 	await expect(sheet.locator('section[data-night="first"] li[data-step="empath"]')).toBeVisible();
 	await page.keyboard.press('Escape');
@@ -2391,14 +2681,42 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	const sheet = page.getByTestId('notes-sheet');
 	// Every player, headed by their character, seat and name (Trevor, 2026-10-19).
 	await expect(sheet.locator('li[data-seat]')).toHaveCount(8);
-	const general = sheet.getByRole('button', { name: /^Game notes:/ });
-	await expect(general).toHaveAccessibleName('Game notes: None');
-	await general.tap();
-	const gameDialog = page.getByRole('dialog', { name: 'Game notes' });
-	await gameDialog.getByRole('textbox').tap();
-	await page.keyboard.type('Ana asked about the Fang Gu');
+	// Game notes as the player's notebook keeps them (Trevor, 2026-10-23): several, each with a
+	// title, starting as a "+ New note" card with a dashed edge.
+	const add = sheet.getByTestId('new-note');
+	const cards = sheet.locator('[data-note]');
+	await expect(cards).toHaveCount(0);
+	await expect(add).toHaveText('New note');
+	await expect(add).toHaveCSS('border-top-style', 'dashed');
+	await add.tap();
+	const gameDialog = page.getByRole('dialog', { name: 'Note' });
+	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Fang Gu');
+	await gameDialog.getByRole('textbox', { name: 'Text' }).fill('Ana asked about the Fang Gu');
 	await gameDialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(general).toContainText('Ana asked about the Fang Gu');
+	await expect(cards).toHaveCount(1);
+	await expect(cards).toHaveText(/^\s*Fang Gu\s*Ana asked about the Fang Gu\s*$/);
+	// A new note left blank is not kept.
+	await add.tap();
+	await page.keyboard.press('Escape');
+	await expect(cards).toHaveCount(1);
+	// A second note goes after the first, and the trash deletes it after asking.
+	await add.tap();
+	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Bluffs');
+	await gameDialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(cards).toHaveText([/Fang Gu/, /Bluffs/]);
+	await cards.nth(1).tap();
+	await gameDialog.getByRole('button', { name: 'Delete note' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Delete this note?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(cards).toHaveCount(1);
+	// Each note hides its own text in the list, keeping its title.
+	await cards.first().tap();
+	await gameDialog.getByRole('button', { name: 'Hide contents' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(cards).toHaveText(/^\s*Fang Gu\s*Hidden\s*$/);
+	await page.screenshot({ path: `test-results/game-notes-${test.info().project.name}.png` });
 
 	const notes = sheet.getByRole('button', { name: /^Notes for Seat 1 \(Ana\):/ });
 	await expect(notes).toHaveAccessibleName('Notes for Seat 1 (Ana): None');
@@ -2474,7 +2792,8 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
 	await expect(history).toContainText('Note on Ana');
-	await expect(history).toContainText('Game notes');
+	await expect(history).toContainText('Game note: Fang Gu');
+	await expect(history).toContainText('Deleted a game note');
 });
 
 test("a seat's reminder list shows who has each reminder and moves it here", async ({ page }) => {
@@ -2523,6 +2842,7 @@ test("on a crowded table one seat's reminders never cover another's", async ({ p
 		.tap();
 	for (let i = 0; i < 7; i++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(15);
 	for (const [seat, name] of [
 		[1, 'Washerwoman'],
@@ -2891,10 +3211,11 @@ test('Back closes an open sheet first, then asks before leaving the game', async
 	await leave.getByRole('button', { name: 'Cancel' }).tap();
 	expect(page.url()).toBe(board);
 
-	// Asks again on the next Back, and Confirm leaves for where the game was opened from.
+	// Asks again on the next Back, and Confirm leaves for where the game was opened from:
+	// Character selection, the step before the board (G7).
 	await page.goBack();
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page).toHaveURL(/\/new$/);
+	await expect(page).toHaveURL(/\/setup$/);
 });
 
 test('once every token is placed, the board does not prompt for the Demon bluffs', async ({
@@ -2965,13 +3286,20 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
 
-	// Turning it on says what it changes first (Trevor, 2026-10-17).
+	// Turning it on says what it changes first (Trevor, 2026-10-17). The switch sits apart, in
+	// Board's closed Advanced part, marked with a warning before it is touched (Trevor,
+	// 2026-10-23).
 	await menu(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await dialog.getByRole('combobox', { name: 'Reminders', exact: true }).tap();
+	const mode = dialog.getByRole('combobox', { name: 'Reminders', exact: true });
+	await expect(mode).toBeHidden();
+	await openBoardAdvanced(dialog);
+	await dialog.getByRole('button', { name: 'Warning' }).tap();
+	await expect(page.getByText(/belong to no seat: no lines back to seats/)).toBeVisible();
+	await mode.tap();
 	await page.getByRole('option', { name: 'Stay where dropped', exact: true }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Reminders stay where dropped?' });
-	await expect(confirm.getByTestId('reminder-mode-effects').locator('li')).toHaveCount(4);
+	await expect(confirm.getByTestId('reminder-mode-effects').locator('li')).toHaveCount(5);
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
@@ -3025,8 +3353,10 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 });
 
 /** Drags a token by mouse from its centre to a point, lifting it straight up first. */
-async function dragTo(page: Page, token: Locator, to: { x: number; y: number }) {
+async function dragTo(page: Page, token: Locator, to: { x: number; y: number } | Locator) {
 	await token.scrollIntoViewIfNeeded();
+	// A target is measured once the token is in view: scrolling to it can move the board.
+	if ('boundingBox' in to) to = await centreOf(to);
 	const box = (await token.boundingBox())!;
 	const x = box.x + box.width / 2;
 	const y = box.y + box.height / 2;
@@ -3062,15 +3392,11 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 	const held = page.getByRole('group', { name: "Angel's reminders" });
 
 	// The Angel's own reminder goes straight on (https://wiki.bloodontheclocktower.com/Angel).
-	await dragTo(
-		page,
-		all.getByRole('button', { name: 'Something Bad reminder' }),
-		await centreOf(angel)
-	);
+	await dragTo(page, all.getByRole('button', { name: 'Something Bad reminder' }), angel);
 	await expect(held.getByRole('button', { name: 'Something Bad reminder' })).toBeVisible();
 
 	// Another character's asks first, saying why (Trevor, 2026-10-17).
-	await dragTo(page, all.getByRole('button', { name: 'Poisoned reminder' }), await centreOf(angel));
+	await dragTo(page, all.getByRole('button', { name: 'Poisoned reminder' }), angel);
 	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
 	await expect(confirm).toContainText('Not a Fabled or Loric reminder.');
 	await expect(confirm).toContainText(/Now\s*In the reminder bank/);
@@ -3153,6 +3479,14 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 	page
 }) => {
 	await startGame(page);
+	// One of the game's own ∞ tokens (plan B9).
+	await page
+		.getByRole('list', { name: 'Reminder bank' })
+		.getByRole('button', { name: 'New token' })
+		.tap();
+	await page.getByTestId('reminder-note').fill('Red herring');
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('reminder-note')).toBeHidden();
 	for (const [number, name] of [
 		[1, 'Poisoner'],
 		[2, 'Monk']
@@ -3171,10 +3505,18 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(strip).toContainText('Poisoner');
 
-	// Only this character covers the setup reminders too (Trevor, 2026-10-17).
+	// Only this character covers the setup reminders too (Trevor, 2026-10-17), and still lists
+	// the ∞ tokens after them: the plain ∞, the game's own and "+ New token" (Trevor, 2026-10-23).
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	const listed = bank.locator('> li:not(.divider)');
 	await focusMode(page, 'Only this character');
-	for (const li of await bank.locator('> li').all()) await expect(li).toHaveClass(/\bnow\b|none/);
+	const now = await bank.locator('> li.now').count();
+	await expect(listed).toHaveCount(now + 3);
+	await expect(listed.nth(-3).getByRole('button')).toHaveAccessibleName('Generic reminder');
+	await expect(listed.nth(-2).getByRole('button')).toHaveAccessibleName(
+		'Generic reminder: Red herring'
+	);
+	await expect(listed.last().getByRole('button')).toHaveAccessibleName('New token');
 	await focusMode(page, 'Bring to front');
 	const tokens = page.getByRole('list', { name: 'Reminder bank' }).locator('> li');
 	// Bring to front, as before: the Poisoner's token first, ringed.
@@ -3183,7 +3525,8 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 
 	// One choice, as a drop-down (Trevor, 2026-10-17): always on, only how.
 	await focusMode(page, 'Only this character');
-	await expect(tokens).toHaveCount(1);
+	await expect(listed).toHaveCount(4);
+	await expect(tokens.first()).toContainText('Poisoned');
 	await focusMode(page, 'Highlight');
 	await expect(page.locator('li.dim').first()).toBeAttached();
 	await expect(tokens.first()).not.toHaveClass(/\bnow\b/);
@@ -3288,7 +3631,8 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await expect(tokens.first()).toHaveClass(/\bnow\b/);
 	await expect(tokens.first()).toContainText('Paid');
 	await focusMode(page, 'Only this character');
-	await expect(tokens).toHaveCount(1);
+	// Paid, then the plain ∞ and "+ New token".
+	await expect(tokens.and(page.locator(':not(.divider)'))).toHaveCount(3);
 	await expect(tokens.first()).toContainText('Paid');
 });
 
@@ -3470,9 +3814,10 @@ test('an information step suggests every valid number, and no sets of players', 
 	await expect(rows).toHaveCount(1);
 	await expect(rows.first().locator('.main')).toHaveText('0');
 	await chef.getByRole('button', { name: 'Close' }).tap();
-	// The walk-through's one line counts them instead of naming one.
+	// The walk-through's one line names them in brackets, not a count that reads as the number
+	// to give (Trevor, 2026-10-22).
 	const strip = await walkTo(page, 'Chef');
-	await expect(strip.getByTestId('night-suggested')).toHaveText(/Valid Information: 1 valid/);
+	await expect(strip.getByTestId('night-suggested')).toHaveText('Valid Information: (0)');
 });
 
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({
@@ -3536,14 +3881,15 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Trevor (2026-10-18, 2026-10-19): game actions, the seats, the settings, then End game.
-	// Storyteller names who runs the game (Trevor, 2026-10-19).
-	await expect(menu.getByRole('separator')).toHaveCount(3);
+	// Storyteller names who runs the game (Trevor, 2026-10-19). A line between Tokens and
+	// Report an issue (Trevor, 2026-10-23).
+	await expect(menu.getByRole('separator')).toHaveCount(4);
 	const items = menu.locator('.menu > :is(button, hr), .menu > .menu-nav > button');
 	const names = await items.evaluateAll((els) =>
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes( Game info)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens (Navigation )?Report an issue \| End game$/
+		/^History Demon bluffs Notes( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens \| (Navigation )?Report an issue \| End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu
@@ -3605,7 +3951,7 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 			.tap();
 		await closeSheet(page);
 	}
-	// The first night ends; two players die on Day 1.
+	// The first night ends; the Empath is executed on Day 1 and the Ravenkeeper dies tonight.
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
@@ -3618,6 +3964,14 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 				.getByRole('dialog', { name: `Status of Seat ${seat}` })
 				.getByRole('button', { name: 'Executed' })
 				.tap();
+			// During the day, Executed asks as the day's Execution does (Trevor, 2026-10-23),
+			// and its Confirm ends the day.
+			const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+			if (seat === 2) {
+				await expect(ask.getByRole('combobox', { name: 'Execution' })).toContainText('Seat 2');
+				await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+				continue;
+			}
 			await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
 		}
 		await closeSheet(page);
@@ -3625,11 +3979,6 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	// Trevor (2026-10-18): "If character is dead do not show them in assisted night order."
 	// The Ravenkeeper still wakes on the night they die
 	// (https://wiki.bloodontheclocktower.com/Ravenkeeper).
-	await bankNight(page, 'End day').tap();
-	await page
-		.getByRole('alertdialog', { name: 'End the day?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
 	const strip = page.getByTestId('night-strip');
 	const names: string[] = [];
 	for (let i = 0; i < 12; i++) {
@@ -3698,6 +4047,7 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 			await page.getByRole('button', { name: 'Fewer players' }).tap();
 		await expect(count).toContainText(String(players));
 		await page.getByRole('button', { name: 'Start game' }).tap();
+		await toBoard(page);
 		await expect(page.getByTestId('seat')).toHaveCount(players);
 		const gameId = page.url().split('/').pop()!;
 		await page.evaluate(
@@ -3763,7 +4113,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	const board = page.url();
 	// Always in place, so the bank never moves: Set up until the tokens are handed out
 	// (Trevor, 2026-10-19), then Start game.
@@ -3772,7 +4122,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	const start = button('Start game');
 	const run = button('Run Night Order');
 	const end = button('End night');
-	const endDay = button('End day');
+	const endDay = button('Execution');
 	await expect(button('Set up')).toBeEnabled();
 	await expect(start).toHaveCount(0);
 	await page.goto(`${new URL(board).pathname}/setup`);
@@ -3817,13 +4167,11 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 		.tap();
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
 	await page.keyboard.press('Escape');
-	// The day: End day, which asks, then starts the next night (Trevor, 2026-10-19).
+	// The day: Execution, which asks who was executed, then starts the next night (Trevor,
+	// 2026-10-19; 2026-10-22).
 	await expect(run).toHaveCount(0);
 	await endDay.tap();
-	await page
-		.getByRole('alertdialog', { name: 'End the day?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	await chooseExecution(page);
 	await expect(strip).toBeVisible();
 	// The night starts on Dusk, though End day has ticked it (Trevor, 2026-10-20).
 	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
@@ -3842,6 +4190,55 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await expect(confirm).toHaveCount(0);
 	await expect(page.getByRole('dialog', { name: 'Day 2' })).toHaveCount(0);
 	await expect(endDay).toBeEnabled();
+});
+
+// https://wiki.bloodontheclocktower.com/Devil%27s_Advocate: a living player, different to last
+// night (Trevor, 2026-10-23: last night's player is not suggested again, but can be chosen).
+test("the Devil's Advocate's token is not suggested on last night's player", async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	const first = await openSeat(page, 1);
+	await first.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: "Devil's Advocate", exact: true })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Dusk');
+
+	// Night 1: the Devil's Advocate chooses Seat 2.
+	const picker = async (seat: number) => {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+		const dialog = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
+		const token = dialog
+			.getByRole('group', { name: "Devil's Advocate" })
+			.getByRole('button')
+			.filter({ hasText: 'Survives Execution' });
+		return { dialog, token };
+	};
+	const night1 = await picker(2);
+	await expect(night1.token).not.toHaveAttribute('data-misfit');
+	await night1.token.tap();
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+	await endNight(page);
+	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	// Night 2: the token comes off Seat 2, which is then marked as not a usual place for it.
+	const again = await picker(2);
+	await again.dialog.getByRole('group', { name: 'On this seat' }).getByRole('button').tap();
+	await expect(again.token).toHaveAttribute('data-misfit', '');
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+	const other = await picker(3);
+	await expect(other.token).not.toHaveAttribute('data-misfit');
+	// Warn, never lock: placed on Seat 2 anyway, with a note saying why.
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+	const back = await picker(2);
+	await back.token.tap();
+	await expect(page.getByText(/the ability says different to last night/)).toBeVisible();
 });
 
 // https://wiki.bloodontheclocktower.com/Investigator: the Minion shown is another player; the
@@ -3869,7 +4266,9 @@ test("the Investigator's own seat fits its Wrong; its Minion is marked and warns
 	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
 		1
 	);
-	await expect(page.getByText(/never goes on its character's own player/)).toBeVisible();
+	// The Investigator is no Minion, so its Minion never fits its own seat (Trevor, 2026-10-23:
+	// no rule about self is needed).
+	await expect(page.getByText(/the character type is not one it goes on/)).toBeVisible();
 });
 
 test('Resume game names a game’s alternative mode beside its script', async ({ page }) => {
@@ -3893,9 +4292,17 @@ test('Resume game names a game’s alternative mode beside its script', async ({
 	await expect(saved.locator(`a[href$="${plain}"]`).getByTestId('game-mode')).toHaveCount(0);
 });
 
+/** Opens Board's Advanced part, which remembers being open. */
+async function openBoardAdvanced(dialog: Locator) {
+	const toggle = dialog.getByRole('button', { name: /^Advanced/ });
+	if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.tap();
+	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+}
+
 async function reminderMode(page: Page, mode: 'Held by seat' | 'Stay where dropped') {
 	await menu(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await openBoardAdvanced(dialog);
 	await dialog.getByRole('combobox', { name: 'Reminders', exact: true }).tap();
 	await page.getByRole('option', { name: mode, exact: true }).tap();
 	if (mode === 'Stay where dropped')
@@ -3926,7 +4333,7 @@ test('loose reminders belong to no seat, leave the bank, and are marked back in 
 	// Trevor (2026-10-18): dropped on a seat or anywhere else, it is put there, belongs to no
 	// seat, and leaves the bank either way.
 	const board = (await page.locator('.board').boundingBox())!;
-	await dragTo(page, inBank('Townsfolk'), await centreOf(seatLabelled(page, 'Seat 2')));
+	await dragTo(page, inBank('Townsfolk'), seatLabelled(page, 'Seat 2'));
 	await dragTo(page, inBank('Wrong'), {
 		x: board.x + board.width * 0.35,
 		y: board.y + board.height * 0.4
@@ -3940,13 +4347,11 @@ test('loose reminders belong to no seat, leave the bank, and are marked back in 
 	await reminderMode(page, 'Held by seat');
 	await expect(page.locator('[data-loose][data-unassigned]')).toHaveCount(2);
 	const wrong = loose.getByRole('button', { name: 'Wrong reminder' });
-	await dragTo(page, wrong, await centreOf(seatLabelled(page, 'Seat 3')));
+	await dragTo(page, wrong, seatLabelled(page, 'Seat 3'));
 	await expect(page.locator('[data-loose][data-unassigned]')).toHaveCount(1);
 });
 
-test("a placed reminder's ⋯ duplicates it beside the original, marked as uncommon", async ({
-	page
-}) => {
+test("a reminder's ⋯ duplicates it into the bank, from the board or the bank", async ({ page }) => {
 	// Two seats and a placed reminder take most of the default 30 s on a slow runner.
 	test.slow();
 	await startGame(page);
@@ -3981,19 +4386,186 @@ test("a placed reminder's ⋯ duplicates it beside the original, marked as uncom
 	await onSeat.getByRole('button', { name: 'Poisoned reminder' }).tap();
 	await page.getByRole('button', { name: 'More reminder actions' }).tap();
 	await page.getByRole('button', { name: 'Duplicate reminder' }).tap();
-	// Trevor (2026-10-18): allowed, but more than the game gives, so it says so and is marked.
+	// Trevor (2026-10-18): allowed, but more than the game gives, so it says so. The copy lands
+	// in the bank, not on the board (Trevor, 2026-10-20).
 	await expect(page.getByText(/More copies of this reminder than the game gives/)).toBeVisible();
-	await expect(onSeat).toHaveCount(2);
+	await expect(onSeat).toHaveCount(1);
+	await expect(inBank).toHaveCount(2);
+	// The copy is marked in the bank as it is on the board (Trevor, 2026-10-22).
+	const bankExtras = page.locator('[aria-label="Reminder bank"] li[data-extra]');
+	await expect(bankExtras).toHaveCount(1);
+	await expect(bankExtras.getByRole('button', { name: 'Poisoned reminder' })).toHaveCount(1);
+	// From the bank too, in its "Put on" (Trevor, 2026-10-20).
+	await inBank.first().tap();
+	const put = page.getByRole('dialog', { name: 'Put Poisoned on' });
+	await put.getByRole('button', { name: 'More reminder actions' }).tap();
+	await page.getByRole('button', { name: 'Duplicate reminder' }).tap();
+	await expect(put).toBeHidden();
+	await expect(inBank).toHaveCount(3);
+	await expect(bankExtras).toHaveCount(2);
+	// A copy in the bank is removed with the red trash, as on the board (Trevor, 2026-10-24);
+	// the game's own token has none.
+	await inBank.first().tap();
+	await expect(put.getByRole('button', { name: 'Remove reminder' })).toHaveCount(0);
+	await put.getByRole('button', { name: 'Close' }).tap();
+	await bankExtras.getByRole('button', { name: 'Poisoned reminder' }).first().tap();
+	await put.getByRole('button', { name: 'Remove reminder' }).tap();
+	await expect(put).toBeHidden();
+	await expect(inBank).toHaveCount(2);
+	await expect(bankExtras).toHaveCount(1);
+	// Placed, an added copy is marked as more than the game gives.
+	for (let n = 0; n < 2; n++) {
+		await inBank.first().tap();
+		await put.getByRole('button', { name: /Seat 2$/ }).tap();
+	}
+	await expect(inBank).toHaveCount(0);
 	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(1);
-	// A new token: the bank keeps its Poisoned (Trevor, 2026-10-18).
-	await expect(inBank).toHaveCount(1);
+});
+
+test('"+ New token" makes a reusable ∞ token whose copies carry its look', async ({ page }) => {
+	// Plan B9 (Trevor, 2026-10-23: "Tokens only").
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	await bank.getByRole('button', { name: 'New token' }).tap();
+	const text = page.getByTestId('reminder-note');
+	await text.fill('Red herring');
+	await text.press('Enter');
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Symbol colour' }).tap();
+	await page.getByRole('option', { name: 'Red', exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(text).toBeHidden();
+	const token = bank.getByRole('button', { name: 'Generic reminder: Red herring' });
+	await expect(token.locator('[data-symbol^="ph:"]')).toBeAttached();
+	// "+ New token" stays last, after the plain ∞ and the new token.
+	await expect(bank.locator('> li').last().getByRole('button')).toHaveAccessibleName('New token');
+
+	// A copy goes on a seat with the token's look; the token stays in the bank.
+	await token.tap();
+	await page
+		.getByRole('dialog', { name: /^Put .* on$/ })
+		.getByRole('button', { name: /None Seat 1/ })
+		.tap();
+	const placed = page.locator(
+		'[data-testid="board-reminder"][aria-label="Generic reminder: Red herring"]'
+	);
+	await expect(placed).toHaveCount(2);
+	await expect(placed.first().locator('[data-symbol^="ph:"]')).toBeAttached();
+	await expect(token).toHaveCount(1);
+
+	// Saved with the game.
+	await page.reload();
+	await expect(token).toHaveCount(1);
+
+	// Edited from its Put on sheet: the copy already placed keeps its words.
+	await token.tap();
+	await page.getByRole('button', { name: 'Edit token' }).tap();
+	await text.fill('Changed');
+	await text.press('Enter');
+	await page.keyboard.press('Escape');
+	await expect(text).toBeHidden();
+	const changed = bank.getByRole('button', { name: 'Generic reminder: Changed' });
+	await expect(changed).toHaveCount(1);
+	await expect(placed).toHaveCount(1);
+
+	// The red trash takes it out of the bank; the copy on the seat stays.
+	await changed.tap();
+	await page.getByRole('button', { name: 'Edit token' }).tap();
+	await page.getByRole('button', { name: 'Delete token' }).tap();
+	await expect(text).toBeHidden();
+	await expect(changed).toHaveCount(0);
+	await expect(placed).toHaveCount(1);
+});
+
+test('an ∞ token is edited beside a live preview of it', async ({ page }, testInfo) => {
+	// Trevor (2026-10-24): two panes, the preview on the left; on a phone it is on top.
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	await bank.getByRole('button', { name: 'New token' }).tap();
+	const dialog = page.getByRole('dialog', { name: /token/ });
+	const preview = dialog.getByTestId('generic-token-preview');
+	const previewBox = (await dialog.getByTestId('dialog-aside').boundingBox())!;
+	const fieldsBox = (await dialog.getByTestId('dialog-pane').boundingBox())!;
+	if (testInfo.project.name === 'tablet') {
+		expect(previewBox.x + previewBox.width).toBeLessThanOrEqual(fieldsBox.x);
+	} else {
+		expect(previewBox.y + previewBox.height).toBeLessThanOrEqual(fieldsBox.y);
+	}
+
+	// Each change shows at once, the text while it is typed, before Enter saves it.
+	const token = preview.getByTestId('board-reminder');
+	await expect(token).toHaveAttribute('aria-label', 'Generic reminder');
+	await page.getByTestId('reminder-note').fill('Red herring');
+	await expect(token).toHaveAttribute('aria-label', 'Generic reminder: Red herring');
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	await expect(token.locator('[data-symbol="ph:star"]')).toBeAttached();
+	await page.getByText('Filled symbol', { exact: true }).tap();
+	await expect(token.locator('[data-icon="ph:star-fill"] svg')).toBeAttached();
+	// Picking a symbol kept the words typed before it.
+	await expect(page.getByTestId('reminder-note')).toHaveValue('Red herring');
+	await expect(token).toHaveAttribute('aria-label', 'Generic reminder: Red herring');
+	await page.screenshot({ path: testInfo.outputPath('generic-token-editor.png') });
+});
+
+test('an ∞ token can have a filled symbol, and copying one is not unusual', async ({ page }) => {
+	// Trevor (2026-10-23): fill is set on each ∞ token, a filled icon is drawn, and an ∞ token
+	// has no "Uncommon" warning when copied.
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	await bank.getByRole('button', { name: 'New token' }).tap();
+	const filled = page.getByRole('checkbox', { name: 'Filled symbol' });
+	const fillLabel = page.getByText('Filled symbol', { exact: true });
+	// Only for an icon symbol, like its colour.
+	await expect(filled).toBeDisabled();
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	await fillLabel.tap();
+	await expect(filled).toBeChecked();
+	await page.keyboard.press('Escape');
+	await expect(fillLabel).toBeHidden();
+	const token = bank.getByRole('button', { name: 'Generic reminder' }).filter({
+		has: page.locator('[data-symbol="ph:star"]')
+	});
+	// Drawn, not an empty box.
+	await expect(token.locator('[data-icon="ph:star-fill"] svg')).toBeAttached();
+
+	// A copy on a seat starts filled; its own sheet draws it as an outline again.
+	await token.tap();
+	await page
+		.getByRole('dialog', { name: /^Put .* on$/ })
+		.getByRole('button', { name: /None Seat 1/ })
+		.tap();
+	const placed = page
+		.locator('.chip-slot[data-seat="1"]')
+		.getByTestId('board-reminder')
+		.filter({
+			has: page.locator('[data-symbol="ph:star"]')
+		});
+	await expect(placed.locator('[data-icon="ph:star-fill"] svg')).toBeAttached();
+	await placed.tap();
+	await fillLabel.tap();
+	await expect(filled).not.toBeChecked();
+	await page.keyboard.press('Escape');
+	await expect(placed.locator('[data-icon="ph:star-fill"]')).toHaveCount(0);
+	await expect(placed.locator('[data-icon^="ph:star"] svg')).toBeAttached();
+	// The bank's token stays filled.
+	await expect(token.locator('[data-icon="ph:star-fill"]')).toBeAttached();
+
+	// Duplicating an ∞ reminder gives no "Uncommon" warning.
+	await placed.tap();
+	await page.getByRole('button', { name: 'More reminder actions' }).tap();
+	await page.getByRole('button', { name: 'Duplicate reminder' }).tap();
+	await expect(page.getByText('Uncommon', { exact: true })).toHaveCount(0);
 });
 
 test('the generic ∞ reminder is always in the bank and can carry a few words', async ({ page }) => {
 	await startGame(page);
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
-	// Last in the bank, whatever is in play (Trevor, 2026-10-18).
-	await expect(bank.locator('> li').last().getByTestId('board-reminder')).toHaveAttribute(
+	// Last in the bank, whatever is in play (Trevor, 2026-10-18), before "+ New token" (plan B9).
+	await expect(bank.locator('> li').last().getByRole('button')).toHaveAccessibleName('New token');
+	await expect(bank.locator('> li').nth(-2).getByTestId('board-reminder')).toHaveAttribute(
 		'aria-label',
 		'Generic reminder'
 	);
@@ -4021,8 +4593,12 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await text.fill('Chose Sam');
 	await text.press('Enter');
 	// Its own symbol (Trevor, 2026-10-19: chosen per token); none by default.
-	await page.getByRole('combobox', { name: 'Symbol' }).tap();
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
 	await page.getByRole('option', { name: 'Owl', exact: true }).tap();
+	// Its symbol's colour (Trevor, 2026-10-20: per token): kept in place, but an emoji keeps
+	// its own colours, so it waits for an icon symbol.
+	const colour = page.getByRole('combobox', { name: 'Symbol colour' });
+	await expect(colour).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
 	const placed = page.locator(
@@ -4050,6 +4626,35 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	});
 	expect(colours.rim).not.toBe(colours.face);
 	expect(colours.band).toContain(colours.rim);
+
+	// An icon symbol takes a colour from the theme's own, and Default gives it back its ink.
+	await openSeat(page, 1);
+	await page.getByRole('button', { name: 'Actions for Chose Sam' }).tap();
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	const icon = placed.locator('[data-symbol^="ph:"]');
+	await expect(icon).toBeAttached();
+	const ink = await icon.evaluate((el) => getComputedStyle(el).color);
+	await expect(colour).toBeEnabled();
+	await colour.tap();
+	await page.getByRole('option', { name: 'Red', exact: true }).tap();
+	const evil = await page.evaluate(() => {
+		const probe = document.createElement('span');
+		probe.style.color = 'var(--evil)';
+		document.body.append(probe);
+		const value = getComputedStyle(probe).color;
+		probe.remove();
+		return value;
+	});
+	await expect(icon).toHaveCSS('color', evil);
+	await colour.tap();
+	await page.getByRole('option', { name: 'Default', exact: true }).tap();
+	await expect(icon).toHaveCSS('color', ink);
+	// None takes the symbol off again.
+	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
+	await page.getByRole('option', { name: 'None', exact: true }).tap();
+	await expect(placed.locator('[data-symbol]')).toHaveCount(0);
+	await expect(colour).toBeDisabled();
 });
 
 // Closing a step opened from the walk-through must not crash the dialog (Grimoire board,
@@ -4112,7 +4717,7 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await picker.getByRole('button', { name: 'Close' }).tap();
-	await expect(sheet).toContainText(/Imp\s*Evil · Seat 1/);
+	await expect(sheet).toContainText(/Imp\s*Demon · Evil · Seat 1/);
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
 });
@@ -4258,7 +4863,7 @@ test('a big name badge beside a dialog title shrinks instead of squeezing the ti
 		.getByRole('button', { name: 'Fortune Teller', exact: true })
 		.tap();
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
-	const menu = page.getByRole('dialog', { name: 'Seat 1' });
+	const menu = page.getByRole('dialog', { name: 'Seat 1', exact: true });
 	const title = menu.locator('[data-part="title"]');
 	await expect(title).toHaveText('Seat 1');
 	// One line: no word is broken across lines, so the title is no taller than its line.
@@ -4402,7 +5007,11 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
+	await toBoard(page);
 	for (const [number, name] of [
 		[1, 'Poisoner'],
 		[2, 'Empath']
@@ -4442,7 +5051,11 @@ test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', as
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
+	await toBoard(page);
 	for (const [number, name] of [
 		[6, 'Washerwoman'],
 		[7, 'Empath']
@@ -4488,6 +5101,13 @@ test('a Dead reminder put on a living player asks whether to mark them dead', as
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, no character, dead')).toBeAttached();
 	await page.keyboard.press('Escape');
+	// The reminder's own character is the cause (Trevor, 2026-10-23: "it should know the token
+	// caused the death").
+	await expect(
+		page
+			.locator('[data-scope="drawer"][data-part="content"]')
+			.getByRole('button', { name: /^Status: Dead: Imp/ })
+	).toBeVisible();
 	await closeSheet(page);
 
 	// Cancel leaves them alive; switched off, it never asks.
@@ -4649,7 +5269,7 @@ test('two copies of a character each have their own reminders, in their own colo
 				.getByRole('dialog', { name: 'Alignment' })
 				.getByRole('button', { name: 'Confirm' })
 				.tap();
-			await expect(sheet).toContainText(/Imp\s*Good · Seat 3/);
+			await expect(sheet).toContainText(/Imp\s*Demon · Good · Seat 3/);
 		}
 		await closeSheet(page);
 	}
@@ -4752,6 +5372,34 @@ test("holding a seat's token lights its character's reminders and dims the rest"
 	await page.mouse.up();
 	await expect(lit).toHaveCount(0);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
+
+	// Board > Advanced (Trevor, 2026-10-23): the reminders on the held seat light instead,
+	// whoever's they are, so Seat 2 lights Seat 3's token and Seat 3 lights nothing.
+	await openSettingsDialog(page);
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board' })
+		.tap();
+	await settings.getByRole('button', { name: /Advanced/ }).tap();
+	await settings.getByText("Holding a token lights its seat's reminders", { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	const hold = async (number: number) => {
+		const box = await seat(number);
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await page.mouse.down();
+	};
+	await hold(2);
+	await expect(placed).toHaveAttribute('data-lit', 'true');
+	await expect(lit).toHaveCount(1);
+	await expect(deadCell).toHaveClass(/dim/);
+	await page.mouse.up();
+	await expect(lit).toHaveCount(0);
+	await hold(3);
+	await expect(placed).toHaveClass(/dim/);
+	await expect(lit).toHaveCount(0);
+	await page.mouse.up();
 });
 
 test('the walk-through shows the character, then its player below, with the count at the top right', async ({
@@ -4896,4 +5544,372 @@ test('a Fool marked dead is offered to survive their first death', async ({ page
 		'aria-label',
 		/dead/
 	);
+});
+
+/** A Trouble Brewing game with one special rule, these seats given these characters. */
+async function startWithRule(
+	page: Page,
+	rule: string,
+	cast: readonly (readonly [number, string])[]
+) {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: /^Special rules/ }).tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	await rules.getByText(rule, { exact: true }).tap();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
+	await toBoard(page);
+	for (const [number, name] of cast) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+}
+
+/** From a night's walk-through, through the day, to the next night's Dusk. */
+async function nextNight(page: Page) {
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: /^Day \d+$/ });
+	await expect(day).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+	// The night's strip slides away before the next night can start.
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	await walkTo(page, 'Dusk');
+}
+
+/** Every step name in tonight's walk-through, from the current step on. */
+async function stepNames(page: Page): Promise<string[]> {
+	const strip = page.getByTestId('night-strip');
+	const names: string[] = [];
+	for (let i = 0; i < 30; i++) {
+		names.push((await strip.locator('.step .name strong').textContent()) ?? '');
+		if (await lastStep(strip)) break;
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	}
+	return names;
+}
+
+test('with The Phantom Detectives, living Townsfolk sleep and the dead keep waking', async ({
+	page
+}) => {
+	// https://schnauzerclub.neocities.org/scripts/thephantomdetectives (Trevor, 2026-10-22).
+	await startWithRule(page, 'The Phantom Detectives', [
+		[1, 'Washerwoman'],
+		[2, 'Poisoner'],
+		[3, 'Imp']
+	]);
+	await walkTo(page, 'Dusk');
+	const first = await stepNames(page);
+	expect(first).toContain('Poisoner');
+	expect(first).not.toContain('Washerwoman');
+	// Dead, the Poisoner keeps its ability and still wakes.
+	await nextNight(page);
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 2' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Poisoner');
+});
+
+test('with Trained Killer, the Demon’s step names the next character in script order', async ({
+	page
+}) => {
+	// https://beardytas.com/garden-of-djinn/trained-killer/ (Trevor, 2026-10-22).
+	await startWithRule(page, 'Trained Killer', [
+		[1, 'Imp'],
+		[2, 'Chef'],
+		[3, 'Washerwoman']
+	]);
+	await walkTo(page, 'Dusk');
+	await nextNight(page);
+	// The Chef is above the Washerwoman on Trouble Brewing's script (TPI's order).
+	const strip = await walkTo(page, 'Imp');
+	await expect(strip.getByTestId('step-attack')).toHaveText('Attacks Seat 2 (Trained Killer)');
+});
+
+test('with Council of the Dead, night 4 starts with the dead waking together', async ({ page }) => {
+	// https://beardytas.com/garden-of-djinn/council-of-the-dead/ (Trevor, 2026-10-22).
+	await startWithRule(page, 'Council of the Dead', [[1, 'Imp']]);
+	await walkTo(page, 'Dusk');
+	expect(await stepNames(page)).not.toContain('Council of the Dead');
+	for (let night = 2; night <= 4; night++) await nextNight(page);
+	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
+	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
+		'Council of the Dead'
+	);
+});
+
+test('with Track nominations on, a seat sheet records who nominated whom under the ghost vote', async ({
+	page
+}) => {
+	// Trevor (2026-10-22): "Make nomination tracking a setting. if enabled, just add beneath dead
+	// vote the same area there to track it."
+	await startGame(page);
+	await expect((await openSeat(page, 1)).getByTestId('sheet-nominated')).toHaveCount(0);
+	await closeSheet(page);
+	await trackNominations(page);
+
+	let sheet = await openSeat(page, 1);
+	const nominated = sheet.getByTestId('sheet-nominated');
+	await expect(nominated).toHaveText('None');
+	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
+	await nominated.tap();
+	await page.getByRole('dialog', { name: 'Who did Seat 1 nominate?' }).getByText('Seat 3').tap();
+	await expect(nominated).toHaveText('Seat 3');
+	await closeSheet(page);
+	// Trevor (2026-10-23): every living seat has the marks, greyed until they happen, side by
+	// side in one pill that never changes size.
+	const seats = page.getByTestId('seat');
+	const marks = page.getByTestId('nomination-marks');
+	await expect(marks).toHaveCount(8);
+	const on = (seat: number, mark: string) =>
+		seats
+			.nth(seat - 1)
+			.getByTestId(mark)
+			.and(page.locator('[data-on]'));
+	await expect(on(1, 'nominator-mark')).toHaveCount(1);
+	await expect(on(1, 'nominated-mark')).toHaveCount(0);
+	await expect(on(3, 'nominated-mark')).toHaveCount(1);
+	await expect(on(2, 'nominator-mark')).toHaveCount(0);
+	const finger = await seats.nth(0).getByTestId('nominator-mark').boundingBox();
+	const gavel = await seats.nth(0).getByTestId('nominated-mark').boundingBox();
+	// Side by side, not stacked.
+	expect(Math.abs((finger?.y ?? 0) - (gavel?.y ?? 1))).toBeLessThan(1);
+	expect(gavel!.x).toBeGreaterThan(finger!.x);
+	const one = await seats.nth(0).getByTestId('nomination-marks').boundingBox();
+	const two = await seats.nth(1).getByTestId('nomination-marks').boundingBox();
+	expect(Math.abs((one?.width ?? 0) - (two?.width ?? 1))).toBeLessThan(1);
+	// The nominee's sheet shows it from the other side.
+	sheet = await openSeat(page, 3);
+	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('Seat 1');
+	// None clears it.
+	await sheet.getByTestId('sheet-nominated-by').tap();
+	await page
+		.getByRole('dialog', { name: 'Who nominated Seat 3?' })
+		.getByRole('button', { name: 'None', exact: true })
+		.tap();
+	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
+	await closeSheet(page);
+	// The nomination is gone from both sides, so no mark is lit.
+	await expect(marks).toHaveCount(8);
+	await expect(page.locator('[data-testid="nomination-marks"] [data-on]')).toHaveCount(0);
+});
+
+// Trevor (2026-10-23): tapping a seat's nomination marks asks who that player nominated, and
+// tracking feeds nomination abilities: a Townsfolk who nominates the Virgin is executed
+// straight away (https://wiki.bloodontheclocktower.com/Virgin). The dead keep only the gavel,
+// unless they nominated today before dying.
+test('tapping the nomination marks records a nomination, and the Virgin executes a Townsfolk', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Virgin'],
+		[2, 'Chef'],
+		[4, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await trackNominations(page);
+	const seats = page.getByTestId('seat');
+	await seats.nth(1).getByTestId('nomination-marks').tap();
+	await page
+		.getByRole('dialog', { name: 'Who did Seat 2 nominate?' })
+		.getByText('Seat 1', { exact: true })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Virgin: execute Seat 2?' });
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await expect(seatLabelled(page, 'Seat 2: no name, Chef, dead')).toBeAttached();
+	// The Virgin's ability is used: her "No Ability" reminder is placed.
+	await expect(seatLabelled(page, 'Seat 1: no name, Virgin, 1 reminder')).toBeAttached();
+	// Dead, but nominated today: the marks stay, the finger lit.
+	await expect(
+		seats.nth(1).getByTestId('nominator-mark').and(page.locator('[data-on]'))
+	).toHaveCount(1);
+	// A player who died without nominating may still be nominated, but not nominate
+	// (Trevor, 2026-10-24): only the gavel.
+	const empath = await openSeat(page, 4);
+	await empath.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 4' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	await closeSheet(page);
+	await expect(seats.nth(3).getByTestId('nominated-mark')).toHaveCount(1);
+	await expect(seats.nth(3).getByTestId('nominator-mark')).toHaveCount(0);
+	await expect(page.getByTestId('nomination-marks')).toHaveCount(8);
+});
+
+// Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented
+// nomination tracking". The Town Crier's answer comes from the nominations recorded today
+// (https://wiki.bloodontheclocktower.com/Town_Crier), and is unknown until one is.
+test("the Town Crier's step reads today's recorded nominations", async ({ page }) => {
+	await startGame(page, 'Sects & Violets');
+	for (const [number, name] of [
+		[1, 'Town Crier'],
+		[2, 'Witch'],
+		[3, 'Fang Gu']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+
+	const step = await openStep(page, 'Town Crier');
+	let suggested = step.getByTestId('night-suggested');
+	await expect(suggested).toContainText('No nominations recorded today');
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(step).toBeHidden();
+
+	// The Witch (a Minion) nominates the Fang Gu.
+	await trackNominations(page);
+	const sheet = await openSeat(page, 2);
+	await sheet.getByTestId('sheet-nominated').tap();
+	await page.getByRole('dialog', { name: 'Who did Seat 2 nominate?' }).getByText('Seat 3').tap();
+	await closeSheet(page);
+	suggested = (await openStep(page, 'Town Crier')).getByTestId('night-suggested');
+	await expect(suggested).not.toContainText('No nominations recorded today');
+	await expect(suggested).toContainText('Yes');
+	await expect(suggested.locator('.because')).toContainText('Seat 2');
+});
+
+/** Turns on Settings > Storyteller > Track nominations. */
+async function trackNominations(page: Page) {
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page
+		.getByRole('dialog', { name: APP_NAME })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await settings.getByText('Track nominations', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+}
+
+/** Records on `nominator`'s seat sheet that they nominated `nominee`. */
+async function nominate(page: Page, nominator: number, nominee: number) {
+	const sheet = await openSeat(page, nominator);
+	await sheet.getByTestId('sheet-nominated').tap();
+	await page
+		.getByRole('dialog', { name: `Who did Seat ${nominator} nominate?` })
+		.getByText(`Seat ${nominee}`, { exact: true })
+		.tap();
+}
+
+// https://beardytas.com/garden-of-djinn/the-warrens/: while 5 or more live, an evil player who
+// nominates a living evil player swaps characters with them (Trevor, 2026-10-23).
+test('with The Warrens, an evil nomination of an evil player offers to swap their characters', async ({
+	page
+}) => {
+	await startWithRule(page, 'The Warrens', [
+		[1, 'Imp'],
+		[2, 'Poisoner'],
+		[3, 'Chef']
+	]);
+	await trackNominations(page);
+	// A good nominee: nothing to swap.
+	await nominate(page, 2, 3);
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+	await closeSheet(page);
+	await nominate(page, 2, 1);
+	const ask = page.getByRole('alertdialog', { name: 'The Warrens: swap characters?' });
+	// The rule asking sits at the top (Trevor, 2026-10-23).
+	await expect(ask.getByTestId('rule-header')).toContainText('The Warrens');
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Poisoner')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
+});
+
+// https://beardytas.com/garden-of-djinn/the-djinns-bargain/: a nominator may choose to die.
+test("with The Djinn's Bargain, a nomination asks whether the nominator chose to die", async ({
+	page
+}) => {
+	await startWithRule(page, 'The Djinn’s Bargain', [[1, 'Chef']]);
+	await trackNominations(page);
+	await nominate(page, 1, 2);
+	const ask = page.getByRole('alertdialog', {
+		name: 'The Djinn’s Bargain: did Seat 1 choose to die?'
+	});
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Chef, dead')).toBeAttached();
+});
+
+// Trevor (2026-10-22, plan D2): a crowded seat's reminders keep a thin line back to it.
+// Trevor (2026-10-23): every reminder is always on the board, so there is no "+N" stack.
+test('reminders keep a line back to their seat, and all of them stay on the board', async ({
+	page
+}) => {
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	for (let n = 0; n < 4; n++) {
+		await bank.getByRole('button', { name: 'Generic reminder' }).tap();
+		await page
+			.getByRole('dialog', { name: 'Put ∞ on' })
+			.getByRole('button', { name: /None Seat 1/ })
+			.tap();
+	}
+	await expect(seatLabelled(page, 'Seat 1: no name, no character, 4 reminders')).toBeAttached();
+	await expect(page.locator('.chip-slot[data-seat="1"]')).toHaveCount(4);
+	// One line per reminder, from the seat's rim.
+	await expect(page.locator('line[data-tether="1"]')).toHaveCount(4);
+	await expect(page.locator('line[data-tether="2"]')).toHaveCount(0);
+	// The lines draw under everything but the logo and background (Trevor, 2026-10-24): the
+	// seats, with their names, ghost votes and marks, and the reminders paint over them.
+	const under = await page.evaluate(() => {
+		const lines = document.querySelector('svg.tethers')!;
+		const zOf = (el: Element) => getComputedStyle(el).zIndex;
+		return (
+			[...lines.parentElement!.children]
+				.filter((el) => el.matches('.slot, .chip-slot'))
+				.every(
+					(el) =>
+						lines.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING &&
+						(zOf(el) === 'auto' || Number(zOf(el)) >= 0)
+				) && zOf(lines) === 'auto'
+		);
+	});
+	expect(under).toBe(true);
+
+	await menu(page, 'Board');
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await expect(dialog.getByText('Stack crowded reminders')).toHaveCount(0);
 });

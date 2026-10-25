@@ -48,9 +48,11 @@ async function addStormFront(page: Page) {
 	return addScript(page);
 }
 
+/** New folder makes "New folder" at once and selects it; Rename then names it. */
 async function newFolder(page: Page, name: string) {
-	await page.getByRole('button', { name: 'New folder' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'New folder' });
+	await page.getByRole('button', { name: 'New folder', exact: true }).tap();
+	await page.getByRole('button', { name: 'Rename New folder' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Rename' });
 	await dialog.getByRole('textbox', { name: 'Name' }).fill(name);
 	await dialog.getByRole('textbox', { name: 'Name' }).press('Enter');
 	await expect(dialog).toHaveCount(0);
@@ -188,6 +190,28 @@ test('one tap selects a row and a double tap opens it; a selected folder is rena
 	await crumbs(page).getByRole('button', { name: 'Home' }).tap();
 	await open(row(page));
 	await expect(pane(page, 'Storm Front')).toBeVisible();
+});
+
+// Trevor (2026-10-22): "add a download button to the library next to the other buttons".
+test('Download saves the selected item as a file, and rests with nothing selected', async ({
+	page
+}) => {
+	await page.goto('/library');
+	const download = page.getByRole('button', { name: 'Download', exact: true });
+	await expect(download).toBeDisabled();
+	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
+	await newFolder(page, 'Club night');
+	// A folder is not a file to save.
+	await row(page, 'Club night').tap();
+	await expect(download).toBeDisabled();
+	await row(page).tap();
+	await expect(download).toBeEnabled();
+	const saving = page.waitForEvent('download');
+	await download.tap();
+	const file = await saving;
+	expect(file.suggestedFilename()).toBe('storm-front.json');
+	const text = await (await file.createReadStream()).toArray();
+	expect(JSON.parse(Buffer.concat(text).toString())).toEqual(homebrew);
 });
 
 test('tags live in the sidebar: add, filter by, delete; and a script can be removed', async ({
@@ -416,6 +440,20 @@ test('a script saved without a name is named after the time it was saved', async
 	).toBeVisible();
 });
 
+test('New folder makes "New folder" at once, selected, numbered when the name is taken', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): "when creating a new folder, just create, and name new folder".
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'New folder', exact: true }).tap();
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(table(page).locator('tr.selected')).toContainText('New folder');
+	await page.getByRole('button', { name: 'New folder', exact: true }).tap();
+	await expect(table(page).locator('tr.selected')).toContainText('New folder 2');
+	await expect(row(page, /^New folder(?! 2)/)).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Rename New folder 2' })).toBeEnabled();
+});
+
 test('the sidebar’s folders, kinds and tags fold away, and folders are made there', async ({
 	page
 }) => {
@@ -423,7 +461,7 @@ test('the sidebar’s folders, kinds and tags fold away, and folders are made th
 	// button into left sidebar, in nav area".
 	await page.goto('/library');
 	const nav = sidebar(page);
-	await expect(nav.getByRole('button', { name: 'New folder' })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'New folder', exact: true })).toBeVisible();
 	await newFolder(page, 'Club night');
 	await expect(nav.getByRole('button', { name: /^Club night/ })).toBeVisible();
 
@@ -868,4 +906,50 @@ test('a script edited in the Script builder is marked as a variation, with what 
 	await expect(changes.getByRole('definition').nth(4)).toContainText('Mayor');
 	await expect(changes.getByRole('definition').nth(5)).toContainText('Saint');
 	await noSidewaysScroll(page);
+});
+
+test('a file of homebrew characters is guessed as a collection or a character, with the reason', async ({
+	page
+}) => {
+	// Trevor, 2026-10-22 (backlog L23): "show guess with a dropdown, show reason for choice".
+	const character = (id: string, name: string) => ({
+		id,
+		name,
+		team: 'townsfolk',
+		ability: 'Each night, learn a number.'
+	});
+	const upload = (name: string, json: unknown) =>
+		page.getByLabel('Script file').setInputFiles({
+			name,
+			mimeType: 'application/json',
+			buffer: Buffer.from(JSON.stringify(json))
+		});
+	await page.goto('/library');
+	const dialog = page.getByRole('dialog', { name: 'Add to the Library' });
+	const kind = dialog.getByRole('combobox', { name: 'Add as' });
+
+	await upload('bakers.json', [character('baker', 'Baker'), character('miller', 'Miller')]);
+	await expect(kind).toHaveText('Character Collection');
+	await expect(dialog.getByTestId('kind-reason')).toHaveText(
+		'No script details and only homebrew characters.'
+	);
+	await noSidewaysScroll(page);
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(pane(page, 'bakers')).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	await upload('cook.json', character('cook', 'Cook'));
+	await expect(kind).toHaveText('Character');
+	await expect(dialog.getByTestId('kind-reason')).toHaveText('A single character, not a list.');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(pane(page, 'Cook')).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	// A wrong guess is one choice to fix: the same file added as a script.
+	await upload('pair.json', [character('tailor', 'Tailor'), character('weaver', 'Weaver')]);
+	await kind.tap();
+	await page.getByRole('option', { name: 'Script' }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	// As a script it goes through the Script check like any other.
+	await expect(page.getByRole('dialog', { name: 'Script check' })).toBeVisible();
 });

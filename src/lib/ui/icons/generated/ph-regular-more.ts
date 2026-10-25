@@ -9,6 +9,7 @@ import ph_arrow_u_up_right from '~icons/ph/arrow-u-up-right';
 import ph_bag_simple from '~icons/ph/bag-simple';
 import ph_beer_bottle from '~icons/ph/beer-bottle';
 import ph_bell from '~icons/ph/bell';
+import ph_binoculars from '~icons/ph/binoculars';
 import ph_bird from '~icons/ph/bird';
 import ph_book_bookmark from '~icons/ph/book-bookmark';
 import ph_book_open from '~icons/ph/book-open';
@@ -21,6 +22,7 @@ import ph_clipboard from '~icons/ph/clipboard';
 import ph_club from '~icons/ph/club';
 import ph_coin from '~icons/ph/coin';
 import ph_copy_simple from '~icons/ph/copy-simple';
+import ph_corners_in from '~icons/ph/corners-in';
 import ph_corners_out from '~icons/ph/corners-out';
 import ph_cross from '~icons/ph/cross';
 import ph_crown from '~icons/ph/crown';
@@ -44,7 +46,6 @@ import ph_gear_six from '~icons/ph/gear-six';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
-import ph_hand_pointing from '~icons/ph/hand-pointing';
 import ph_hard_drives from '~icons/ph/hard-drives';
 import ph_heart from '~icons/ph/heart';
 import ph_hexagon from '~icons/ph/hexagon';
@@ -57,8 +58,8 @@ import ph_link_simple_break from '~icons/ph/link-simple-break';
 import ph_list_dashes from '~icons/ph/list-dashes';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_lock from '~icons/ph/lock';
+import ph_megaphone from '~icons/ph/megaphone';
 import ph_minus_circle from '~icons/ph/minus-circle';
-import ph_moon from '~icons/ph/moon';
 import ph_notepad from '~icons/ph/notepad';
 import ph_paint_brush from '~icons/ph/paint-brush';
 import ph_pause_circle from '~icons/ph/pause-circle';
@@ -68,6 +69,7 @@ import ph_prohibit_inset from '~icons/ph/prohibit-inset';
 import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
 import ph_scales from '~icons/ph/scales';
+import ph_scan from '~icons/ph/scan';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
 import ph_sliders from '~icons/ph/sliders';
@@ -108,6 +110,7 @@ const icons: IconMap = {
 	'ph:bag-simple': ph_bag_simple,
 	'ph:beer-bottle': ph_beer_bottle,
 	'ph:bell': ph_bell,
+	'ph:binoculars': ph_binoculars,
 	'ph:bird': ph_bird,
 	'ph:book-bookmark': ph_book_bookmark,
 	'ph:book-open': ph_book_open,
@@ -120,6 +123,7 @@ const icons: IconMap = {
 	'ph:club': ph_club,
 	'ph:coin': ph_coin,
 	'ph:copy-simple': ph_copy_simple,
+	'ph:corners-in': ph_corners_in,
 	'ph:corners-out': ph_corners_out,
 	'ph:cross': ph_cross,
 	'ph:crown': ph_crown,
@@ -143,7 +147,6 @@ const icons: IconMap = {
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,
-	'ph:hand-pointing': ph_hand_pointing,
 	'ph:hard-drives': ph_hard_drives,
 	'ph:heart': ph_heart,
 	'ph:hexagon': ph_hexagon,
@@ -156,8 +159,8 @@ const icons: IconMap = {
 	'ph:list-dashes': ph_list_dashes,
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:lock': ph_lock,
+	'ph:megaphone': ph_megaphone,
 	'ph:minus-circle': ph_minus_circle,
-	'ph:moon': ph_moon,
 	'ph:notepad': ph_notepad,
 	'ph:paint-brush': ph_paint_brush,
 	'ph:pause-circle': ph_pause_circle,
@@ -167,6 +170,7 @@ const icons: IconMap = {
 	'ph:qr-code': ph_qr_code,
 	'ph:question': ph_question,
 	'ph:scales': ph_scales,
+	'ph:scan': ph_scan,
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,
 	'ph:sliders': ph_sliders,

@@ -1,11 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Settings > Tokens (Trevor, 2026-10-16): character token and reminder sizes, token colours
 // with a contrast readout. Stored on the device and applied everywhere tokens show.
 
 async function openTokens(page: Page) {
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -84,7 +86,7 @@ test('border, reminder text and reminder text band are colours of their own', as
 	await dialog.getByLabel('Reminder text', { exact: true }).fill('#663322');
 	expect(await rootStyle(page, '--on-reminder')).toBe('#663322');
 	expect(await rootStyle(page, '--on-token')).not.toBe('#663322');
-	const label = dialog.getByTestId('reminder-preview').locator('.label');
+	const label = dialog.getByTestId('reminder-preview').locator('.label').first();
 	const face = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
 	await dialog.getByLabel('Reminder text band', { exact: true }).fill('#336622');
 	await expect
@@ -193,7 +195,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
@@ -328,8 +330,8 @@ test('the preview draws the reminder as the board does, at the board size', asyn
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const preview = dialog.getByTestId('reminder-preview');
-	const reminder = preview.getByTestId('board-reminder');
-	await expect(reminder).toHaveAttribute('aria-label', 'Died Today reminder');
+	const reminder = preview.getByTestId('board-reminder').first();
+	await expect(reminder).toHaveAttribute('aria-label', 'Survives Execution reminder');
 	await expect(preview.getByTestId('reminder-token')).toHaveCount(0);
 	const before = (await reminder.boundingBox())!.width;
 	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('1.5');
@@ -348,7 +350,7 @@ test('night order badges sit on the side leaves, counting this game’s characte
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	for (const [n, name] of [
 		[1, 'Empath'],
@@ -377,8 +379,9 @@ test('night order badges sit on the side leaves, counting this game’s characte
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Tokens' })
 		.tap();
-	const label = 'Show night order numbers on tokens';
-	await dialog.getByText(label, { exact: true }).tap();
+	// Night leaves, with their night order numbers (Trevor, 2026-10-22: one setting).
+	await dialog.getByRole('combobox', { name: 'Night leaves', exact: true }).tap();
+	await page.getByRole('option', { name: 'Leaves and numbers', exact: true }).tap();
 	// The preview's one character is 1 on each night (Trevor, 2026-10-17: not absolute).
 	const previewBadges = dialog.getByTestId('token-preview').getByTestId('night-badge');
 	await expect(previewBadges).toHaveText(['1', '1']);
@@ -417,7 +420,7 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
@@ -451,14 +454,15 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 
 test('reminder words can run wider or wrap instead of ending in "…"', async ({ page }) => {
 	// Trevor (2026-10-17): "red he..." on the Red Herring reminder; the sample is now the
-	// Godfather's Died Today.
+	// Devil's Advocate's Survives Execution, long enough to need the room.
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const label = dialog
 		.getByTestId('reminder-preview')
 		.getByTestId('board-reminder')
+		.first()
 		.locator('.label');
-	await expect(label).toHaveText('Died Today');
+	await expect(label).toHaveText('Survives Execution');
 	const cut = () => label.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
 	const lines = () =>
 		label.evaluate((el) =>
@@ -486,24 +490,24 @@ test('reminder words can run wider or wrap instead of ending in "…"', async ({
 	expect(await lines()).toBe(1);
 });
 
-test('the preview player name follows the Player name size', async ({ page }) => {
+test('the player name badge is set beside the character token preview', async ({ page }) => {
+	// Trevor (2026-10-20): "player name badges should have settings in tokens under character
+	// tokens. This should include the font, size, how far from the token".
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const name = dialog.getByTestId('token-preview').getByTestId('token-player-name');
-	const before = (await name.boundingBox())!.width;
-	// Player name size is a Board setting (Trevor, 2026-10-18: Board and Tokens split).
-	const go = async (section: string) => {
-		const back = dialog.getByRole('button', { name: 'All settings' });
-		if (await back.isVisible()) await back.tap();
-		await dialog
-			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: section, exact: true })
-			.tap();
-	};
-	await go('Board');
+	const box = async () => (await name.boundingBox())!;
+	const before = await box();
 	await dialog.getByRole('slider', { name: 'Player name size' }).fill('1.5');
-	await go('Tokens');
-	await expect.poll(async () => (await name.boundingBox())!.width).toBeGreaterThan(before * 1.3);
+	await expect.poll(async () => (await box()).width).toBeGreaterThan(before.width * 1.3);
+	const sized = await box();
+	await dialog.getByRole('slider', { name: 'Player name distance' }).fill('0.2');
+	await expect.poll(async () => (await box()).y).toBeGreaterThan(sized.y);
+	await expect(dialog.getByTestId('player-font')).toBeVisible();
+	const saved = await page.evaluate(() =>
+		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
+	);
+	expect(saved).toMatchObject({ nameSize: 1.5, nameOffset: 0.2 });
 });
 
 test('the character name and reminder fonts are set beside their token previews', async ({
@@ -522,6 +526,7 @@ test('the character name and reminder fonts are set beside their token previews'
 	const label = dialog
 		.getByTestId('reminder-preview')
 		.getByTestId('board-reminder')
+		.first()
 		.locator('.label');
 	const chip = dialog.getByTestId('in-text-preview').getByTestId('reminder-token');
 	const family = (el: typeof label) => el.evaluate((e) => getComputedStyle(e).fontFamily);
@@ -536,4 +541,95 @@ test('the character name and reminder fonts are set beside their token previews'
 	await expect(dialog.getByRole('combobox', { name: 'Headings' })).toBeVisible();
 	await expect(dialog.getByRole('combobox', { name: 'Character names' })).toHaveCount(0);
 	await expect(dialog.getByRole('combobox', { name: 'Reminder tokens' })).toHaveCount(0);
+});
+
+test('reminder highlight can be switched and restyled, and the owner icon recoloured', async ({
+	page
+}) => {
+	// Trevor (2026-10-20): settings for reminder glow effects (on/off and how they look) and
+	// for the reminder's source mark (the owning character's icon): on/off and colour.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const lit = dialog.getByTestId('lit-reminder-sample').locator('.reminder');
+	const style = (prop: 'outlineStyle' | 'filter') =>
+		lit.evaluate((el, p) => getComputedStyle(el)[p], prop);
+	await expect.poll(() => style('outlineStyle')).toBe('solid');
+	expect(await style('filter')).toBe('none');
+	await dialog.getByRole('combobox', { name: 'Highlight look', exact: true }).tap();
+	await page.getByRole('option', { name: 'Glow', exact: true }).tap();
+	await expect.poll(() => style('outlineStyle')).toBe('none');
+	expect(await style('filter')).toContain('drop-shadow');
+	await dialog.getByText('Highlight reminders', { exact: true }).tap();
+	await expect.poll(() => style('filter')).toBe('none');
+	await expect(
+		dialog.getByRole('combobox', { name: 'Highlight look', exact: true })
+	).toBeDisabled();
+
+	const icon = lit.locator('img');
+	await expect(icon).toBeVisible();
+	// The owner's icon is always shown, in its owner's alignment (Trevor, 2026-10-23): no
+	// switch to hide it and no colour to pick.
+	await expect(dialog.getByText("Owner's icon on reminders", { exact: true })).toHaveCount(0);
+	await expect(dialog.getByText("Owner's icon colour", { exact: true })).toHaveCount(0);
+	const saved = await page.evaluate(
+		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
+	);
+	expect(saved).toMatchObject({
+		reminderHighlight: false,
+		reminderHighlightLook: 'glow'
+	});
+});
+
+test('character icon size is set for character tokens and reminder tokens apart', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): "character icon size should be a setting on character tokens and
+	// reminder tokens". Each preview shows its own.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const tokenIcon = dialog.getByTestId('token-preview').locator('img').first();
+	const reminderIcon = dialog.getByTestId('reminder-preview').locator('img').first();
+	const width = async (icon: typeof tokenIcon) => (await icon.boundingBox())!.width;
+	const tokenBefore = await width(tokenIcon);
+	const reminderBefore = await width(reminderIcon);
+	const sliders = dialog.getByRole('slider', { name: 'Character icon size' });
+	await expect(sliders).toHaveCount(2);
+	await sliders.first().fill('0.5');
+	await expect.poll(() => width(tokenIcon)).toBeCloseTo(tokenBefore / 2, 0);
+	expect(await width(reminderIcon)).toBeCloseTo(reminderBefore, 0);
+	await sliders.last().fill('1.25');
+	await expect.poll(() => width(reminderIcon)).toBeCloseTo(reminderBefore * 1.25, 0);
+	const saved = await page.evaluate(
+		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
+	);
+	expect(saved).toMatchObject({ tokenIconScale: 0.5, reminderIconScale: 1.25 });
+	// The fill of ∞ symbols is each token's own now, not a setting here.
+	await expect(dialog.getByText('Filled ∞ token symbols', { exact: true })).toHaveCount(0);
+});
+
+test('night leaves can be switched off, or carry night order numbers', async ({ page }) => {
+	// Trevor (2026-10-22): "add setting for night leaves. should be combined with the night
+	// order number section".
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const preview = dialog.getByTestId('token-preview');
+	const leaves = preview.locator('.leaf[data-kind="night"]');
+	const badgeSize = dialog.getByRole('slider', { name: 'Night order badge size' });
+	const nightLeaves = dialog.getByRole('combobox', { name: 'Night leaves', exact: true });
+	const choose = async (option: string) => {
+		await nightLeaves.tap();
+		await page.getByRole('option', { name: option, exact: true }).tap();
+	};
+	// Leaves by default, with no numbers.
+	await expect(nightLeaves).toContainText('Leaves');
+	await expect(leaves).toHaveCount(2);
+	await expect(preview.getByTestId('night-badge')).toHaveCount(0);
+	await expect(badgeSize).toBeDisabled();
+	await choose('Leaves and numbers');
+	await expect(preview.getByTestId('night-badge')).toHaveText(['1', '1']);
+	await expect(badgeSize).toBeEnabled();
+	await choose('Off');
+	await expect(leaves).toHaveCount(0);
+	await expect(preview.getByTestId('night-badge')).toHaveCount(0);
+	await expect(badgeSize).toBeDisabled();
 });

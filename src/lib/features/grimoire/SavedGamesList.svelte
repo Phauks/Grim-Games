@@ -22,10 +22,20 @@
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
+	import { forgetGame } from './forget-game.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import { endedGames, seatLayouts, type EndedGame } from './device-notes.ts';
+	import {
+		endedGames,
+		gameStarts,
+		nightUnderway,
+		nightViews,
+		seatLayouts,
+		type EndedGame
+	} from './device-notes.ts';
+	import { phaseText } from './phase-text.ts';
+	import { gamePhase } from '#lib/core/rules/index.ts';
 	import { gameModeName } from './game-mode-name.ts';
 
 	// ── Saved games ──
@@ -71,11 +81,7 @@
 		await refresh();
 	}
 
-	async function forget(gameId: GameId) {
-		await gameStore().delete(gameId);
-		seatLayouts.forget(gameId);
-		endedGames.reopen(gameId);
-	}
+	const forget = forgetGame;
 
 	/** Deletes every game this list shows (Trevor, 2026-10-18: clear all on Resume game). */
 	export async function clearAll() {
@@ -122,9 +128,14 @@
 				? 'Evil won'
 				: 'Winner not recorded';
 
-	/** Where a game is up to, for the list. */
-	const stageText = (game: SavedGameSummary) =>
-		game.stage.kind === 'setup' ? 'Setting up' : `Day ${game.stage.day}`;
+	/** Where a game is up to, for the list: the board's phase (gamePhase), so they agree. */
+	const stageText = (game: SavedGameSummary) => {
+		const phase = gamePhase(game.days, {
+			begun: gameStarts.read(game.gameId) !== undefined,
+			nightUnderway: nightUnderway(nightViews.read(game.gameId), game.days, !!ended[game.gameId])
+		});
+		return phase.kind === 'setup' ? 'Setting up' : phaseText(phase);
+	};
 </script>
 
 <!-- Resume game's title is the page's (Page); History keeps its own "Games" heading. -->

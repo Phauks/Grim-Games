@@ -13,7 +13,9 @@ export const STORYTELLER_GROUPS = {
 		'deadReminderAsk',
 		'demonVotedButton',
 		'savantInfo',
+		'playerClaims',
+		'trackNominations',
 		'gameEndPrompts'
 	],
-	board: ['stackReminders', 'scriptTitle']
+	board: ['stackReminders', 'roomCode', 'gameClock', 'boardPhase']
 } as const satisfies Record<string, readonly AssistKey[]>;

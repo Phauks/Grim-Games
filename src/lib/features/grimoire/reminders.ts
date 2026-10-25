@@ -4,9 +4,10 @@
  * `reminders` and `remindersGlobal` while it is in play (`reminderGroups` has the exceptions).
  */
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-import { gainedAbilities, type Night } from '#lib/core/rules/index.ts';
+import { gainedAbilities, reminderOffered, type Night } from '#lib/core/rules/index.ts';
 import { isBagDisabled, isNotDealt } from '#lib/core/rules/bag-characters.ts';
-import { REMINDER_PLACEHOLDERS } from '#lib/core/rules/reminder-placeholders.data.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { placeholderRulesOf } from '#lib/core/rules/night-text.ts';
 import {
 	GENERIC_REMINDER_ID,
 	charactersInPlay,
@@ -94,15 +95,19 @@ export const byLabel = (a: string, b: string): number =>
  * How many of each reminder token the game has. A token can be on the board once, unless
  * the game gives more: a label listed more than once in TPI's data, or its character in
  * play more than once (two seats, or a seat and its true character). An extra copy the
- * Storyteller added (`canAddCopy`) counts while it is on the board. Keyed by `reminderKey`;
+ * Storyteller added (`canAddCopy`) counts while it is on the board, and so does one added to the
+ * bank (`bank`). Keyed by `reminderKey`;
  * a reminder not in the map has one copy.
  */
 export function reminderCopies(
 	game: Game,
 	characters: CharacterLookup,
-	copies: ReadonlySet<ReminderId> = NO_COPIES
+	copies: ReadonlySet<ReminderId> = NO_COPIES,
+	bank: ReadonlyMap<string, number> = NO_BANK
 ): Map<string, number> {
 	const total = listedCopies(game, characters);
+	// Copies the Storyteller added to the bank (Duplicate reminder, Trevor 2026-10-20).
+	for (const [key, n] of bank) total.set(key, (total.get(key) ?? 1) + n);
 	const placed = new Map<string, number>();
 	for (const r of counted(game, copies))
 		placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
@@ -180,9 +185,10 @@ export function canAddCopy(character: Character | undefined): boolean {
 export function reminderCopiesLeft(
 	game: Game,
 	characters: CharacterLookup,
-	copies: ReadonlySet<ReminderId> = NO_COPIES
+	copies: ReadonlySet<ReminderId> = NO_COPIES,
+	bank: ReadonlyMap<string, number> = NO_BANK
 ): Map<string, number> {
-	const left = reminderCopies(game, characters, copies);
+	const left = reminderCopies(game, characters, copies, bank);
 	for (const r of counted(game, copies)) {
 		const key = reminderKey(r);
 		left.set(key, (left.get(key) ?? 1) - 1);
@@ -191,6 +197,7 @@ export function reminderCopiesLeft(
 }
 
 const NO_COPIES: ReadonlySet<ReminderId> = new Set();
+const NO_BANK: ReadonlyMap<string, number> = new Map();
 
 /** The generic ∞ reminder (core's GENERIC_REMINDER_ID): any number, belonging to no one. */
 export const isGeneric = (reminder: Pick<Reminder, 'characterId'>): boolean =>
@@ -245,6 +252,11 @@ export interface BankReminder {
 	label: string;
 	/** Copies not yet on the board. */
 	left: number;
+	/**
+	 * How many of those are beyond the copies the game gives (a Duplicate): placed last, and
+	 * marked as unusual in the bank as on the board (Trevor, 2026-10-22).
+	 */
+	extra: number;
 	/** Used by the night step being walked through: first in the bank, and marked. */
 	now: boolean;
 }
@@ -258,9 +270,9 @@ export interface StepReminders {
 /**
  * The reminders a character places at its step on `night` (Trevor, 2026-10-16: "only
  * highlight a token if it could be used that night"), from what each `:reminder:` in TPI's
- * night text means (`REMINDER_PLACEHOLDERS`). A step whose text handles no token places none:
+ * night text means (its `reminderPlaceholders` rule). A step whose text handles no token places none:
  * the Grandmother's Dead token is never used on the first night. A script's own character
- * has no such data, so all of its reminders count (`character`; Trevor, 2026-10-17, Fall of
+ * without that rule has no such data, so all of its reminders count (`character`; Trevor, 2026-10-17, Fall of
  * Rome's Merchant).
  */
 export function stepReminders(
@@ -268,15 +280,16 @@ export function stepReminders(
 	night: Night,
 	character?: Character
 ): StepReminders {
-	const known =
-		`${characterId}:first` in REMINDER_PLACEHOLDERS ||
-		`${characterId}:other` in REMINDER_PLACEHOLDERS;
+	const rules = character
+		? placeholderRulesOf(character)
+		: OFFICIAL_RULES.get(characterId)?.reminderPlaceholders;
+	const known = rules?.first !== undefined || rules?.other !== undefined;
 	if (!known && character)
 		return {
 			characterId,
 			labels: [...new Set([...character.reminders, ...character.remindersGlobal])]
 		};
-	const entries = REMINDER_PLACEHOLDERS[`${characterId}:${night}`] ?? [];
+	const entries = rules?.[night] ?? [];
 	const labels = entries.flatMap((e) =>
 		e.tokens.filter((t) => t.action === 'place').map((t) => t.label)
 	);
@@ -293,15 +306,25 @@ export function bankReminders(
 	characters: CharacterLookup,
 	focus?: StepReminders,
 	front = true,
-	copies: ReadonlySet<ReminderId> = NO_COPIES
+	copies: ReadonlySet<ReminderId> = NO_COPIES,
+	bank: ReadonlyMap<string, number> = NO_BANK
 ): BankReminder[] {
-	const left = reminderCopiesLeft(game, characters, copies);
+	const left = reminderCopiesLeft(game, characters, copies, bank);
+	const total = reminderCopies(game, characters, copies, bank);
+	const listed = listedCopies(game, characters);
 	const out: BankReminder[] = [];
 	for (const { character, labels } of reminderGroups(game, characters)) {
 		for (const label of labels) {
-			const n = left.get(reminderKey({ characterId: character.id, label })) ?? 1;
+			// A token that doesn't exist in this game yet (the Village Idiot's Drunk with one).
+			if (!reminderOffered(game, { characterId: character.id, label }, characters)) continue;
+			const key = reminderKey({ characterId: character.id, label });
+			const n = left.get(key) ?? 1;
 			const now = focus?.characterId === character.id && focus.labels.includes(label);
-			if (n > 0) out.push({ characterId: character.id, label, left: n, now });
+			// The copies the game still gives go first; the rest of the bank's are extras.
+			const placed = (total.get(key) ?? 1) - n;
+			const given = Math.max(0, (listed.get(key) ?? 1) - placed);
+			const extra = Math.max(0, n - given);
+			if (n > 0) out.push({ characterId: character.id, label, left: n, extra, now });
 		}
 	}
 	return front ? [...out.filter((r) => r.now), ...out.filter((r) => !r.now)] : out;

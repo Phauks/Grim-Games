@@ -1,0 +1,75 @@
+{
+	"reminderTargets": {
+		"Master": {
+			"seat": "other",
+			"note": "The player the Butler chose as master; dead players are allowed."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has chosen"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Master"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "vote restriction"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Master",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Master",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Butler chooses a player: mark them *MASTER*.",
+				"reason": "Says the Master token goes on the chosen player."
+			}
+		},
+		"other": {
+			"full": {
+				"text": "The Butler chooses a player: move *MASTER* to them.",
+				"reason": "Says the Master token moves to tonight’s choice."
+			}
+		}
+	}
+}

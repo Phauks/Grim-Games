@@ -61,6 +61,14 @@ export interface Preferences {
 	requireName: boolean;
 	/** The drawn token shows only while it's held down (Trevor, 2026-10-20: a setting, off). */
 	holdToReveal: boolean;
+	/** Bag tile labels come in a random order (Trevor, 2026-10-20). */
+	tileOrderRandom: boolean;
+	/**
+	 * The drawn token spins like a slot machine through the script's characters before it
+	 * stops on the player's (Trevor, 2026-10-22: a Bag draw setting, off). Purely visual: the
+	 * character was decided when the tile was drawn.
+	 */
+	slotMachine: boolean;
 	/**
 	 * Show text in our own wording that Trevor hasn't approved yet, such as the game modes'
 	 * About descriptions; off by default, when only source text and links show (no authored
@@ -68,7 +76,7 @@ export interface Preferences {
 	 */
 	ownWording: boolean;
 	/**
-	 * Share's View grimoire tab hides its QR code and link, e.g. while streaming (Trevor,
+	 * Share's view-only grimoire part hides its QR code and link, e.g. while streaming (Trevor,
 	 * 2026-10-21); Copy and Share still work.
 	 */
 	hideWatchLink: boolean;
@@ -82,7 +90,37 @@ export interface Preferences {
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
 	timerPerPlayer: number;
+	/**
+	 * What goes in the middle of a share QR code (Trevor, 2026-10-20, plan R1): the script's
+	 * logo (or its name), the Storyteller's own picture, or nothing.
+	 */
+	qrCentre: QrCentre;
+	/**
+	 * How the Storyteller's picture sits in the QR's middle (Trevor, 2026-10-23: "allow some
+	 * controls to help the user shape how they want their logo to appear"): the whole picture
+	 * or filling the square, how far it is zoomed in, and its corners.
+	 */
+	qrPictureWhole: boolean;
+	qrPictureZoom: number;
+	qrPictureCorners: QrPictureCorners;
+	/**
+	 * The shape of the QR code's squares and of its three corner markers (Trevor, 2026-10-23:
+	 * "options for circles or dots and the like"). Dark on light whatever the shape.
+	 */
+	qrModules: QrModules;
+	qrFinders: QrFinders;
 }
+
+export const QR_CENTRES = ['script', 'picture', 'none'] as const;
+export type QrCentre = (typeof QR_CENTRES)[number];
+export const QR_PICTURE_CORNERS = ['square', 'rounded', 'circle'] as const;
+export type QrPictureCorners = (typeof QR_PICTURE_CORNERS)[number];
+/** The picture's zoom, from the whole square to twice as close. */
+export const QR_PICTURE_ZOOM: ScaleRange = { min: 1, max: 2, step: 0.05 };
+export const QR_MODULES = ['square', 'rounded', 'dot'] as const;
+export type QrModules = (typeof QR_MODULES)[number];
+export const QR_FINDERS = ['square', 'rounded', 'circle'] as const;
+export type QrFinders = (typeof QR_FINDERS)[number];
 
 export const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
@@ -152,14 +190,29 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	tileFace: 'numbers',
 	requireName: false,
 	holdToReveal: false,
+	slotMachine: false,
+	tileOrderRandom: false,
 	ownWording: false,
 	hideWatchLink: false,
 	timerSound: 'bell',
 	timerMode: 'down',
 	timerVibrate: true,
 	timerKeepAwake: true,
-	timerPerPlayer: DAY_SECONDS_PER_ALIVE
+	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
+	qrCentre: 'script',
+	qrPictureWhole: false,
+	qrPictureZoom: 1,
+	qrPictureCorners: 'rounded',
+	qrModules: 'square',
+	qrFinders: 'square'
 };
+
+function oneOf<T extends string>(values: readonly T[], input: unknown, fallback: T): T {
+	return (values as readonly unknown[]).includes(input) ? (input as T) : fallback;
+}
+
+/** Icon slots saved under an older name: new name -> old name. */
+const RENAMED_SLOTS: Partial<Record<IconSlot, string>> = { edit: 'rename' };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
 export function parsePreferences(raw: unknown): Preferences {
@@ -169,7 +222,7 @@ export function parsePreferences(raw: unknown): Preferences {
 	) as Record<string, unknown>;
 	const iconOverrides: Preferences['iconOverrides'] = {};
 	for (const slot of iconSlots) {
-		const id = overrides[slot];
+		const id = overrides[slot] ?? overrides[RENAMED_SLOTS[slot] ?? ''];
 		if (isIconChoice(slot, id)) iconOverrides[slot] = id;
 	}
 	const iconScale = parseScale(input.iconScale, ICON_SCALE, DEFAULT_PREFERENCES.iconScale);
@@ -199,12 +252,29 @@ export function parsePreferences(raw: unknown): Preferences {
 			typeof input.holdToReveal === 'boolean'
 				? input.holdToReveal
 				: DEFAULT_PREFERENCES.holdToReveal,
+		slotMachine:
+			typeof input.slotMachine === 'boolean' ? input.slotMachine : DEFAULT_PREFERENCES.slotMachine,
+		tileOrderRandom:
+			typeof input.tileOrderRandom === 'boolean'
+				? input.tileOrderRandom
+				: DEFAULT_PREFERENCES.tileOrderRandom,
 		ownWording:
 			typeof input.ownWording === 'boolean' ? input.ownWording : DEFAULT_PREFERENCES.ownWording,
 		hideWatchLink:
 			typeof input.hideWatchLink === 'boolean'
 				? input.hideWatchLink
 				: DEFAULT_PREFERENCES.hideWatchLink,
+		qrCentre: (QR_CENTRES as readonly unknown[]).includes(input.qrCentre)
+			? (input.qrCentre as QrCentre)
+			: DEFAULT_PREFERENCES.qrCentre,
+		qrPictureWhole:
+			typeof input.qrPictureWhole === 'boolean'
+				? input.qrPictureWhole
+				: DEFAULT_PREFERENCES.qrPictureWhole,
+		qrPictureZoom: parseScale(input.qrPictureZoom, QR_PICTURE_ZOOM),
+		qrPictureCorners: oneOf(QR_PICTURE_CORNERS, input.qrPictureCorners, 'rounded'),
+		qrModules: oneOf(QR_MODULES, input.qrModules, 'square'),
+		qrFinders: oneOf(QR_FINDERS, input.qrFinders, 'square'),
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,

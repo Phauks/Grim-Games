@@ -35,6 +35,12 @@ describe('parsePreferences', () => {
 		).toEqual(DEFAULT_PREFERENCES);
 	});
 
+	it('reads an icon picked under a slot’s old name', () => {
+		expect(parsePreferences({ iconOverrides: { rename: 'ph:user-switch' } }).iconOverrides).toEqual(
+			{ edit: 'ph:user-switch' }
+		);
+	});
+
 	it('keeps valid choices', () => {
 		const valid = {
 			themeId: 'grimoire',
@@ -51,7 +57,7 @@ describe('parsePreferences', () => {
 				tokenScale: 1.25,
 				reminderScale: 0.75,
 				boardNames: true,
-				nightNumbers: true,
+				nightLeaves: 'numbers',
 				nightBadgeScale: 0.75,
 				reminderLabelWidth: 2,
 				reminderLabelWrap: true,
@@ -63,22 +69,48 @@ describe('parsePreferences', () => {
 				inlineNameBadgeScale: 2,
 				reminderLeaves: false,
 				setupFlower: true,
-				setupMovesName: false
+				setupMovesName: false,
+				reminderHighlight: false,
+				reminderHighlightLook: 'both',
+				tokenIconScale: 0.9,
+				reminderIconScale: 1.2
 			},
 			colors: {},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',
 			requireName: true,
 			holdToReveal: true,
+			slotMachine: true,
+			tileOrderRandom: true,
 			ownWording: true,
 			hideWatchLink: true,
 			timerSound: 'buzzer',
 			timerMode: 'up',
 			timerVibrate: false,
 			timerKeepAwake: false,
-			timerPerPlayer: 45
+			timerPerPlayer: 45,
+			qrCentre: 'picture',
+			qrPictureWhole: true,
+			qrPictureZoom: 1.5,
+			qrPictureCorners: 'circle',
+			qrModules: 'dot',
+			qrFinders: 'rounded'
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
+		// Shapes it doesn't know, and a zoom out of range, fall back (Trevor, 2026-10-23).
+		expect(
+			parsePreferences({
+				qrModules: 'stars',
+				qrFinders: 7,
+				qrPictureZoom: 9,
+				qrPictureCorners: 'x'
+			})
+		).toMatchObject({
+			qrModules: 'square',
+			qrFinders: 'square',
+			qrPictureZoom: 2,
+			qrPictureCorners: 'rounded'
+		});
 	});
 
 	it('keeps any bag tile label, and reads an unknown one as numbers', () => {

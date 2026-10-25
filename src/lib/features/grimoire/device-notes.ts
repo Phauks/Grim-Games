@@ -188,6 +188,71 @@ export const reminderCopyIds = {
 	}
 };
 
+/** Extra bank copies as stored, by reminder key; anything but a whole count above 0 is left out. */
+export function parseBankCopies(raw: unknown): Map<string, number> {
+	const out = new Map<string, number>();
+	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+	for (const [key, n] of Object.entries(raw as Record<string, unknown>))
+		if (typeof n === 'number' && Number.isInteger(n) && n > 0) out.set(key, n);
+	return out;
+}
+
+const BANK_COPIES_KEY = (gameId: GameId) => `grim-games:bank-copies:v1:${gameId}`;
+
+/**
+ * Copies added to the reminder bank with ⋯ > Duplicate reminder on this device, by reminder
+ * key (Trevor, 2026-10-20: a duplicate lands in the bank, not on the board).
+ */
+export const bankCopies = {
+	read(gameId: GameId): Map<string, number> {
+		try {
+			return parseBankCopies(
+				JSON.parse(globalThis.localStorage?.getItem(BANK_COPIES_KEY(gameId)) ?? '{}')
+			);
+		} catch {
+			return new Map();
+		}
+	},
+	write(gameId: GameId, counts: ReadonlyMap<string, number>): void {
+		try {
+			if (counts.size === 0) globalThis.localStorage?.removeItem(BANK_COPIES_KEY(gameId));
+			else
+				globalThis.localStorage?.setItem(
+					BANK_COPIES_KEY(gameId),
+					JSON.stringify(Object.fromEntries(counts))
+				);
+		} catch {
+			// Storage full or blocked: the copies last until the page is closed.
+		}
+	}
+};
+
+const START_KEY = (gameId: GameId) => `grim-games:game-start:v1:${gameId}`;
+
+/**
+ * When the game's first night began on this device (Trevor, 2026-10-23), for the game's
+ * length on the board; with `endedGames` it gives the final length. Set once, by Start game.
+ */
+export const gameStarts = {
+	read(gameId: GameId): number | undefined {
+		try {
+			const at = Number(globalThis.localStorage?.getItem(START_KEY(gameId)) ?? NaN);
+			return Number.isFinite(at) && at > 0 ? at : undefined;
+		} catch {
+			return undefined;
+		}
+	},
+	/** Records now as the start, unless the game already has one. */
+	start(gameId: GameId, now = Date.now()): void {
+		if (gameStarts.read(gameId) !== undefined) return;
+		try {
+			globalThis.localStorage?.setItem(START_KEY(gameId), String(now));
+		} catch {
+			// Storage blocked: the length shows only while this page stays open.
+		}
+	}
+};
+
 const NIGHT_KEY = (gameId: GameId) => `grim-games:night:v1:${gameId}`;
 
 /**
@@ -205,6 +270,23 @@ export interface NightView {
 	walk?: { night: 'first' | 'other'; index: number };
 	/** The step dialog: which night and which step. */
 	guided?: { night: 'first' | 'other'; stepId: string };
+}
+
+/**
+ * Tonight's night has begun on this device: a step of it is ticked and no new day has started
+ * since. The board and the saved games list both read it (gamePhase). For an ended game Dusk
+ * alone does not count: a game that ends at an Execution ends on that day (Trevor,
+ * 2026-10-24), though the Execution ticked Dusk before End game was asked.
+ */
+export function nightUnderway(
+	view: { done: readonly string[]; day?: number },
+	days: number,
+	ended = false
+): boolean {
+	return (
+		(view.day ?? days) === days &&
+		view.done.some((key) => key.startsWith(`${days}:`) && !(ended && key.endsWith(':dusk')))
+	);
 }
 
 const isNight = (v: unknown): v is 'first' | 'other' => v === 'first' || v === 'other';

@@ -1,0 +1,29 @@
+{
+	"actsWhenDead": true,
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "executed-loses"
+			}
+		]
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "loss condition"
+	}
+}

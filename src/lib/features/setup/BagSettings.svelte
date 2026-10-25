@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { tileFaceOptions } from '#lib/features/setup/tile-face.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
@@ -14,6 +16,7 @@
 <!--
 	The bag draw settings, reachable while dealing with the bag (Trevor, 2026-10-17).
 	The same stored values as Settings > Storyteller, so a change in one shows in the other.
+	Setup has no app sidebar, so All settings is here too: one cog, not two (Trevor, 2026-10-24).
 -->
 <IconButton
 	icon="settings"
@@ -31,6 +34,14 @@
 			onChange={(tileFace) => preferences.update({ tileFace })}
 		/>
 		<SettingToggle
+			label={t('settings.tileOrderRandom')}
+			description={t('settings.tileOrderRandomHelp')}
+			checked={preferences.current.tileOrderRandom}
+			disabled={preferences.current.tileFace === 'random' ||
+				preferences.current.tileFace === 'none'}
+			onChange={(tileOrderRandom) => preferences.update({ tileOrderRandom })}
+		/>
+		<SettingToggle
 			label={t('settings.requireName')}
 			description={t('settings.requireNameHelp')}
 			checked={preferences.current.requireName}
@@ -42,6 +53,20 @@
 			checked={preferences.current.holdToReveal}
 			onChange={(holdToReveal) => preferences.update({ holdToReveal })}
 		/>
+		<SettingToggle
+			label={t('settings.slotMachine')}
+			description={t('settings.slotMachineHelp')}
+			checked={preferences.current.slotMachine}
+			onChange={(slotMachine) => preferences.update({ slotMachine })}
+		/>
+		<div class="all">
+			<Button
+				onclick={() => {
+					open = false;
+					settingsDialog.show();
+				}}>{t('settings.allSettings')}</Button
+			>
+		</div>
 	</div>
 </Dialog>
 
@@ -49,5 +74,9 @@
 	.settings {
 		display: grid;
 		gap: var(--space-2);
+	}
+	.all {
+		display: flex;
+		justify-content: flex-end;
 	}
 </style>

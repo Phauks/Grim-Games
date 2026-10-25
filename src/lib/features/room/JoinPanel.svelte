@@ -1,26 +1,49 @@
+<script lang="ts" module>
+	import type { SeatId as DraftSeat } from '#lib/core/model/index.ts';
+
+	/**
+	 * What the phone typed or chose in each room before asking. The panel is drawn again when the
+	 * room's script arrives (the page gains its tabs), and that must not lose it.
+	 */
+	const drafts: Record<string, { name: string; seat: DraftSeat | ''; placed?: DraftSeat | '' }> =
+		{};
+</script>
+
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { formatRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '#lib/core/sync/room-code.ts';
-	import PageSection from '#lib/ui/layout/PageSection.svelte';
+	import { normaliseRoomCode, ROOM_CODE_LENGTH, scannedRoom } from '#lib/core/sync/room-code.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import QrScanner from '#lib/ui/share/QrScanner.svelte';
+	import SettingAvatar from '#lib/ui/settings/SettingAvatar.svelte';
+	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
+	import { viewerKeyFromPassword } from './viewer.svelte.ts';
+	import ScriptBallot from './ScriptBallot.svelte';
+	import VoteChoice from './VoteChoice.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
-	import { followRoomScript } from './room-script.ts';
+	import { followRoomScript } from './room-script.svelte.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
-	import { recentRooms, rememberRoom } from './recent-rooms.ts';
+	import { rememberRoom } from './recent-rooms.ts';
+	import YourGames from './YourGames.svelte';
+	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 
 	/**
-	 * Joining a live room on a phone: the code form (with the game it opens), then your name
-	 * and seat, the table, and the Specters vote. /play shows it
-	 * in its Room tab (Trevor, 2026-10-19), so a player moves between script and room.
+	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
+	 * over /play's tabs, which says where this phone sits and opens a sheet for its name, seat
+	 * and initials (plan J12: no Room tab), and the Specters vote.
 	 */
 	interface Props {
 		/** The room's code; undefined shows the code form. */
@@ -34,9 +57,16 @@
 		onJoined?: (joined: boolean) => void;
 		/** Told the Storyteller's name the room gives, for the share text around it. */
 		onStoryteller?: (name: string | undefined) => void;
+		/** Told when the phone has a seat here, or has asked for one, as it does or on its return. */
+		onSeated?: () => void;
+		/**
+		 * Whether the code form shows while the phone is not in a room (Join game); /play's
+		 * own row for the last room shows nothing then.
+		 */
+		entry?: boolean;
 	}
 
-	let { code, onCode, onJoined, onStoryteller }: Props = $props();
+	let { code, onCode, onJoined, onStoryteller, onSeated, entry = true }: Props = $props();
 
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
@@ -47,18 +77,35 @@
 
 	$effect(() => {
 		if (!valid) return;
-		const p = useRoom(valid);
+		// Only the code is tracked. Opening the room reads settings (the avatar, the frame), and a
+		// view arriving later must not wipe a name being typed.
+		const p = untrack(() => useRoom(valid));
 		player = p;
-		name = p.view?.me.name ?? p.savedName;
+		const draft = drafts[valid];
+		name = draft?.name ?? untrack(() => p.view?.me.name ?? p.savedName);
+		seat = draft?.seat ?? '';
+		lastPlaced = draft?.placed;
 		return () => releaseRoom(p);
+	});
+	$effect(() => {
+		if (valid) drafts[valid] = { name, seat, placed: lastPlaced };
+	});
+
+	// The player's avatar and frame go to the room as they pick them (plan R6).
+	$effect(() => {
+		void playerSettings.current.avatar;
+		void playerSettings.current.frame;
+		void player?.view;
+		player?.sendLook();
 	});
 
 	// The game's script becomes this phone's current script, for /play.
 	$effect(() => {
 		const sent = player?.script;
-		if (!sent) return;
+		const room = valid;
+		if (!sent || !room) return;
 		let cancelled = false;
-		void followRoomScript(sent)
+		void followRoomScript(sent, room)
 			.then((loaded) => {
 				if (cancelled || !loaded) return;
 				if (valid) rememberRoom(valid, loaded.name);
@@ -80,12 +127,19 @@
 	const storyteller = $derived(view?.public?.storytellerName);
 	$effect(() => onStoryteller?.(storyteller));
 	const mine = $derived(view?.me.seatId);
+	$effect(() => {
+		if (view?.request || mine) untrack(() => onSeated?.());
+	});
 	// The seat this phone has, or asked for, is the one chosen when the room opens again.
 	const placed = $derived(
 		view ? (view.request ? (view.request.seatId ?? '') : (mine ?? '')) : undefined
 	);
+	/** The seat the room last gave or held, so only a change to it moves the choice. */
+	let lastPlaced: SeatId | '' | undefined;
 	$effect(() => {
-		if (placed !== undefined) seat = placed;
+		if (placed === undefined || placed === lastPlaced) return;
+		lastPlaced = placed;
+		seat = placed;
 	});
 	/** Asking again for the seat and name this phone already has changes nothing. */
 	const unchanged = $derived(
@@ -97,6 +151,7 @@
 	};
 	const summary = $derived.by(() => {
 		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
+		if (view.choosing) return t('room.choosing');
 		// The same words as the Storyteller's board once the game has ended.
 		if (view.ended)
 			return view.ended.winner === 'good'
@@ -159,24 +214,6 @@
 					: ''
 	);
 
-	// The rooms this phone joined, read once so the list keeps its rows while each is looked up.
-	const recent = code === undefined ? recentRooms() : [];
-	let recentGames = $state<Record<string, GamePreview | null>>({});
-	$effect(() => {
-		if (recent.length === 0) return;
-		const abort = new AbortController();
-		for (const room of recent) {
-			fetchRoomPreview(room.code, abort.signal).then(
-				(game) => {
-					recentGames = { ...recentGames, [room.code]: game ?? null };
-					if (!game) forgetRoom(room.code);
-				},
-				() => {}
-			);
-		}
-		return () => abort.abort();
-	});
-
 	function openRoom(roomCode: string) {
 		if (onCode) onCode(roomCode);
 		else void goto(resolve('/join/[code]', { code: roomCode }));
@@ -188,15 +225,80 @@
 		openRoom(lookup.code);
 	}
 
+	/*
+	 * Share grim (Trevor, 2026-10-20, plan R5): when the finished grimoire the Storyteller
+	 * shared arrives, /play turns to its Grim tab, where it shows (Trevor, 2026-10-24).
+	 */
+	const revealed = $derived(player?.revealed);
+	let seenReveal: string | undefined;
+	$effect(() => {
+		const id = revealed?.gameId;
+		if (id && id !== seenReveal) finalGrimoire.open = true;
+		if (!id) finalGrimoire.open = false;
+		seenReveal = id;
+	});
+
+	/*
+	 * Name, seat and initials are one sheet away: the whole "You" row opens it (plan J12), so
+	 * the phone lands on the script (Trevor, 2026-10-23) with its next step in view. Asking
+	 * closes it.
+	 */
+	let editing = $state(false);
+
+	/*
+	 * Grim view (plan D1, Trevor 2026-10-22: "grim view by password or direct link. drop
+	 * spectate"): the room code and the Storyteller's password open the view-only grimoire.
+	 * Players without a seat (Specters) join as players.
+	 */
+	let grimViewOpen = $state(false);
+	let grimPassword = $state('');
+	async function grimView(event: SubmitEvent) {
+		event.preventDefault();
+		const password = grimPassword.trim();
+		if (!lookup || !password) return;
+		const key = await viewerKeyFromPassword(lookup.code, password);
+		grimViewOpen = false;
+		grimPassword = '';
+		// The key goes in the hash, which never reaches the server; the path is resolved.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		await goto(`${resolve('/watch/[code]', { code: lookup.code })}#${key}`, {
+			state: { password: true }
+		});
+	}
+
+	/*
+	 * Scan a code (plan J2, 2026-10-22): the Share screen's QR code read in the app, as the
+	 * players link or the Grim view link it holds, or a room code on its own.
+	 */
+	let scanning = $state(false);
+	let scanProblem = $state('');
+	$effect(() => {
+		if (!scanning) scanProblem = '';
+	});
+	function scanned(text: string): boolean {
+		const room = scannedRoom(text);
+		if (!room) {
+			scanProblem = t('room.scanNotRoom');
+			return false;
+		}
+		scanning = false;
+		if (room.kind === 'join') openRoom(room.code);
+		// The key stays in the hash, which never reaches the server; the path is resolved.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		else void goto(`${resolve('/watch/[code]', { code: room.code })}#${room.key}`);
+		return true;
+	}
+
 	function ask(event: SubmitEvent) {
 		event.preventDefault();
 		const n = name.trim();
 		if (!n || !player) return;
 		player.ask(n, seat || undefined);
+		editing = false;
 	}
 </script>
 
-{#if !inRoom}
+{#if !inRoom && entry}
 	{#if code !== undefined}
 		<p class="problem" role="alert">
 			{!valid
@@ -244,47 +346,52 @@
 				{/if}
 			</div>
 		</section>
-		<Button type="submit" variant="accent" disabled={!canJoin}>
-			{t('room.join')}
-		</Button>
+		<div class="entry">
+			<Button type="submit" variant="accent" disabled={!canJoin}>
+				{t('room.join')}
+			</Button>
+			<!-- Always here; disabled until the room has a Grim view password, so nothing moves. -->
+			<Button disabled={!found?.grimView} onclick={() => (grimViewOpen = true)}
+				>{t('room.grimView')}</Button
+			>
+			<!-- A camera icon, not words (Trevor, 2026-10-23). -->
+			<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
+		</div>
 	</form>
-	{#if recent.length > 0}
-		<PageSection title={t('room.yourGames')}>
-			<ul class="recent" data-testid="recent-rooms">
-				{#each recent as room (room.code)}
-					{@const game = recentGames[room.code]}
-					<li>
-						<button
-							type="button"
-							class="recent-game"
-							disabled={game === null}
-							onclick={() => openRoom(room.code)}
-						>
-							<ScriptLogo src={game?.logo} name={game?.name ?? room.script} class="recent-logo" />
-							<span class="recent-text">
-								<span class="recent-name"
-									>{(game?.name ?? room.script) || t('room.noScriptYet')}</span
-								>
-								<span class="recent-line"
-									>{game === null
-										? t('room.recentClosed', { code: formatRoomCode(room.code) })
-										: game?.storyteller
-											? t('room.recentLine', {
-													code: formatRoomCode(room.code),
-													name: game.storyteller
-												})
-											: formatRoomCode(room.code)}</span
-								>
-							</span>
-						</button>
-					</li>
-				{/each}
-			</ul>
-		</PageSection>
-	{/if}
-{:else}
-	<PageSection title={t('room.you')}>
-		<p class="summary" role="status" data-testid="join-status">{summary}</p>
+	<Dialog bind:open={scanning} title={t('share.scan')}>
+		{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} />{/if}
+	</Dialog>
+	<Dialog bind:open={grimViewOpen} title={t('room.grimView')}>
+		<form class="grim-view" onsubmit={grimView}>
+			<TextField
+				label={t('room.watch.password')}
+				bind:value={grimPassword}
+				maxlength={64}
+				type="password"
+				autocomplete="off"
+			/>
+			<ModalActions
+				onCancel={() => (grimViewOpen = false)}
+				disabled={!grimPassword.trim()}
+				submit
+			/>
+		</form>
+	</Dialog>
+	{#if code === undefined}<YourGames onOpen={openRoom} />{/if}
+{:else if inRoom}
+	<!-- One tap target, the whole row (Trevor: whole-row tap), with the pencil it opens by. -->
+	<button
+		type="button"
+		class="you"
+		data-testid="you-row"
+		aria-haspopup="dialog"
+		onclick={() => (editing = true)}
+	>
+		<span class="summary" role="status" data-testid="join-status">{summary}</span>
+		<Icon name="edit" />
+		<span class="visually-hidden">{t('room.editYou')}</span>
+	</button>
+	<Dialog bind:open={editing} title={t('room.you')}>
 		<form onsubmit={ask}>
 			<label for="player-name">{t('room.yourName')}</label>
 			<ClearableField bind:value={name}>
@@ -297,6 +404,12 @@
 					onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
 				/>
 			</ClearableField>
+			<!-- Goes on the seat without asking (plan R6); also in Settings > Player. -->
+			<SettingAvatar
+				value={playerSettings.current.avatar}
+				onChange={(avatar) => playerSettings.update({ avatar })}
+				testid="join-avatar"
+			/>
 			<fieldset>
 				<legend>{t('room.yourSeat')}</legend>
 				<div class="seats">
@@ -318,51 +431,33 @@
 					{/each}
 				</div>
 			</fieldset>
-			<div class="row">
-				<Button
-					type="submit"
-					variant="accent"
-					disabled={!name.trim() || unchanged || status !== 'open'}
-				>
-					{t('room.ask')}
-				</Button>
-				<Button
-					variant="quiet"
-					disabled={!view?.request || status !== 'open'}
-					onclick={() => player?.cancel()}
-				>
-					{t('room.cancelRequest')}
-				</Button>
-				<Button
-					variant="quiet"
-					disabled={!mine || status !== 'open'}
-					onclick={() => player?.leaveSeat()}
-				>
-					{t('room.leaveSeat')}
-				</Button>
-			</div>
+			<!-- Ask is the sheet's Confirm; withdrawing a request or leaving a seat sit at the
+			     bottom left, always there and usable when they apply, so nothing moves. -->
+			<ModalActions
+				onCancel={() => (editing = false)}
+				submit
+				disabled={!name.trim() || unchanged || status !== 'open'}
+				confirmLabel={t('room.ask')}
+			>
+				{#snippet start()}
+					<Button
+						variant="quiet"
+						disabled={!view?.request || status !== 'open'}
+						onclick={() => player?.cancel()}
+					>
+						{t('room.cancelRequest')}
+					</Button>
+					<Button
+						variant="quiet"
+						disabled={!mine || status !== 'open'}
+						onclick={() => player?.leaveSeat()}
+					>
+						{t('room.leaveSeat')}
+					</Button>
+				{/snippet}
+			</ModalActions>
 		</form>
-	</PageSection>
-	<PageSection title={t('room.table')}>
-		{#if seats.length === 0}
-			<p class="none">{t('common.none')}</p>
-		{:else}
-			<p class="storyteller" data-testid="room-storyteller">
-				{t('room.storytellerLine', { name: storyteller ?? t('common.none') })}
-			</p>
-			<ol class="table">
-				{#each seats as s (s.seatId)}
-					<li data-dead={s.dead || undefined} data-mine={s.seatId === mine || undefined}>
-						<span class="number">{s.seatNumber}</span>
-						<span class="name">{s.playerName ?? t('common.none')}</span>
-						<span class="state">
-							{s.dead ? t('room.dead') : ''}
-						</span>
-					</li>
-				{/each}
-			</ol>
-		{/if}
-	</PageSection>
+	</Dialog>
 {/if}
 
 <Dialog bind:open={voting} title={t('room.vote.title')}>
@@ -372,22 +467,19 @@
 		{#each vote?.options ?? [] as option (option)}
 			{@const s = seats.find((x) => x.seatId === option)}
 			<li>
-				<button
-					type="button"
-					class="choice"
-					aria-pressed={vote?.choice === option}
+				<VoteChoice
+					mark={s?.seatNumber}
+					pressed={vote?.choice === option}
 					disabled={status !== 'open'}
 					onclick={() => player?.vote(option)}
+					>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</VoteChoice
 				>
-					<span class="number">{s?.seatNumber ?? ''}</span>
-					<span class="name"
-						>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</span
-					>
-				</button>
 			</li>
 		{/each}
 	</ul>
 </Dialog>
+
+{#if player}<ScriptBallot {player} />{/if}
 
 <style>
 	form {
@@ -451,69 +543,56 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
+	.entry {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--space-2);
+	}
+	.grim-view {
+		display: grid;
+		gap: var(--space-4);
+	}
 	.code-form :global(.button) {
 		min-width: calc(10 * var(--u));
 	}
-	.recent {
-		display: grid;
-		gap: var(--space-2);
+	.problem {
 		margin: 0;
-		padding: 0;
-		list-style: none;
+		color: var(--on-surface-muted);
 	}
-	/* Two lines always, so a room's details arriving move nothing. */
-	.recent-game {
-		display: grid;
-		grid-template-columns: calc(2.5 * var(--u)) minmax(0, 1fr);
+	/* Where this phone sits, and the pencil for its sheet, in one row over the tabs. */
+	.you {
+		display: flex;
 		align-items: center;
-		gap: var(--space-3);
+		gap: var(--space-2);
 		box-sizing: border-box;
 		width: 100%;
 		min-height: var(--tap-target);
+		margin-bottom: var(--space-2);
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
-		color: var(--on-surface);
+		color: inherit;
 		font: inherit;
 		text-align: start;
 		cursor: pointer;
 	}
-	.recent-game:disabled {
-		cursor: default;
-		opacity: 0.55;
-	}
-	.recent-game :global(.recent-logo) {
-		width: calc(2.5 * var(--u));
-		height: calc(2.5 * var(--u));
-	}
-	.recent-text {
-		display: grid;
-		min-width: 0;
-	}
-	.recent-name,
-	.recent-line {
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
 		overflow: hidden;
-		text-overflow: ellipsis;
+		clip-path: inset(50%);
 		white-space: nowrap;
 	}
-	.recent-name {
-		font-family: var(--font-heading);
-		font-weight: var(--font-heading-weight);
-	}
-	.recent-line {
-		color: var(--on-surface-muted);
-	}
-	.problem,
-	.storyteller,
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
-	/* Two lines reserved, so a longer status never moves the form. */
+	/* Two lines reserved, so a longer status never moves the tabs. */
 	.summary {
+		flex: 1;
+		min-width: 0;
 		min-height: 2.8em;
 		margin: 0;
+		align-content: center;
 	}
 	input:not([type='radio']) {
 		box-sizing: border-box;
@@ -571,46 +650,6 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-	}
-	.table {
-		display: grid;
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.table li {
-		display: grid;
-		grid-template-columns: 2.5em 1fr auto;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-	}
-	.table li[data-mine] {
-		border-color: var(--accent);
-	}
-	/* Dead seats are greyed, no skull (09-player-script-view.md). */
-	.table li[data-dead] {
-		color: var(--on-surface-muted);
-	}
-	.number {
-		font-variant-numeric: tabular-nums;
-	}
-	.name {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.state {
-		color: var(--on-surface-muted);
-	}
 	.ability {
 		margin: 0 0 var(--space-2);
 	}
@@ -620,25 +659,5 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.choice {
-		display: grid;
-		grid-template-columns: 2.5em 1fr;
-		align-items: center;
-		gap: var(--space-2);
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		touch-action: manipulation;
-	}
-	.choice[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--surface-selected);
 	}
 </style>

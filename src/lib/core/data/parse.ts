@@ -3,6 +3,7 @@
  * validate it, map TPI's `team` to our `type`, and throw a `DataError` listing every
  * problem found.
  */
+import { parseCharacterRules, type CharacterRules } from './character-rules.ts';
 import {
 	CHARACTER_TYPES,
 	SPECIAL_GLOBALS,
@@ -51,7 +52,8 @@ const SCRIPT_CHARACTER_KEYS = [
 	'image',
 	'firstNight',
 	'otherNight',
-	'jinxes'
+	'jinxes',
+	'rules'
 ] as const;
 const SPECIAL_KEYS = ['type', 'name', 'value', 'time', 'global'] as const;
 
@@ -134,11 +136,17 @@ export function parseCharacter(
 	let image: string | string[] | undefined;
 	let firstNight: number | undefined;
 	let otherNight: number | undefined;
+	let rules: CharacterRules | undefined;
 	if (options.scriptFields) {
 		if (typeof raw.image === 'string') image = raw.image;
 		else if (raw.image !== undefined) image = readStringArray(raw, 'image', path, issues);
 		firstNight = readNumber(raw, 'firstNight', path, issues);
 		otherNight = readNumber(raw, 'otherNight', path, issues);
+		if (raw.rules !== undefined)
+			rules = parseCharacterRules(raw.rules, `${path}.rules`, issues, [
+				...reminders,
+				...remindersGlobal
+			]);
 	}
 
 	if (issues.list.length > before) return undefined;
@@ -158,6 +166,7 @@ export function parseCharacter(
 	if (otherNightReminder !== undefined) character.otherNightReminder = otherNightReminder;
 	if (image !== undefined) character.image = image;
 	if (firstNight !== undefined) character.firstNight = firstNight;
+	if (rules !== undefined) character.rules = rules;
 	if (otherNight !== undefined) character.otherNight = otherNight;
 	return character;
 }

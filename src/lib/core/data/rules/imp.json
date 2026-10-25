@@ -1,0 +1,46 @@
+{
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "Any player the Imp attacks, including itself or a player already dead."
+		}
+	},
+	"gameEnd": {
+		"holds": [
+			{
+				"kind": "death-passes",
+				"to": "minion"
+			}
+		]
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night kills"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

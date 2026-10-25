@@ -179,8 +179,8 @@ export function plainText(source: string): string {
  */
 export function boldToRed(source: string): string {
 	return toSource(
-		parseRich(source).map((run) =>
-			run.bold ? { ...run, bold: false, color: run.color ?? 'red' } : run
+		parseRich(source).map(
+			(run) => (run.bold ? { ...run, bold: false, color: run.color ?? 'red' } : run) // colour-ok: an ink name (INK_TOKENS)
 		)
 	);
 }

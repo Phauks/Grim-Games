@@ -29,7 +29,11 @@ export const CHARACTER_COVERAGE = {
 	image: 'icons',
 	// Custom scripts only; the official order is shown as steps in the night columns.
 	firstNight: 'firstNight',
-	otherNight: 'otherNight'
+	otherNight: 'otherNight',
+	// Custom scripts only (official blocks are data/rules/<id>.json).
+	rules: {
+		notShown: 'How the app applies the ability; Inspect is to show the whole rules block (planned).'
+	}
 } as const satisfies Record<keyof Character, Shown>;
 
 export const ENTRY_COVERAGE = {

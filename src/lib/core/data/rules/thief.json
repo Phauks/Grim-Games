@@ -1,0 +1,69 @@
+{
+	"reminderTargets": {
+		"Negative Vote": {
+			"seat": "other",
+			"note": "The player the Thief chooses, never themself; dead players allowed."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has chosen"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Negative Vote"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "vote change"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Negative Vote",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Negative Vote",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Thief chooses a player: move *NEGATIVE VOTE* to them.",
+				"reason": "Says last night’s Negative Vote token comes off."
+			}
+		}
+	}
+}

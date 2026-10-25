@@ -1,15 +1,19 @@
 <script lang="ts">
-	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { Theme } from '#lib/ui/themes/types.ts';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import {
 		MIN_CONTRAST,
+		NIGHT_LEAVES,
+		REMINDER_HIGHLIGHT_LOOKS,
 		REMINDER_LABEL_WIDTH,
 		TOKEN_COLOURS,
+		ICON_SCALE,
 		TOKEN_SCALE,
 		tokenColour,
 		tokenContrast,
@@ -25,8 +29,14 @@
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import { sheetNumbersFor } from './sheet-night-numbers.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import type { ReminderLabel } from '#lib/core/data/index.ts';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
-	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import {
+		boardLooks,
+		DEFAULT_BOARD_LOOKS,
+		NAME_OFFSET,
+		NAME_SIZE
+	} from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 
 	interface Props {
@@ -37,9 +47,11 @@
 		characterFont?: Snippet;
 		/** The Reminder tokens font, first in the reminder token's box. */
 		reminderFont?: Snippet;
+		/** The Player names font, with the player name badge's other settings. */
+		playerFont?: Snippet;
 	}
 
-	let { value, theme, onChange, characterFont, reminderFont }: Props = $props();
+	let { value, theme, onChange, characterFont, reminderFont, playerFont }: Props = $props();
 
 	onMount(() => void loadOfficialData());
 	// A character with every marking, so each leaf setting shows (Trevor, 2026-10-19: "a setup,
@@ -47,11 +59,15 @@
 	// also long enough to show the reminder word settings.
 	const SAMPLE_ID = 'godfather';
 	const sample = $derived(officialData.current?.byId.get(SAMPLE_ID));
+	// Long words, so Reminder words width and Wrap long reminder words show (Trevor,
+	// 2026-10-22: every setting shows in its preview).
+	const REMINDER_SAMPLE_ID = 'devilsadvocate';
+	const reminderSample = $derived(officialData.current?.byId.get(REMINDER_SAMPLE_ID));
 	// The sample as the only character in play (Trevor, 2026-10-17: "a low number (1) (1),
 	// not absolute"): 1 on each night it wakes.
 	const sampleNumbers = $derived.by(() => {
 		const data = officialData.current;
-		if (!data || !value.nightNumbers) return undefined;
+		if (!data || value.nightLeaves !== 'numbers') return undefined;
 		const { first, other } = sheetNumbersFor(data.nightSheet, SAMPLE_ID);
 		return { first: first && 1, other: other && 1 };
 	});
@@ -104,7 +120,6 @@
 				>{/if}
 		</div>
 	{/snippet}
-	{@render characterFont?.()}
 	<SettingSlider
 		label={t('characters.tokenSize')}
 		description={t('characters.tokenSizeHelp')}
@@ -113,25 +128,42 @@
 		defaultValue={1}
 		onChange={(tokenScale) => onChange({ ...value, tokenScale })}
 	/>
+	<SettingSlider
+		label={t('characters.tokenIconSize')}
+		description={t('characters.tokenIconSizeHelp')}
+		value={value.tokenIconScale}
+		{...ICON_SCALE}
+		defaultValue={1}
+		onChange={(tokenIconScale) => onChange({ ...value, tokenIconScale })}
+	/>
 	<SettingToggle
 		label={t('characters.boardNames')}
 		description={t('characters.boardNamesHelp')}
 		checked={value.boardNames}
 		onChange={(boardNames) => onChange({ ...value, boardNames })}
 	/>
-	<SettingToggle
-		label={t('characters.nightNumbers')}
-		description={t('characters.nightNumbersHelp')}
-		checked={value.nightNumbers}
-		onChange={(nightNumbers) => onChange({ ...value, nightNumbers })}
-	/>
-	<!-- Always shown, so switching the badges on or off never moves the settings below. -->
+	<!-- The side leaves and their night order numbers, one setting (Trevor, 2026-10-22). -->
+	<SettingRow label={t('characters.nightLeaves')} description={t('characters.nightLeavesHelp')}>
+		{#snippet control(labelId)}<Select
+				label={t('characters.nightLeaves')}
+				labelledBy={labelId}
+				value={value.nightLeaves}
+				options={NIGHT_LEAVES.map((leaves) => ({
+					value: leaves,
+					label: t(`characters.nightLeaves.${leaves}`)
+				}))}
+				onChange={(nightLeaves) => onChange({ ...value, nightLeaves })}
+			/>{/snippet}
+	</SettingRow>
+	<!-- Always shown, so switching the badges on or off never moves the settings below;
+	     disabled while they are off. -->
 	<SettingSlider
 		label={t('characters.nightBadgeSize')}
 		description={t('characters.nightBadgeSizeHelp')}
 		value={value.nightBadgeScale}
 		{...TOKEN_SCALE}
 		defaultValue={1}
+		disabled={value.nightLeaves !== 'numbers'}
 		onChange={(nightBadgeScale) => onChange({ ...value, nightBadgeScale })}
 	/>
 	<SettingToggle
@@ -154,6 +186,26 @@
 		disabled={!value.setupFlower}
 		onChange={(setupMovesName) => onChange({ ...value, setupMovesName })}
 	/>
+	<!-- The player name badge under each seat's token (Trevor, 2026-10-20: "player name badges
+	     should have settings in tokens under character tokens"), shown on the preview's token. -->
+	{@render playerFont?.()}
+	<SettingSlider
+		label={t('settings.nameSize')}
+		value={boardLooks.current.nameSize}
+		{...NAME_SIZE}
+		defaultValue={DEFAULT_BOARD_LOOKS.nameSize}
+		format={(size) => intl.number(size, { style: 'percent' })}
+		onChange={(nameSize) => boardLooks.update({ nameSize })}
+	/>
+	<!-- Clear of the character's name on the token (Trevor, 2026-10-18). -->
+	<SettingSlider
+		label={t('settings.nameOffset')}
+		value={boardLooks.current.nameOffset}
+		{...NAME_OFFSET}
+		defaultValue={DEFAULT_BOARD_LOOKS.nameOffset}
+		format={(offset) => intl.number(offset, { style: 'percent' })}
+		onChange={(nameOffset) => boardLooks.update({ nameOffset })}
+	/>
 	{@render colourRow('face')}
 	{@render colourRow('rim')}
 	{@render colourRow('ink')}
@@ -162,10 +214,31 @@
 
 <SettingGroup title={t('characters.group.reminder')} testid="reminder-preview">
 	{#snippet preview()}
+		<!-- As it rests, then highlighted as a held seat's reminder (Trevor, 2026-10-20). Its
+		     player has turned good, so its owner's icon is good's (Trevor, 2026-10-23). Then an ∞
+		     token with an icon symbol. -->
 		<div class="preview reminder-sample" style:--sample="{largestReminder}px">
-			{#if sample}<BoardReminder
-					label={sample.reminders[0] ?? t('characters.previewReminder')}
-					character={sample}
+			{#if reminderSample}<BoardReminder
+					label={reminderSample.reminders[0]}
+					character={reminderSample}
+					alignment="good"
+					size={reminderSize}
+					disabled
+					onTap={() => {}}
+				/><span class="lit" data-testid="lit-reminder-sample"
+					><BoardReminder
+						label={reminderSample.reminders[0]}
+						character={reminderSample}
+						alignment="good"
+						size={reminderSize}
+						disabled
+						onTap={() => {}}
+					/></span
+				><BoardReminder
+					label={'' as ReminderLabel}
+					character={undefined}
+					infinite
+					symbol="ph:star"
 					size={reminderSize}
 					disabled
 					onTap={() => {}}
@@ -182,6 +255,14 @@
 		onChange={(reminderScale) => onChange({ ...value, reminderScale })}
 	/>
 	<SettingSlider
+		label={t('characters.reminderIconSize')}
+		description={t('characters.reminderIconSizeHelp')}
+		value={value.reminderIconScale}
+		{...ICON_SCALE}
+		defaultValue={1}
+		onChange={(reminderIconScale) => onChange({ ...value, reminderIconScale })}
+	/>
+	<SettingSlider
 		label={t('characters.reminderLabelWidth')}
 		description={t('characters.reminderLabelWidthHelp')}
 		value={value.reminderLabelWidth}
@@ -195,6 +276,27 @@
 		checked={value.reminderLabelWrap}
 		onChange={(reminderLabelWrap) => onChange({ ...value, reminderLabelWrap })}
 	/>
+	<!-- Reminder glow and owner's icon (Trevor, 2026-10-20). The drop-downs stay in place,
+	     disabled while their switch is off, so nothing below moves. -->
+	<SettingToggle
+		label={t('characters.reminderHighlight')}
+		description={t('characters.reminderHighlightHelp')}
+		checked={value.reminderHighlight}
+		onChange={(reminderHighlight) => onChange({ ...value, reminderHighlight })}
+	/>
+	<SettingRow label={t('characters.reminderHighlightLook')}>
+		{#snippet control(labelId)}<Select
+				label={t('characters.reminderHighlightLook')}
+				labelledBy={labelId}
+				value={value.reminderHighlightLook}
+				disabled={!value.reminderHighlight}
+				options={REMINDER_HIGHLIGHT_LOOKS.map((look) => ({
+					value: look,
+					label: t(`characters.highlightLook.${look}`)
+				}))}
+				onChange={(reminderHighlightLook) => onChange({ ...value, reminderHighlightLook })}
+			/>{/snippet}
+	</SettingRow>
 	{@render colourRow('reminder')}
 	{@render colourRow('reminderLabel')}
 	{@render colourRow('reminderInk')}
@@ -223,6 +325,9 @@
 			</p>
 		</div>
 	{/snippet}
+	<!-- Here, not under Character token: the names in this line always show the font, while
+	     names on tokens are a switch (Trevor, 2026-10-22: every setting shows in its preview). -->
+	{@render characterFont?.()}
 	<!-- Text, icon and badge sizes for each, none shared (Trevor, 2026-10-18). -->
 	<SettingSlider
 		label={t('characters.inlineNameTextSize')}
@@ -320,8 +425,31 @@
 		white-space: nowrap;
 		overflow: hidden;
 	}
+	/* Room under the largest token for the player name at its largest size and distance
+	   (Trevor, 2026-10-20), so neither slider moves the settings or hides the name. */
+	.token-sample {
+		align-items: flex-start;
+		height: max(calc(1.45 * var(--sample)), 4.4rem);
+	}
 	.reminder-sample {
 		height: max(var(--sample), 3rem);
+	}
+	/* Wide, the box beside the settings is too narrow for the reminders side by side at their
+	   largest, so they stack: at rest, highlighted, then the ∞ token. */
+	@container (min-width: 26rem) {
+		.reminder-sample {
+			flex-direction: column;
+			height: max(calc(3 * var(--sample) + 2 * var(--space-4)), 9rem);
+		}
+	}
+	/* The board's highlight on a held seat's reminders (GrimoireBoard .chip-slot.lit). */
+	.lit {
+		display: contents;
+	}
+	.lit > :global(.reminder) {
+		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
+		outline-offset: 0.15rem;
+		filter: var(--reminder-lit-glow, none);
 	}
 	/*
 	 * Narrow, the box sits above its settings, so it keeps room for every size at its largest

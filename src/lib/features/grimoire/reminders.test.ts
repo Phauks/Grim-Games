@@ -148,6 +148,19 @@ describe('reminderCopiesLeft', () => {
 		expect(reminderCopies(g, characters).get(key)).toBe(2);
 		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
 	});
+	// Trevor (2026-10-20): a duplicate lands in the bank, as one more copy left to place.
+	it('adds the copies the Storyteller put in the bank', () => {
+		const g = game();
+		const key = reminderKey({ characterId: 'poisoner', label: 'Poisoned' });
+		const bank = new Map([[key, 2]]);
+		expect(reminderCopies(g, characters, undefined, bank).get(key)).toBe(3);
+		expect(reminderCopiesLeft(g, characters, undefined, bank).get(key)).toBe(3);
+		// Two of the three are beyond what the game gives, marked in the bank (Trevor, 2026-10-22).
+		const poisoned = bankReminders(g, characters, undefined, true, undefined, bank).find(
+			(r) => r.label === 'Poisoned'
+		);
+		expect(poisoned).toMatchObject({ left: 3, extra: 2 });
+	});
 	// Trevor (2026-10-18): Duplicate reminder makes a new token; it never takes the bank's.
 	it("leaves the bank's copies alone for a duplicate, which is always extra", () => {
 		let g = game();
@@ -189,7 +202,7 @@ describe('bankReminders', () => {
 	};
 	it('holds every reminder still off the board, and loses one once it is placed', () => {
 		let g = game();
-		const poisoned = { characterId: 'poisoner', label: 'Poisoned', left: 1, now: false };
+		const poisoned = { characterId: 'poisoner', label: 'Poisoned', left: 1, extra: 0, now: false };
 		expect(bankReminders(g, characters)).toContainEqual(poisoned);
 		g = run(g, {
 			type: 'AddReminder',

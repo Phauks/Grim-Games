@@ -13,6 +13,8 @@ export const reports = {
 	'reports.body': 'Description',
 	'reports.contact': 'Contact (optional)',
 	'reports.includeDetails': 'Include problem details',
+	'reports.includeScript': 'Include the script',
+	'reports.script': 'Script',
 	'reports.sentWith': 'Sent with it',
 	'reports.build': 'Build',
 	'reports.device': 'Device',
@@ -23,10 +25,6 @@ export const reports = {
 	'reports.inbox': 'Reports',
 	'reports.pageTitle': `Reports · ${APP_NAME}`,
 	'reports.checking': 'Checking access…',
-	'reports.admins': 'Admins',
-	'reports.addAdmin': 'Add an admin by sign-in email',
-	'reports.noAccount': 'No account signs in with that email',
-	'reports.removeAdmin': 'Remove admin {email}',
 	'reports.status': 'Status',
 	'reports.status.new': 'New',
 	'reports.status.accepted': 'Accepted',
@@ -40,7 +38,6 @@ export const reports = {
 	'reports.reporter': 'Reporter',
 	'reports.noUsername': 'No username',
 	'reports.signedOut': 'Signed out',
-	'reports.onlyMine': 'Only mine',
 	'reports.hidden': 'Hidden',
 	'reports.loadFailed': 'Could not load reports'
 } as const;

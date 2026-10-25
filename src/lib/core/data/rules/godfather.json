@@ -1,0 +1,70 @@
+{
+	"reminderPrompts": {
+		"Died Today": "markDead"
+	},
+	"kills": {
+		"by": "other"
+	},
+	"reminderTargets": {
+		"Died Today": {
+			"seat": "other",
+			"types": ["outsider"],
+			"life": "dead",
+			"note": "An Outsider who died during the day."
+		},
+		"Dead": {
+			"seat": "any",
+			"note": "The player the Godfather kills that night."
+		}
+	},
+	"answers": {
+		"question": "outsider-died",
+		"token": "Died Today"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"setupModifier": {
+		"summary": "−1 or +1 Outsider",
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "outsider",
+				"values": [-1, 1]
+			}
+		]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

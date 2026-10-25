@@ -142,8 +142,8 @@ export type DuplicatesRule = Cited &
 
 /** 7. Characters always in the game. */
 export interface ForcedRule extends Cited {
-	/** Always in play (dealt to a player). */
-	inPlay: CharacterId[];
+	/** Always in play (dealt to a player). Left out when none is (revision 12). */
+	inPlay?: CharacterId[];
 	/** Always on the script, in play or not. */
 	onScript?: CharacterId[];
 	/** Rule characters (Fabled, Loric) always in the game. */
@@ -154,7 +154,8 @@ export interface ForcedRule extends Cited {
 
 /** 8 and 9. Rules the Storyteller runs by hand: which characters, and where to read them. */
 export interface LinkedRule extends Cited {
-	characters: CharacterId[];
+	/** Left out when the rule concerns no particular character (revision 12). */
+	characters?: CharacterId[];
 }
 
 /**
@@ -334,7 +335,10 @@ export const RULE_ONLY_PARTS = [
 	'travellers',
 	'seats',
 	'deaths',
-	'nightSteps'
+	'nightSteps',
+	'abilities',
+	'demonAttacks',
+	'nominations'
 ] as const;
 export type RuleOnlyPart = (typeof RULE_ONLY_PARTS)[number];
 
@@ -362,12 +366,48 @@ export interface DeathsRule extends Cited {
 	kind: 'private';
 }
 
-/** A step added to each night, for these characters or character types. */
+/** A step added to each night, or to one night, for these characters, types or the dead. */
 export interface NightStep extends Cited {
 	kind: 'wake';
-	when: 'each-night' | 'each-night-except-first';
+	when: 'each-night' | 'each-night-except-first' | 'one-night';
+	/** The night, for `one-night` (1 is the first night). */
+	night?: number;
 	characters?: CharacterId[];
 	types?: SeatedType[];
+	/** Every dead player wakes, together (Council of the Dead). */
+	dead?: boolean;
+	/** How long they wake for, in minutes. */
+	minutes?: number;
+}
+
+/** Who has an ability, alive or dead (The Phantom Detectives). */
+export interface AbilitiesRule extends Cited {
+	kind: 'dead-keep';
+	/** Dead players keep their abilities, except these types. */
+	deadLose: SeatedType[];
+	/** Living players of these types have no ability until they die. */
+	livingLose: SeatedType[];
+}
+
+/** Who the Demon attacks each night (Trained Killer). */
+export interface DemonAttacksRule extends Cited {
+	/** The next living in-play character in script order, after the last one it killed. */
+	kind: 'script-order';
+}
+
+/**
+ * What a nomination sets off (The Warrens, The Djinn's Bargain). The board offers it to the
+ * Storyteller when a nomination is recorded; they decide.
+ */
+export interface NominationEffect extends Cited {
+	/**
+	 * `evil-swap`: an evil nominator and a living evil nominee, neither a Traveller, swap
+	 * characters. `nominator-may-die`: the nominator may choose to die, and the nominee's
+	 * ability then works twice until the next dusk.
+	 */
+	kind: 'evil-swap' | 'nominator-may-die';
+	/** Only while at least this many players are alive. */
+	minAlive?: number;
 }
 
 export interface RuleOnlyParts {
@@ -379,6 +419,9 @@ export interface RuleOnlyParts {
 	seats?: SeatsRule;
 	deaths?: DeathsRule;
 	nightSteps?: NightStep[];
+	abilities?: AbilitiesRule;
+	demonAttacks?: DemonAttacksRule;
+	nominations?: NominationEffect[];
 }
 
 /** A special rule's pool can only add to the script. */

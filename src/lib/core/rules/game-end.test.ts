@@ -7,7 +7,15 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { Issues } from '#lib/core/data/validate.ts';
+import {
+	castGame,
+	newGame,
+	run,
+	testCharacters as characters,
+	testContext
+} from '#lib/core/model/fixtures.test-support.ts';
 import {
 	gameEnds,
 	promptable,
@@ -139,7 +147,9 @@ describe('core rules (Glossary)', () => {
 describe('Saint (https://wiki.bloodontheclocktower.com/Saint)', () => {
 	it('executed: its team loses', () => {
 		const { ends: e, seats } = ends(TB, [execute(4)]);
-		expect(e).toMatchObject([{ rule: 'saint', winner: 'evil', seats: [seats[4]], holds: [] }]);
+		expect(e).toMatchObject([
+			{ rule: 'executed-loses', winner: 'evil', seats: [seats[4]], holds: [] }
+		]);
 	});
 
 	it('killed another way: the game goes on', () => {
@@ -148,14 +158,14 @@ describe('Saint (https://wiki.bloodontheclocktower.com/Saint)', () => {
 
 	it('an evil Saint executed loses for evil', () => {
 		expect(ends(TB, [align(4, 'evil'), execute(4)]).ends).toMatchObject([
-			{ rule: 'saint', winner: 'good' }
+			{ rule: 'executed-loses', winner: 'good' }
 		]);
 	});
 
 	it("poisoned: the Storyteller's call", () => {
 		const e = ends(TB, [remind(4, 'poisoner', 'Poisoned'), execute(4)]).ends;
 		expect(e).toMatchObject([
-			{ rule: 'saint', holds: [{ rule: 'impaired', characterId: 'saint' }] }
+			{ rule: 'executed-loses', holds: [{ rule: 'impaired', characterId: 'saint' }] }
 		]);
 		expect(suggestedWinner(e)).toBeUndefined();
 	});
@@ -167,7 +177,9 @@ describe('Evil Twin (https://wiki.bloodontheclocktower.com/Evil_Twin)', () => {
 
 	it('good twin executed: evil wins', () => {
 		const { ends: e, seats } = ends(cast, [twin, execute(1)]);
-		expect(e).toMatchObject([{ rule: 'evil-twin', winner: 'evil', seats: [seats[1], seats[4]] }]);
+		expect(e).toMatchObject([
+			{ rule: 'marked-executed', winner: 'evil', seats: [seats[1], seats[4]] }
+		]);
 	});
 
 	it('good twin killed at night: the game goes on', () => {
@@ -177,7 +189,7 @@ describe('Evil Twin (https://wiki.bloodontheclocktower.com/Evil_Twin)', () => {
 	it('Demon dead while both twins live: good cannot win yet', () => {
 		const { ends: e, seats } = ends(cast, [twin, execute(5)]);
 		expect(e).toMatchObject([
-			{ rule: 'demon-dead', holds: [{ rule: 'evil-twin', seats: [seats[4], seats[1]] }] }
+			{ rule: 'demon-dead', holds: [{ rule: 'marked-alive', seats: [seats[4], seats[1]] }] }
 		]);
 		expect(suggestedWinner(e)).toBeUndefined();
 	});
@@ -194,7 +206,7 @@ describe('Scarlet Woman (https://wiki.bloodontheclocktower.com/Scarlet_Woman)', 
 	it('5 or more alive when the Demon dies: she may become the Demon', () => {
 		const cast = ['chef', 'empath', 'monk', 'mayor', 'scarletwoman', 'imp'];
 		expect(ends(cast, [execute(5)]).ends).toMatchObject([
-			{ rule: 'demon-dead', holds: [{ rule: 'scarlet-woman' }] }
+			{ rule: 'demon-dead', holds: [{ rule: 'becomes-demon' }] }
 		]);
 	});
 
@@ -213,7 +225,9 @@ describe('Scarlet Woman (https://wiki.bloodontheclocktower.com/Scarlet_Woman)', 
 describe('Imp (https://wiki.bloodontheclocktower.com/Imp)', () => {
 	it('killing itself with a Minion alive: a Minion may become the Imp', () => {
 		const { ends: e, seats } = ends(TB, [dead(6, 'imp')]);
-		expect(e).toMatchObject([{ rule: 'demon-dead', holds: [{ rule: 'imp', seats: [seats[5]] }] }]);
+		expect(e).toMatchObject([
+			{ rule: 'demon-dead', holds: [{ rule: 'death-passes', seats: [seats[5]] }] }
+		]);
 	});
 
 	it('offers the star pass to the living Minions, the Scarlet Woman first', () => {
@@ -248,7 +262,7 @@ describe('Fang Gu (https://wiki.bloodontheclocktower.com/Fang_Gu)', () => {
 	it('dying by its own kill with an Outsider alive: the Outsider may become the Fang Gu', () => {
 		const { ends: e, seats } = ends(cast, [dead(5, 'fanggu')]);
 		expect(e).toMatchObject([
-			{ rule: 'demon-dead', holds: [{ rule: 'fang-gu', seats: [seats[3]] }] }
+			{ rule: 'demon-dead', holds: [{ rule: 'death-passes', seats: [seats[3]] }] }
 		]);
 	});
 
@@ -263,24 +277,24 @@ describe('Mastermind (https://wiki.bloodontheclocktower.com/Mastermind)', () => 
 
 	it('Demon executed: play one more day', () => {
 		const e = ends(cast, [newDay, execute(5)]).ends;
-		expect(e).toMatchObject([{ rule: 'demon-dead', holds: [{ rule: 'mastermind' }] }]);
+		expect(e).toMatchObject([{ rule: 'demon-dead', holds: [{ rule: 'extra-day' }] }]);
 	});
 
 	it('a good player executed on the extra day: evil wins', () => {
 		const e = ends(cast, [newDay, execute(5), newDay, execute(0)]).ends;
-		expect(e).toMatchObject([{ rule: 'mastermind', winner: 'evil', day: 2 }]);
+		expect(e).toMatchObject([{ rule: 'extra-day', winner: 'evil', day: 2 }]);
 	});
 
 	it('an evil player executed on the extra day: good wins', () => {
 		const e = ends(cast, [newDay, execute(5), newDay, execute(4)]).ends;
-		expect(e).toMatchObject([{ rule: 'mastermind', winner: 'good' }]);
+		expect(e).toMatchObject([{ rule: 'extra-day', winner: 'good' }]);
 	});
 
 	it('nobody executed on the extra day: good wins', () => {
 		const steps = [newDay, execute(5), newDay];
-		expect(ends(cast, steps).ends).toMatchObject([{ holds: [{ rule: 'mastermind' }] }]);
+		expect(ends(cast, steps).ends).toMatchObject([{ holds: [{ rule: 'extra-day' }] }]);
 		expect(ends(cast, steps, { dayEnded: true }).ends).toMatchObject([
-			{ rule: 'mastermind', winner: 'good', seats: [] }
+			{ rule: 'extra-day', winner: 'good', seats: [] }
 		]);
 	});
 
@@ -294,9 +308,11 @@ describe('Vortox (https://wiki.bloodontheclocktower.com/Vortox)', () => {
 
 	it('a day with no execution: evil wins', () => {
 		expect(ends(cast, [newDay, newDay]).ends).toMatchObject([
-			{ rule: 'vortox', winner: 'evil', day: 1 }
+			{ rule: 'day-without-execution', winner: 'evil', day: 1 }
 		]);
-		expect(ends(cast, [newDay], { dayEnded: true }).ends).toMatchObject([{ rule: 'vortox' }]);
+		expect(ends(cast, [newDay], { dayEnded: true }).ends).toMatchObject([
+			{ rule: 'day-without-execution' }
+		]);
 	});
 
 	it('an execution that day: the game goes on', () => {
@@ -307,7 +323,7 @@ describe('Vortox (https://wiki.bloodontheclocktower.com/Vortox)', () => {
 	it('an exile is not an execution', () => {
 		const traveller = [...cast, 'gunslinger'];
 		const steps = [align(6, 'good'), newDay, exile(6), newDay];
-		expect(ends(traveller, steps).ends).toMatchObject([{ rule: 'vortox' }]);
+		expect(ends(traveller, steps).ends).toMatchObject([{ rule: 'day-without-execution' }]);
 	});
 });
 
@@ -318,7 +334,7 @@ describe('Mayor (https://wiki.bloodontheclocktower.com/Mayor)', () => {
 	it('3 alive and no execution at dusk: the Mayor’s team wins', () => {
 		expect(ends(cast, three).ends).toEqual([]);
 		expect(ends(cast, three, { dayEnded: true }).ends).toMatchObject([
-			{ rule: 'mayor', winner: 'good', day: 1 }
+			{ rule: 'alive-at-dusk', winner: 'good', day: 1 }
 		]);
 	});
 
@@ -340,7 +356,7 @@ describe('Leviathan (https://wiki.bloodontheclocktower.com/Leviathan)', () => {
 		expect(ends(cast, [newDay, execute(0)]).ends).toEqual([]);
 		const { ends: e, seats } = ends(cast, [newDay, execute(0), newDay, execute(1)]);
 		expect(e).toMatchObject([
-			{ rule: 'leviathan-executions', winner: 'evil', seats: [seats[0], seats[1]] }
+			{ rule: 'executions-of-alignment', winner: 'evil', seats: [seats[0], seats[1]] }
 		]);
 	});
 
@@ -352,9 +368,9 @@ describe('Leviathan (https://wiki.bloodontheclocktower.com/Leviathan)', () => {
 		const five = [newDay, newDay, newDay, newDay, newDay];
 		expect(ends(cast, five).ends).toEqual([]);
 		expect(ends(cast, five, { dayEnded: true }).ends).toMatchObject([
-			{ rule: 'leviathan-day-5', winner: 'evil', day: 5 }
+			{ rule: 'survives-day', winner: 'evil', day: 5 }
 		]);
-		expect(ends(cast, [...five, newDay]).ends).toMatchObject([{ rule: 'leviathan-day-5' }]);
+		expect(ends(cast, [...five, newDay]).ends).toMatchObject([{ rule: 'survives-day' }]);
 	});
 });
 
@@ -364,7 +380,7 @@ describe('Fearmonger (https://wiki.bloodontheclocktower.com/Fearmonger)', () => 
 
 	it('nominates and executes the chosen player: their team loses', () => {
 		const e = ends(cast, [fear, newDay, nominate(4, 1), execute(1)]).ends;
-		expect(e).toMatchObject([{ rule: 'fearmonger', winner: 'evil' }]);
+		expect(e).toMatchObject([{ rule: 'nominated-marked-executed', winner: 'evil' }]);
 	});
 
 	it("someone else's nominee executed: no win", () => {
@@ -376,7 +392,7 @@ describe('Fearmonger (https://wiki.bloodontheclocktower.com/Fearmonger)', () => 
 		// The Imp dying wins it for good too; both are listed.
 		expect(ends(cast, steps).ends.map((e) => [e.rule, e.winner])).toEqual([
 			['demon-dead', 'good'],
-			['fearmonger', 'good']
+			['nominated-marked-executed', 'good']
 		]);
 	});
 });
@@ -390,7 +406,7 @@ describe('Summoner (https://wiki.bloodontheclocktower.com/Summoner)', () => {
 
 	it('the Summoner dies before summoning: good wins', () => {
 		expect(ends(cast, [newDay, execute(4)]).ends).toMatchObject([
-			{ rule: 'summoner', winner: 'good' }
+			{ rule: 'dead-without-demon', winner: 'good' }
 		]);
 	});
 });
@@ -401,7 +417,11 @@ describe('Heretic (https://wiki.bloodontheclocktower.com/Heretic)', () => {
 	it('flips the result, even when dead', () => {
 		const { ends: e, seats } = ends(cast, [dead(2), execute(1)]);
 		expect(e).toMatchObject([
-			{ rule: 'saint', winner: 'good', flippedBy: { characterId: 'heretic', seatId: seats[2] } }
+			{
+				rule: 'executed-loses',
+				winner: 'good',
+				flippedBy: { characterId: 'heretic', seatId: seats[2] }
+			}
 		]);
 		expect(suggestedWinner(e)).toBe('good');
 	});
@@ -439,7 +459,7 @@ describe('Binary Supernovae (https://beardytas.com/garden-of-djinn/binary-supern
 		const cast = ['washerwoman', 'chef', 'empath', 'monk', 'mastermind', 'imp', 'imp'];
 		const e = ends(cast, [execute(5)], rule).ends;
 		expect(e.find((x) => x.rule === 'demon-executed')?.holds).toMatchObject([
-			{ rule: 'mastermind' }
+			{ rule: 'extra-day' }
 		]);
 		expect(promptable(e).some((x) => x.rule === 'demon-executed')).toBe(false);
 	});
@@ -465,6 +485,68 @@ describe('promptable', () => {
 		const held = ends(cast, [newDay, execute(5)]).ends;
 		expect(promptable(held)).toEqual([]);
 		const both = ends(cast, [newDay, execute(5), dead(1, 'execution')]).ends;
-		expect(promptable(both).map((e) => e.rule)).toEqual(['saint']);
+		expect(promptable(both).map((e) => e.rule)).toEqual(['executed-loses']);
+	});
+});
+
+describe('custom characters', () => {
+	function custom(raw: Record<string, unknown>, cast: string[], ...steps: Step[]) {
+		const issues = new Issues();
+		const character = parseCharacter(raw, '[0]', issues, { strict: false, scriptFields: true });
+		expect(issues.list).toEqual([]);
+		const all = new Map([...characters, [character!.id, character!]]);
+		const created = newGame(cast.length, { ctx: testContext({ characters: all }) });
+		const { ctx, seats } = created;
+		const session = run(
+			created.session,
+			ctx,
+			...cast.map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			})),
+			...steps.map((step) => (typeof step === 'function' ? step(seats) : step))
+		);
+		return { game: session.game, seats, all };
+	}
+
+	// A homebrew Outsider whose execution loses the game for its team, as the Saint's does
+	// (https://wiki.bloodontheclocktower.com/Saint).
+	it('end the game through their rules block', () => {
+		const martyr = {
+			id: 'martyr',
+			name: 'Martyr',
+			team: 'outsider',
+			ability: 'If you die by execution, your team loses.',
+			rules: { gameEnd: { ends: [{ kind: 'executed-loses' }] } }
+		};
+		const { game, seats, all } = custom(martyr, ['martyr', 'chef', 'empath', 'imp'], execute(0));
+		expect(gameEnds(game, all)).toMatchObject([
+			{ rule: 'executed-loses', characterId: 'martyr', winner: 'evil', seats: [seats[0]] }
+		]);
+	});
+
+	// A homebrew Townsfolk that turns the result round, as the Heretic does
+	// (https://wiki.bloodontheclocktower.com/Heretic).
+	it('invert the winner through their rules block', () => {
+		const contrarian = {
+			id: 'contrarian',
+			name: 'Contrarian',
+			team: 'townsfolk',
+			ability: 'Whoever wins, loses.',
+			rules: { gameEnd: { invertWinner: true } }
+		};
+		const { game, seats, all } = custom(
+			contrarian,
+			['contrarian', 'chef', 'empath', 'imp'],
+			execute(3)
+		);
+		expect(gameEnds(game, all)).toMatchObject([
+			{
+				rule: 'demon-dead',
+				winner: 'evil',
+				flippedBy: { characterId: 'contrarian', seatId: seats[0] }
+			}
+		]);
 	});
 });

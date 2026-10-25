@@ -34,11 +34,15 @@
 	const groups = $derived(reminderGroups(grimoire.game, characters));
 	// Each token can be placed once unless the game gives more copies; used-up ones stay in
 	// place, disabled, so nothing moves.
-	const left = $derived(reminderCopiesLeft(grimoire.game, characters, grimoire.copies));
+	const left = $derived(
+		reminderCopiesLeft(grimoire.game, characters, grimoire.copies, grimoire.bankCopies)
+	);
 	const usedUp = (reminder: Reminder) => (left.get(reminderKey(reminder)) ?? 1) <= 0;
 	// Several copies of one token are shown one by one, or as one token with a count when the
 	// Storyteller turns on "Stack duplicate reminders" (Trevor, 2026-10-16).
-	const total = $derived(reminderCopies(grimoire.game, characters, grimoire.copies));
+	const total = $derived(
+		reminderCopies(grimoire.game, characters, grimoire.copies, grimoire.bankCopies)
+	);
 	const stack = $derived(preferences.current.assistance.stackReminders);
 	/** This seat's reminders, by key: tapping one of these takes it off (Trevor, 2026-10-16). */
 	const here = $derived.by(() => {
@@ -146,7 +150,8 @@
 	 * a dashed edge; it can still be placed, and the board then says why (warn, never lock).
 	 */
 	const misfit = (reminder: Reminder) =>
-		seatId !== undefined && seatMisses(grimoire.game, reminder, seatId, characters).length > 0;
+		seatId !== undefined &&
+		seatMisses(grimoire.game, reminder, seatId, characters, grimoire.atDawn).length > 0;
 </script>
 
 <Dialog bind:open title={`Reminders for ${title}`} size="full">

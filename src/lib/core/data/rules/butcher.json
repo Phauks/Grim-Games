@@ -1,0 +1,21 @@
+{
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may nominate again"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "execution"
+	}
+}

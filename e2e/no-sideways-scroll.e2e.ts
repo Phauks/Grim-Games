@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // Trevor (2026-10-16): no horizontal scrolling on mobile. Every route, at the narrowest phone
 // widths, with the smallest and the largest text, icon, token and reminder sizes.
@@ -14,6 +15,7 @@ const STATIC_ROUTES = [
 	'/new',
 	'/games',
 	'/changelog',
+	'/roadmap',
 	'/privacy',
 	'/reference',
 	'/scripts',
@@ -73,7 +75,7 @@ async function startGame(page: Page): Promise<string> {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	return new URL(page.url()).pathname;
 }
 

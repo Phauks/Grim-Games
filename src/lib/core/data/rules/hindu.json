@@ -1,0 +1,23 @@
+{
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is in play"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "reincarnation"
+	}
+}

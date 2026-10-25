@@ -37,6 +37,8 @@
 		travellers?: readonly TravellerInPlay[];
 		/** False leaves the Jinxes section out (a printed sheet without them). */
 		showJinxes?: boolean;
+		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
+		showBreakdown?: boolean;
 		/** Overrides the reader's density setting (printing picks whatever fits one page). */
 		density?: SheetDensity;
 	}
@@ -49,6 +51,7 @@
 		inPlay,
 		travellers,
 		showJinxes = true,
+		showBreakdown = true,
 		density: fixed
 	}: Props = $props();
 	const playing = $derived(
@@ -100,9 +103,12 @@
 				>
 					{#each partners as p (p.id)}
 						{@const src = iconUrl(p)}
-						{#if src}<img {src} alt="" {@attach iconFallback(fallbackIconUrl(p))} />{:else}<span
-								class="dot"
-							></span>{/if}
+						{#if src}<img
+								{src}
+								alt=""
+								referrerpolicy="no-referrer"
+								{@attach iconFallback(fallbackIconUrl(p))}
+							/>{:else}<span class="dot"></span>{/if}
 					{/each}
 				</button>
 			{/if}
@@ -183,7 +189,7 @@
 			jinxes.length
 		)}{/if}
 
-	{#if !flat}
+	{#if !flat && showBreakdown}
 		{#snippet breakdown()}<PlayerCounts
 				{players}
 				maxPlayers={scriptMaxPlayers(characters)}
@@ -208,6 +214,13 @@
 		/* minmax(0, …) lets the wide Players table scroll inside its section on phones. */
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-4);
+	}
+	/* A line across the whole sheet where one character type gives way to the next (Trevor,
+	   2026-10-23: "a line that covers the screen to show the delineation"), on screen and in
+	   print. */
+	.sheet > :global(section + section) {
+		padding-top: var(--space-3);
+		border-top: var(--card-border);
 	}
 	ul {
 		display: grid;

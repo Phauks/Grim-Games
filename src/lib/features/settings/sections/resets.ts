@@ -39,27 +39,42 @@ export const resets = {
 	icons: () => preferences.update(pick('iconSet', 'iconOverrides', 'iconScale')),
 	board: () => {
 		preferences.update({ assistance: assistanceWith(STORYTELLER_GROUPS.board) });
-		boardLooks.update(DEFAULT_BOARD_LOOKS);
+		// The player name badge is set in Tokens (Trevor, 2026-10-20), so it keeps its looks.
+		const { nameSize, nameOffset } = boardLooks.current;
+		boardLooks.update({ ...DEFAULT_BOARD_LOOKS, nameSize, nameOffset });
 		stepFocus.update(DEFAULT_STEP_FOCUS);
 	},
-	tokens: () =>
+	tokens: () => {
 		preferences.update({
 			...pick('tokenAppearance', 'characterIconScale'),
 			fonts: fontsWithout(TOKEN_FONT_ROLES)
-		}),
+		});
+		boardLooks.update({
+			nameSize: DEFAULT_BOARD_LOOKS.nameSize,
+			nameOffset: DEFAULT_BOARD_LOOKS.nameOffset
+		});
+	},
 	assistance: () =>
 		preferences.update({
 			...pick(
 				'tileFace',
+				'tileOrderRandom',
 				'requireName',
 				'holdToReveal',
+				'slotMachine',
 				'ownWording',
 				'hideWatchLink',
 				'timerSound',
 				'timerMode',
 				'timerVibrate',
 				'timerKeepAwake',
-				'timerPerPlayer'
+				'timerPerPlayer',
+				'qrCentre',
+				'qrPictureWhole',
+				'qrPictureZoom',
+				'qrPictureCorners',
+				'qrModules',
+				'qrFinders'
 			),
 			assistance: assistanceWith([...STORYTELLER_GROUPS.night, ...STORYTELLER_GROUPS.day])
 		})

@@ -16,6 +16,12 @@ describe('board looks', () => {
 				nameOffset: 1,
 				reminders: 'free',
 				usedGhostVote: 'struck',
+				defaultFrame: 'laurel',
+				holdLights: 'seat',
+				// Every reminder is always on the board now (Trevor, 2026-10-23).
+				reminderStacks: true,
+				// A dragged reminder no longer names its source (Trevor, 2026-10-24).
+				dragSource: 'bank',
 				// The script's name is only in the lower left corner now (Trevor, 2026-10-18).
 				titleAt: 'corner'
 			})
@@ -29,7 +35,9 @@ describe('board looks', () => {
 			nameSize: 1.6,
 			nameOffset: 0.3,
 			reminders: 'free',
-			usedGhostVote: 'struck'
+			usedGhostVote: 'struck',
+			defaultFrame: 'laurel',
+			holdLights: 'seat'
 		});
 		expect(
 			parseBoardLooks({
@@ -40,6 +48,10 @@ describe('board looks', () => {
 				nameOffset: -1,
 				reminders: 'x',
 				usedGhostVote: 'x',
+				defaultFrame: 'gilded',
+				dragSource: 'x',
+				holdLights: 'x',
+				reminderStacks: 'yes',
 				titleAt: 'x'
 			})
 		).toEqual(DEFAULT_BOARD_LOOKS);

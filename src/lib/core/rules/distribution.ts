@@ -9,9 +9,9 @@
  * players from 10, and Outsiders cycling 0, 1, 2 within each band of three.
  */
 
-/** The character types dealt from the bag. */
-export const SEATED_TYPES = ['townsfolk', 'outsider', 'minion', 'demon'] as const;
-export type SeatedType = (typeof SEATED_TYPES)[number];
+import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
+
+export { SEATED_TYPES, type SeatedType };
 export type TypeCounts = Record<SeatedType, number>;
 
 export const MIN_PLAYERS = 5;

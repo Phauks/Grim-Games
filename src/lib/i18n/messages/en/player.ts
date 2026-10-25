@@ -10,16 +10,22 @@ export const player = {
 	'player.tab.night': 'Night',
 	'player.tab.grim': 'Grim',
 	'player.tab.notes': 'Notes',
-	'player.tab.room': 'Room',
-	'player.shareRoom': 'Share room',
 	'player.leaveTitle': 'Leave the script?',
 	'player.leaveBody': 'Your notes, scratch pads and guesses stay on this device.',
 	'player.grim.you': 'you',
 	'player.grim.dead': 'dead',
 	'player.grim.voteUnused': 'ghost vote not used',
 	'player.grim.voteUsed': 'ghost vote used',
+	'player.grim.votes': {
+		one: '{count} vote per nomination',
+		other: '{count} votes per nomination'
+	},
 	'player.grim.traveller': 'Traveller: {name}',
 	'player.grim.guess': 'your guess: {name}',
+	'player.grim.generic': 'Guess a type or alignment',
+	'player.grim.hasNote': 'your note',
+	'player.grim.noteTitle': 'Note: {name}',
+	'player.seatNotes': 'Players',
 	'player.sharedLinkFailed': 'Could not open the shared script',
 	'player.cannotSave': 'This browser cannot save',
 	'player.cannotSaveDetail': 'Notes are lost when the page closes.',
@@ -50,6 +56,13 @@ export const player = {
 	'player.delete': 'Delete',
 
 	'player.density': 'Script sheet layout',
+	'player.lightSheet': 'Light background',
+	'player.frame': 'Your frame',
+	'player.avatar': 'Initials on your seat',
+	'player.guessesOnTokens': 'Guesses over avatars',
+	'player.guessesOnTokensDetail':
+		"Your guess of a seat's character shows on its token in place of the player's avatar.",
+	'player.frameStoryteller': "Storyteller's choice",
 	'player.densityDetail':
 		"How tightly the Script sheet is laid out for you, on screen and in print. Applies to the player view and the Storyteller's copy of the script.",
 	'player.density.normal': 'Normal',

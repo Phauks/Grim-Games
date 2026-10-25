@@ -1,0 +1,43 @@
+{
+	"kills": {
+		"by": "other"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The Harlot and the player they visited, if that player agreed and the Storyteller kills both."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

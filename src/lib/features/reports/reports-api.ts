@@ -1,8 +1,6 @@
 import {
-	REPORTS_ADMINS_API,
 	REPORTS_API,
-	type Admin,
-	type AdminList,
+	reportScriptPath,
 	type CreatedReport,
 	type ReportDraft,
 	type ReportList,
@@ -51,29 +49,10 @@ export async function deleteReport(id: number) {
 	if (!response.ok) throw new Error(await response.text());
 }
 
-export async function listAdmins(): Promise<Admin[]> {
-	const response = await fetch(REPORTS_ADMINS_API);
+/** The script a report was sent with, as TPI's JSON; undefined when there is none to show. */
+export async function fetchReportScript(id: number): Promise<unknown[] | undefined> {
+	const response = await fetch(reportScriptPath(id));
+	if (response.status === 404) return undefined;
 	if (!response.ok) throw new Error(await response.text());
-	return ((await response.json()) as AdminList).admins;
-}
-
-/** False when nobody has signed in with that email yet. */
-export async function addAdmin(email: string): Promise<boolean> {
-	const response = await fetch(REPORTS_ADMINS_API, {
-		method: 'POST',
-		headers: json,
-		body: JSON.stringify({ email })
-	});
-	if (response.status === 404) return false;
-	if (!response.ok) throw new Error(await response.text());
-	return true;
-}
-
-export async function removeAdmin(id: string) {
-	const response = await fetch(REPORTS_ADMINS_API, {
-		method: 'DELETE',
-		headers: json,
-		body: JSON.stringify({ id })
-	});
-	if (!response.ok) throw new Error(await response.text());
+	return (await response.json()) as unknown[];
 }

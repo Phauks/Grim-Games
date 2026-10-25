@@ -1,0 +1,59 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"1": {
+			"seat": "any",
+			"note": "The first player the Al-Hadikhia chooses tonight."
+		},
+		"2": {
+			"seat": "any",
+			"note": "The second player chosen tonight."
+		},
+		"3": {
+			"seat": "any",
+			"note": "The third player chosen tonight."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night kills"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "1",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "2",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "3",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

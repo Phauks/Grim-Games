@@ -1,0 +1,11 @@
+{
+	"learns": {
+		"measure": "evil-alive-neighbours"
+	},
+	"dayReminders": {
+		"none": "night info"
+	},
+	"deathCause": {
+		"none": "info"
+	}
+}

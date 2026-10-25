@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 test('an info token is shown full screen and only the close button hides it', async ({ page }) => {
 	await page.goto('/info-tokens');
@@ -38,7 +39,7 @@ test('a shown token fits the screen at any token size', async ({ page }) => {
 	// Trevor (2026-10-19): at 150% the Sweetheart ran off the phone. Token size is for the board
 	// only now, so the player's view fits the token to the screen at the largest size too.
 	await page.goto('/info-tokens');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -166,6 +167,40 @@ test('the Storyteller sets the 3 Demon bluffs at once and shows them as a list',
 	await expect(shown).toContainText('Each night*, choose a player');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Demon bluffs' })).toBeVisible();
+});
+
+test('the bluff picker puts the chosen places beside the list when there is room', async ({
+	page
+}) => {
+	// Trevor, 2026-10-22: two columns on tablets and wider, chosen on the left; phones keep one.
+	await page.goto('/spikes/bluffs');
+	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
+	await page.getByRole('button', { name: 'Choose' }).tap();
+	await expect(choice(page, 'Monk')).toBeVisible();
+	// Measured before anything scrolls: the chosen places stay pinned over a scrolled list.
+	const chosen = (await page.getByRole('list', { name: 'Chosen' }).boundingBox())!;
+	const list = (await page.getByRole('group', { name: 'Bluff characters' }).boundingBox())!;
+	// Two columns once the sheet is 36rem wide (576 CSS pixels at the default text size).
+	if (list.x + list.width - chosen.x >= 576) {
+		expect(chosen.x + chosen.width).toBeLessThanOrEqual(list.x);
+		expect(chosen.y).toBeLessThan(list.y + list.height);
+	} else {
+		expect(chosen.y + chosen.height).toBeLessThanOrEqual(list.y);
+	}
+	expect(page.viewportSize()!.width >= 600).toBe(chosen.x + chosen.width <= list.x);
+	await choice(page, 'Monk').tap();
+	// Choosing still never pushes anything.
+	const before = (await page.getByRole('list', { name: 'Chosen' }).boundingBox())!.height;
+	await choice(page, 'Saint').tap();
+	expect((await page.getByRole('list', { name: 'Chosen' }).boundingBox())!.height).toBeCloseTo(
+		before,
+		0
+	);
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+		)
+	).toBe(true);
 });
 
 test("characters in play are marked for the Demon's bluffs, but the Drunk's Townsfolk is not", async ({

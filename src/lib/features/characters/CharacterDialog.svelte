@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { wikiUrl, type Character } from '#lib/core/data/index.ts';
+	import { wikiUrl, type Alignment, type Character } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { clearTermHandler } from '#lib/features/glossary/term-handler.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -26,9 +26,11 @@
 		 * header's link in its place.
 		 */
 		sourcePage?: string;
+		/** The seat it was opened from (CharacterSummary). */
+		seat?: { number: number; alignment?: Alignment };
 	}
 
-	let { open = $bindable(false), character, icon: given, sourcePage }: Props = $props();
+	let { open = $bindable(false), character, icon: given, sourcePage, seat }: Props = $props();
 	// Terms here open their popover, even when these details were opened from the Glossary.
 	clearTermHandler();
 	// Its own badge in the text draws the eye back to the summary at the top (Trevor, 2026-10-20).
@@ -171,7 +173,7 @@
 			if (event.target === event.currentTarget) pulse = false;
 		}}
 	>
-		<CharacterSummary {character} icon={given} />
+		<CharacterSummary {character} icon={given} {seat} />
 	</div>
 	<ContentsLayout
 		label={t('characters.moreFromWiki')}
@@ -273,15 +275,17 @@
 	.own[data-pulse] {
 		animation: own-pulse 0.9s ease-out;
 	}
+	/* Drawn inside the box, so the dialog's edges never clip it (Trevor, 2026-10-24: only the
+	   bottom and corners showed). */
 	@keyframes own-pulse {
 		0%,
 		30% {
 			background-color: var(--surface-selected);
-			box-shadow: 0 0 0 calc(0.15 * var(--u)) var(--accent);
+			box-shadow: inset 0 0 0 calc(0.15 * var(--u)) var(--accent);
 		}
 		100% {
 			background-color: transparent;
-			box-shadow: 0 0 0 calc(0.15 * var(--u)) transparent;
+			box-shadow: inset 0 0 0 calc(0.15 * var(--u)) transparent;
 		}
 	}
 </style>

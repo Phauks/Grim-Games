@@ -1,0 +1,42 @@
+{
+	"reminderTargets": {
+		"Correct": {
+			"seat": "self",
+			"note": "On the Juggler, one per correct guess."
+		}
+	},
+	"answers": {
+		"question": "correct-guesses"
+	},
+	"dayClaim": "guesses",
+	"guessLimit": 5,
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may juggle"
+					}
+				],
+				"when": {
+					"noReminder": "Correct"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["Correct"],
+		"why": "The guesses are made once, on the first day."
+	}
+}

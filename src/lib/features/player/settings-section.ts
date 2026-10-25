@@ -9,6 +9,14 @@ registerSettingsSection({
 	label: 'Player',
 	icon: 'notes',
 	component: PlayerSettingsSection,
-	reset: () => playerSettings.update({ density: 'normal', print: PRINT_DEFAULTS }),
+	reset: () =>
+		playerSettings.update({
+			density: 'normal',
+			print: PRINT_DEFAULTS,
+			frame: undefined,
+			avatar: 'initials',
+			guessesOnTokens: false,
+			lightSheet: false
+		}),
 	order: 37
 });

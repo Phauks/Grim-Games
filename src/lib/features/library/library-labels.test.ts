@@ -7,6 +7,7 @@ import {
 	filterLibrary,
 	folderPath,
 	folderTree,
+	freeName,
 	labelsFor,
 	labelUses,
 	labelsToOffer,
@@ -53,6 +54,14 @@ describe('labels', () => {
 		expect(addLabel(s, 'tags', '   ', 'c')).toBe(s);
 		s = addLabel(s, 'folders', 'Stupid fun', 'f');
 		expect(s.folders).toHaveLength(1);
+	});
+
+	it('names a new folder "New folder", numbered past the names taken', () => {
+		let s = emptyLabels();
+		expect(freeName(s.folders, 'New folder')).toBe('New folder');
+		s = addLabel(s, 'folders', 'new FOLDER', 'a');
+		s = addLabel(s, 'folders', 'New folder 2', 'b');
+		expect(freeName(s.folders, 'New folder')).toBe('New folder 3');
 	});
 
 	it('renames, keeping the name free', () => {

@@ -1,0 +1,65 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"seat": "any",
+			"alignment": "good",
+			"note": "The one good player who learns a Widow is in play."
+		},
+		"Poisoned": {
+			"seat": "any",
+			"note": "Any player the Widow poisons, possibly the Widow itself."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Know",
+				"text": "Choose a good player who will learn a Widow is in play: put [Know] on them",
+				"target": {
+					"choose": "good",
+					"choice": "a good player"
+				},
+				"reason": "This good player learns a Widow is in play"
+			}
+		]
+	},
+	"dayReminders": {
+		"none": "first-night action"
+	},
+	"deathCause": {
+		"none": "poisons; info"
+	},
+	"reminderMovement": {
+		"fixed": ["Poisoned", "Know"],
+		"why": "The Widow poisons once, on the first night, and one good player learns of her."
+	},
+	"reminderPlaceholders": {
+		"note": "The Widow poisons a player; one good player learns a Widow is in play.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Know",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "Show the Grimoire for as long as the Widow needs. The Widow chooses a player: mark them *POISONED*. Choose a good player: mark them *KNOW*. Put the Widow to sleep, wake the *KNOW* player and show them the Widow token.",
+				"reason": "Says which token goes on whom, in the order they are placed."
+			}
+		}
+	}
+}

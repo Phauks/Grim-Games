@@ -9,9 +9,11 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { untrack } from 'svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import { pastNames, suggestNames } from '#lib/features/grimoire/device-notes.ts';
+	import { reelsMove, spinReel } from './reel.ts';
 
 	interface Props {
 		open: boolean;
@@ -39,6 +41,16 @@
 		 * finger, mouse button or Space is held on it, so a neighbour can't glance at it.
 		 */
 		holdToReveal?: boolean;
+		/**
+		 * The slot machine reveal (Trevor, 2026-10-22, a Bag draw setting): the token first
+		 * spins through these characters, then stops on the player's. Purely visual.
+		 */
+		reel?: readonly Character[];
+		/**
+		 * Closing the reveal once the character was seen confirms it (Trevor, 2026-10-22: no
+		 * "held" after a player has seen their character, so nobody else can take it back).
+		 */
+		confirmOnClose?: boolean;
 		onConfirm: (details: { playerName: string; alignment?: Alignment }) => void;
 	}
 
@@ -52,6 +64,8 @@
 		taken = [],
 		pair,
 		holdToReveal = false,
+		reel = [],
+		confirmOnClose = false,
 		onConfirm
 	}: Props = $props();
 	const faces = $derived(
@@ -85,8 +99,35 @@
 			seen = false;
 		}
 	});
-	const visible = $derived(revealed && (!holdToReveal || held));
-	const canConfirm = $derived(revealed && (!holdToReveal || seen));
+	/** The reel's character while it spins; undefined once it has stopped on the player's. */
+	let spinning = $state<Character>();
+	let spun = false;
+	let cancelReel = () => {};
+	function stopReel() {
+		cancelReel();
+		spinning = undefined;
+	}
+	function spin() {
+		spun = true;
+		if (reel.length < 2 || pair || !reelsMove()) return;
+		cancelReel = spinReel(reel, (character) => (spinning = character), stopReel);
+	}
+	const shown = $derived(revealed && (!holdToReveal || held));
+	$effect(() => {
+		if (!open) {
+			spun = false;
+			stopReel();
+		} else if (shown && !spun && reel.length > 0) untrack(spin);
+	});
+	/** The character itself shows once the reel has stopped. */
+	const visible = $derived(shown && !spinning);
+	/** The character has been seen in this reveal (not just the spinning reel). */
+	let shownOnce = false;
+	$effect(() => {
+		if (!open) return;
+		if (visible) shownOnce = true;
+	});
+	const canConfirm = $derived(revealed && (!holdToReveal || seen) && !spinning);
 	function hold(on: boolean) {
 		held = on;
 		if (on) seen = true;
@@ -96,10 +137,25 @@
 		if (document.visibilityState !== 'visible') held = false;
 	}
 
+	/** Set once this reveal is confirmed, so closing it doesn't confirm it again. */
+	let confirmed = false;
 	function confirm() {
+		confirmed = true;
 		pastNames.remember(name);
 		onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) });
 	}
+	// Closed with X, Escape or a tap outside: confirmed if the character was seen.
+	let wasOpen = false;
+	$effect(() => {
+		if (open) {
+			wasOpen = true;
+			confirmed = false;
+			if (!untrack(() => visible)) shownOnce = false;
+		} else if (wasOpen) {
+			wasOpen = false;
+			if (confirmOnClose && !confirmed && shownOnce) confirm();
+		}
+	});
 
 	// On a computer, Enter (outside a field or button) does the main action: Reveal, then Confirm.
 	function onWindowKey(event: KeyboardEvent) {
@@ -118,7 +174,8 @@
 
 <!--
 	The player's own reveal. A drawn tile is never put back (Trevor, 2026-10-15): closing the
-	reveal keeps it in the player's hand (the draw is saved) until it is confirmed.
+	reveal before the character was seen keeps it in the player's hand (the draw is saved);
+	with confirmOnClose, closing it after confirms it (Trevor, 2026-10-22).
 -->
 <Dialog bind:open title={t('setup.draw.tile', { number })} size="full">
 	<div class="reveal" data-testid="reveal">
@@ -165,14 +222,14 @@
 							oncontextmenu={(e) => e.preventDefault()}
 						>
 							{#if held}<CharacterToken
-									character={face.character}
+									character={spinning ?? face.character}
 									size={pair ? 120 : 160}
 								/>{:else}<span class="hidden-token">{t('setup.reveal.hold')}</span>{/if}
 						</button>
 					{:else}
-						<div class="token">
+						<div class="token" data-testid="reveal-token" data-spinning={spinning ? '' : undefined}>
 							{#if revealed}<CharacterToken
-									character={face.character}
+									character={spinning ?? face.character}
 									size={pair ? 120 : 160}
 								/>{:else}<span class="hidden-token" data-testid="reveal-locked"
 									>{t('setup.reveal.locked')}</span

@@ -23,23 +23,27 @@
 	}
 
 	let { src, fallback, label, leaves, size = 56, name, nightNumbers }: Props = $props();
+	// Settings > Tokens: the reminder leaves (on), the night leaves (on) and the setup flower
+	// (off) can be switched.
+	const appearance = $derived(preferences.current.tokenAppearance);
+	const shown = $derived({
+		...leaves,
+		...(appearance.reminderLeaves ? {} : { reminders: 0 }),
+		...(appearance.nightLeaves === 'off' ? { firstNight: false, otherNight: false } : {})
+	});
 	// Each badge sits on the middle of its leaf (the leaf runs from the rim inwards). The
 	// user's Night order badge size (--night-badge-scale) scales it about that point.
 	const badges = $derived(
 		[
-			{ night: 'first', x: 12.5, value: leaves.firstNight ? nightNumbers?.first : undefined },
-			{ night: 'other', x: 87.5, value: leaves.otherNight ? nightNumbers?.other : undefined }
+			{ night: 'first', x: 12.5, value: shown.firstNight ? nightNumbers?.first : undefined },
+			{ night: 'other', x: 87.5, value: shown.otherNight ? nightNumbers?.other : undefined }
 		].flatMap((b) =>
 			b.value === undefined
 				? []
 				: [{ ...b, text: String(b.value), width: Math.max(16, 7 + String(b.value).length * 6.5) }]
 		)
 	);
-	// Settings > Tokens: the reminder leaves (on) and the setup flower (off) can be switched.
-	const appearance = $derived(preferences.current.tokenAppearance);
-	const layout = $derived(
-		leafLayout(appearance.reminderLeaves ? leaves : { ...leaves, reminders: 0 })
-	);
+	const layout = $derived(leafLayout(shown));
 	const flower = $derived(appearance.setupFlower && !!leaves.setup);
 	// A leaf pointing up from (0,0) to (0,-19), with a midrib. Leaves hang from the rim of the
 	// face towards the middle, always inside the token (Trevor, 2026-10-15).
@@ -75,7 +79,7 @@
 
 <!-- Drawn at the size given: the Character token size setting only sizes the board's seats
      (Trevor, 2026-10-19), which pass it in. -->
-<span class="token" role="img" aria-label={label} style:--token-size="{size}px">
+<span class="token" data-token-face role="img" aria-label={label} style:--token-size="{size}px">
 	<svg viewBox="0 0 100 100" aria-hidden="true">
 		<circle class="face" cx="50" cy="50" r="48" />
 	</svg>
@@ -86,6 +90,7 @@
 			width={size}
 			height={size}
 			loading="lazy"
+			referrerpolicy="no-referrer"
 			{@attach iconFallback(fallback)}
 		/>{/if}
 	<!-- Leaves are drawn over the icon, so they always show. -->
@@ -193,12 +198,14 @@
 		stroke-width: 1;
 		opacity: 0.6;
 	}
+	/* Character icon size (Settings > Tokens) scales it about the middle. */
 	img {
 		position: absolute;
-		left: 13%;
-		top: 13%;
-		width: 74%;
-		height: 74%;
+		left: 50%;
+		top: 50%;
+		width: calc(74% * var(--token-icon, 1));
+		height: calc(74% * var(--token-icon, 1));
+		translate: -50% -50%;
 		object-fit: contain;
 	}
 	.name {

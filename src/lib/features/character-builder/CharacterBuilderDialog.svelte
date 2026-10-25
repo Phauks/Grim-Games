@@ -103,15 +103,22 @@
 	bind:open
 	title={savedId ? t('character-builder.editTitle') : t('character-builder.newTitle')}
 	size="max"
+	pinAside={false}
 	{beforeClose}
 >
-	<ErrorBoundary area="character-builder">
-		<div class="builder" data-testid="character-builder-dialog">
+	<!-- The preview beside the form once there is room, as on the page; above it on a phone,
+	     scrolling with it, as it is tall. -->
+	{#snippet aside()}
+		<ErrorBoundary area="character-builder">
 			<aside class="side">
 				<CharacterPreview fields={f} {problems}>
 					<CollectionField savedId={draft.current.editing} />
 				</CharacterPreview>
 			</aside>
+		</ErrorBoundary>
+	{/snippet}
+	<ErrorBoundary area="character-builder">
+		<div class="builder" data-testid="character-builder-dialog">
 			<CharacterForm {draft} {data} />
 		</div>
 	</ErrorBoundary>
@@ -130,24 +137,8 @@
 </ConfirmDialog>
 
 <style>
-	.builder {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-4);
-		align-items: start;
-	}
 	.side {
 		display: grid;
 		gap: var(--space-3);
-	}
-	/* Preview beside the form once there is room, as on the page. */
-	@media (min-width: 56rem) {
-		.builder {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-		}
-		.side {
-			position: sticky;
-			top: 0;
-		}
 	}
 </style>

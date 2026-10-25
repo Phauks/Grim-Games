@@ -1,5 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { pickScript, toBoard } from './new-game.ts';
+import { menuButton, theMenu } from './shell.ts';
 
 async function signIn(page: Page, email: string) {
 	await page.goto('/account');
@@ -28,12 +30,12 @@ function listedAdmin(testInfo: TestInfo, n: 1 | 2): string {
 	return `${testInfo.project.name}-admin-${n}@example.com`;
 }
 
-test('a report sent from the footer reaches the inbox, where it can be triaged and deleted', async ({
+test('a report sent from the menu reaches the inbox, where it can be triaged and deleted', async ({
 	page
 }, testInfo) => {
 	const title = `Enhancement ${Date.now()}`;
 	await page.goto('/');
-	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 	const form = page.getByRole('dialog', { name: 'Report' });
 
 	// Nothing is sent until Send, which waits for a title and a description.
@@ -79,7 +81,8 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await expect(report).toBeHidden();
 	await table.getByRole('button', { name: 'Filter Status (set)' }).tap();
 	const status = page.getByRole('dialog', { name: 'Filter Status' });
-	await status.getByLabel('New').uncheck();
+	// New may have no rows left: unticked, it leaves the list, so it is tapped, not unchecked.
+	await status.getByLabel('New').click();
 	await status.getByLabel('Accepted').check();
 	await status.getByRole('button', { name: 'Close' }).tap();
 	await expect(row).toBeVisible();
@@ -87,7 +90,7 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	// Still an admin after a reload; delete confirms first.
 	await page.reload();
 	await table.getByRole('button', { name: 'Filter Status (set)' }).tap();
-	await status.getByLabel('New').uncheck();
+	await status.getByLabel('New').click();
 	await status.getByRole('button', { name: 'Close' }).tap();
 	await row.getByRole('button', { name: title }).tap();
 	await page.getByRole('button', { name: 'Delete report' }).tap();
@@ -101,53 +104,21 @@ test('reading reports signed out is refused', async ({ request }) => {
 	expect(bad.status()).toBe(400);
 });
 
-test('an admin named in ADMIN_EMAILS adds and removes other admins', async ({
-	page,
-	browser
+test('an account in ADMIN_EMAILS is an admin, with nothing to manage on Reports', async ({
+	page
 }, testInfo) => {
-	const email = `admin-${Date.now()}@example.com`;
-	// The listed admin adds another from the Admins list. Only an existing account can be
-	// named: admins are stored by account id, so the email can change later.
+	// Admin is inherent by user type (Trevor, 2026-10-22): no Admins list, no Only mine.
 	await signIn(page, listedAdmin(testInfo, 2));
 	await expect(page.getByTestId('account-type')).toHaveText('Admin');
-	await page.goto('/reports');
-	await page.getByRole('button', { name: 'Admins' }).tap();
-	const admins = page.getByRole('dialog', { name: 'Admins' });
-	await admins.getByLabel('Add an admin by sign-in email').fill(email);
-	await admins.getByLabel('Add an admin by sign-in email').press('Enter');
-	await expect(admins.getByLabel('No account signs in with that email')).toBeVisible();
-
-	// On another device, that person signs in once.
-	const other = await browser.newContext();
-	const phone = await other.newPage();
-	await signIn(phone, email);
-	// New accounts get a word-chain id (five words joined by "-"); admins are stored by it.
-	const session = await phone.evaluate(async () => (await fetch('/api/auth/session')).json());
-	expect(session.user.id).toMatch(/^[a-z]+(-[a-z]+){4}$/);
-	await admins.getByLabel('No account signs in with that email').press('Enter');
-	await expect(admins.getByTestId('admins')).toContainText(email);
-	await expect(admins.getByLabel('Add an admin by sign-in email')).toHaveValue('');
-
-	// Their account is now an Admin, with Reports in the menu (Trevor, 2026-10-18).
-	await phone.goto('/account');
-	await expect(phone.getByTestId('account-type')).toHaveText('Admin');
-	await phone.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
-	await phone.getByRole('dialog', { name: APP_NAME }).getByRole('link', { name: 'Reports' }).tap();
-	await expect(phone).toHaveURL(/\/reports$/);
-
-	// Now their account triages reports too.
-	await phone.goto('/reports');
-	await expect(phone.getByTestId('reports')).toBeVisible();
-	await expect(phone.getByRole('button', { name: 'Admins' })).toBeVisible();
-
-	// Removing the admin closes the inbox to that account again.
-	await admins.getByRole('button', { name: `Remove admin ${email}` }).tap();
-	await expect(admins.getByTestId('admins')).not.toContainText(email);
-	// They still read reports, like any signed-in account, but no longer triage them.
-	await phone.reload();
-	await expect(phone.getByTestId('reports')).toBeVisible();
-	await expect(phone.getByRole('button', { name: 'Admins' })).toBeHidden();
-	await other.close();
+	// Admins have Reports in the menu (Trevor, 2026-10-18).
+	await menuButton(page).tap();
+	await page.getByRole('dialog', { name: APP_NAME }).getByRole('link', { name: 'Reports' }).tap();
+	await expect(page).toHaveURL(/\/reports$/);
+	await expect(page.getByTestId('reports')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Admins' })).toHaveCount(0);
+	await expect(page.getByText('Only mine', { exact: true })).toHaveCount(0);
+	// The old admin list API is gone.
+	expect((await page.request.get('/api/reports/admins')).status()).toBe(404);
 });
 
 test('a signed-in account that is not an admin reads reports but cannot triage them', async ({
@@ -159,7 +130,7 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	const title = `Signed in ${Date.now()}`;
 	await signIn(page, sender);
 	await page.goto('/');
-	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 	const form = page.getByRole('dialog', { name: 'Report' });
 	await form.getByRole('textbox', { name: 'Title' }).fill(title);
 	await form.getByRole('textbox', { name: 'Description' }).fill('The bag forgets the Drunk.');
@@ -173,7 +144,7 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	const reader = await other.newPage();
 	await signIn(reader, `reader-${Date.now()}@example.com`);
 	await expect(reader.getByTestId('account-type')).toHaveText('User');
-	await reader.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await menuButton(reader).tap();
 	const menu = reader.getByRole('dialog', { name: APP_NAME });
 	await expect(menu.getByRole('link', { name: 'Library' })).toBeVisible();
 	await expect(menu.getByRole('link', { name: 'Reports' })).toHaveCount(0);
@@ -195,10 +166,9 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	await expect(report.getByRole('combobox', { name: 'Status' })).toBeDisabled();
 	await expect(report.getByRole('button', { name: 'Delete report' })).toBeDisabled();
 	await report.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(reader.getByRole('button', { name: 'Admins' })).toBeHidden();
-	// Only mine: yourself as the reporter in one tap.
-	await reader.getByText('Only mine', { exact: true }).tap();
-	await expect(row).toBeHidden();
+	await expect(reader.getByRole('button', { name: 'Admins' })).toHaveCount(0);
+	// Yourself as the reporter: the Reporter column filters (Trevor, 2026-10-22).
+	await expect(table.getByRole('button', { name: 'Filter Reporter' })).toBeVisible();
 	expect((await reader.request.get('/api/reports/admins')).status()).toBe(404);
 	expect(
 		(
@@ -210,12 +180,49 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	).toBe(404);
 	await other.close();
 
-	// The sender sees it under Only mine, with what it was sent with.
+	// The sender sees it with what it was sent with.
 	await page.goto('/reports');
-	await page.getByText('Only mine', { exact: true }).tap();
 	const mine = page.getByTestId('reports').locator('tr', { hasText: title });
 	await mine.getByRole('button', { name: title }).tap();
 	await expect(page.getByRole('dialog', { name: new RegExp(title) })).toContainText(
 		'sender on Discord'
 	);
+});
+
+test('a report sent from the board carries its script, for its sender and the admins to open', async ({
+	page
+}) => {
+	// Trevor, 2026-10-22: "if submitting report from a script, we should include the script".
+	const title = `From a script ${Date.now()}`;
+	await signIn(page, `scripted-${Date.now()}@example.com`);
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	await expect(page.getByTestId('seat')).toHaveCount(8);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Report an issue' })
+		.tap();
+
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await form.getByRole('textbox', { name: 'Title' }).fill(title);
+	await form.getByRole('textbox', { name: 'Description' }).fill('The Chef counts wrong.');
+	await expect(form.getByLabel('Include the script')).toBeChecked();
+	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await expect(form.getByTestId('report-script')).toHaveText('Trouble Brewing');
+	await form.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(form.getByTestId('report-sent')).toBeVisible();
+	await form.getByRole('button', { name: 'Close' }).last().tap();
+
+	// Its sender opens the script from the report, as its JSON; the game itself never goes.
+	await page.goto('/reports');
+	const row = page.getByTestId('reports').locator('tr', { hasText: title });
+	await row.getByRole('button', { name: title }).tap();
+	const report = page.getByRole('dialog', { name: new RegExp(title) });
+	await report.getByRole('button', { name: 'Trouble Brewing' }).tap();
+	const json = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	await expect(json).toContainText('washerwoman');
+	await expect(json).not.toContainText('Seat');
 });

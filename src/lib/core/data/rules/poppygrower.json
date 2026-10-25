@@ -1,0 +1,23 @@
+{
+	"actsWhenDead": true,
+	"reminderTargets": {
+		"Evil Wakes": {
+			"seat": "self",
+			"life": "dead",
+			"note": "The Poppy Grower once they have died."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "changes evil info"
+	},
+	"deathCause": {
+		"none": "changes what evil learns"
+	},
+	"reminderMovement": {
+		"fixed": ["Evil Wakes"],
+		"why": "Marks this character’s own state, so it stays on its seat."
+	}
+}

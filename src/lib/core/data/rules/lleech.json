@@ -1,0 +1,83 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player the Lleech kills that night."
+		},
+		"Poisoned": {
+			"seat": "any",
+			"note": "The host the Lleech picks on the first night.",
+			"ambiguous": "The wiki says any player and doesn't say whether the Lleech may pick itself."
+		}
+	},
+	"gameEnd": {
+		"aliveWhileDead": {
+			"whileCarrierAlive": "Poisoned"
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has chosen"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Poisoned"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["Poisoned"],
+		"why": "The host is chosen once, on the first night."
+	},
+	"reminderPlaceholders": {
+		"note": "The host is poisoned; then the Lleech kills each night.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Poisoned",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Lleech chooses a player: mark them *POISONED*. They are the Lleech’s host.",
+				"reason": "Says the Poisoned token marks the host for the whole game."
+			}
+		}
+	}
+}

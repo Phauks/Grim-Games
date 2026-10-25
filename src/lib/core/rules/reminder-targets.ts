@@ -1,15 +1,18 @@
 /**
  * Valid targets for reminder tokens (Trevor, 2026-10-16): which seats a token may go on,
  * so the board can show fitting and unfitting players while the Storyteller places or
- * drags one. Curated per character in `reminder-targets.data.ts` from each character's
- * wiki page.
+ * drags one. Each character's rules block says where its tokens go (`reminderTargets`, see
+ * `data/target-rules.ts`): our `data/rules/<id>.json`, or a custom character's `rules`.
  *
  * This only suggests and warns: a token on an unfitting seat is never refused (the
  * Storyteller can override anything). Checks use the true character and the alignment the
- * rules use (`trueCharacter`, `alignmentOf`), never what a player registers as, because
- * misregistration is the Storyteller's call.
+ * rules use (`trueCharacter`, `alignmentOf`), because misregistration is the Storyteller's
+ * call, except where a rule says otherwise: info tokens, and a neighbour of a seat that may
+ * register as the Demon (the Marionette beside a Recluse; Trevor, 2026-10-23).
  */
-import type { CharacterId } from '#lib/core/data/types.ts';
+import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
+import type { NeighbourRule, TargetRule } from '#lib/core/data/target-rules.ts';
+import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	aliveNeighbours,
@@ -18,17 +21,21 @@ import {
 	trueCharacter,
 	typeOf
 } from '#lib/core/model/selectors.ts';
-import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
+import type { Game, Reminder, ReminderInstance, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
-import {
-	REMINDER_TARGETS,
-	type CharacterTargets,
-	type NeighbourRule,
-	type TargetRule
-} from './reminder-targets.data.ts';
 
-export { REMINDER_TARGETS };
-export type { CharacterTargets, NeighbourRule, TargetRule };
+export type { NeighbourRule, TargetRule };
+
+export interface CharacterTargets {
+	labels: Readonly<Record<ReminderLabel, TargetRule>>;
+}
+
+/** The official characters' token rules, by character id. */
+export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> = Object.fromEntries(
+	[...OFFICIAL_RULES].flatMap(([id, rules]) =>
+		rules.reminderTargets ? [[id, { labels: rules.reminderTargets }]] : []
+	)
+);
 
 /**
  * Why a seat doesn't fit a token's rule, one code per broken condition:
@@ -38,7 +45,9 @@ export type { CharacterTargets, NeighbourRule, TargetRule };
  *   of the token it was dealt, for `shown`), alignment, character, or alive/dead state is
  *   wrong;
  * - `neighbour`: not a neighbour as the rule counts them;
- * - `with-label` / `not-with-label`: missing, or already carrying, the owner's other token.
+ * - `with-label` / `not-with-label`: missing, or already carrying, the owner's other token;
+ * - `last-night`: the ability says "different to last night", and this player carried the
+ *   token at the latest dawn (or, for `type`, has that player's character type).
  */
 export type TargetMiss =
 	| 'global'
@@ -50,7 +59,8 @@ export type TargetMiss =
 	| 'life'
 	| 'neighbour'
 	| 'with-label'
-	| 'not-with-label';
+	| 'not-with-label'
+	| 'last-night';
 
 export interface TargetFit {
 	seatId: SeatId;
@@ -58,9 +68,26 @@ export interface TargetFit {
 	misses: TargetMiss[];
 }
 
-/** The curated rule for a token, or undefined for homebrew tokens and unlisted labels. */
-export function targetRule(reminder: Reminder): TargetRule | undefined {
-	return REMINDER_TARGETS[reminder.characterId]?.labels[reminder.label];
+/** The rule for a token, or undefined for a token whose character's rules give none. */
+export function targetRule(
+	reminder: Reminder,
+	characters?: CharacterLookup
+): TargetRule | undefined {
+	return rulesOf(reminder.characterId, characters)?.reminderTargets?.[reminder.label];
+}
+
+/**
+ * Whether the token exists in this game: one with `minOwners` only while that many seats hold
+ * its character (the Village Idiot's Drunk, with 2 or more Village Idiots; Trevor,
+ * 2026-10-23).
+ */
+export function reminderOffered(
+	game: Game,
+	reminder: Reminder,
+	characters: CharacterLookup
+): boolean {
+	const min = targetRule(reminder, characters)?.minOwners;
+	return min === undefined || ownerSeats(game, reminder.characterId, characters).length >= min;
 }
 
 /** Seats whose true character (or character token) is the token's character. */
@@ -91,7 +118,8 @@ function neighbours(
 ): SeatId[] {
 	const skip = (id: SeatId) =>
 		(rule.alive === true && registersAsDead(game, id)) ||
-		(rule.type !== undefined && typeOf(game, id, characters) !== rule.type);
+		(rule.type !== undefined && typeOf(game, id, characters) !== rule.type) ||
+		(rule.alignment !== undefined && alignmentOf(game, id) !== rule.alignment);
 	return aliveNeighbours(game, from, skip);
 }
 
@@ -113,15 +141,18 @@ function mayBeFalse(
 /**
  * Whether `seatId` fits the token's rule. A seat always fits a token with no rule. Rules
  * that depend on the owner (its seat, alignment or neighbours) are skipped while the
- * owner isn't in play, so nothing is flagged that can't be judged.
+ * owner isn't in play, so nothing is flagged that can't be judged. `atDawn` is the game as
+ * it stood at the latest "New day" (`dawnGames`), for "different to last night"; without it
+ * (the first night) that check is skipped.
  */
 export function reminderTargetMisses(
 	game: Game,
 	reminder: Reminder,
 	seatId: SeatId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	atDawn?: Game
 ): TargetMiss[] {
-	const rule = targetRule(reminder);
+	const rule = targetRule(reminder, characters);
 	if (!rule || !Object.hasOwn(game.seats, seatId)) return [];
 	if (rule.global) return ['global'];
 
@@ -170,22 +201,51 @@ export function reminderTargetMisses(
 			}
 		}
 	}
+	if (rule.alignmentCounts) {
+		const alignment = alignmentOf(game, seatId);
+		const max = alignment ? rule.alignmentCounts[alignment] : undefined;
+		if (max !== undefined) {
+			const self = 'reminderId' in reminder ? (reminder as ReminderInstance).reminderId : undefined;
+			const placed = game.seating
+				.filter((id) => alignmentOf(game, id) === alignment)
+				.flatMap((id) => game.seats[id].reminders)
+				.filter(
+					(r) =>
+						r.characterId === reminder.characterId &&
+						r.label === reminder.label &&
+						r.reminderId !== self
+				).length;
+			if (placed >= max) misses.push('alignment');
+		}
+	}
 	if (rule.life) {
 		const dead = game.seats[seatId].dead;
 		if (rule.life === 'alive' ? dead : !dead) misses.push('life');
 	}
 	if (rule.neighbour) {
-		const { of, ofType } = rule.neighbour;
-		const from = ofType
-			? game.seating.filter((id) => typeOf(game, id, characters) === ofType)
-			: of === 'self'
+		const near = rule.neighbour;
+		const from = near.ofType
+			? game.seating.filter(
+					(id) =>
+						typeOf(game, id, characters) === near.ofType ||
+						registrations(game, characters).some(
+							(r) => r.seatId === id && r.types.includes(near.ofType!)
+						)
+				)
+			: near.of === 'self'
 				? owners
-				: seatsWith(game, reminder.characterId, of);
+				: seatsWith(game, reminder.characterId, near.of);
 		if (from.length > 0) {
-			const near = from.some((id) =>
-				neighbours(game, id, rule.neighbour!, characters).includes(seatId)
-			);
-			if (!near) misses.push('neighbour');
+			const fits = from.some((id) => {
+				const seats = neighbours(game, id, near, characters);
+				if (!seats.includes(seatId)) return false;
+				// Both neighbours must fit (the Tea Lady protects only while both are good).
+				return (
+					!near.both ||
+					seats.every((s) => !rule.alignment || rule.alignment === alignmentOf(game, s))
+				);
+			});
+			if (!fits) misses.push('neighbour');
 		}
 	}
 	const labels = game.seats[seatId].reminders
@@ -193,6 +253,15 @@ export function reminderTargetMisses(
 		.map((r) => r.label);
 	if (rule.withLabel && !labels.includes(rule.withLabel)) misses.push('with-label');
 	if (rule.notWithLabel && labels.includes(rule.notWithLabel)) misses.push('not-with-label');
+	if (rule.differsFromLastNight && atDawn) {
+		const before = seatsWith(atDawn, reminder.characterId, reminder.label);
+		const type = typeOf(game, seatId, characters);
+		const repeat =
+			rule.differsFromLastNight === 'player'
+				? before.includes(seatId)
+				: type !== undefined && before.some((id) => typeOf(atDawn, id, characters) === type);
+		if (repeat) misses.push('last-night');
+	}
 	return misses;
 }
 
@@ -200,10 +269,11 @@ export function reminderTargetMisses(
 export function reminderTargets(
 	game: Game,
 	reminder: Reminder,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	atDawn?: Game
 ): TargetFit[] {
 	return game.seating.map((seatId) => ({
 		seatId,
-		misses: reminderTargetMisses(game, reminder, seatId, characters)
+		misses: reminderTargetMisses(game, reminder, seatId, characters, atDawn)
 	}));
 }

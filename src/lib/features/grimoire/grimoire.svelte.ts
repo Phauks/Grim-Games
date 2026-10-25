@@ -1,12 +1,13 @@
-import type { Command } from '#lib/core/engine/index.ts';
-import { demonToBecome, foolSurvives, type Night } from '#lib/core/rules/index.ts';
+import { dawnGames, type Command } from '#lib/core/engine/index.ts';
+import { demonToBecome, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { reminderFitWarning, warningText } from './board.ts';
+import { reminderKey } from './reminders.ts';
 import {
 	DEFAULT_SEAT_LAYOUT,
 	type SeatLayout,
@@ -14,7 +15,9 @@ import {
 } from '#lib/ui/seating/seat-layout.ts';
 import type { Reminder, ReminderId } from '#lib/core/model/index.ts';
 import {
+	bankCopies,
 	forgetUpsideDownMarks,
+	nightUnderway,
 	nightViews,
 	pastNames,
 	reminderCopyIds,
@@ -36,6 +39,7 @@ export class Grimoire {
 		this.layout = seatLayouts.read(open.game.gameId);
 		this.reminderSpots = reminderSpots.read(open.game.gameId);
 		this.copies = reminderCopyIds.read(open.game.gameId);
+		this.bankCopies = bankCopies.read(open.game.gameId);
 		this.nightView = nightViews.read(open.game.gameId);
 		this.nightDone = this.nightView.done;
 		this.nightDay = this.nightView.day ?? open.game.pastDays.length;
@@ -124,11 +128,7 @@ export class Grimoire {
 	 * Start game or End day.
 	 */
 	get nightUnderway(): boolean {
-		const today = `${this.game.pastDays.length}:`;
-		return (
-			this.nightDay === this.game.pastDays.length &&
-			this.nightDone.some((key) => key.startsWith(today))
-		);
+		return nightUnderway({ day: this.nightDay, done: this.nightDone }, this.game.pastDays.length);
 	}
 
 	/**
@@ -167,6 +167,41 @@ export class Grimoire {
 		reminderCopyIds.write(this.game.gameId, this.copies);
 	}
 
+	/**
+	 * Copies added to the reminder bank by key (device-only, `bankCopies`): a Duplicate
+	 * reminder lands in the bank (Trevor, 2026-10-20). Replaced, never changed in place.
+	 */
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	bankCopies = $state.raw<ReadonlyMap<string, number>>(new Map());
+
+	/** Adds one more copy of a reminder to the bank. */
+	addBankCopy(reminder: Reminder): void {
+		const key = reminderKey(reminder);
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const next = new Map(this.bankCopies);
+		next.set(key, (next.get(key) ?? 0) + 1);
+		this.bankCopies = next;
+		bankCopies.write(this.game.gameId, next);
+	}
+
+	/** Copies of a reminder Duplicate added to the bank, still there. */
+	bankCopyCount(reminder: Reminder): number {
+		return this.bankCopies.get(reminderKey(reminder)) ?? 0;
+	}
+
+	/** Takes one Duplicate copy back out of the bank (Trevor, 2026-10-24). */
+	removeBankCopy(reminder: Reminder): void {
+		const key = reminderKey(reminder);
+		const n = this.bankCopies.get(key) ?? 0;
+		if (n <= 0) return;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const next = new Map(this.bankCopies);
+		if (n === 1) next.delete(key);
+		else next.set(key, n - 1);
+		this.bankCopies = next;
+		bankCopies.write(this.game.gameId, next);
+	}
+
 	setReminderSpot(reminderId: ReminderId, at: SeatPoint): void {
 		this.reminderSpots = { ...this.reminderSpots, [reminderId]: at };
 		reminderSpots.write(this.game.gameId, this.reminderSpots);
@@ -181,6 +216,12 @@ export class Grimoire {
 	get game() {
 		return this.open.game;
 	}
+
+	/**
+	 * The game as it stood at the latest "New day", so a token whose ability says "different
+	 * to last night" is not suggested on last night's player; undefined before the first day.
+	 */
+	readonly atDawn = $derived.by(() => dawnGames(this.open.session.log).at(-1));
 
 	/** Runs a command; returns whether it was accepted. */
 	run(command: Command): boolean {
@@ -197,7 +238,7 @@ export class Grimoire {
 		if (misfit) toast('Note', misfit);
 		this.askAlignment(command);
 		this.askDemon(command);
-		this.askFool(command);
+		this.askFirstDeath(command);
 		return true;
 	}
 
@@ -220,13 +261,15 @@ export class Grimoire {
 	demonAsk = $state.raw<{ seatId: SeatId; characterId: CharacterId } | undefined>();
 
 	/**
-	 * A Fool just marked dead whose ability is unused and works (not by the Assassin): the
-	 * board offers to keep them alive and spend the ability (`foolSurvives`; Trevor,
-	 * 2026-10-22).
+	 * A player just marked dead whose ability stops their first death, unused and working (the
+	 * Fool, not by the Assassin): the board offers to keep them alive and spend the ability
+	 * (`survivesFirstDeath`; Trevor, 2026-10-22).
 	 */
-	foolAsk = $state.raw<{ seatId: SeatId } | undefined>();
+	firstDeathAsk = $state.raw<
+		{ seatId: SeatId; characterId: CharacterId; spentToken: ReminderLabel } | undefined
+	>();
 
-	private askFool(command: Command): void {
+	private askFirstDeath(command: Command): void {
 		const death =
 			command.type === 'SetDead' && command.dead
 				? { seatId: command.seatId, cause: command.cause }
@@ -234,8 +277,18 @@ export class Grimoire {
 					? { seatId: command.seatId, cause: 'execution' as const }
 					: undefined;
 		if (!death || !this.open.game.seats[death.seatId]?.dead) return;
-		if (foolSurvives(this.open.game, death.seatId, death.cause, this.open.characters))
-			this.foolAsk = { seatId: death.seatId };
+		const saver = survivesFirstDeath(
+			this.open.game,
+			death.seatId,
+			death.cause,
+			this.open.characters
+		);
+		if (saver)
+			this.firstDeathAsk = {
+				seatId: death.seatId,
+				characterId: saver.source.characterId,
+				spentToken: saver.spentToken
+			};
 	}
 
 	private askDemon(command: Command): void {
@@ -275,11 +328,11 @@ export class Grimoire {
 		const game = this.open.game;
 		const characters = this.open.characters;
 		if (command.type === 'AddReminder')
-			return reminderFitWarning(game, command.reminder, command.seatId, characters);
+			return reminderFitWarning(game, command.reminder, command.seatId, characters, this.atDawn);
 		if (command.type === 'MoveReminder') {
 			for (const seatId of game.seating) {
 				const r = game.seats[seatId].reminders.find((x) => x.reminderId === command.reminderId);
-				if (r) return reminderFitWarning(game, r, command.toSeatId, characters);
+				if (r) return reminderFitWarning(game, r, command.toSeatId, characters, this.atDawn);
 			}
 		}
 		return undefined;

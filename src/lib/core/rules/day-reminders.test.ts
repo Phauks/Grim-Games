@@ -1,23 +1,26 @@
 /**
- * Pre-day reminders. Each curated entry cites its character's wiki page in
- * `day-reminders.data.ts`; the behaviour tests below cite the pages they encode.
+ * Pre-day reminders. Each official character's `dayReminders` lives in its rules block
+ * (`data/rules/<id>.json`) and links its wiki page; the behaviour tests below cite the pages
+ * they encode.
  */
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import type { Character } from '#lib/core/data/types.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { Issues } from '#lib/core/data/validate.ts';
+import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
+import { wikiUrl } from '#lib/core/data/wiki.ts';
 import {
 	newGame,
 	run as runCommands,
 	testCharacters
 } from '#lib/core/model/fixtures.test-support.ts';
 import {
-	DAY_REMINDER_ENTRIES,
 	dayReminders,
 	daySentence,
 	dayStateFromGame,
 	impairment,
 	isOnceOnlyDayAbility,
-	NO_DAY_RELEVANCE,
 	renderReminder,
 	type DayReminderOverride,
 	type ReminderSegment,
@@ -26,6 +29,18 @@ import {
 } from './day-reminders.ts';
 
 const data = committedGameData();
+/** Official characters with something to watch by day, from their rules blocks. */
+const DAY_REMINDER_ENTRIES = [...OFFICIAL_RULES].flatMap(([id, rules]) => {
+	const day = rules.dayReminders;
+	if (!day?.reminders?.length && !day?.impairable) return [];
+	return [{ id, impairable: day.impairable, reminders: day.reminders ?? [] }];
+});
+/** Official characters with nothing to watch by day, and why. */
+const NO_DAY_RELEVANCE = Object.fromEntries(
+	[...OFFICIAL_RULES].flatMap(([id, rules]) =>
+		rules.dayReminders?.none === undefined ? [] : [[id, rules.dayReminders.none]]
+	)
+);
 const name = (id: string) => data.byId.get(id)?.name ?? id;
 let n = 0;
 const seat = (characterId: string, extra: Partial<DaySeat> = {}): DaySeat => ({
@@ -57,11 +72,15 @@ describe('coverage', () => {
 		const all = new Set([...curated, ...quiet]);
 		expect(data.characters.filter((c) => !all.has(c.id)).map((c) => c.id)).toEqual([]);
 		expect([...all].filter((id) => !data.byId.has(id))).toEqual([]);
+		// Trevor, 2026-10-23: the Pit-Hag acts only at night, so it is not a day ability.
+		expect(NO_DAY_RELEVANCE.pithag).toBe('night action');
 	});
 
 	it('cites a wiki page and has text for every curated reminder', () => {
 		for (const entry of DAY_REMINDER_ENTRIES) {
-			expect(entry.wiki, entry.id).toMatch(/^https:\/\/wiki\.bloodontheclocktower\.com\/\S+$/);
+			expect(wikiUrl(data.byId.get(entry.id)!), entry.id).toMatch(
+				/^https:\/\/wiki\.bloodontheclocktower\.com\/\S+$/
+			);
 			for (const spec of entry.reminders) {
 				expect(
 					spec.template.some((p) => 'self' in p),
@@ -272,6 +291,104 @@ describe('homebrew', () => {
 			ability: 'Each day, publicly cook.'
 		};
 		expect(texts({ seats: [seat('chef')] }, [copy])).toEqual(['[Chef] may act today']);
+	});
+
+	// A custom character's own `dayReminders` work as an official one's: the Sailor's
+	// "cannot die" (https://wiki.bloodontheclocktower.com/Sailor) and the Spy's registration for
+	// the Virgin (https://wiki.bloodontheclocktower.com/Spy).
+	const parse = (raw: unknown, reminders: string[] = []) =>
+		parseCharacterRules(raw, 'rules', new Issues(), reminders);
+	const deckhand: Character = {
+		id: 'deckhand',
+		name: 'Deckhand',
+		type: 'townsfolk',
+		ability: 'You can not die.',
+		setup: false,
+		reminders: ['Marked'],
+		remindersGlobal: [],
+		special: [],
+		rules: parse(
+			{
+				dayReminders: {
+					impairable: true,
+					reminders: [
+						{ group: 'execution-death', template: [{ self: true }, { text: 'cannot die.' }] },
+						{
+							group: 'nomination',
+							template: [{ self: true }, { text: 'has marked' }, { target: true }],
+							when: { reminder: 'Marked' }
+						}
+					],
+					interactions: [
+						{
+							other: 'virgin',
+							group: 'nomination',
+							text: 'may register as a Townsfolk if they nominate',
+							otherNoReminder: 'No Ability'
+						}
+					]
+				}
+			},
+			['Marked']
+		)
+	};
+
+	it('shows a custom character’s own day reminders, not guessed ones', () => {
+		const seats = [
+			seat('deckhand'),
+			seat('virgin', { playerName: 'Vi', reminders: [token('deckhand', 'Marked')] })
+		];
+		const reminders = run({ seats }, [deckhand]).groups.flatMap((g) => g.reminders);
+		expect(reminders.every((r) => !r.autoDetected)).toBe(true);
+		expect(texts({ seats }, [deckhand])).toEqual([
+			'[Deckhand] has marked [Virgin · Vi]',
+			'[Virgin · Vi] has not been nominated',
+			'[Deckhand] may register as a Townsfolk if they nominate [Virgin · Vi]',
+			'[Deckhand] cannot die.'
+		]);
+		const poisoned = seat('deckhand', { reminders: [token('poisoner', 'Poisoned')] });
+		expect(texts({ seats: [poisoned] }, [deckhand])).toEqual([
+			'[Deckhand] is poisoned by [Poisoner]'
+		]);
+	});
+
+	it('shows nothing for a custom character whose rules say it has nothing by day', () => {
+		const quiet = {
+			...custom,
+			id: 'mute',
+			rules: parse({ dayReminders: { none: 'night action' } })
+		};
+		expect(texts({ seats: [seat('mute')] }, [quiet])).toEqual([]);
+	});
+
+	it('reports a malformed dayReminders block', () => {
+		const issues = new Issues();
+		parseCharacterRules(
+			{
+				dayReminders: {
+					impairable: 'yes',
+					none: 'night action',
+					reminders: [
+						{ group: 'lunch', template: [{ self: true }] },
+						{ group: 'vote', template: [{ target: true }] },
+						{ group: 'vote', template: [{ self: true }], when: { reminder: 'Hat', self: 'asleep' } }
+					],
+					interactions: [{ group: 'vote', text: 'x' }]
+				}
+			},
+			'rules',
+			issues,
+			['Mad']
+		);
+		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
+			'rules.dayReminders.impairable',
+			'rules.dayReminders.reminders[0].group',
+			'rules.dayReminders.reminders[1].when.reminder',
+			'rules.dayReminders.reminders[2].when.self',
+			'rules.dayReminders.reminders[2].when.reminder',
+			'rules.dayReminders.interactions[0].other',
+			'rules.dayReminders.none'
+		]);
 	});
 });
 

@@ -1,0 +1,63 @@
+{
+	"reminderPrompts": {
+		"Died Today": "markDead"
+	},
+	"actsWhenDead": true,
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "On the player the Zombuul chose tonight."
+		},
+		"Died Today": {
+			"seat": "any",
+			"note": "On any player who died during the day, the Zombuul included."
+		}
+	},
+	"gameEnd": {
+		"aliveWhileDead": {
+			"untilToken": "Dead"
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

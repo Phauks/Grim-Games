@@ -1,0 +1,64 @@
+{
+	"reminderTargets": {
+		"Outsider": {
+			"info": true,
+			"seat": "other",
+			"types": ["outsider"],
+			"note": "The player whose Outsider character the Librarian is shown."
+		},
+		"Wrong": {
+			"info": true,
+			"seat": "any",
+			"notWithLabel": "Outsider",
+			"note": "The second player shown, who is not that Outsider."
+		}
+	},
+	"learns": {
+		"measure": "pair-of-type",
+		"type": "outsider",
+		"noneWhenAbsent": true,
+		"reminders": {
+			"target": "Outsider",
+			"other": "Wrong"
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Outsider",
+				"text": "Choose an Outsider to show the Librarian: put [Outsider] on them",
+				"target": {
+					"choose": "outsider",
+					"choice": "an Outsider player",
+					"notSelf": true
+				},
+				"reason": "Marks the Outsider the Librarian learns about (none in play: they learn 0)",
+				"when": {
+					"minOutsiders": 1
+				}
+			},
+			{
+				"label": "Wrong",
+				"text": "Choose a player: put [Wrong] on them",
+				"target": {
+					"choose": "any",
+					"choice": "any player"
+				},
+				"reason": "Marks the second player the Librarian is shown",
+				"when": {
+					"minOutsiders": 1
+				}
+			}
+		]
+	},
+	"dayReminders": {
+		"none": "first-night info"
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["Outsider", "Wrong"],
+		"why": "Marks the information the player started knowing."
+	}
+}

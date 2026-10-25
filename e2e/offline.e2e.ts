@@ -160,3 +160,83 @@ test('an update downloads only the files that changed', async ({ page, context }
 	expect(downloaded).not.toContain('/data/roles.json');
 	expect(downloaded).toContain('/');
 });
+
+// Trevor (2026-10-23): updates still felt slow. Most files of an update were only renamed,
+// because a file they import changed (chunk-renames.ts); those are rebuilt from the stored copy.
+test('an update rebuilds a renamed file from its stored copy', async ({
+	page,
+	context,
+	request
+}) => {
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+	const [build] = Object.keys(await cachedPaths(page)).filter(
+		(name) => name !== 'grim-games-runtime-v1'
+	);
+
+	// Pretend the stored build is an older one in which a page file and a file it imports had
+	// other names: the import is the file that changed, the page file was only renamed.
+	const { page: renamed, dependency } = await page.evaluate(async (name) => {
+		const current = await caches.open(name);
+		const chunks = await (await current.match('/precache-chunks.json'))!.json();
+		const pagePath = Object.keys(chunks).find((path) =>
+			chunks[path].names.some((file: string) => file.endsWith('.js'))
+		)!;
+		const depName: string = chunks[pagePath].names.find((file: string) => file.endsWith('.js'));
+		const depPath = Object.keys(chunks).find((path) => path.endsWith(`/${depName}`))!;
+		const oldPage = '/_app/immutable/nodes/Renamed0.js';
+		const oldDep = '/_app/immutable/chunks/OldDep00.js';
+		const old = await caches.open('grim-games-older');
+		for (const request of await current.keys()) {
+			const path = new URL(request.url).pathname;
+			if (path !== pagePath && path !== depPath && path !== '/precache-chunks.json')
+				await old.put(request, (await current.match(request))!);
+		}
+		const text = await (await current.match(pagePath))!.text();
+		await old.put(
+			oldPage,
+			new Response(text.split(`/${depName}`).join('/OldDep00.js'), {
+				headers: { 'Content-Type': 'text/javascript' }
+			})
+		);
+		await old.put(oldDep, (await current.match(depPath))!);
+		const oldChunks = { ...chunks };
+		delete oldChunks[pagePath];
+		delete oldChunks[depPath];
+		oldChunks[oldPage] = {
+			...chunks[pagePath],
+			names: chunks[pagePath].names.map((file: string) => (file === depName ? 'OldDep00.js' : file))
+		};
+		oldChunks[oldDep] = { ...chunks[depPath], shape: 'changed' };
+		await old.put('/precache-chunks.json', Response.json(oldChunks));
+		await caches.delete(name);
+		const runtime = await caches.open('grim-games-runtime-v1');
+		await runtime.delete(depPath);
+		await runtime.delete(pagePath);
+		await runtime.put('/__active-build', new Response('grim-games-older'));
+		return { page: pagePath, dependency: depPath };
+	}, build);
+
+	const downloaded: string[] = [];
+	context.on('request', (request) => {
+		if (request.serviceWorker()) downloaded.push(new URL(request.url()).pathname);
+	});
+	await page.evaluate(async () => {
+		const registration = await navigator.serviceWorker.register('/service-worker.js?renamed');
+		const next = registration.installing;
+		if (!next) throw new Error('no new build found');
+		await new Promise<void>((done) =>
+			next.addEventListener('statechange', () => next.state === 'installed' && done())
+		);
+	});
+
+	// The changed file came over the network; the renamed one was rebuilt, byte for byte.
+	expect(downloaded).toContain(dependency);
+	expect(downloaded).not.toContain(renamed);
+	const stored = await page.evaluate(
+		async ({ name, path }) => (await (await caches.open(name)).match(path))?.text(),
+		{ name: build, path: renamed }
+	);
+	expect(stored).toBe(await (await request.get(renamed)).text());
+});

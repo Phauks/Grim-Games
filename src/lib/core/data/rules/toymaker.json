@@ -1,0 +1,22 @@
+{
+	"reminderTargets": {
+		"Final Night: No Attack": {
+			"seat": "any",
+			"types": ["demon"],
+			"note": "On the Demon until it skips an attack."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night rule"
+	},
+	"deathCause": {
+		"none": "the Demon may not attack"
+	},
+	"reminderMovement": {
+		"fixed": ["Final Night: No Attack"],
+		"why": "Marks this character’s own state, so it stays on its seat."
+	}
+}

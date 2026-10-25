@@ -1,0 +1,77 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"3 Attacks": {
+			"seat": "self",
+			"note": "On the Po after it chooses no one, until it takes three kills."
+		},
+		"Dead": {
+			"seat": "any",
+			"note": "Any player the Po attacks."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night kills"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"note": "One kill, or no kill and 3 Attacks; after a charge, 3 kills.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					},
+					{
+						"label": "3 Attacks",
+						"action": "place"
+					}
+				],
+				"either": true
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "If the Po chose no one last night (*3 ATTACKS*), remove it: the Po chooses 3 players, mark each *DEAD*. Otherwise the Po may choose a player (mark them *DEAD*) or no one (mark the Po *3 ATTACKS*).",
+				"reason": "Says when the 3 Attacks token goes on and comes off."
+			}
+		}
+	}
+}

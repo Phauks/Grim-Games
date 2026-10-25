@@ -11,7 +11,9 @@ export const savant = {
 	'savant.noAbility': '{character} has no ability: any mix is allowed.',
 	'savant.vortox': 'A working {character} is in play: both must be false.',
 	'savant.statement': 'Statement {number}',
-	'savant.lock': 'Keep statement {number}',
+	'savant.write': 'Write statement {number} yourself',
+	'savant.writeField': 'Statement {number}, your words',
+	'savant.show': 'Show to player',
 	'savant.another': 'Another statement {number}',
 	'savant.true': 'True',
 	'savant.false': 'False',
@@ -19,6 +21,8 @@ export const savant = {
 	'savant.checkTrue': 'You check: true',
 	'savant.checkFalse': 'You check: false',
 	'savant.use': 'Use these',
+	'savant.earlier': 'Earlier days',
+	'savant.today': 'Today',
 	'savant.noteTrue': 'True: {statement}',
 	'savant.noteFalse': 'False: {statement}'
 } as const;

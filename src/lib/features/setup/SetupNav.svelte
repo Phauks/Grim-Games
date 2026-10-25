@@ -5,14 +5,17 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 
 	interface Props {
-		/** Where Back goes, and its label. */
-		backHref: ResolvedPathname;
+		/** Where Back goes, and its label; `onBack` instead where Back does more than open a page. */
+		backHref?: ResolvedPathname;
+		onBack?: () => void;
+		/** Back shown but off (a step that can no longer go back without losing what was done). */
+		backDisabled?: boolean;
 		backLabel: string;
 		/** The step's main action, on the right. */
 		next: Snippet;
 	}
 
-	let { backHref, backLabel, next }: Props = $props();
+	let { backHref, onBack, backDisabled = false, backLabel, next }: Props = $props();
 </script>
 
 <!--
@@ -21,14 +24,17 @@
 -->
 <nav class="setup-nav pinned-bottom" aria-label={t('setup.nav')}>
 	<div class="bar">
-		<Button variant="quiet" icon="back" href={backHref}>{backLabel}</Button>
+		{#if onBack}<Button variant="quiet" icon="back" disabled={backDisabled} onclick={onBack}
+				>{backLabel}</Button
+			>
+		{:else}<Button variant="quiet" icon="back" href={backHref}>{backLabel}</Button>{/if}
 		{@render next()}
 	</div>
 </nav>
 
 <style>
 	/* Pinned to the screen's bottom edge, so it sits in the same place on every step. Its room
-	   is kept below the whole page, footer included (`.pinned-bottom` in base.css). */
+	   is kept below the whole page (`.pinned-bottom` in base.css). */
 	.setup-nav {
 		position: fixed;
 		right: 0;

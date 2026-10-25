@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
+import { menuButton } from './shell.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
 
@@ -10,8 +11,8 @@ async function selectionFor(page: Page, players: number, script = 'Trouble Brewi
 	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	for (let n = 8; n < players; n++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-	await page.goto(`${new URL(page.url()).pathname}/setup`);
+	// A new game opens on character selection (G7).
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('player-count')).toHaveText(String(players));
 }
@@ -46,13 +47,15 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
 	const barButtons = async () => {
 		const [back, next] = await Promise.all([
-			bar.getByRole('link').first().boundingBox(),
+			bar.locator('a, button').first().boundingBox(),
 			bar.locator('a, button').last().boundingBox()
 		]);
 		expect(back!.x).toBeLessThan(next!.x);
 		return { back, next };
 	};
-	await expect(bar.getByRole('link', { name: 'Grimoire' })).toBeVisible();
+	// Before any character is dealt, Back goes to New game; the board is one tap away.
+	await expect(bar.getByRole('button', { name: 'New game' })).toBeVisible();
+	await expect(bar.getByTestId('setup-to-board')).toBeVisible();
 	await expect(bar.getByRole('button', { name: 'Build bag' })).toBeVisible();
 	const onCharacters = await barButtons();
 
@@ -137,22 +140,47 @@ async function noSidewaysScroll(page: Page) {
 }
 
 // Trevor, 2026-10-17: the counts and search stay in view below the app header, never over it.
-test('the counts and search stick just below the header while the list scrolls', async ({
+test('the counts and search stick at the top of the screen while the list scrolls', async ({
 	page
 }) => {
 	await selectionFor(page, 5);
 	await page.mouse.wheel(0, 3000);
 	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-	const header = (await page.getByRole('banner').boundingBox())!;
 	const counts = page.getByTestId('setup-counts');
 	await expect(counts).toBeInViewport();
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
 	await expect(search).toBeInViewport();
 	for (const box of [await counts.boundingBox(), await search.boundingBox()]) {
-		expect(box!.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+		expect(box!.y).toBeGreaterThanOrEqual(-1);
 	}
+	expect((await counts.boundingBox())!.y).toBeLessThan(100);
 	// It really did scroll: the page heading is gone.
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).not.toBeInViewport();
+});
+
+test('tapping a type count shows the setup sheet count and every change to it', async ({
+	page
+}) => {
+	// Trevor (2026-10-20): a small info popup, like definitions, with the base and each modifier.
+	await selectionFor(page, 8);
+	await select(page, 'Baron');
+	const before = await page.getByTestId('setup-counts').boundingBox();
+	await page.getByTestId('count-info-outsider').tap();
+	const info = page.getByTestId('count-info');
+	await expect(info).toBeVisible();
+	await expect(info).toContainText('Setup sheet, 8 players1');
+	await expect(info).toContainText(/Baron\s*: \+2 Outsiders/);
+	await expect(info).toContainText('Expected3');
+	await expect(info).toContainText('Chosen0');
+	// An overlay: the counts don't move.
+	expect(await page.getByTestId('setup-counts').boundingBox()).toEqual(before);
+	await page.keyboard.press('Escape');
+	await expect(info).toBeHidden();
+	// Townsfolk make room for the Outsiders, so the Baron explains them too.
+	await page.getByTestId('count-info-townsfolk').tap();
+	await expect(info).toContainText('Setup sheet, 8 players5');
+	await expect(info).toContainText(/Baron\s*: \+2 Outsiders/);
+	await expect(info).toContainText('Expected3');
 });
 
 test('selection counts against the setup sheet and explains the Drunk', async ({ page }) => {
@@ -224,6 +252,10 @@ test('Stowed Away: up to 2 Travellers count in the bag, the rest for fewer playe
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Special rules in this game' })
+		.getByRole('button', { name: 'Start game' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);
@@ -278,6 +310,15 @@ test("Travellers can join the bag: the edition's are listed, the rest are a sear
 		'Not on script'
 	);
 	await expect(page.getByTestId('count-traveller')).toHaveText('1');
+	// A Traveller is one more player, leaving the other counts for 8 (Trevor, 2026-10-24;
+	// https://wiki.bloodontheclocktower.com/Travellers).
+	for (const [type, expected] of [
+		['townsfolk', '/ 5'],
+		['outsider', '/ 1'],
+		['minion', '/ 1'],
+		['demon', '/ 1']
+	])
+		await expect(page.getByTestId(`count-info-${type}`)).toContainText(expected);
 	await noSidewaysScroll(page);
 });
 
@@ -376,6 +417,49 @@ test('Show only selected lists just the chosen characters and still searches', a
 	await noSidewaysScroll(page);
 });
 
+test('Random label order mixes the bag tile labels, so colours are not always a rainbow', async ({
+	page
+}) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	const bag = page.getByRole('list', { name: 'Bag' }).getByRole('button');
+	const labels = async () =>
+		(await bag.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')))).sort();
+	const settings = page.getByTestId('bag-settings');
+	const order = settings.getByRole('checkbox', { name: 'Random label order' });
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await settings.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+	await page.getByRole('option', { name: 'Colours' }).tap();
+	await expect(order).not.toBeChecked();
+	await page.keyboard.press('Escape');
+	const rainbow = ['Tile Green', 'Tile Lime', 'Tile Orange', 'Tile Red', 'Tile Yellow'];
+	expect(await labels()).toEqual(rainbow);
+
+	// Colours come from the whole list, every tile still different, and they stay put.
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await settings.getByText('Random label order', { exact: true }).tap();
+	await expect(order).toBeChecked();
+	await page.keyboard.press('Escape');
+	await expect.poll(labels).not.toEqual(rainbow);
+	const mixed = await labels();
+	expect(new Set(mixed).size).toBe(5);
+	await page.reload();
+	await expect.poll(labels).toEqual(mixed);
+
+	// Numbers keep 1 to 5. Random already mixes everything, so the switch has nothing to do.
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await settings.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+	await page.getByRole('option', { name: 'Numbers' }).tap();
+	await page.keyboard.press('Escape');
+	await expect.poll(labels).toEqual(['Tile 1', 'Tile 2', 'Tile 3', 'Tile 4', 'Tile 5']);
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await settings.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+	await page.getByRole('option', { name: 'Random', exact: true }).tap();
+	await expect(order).toBeDisabled();
+});
+
 test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, centred on the token', async ({
 	page
 }) => {
@@ -391,7 +475,10 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 	expect(Math.abs(t!.y + t!.height / 2 - (f!.y + f!.height / 2))).toBeLessThan(2);
 
 	// A dropdown, not a switch (Trevor, 2026-10-16).
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	// One cog: Bag draw, with All settings inside (Trevor, 2026-10-24).
+	await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await page.getByTestId('bag-settings').getByRole('button', { name: 'All settings' }).tap();
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
 	await page.getByRole('option', { name: 'Letters' }).tap();
@@ -449,7 +536,10 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 test('with Require a name, the token stays hidden until a name is typed', async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	// One cog: Bag draw, with All settings inside (Trevor, 2026-10-24).
+	await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await page.getByTestId('bag-settings').getByRole('button', { name: 'All settings' }).tap();
 	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByText('Require a name before drawing', { exact: true }).tap();
 	await page.keyboard.press('Escape');
@@ -578,19 +668,14 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 
-	// A drawn tile is never put back: closing the reveal keeps it in seat 2's hand, even
-	// across a reload.
+	// Once seen, closing the reveal finishes the draw: no "held" tile anyone could open again
+	// (Trevor, 2026-10-22).
 	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
 	await expect(reveal).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(reveal).toBeHidden();
-	await page.reload();
-	const held = page.getByRole('button', { name: 'Tile 2, held by Seat 2' });
-	await expect(held).toBeVisible();
-	await held.tap();
-	await expect(page.getByRole('button', { name: 'Put back' })).toHaveCount(0);
-	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 2, drawn' })).toBeDisabled();
+	await expect(page.getByText('Held')).toHaveCount(0);
 
 	// The rest are drawn one by one; Enter in the name field closes the keyboard, not the reveal.
 	for (let n = 3; n <= 5; n++) {
@@ -635,8 +720,7 @@ test.describe('in a computer window', () => {
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
 		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
 		await page.getByRole('button', { name: 'Start game' }).click();
-		await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-		await page.goto(`${new URL(page.url()).pathname}/setup`);
+		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 
 		// The setup sheet is beside the characters; Build bag is in the bar at the bottom right.
 		const sheet = await page.getByTestId('setup-table').boundingBox();
@@ -762,7 +846,7 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	await pickScript(page, 'Jinx Check');
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 
 	const check = page.getByTestId('setup-check');
@@ -823,7 +907,7 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 	await page.goto('/new');
 	await pickScript(page, 'Custom Check');
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 
 	const check = page.getByTestId('setup-check');
@@ -945,6 +1029,88 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	await expect(page.getByTestId('setup-bluffs')).toHaveCount(0);
 });
 
+test('each good character row sets or clears a Demon bluff, up to three', async ({ page }) => {
+	// Trevor (2026-10-22): a bluff from the character's own row, beside its lock.
+	await selectionFor(page, 8);
+	const row = (id: string) =>
+		page.locator('.row', { has: page.locator(`.main[data-character-id="${id}"]`) });
+	const bluffButton = (id: string) => row(id).getByTestId('bluff-character');
+	const bluffs = page.getByTestId('setup-bluffs');
+	await expect(bluffButton('soldier')).toHaveAccessibleName('Demon bluff: Soldier');
+	await bluffButton('soldier').tap();
+	await expect(bluffButton('soldier')).toHaveAttribute('aria-pressed', 'true');
+	await expect(row('soldier').getByTestId('bluff-tag')).toBeVisible();
+	await expect(bluffs).toContainText('Soldier');
+	await bluffButton('soldier').tap();
+	await expect(row('soldier').getByTestId('bluff-tag')).toHaveCount(0);
+	await expect(bluffs).not.toContainText('Soldier');
+	// Minions and Demons have none.
+	await expect(bluffButton('imp')).toHaveCount(0);
+	for (const id of ['soldier', 'monk', 'saint']) await bluffButton(id).tap();
+	await expect(bluffButton('chef')).toBeDisabled();
+	await expect(bluffButton('chef')).toHaveAttribute('title', '3 bluffs chosen');
+	// One of the three can still come out.
+	await expect(bluffButton('monk')).toBeEnabled();
+});
+
+test('Demon bluffs: listed by Show only selected, warned when chosen, new on each Random selection', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): Show only selected and Random take in the bluffs; a bluff also
+	// chosen to be in play is a warning, never a lock.
+	await selectionFor(page, 8);
+	// The bluff slots below have rows too: only the list's.
+	const row = (id: string) =>
+		page
+			.getByTestId('character-picker')
+			.locator('.row', { has: page.locator(`.main[data-character-id="${id}"]`) });
+	const bluffs = page.getByTestId('setup-bluffs');
+	const check = page.getByTestId('setup-check');
+	await row('soldier').getByTestId('bluff-character').tap();
+	await expect(bluffs).toContainText('Soldier');
+
+	const only = page.getByRole('button', { name: 'Show only selected' });
+	await only.tap();
+	await expect(choice(page, 'Soldier')).toBeVisible();
+	await expect(choice(page, 'Washerwoman')).toHaveCount(0);
+	await only.tap();
+
+	await expect(check).not.toContainText('Soldier is a Demon bluff');
+	await choice(page, 'Soldier').tap();
+	await expect(check).toContainText(/Soldier\s*is a Demon bluff and is also chosen to be in play/);
+	await expect(bluffs.locator('li[data-in-play]')).toContainText('Also in play');
+	// A warning only: the Soldier stays chosen and stays a bluff.
+	await expect(row('soldier').locator('.main')).toHaveAttribute('aria-pressed', 'true');
+	await choice(page, 'Soldier').tap();
+	await expect(bluffs.locator('li[data-in-play]')).toHaveCount(0);
+
+	for (let i = 0; i < 3; i++) {
+		await page.getByRole('button', { name: 'Random selection' }).tap();
+		await expect(bluffs.locator('li:not(.none)')).toHaveCount(3);
+		await expect(bluffs.locator('li[data-in-play]')).toHaveCount(0);
+		await expect(check).not.toContainText('is a Demon bluff');
+	}
+	await noSidewaysScroll(page);
+});
+
+test('the keyboard focus ring on a character token is round, around the token', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): it was a square around the token's button.
+	await selectionFor(page, 5);
+	const info = page.getByRole('button', { name: 'About the Chef' });
+	await info.tap();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeFocused();
+	expect(await info.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('none');
+	const face = info.locator('[data-token-face]');
+	const ring = await face.evaluate((el) => {
+		const style = getComputedStyle(el);
+		return { outline: style.outlineStyle, radius: style.borderRadius };
+	});
+	expect(ring).toEqual({ outline: 'solid', radius: '50%' });
+});
+
 // Trevor, 2026-10-19: the bag's cog and Share sit on the Draw heading's line, at the right.
 test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 	await selectionFor(page, 5);
@@ -960,7 +1126,9 @@ test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
 		const middle = box.y + box.height / 2;
 		expect(middle).toBeGreaterThan(title.y);
 		expect(middle).toBeLessThan(title.y + title.height);
-		expect(box.x).toBeGreaterThan(title.x);
+		// The hamburger comes before the title (no app header); the cog and Share after it.
+		if ((await button.getAttribute('aria-label')) === 'Menu') expect(box.x).toBeLessThan(title.x);
+		else expect(box.x).toBeGreaterThan(title.x);
 	}
 	await noSidewaysScroll(page);
 });
@@ -1028,7 +1196,7 @@ test('a Teensyville script greys out player counts above 6 but still allows them
 	await expect(page.getByTestId('player-count')).toHaveText('8');
 	for (let n = 8; n > 6; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 	await expect(table.locator('thead th[data-too-many]')).toHaveCount(9);
 	await page.getByRole('button', { name: 'More players' }).tap();
@@ -1056,16 +1224,16 @@ async function lockedDraw(page: Page) {
 	await lockDraw(page);
 }
 
-// Trevor (2026-10-20, Pixel): the footer was cut off under the Draw page's bottom bar.
-test('the page footer clears the bottom bar on the setup steps', async ({ page }) => {
+// Trevor (2026-10-20, Pixel): the page's end was cut off under the Draw page's bottom bar.
+test("the page's end clears the bottom bar on the setup steps", async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
 	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-	const footer = await page.getByRole('contentinfo').boundingBox();
+	const end = await page.locator('.app-body').boundingBox();
 	const bar = await page.locator('.setup-nav').boundingBox();
-	expect(footer && bar && footer.y + footer.height).toBeLessThanOrEqual(bar!.y + 1);
+	expect(end && bar && end.y + end.height).toBeLessThanOrEqual(bar!.y + 1);
 });
 
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
@@ -1078,10 +1246,9 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	await expect(title).toHaveText('Trouble Brewing');
 	await expect(title.getByTestId('script-logo')).toHaveCount(1);
 	await expect(page.locator('.setup-nav')).toHaveCount(0);
-	// No header, sidebar or footer to leave by while the phone is passed round.
-	await expect(page.getByRole('banner')).toHaveCount(0);
+	// No menu to leave by while the phone is passed round.
+	await expect(menuButton(page)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
-	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
 	// Hold to see character is off by default, locked or not (Trevor, 2026-10-20).
 	await page.getByRole('button', { name: /^Tile 1/ }).tap();
@@ -1111,8 +1278,8 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
-	// Unlocked: the header is back.
-	await expect(page.getByRole('banner')).toBeVisible();
+	// Unlocked, setup still has the game's screen: no menu (Trevor, 2026-10-23).
+	await expect(menuButton(page)).toHaveCount(0);
 	await noSidewaysScroll(page);
 });
 
@@ -1156,11 +1323,43 @@ test('locked characters stay in play through Random and are remembered', async (
 	}
 	await page.reload();
 	await expect(lock('drunk')).toHaveAttribute('aria-pressed', 'true');
-	// Deselecting unlocks.
+	// A lock holds against taps and Clear too (Trevor, 2026-10-22); unlocking lets it go.
+	await choice('baron').tap();
+	await expect(choice('baron')).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.getByText('Unlock this character to take it out.')).toBeVisible();
+	await page.getByRole('button', { name: 'Clear selection' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	for (const id of ['baron', 'drunk']) await expect(row(id)).toHaveAttribute('data-chosen', '');
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
+	await lock('baron').tap();
+	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
 	await choice('baron').tap();
 	await expect(choice('baron')).toHaveAttribute('aria-pressed', 'false');
-	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
 });
+
+for (const width of [undefined, 1400]) {
+	test(`the counts stay above the characters, each type's heading pinned under them${width ? ' on a computer window' : ''}`, async ({
+		page
+	}) => {
+		// Trevor (2026-10-22): a computer window works as phones do.
+		if (width) await page.setViewportSize({ width, height: 900 });
+		await selectionFor(page, 8);
+		const band = page.getByTestId('selection-band');
+		const heading = page.locator('.collapsible > .head', { hasText: 'Townsfolk' });
+		// Scroll the heading's group past the band's bottom edge.
+		await heading.evaluate((h) => window.scrollBy(0, h.getBoundingClientRect().top + 200));
+		await page.evaluate(() => new Promise(requestAnimationFrame));
+		const [b, h] = await Promise.all([band.boundingBox(), heading.boundingBox()]);
+		// The band is in view, and the heading sits just under it.
+		expect(b!.y).toBeGreaterThanOrEqual(0);
+		expect(h!.y).toBeGreaterThanOrEqual(b!.y + b!.height - 2);
+		expect(h!.y).toBeLessThan(b!.y + b!.height + 20);
+		// Search and its tools sit over the characters, not in the side column.
+		const search = await page.getByRole('searchbox').boundingBox();
+		const list = await page.locator('.main[data-character-id="imp"]').boundingBox();
+		expect(search!.x + search!.width).toBeGreaterThan(list!.x);
+	});
+}
 
 test('the board stays locked while the draw is, until the Storyteller PIN', async ({ page }) => {
 	// Trevor (2026-10-19): with the phone passed round, opening the game's grimoire (by its
@@ -1171,7 +1370,6 @@ test('the board stays locked while the draw is, until the Storyteller PIN', asyn
 	const locked = page.getByTestId('board-locked');
 	await expect(locked).toContainText('The grimoire is locked');
 	await expect(page.getByTestId('seat')).toHaveCount(0);
-	await expect(page.getByRole('banner')).toHaveCount(0);
 
 	// Back to the draw is always there; the PIN opens the board.
 	await expect(locked.getByRole('link', { name: 'Back to the draw' })).toBeVisible();
@@ -1226,12 +1424,47 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
 	const hold = reveal.getByTestId('reveal-hold');
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	// Closed before the character was seen, the tile stays held for that seat.
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Tile 1, held by Seat 1' }).tap();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
 	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+	// Seen, closing it finishes the draw (Trevor, 2026-10-22: no "held" once seen).
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
+});
+
+test("Slot machine reveal, a Bag draw setting, spins the token before it stops on the player's", async ({
+	page
+}) => {
+	// Trevor (2026-10-22): a Bag draw setting, off by default.
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	const setting = page
+		.getByTestId('bag-settings')
+		.getByText('Slot machine reveal', { exact: true });
+	await setting.tap();
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	const reveal = page.getByTestId('reveal');
+	const token = reveal.getByTestId('reveal-token');
+	// Spinning: the name and Confirm wait for the reel to stop.
+	await expect(token).toHaveAttribute('data-spinning', '');
+	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	await expect(page.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	// Closed while it spins, the character wasn't seen: the tile stays held for that seat.
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Tile 1, held by Seat 1' }).tap();
+	await expect(token).not.toHaveAttribute('data-spinning');
+	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	await expect(page.getByRole('button', { name: 'Confirm' })).toBeEnabled();
 });
 
 test('selecting a character moves nothing, and its lock picks it when not yet chosen', async ({
@@ -1259,4 +1492,58 @@ test('selecting a character moves nothing, and its lock picks it when not yet ch
 	await lock.tap();
 	await expect(main('baron')).toHaveAttribute('aria-pressed', 'true');
 	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+});
+
+// Trevor, backlog L25: a custom script can leave out how its own characters go in the bag
+// (Blood on Hope's Peak's Ultimate Imposter thinks it is another character, like the
+// Drunk). The ⋯ on Characters sets it for the game.
+test('the ⋯ sets how a custom script’s own character goes in the bag', async ({ page }) => {
+	await page.addInitScript(() => {
+		localStorage.setItem(
+			'grim-games:scripts:quick-play',
+			JSON.stringify({
+				schemaVersion: 1,
+				scriptId: 'quick-play',
+				name: 'Imposter Test',
+				json: [
+					{ id: '_meta', name: 'Imposter Test' },
+					'washerwoman',
+					'empath',
+					'monk',
+					'chef',
+					{
+						id: 'imposter',
+						name: 'Imposter',
+						team: 'outsider',
+						ability: 'You think you are a different character, but you are not.',
+						setup: true,
+						remindersGlobal: ['Is Imposter']
+					},
+					'poisoner',
+					'imp'
+				],
+				source: { kind: 'paste' },
+				addedAt: 1,
+				lastUsedAt: 1,
+				revision: 1
+			})
+		);
+	});
+	await selectionFor(page, 6, 'Imposter Test');
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Imposter', 'Poisoner', 'Imp');
+	const check = page.getByTestId('setup-check');
+	await expect(check).not.toContainText(/Imposter\s*: \+1 Townsfolk in the bag/);
+
+	await page.getByRole('button', { name: 'Script characters in the bag' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Script characters in the bag' });
+	const role = dialog.getByRole('combobox', { name: 'Imposter' });
+	await expect(role).toHaveText('Dealt as itself');
+	await noSidewaysScroll(page);
+	await role.tap();
+	await page.getByRole('option', { name: 'Thinks they are another character' }).tap();
+	await expect(role).toHaveText('Thinks they are another character');
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	// Now it is handled like the Drunk: one more Townsfolk in the bag instead of its own token.
+	await expect(check).toContainText(/Imposter\s*: \+1 Townsfolk in the bag/);
 });

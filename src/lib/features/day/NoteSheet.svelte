@@ -9,6 +9,8 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { correctGuesses, dayClaim, guessLimit } from '#lib/core/rules/index.ts';
 	import type { DayPort } from './day-port.ts';
 
 	export interface NoteTarget {
@@ -32,46 +34,77 @@
 					e.kind === 'note' && e.characterId === target.characterId && e.seatId === target.seatId
 			)
 	);
-	const juggler = $derived(target?.characterId === 'juggler');
+	/** The claim the player makes in town (L56): guesses, or one statement true or false. */
+	const claim = $derived(target && dayClaim(target.characterId, game.characters));
 	const scriptIds = $derived(
 		game.game.script.entries.map((e) => (e.kind === 'official' ? e.id : e.character.id))
 	);
-	const others = $derived(game.game.seating.filter((s) => s !== target?.seatId));
-	/** The guess drop-down's value for no guess. */
-	const NO_GUESS = 'none';
+	/**
+	 * Free guess slots, each one player and one character (Trevor, 2026-10-24): the same player
+	 * may be guessed as several characters (https://wiki.bloodontheclocktower.com/Juggler). As
+	 * many as the rules block allows (the Juggler's 5), else one per player.
+	 */
+	const slotCount = $derived(
+		(target && guessLimit(target.characterId, game.characters)) ?? game.game.seating.length
+	);
+	/** A drop-down's value for nothing chosen. */
+	const NONE = 'none';
+	const playerOptions = $derived([
+		{ value: NONE, label: t('day.noPlayer') },
+		...game.game.seating.map((s) => ({ value: s as string, label: game.seatName(s) }))
+	]);
 	const guessOptions = $derived([
-		{ value: NO_GUESS, label: t('day.noGuess') },
+		{ value: NONE, label: t('day.noGuess') },
 		...scriptIds.map((id) => ({ value: id as string, label: game.characterName(id) }))
 	]);
 
+	interface Slot {
+		seatId?: SeatId;
+		characterId?: CharacterId;
+	}
 	let text = $state('');
-	let guesses = $state<Record<SeatId, CharacterId>>({});
+	let slots = $state<Slot[]>([]);
+	let holds = $state(false);
 
 	// Fill the form each time the sheet opens.
 	$effect(() => {
 		if (!open) return;
 		text = existing?.text ?? '';
-		guesses = Object.fromEntries((existing?.guesses ?? []).map((g) => [g.seatId, g.characterId]));
+		const saved: Slot[] = (existing?.guesses ?? []).map((g) => ({ ...g }));
+		slots = [
+			...saved,
+			...Array.from({ length: Math.max(0, slotCount - saved.length) }, () => ({}))
+		];
+		holds = existing?.holds ?? false;
 	});
+
+	/** The slots with both a player and a character; half-filled ones are left out on save. */
+	const list = $derived<CharacterGuess[]>(
+		slots.flatMap((g) =>
+			g.seatId && g.characterId ? [{ seatId: g.seatId, characterId: g.characterId }] : []
+		)
+	);
+	/** How many guesses are right so far, from the grimoire's true characters. */
+	const correct = $derived(correctGuesses(game.game, list, game.characters).length);
 
 	function save() {
 		if (!target) return;
-		const list: CharacterGuess[] = Object.entries(guesses)
-			.filter(([, id]) => id)
-			.map(([seatId, characterId]) => ({ seatId, characterId }));
+		const truth = claim === 'statement' ? { holds } : {};
 		const ok = existing
 			? game.run({
 					type: 'EditDayNote',
 					entryId: existing.entryId,
 					text,
-					...(list.length ? { guesses: list } : {})
+					...(list.length ? { guesses: list } : {}),
+					...truth
 				})
 			: game.run({
 					type: 'DayNote',
 					characterId: target.characterId,
 					...(target.seatId ? { seatId: target.seatId } : {}),
 					text,
-					...(list.length ? { guesses: list } : {})
+					...(list.length ? { guesses: list } : {}),
+					...truth
 				});
 		if (ok) open = false;
 	}
@@ -104,22 +137,41 @@
 			save();
 		}}
 	>
-		<TextField label={t('day.note')} bind:value={text} multiline rows={6} testid="note-text" />
+		<TextField
+			label={t(claim === 'statement' ? 'day.statement' : 'day.note')}
+			bind:value={text}
+			multiline
+			rows={6}
+			testid="note-text"
+		/>
 
-		{#if juggler}
+		{#if claim === 'statement'}
+			<Toggle label={t('day.statementTrue')} checked={holds} onChange={(on) => (holds = on)} />
+		{:else if claim === 'guesses'}
 			<fieldset class="guesses">
-				<legend>{t('day.jugglerGuesses')}</legend>
-				{#each others as seatId (seatId)}
-					<div class="guess">
-						<span>{game.seatName(seatId)}</span>
+				<legend
+					>{t('day.guessesTitle')}
+					<span class="correct" data-testid="correct-guesses"
+						>{t('day.correctGuesses', { count: correct })}</span
+					></legend
+				>
+				{#each slots as guess, i (i)}
+					<div class="guess" data-testid="guess-slot">
+						<span class="number">{i + 1}</span>
 						<Select
-							label={t('day.guessFor', { name: game.seatName(seatId) })}
+							label={t('day.guessPlayer', { number: i + 1 })}
 							hideLabel
-							value={guesses[seatId] ?? NO_GUESS}
+							value={guess.seatId ?? NONE}
+							options={playerOptions}
+							onChange={(id: string) => (guess.seatId = id === NONE ? undefined : (id as SeatId))}
+						/>
+						<Select
+							label={t('day.guessCharacter', { number: i + 1 })}
+							hideLabel
+							value={guess.characterId ?? NONE}
 							options={guessOptions}
 							onChange={(id: string) =>
-								// No guess is left out when the note is saved.
-								(guesses[seatId] = (id === NO_GUESS ? '' : id) as CharacterId)}
+								(guess.characterId = id === NONE ? undefined : (id as CharacterId))}
 						/>
 					</div>
 				{/each}
@@ -143,13 +195,25 @@
 		border: 0;
 	}
 	legend {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
 		font-family: var(--font-control);
 		margin-bottom: var(--space-2);
 		font-weight: 600;
 	}
+	.number {
+		min-width: 1.5em;
+		font-variant-numeric: tabular-nums;
+		color: var(--on-surface-muted);
+	}
+	.correct {
+		font-weight: 400;
+		color: var(--on-surface-muted);
+	}
 	.guess {
 		display: grid;
-		grid-template-columns: calc(5 * var(--u)) 1fr;
+		grid-template-columns: auto 1fr 1fr;
 		align-items: center;
 		gap: var(--space-2);
 	}
