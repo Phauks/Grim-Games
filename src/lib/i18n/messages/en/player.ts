@@ -58,7 +58,6 @@ export const player = {
 	'player.density': 'Script sheet layout',
 	'player.lightSheet': 'Light background',
 	'player.frame': 'Your frame',
-	'player.avatar': 'Initials on your seat',
 	'player.guessesOnTokens': 'Guesses over avatars',
 	'player.guessesOnTokensDetail':
 		"Your guess of a seat's character shows on its token in place of the player's avatar.",
