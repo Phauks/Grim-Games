@@ -4,6 +4,7 @@
  * one set of parts.
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
+import type { AnyDuplicates } from '#lib/core/rules/index.ts';
 import {
 	allowedOffScript,
 	STANDARD,
@@ -21,6 +22,15 @@ export function gameModeOf(gameId: GameId): (GameMode & { parts: CombinedParts }
 	const record = readGameMode(gameId);
 	if (!record) return undefined;
 	return withRules(findMode(record.modeId) ?? STANDARD, record.rules);
+}
+
+/**
+ * The characters this game's mode or rules let have several copies (Duplicate Characters,
+ * Whale Buffet): every type but those named; undefined when only their own rules allow it.
+ */
+export function duplicatesAllowedIn(gameId: GameId): AnyDuplicates | undefined {
+	const duplicates = gameModeOf(gameId)?.parts.duplicates;
+	return duplicates?.kind === 'allowed' ? { notTypes: duplicates.notTypes } : undefined;
 }
 
 /** The characters this game's rules put in play from off the script (+1, Infinite Possibilities). */

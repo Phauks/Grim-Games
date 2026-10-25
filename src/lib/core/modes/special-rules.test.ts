@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { analyseSetup, canDuplicate, type AnyDuplicates } from '#lib/core/rules/index.ts';
 import { combineRules } from './combine.ts';
 import { GAME_MODES, STANDARD, gameModeById } from './registry.ts';
 import { SPECIAL_RULES, upgradeModeChoice } from './rules/index.ts';
@@ -272,6 +273,41 @@ describe('+1', () => {
 			rule('infinite-possibilities')
 		]);
 		expect(conflicts).toEqual([{ ids: ['plus-one', 'infinite-possibilities'], part: 'pool' }]);
+	});
+});
+
+// Trevor (2026-10-24): "add special rule, Duplicate Characters. There can be multiple copies
+// of characters in the bag."
+describe('Duplicate Characters', () => {
+	const rule = SPECIAL_RULES.find((r) => r.id === 'duplicate-characters')!;
+	const data = committedGameData();
+	const byId = (id: string) => data.characters.find((c) => c.id === id)!;
+
+	it('lets any character but a Demon have more than one copy on a standard game', () => {
+		const duplicates = combineRules(STANDARD, [rule]).parts.duplicates;
+		expect(duplicates).toMatchObject({ kind: 'allowed', notTypes: ['demon'] });
+		const allowed = duplicates?.kind === 'allowed' ? duplicates : undefined;
+		for (const id of ['chef', 'saint', 'poisoner']) {
+			const character = byId(id);
+			expect(canDuplicate(character, [character]), id).toBe(false);
+			expect(canDuplicate(character, [character], allowed), id).toBe(true);
+		}
+		// Trevor (2026-10-24): not Demons, "since that could make a game too unwinnable".
+		const imp = byId('imp');
+		expect(canDuplicate(imp, [imp], allowed)).toBe(false);
+		expect(canDuplicate(imp, [imp], {})).toBe(true);
+	});
+
+	it('takes the duplicate warning out of the setup check, except for a Demon', () => {
+		const allowed: AnyDuplicates = { notTypes: ['demon'] };
+		const codes = (ids: string[], duplicatesAllowed?: AnyDuplicates) =>
+			analyseSetup({ players: 5, inPlay: ids.map(byId), duplicatesAllowed }).warnings.map(
+				(w) => w.code
+			);
+		const chefs = ['chef', 'chef', 'empath', 'poisoner', 'imp'];
+		expect(codes(chefs)).toContain('duplicate');
+		expect(codes(chefs, allowed)).not.toContain('duplicate');
+		expect(codes(['chef', 'empath', 'saint', 'imp', 'imp'], allowed)).toContain('duplicate');
 	});
 });
 

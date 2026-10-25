@@ -42,6 +42,8 @@ export const APPROVED_ABOUT: Readonly<Record<string, string>> = {
 		'While 5 or more players are alive, an evil player who nominates another living evil player swaps characters with them at once. Travellers are left out.',
 	'djinns-bargain':
 		'A player who nominates may choose to die. If they do, the player they nominated has their ability work twice until dusk the next day.',
+	// Trevor's own wording, 2026-10-24.
+	'duplicate-characters': 'There can be multiple copies of characters in the bag.',
 	// Approved 2026-10-24 ("Approved"), after reading the drafts in the World Cup thread.
 	'flesh-and-bone':
 		'A campaign of games with the Flesh and Bone Fabled. Characters executed in one game are out for the rest of the campaign and replaced on the next script.',
