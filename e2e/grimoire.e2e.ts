@@ -5471,6 +5471,59 @@ test("holding a seat's token lights its character's reminders and dims the rest"
 	await page.mouse.up();
 });
 
+test('with Hold a seat, then drag on, a held seat drags to a new place without opening', async ({
+	page
+}) => {
+	// Trevor (2026-10-25): a setting so a long press on a token then a drag moves it, to try
+	// with Storytellers before choosing the built-in behaviour. Off, a hold moves nothing.
+	await startGame(page);
+	const seat = (n: number) => page.getByRole('button', { name: new RegExp(`^Seat ${n}:`) });
+	const centre = async (n: number) => {
+		const box = (await seat(n).boundingBox())!;
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+	const board = (await page.locator('.board').boundingBox())!;
+	const to = { x: board.x + board.width / 2, y: board.y + board.height * 0.3 };
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	const holdAndDrag = async () => {
+		const from = await centre(1);
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await expect(page.locator('.slot.dim')).toHaveCount(7);
+		await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+		await page.mouse.move(to.x, to.y, { steps: 4 });
+		await page.mouse.up();
+		await expect(page.locator('.slot.dim')).toHaveCount(0);
+	};
+
+	const start = await centre(1);
+	await holdAndDrag();
+	expect(await centre(1)).toEqual(start);
+	await expect(sheet).toBeHidden();
+
+	await openSettingsDialog(page);
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board' })
+		.tap();
+	await settings.getByRole('button', { name: /Advanced/ }).tap();
+	await settings.getByText('Hold a seat, then drag, to move it', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+
+	const seat2 = await centre(2);
+	await holdAndDrag();
+	const moved = await centre(1);
+	expect(Math.abs(moved.x - to.x)).toBeLessThan(4);
+	expect(Math.abs(moved.y - to.y)).toBeLessThan(4);
+	expect(await centre(2)).toEqual(seat2);
+	await expect(sheet).toBeHidden();
+	// A tap still opens the seat.
+	await openSeat(page, 1);
+	await closeSheet(page);
+});
+
 test('the walk-through shows the character, then its player below, with the count at the top right', async ({
 	page
 }) => {
