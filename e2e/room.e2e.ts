@@ -411,6 +411,56 @@ test('after a game the room votes on the next script, and the next game opens in
 	await phoneContext.close();
 });
 
+test("a new game in the same room starts the phone's notes and guesses afresh", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-25): "I loaded into a new trouble brewing game, but I had the same
+	// scratch notes from a previous game". A phone keeps its notes, pads, guesses and seat
+	// notes per game in a room, not per script.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+
+	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await phone.getByRole('button', { name: 'New note' }).tap();
+	const editor = phone.getByRole('dialog', { name: 'Note' });
+	await editor.getByRole('textbox', { name: 'Title' }).fill('Game one');
+	await phone.keyboard.press('Escape');
+	await expect(phone.locator('[data-note]').filter({ hasText: 'Game one' })).toHaveCount(1);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await phone.getByTestId('grim-seat').nth(1).tap();
+	await phone
+		.getByRole('dialog', { name: 'Seat 2 · Seat 2' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await expect(phone.getByTestId('grim-seat').nth(1)).toHaveAttribute('data-guess', 'true');
+
+	// The same script again, in the same room.
+	await page.goto(board);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game' })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'End game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	const second = await startGame(page);
+	expect(second).not.toBe(board);
+	await expect(phone.getByTestId('grim-seat').nth(1)).not.toHaveAttribute('data-guess', 'true');
+	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(phone.locator('[data-note]').first()).toBeVisible();
+	await expect(phone.locator('[data-note]').filter({ hasText: 'Game one' })).toHaveCount(0);
+	await phoneContext.close();
+});
+
 test('New game opens a room for the vote before any game or script', async ({
 	page,
 	browser
