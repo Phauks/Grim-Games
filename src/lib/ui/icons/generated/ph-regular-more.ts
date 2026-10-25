@@ -2,6 +2,7 @@
 import type { IconMap } from '../types.ts';
 import ph_anchor from '~icons/ph/anchor';
 import ph_archive from '~icons/ph/archive';
+import ph_arrow_circle_right from '~icons/ph/arrow-circle-right';
 import ph_arrow_left from '~icons/ph/arrow-left';
 import ph_arrow_right from '~icons/ph/arrow-right';
 import ph_arrow_u_up_left from '~icons/ph/arrow-u-up-left';
@@ -104,6 +105,7 @@ import ph_x_circle from '~icons/ph/x-circle';
 const icons: IconMap = {
 	'ph:anchor': ph_anchor,
 	'ph:archive': ph_archive,
+	'ph:arrow-circle-right': ph_arrow_circle_right,
 	'ph:arrow-left': ph_arrow_left,
 	'ph:arrow-right': ph_arrow_right,
 	'ph:arrow-u-up-left': ph_arrow_u_up_left,

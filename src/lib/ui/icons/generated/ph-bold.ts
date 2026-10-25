@@ -3,6 +3,7 @@ import type { IconMap } from '../types.ts';
 import ph_anchor_bold from '~icons/ph/anchor-bold';
 import ph_archive_bold from '~icons/ph/archive-bold';
 import ph_arrow_bend_up_right_bold from '~icons/ph/arrow-bend-up-right-bold';
+import ph_arrow_circle_right_bold from '~icons/ph/arrow-circle-right-bold';
 import ph_arrow_clockwise_bold from '~icons/ph/arrow-clockwise-bold';
 import ph_arrow_counter_clockwise_bold from '~icons/ph/arrow-counter-clockwise-bold';
 import ph_arrow_left_bold from '~icons/ph/arrow-left-bold';
@@ -10,6 +11,7 @@ import ph_arrow_right_bold from '~icons/ph/arrow-right-bold';
 import ph_arrow_square_out_bold from '~icons/ph/arrow-square-out-bold';
 import ph_arrow_u_up_left_bold from '~icons/ph/arrow-u-up-left-bold';
 import ph_arrow_u_up_right_bold from '~icons/ph/arrow-u-up-right-bold';
+import ph_arrows_clockwise_bold from '~icons/ph/arrows-clockwise-bold';
 import ph_arrows_down_up_bold from '~icons/ph/arrows-down-up-bold';
 import ph_arrows_in_bold from '~icons/ph/arrows-in-bold';
 import ph_arrows_left_right_bold from '~icons/ph/arrows-left-right-bold';
@@ -205,6 +207,7 @@ const icons: IconMap = {
 	'ph:anchor-bold': ph_anchor_bold,
 	'ph:archive-bold': ph_archive_bold,
 	'ph:arrow-bend-up-right-bold': ph_arrow_bend_up_right_bold,
+	'ph:arrow-circle-right-bold': ph_arrow_circle_right_bold,
 	'ph:arrow-clockwise-bold': ph_arrow_clockwise_bold,
 	'ph:arrow-counter-clockwise-bold': ph_arrow_counter_clockwise_bold,
 	'ph:arrow-left-bold': ph_arrow_left_bold,
@@ -212,6 +215,7 @@ const icons: IconMap = {
 	'ph:arrow-square-out-bold': ph_arrow_square_out_bold,
 	'ph:arrow-u-up-left-bold': ph_arrow_u_up_left_bold,
 	'ph:arrow-u-up-right-bold': ph_arrow_u_up_right_bold,
+	'ph:arrows-clockwise-bold': ph_arrows_clockwise_bold,
 	'ph:arrows-down-up-bold': ph_arrows_down_up_bold,
 	'ph:arrows-in-bold': ph_arrows_in_bold,
 	'ph:arrows-left-right-bold': ph_arrows_left_right_bold,

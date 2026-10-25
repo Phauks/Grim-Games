@@ -503,6 +503,7 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 		.getByRole('dialog', { name: 'Seat 2 · Seat 2' })
 		.getByRole('button', { name: 'Empath', exact: true })
 		.tap();
+	await phone.keyboard.press('Escape');
 	await expect(phone.getByTestId('grim-seat').nth(1)).toHaveAttribute('data-guess', 'true');
 
 	// The same script again, in the same room.
@@ -1249,18 +1250,51 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	);
 	await expect(seats.first().getByTestId('dead-mark')).toHaveAttribute('data-vote', 'used');
 
-	// A guess is the player's own, on this phone only, and stays after a reload.
+	// A guess is the player's own, on this phone only, and stays after a reload. The sheet
+	// stays open, its guesses at the top, so a seat can take more than one.
 	await seats.nth(1).tap();
-	await phone
-		.getByRole('dialog', { name: 'Seat 2 · Seat 2' })
-		.getByRole('button', { name: 'Empath', exact: true })
-		.tap();
+	const seatTwo = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
+	const yours = seatTwo.getByTestId('seat-guesses');
+	await expect(yours).toHaveText(/None/);
+	await seatTwo.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	await expect(seats.nth(1)).toHaveAttribute('data-guess', 'true');
+	await expect(seats.nth(1).getByTestId('guess-marks')).toHaveCount(0);
+	// Several roles for one seat (Trevor, 2026-10-25): the newest is the main one, on the face,
+	// and the others are icons in a pill over the top-right rim.
+	await seatTwo.getByRole('button', { name: 'Spy', exact: true }).tap();
+	await expect(yours.getByRole('button')).toHaveCount(2);
+	await expect(yours.getByRole('button').first()).toHaveAttribute('aria-pressed', 'true');
+	await expect(yours.getByRole('button').first()).toContainText('Spy');
+	await phone.keyboard.press('Escape');
+	await expect(seatTwo).toBeHidden();
+	await expect(seats.nth(1)).toHaveAttribute(
+		'aria-label',
+		'Seat 2: Seat 2, your guess: Spy, Empath'
+	);
+	await expect(seats.nth(1).getByTestId('guess-mark')).toHaveCount(1);
+	await expect(seats.nth(1).getByRole('img', { name: 'Empath' })).toBeVisible();
+	// Tapping the pill makes the next guess the main one, without opening the sheet.
+	await seats.nth(1).getByTestId('guess-marks').tap();
+	await expect(seatTwo).toBeHidden();
+	await expect(seats.nth(1)).toHaveAttribute(
+		'aria-label',
+		'Seat 2: Seat 2, your guess: Empath, Spy'
+	);
+	// In the sheet, tapping a guess makes it the main one, and tapping it in the list takes it off.
+	await seats.nth(1).tap();
+	await yours.getByRole('button', { name: /Spy/ }).tap();
+	await expect(yours.getByRole('button').first()).toContainText('Spy');
+	// The picker's Spy, after the chip of the same name.
+	await seatTwo.getByRole('button', { name: 'Spy', exact: true }).last().tap();
+	await expect(yours.getByRole('button')).toHaveCount(1);
+	await phone.keyboard.press('Escape');
+	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	// Or only a type, or only good or evil (Trevor, 2026-10-24).
 	await seats.nth(2).tap();
 	const guessSheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
 	await guessSheet.getByRole('button', { name: 'Minion', exact: true }).tap();
+	await phone.keyboard.press('Escape');
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
 	await expect(seats.nth(2).getByRole('img', { name: 'Minion' })).toBeVisible();
 	await seats.nth(3).tap();
@@ -1268,6 +1302,7 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 		.getByRole('dialog', { name: 'Seat 4 · Seat 4' })
 		.getByRole('button', { name: 'Good', exact: true })
 		.tap();
+	await phone.keyboard.press('Escape');
 	await expect(seats.nth(3)).toHaveAttribute('aria-label', 'Seat 4: Seat 4, your guess: Good');
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
@@ -1488,6 +1523,7 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	await empath.scrollIntoViewIfNeeded();
 	await expect(empath).toBeInViewport();
 	await empath.tap();
+	await phone.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(mine).toHaveAttribute('aria-label', /your guess: Empath/);
 	await expect(mine.getByTestId('avatar-face')).toBeVisible();
