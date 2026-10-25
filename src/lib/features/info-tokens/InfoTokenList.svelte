@@ -154,11 +154,12 @@
 		quickAdds = add;
 		quickOpen = true;
 	}
-	function useQuick() {
+	/** Enter keeps to how it was opened: the tile's + adds, the card itself shows. */
+	function useQuick(add = quickAdds) {
 		if (!plainText(quickText).trim()) return;
 		quickOpen = false;
 		const card: InfoToken = { id: 'quick', text: quickText, source: 'custom' };
-		if (quickAdds) onadd?.(card);
+		if (add) onadd?.(card);
 		else onchoose(card);
 	}
 
@@ -606,16 +607,29 @@
 				bind:value={quickText}
 				label={t('info-tokens.text')}
 				maxlength={MAX_CUSTOM_TEXT}
-				onsubmit={useQuick}
+				onsubmit={() => useQuick()}
 			/>
 		</div>
 	</div>
 	{#snippet actions()}
+		<!-- Shown now, or added to the cards to show with others (Trevor, 2026-10-25), as each
+		     tile's + does; from the board sheet's header too, which has no tile. -->
 		<ModalActions
 			onCancel={() => (quickOpen = false)}
-			onConfirm={useQuick}
+			onConfirm={() => useQuick(false)}
 			disabled={!plainText(quickText).trim()}
-		/>
+		>
+			{#snippet start()}
+				{#if onadd}
+					<Button
+						variant="quiet"
+						icon="add"
+						disabled={!plainText(quickText).trim()}
+						onclick={() => useQuick(true)}>{t('info-tokens.addToShow')}</Button
+					>
+				{/if}
+			{/snippet}
+		</ModalActions>
 	{/snippet}
 </Dialog>
 
