@@ -28,7 +28,6 @@ export const LARGE_FILE_TODO = [
 	'src/lib/features/info-tokens/InfoTokenList.svelte',
 	'src/lib/features/library/LibraryBrowser.svelte',
 	'src/lib/features/script-builder/ScriptBuilderPage.svelte',
-	'src/lib/features/scripts/ScriptPicker.svelte',
 	'src/lib/ui/table/DataTable.svelte'
 ];
 
