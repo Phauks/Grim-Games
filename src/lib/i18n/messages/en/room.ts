@@ -75,6 +75,7 @@ export const room = {
 	'room.shareGrim.body':
 		'Every player in the room sees the whole finished grimoire: every seat’s character and reminders.',
 	'room.shareGrim.failed': 'The grimoire could not be shared. Check the room is connected.',
+	'room.shareGrim.atEnd': 'Share the final grimoire with players',
 	'room.choosing': 'The Storyteller is choosing a script.',
 	'room.scriptVote.title': 'Vote on the next script',
 	'room.scriptVote.button': 'Room vote',

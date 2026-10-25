@@ -3,11 +3,38 @@
  * tap a player and put what they think they are as a character"). Kept on this phone only,
  * per room; seat ids are new in every game, so a new game starts with no guesses.
  */
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
-/** Seat id to the character this player thinks sits there. */
+/**
+ * Seat id to the character this player thinks sits there, or a generic guess (`GenericGuess`)
+ * by its key, such as `type:minion` or `team:evil`.
+ */
 export type Guesses = Record<string, CharacterId>;
+
+/**
+ * A guess of a seat by its character type alone, or only its alignment (Trevor, 2026-10-24).
+ * Keys hold a colon, which no character id does, so they never clash with one.
+ */
+export interface GenericGuess {
+	key: string;
+	type?: CharacterType;
+	team: Alignment;
+}
+
+export const GENERIC_GUESSES: readonly GenericGuess[] = [
+	{ key: 'type:townsfolk', type: 'townsfolk', team: 'good' },
+	{ key: 'type:outsider', type: 'outsider', team: 'good' },
+	{ key: 'type:minion', type: 'minion', team: 'evil' },
+	{ key: 'type:demon', type: 'demon', team: 'evil' },
+	{ key: 'team:good', team: 'good' },
+	{ key: 'team:evil', team: 'evil' }
+];
+
+/** The generic guess a stored guess is, if it is one. */
+export function genericGuess(guess: string | undefined): GenericGuess | undefined {
+	return GENERIC_GUESSES.find((g) => g.key === guess);
+}
 
 /** A room holds at most this many players, so older guesses beyond it are dropped. */
 const MAX_GUESSES = 40;

@@ -24,13 +24,15 @@
 		/** None is the reminder's own ink. */
 		onColour: (colour: SymbolColour | undefined) => void;
 		onFill: (fill: boolean) => void;
+		/** The text as typed, before it is saved (a live preview shows it). */
+		text?: string;
 	}
 
-	let { look, onNote, onSymbol, onColour, onFill }: Props = $props();
-	// eslint-disable-next-line svelte/prefer-writable-derived -- edited here, saved on commit
-	let text = $state('');
+	let { look, onNote, onSymbol, onColour, onFill, text = $bindable('') }: Props = $props();
+	// Only when the saved text changes: picking a symbol mid-typing keeps what was typed.
+	const saved = $derived(look.note ?? '');
 	$effect.pre(() => {
-		text = look.note ?? '';
+		text = saved;
 	});
 
 	function save() {

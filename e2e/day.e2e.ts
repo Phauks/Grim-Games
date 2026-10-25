@@ -145,7 +145,9 @@ test("day notes are gone; a player's day button sits in their ability row", asyn
 	await row.screenshot({ path: `test-results/day-used-row-${test.info().project.name}.png` });
 });
 
-test("the Juggler's note keeps a guess for each player", async ({ page }) => {
+test("the Juggler's note has 5 guess slots, and a player may be guessed twice", async ({
+	page
+}) => {
 	await loaded(page);
 	await sampleGame(page, 'Sects & Violets');
 	// His guesses have their own button on his row (Trevor, 2026-10-19).
@@ -154,21 +156,31 @@ test("the Juggler's note keeps a guess for each player", async ({ page }) => {
 	).toHaveCount(1);
 	await page.getByRole('button', { name: /^Guesses: Juggler/ }).tap();
 	const sheet = page.getByRole('dialog', { name: /^Note: Juggler/ });
-	const guess = sheet.getByRole('combobox', { name: 'Guess for Ana' });
-	await expect(guess).toHaveText('No guess');
-	await guess.tap();
-	await page.getByRole('option', { name: 'Witch', exact: true }).tap();
-	await expect(guess).toHaveText('Witch');
-	// The live count of right guesses (L57): Ana is not the Witch, Eve is.
+	// Up to 5 guesses, each a player and a character (https://wiki.bloodontheclocktower.com/Juggler;
+	// Trevor, 2026-10-24: free slots, not one per player).
+	await expect(sheet.getByTestId('guess-slot')).toHaveCount(5);
+	const pick = async (name: string, option: string) => {
+		await sheet.getByRole('combobox', { name }).tap();
+		await page.getByRole('option', { name: option, exact: true }).tap();
+	};
 	const correct = sheet.getByTestId('correct-guesses');
+	await expect(sheet.getByRole('combobox', { name: 'Character for guess 1' })).toHaveText(
+		'No guess'
+	);
+	// Eve is the Witch: guessing her as the Cerenovus and then the Witch is one right of two.
+	await pick('Player for guess 1', 'Eve');
+	await pick('Character for guess 1', 'Cerenovus');
 	await expect(correct).toHaveText('0 correct');
-	await sheet.getByRole('combobox', { name: 'Guess for Eve' }).tap();
-	await page.getByRole('option', { name: 'Witch', exact: true }).tap();
+	await pick('Player for guess 2', 'Eve');
+	await pick('Character for guess 2', 'Witch');
 	await expect(correct).toHaveText('1 correct');
 	await sheet.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(sheet).toBeHidden();
 	await page.getByRole('button', { name: /^Guesses: Juggler/ }).tap();
-	await expect(guess).toHaveText('Witch');
+	await expect(sheet.getByRole('combobox', { name: 'Player for guess 2' })).toHaveText('Eve');
+	await expect(sheet.getByRole('combobox', { name: 'Character for guess 2' })).toHaveText('Witch');
+	await expect(sheet.getByTestId('guess-slot')).toHaveCount(5);
+	await sheet.screenshot({ path: `test-results/juggler-slots-${test.info().project.name}.png` });
 });
 
 test('the Gossip’s statement, marked true, is a yes on her night step (L58)', async ({ page }) => {

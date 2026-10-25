@@ -272,6 +272,23 @@ export interface NightView {
 	guided?: { night: 'first' | 'other'; stepId: string };
 }
 
+/**
+ * Tonight's night has begun on this device: a step of it is ticked and no new day has started
+ * since. The board and the saved games list both read it (gamePhase). For an ended game Dusk
+ * alone does not count: a game that ends at an Execution ends on that day (Trevor,
+ * 2026-10-24), though the Execution ticked Dusk before End game was asked.
+ */
+export function nightUnderway(
+	view: { done: readonly string[]; day?: number },
+	days: number,
+	ended = false
+): boolean {
+	return (
+		(view.day ?? days) === days &&
+		view.done.some((key) => key.startsWith(`${days}:`) && !(ended && key.endsWith(':dusk')))
+	);
+}
+
 const isNight = (v: unknown): v is 'first' | 'other' => v === 'first' || v === 'other';
 
 export function parseNightView(raw: unknown): NightView {
