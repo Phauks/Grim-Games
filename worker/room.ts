@@ -141,7 +141,7 @@ export class Room extends DurableObject<RoomEnv> {
 					return;
 				}
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
-				send(ws, hostView(room));
+				send(ws, hostView(room, this.present()));
 				send(ws, { type: 'watchers', count: this.watchers() });
 				return;
 			}
@@ -167,15 +167,15 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			const memberId = hash.slice(0, 24);
-			const joined = join(room, memberId);
+			const joined = join(room, memberId, this.present());
 			if (!joined) {
 				send(ws, { type: 'refused', reason: 'room-full' });
 				ws.close(4429, 'Room full');
 				return;
 			}
 			ws.serializeAttachment({ role: 'player', memberId } satisfies Attachment);
-			if (joined !== room) await this.save(joined);
-			else send(ws, playerView(room, memberId));
+			// Saved even when nothing changed, so the Storyteller sees this phone is here now.
+			await this.save(joined);
 			const script = await this.ctx.storage.get<ScriptView>('script');
 			if (script) send(ws, script);
 			// A phone joining after the Storyteller shared the finished grimoire gets it too.
@@ -327,10 +327,37 @@ export class Room extends DurableObject<RoomEnv> {
 		if (reveal && !canReveal(room, reveal.gameId)) await this.ctx.storage.delete('reveal');
 	}
 
-	/** A viewer leaving changes the Storyteller's count of who is watching. */
+	/**
+	 * A viewer leaving changes the Storyteller's count of who is watching; a phone leaving
+	 * changes who is here now.
+	 */
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const who = ws.deserializeAttachment() as Attachment | null;
 		if (who?.role === 'viewer') this.tellWatchers(ws);
+		if (who?.role === 'player') {
+			const room = await this.load();
+			if (room) this.tellHost(room, ws);
+		}
+	}
+
+	/** The members with a phone connected now, leaving out one that is going. */
+	private present(going?: WebSocket): Set<string> {
+		const ids = new Set<string>();
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'player' && socket !== going && socket.readyState === WebSocket.OPEN)
+				ids.add(who.memberId);
+		}
+		return ids;
+	}
+
+	/** Sends the Storyteller's device its view, without storing anything. */
+	private tellHost(room: RoomState, going?: WebSocket): void {
+		const text = JSON.stringify(hostView(room, this.present(going)));
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'host') socket.send(text);
+		}
 	}
 
 	/** Viewers still connected, leaving out one that is going. */
@@ -356,7 +383,7 @@ export class Room extends DurableObject<RoomEnv> {
 	/** Stores the room and sends every device its updated view. */
 	private async save(room: RoomState): Promise<void> {
 		await this.ctx.storage.put('room', room);
-		const host = JSON.stringify(hostView(room));
+		const host = JSON.stringify(hostView(room, this.present()));
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
 			if (!who || who.role === 'viewer') continue;

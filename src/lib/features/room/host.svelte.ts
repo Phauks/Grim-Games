@@ -73,6 +73,11 @@ const GRIMOIRE_DELAY_MS = 300;
 export class RoomHost {
 	code = $state<string>();
 	members = $state.raw<RoomMember[]>([]);
+	/**
+	 * The members whose phone is connected now; undefined from a room that doesn't say, when
+	 * every member counts as here. The room keeps phones from earlier games (2026-10-25).
+	 */
+	present = $state.raw<readonly string[]>();
 	requests = $state.raw<RoomRequest[]>([]);
 	/** The spectators' open vote and its count (Specters), if one is open. */
 	vote = $state.raw<VoteTally>();
@@ -424,10 +429,21 @@ export class RoomHost {
 		);
 	}
 
+	/** Whether this member's phone is connected now (every member, from a room that doesn't say). */
+	isHere(memberId: string): boolean {
+		return this.present?.includes(memberId) ?? true;
+	}
+
+	/** Members with no seat whose phone is connected now: spectators, or players yet to sit. */
+	get connectedUnseated(): RoomMember[] {
+		return this.members.filter((m) => m.seatId === undefined && this.isHere(m.memberId));
+	}
+
 	#receive(message: ServerMessage): void {
 		if (message.type === 'host-view') {
 			this.#applyLooks(this.members, message.members);
 			this.members = message.members;
+			this.present = message.present;
 			this.requests = message.requests;
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
@@ -512,6 +528,7 @@ export class RoomHost {
 		this.watchers = 0;
 		this.code = undefined;
 		this.members = [];
+		this.present = undefined;
 		this.requests = [];
 		this.vote = undefined;
 		this.scriptVote = undefined;

@@ -91,7 +91,8 @@
 
 	const host = roomHost();
 	const seats = $derived(game.seating);
-	const spectators = $derived(host.members.filter((m) => m.seatId === undefined).length);
+	// Only phones connected now: the room keeps phones from earlier games (2026-10-25).
+	const spectators = $derived(host.connectedUnseated.length);
 
 	// The last count stays shown after the vote closes, so the Storyteller can act on it.
 	let last = $state.raw<VoteTally | undefined>();

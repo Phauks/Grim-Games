@@ -77,7 +77,13 @@
 			? `${location.origin}${resolve('/watch/[code]', { code: host.code })}#${host.viewerKey}`
 			: ''
 	);
-	const seated = $derived(host.members.filter((m) => m.name !== undefined));
+	// Seated players stay listed while their phone sleeps; others only while they are here, as
+	// the room keeps phones from earlier games (2026-10-25).
+	const seated = $derived(
+		host.members.filter(
+			(m) => m.name !== undefined && (m.seatId !== undefined || host.isHere(m.memberId))
+		)
+	);
 	const statusText = $derived(
 		!host.code
 			? host.problem
