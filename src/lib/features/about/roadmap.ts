@@ -82,7 +82,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: 'One start flow: New game, then Game info during the game',
-		parts: [...range('G', 1, 3), ...range('G', 5, 7), 'G9', 'G10', 'G14', 'L6', 'L14', 'L37']
+		parts: [...range('G', 1, 3), ...range('G', 5, 7), 'G9', 'G10', 'G14', 'G16', 'L6', 'L14', 'L37']
 	},
 	{
 		title:
