@@ -286,7 +286,8 @@ test("Trevor's Enhanced tokens sit apart, and the number can be stepped or typed
 		'Use your ability?',
 		'Select a player',
 		'Select a character',
-		'Please choose again'
+		'Please choose again',
+		'Are you sure?'
 	])
 		await expect(enhanced.getByRole('button', { name, exact: true })).toBeVisible();
 	const shown = page.locator('[data-testid="show-to-player"][open]');

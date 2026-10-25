@@ -22,7 +22,8 @@ describe('info tokens', () => {
 			'Use your ability?',
 			'Select a player',
 			'Select a character',
-			'Please choose again'
+			'Please choose again',
+			'Are you sure?'
 		]);
 		const firstExtra = STANDARD_INFO_TOKENS.findIndex((t) => t.extra);
 		expect(STANDARD_INFO_TOKENS.slice(firstExtra).every((t) => t.extra)).toBe(true);

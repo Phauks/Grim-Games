@@ -379,6 +379,15 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	await sheet.getByRole('textbox', { name: 'Text' }).fill('Sam is the Imp');
 	await page.keyboard.press('Escape');
 
+	// New ones start from a dashed card at the end of each list, not a header button (Trevor,
+	// 2026-10-24).
+	await expect(
+		page.locator('[data-note]').last().locator('xpath=../following-sibling::li')
+	).toHaveCount(1);
+	await expect(page.getByTestId('new-note')).toHaveCSS('border-style', 'dashed');
+	await expect(page.getByTestId('new-pad')).toHaveCSS('border-style', 'dashed');
+	await expect(page.getByRole('button', { name: 'New note' })).toHaveCount(1);
+	await expect(page.getByRole('button', { name: 'New pad' })).toHaveCount(1);
 	await page.getByRole('button', { name: 'New note' }).tap();
 	sheet = page.getByRole('dialog', { name: 'Note' });
 	await sheet.getByRole('textbox', { name: 'Title' }).fill('My bluff');

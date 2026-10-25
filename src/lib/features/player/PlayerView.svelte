@@ -36,6 +36,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
+	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
 	import PlayerRoom from './PlayerRoom.svelte';
 	import { lastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
@@ -61,6 +62,12 @@
 	let error = $state<string>();
 	// Joining lands on the script (Trevor, 2026-10-23); the room is the row above the tabs.
 	let tab = $state('script');
+	// The finished grimoire shows on the Grim tab (Share grim, R5): turn to it when it arrives.
+	$effect(() => {
+		if (!finalGrimoire.open) return;
+		tab = 'grim';
+		finalGrimoire.open = false;
+	});
 
 	onMount(async () => {
 		try {

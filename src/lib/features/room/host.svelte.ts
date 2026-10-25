@@ -13,7 +13,11 @@ import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts'
 import type { Script } from '#lib/core/data/index.ts';
 import { toSavedGame } from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
-import { publicProjection, type PublicGameState } from '#lib/core/sync/public-projection.ts';
+import {
+	publicProjection,
+	type PublicCorner,
+	type PublicGameState
+} from '#lib/core/sync/public-projection.ts';
 import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
@@ -95,6 +99,8 @@ export class RoomHost {
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
 	#choosing = false;
+	/** What the open board's corner shows, for the phones' corners (showCorner). */
+	#corner = $state<{ gameId: string; corner: PublicCorner }>();
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -263,10 +269,13 @@ export class RoomHost {
 			$effect(() => {
 				// Where the board draws the seats, so phones draw the town the same way (plan J13).
 				const layout = notes ? parseSeatLayout(notes().layout) : seatLayouts.read(game.game.gameId);
+				const corner = this.#corner?.gameId === game.game.gameId ? this.#corner.corner : undefined;
 				const state = publicProjection(
 					game.game,
 					publicTravellerTest(game.game.gameId, game.characters),
-					layout
+					layout,
+					corner,
+					game.characters
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
@@ -277,6 +286,15 @@ export class RoomHost {
 				this.#socket?.send({ type: 'script', script });
 			});
 		});
+	}
+
+	/**
+	 * The lines the board's corner shows now (corner-lines.ts), so each phone's grim shows the
+	 * same corner (Trevor, 2026-10-24). Sent with the game's public state.
+	 */
+	showCorner(gameId: string, corner: PublicCorner): void {
+		const shown = { gameId, corner: $state.snapshot(corner) as PublicCorner };
+		if (JSON.stringify(shown) !== JSON.stringify(this.#corner)) this.#corner = shown;
 	}
 
 	/** Approves a request, optionally into a different seat, naming that seat in the grimoire. */
