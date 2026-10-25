@@ -954,6 +954,17 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await expect(toolbar.getByRole('button', { name: 'Script', exact: true })).toBeEnabled();
 	const timer = viewer.getByTestId('day-timer');
 	await expect(timer).toBeVisible();
+	// The app's sidebar stays beside the watched board, so a spectator can leave and come back
+	// (Trevor, 2026-10-25); its hamburger is then the only one. Narrow, the toolbar's opens the menu.
+	const sidebar = viewer.getByRole('navigation', { name: 'Menu', exact: true });
+	const size = viewer.viewportSize()!;
+	await viewer.setViewportSize({ width: 1280, height: 800 });
+	await expect(sidebar).toBeVisible();
+	await expect(viewer.getByRole('button', { name: 'Menu', exact: true })).toHaveCount(1);
+	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toBeInViewport();
+	await viewer.setViewportSize(size);
+	await expect(sidebar).toBeHidden();
+	await expect(toolbar.getByRole('button', { name: 'Menu', exact: true })).toBeVisible();
 	for (const button of await timer.getByRole('button').all()) await expect(button).toBeDisabled();
 	await viewer.getByRole('button', { name: /^Seat 1:/ }).tap();
 	await expect(
