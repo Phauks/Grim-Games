@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import type { Seat } from '#lib/core/model/index.ts';
@@ -213,9 +214,7 @@
 			></span
 		>{/if}
 	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
-	{#if seat.note}<span class="mark note" data-testid="note-mark" title="Note"
-			><Icon name="notes" /></span
-		>{/if}
+	{#if seat.note}<SeatNoteMark />{/if}
 {/snippet}
 
 <button
@@ -345,12 +344,6 @@
 		translate: -50% 0;
 	}
 	/* Lower right: the dead skull keeps the lower left. */
-	.note {
-		right: -4%;
-		bottom: -4%;
-		background: var(--surface-raised);
-		color: var(--on-surface);
-	}
 	/* Over the top-left rim, half outside the token: the left leaf's first-night number, at the
 	   middle of the left rim, stays clear (Trevor, 2026-10-24). */
 	.nominations {
@@ -390,12 +383,5 @@
 		background: var(--on-surface);
 		color: var(--surface);
 		opacity: 1;
-	}
-	/* A tap target bigger than the mark it shows (Trevor, 2026-10-19: tap it for the notes). */
-	.note::after {
-		content: '';
-		position: absolute;
-		inset: calc(-0.875 * var(--u));
-		border-radius: 50%;
 	}
 </style>
