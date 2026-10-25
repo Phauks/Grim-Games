@@ -195,10 +195,11 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
 	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
-	// In its place all game on the Grim tab, so nothing moves when it can be used (no reflow).
+	// Not there during the game, where it would do nothing (Trevor, 2026-10-25).
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	const finalSwitch = phone.getByRole('checkbox', { name: 'Final grimoire' });
-	await expect(finalSwitch).toBeDisabled();
+	await expect(phone.getByTestId('player-grim')).toBeVisible();
+	await expect(finalSwitch).toHaveCount(0);
 	// Only once the game is over.
 	await expect(page.getByRole('button', { name: 'Share grim' })).toBeDisabled();
 
@@ -251,7 +252,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 		.tap();
 	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
 	await expect(final).toHaveCount(0);
-	await expect(finalSwitch).toBeDisabled();
+	await expect(finalSwitch).toHaveCount(0);
 	await phoneContext.close();
 });
 
@@ -1287,6 +1288,12 @@ test('a player writes a note on a seat from the Grim tab, and the Notes tab list
 	await phone.keyboard.press('Escape');
 	await expect(seats.nth(2).getByTestId('note-mark')).toBeVisible();
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your note');
+	// The board's own note mark, which opens the note straight away, as on the board (Trevor,
+	// 2026-10-25: the same icon and the same behaviour).
+	await seats.nth(2).getByTestId('note-mark').tap();
+	await expect(editor.getByTestId('note-editor')).toHaveValue('Claims Chef: 1');
+	await expect(sheet).toHaveCount(0);
+	await editor.getByRole('button', { name: 'Close' }).tap();
 
 	// The Notes tab lists every seat with its note, and opens the same editor.
 	await phone.getByRole('tab', { name: 'Notes' }).tap();
