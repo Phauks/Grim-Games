@@ -39,5 +39,10 @@
 				"reason": "Says the Chosen token moves each night and what it stops."
 			}
 		}
+	},
+	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"]
+		}
 	}
 }

@@ -59,5 +59,10 @@
 				"either": true
 			}
 		]
+	},
+	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"]
+		}
 	}
 }

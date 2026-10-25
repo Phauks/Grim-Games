@@ -17,6 +17,7 @@ import {
 } from './day-reminder-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
+import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
 	readReminderPlaceholders,
@@ -158,6 +159,8 @@ export interface CharacterRules {
 	reminderPlaceholders?: ReminderPlaceholderRules;
 	/** Our own night text in place of the original (`rules/night-text.ts`). */
 	nightText?: NightTextRules;
+	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
+	infoTokenCharacters?: InfoTokenCharacterRules;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -343,7 +346,8 @@ export const RULE_KEYS = [
 	'deathCause',
 	'reminderMovement',
 	'reminderPlaceholders',
-	'nightText'
+	'nightText',
+	'infoTokenCharacters'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -524,6 +528,11 @@ export function parseCharacterRules(
 	if (raw.nightText !== undefined) {
 		const nightText = readNightText(raw.nightText, `${path}.nightText`, issues);
 		if (nightText) rules.nightText = nightText;
+	}
+	if (raw.infoTokenCharacters !== undefined) {
+		const at = `${path}.infoTokenCharacters`;
+		const filled = readInfoTokenCharacters(raw.infoTokenCharacters, at, issues);
+		if (filled) rules.infoTokenCharacters = filled;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

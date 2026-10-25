@@ -14,6 +14,7 @@
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
+	import type { FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
@@ -41,9 +42,10 @@
 		night: Night;
 		/**
 		 * Info tokens, for the steps that show the player something; with a token, opened
-		 * straight at that card (one the step's text names, Trevor 2026-10-19).
+		 * straight at that card (one the step's text names, Trevor 2026-10-19), with the
+		 * characters the step's rules fill in.
 		 */
-		onInfoTokens: (token?: InfoToken) => void;
+		onInfoTokens: (token?: InfoToken, filled?: FilledInfoToken) => void;
 		/** Demon info with no bluffs yet: open the Demon bluffs sheet. */
 		onChooseBluffs?: () => void;
 		/** A Traveller's alignment by draw. */
@@ -295,7 +297,12 @@
 			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). -->
 			{#if step.character}
 				<!-- Over the open step, which stays open under the sheet, as with onShow above. -->
-				<StepInfoTokens text={step.reminder} onchoose={(token) => onInfoTokens(token)} />
+				<StepInfoTokens
+					text={step.reminder}
+					character={step.character}
+					{characters}
+					onchoose={(token, filled) => onInfoTokens(token, filled)}
+				/>
 			{/if}
 			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
 			{#if step.character}

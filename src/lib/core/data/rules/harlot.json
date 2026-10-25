@@ -39,5 +39,10 @@
 				]
 			}
 		]
+	},
+	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"]
+		}
 	}
 }
