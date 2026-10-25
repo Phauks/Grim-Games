@@ -10,7 +10,7 @@
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames, gameStarts, nightUnderway } from './device-notes.ts';
+	import { endedGames, gameStarts, nightUnderway, type EndedGame } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -154,9 +154,14 @@
 		watching?: boolean;
 		/** The Storyteller's day timer, on a spectator's board. */
 		watchedTimer?: WatchedTimer;
+		/**
+		 * A watched game the room says is over (the final grimoire on a phone, Trevor
+		 * 2026-10-24): its History steps through on this device only.
+		 */
+		over?: EndedGame;
 	}
 
-	let { grimoire, watching = false, watchedTimer }: Props = $props();
+	let { grimoire, watching = false, watchedTimer, over }: Props = $props();
 	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
@@ -560,7 +565,7 @@
 
 	/** This game's ending, if it has ended (End game below). */
 	let endedRead = $state(0);
-	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
+	const ended = $derived(over ?? (void endedRead, endedGames.read()[game.gameId]));
 	/**
 	 * Tokens are still to be handed out (Trevor, 2026-10-19: "if there are tokens still in the
 	 * bag ... it should be Set Up"): no character chosen yet, or a bag not fully drawn. The
@@ -1513,7 +1518,8 @@
 				game,
 				publicTravellerTest(game.gameId, characters),
 				layout,
-				cornerInfo
+				cornerInfo,
+				characters
 			)}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
@@ -1534,7 +1540,10 @@
 							guessKey: `storyteller:${game.gameId}`
 						}}
 					/>{/snippet}
-				{#snippet notes()}<PlayerNotes notesKey={scriptKey(loadedScript!)} />{/snippet}
+				{#snippet notes()}<PlayerNotes
+						notesKey={scriptKey(loadedScript!)}
+						town={{ seats: town.seats, guessKey: `storyteller:${game.gameId}` }}
+					/>{/snippet}
 			</PlayerScriptTabs>
 		{/if}
 	</div>

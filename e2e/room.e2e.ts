@@ -197,8 +197,8 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
 	// In its place all game on the Grim tab, so nothing moves when it can be used (no reflow).
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
-	const finalButton = phone.getByRole('button', { name: 'Final grimoire' });
-	await expect(finalButton).toBeDisabled();
+	const finalSwitch = phone.getByRole('checkbox', { name: 'Final grimoire' });
+	await expect(finalSwitch).toBeDisabled();
 	// Only once the game is over.
 	await expect(page.getByRole('button', { name: 'Share grim' })).toBeDisabled();
 
@@ -226,18 +226,18 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(share).toBeDisabled();
-	// The phone opens it as it arrives: the whole board, every seat.
-	const final = phone.getByRole('dialog', { name: 'Final grimoire' });
-	await expect(final.getByTestId('final-grimoire').getByTestId('seat')).toHaveCount(seats);
-	await final.getByRole('button', { name: 'Close' }).tap();
-	await expect(finalButton).toBeEnabled();
-	// A phone coming back still has it.
+	// The phone shows it on the Grim tab in place of the town (Trevor, 2026-10-24): the whole
+	// board, every seat; the switch puts the town and its guesses back.
+	const final = phone.getByTestId('final-grimoire');
+	await expect(final.getByTestId('seat')).toHaveCount(seats);
+	await expect(finalSwitch).toBeChecked();
+	await phone.getByText('Final grimoire', { exact: true }).tap();
+	await expect(final).toHaveCount(0);
+	await expect(phone.getByTestId('player-grim')).toBeVisible();
+	// A phone coming back still has it, and turns to the Grim tab for it.
 	await phone.reload();
-	await expect(phone.getByRole('dialog', { name: 'Final grimoire' })).toBeVisible();
-	await phone
-		.getByRole('dialog', { name: 'Final grimoire' })
-		.getByRole('button', { name: 'Close' })
-		.tap();
+	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
+	await expect(final.getByTestId('seat')).toHaveCount(seats);
 
 	// Reopening the game makes the grimoire private again.
 	await page
@@ -250,9 +250,63 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
-	// The reload opened the phone on its script again.
-	await phone.getByRole('tab', { name: 'Grim' }).tap();
-	await expect(finalButton).toBeDisabled();
+	await expect(final).toHaveCount(0);
+	await expect(finalSwitch).toBeDisabled();
+	await phoneContext.close();
+});
+
+test('End game can share the final grimoire, and each phone steps through its History', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-24): "on game end, storyteller should be given option to push the final
+	// grim to the players", and "players should individually be able to scroll through the
+	// history".
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toBeVisible();
+
+	// One change to step back over: seat 1 is executed.
+	await page.goto(board);
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: /^Status of/ })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toHaveCount(0);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game' })
+		.tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	const share = end.getByRole('checkbox', { name: 'Share the final grimoire with players' });
+	await expect(share).not.toBeChecked();
+	await end.getByText('Share the final grimoire with players', { exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+
+	// The phone turns to its Grim tab, where the finished board shows with its History.
+	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
+	const final = phone.getByTestId('final-grimoire');
+	const steps = final.getByTestId('history-strip');
+	await expect(steps).toBeVisible();
+	const count = steps.locator('.count');
+	const last = await count.textContent();
+	await steps.getByRole('button', { name: 'Previous change' }).tap();
+	await expect(count).not.toHaveText(last!);
+	// Only on that phone: the Storyteller's board stays at the end.
+	await expect(page.getByTestId('history-strip').locator('.count')).toHaveText(last!);
 	await phoneContext.close();
 });
 
@@ -1078,9 +1132,115 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 		.tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	await expect(seats.nth(1)).toHaveAttribute('data-guess', 'true');
+	// Or only a type, or only good or evil (Trevor, 2026-10-24).
+	await seats.nth(2).tap();
+	const guessSheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
+	await guessSheet.getByRole('button', { name: 'Minion', exact: true }).tap();
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
+	await expect(seats.nth(2).getByRole('img', { name: 'Minion' })).toBeVisible();
+	await seats.nth(3).tap();
+	await phone
+		.getByRole('dialog', { name: 'Seat 4 · Seat 4' })
+		.getByRole('button', { name: 'Good', exact: true })
+		.tap();
+	await expect(seats.nth(3)).toHaveAttribute('aria-label', 'Seat 4: Seat 4, your guess: Good');
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
+	await phoneContext.close();
+});
+
+test("a Banshee the Demon killed shows two votes and no ghost vote on the players' Grim", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Everyone learns when the Demon kills the Banshee, who then votes twice on each nomination
+	// with no ghost vote to spend (https://wiki.bloodontheclocktower.com/Banshee); the players'
+	// grim says so as the board does.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seat = phone.getByTestId('grim-seat').first();
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 1: Seat 1');
+
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Banshee', exact: true }).tap();
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 1: Seat 1, dead, 2 votes per nomination');
+	// The skull, as on the board: no ghost to spend.
+	await expect(seat.getByTestId('dead-mark')).not.toHaveAttribute('data-vote');
+
+	// Executed instead, the Banshee is just dead, with a ghost vote like anyone.
+	await sheet.getByRole('button', { name: /^Status:/ }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 1: Seat 1, dead, ghost vote not used');
+	await phoneContext.close();
+});
+
+test('a player writes a note on a seat from the Grim tab, and the Notes tab lists it', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-24): "allow players to write notes directly from the grim screen relating
+	// to players", which "show up in the notes area", as the Storyteller's per-player notes do.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seats = phone.getByTestId('grim-seat');
+	await expect(seats).toHaveCount(8);
+
+	await seats.nth(2).tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
+	await expect(sheet.getByTestId('seat-note')).toContainText('None');
+	await sheet.getByTestId('seat-note').tap();
+	const editor = phone.getByRole('dialog', { name: 'Note: Seat 3' });
+	await editor.getByTestId('note-editor').fill('Claims Chef: 1');
+	// Kept as it closes, with no Save.
+	await editor.getByRole('button', { name: 'Close' }).tap();
+	await expect(sheet.getByTestId('seat-note')).toContainText('Claims Chef: 1');
+	await phone.keyboard.press('Escape');
+	await expect(seats.nth(2).getByTestId('note-mark')).toBeVisible();
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your note');
+
+	// The Notes tab lists every seat with its note, and opens the same editor.
+	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(phone.getByRole('heading', { name: 'Players' })).toBeVisible();
+	const row = phone.locator('[data-seat-note]').nth(2);
+	await expect(row).toContainText('Claims Chef: 1');
+	await expect(phone.locator('[data-seat-note]').first()).toContainText('None');
+	await row.getByRole('button').tap();
+	await editor.getByTestId('note-editor').fill('Claims Chef: 0');
+	await editor.getByRole('button', { name: 'Close' }).tap();
+	await expect(row).toContainText('Claims Chef: 0');
+	// On this phone only, and kept after a reload.
+	await phone.reload();
+	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(phone.locator('[data-seat-note]').nth(2)).toContainText('Claims Chef: 0');
 	await phoneContext.close();
 });
 
@@ -1126,8 +1286,19 @@ test("on a laptop the player's screen shows the script's logo, and the guess she
 	const start = (await scrolled())!;
 	expect(start).toEqual({ top: 0, max: expect.any(Number) });
 	expect(start.max).toBeGreaterThan(0);
+	// From the foot of the screen, over the character list, which runs on below it (the rows
+	// above the list can push Empath itself out of view).
 	const at = (await empath.boundingBox())!;
-	await phone.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
+	const foot = phone.viewportSize()!.height * 0.95;
+	await expect
+		.poll(() =>
+			phone.evaluate(
+				([x, y]) => !!document.elementFromPoint(x, y)?.closest('[role="dialog"] button'),
+				[at.x + at.width / 2, foot]
+			)
+		)
+		.toBe(true);
+	await phone.mouse.move(at.x + at.width / 2, foot);
 	await phone.mouse.wheel(0, start.max + 200);
 	await expect.poll(async () => (await scrolled())!.top).toBeGreaterThanOrEqual(start.max - 1);
 	await laptop.close();

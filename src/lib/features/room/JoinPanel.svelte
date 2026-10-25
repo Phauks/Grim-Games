@@ -28,7 +28,6 @@
 	import SettingAvatar from '#lib/ui/settings/SettingAvatar.svelte';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
-	import SharedBoard from './SharedBoard.svelte';
 	import ScriptBallot from './ScriptBallot.svelte';
 	import VoteChoice from './VoteChoice.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
@@ -227,8 +226,8 @@
 	}
 
 	/*
-	 * Share grim (Trevor, 2026-10-20, plan R5): the finished grimoire the Storyteller shared
-	 * opens over the page once when it arrives, and again from its button.
+	 * Share grim (Trevor, 2026-10-20, plan R5): when the finished grimoire the Storyteller
+	 * shared arrives, /play turns to its Grim tab, where it shows (Trevor, 2026-10-24).
 	 */
 	const revealed = $derived(player?.revealed);
 	let seenReveal: string | undefined;
@@ -480,11 +479,6 @@
 	</ul>
 </Dialog>
 
-<Dialog bind:open={finalGrimoire.open} title={t('room.finalGrimoire')} size="max" scroll={false}>
-	<div class="final" data-testid="final-grimoire">
-		<SharedBoard shared={revealed?.grimoire} />
-	</div>
-</Dialog>
 {#if player}<ScriptBallot {player} />{/if}
 
 <style>
@@ -554,11 +548,6 @@
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: var(--space-2);
-	}
-	.final {
-		position: relative;
-		height: 100%;
-		min-height: 0;
 	}
 	.grim-view {
 		display: grid;

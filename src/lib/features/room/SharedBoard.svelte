@@ -9,7 +9,11 @@
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
-	import { parseReminderCopyIds, parseReminderSpots } from '#lib/features/grimoire/device-notes.ts';
+	import {
+		parseReminderCopyIds,
+		parseReminderSpots,
+		type EndedGame
+	} from '#lib/features/grimoire/device-notes.ts';
 	import { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import GrimoireBoard from '#lib/features/grimoire/GrimoireBoard.svelte';
 	import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
@@ -25,9 +29,11 @@
 		onReady?: (ready: boolean) => void;
 		/** Told why the grimoire can't be shown, or `undefined` once it can. */
 		onProblem?: (problem: string | undefined) => void;
+		/** The room says the game is over: its History can be stepped through here. */
+		over?: EndedGame;
 	}
 
-	let { shared, onReady, onProblem }: Props = $props();
+	let { shared, onReady, onProblem, over }: Props = $props();
 
 	let board = $state.raw<Grimoire>();
 	/** The Storyteller's day timer, as sent with the grimoire. */
@@ -70,6 +76,11 @@
 
 {#if board}
 	<ErrorBoundary area="grimoire">
-		<GrimoireBoard grimoire={board} watching watchedTimer={timer.known ? timer : undefined} />
+		<GrimoireBoard
+			grimoire={board}
+			watching
+			watchedTimer={timer.known ? timer : undefined}
+			{over}
+		/>
 	</ErrorBoundary>
 {/if}

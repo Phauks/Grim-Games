@@ -9,8 +9,9 @@
 	import { lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
-	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import SharedBoard from '#lib/features/room/SharedBoard.svelte';
+	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
@@ -36,7 +37,21 @@
 		seatPoints,
 		seatTokenSize
 	} from '#lib/ui/seating/seat-layout.ts';
-	import { readGuesses, withGuess, writeGuesses, type Guesses } from './grim-guesses.ts';
+	import {
+		GENERIC_GUESSES,
+		genericGuess,
+		readGuesses,
+		withGuess,
+		writeGuesses,
+		type GenericGuess,
+		type Guesses
+	} from './grim-guesses.ts';
+	import GenericGuessToken from './GenericGuessToken.svelte';
+	import SeatNoteDialog from '#lib/ui/notes/SeatNoteDialog.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
+	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
+	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -77,6 +92,26 @@
 	const seats = $derived(table?.seats ?? []);
 	const mine = $derived(player?.view?.me.seatId);
 	let guesses = $state<Guesses>(code ? readGuesses(code) : {});
+	/** The player's own note on each seat (Trevor, 2026-10-24), shared with the Notes tab. */
+	// Read here, not inside the derived, so the derived follows the notes it reads.
+	const book = code ? seatNotes(code) : undefined;
+	const notes = $derived(book?.notes ?? {});
+	let noteOpen = $state(false);
+
+	/**
+	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), in place of
+	 * the town until switched off (Trevor, 2026-10-24); its History steps through on this
+	 * phone only.
+	 */
+	const final = $derived(player?.revealed);
+	let showFinal = $state(true);
+	let arrivedAt = $state(0);
+	$effect(() => {
+		if (final) arrivedAt = Date.now();
+	});
+	const over = $derived<EndedGame | undefined>(
+		final ? ({ endedAt: arrivedAt, ...player?.view?.ended } as EndedGame) : undefined
+	);
 
 	const nameOf = (seat: PublicSeat) =>
 		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
@@ -145,6 +180,14 @@
 		chosen = seat;
 		open = true;
 	}
+	/** A generic guess's word: its character type, or Good or Evil. */
+	const genericLabel = (g: GenericGuess) =>
+		g.type ? TYPE_LABELS[g.type] : g.team === 'good' ? 'Good' : 'Evil';
+	const guessName = (value: string | undefined) => {
+		const generic = genericGuess(value);
+		return generic ? genericLabel(generic) : characterOf(value)?.name;
+	};
+
 	function guess(characterId?: CharacterId) {
 		if (!code || !chosen) return;
 		guesses = withGuess(guesses, chosen.seatId, characterId);
@@ -159,25 +202,35 @@
 		if (seat.dead) parts.push(t('player.grim.dead'));
 		if (seat.ghostVote === 'unused') parts.push(t('player.grim.voteUnused'));
 		if (seat.ghostVote === 'used') parts.push(t('player.grim.voteUsed'));
+		// No ghost vote to spend (the Banshee killed by the Demon), as the board says.
+		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
 		const traveller = characterOf(seat.traveller);
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
-		const guessed = characterOf(guesses[seat.seatId]);
-		if (guessed) parts.push(t('player.grim.guess', { name: guessed.name }));
+		const guessed = guessName(guesses[seat.seatId]);
+		if (guessed) parts.push(t('player.grim.guess', { name: guessed }));
+		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
 		return parts.join(', ');
 	}
 	/* eslint-enable grim/names-as-badges */
 </script>
 
 <!-- Share grim (plan R5): in its place all game, usable once the Storyteller shares it; the
-     board's own copy of this tab has no such button. -->
+     board's own copy of this tab has no such switch. -->
 {#if !town}
 	<div class="tools">
-		<Button icon="grimoire" disabled={!player?.revealed} onclick={() => (finalGrimoire.open = true)}
-			>{t('room.finalGrimoire')}</Button
-		>
+		<Toggle
+			label={t('room.finalGrimoire')}
+			checked={!!final && showFinal}
+			disabled={!final}
+			onChange={(on) => (showFinal = on)}
+		/>
 	</div>
 {/if}
-{#if !code || seats.length === 0}
+{#if final && showFinal}
+	<div class="final" data-testid="final-grimoire">
+		<SharedBoard shared={final.grimoire} {over} />
+	</div>
+{:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
 	<div
@@ -205,7 +258,8 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
-			{@const guessed = characterOf(guesses[seat.seatId])}
+			{@const generic = genericGuess(guesses[seat.seatId])}
+			{@const guessed = generic ?? characterOf(guesses[seat.seatId])}
 			<!-- The player's avatar unless their own guess is set to show over it (plan R6). -->
 			{@const shown =
 				known ?? (seat.avatar && !playerSettings.current.guessesOnTokens ? undefined : guessed)}
@@ -230,9 +284,14 @@
 					avatar={seat.avatar}
 					usedVote={boardLooks.current.usedGhostVote}
 					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
+					marks={notes[seat.seatId] ? noteMark : undefined}
 				/>
 				{#snippet face()}
-					{#if shown}<CharacterToken character={shown} {size} />{/if}
+					{#if shown && 'key' in shown}<GenericGuessToken
+							guess={shown}
+							label={genericLabel(shown)}
+							{size}
+						/>{:else if shown}<CharacterToken character={shown} {size} />{/if}
 				{/snippet}
 			</button>
 		{/each}
@@ -262,6 +321,28 @@
 		checked={playerSettings.current.guessesOnTokens}
 		onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
 	/>
+	<!-- The player's own note on this seat, as the Storyteller has one per player (Trevor,
+	     2026-10-24); it shows on the Notes tab too. -->
+	<button type="button" class="seat-note" data-testid="seat-note" onclick={() => (noteOpen = true)}
+		><span class="seat-note-label">{t('player.note')}</span><span class="seat-note-text"
+			>{(chosen && notes[chosen.seatId]) || t('common.none')}</span
+		></button
+	>
+	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
+	     characters. -->
+	<ul class="generic" aria-label={t('player.grim.generic')}>
+		{#each GENERIC_GUESSES as g (g.key)}
+			<li>
+				<button
+					type="button"
+					aria-pressed={!!chosen && guesses[chosen.seatId] === g.key}
+					data-guess-key={g.key}
+					onclick={() => guess(g.key)}
+					><AlignmentPill alignment={g.team} text={genericLabel(g)} /></button
+				>
+			</li>
+		{/each}
+	</ul>
 	<CharacterPicker
 		characters={script.characters}
 		selected={chosen && guesses[chosen.seatId] ? [guesses[chosen.seatId]] : []}
@@ -270,11 +351,98 @@
 	/>
 </BottomSheet>
 
+{#snippet noteMark()}
+	<!-- Lower right, as the Storyteller's note mark on the board (SeatToken). -->
+	<span class="note-mark" data-testid="note-mark"><Icon name="notes" /></span>
+{/snippet}
+
+<SeatNoteDialog
+	bind:open={noteOpen}
+	title={chosen ? t('player.grim.noteTitle', { name: nameOf(chosen) }) : ''}
+	value={(chosen && notes[chosen.seatId]) || ''}
+	onSave={(note) => code && chosen && setSeatNote(code, chosen.seatId, note)}
+/>
+
 <style>
+	.seat-note {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: center;
+		gap: var(--space-2);
+		width: 100%;
+		min-height: var(--tap-target);
+		margin: var(--space-2) 0;
+		padding: var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+	}
+	.seat-note-label {
+		font-family: var(--font-control);
+		font-weight: 600;
+	}
+	.seat-note-text {
+		overflow: hidden;
+		color: var(--on-surface-muted);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	/* The board's note mark: a small disc on the token's lower right rim. */
+	.note-mark {
+		position: absolute;
+		right: -4%;
+		bottom: -4%;
+		display: grid;
+		place-items: center;
+		width: max(1.125 * var(--u), calc(var(--size) * 0.3));
+		height: max(1.125 * var(--u), calc(var(--size) * 0.3));
+		border-radius: 50%;
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		box-shadow: var(--shadow);
+		--icon-size: calc(max(1.125 * var(--u), calc(var(--size) * 0.3)) * 0.65);
+		pointer-events: none;
+	}
+	/* Two rows of three on a phone, one row where there is room. */
+	.generic {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(30%, calc(7 * var(--u))), 1fr));
+		gap: var(--space-1);
+		margin: 0 0 var(--space-2);
+		padding: 0;
+		list-style: none;
+	}
+	.generic button {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-1);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		background: var(--surface-raised);
+		font: inherit;
+		touch-action: manipulation;
+		cursor: pointer;
+	}
+	.generic button[aria-pressed='true'] {
+		border-color: var(--accent);
+		background: var(--surface-selected);
+	}
 	.tools {
 		display: flex;
 		justify-content: flex-end;
 		margin-bottom: var(--space-2);
+	}
+	/* The Storyteller's board, with room under it for History's Previous and Next. */
+	.final {
+		position: relative;
+		height: 75dvh;
+		margin-bottom: calc(2 * var(--tray-h, var(--tap-target)));
 	}
 	.none {
 		margin: 0;

@@ -13,6 +13,8 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import type { CharacterId, PlayerName } from '#lib/core/data/index.ts';
+import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { publicVotesWithoutToken } from '#lib/core/rules/voting.ts';
 import type { GamePhase } from '#lib/core/rules/game-phase.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
@@ -32,6 +34,12 @@ export interface PublicSeat {
 	 * Grim shows "who has dead votes"). Only on seats that show as dead.
 	 */
 	ghostVote?: 'unused' | 'used';
+	/**
+	 * Dead, but voting this many times on each nomination with no ghost vote to spend, as the
+	 * town learned (the Banshee killed by the Demon, `publicVotesWithoutToken`). Set in place of
+	 * `ghostVote`.
+	 */
+	votes?: number;
 	/**
 	 * A Traveller's character: Travellers tell the town who they are
 	 * (https://wiki.bloodontheclocktower.com/Travellers), so the players' script can show it
@@ -148,12 +156,14 @@ function appearsDead(seat: Seat): boolean {
  *   caller knows the character types and the game's mode. Left out, no character is shown.
  * @param layout Where the board draws the seats, kept on the Storyteller's device.
  * @param corner What the board's corner shows now, from the Storyteller's board.
+ * @param characters The game's characters, for what the town learns of a death (`votes`).
  */
 export function publicProjection(
 	game: Game,
 	publicTraveller?: (characterId: CharacterId) => boolean,
 	layout?: PublicSeatLayout,
-	corner?: PublicCorner
+	corner?: PublicCorner,
+	characters?: CharacterLookup
 ): PublicGameState {
 	const drawn = layout && boardLayout(layout);
 	return {
@@ -170,7 +180,12 @@ export function publicProjection(
 			if (seat.avatar !== undefined) view.avatar = seat.avatar;
 			if (seat.frame !== undefined) view.frame = seat.frame;
 			// Every seat that looks dead shows a vote the same way, so a Zombuul looks no different.
-			if (view.dead) view.ghostVote = seat.ghostVoteUsed ? 'used' : 'unused';
+			const votes =
+				view.dead && characters
+					? publicVotesWithoutToken(game, seat.seatId, characters)
+					: undefined;
+			if (votes !== undefined) view.votes = votes;
+			else if (view.dead) view.ghostVote = seat.ghostVoteUsed ? 'used' : 'unused';
 			if (seat.characterId && publicTraveller?.(seat.characterId))
 				view.traveller = seat.characterId;
 			return view;
