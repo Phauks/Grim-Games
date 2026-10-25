@@ -6,6 +6,8 @@ import './profile-scripts.svelte.ts';
 // sign-in sheet offers them.
 import '#lib/features/library/library-labels.svelte.ts';
 import '#lib/features/library/library-collections.svelte.ts';
+// Settings profiles too (plan S18).
+import '#lib/features/settings/profiles/settings-profiles.svelte.ts';
 
 export function startAccount(): Promise<void> {
 	return account.refresh();

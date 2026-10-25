@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import type { Game } from '#lib/core/model/index.ts';
 	import { carryFrom, clearNextGame, setNextGame } from '#lib/features/game/next-game.ts';
 	import NewGame from '#lib/features/grimoire/NewGame.svelte';
@@ -35,10 +36,12 @@
 		setNextGame(carryFrom(game, drop));
 		open = true;
 	}
-	// Closed without starting: nothing carries into a later game.
+	// Closed without starting, or the board left with it open: nothing carries into a later
+	// game. A game started from the sheet has taken the carry by then.
 	$effect(() => {
 		if (!open) clearNextGame();
 	});
+	onDestroy(clearNextGame);
 </script>
 
 <ConfirmDialog

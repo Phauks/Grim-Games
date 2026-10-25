@@ -1,4 +1,9 @@
 {
+	"protects": {
+		"who": "good",
+		"from": "execution",
+		"storytellerDecides": true
+	},
 	"dayReminders": {
 		"impairable": true,
 		"reminders": [

@@ -54,6 +54,11 @@ export interface BoardLooks {
 	 * Trevor 2026-10-23).
 	 */
 	holdLights: 'character' | 'seat';
+	/**
+	 * Holding a seat's token, then dragging, moves it as Arrange seats does: anywhere, or onto
+	 * another seat to change the order (Trevor, 2026-10-25: a choice to show Storytellers).
+	 */
+	holdMoves: boolean;
 }
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
@@ -76,7 +81,8 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	reminders: 'seat',
 	usedGhostVote: 'hollow',
 	defaultFrame: DEFAULT_FRAME,
-	holdLights: 'character'
+	holdLights: 'character',
+	holdMoves: false
 };
 const KEY = 'grim.boardLooks';
 
@@ -111,7 +117,8 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		// board (Trevor, 2026-10-23). So is `dragSource`: a dragged reminder no longer names
 		// where it came from (Trevor, 2026-10-24).
 		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME,
-		holdLights: value.holdLights === 'seat' ? 'seat' : 'character'
+		holdLights: value.holdLights === 'seat' ? 'seat' : 'character',
+		holdMoves: value.holdMoves === true
 	};
 }
 

@@ -25,10 +25,12 @@ import {
 	isBagDisabled,
 	isNotDealt,
 	isReplacedAfterDraw,
-	replacementReminder
+	replacementReminder,
+	type AnyDuplicates
 } from './bag-characters.ts';
 
 export { canDuplicate, isBagDisabled, isNotDealt, isReplacedAfterDraw, replacementReminder };
+export type { AnyDuplicates };
 
 /** Copies of each selected character (a missing id or 0 is not selected). */
 export type BagSelection = Readonly<Record<CharacterId, number>>;
@@ -208,6 +210,8 @@ export interface SelectionAnalysisInput {
 	scriptOrder: readonly CharacterId[];
 	lookup: (id: CharacterId) => Character | undefined;
 	findByName?: (name: string) => CharacterId | undefined;
+	/** A game rule lets characters have more than one copy (Duplicate Characters). */
+	duplicatesAllowed?: AnyDuplicates;
 }
 
 /**
@@ -233,7 +237,8 @@ export function analyseSelection(input: SelectionAnalysisInput): SetupAnalysis {
 		travellers,
 		inPlay: characters,
 		findByName: input.findByName,
-		findById: input.lookup
+		findById: input.lookup,
+		duplicatesAllowed: input.duplicatesAllowed
 	});
 }
 

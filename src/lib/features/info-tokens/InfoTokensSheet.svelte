@@ -3,7 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
-	import type { FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+	import { shuffled, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 	import type { ShowableBluffSet } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -51,7 +51,7 @@
 
 	type View =
 		| { kind: 'list' }
-		| { kind: 'characters'; token: InfoToken; max: number }
+		| { kind: 'characters'; token: InfoToken; max: number; filled?: FilledInfoToken }
 		| { kind: 'sets'; token: InfoToken };
 
 	let view = $state<View>({ kind: 'list' });
@@ -134,9 +134,9 @@
 		if (filled) {
 			// Every place filled shows at once; with room left the picker opens with them
 			// picked, to add to or change (Trevor, 2026-10-24).
-			if (filled.characterIds.length >= filled.upTo) return use(token.text, filled.characterIds);
+			if (filled.characterIds.length >= filled.upTo) return use(token.text, order(filled));
 			picked = [...filled.characterIds];
-			view = { kind: 'characters', token, max: filled.upTo };
+			view = { kind: 'characters', token, max: filled.upTo, filled };
 			return;
 		}
 		if (token.asks?.characters) {
@@ -147,6 +147,10 @@
 		// "This is the Demon", "These are your Minions" and the rest: the Storyteller points.
 		use(token.text, [], detail);
 	}
+
+	/** The characters in the order shown: random for a card that shuffles (the Dreamer's). */
+	const order = (filled: FilledInfoToken | undefined, ids = filled?.characterIds ?? []) =>
+		filled?.shuffle ? shuffled(ids) : [...ids];
 
 	/**
 	 * Opens the sheet straight at one card, as tapped in the list: a night step's own cards
@@ -212,6 +216,7 @@
 			<ChainBar bind:cards={chainCards} {characters} onshow={() => show(chainCards)} />
 		{:else if view.kind === 'characters'}
 			{@const token = view.token}
+			{@const filled = view.filled}
 			<CharacterPicker
 				{characters}
 				bind:selected={picked}
@@ -219,10 +224,11 @@
 				label={t('info-tokens.characters')}
 				inPlay={inPlay && new Set(inPlay)}
 				notInPlay={token.asks?.notInPlay === true}
+				onlyAlignment={view.filled?.othersAlignment}
 			/>
 			<ModalActions
 				onCancel={() => (view = { kind: 'list' })}
-				onConfirm={() => use(token.text, picked)}
+				onConfirm={() => use(token.text, order(filled, picked))}
 				disabled={picked.length === 0}
 			/>
 		{:else}

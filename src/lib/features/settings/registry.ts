@@ -18,6 +18,11 @@ export interface SettingsSection {
 	label: string | Message;
 	icon: IconSlot;
 	component: Component;
+	/**
+	 * Its settings belong to the settings profile in use (plan S18): the heading shows the
+	 * profile drop-down, so it is clear which profile a change goes into.
+	 */
+	profile?: boolean;
 	/** Optional control shown beside the section heading, such as Diagnostics' Refresh icon. */
 	headingAction?: Component;
 	/**

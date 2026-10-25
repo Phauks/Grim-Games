@@ -11,7 +11,13 @@ import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import type { Character } from '#lib/core/data/types.ts';
-import { filledInfoToken, infoTokenCharacterRulesOf } from './info-token-characters.ts';
+import {
+	filledInfoToken,
+	infoTokenCharacterRulesOf,
+	shuffled,
+	stepInfoTokens,
+	withChosen
+} from './info-token-characters.ts';
 import { nightTextFor } from './night-text.ts';
 
 const data = committedGameData();
@@ -71,16 +77,58 @@ describe('info tokens filled in with the step’s own character', () => {
 		expect(filled('barber', 'you-are')).toBeUndefined();
 	});
 
-	it('only fills in a token the character’s own night text names', () => {
+	it('only fills in a token the character’s own night text names, or its step offers', () => {
 		const stray = [...OFFICIAL_RULES].flatMap(([id, rules]) =>
-			Object.keys(rules.infoTokenCharacters ?? {}).flatMap((token) => {
+			Object.entries(rules.infoTokenCharacters ?? {}).flatMap(([token, rule]) => {
 				const named = (['first', 'other'] as const).some((night) =>
 					infoTokensNamedIn(nightTextFor(character(id), night)?.text).some((t) => t.id === token)
 				);
-				return named ? [] : [`${id}: ${token}`];
+				return named || rule.offer ? [] : [`${id}: ${token}`];
 			})
 		);
 		expect(stray).toEqual([]);
+	});
+
+	describe('the Dreamer (https://wiki.bloodontheclocktower.com/Dreamer)', () => {
+		// The Dreamer learns one good and one evil character, one of which is the chosen
+		// player's. TPI's text names no card, so the step offers "This player is" itself.
+		const dreamer = character('dreamer');
+
+		it('offers "This player is" though its night text names no card', () => {
+			expect(infoTokensNamedIn(nightTextFor(dreamer, 'other')?.text)).toEqual([]);
+			expect(
+				stepInfoTokens(dreamer, nightTextFor(dreamer, 'other')?.text).map((t) => t.id)
+			).toEqual(['this-player-is']);
+		});
+
+		it('asks for the chosen player, then picks the other from the opposite alignment', () => {
+			const filled = filledInfoToken(dreamer, 'this-player-is', 3)!;
+			expect(filled).toEqual({
+				characterIds: [],
+				upTo: 2,
+				chosenAt: 0,
+				othersOpposite: true,
+				shuffle: true
+			});
+			expect(withChosen(filled, character('clockmaker'))).toEqual({
+				characterIds: ['clockmaker'],
+				upTo: 2,
+				shuffle: true,
+				othersAlignment: 'evil'
+			});
+			expect(withChosen(filled, character('nodashii')).othersAlignment).toBe('good');
+		});
+
+		it('shows the two in random order', () => {
+			expect(shuffled(['a', 'b'], () => 0)).toEqual(['b', 'a']);
+			expect(shuffled(['a', 'b'], () => 0.99)).toEqual(['a', 'b']);
+		});
+	});
+
+	it('a step with no rule offers only what its text names', () => {
+		expect(stepInfoTokens(character('imp'), 'Show the *YOU ARE* token.').map((t) => t.id)).toEqual([
+			'you-are'
+		]);
 	});
 
 	it('reads a homebrew character’s own rule, never the official one it shares an id with', () => {
@@ -119,5 +167,25 @@ describe('reading infoTokenCharacters', () => {
 		expect(parse({ 'selected-you': { characters: [] } }).issues).toHaveLength(1);
 		expect(parse({ 'selected-you': { characters: ['self'], upTo: 9 } }).issues).toHaveLength(1);
 		expect(parse({ 'selected-you': { characters: ['self'], more: 1 } }).issues).toHaveLength(1);
+	});
+
+	it('reads a chosen player’s character, opposite-alignment others, shuffle and offer', () => {
+		const rule = {
+			'this-player-is': {
+				characters: ['chosen'],
+				upTo: 2,
+				others: 'opposite-alignment',
+				shuffle: true,
+				offer: true
+			}
+		};
+		expect(parse(rule)).toEqual({ rules: { infoTokenCharacters: rule }, issues: [] });
+		const card = rule['this-player-is'];
+		expect(parse({ 'this-player-is': { ...card, characters: ['self'] } }).issues).toHaveLength(1);
+		expect(
+			parse({ 'this-player-is': { ...card, characters: ['chosen', 'chosen'] } }).issues
+		).toHaveLength(1);
+		expect(parse({ 'this-player-is': { ...card, shuffle: false } }).issues).toHaveLength(1);
+		expect(parse({ 'this-player-is': { ...card, others: 'any' } }).issues).toHaveLength(1);
 	});
 });

@@ -8,10 +8,12 @@
  * then does the grimoire change, through its own commands.
  */
 import type { Alignment, Script } from '#lib/core/data/index.ts';
+import type { GameFeedback } from '#lib/core/feedback/index.ts';
 import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
 import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
+import { feedbackView, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 import {
 	cleanBallot,
 	newScriptVote,
@@ -80,6 +82,8 @@ export interface RoomState {
 	choosing?: true;
 	/** The room's vote on the next script, while the Storyteller has it open. */
 	scriptVote?: ScriptVote;
+	/** Players' feedback on the ended game, one per member; cleared with `ended`. */
+	feedback?: MemberFeedback[];
 }
 
 /**
@@ -162,6 +166,8 @@ export type ClientMessage =
 	| { type: 'look'; avatar?: string; frame?: string }
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
+	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
+	| { type: 'feedback'; gameId: string; feedback: GameFeedback }
 	/** A player's ballot in the script vote; a new one replaces the last. */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
 	// From the Storyteller.
@@ -208,6 +214,8 @@ export type ClientMessage =
 	| { type: 'close-script-vote' }
 	| { type: 'close' };
 
+export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
+
 /** What the Storyteller's device sees. */
 export interface HostView {
 	type: 'host-view';
@@ -215,6 +223,8 @@ export interface HostView {
 	requests: RoomRequest[];
 	/** The open vote's count of spectators' choices; absent when no vote is open. */
 	vote?: VoteTally;
+	/** Players' feedback on the ended game, once any has come. */
+	feedback?: FeedbackView[];
 	/** The script vote's count, while one is open. */
 	scriptVote?: ScriptVoteTally;
 }
@@ -234,6 +244,11 @@ export interface VoteTally {
 export interface PlayerView {
 	type: 'player-view';
 	public?: PublicGameState;
+	/**
+	 * The game on the table, so a phone keeps its notes and guesses per game, not per room or
+	 * script (Trevor, 2026-10-25). Not a secret: phones are sent it with the final grimoire.
+	 */
+	gameId?: string;
 	me: RoomMember;
 	request?: Pick<RoomRequest, 'name' | 'seatId'>;
 	/** Seats someone in the room already sits in. */
@@ -242,6 +257,8 @@ export interface PlayerView {
 	vote?: { voteId: string; options: SeatId[]; ability?: string; choice?: SeatId };
 	/** The game on the table is over, with who won and how. */
 	ended?: Omit<GameOver, 'gameId'>;
+	/** The feedback this phone sent on the ended game. */
+	feedback?: GameFeedback;
 	/** The Storyteller is choosing the next script. */
 	choosing?: true;
 	/** The script vote, while one is open, with this phone's own ballot. */
@@ -397,6 +414,7 @@ export function newRoom(hostKeyHash: string): RoomState {
 export function hostView(room: RoomState): HostView {
 	const view: HostView = { type: 'host-view', members: room.members, requests: room.requests };
 	if (room.vote) view.vote = tally(room, room.vote);
+	if (room.feedback?.length) view.feedback = room.feedback.map((f) => feedbackView(room, f));
 	if (room.scriptVote) {
 		view.scriptVote = tallyScriptVote(
 			room.scriptVote,
@@ -436,10 +454,13 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 		takenSeats: room.members.flatMap((m) => (m.seatId ? [m.seatId] : []))
 	};
 	if (room.public) view.public = room.public;
+	if (room.gameId) view.gameId = room.gameId;
 	if (room.ended && room.ended.gameId === room.gameId) {
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
 		view.ended = ended;
+		const mine = room.feedback?.find((f) => f.memberId === memberId);
+		if (mine) view.feedback = mine.feedback;
 	}
 	if (room.choosing) view.choosing = true;
 	if (room.scriptVote) {
@@ -676,8 +697,9 @@ export function reopenGame(room: RoomState, gameId: unknown): RoomState {
 
 function withoutEnded(room: RoomState): RoomState {
 	if (!room.ended) return room;
-	const { ended: _over, ...rest } = room;
+	const { ended: _over, feedback: _feedback, ...rest } = room;
 	void _over;
+	void _feedback;
 	return rest;
 }
 

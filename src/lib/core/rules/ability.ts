@@ -16,7 +16,11 @@
  * Everything here is a suggestion: the Storyteller can override any of it.
  */
 import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
-import type { ImpairmentReason, TokenImpairment } from '#lib/core/data/character-rules.ts';
+import type {
+	ImpairmentReason,
+	Protects,
+	TokenImpairment
+} from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -394,14 +398,56 @@ export interface Protector {
 /** What a death is from: the Demon's kill, another ability's, or the day's execution. */
 export type DeathBy = 'demon' | 'other' | 'execution';
 
+/** Whether a protection stops a death `by` this: not one lasting only the night, for an execution. */
+function stops(rule: Protects, by: DeathBy): boolean {
+	return (rule.from === 'any' || rule.from === by) && !(rule.night && by === 'execution');
+}
+
+/**
+ * The protection `characterId` gives `seatId`, if its rule covers that player: its own
+ * player (`self`), the player its token marks (`marked`), or any good player (`good`).
+ */
+function protectionFor(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	rule: Protects,
+	characters: CharacterLookup
+): AbilitySource | undefined {
+	const seat = getSeat(game, seatId);
+	if (!seat) return undefined;
+	const from = seatOfCharacter(game, characterId, characters);
+	switch (rule.who) {
+		case 'self':
+			return trueCharacter(game, seatId, characters) === characterId
+				? { characterId, seatId }
+				: undefined;
+		case 'good':
+			return alignmentOf(game, seatId) === 'good'
+				? { characterId, ...(from ? { seatId: from } : {}) }
+				: undefined;
+		case 'marked': {
+			const token = rule.token.toLowerCase();
+			const r = seat.reminders.find(
+				(r) => r.characterId === characterId && r.label.toLowerCase() === token
+			);
+			return r
+				? { characterId, ...(from ? { seatId: from } : {}), reminderId: r.reminderId }
+				: undefined;
+		}
+	}
+}
+
 /**
  * Every ability that would stop `seatId` dying to a kill `by` the Demon or another ability,
  * in this order: its own (`protects.who: self`, the Sailor, the Soldier), then each reminder
  * on the seat whose character's rules say it protects the player it marks (the Tea Lady's
  * "Cannot Die", the Innkeeper's and Monk's "Safe", the Devil's Advocate's "Survives
  * Execution"). From the rules blocks (`protects`), so a custom character can protect too. An
- * execution is never stopped by a protection that lasts only the night (`night`). Whether
- * each ability works is the caller's to check.
+ * execution is never stopped by a protection that lasts only the night (`night`), and a
+ * player who only "might not die" (`storytellerDecides`) is never protected here: the
+ * Storyteller applies that in the Execution sheet (`executionSavers`). Whether each ability
+ * works is the caller's to check.
  */
 export function protectors(
 	game: Game,
@@ -411,29 +457,78 @@ export function protectors(
 ): Protector[] {
 	const seat = getSeat(game, seatId);
 	if (!seat) return [];
-	const against = ({ from, night }: { from: Protector['from']; night?: true }) =>
-		(from === 'any' || from === by) && !(night && by === 'execution');
 	const out: Protector[] = [];
+	const add = (characterId: CharacterId) => {
+		const rule = rulesOf(characterId, characters)?.protects;
+		if (!rule || rule.storytellerDecides || !stops(rule, by)) return;
+		if (out.some((p) => p.source.characterId === characterId)) return;
+		const source = protectionFor(game, seatId, characterId, rule, characters);
+		if (source) out.push({ source, from: rule.from });
+	};
 	const id = trueCharacter(game, seatId, characters);
-	const own = id ? rulesOf(id, characters)?.protects : undefined;
-	if (id && own?.who === 'self' && against(own)) {
-		out.push({ source: { characterId: id, seatId }, from: own.from });
-	}
-	for (const r of seat.reminders) {
-		const rule = rulesOf(r.characterId, characters)?.protects;
-		if (rule?.who !== 'marked' || rule.token.toLowerCase() !== r.label.toLowerCase()) continue;
-		if (!against(rule)) continue;
-		const from = seatOfCharacter(game, r.characterId, characters);
-		out.push({
-			source: {
-				characterId: r.characterId,
-				...(from ? { seatId: from } : {}),
-				reminderId: r.reminderId
-			},
-			from: rule.from
-		});
+	if (id) add(id);
+	for (const r of seat.reminders) add(r.characterId);
+	for (const other of game.seating) {
+		const characterId = trueCharacter(game, other, characters);
+		if (characterId && rulesOf(characterId, characters)?.protects?.who === 'good') add(characterId);
 	}
 	return out;
+}
+
+/** One ability the Storyteller may say saves an executed player, and why it might not. */
+export interface ExecutionSaver {
+	source: AbilitySource;
+	/**
+	 * Why it may not save this player: its character is not in play, its rule does not cover
+	 * them (the Pacifist's good players, the Devil's Advocate's marked one), or it is drunk,
+	 * poisoned or spent. The Storyteller may apply it anyway (warn, never lock).
+	 */
+	problem?: 'not-in-play' | 'not-this-player' | 'impaired';
+}
+
+/**
+ * Every character on the script or in play whose ability can stop an execution death
+ * (`protects` from `any` or `execution`, not lasting only the night), for the Execution
+ * sheet's Saved by (Trevor, 2026-10-24: "a modifier slot to the execution area"). Those that
+ * apply to `seatId` and work come first. Includes the ones the Storyteller decides
+ * (`storytellerDecides`: the Pacifist, the Psychopath's roshambo, the Lleech, the
+ * Ventriloquist's mad nominee). https://wiki.bloodontheclocktower.com/Pacifist,
+ * /Devil%27s_Advocate, /Sailor, /Tea_Lady, /Vizier, /Psychopath, /Lleech, /Ventriloquist
+ */
+export function executionSavers(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): ExecutionSaver[] {
+	const ids = new Set<CharacterId>();
+	for (const entry of game.script.entries)
+		ids.add(entry.kind === 'official' ? entry.id : entry.character.id);
+	for (const id of game.ruleCharacters) ids.add(id);
+	for (const s of game.seating) {
+		const id = trueCharacter(game, s, characters);
+		if (id) ids.add(id);
+	}
+	const out: ExecutionSaver[] = [];
+	for (const characterId of ids) {
+		const rule = rulesOf(characterId, characters)?.protects;
+		if (!rule || !stops(rule, 'execution')) continue;
+		const from = seatOfCharacter(game, characterId, characters);
+		const source = protectionFor(game, seatId, characterId, rule, characters);
+		const inPlay = from !== undefined || game.ruleCharacters.includes(characterId);
+		const owner = source?.seatId ?? from;
+		const problem = !inPlay
+			? 'not-in-play'
+			: !source
+				? 'not-this-player'
+				: owner && !abilityState(game, owner, characters).works
+					? 'impaired'
+					: undefined;
+		out.push({
+			source: source ?? { characterId, ...(from ? { seatId: from } : {}) },
+			...(problem ? { problem } : {})
+		});
+	}
+	return out.sort((a, b) => Number(!!a.problem) - Number(!!b.problem));
 }
 
 /**
