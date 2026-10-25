@@ -116,6 +116,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: 'Install as an app', parts: ['S1'] },
 	{
+		title: 'Settings profiles: save your board and settings, and pick one for each game',
+		parts: ['S18']
+	},
+	{
 		title: 'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover',
 		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24']
 	},

@@ -497,13 +497,15 @@ test('a downloaded data file imports into another account, adding only what is m
 	let dialog = await importOnce();
 	const plan = dialog.getByTestId('import-plan');
 	await expect(plan.getByRole('row', { name: 'Items to add' })).toContainText('1');
-	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('0');
+	// Each account starts with the device's settings profile (plan S18); both are the same
+	// untouched "My settings", so that one is already there.
+	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('1');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect.poll(() => profileScriptNames(second)).toEqual(['Storm Front']);
 
 	// The same file again has nothing to add.
 	dialog = await importOnce();
-	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('1');
+	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('2');
 	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
 	await other.close();
 });
