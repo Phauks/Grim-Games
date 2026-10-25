@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { idsIn, ROADMAP, roadmapStatus, type RoadmapArea } from './roadmap.ts';
+import { idsIn, PART_PRS, ROADMAP, roadmapStatus, type RoadmapItem } from './roadmap.ts';
 import type { Change } from './changelog.ts';
 
 const change = (sha: string, subject: string, pr?: number): Change => ({
@@ -18,28 +18,31 @@ describe('roadmap', () => {
 		expect(idsIn('L2 without brackets')).toEqual([]);
 	});
 
-	it('ticks an item off by its ID in a title or by a listed PR, naming the first change', () => {
-		const areas: RoadmapArea[] = [
-			{
-				title: 'Area',
-				items: [
-					{ id: 'L2', title: 'By ID' },
-					{ id: 'S1', title: 'By PR', prs: [320] },
-					{ id: 'B1', title: 'Not yet' }
-				]
-			}
+	it('marks a feature done once every part and PR has merged, naming the last one', () => {
+		const items: RoadmapItem[] = [
+			{ title: 'By ID and PR', parts: ['L2', 'S1'], prs: [330] },
+			{ title: 'Partly', parts: ['L2', 'B1'] },
+			{ title: 'Someday', parts: ['A1'], later: true }
 		];
-		const [area] = roadmapStatus(areas, [
-			change('c', 'Savant follow-up (L2)', 340),
-			change('b', 'Install app', 320),
-			change('a', 'Savant info generator (L2)', 319)
-		]);
-		expect(area.items.map((item) => item.doneBy?.pr)).toEqual([319, 320, undefined]);
+		const { done, next, later } = roadmapStatus(
+			items,
+			[
+				change('d', 'Savant follow-up (L2)', 340),
+				change('c', 'Ratings', 330),
+				change('b', 'Install app', 320),
+				change('a', 'Savant info generator (L2)', 319)
+			],
+			{ S1: 320 }
+		);
+		expect(done.map((item) => [item.title, item.doneBy?.pr])).toEqual([['By ID and PR', 330]]);
+		expect(next.map((item) => [item.title, item.finished, item.total])).toEqual([['Partly', 1, 2]]);
+		expect(later.map((item) => item.title)).toEqual(['Someday']);
 	});
 
-	it('gives every item its own ID in the plan format', () => {
-		const ids = ROADMAP.flatMap((area) => area.items.map((item) => item.id));
+	it('names each plan ID in one feature only, in the plan format', () => {
+		const ids = ROADMAP.flatMap((item) => item.parts ?? []);
 		expect(new Set(ids).size).toBe(ids.length);
-		for (const id of ids) expect(idsIn(`(${id})`)).toEqual([id]);
+		for (const id of [...ids, ...Object.keys(PART_PRS)]) expect(idsIn(`(${id})`)).toEqual([id]);
+		for (const id of Object.keys(PART_PRS)) expect(ids).toContain(id);
 	});
 });

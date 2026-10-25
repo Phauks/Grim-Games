@@ -108,6 +108,7 @@ export type WarningCode =
 	| 'save-may-not-apply'
 	| 'not-seat-character'
 	| 'already-used'
+	| 'too-many-guesses'
 	| 'empty-day'
 	| 'reminder-fixed'
 	| 'no-cause';

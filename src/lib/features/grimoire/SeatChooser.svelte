@@ -18,6 +18,10 @@
 		onChoose: (seatId: SeatId) => void;
 		/** A first "None" row, for a choice that can be cleared (a nomination). */
 		onNone?: () => void;
+		/** Only these seats are offered (a nomination's nominator: not the dead). */
+		offer?: (seatId: SeatId) => boolean;
+		/** Marks at the end of each row, in a column of their own (today's nominations). */
+		rowMarks?: Snippet<[SeatId]>;
 	}
 
 	let {
@@ -29,7 +33,9 @@
 		characters,
 		exclude,
 		onChoose,
-		onNone
+		onNone,
+		offer,
+		rowMarks
 	}: Props = $props();
 
 	const seats = $derived(
@@ -38,14 +44,14 @@
 </script>
 
 <Dialog bind:open {title} {heading} {headActions}>
-	<ul>
+	<ul data-marks={rowMarks ? '' : undefined}>
 		{#if onNone}
 			<li>
 				<button type="button" class="none" onclick={() => onNone?.()}>None</button>
 			</li>
 		{/if}
 		{#each seats as { seat, number } (seat.seatId)}
-			{#if seat.seatId !== exclude}
+			{#if seat.seatId !== exclude && (offer?.(seat.seatId) ?? true)}
 				{@const character = seat.characterId ? characters.get(seat.characterId) : undefined}
 				<li>
 					<!-- Number, character, player (Trevor, 2026-10-20): the character once, as its
@@ -60,7 +66,9 @@
 									interactive={false}
 								/>{:else}None{/if}</span
 						>
-						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>
+						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>{#if rowMarks}<span
+								class="marks">{@render rowMarks(seat.seatId)}</span
+							>{/if}
 					</button>
 				</li>
 			{/if}
@@ -90,8 +98,15 @@
 		text-align: left;
 		cursor: pointer;
 	}
+	ul[data-marks] button {
+		grid-template-columns: 1.5em minmax(0, 1fr) minmax(0, 1fr) auto;
+	}
 	.none {
 		display: flex;
+	}
+	.marks {
+		display: flex;
+		gap: var(--space-1);
 	}
 	button:hover {
 		background: var(--surface-selected);

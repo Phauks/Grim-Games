@@ -4,11 +4,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
-import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
+import { castGame, newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import {
 	blockThreshold,
 	counts,
 	ghostVotesLeft,
+	votesWithoutToken,
 	livingByTeam,
 	seatsBehind,
 	type DayCount
@@ -49,7 +50,7 @@ describe('ghostVotesLeft', () => {
 	// https://wiki.bloodontheclocktower.com/Dead_Player: each dead player has one vote left.
 	it('counts the dead who have not spent their vote', () => {
 		const { session, ctx, seats } = newGame(5);
-		expect(ghostVotesLeft(session.game)).toBe(0);
+		expect(ghostVotesLeft(session.game, ctx.characters)).toBe(0);
 		const g = run(
 			session,
 			ctx,
@@ -57,7 +58,29 @@ describe('ghostVotesLeft', () => {
 			{ type: 'SetDead', seatId: seats[1], dead: true },
 			{ type: 'SpendGhostVote', seatId: seats[1] }
 		).game;
-		expect(ghostVotesLeft(g)).toBe(1);
+		expect(ghostVotesLeft(g, ctx.characters)).toBe(1);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Banshee: killed by the Demon, they vote twice on
+	// every nomination with no vote token; killed another way, they are like any dead player.
+	it('counts two votes, never spent, for a Banshee the Demon killed', () => {
+		const die = (cause: 'demon' | 'execution') =>
+			castGame(['banshee', 'chef', 'imp'], (s) => ({
+				type: 'SetDead',
+				seatId: s[0],
+				dead: true,
+				cause
+			}));
+		const byDemon = die('demon');
+		expect(ghostVotesLeft(byDemon.session.game, byDemon.ctx.characters)).toBe(2);
+		expect(votesWithoutToken(byDemon.session.game, byDemon.seats[0], byDemon.ctx.characters)).toBe(
+			2
+		);
+		const executed = die('execution');
+		expect(ghostVotesLeft(executed.session.game, executed.ctx.characters)).toBe(1);
+		expect(
+			votesWithoutToken(executed.session.game, executed.seats[0], executed.ctx.characters)
+		).toBeUndefined();
 	});
 });
 
@@ -81,11 +104,11 @@ describe('seatsBehind', () => {
 		expect(seatsBehind(g, 'evil')).toEqual([seats[0], seats[3]]);
 		expect(seatsBehind(g, 'ghostVotes')).toEqual([seats[1], seats[2]]);
 		const total = (count: DayCount) =>
-			seatsBehind(g, count).filter((s) => counts(g, count, s)).length;
+			seatsBehind(g, count).reduce((sum, s) => sum + counts(g, count, s, ctx.characters), 0);
 		const teams = livingByTeam(g);
 		expect(total('alive')).toBe(teams.alive);
 		expect(total('good')).toBe(teams.good);
 		expect(total('evil')).toBe(teams.evil);
-		expect(total('ghostVotes')).toBe(ghostVotesLeft(g));
+		expect(total('ghostVotes')).toBe(ghostVotesLeft(g, ctx.characters));
 	});
 });

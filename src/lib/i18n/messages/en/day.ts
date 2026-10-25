@@ -49,7 +49,9 @@ export const day = {
 	'day.noteTitle': 'Note: {character}',
 	'day.noteTitleSeat': 'Note: {character} · {seat}',
 	'day.guessesTitle': 'Guesses',
-	'day.guessFor': 'Guess for {name}',
+	'day.guessPlayer': 'Player for guess {number}',
+	'day.guessCharacter': 'Character for guess {number}',
+	'day.noPlayer': 'No player',
 	'day.noGuess': 'No guess',
 	'day.notDone': 'Not done',
 	'day.toastNote': 'Note',
@@ -93,6 +95,10 @@ export const day = {
 	'day.count.ghostVote': 'Ghost vote',
 	'day.count.unused': 'Unused',
 	'day.count.used': 'Used',
+	'day.count.noToken': {
+		one: '{count} vote per nomination, no token',
+		other: '{count} votes per nomination, no token'
+	},
 	'day.count.total': 'Total',
 	'day.count.living': 'Living players',
 	'day.count.half': 'Half, rounded up',
