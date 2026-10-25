@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castGame, newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import { NoopSyncProvider, publicProjection } from './public-projection.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -96,6 +97,30 @@ describe('publicProjection', () => {
 			shape: 'circle',
 			gaps: { [seats[0]]: 1 },
 			placed: { [seats[1]]: { x: 20, y: 30 } }
+		});
+	});
+
+	it("carries the board corner's lines, and nothing else (Trevor, 2026-10-24)", () => {
+		const { game } = busyGame();
+		expect(publicProjection(game)).not.toHaveProperty('corner');
+		const corner = {
+			modes: ['World Cup', 'Djinn limit'],
+			joinCode: true,
+			phase: { kind: 'night', number: 2, secret: 'x' } as { kind: 'night'; number: number },
+			gameTime: { begun: true, startedAt: 1000 },
+			watchers: 3,
+			grimoire: 'secret'
+		};
+		expect(publicProjection(game, undefined, undefined, corner).corner).toEqual({
+			modes: ['World Cup', 'Djinn limit'],
+			joinCode: true,
+			phase: { kind: 'night', number: 2 },
+			gameTime: { begun: true, startedAt: 1000 },
+			watchers: 3
+		});
+		// Lines the board hides are left out.
+		expect(publicProjection(game, undefined, undefined, { modes: [] }).corner).toEqual({
+			modes: []
 		});
 	});
 
@@ -242,5 +267,43 @@ describe('NoopSyncProvider', () => {
 			provider.publish({ seats: [], today: { nominations: [], executions: [] } })
 		).resolves.toBeUndefined();
 		await expect(provider.close()).resolves.toBeUndefined();
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Banshee: everyone learns when the Demon kills the Banshee,
+// who then votes twice on each nomination; the players' grim shows that instead of a ghost vote.
+describe('a Banshee the Demon killed', () => {
+	const die =
+		(seat: number, cause?: 'demon' | 'execution' | 'imp') =>
+		(s: string[]): Command => ({
+			type: 'SetDead',
+			seatId: s[seat],
+			dead: true,
+			...(cause ? { cause } : {})
+		});
+	const seatOf = (cause?: 'demon' | 'execution' | 'imp') => {
+		const { session, ctx } = castGame(['banshee', 'chef', 'imp'], die(0, cause));
+		return publicProjection(session.game, undefined, undefined, undefined, ctx.characters).seats[0];
+	};
+
+	it('shows two votes and no ghost vote, by the Demon or the Imp', () => {
+		for (const cause of ['demon', 'imp'] as const) {
+			const seat = seatOf(cause);
+			expect(seat).toMatchObject({ dead: true, votes: 2 });
+			expect(seat).not.toHaveProperty('ghostVote');
+		}
+	});
+
+	it('shows a ghost vote when executed, or when the cause is not recorded', () => {
+		for (const cause of ['execution', undefined] as const) {
+			const seat = seatOf(cause);
+			expect(seat).toMatchObject({ dead: true, ghostVote: 'unused' });
+			expect(seat).not.toHaveProperty('votes');
+		}
+	});
+
+	it('names no character for the town without the characters', () => {
+		const { session } = castGame(['banshee', 'chef', 'imp'], die(0, 'demon'));
+		expect(publicProjection(session.game).seats[0]).toMatchObject({ ghostVote: 'unused' });
 	});
 });

@@ -16,8 +16,16 @@ export const player = {
 	'player.grim.dead': 'dead',
 	'player.grim.voteUnused': 'ghost vote not used',
 	'player.grim.voteUsed': 'ghost vote used',
+	'player.grim.votes': {
+		one: '{count} vote per nomination',
+		other: '{count} votes per nomination'
+	},
 	'player.grim.traveller': 'Traveller: {name}',
 	'player.grim.guess': 'your guess: {name}',
+	'player.grim.generic': 'Guess a type or alignment',
+	'player.grim.hasNote': 'your note',
+	'player.grim.noteTitle': 'Note: {name}',
+	'player.seatNotes': 'Players',
 	'player.sharedLinkFailed': 'Could not open the shared script',
 	'player.cannotSave': 'This browser cannot save',
 	'player.cannotSaveDetail': 'Notes are lost when the page closes.',

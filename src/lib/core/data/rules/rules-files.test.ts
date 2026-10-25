@@ -61,6 +61,16 @@ describe('parseCharacterRules', () => {
 		]);
 	});
 
+	it('reads what a player may still do once dead, and rejects a bad cause or count', () => {
+		const afterDeath = { cause: ['demon'], nominations: 2, votes: 2 };
+		expect(parse({ afterDeath }).rules).toEqual({ afterDeath });
+		expect(parse({ afterDeath: { ...afterDeath, cause: [] } }).issues).toHaveLength(1);
+		expect(parse({ afterDeath: { ...afterDeath, cause: 'demon' } }).issues).toHaveLength(1);
+		expect(parse({ afterDeath: { ...afterDeath, votes: 0 } }).issues).toHaveLength(1);
+		expect(parse({ afterDeath: { cause: ['demon'] } }).issues).toHaveLength(1);
+		expect(parse({ afterDeath: { ...afterDeath, twice: true } }).issues).toHaveLength(1);
+	});
+
 	it('reads a reminder prompt', () => {
 		expect(parse({ reminderPrompts: { Dead: 'markDead' } })).toEqual({
 			rules: { reminderPrompts: { Dead: 'markDead' } },

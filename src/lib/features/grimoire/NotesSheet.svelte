@@ -2,15 +2,14 @@
 	import { untrack } from 'svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
 	import NoteEditor from '#lib/ui/notes/NoteEditor.svelte';
 	import type { TitledNote } from '#lib/ui/notes/note.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import SeatNoteDialog from '#lib/ui/notes/SeatNoteDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import SeatNoteEntry from './SeatNoteEntry.svelte';
 
 	/**
 	 * Every note in the game on one screen (Trevor, 2026-10-19): the game's titled notes as
@@ -30,37 +29,18 @@
 	const characters = $derived(grimoire.open.characters);
 	const viewOnly = $derived(grimoire.open.viewOnly);
 
-	// ── Editing one seat's note ──
+	// ── Editing one seat's note (SeatNoteDialog: saved as it closes, one History entry) ──
 	let editOpen = $state(false);
-	let draft = $state('');
 	let editing = $state<SeatId>();
 
 	/** Opens a seat's note editor; also used straight from its ⋯ menu, without the sheet. */
 	export function edit(seatId: SeatId) {
 		editing = seatId;
-		draft = game.seats[seatId]?.note ?? '';
 		editOpen = true;
 	}
-
-	/**
-	 * Saved as it closes, however it closes, as the seat note always was (Trevor, 2026-10-17:
-	 * no Save or Cancel; a swipe down keeps it). One History entry per edit; also saved if the
-	 * app is put away mid-edit. Game notes save the same way.
-	 */
-	function save() {
-		const on = editing;
-		if (!on || viewOnly) return;
-		if (draft.trim() === (game.seats[on]?.note ?? '').trim()) return;
-		grimoire.run({ type: 'SetSeatNote', seatId: on, note: draft });
+	function saveSeatNote(seatId: SeatId | undefined, note: string) {
+		if (seatId && !viewOnly) grimoire.run({ type: 'SetSeatNote', seatId, note });
 	}
-	$effect(() => {
-		if (editOpen) return;
-		untrack(() => {
-			save();
-			editing = undefined;
-		});
-	});
-
 	const editTitle = $derived(
 		editing === undefined
 			? ''
@@ -110,7 +90,6 @@
 <svelte:document
 	onvisibilitychange={() => {
 		if (document.visibilityState !== 'hidden') return;
-		if (editOpen) save();
 		if (gameNoteOpen) {
 			saveGameNote();
 			// A new note is kept now, so it is edited, not added again, when the app returns.
@@ -138,21 +117,13 @@
 					{@const label = seatLabel(game, seatId)}
 					<li data-seat={seatId}>
 						<!-- Character, seat and name above the note (Trevor, 2026-10-19). -->
-						<CharacterEntry
+						<SeatNoteEntry
 							characterId={seat.characterId}
 							alignment={seat.alignment}
-							playerName={label}
 							{label}
-						>
-							<button
-								type="button"
-								class="note"
-								aria-label={seat.note
-									? `Notes for ${label}: ${seat.note}`
-									: `Notes for ${label}: None`}
-								onclick={() => edit(seatId)}>{seat.note ?? 'None'}</button
-							>
-						</CharacterEntry>
+							note={seat.note}
+							onOpen={() => edit(seatId)}
+						/>
 					</li>
 				{/each}
 			</ul>
@@ -174,26 +145,15 @@
 	{/if}
 {/snippet}
 
-<Dialog
+<!-- Never shown to players. -->
+<SeatNoteDialog
 	bind:open={editOpen}
 	title={editTitle}
 	subtitle={editing === undefined ? undefined : seatCharacter}
->
-	<!-- Several lines: Enter starts a new line, and the field grows with them. Kept on
-	     close. Never shown to players. -->
-	<div class="editor">
-		<TextField
-			label={editTitle}
-			hideLabel
-			multiline
-			rows={5}
-			bind:value={draft}
-			disabled={viewOnly}
-			testid="note-editor"
-			autogrow
-		/>
-	</div>
-</Dialog>
+	value={editing ? (game.seats[editing]?.note ?? '') : ''}
+	readonly={viewOnly}
+	onSave={(note) => saveSeatNote(editing, note)}
+/>
 
 <NoteEditor
 	bind:open={gameNoteOpen}
@@ -204,10 +164,6 @@
 />
 
 <style>
-	/* Room between the character badge above and the field (Trevor, 2026-10-19). */
-	.editor {
-		padding-top: var(--space-3);
-	}
 	.notes {
 		display: grid;
 		gap: var(--space-4);
@@ -221,21 +177,5 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	/* The note as it reads in its editor: the sheet's own text, every line kept. */
-	.note {
-		display: block;
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: transparent;
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-		cursor: pointer;
 	}
 </style>
