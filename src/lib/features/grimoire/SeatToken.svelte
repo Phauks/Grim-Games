@@ -45,6 +45,8 @@
 		 * A hold is never a tap, so it opens nothing.
 		 */
 		onHold?: (holding: boolean) => void;
+		/** A hold then a drag moves the seat (boardLooks.holdMoves): no panning on the token. */
+		holdMoves?: boolean;
 		/**
 		 * Today's nominations (Trevor, 2026-10-23), while Track nominations is on: whether this
 		 * player has nominated, and was nominated. A mark not yet earned shows greyed, as the
@@ -73,6 +75,7 @@
 		onTap,
 		onGhostVote,
 		onHold,
+		holdMoves = false,
 		nominations,
 		tokenFreeVotes
 	}: Props = $props();
@@ -125,9 +128,16 @@
 	function pointerdown(event: PointerEvent) {
 		down = { x: event.clientX, y: event.clientY };
 		clearTimeout(holdTimer);
+		const token = event.currentTarget as HTMLElement;
 		if (onHold)
 			holdTimer = setTimeout(() => {
 				held = true;
+				// Held, the token keeps the pointer, so letting go anywhere ends the hold.
+				try {
+					token.setPointerCapture(event.pointerId);
+				} catch {
+					// Already let go.
+				}
 				onHold(true);
 			}, HOLD_MS);
 	}
@@ -227,6 +237,7 @@
 	data-role={role}
 	data-misfit={misfit || undefined}
 	data-testid="seat"
+	data-hold-moves={holdMoves || undefined}
 	aria-label={label}
 	style:--size="{size}px"
 	onpointerdown={pointerdown}
@@ -307,6 +318,10 @@
 		color: var(--on-surface);
 		cursor: pointer;
 		touch-action: manipulation;
+	}
+	/* The browser must not take a held finger for a pan, or the drag would be cancelled. */
+	.seat[data-hold-moves] {
+		touch-action: none;
 	}
 	.mark {
 		position: absolute;

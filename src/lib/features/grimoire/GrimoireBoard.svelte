@@ -407,7 +407,8 @@
 		points,
 		size,
 		board: boardSize,
-		element: board
+		element: board,
+		holdMoves: boardLooks.current.holdMoves && !watching
 	}));
 	const shown = $derived(seatArr.shown);
 
@@ -1128,7 +1129,13 @@
 								: part === 'nominate'
 									? askNomination(seat.seatId)
 									: openSeat(seat.seatId))}
-					onHold={seatArr.arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
+					onHold={seatArr.arranging
+						? undefined
+						: (on) => {
+								holding = on ? seat.seatId : undefined;
+								if (on) seatArr.held(seat.seatId);
+							}}
+					holdMoves={boardLooks.current.holdMoves && !watching}
 					onGhostVote={() =>
 						!seatArr.arranging &&
 						!watching &&
