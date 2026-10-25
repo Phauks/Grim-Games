@@ -1,16 +1,20 @@
 /**
  * What a player thinks each seat is, on their own Grim tab (Trevor, 2026-10-19: "players can
  * tap a player and put what they think they are as a character"). Kept on this phone only,
- * per room; seat ids are new in every game, so a new game starts with no guesses.
+ * per game (`gameKey`), so a new game starts with no guesses.
  */
-import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/index.ts';
+import type { Alignment, Character, CharacterId, CharacterType } from '#lib/core/data/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 /**
- * Seat id to the character this player thinks sits there, or a generic guess (`GenericGuess`)
- * by its key, such as `type:minion` or `team:evil`.
+ * Seat id to the characters this player thinks may sit there, main guess first (Trevor,
+ * 2026-10-25: more than one role per seat). Each is a character id or a generic guess
+ * (`GenericGuess`) by its key, such as `type:minion` or `team:evil`.
  */
-export type Guesses = Record<string, CharacterId>;
+export type Guesses = Record<string, CharacterId[]>;
+
+/** A seat holds at most this many guesses: the main one on its face, the rest in a pill. */
+export const MAX_SEAT_GUESSES = 3;
 
 /**
  * A guess of a seat by its character type alone, or only its alignment (Trevor, 2026-10-24).
@@ -21,6 +25,9 @@ export interface GenericGuess {
 	type?: CharacterType;
 	team: Alignment;
 }
+
+/** A guess after the main one, as its seat's pill draws it (GuessMarks). */
+export type GuessMark = { character: Character } | { generic: GenericGuess; label: string };
 
 export const GENERIC_GUESSES: readonly GenericGuess[] = [
 	{ key: 'type:townsfolk', type: 'townsfolk', team: 'good' },
@@ -41,19 +48,64 @@ const MAX_GUESSES = 40;
 
 const key = (room: string) => `grim-games:play:guesses:${room}`;
 
+/**
+ * Reads stored guesses. A seat used to hold one guess as a string; it reads as a list of one,
+ * so a phone that saved guesses before keeps them.
+ */
 export function parseGuesses(raw: unknown): Guesses {
 	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
-	const entries = Object.entries(raw).filter(
-		(e): e is [string, CharacterId] => typeof e[1] === 'string' && e[1] !== ''
-	);
+	const entries: [string, CharacterId[]][] = [];
+	for (const [seatId, value] of Object.entries(raw)) {
+		const list = (Array.isArray(value) ? value : [value]).filter(
+			(id): id is CharacterId => typeof id === 'string' && id !== ''
+		);
+		const unique = [...new Set(list)].slice(0, MAX_SEAT_GUESSES);
+		if (unique.length) entries.push([seatId, unique]);
+	}
 	return Object.fromEntries(entries.slice(-MAX_GUESSES));
 }
 
-/** The guesses with `seatId` set to `characterId`, or cleared when there is none. */
-export function withGuess(guesses: Guesses, seatId: string, characterId?: CharacterId): Guesses {
+/** A seat's guesses, main first. */
+export function guessesOf(guesses: Guesses, seatId: string): readonly CharacterId[] {
+	return guesses[seatId] ?? [];
+}
+
+/** The guesses with `seatId` holding `list`, or none when it is empty. */
+function withList(guesses: Guesses, seatId: string, list: readonly CharacterId[]): Guesses {
 	const { [seatId]: _old, ...rest } = guesses;
 	void _old;
-	return parseGuesses(characterId ? { ...rest, [seatId]: characterId } : rest);
+	return parseGuesses(list.length ? { ...rest, [seatId]: list } : rest);
+}
+
+/**
+ * Tapping a character in the guess sheet: a new guess becomes the main one (the oldest drops
+ * once the seat holds `MAX_SEAT_GUESSES`); one already there is taken off.
+ */
+export function toggleGuess(guesses: Guesses, seatId: string, id: CharacterId): Guesses {
+	const list = guessesOf(guesses, seatId);
+	return withList(
+		guesses,
+		seatId,
+		list.includes(id) ? list.filter((g) => g !== id) : [id, ...list].slice(0, MAX_SEAT_GUESSES)
+	);
+}
+
+/** Makes one of a seat's guesses the main one. */
+export function mainGuess(guesses: Guesses, seatId: string, id: CharacterId): Guesses {
+	const list = guessesOf(guesses, seatId);
+	if (!list.includes(id)) return guesses;
+	return withList(guesses, seatId, [id, ...list.filter((g) => g !== id)]);
+}
+
+/** The arrow on the token: the next guess becomes the main one, the main one goes last. */
+export function cycleGuess(guesses: Guesses, seatId: string): Guesses {
+	const [first, ...rest] = guessesOf(guesses, seatId);
+	return first === undefined ? guesses : withList(guesses, seatId, [...rest, first]);
+}
+
+/** None: the seat has no guesses. */
+export function clearGuesses(guesses: Guesses, seatId: string): Guesses {
+	return withList(guesses, seatId, []);
 }
 
 export function readGuesses(room: string): Guesses {

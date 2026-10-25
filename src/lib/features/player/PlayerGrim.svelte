@@ -40,14 +40,21 @@
 	} from '#lib/ui/seating/seat-layout.ts';
 	import {
 		GENERIC_GUESSES,
+		clearGuesses,
+		cycleGuess,
 		genericGuess,
+		guessesOf,
+		mainGuess,
 		readGuesses,
-		withGuess,
+		toggleGuess,
 		writeGuesses,
 		type GenericGuess,
+		type GuessMark,
 		type Guesses
 	} from './grim-guesses.ts';
 	import GenericGuessToken from './GenericGuessToken.svelte';
+	import GuessMarks from './GuessMarks.svelte';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import SeatNoteDialog from '#lib/ui/notes/SeatNoteDialog.svelte';
 	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
@@ -184,9 +191,11 @@
 	let chosen = $state<PublicSeat>();
 	function choose(seat: PublicSeat, event?: MouseEvent) {
 		chosen = seat;
-		// The note mark opens the note itself, as the board's does (Trevor, 2026-10-25).
+		// The note mark opens the note itself, as the board's does (Trevor, 2026-10-25), and
+		// the guess pill makes the next guess the main one.
 		const target = event?.target instanceof Element ? event.target : null;
 		if (target?.closest('.mark.note')) noteOpen = true;
+		else if (target?.closest('[data-testid="guess-marks"]')) save(cycleGuess(guesses, seat.seatId));
 		else open = true;
 	}
 	/** A generic guess's word: its character type, or Good or Evil. */
@@ -197,12 +206,26 @@
 		return generic ? genericLabel(generic) : characterOf(value)?.name;
 	};
 
-	function guess(characterId?: CharacterId) {
-		if (!kept || !chosen) return;
-		guesses = withGuess(guesses, chosen.seatId, characterId);
+	function save(next: Guesses) {
+		if (!kept) return;
+		guesses = next;
 		writeGuesses(kept, guesses);
-		open = false;
 	}
+	/**
+	 * A tap in the sheet adds a guess as the main one, or takes it off (up to three a seat,
+	 * Trevor 2026-10-25); the sheet stays open so the next can be added.
+	 */
+	function guess(characterId: CharacterId) {
+		if (chosen) save(toggleGuess(guesses, chosen.seatId, characterId));
+	}
+	/** The seat's guesses, main first, as the token, its pill and the sheet show them. */
+	const listed = (seatId: string) =>
+		guessesOf(guesses, seatId).map((id) => {
+			const generic = genericGuess(id);
+			return generic
+				? { id, generic, label: genericLabel(generic) }
+				: { id, character: characterOf(id) };
+		});
 
 	/* eslint-disable grim/names-as-badges -- the seat button's accessible name (aria-label) only */
 	function label(seat: PublicSeat): string {
@@ -215,8 +238,8 @@
 		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
 		const traveller = characterOf(seat.traveller);
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
-		const guessed = guessName(guesses[seat.seatId]);
-		if (guessed) parts.push(t('player.grim.guess', { name: guessed }));
+		const guessed = guessesOf(guesses, seat.seatId).map(guessName).filter(Boolean);
+		if (guessed.length) parts.push(t('player.grim.guess', { name: guessed.join(', ') }));
 		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
 		return parts.join(', ');
 	}
@@ -266,8 +289,18 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
-			{@const generic = genericGuess(guesses[seat.seatId])}
-			{@const guessed = generic ?? characterOf(guesses[seat.seatId])}
+			{@const main = guessesOf(guesses, seat.seatId)[0]}
+			{@const generic = genericGuess(main)}
+			{@const guessed = generic ?? characterOf(main)}
+			{@const others = listed(seat.seatId)
+				.slice(1)
+				.flatMap((g): GuessMark[] =>
+					g.generic
+						? [{ generic: g.generic, label: g.label }]
+						: g.character
+							? [{ character: g.character }]
+							: []
+				)}
 			<!-- The player's avatar unless their own guess is set to show over it (plan R6). -->
 			{@const shown =
 				known ?? (seat.avatar && !playerSettings.current.guessesOnTokens ? undefined : guessed)}
@@ -292,8 +325,13 @@
 					avatar={seat.avatar}
 					usedVote={boardLooks.current.usedGhostVote}
 					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
-					marks={notes[seat.seatId] ? noteMark : undefined}
+					marks={notes[seat.seatId] || (others.length && shown === guessed) ? marks : undefined}
 				/>
+				{#snippet marks()}
+					<!-- The board's own mark (SeatNoteMark): tapping it opens the note, as on the board. -->
+					{#if notes[seat.seatId]}<SeatNoteMark />{/if}
+					{#if others.length && shown === guessed}<GuessMarks {others} />{/if}
+				{/snippet}
 				{#snippet face()}
 					{#if shown && 'key' in shown}<GenericGuessToken
 							guess={shown}
@@ -323,19 +361,50 @@
 	bind:open
 	title={chosen ? `${t('common.seat', { number: chosen.seatNumber })} · ${nameOf(chosen)}` : ''}
 >
+	<!-- This seat's guesses, main first, at the top (Trevor, 2026-10-25); a tap makes one the
+	     main guess. Then the note, a row of its own, so the two never read as one. -->
+	<div class="row" data-testid="seat-guesses">
+		<span class="row-label">{t('player.grim.guesses')}</span>
+		<ul class="chips" aria-label={t('player.grim.guesses')}>
+			{#each chosen ? listed(chosen.seatId) : [] as g, i (g.id)}
+				<li>
+					<button
+						type="button"
+						class="chip"
+						aria-pressed={i === 0}
+						onclick={() => chosen && save(mainGuess(guesses, chosen.seatId, g.id))}
+						>{#if g.generic}<AlignmentPill
+								alignment={g.generic.team}
+								text={g.label}
+							/>{:else}<CharacterBadge
+								characterId={g.id}
+								character={g.character}
+								interactive={false}
+							/>{/if}</button
+					>
+				</li>
+			{:else}
+				<li class="row-none">{t('common.none')}</li>
+			{/each}
+		</ul>
+	</div>
+	<!-- The player's own note on this seat, as the Storyteller has one per player (Trevor,
+	     2026-10-24); it shows on the Notes tab too. -->
+	<button
+		type="button"
+		class="row seat-note"
+		data-testid="seat-note"
+		onclick={() => (noteOpen = true)}
+		><span class="row-label">{t('player.note')}</span><span class="seat-note-text"
+			>{(chosen && notes[chosen.seatId]) || t('common.none')}</span
+		></button
+	>
 	<!-- Also in Settings > Player: one switch for every seat. -->
 	<SettingToggle
 		label={t('player.guessesOnTokens')}
 		checked={playerSettings.current.guessesOnTokens}
 		onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
 	/>
-	<!-- The player's own note on this seat, as the Storyteller has one per player (Trevor,
-	     2026-10-24); it shows on the Notes tab too. -->
-	<button type="button" class="seat-note" data-testid="seat-note" onclick={() => (noteOpen = true)}
-		><span class="seat-note-label">{t('player.note')}</span><span class="seat-note-text"
-			>{(chosen && notes[chosen.seatId]) || t('common.none')}</span
-		></button
-	>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
 	     characters. -->
 	<ul class="generic" aria-label={t('player.grim.generic')}>
@@ -343,7 +412,7 @@
 			<li>
 				<button
 					type="button"
-					aria-pressed={!!chosen && guesses[chosen.seatId] === g.key}
+					aria-pressed={!!chosen && guessesOf(guesses, chosen.seatId).includes(g.key)}
 					data-guess-key={g.key}
 					onclick={() => guess(g.key)}
 					><AlignmentPill alignment={g.team} text={genericLabel(g)} /></button
@@ -353,16 +422,11 @@
 	</ul>
 	<CharacterPicker
 		characters={script.characters}
-		selected={chosen && guesses[chosen.seatId] ? [guesses[chosen.seatId]] : []}
+		selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
 		onSelect={(id) => guess(id)}
-		onNone={() => guess()}
+		onNone={() => chosen && save(clearGuesses(guesses, chosen.seatId))}
 	/>
 </BottomSheet>
-
-{#snippet noteMark()}
-	<!-- The board's own mark (SeatNoteMark): tapping it opens the note, as on the board. -->
-	<SeatNoteMark />
-{/snippet}
 
 <SeatNoteDialog
 	bind:open={noteOpen}
@@ -372,26 +436,60 @@
 />
 
 <style>
-	.seat-note {
+	/* Guesses and Note: one labelled row each, with a line between them (Trevor: rows with
+	   dividers), so a guess never reads as a note. */
+	.row {
 		display: grid;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: calc(6 * var(--u)) 1fr;
 		align-items: center;
 		gap: var(--space-2);
 		width: 100%;
 		min-height: var(--tap-target);
-		margin: var(--space-2) 0;
-		padding: var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
+		padding: var(--space-1) 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.row-label {
+		font-family: var(--font-control);
+		font-weight: 600;
+	}
+	.seat-note {
+		margin: 0 0 var(--space-2);
+		border-width: 0 0 1px;
+		border-radius: 0;
 		background: transparent;
 		color: inherit;
 		font: inherit;
 		text-align: start;
 		cursor: pointer;
 	}
-	.seat-note-label {
-		font-family: var(--font-control);
-		font-weight: 600;
+	/* One line of up to three, so adding a guess moves nothing below it. */
+	.chips {
+		display: flex;
+		gap: var(--space-1);
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+		list-style: none;
+	}
+	.chip {
+		display: grid;
+		place-items: center;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-1);
+		border: 1px solid transparent;
+		border-radius: var(--radius-sm);
+		background: none;
+		font: inherit;
+		cursor: pointer;
+	}
+	/* The main guess, the one on the token. */
+	.chip[aria-pressed='true'] {
+		border-color: var(--accent);
+		background: var(--surface-selected);
+	}
+	.row-none {
+		color: var(--on-surface-muted);
 	}
 	.seat-note-text {
 		overflow: hidden;

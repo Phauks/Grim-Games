@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RimPill from '#lib/ui/seating/RimPill.svelte';
 	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
 	import { seatFrame } from '#lib/core/frames/index.ts';
@@ -176,7 +177,7 @@
 				onTap(
 					target?.closest('.mark.note')
 						? 'note'
-						: target?.closest('.nominations')
+						: target?.closest('.rim-pill')
 							? 'nominate'
 							: undefined
 				);
@@ -210,7 +211,7 @@
 	<!-- Today's nominations: two marks side by side in one pill over the top-left rim, each
 	     greyed until it happens (Trevor, 2026-10-23), clear of the first-night number on the
 	     left leaf (Trevor, 2026-10-24). A tap asks who this player nominated. -->
-	{#if nominations}<span class="nominations" data-testid="nomination-marks"
+	{#if nominations}<RimPill side="left" testid="nomination-marks"
 			>{#if nominations.made !== undefined}<span
 					class="slot"
 					data-testid="nominator-mark"
@@ -223,7 +224,7 @@
 				data-on={nominations.received || undefined}
 				title={nominations.received ? 'Was nominated today' : 'Not nominated today'}
 				><Icon name="nominated" /></span
-			></span
+			></RimPill
 		>{/if}
 	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
 	{#if seat.note}<SeatNoteMark />{/if}
@@ -360,31 +361,8 @@
 		top: -10%;
 		translate: -50% 0;
 	}
-	/* Lower right: the dead skull keeps the lower left. */
-	/* Over the top-left rim, half outside the token: the left leaf's first-night number, at the
-	   middle of the left rim, stays clear (Trevor, 2026-10-24). */
-	.nominations {
-		position: absolute;
-		right: 64%;
-		top: -8%;
-		display: flex;
-		gap: calc(0.125 * var(--u));
-		padding: calc(0.125 * var(--u));
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		box-shadow: var(--shadow);
-		--slot: max(1.25 * var(--u), calc(var(--size) * 0.3));
-	}
-	/* A tap target of its own, however small the token. */
-	.nominations::after {
-		content: '';
-		position: absolute;
-		inset: 50% auto auto 50%;
-		width: max(100%, var(--tap-target));
-		height: max(100%, var(--tap-target));
-		translate: -50% -50%;
-	}
-	.nominations .slot {
+	/* The nomination marks, in their pill over the top-left rim (RimPill). */
+	.slot {
 		display: grid;
 		place-items: center;
 		width: var(--slot);
@@ -396,7 +374,7 @@
 	}
 	/* One neutral fill for both: the icon tells them apart, and red or blue would read as an
 	   alignment (the accent is red in some themes). */
-	.nominations .slot[data-on] {
+	.slot[data-on] {
 		background: var(--on-surface);
 		color: var(--surface);
 		opacity: 1;
