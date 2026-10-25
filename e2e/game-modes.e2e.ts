@@ -1734,9 +1734,16 @@ test('New game previews the script as it will play, beside the settings', async 
 	await noSidewaysScroll(page);
 });
 
-test('the script preview turns light from its sun and moon switch, and Settings > Player shows the same switch', async ({
+test('the script preview’s background is a choice of neutral colours, also in Settings > Player', async ({
 	page
 }) => {
+	// A device that had the light switch on (2026-10-23) opens on parchment.
+	await page.addInitScript(() => {
+		if (!sessionStorage.getItem('seeded')) {
+			localStorage.setItem('grim-games:player-settings:v1', JSON.stringify({ lightSheet: true }));
+			sessionStorage.setItem('seeded', '1');
+		}
+	});
 	await page.goto('/new');
 	const copy = page.getByTestId('script-preview').getByTestId('script-copy');
 	await copy.getByText('Chef').first().waitFor();
@@ -1747,37 +1754,47 @@ test('the script preview turns light from its sun and moon switch, and Settings 
 	expect((await title.boundingBox())!.y).toBeLessThan(
 		(await copy.getByTestId('script-byline').boundingBox())!.y
 	);
-	// A moon while dark, a sun once light (Trevor, 2026-10-23).
-	const light = copy.getByRole('button', { name: 'Light background' });
-	await expect(light).toHaveAttribute('aria-pressed', 'false');
+	await expect(copy).toHaveCSS('background-color', 'rgb(251, 248, 241)');
+
+	// Grey, tan and the other neutral colours (Trevor, 2026-10-24); nothing moves.
+	const background = copy.getByRole('combobox', { name: 'Sheet background' });
 	const size = async () => {
 		const box = await copy.boundingBox();
 		return box && { width: box.width, height: box.height };
 	};
 	const before = await size();
-	await light.tap();
-	await expect(light).toHaveAttribute('aria-pressed', 'true');
-	await expect(copy).toHaveCSS('background-color', 'rgb(251, 248, 241)');
-	// Nothing moves when it turns light (no layout reflow).
+	await background.tap();
+	await expect(page.getByRole('option')).toHaveText([
+		'Theme',
+		'Off-white',
+		'Parchment',
+		'Tan',
+		'Grey',
+		'Slate',
+		'Charcoal'
+	]);
+	await page.getByRole('option', { name: 'Tan' }).tap();
+	await expect(copy).toHaveCSS('background-color', 'rgb(233, 220, 194)');
 	expect(await size()).toEqual(before);
 
 	// Remembered on this device, and the same setting in Settings > Player.
 	await page.reload();
-	await expect(light).toHaveAttribute('aria-pressed', 'true');
+	await expect(copy).toHaveCSS('background-color', 'rgb(233, 220, 194)');
 	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Player' })
 		.tap();
-	const setting = dialog.getByRole('checkbox', { name: 'Light background' });
-	await expect(setting).toBeChecked();
-	await dialog.getByText('Light background', { exact: true }).tap();
+	const setting = dialog.getByRole('combobox', { name: 'Sheet background' });
+	await expect(setting).toContainText('Tan');
+	await setting.tap();
+	await page.getByRole('option', { name: 'Slate' }).tap();
 	await page.keyboard.press('Escape');
-	await expect(light).toHaveAttribute('aria-pressed', 'false');
+	await expect(copy).toHaveCSS('background-color', 'rgb(44, 51, 59)');
 });
 
-test('the Script sheet’s sun and moon sit beside Print and Share, and turn the night order light too', async ({
+test('the Script sheet’s background choice sits beside Print and Share, and covers the night order too', async ({
 	page
 }) => {
 	await page.goto('/new');
@@ -1786,19 +1803,20 @@ test('the Script sheet’s sun and moon sit beside Print and Share, and turn the
 	await toBoard(page);
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
-	// One switch in the header; none in the copy itself.
-	const light = sheet.getByTestId('light-sheet');
-	await expect(light).toHaveCount(1);
-	await expect(sheet.getByTestId('script-copy').getByTestId('light-sheet')).toHaveCount(0);
-	await light.tap();
+	// One choice in the header; none in the copy itself.
+	const choice = sheet.getByTestId('sheet-background');
+	await expect(choice).toHaveCount(1);
+	await expect(sheet.getByTestId('script-copy').getByTestId('sheet-background')).toHaveCount(0);
+	await choice.getByRole('combobox', { name: 'Sheet background' }).tap();
+	await page.getByRole('option', { name: 'Grey' }).tap();
 	await expect(sheet.getByTestId('script-copy')).toHaveCSS(
 		'background-color',
-		'rgb(251, 248, 241)'
+		'rgb(218, 218, 218)'
 	);
 	await sheet.getByRole('tab', { name: 'Night' }).tap();
 	await expect(sheet.getByTestId('night-sheet')).toHaveCSS(
 		'background-color',
-		'rgb(251, 248, 241)'
+		'rgb(218, 218, 218)'
 	);
 	// Each character type starts under a line across the sheet.
 	await sheet.getByRole('tab', { name: 'Script' }).tap();
