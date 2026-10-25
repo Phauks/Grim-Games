@@ -223,7 +223,7 @@
 		<!-- The mode and rules take the author's line, joined as on a board short of room. -->
 		{#if modeLine}<span class="preview-mode" data-testid="preview-mode">{modeLine}</span>{/if}
 		{#if lines.author && !modeLine}<span class="preview-room-code" data-testid="preview-author"
-				>by {t('settings.previewAuthor')}</span
+				>{t('player.byAuthor', { author: t('settings.previewAuthor') })}</span
 			>{/if}
 		{#if lines.version}<span class="preview-room-code" data-testid="preview-version"
 				>{t('modes.info.version')}: 1.0</span
