@@ -133,7 +133,8 @@
 	dl {
 		margin: 0;
 		display: grid;
-		grid-template-columns: auto 1fr;
+		/* minmax: the value column may shrink below its content, so Update stays on a phone's screen. */
+		grid-template-columns: auto minmax(0, 1fr);
 		gap: calc(0.25 * var(--u)) calc(1 * var(--u));
 	}
 	dt {
@@ -153,6 +154,11 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
+		min-width: 0;
+	}
+	/* Only the status text gives up room. */
+	.version > :global(:not(.result)) {
+		flex: none;
 	}
 	.result {
 		flex: 1;
