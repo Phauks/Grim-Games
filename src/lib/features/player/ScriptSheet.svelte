@@ -3,6 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { ScriptJinx } from '#lib/core/rules/jinxes.ts';
+	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
@@ -37,6 +38,8 @@
 		travellers?: readonly TravellerInPlay[];
 		/** False leaves the Jinxes section out (a printed sheet without them). */
 		showJinxes?: boolean;
+		/** The game mode and special rules, in their own section under Jinxes; none, none shown. */
+		rules?: readonly PublicRule[];
 		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
 		showBreakdown?: boolean;
 		/** Overrides the reader's density setting (printing picks whatever fits one page). */
@@ -51,6 +54,7 @@
 		inPlay,
 		travellers,
 		showJinxes = true,
+		rules = [],
 		showBreakdown = true,
 		density: fixed
 	}: Props = $props();
@@ -189,6 +193,25 @@
 			jinxes.length
 		)}{/if}
 
+	{#snippet ruleList()}
+		<ul>
+			{#each rules as rule (rule.id)}
+				<li class="rule" data-testid="sheet-rule">
+					<span class="rule-name">{rule.name}</span>
+					{#if rule.text}<p class="ability"><GlossaryText text={rule.text} {names} /></p>{/if}
+				</li>
+			{/each}
+		</ul>
+	{/snippet}
+	{#if rules.length}{@render section(
+			t('player.modeAndRules'),
+			'play:rules',
+			ruleList,
+			undefined,
+			false,
+			rules.length
+		)}{/if}
+
 	{#if !flat && showBreakdown}
 		{#snippet breakdown()}<PlayerCounts
 				{players}
@@ -231,7 +254,8 @@
 		list-style: none;
 	}
 	.character,
-	.jinx {
+	.jinx,
+	.rule {
 		display: grid;
 		justify-items: start;
 		gap: calc(0.125 * var(--u));
@@ -260,6 +284,14 @@
 	.none {
 		margin: 0;
 		color: var(--on-surface-muted);
+	}
+	/* A rule has no badge: its name at the badge's height keeps the rows even. */
+	.rule-name {
+		display: flex;
+		align-items: center;
+		min-height: var(--tap-target);
+		font-family: var(--font-control);
+		font-weight: 600;
 	}
 	.name {
 		display: inline-flex;
