@@ -13,6 +13,7 @@
 	import { playerNight } from './player-script.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { sheetStyle } from '#lib/ui/themes/sheet-backgrounds.ts';
+	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 	import ScriptCopy from './ScriptCopy.svelte';
 	import type { TravellerInPlay } from './travellers-in-play.ts';
 
@@ -29,6 +30,8 @@
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play, with their players. */
 		travellers?: readonly TravellerInPlay[];
+		/** The game mode and special rules, listed under Jinxes. */
+		rules?: readonly PublicRule[];
 		/** The town as the table knows it, from the live room (/play only). */
 		grim?: Snippet;
 		/** The player's own Notes tab (/play only). */
@@ -41,6 +44,7 @@
 		players,
 		inPlay,
 		travellers,
+		rules,
 		grim,
 		notes,
 		tab = $bindable('script')
@@ -78,6 +82,7 @@
 						{players}
 						{inPlay}
 						{travellers}
+						{rules}
 						byline={false}
 						backgroundChoice={false}
 					/>

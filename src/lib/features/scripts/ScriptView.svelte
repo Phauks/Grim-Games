@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ReportButton from '#lib/features/reports/ReportButton.svelte';
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import { untrack } from 'svelte';
@@ -353,6 +354,7 @@
 		/>
 		<ScriptSourceButton page={origin.page} source={origin.label} />
 		{@render extraActions?.()}
+		<ReportButton name={preview?.name} disabled={!preview} />
 	{/snippet}
 </ScriptDetails>
 

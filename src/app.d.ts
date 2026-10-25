@@ -14,6 +14,8 @@ declare global {
 		interface PageState {
 			/** The board's extra history entry, so Back asks before leaving a game. */
 			inGame?: boolean;
+			/** The locked draw's extra history entry, so a back swipe previews only the draw. */
+			drawLocked?: boolean;
 			/** The grimoire was opened with a typed Grim view password, not the link. */
 			password?: boolean;
 		}

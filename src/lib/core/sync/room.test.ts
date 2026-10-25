@@ -269,6 +269,9 @@ describe('feedback after a game', () => {
 		// Anonymous feedback carries a room-made id, never the member id.
 		expect(JSON.stringify(hostView(room).feedback)).not.toContain('sam');
 		expect(playerView(room, 'sam').feedback).toEqual(anonymous);
+		// The phone sends feedback for the game that ended.
+		expect(playerView(room, 'sam').endedGameId).toBe('g1');
+		expect(playerView(roomWith('sam'), 'sam').endedGameId).toBeUndefined();
 		expect(playerView(room, 'alex').feedback).toEqual(rated);
 	});
 

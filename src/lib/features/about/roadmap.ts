@@ -82,7 +82,18 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: 'One start flow: New game, then Game info during the game',
-		parts: [...range('G', 1, 3), ...range('G', 5, 7), 'G9', 'G10', 'G14', 'G16', 'L6', 'L14', 'L37']
+		parts: [
+			...range('G', 1, 3),
+			...range('G', 5, 7),
+			'G9',
+			'G10',
+			'G14',
+			'G15',
+			'G16',
+			'L6',
+			'L14',
+			'L37'
+		]
 	},
 	{
 		title:
@@ -109,7 +120,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['R4', 'R5']
 	},
 	{ title: 'QR codes with your own picture and shapes', parts: ['Q1', 'Q2'] },
-	{ title: 'Report an issue from inside the app, with diagnostics', parts: ['S2', 'S7', 'S10'] },
+	{
+		title: 'Report an issue from inside the app, with diagnostics',
+		parts: ['S2', 'S7', 'S10', 'S16']
+	},
 	{
 		title: 'One consistent look: one badge, theme colours only, one icon per meaning',
 		parts: ['S4', 'S6', 'S12', 'S17', 'S19', 'S20']

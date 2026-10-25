@@ -61,6 +61,7 @@
 	import { townSetupHref } from './town-setup.ts';
 	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
 	import { openedByBack, readDraft, saveDraft } from './new-game-draft.ts';
+	import { sheetRules } from './sheet-rules.ts';
 
 	/**
 	 * New game's Game modes area (Trevor, 2026-10-17: modes are their own area because they
@@ -551,7 +552,13 @@
 					</h3>{/if}
 				<!-- New game already shows the player counts beside the settings. -->
 				<!-- The name above the author, as players see it (Trevor, 2026-10-24). -->
-				<ScriptCopy script={loaded} players={previewPlayers} showBreakdown={false} title />
+				<ScriptCopy
+					script={loaded}
+					players={previewPlayers}
+					showBreakdown={false}
+					title
+					rules={sheetRules(mode, rules)}
+				/>
 			{:else}
 				<p class="muted" aria-busy="true">{t('scripts.details.loading')}</p>
 			{/each}
@@ -573,7 +580,6 @@
 	{ruleIds}
 	onChange={(ids) => (ruleIds = ids)}
 	choices={switchChoices}
-	onSwitch={(c) => (switchChoices = c)}
 	onadd={() => (adding = true)}
 />
 <AddModeDialog
