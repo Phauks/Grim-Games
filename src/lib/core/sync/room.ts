@@ -244,6 +244,11 @@ export interface VoteTally {
 export interface PlayerView {
 	type: 'player-view';
 	public?: PublicGameState;
+	/**
+	 * The game on the table, so a phone keeps its notes and guesses per game, not per room or
+	 * script (Trevor, 2026-10-25). Not a secret: phones are sent it with the final grimoire.
+	 */
+	gameId?: string;
 	me: RoomMember;
 	request?: Pick<RoomRequest, 'name' | 'seatId'>;
 	/** Seats someone in the room already sits in. */
@@ -449,6 +454,7 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 		takenSeats: room.members.flatMap((m) => (m.seatId ? [m.seatId] : []))
 	};
 	if (room.public) view.public = room.public;
+	if (room.gameId) view.gameId = room.gameId;
 	if (room.ended && room.ended.gameId === room.gameId) {
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;

@@ -6,7 +6,7 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import { lastRoom } from '#lib/features/room/player.svelte.ts';
+	import { gameKey, lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
@@ -91,10 +91,16 @@
 	const table = $derived(town ?? player?.view?.public);
 	const seats = $derived(table?.seats ?? []);
 	const mine = $derived(player?.view?.me.seatId);
-	let guesses = $state<Guesses>(code ? readGuesses(code) : {});
+	/** Where this game's guesses and seat notes are kept: per game (`gameKey`). */
+	const kept = $derived(town ? town.guessKey : code ? gameKey(code) : undefined);
+	let guesses = $state<Guesses>({});
 	/** The player's own note on each seat (Trevor, 2026-10-24), shared with the Notes tab. */
-	// Read here, not inside the derived, so the derived follows the notes it reads.
-	const book = code ? seatNotes(code) : undefined;
+	// Set in an effect, not a derived, so the derived below follows the notes it reads.
+	let book = $state<ReturnType<typeof seatNotes>>();
+	$effect.pre(() => {
+		guesses = kept ? readGuesses(kept) : {};
+		book = kept ? seatNotes(kept) : undefined;
+	});
 	const notes = $derived(book?.notes ?? {});
 	let noteOpen = $state(false);
 
@@ -189,9 +195,9 @@
 	};
 
 	function guess(characterId?: CharacterId) {
-		if (!code || !chosen) return;
+		if (!kept || !chosen) return;
 		guesses = withGuess(guesses, chosen.seatId, characterId);
-		writeGuesses(code, guesses);
+		writeGuesses(kept, guesses);
 		open = false;
 	}
 
@@ -360,7 +366,7 @@
 	bind:open={noteOpen}
 	title={chosen ? t('player.grim.noteTitle', { name: nameOf(chosen) }) : ''}
 	value={(chosen && notes[chosen.seatId]) || ''}
-	onSave={(note) => code && chosen && setSeatNote(code, chosen.seatId, note)}
+	onSave={(note) => kept && chosen && setSeatNote(kept, chosen.seatId, note)}
 />
 
 <style>

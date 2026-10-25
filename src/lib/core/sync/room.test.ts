@@ -195,6 +195,11 @@ describe('the live room', () => {
 });
 
 describe('the end of a game', () => {
+	it('tells each phone which game is on the table, so its notes are kept per game', () => {
+		expect(playerView(roomWith('alex'), 'alex').gameId).toBe('g1');
+		expect(playerView(publish(roomWith('alex'), 'g2', table('a')), 'alex').gameId).toBe('g2');
+	});
+
 	it('tells every phone the game is over, with who won and how', () => {
 		const room = gameOver(roomWith('alex'), 'g1', 'evil', 'two-alive');
 		expect(playerView(room, 'alex').ended).toEqual({ winner: 'evil', reason: 'two-alive' });
