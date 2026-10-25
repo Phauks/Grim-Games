@@ -1,0 +1,56 @@
+{
+	"reminderTargets": {
+		"Everyone Is Drunk": {
+			"note": "On the Minstrel, from the Minion's execution until dusk the next day.",
+			"seat": "self"
+		}
+	},
+	"impairs": {
+		"tokens": {
+			"Everyone Is Drunk": {
+				"reason": "drunk",
+				"on": "others"
+			}
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			},
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has made everyone drunk"
+					}
+				],
+				"when": {
+					"self": "any",
+					"reminder": "Everyone Is Drunk"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "drunkenness"
+	},
+	"reminderMovement": {
+		"why": "Marks a day-long effect."
+	}
+}

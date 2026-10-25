@@ -1,0 +1,20 @@
+{
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "other",
+			"note": "On the first player that night to choose the Goon with their own ability."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night effect"
+	},
+	"deathCause": {
+		"none": "drunkenness; changes alignment"
+	},
+	"reminderMovement": {
+		"why": "Follows whoever chose the Goon tonight."
+	}
+}

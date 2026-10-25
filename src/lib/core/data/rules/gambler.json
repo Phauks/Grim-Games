@@ -1,0 +1,48 @@
+{
+	"kills": {
+		"by": "other",
+		"targets": "self"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "self",
+			"note": "On the Gambler after a wrong guess."
+		}
+	},
+	"deathCheck": {
+		"kind": "wrong-guess"
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"kind": "own-death"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"note": "A wrong guess kills the Gambler.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Gambler chooses a player & a character. If the guess is wrong, the Gambler dies: mark them *DEAD*.",
+				"reason": "Says when the Dead token is used (Trevor’s review)."
+			}
+		}
+	}
+}

@@ -6,7 +6,11 @@
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { isSeatable } from '#lib/core/data/character-type.ts';
-import type { DayCondition, DayReminderSpec, DeathCauseMatch } from './day-reminders.data.ts';
+import type {
+	DayCondition,
+	DayReminderSpec,
+	DeathCauseMatch
+} from '#lib/core/data/day-reminder-rules.ts';
 
 type Named = Pick<Character, 'name' | 'type'>;
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -37,7 +38,9 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
-	import { DEMON_SET, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
+	import { backToNewGame, notBegun } from '#lib/features/modes/new-game-draft.ts';
+	import { stepBeforeCharacters } from '#lib/features/modes/start.ts';
+	import { DEMON_SET, randomBluffs, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupNav from './SetupNav.svelte';
@@ -70,6 +73,10 @@
 	onMount(() => void loadOfficialData());
 
 	const game = $derived(port.game);
+	/** Where this step's Back goes: the start flow's step before until the game begins. */
+	const backStep = $derived(
+		game && notBegun(game) ? stepBeforeCharacters(game.gameId) : ('board' as const)
+	);
 	const data = $derived(officialData.current);
 	// The game's own script, so a homebrew character is found even if the Scripts page moved on.
 	const script = $derived(game && data ? fromScript(game.script, data).script : undefined);
@@ -171,14 +178,21 @@
 			.map((id) => lookup(id))
 			.filter((c): c is Character => c !== undefined && !isRuleCharacter(c.type))
 	);
-	/** Only the chosen characters, with the search still applying (Trevor, 2026-10-18). */
+	/**
+	 * Only the chosen characters, with the search still applying (Trevor, 2026-10-18), and the
+	 * Demon's bluffs (Trevor, 2026-10-23).
+	 */
 	let selectedOnly = $state(false);
 	const listed = $derived(
 		[...choices, ...editionTravellers, ...offScript, ...scriptRules, ...offScriptRules].filter(
-			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id)
+			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id) || bluffIds.has(c.id)
 		)
 	);
-	const offScriptIds = $derived(new Set([...offScript, ...offScriptRules].map((c) => c.id)));
+	/** Characters a special rule put in play (+1, Infinite Possibilities) are not marked. */
+	const ruleAllowed = $derived(game ? allowedOffScriptIn(game.gameId) : new Set<CharacterId>());
+	const offScriptIds = $derived(
+		new Set([...offScript, ...offScriptRules].map((c) => c.id).filter((id) => !ruleAllowed.has(id)))
+	);
 	/** The Demon's bluffs, chosen below the list, are tagged in it (Trevor, 2026-10-18). */
 	const bluffIds = $derived(new Set(game?.bluffs[DEMON_SET] ?? []));
 	/**
@@ -211,6 +225,13 @@
 	];
 
 	const ready = $derived(script !== undefined && game !== undefined && s.gameId === game.gameId);
+	/**
+	 * Travellers a special rule lets into the bag (Stowed Away: up to 2, the other counts for
+	 * that many fewer players). Otherwise a selected Traveller is one more player.
+	 */
+	const travellersInBag = $derived(
+		game ? (gameModeOf(game.gameId)?.parts.travellers?.inBag ?? 0) : 0
+	);
 	const analysis = $derived(
 		analyseSelection({
 			players: s.players,
@@ -218,7 +239,8 @@
 			ruleCharacters: game?.ruleCharacters,
 			scriptOrder,
 			lookup,
-			findByName
+			findByName,
+			travellersInBag
 		})
 	);
 	const plan = $derived(
@@ -266,13 +288,6 @@
 		return of;
 	});
 	const travellers = $derived(ids.filter((id) => lookup(id)?.type === 'traveller').length);
-	/**
-	 * Travellers a special rule lets into the bag (Stowed Away: up to 2, the other counts for
-	 * that many fewer players). Selected Travellers already lower the other counts.
-	 */
-	const travellersInBag = $derived(
-		game ? (gameModeOf(game.gameId)?.parts.travellers?.inBag ?? 0) : 0
-	);
 	const travellerLimits = $derived(
 		travellersInBag ? travellerRange(s.players, travellersInBag) : undefined
 	);
@@ -280,7 +295,11 @@
 		...setupWarningMessages(analysis.warnings, requirements, name),
 		...plan.issues.map((i) => i.message),
 		...jinxSetupWarnings(jinxes, ids, name).map((w) => w.message),
-		...(script ? teensyvilleWarnings(script.characters, s.players) : [])
+		...(script ? teensyvilleWarnings(script.characters, s.players) : []),
+		// A Demon bluff that is also chosen: a warning, never a lock (Trevor, 2026-10-23).
+		...[...bluffIds]
+			.filter((id) => (s.selection[id] ?? 0) > 0)
+			.map((id) => t('setup.check.bluffInPlay', { name: name(id) }))
 	]);
 
 	const errors = $derived(
@@ -374,7 +393,8 @@
 	async function buildBag() {
 		replaceOpen = false;
 		if (!game) return;
-		for (let n = port.game?.seating.length ?? 0; n < s.players; n++) {
+		// A seat for each player, selected Travellers included.
+		for (let n = port.game?.seating.length ?? 0; n < analysis.players; n++) {
 			if (!send({ type: 'AddSeat' })) return;
 		}
 		const built = send({
@@ -419,8 +439,23 @@
 			random: Math.random,
 			travellersInBag
 		});
-		if (result.ok) setupSelection.replace(result.selection);
-		else
+		if (result.ok) {
+			setupSelection.replace(result.selection);
+			// New Demon bluffs too, never one just chosen (Trevor, 2026-10-23).
+			const chosen = new Set(
+				Object.keys(result.selection).filter((id) => result.selection[id] > 0)
+			);
+			send({
+				type: 'SetBluffs',
+				set: DEMON_SET,
+				characterIds: randomBluffs(
+					choices.filter(canBluff).map((c) => c.id),
+					chosen,
+					BLUFFS_PER_SET,
+					Math.random
+				)
+			});
+		} else
 			toast(
 				t(s.locked.length > 0 ? 'setup.randomNoneLocked' : 'setup.randomNone'),
 				result.problems[0]
@@ -512,7 +547,7 @@
 			surface="page"
 			contained={false}
 			types={TYPES}
-			pinTop="calc(var(--tap-target) + env(safe-area-inset-top) + {Math.max(0, bandHeight - 1)}px)"
+			pinTop="calc(var(--app-top) + {Math.max(0, bandHeight - 1)}px)"
 			keepTypes={['traveller', 'fabled', 'loric']}
 			closedTypes={travellersChosenAtStart ? ['fabled', 'loric'] : ['traveller', 'fabled', 'loric']}
 			onSelect={(id) => {
@@ -573,18 +608,39 @@
 	</ErrorBoundary>
 
 	{#if game}
+		<!-- Back is the start flow's step before while nothing has happened yet (Trevor,
+		     2026-10-23), else the board. -->
 		<SetupNav
-			backHref={resolve('/grimoire/[gameId]', { gameId: game.gameId })}
-			backLabel={t('setup.grimoire')}
+			backHref={backStep === 'board'
+				? resolve('/grimoire/[gameId]', { gameId: game.gameId })
+				: backStep === 'extras'
+					? resolve('/grimoire/[gameId]/extras', { gameId: game.gameId })
+					: undefined}
+			onBack={backStep === 'new' ? () => void backToNewGame(game.gameId) : undefined}
+			backLabel={backStep === 'board'
+				? t('setup.grimoire')
+				: backStep === 'extras'
+					? t('modes.extras.title')
+					: t('setup.newGame')}
 		>
 			{#snippet next()}
-				<Button
-					variant="accent"
-					icon="bag"
-					disabled={!ready || plan.tiles.length === 0}
-					onclick={() => requestBuild()}
-					>{sameBag ? t('setup.continueDraw') : t('setup.buildBag')}</Button
-				>
+				<span class="next">
+					<!-- The board without a bag, for a Storyteller who hands tokens out on it; always
+					     here, so the bar never changes. -->
+					{#if backStep !== 'board'}<IconButton
+							icon="grimoire"
+							label={t('setup.grimoire')}
+							onclick={() => void goto(resolve('/grimoire/[gameId]', { gameId: game.gameId }))}
+							data-testid="setup-to-board"
+						/>{/if}
+					<Button
+						variant="accent"
+						icon="bag"
+						disabled={!ready || plan.tiles.length === 0}
+						onclick={() => requestBuild()}
+						>{sameBag ? t('setup.continueDraw') : t('setup.buildBag')}</Button
+					>
+				</span>
 			{/snippet}
 		</SetupNav>
 	{/if}
@@ -644,6 +700,11 @@
 </ConfirmDialog>
 
 <style>
+	.next {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
 	.script {
 		display: flex;
 		min-width: 0;
@@ -667,10 +728,10 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		position: sticky;
-		/* Just below the app header, which is sticky too (as the sidebar does). */
-		top: calc(var(--tap-target) + env(safe-area-inset-top));
+		/* At the top of the screen, as the sidebar is. */
+		top: var(--app-top);
 		z-index: var(--z-raised);
-		/* Edge to edge, like the app header above it, so nothing shows beside it (Trevor). */
+		/* Edge to edge, so nothing shows beside it. */
 		margin-inline: calc(-1 * var(--page-gutter));
 		padding: var(--space-2) var(--page-gutter);
 		/* The page's own background, pinned to the window as the body's is, so it lines up. */

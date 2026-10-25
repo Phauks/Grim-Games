@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SetupNav from '#lib/features/setup/SetupNav.svelte';
+	import { backToNewGame } from './new-game-draft.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -13,6 +15,7 @@
 		STANDARD
 	} from '#lib/core/modes/index.ts';
 	import type { SeatedType } from '#lib/core/rules/distribution.ts';
+	import { setupComplete } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -30,6 +33,8 @@
 	import { readGameMode } from './game-mode-store.ts';
 	import { gameModeOf } from './game-mode.ts';
 	import { readExtras, writeExtras } from './mode-extras.ts';
+	import RuleHeader from './RuleHeader.svelte';
+	import { spawnedBy } from './spawned-by.ts';
 
 	/**
 	 * The hidden extra characters of a mode like A Script of Infinite Possibilities, for the
@@ -47,10 +52,14 @@
 
 	const game = $derived(port.game!);
 	const gameId = $derived(game.gameId);
+	/** Opened from Game info once the game is set up: the bar goes back to the board instead. */
+	const started = $derived(setupComplete(game));
 	const record = $derived(readGameMode(gameId));
 	const mode = $derived(gameModeOf(gameId) ?? STANDARD);
 	const restrictions = $derived(record?.restrictions ?? NO_RESTRICTIONS);
 	const pool = $derived(mode.parts.pool);
+	/** The mode or rules that hide characters, shown at the top. */
+	const spawning = $derived(spawnedBy(gameId, (p) => p.pool?.kind === 'script-plus-hidden'));
 	const announce = $derived(pool?.kind === 'script-plus-hidden' && pool.announceRange);
 	const scriptCharacters = $derived(
 		game.script.entries.flatMap((e): Character[] => {
@@ -159,7 +168,7 @@
 	 * Puts the extras into the setup selection, taking out any earlier roll first: the setup
 	 * screen only offers the script, so an off-script character selected there came from here.
 	 */
-	async function next() {
+	async function goNext() {
 		setupSelection.open(gameId, game.seating.length);
 		const onScript = new Set(scriptCharacters.map((c) => c.id));
 		const types = new Set<string>(ROW_TYPES);
@@ -181,17 +190,21 @@
 		</Button>
 	{/snippet}
 
+	<RuleHeader rules={spawning} />
+
 	<!-- One row per type, always drawn, so choosing or rolling never moves anything. -->
 	<ul class="extras" data-testid="extras">
 		{#each rowTypes as type, i (i)}
 			{@const extra = rows[i]}
 			<li class="extra">
 				<span class="muted">{TYPE_LABELS[type]}</span>
-				{#if extra}
-					<CharacterBadge characterId={extra.id} character={extra} />
-				{:else}
-					<span class="muted">{t('common.none')}</span>
-				{/if}
+				<span class="pick">
+					{#if extra}
+						<CharacterBadge characterId={extra.id} character={extra} />
+					{:else}
+						<span class="muted">{t('common.none')}</span>
+					{/if}
+				</span>
 				<span class="tools">
 					<IconButton
 						icon="search"
@@ -242,16 +255,24 @@
 		</div>
 	{/if}
 
-	<div class="next">
-		<Button
-			variant="accent"
-			icon="forward"
-			disabled={official.length === 0 || extras.length < total.min || extras.length > total.max}
-			onclick={next}
-		>
-			{t('modes.extras.next')}
-		</Button>
-	</div>
+	<!-- The start flow's bar, Back to New game as it was (Trevor, 2026-10-23). Once the game
+	     is set up, the bar goes back to the board and choosing characters is done. -->
+	{#if started}
+		<SetupNav backHref={resolve('/grimoire/[gameId]', { gameId })} backLabel={t('setup.grimoire')}>
+			{#snippet next()}{/snippet}
+		</SetupNav>
+	{:else}<SetupNav onBack={() => void backToNewGame(gameId)} backLabel={t('setup.newGame')}>
+			{#snippet next()}
+				<Button
+					variant="accent"
+					icon="forward"
+					disabled={official.length === 0 || extras.length < total.min || extras.length > total.max}
+					onclick={goNext}
+				>
+					{t('modes.extras.next')}
+				</Button>
+			{/snippet}
+		</SetupNav>{/if}
 </Page>
 
 <Dialog
@@ -271,21 +292,27 @@
 
 <style>
 	.extras {
-		display: grid;
-		gap: var(--space-2);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
+	/* Rows with dividers, not boxes (Trevor: stacked items are delineated). The pick's column
+	   can shrink, so a long name ends in "…" inside its badge and the tools keep their place
+	   (Trevor, 2026-10-23: "long name pushes rest of stuff to side"). */
 	.extra {
 		display: grid;
-		grid-template-columns: minmax(calc(6 * var(--u)), auto) 1fr auto;
+		grid-template-columns: minmax(calc(6 * var(--u)), auto) minmax(0, 1fr) auto;
 		align-items: center;
 		gap: var(--space-2);
 		min-height: var(--tap-target);
-		padding: var(--space-1) var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
+		padding-block: var(--space-1);
+	}
+	.extra + .extra {
+		border-top: 1px solid var(--border); /* px-ok: hairline divider */
+	}
+	.pick {
+		display: flex;
+		min-width: 0;
 	}
 	.tools {
 		display: flex;
@@ -299,9 +326,5 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2);
-	}
-	.next {
-		display: flex;
-		justify-content: flex-end;
 	}
 </style>

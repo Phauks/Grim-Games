@@ -1,0 +1,75 @@
+{
+	"protects": {
+		"who": "self",
+		"from": "any"
+	},
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "any",
+			"life": "alive",
+			"note": "Either the Sailor or the alive player they chose, at the Storyteller's call."
+		}
+	},
+	"setupPrep": {
+		"none": "its Drunk token marks the Sailor’s own night choice, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "cannot die."
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "drunkenness; protects itself"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "Drunk goes on the Sailor or the chosen player, whichever is drunk.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Sailor chooses a living player. Either the Sailor or that player is drunk until dusk: mark them *DRUNK*.",
+				"reason": "Says who gets the Drunk token and when it comes off."
+			}
+		},
+		"other": {
+			"full": {
+				"text": "The Sailor chooses a living player. Either the Sailor or that player is drunk until dusk: mark them *DRUNK*.",
+				"reason": "Says who gets the Drunk token and when it comes off."
+			}
+		}
+	}
+}

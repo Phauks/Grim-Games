@@ -8,6 +8,11 @@
  * Add a token to src/lib/ui/tokens/components.css instead. A colour that must stay says
  * why in a `colour-ok: ...` comment on the same line (or alone on the next, where Prettier
  * wraps it).
+ *
+ * Named colours (`white`, `black`, `gainsboro`...) count too, wherever a colour goes: a CSS
+ * colour property, a custom property, an SVG `fill`/`stroke` attribute, an inline style or
+ * a canvas `fillStyle`. Trevor (2026-10-23): every colour can be customised, or at least
+ * follows the theme. `currentColor`, `transparent` and system colours (`Canvas`) are fine.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -57,6 +62,47 @@ export function findColourFunctions(source: string): { line: number; match: stri
 	return found;
 }
 
+const NAMED = (
+	'aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue ' +
+	'blueviolet brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk ' +
+	'crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey darkkhaki ' +
+	'darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen ' +
+	'darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue ' +
+	'dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite ' +
+	'gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki ' +
+	'lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan ' +
+	'lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen ' +
+	'lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime limegreen linen ' +
+	'magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen ' +
+	'mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream ' +
+	'mistyrose moccasin navajowhite navy oldlace olive olivedrab orange orangered orchid ' +
+	'palegoldenrod palegreen paleturquoise palevioletred papayawhip peru pink plum powderblue ' +
+	'purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen ' +
+	'seashell sienna silver skyblue slateblue slategray slategrey snow springgreen steelblue ' +
+	'tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen'
+).split(' ');
+// Where a colour goes: CSS and custom properties, SVG attributes (`fill="..."`, also as
+// object keys) and canvas styles.
+const COLOUR_PLACE = String.raw`(?:--[\w-]+|color|background(?:-color|-image)?|fill|stroke|stop-color|flood-color|lighting-color|caret-color|accent-color|scrollbar-color|outline(?:-color)?|border(?:-(?:top|right|bottom|left|block|inline)(?:-(?:start|end))?)?(?:-color)?|box-shadow|text-shadow|text-decoration(?:-color)?|column-rule(?:-color)?|filter|mask(?:-image)?|-webkit-tap-highlight-color|-webkit-text-(?:stroke|fill)(?:-color)?|fillStyle|strokeStyle|shadowColor|stopColor|floodColor)`;
+const NAMED_COLOUR = new RegExp(
+	String.raw`(?<![\w-])${COLOUR_PLACE}['"]?\s*[:=]\s*[^;\n]*?(?<![\w-])(${NAMED.join('|')})(?![\w-])`,
+	'g'
+);
+
+export function findNamedColours(source: string): { line: number; match: string }[] {
+	const found: { line: number; match: string }[] = [];
+	const lines = source.split('\n');
+	lines.forEach((text, index) => {
+		const next = lines[index + 1]?.trim() ?? '';
+		if (text.includes('colour-ok:') || (next.startsWith('/* colour-ok:') && next.includes('*/'))) {
+			return;
+		}
+		for (const match of text.matchAll(NAMED_COLOUR))
+			found.push({ line: index + 1, match: match[1] });
+	});
+	return found;
+}
+
 function* files(dir: string): Generator<string> {
 	for (const entry of readdirSync(dir, { withFileTypes: true })) {
 		const path = join(dir, entry.name);
@@ -83,6 +129,10 @@ if (process.argv.includes('--run')) {
 				console.error(
 					`${file}:${line}  ${match}()  use a token from src/lib/ui/tokens/components.css`
 				);
+				problems++;
+			}
+			for (const { line, match } of findNamedColours(source)) {
+				console.error(`${file}:${line}  ${match}  use a theme token instead of a named colour`);
 				problems++;
 			}
 		}

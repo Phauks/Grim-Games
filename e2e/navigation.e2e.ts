@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { menuButton } from './shell.ts';
 
 // Trevor (2026-10-16): New game, Resume game, Scripts and the other destinations in a left
 // sidebar reachable from every part of the app; a drawer on phones.
@@ -7,7 +8,7 @@ import { APP_NAME } from '../src/lib/core/app-name.ts';
 test('on a phone, the header menu opens a drawer with every destination', async ({ page }) => {
 	test.skip(test.info().project.name !== 'phone', 'phone layout');
 	await page.goto('/');
-	const menu = page.getByRole('banner').getByRole('button', { name: 'Menu' });
+	const menu = menuButton(page);
 	await expect(menu).toHaveAttribute('aria-expanded', 'false');
 	await menu.tap();
 	const drawer = page.getByRole('dialog', { name: APP_NAME });
@@ -32,9 +33,10 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	]) {
 		await expect(drawer.getByRole('link', { name })).toBeVisible();
 	}
-	// Grouped under plain labels: games, preparation, then you (Trevor, 2026-10-16; no Player view, 2026-10-19).
+	// Grouped under plain labels: games, preparation, you, then the app's own pages (Trevor,
+	// 2026-10-16; no Player view, 2026-10-19; the footer's pages, 2026-10-23).
 	// Headed with the app's name, not "Menu" (Trevor, 2026-10-18).
-	await expect(drawer.getByRole('heading')).toHaveText([APP_NAME, 'Play', 'Prepare', 'You']);
+	await expect(drawer.getByRole('heading')).toHaveText([APP_NAME, 'Play', 'Prepare', 'You', 'App']);
 	// Home stands first on its own, outside the groups (Trevor, 2026-10-16).
 	await expect(drawer.getByRole('link').first()).toHaveText('Home');
 	await expect(
@@ -70,7 +72,7 @@ test.describe('on a computer', () => {
 		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
 		await page.goto('/privacy');
 		const nav = page.getByRole('navigation', { name: 'Menu' });
-		const menu = page.getByRole('banner').getByRole('button', { name: 'Menu' });
+		const menu = menuButton(page);
 		await expect(nav).toBeVisible();
 		await expect(menu).toHaveAttribute('aria-expanded', 'true');
 

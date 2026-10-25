@@ -1,0 +1,43 @@
+{
+	"reminderTargets": {
+		"Has Ability": {
+			"seat": "any",
+			"life": "dead",
+			"note": "The dead player who regains their ability until dusk."
+		},
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Bone Collector once they have used their ability."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"none": "returns an ability to a dead player"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability", "Has Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"note": "The chosen dead player has their ability until dusk; the Bone Collector's is used.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Has Ability",
+						"action": "place"
+					},
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

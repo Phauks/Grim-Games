@@ -1,0 +1,191 @@
+import type { GameEvent } from '../events.ts';
+import {
+	MAX_SEATS,
+	nextPosition,
+	offScript,
+	refuse,
+	seatNumberNames,
+	seatOf,
+	type Deciders
+} from './shared.ts';
+
+/** Seats, the script, the Storyteller name and game notes. */
+export const SEATS_DECIDERS: Deciders<
+	| 'ChangeScript'
+	| 'AddSeat'
+	| 'RemoveSeat'
+	| 'RenameSeat'
+	| 'SetStorytellerName'
+	| 'SetSeatNote'
+	| 'SetSeatLook'
+	| 'SetGameNote'
+	| 'DeleteGameNote'
+	| 'SwapSeats'
+	| 'RotateSeats'
+	| 'MoveSeat'
+> = {
+	ChangeScript(game, command, ctx, warn) {
+		if (JSON.stringify(command.script) === JSON.stringify(game.script)) {
+			warn('no-change', 'that is already the script');
+			return [];
+		}
+		for (const id of offScript(game, command.script, ctx)) {
+			const name = ctx.characters.get(id)?.name ?? id;
+			warn('not-on-script', `${name} is not on the script`, [id]);
+		}
+		return [{ type: 'ScriptChanged', script: command.script }];
+	},
+
+	AddSeat(game, command, ctx) {
+		const position = command.position ?? game.seating.length;
+		if (!Number.isInteger(position) || position < 0 || position > game.seating.length) {
+			refuse('invalid-position', `position must be from 0 to ${game.seating.length}`);
+		}
+		if (game.seating.length >= MAX_SEATS) {
+			refuse('invalid-player-count', `a game has at most ${MAX_SEATS} seats`);
+		}
+		const playerName = command.playerName?.trim() || undefined;
+		const event: GameEvent = { type: 'SeatAdded', seatId: ctx.newId(), position };
+		if (playerName !== undefined) event.playerName = playerName;
+		return [event];
+	},
+
+	RemoveSeat(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		const events: GameEvent[] = [];
+		if (seat.characterId !== undefined) {
+			warn('seat-has-character', 'the removed seat had a character');
+		}
+		for (const tile of Object.values(game.bag?.tiles ?? {})) {
+			if (tile.drawnBySeat === seat.seatId && !tile.confirmed) {
+				warn('draw-cancelled', 'the tile this player was holding went back in the bag');
+				events.push({
+					type: 'DrawCancelled',
+					tileId: tile.tileId,
+					position: nextPosition(game.bag!.order.length, ctx)
+				});
+			}
+		}
+		events.push({ type: 'SeatRemoved', seatId: seat.seatId });
+		return events;
+	},
+
+	RenameSeat(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		const playerName = command.playerName?.trim() || undefined;
+		if (playerName === seat.playerName) {
+			warn('no-change', 'the name is unchanged');
+			return [];
+		}
+		const event: GameEvent = { type: 'SeatRenamed', seatId: seat.seatId };
+		if (playerName !== undefined) event.playerName = playerName;
+		return [event];
+	},
+
+	SetStorytellerName(game, command, ctx, warn) {
+		const name = command.name?.trim() || undefined;
+		if (name === game.storytellerName) {
+			warn('no-change', 'the name is unchanged');
+			return [];
+		}
+		const event: GameEvent = { type: 'StorytellerNameSet' };
+		if (name !== undefined) event.name = name;
+		return [event];
+	},
+
+	SetSeatNote(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		const note = command.note?.trim() || undefined;
+		if (note === seat.note) {
+			warn('no-change', 'the note is unchanged');
+			return [];
+		}
+		const event: GameEvent = { type: 'SeatNoteSet', seatId: seat.seatId };
+		if (note !== undefined) event.note = note;
+		return [event];
+	},
+
+	SetSeatLook(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (command.avatar === seat.avatar && command.frame === seat.frame) {
+			warn('no-change', 'the look is unchanged');
+			return [];
+		}
+		const event: GameEvent = { type: 'SeatLookSet', seatId: seat.seatId };
+		if (command.avatar !== undefined) event.avatar = command.avatar;
+		if (command.frame !== undefined) event.frame = command.frame;
+		return [event];
+	},
+
+	SetGameNote(game, command, ctx, warn) {
+		const notes = game.notes ?? [];
+		const before = command.noteId
+			? (notes.find((n) => n.noteId === command.noteId) ??
+				refuse('unknown-note', `no note ${command.noteId}`))
+			: undefined;
+		const title = command.title.trim();
+		const text = command.text.trim();
+		if (!before && !title && !text) {
+			warn('no-change', 'a new note with nothing in it is not kept');
+			return [];
+		}
+		if (
+			before &&
+			before.title === title &&
+			before.text === text &&
+			before.hidden === command.hidden
+		) {
+			warn('no-change', 'the note is unchanged');
+			return [];
+		}
+		const noteId =
+			before?.noteId ??
+			`n${notes.reduce((max, n) => Math.max(max, Number(n.noteId.slice(1)) || 0), 0) + 1}`;
+		return [{ type: 'GameNoteSet', note: { noteId, title, text, hidden: command.hidden } }];
+	},
+
+	DeleteGameNote(game, command) {
+		if (!game.notes?.some((n) => n.noteId === command.noteId))
+			refuse('unknown-note', `no note ${command.noteId}`);
+		return [{ type: 'GameNoteDeleted', noteId: command.noteId }];
+	},
+
+	SwapSeats(game, command) {
+		const a = seatOf(game, command.seatA);
+		const b = seatOf(game, command.seatB);
+		if (a.seatId === b.seatId) refuse('same-seat', 'choose two different seats');
+		return [{ type: 'SeatsSwapped', seatA: a.seatId, seatB: b.seatId }];
+	},
+
+	RotateSeats(game, command, ctx, warn) {
+		const { seating } = game;
+		if (command.direction !== 'clockwise' && command.direction !== 'anticlockwise') {
+			refuse('invalid-direction', 'rotate clockwise or anticlockwise');
+		}
+		if (seating.length < 2) {
+			warn('no-change', 'there are fewer than 2 seats');
+			return [];
+		}
+		const rotated =
+			command.direction === 'clockwise'
+				? [seating[seating.length - 1], ...seating.slice(0, -1)]
+				: [...seating.slice(1), seating[0]];
+		return [...seatNumberNames(game), { type: 'SeatingReordered', seating: rotated }];
+	},
+
+	MoveSeat(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		const { position } = command;
+		const last = game.seating.length - 1;
+		if (!Number.isInteger(position) || position < 0 || position > last) {
+			refuse('invalid-position', `position must be from 0 to ${last}`);
+		}
+		if (game.seating.indexOf(seat.seatId) === position) {
+			warn('no-change', 'the player is already there');
+			return [];
+		}
+		const seating = game.seating.filter((id) => id !== seat.seatId);
+		seating.splice(position, 0, seat.seatId);
+		return [...seatNumberNames(game), { type: 'SeatingReordered', seating }];
+	}
+};

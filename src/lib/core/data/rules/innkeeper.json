@@ -1,0 +1,68 @@
+{
+	"protects": {
+		"who": "marked",
+		"token": "Safe",
+		"from": "any",
+		"night": true
+	},
+	"reminderTargets": {
+		"Safe": {
+			"seat": "any",
+			"note": "Each of the two players the Innkeeper chooses."
+		},
+		"Drunk": {
+			"seat": "any",
+			"withLabel": "Safe",
+			"note": "One of the two players the Innkeeper protected."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night protection"
+	},
+	"deathCause": {
+		"none": "protects; drunkenness"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "Two players are safe from death; one of them is drunk.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Safe",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Safe",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "Drunk",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "Remove last night’s tokens. The Innkeeper chooses 2 players: mark both *SAFE* (they can’t die tonight), and mark one of them *DRUNK* until dusk.",
+				"reason": "Says which token goes where and that last night’s come off."
+			}
+		}
+	}
+}

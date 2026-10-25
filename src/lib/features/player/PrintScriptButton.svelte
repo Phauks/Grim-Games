@@ -249,7 +249,7 @@
 		:global(html.printing),
 		:global(html.printing body) {
 			color-scheme: light !important;
-			background: white !important;
+			background: var(--print-paper) !important;
 		}
 	}
 	@page {

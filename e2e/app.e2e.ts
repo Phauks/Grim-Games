@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { menuButton, openSettingsDialog, theMenu } from './shell.ts';
 
 test('home page renders on a touch device', async ({ page }) => {
 	await page.goto('/');
@@ -23,71 +25,43 @@ test('the Worker answers its health check and rejects bad room codes', async ({ 
 	expect((await request.get('/api/nope')).status()).toBe(404);
 });
 
-test('every page shows build info and a Report an issue button for the in-app form', async ({
+/** The menu: the sidebar where it shows, else the drawer, opened. */
+// No footer (2026-10-23): its pages, Report an issue and the build line moved to the end of the
+// menu, the build line just above the CCC logo (Trevor's pick: the menu's bottom).
+test('the menu ends with App, the build line and the CCC logo; there is no footer', async ({
 	page
 }) => {
 	await page.goto('/');
-	await expect(page.getByTestId('build-info')).toContainText(/v\d+\.\d+\.\d+ · [0-9a-f]{7}/);
-	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
-});
-
-// Trevor (2026-10-17): the Community Created Content logo sits at the bottom of the menu, not
-// in every page's footer (TPI's policy only asks that it is shown clearly).
-test('the Community Created Content logo is at the bottom of the menu', async ({ page }) => {
-	await page.goto('/');
-	await expect(
-		page.getByRole('contentinfo').getByRole('img', { name: /Community Created Content/ })
-	).toHaveCount(0);
-	const sidebar = page.getByRole('navigation', { name: 'Menu' }).first();
-	const drawer = page.getByRole('dialog', { name: APP_NAME });
-	let menu = sidebar;
-	if (!(await sidebar.isVisible())) {
-		await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-		menu = drawer;
-	}
+	await expect(page.getByRole('contentinfo')).toHaveCount(0);
+	const menu = await theMenu(page);
+	await expect(menu.getByRole('list', { name: 'App', exact: true }).getByRole('link')).toHaveText([
+		'About',
+		'Changelog',
+		'Roadmap',
+		'Privacy'
+	]);
+	const build = menu.getByTestId('build-info');
+	await expect(build).toContainText(/v\d+\.\d+\.\d+ · [0-9a-f]{7}/);
+	const commit = build.getByRole('link', { name: /^[0-9a-f]{7}$/ });
+	expect(await commit.getAttribute('href')).toMatch(/\/commit\/[0-9a-f]{40}$/);
+	// The Community Created Content logo is last (Trevor, 2026-10-17 and 2026-10-22).
 	const logo = menu.getByRole('img', { name: /Community Created Content/ });
 	await expect(logo).toBeVisible();
 	await expect
 		.poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth))
 		.toBeGreaterThan(0);
-	// Below every menu link.
-	const links = await menu.getByRole('link').all();
-	const last = (await links[links.length - 2].boundingBox())!;
-	expect((await logo.boundingBox())!.y).toBeGreaterThan(last.y);
+	expect((await logo.boundingBox())!.y).toBeGreaterThan((await build.boundingBox())!.y);
+
+	await menu.getByRole('button', { name: 'Report an issue' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
 });
 
-test('the footer has every text link on the right', async ({ page }) => {
-	await page.goto('/');
-	const build = page.getByTestId('build-info');
-	await expect(build.getByRole('button', { name: 'Report an issue' })).toBeVisible();
-	const links = await build.boundingBox();
-	const width = page.viewportSize()!.width;
-	// The links end at the right edge, whether or not they wrap.
-	expect(links!.x + links!.width).toBeGreaterThan(width * 0.9);
-	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-		width
-	);
-});
-
-test('the commit is a link; About is in Settings, not the footer', async ({ page }) => {
-	await page.goto('/');
-	const build = page.getByTestId('build-info');
-	const commit = build.getByRole('link', { name: /^[0-9a-f]{7}$/ });
-	expect(await commit.getAttribute('href')).toMatch(/\/commit\/[0-9a-f]{40}$/);
-	// Trevor (2026-10-18): "remove about from footer, access from settings only".
-	await expect(page.getByRole('contentinfo').getByRole('button', { name: 'About' })).toHaveCount(0);
-	await expect(build.getByRole('link', { name: 'Roadmap' })).toBeVisible();
-	await expect(build.getByRole('link', { name: 'Changelog' })).toBeVisible();
-	await expect(build.getByRole('link', { name: 'Privacy' })).toBeVisible();
-	await expect(build.getByRole('button', { name: 'Report an issue' })).toBeVisible();
-});
-
-// Trevor (2026-10-19): a footer button switches between the beta and production builds. A local
-// build has no other build to open, so it shows none; build-switch.test.ts covers the hosts.
+// Trevor (2026-10-19): a link switches between the beta and production builds. A local build
+// has no other build to open, so it shows none; build-switch.test.ts covers the hosts.
 test('a local build shows no switch to beta or production', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByTestId('build-info')).toBeVisible();
+	const menu = await theMenu(page);
+	await expect(menu.getByTestId('build-info')).toBeVisible();
 	await expect(page.getByTestId('switch-build')).toHaveCount(0);
 });
 
@@ -106,23 +80,9 @@ test('installs as a PWA and reopens offline', async ({ page, context }) => {
 	await context.setOffline(false);
 });
 
-test('the footer sits at the bottom of the screen on a short page', async ({ page }) => {
+test('the menu links the changelog page, which lists merged changes by day', async ({ page }) => {
 	await page.goto('/');
-	const footer = page.getByRole('contentinfo');
-	await expect(footer).toBeVisible();
-	const box = await footer.boundingBox();
-	const height = await page.evaluate(() => document.documentElement.scrollHeight);
-	const viewport = page.viewportSize()!.height;
-	// Either the page is short and the footer touches the bottom of the screen, or the page
-	// scrolls and the footer ends the document.
-	expect(Math.round(box!.y + box!.height)).toBe(Math.max(viewport, height));
-});
-
-test('the footer links to the changelog page, which lists merged changes by day', async ({
-	page
-}) => {
-	await page.goto('/');
-	await page.getByRole('contentinfo').getByRole('link', { name: 'Changelog' }).tap();
+	await (await theMenu(page)).getByRole('link', { name: 'Changelog' }).tap();
 	await expect(page).toHaveURL(/\/changelog$/);
 	await expect(page.getByRole('heading', { name: 'Changelog', level: 1 })).toBeVisible();
 	const main = page.getByRole('main');
@@ -131,24 +91,32 @@ test('the footer links to the changelog page, which lists merged changes by day'
 	await expect(main.getByRole('heading', { level: 3 }).first()).toBeVisible();
 	const change = main.getByTestId('update-changes').getByRole('link').first();
 	await expect(change).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\//);
+	// A line between changes, none above the first.
+	const rows = main.getByTestId('update-changes').first().getByRole('listitem');
+	await expect(rows.first()).toHaveCSS('border-top-width', '0px');
+	if ((await rows.count()) > 1) await expect(rows.nth(1)).not.toHaveCSS('border-top-width', '0px');
 });
 
-test('the footer links to the roadmap, which lists planned items by area', async ({ page }) => {
+test('the menu links the roadmap, which lists features as done, next and later', async ({
+	page
+}) => {
 	await page.goto('/');
-	await page.getByRole('contentinfo').getByRole('link', { name: 'Roadmap' }).tap();
+	await (await theMenu(page)).getByRole('link', { name: 'Roadmap' }).tap();
 	await expect(page).toHaveURL(/\/roadmap$/);
 	await expect(page.getByRole('heading', { name: 'Roadmap', level: 1 })).toBeVisible();
 	const main = page.getByRole('main');
-	await expect(main.getByRole('heading', { name: 'Rooms and sharing', level: 2 })).toBeVisible();
-	await expect(main.getByTestId('roadmap-item').first()).toContainText('D1');
+	// Done is filled only from full history; Next and Later have features either way.
+	await expect(main.getByRole('heading', { name: 'Next', level: 2 })).toBeVisible();
+	await expect(main.getByRole('heading', { name: 'Later', level: 2 })).toBeVisible();
+	await expect(main.getByTestId('roadmap-later')).toContainText('Achievements');
 	// Done items link the change that finished them; CI's one-commit history has none.
 	for (const done of await main.locator('[data-testid="roadmap-item"][data-done] a').all())
 		await expect(done).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\//);
 });
 
-test('the footer links to the privacy policy page', async ({ page }) => {
+test('the menu links the privacy policy page', async ({ page }) => {
 	await page.goto('/');
-	await page.getByRole('contentinfo').getByRole('link', { name: 'Privacy' }).tap();
+	await (await theMenu(page)).getByRole('link', { name: 'Privacy' }).tap();
 	await expect(page).toHaveURL(/\/privacy$/);
 	await expect(page.getByRole('heading', { name: 'Privacy policy', level: 1 })).toBeVisible();
 });
@@ -163,82 +131,104 @@ test("the 'not official' notice links the official site, in About and the privac
 		page.getByRole('main').getByRole('link', { name: 'Blood on the Clocktower', exact: true })
 	).toHaveAttribute('href', official);
 
-	await page.goto('/');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'About' })
-		.tap();
-	const notice = settings.locator('.official-notice');
+	await page.goto('/about');
+	const notice = page.getByRole('main').locator('.official-notice');
 	await expect(notice).toContainText('Not affiliated with The Pandemonium Institute.');
 	await expect(
 		notice.getByRole('link', { name: 'Blood on the Clocktower', exact: true })
 	).toHaveAttribute('href', official);
 });
 
-test('the footer never makes the page wider than the screen, even at the largest text size', async ({
+// About is its own page in the menu, not a Settings section, since it holds no settings
+// (2026-10-23). Diagnostics stays its Advanced part, closed until opened (Trevor, 2026-10-18).
+test('About is a page in the menu with Diagnostics closed under it; /diagnostics opens it', async ({
 	page
 }) => {
 	await page.goto('/');
-	await page.evaluate(() =>
-		localStorage.setItem('grim-games:preferences:v1', JSON.stringify({ textScale: 1.5 }))
-	);
-	await page.reload();
-	await page.evaluate(() => document.fonts.ready);
-	const widths = await page.evaluate(() => ({
-		page: document.documentElement.scrollWidth,
-		screen: window.innerWidth
-	}));
-	expect(widths.page).toBeLessThanOrEqual(widths.screen);
-});
-
-// Trevor (2026-10-18): Diagnostics is About's Advanced part, closed until opened.
-test('Diagnostics is under About, closed, and its old page address opens it', async ({ page }) => {
-	await page.goto('/');
-	await page.evaluate(() => document.fonts.ready);
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'About' })
-		.tap();
-	const advanced = settings.getByRole('button', { name: 'Advanced' });
+	await (await theMenu(page)).getByRole('link', { name: 'About' }).tap();
+	await expect(page).toHaveURL(/\/about$/);
+	await expect(page.getByRole('heading', { name: 'About', level: 1 })).toBeVisible();
+	const main = page.getByRole('main');
+	const advanced = main.getByRole('button', { name: 'Advanced' });
 	await expect(advanced).toHaveAttribute('aria-expanded', 'false');
-	await expect(settings.getByTestId('diagnostics')).toBeHidden();
+	await expect(main.getByTestId('diagnostics')).toBeHidden();
 	await advanced.tap();
-	await expect(settings.getByTestId('diagnostics')).toBeVisible();
+	await expect(main.getByTestId('diagnostics')).toBeVisible();
 	await advanced.tap();
-	await expect(page).toHaveURL(/\/$/);
 
-	// The old page address opens About with Advanced open; closing it goes home.
+	// Settings no longer lists About.
+	const settings = await openSettingsDialog(page);
+	await expect(
+		settings
+			.getByRole('navigation', { name: 'Settings sections' })
+			.getByRole('button', { name: 'About' })
+	).toHaveCount(0);
+
+	// The old page address opens About with Advanced open.
 	await page.goto('/diagnostics');
-	await expect(settings.getByTestId('diagnostics')).toBeVisible();
+	await expect(page).toHaveURL(/\/about$/);
+	await expect(main.getByTestId('diagnostics')).toBeVisible();
 	await expect(advanced).toHaveAttribute('aria-expanded', 'true');
-	await settings.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(page).toHaveURL(/\/$/);
 });
 
 // Turned on by the board's +layout.ts ({ chrome: 'game' }); the board's toolbar opens the
 // app menu, and leaving asks first (src/lib/features/shell/shell.ts).
-test('a game in progress hides the header and footer, so a stray tap cannot leave it', async ({
-	page
-}) => {
+test('a game in progress hides the sidebar, so a stray tap cannot leave it', async ({ page }) => {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-	await expect(page.getByRole('banner')).toHaveCount(0);
-	await expect(page.getByRole('contentinfo')).toHaveCount(0);
+	await toBoard(page);
+	await expect(page.locator('.app-body.bare')).toHaveCount(1);
 
-	// Setting up a game is not "in progress": the header is back there.
+	// Character setup is part of the game too (Trevor, 2026-10-23): no sidebar or menu there.
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
-	await expect(page.getByRole('banner').getByRole('link', { name: APP_NAME })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+	await expect(page.locator('.app-body.bare')).toHaveCount(1);
+	await expect(page.getByRole('button', { name: 'Menu', exact: true })).toHaveCount(0);
+});
+
+// Join game and the player view are app pages, not game screens (Trevor, 2026-10-24: "join
+// game page appears to use different left sidebar", then the same of the player's Grim): the
+// same sidebar where it shows, the same hamburger otherwise.
+test('Join game and the player view have the same sidebar and menu as the other pages', async ({
+	page
+}) => {
+	const sidebar = page.getByRole('navigation', { name: 'Menu', exact: true });
+	for (const [path, current] of [
+		['/join', 'Join game'],
+		['/join/123456', 'Join game'],
+		['/play', undefined]
+	] as const) {
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.goto(path);
+		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+		await expect(sidebar).toBeVisible();
+		if (current)
+			await expect(sidebar.getByRole('link', { name: current })).toHaveAttribute(
+				'aria-current',
+				'page'
+			);
+		// One hamburger: the sidebar's, none before the title.
+		await expect(menuButton(page)).toHaveCount(1);
+		await expect(page.locator('.app-body.bare')).toHaveCount(0);
+
+		// Narrow, the hamburger sits where every app page has it and opens the same drawer.
+		await page.setViewportSize({ width: 400, height: 800 });
+		await expect(sidebar).toBeHidden();
+		const nav = await theMenu(page);
+		if (current)
+			await expect(nav.getByRole('link', { name: current })).toHaveAttribute(
+				'aria-current',
+				'page'
+			);
+		await page.keyboard.press('Escape');
+	}
 });
 
 // Trevor (2026-10-19): the phone's top and bottom bars match the palette. The page draws under
-// them (viewport-fit=cover) and the status bar takes the header's colour, in every theme.
-test("the phone's bars follow the header colour, custom colours included", async ({ page }) => {
+// them (viewport-fit=cover) and the status bar takes the surface colour, in every theme. With no
+// app header (2026-10-22), a strip of that colour stays under the status bar as the page scrolls.
+test("the phone's bars follow the surface colour, custom colours included", async ({ page }) => {
 	const hex = (rgb: string) =>
 		'#' +
 		(rgb.match(/\d+/g) ?? [])
@@ -248,7 +238,7 @@ test("the phone's bars follow the header colour, custom colours included", async
 	const barColours = () =>
 		page.evaluate(() => ({
 			meta: document.querySelector('meta[name="theme-color"]')?.getAttribute('content'),
-			header: getComputedStyle(document.querySelector('header')!).backgroundColor
+			header: getComputedStyle(document.querySelector('.app-body')!, '::before').backgroundColor
 		}));
 
 	await page.goto('/');
@@ -256,7 +246,7 @@ test("the phone's bars follow the header colour, custom colours included", async
 		'content',
 		/viewport-fit=cover/
 	);
-	await expect(page.getByRole('banner')).toBeVisible();
+	await expect(menuButton(page)).toBeVisible();
 	const before = await barColours();
 	expect(before.meta).toBe(hex(before.header));
 
@@ -267,7 +257,7 @@ test("the phone's bars follow the header colour, custom colours included", async
 		)
 	);
 	await page.reload();
-	await expect(page.getByRole('banner')).toBeVisible();
+	await expect(menuButton(page)).toBeVisible();
 	const after = await barColours();
 	expect(after.meta).toBe('#203040');
 	expect(hex(after.header)).toBe('#203040');
@@ -279,7 +269,7 @@ test("the theme's backdrop is a fixed layer that reaches under the phone's bars"
 	page
 }) => {
 	await page.goto('/');
-	await expect(page.getByRole('banner')).toBeVisible();
+	await expect(menuButton(page)).toBeVisible();
 	const looks = await page.evaluate(() => {
 		const layer = getComputedStyle(document.body, '::before');
 		return {
@@ -297,29 +287,32 @@ test("the theme's backdrop is a fixed layer that reaches under the phone's bars"
 	expect(looks.height).toBeGreaterThanOrEqual(page.viewportSize()!.height);
 });
 
-// Trevor (2026-10-19, on a Pixel): with no header, the bars (flat theme-color) stood apart from
-// the board's backdrop. On a game screen the backdrop fades to --surface at the top and bottom.
-test("a game screen's backdrop fades into the phone's bars", async ({ page }) => {
+// Trevor (2026-10-19, on a Pixel): the bars (flat theme-color) stood apart from the backdrop.
+// With no header or footer on any screen, every backdrop fades to --surface at the top and bottom.
+test("every screen's backdrop fades into the phone's bars", async ({ page }) => {
 	const layer = () =>
 		page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage);
+	const surface = () =>
+		page.evaluate(() => {
+			const probe = document.createElement('i');
+			probe.style.color = 'var(--surface)';
+			document.body.append(probe);
+			const colour = getComputedStyle(probe).color;
+			probe.remove();
+			return colour;
+		});
 	await page.goto('/');
-	await expect(page.getByRole('banner')).toBeVisible();
-	expect((await layer()).match(/linear-gradient/g)).toBeNull();
+	await expect(menuButton(page)).toBeVisible();
+	expect((await layer()).match(/linear-gradient/g)).toHaveLength(2);
+	expect(await layer()).toContain(await surface());
 
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page.getByRole('banner')).toHaveCount(0);
-	const surface = await page.evaluate(() => {
-		const probe = document.createElement('i');
-		probe.style.color = 'var(--surface)';
-		document.body.append(probe);
-		const colour = getComputedStyle(probe).color;
-		probe.remove();
-		return colour;
-	});
+	await toBoard(page);
+	await expect(page.locator('.app-body.bare')).toBeVisible();
 	const image = await layer();
 	expect(image.match(/linear-gradient/g)).toHaveLength(2);
-	expect(image).toContain(surface);
+	expect(image).toContain(await surface());
 	expect(image).toMatch(/radial-gradient/);
 });

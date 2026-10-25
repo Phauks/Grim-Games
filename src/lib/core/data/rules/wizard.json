@@ -1,0 +1,34 @@
+{
+	"reminderTargets": {
+		"?": {
+			"seat": "any",
+			"note": "Tracks whatever a granted wish needs.",
+			"ambiguous": "The wiki's How to Run doesn't mention the ? reminder or where it goes."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may make a wish"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "The Storyteller decides what these mean."
+	}
+}

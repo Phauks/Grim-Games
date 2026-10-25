@@ -55,7 +55,7 @@ describe('Mastermind', () => {
 				(s) => ({ type: 'Execute', seatId: s[0] })
 			);
 			expect(gameEnds(session.game, testCharacters)).toMatchObject([
-				{ rule: 'mastermind', winner: 'evil' }
+				{ rule: 'extra-day', winner: 'evil' }
 			]);
 		});
 		it.todo('Example 2: Protected evil player executed; good wins anyway');
@@ -69,7 +69,7 @@ describe('Mastermind', () => {
 				{ type: 'NewDay' }
 			);
 			expect(gameEnds(session.game, testCharacters, { dayEnded: true })).toMatchObject([
-				{ rule: 'mastermind', winner: 'good' }
+				{ rule: 'extra-day', winner: 'good' }
 			]);
 		});
 	});

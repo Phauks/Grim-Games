@@ -1,6 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
-import { pickScript } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
+import { menuButton, theMenu } from './shell.ts';
 
 async function signIn(page: Page, email: string) {
 	await page.goto('/account');
@@ -29,12 +30,12 @@ function listedAdmin(testInfo: TestInfo, n: 1 | 2): string {
 	return `${testInfo.project.name}-admin-${n}@example.com`;
 }
 
-test('a report sent from the footer reaches the inbox, where it can be triaged and deleted', async ({
+test('a report sent from the menu reaches the inbox, where it can be triaged and deleted', async ({
 	page
 }, testInfo) => {
 	const title = `Enhancement ${Date.now()}`;
 	await page.goto('/');
-	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 	const form = page.getByRole('dialog', { name: 'Report' });
 
 	// Nothing is sent until Send, which waits for a title and a description.
@@ -110,7 +111,7 @@ test('an account in ADMIN_EMAILS is an admin, with nothing to manage on Reports'
 	await signIn(page, listedAdmin(testInfo, 2));
 	await expect(page.getByTestId('account-type')).toHaveText('Admin');
 	// Admins have Reports in the menu (Trevor, 2026-10-18).
-	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await menuButton(page).tap();
 	await page.getByRole('dialog', { name: APP_NAME }).getByRole('link', { name: 'Reports' }).tap();
 	await expect(page).toHaveURL(/\/reports$/);
 	await expect(page.getByTestId('reports')).toBeVisible();
@@ -129,7 +130,7 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	const title = `Signed in ${Date.now()}`;
 	await signIn(page, sender);
 	await page.goto('/');
-	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 	const form = page.getByRole('dialog', { name: 'Report' });
 	await form.getByRole('textbox', { name: 'Title' }).fill(title);
 	await form.getByRole('textbox', { name: 'Description' }).fill('The bag forgets the Drunk.');
@@ -143,7 +144,7 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	const reader = await other.newPage();
 	await signIn(reader, `reader-${Date.now()}@example.com`);
 	await expect(reader.getByTestId('account-type')).toHaveText('User');
-	await reader.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await menuButton(reader).tap();
 	const menu = reader.getByRole('dialog', { name: APP_NAME });
 	await expect(menu.getByRole('link', { name: 'Library' })).toBeVisible();
 	await expect(menu.getByRole('link', { name: 'Reports' })).toHaveCount(0);
@@ -197,6 +198,7 @@ test('a report sent from the board carries its script, for its sender and the ad
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page

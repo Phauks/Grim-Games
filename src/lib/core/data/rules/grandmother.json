@@ -1,0 +1,68 @@
+{
+	"reminderTargets": {
+		"Grandchild": {
+			"seat": "other",
+			"alignment": "good",
+			"note": "A good player other than the Grandmother, chosen at setup; any character type, since a Minion or Demon may be good."
+		},
+		"Dead": {
+			"seat": "self",
+			"note": "On the Grandmother when the Demon kills her Grandchild."
+		}
+	},
+	"deathCheck": {
+		"kind": "marked-killed-by-demon",
+		"token": "Grandchild"
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Grandchild",
+				"text": "Choose a good player: put [Grandchild] on them",
+				"target": {
+					"choose": "good",
+					"choice": "a good player",
+					"notSelf": true
+				},
+				"reason": "The Grandmother learns this player and their character"
+			}
+		]
+	},
+	"dayReminders": {
+		"none": "night info and night death"
+	},
+	"deathCause": {
+		"kind": "own-death"
+	},
+	"reminderMovement": {
+		"fixed": ["Grandchild"],
+		"why": "The grandchild is shown once; Dead marks tonight’s death and moves."
+	},
+	"reminderPlaceholders": {
+		"note": "The Grandmother dies with her grandchild.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"first": {
+			"reviewed": {
+				"text": "Point to the *GRANDCHILD* player & show their character token.",
+				"reason": "Names the Grandchild reminder token instead of “the grandchild player” (Trevor’s review)."
+			}
+		},
+		"other": {
+			"reviewed": {
+				"text": "If the grandchild was killed by the Demon, the Grandmother dies too. *DEAD*",
+				"reason": "Marks the Grandmother dead with the death marker, not an unnamed reminder (Trevor’s review)."
+			}
+		}
+	}
+}

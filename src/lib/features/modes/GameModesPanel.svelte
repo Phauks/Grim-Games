@@ -60,6 +60,7 @@
 	import { townGroup } from './town-groups.ts';
 	import { townSetupHref } from './town-setup.ts';
 	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
+	import { openedByBack, readDraft, saveDraft } from './new-game-draft.ts';
 
 	/**
 	 * New game's Game modes area (Trevor, 2026-10-17: modes are their own area because they
@@ -78,24 +79,54 @@
 		standardScript: ScriptChoice;
 		/** Standard's own player count, for the preview's Players breakdown. */
 		standardPlayers: number;
+		/** The mode chosen; New game sets it when the room votes on the mode (Trevor, 2026-10-23). */
+		modeId?: string;
 	}
 
-	let { standard, standardScript, standardPlayers }: Props = $props();
+	let {
+		standard,
+		standardScript,
+		standardPlayers,
+		modeId = $bindable(STANDARD.id)
+	}: Props = $props();
 	/** Start game with special rules on restates them first (RulesRecap). */
 	let recap = $state<(() => void) | undefined>();
 	let recapOpen = $state(false);
 	function startAfterRecap(go: () => void) {
+		// Kept so Back from the next step brings New game back as it is now (Trevor, 2026-10-23).
+		saveDraft(
+			{
+				modeId,
+				ruleIds,
+				switchChoices: { ...switchChoices },
+				banned: restrictions.banned,
+				allowed: restrictions.allowed,
+				modePlayers: players,
+				modeScript: script
+			},
+			true
+		);
 		if (!rules.length) return go();
 		recap = go;
 		recapOpen = true;
 	}
 
-	onMount(() => void restoreScripts());
+	onMount(() => {
+		void restoreScripts();
+		if (!openedByBack()) return;
+		const draft = readDraft();
+		if (draft.modeId && findMode(draft.modeId)) modeId = draft.modeId;
+		if (draft.ruleIds) ruleIds = draft.ruleIds.filter((id) => findRule(id));
+		if (draft.switchChoices) switchChoices = draft.switchChoices;
+		if (draft.banned || draft.allowed)
+			restrictions = { banned: draft.banned ?? [], allowed: draft.allowed ?? [] };
+		if (draft.modePlayers) players = draft.modePlayers;
+		if (draft.modeScript) script = draft.modeScript;
+	});
 
 	// Standard first, then every mode (Trevor, 2026-10-18: one screen, modes in a drop-down).
 	const modes = $derived([STANDARD, ...allModes().filter((m) => m.id !== STANDARD.id)]);
 	const storyteller = $derived(storytellerName.current);
-	let modeId = $state(STANDARD.id);
 	const isStandard = $derived(modeId === STANDARD.id);
 	const custom = $derived(customModes.list.some((m) => m.id === modeId));
 	let adding = $state(false);
@@ -326,6 +357,7 @@
 				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen } : {}),
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
+			saveDraft({ gameId: open.game.gameId });
 			await goto(startHref(modeId, rules, open.game.gameId));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
@@ -527,7 +559,13 @@
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
-<RulesRecap bind:open={recapOpen} {rules} choices={switchChoices} onStart={() => recap?.()} />
+<RulesRecap
+	bind:open={recapOpen}
+	{rules}
+	choices={switchChoices}
+	onSwitch={(c) => (switchChoices = c)}
+	onStart={() => recap?.()}
+/>
 <SpecialRulesDialog
 	bind:open={choosingRules}
 	{mode}
@@ -601,8 +639,8 @@
 		padding-top: var(--space-2);
 		border-top: 1px solid var(--border);
 	}
-	/* A computer window: the preview sits to the right and scrolls on its own, held below the
-	   app header as Page's side column is. */
+	/* A computer window: the preview sits to the right and scrolls on its own, held at the
+	   top of the screen as Page's side column is. */
 	@media (min-width: 75rem) {
 		.new-game {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -610,8 +648,8 @@
 		}
 		.preview {
 			position: sticky;
-			top: calc(var(--tap-target) + env(safe-area-inset-top));
-			max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top));
+			top: calc(var(--app-top) + var(--space-2));
+			max-height: calc(100dvh - var(--app-top) - var(--space-4));
 			overflow-y: auto;
 			padding-bottom: var(--space-4);
 		}

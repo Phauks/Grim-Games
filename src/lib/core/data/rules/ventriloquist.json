@@ -1,0 +1,40 @@
+{
+	"reminderTargets": {
+		"Mad": {
+			"seat": "any",
+			"life": "alive",
+			"note": "A nominee about to die who is claiming a character different from an earlier claim."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "madness",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has made mad"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Mad",
+					"self": "any"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "executed players might survive"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each time."
+	}
+}

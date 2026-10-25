@@ -1,3 +1,56 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"onDeath": {
+		"by": "demon"
+	},
+	"afterDeath": { "cause": ["demon"], "nominations": 2, "votes": 2 },
+	"reminderTargets": {
+		"Has Ability": {
+			"seat": "self",
+			"life": "dead",
+			"note": "The Banshee after the Demon has killed them while they had their ability."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "vote",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may nominate and vote twice"
+					}
+				],
+				"when": {
+					"self": "dead",
+					"cause": ["demon"]
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "extra nominations and votes"
+	},
+	"reminderMovement": {
+		"fixed": ["Has Ability"],
+		"why": "Marks this character’s own state, so it stays on its seat."
+	},
+	"reminderPlaceholders": {
+		"note": "The Banshee, killed by the Demon, gains their nominate-and-vote ability.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Has Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
 }

@@ -2,8 +2,10 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import VoteChoice from './VoteChoice.svelte';
+	import VoteTimeLeft from './VoteTimeLeft.svelte';
 
 	/**
 	 * A phone's ballot in the room's vote on the next script (Trevor, 2026-10-20, plan R1). It
@@ -33,7 +35,9 @@
 	/** A ranking being made, from the first tap or Start again until it is sent and after. */
 	let ranking = $state<string[]>();
 	const chosen = $derived(ranking ?? vote?.choices ?? []);
-	const offline = $derived(player.status !== 'open');
+	let ended = $state(false);
+	/** No taps while offline or once the Storyteller's time limit is up. */
+	const offline = $derived(player.status !== 'open' || ended);
 
 	function tap(id: string) {
 		if (!vote) return;
@@ -49,17 +53,20 @@
 		}
 	}
 
+	const mode = $derived(vote?.subject === 'mode');
 	const lead = $derived(
 		vote?.kind === 'single'
-			? t('room.scriptVote.ballotSingle')
+			? t(mode ? 'room.scriptVote.modeBallotSingle' : 'room.scriptVote.ballotSingle')
 			: vote?.kind === 'multiple'
-				? t('room.scriptVote.ballotMultiple')
-				: t('room.scriptVote.ballotRanked')
+				? t(mode ? 'room.scriptVote.modeBallotMultiple' : 'room.scriptVote.ballotMultiple')
+				: t(mode ? 'room.scriptVote.modeBallotRanked' : 'room.scriptVote.ballotRanked')
 	);
 </script>
 
-<Dialog bind:open title={t('room.scriptVote.title')}>
+<!-- The same ballot for a vote on the game mode (Trevor, 2026-10-23). -->
+<Dialog bind:open title={t(mode ? 'room.scriptVote.modeTitle' : 'room.scriptVote.title')}>
 	<p class="lead">{lead}</p>
+	<VoteTimeLeft endsAt={vote?.endsAt} onEnded={(e) => (ended = e)} />
 	<ul class="vote" data-testid="script-ballot">
 		{#each vote?.options ?? [] as option (option.id)}
 			{@const place = chosen.indexOf(option.id)}
@@ -69,7 +76,10 @@
 					pressed={place >= 0}
 					disabled={offline}
 					onclick={() => tap(option.id)}
-					>{option.name}{#if option.author}<span class="author">, {option.author}</span
+					>{#if option.logo}<ScriptLogo
+							src={option.logo}
+							class="ballot-logo"
+						/>{/if}{option.name}{#if option.author}<span class="author">, {option.author}</span
 						>{/if}</VoteChoice
 				>
 			</li>
@@ -96,5 +106,12 @@
 	}
 	.author {
 		color: var(--on-surface-muted);
+	}
+	/* The script's logo before its name (Trevor, 2026-10-24). */
+	.vote :global(.ballot-logo) {
+		width: 1.5em;
+		height: 1.5em;
+		margin-inline-end: var(--space-1);
+		vertical-align: middle;
 	}
 </style>

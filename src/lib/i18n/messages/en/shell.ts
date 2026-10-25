@@ -1,6 +1,6 @@
 import { APP_NAME } from '#lib/core/app-name.ts';
 
-/** App shell: header, footer, About, update prompt and the Changelog page. */
+/** App shell: sidebar, menu, About, update prompt and the Changelog page. */
 export const shell = {
 	'shell.settings': 'Settings',
 	'shell.appName': APP_NAME,
@@ -9,6 +9,7 @@ export const shell = {
 	'shell.navSectionGames': 'Play',
 	'shell.navSectionPrepare': 'Prepare',
 	'shell.navSectionYou': 'You',
+	'shell.navSectionApp': 'App',
 	'shell.navHome': 'Home',
 	'shell.navNewGame': 'New game',
 	'shell.navResumeGame': 'Resume game',
@@ -57,7 +58,7 @@ export const shell = {
 	'shell.updateReady': 'Update ready',
 	'shell.updateSaved': 'Your game is saved and reopens after refreshing.',
 	'shell.updateLater': 'Later',
-	'shell.updateRefresh': 'Refresh',
+	'shell.updateRefresh': 'Update',
 	'shell.whatChanged': 'What changed',
 	'shell.whatChangedCount': 'What changed ({count})',
 	'shell.olderChanges': 'Older changes not listed.',
@@ -67,5 +68,7 @@ export const shell = {
 	'shell.roadmapTitle': `Roadmap · ${APP_NAME}`,
 	'shell.roadmapProgress': '{done} of {total} done',
 	'shell.roadmapDone': 'Done',
+	'shell.roadmapNext': 'Next',
+	'shell.roadmapLater': 'Later',
 	'shell.roadmapPlanned': 'Planned'
 } as const;

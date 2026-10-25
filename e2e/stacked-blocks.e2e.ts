@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toBoard } from './new-game.ts';
 
 // Trevor (2026-10-22): pieces of information stacked one under another with nothing between
 // them (special rule toggles over their descriptions) read as one block. Where things sit is
@@ -131,7 +132,7 @@ test('no list of information runs together without a divider, a gap or a heading
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await toBoard(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeVisible();
 	seen.push(...(await undelineated(page, 'board More menu')));

@@ -32,16 +32,14 @@ export function iconUrl(character: Character, alignment?: Alignment): string | u
 }
 
 /**
- * A reminder token's owner icon in the colour chosen in Settings > Tokens (Trevor,
- * 2026-10-20): the placing player's alignment, else the character's usual one. "Plain" draws
- * the player's icon without colour (BoardReminder greys it): TPI has no uncoloured icons.
+ * A reminder token's owner icon, always in its owner's alignment (Trevor, 2026-10-23: no
+ * setting): the placing player's, else the character's usual one.
  */
 export function reminderIconUrl(
 	character: Character,
-	alignment: Alignment | undefined,
-	colour: 'player' | 'character' | 'plain'
+	alignment: Alignment | undefined
 ): string | undefined {
-	return iconUrl(character, colour === 'character' ? undefined : alignment);
+	return iconUrl(character, alignment);
 }
 
 /**

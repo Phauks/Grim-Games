@@ -3,7 +3,7 @@
  * whose ability can kill, cause their own death or cause an execution, plus any such
  * character in play off the script (Travellers, Fabled and Loric can join any game).
  *
- * The data is `death-causes.data.ts`. Returns data only; the UI words it. The picker's
+ * The data is each character's `deathCause` rule (`data/death-cause-rules.ts`). Returns data only; the UI words it. The picker's
  * general causes (executed, the Demon, something else) are `GENERAL_DEATH_CAUSES`.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
@@ -31,17 +31,18 @@ import {
 } from './ability.ts';
 import { gainedAbilities } from './gained-abilities.ts';
 import {
-	DEATH_CAUSE_ENTRIES,
 	DEATH_KINDS,
-	NO_DEATH,
-	VICTIM_RULES,
-	type DeathCauseEntry,
+	type DeathCauseRule,
 	type DeathKind,
 	type VictimRule
-} from './death-causes.data.ts';
+} from '#lib/core/data/death-cause-rules.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 
-export { DEATH_CAUSE_ENTRIES, DEATH_KINDS, NO_DEATH, VICTIM_RULES };
-export type { DeathCauseEntry, DeathKind, VictimRule };
+export { DEATH_KINDS };
+export type { DeathCauseRule, DeathKind, VictimRule };
+
+/** A `deathCause` rule for a character whose ability can cause a death. */
+export type DeathCauseEntry = Extract<DeathCauseRule, { kind: DeathKind }>;
 
 /**
  * One character the picker can offer. `kind` is `unknown` for a character not in our data
@@ -52,9 +53,21 @@ export interface DeathCauseOption {
 	kind: DeathKind | 'unknown';
 }
 
-/** The data entry for an official character that can cause a death, if any. */
-export function deathCauseEntry(id: CharacterId): DeathCauseEntry | undefined {
-	return Object.hasOwn(DEATH_CAUSE_ENTRIES, id) ? DEATH_CAUSE_ENTRIES[id] : undefined;
+/** A character's `deathCause` rule: its own (a custom character's) or our overlay file's. */
+export function deathCauseRule(
+	id: CharacterId,
+	characters?: CharacterLookup
+): DeathCauseRule | undefined {
+	return rulesOf(id, characters)?.deathCause;
+}
+
+/** The `deathCause` rule of a character that can cause a death, if any. */
+export function deathCauseEntry(
+	id: CharacterId,
+	characters?: CharacterLookup
+): DeathCauseEntry | undefined {
+	const rule = deathCauseRule(id, characters);
+	return rule && 'kind' in rule ? rule : undefined;
 }
 
 /**
@@ -71,12 +84,12 @@ export function deathCauses(
 	const present = new Set(ids);
 	const out: DeathCauseOption[] = [];
 	for (const id of ids) {
-		const entry = deathCauseEntry(id);
-		if (entry) {
-			if (!entry.onlyWith || entry.onlyWith.some((other) => present.has(other))) {
-				out.push({ characterId: id, kind: entry.kind });
+		const rule = deathCauseRule(id, characters);
+		if (rule && 'kind' in rule) {
+			if (!rule.onlyWith || rule.onlyWith.some((other) => present.has(other))) {
+				out.push({ characterId: id, kind: rule.kind });
 			}
-		} else if (!Object.hasOwn(NO_DEATH, id)) {
+		} else if (!rule) {
 			const type = characters.get(id)?.type;
 			if (type !== undefined) {
 				out.push({ characterId: id, kind: type === 'demon' ? 'kills' : 'unknown' });
@@ -92,6 +105,21 @@ export function gameDeathCauses(game: Game, characters: CharacterLookup): DeathC
 		...charactersInPlay(game),
 		...game.ruleCharacters
 	]);
+}
+
+/**
+ * The cause a reminder gives the death it marks: its own character, when that character can
+ * cause a death in this game (Trevor, 2026-10-23: the Fang Gu's "Dead" on a player "should know
+ * the token caused the death"). Undefined for the ∞ reminder, a character whose ability never
+ * kills, or a homebrew one we know nothing about.
+ */
+export function reminderDeathCause(
+	game: Game,
+	characters: CharacterLookup,
+	characterId: CharacterId
+): CharacterId | undefined {
+	const option = gameDeathCauses(game, characters).find((o) => o.characterId === characterId);
+	return option && option.kind !== 'unknown' ? option.characterId : undefined;
 }
 
 // ── Valid causes for one player ─────────────────────────────────────────────
@@ -166,7 +194,7 @@ const GAINED_FROM: Readonly<
  *
  * A character is left out when no player has it (true character, so a Drunk shown as the
  * Slayer is not one) and it is not a Fabled or Loric in play; when it only kills its own
- * player and this is someone else; and when its `VICTIM_RULES` rule fails however anyone
+ * player and this is someone else; and when its `deathCause.victim` rule fails however anyone
  * registers. Demons are left out: "the Demon" covers them. A rule that holds only through
  * a false registration, a character whose players are all impaired now, and a player
  * whose alignment or character is unset give flagged entries instead.
@@ -197,14 +225,14 @@ export function validDeathCauses(
 		const gainedBy = new Map<SeatId, CharacterId>();
 		for (const h of from ? holders : []) {
 			const id = from!(game, h, characters);
-			const entry = id === undefined ? undefined : deathCauseEntry(id);
+			const entry = id === undefined ? undefined : deathCauseEntry(id, characters);
 			if (id !== undefined && entry && entry.kind !== 'gained-ability') gainedBy.set(h, id);
 		}
 		if (from && gainedBy.size === 0) continue;
 		const ruleFor = (h: SeatId): VictimRule | undefined => {
 			const id = gainedBy.get(h) ?? characterId;
-			const k = gainedBy.has(h) ? deathCauseEntry(id)!.kind : kind;
-			return k === 'own-death' ? { victim: 'self' } : VICTIM_RULES[id];
+			const k = gainedBy.has(h) ? deathCauseEntry(id, characters)!.kind : kind;
+			return k === 'own-death' ? { who: 'self' } : deathCauseEntry(id, characters)?.victim;
 		};
 		const acting = holders.filter(
 			(h) => (!from || gainedBy.has(h)) && holderFits(game, ruleFor(h), h, seatId)
@@ -214,7 +242,7 @@ export function validDeathCauses(
 		const rule = acting.length > 0 ? ruleFor(acting[0]) : ruleFor(holders[0]);
 
 		const flags: DeathCauseFlag[] = [];
-		if (rule?.victim === 'registers') {
+		if (rule?.who === 'registers') {
 			worlds ??= registrationWorlds(game, characters, regs);
 			const verdict = registersAs(game, seatId, rule.as, worlds);
 			if (verdict === 'never') continue;
@@ -242,7 +270,7 @@ function holderFits(
 	holder: SeatId,
 	victim: SeatId
 ): boolean {
-	switch (rule?.victim) {
+	switch (rule?.who) {
 		case undefined:
 			return true;
 		case 'self':

@@ -3,8 +3,9 @@
  * never looks at character data, the clock or randomness, which the events already
  * carry. Events that refer to something missing (a seat removed since) change nothing.
  */
+import { parseAvatarId } from '#lib/core/avatars/index.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
-import type { Game, ReminderInstance, Seat, SeatId } from '#lib/core/model/index.ts';
+import type { Game, GameNote, ReminderInstance, Seat, SeatId } from '#lib/core/model/index.ts';
 import type { GameEvent } from './events.ts';
 
 function newSeat(seatId: SeatId, playerName?: string): Seat {
@@ -103,6 +104,25 @@ function liftHeldReminder(
 }
 
 /** A shallow copy without the given keys. */
+/** The note an old game's single general note becomes (`GameNotesSet`). */
+const LEGACY_NOTE = 'n1';
+
+/** The game with these notes, or none when the list is empty. */
+function withNotes(game: Game, notes: GameNote[]): Game {
+	return notes.length ? { ...game, notes } : omit(game, 'notes');
+}
+
+/** Replaces the note with this id in place, or adds it at the end. */
+function setNote(game: Game, note: GameNote): Game {
+	const notes = game.notes ?? [];
+	return withNotes(
+		game,
+		notes.some((n) => n.noteId === note.noteId)
+			? notes.map((n) => (n.noteId === note.noteId ? note : n))
+			: [...notes, note]
+	);
+}
+
 function omit<T extends object, K extends keyof T>(value: T, ...keys: K[]): Omit<T, K> {
 	const copy = { ...value };
 	for (const key of keys) delete copy[key];
@@ -180,12 +200,26 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'SeatLookSet':
 			return updateSeat(game, event.seatId, (seat) => {
 				const next: Seat = omit(seat, 'avatar', 'frame');
-				if (event.avatar !== undefined) next.avatar = event.avatar;
+				// A picture from the earlier icon set, in a game saved by that beta build, is dropped.
+				const avatar = parseAvatarId(event.avatar);
+				if (avatar !== undefined) next.avatar = avatar;
 				if (event.frame !== undefined) next.frame = event.frame;
 				return next;
 			});
 		case 'GameNotesSet':
-			return event.notes === undefined ? omit(game, 'notes') : { ...game, notes: event.notes };
+			return event.notes === undefined
+				? withNotes(
+						game,
+						(game.notes ?? []).filter((n) => n.noteId !== LEGACY_NOTE)
+					)
+				: setNote(game, { noteId: LEGACY_NOTE, title: '', text: event.notes, hidden: false });
+		case 'GameNoteSet':
+			return setNote(game, event.note);
+		case 'GameNoteDeleted':
+			return withNotes(
+				game,
+				(game.notes ?? []).filter((n) => n.noteId !== event.noteId)
+			);
 		case 'CharacterAssigned':
 			return updateSeat(game, event.seatId, (seat) =>
 				event.alignment === undefined
@@ -398,6 +432,19 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				looseReminders: [...(lifted.game.looseReminders ?? []), lifted.reminder]
 			};
 		}
+		case 'GenericTokenAdded':
+			return { ...game, genericTokens: [...(game.genericTokens ?? []), { ...event.token }] };
+		case 'GenericTokenSet':
+			return {
+				...game,
+				genericTokens: (game.genericTokens ?? []).map((t) =>
+					t.tokenId === event.token.tokenId ? { ...event.token } : t
+				)
+			};
+		case 'GenericTokenRemoved': {
+			const genericTokens = (game.genericTokens ?? []).filter((t) => t.tokenId !== event.tokenId);
+			return genericTokens.length > 0 ? { ...game, genericTokens } : omit(game, 'genericTokens');
+		}
 		case 'StorytellerNameSet':
 			return event.name === undefined
 				? omit(game, 'storytellerName')
@@ -413,6 +460,10 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'ReminderSymbolColourSet':
 			return withReminder(game, event.reminderId, (r) =>
 				event.colour === undefined ? omit(r, 'symbolColour') : { ...r, symbolColour: event.colour }
+			);
+		case 'ReminderSymbolFillSet':
+			return withReminder(game, event.reminderId, (r) =>
+				event.fill ? { ...r, symbolFill: true } : omit(r, 'symbolFill')
 			);
 		case 'BluffsSet': {
 			const bluffs = game.bluffs.map((set) => [...set]);

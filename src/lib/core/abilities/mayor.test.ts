@@ -55,7 +55,7 @@ describe('Mayor', () => {
 				(s) => ({ type: 'SetDead', seatId: s[2], dead: true, cause: 'demon' })
 			);
 			expect(gameEnds(session.game, testCharacters, { dayEnded: true })).toMatchObject([
-				{ rule: 'mayor', winner: 'good' }
+				{ rule: 'alive-at-dusk', winner: 'good' }
 			]);
 		});
 		it.todo('Example 3: Tied vote spares everyone; good wins');

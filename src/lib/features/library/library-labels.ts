@@ -164,6 +164,14 @@ export function nameFree(labels: readonly Label[], name: string, except?: string
 	);
 }
 
+/** `base`, or the first of "base 2", "base 3"... not taken among `labels` (a new folder's name). */
+export function freeName(labels: readonly Label[], base: string): string {
+	for (let n = 1; ; n++) {
+		const name = n === 1 ? base : `${base} ${n}`;
+		if (nameFree(labels, name)) return name;
+	}
+}
+
 /** The labels a new name must differ from: every tag, or a folder's siblings. */
 export function siblings(
 	state: LibraryLabels,

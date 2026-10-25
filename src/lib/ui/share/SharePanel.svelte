@@ -1,13 +1,15 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import QrCode, { fitsQrCode } from '#lib/ui/primitives/QrCode.svelte';
 	import { copyText } from '#lib/ui/clipboard.ts';
-	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { qrPicture } from './qr-picture.svelte.ts';
 	import QrCentreSetting from './QrCentreSetting.svelte';
+	import QrPicture from './QrPicture.svelte';
 
 	/**
 	 * The one share screen (Trevor, 2026-10-18): an optional code in large type, the QR code,
@@ -48,6 +50,12 @@
 		 * Copy and Share still work.
 		 */
 		hidden?: boolean;
+		/**
+		 * A file to send as well as the link, e.g. a game recap's page, offered where the phone
+		 * can share files; sending it can fail over to `onFileFailed` (e.g. a download).
+		 */
+		file?: File;
+		onFileFailed?: () => void;
 	}
 
 	let {
@@ -62,7 +70,9 @@
 		qrCenter,
 		qrCenterShape,
 		qrCaption,
-		hidden = false
+		hidden = false,
+		file,
+		onFileFailed
 	}: Props = $props();
 	/*
 	 * The middle of the QR is the Storyteller's choice (plan R1): the caller's (the script's
@@ -73,12 +83,12 @@
 	const middle = $derived(centre === 'none' ? undefined : usePicture ? pictureCentre : qrCenter);
 	const middleShape = $derived(usePicture ? 'square' : qrCenterShape);
 	let centreOpen = $state(false);
-	let centreButton = $state<HTMLButtonElement>();
 	const id = $props.id();
 	const urlId = `${id}-url`;
 	const codeId = `${id}-code`;
 
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+	const canShareFile = $derived(!!file && canShare && !!navigator.canShare?.({ files: [file] }));
 
 	/** A copy icon shows a check for a moment instead of a success popup. */
 	const COPIED_MS = 1500;
@@ -118,6 +128,15 @@
 			if (!(e instanceof DOMException && e.name === 'AbortError')) await copy();
 		}
 	}
+
+	async function shareFile() {
+		if (!file) return;
+		try {
+			await navigator.share({ title, files: [file] });
+		} catch (e) {
+			if (!(e instanceof DOMException && e.name === 'AbortError')) onFileFailed?.();
+		}
+	}
 </script>
 
 <div class="share">
@@ -147,6 +166,8 @@
 				center={middle}
 				centerShape={middleShape}
 				caption={qrCaption}
+				modules={preferences.current.qrModules}
+				finders={preferences.current.qrFinders}
 			/>
 			{#if hidden}<p class="placeholder cover" data-testid="share-hidden">
 					{t('share.hidden')}
@@ -183,31 +204,60 @@
 			{#if canShare}
 				<IconButton icon="share" label={t('share.share')} onclick={share} disabled={!url} />
 			{/if}
-			<!-- The QR's middle, set where it shows as well as in Settings. -->
+			<!-- The QR's look, set where it shows as well as in Settings. -->
 			<IconButton
 				icon="settings"
-				label={t('share.qrCentre')}
-				bind:ref={centreButton}
-				onclick={() => (centreOpen = !centreOpen)}
+				label={t('share.qrSettings')}
+				onclick={() => (centreOpen = true)}
 			/>
 		</div>
 	</div>
-	{#if actions}<div class="actions">{@render actions()}</div>{/if}
+	{#if actions || canShareFile}<div class="actions">
+			{#if canShareFile}<Button onclick={() => void shareFile()}>{t('share.sendFile')}</Button>{/if}
+			{@render actions?.()}
+		</div>{/if}
 </div>
 
 {#snippet pictureCentre()}
-	<img class="qr-picture" src={qrPicture.current} alt="" />
+	<QrPicture />
 {/snippet}
 
-<Popover bind:open={centreOpen} title={t('share.qrCentre')} anchor={centreButton}>
+<!-- A dialog, not a popover, so no list ends up under its edge: the QR code on the left and
+     its settings on the right (Trevor, 2026-10-24), or the code on top of them on a phone,
+     so every change shows at once. -->
+<Dialog bind:open={centreOpen} title={t('share.qrSettings')}>
+	{#snippet aside()}
+		<div class="preview" data-testid="qr-preview">
+			{#if url && fitsQrCode(url)}
+				<QrCode
+					value={url}
+					label={qrLabel}
+					center={middle}
+					centerShape={middleShape}
+					modules={preferences.current.qrModules}
+					finders={preferences.current.qrFinders}
+				/>
+			{:else}
+				<p class="placeholder">{url ? t('share.tooLong') : pending}</p>
+			{/if}
+		</div>
+	{/snippet}
 	<div class="centre"><QrCentreSetting /></div>
-</Popover>
+</Dialog>
 
 <style>
-	.qr-picture {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
+	/* The dialog's aside: small on top of a phone's settings, the pane's width beside them. */
+	.preview {
+		display: grid;
+		justify-items: center;
+	}
+	.preview > :global(*) {
+		width: min(45%, calc(10 * var(--u)));
+	}
+	@container dialog-panes (min-width: 36rem) {
+		.preview > :global(*) {
+			width: 100%;
+		}
 	}
 	.centre {
 		display: grid;

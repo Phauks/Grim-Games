@@ -35,7 +35,7 @@
 		 * footprint, the face shrinking a little, so nothing around the seat moves.
 		 */
 		frame?: Frame;
-		/** The player's avatar (plan R6), shown when there is no face in place of the number. */
+		/** The player's avatar (plan R6, their initials from `name`), shown in place of the number. */
 		avatar?: AvatarId;
 	}
 
@@ -63,9 +63,10 @@
 	style:--face-scale={FACE_RADIUS / 50}
 >
 	<span class="disc">
-		<span class="face"
-			>{#if face}{@render face()}{:else if avatar}<AvatarFace {avatar} />{:else}<span class="empty"
-					>{number}</span
+		<!-- Marked as a token face, so a seat button's focus ring is round (base.css). -->
+		<span class="face" data-token-face
+			>{#if face}{@render face()}{:else if avatar}<AvatarFace {avatar} {name} />{:else}<span
+					class="empty">{number}</span
 				>{/if}</span
 		>
 		{#if frame && framed}<span class="frame-layer"><FrameDrawing {frame} /></span>{/if}

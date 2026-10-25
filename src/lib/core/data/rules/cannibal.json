@@ -1,0 +1,44 @@
+{
+	"reminderTargets": {
+		"Lunch": {
+			"seat": "other",
+			"life": "dead",
+			"note": "The player who most recently died by execution."
+		},
+		"Poisoned": {
+			"seat": "self",
+			"note": "On the Cannibal when their lunch was evil."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has the ability of"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Lunch"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "gained-ability"
+	},
+	"reminderMovement": {
+		"why": "Follows the most recent execution."
+	}
+}

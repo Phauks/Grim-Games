@@ -5,6 +5,7 @@ import { parseCharacterRules } from '../character-rules.ts';
 import { parseCharacter } from '../parse.ts';
 import { Issues } from '../validate.ts';
 import { actsWhenDead } from '#lib/core/rules/dead-characters.ts';
+import { onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
 import { reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
 import { OFFICIAL_RULES, rulesOf } from './index.ts';
 
@@ -23,7 +24,10 @@ describe('official rules files (data/rules/<id>.json)', () => {
 		expect(character, id).toBeDefined();
 		const issues = new Issues();
 		const raw: unknown = JSON.parse(readFileSync(new URL(file, dir), 'utf8'));
-		parseCharacterRules(raw, file, issues, character!.reminders);
+		parseCharacterRules(raw, file, issues, [
+			...character!.reminders,
+			...character!.remindersGlobal
+		]);
 		expect(issues.list).toEqual([]);
 	});
 });
@@ -34,6 +38,23 @@ describe('parseCharacterRules', () => {
 		return { rules: parseCharacterRules(raw, 'rules', issues, reminders), issues: issues.list };
 	};
 
+	it('reads what being nominated sets off, and rejects an unknown type or effect', () => {
+		const onNominated = { by: 'townsfolk', effect: 'execute-nominator' };
+		expect(parse({ onNominated }).rules).toEqual({ onNominated });
+		expect(parse({ onNominated: { ...onNominated, by: 'player' } }).issues).toHaveLength(1);
+		expect(parse({ onNominated: { ...onNominated, effect: 'swap' } }).issues).toHaveLength(1);
+	});
+
+	it('reads what a player may still do once dead, and rejects a bad cause or count', () => {
+		const afterDeath = { cause: ['demon'], nominations: 2, votes: 2 };
+		expect(parse({ afterDeath }).rules).toEqual({ afterDeath });
+		expect(parse({ afterDeath: { ...afterDeath, cause: [] } }).issues).toHaveLength(1);
+		expect(parse({ afterDeath: { ...afterDeath, cause: 'demon' } }).issues).toHaveLength(1);
+		expect(parse({ afterDeath: { ...afterDeath, votes: 0 } }).issues).toHaveLength(1);
+		expect(parse({ afterDeath: { cause: ['demon'] } }).issues).toHaveLength(1);
+		expect(parse({ afterDeath: { ...afterDeath, twice: true } }).issues).toHaveLength(1);
+	});
+
 	it('reads a reminder prompt', () => {
 		expect(parse({ reminderPrompts: { Dead: 'markDead' } })).toEqual({
 			rules: { reminderPrompts: { Dead: 'markDead' } },
@@ -41,8 +62,107 @@ describe('parseCharacterRules', () => {
 		});
 	});
 
+	it('reads the claim a player makes by day (L56)', () => {
+		expect(parse({ dayClaim: 'guesses' })).toEqual({ rules: { dayClaim: 'guesses' }, issues: [] });
+	});
+
 	it('reports unknown rules, unknown prompts and reminders the character lacks', () => {
-		expect(parse({ kills: true }).issues).toEqual(['rules.kills: unknown rule']);
+		expect(parse({ slays: true }).issues).toEqual(['rules.slays: unknown rule']);
+		expect(parse({ onDeath: { by: 'night' } }).issues).toEqual([
+			'rules.onDeath.by: unknown value "night"'
+		]);
+		expect(parse({ protects: { who: 'marked', from: 'demon' } }).issues).toEqual([
+			'rules.protects.token: missing'
+		]);
+		expect(parse({ protects: { who: 'self', token: 'Dead', from: 'any' } }).issues).toEqual([
+			'rules.protects.token: only a marked player has a token'
+		]);
+		expect(parse({ protects: { who: 'marked', token: 'Safe', from: 'any' } }).issues).toEqual([
+			'rules.protects.token: not one of this character’s reminders'
+		]);
+		expect(parse({ redirectsKill: { from: 'other' } }).issues).toEqual([
+			'rules.redirectsKill.from: unknown value "other"'
+		]);
+		expect(parse({ survivesFirstDeath: { spentToken: 'No Ability' } }).issues).toEqual([
+			'rules.survivesFirstDeath.spentToken: not one of this character’s reminders'
+		]);
+		expect(parse({ survivesFirstDeath: {} }).issues).toEqual([
+			'rules.survivesFirstDeath.spentToken: missing'
+		]);
+		expect(parse({ kills: { by: 'night' } }).issues).toEqual([
+			'rules.kills.by: unknown value "night"'
+		]);
+		expect(parse({ kills: { by: 'other', targets: 'all' } }).issues).toEqual([
+			'rules.kills.targets: unknown value "all"'
+		]);
+		expect(parse({ learns: { measure: 'pair-of-type' } }).issues).toEqual([
+			'rules.learns.type: missing'
+		]);
+		expect(parse({ learns: { measure: 'demon-or-token' } }).issues).toEqual([
+			'rules.learns.token: missing'
+		]);
+		expect(
+			parse({ learns: { measure: 'evil-pairs', reminders: { each: 'Know' } } }).issues
+		).toEqual(['rules.learns.reminders.each: not one of this character’s reminders']);
+		expect(parse({ answers: { question: 'who-knows' } }).issues).toEqual([
+			'rules.answers.question: unknown value "who-knows"'
+		]);
+		expect(parse({ impairs: { self: { reason: 'sleepy' } } }).issues).toEqual([
+			'rules.impairs.self.reason: unknown value "sleepy"'
+		]);
+		expect(
+			parse({ impairs: { tokens: { Hush: { reason: 'drunk', on: 'others' } } } }).issues
+		).toEqual(['rules.impairs.tokens.Hush: not one of this character’s reminders']);
+		expect(parse({ impairs: { tokens: { Dead: { reason: 'drunk', on: 'all' } } } }).issues).toEqual(
+			['rules.impairs.tokens.Dead.on: unknown value "all"']
+		);
+		expect(parse({ registersAs: { self: { types: ['wizard'] } } }).issues).toEqual([
+			'rules.registersAs.self.types: unknown value "wizard"'
+		]);
+		expect(parse({ registersAs: { tokens: { Paw: { alignments: ['evil'] } } } }).issues).toEqual([
+			'rules.registersAs.tokens.Paw: not one of this character’s reminders'
+		]);
+		expect(parse({ gameEnd: { ends: [{ kind: 'win-now' }] } }).issues).toEqual([
+			'rules.gameEnd.ends[0].kind: unknown value "win-now"'
+		]);
+		expect(parse({ gameEnd: { ends: [{ kind: 'survives-day', day: 5 }] } }).issues).toEqual([
+			'rules.gameEnd.ends[0].winner: missing'
+		]);
+		expect(parse({ gameEnd: { holds: [{ kind: 'marked-alive', token: 'Twin' }] } }).issues).toEqual(
+			['rules.gameEnd.holds[0].token: not one of this character’s reminders']
+		);
+		expect(parse({ deathCheck: { kind: 'explodes' } }).issues).toEqual([
+			'rules.deathCheck.kind: unknown value "explodes"'
+		]);
+		expect(parse({ deathCheck: { kind: 'marked-killed-by-demon' } }).issues).toEqual([
+			'rules.deathCheck.token: missing'
+		]);
+		expect(
+			parse({ setupPrep: { reminders: [{ label: 'Dead', text: 'x', reason: 'y' }] } }).issues
+		).toEqual(['rules.setupPrep.reminders[0].target: missing']);
+		expect(
+			parse({
+				setupPrep: {
+					reminders: [
+						{ label: 'Lit', text: 'x', reason: 'y', target: { choose: 'all', choice: 'z' } }
+					]
+				}
+			}).issues
+		).toEqual([
+			'rules.setupPrep.reminders[0].label: not one of this character’s reminders',
+			'rules.setupPrep.reminders[0].target.choose: unknown value "all"'
+		]);
+		expect(
+			parse({ setupModifier: { summary: '+1', ops: [{ kind: 'delta', type: 'traveller' }] } })
+				.issues
+		).toEqual(['rules.setupModifier.ops[0].type: unknown value "traveller"']);
+		expect(
+			parse({ setupModifier: { summary: '+1', ops: [{ kind: 'delta', type: 'outsider' }] } }).issues
+		).toEqual(['rules.setupModifier.ops[0].values: expected a list of whole numbers']);
+		expect(parse({ reminderTargets: { Dead: { differsFromLastNight: 'seat' } } }).issues).toEqual([
+			'rules.reminderTargets.Dead.differsFromLastNight: unknown value "seat"'
+		]);
+		expect(parse({ dayClaim: 'shout' }).issues).toEqual(['rules.dayClaim: unknown value "shout"']);
 		expect(parse({ actsWhenDead: 'yes' }).issues).toEqual([
 			'rules.actsWhenDead: expected boolean, got string'
 		]);
@@ -91,8 +211,9 @@ describe('custom characters', () => {
 	});
 
 	it('keep the official block when they reuse an official id without rules', () => {
-		expect(rulesOf('imp', new Map([['imp', {}]]))).toEqual({
-			reminderPrompts: { Dead: 'markDead' }
+		expect(rulesOf('imp', new Map([['imp', {}]]))).toMatchObject({
+			reminderPrompts: { Dead: 'markDead' },
+			kills: { by: 'demon' }
 		});
 	});
 
@@ -117,5 +238,28 @@ describe('custom characters', () => {
 		const characters = new Map([[lantern!.id, lantern!]]);
 		expect(actsWhenDead('lanternbearer', characters)).toBe(true);
 		expect(actsWhenDead('lanternbearer')).toBe(false);
+	});
+
+	// A homebrew Townsfolk woken by a Demon kill, as the Sage is
+	// (https://wiki.bloodontheclocktower.com/Sage).
+	it('can be set off by their death', () => {
+		const issues = new Issues();
+		const watcher = parseCharacter(
+			{
+				id: 'lastwatch',
+				name: 'Last Watch',
+				team: 'townsfolk',
+				ability: 'If the Demon kills you, you learn a player.',
+				rules: { onDeath: { by: 'demon' } }
+			},
+			'[0]',
+			issues,
+			{ strict: false, scriptFields: true }
+		);
+		expect(issues.list).toEqual([]);
+		expect(onDeathTrigger('lastwatch', new Map([[watcher!.id, watcher!]]))).toEqual({
+			by: 'demon'
+		});
+		expect(onDeathTrigger('lastwatch')).toBeUndefined();
 	});
 });

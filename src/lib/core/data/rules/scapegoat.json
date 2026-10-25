@@ -1,0 +1,24 @@
+{
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "execution",
+		"victim": {
+			"who": "self"
+		}
+	}
+}

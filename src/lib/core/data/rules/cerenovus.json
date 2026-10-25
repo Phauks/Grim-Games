@@ -1,0 +1,69 @@
+{
+	"reminderTargets": {
+		"Mad": {
+			"seat": "any",
+			"note": "Any player the Cerenovus makes mad about a good character."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "madness",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has made mad"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Mad"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "execution"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Mad",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Mad",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Cerenovus chooses a player & a character: move *MAD* to them. Put the Cerenovus to sleep, wake the target and show the *THIS CHARACTER SELECTED YOU* token, the Cerenovus token, then the madness-character token.",
+				"reason": "Says last night’s Mad token comes off."
+			}
+		}
+	}
+}

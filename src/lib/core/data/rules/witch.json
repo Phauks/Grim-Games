@@ -1,0 +1,75 @@
+{
+	"reminderTargets": {
+		"Cursed": {
+			"seat": "any",
+			"note": "Any player the Witch chooses, even themself or a dead player."
+		}
+	},
+	"impairs": {
+		"self": {
+			"reason": "no-ability",
+			"aliveAtMost": 3
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has chosen"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Cursed"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Cursed",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Cursed",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Witch chooses a player: move *CURSED* to them.",
+				"reason": "Says last night’s Cursed token comes off."
+			}
+		}
+	}
+}

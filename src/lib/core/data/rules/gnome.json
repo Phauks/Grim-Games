@@ -1,0 +1,52 @@
+{
+	"reminderTargets": {
+		"Amigo": {
+			"seat": "other",
+			"alignment": "same",
+			"note": "Another player who shares the Gnome's alignment."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Amigo",
+				"text": "Choose a player of the Gnome’s alignment as their amigo: put [Amigo] on them",
+				"target": {
+					"choose": "same-alignment",
+					"choice": "a player of the Gnome’s alignment",
+					"notSelf": true
+				},
+				"reason": "Everyone learns this player"
+			}
+		]
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "protects"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Amigo"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["Amigo"],
+		"why": "The amigo is chosen once, on the first night."
+	}
+}

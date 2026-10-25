@@ -40,4 +40,42 @@ describe('Homebrew Wiki answers', () => {
 			{ name: 'Folie à Deux', creator: 'DJ', url: 'https://botchomebrew.wiki/c/folie-a-deux' }
 		]);
 	});
+
+	it("links a character to its own collection's page when another has the same name", () => {
+		// https://botchomebrew.wiki/c/call-of-the-executioner/glassblower-2: the wiki's second
+		// Glassblower, after one in another collection.
+		const script = [
+			{ id: '_meta', name: 'Call of the Executioner' },
+			{ id: 'glassblower', name: 'Glassblower' }
+		];
+		const grid = [
+			{
+				slug: 'glassblower',
+				page: 'c/other-collection/glassblower',
+				name: 'Glassblower',
+				creator: 'A'
+			},
+			{
+				slug: 'glassblower-2',
+				page: 'c/call-of-the-executioner/glassblower-2',
+				name: 'Glassblower',
+				creator: 'B'
+			}
+		];
+		expect(readCredits(grid, script, 'call-of-the-executioner')).toEqual([
+			{
+				name: 'Glassblower',
+				creator: 'B',
+				url: 'https://botchomebrew.wiki/c/call-of-the-executioner/glassblower-2'
+			}
+		]);
+		// Without its own row, the first of that name elsewhere.
+		expect(readCredits(grid.slice(0, 1), script, 'call-of-the-executioner')).toEqual([
+			{
+				name: 'Glassblower',
+				creator: 'A',
+				url: 'https://botchomebrew.wiki/c/other-collection/glassblower'
+			}
+		]);
+	});
 });

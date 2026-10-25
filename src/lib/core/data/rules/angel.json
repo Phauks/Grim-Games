@@ -1,0 +1,66 @@
+{
+	"reminderTargets": {
+		"Protected": {
+			"seat": "any",
+			"note": "On each player the Angel protects, with their consent."
+		},
+		"Something Bad": {
+			"seat": "any",
+			"note": "On the player most responsible for a protected player's death."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Protected",
+				"text": "Choose the new players the Angel protects: put [Protected] on each",
+				"target": {
+					"choose": "any",
+					"choice": "a new player who agrees to be protected"
+				},
+				"reason": "Use one token per protected player"
+			}
+		]
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "protects"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Protected",
+					"self": "any"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["Protected", "Something Bad"],
+		"why": "The protected players are chosen at setup."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Protected",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

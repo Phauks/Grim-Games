@@ -5,8 +5,9 @@
 </script>
 
 <!--
-	The hamburger: opens and closes the sidebar on wide screens, the drawer otherwise. At the far
-	left of the header; a game screen mounts it at the far left of its own toolbar, and leaving
+	The hamburger: opens and closes the sidebar on wide screens, the drawer otherwise. At the top
+	of the sidebar, or before the page's title while no sidebar shows (Page); a game screen mounts
+	it at the far left of its own toolbar, and leaving
 	the game through the menu asks first (setLeaveGuard in shell.ts).
 -->
 <IconButton

@@ -2,7 +2,8 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import { copyText } from '#lib/ui/clipboard.ts';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import { downloadFile, fileNameFor } from '#lib/ui/download.ts';
 	import { recapHtml } from './recap-html.ts';
 	import { isRecapId, type SharedRecap } from './recap-share-api.ts';
@@ -53,26 +54,12 @@
 		if (html) downloadFile(fileName, html, 'text/html');
 	}
 
-	/** The file itself where the phone can share files, else the link, else a copy of it. */
-	async function share() {
-		if (!html || !shared) return;
-		const title = shared.recap.title;
-		const file = new File([html], fileName, { type: 'text/html' });
-		try {
-			if (navigator.canShare?.({ files: [file] })) {
-				await navigator.share({ title, files: [file] });
-			} else if (typeof navigator.share === 'function') {
-				await navigator.share({ title, url: location.href });
-			} else {
-				await copyText(location.href, {
-					failed: [t('share.copyFailed'), t('share.copyFailedHint')]
-				});
-			}
-		} catch (e) {
-			// Closing the share sheet is not a failure.
-			if (!(e instanceof DOMException && e.name === 'AbortError')) save();
-		}
-	}
+	/**
+	 * Share opens the one share screen (Trevor, 2026-10-23: every Share the same): the recap's
+	 * QR code and link, plus the file itself where the phone can send files.
+	 */
+	let sharing = $state(false);
+	const file = $derived(html ? new File([html], fileName, { type: 'text/html' }) : undefined);
 
 	/** The file sits in a frame as tall as its content, so the page scrolls, not the frame. */
 	let frameHeight = $state(0);
@@ -93,7 +80,12 @@
 
 {#snippet actions()}
 	<IconButton icon="download" label={t('history.recapSave')} disabled={!html} onclick={save} />
-	<IconButton icon="share" label={t('history.recapShare')} disabled={!html} onclick={share} />
+	<IconButton
+		icon="share"
+		label={t('history.recapShare')}
+		disabled={!html}
+		onclick={() => (sharing = true)}
+	/>
 {/snippet}
 
 <Page title={shared?.recap.title ?? t('history.recapTitle')} {actions}>
@@ -115,7 +107,23 @@
 	{/if}
 </Page>
 
+<Dialog bind:open={sharing} title={t('scripts.share.title', { title: shared?.recap.title ?? '' })}>
+	<div class="share">
+		<SharePanel
+			url={html ? location.href : undefined}
+			title={shared?.recap.title ?? t('history.recapTitle')}
+			qrLabel={t('history.shareQr')}
+			pending={t('history.recapLoading')}
+			{file}
+			onFileFailed={save}
+		/>
+	</div>
+</Dialog>
+
 <style>
+	.share {
+		margin-top: var(--space-3);
+	}
 	.recap {
 		display: block;
 		width: 100%;

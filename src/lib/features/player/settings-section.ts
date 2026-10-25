@@ -14,8 +14,9 @@ registerSettingsSection({
 			density: 'normal',
 			print: PRINT_DEFAULTS,
 			frame: undefined,
-			avatar: undefined,
-			guessesOnTokens: false
+			avatar: 'initials',
+			guessesOnTokens: false,
+			lightSheet: false
 		}),
 	order: 37
 });

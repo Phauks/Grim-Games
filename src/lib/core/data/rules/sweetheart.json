@@ -1,3 +1,50 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"onDeath": {
+		"by": "any"
+	},
+	"reminderTargets": {
+		"Drunk": {
+			"seat": "any",
+			"note": "Any one player the Storyteller picks when the Sweetheart dies."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "drunkenness"
+	},
+	"reminderMovement": {
+		"fixed": ["Drunk"],
+		"why": "One player becomes drunk once, when the Sweetheart dies."
+	},
+	"reminderPlaceholders": {
+		"note": "The Sweetheart's death makes one player drunk for the rest of the game.",
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
 }

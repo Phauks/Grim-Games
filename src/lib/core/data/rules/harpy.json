@@ -1,0 +1,91 @@
+{
+	"reminderTargets": {
+		"2nd": {
+			"seat": "any",
+			"note": "The second player the Harpy picks; may be dead or the Harpy."
+		},
+		"Mad": {
+			"seat": "any",
+			"note": "The first player the Harpy picks, who must be mad about the 2nd being evil.",
+			"ambiguous": "The wiki does not say whether the same player can be picked as both first and second."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "madness",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "has made mad"
+					},
+					{
+						"target": true
+					}
+				],
+				"when": {
+					"reminder": "Mad"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each night."
+	},
+	"reminderPlaceholders": {
+		"note": "The 1st target is mad; the 2nd is the player they must be mad about.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Mad",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "2nd",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Mad",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "2nd",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "The Harpy chooses 2 players: move *MAD* to the 1st and *2ND* to the 2nd. Put the Harpy to sleep, wake the 1st target, show the *THIS CHARACTER SELECTED YOU* token and the Harpy token, then point to the 2nd target.",
+				"reason": "Says which token goes on which target and that last night’s come off."
+			}
+		}
+	}
+}

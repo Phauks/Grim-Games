@@ -1,0 +1,61 @@
+{
+	"reminderTargets": {
+		"Know": {
+			"seat": "any",
+			"note": "One of the three players shown to the Noble: two of the three are good and one is evil.",
+			"alignmentCounts": {
+				"good": 2,
+				"evil": 1
+			}
+		}
+	},
+	"learns": {
+		"measure": "one-evil-of-three",
+		"reminders": {
+			"each": "Know"
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Know",
+				"text": "Choose 3 players for the Noble, exactly 1 evil: put [Know] on each",
+				"target": {
+					"choose": "evil",
+					"choice": "an evil player"
+				},
+				"reason": "The one evil player among the 3 the Noble is shown"
+			},
+			{
+				"label": "Know",
+				"text": "Choose 3 players for the Noble, exactly 1 evil: put [Know] on each",
+				"target": {
+					"choose": "good",
+					"choice": "a good player",
+					"notSelf": true
+				},
+				"reason": "A good player among the 3 the Noble is shown"
+			},
+			{
+				"label": "Know",
+				"text": "Choose 3 players for the Noble, exactly 1 evil: put [Know] on each",
+				"target": {
+					"choose": "good",
+					"choice": "another good player",
+					"notSelf": true
+				},
+				"reason": "A good player among the 3 the Noble is shown"
+			}
+		]
+	},
+	"dayReminders": {
+		"none": "first-night info"
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["Know"],
+		"why": "Marks the information the player started knowing."
+	}
+}

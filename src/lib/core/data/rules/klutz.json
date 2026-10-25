@@ -1,3 +1,30 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"onDeath": {
+		"by": "any"
+	},
+	"gameEnd": {
+		"decidedByStoryteller": true
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is dead"
+					}
+				],
+				"when": {
+					"self": "dead"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "loss condition"
+	}
 }

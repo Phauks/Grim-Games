@@ -1,3 +1,63 @@
 {
-	"reminderPrompts": { "Dead": "markDead" }
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
+	"kills": {
+		"by": "other"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "On any player the Storyteller picks to die that night after a true statement; parked by the Grimoire's left side during the day."
+		}
+	},
+	"answers": {
+		"question": "statement-true"
+	},
+	"dayClaim": "statement",
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "may make a statement"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"other": {
+			"full": {
+				"text": "If the Gossip’s public statement today was true, a player dies: mark them *DEAD*.",
+				"reason": "Says what makes the Gossip kill."
+			}
+		}
+	}
 }

@@ -5,6 +5,7 @@
 	import { fallbackIconUrl, reminderIconUrl } from '#lib/features/characters/icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
+	import { fitLines } from '#lib/ui/fit-lines.ts';
 	import IconGlyph from '#lib/ui/icons/IconGlyph.svelte';
 	import { ICON_SETS, withWeight } from '#lib/ui/icons/catalogue.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -36,6 +37,8 @@
 		symbol?: string;
 		/** Its symbol's colour (Trevor, 2026-10-20); none is the reminder's ink. */
 		symbolColour?: SymbolColour;
+		/** Its icon symbol drawn filled (Trevor, 2026-10-23: per token). */
+		symbolFill?: boolean;
 		disabled?: boolean;
 		onTap: () => void;
 		/** Pointer position in client px while dragging; `end` true when released. */
@@ -58,6 +61,7 @@
 		infinite = false,
 		symbol = '',
 		symbolColour,
+		symbolFill = false,
 		disabled = false,
 		onTap,
 		onDrag,
@@ -65,12 +69,19 @@
 		panX = false
 	}: Props = $props();
 
-	// Settings > Tokens: the owner's icon can be hidden or coloured differently (Trevor, 2026-10-20).
 	const appearance = $derived(preferences.current.tokenAppearance);
-	const src = $derived(
-		character && appearance.reminderIcon
-			? reminderIconUrl(character, alignment, appearance.reminderIconColour)
-			: undefined
+	// The owner's icon, always in the owner's alignment (Trevor, 2026-10-23).
+	const src = $derived(character ? reminderIconUrl(character, alignment) : undefined);
+	// Wrapped words as wide as their longest line (Trevor, 2026-10-23), measured again when
+	// anything that lays them out changes.
+	const fitWords = $derived(
+		fitLines(
+			label,
+			size,
+			appearance.reminderLabelWidth,
+			appearance.reminderLabelWrap,
+			appearance.reminderScale
+		)
 	);
 	const set = $derived(resolveIconSet(preferences.current, preferences.theme));
 	const weight = $derived(ICON_SETS.find((s) => s.id === set)?.weight ?? 'regular');
@@ -216,26 +227,25 @@
 					class="symbol"
 					data-symbol={symbol}
 					style:color={symbolColour && SYMBOL_COLOUR_LOOKS[symbolColour].colour}
-					><IconGlyph id={withWeight(symbol, weight)} {set} /></span
+					><IconGlyph
+						id={withWeight(symbol, symbolFill ? 'fill' : weight)}
+						set={symbolFill ? 'ph-fill' : set}
+					/></span
 				>{:else if symbol}<span class="symbol emoji" data-symbol={symbol} aria-hidden="true"
 					>{symbol}</span
 				>{/if}{:else if src}<img
 				{src}
-				data-plain={appearance.reminderIconColour === 'plain' || undefined}
 				alt=""
 				draggable="false"
+				referrerpolicy="no-referrer"
 				{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
 			/>{/if}
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
-		{#if label}<span class="label">{label}</span>{/if}
+		{#if label}<span class="label" {@attach fitWords}>{label}</span>{/if}
 	{/if}
 </button>
 
 <style>
-	/* Settings > Tokens' plain owner icon (Trevor, 2026-10-20). */
-	img[data-plain] {
-		filter: grayscale(1);
-	}
 	.reminder {
 		--rim: var(--reminder-face);
 		position: relative;
@@ -326,9 +336,10 @@
 	.emoji {
 		font-size: calc(var(--d) * 0.36);
 	}
+	/* Character icon size (Settings > Tokens). */
 	img {
-		width: 84%;
-		height: 84%;
+		width: calc(84% * var(--reminder-icon, 1));
+		height: calc(84% * var(--reminder-icon, 1));
 		margin-top: -16%;
 		object-fit: contain;
 		pointer-events: none;

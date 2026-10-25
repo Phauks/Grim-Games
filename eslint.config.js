@@ -11,6 +11,12 @@ import grim from './scripts/lint/plugin.js';
  * Files still reaching localStorage directly instead of #lib/ui/stored.ts; only ever shrinks
  * (component review, 2026-10-18).
  */
+/**
+ * Files still calling the phone's share sheet themselves instead of opening SharePanel; only
+ * ever shrinks (Trevor, 2026-10-23: every Share the same). Empty since the share audit.
+ */
+const SHARE_TODO = [];
+
 const LOCAL_STORAGE_TODO = [
 	'src/lib/features/account/profile-scripts.svelte.ts',
 	'src/lib/features/grimoire/board-looks.svelte.ts',
@@ -191,6 +197,20 @@ export default defineConfig(
 		}
 	},
 	{
+		// Every Share opens the one share screen (Trevor, 2026-10-23); only it calls
+		// navigator.share. SHARE_TODO only shrinks.
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
+		ignores: [
+			'src/lib/ui/share/SharePanel.svelte',
+			'src/**/*.test.ts',
+			'src/lib/features/spikes/**',
+			'src/routes/spikes/**',
+			...SHARE_TODO
+		],
+		plugins: { grim },
+		rules: { 'grim/share-panel': 'error' }
+	},
+	{
 		// Labelled text fields are the shared TextField, search boxes SearchField
 		// (component review, 2026-10-17; every older file moved 2026-10-18).
 		files: ['src/**/*.svelte'],
@@ -217,6 +237,19 @@ export default defineConfig(
 		ignores: ['src/lib/ui/primitives/**', 'src/lib/features/spikes/**', 'src/routes/spikes/**'],
 		plugins: { grim },
 		rules: { 'grim/close-button': 'error' }
+	},
+	{
+		// One icon per meaning, from the catalogue: an edit is always the pencil (Trevor,
+		// 2026-10-23). `owners` keeps a tool's icon on its own screen.
+		files: ['src/**/*.svelte', 'src/**/*.ts'],
+		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: {
+			'grim/icon-meaning': [
+				'error',
+				{ owners: { pen: ['src/lib/ui/scratch/'], eraser: ['src/lib/ui/scratch/'] } }
+			]
+		}
 	},
 	{
 		// Decision modals end in Cancel and Confirm, bottom right (Trevor, 2026-10-17).

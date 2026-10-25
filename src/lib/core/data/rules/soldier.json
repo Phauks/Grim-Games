@@ -1,0 +1,12 @@
+{
+	"protects": {
+		"who": "self",
+		"from": "demon"
+	},
+	"dayReminders": {
+		"none": "Demon protection only"
+	},
+	"deathCause": {
+		"none": "protects itself"
+	}
+}

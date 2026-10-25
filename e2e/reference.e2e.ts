@@ -1,16 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { menuButton } from './shell.ts';
 
 /** A character's row in the Reference table, the page's only view (Trevor, 2026-10-19). */
 const rowOf = (page: Page, id: string) =>
 	page.getByTestId('character-table').locator(`tr[data-character="${id}"]`);
 
-test('the menu opens the character reference; the footer no longer links it', async ({ page }) => {
+test('the menu opens the character reference', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Reference' })).toHaveCount(
-		0
-	);
-	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await menuButton(page).tap();
 	await page
 		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('link', { name: 'Character reference' })
@@ -412,7 +410,7 @@ test('reminder tokens show their copies and whether setup places them; the table
 
 	await search.fill('Washerwoman');
 	await expect(rowsOf('washerwoman')).toHaveText([
-		'TownsfolkPlaced at setup · Goes on: Townsfolk, not self',
+		'TownsfolkPlaced at setup · Goes on: Townsfolk',
 		'WrongPlaced at setup · Goes on: Players, not with Townsfolk'
 	]);
 

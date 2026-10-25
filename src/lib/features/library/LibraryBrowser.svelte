@@ -65,7 +65,9 @@
 		childFolders,
 		folderMoveProblem,
 		folderPath,
-		libraryKey
+		freeName,
+		libraryKey,
+		siblings
 	} from './library-labels.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
@@ -536,7 +538,15 @@
 
 	// ---- New folder, new collection ----
 
-	let folderNaming = $state(false);
+	/**
+	 * A new folder is made at once, named "New folder" (numbered when taken) and selected, so
+	 * Rename or F2 names it (Trevor, 2026-10-23: "just create, and name new folder").
+	 */
+	function newFolder() {
+		const name = freeName(siblings(labels, 'folders', folder), t('library.newFolder'));
+		const id = libraryLabels.add('folders', name, folder);
+		if (id) selectedKey = `folder:${id}`;
+	}
 	let collectionNaming = $state(false);
 	export function newCollection() {
 		collectionNaming = true;
@@ -566,7 +576,7 @@
 					bind:place
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
-					onnewfolder={() => (folderNaming = true)}
+					onnewfolder={newFolder}
 					onmove={move}
 					onrename={renameFolder}
 				/>
@@ -580,7 +590,7 @@
 					bind:place
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
-					onnewfolder={() => (folderNaming = true)}
+					onnewfolder={newFolder}
 					onmove={move}
 					onrename={renameFolder}
 				/>
@@ -718,7 +728,6 @@
 {/snippet}
 
 <!-- The new folder isn't opened (Trevor, 2026-10-18); it is listed in the folder made in. -->
-<FolderNameDialog bind:open={folderNaming} parent={folder} />
 <FolderNameDialog bind:open={renameOpen} folder={renaming} />
 
 <NameDialog
@@ -779,13 +788,13 @@
 	:global(.sided tr.selected) .pick {
 		box-shadow: inset 0.25rem 0 0 var(--accent);
 	}
-	/* The sidebar and pane stay in view beside the list, just below the app header (not in a
+	/* The sidebar and pane stay in view beside the list, at the top of the screen (not in a
 	   picker's dialog, which scrolls itself). */
 	.manager:not(.picking) .side,
 	.pane {
 		position: sticky;
-		top: calc(var(--tap-target) + env(safe-area-inset-top) + var(--space-2));
-		max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+		top: calc(var(--app-top) + var(--space-2));
+		max-height: calc(100dvh - var(--app-top) - var(--space-4));
 		min-width: 0;
 	}
 	.side {
@@ -793,7 +802,7 @@
 	}
 	.pane {
 		display: grid;
-		height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+		height: calc(100dvh - var(--app-top) - var(--space-4));
 	}
 	.files {
 		display: grid;

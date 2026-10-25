@@ -48,9 +48,11 @@ async function addStormFront(page: Page) {
 	return addScript(page);
 }
 
+/** New folder makes "New folder" at once and selects it; Rename then names it. */
 async function newFolder(page: Page, name: string) {
-	await page.getByRole('button', { name: 'New folder' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'New folder' });
+	await page.getByRole('button', { name: 'New folder', exact: true }).tap();
+	await page.getByRole('button', { name: 'Rename New folder' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Rename' });
 	await dialog.getByRole('textbox', { name: 'Name' }).fill(name);
 	await dialog.getByRole('textbox', { name: 'Name' }).press('Enter');
 	await expect(dialog).toHaveCount(0);
@@ -438,6 +440,20 @@ test('a script saved without a name is named after the time it was saved', async
 	).toBeVisible();
 });
 
+test('New folder makes "New folder" at once, selected, numbered when the name is taken', async ({
+	page
+}) => {
+	// Trevor (2026-10-23): "when creating a new folder, just create, and name new folder".
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'New folder', exact: true }).tap();
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(table(page).locator('tr.selected')).toContainText('New folder');
+	await page.getByRole('button', { name: 'New folder', exact: true }).tap();
+	await expect(table(page).locator('tr.selected')).toContainText('New folder 2');
+	await expect(row(page, /^New folder(?! 2)/)).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Rename New folder 2' })).toBeEnabled();
+});
+
 test('the sidebar’s folders, kinds and tags fold away, and folders are made there', async ({
 	page
 }) => {
@@ -445,7 +461,7 @@ test('the sidebar’s folders, kinds and tags fold away, and folders are made th
 	// button into left sidebar, in nav area".
 	await page.goto('/library');
 	const nav = sidebar(page);
-	await expect(nav.getByRole('button', { name: 'New folder' })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'New folder', exact: true })).toBeVisible();
 	await newFolder(page, 'Club night');
 	await expect(nav.getByRole('button', { name: /^Club night/ })).toBeVisible();
 

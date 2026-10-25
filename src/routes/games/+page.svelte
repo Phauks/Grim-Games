@@ -26,6 +26,8 @@
 	<ErrorBoundary area="grimoire">
 		<SavedGamesList bind:this={list} onCount={(n) => (count = n)} />
 	</ErrorBoundary>
+	<!-- Games joined as a player are listed on Join game, once (Trevor, 2026-10-23); no link
+	     to it here (Trevor, 2026-10-24), as the sidebar has one. -->
 </Page>
 
 <!-- Finished games stay in History; this clears only the games still being played. -->

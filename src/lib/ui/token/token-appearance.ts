@@ -77,6 +77,19 @@ export function parseScale(raw: unknown): number {
 }
 
 /**
+ * The character's icon inside a character token or reminder token, as a multiple of its
+ * usual share of the face (Trevor, 2026-10-23): 50% to 125% in 5% steps, so it stays
+ * inside the token.
+ */
+export const ICON_SCALE = { min: 0.5, max: 1.25, step: 0.05 } as const;
+
+function parseIconScale(raw: unknown): number {
+	if (typeof raw !== 'number' || !Number.isFinite(raw)) return 1;
+	const clamped = Math.min(ICON_SCALE.max, Math.max(ICON_SCALE.min, raw));
+	return (Math.round(clamped / ICON_SCALE.step) * 5) / 100;
+}
+
+/**
  * How wide a reminder's words may run, as a multiple of the reminder's width (Trevor,
  * 2026-10-17: "red he..."): 100% to 300% in 25% steps.
  */
@@ -93,6 +106,9 @@ export interface TokenAppearance {
 	colours: Partial<Record<TokenColour, string>>;
 	tokenScale: number;
 	reminderScale: number;
+	/** The character's icon on character tokens and on reminder tokens, on ICON_SCALE. */
+	tokenIconScale: number;
+	reminderIconScale: number;
 	/** The character's name curved along the bottom of grimoire tokens (Trevor, 2026-10-16). */
 	boardNames: boolean;
 	/**
@@ -135,9 +151,6 @@ export interface TokenAppearance {
 	 */
 	reminderHighlight: boolean;
 	reminderHighlightLook: ReminderHighlightLook;
-	/** The owning character's icon on reminder tokens (Trevor, 2026-10-20: on/off and colour). */
-	reminderIcon: boolean;
-	reminderIconColour: ReminderIconColour;
 }
 
 /** A ring round the reminder, a glow, or both, as a picked seat (SeatToken). */
@@ -150,8 +163,6 @@ export type ReminderHighlightLook = (typeof REMINDER_HIGHLIGHT_LOOKS)[number];
  * The icon in the alignment of the player who put the token down (red for a turned-evil good
  * player, Trevor 2026-10-16), in the character's usual alignment, or plain (unaligned).
  */
-export const REMINDER_ICON_COLOURS = ['player', 'character', 'plain'] as const;
-export type ReminderIconColour = (typeof REMINDER_ICON_COLOURS)[number];
 
 const oneOf = <T extends string>(choices: readonly T[], raw: unknown, fallback: T): T =>
 	choices.includes(raw as T) ? (raw as T) : fallback;
@@ -160,6 +171,8 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	colours: {},
 	tokenScale: 1,
 	reminderScale: 1,
+	tokenIconScale: 1,
+	reminderIconScale: 1,
 	boardNames: false,
 	nightLeaves: 'leaves',
 	nightBadgeScale: 1,
@@ -175,9 +188,7 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	setupFlower: false,
 	setupMovesName: false,
 	reminderHighlight: true,
-	reminderHighlightLook: 'ring',
-	reminderIcon: true,
-	reminderIconColour: 'player'
+	reminderHighlightLook: 'ring'
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -202,6 +213,8 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		colours,
 		tokenScale: parseScale(input.tokenScale),
 		reminderScale: parseScale(input.reminderScale),
+		tokenIconScale: parseIconScale(input.tokenIconScale),
+		reminderIconScale: parseIconScale(input.reminderIconScale),
 		// Earlier builds' `namePlacement` and `playerNamePlacement` are dropped: the character
 		// name always curves along the edge and the player name is always a badge.
 		boardNames: input.boardNames === true,
@@ -226,9 +239,11 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		setupFlower: input.setupFlower === true,
 		setupMovesName: input.setupMovesName === true,
 		reminderHighlight: input.reminderHighlight !== false,
-		reminderHighlightLook: oneOf(REMINDER_HIGHLIGHT_LOOKS, input.reminderHighlightLook, 'ring'),
-		reminderIcon: input.reminderIcon !== false,
-		reminderIconColour: oneOf(REMINDER_ICON_COLOURS, input.reminderIconColour, 'player')
+		reminderHighlightLook: oneOf(REMINDER_HIGHLIGHT_LOOKS, input.reminderHighlightLook, 'ring')
+		// Earlier builds' `reminderIcon` switch is dropped: the owner's icon always shows, and
+		// their `reminderIconColour` too: it is always the owner's alignment (Trevor, 2026-10-23).
+		// Earlier builds' `genericIconFill` switch is dropped: each ∞ token has its own
+		// (Trevor, 2026-10-23).
 	};
 }
 
@@ -248,6 +263,8 @@ export function tokenVariables(appearance: TokenAppearance): Record<CssVariable,
 	const variables: Record<CssVariable, string> = {
 		'--token-scale': String(appearance.tokenScale),
 		'--reminder-scale': String(appearance.reminderScale),
+		'--token-icon': String(appearance.tokenIconScale),
+		'--reminder-icon': String(appearance.reminderIconScale),
 		'--night-badge-scale': String(appearance.nightBadgeScale),
 		'--reminder-label-width': String(appearance.reminderLabelWidth),
 		'--reminder-label-wrap': appearance.reminderLabelWrap ? 'normal' : 'nowrap',

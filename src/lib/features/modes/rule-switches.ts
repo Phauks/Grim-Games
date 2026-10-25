@@ -8,19 +8,22 @@ import type { SpecialRule } from '#lib/core/modes/index.ts';
  */
 export interface RuleSwitch {
 	id: string;
-	/** i18n key of the switch's label. */
-	label: 'modes.switch.named';
+	/** i18n key of the switch's label, which may depend on the rule it belongs to. */
+	label: (ruleId: string) => SwitchLabel;
 	/** How the rule file plays without the switch being touched. */
 	default: boolean;
 	apply: (rule: SpecialRule, on: boolean) => SpecialRule;
 }
+
+export type SwitchLabel =
+	'modes.switch.namedOne' | 'modes.switch.namedMany' | 'modes.switch.threeAlive';
 
 /** The Storyteller's switch choices, by `ruleId:switchId`; a missing one is its default. */
 export type SwitchChoices = Readonly<Record<string, boolean>>;
 
 /** +1's two instructions, both Trevor's wording (2026-10-22); the first is the rule's own. */
 export const PLUS_ONE_NAMED = 'Tell the table which character from off the script is in play.';
-/** Our draft for Infinite Possibilities' named setting; hidden until approved. */
+/** Infinite Possibilities' named setting, our wording (approved 2026-10-23). */
 export const INFINITE_NAMED = 'Tell the table which characters from off the script are in play.';
 
 /**
@@ -31,7 +34,9 @@ export const INFINITE_NAMED = 'Tell the table which characters from off the scri
 const EXTRAS: readonly RuleSwitch[] = [
 	{
 		id: 'named',
-		label: 'modes.switch.named',
+		// Trevor (2026-10-23): "Storyteller Announces Character"; plural for Infinite
+		// Possibilities, which may hide several.
+		label: (ruleId) => (ruleId === 'plus-one' ? 'modes.switch.namedOne' : 'modes.switch.namedMany'),
 		default: false,
 		apply: (rule, on) => {
 			if (!on) return rule;
@@ -53,9 +58,45 @@ const EXTRAS: readonly RuleSwitch[] = [
 	}
 ];
 
+/** The Djinn's Bargain's 3-player limit, from the author's notes; our wording (approved). */
+export const DJINN_THREE_ALIVE =
+	'While only 3 players are alive, no one may choose to die this way.';
+
+/**
+ * The Djinn's Bargain's page (https://beardytas.com/garden-of-djinn/the-djinns-bargain/) bars
+ * the bargain while only 3 players live, a line its rule text leaves out (Trevor, 2026-10-23:
+ * "include the 3-player limit as a setting"). Off by default, as the rule text plays.
+ */
+const DJINN: readonly RuleSwitch[] = [
+	{
+		id: 'three-alive',
+		label: () => 'modes.switch.threeAlive',
+		default: false,
+		apply: (rule, on) => {
+			if (!on) return rule;
+			const [first, ...rest] = rule.parts.ruleChanges ?? [];
+			return {
+				...rule,
+				parts: {
+					...rule.parts,
+					// The prompt on a nomination is offered only while 4 or more live.
+					...(rule.parts.nominations
+						? { nominations: rule.parts.nominations.map((n) => ({ ...n, minAlive: 4 })) }
+						: {}),
+					ruleChanges: [
+						{ ...first, instructions: `${first?.instructions ?? ''} ${DJINN_THREE_ALIVE}`.trim() },
+						...rest
+					]
+				}
+			};
+		}
+	}
+];
+
 export const RULE_SWITCHES: Readonly<Record<string, readonly RuleSwitch[]>> = {
 	'plus-one': EXTRAS,
-	'infinite-possibilities': EXTRAS
+	'infinite-possibilities': EXTRAS,
+	'djinns-bargain': DJINN
 };
 
 /** Whether a rule's switch is on. */

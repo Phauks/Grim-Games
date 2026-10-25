@@ -1,3 +1,34 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"reminderTargets": {
+		"Tea Party Tonight": {
+			"seat": "self",
+			"note": "On the Hatter when they die."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "changes Minion and Demon characters"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s tea party.",
+		"relocates": "lets players change characters"
+	}
 }

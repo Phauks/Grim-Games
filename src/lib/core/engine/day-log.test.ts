@@ -162,6 +162,47 @@ describe('Execute', () => {
 		expect(after.game.today.entries[0]).toMatchObject({ kind: 'execution', died: false });
 	});
 
+	it("logs a player the Devil's Advocate chose as executed and alive", () => {
+		// https://wiki.bloodontheclocktower.com/Devil%27s_Advocate: the chosen player survives
+		// execution tomorrow.
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[3],
+			reminder: { characterId: 'devilsadvocate', label: 'Survives Execution' }
+		});
+		expect(warned(s, ctx, { type: 'Execute', seatId: seats[3] })).toEqual(['survives-execution']);
+		const after = run(s, ctx, { type: 'Execute', seatId: seats[3] });
+		expect(after.game.seats[seats[3]].dead).toBe(false);
+		expect(after.game.today.entries[0]).toMatchObject({
+			kind: 'execution',
+			died: false,
+			savedBy: { characterId: 'devilsadvocate' }
+		});
+		// The Storyteller rules otherwise: they die.
+		const ruled = run(s, ctx, { type: 'Execute', seatId: seats[3], dies: true });
+		expect(ruled.game.seats[seats[3]].dead).toBe(true);
+		// The token is no protection from the Demon.
+		const imp = run(s, ctx, { type: 'SetDead', seatId: seats[3], dead: true, cause: 'demon' });
+		expect(imp.game.seats[seats[3]].dead).toBe(true);
+	});
+
+	it("does not let the Innkeeper's tonight-only protection stop an execution", () => {
+		// https://wiki.bloodontheclocktower.com/Innkeeper: "can't die tonight".
+		const { session, ctx, seats } = setup();
+		const s = run(
+			session,
+			ctx,
+			{
+				type: 'AddReminder',
+				seatId: seats[3],
+				reminder: { characterId: 'innkeeper', label: 'Safe' }
+			},
+			{ type: 'Execute', seatId: seats[3] }
+		);
+		expect(s.game.seats[seats[3]].dead).toBe(true);
+	});
+
 	it('warns about a second execution in one day', () => {
 		const { session, ctx, seats } = setup();
 		const s = run(session, ctx, { type: 'Execute', seatId: seats[3] });
@@ -336,6 +377,23 @@ describe('DayNote', () => {
 				guesses: [{ seatId: seats[0], characterId: 'nobody' }]
 			})
 		).toBe('unknown-character');
+	});
+
+	// https://wiki.bloodontheclocktower.com/Juggler: up to 5 guesses, a player more than once.
+	it('keeps a player guessed as several characters, and warns past the Juggler’s 5', () => {
+		const { session, ctx, seats } = setup();
+		const pair = (seat: number, characterId: string) => ({ seatId: seats[seat], characterId });
+		const five = [pair(0, 'imp'), pair(0, 'baron'), pair(1, 'imp'), pair(2, 'imp'), pair(3, 'imp')];
+		const note = (guesses: typeof five): Command => ({
+			type: 'DayNote',
+			characterId: 'juggler',
+			text: '',
+			guesses
+		});
+		const s = run(session, ctx, note(five));
+		expect(s.game.today.entries[0]).toMatchObject({ kind: 'note', guesses: five });
+		expect(warned(session, ctx, note(five))).toEqual([]);
+		expect(warned(session, ctx, note([...five, pair(4, 'imp')]))).toEqual(['too-many-guesses']);
 	});
 
 	it('skips an empty note: nothing requires one', () => {

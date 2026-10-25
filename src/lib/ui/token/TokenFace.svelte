@@ -79,7 +79,7 @@
 
 <!-- Drawn at the size given: the Character token size setting only sizes the board's seats
      (Trevor, 2026-10-19), which pass it in. -->
-<span class="token" role="img" aria-label={label} style:--token-size="{size}px">
+<span class="token" data-token-face role="img" aria-label={label} style:--token-size="{size}px">
 	<svg viewBox="0 0 100 100" aria-hidden="true">
 		<circle class="face" cx="50" cy="50" r="48" />
 	</svg>
@@ -90,6 +90,7 @@
 			width={size}
 			height={size}
 			loading="lazy"
+			referrerpolicy="no-referrer"
 			{@attach iconFallback(fallback)}
 		/>{/if}
 	<!-- Leaves are drawn over the icon, so they always show. -->
@@ -197,12 +198,14 @@
 		stroke-width: 1;
 		opacity: 0.6;
 	}
+	/* Character icon size (Settings > Tokens) scales it about the middle. */
 	img {
 		position: absolute;
-		left: 13%;
-		top: 13%;
-		width: 74%;
-		height: 74%;
+		left: 50%;
+		top: 50%;
+		width: calc(74% * var(--token-icon, 1));
+		height: calc(74% * var(--token-icon, 1));
+		translate: -50% -50%;
 		object-fit: contain;
 	}
 	.name {

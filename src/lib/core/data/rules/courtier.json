@@ -1,0 +1,86 @@
+{
+	"reminderTargets": {
+		"Drunk 1": {
+			"seat": "any",
+			"note": "The player of the in-play character the Courtier named, on the first night of drunkenness."
+		},
+		"Drunk 2": {
+			"seat": "any",
+			"note": "Swapped onto the same drunk player on the second night."
+		},
+		"Drunk 3": {
+			"seat": "any",
+			"note": "Swapped onto the same drunk player on the third night."
+		},
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Courtier once the drunkenness has ended."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"none": "drunkenness"
+	},
+	"reminderMovement": {
+		"fixed": ["Drunk 3", "Drunk 2", "Drunk 1", "No Ability"],
+		"why": "The chosen character is drunk for three days; the choice is made once."
+	},
+	"reminderPlaceholders": {
+		"note": "The chosen character's player is drunk for 3 nights and 3 days; the ability is used.",
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk 3",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Drunk 3",
+						"action": "place"
+					}
+				]
+			},
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
+	},
+	"nightText": {
+		"first": {
+			"full": {
+				"text": "The Courtier might choose a character. If so, that character’s player is drunk: mark them *DRUNK 3*, and mark the Courtier *NO ABILITY*.",
+				"reason": "Says which token goes on whom."
+			}
+		},
+		"other": {
+			"full": {
+				"text": "Count down an existing drunk token: *DRUNK 3* becomes *DRUNK 2*, *DRUNK 2* becomes *DRUNK 1*, *DRUNK 1* comes off. The Courtier might choose a character. If so, mark that character’s player *DRUNK 3*, and the Courtier *NO ABILITY*.",
+				"reason": "Says how the drunk tokens count down over 3 nights and days."
+			}
+		}
+	}
+}

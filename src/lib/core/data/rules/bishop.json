@@ -1,0 +1,39 @@
+{
+	"reminderTargets": {
+		"Nominate Evil": {
+			"seat": "self",
+			"alignment": "good",
+			"note": "On a good Bishop each dawn until an evil player is nominated."
+		},
+		"Nominate Good": {
+			"seat": "self",
+			"alignment": "evil",
+			"note": "On an evil Bishop each dawn until a good player is nominated."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"impairable": true,
+		"reminders": [
+			{
+				"group": "nomination",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is alive"
+					}
+				]
+			}
+		]
+	},
+	"deathCause": {
+		"none": "nominations"
+	},
+	"reminderMovement": {
+		"why": "Placed on a new choice each day."
+	}
+}

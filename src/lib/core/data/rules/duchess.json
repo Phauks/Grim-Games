@@ -1,0 +1,40 @@
+{
+	"reminderTargets": {
+		"Visitor": {
+			"seat": "any",
+			"note": "Two of the three players who visited the Duchess today."
+		},
+		"False Info": {
+			"seat": "any",
+			"notWithLabel": "Visitor",
+			"note": "The third visitor, who gets false info."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is taking visitors"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"why": "Placed on new visitors each day."
+	}
+}

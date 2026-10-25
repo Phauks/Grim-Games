@@ -21,6 +21,7 @@
 	import Spinner from '#lib/ui/primitives/Spinner.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import ScriptSourceButton from './ScriptSourceButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { compareVersions, scriptPageUrl } from './botcscripts-api.ts';
 	import { fetchRemote, isRemote, remotePreviews } from './remote-previews.svelte.ts';
@@ -217,9 +218,9 @@
 		await goto(resolve('/new'));
 	}
 
-	const facts = $derived.by((): ScriptFact[] => {
+	/** Where the shown script came from, and its own page there (Trevor, 2026-10-16). */
+	const origin = $derived.by(() => {
 		const row = shownListing?.row;
-		const none = t('common.none');
 		const rowSource: ScriptSource | undefined =
 			row?.source === 'botc' && row.number !== undefined
 				? { kind: 'botcscripts', scriptId: row.number, version: row.version ?? '' }
@@ -228,19 +229,25 @@
 		// already shows it is saved); a Library row shows where its script came from.
 		const fromLibrary = !row || row.source === 'recent' || row.source === 'profile';
 		const source = fromLibrary ? (shownSaved?.source ?? rowSource) : rowSource;
-		// The Source opens the script's own page where it came from (Trevor, 2026-10-16).
-		const page = (source && sourcePage(source)) ?? row?.page;
+		const page = (source && sourcePage(source, shownSaved?.edition)) ?? row?.page;
+		const label = source
+			? describeSource(source)
+			: row
+				? row.note || t(`scripts.sourceLabel.${row.source}`)
+				: undefined;
+		return { page, label };
+	});
+
+	const facts = $derived.by((): ScriptFact[] => {
+		const row = shownListing?.row;
+		const none = t('common.none');
 		return [
 			{ label: t('scripts.current.author'), value: row ? row.author || none : none },
 			{ label: t('scripts.column.type'), value: row ? t(`scripts.kind.${row.kind}`) : none },
 			{
 				label: t('scripts.current.source'),
-				value: source
-					? describeSource(source)
-					: row
-						? row.note || t(`scripts.sourceLabel.${row.source}`)
-						: none,
-				href: page
+				value: origin.label ?? none,
+				href: origin.page
 			}
 		];
 	});
@@ -345,6 +352,7 @@
 			logo={shownListing?.row.logo}
 			target={shareTarget}
 		/>
+		<ScriptSourceButton page={origin.page} source={origin.label} />
 		{@render extraActions?.()}
 		<ReportButton name={preview?.name} disabled={!preview} />
 	{/snippet}

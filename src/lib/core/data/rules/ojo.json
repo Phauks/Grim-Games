@@ -1,0 +1,35 @@
+{
+	"kills": {
+		"by": "demon"
+	},
+	"reminderTargets": {
+		"Dead": {
+			"seat": "any",
+			"note": "The player holding the named character, or a player the Storyteller picks when it is not in play."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"none": "night kills"
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"why": "Marks tonight’s deaths or attacks, placed anew each time."
+	},
+	"reminderPlaceholders": {
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "Dead",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

@@ -16,6 +16,8 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import ModeValue from './ModeValue.svelte';
+	import RuleHeader from './RuleHeader.svelte';
+	import { spawnedBy } from './spawned-by.ts';
 	import { readSpecterAbility, writeSpecterAbility, type SpecterAbility } from './specters.ts';
 
 	/**
@@ -38,6 +40,11 @@
 		mode.parts.daySteps?.find(
 			(s): s is Extract<DayStep, { kind: 'spectator-vote' }> => s.kind === 'spectator-vote'
 		)
+	);
+
+	/** The mode or rules that give the spectators a vote, shown at the top. */
+	const spawning = $derived(
+		spawnedBy(game.gameId, (p) => !!p.daySteps?.some((s) => s.kind === 'spectator-vote'))
 	);
 
 	let data = $state.raw<GameData>();
@@ -117,6 +124,7 @@
 	focusFirstField={false}
 >
 	<div class="sheet" data-testid="specters-sheet">
+		<RuleHeader rules={spawning} />
 		<section class="group" aria-labelledby="specters-ability-title">
 			<h3 id="specters-ability-title">{t('modes.specters.ability')}</h3>
 			<Select
@@ -136,7 +144,7 @@
 			{#if ability.kind === 'character'}
 				<div class="character">
 					<CharacterBadge characterId={ability.characterId} />
-					<Button icon="rename" disabled={!data} onclick={() => (picking = true)}>
+					<Button icon="edit" disabled={!data} onclick={() => (picking = true)}>
 						{t('modes.specters.pickCharacter')}
 					</Button>
 				</div>

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	adjust,
 	dayTimer,
+	elapsed,
 	formatClock,
 	isFresh,
 	isOver,
@@ -56,6 +57,19 @@ describe('day timer', () => {
 		const running = start(dayTimer(4), 0);
 		expect(adjust(running, -10, 100_000).durationMs).toBe(100_000);
 		expect(remaining(adjust(running, -10, 100_000), 100_000)).toBe(0);
+	});
+
+	it('counting up, changes the time used by 30 seconds, never below 0:00', () => {
+		const t = dayTimer(4);
+		expect(elapsed(adjust(t, 1, 0, 'up'), 0)).toBe(30_000);
+		expect(adjust(t, 1, 0, 'up').durationMs).toBe(t.durationMs);
+		expect(elapsed(adjust(t, -1, 0, 'up'), 0)).toBe(0);
+		const running = start(t, 0, 'up');
+		const later = adjust(running, 2, 10_000, 'up');
+		expect(isRunning(later)).toBe(true);
+		expect(elapsed(later, 10_000)).toBe(70_000);
+		expect(elapsed(later, 15_000)).toBe(75_000);
+		expect(elapsed(adjust(running, -1, 10_000, 'up'), 10_000)).toBe(0);
 	});
 
 	it('shows m:ss, rounding up', () => {

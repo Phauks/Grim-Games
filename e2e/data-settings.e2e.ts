@@ -1,9 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 // Trevor (2026-10-16): the Data section is a table of what is stored, by size; chosen rows clear.
 
 async function openData(page: Page) {
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })

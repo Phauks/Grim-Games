@@ -1,3 +1,12 @@
 {
-	"actsWhenDead": true
+	"actsWhenDead": true,
+	"onDeath": {
+		"by": "any"
+	},
+	"dayReminders": {
+		"none": "triggers on night death"
+	},
+	"deathCause": {
+		"none": "info when it dies"
+	}
 }

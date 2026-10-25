@@ -1,0 +1,40 @@
+{
+	"reminderTargets": {
+		"Aligned": {
+			"seat": "any",
+			"neighbour": {
+				"of": "Aligned"
+			},
+			"note": "Each of the two neighbouring players who share an alignment.",
+			"ambiguous": "The How to Run section never mentions an ALIGNED token; it only places REGISTER FALSELY? between the pair."
+		},
+		"Register Falsely?": {
+			"seat": "any",
+			"withLabel": "Aligned",
+			"note": "One of the Revolutionary pair; removed once that player has registered falsely."
+		}
+	},
+	"setupPrep": {
+		"reminders": [
+			{
+				"label": "Register Falsely?",
+				"text": "Choose 2 neighbours of the same alignment as the Revolutionaries: put [Register Falsely?] between them",
+				"target": {
+					"choose": "any",
+					"choice": "between 2 neighbours of the same alignment"
+				},
+				"reason": "Marks the 2 Revolutionaries"
+			}
+		]
+	},
+	"dayReminders": {
+		"none": "registration only"
+	},
+	"deathCause": {
+		"none": "registration"
+	},
+	"reminderMovement": {
+		"fixed": ["Register Falsely?", "Aligned"],
+		"why": "The pair of neighbours is chosen at setup."
+	}
+}

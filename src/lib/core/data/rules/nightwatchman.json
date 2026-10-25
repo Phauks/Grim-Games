@@ -1,0 +1,43 @@
+{
+	"reminderTargets": {
+		"No Ability": {
+			"seat": "self",
+			"note": "On the Nightwatchman once they have used their ability."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens mark what a player chooses at night, placed when they choose"
+	},
+	"dayReminders": {
+		"none": "night action"
+	},
+	"deathCause": {
+		"none": "info"
+	},
+	"reminderMovement": {
+		"fixed": ["No Ability"],
+		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"reminderPlaceholders": {
+		"first": [
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		],
+		"other": [
+			{
+				"tokens": [
+					{
+						"label": "No Ability",
+						"action": "place"
+					}
+				]
+			}
+		]
+	}
+}

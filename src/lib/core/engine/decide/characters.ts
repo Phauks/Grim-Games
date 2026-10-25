@@ -1,0 +1,182 @@
+import { defaultAlignment } from '#lib/core/data/index.ts';
+import { OVERRIDE_FIELDS, isOnScript, registersAsDead } from '#lib/core/model/index.ts';
+import type { GameEvent } from '../events.ts';
+import {
+	allowsDuplicates,
+	characterOf,
+	deathCause,
+	refuse,
+	seatOf,
+	seatableCharacter,
+	type Deciders
+} from './shared.ts';
+
+/** Characters on seats, alignment, death, ghost votes, overrides and Fabled or Loric in play. */
+export const CHARACTERS_DECIDERS: Deciders<
+	| 'AssignCharacter'
+	| 'ClearCharacter'
+	| 'SetAlignment'
+	| 'SetDead'
+	| 'SetDeathCause'
+	| 'SpendGhostVote'
+	| 'RestoreGhostVote'
+	| 'SetOverride'
+	| 'ClearOverride'
+	| 'AddRuleCharacter'
+	| 'RemoveRuleCharacter'
+> = {
+	AssignCharacter(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		const character = seatableCharacter(ctx, command.characterId);
+		if (character.type !== 'traveller' && !isOnScript(game.script, character.id)) {
+			warn('not-on-script', `${character.name} is not on the script`, [character.id]);
+		}
+		const elsewhere = game.seating.some(
+			(id) => id !== seat.seatId && game.seats[id].characterId === character.id
+		);
+		if (elsewhere && !allowsDuplicates(character)) {
+			warn('already-in-play', `${character.name} is already on another seat`);
+		}
+		const typeDefault = defaultAlignment(character.type);
+		let alignment = command.alignment;
+		if (alignment === undefined && seat.characterId !== undefined) {
+			alignment = seat.alignment;
+			if (alignment !== undefined && typeDefault !== undefined && alignment !== typeDefault) {
+				warn('kept-alignment', `kept ${alignment}: a character change does not change alignment`);
+			}
+		}
+		alignment ??= typeDefault;
+		// A Traveller's alignment may be chosen later: the first night step asks for it
+		// (Trevor, 2026-10-16).
+		const assigned: GameEvent = {
+			type: 'CharacterAssigned',
+			seatId: seat.seatId,
+			characterId: character.id
+		};
+		if (alignment !== undefined) assigned.alignment = alignment;
+		return [assigned];
+	},
+
+	ClearCharacter(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (seat.characterId === undefined) {
+			warn('no-change', 'the seat has no character');
+			return [];
+		}
+		return [{ type: 'CharacterCleared', seatId: seat.seatId }];
+	},
+
+	SetAlignment(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (seat.alignment === command.alignment) {
+			warn('no-change', `already ${command.alignment}`);
+			return [];
+		}
+		return [{ type: 'AlignmentSet', seatId: seat.seatId, alignment: command.alignment }];
+	},
+
+	SetDead(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		const cause = command.cause === undefined ? undefined : deathCause(ctx, command.cause);
+		if (!command.dead && cause !== undefined) {
+			warn('cause-ignored', 'a living player has no cause of death');
+		}
+		// Every death has a cause (Trevor, 2026-10-16): still allowed, as an override.
+		if (command.dead && cause === undefined && !seat.dead) {
+			warn('no-cause', 'every death has a cause; record one');
+		}
+		if (seat.dead === command.dead) {
+			// Marking a dead player dead again with a new cause records the cause.
+			if (command.dead && cause !== undefined && cause !== seat.deathCause) {
+				return [{ type: 'DeathCauseSet', seatId: seat.seatId, cause }];
+			}
+			warn('no-change', command.dead ? 'already dead' : 'already alive');
+			return [];
+		}
+		const death: GameEvent = { type: 'DeathSet', seatId: seat.seatId, dead: command.dead };
+		if (command.dead && cause !== undefined) death.cause = cause;
+		const events: GameEvent[] = [death];
+		// A player who comes back to life has their vote again.
+		if (!command.dead && seat.ghostVoteUsed) {
+			events.push({ type: 'GhostVoteRestored', seatId: seat.seatId });
+		}
+		return events;
+	},
+
+	SetDeathCause(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		const cause = command.cause === undefined ? undefined : deathCause(ctx, command.cause);
+		if (cause === seat.deathCause) {
+			warn('no-change', cause === undefined ? 'no cause is recorded' : `already ${cause}`);
+			return [];
+		}
+		if (!seat.dead) refuse('not-dead', 'only a dead player has a cause of death');
+		const event: GameEvent = { type: 'DeathCauseSet', seatId: seat.seatId };
+		if (cause !== undefined) event.cause = cause;
+		return [event];
+	},
+
+	SpendGhostVote(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (seat.ghostVoteUsed) {
+			warn('no-change', 'the ghost vote is already used');
+			return [];
+		}
+		if (!registersAsDead(game, seat.seatId)) {
+			warn('ghost-vote-while-alive', 'living players do not use their ghost vote');
+		}
+		return [{ type: 'GhostVoteSpent', seatId: seat.seatId }];
+	},
+
+	RestoreGhostVote(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (!seat.ghostVoteUsed) {
+			warn('no-change', 'the ghost vote is not used');
+			return [];
+		}
+		return [{ type: 'GhostVoteRestored', seatId: seat.seatId }];
+	},
+
+	SetOverride(game, command, ctx) {
+		const seat = seatOf(game, command.seatId);
+		const { override } = command;
+		if (!(OVERRIDE_FIELDS as readonly string[]).includes(override.field)) {
+			refuse('unknown-override', `no override ${String(override.field)}`);
+		}
+		if (override.field === 'character') characterOf(ctx, override.value);
+		const copy = { ...override };
+		const note = copy.note?.trim();
+		if (note) copy.note = note;
+		else delete copy.note;
+		return [{ type: 'OverrideSet', seatId: seat.seatId, override: copy }];
+	},
+
+	ClearOverride(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (!seat.overrides.some((o) => o.field === command.field)) {
+			warn('no-change', `no ${command.field} override`);
+			return [];
+		}
+		return [{ type: 'OverrideCleared', seatId: seat.seatId, field: command.field }];
+	},
+
+	AddRuleCharacter(game, command, ctx, warn) {
+		const character = characterOf(ctx, command.characterId);
+		if (character.type !== 'fabled' && character.type !== 'loric') {
+			refuse('not-rule-character', `${character.name} is not a Fabled or Loric`);
+		}
+		if (game.ruleCharacters.includes(character.id)) {
+			warn('no-change', `${character.name} is already in play`);
+			return [];
+		}
+		return [{ type: 'RuleCharacterAdded', characterId: character.id }];
+	},
+
+	RemoveRuleCharacter(game, command, ctx, warn) {
+		if (!game.ruleCharacters.includes(command.characterId)) {
+			warn('no-change', `${command.characterId} is not in play`);
+			return [];
+		}
+		return [{ type: 'RuleCharacterRemoved', characterId: command.characterId }];
+	}
+};

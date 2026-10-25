@@ -89,13 +89,23 @@ export function recommendedTravellers(script: Script, characters: CharacterLooku
 
 /**
  * The orphan warning: a seat whose character token is not on the game's script (Travellers
- * never are, so they are not orphans).
+ * never are, so they are not orphans), nor put in play by a special rule (`allowed`: +1,
+ * Infinite Possibilities; Trevor, 2026-10-23).
  */
-export function isOrphan(seat: Seat, script: Script, characters: CharacterLookup): boolean {
+export function isOrphan(
+	seat: Seat,
+	script: Script,
+	characters: CharacterLookup,
+	allowed: ReadonlySet<CharacterId> = new Set()
+): boolean {
 	if (seat.characterId === undefined) return false;
 	const character = characters.get(seat.characterId);
 	if (!character) return true;
-	return character.type !== 'traveller' && !isOnScript(script, seat.characterId);
+	return (
+		character.type !== 'traveller' &&
+		!isOnScript(script, seat.characterId) &&
+		!allowed.has(seat.characterId)
+	);
 }
 
 /**
@@ -298,7 +308,8 @@ const MISS_WORDS: Record<TargetMiss, string> = {
 	life: 'it goes on a player who is alive or dead, not this one',
 	neighbour: 'this player is not a neighbour it can go on',
 	'with-label': 'it needs another reminder on the same player',
-	'not-with-label': 'another reminder on this player rules it out'
+	'not-with-label': 'another reminder on this player rules it out',
+	'last-night': 'the ability says different to last night'
 };
 
 /** Checks that need to know who the player is. */
@@ -312,9 +323,10 @@ export function seatMisses(
 	game: Game,
 	reminder: Reminder,
 	seatId: SeatId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	atDawn?: Game
 ): TargetMiss[] {
-	const misses = reminderTargetMisses(game, reminder, seatId, characters);
+	const misses = reminderTargetMisses(game, reminder, seatId, characters, atDawn);
 	return game.seats[seatId]?.characterId === undefined
 		? misses.filter((m) => !NEEDS_CHARACTER.includes(m))
 		: misses;
@@ -329,11 +341,12 @@ export function reminderFitWarning(
 	game: Game,
 	reminder: Reminder,
 	seatId: SeatId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	atDawn?: Game
 ): string | undefined {
-	const misses = seatMisses(game, reminder, seatId, characters);
+	const misses = seatMisses(game, reminder, seatId, characters, atDawn);
 	if (misses.length === 0) return undefined;
 	const why = misses.map((m) => MISS_WORDS[m]).join('; ');
-	const note = targetRule(reminder)?.note;
+	const note = targetRule(reminder, characters)?.note;
 	return `Not a usual place for it: ${why}.${note ? ` ${note}` : ''}`;
 }

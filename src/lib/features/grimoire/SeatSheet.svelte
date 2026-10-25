@@ -1,17 +1,23 @@
 <script lang="ts">
+	import AlignmentPill from './AlignmentPill.svelte';
+	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
+	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
+	import NominationChooser from './NominationChooser.svelte';
 	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import { setupReminders, validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
+	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
-	import { abilityState, seatNominations, type ImpairmentReason } from '#lib/core/rules/index.ts';
+	import {
+		abilityState,
+		mayNominate,
+		seatNominations,
+		votesWithoutToken,
+		type ImpairmentReason
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import ReminderOrigin from './ReminderOrigin.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -23,7 +29,6 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import {
-		causeFlagText,
 		causeLabel,
 		isOrphan,
 		placingAlignment,
@@ -32,19 +37,23 @@
 		tableCheck
 	} from './board.ts';
 	import CauseName from './CauseName.svelte';
+	import SeatStatusDialog from './SeatStatusDialog.svelte';
+	import SeatMenu from './SeatMenu.svelte';
+	import SeatReminderMenu from './SeatReminderMenu.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ReminderPicker from './ReminderPicker.svelte';
-	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { seatChanges } from './history.ts';
 	import DeadBadge from '#lib/ui/seating/DeadBadge.svelte';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import { isGeneric, tokenLabel } from './reminders.ts';
-	import ReminderNoteField from './ReminderNoteField.svelte';
+	import { tokenLabel } from './reminders.ts';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
+	import NoteSheet from '#lib/features/day/NoteSheet.svelte';
+	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
+	import { dayClaim } from '#lib/core/rules/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 
 	interface Props {
@@ -55,11 +64,29 @@
 		onDraw?: (seatId: SeatId) => void;
 		/** Edits this player's notes, which live in the board's Notes sheet. */
 		onNotes?: (seatId: SeatId) => void;
+		/** A nomination was recorded or changed: special rules may act on it (NominationAsk). */
+		onNominated?: (nomination: { nominator: SeatId; nominee: SeatId }) => void;
+		/**
+		 * Executed from a living seat's status during the day: the same as the day's Execution
+		 * (Trevor, 2026-10-23), so the board asks and ends the day. False when it isn't the day
+		 * and the board left it to the seat, which logs the execution only.
+		 */
+		onExecute?: (seatId: SeatId) => boolean;
 	}
 
-	let { open = $bindable(), grimoire, seatId, onDraw, onNotes }: Props = $props();
+	let {
+		open = $bindable(),
+		grimoire,
+		seatId,
+		onDraw,
+		onNotes,
+		onNominated,
+		onExecute
+	}: Props = $props();
 
 	const game = $derived(grimoire.game);
+	/** Characters a special rule put in play from off the script, not flagged (+1). */
+	const offScriptOk = $derived(allowedOffScriptIn(game.gameId));
 	const characters = $derived(grimoire.open.characters);
 	const seat = $derived(seatId === undefined ? undefined : game.seats[seatId]);
 	const number = $derived(seatId === undefined ? 0 : game.seating.indexOf(seatId) + 1);
@@ -145,7 +172,8 @@
 	const abilityLine = $derived.by((): LinePart[] => {
 		if (!seat || !character) return [{ text: 'None' }];
 		const parts: LinePart[] = [];
-		if (isOrphan(seat, game.script, characters)) parts.push({ text: 'Not on the script' });
+		if (isOrphan(seat, game.script, characters, offScriptOk))
+			parts.push({ text: 'Not on the script' });
 		if (really) parts.push({ text: 'Is the ', characterId: really.id });
 		// Only what the sheet shows nowhere else (Trevor, 2026-10-18): a reminder on this seat
 		// is in Reminders below, and death is in Status.
@@ -280,63 +308,29 @@
 
 	// ── Status: Alive, or dead with its cause, in one list (Trevor, 2026-10-16) ──
 	let causeOpen = $state(false);
-	let reviveOpen = $state(false);
 	const statusText = $derived(
 		seat?.dead ? `Dead: ${causeLabel(seat.deathCause, characters, traveller)}` : 'Alive'
 	);
-	// Only the causes that fit this player (core, which no longer offers "Something else").
-	const causes = $derived(seatId && open ? validDeathCauses(game, seatId, characters) : []);
-	let flagged = $state<ValidDeathCause | undefined>();
-	let flagOpen = $state(false);
-
-	// A death always has a cause (Trevor, 2026-10-16: "dead, no cause" does not exist). Alive
-	// brings a dead player back, after a confirm that states both sides.
-	function pickAlive() {
-		causeOpen = false;
-		if (seat?.dead) reviveOpen = true;
-	}
-	function revive() {
-		reviveOpen = false;
-		if (seatId) grimoire.run({ type: 'SetDead', seatId, dead: false });
-	}
-
-	function setCause(cause: DeathCause) {
-		causeOpen = false;
-		if (!seat || !seatId) return;
-		if (seat.dead) grimoire.run({ type: 'SetDeathCause', seatId, cause });
-		// An execution or exile is also today's day log entry (the Undertaker, game end, stats),
-		// as the day's Players section logged it before it went (Trevor, 2026-10-20).
-		else if (cause === 'execution') grimoire.run({ type: 'Execute', seatId });
-		else if (cause === 'exile') grimoire.run({ type: 'Exile', seatId });
-		else grimoire.run({ type: 'SetDead', seatId, dead: true, cause });
-	}
 
 	// ── Reminders and seats ──
 	let moving = $state<ReminderId | undefined>();
 	let moveOpen = $state(false);
 	/** Which of the seat's nominations is being chosen (Track nominations). */
-	let nominating = $state<'made' | 'received'>();
-	const nominations = $derived(seatId === undefined ? {} : seatNominations(game, seatId));
-	/** Records, changes or clears the seat's nomination, in the game's day log. */
-	function nominate(other: SeatId | undefined) {
-		const side = nominating;
-		nominating = undefined;
-		if (!side || seatId === undefined) return;
-		const entry = side === 'made' ? nominations.made : nominations.received;
-		if (!other) {
-			if (entry) grimoire.run({ type: 'RemoveDayEntry', entryId: entry.entryId });
-			return;
-		}
-		const pair =
-			side === 'made'
-				? { nominator: seatId, nominee: other }
-				: { nominator: other, nominee: seatId };
-		grimoire.run(
-			entry
-				? { type: 'EditNomination', entryId: entry.entryId, ...pair }
-				: { type: 'Nominate', ...pair }
-		);
-	}
+	let nominating = $state<{ seatId: SeatId; side: 'made' | 'received' }>();
+	const nominations = $derived(
+		seatId === undefined ? { allMade: [] } : seatNominations(game, seatId)
+	);
+	/**
+	 * Dead but voting with no vote token (the Banshee killed by the Demon, `afterDeath`): no
+	 * ghost vote to spend, so the row says how many votes they have instead.
+	 */
+	const tokenFreeVotes = $derived(
+		seatId === undefined ? undefined : votesWithoutToken(game, seatId, characters)
+	);
+	/** The dead may not nominate, unless their character says so; a row already set stays editable. */
+	const canNominate = $derived(
+		seatId !== undefined && (!!nominations.made || mayNominate(game, seatId, characters))
+	);
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let menuOpen = $state(false);
 	let reminderMenuOpen = $state(false);
@@ -346,28 +340,6 @@
 		reminderMenuOpen = true;
 	}
 	const movingReminder = $derived(seat?.reminders.find((r) => r.reminderId === moving));
-	/** A setup reminder can go back to the Setup reminders tray (Trevor, 2026-10-16). */
-	const fromSetup = $derived.by(() => {
-		const r = movingReminder;
-		if (!r || !seat || !seatId) return false;
-		// Suggested at setup once this token is off the board again.
-		const without = {
-			...game,
-			seats: {
-				...game.seats,
-				[seatId]: { ...seat, reminders: seat.reminders.filter((x) => x !== r) }
-			}
-		};
-		return setupReminders(without, characters).some(
-			(s) => s.characterId === r.characterId && s.label === r.label
-		);
-	});
-	/** Runs a menu action after closing the menu. */
-	function fromMenu(action: () => void) {
-		menuOpen = false;
-		reminderMenuOpen = false;
-		action();
-	}
 	let removeOpen = $state(false);
 	let showOpen = $state(false);
 	let savantOpen = $state(false);
@@ -376,6 +348,16 @@
 		seat?.characterId === 'savant' && preferences.current.assistance.savantInfo
 	);
 	let remindersOpen = $state(false);
+	/** A player's claim in town (L56): Guesses or Statement, as on their day row. */
+	const claim = $derived.by(() => {
+		const id = seat?.characterId;
+		const c = id ? dayClaim(id, grimoire.open.characters) : undefined;
+		return preferences.current.assistance.playerClaims && (c === 'guesses' || c === 'statement')
+			? c
+			: undefined;
+	});
+	let claimOpen = $state(false);
+	const day = $derived(new LiveDay(grimoire.open));
 </script>
 
 <BottomSheet bind:open {title} description={`Seat ${number}`}>
@@ -431,7 +413,7 @@
 	{#snippet titleEnd()}
 		<span class="ink"
 			><IconButton
-				icon="rename"
+				icon="edit"
 				label="Edit player name"
 				disabled={editingName}
 				onclick={editName}
@@ -491,7 +473,7 @@
 				{/if}
 				<!-- One reserved line for what the rules say about this seat. -->
 				<p class="state" class:warn={stateWarn}>
-					{#if isOrphan(seat, game.script, characters)}<Icon name="warning" />{/if}
+					{#if isOrphan(seat, game.script, characters, offScriptOk)}<Icon name="warning" />{/if}
 					{#each abilityLine as part, i (i)}{#if i > 0}
 							·
 						{/if}{part.text}{#if part.characterId}<CharacterBadge
@@ -530,8 +512,8 @@
 					type="button"
 					class="value ghost"
 					aria-labelledby={`ghost-${seat.seatId}`}
-					aria-pressed={seat.dead ? seat.ghostVoteUsed : undefined}
-					disabled={!seat.dead}
+					aria-pressed={seat.dead && tokenFreeVotes === undefined ? seat.ghostVoteUsed : undefined}
+					disabled={!seat.dead || tokenFreeVotes !== undefined}
 					onclick={() =>
 						grimoire.run({
 							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
@@ -540,13 +522,21 @@
 				>
 					<!-- The board's badge (Trevor, 2026-10-19: one ghost vote look in and out of the sheet). -->
 					<DeadBadge
-						vote={seat.ghostVoteUsed ? 'used' : 'unused'}
+						vote={tokenFreeVotes !== undefined ? undefined : seat.ghostVoteUsed ? 'used' : 'unused'}
 						usedLook={boardLooks.current.usedGhostVote}
 						testid="sheet-ghost-vote"
 					/>
-					<!-- As wide as its longest words, so toggling moves only the text (Trevor, 2026-10-19). -->
-					<span class="ghost-text" data-reserve="None while alive"
-						>{seat.dead ? (seat.ghostVoteUsed ? 'Used' : 'Not used') : 'None while alive'}</span
+					<!-- As wide as "Not used", so toggling moves only the text (Trevor, 2026-10-19). Not
+					     the longer "None while alive", which only shows while alive: reserving that
+					     left "Not used" off centre in its button (Trevor, 2026-10-23). -->
+					<span class="ghost-text" data-reserve="Not used"
+						>{!seat.dead
+							? 'None while alive'
+							: tokenFreeVotes !== undefined
+								? `${tokenFreeVotes} votes`
+								: seat.ghostVoteUsed
+									? 'Used'
+									: 'Not used'}</span
 					>
 				</button>
 			</div>
@@ -561,10 +551,15 @@
 						class="value nomination"
 						aria-labelledby={`nominated-${seat.seatId}`}
 						data-testid="sheet-nominated"
-						onclick={() => (nominating = 'made')}
+						disabled={!canNominate}
+						onclick={() => seatId !== undefined && (nominating = { seatId, side: 'made' })}
 					>
-						<Icon name="vote" />
-						<span>{nominations.made ? seatLabelFor(game, nominations.made.nominee) : 'None'}</span>
+						<Icon name="nominator" />
+						<span
+							>{nominations.allMade.length
+								? nominations.allMade.map((n) => seatLabelFor(game, n.nominee)).join(', ')
+								: 'None'}</span
+						>
 					</button>
 				</div>
 				<div class="row">
@@ -574,9 +569,9 @@
 						class="value nomination"
 						aria-labelledby={`nominated-by-${seat.seatId}`}
 						data-testid="sheet-nominated-by"
-						onclick={() => (nominating = 'received')}
+						onclick={() => seatId !== undefined && (nominating = { seatId, side: 'received' })}
 					>
-						<Icon name="vote" />
+						<Icon name="nominated" />
 						<span
 							>{nominations.received
 								? seatLabelFor(game, nominations.received.nominator)
@@ -625,6 +620,9 @@
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
 <SavantSheet bind:open={savantOpen} {grimoire} {seatId} />
+{#if claim && seat?.characterId}
+	<NoteSheet bind:open={claimOpen} game={day} target={{ characterId: seat.characterId, seatId }} />
+{/if}
 
 <ReminderPicker
 	bind:open={remindersOpen}
@@ -667,12 +665,6 @@
 		seat={{ number, alignment: seat?.alignment }}
 	/>{/if}
 
-{#snippet team(alignment: Alignment | undefined)}
-	<strong class="team" data-team={alignment ?? 'neutral'}
-		>{alignment === 'good' ? 'Good' : alignment === 'evil' ? 'Evil' : 'Not set'}</strong
-	>
-{/snippet}
-
 <!-- Every change of state says what it is now and what it becomes (Trevor, 2026-10-16). -->
 <ConfirmDialog bind:open={changeOpen} title="Change character?" onConfirm={confirmChange}>
 	{#if seat?.characterId && changeTo}
@@ -712,21 +704,7 @@
 	{/if}
 </ConfirmDialog>
 
-<Dialog bind:open={changesOpen} title={`Character history for ${seatLabel}`}>
-	<ol class="changes" data-testid="seat-changes">
-		{#each changes as change, i (i)}
-			<li>
-				{#if change.kind === 'character'}
-					<CharacterBadge characterId={change.from} character={characters.get(change.from)} />
-					→
-					<CharacterBadge characterId={change.to} character={characters.get(change.to)} />
-				{:else}
-					{@render team(change.from)} → {@render team(change.to)}
-				{/if}
-			</li>
-		{/each}
-	</ol>
-</Dialog>
+<CharacterHistoryDialog bind:open={changesOpen} {grimoire} {seatId} />
 
 <!-- How the change affects the table: players (Travellers not counted) and the setup sheet. -->
 {#snippet table(kind: 'remove-seat' | 'remove-character', id: SeatId)}
@@ -785,12 +763,12 @@
 		{@const next = seat?.alignment === 'evil' ? 'good' : 'evil'}
 		<dl class="change">
 			<dt>Now</dt>
-			<dd>{@render seatBadge(seatId)} is {@render team(seat?.alignment)}</dd>
+			<dd>{@render seatBadge(seatId)} is <AlignmentPill alignment={seat?.alignment} /></dd>
 			<dt>Becomes</dt>
 			<dd>
-				{#if seat?.alignment === undefined}{@render team('good')} or {@render team(
-						'evil'
-					)}{:else}{@render team(next)}{/if}
+				{#if seat?.alignment === undefined}<AlignmentPill alignment="good" /> or <AlignmentPill
+						alignment="evil"
+					/>{:else}<AlignmentPill alignment={next} />{/if}
 			</dd>
 		</dl>
 		<div class="choices">
@@ -807,101 +785,7 @@
 	{/if}
 </Dialog>
 
-<Dialog bind:open={causeOpen} title={`Status of ${title}`}>
-	<div class="causes">
-		<div class="cause-row">
-			<button type="button" class="cause" aria-pressed={!seat?.dead} onclick={pickAlive}>
-				<span class="slot status-icon"><Icon name="alive" /></span>
-				Alive
-			</button>
-		</div>
-		{#each causes as { cause, flags, gained }, i (cause)}
-			{@const killer = characters.get(cause)}
-			<div class="cause-row">
-				<button
-					type="button"
-					class="cause"
-					aria-pressed={seat?.deathCause === cause}
-					onclick={() => setCause(cause)}
-				>
-					<span class="slot" class:status-icon={!killer} data-dead
-						>{#if killer}<CharacterToken character={killer} size={32} />{:else}<Icon
-								name="dead"
-							/>{/if}</span
-					>
-					{causeLabel(cause, characters, traveller)}
-					<!-- The gained ability that kills, as on the day sheet: "Cannibal (Slayer)". -->
-					{#if gained}<span class="gained"
-							>(<CharacterBadge
-								characterId={gained}
-								character={characters.get(gained)}
-								interactive={false}
-							/>)</span
-						>{/if}
-				</button>
-				{#if flags.length > 0}
-					<IconButton
-						icon="warning"
-						label={`Why ${causeLabel(cause, characters, traveller)} is marked`}
-						onclick={() => {
-							flagged = causes[i];
-							flagOpen = true;
-						}}
-					/>
-				{/if}
-			</div>
-		{/each}
-	</div>
-	{#snippet actions()}
-		<ModalActions onCancel={() => (causeOpen = false)} />
-	{/snippet}
-</Dialog>
-
-<ConfirmDialog bind:open={reviveOpen} title={`Bring ${title} back to life?`} onConfirm={revive}>
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>
-			<span class="state-pill" data-dead
-				><Icon name="dead" />Dead: <CauseName
-					cause={seat?.deathCause}
-					{characters}
-					{traveller}
-				/></span
-			>
-		</dd>
-		<dt>Becomes</dt>
-		<dd><span class="state-pill"><Icon name="alive" />Alive</span></dd>
-	</dl>
-</ConfirmDialog>
-
-<Dialog
-	bind:open={flagOpen}
-	title={flagged ? causeLabel(flagged.cause, characters, traveller) : ''}
-	description="Offered with a caution"
->
-	{#if flagged}
-		<ul class="flags">
-			{#each flagged.flags as flag, i (i)}
-				{@const why = causeFlagText(flag, game, characters, title)}
-				<li>
-					{why.text}{#if why.by}
-						(<CharacterBadge characterId={why.by} character={characters.get(why.by)} />).{/if}
-				</li>
-			{/each}
-		</ul>
-	{/if}
-	{#snippet actions()}
-		{@const registers = flagged?.flags.find((f) => f.code === 'registers')}
-		{#if registers?.code === 'registers'}
-			<!-- External wiki page (the rules authority), not an app route. -->
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a class="wiki" href={registers.wiki} target="_blank" rel="noopener">
-				<Icon name="wiki" /><span>Open wiki entry</span>
-			</a>
-		{/if}
-		<Button variant="quiet" onclick={() => (flagOpen = false)}>Close</Button>
-	{/snippet}
-</Dialog>
+<SeatStatusDialog bind:open={causeOpen} {grimoire} {seatId} sheetOpen={open} {onExecute} />
 
 {#snippet seatBadge(id: SeatId | undefined)}
 	{@const other = id ? game.seats[id] : undefined}
@@ -921,133 +805,45 @@
 {/snippet}
 
 <!-- The seat's less frequent actions, in an overlay so the sheet stays short. -->
-<Dialog bind:open={menuOpen} {title} description={`Seat ${number}`}>
-	{#snippet lead()}
-		{#if seat?.characterId}
-			<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />
-		{/if}
-	{/snippet}
-	<div class="menu">
-		<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (pickerOpen = true))}>
-			{character ? 'Change character' : 'Choose character'}
-		</Button>
-		{#if apprentice}
-			<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (gainOpen = true))}>
-				Gained ability…
-			</Button>
-		{/if}
-		{#if savant}
-			<Button variant="quiet" icon="random" onclick={() => fromMenu(() => (savantOpen = true))}>
-				Savant information…
-			</Button>
-		{/if}
-		<Button
-			variant="quiet"
-			icon="alignment"
-			disabled={!character}
-			onclick={() =>
-				fromMenu(() => {
-					alignmentFor = undefined;
-					alignmentOpen = true;
-				})}
-		>
-			Change alignment
-		</Button>
-		<!-- The same notes as in ⋯ Notes on the board (Trevor, 2026-10-19). -->
-		<Button
-			variant="quiet"
-			icon="notes"
-			onclick={() =>
-				fromMenu(() => {
-					if (seatId) onNotes?.(seatId);
-				})}
-		>
-			Notes
-		</Button>
-		<!-- Rarely needed, so in here rather than a row of its own (Trevor, 2026-10-18). -->
-		<Button
-			variant="quiet"
-			icon="history"
-			disabled={changes.length === 0}
-			onclick={() => fromMenu(() => (changesOpen = true))}
-		>
-			Character history
-		</Button>
-	</div>
-	{#snippet headActions()}
-		<!-- Beside the close X, as on every sheet (Trevor, 2026-10-17). Removing the character
-		     is "None" in Change character. -->
-		<DeleteButton label="Remove seat" onclick={() => fromMenu(() => (removeOpen = true))} />
-	{/snippet}
-</Dialog>
-
-<Dialog bind:open={reminderMenuOpen} title="Reminder">
-	{#snippet heading()}
-		{#if movingReminder}<ReminderToken
-				label={tokenLabel(movingReminder)}
-				character={characters.get(movingReminder.characterId)}
-				alignment={placingAlignment(game, movingReminder, characters)}
-			/>{:else}Reminder{/if}
-	{/snippet}
-	{#snippet subtitle()}
-		{#if movingReminder && seatId}From <ReminderOrigin
-				{game}
-				{characters}
-				characterId={movingReminder.characterId}
-				on={seatId}
-			/>{/if}
-	{/snippet}
-	<!-- Whose ability it comes from, first, so an unfamiliar reminder makes sense (Trevor,
-	     2026-10-17); "From" above already names it (Trevor, 2026-10-18). -->
-	{#if movingReminder && isGeneric(movingReminder)}
-		<ReminderNoteField {grimoire} reminder={movingReminder} />
-	{/if}
-	{#if movingReminder}
-		{@const source = characters.get(movingReminder.characterId)}
-		{#if source}<CharacterSummary character={source} reminders={false} />{/if}
-	{/if}
-	<div class="menu">
-		<Button variant="quiet" icon="move" onclick={() => fromMenu(() => (moveOpen = true))}>
-			Move to another seat
-		</Button>
-		<Button
-			variant="quiet"
-			icon="reminder"
-			disabled={!fromSetup}
-			onclick={() =>
-				fromMenu(() => {
-					// Taken off the seat, it waits in the reminder bank again.
-					if (moving) moveConfirm?.requestReturn(moving);
-					moving = undefined;
-				})}
-		>
-			Return to reminder bank
-		</Button>
-	</div>
-	{#snippet headActions()}
-		<ReminderMoreButton {grimoire} reminderId={moving} onDone={() => (reminderMenuOpen = false)} />
-		<DeleteButton
-			label="Remove reminder"
-			onclick={() =>
-				fromMenu(() => {
-					if (moving) moveConfirm?.requestReturn(moving);
-					moving = undefined;
-				})}
-		/>
-	{/snippet}
-</Dialog>
-
-<SeatChooser
-	open={nominating !== undefined}
-	title={nominating === 'received'
-		? `Who nominated ${seatLabel}?`
-		: `Who did ${seatLabel} nominate?`}
-	{game}
-	{characters}
-	exclude={seatId}
-	onNone={() => nominate(undefined)}
-	onChoose={(other) => nominate(other)}
+<SeatMenu
+	bind:open={menuOpen}
+	{title}
+	{number}
+	{seat}
+	{character}
+	{apprentice}
+	{savant}
+	{claim}
+	hasChanges={changes.length > 0}
+	onChangeCharacter={() => (pickerOpen = true)}
+	onGain={() => (gainOpen = true)}
+	onSavant={() => (savantOpen = true)}
+	onClaim={() => (claimOpen = true)}
+	onAlignment={() => {
+		alignmentFor = undefined;
+		alignmentOpen = true;
+	}}
+	onNotes={() => {
+		if (seatId) onNotes?.(seatId);
+	}}
+	onHistory={() => (changesOpen = true)}
+	onRemove={() => (removeOpen = true)}
 />
+
+<SeatReminderMenu
+	bind:open={reminderMenuOpen}
+	{grimoire}
+	{seatId}
+	reminderId={moving}
+	onMove={() => (moveOpen = true)}
+	onReturn={() => {
+		// Taken off the seat, it waits in the reminder bank again.
+		if (moving) moveConfirm?.requestReturn(moving);
+		moving = undefined;
+	}}
+/>
+
+<NominationChooser {grimoire} {characters} bind:asking={nominating} {onNominated} />
 
 <SeatChooser
 	bind:open={moveOpen}
@@ -1096,9 +892,6 @@
 	.ink {
 		display: contents;
 	}
-	.gained {
-		color: var(--on-surface-muted);
-	}
 	.change {
 		display: grid;
 		grid-template-columns: auto 1fr;
@@ -1113,21 +906,6 @@
 	.change dd {
 		margin: 0;
 	}
-	.team {
-		display: inline-block;
-		padding: 0 var(--space-2);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-	}
-	.team[data-team='good'] {
-		background: var(--good);
-		color: var(--on-good);
-	}
-	.team[data-team='evil'] {
-		background: var(--evil);
-		color: var(--on-evil);
-	}
 	.off {
 		color: var(--evil);
 	}
@@ -1138,11 +916,6 @@
 	.note {
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
-	}
-	.menu {
-		display: grid;
-		gap: var(--space-2);
-		margin-top: var(--space-3);
 	}
 	.name-form {
 		display: contents;
@@ -1185,15 +958,7 @@
 		font-size: 0.8rem;
 	}
 	.dropped,
-	.changes {
-		display: grid;
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.dropped li,
-	.changes li {
+	.dropped li {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -1282,12 +1047,6 @@
 	.state.warn {
 		color: var(--accent);
 	}
-	.slot {
-		display: grid;
-		place-items: center;
-		width: calc(3 * var(--u));
-		height: calc(3 * var(--u));
-	}
 	.row {
 		display: flex;
 		align-items: center;
@@ -1305,23 +1064,9 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.status[data-dead],
-	.state-pill[data-dead],
-	.status-icon[data-dead] {
+	.status[data-dead] {
 		background: var(--backdrop);
 		color: var(--on-surface);
-	}
-	.state-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		padding: 0 var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-	}
-	.status-icon {
-		border-radius: 50%;
-		--icon-size: calc(1.25 * var(--u));
 	}
 	.value {
 		display: inline-flex;
@@ -1361,10 +1106,13 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
+	/* As wide as "Not used", the longer of a dead player's two, with the words centred in it
+	   (Trevor, 2026-10-23: "Not used" sat to one side, in room kept for "None while alive").
+	   Toggling still moves only the words. */
 	.ghost-text {
 		display: inline-grid;
-		justify-items: start;
-		text-align: start;
+		justify-items: center;
+		text-align: center;
 	}
 	.ghost-text::before {
 		content: attr(data-reserve);
@@ -1405,58 +1153,5 @@
 		flex-wrap: wrap;
 		gap: var(--space-2);
 		margin-top: var(--space-3);
-	}
-	.causes {
-		display: grid;
-		gap: calc(0.125 * var(--u));
-		margin-top: var(--space-2);
-	}
-	.cause {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-2);
-		border: 1px solid transparent;
-		border-radius: var(--radius-md);
-		background: none;
-		color: inherit;
-		font: inherit;
-		text-align: left;
-		cursor: pointer;
-	}
-	.cause:hover {
-		background: var(--surface-selected);
-	}
-	.cause[aria-pressed='true'] {
-		border-color: var(--focus);
-	}
-	.cause-row {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		align-items: center;
-	}
-	.wiki {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-4);
-		border-radius: var(--radius-md);
-		background: var(--accent);
-		color: var(--on-accent, var(--on-surface));
-		text-decoration: none;
-		font-weight: 600;
-	}
-	.flags {
-		margin: var(--space-2) 0 0;
-		padding-left: var(--space-3);
-	}
-	.flags li + li {
-		margin-top: var(--space-1);
-	}
-	.cause .slot {
-		width: calc(2 * var(--u));
-		height: calc(2 * var(--u));
 	}
 </style>

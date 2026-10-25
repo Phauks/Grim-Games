@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSettingsDialog } from './shell.ts';
 
 /** The Poisoner's row in the Character reference table. */
 async function poisonerCard(page: Page) {
@@ -61,7 +62,7 @@ test('tapping a rules term shows the wiki Glossary wording and button, without m
 
 test('with rules term underlines off the terms are plain text', async ({ page }) => {
 	await page.goto('/reference');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -86,7 +87,9 @@ test('terms in the character dialog open above it', async ({ page }) => {
 	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
 	await page
 		.locator('li[data-character="slayer"]')
-		.getByRole('button', { name: 'About the Slayer' })
+		// The character's band opens its details (Trevor, 2026-10-23: day rows as cards).
+		.locator('.bar')
+		.getByRole('button', { name: /^Slayer/ })
 		.first()
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Slayer' });

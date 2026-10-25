@@ -159,6 +159,14 @@
 			await loadSessions();
 		});
 
+	// This device's own row signs out here: there is no app header with an account card any more
+	// (2026-10-22).
+	const signOutHere = () =>
+		act(async () => {
+			await account.signOut();
+			toast(t('account.signedOut'));
+		});
+
 	const endOthers = () =>
 		act(async () => {
 			await accountApi.endOtherSessions();
@@ -247,7 +255,7 @@
 					<dt>{t('account.you.icon')}</dt>
 					<dd><span class="icon"><ProfileIcon icon={account.user.icon} /></span></dd>
 					<IconButton
-						icon="rename"
+						icon="edit"
 						label={t('account.icon.title')}
 						onclick={() => (editIcon = true)}
 						disabled={busy}
@@ -255,7 +263,7 @@
 					<dt>{t('account.you.username')}</dt>
 					<dd data-testid="account-username">{account.user.username ?? t('common.none')}</dd>
 					<IconButton
-						icon="rename"
+						icon="edit"
 						label={t('account.username.title')}
 						onclick={() => (editUsername = true)}
 						disabled={busy}
@@ -263,7 +271,7 @@
 					<dt>{t('account.you.email')}</dt>
 					<dd data-testid="account-email">{account.user.email}</dd>
 					<IconButton
-						icon="rename"
+						icon="edit"
 						label={t('account.changeEmail.title')}
 						onclick={() => (editEmail = true)}
 						disabled={busy || account.delivery === 'unavailable'}
@@ -273,7 +281,7 @@
 						{account.user.hasPassword ? t('account.you.passwordSet') : t('common.none')}
 					</dd>
 					<IconButton
-						icon="rename"
+						icon="edit"
 						label={t('account.password.title')}
 						onclick={() => (editPassword = true)}
 						disabled={busy}
@@ -341,8 +349,8 @@
 								<Button
 									variant="quiet"
 									aria-label={t('account.devices.signOutDevice', { device: deviceName(session) })}
-									onclick={() => endSession(session.id)}
-									disabled={busy || session.current}>{t('account.devices.signOut')}</Button
+									onclick={() => (session.current ? signOutHere() : endSession(session.id))}
+									disabled={busy}>{t('account.devices.signOut')}</Button
 								>
 							{/if}
 						{/snippet}

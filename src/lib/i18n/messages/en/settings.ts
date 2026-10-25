@@ -97,7 +97,7 @@ export const settings = {
 	'settings.scriptLogoOpacity': 'Script logo opacity',
 	'settings.nameSize': 'Player name size',
 	'settings.previewDeadPlayer': 'Alex',
-	'settings.boardPreview': 'Board look',
+	'settings.boardPreview': 'Board preview',
 	'settings.previewScript': 'Example script',
 	'settings.previewBank': 'Reminder bank',
 	'settings.nameOffset': 'Player name distance',
@@ -107,10 +107,15 @@ export const settings = {
 	'settings.rulesAt.middle': 'Middle',
 	'settings.rulesAt.edge': 'Corner',
 	'settings.rulesGrouped': 'Grouping',
-	'settings.reminderStacks': 'Stack crowded reminders',
-	'settings.reminderStacksHelp':
-		'A seat with more than three reminders shows two and a +N token that opens the seat.',
 	'settings.groupRules': 'Fabled and Loric',
+	'settings.warning': 'Warning',
+	'settings.storytellerLine': 'Storyteller: {name}',
+	'settings.boardAdvanced': 'Advanced',
+	'settings.holdLightsSeat': "Holding a token lights its seat's reminders",
+	'settings.holdLightsSeatDescription':
+		"Off: the held character's reminders light, wherever they are. On: the reminders on the held seat light, whoever's they are.",
+	'settings.reminderModeWarning':
+		'Reminders left where dropped belong to no seat: no lines back to seats, no fitting around them, and they stay put when seats move.',
 	'settings.rulesGrouped.each': 'Individual',
 	'settings.rulesGrouped.grouped': 'Stacked',
 	'settings.groupShare': 'Share',

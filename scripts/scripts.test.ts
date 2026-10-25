@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { findColourFunctions, findHexColours } from './check-colors.ts';
+import { findColourFunctions, findHexColours, findNamedColours } from './check-colors.ts';
+import { counted, lineCount, lineProblems, MAX_LINES } from './check-lines.ts';
 import { findPxSizes, svelteStyles } from './check-px.ts';
 import { flakyTests, summaryMarkdown } from './flaky-summary.ts';
 import { generatedFiles, missingIcons } from './generate-icons.ts';
@@ -56,6 +57,33 @@ describe('check-colors', () => {
 		const css =
 			'a { background: linear-gradient(\n\trgb(0 0 0) 75%\n\t/* colour-ok: shade */,\n\trgb(0 0 0)\n); }';
 		expect(findColourFunctions(css)).toEqual([{ line: 4, match: 'rgb' }]);
+	});
+
+	it('flags named colours wherever a colour goes', () => {
+		const source = [
+			'a { background: white; border: 1px solid var(--x, gainsboro); }',
+			'<circle fill="black" style="color: red" />',
+			"ctx.fillStyle = 'navy';",
+			'b { --paper: ivory; }'
+		].join('\n');
+		expect(findNamedColours(source)).toEqual([
+			{ line: 1, match: 'white' },
+			{ line: 1, match: 'gainsboro' },
+			{ line: 2, match: 'black' },
+			{ line: 2, match: 'red' },
+			{ line: 3, match: 'navy' },
+			{ line: 4, match: 'ivory' }
+		]);
+	});
+
+	it('leaves words, keywords and tokens that only look like colours', () => {
+		const source = [
+			'a { color: currentColor; background: transparent; fill: none; }',
+			'b { --scratch-white-ink: var(--on-reminder); background: var(--surface, Canvas); }',
+			"const label = 'Green felt'; const team = 'red';",
+			'c { color: white; } /* colour-ok: a reason */'
+		].join('\n');
+		expect(findNamedColours(source)).toEqual([]);
 	});
 });
 
@@ -138,5 +166,48 @@ describe('flaky-summary', () => {
 		expect(summaryMarkdown(flakyTests(report))).toContain(
 			'| phone | `e2e/room.e2e.ts:17` | a phone joins |'
 		);
+	});
+});
+
+describe('CI Playwright image', () => {
+	it('matches the installed @playwright/test, so its baked-in Chromium is the one tests expect', () => {
+		const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+		const lock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
+		const installed = lock.packages['node_modules/@playwright/test'].version;
+		const tags = [...ci.matchAll(/mcr\.microsoft\.com\/playwright:v([\d.]+)-/g)].map((m) => m[1]);
+		expect(tags.length).toBeGreaterThan(0);
+		for (const tag of tags) expect(tag, 'update the image tags in ci.yml').toBe(installed);
+	});
+});
+
+describe('check-lines', () => {
+	it('counts lines as wc -l does', () => {
+		expect(lineCount('')).toBe(0);
+		expect(lineCount('a\nb\n')).toBe(2);
+		expect(lineCount('a\nb')).toBe(2);
+	});
+
+	it('skips tests, rules data tables, catalogs and generated files', () => {
+		expect(counted('src/lib/features/grimoire/board.ts')).toBe(true);
+		expect(counted('src/lib/ui/table/DataTable.svelte')).toBe(true);
+		expect(counted('src/lib/features/grimoire/board.test.ts')).toBe(false);
+		expect(counted('e2e/board.e2e.ts')).toBe(false);
+		expect(counted('src/lib/core/rules/example.data.ts')).toBe(false);
+		expect(counted('src/lib/i18n/messages/en/room.ts')).toBe(false);
+		expect(counted('src/lib/ui/icons/generated/ph-regular.ts')).toBe(false);
+		expect(counted('src/lib/core/data/rules/fool.json')).toBe(false);
+	});
+
+	it('flags a long file unless listed, and a listed file once it is short', () => {
+		const sizes = new Map([
+			['src/new.ts', MAX_LINES + 1],
+			['src/listed.ts', MAX_LINES + 1],
+			['src/split.ts', MAX_LINES],
+			['src/fine.ts', 10]
+		]);
+		expect(lineProblems(sizes, ['src/listed.ts', 'src/split.ts'])).toEqual([
+			{ file: 'src/new.ts', lines: MAX_LINES + 1, problem: 'too-long' },
+			{ file: 'src/split.ts', lines: MAX_LINES, problem: 'listed-short' }
+		]);
 	});
 });

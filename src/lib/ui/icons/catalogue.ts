@@ -8,8 +8,6 @@
  * pickers in Settings work offline. After editing this file run `npm run icons`.
  */
 
-import { AVATAR_IDS } from '#lib/core/avatars/index.ts';
-
 export interface IconSlotInfo {
 	label: string;
 	/** Iconify ids offered for this slot; the first is the default. */
@@ -25,7 +23,12 @@ export const ICON_SLOTS = {
 	protected: { label: 'Protected', choices: ['ph:shield', 'ph:shield-check', 'ph:shield-star'] },
 	night: { label: 'Night', choices: ['ph:moon-stars', 'ph:moon'] },
 	day: { label: 'Day', choices: ['ph:sun', 'ph:sun-horizon'] },
+	/** A script or night order sheet on a light background, or the dark one (Trevor, 2026-10-23). */
+	lightSheet: { label: 'Light background', choices: ['ph:sun'] },
+	darkSheet: { label: 'Dark background', choices: ['ph:moon'] },
 	vote: { label: 'Vote', choices: ['ph:hand-palm', 'ph:hand-fist'] },
+	nominator: { label: 'Has nominated', choices: ['ph:hand-pointing', 'ph:megaphone'] },
+	nominated: { label: 'Was nominated', choices: ['ph:gavel', 'ph:scales'] },
 	demon: { label: 'Demon', choices: ['ph:mask-sad', 'ph:smiley-angry', 'ph:fire'] },
 	bag: { label: 'Bag', choices: ['ph:handbag', 'ph:tote', 'ph:bag-simple'] },
 	reminder: { label: 'Reminder', choices: ['ph:push-pin', 'ph:bookmark-simple', 'ph:tag'] },
@@ -99,7 +102,11 @@ export const ICON_SLOTS = {
 	save: { label: 'Save', choices: ['ph:bookmark-simple', 'ph:floppy-disk'] },
 	swap: { label: 'Swap seats', choices: ['ph:arrows-left-right', 'ph:swap'] },
 	alignment: { label: 'Change alignment', choices: ['ph:yin-yang', 'ph:scales'] },
-	rename: { label: 'Rename', choices: ['ph:pencil-simple', 'ph:user-switch'] },
+	/**
+	 * Every edit, rename or change-in-place button: the one pencil (Trevor, 2026-10-23). Was
+	 * `rename` until then; saved overrides under that name still load (preferences.ts).
+	 */
+	edit: { label: 'Edit', choices: ['ph:pencil-simple', 'ph:user-switch'] },
 	move: { label: 'Move', choices: ['ph:arrow-bend-up-right'] },
 	traveller: { label: 'Traveller', choices: ['ph:person-simple-walk', 'ph:user-plus'] },
 	fabled: { label: 'Fabled and Loric', choices: ['ph:sparkle'] },
@@ -109,8 +116,11 @@ export const ICON_SLOTS = {
 	history: { label: 'History', choices: ['ph:clock-counter-clockwise', 'ph:list-bullets'] },
 	join: { label: 'Join game', choices: ['ph:sign-in', 'ph:door-open'] },
 	share: { label: 'Share', choices: ['ph:share-network', 'ph:qr-code'] },
+	/** Reads a QR code with the camera (Join game). */
+	scan: { label: 'Scan a code', choices: ['ph:camera', 'ph:scan'] },
 	copy: { label: 'Copy', choices: ['ph:copy', 'ph:copy-simple'] },
 	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] },
+	/** The scratch pad's drawing tool only; an edit button is `edit` (grim/icon-meaning). */
 	pen: { label: 'Pen', choices: ['ph:pen-nib', 'ph:pencil-simple-line'] },
 	eraser: { label: 'Eraser', choices: ['ph:eraser'] },
 	/** Locks a scratch pad so a stray touch can't draw on it. */
@@ -127,6 +137,7 @@ export const ICON_SLOTS = {
 	/** Opens an item from its preview into a window over the page. */
 	openItem: { label: 'Open', choices: ['ph:arrow-square-out', 'ph:frame-corners'] },
 	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
+	exitFullScreen: { label: 'Exit full screen', choices: ['ph:arrows-in', 'ph:corners-in'] },
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
 	/** Someone is watching the view-only grimoire (Trevor, 2026-10-20). */
 	watchers: { label: 'Watching', choices: ['ph:eye', 'ph:binoculars'] },
@@ -206,9 +217,6 @@ export const TILE_SYMBOL_ICONS = [
 	'ph:umbrella'
 ] as const;
 
-/** Player avatars (plan R6), each a Phosphor icon named by the avatar's id. Not slots either. */
-export const AVATAR_ICONS: readonly string[] = AVATAR_IDS.map((id) => `ph:${id}`);
-
 /** Each slot's default base Iconify id, deduplicated and sorted: what most screens draw. */
 export function defaultIconIds(): string[] {
 	return [...new Set(iconSlots.map((slot) => ICON_SLOTS[slot].choices[0]))].sort();
@@ -216,7 +224,7 @@ export function defaultIconIds(): string[] {
 
 /** Every base Iconify id offered by the catalogue, deduplicated and sorted. */
 export function catalogueIconIds(): string[] {
-	const ids = new Set<string>([...TILE_SYMBOL_ICONS, ...AVATAR_ICONS]);
+	const ids = new Set<string>([...TILE_SYMBOL_ICONS]);
 	for (const slot of iconSlots) for (const id of ICON_SLOTS[slot].choices) ids.add(id);
 	return [...ids].sort();
 }

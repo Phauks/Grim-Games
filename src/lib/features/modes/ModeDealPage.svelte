@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SetupNav from '#lib/features/setup/SetupNav.svelte';
+	import { backToNewGame } from './new-game-draft.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -34,6 +36,7 @@
 	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
 	import { readGameMode } from './game-mode-store.ts';
 	import { gameModeOf } from './game-mode.ts';
+	import OfferReels from './OfferReels.svelte';
 
 	/**
 	 * Characters for a mode that doesn't put characters in the bag, on the Storyteller's
@@ -65,6 +68,18 @@
 		})
 	);
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
+	/**
+	 * With the slot machine on (a Bag draw setting), reels run through every character a player
+	 * can get: Sushi Buffet's offers spin in 3, 2, 1, and Whale Buffet's choice is revealed as
+	 * any draw is (Trevor, 2026-10-23).
+	 */
+	const slotMachine = $derived(preferences.current.slotMachine);
+	const reel = $derived(
+		characters.filter((c) =>
+			(['townsfolk', 'outsider', 'minion', 'demon'] as const).some((type) => type === c.type)
+		)
+	);
+	let offerSpinning = $state(false);
 
 	function fresh(): DealProgress | undefined {
 		if (assignment?.kind === 'draft')
@@ -226,16 +241,30 @@
 
 	<BagTiles {slots} {marks} seatLabel={label} onpick={draw} />
 
-	<div class="footer">
-		{#if progress?.kind === 'choose' && assignment?.kind === 'choose-own' && assignment.reconsider}
-			<Button icon="undo" disabled={picks.length === 0 || held !== undefined} onclick={chooseAgain}>
-				{t('modes.deal.chooseAgain')}
-			</Button>
-		{/if}
-		<Button variant="accent" icon="check" disabled={!done} onclick={finish}>
-			{t('modes.deal.finish')}
-		</Button>
-	</div>
+	<!-- The start flow's bar (Trevor, 2026-10-23): Back to New game as it was, until a tile is
+	     drawn; Restart starts the deal over after that. -->
+	<SetupNav
+		onBack={() => void backToNewGame(gameId)}
+		backDisabled={picks.length > 0 || held !== undefined}
+		backLabel={t('setup.newGame')}
+	>
+		{#snippet next()}
+			<span class="footer">
+				{#if progress?.kind === 'choose' && assignment?.kind === 'choose-own' && assignment.reconsider}
+					<Button
+						icon="undo"
+						disabled={picks.length === 0 || held !== undefined}
+						onclick={chooseAgain}
+					>
+						{t('modes.deal.chooseAgain')}
+					</Button>
+				{/if}
+				<Button variant="accent" icon="check" disabled={!done} onclick={finish}>
+					{t('modes.deal.finish')}
+				</Button>
+			</span>
+		{/snippet}
+	</SetupNav>
 </Page>
 
 <!-- The seat's offer or dealt type, for the player who drew the tile only. -->
@@ -251,10 +280,19 @@
 				? t('modes.deal.dealtType', { type: TYPE_LABELS[dealtType] })
 				: t('modes.deal.offer')}
 		</p>
+		{#if slotMachine && progress?.kind === 'draft' && assignment?.kind === 'draft'}
+			<OfferReels
+				offer={options}
+				size={assignment.offers[0] ?? options.length}
+				{reel}
+				bind:spinning={offerSpinning}
+			/>
+		{/if}
 		{#if options.length === 0}
 			<p>{t('modes.deal.noOptions')}</p>
 		{:else}
-			<div class="list">
+			<!-- Kept back while the reels spin: they show the offer first. -->
+			<div class="list" class:spinning={offerSpinning} inert={offerSpinning}>
 				<SharedPicker
 					characters={options}
 					collapsibleKey="deal"
@@ -264,7 +302,7 @@
 			</div>
 		{/if}
 		{#if progress?.kind === 'draft'}
-			<Button icon="random" disabled={!canRefuse(progress.state)} onclick={refuse}>
+			<Button icon="random" disabled={!canRefuse(progress.state) || offerSpinning} onclick={refuse}>
 				{t('modes.deal.refuse')}
 			</Button>
 		{/if}
@@ -280,6 +318,7 @@
 		seatLabel={label(revealing.seatId)}
 		playerName={game.seats[revealing.seatId]?.playerName ?? ''}
 		onConfirm={confirmReveal}
+		reel={slotMachine && progress?.kind === 'choose' ? reel : []}
 	/>
 {/if}
 
@@ -296,9 +335,7 @@
 <style>
 	.footer {
 		display: flex;
-		justify-content: flex-end;
 		gap: var(--space-2);
-		margin-top: var(--space-3);
 	}
 	/* A full dialog doesn't scroll itself: its content does. */
 	.choose {
@@ -314,6 +351,9 @@
 	}
 	.prompt {
 		font-weight: 600;
+	}
+	.list.spinning {
+		visibility: hidden;
 	}
 	.list {
 		display: flex;

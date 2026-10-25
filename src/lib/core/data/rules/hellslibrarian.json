@@ -1,0 +1,36 @@
+{
+	"reminderTargets": {
+		"Something Bad": {
+			"seat": "any",
+			"note": "On a player who talked during a silence the Storyteller asked for."
+		}
+	},
+	"setupPrep": {
+		"none": "its tokens are only used after the first night or when something happens"
+	},
+	"dayReminders": {
+		"reminders": [
+			{
+				"group": "announcement",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "is in play"
+					}
+				],
+				"when": {
+					"self": "any"
+				}
+			}
+		]
+	},
+	"deathCause": {
+		"kind": "kills"
+	},
+	"reminderMovement": {
+		"fixed": ["Something Bad"],
+		"why": "Marks this character’s own state, so it stays on its seat."
+	}
+}

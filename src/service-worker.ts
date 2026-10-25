@@ -23,6 +23,16 @@ import {
 	type KeepOfflineMessage
 } from '#lib/features/offline/cache-rules.ts';
 import {
+	byShape,
+	fileName,
+	namePattern,
+	parseChunks,
+	PRECACHE_CHUNKS_PATH,
+	REBUILDABLE,
+	renamed,
+	type Chunks
+} from '#lib/features/offline/chunk-renames.ts';
+import {
 	parseSizes,
 	percentDone,
 	PRECACHE_PROGRESS,
@@ -93,17 +103,48 @@ async function keptCopy(
 	return previous.cache?.match(path);
 }
 
+/** First 16 hex digits of SHA-256 over the text's UTF-8 bytes, as the build hashes files. */
+async function hashText(text: string): Promise<string> {
+	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+	return [...new Uint8Array(digest).slice(0, 8)]
+		.map((b) => b.toString(16).padStart(2, '0'))
+		.join('');
+}
+
+/**
+ * Rebuilds a build file that only got a new name because a file it imports changed, from the
+ * stored file with the same shape (chunk-renames.ts). Undefined when there is none, or when the
+ * result is not the published content.
+ */
+async function rebuiltCopy(
+	path: string,
+	chunks: Chunks,
+	previous: { shapes: Map<string, string>; pattern: RegExp | undefined }
+): Promise<Response | undefined> {
+	const info = chunks[path];
+	const from = info && REBUILDABLE.test(path) ? previous.shapes.get(info.shape) : undefined;
+	const stored = from ? await caches.match(from) : undefined;
+	if (!info || !stored) return undefined;
+	const text = renamed(await stored.text(), previous.pattern, info.names);
+	if (text === undefined || (await hashText(text)) !== info.hash) return undefined;
+	return new Response(text, {
+		headers: { 'Content-Type': stored.headers.get('Content-Type') ?? 'text/javascript' }
+	});
+}
+
 /**
  * Stores the build. Files the previous build already holds unchanged are copied from it, so
  * an update only downloads what changed (Trevor, 2026-10-19: a full download each time
- * stuttered). The rest come a few at a time, telling every open page how far it has got
+ * stuttered). Files that were only renamed are rebuilt from their stored copy (Trevor,
+ * 2026-10-23: updates still felt slow). The rest come a few at a time, telling every open page how far it has got
  * (About's Check for updates shows it). Any file failing fails the install, as addAll did.
  */
 async function precache(cache: Cache): Promise<void> {
 	// The build's file sizes, so the page can say "2.4 MB of 6.1 MB"; without them, files only.
-	const [sizes, hashes] = await Promise.all([
+	const [sizes, hashes, chunks] = await Promise.all([
 		fetchJson(PRECACHE_SIZES_PATH).then(parseSizes),
-		fetchJson(PRECACHE_HASHES_PATH).then(parseHashes)
+		fetchJson(PRECACHE_HASHES_PATH).then(parseHashes),
+		fetchJson(PRECACHE_CHUNKS_PATH).then(parseChunks)
 	]);
 	const previousCache = await previousBuild().catch(() => undefined);
 	const previous = {
@@ -115,14 +156,30 @@ async function precache(cache: Cache): Promise<void> {
 				.catch(() => ({}))
 		)
 	};
-	const queue: string[] = [];
-	for (const path of ASSETS) {
-		const kept = await keptCopy(path, hashes, previous).catch(() => undefined);
-		if (kept) await cache.put(path, kept);
-		else queue.push(path);
-	}
+	const previousChunks = parseChunks(
+		await previousCache
+			?.match(PRECACHE_CHUNKS_PATH)
+			.then((response) => response?.json())
+			.catch(() => ({}))
+	);
+	const renames = {
+		shapes: byShape(previousChunks),
+		pattern: namePattern(Object.keys(previousChunks).map(fileName))
+	};
+	// All at once: one at a time, the ~400 stored copies took over a second.
+	const stored = await Promise.all(
+		ASSETS.map(async (path) => {
+			const copy =
+				(await keptCopy(path, hashes, previous).catch(() => undefined)) ??
+				(await rebuiltCopy(path, chunks, renames).catch(() => undefined));
+			if (copy) await cache.put(path, copy);
+			return !!copy;
+		})
+	);
+	const queue = ASSETS.filter((_, i) => !stored[i]);
 	// Kept with the build, for the next one to compare against.
 	await cache.put(PRECACHE_HASHES_PATH, Response.json(hashes));
+	await cache.put(PRECACHE_CHUNKS_PATH, Response.json(chunks));
 
 	const total = queue.length;
 	const allBytes = totalBytes(queue, sizes);
@@ -210,7 +267,11 @@ async function store(cache: Cache, path: string): Promise<Response | undefined> 
  */
 async function storeImage(cache: Cache, url: string): Promise<void> {
 	try {
-		const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
+		const response = await fetch(url, {
+			mode: 'cors',
+			credentials: 'omit',
+			referrerPolicy: 'no-referrer'
+		});
 		if (response.ok) await cache.put(url, response);
 	} catch {
 		// No CORS, or offline: the image still shows online, straight from its host.

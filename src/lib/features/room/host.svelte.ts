@@ -13,7 +13,11 @@ import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts'
 import type { Script } from '#lib/core/data/index.ts';
 import { toSavedGame } from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
-import { publicProjection, type PublicGameState } from '#lib/core/sync/public-projection.ts';
+import {
+	publicProjection,
+	type PublicCorner,
+	type PublicGameState
+} from '#lib/core/sync/public-projection.ts';
 import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
@@ -26,7 +30,8 @@ import {
 import type {
 	ScriptVoteKind,
 	ScriptVoteOption,
-	ScriptVoteTally
+	ScriptVoteTally,
+	VoteSubject
 } from '#lib/core/sync/script-vote.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -35,6 +40,7 @@ import {
 	reminderSpots,
 	seatLayouts
 } from '#lib/features/grimoire/device-notes.ts';
+import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
@@ -93,6 +99,8 @@ export class RoomHost {
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
 	#choosing = false;
+	/** What the open board's corner shows, for the phones' corners (showCorner). */
+	#corner = $state<{ gameId: string; corner: PublicCorner }>();
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -259,9 +267,15 @@ export class RoomHost {
 				});
 			});
 			$effect(() => {
+				// Where the board draws the seats, so phones draw the town the same way (plan J13).
+				const layout = notes ? parseSeatLayout(notes().layout) : seatLayouts.read(game.game.gameId);
+				const corner = this.#corner?.gameId === game.game.gameId ? this.#corner.corner : undefined;
 				const state = publicProjection(
 					game.game,
-					publicTravellerTest(game.game.gameId, game.characters)
+					publicTravellerTest(game.game.gameId, game.characters),
+					layout,
+					corner,
+					game.characters
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
@@ -272,6 +286,15 @@ export class RoomHost {
 				this.#socket?.send({ type: 'script', script });
 			});
 		});
+	}
+
+	/**
+	 * The lines the board's corner shows now (corner-lines.ts), so each phone's grim shows the
+	 * same corner (Trevor, 2026-10-24). Sent with the game's public state.
+	 */
+	showCorner(gameId: string, corner: PublicCorner): void {
+		const shown = { gameId, corner: $state.snapshot(corner) as PublicCorner };
+		if (JSON.stringify(shown) !== JSON.stringify(this.#corner)) this.#corner = shown;
 	}
 
 	/** Approves a request, optionally into a different seat, naming that seat in the grimoire. */
@@ -344,14 +367,24 @@ export class RoomHost {
 		this.#socket?.send({ type: 'choosing', on });
 	}
 
-	/** Opens a vote on the next script, replacing any open one. False when offline. */
-	openScriptVote(kind: ScriptVoteKind, options: ScriptVoteOption[]): boolean {
+	/**
+	 * Opens a vote on the next script, replacing any open one, with a time limit in minutes
+	 * if given. False when offline.
+	 */
+	openScriptVote(
+		kind: ScriptVoteKind,
+		options: ScriptVoteOption[],
+		minutes?: number,
+		subject: VoteSubject = 'script'
+	): boolean {
 		return (
 			this.#socket?.send({
 				type: 'open-script-vote',
 				voteId: crypto.randomUUID(),
 				kind,
-				options
+				options,
+				...(minutes !== undefined ? { minutes } : {}),
+				...(subject === 'mode' ? { subject } : {})
 			}) ?? false
 		);
 	}
@@ -445,6 +478,8 @@ export class RoomHost {
 	}
 
 	#publish(published: { gameId: string; state: PublicGameState }): void {
+		// The board's notes change with every reminder moved; the table only when it does.
+		if (JSON.stringify(published) === JSON.stringify(this.#published)) return;
 		this.#published = published;
 		this.#resend();
 	}

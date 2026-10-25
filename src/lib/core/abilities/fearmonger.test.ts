@@ -59,7 +59,7 @@ describe('Fearmonger', () => {
 				(s) => ({ type: 'Execute', seatId: s[0] })
 			);
 			expect(gameEnds(session.game, testCharacters)).toMatchObject([
-				{ rule: 'fearmonger', winner: 'evil' }
+				{ rule: 'nominated-marked-executed', winner: 'evil' }
 			]);
 		});
 		it("Example 2: Another player's nominee executed; no win", () => {
@@ -90,7 +90,7 @@ describe('Fearmonger', () => {
 				(s) => ({ type: 'Execute', seatId: s[0] })
 			);
 			expect(gameEnds(session.game, testCharacters)).toMatchObject([
-				{ rule: 'fearmonger', winner: 'good' }
+				{ rule: 'nominated-marked-executed', winner: 'good' }
 			]);
 		});
 	});
