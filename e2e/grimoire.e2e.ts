@@ -3895,7 +3895,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(shown).toContainText('Fortune Teller');
 });
 
-test('an information step suggests every valid number, and no sets of players', async ({
+test('an information step suggests every valid number, and the roles it could show', async ({
 	page
 }) => {
 	await startGame(page);
@@ -3912,11 +3912,12 @@ test('an information step suggests every valid number, and no sets of players', 
 	await give(2, 'Chef');
 	await give(3, 'Empath');
 	await give(4, 'Imp');
-	// Trevor (2026-10-18): "only show info suggest for numbers, not sets of characters".
-	// Read from the walk-through: closing a step that has setup reminders on a phone hits a
-	// dialog library crash, reported to the dialog's owner (2026-10-18).
+	// A "learn a role" step names the Townsfolk it could show (Trevor, 2026-10-25), read from
+	// the walk-through's one line (https://wiki.bloodontheclocktower.com/Washerwoman).
 	const washerwoman = await walkTo(page, 'Washerwoman');
-	await expect(washerwoman.getByTestId('night-suggested')).toHaveCount(0);
+	await expect(washerwoman.getByTestId('night-suggested')).toHaveText(
+		/^Valid Information:\s*Chef\s*,\s*Empath\s*$/
+	);
 	// No evil pair sits together: the Chef's 0 (https://wiki.bloodontheclocktower.com/Chef).
 	const chef = await openStep(page, 'Chef');
 	const rows = chef.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
@@ -3927,6 +3928,51 @@ test('an information step suggests every valid number, and no sets of players', 
 	// to give (Trevor, 2026-10-22).
 	const strip = await walkTo(page, 'Chef');
 	await expect(strip.getByTestId('night-suggested')).toHaveText('Valid Information: (0)');
+});
+
+// Trevor (2026-10-25): the Investigator's step shows which Minion it could see, and a Recluse
+// as a choice of Minion (https://wiki.bloodontheclocktower.com/Investigator, /Recluse).
+test('the Investigator step lists each Minion, and the Recluse as a Minion you pick', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Investigator'],
+		[2, 'Recluse'],
+		[3, 'Poisoner'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const step = await openStep(page, 'Investigator');
+	const rows = step.getByTestId('learned-roles').getByRole('listitem');
+	await expect(rows).toHaveCount(2);
+	await expect(rows.first()).toContainText('Poisoner');
+	await expect(rows.first()).toContainText('Seat 3');
+	await expect(rows.first()).toContainText('any other player');
+	const recluse = rows.nth(1);
+	await expect(recluse).toContainText('Registers');
+	// Nothing is shown until the Storyteller picks which Minion the Recluse is shown as.
+	const show = recluse.getByRole('button', { name: 'Show to player' });
+	await expect(show).toBeDisabled();
+	// Tapping first scrolls the row into view, and a scroll closes an open list (Select).
+	const shownAs = recluse.getByRole('combobox', { name: 'Shown as' });
+	await shownAs.scrollIntoViewIfNeeded();
+	const baron = page.getByRole('option', { name: 'Baron' });
+	await expect(async () => {
+		if (!(await baron.isVisible())) await shownAs.tap();
+		await expect(baron).toBeVisible({ timeout: 1000 });
+	}).toPass();
+	await baron.tap();
+	await show.tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown).toContainText('Baron');
 });
 
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({
