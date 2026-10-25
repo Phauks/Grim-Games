@@ -14,6 +14,7 @@
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
@@ -60,7 +61,7 @@
 	// ── Confirming a change: what it is now, and what it will be ──
 	// TPI's reminder token text (game data, not interface text).
 	const NO_ABILITY = 'No Ability';
-	// The texts hold slots (slots.ts): `character` and `reminder` show as badges.
+	// The texts hold slots (slots.ts): `character`, `reminder` and `seat` show as badges.
 	interface Pending {
 		/** The dialog's own title (its action). */
 		action: string;
@@ -68,6 +69,7 @@
 		now: string;
 		after: string;
 		characterId: CharacterId;
+		seatId: SeatId;
 		run: () => void;
 	}
 	let pending = $state<Pending>();
@@ -83,7 +85,7 @@
 	}
 
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
-		const who = t('day.who', { character: slot('character'), seat: game.seatName(seatId) });
+		const who = t('day.who', { character: slot('character'), seat: slot('seat') });
 		const token = game.characters.get(characterId)?.reminders.includes(NO_ABILITY);
 		ask({
 			action: t('day.markUsed'),
@@ -93,6 +95,7 @@
 				? t('day.markUsedAfterToken', { who, reminder: slot('reminder') })
 				: t('day.markUsedAfter', { who }),
 			characterId,
+			seatId,
 			run: () => game.run({ type: 'UseAbility', seatId, characterId })
 		});
 	}
@@ -104,7 +107,7 @@
 	 * "require confirmation on the undoing").
 	 */
 	function askUnmarkUsed(seatId: SeatId, characterId: CharacterId) {
-		const who = t('day.who', { character: slot('character'), seat: game.seatName(seatId) });
+		const who = t('day.who', { character: slot('character'), seat: slot('seat') });
 		const token = g.seats[seatId].reminders.find(
 			(r) => r.characterId === characterId && r.label === NO_ABILITY
 		);
@@ -116,6 +119,7 @@
 				: t('day.markUsedAfter', { who }),
 			after: t('day.markUsedNow', { who }),
 			characterId,
+			seatId,
 			run: () => unmarkUsed(seatId, characterId)
 		});
 	}
@@ -459,7 +463,9 @@
 			character={game.characters.get(id)}
 			{interactive}
 		/>{/if}{/snippet}
-{#snippet pendingSlot(name: string)}{#if name === 'reminder'}<ReminderToken
+{#snippet pendingSlot(name: string)}{#if name === 'seat'}{#if pending}<PlayerBadge
+				name={game.seatName(pending.seatId)}
+			/>{/if}{:else if name === 'reminder'}<ReminderToken
 			label={NO_ABILITY}
 			character={pending ? game.characters.get(pending.characterId) : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}

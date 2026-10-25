@@ -29,6 +29,7 @@
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import ScriptBallot from './ScriptBallot.svelte';
 	import VoteChoice from './VoteChoice.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 	import { followRoomScript } from './room-script.svelte.ts';
@@ -415,10 +416,13 @@
 							<input type="radio" bind:group={seat} value={s.seatId} />
 							<span>{t('common.seat', { number: s.seatNumber })}</span>
 							<span class="sub">
-								{s.seatId === mine
-									? t('room.mine')
-									: (s.playerName ??
-										(view?.takenSeats.includes(s.seatId) ? t('room.taken') : t('room.empty')))}
+								{#if s.seatId === mine}
+									{t('room.mine')}
+								{:else if s.playerName}
+									<PlayerBadge name={s.playerName} />
+								{:else}
+									{view?.takenSeats.includes(s.seatId) ? t('room.taken') : t('room.empty')}
+								{/if}
 							</span>
 						</label>
 					{/each}
@@ -465,7 +469,9 @@
 					pressed={vote?.choice === option}
 					disabled={status !== 'open'}
 					onclick={() => player?.vote(option)}
-					>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</VoteChoice
+					>{#if s?.playerName}<PlayerBadge name={s.playerName} />{:else}{t('common.seat', {
+							number: s?.seatNumber ?? 0
+						})}{/if}</VoteChoice
 				>
 			</li>
 		{/each}

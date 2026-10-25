@@ -1,7 +1,8 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Character, GameData } from '#lib/core/data/index.ts';
 	import type { Game, SeatId } from '#lib/core/model/index.ts';
-	import { seatNumber } from '#lib/core/model/index.ts';
 	import type { DayStep, GameMode } from '#lib/core/modes/index.ts';
 	import type { VoteTally } from '#lib/core/sync/room.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -105,12 +106,6 @@
 		return new Set(shown.options.filter((o) => (shown.counts[o] ?? 0) === top));
 	});
 
-	function label(seatId: SeatId): string {
-		const number = t('common.seat', { number: seatNumber(game, seatId) ?? 0 });
-		const name = game.seats[seatId]?.playerName;
-		return name ? `${number} · ${name}` : number;
-	}
-
 	function openVote() {
 		last = undefined;
 		host.openVote([...seats], abilityText || undefined);
@@ -191,7 +186,7 @@
 			<ol class="tally" data-testid="specters-tally">
 				{#each seats as seatId (seatId)}
 					<li data-most={most.has(seatId) || undefined}>
-						<span>{label(seatId)}</span>
+						<PlayerBadge name={seatName(game, seatId)} />
 						<span class="count">{shown?.counts[seatId] ?? 0}</span>
 					</li>
 				{/each}

@@ -5821,7 +5821,7 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	// None clears it.
 	await sheet.getByTestId('sheet-nominated-by').tap();
 	await page
-		.getByRole('dialog', { name: 'Who nominated Seat 3?' })
+		.getByRole('dialog', { name: /^Who nominated Seat 3\s?\?$/ })
 		.getByRole('button', { name: 'None', exact: true })
 		.tap();
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');

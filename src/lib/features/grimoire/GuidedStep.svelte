@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
 	import StepAfflictions from './StepAfflictions.svelte';
@@ -239,7 +240,9 @@
 				</span>
 				<div class="head-text">
 					<p class="who">
-						{holders.length > 0 ? holders.map((s) => seatName(game, s)).join(', ') : 'None'}
+						{#each holders as s, i (s)}{i > 0 ? ', ' : ''}<PlayerBadge
+								name={seatName(game, s)}
+							/>{:else}None{/each}
 					</p>
 					<!-- The whole ability up top, beside the icon and name (Trevor, 2026-10-17). -->
 					{#if step.character?.ability}
@@ -346,7 +349,7 @@
 							/>
 							<!-- The seat and its character (Trevor, 2026-10-18), on one line. -->
 							<span class="where"
-								>{at ? `On ${seatName(game, at.seatId)}` : 'Not placed'}{#if held?.characterId}
+								>{#if at}On <PlayerBadge name={seatName(game, at.seatId)} />{:else}Not placed{/if}{#if held?.characterId}
 									<CharacterBadge
 										characterId={held.characterId}
 										character={characters.get(held.characterId)}

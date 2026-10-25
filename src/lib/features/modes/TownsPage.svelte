@@ -1,7 +1,11 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { CharacterId, PlayerName } from '#lib/core/data/index.ts';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		canMoveTown,
@@ -83,9 +87,11 @@
 			: resolve('/grimoire/[gameId]/setup', { gameId });
 	}
 
+	/** "Seat 3 · Ana", for the move's accessible name; on screen the player is their badge. */
 	function seatLabel(open: OpenGame, seatId: SeatId): string {
 		const number = t('common.seat', { number: seatNumber(open.game, seatId) ?? 0 });
 		const name = open.game.seats[seatId]?.playerName;
+		// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 		return name ? `${number} · ${name}` : number;
 	}
 
@@ -101,7 +107,7 @@
 	const warnings = $derived.by(() => {
 		if (!towns || !samePlayers) return [];
 		const across: PlayerAcrossTowns[] = Array.from({ length: players }, (_, i) => ({
-			playerName: names[i] || t('common.seat', { number: i + 1 }),
+			playerName: names[i] || (t('common.seat', { number: i + 1 }) as PlayerName),
 			characters: (towns ?? []).map((open) => {
 				const seat = open.game.seats[open.game.seating[i]];
 				const character = seat?.characterId && open.characters.get(seat.characterId);
@@ -197,9 +203,14 @@
 					{#if warnings.length === 0}
 						{t('common.none')}
 					{:else}
-						{#each warnings as w (w.playerName + w.type)}
+						{#each warnings as w, i (i)}
 							<p role="alert">
-								{t('modes.towns.inEveryTown', { player: w.playerName, type: TYPE_LABELS[w.type] })}
+								<Sentence
+									text={t('modes.towns.inEveryTown', {
+										player: slot('player'),
+										type: TYPE_LABELS[w.type]
+									})}>{#snippet fill()}<PlayerBadge name={w.playerName} />{/snippet}</Sentence
+								>
 							</p>
 						{/each}
 					{/if}
@@ -241,7 +252,7 @@
 							confirming = true;
 						}}
 					>
-						<span>{seatLabel(open, m.seatId)}</span>
+						<PlayerBadge name={seatName(open.game, m.seatId)} />
 						<CharacterBadge
 							characterId={seat.characterId as CharacterId}
 							alignment={seat.alignment}
@@ -266,7 +277,14 @@
 		: ''}
 	onConfirm={doMove}
 	onCancel={() => (move = undefined)}
-/>
+>
+	{#snippet heading()}{#if move && towns}<Sentence
+				text={t('modes.towns.moveConfirm', { player: slot('player'), number: target + 1 })}
+				>{#snippet fill()}{#if move && towns}<PlayerBadge
+							name={seatName(towns[move.from].game, move.seatId)}
+						/>{/if}{/snippet}</Sentence
+			>{/if}{/snippet}
+</ConfirmDialog>
 
 <style>
 	h2,
