@@ -3,7 +3,8 @@
 	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import NominationChooser from './NominationChooser.svelte';
-	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
@@ -93,8 +94,6 @@
 	const character = $derived(seat?.characterId ? characters.get(seat.characterId) : undefined);
 	const traveller = $derived(character?.type === 'traveller');
 	const title = $derived(seat ? (seat.playerName ?? `Seat ${number}`) : '');
-	/** "Seat 3 (Cat)", or "Seat 3" with no name. */
-	const seatLabel = $derived(seatId === undefined ? '' : seatLabelFor(game, seatId));
 	/** Custom tokens can look alike, so the type shows too (Trevor, 2026-10-22, plan L26). */
 	const typeText = $derived(
 		character ? character.type[0].toUpperCase() + character.type.slice(1) : ''
@@ -406,7 +405,7 @@
 			</form>
 		{:else}
 			<span class="player-name" class:no-name={!seat?.playerName}
-				>{seat?.playerName ?? 'No name'}</span
+				>{#if seat?.playerName}<PlayerBadge name={seat.playerName} />{:else}No name{/if}</span
 			>
 		{/if}
 	{/snippet}
@@ -556,9 +555,9 @@
 					>
 						<Icon name="nominator" />
 						<span
-							>{nominations.allMade.length
-								? nominations.allMade.map((n) => seatLabelFor(game, n.nominee)).join(', ')
-								: 'None'}</span
+							>{#each nominations.allMade as n, i (i)}{i > 0 ? ', ' : ''}<PlayerBadge
+									name={seatName(game, n.nominee)}
+								/>{:else}None{/each}</span
 						>
 					</button>
 				</div>
@@ -573,9 +572,9 @@
 					>
 						<Icon name="nominated" />
 						<span
-							>{nominations.received
-								? seatLabelFor(game, nominations.received.nominator)
-								: 'None'}</span
+							>{#if nominations.received}<PlayerBadge
+									name={seatName(game, nominations.received.nominator)}
+								/>{:else}None{/if}</span
 						>
 					</button>
 				</div>
@@ -670,7 +669,9 @@
 	{#if seat?.characterId && changeTo}
 		<dl class="change">
 			<dt>Player</dt>
-			<dd><strong>{seatLabel}</strong></dd>
+			<dd>
+				{#if seatId}<PlayerBadge name={seatName(game, seatId)} />{/if}
+			</dd>
 			<dt>Current role</dt>
 			<dd>
 				<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />
@@ -790,16 +791,15 @@
 {#snippet seatBadge(id: SeatId | undefined)}
 	{@const other = id ? game.seats[id] : undefined}
 	{#if other}
-		{@const n = game.seating.indexOf(other.seatId) + 1}
 		{#if other.characterId}
 			<CharacterBadge
 				characterId={other.characterId}
 				character={characters.get(other.characterId)}
 				alignment={other.alignment}
-				playerName={other.playerName ?? `Seat ${n}`}
+				playerName={seatName(game, other.seatId)}
 			/>
 		{:else}
-			<strong>{other.playerName ?? `Seat ${n}`}</strong>
+			<PlayerBadge name={seatName(game, other.seatId)} />
 		{/if}
 	{/if}
 {/snippet}
