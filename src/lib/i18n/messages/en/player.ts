@@ -56,9 +56,15 @@ export const player = {
 	'player.delete': 'Delete',
 
 	'player.density': 'Script sheet layout',
-	'player.lightSheet': 'Light background',
+	'player.sheetBackground': 'Sheet background',
+	'player.sheetBackground.theme': 'Theme',
+	'player.sheetBackground.white': 'Off-white',
+	'player.sheetBackground.parchment': 'Parchment',
+	'player.sheetBackground.tan': 'Tan',
+	'player.sheetBackground.grey': 'Grey',
+	'player.sheetBackground.slate': 'Slate',
+	'player.sheetBackground.charcoal': 'Charcoal',
 	'player.frame': 'Your frame',
-	'player.avatar': 'Initials on your seat',
 	'player.guessesOnTokens': 'Guesses over avatars',
 	'player.guessesOnTokensDetail':
 		"Your guess of a seat's character shows on its token in place of the player's avatar.",

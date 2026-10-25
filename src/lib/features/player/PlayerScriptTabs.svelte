@@ -12,7 +12,7 @@
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import { playerNight } from './player-script.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
-	import { LIGHT_SHEET_STYLE } from '#lib/ui/themes/print.ts';
+	import { sheetStyle } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import ScriptCopy from './ScriptCopy.svelte';
 	import type { TravellerInPlay } from './travellers-in-play.ts';
 
@@ -73,14 +73,21 @@
 			<!-- A crash in one tab replaces only that tab. -->
 			<ErrorBoundary area="play">
 				{#if value === 'script'}
-					<ScriptCopy {script} {players} {inPlay} {travellers} byline={false} lightSwitch={false} />
+					<ScriptCopy
+						{script}
+						{players}
+						{inPlay}
+						{travellers}
+						byline={false}
+						backgroundChoice={false}
+					/>
 				{:else if value === 'night'}
 					<!-- The night order takes the same light background as the script (Trevor,
 					     2026-10-23: "Sun and Moon should affect night order as well"). -->
 					<div
 						class="sheet"
-						class:light={playerSettings.current.lightSheet}
-						style={playerSettings.current.lightSheet ? LIGHT_SHEET_STYLE : undefined}
+						class:painted={playerSettings.current.sheetBackground !== 'theme'}
+						style={sheetStyle(playerSettings.current.sheetBackground)}
 						data-testid="night-sheet"
 					>
 						{#if data}<PlayerNightOrder {nights} />{:else}<p class="muted">
@@ -106,8 +113,8 @@
 		padding: var(--space-3);
 		border-radius: var(--radius-md);
 	}
-	/* The colours themselves are LIGHT_SHEET (themes/print.ts), set on the element. */
-	.light {
+	/* The colours themselves are the chosen background's (themes/sheet-backgrounds.ts), set on the element. */
+	.painted {
 		background: var(--surface);
 		color: var(--on-surface);
 	}

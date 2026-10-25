@@ -7,8 +7,9 @@
 	 * entry"). One real `<input>` lies over the boxes, so typing moves on to the next box,
 	 * Backspace steps back, a pasted or autofilled code fills them all, and screen readers
 	 * see one ordinary field. Characters outside `allowed` (spaces, dashes) are dropped and
-	 * anything past `length` is cut off. Enter submits the form around it as usual. The X
-	 * clears the whole code, like every other text field.
+	 * anything past `length` is cut off. Enter submits the form around it as usual, or calls
+	 * `onenter` when given (a form with two codes has no implicit submit). The X clears the
+	 * whole code, like every other text field.
 	 */
 	interface Props {
 		value?: string;
@@ -29,6 +30,12 @@
 		 * Trevor, 2026-10-19: "make the number input bigger").
 		 */
 		large?: boolean;
+		/** The keyboard's action key: Next on a code with another field after it. */
+		enterkeyhint?: 'go' | 'next' | 'done';
+		/** Enter, in place of submitting the form. */
+		onenter?: () => void;
+		/** The last box was just filled. */
+		oncomplete?: () => void;
 	}
 
 	let {
@@ -40,7 +47,10 @@
 		inputmode = 'numeric',
 		clearLabel,
 		centred = false,
-		large = false
+		large = false,
+		enterkeyhint = 'go',
+		onenter,
+		oncomplete
 	}: Props = $props();
 
 	let focused = $state(false);
@@ -57,8 +67,16 @@
 	function oninput(event: Event & { currentTarget: HTMLInputElement }) {
 		const cleaned = keep(event.currentTarget.value);
 		if (cleaned !== event.currentTarget.value) event.currentTarget.value = cleaned;
+		const filled = cleaned.length === length && value.length < length;
 		value = cleaned;
 		toEnd(event.currentTarget);
+		if (filled) oncomplete?.();
+	}
+
+	function onkeydown(event: KeyboardEvent) {
+		if (event.key !== 'Enter' || !onenter) return;
+		event.preventDefault();
+		onenter();
 	}
 
 	/** Typing always carries on from the last box, so the caret stays at the end. */
@@ -96,8 +114,9 @@
 		autocomplete="one-time-code"
 		autocapitalize="characters"
 		spellcheck="false"
-		enterkeyhint="go"
+		{enterkeyhint}
 		{oninput}
+		{onkeydown}
 		onfocus={(e) => {
 			focused = true;
 			toEnd(e.currentTarget);

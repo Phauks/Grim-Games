@@ -1,5 +1,5 @@
 import type { Game, GameId } from '#lib/core/model/index.ts';
-import { readStored, writeStored } from '#lib/ui/stored.ts';
+import { writeStored } from '#lib/ui/stored.ts';
 
 /**
  * New game from inside a game (Game info, Trevor 2026-10-24: "a way to 'Start A New Game'"):
@@ -14,13 +14,15 @@ export interface NextGame {
 	drop: boolean;
 	/** Player names in seating order; an unnamed seat is undefined. */
 	names: (string | undefined)[];
-	/** When the sheet opened; a carry left behind by a closed tab goes stale. */
+	/** When the sheet opened. */
 	at: number;
 }
 
-const KEY = 'grim-games:next-game:v1';
-/** A carry older than this is ignored, so a crash never seats them in a later game. */
-const STALE_MS = 60 * 60 * 1000;
+/** Where earlier builds kept the carry; removed so nothing reads a stale one. */
+const OLD_KEY = 'grim-games:next-game:v1';
+writeStored(OLD_KEY, undefined);
+
+let carried: NextGame | undefined;
 
 /** The players and game to carry from `game` into the next one. */
 export function carryFrom(game: Game, drop: boolean, now = Date.now()): NextGame {
@@ -33,30 +35,22 @@ export function carryFrom(game: Game, drop: boolean, now = Date.now()): NextGame
 }
 
 export function setNextGame(next: NextGame): void {
-	writeStored(KEY, next);
+	carried = { ...next, names: [...next.names] };
 }
 
 export function clearNextGame(): void {
-	writeStored(KEY, undefined);
+	carried = undefined;
 }
 
-/** The carry, if a fresh one is set; read leniently. */
-export function readNextGame(now = Date.now()): NextGame | undefined {
-	const raw = readStored(KEY);
-	if (!raw || typeof raw !== 'object') return undefined;
-	const r = raw as Record<string, unknown>;
-	if (typeof r.from !== 'string' || typeof r.at !== 'number' || now - r.at > STALE_MS)
-		return undefined;
-	const names = Array.isArray(r.names)
-		? r.names.map((n) => (typeof n === 'string' && n.trim() ? n : undefined))
-		: [];
-	return { from: r.from as GameId, drop: r.drop === true, names, at: r.at };
+/** The carry, while Game info's New game sheet is open. */
+export function readNextGame(): NextGame | undefined {
+	return carried;
 }
 
 /** Reads the carry and clears it, so only one game takes it. */
-export function takeNextGame(now = Date.now()): NextGame | undefined {
-	const next = readNextGame(now);
-	if (next) clearNextGame();
+export function takeNextGame(): NextGame | undefined {
+	const next = carried;
+	carried = undefined;
 	return next;
 }
 

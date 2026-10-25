@@ -42,22 +42,34 @@ const TABLE_KEY = 'grim-games-room-table';
 export interface RoomTable {
 	storyteller?: string;
 	travellers?: TravellerInPlay[];
+	/** The room's game, so notes and guesses follow the game even offline (`gameKey`). */
+	gameId?: string;
 }
 
 function storedTable(code: string | undefined): RoomTable {
 	const stored = readStored<RoomTable & { code: string }>(TABLE_KEY);
 	if (!code || stored?.code !== code) return {};
-	return { storyteller: stored.storyteller, travellers: stored.travellers };
+	return { storyteller: stored.storyteller, travellers: stored.travellers, gameId: stored.gameId };
 }
 
 /** The last room's table, while it is remembered. */
 export const roomTable = $state<RoomTable>(storedTable(lastRoom()));
 
+/**
+ * Where a phone keeps what it writes for one game in room `code` (its guesses and seat notes):
+ * per game, so a new game in the same room starts clean (Trevor, 2026-10-25). Before the room
+ * has said which game it is, the room's code alone.
+ */
+export function gameKey(code: string): string {
+	return code === lastRoom() && roomTable.gameId ? `${code}:${roomTable.gameId}` : code;
+}
+
 function setTable(code: string, table: RoomTable): void {
 	if (JSON.stringify(table) === JSON.stringify($state.snapshot(roomTable))) return;
 	roomTable.storyteller = table.storyteller;
 	roomTable.travellers = table.travellers;
-	const empty = !table.storyteller && !table.travellers?.length;
+	roomTable.gameId = table.gameId;
+	const empty = !table.storyteller && !table.travellers?.length && !table.gameId;
 	writeStored(TABLE_KEY, empty ? undefined : { code, ...table });
 }
 
@@ -94,7 +106,8 @@ export class RoomPlayer {
 					const travellers = travellersInPlay(m.public?.seats ?? []);
 					setTable(code, {
 						...(storyteller ? { storyteller } : {}),
-						...(travellers.length ? { travellers } : {})
+						...(travellers.length ? { travellers } : {}),
+						...(m.gameId ? { gameId: m.gameId } : {})
 					});
 				} else if (m.type === 'script') this.script = m.script;
 				else if (m.type === 'reveal') {

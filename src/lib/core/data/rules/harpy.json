@@ -87,5 +87,10 @@
 				"reason": "Says which token goes on which target and that last night’s come off."
 			}
 		}
+	},
+	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"]
+		}
 	}
 }

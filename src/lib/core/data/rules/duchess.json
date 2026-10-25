@@ -36,5 +36,10 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on new visitors each day."
+	},
+	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"]
+		}
 	}
 }

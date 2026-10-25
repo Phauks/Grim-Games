@@ -41,14 +41,16 @@
 			<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 			<li>
 				While you are signed in, a copy of your account's scripts, Library folders, tags and names,
-				and character collections, and any changes still waiting to reach it, so they work offline
-				(IndexedDB).
+				character collections and settings profiles, and any changes still waiting to reach it, so
+				they work offline (IndexedDB).
 			</li>
 			<li>
-				Your settings and screen choices, such as theme, fonts, text size, language, column widths
-				and how you last viewed the <a href={resolve('/reference')}>Reference</a> page; your Library tags
-				and folders; a script you are building; the characters you make and one you are building; your
-				custom info tokens; the player names you have used; and setup in progress (localStorage).
+				Your settings, settings profiles and screen choices, such as theme, fonts, text size,
+				language, column widths and how you last viewed the <a href={resolve('/reference')}
+					>Reference</a
+				> page; your Library tags and folders; a script you are building; the characters you make and
+				one you are building; your custom info tokens; the player names you have used; and setup in progress
+				(localStorage).
 			</li>
 			<li>
 				A log of up to 20 recent problems the app ran into: the error, where in the app and on which
@@ -196,6 +198,12 @@
 				Your Library's folders, tags and the names you give items there, and your character
 				collections, including the first time you sign in on a device. Every device you sign in on
 				keeps them in step; you can stop a device syncing either in Settings, Data.
+			</li>
+			<li>
+				Your settings profiles: each profile's name and its theme, text, icon, board, token and
+				Storyteller settings, including the first time you sign in on a device. A background picture
+				you add stays on the device you added it on. You can stop a device syncing them in Settings,
+				Data.
 			</li>
 		</ul>
 		<p>

@@ -2,7 +2,12 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
+	import {
+		defaultAlignment,
+		type Alignment,
+		type Character,
+		type PlayerName
+	} from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -28,7 +33,8 @@
 		needsAlignment: boolean;
 		/** "Seat 3", the seat the draw goes to. */
 		seatLabel: string;
-		playerName: string;
+		/** The name already on the seat, to start the name field with. */
+		playerName: PlayerName;
 		/** Names already on other seats, left out of the names to pick from. */
 		taken?: readonly string[];
 		/**
@@ -167,6 +173,19 @@
 		else if (revealed) return;
 		else if (name.trim() !== '') revealed = true;
 	}
+
+	/**
+	 * Android Chrome buzzes about half a second into any long press, after the token is
+	 * already showing, so the buzz matched nothing (Trevor, 2026-10-25: "remove or correct
+	 * timing"). Cancelling the touch's default stops the long-press gesture and its buzz; the
+	 * hold itself runs on Pointer Events, which still fire. Svelte's own touch handlers are
+	 * passive, so this one is added by hand.
+	 */
+	function noLongPress(node: HTMLElement) {
+		const stop = (event: TouchEvent) => event.cancelable && event.preventDefault();
+		node.addEventListener('touchstart', stop, { passive: false });
+		return () => node.removeEventListener('touchstart', stop);
+	}
 </script>
 
 <svelte:window onkeydown={onWindowKey} />
@@ -220,6 +239,7 @@
 							onkeyup={(e) => e.key === ' ' && hold(false)}
 							onblur={() => hold(false)}
 							oncontextmenu={(e) => e.preventDefault()}
+							{@attach noLongPress}
 						>
 							{#if held}<CharacterToken
 									character={spinning ?? face.character}

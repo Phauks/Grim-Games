@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import type { PlayerName } from '#lib/core/data/index.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -36,7 +38,7 @@
 		return [...seated, ...[...all].filter((id) => !seated.includes(id))];
 	});
 	/** A seat's name now, or the newest name History has for a removed seat. */
-	function seatLabel(seatId: SeatId): string {
+	function seatLabel(seatId: SeatId): PlayerName {
 		const game = grimoire.game;
 		const number = game.seating.indexOf(seatId) + 1;
 		if (number > 0) return game.seats[seatId]?.playerName ?? `Seat ${number}`;
@@ -90,7 +92,7 @@
 				type="button"
 				class="who"
 				aria-pressed={chosenSeats.includes(id)}
-				onclick={() => toggleFilter(id)}><span>{seatLabel(id)}</span></button
+				onclick={() => toggleFilter(id)}><PlayerBadge name={seatLabel(id)} /></button
 			>
 		{/each}
 	</div>
@@ -171,12 +173,6 @@
 	}
 	.filter .who {
 		max-width: 12em;
-	}
-	.who span {
-		max-width: 100%;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	.filter button[aria-pressed='true'] {
 		border-color: var(--accent);

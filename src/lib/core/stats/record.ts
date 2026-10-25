@@ -7,7 +7,13 @@
  * Days follow the grimoire's own count (`dayNumber`): 0 is the first night, and each Dawn
  * starts the next day.
  */
-import type { Alignment, CharacterId, CharacterName, CharacterType } from '#lib/core/data/index.ts';
+import type {
+	Alignment,
+	CharacterId,
+	CharacterName,
+	CharacterType,
+	PlayerName
+} from '#lib/core/data/index.ts';
 import type { DeathCause, GameId, SeatId } from '#lib/core/model/index.ts';
 import type { EndReason } from '#lib/core/rules/end-reason.ts';
 
@@ -28,7 +34,7 @@ export interface RecordCharacter {
 
 export interface RecordSeat {
 	seatId: SeatId;
-	playerName?: string;
+	playerName?: PlayerName;
 	/** At the first Dawn (the end of the first night); absent if the seat had no character then. */
 	start?: RecordCharacter;
 	/** When the game ended. */

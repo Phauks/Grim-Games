@@ -40,6 +40,8 @@
 		selected?: Snippet<[Option]>;
 		/** Shown but not usable (a setting that depends on another one being on). */
 		disabled?: boolean;
+		/** False lets the list be as wide as its options (a closed control smaller than them). */
+		listFitsTrigger?: boolean;
 	}
 
 	let {
@@ -56,7 +58,8 @@
 		action,
 		item,
 		selected,
-		disabled
+		disabled,
+		listFitsTrigger = true
 	}: Props = $props();
 
 	let open = $state(false);
@@ -146,7 +149,7 @@
 	onValueChange={(details) => change(details.value as T[])}
 	ids={labelledBy ? { label: labelledBy } : undefined}
 	{disabled}
-	positioning={{ strategy: 'fixed', sameWidth: true, fitViewport: true, gutter: 4 }}
+	positioning={{ strategy: 'fixed', sameWidth: listFitsTrigger, fitViewport: true, gutter: 4 }}
 	lazyMount
 	unmountOnExit
 >

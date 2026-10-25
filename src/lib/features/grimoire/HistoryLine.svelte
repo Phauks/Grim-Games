@@ -2,6 +2,7 @@
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import type { HistoryPart } from './history.ts';
 	import { tokenLabel } from './reminders.ts';
 
@@ -19,7 +20,9 @@
 				character={characters.get(part.characterId)}
 				alignment={part.alignment}
 				playerName={part.name}
-			/>{:else}<strong>{part.name}</strong>{/if}{:else if part.kind === 'character'}<CharacterBadge
+			/>{:else}<PlayerBadge
+				name={part.name}
+			/>{/if}{:else if part.kind === 'character'}<CharacterBadge
 			characterId={part.characterId}
 			character={characters.get(part.characterId)}
 		/>{:else}<span class="chip"

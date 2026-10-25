@@ -16,5 +16,11 @@
 	},
 	"deathCause": {
 		"kind": "gained-ability"
+	},
+	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"],
+			"upTo": 2
+		}
 	}
 }

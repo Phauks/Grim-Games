@@ -54,11 +54,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title:
 			'Grimoire board with a guided night: night steps, reminders, frames, the character sheet',
-		parts: ['L8', 'L18a', 'L4', 'L26']
+		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60']
 	},
 	{
 		title: 'Day view: executions, announcements, Savant reminders, player claims',
-		parts: ['L12', 'L13', 'L21', 'L9', 'L28', 'L45', 'L56', 'L57', 'L58']
+		parts: ['L12', 'L13', 'L21', 'L9', 'L28', 'L45', 'L56', 'L57', 'L58', 'L61']
 	},
 	{
 		title: 'Live rooms: one join code, a script and mode vote, the next game in the same room',
@@ -82,7 +82,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: 'One start flow: New game, then Game info during the game',
-		parts: [...range('G', 1, 3), ...range('G', 5, 7), 'G9', 'G10', 'G14', 'L6', 'L14', 'L37']
+		parts: [...range('G', 1, 3), ...range('G', 5, 7), 'G9', 'G10', 'G14', 'G16', 'L6', 'L14', 'L37']
 	},
 	{
 		title:
@@ -115,6 +115,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S4', 'S6', 'S12', 'S17', 'S19', 'S20']
 	},
 	{ title: 'Install as an app', parts: ['S1'] },
+	{
+		title: 'Settings profiles: save your board and settings, and pick one for each game',
+		parts: ['S18']
+	},
 	{
 		title: 'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover',
 		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24']

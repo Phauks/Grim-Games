@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		reminderHolder,
@@ -139,7 +140,7 @@
 </script>
 
 {#snippet place(at: Place, back = false)}
-	{#if 'seatId' in at}On {seatLabel(game, at.seatId)}
+	{#if 'seatId' in at}On <PlayerBadge name={seatName(game, at.seatId)} />
 	{:else if 'characterId' in at}On <CharacterBadge
 			characterId={at.characterId}
 			character={characters.get(at.characterId)}

@@ -77,5 +77,10 @@
 				"either": true
 			}
 		]
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["self"]
+		}
 	}
 }

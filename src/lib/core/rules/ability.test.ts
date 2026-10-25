@@ -19,6 +19,7 @@ import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import {
 	abilityState,
+	executionSavers,
 	firstDeathSaver,
 	killRedirect,
 	protection,
@@ -261,6 +262,65 @@ describe('protection', () => {
 		expect(protection(g, seats[1], all, 'demon')).toMatchObject({ characterId: 'lampwarden' });
 		expect(protection(g, seats[1], all, 'other')).toBeUndefined();
 		expect(protection(g, seats[1], characters, 'demon')).toBeUndefined();
+	});
+});
+
+describe('executionSavers', () => {
+	const ids = (g: ReturnType<typeof game>, i: number) =>
+		executionSavers(g.game, g.seats[i], characters)
+			.filter((s) => s.source.characterId !== 'sailor' && s.source.characterId !== 'tealady')
+			.map((s) => [s.source.characterId, s.problem ?? 'ok']);
+
+	it('offers the Pacifist for a good player, warns for an evil one, never applies it unasked', () => {
+		// https://wiki.bloodontheclocktower.com/Pacifist: "might not die"; the Storyteller chooses.
+		const g = game(['pacifist', 'chef', 'poisoner', 'imp']);
+		expect(ids(g, 1)).toContainEqual(['pacifist', 'ok']);
+		expect(ids(g, 2)).toContainEqual(['pacifist', 'not-this-player']);
+		expect(protection(g.game, g.seats[1], characters, 'execution')).toBeUndefined();
+	});
+
+	it("says when the save's character is drunk or poisoned", () => {
+		const g = game(['pacifist', 'chef', 'poisoner', 'imp'], add(0, 'poisoner', 'Poisoned'));
+		expect(ids(g, 1)).toContainEqual(['pacifist', 'impaired']);
+	});
+
+	it("offers the Devil's Advocate only for the player it marked", () => {
+		// https://wiki.bloodontheclocktower.com/Devil%27s_Advocate
+		const g = game(
+			['devilsadvocate', 'chef', 'clockmaker', 'imp'],
+			add(1, 'devilsadvocate', 'Survives Execution')
+		);
+		expect(ids(g, 1)).toContainEqual(['devilsadvocate', 'ok']);
+		expect(ids(g, 2)).toContainEqual(['devilsadvocate', 'not-this-player']);
+		expect(protection(g.game, g.seats[1], characters, 'execution')).toMatchObject({
+			characterId: 'devilsadvocate'
+		});
+	});
+
+	it('offers the Psychopath and Lleech for themselves only; the Vizier applies unasked', () => {
+		// https://wiki.bloodontheclocktower.com/Psychopath (roshambo), /Lleech (lives while the
+		// host does), /Vizier (cannot die during the day).
+		const g = game(['psychopath', 'lleech', 'vizier', 'chef']);
+		expect(ids(g, 0)).toContainEqual(['psychopath', 'ok']);
+		expect(ids(g, 1)).toContainEqual(['lleech', 'ok']);
+		expect(ids(g, 3)).toEqual(
+			expect.arrayContaining([
+				['psychopath', 'not-this-player'],
+				['lleech', 'not-this-player']
+			])
+		);
+		expect(protection(g.game, g.seats[0], characters, 'execution')).toBeUndefined();
+		expect(protection(g.game, g.seats[2], characters, 'execution')).toMatchObject({
+			characterId: 'vizier'
+		});
+		// Not the Vizier's protection at night.
+		expect(protection(g.game, g.seats[2], characters, 'demon')).toBeUndefined();
+	});
+
+	it('never offers a protection that lasts only the night', () => {
+		// https://wiki.bloodontheclocktower.com/Innkeeper: "can't die tonight".
+		const g = game(['innkeeper', 'monk', 'soldier', 'imp']);
+		expect(ids(g, 0)).toEqual([]);
 	});
 });
 

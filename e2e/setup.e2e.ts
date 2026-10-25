@@ -1224,6 +1224,33 @@ async function lockedDraw(page: Page) {
 	await lockDraw(page);
 }
 
+// Trevor (2026-10-25, Pixel): the keyboard's action key did nothing, and the keyboard hid
+// Confirm. Typed with the keyboard alone: the 4th digit moves on, Enter locks.
+test('the PIN sheet is typed with the keyboard alone and stays above it', async ({ page }) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByTestId('draw-lock').tap();
+	const dialog = page.getByRole('dialog', { name: 'Lock the draw' });
+	const first = dialog.getByLabel('PIN', { exact: true });
+	await expect(first).toHaveAttribute('enterkeyhint', 'next');
+	await first.focus();
+	await page.keyboard.type('1357');
+	await expect(dialog.getByLabel('PIN again')).toBeFocused();
+	await expect(dialog.getByLabel('PIN again')).toHaveAttribute('enterkeyhint', 'done');
+	// A keyboard over the lower 45% of the screen: the sheet and its Confirm sit above it.
+	const height = page.viewportSize()!.height;
+	await page.evaluate(
+		(inset) => document.documentElement.style.setProperty('--keyboard-inset', `${inset}px`),
+		Math.round(height * 0.45)
+	);
+	const confirm = await dialog.getByRole('button', { name: 'Confirm' }).boundingBox();
+	expect(confirm!.y + confirm!.height).toBeLessThanOrEqual(height * 0.55 + 1);
+	await page.keyboard.type('1357');
+	await page.keyboard.press('Enter');
+	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
+});
+
 // Trevor (2026-10-20, Pixel): the page's end was cut off under the Draw page's bottom bar.
 test("the page's end clears the bottom bar on the setup steps", async ({ page }) => {
 	await selectionFor(page, 5);
@@ -1424,6 +1451,13 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
 	const hold = reveal.getByTestId('reveal-hold');
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	// No long-press buzz half a second in (Trevor, 2026-10-25): the touch's default is cancelled.
+	const buzzless = await hold.evaluate((el) => {
+		const touch = new TouchEvent('touchstart', { cancelable: true, bubbles: true });
+		el.dispatchEvent(touch);
+		return touch.defaultPrevented;
+	});
+	expect(buzzless).toBe(true);
 	// Closed before the character was seen, the tile stays held for that seat.
 	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Tile 1, held by Seat 1' }).tap();

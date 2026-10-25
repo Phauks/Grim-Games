@@ -12,14 +12,15 @@ const AT = 'src/lib/features/grimoire/ReminderMoveConfirm.svelte';
 
 const head = `<script lang="ts">
 	import type { Character } from '#lib/core/data/index.ts';
-	import type { Reminder } from '#lib/core/model/index.ts';
+	import type { Reminder, Seat } from '#lib/core/model/index.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
-	interface Props { character: Character; reminder: Reminder; list: Character[] }
-	let { character, reminder, list }: Props = $props();
+	interface Props { character: Character; reminder: Reminder; list: Character[]; seat: Seat }
+	let { character, reminder, list, seat }: Props = $props();
 	let open = $state(false);
 </script>
 `;
@@ -53,5 +54,17 @@ describe('grim/names-as-badges', () => {
 <IconButton icon="close" label={\`Remove \${reminder.label}\`} />
 <input value={character.name} />`)
 		).toEqual([]);
+	}, 60_000);
+
+	// Trevor, 2026-10-24: "wherever we invoke a player name, we should use the player name
+	// badge that is on the grim".
+	it('reports player names as text and allows them in PlayerBadge or a badge prop', async () => {
+		expect(
+			await problems(`<p>{seat.playerName}</p>
+<p>{\`Note: \${seat.playerName ?? 'Seat 1'}\`}</p>
+<PlayerBadge name={seat.playerName ?? 'Seat 1'} />
+<CharacterBadge characterId={character.id} playerName={seat.playerName} />
+<span aria-label={\`Notes for \${seat.playerName}\`}></span>`)
+		).toEqual(['1:plain', '2:plain']);
 	}, 60_000);
 });

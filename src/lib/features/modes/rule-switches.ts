@@ -16,7 +16,10 @@ export interface RuleSwitch {
 }
 
 export type SwitchLabel =
-	'modes.switch.namedOne' | 'modes.switch.namedMany' | 'modes.switch.threeAlive';
+	| 'modes.switch.namedOne'
+	| 'modes.switch.namedMany'
+	| 'modes.switch.threeAlive'
+	| 'modes.switch.duplicateDemons';
 
 /** The Storyteller's switch choices, by `ruleId:switchId`; a missing one is its default. */
 export type SwitchChoices = Readonly<Record<string, boolean>>;
@@ -93,10 +96,42 @@ const DJINN: readonly RuleSwitch[] = [
 	}
 ];
 
+/** Duplicate Characters with Demons repeating too; our wording, hidden until approved. */
+export const DUPLICATE_DEMONS = 'You may put more than one copy of a character in the bag.';
+
+/**
+ * Duplicate Characters keeps Demons to one copy each, since several could make a game too hard
+ * to win; this switch lets them repeat as well (Trevor, 2026-10-24: "allow duplicate demons
+ * could be a setting"). Off by default.
+ */
+const DUPLICATES: readonly RuleSwitch[] = [
+	{
+		id: 'demons',
+		label: () => 'modes.switch.duplicateDemons',
+		default: false,
+		apply: (rule, on) => {
+			const duplicates = rule.parts.duplicates;
+			if (!on || duplicates?.kind !== 'allowed') return rule;
+			return {
+				...rule,
+				parts: {
+					...rule.parts,
+					duplicates: {
+						...duplicates,
+						notTypes: duplicates.notTypes?.filter((type) => type !== 'demon'),
+						instructions: DUPLICATE_DEMONS
+					}
+				}
+			};
+		}
+	}
+];
+
 export const RULE_SWITCHES: Readonly<Record<string, readonly RuleSwitch[]>> = {
 	'plus-one': EXTRAS,
 	'infinite-possibilities': EXTRAS,
-	'djinns-bargain': DJINN
+	'djinns-bargain': DJINN,
+	'duplicate-characters': DUPLICATES
 };
 
 /** Whether a rule's switch is on. */

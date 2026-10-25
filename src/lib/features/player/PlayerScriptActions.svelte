@@ -3,7 +3,7 @@
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
-	import LightSheetSwitch from './LightSheetSwitch.svelte';
+	import SheetBackgroundSelect from './SheetBackgroundSelect.svelte';
 	import PrintScriptButton from './PrintScriptButton.svelte';
 
 	/**
@@ -28,7 +28,7 @@
 </script>
 
 <!-- One switch for the Script and Night tabs, beside Print and Share (Trevor, 2026-10-23). -->
-<LightSheetSwitch />
+<SheetBackgroundSelect compact />
 <PrintScriptButton {script} {version} />
 <ShareControl
 	what="script"

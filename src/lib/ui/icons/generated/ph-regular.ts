@@ -60,7 +60,6 @@ import ph_lock_simple from '~icons/ph/lock-simple';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_minus from '~icons/ph/minus';
-import ph_moon from '~icons/ph/moon';
 import ph_moon_stars from '~icons/ph/moon-stars';
 import ph_note_pencil from '~icons/ph/note-pencil';
 import ph_palette from '~icons/ph/palette';
@@ -163,7 +162,6 @@ const icons: IconMap = {
 	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-sad': ph_mask_sad,
 	'ph:minus': ph_minus,
-	'ph:moon': ph_moon,
 	'ph:moon-stars': ph_moon_stars,
 	'ph:note-pencil': ph_note_pencil,
 	'ph:palette': ph_palette,

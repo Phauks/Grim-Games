@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { seatNumber } from '#lib/core/model/index.ts';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -23,12 +24,6 @@
 	const character = $derived(ask && grimoire.open.characters.get(ask.characterId));
 	// eslint-disable-next-line grim/names-as-badges -- a dialog title is plain text (Trevor's wording, "Use the Fool’s ability?"); the badge is in the body
 	const title = $derived(`Use the ${character?.name ?? ''}’s ability?`);
-	const label = $derived.by(() => {
-		if (!ask) return '';
-		const n = seatNumber(grimoire.game, ask.seatId);
-		const name = grimoire.game.seats[ask.seatId]?.playerName;
-		return name ? `Seat ${n} (${name})` : `Seat ${n}`;
-	});
 
 	let open = $state(false);
 	$effect(() => {
@@ -65,7 +60,7 @@
 		</p>
 		<dl class="change">
 			<dt>Player</dt>
-			<dd><strong>{label}</strong></dd>
+			<dd><PlayerBadge name={seatName(grimoire.game, ask.seatId)} /></dd>
 			<dt>Places</dt>
 			<dd><ReminderToken label={ask.spentToken} {character} /></dd>
 		</dl>

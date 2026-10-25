@@ -35,7 +35,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 			(id) => id !== seat.seatId && game.seats[id].characterId === character.id
 		);
 		if (elsewhere && !allowsDuplicates(character)) {
-			warn('already-in-play', `${character.name} is already on another seat`);
+			warn('already-in-play', `${character.name} is already on another seat`, [character.id]);
 		}
 		const typeDefault = defaultAlignment(character.type);
 		let alignment = command.alignment;

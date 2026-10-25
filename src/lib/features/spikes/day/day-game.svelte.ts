@@ -1,4 +1,4 @@
-import type { CharacterId, GameData } from '#lib/core/data/index.ts';
+import type { CharacterId, GameData, PlayerName } from '#lib/core/data/index.ts';
 import {
 	canUndo,
 	dispatch,
@@ -72,7 +72,7 @@ export class DayGame implements DayPort {
 		if (this.canUndo) this.session = undo(this.session);
 	}
 
-	seatName(seatId: SeatId | undefined): string {
+	seatName(seatId: SeatId | undefined): PlayerName {
 		if (seatId === undefined) return '';
 		return this.game.seats[seatId]?.playerName ?? 'Unknown seat';
 	}

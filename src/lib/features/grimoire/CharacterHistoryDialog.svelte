@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
+	import { seatLabel as seatLabelFor, seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -26,7 +27,11 @@
 	);
 </script>
 
+<!-- eslint-disable-next-line grim/names-as-badges -- the dialog's accessible name; its heading shows the badge -->
 <Dialog bind:open title={`Character history for ${seatLabel}`}>
+	{#snippet heading()}Character history for {#if seatId}<PlayerBadge
+				name={seatName(grimoire.game, seatId)}
+			/>{/if}{/snippet}
 	<ol class="changes" data-testid="seat-changes">
 		{#each changes as change, i (i)}
 			<li>

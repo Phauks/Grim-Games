@@ -42,5 +42,10 @@
 				]
 			}
 		]
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["self"]
+		}
 	}
 }

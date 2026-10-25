@@ -18,6 +18,7 @@ describe('board looks', () => {
 				usedGhostVote: 'struck',
 				defaultFrame: 'laurel',
 				holdLights: 'seat',
+				holdMoves: true,
 				// Every reminder is always on the board now (Trevor, 2026-10-23).
 				reminderStacks: true,
 				// A dragged reminder no longer names its source (Trevor, 2026-10-24).
@@ -37,7 +38,8 @@ describe('board looks', () => {
 			reminders: 'free',
 			usedGhostVote: 'struck',
 			defaultFrame: 'laurel',
-			holdLights: 'seat'
+			holdLights: 'seat',
+			holdMoves: true
 		});
 		expect(
 			parseBoardLooks({
@@ -51,6 +53,7 @@ describe('board looks', () => {
 				defaultFrame: 'gilded',
 				dragSource: 'x',
 				holdLights: 'x',
+				holdMoves: 'yes',
 				reminderStacks: 'yes',
 				titleAt: 'x'
 			})

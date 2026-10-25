@@ -163,9 +163,11 @@
 		z-index: calc(var(--z-overlay) + var(--layer, 0));
 		background: var(--backdrop);
 	}
+	/* Above the on-screen keyboard, so the field being typed in and Confirm stay in view
+	   (keyboard-inset.ts; Trevor, 2026-10-25). */
 	:global([data-scope='dialog'][data-part='positioner']) {
 		position: fixed;
-		inset: 0;
+		inset: 0 0 var(--keyboard-inset, 0) 0;
 		z-index: calc(var(--z-overlay) + var(--layer, 1));
 		display: grid;
 		place-items: center;
@@ -173,7 +175,7 @@
 	}
 	:global([data-scope='dialog'][data-part='content']) {
 		width: min(100%, calc(28 * var(--u)));
-		max-height: 85dvh;
+		max-height: min(85dvh, 100%);
 		overflow-y: auto;
 		padding: var(--space-4);
 		border: var(--card-border);
