@@ -1292,24 +1292,7 @@
 			/>
 		{/if}
 		{#if ended}
-			<HistoryStrip {grimoire}>
-				{#snippet notice()}
-					<!-- In History's strip, out of the circle (Trevor, 2026-10-18); in the strip so
-					     ending the game moves nothing (2026-10-24). Tapping it offers to reopen. -->
-					<button
-						type="button"
-						class="game-over"
-						data-testid="game-over"
-						data-team={ended.winner}
-						disabled={watching}
-						onclick={() => (reopenOpen = true)}
-					>
-						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
-							? ' · Shown from History'
-							: ''}
-					</button>
-				{/snippet}
-			</HistoryStrip>
+			<HistoryStrip {grimoire} />
 		{:else}
 			<ReminderBank
 				{grimoire}
@@ -1357,7 +1340,27 @@
 			bind:titleW
 			bind:titleH
 			bind:room={corner}
-		/>
+		>
+			{#snippet status()}
+				{#if ended}
+					<!-- Above Game info (the corner), out of History's strip so the strip keeps
+					     its room for the change shown (Trevor, 2026-10-25); held off the corner's
+					     size, so ending the game moves nothing. Tapping it offers to reopen. -->
+					<button
+						type="button"
+						class="game-over"
+						data-testid="game-over"
+						data-team={ended.winner}
+						disabled={watching}
+						onclick={() => (reopenOpen = true)}
+					>
+						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
+							? ' · Shown from History'
+							: ''}
+					</button>
+				{/if}
+			{/snippet}
+		</BoardCorner>
 		{#if showTimer}
 			<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. -->
 			<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
@@ -1789,7 +1792,7 @@
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.game-over {
 		flex: none;
-		max-width: 50%;
+		max-width: 100%;
 		min-height: var(--tap-target);
 		overflow: hidden;
 		text-overflow: ellipsis;

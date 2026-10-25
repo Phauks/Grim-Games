@@ -2375,7 +2375,9 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toBeDisabled();
 	await prompt.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
-	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toContainText('Demon died');
+	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toContainText(
+		'Demon execution'
+	);
 	await prompt.getByRole('button', { name: 'Confirm' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
@@ -2452,16 +2454,13 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
 	// Read-only: nothing pops up in the middle (Trevor, 2026-10-18), and the game over line
-	// sits in History's strip, out of the circle, so ending moves nothing (2026-10-24).
+	// is a status above Game info, leaving History's strip its room (2026-10-25).
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
 	const over = (await page.getByTestId('game-over').boundingBox())!;
-	const strip = (await steps.boundingBox())!;
-	expect(over.y).toBeGreaterThanOrEqual(strip.y);
-	expect(over.y + over.height).toBeLessThanOrEqual(strip.y + strip.height + 1);
-	expect(over.y).toBeGreaterThanOrEqual(
-		(await page.locator('.board').boundingBox())!.y +
-			(await page.locator('.board').boundingBox())!.height
-	);
+	const corner = (await page.getByTestId('script-title').boundingBox())!;
+	await expect(steps.getByTestId('game-over')).toHaveCount(0);
+	expect(over.y + over.height).toBeLessThanOrEqual(corner.y + 1);
+	expect(over.x).toBeLessThan(corner.x + corner.width);
 	await steps.getByRole('button', { name: 'Next change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 	await expect(steps.getByRole('button', { name: 'Next change' })).toBeDisabled();
