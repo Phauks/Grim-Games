@@ -47,8 +47,11 @@ export const PRESETS = {
 export type PresetId = keyof typeof PRESETS;
 const isPreset = (id: unknown): id is PresetId => typeof id === 'string' && id in PRESETS;
 
-/** Where a choice applies: one game, or every game without its own. */
-export type BackgroundScope = { gameId: string } | 'default';
+/**
+ * Where a choice applies: one game, or every game without its own. A settings profile keeps
+ * its picture under its own scope while another profile is in use (plan S18).
+ */
+export type BackgroundScope = { gameId: string } | { profileId: string } | 'default';
 
 const DB_NAME = 'grim-games-backgrounds';
 const STORE = 'choices';
@@ -56,7 +59,11 @@ const STORE = 'choices';
 export const MAX_SIDE = 1920;
 
 const keyOf = (scope: BackgroundScope) =>
-	scope === 'default' ? 'default' : `game:${scope.gameId}`;
+	scope === 'default'
+		? 'default'
+		: 'gameId' in scope
+			? `game:${scope.gameId}`
+			: `profile:${scope.profileId}`;
 
 let db: Promise<IDBDatabase> | undefined;
 function open(): Promise<IDBDatabase> {

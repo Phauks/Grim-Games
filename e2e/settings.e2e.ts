@@ -219,7 +219,8 @@ test('the board looks and background are in Board, saved with the board', async 
 		reminders: 'seat',
 		usedGhostVote: 'hollow',
 		defaultFrame: 'none',
-		holdLights: 'character'
+		holdLights: 'character',
+		holdMoves: false
 	});
 
 	await page.reload();
@@ -342,6 +343,8 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	// Trevor, 2026-10-17: every Storyteller-only setting is in Storyteller settings. (Install
 	// app, where offered, sits below the list.)
 	await expect(nav.getByRole('list').getByRole('button')).toHaveText([
+		// Settings profiles first (plan S18): the next six belong to the one in use.
+		'Profiles',
 		'Theme',
 		'Text',
 		'Icons',

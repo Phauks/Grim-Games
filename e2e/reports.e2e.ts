@@ -226,3 +226,38 @@ test('a report sent from the board carries its script, for its sender and the ad
 	await expect(json).toContainText('washerwoman');
 	await expect(json).not.toContainText('Seat');
 });
+
+test('the Library script popup has Report an issue, and the player view reports its script', async ({
+	page
+}) => {
+	// Trevor, 2026-10-23: "add report button to those screens" (their script covers the footer).
+	const script = [{ id: '_meta', name: 'Storm Front', author: 'Trevor' }, 'washerwoman', 'imp'];
+	await page.goto('/library');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(JSON.stringify(script))
+	});
+	const pane = page.getByRole('dialog', { name: 'Storm Front' });
+	const report = pane.getByRole('button', { name: 'Report an issue' });
+	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+	await report.tap();
+	const form = page.getByRole('dialog', { name: 'Report' });
+	// A script or data report, titled with the script, the script going with it.
+	await expect(form.getByRole('textbox', { name: 'Title' })).toHaveValue('Storm Front: ');
+	await expect(form.getByRole('combobox', { name: 'Kind' })).toContainText(
+		'Script or data problem'
+	);
+	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await expect(form.getByTestId('report-script')).toHaveText('Storm Front');
+	await form.getByRole('button', { name: 'Cancel' }).tap();
+
+	// The player view needs none of its own: the menu's Report an issue takes its script too.
+	await page.goto('/play');
+	await expect(page.getByRole('main').getByRole('button', { name: 'Report an issue' })).toHaveCount(
+		0
+	);
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
+	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await expect(form.getByTestId('report-script')).toHaveText('Storm Front');
+});

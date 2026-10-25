@@ -181,6 +181,65 @@ test('End game keeps the room open and tells its phones the game is over', async
 	await phoneContext.close();
 });
 
+test('after End game a phone rates the game in half stars and sends accolades', async ({
+	page,
+	browser
+}, testInfo) => {
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	const status = phone.getByTestId('join-status');
+	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	// In its place all game, usable once the game is over (no reflow).
+	const rate = phone.getByRole('button', { name: 'Rate game' });
+	await expect(rate).toBeDisabled();
+
+	await page.goto(board);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game' })
+		.tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(status).toHaveText('Game over: Good won');
+
+	await rate.tap();
+	const sheet = phone.getByRole('dialog', { name: 'Rate this game' });
+	const send = sheet.getByRole('button', { name: 'Send' });
+	await expect(send).toBeDisabled();
+	// A second tap on the same star takes off half.
+	await sheet.getByRole('button', { name: 'Star 4' }).tap();
+	await sheet.getByRole('button', { name: 'Star 4' }).tap();
+	await expect(sheet.getByTestId('feedback-rating')).toHaveText('3.5 of 5');
+	await sheet.getByRole('button', { name: /Great pacing/ }).tap();
+	await expect(sheet.getByRole('button', { name: /Great pacing/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(sheet.getByRole('checkbox', { name: 'Anonymous' })).toBeChecked();
+	await sheet.getByRole('textbox', { name: 'Comment' }).fill('A great night.');
+	await send.tap();
+	await expect(sheet).toHaveCount(0);
+	// The room keeps what this phone sent, so it opens as sent, after a reload too.
+	await phone.reload();
+	await rate.tap();
+	await expect(sheet.getByTestId('feedback-rating')).toHaveText('3.5 of 5');
+	await expect(sheet.getByRole('textbox', { name: 'Comment' })).toHaveValue('A great night.');
+	await expect(sheet.getByRole('button', { name: /Great pacing/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await phoneContext.close();
+});
+
 test('after End game the Storyteller shares the finished grimoire with the room', async ({
 	page,
 	browser
@@ -195,10 +254,11 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
 	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
-	// In its place all game on the Grim tab, so nothing moves when it can be used (no reflow).
+	// Not there during the game, where it would do nothing (Trevor, 2026-10-25).
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	const finalSwitch = phone.getByRole('checkbox', { name: 'Final grimoire' });
-	await expect(finalSwitch).toBeDisabled();
+	await expect(phone.getByTestId('player-grim')).toBeVisible();
+	await expect(finalSwitch).toHaveCount(0);
 	// Only once the game is over.
 	await expect(page.getByRole('button', { name: 'Share grim' })).toBeDisabled();
 
@@ -251,7 +311,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 		.tap();
 	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
 	await expect(final).toHaveCount(0);
-	await expect(finalSwitch).toBeDisabled();
+	await expect(finalSwitch).toHaveCount(0);
 	await phoneContext.close();
 });
 
@@ -1295,6 +1355,12 @@ test('a player writes a note on a seat from the Grim tab, and the Notes tab list
 	await phone.keyboard.press('Escape');
 	await expect(seats.nth(2).getByTestId('note-mark')).toBeVisible();
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your note');
+	// The board's own note mark, which opens the note straight away, as on the board (Trevor,
+	// 2026-10-25: the same icon and the same behaviour).
+	await seats.nth(2).getByTestId('note-mark').tap();
+	await expect(editor.getByTestId('note-editor')).toHaveValue('Claims Chef: 1');
+	await expect(sheet).toHaveCount(0);
+	await editor.getByRole('button', { name: 'Close' }).tap();
 
 	// The Notes tab lists every seat with its note, and opens the same editor.
 	await phone.getByRole('tab', { name: 'Notes' }).tap();

@@ -66,7 +66,7 @@
 	level={3}
 	storageKey="settings-board-advanced"
 	defaultOpen={false}
-	count={2}
+	count={3}
 >
 	<SettingRow label={REMINDER_MODE_LABEL} warning={t('settings.reminderModeWarning')}>
 		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
@@ -76,6 +76,12 @@
 		description={t('settings.holdLightsSeatDescription')}
 		checked={boardLooks.current.holdLights === 'seat'}
 		onChange={(on) => boardLooks.update({ holdLights: on ? 'seat' : 'character' })}
+	/>
+	<SettingToggle
+		label={t('settings.holdMoves')}
+		description={t('settings.holdMovesDescription')}
+		checked={boardLooks.current.holdMoves}
+		onChange={(on) => boardLooks.update({ holdMoves: on })}
 	/>
 </Collapsible>
 

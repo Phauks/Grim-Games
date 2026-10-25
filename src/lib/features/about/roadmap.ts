@@ -120,12 +120,19 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['R4', 'R5']
 	},
 	{ title: 'QR codes with your own picture and shapes', parts: ['Q1', 'Q2'] },
-	{ title: 'Report an issue from inside the app, with diagnostics', parts: ['S2', 'S7', 'S10'] },
+	{
+		title: 'Report an issue from inside the app, with diagnostics',
+		parts: ['S2', 'S7', 'S10', 'S16']
+	},
 	{
 		title: 'One consistent look: one badge, theme colours only, one icon per meaning',
 		parts: ['S4', 'S6', 'S12', 'S17', 'S19']
 	},
 	{ title: 'Install as an app', parts: ['S1'] },
+	{
+		title: 'Settings profiles: save your board and settings, and pick one for each game',
+		parts: ['S18']
+	},
 	{
 		title: 'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover',
 		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24']

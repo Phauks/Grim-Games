@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId, LoadedScript } from '#lib/core/data/index.ts';
 	import type { PublicCorner, PublicSeat } from '#lib/core/sync/public-projection.ts';
@@ -48,7 +49,6 @@
 	} from './grim-guesses.ts';
 	import GenericGuessToken from './GenericGuessToken.svelte';
 	import SeatNoteDialog from '#lib/ui/notes/SeatNoteDialog.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
@@ -182,9 +182,12 @@
 
 	let open = $state(false);
 	let chosen = $state<PublicSeat>();
-	function choose(seat: PublicSeat) {
+	function choose(seat: PublicSeat, event?: MouseEvent) {
 		chosen = seat;
-		open = true;
+		// The note mark opens the note itself, as the board's does (Trevor, 2026-10-25).
+		const target = event?.target instanceof Element ? event.target : null;
+		if (target?.closest('.mark.note')) noteOpen = true;
+		else open = true;
 	}
 	/** A generic guess's word: its character type, or Good or Evil. */
 	const genericLabel = (g: GenericGuess) =>
@@ -220,14 +223,13 @@
 	/* eslint-enable grim/names-as-badges */
 </script>
 
-<!-- Share grim (plan R5): in its place all game, usable once the Storyteller shares it; the
-     board's own copy of this tab has no such switch. -->
-{#if !town}
+<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
+     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
+{#if !town && final}
 	<div class="tools">
 		<Toggle
 			label={t('room.finalGrimoire')}
-			checked={!!final && showFinal}
-			disabled={!final}
+			checked={showFinal}
 			onChange={(on) => (showFinal = on)}
 		/>
 	</div>
@@ -278,7 +280,7 @@
 				style:top="{point?.y ?? 50}%"
 				aria-label={label(seat)}
 				data-testid="grim-seat"
-				onclick={() => choose(seat)}
+				onclick={(event) => choose(seat, event)}
 			>
 				<SeatDisc
 					{size}
@@ -358,8 +360,8 @@
 </BottomSheet>
 
 {#snippet noteMark()}
-	<!-- Lower right, as the Storyteller's note mark on the board (SeatToken). -->
-	<span class="note-mark" data-testid="note-mark"><Icon name="notes" /></span>
+	<!-- The board's own mark (SeatNoteMark): tapping it opens the note, as on the board. -->
+	<SeatNoteMark />
 {/snippet}
 
 <SeatNoteDialog
@@ -396,22 +398,6 @@
 		color: var(--on-surface-muted);
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	/* The board's note mark: a small disc on the token's lower right rim. */
-	.note-mark {
-		position: absolute;
-		right: -4%;
-		bottom: -4%;
-		display: grid;
-		place-items: center;
-		width: max(1.125 * var(--u), calc(var(--size) * 0.3));
-		height: max(1.125 * var(--u), calc(var(--size) * 0.3));
-		border-radius: 50%;
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		box-shadow: var(--shadow);
-		--icon-size: calc(max(1.125 * var(--u), calc(var(--size) * 0.3)) * 0.65);
-		pointer-events: none;
 	}
 	/* Two rows of three on a phone, one row where there is room. */
 	.generic {

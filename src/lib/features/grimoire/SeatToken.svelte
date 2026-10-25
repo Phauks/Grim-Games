@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import type { Seat } from '#lib/core/model/index.ts';
@@ -45,6 +46,8 @@
 		 * A hold is never a tap, so it opens nothing.
 		 */
 		onHold?: (holding: boolean) => void;
+		/** A hold then a drag moves the seat (boardLooks.holdMoves): no panning on the token. */
+		holdMoves?: boolean;
 		/**
 		 * Today's nominations (Trevor, 2026-10-23), while Track nominations is on: whether this
 		 * player has nominated, and was nominated. A mark not yet earned shows greyed, as the
@@ -73,6 +76,7 @@
 		onTap,
 		onGhostVote,
 		onHold,
+		holdMoves = false,
 		nominations,
 		tokenFreeVotes
 	}: Props = $props();
@@ -125,9 +129,16 @@
 	function pointerdown(event: PointerEvent) {
 		down = { x: event.clientX, y: event.clientY };
 		clearTimeout(holdTimer);
+		const token = event.currentTarget as HTMLElement;
 		if (onHold)
 			holdTimer = setTimeout(() => {
 				held = true;
+				// Held, the token keeps the pointer, so letting go anywhere ends the hold.
+				try {
+					token.setPointerCapture(event.pointerId);
+				} catch {
+					// Already let go.
+				}
 				onHold(true);
 			}, HOLD_MS);
 	}
@@ -213,9 +224,7 @@
 			></span
 		>{/if}
 	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
-	{#if seat.note}<span class="mark note" data-testid="note-mark" title="Note"
-			><Icon name="notes" /></span
-		>{/if}
+	{#if seat.note}<SeatNoteMark />{/if}
 {/snippet}
 
 <button
@@ -227,6 +236,7 @@
 	data-role={role}
 	data-misfit={misfit || undefined}
 	data-testid="seat"
+	data-hold-moves={holdMoves || undefined}
 	aria-label={label}
 	style:--size="{size}px"
 	onpointerdown={pointerdown}
@@ -308,6 +318,10 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
+	/* The browser must not take a held finger for a pan, or the drag would be cancelled. */
+	.seat[data-hold-moves] {
+		touch-action: none;
+	}
 	.mark {
 		position: absolute;
 		display: grid;
@@ -345,12 +359,6 @@
 		translate: -50% 0;
 	}
 	/* Lower right: the dead skull keeps the lower left. */
-	.note {
-		right: -4%;
-		bottom: -4%;
-		background: var(--surface-raised);
-		color: var(--on-surface);
-	}
 	/* Over the top-left rim, half outside the token: the left leaf's first-night number, at the
 	   middle of the left rim, stays clear (Trevor, 2026-10-24). */
 	.nominations {
@@ -390,12 +398,5 @@
 		background: var(--on-surface);
 		color: var(--surface);
 		opacity: 1;
-	}
-	/* A tap target bigger than the mark it shows (Trevor, 2026-10-19: tap it for the notes). */
-	.note::after {
-		content: '';
-		position: absolute;
-		inset: calc(-0.875 * var(--u));
-		border-radius: 50%;
 	}
 </style>
