@@ -26,7 +26,9 @@
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
+	import { pushState } from '$app/navigation';
+	import { page } from '$app/state';
 
 	interface Props {
 		port: SetupGamePort;
@@ -100,6 +102,29 @@
 			unguard();
 			release();
 		};
+	});
+	// ── Back while locked (Trevor, 2026-10-25): Android's back swipe previews the screen under
+	// this one before the app can say no, and Characters would show who is in the bag. So the
+	// locked draw puts an entry of its own on top: the swipe previews the locked draw itself.
+	// Landing back on the entry under it puts the entry back and asks for the PIN.
+	$effect(() => {
+		if (!locked) return;
+		untrack(() => {
+			if (!page.state.drawLocked) pushState('', { drawLocked: true });
+		});
+	});
+	/** The draw's entry was on top, so its going means Back (not a reload, which drops it). */
+	let wasOnTop = false;
+	$effect(() => {
+		const onTop = page.state.drawLocked;
+		untrack(() => {
+			const back = wasOnTop && !onTop;
+			wasOnTop = !!onTop;
+			if (!back || !locked) return;
+			pushState('', { drawLocked: true });
+			// The right PIN unlocks and stays here; Back then leaves as on an unlocked draw.
+			askPin('unlock');
+		});
 	});
 
 	function send(command: Command): boolean {

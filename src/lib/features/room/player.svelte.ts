@@ -4,8 +4,10 @@
  * secret, kept on the device, so it is the same member when it comes back.
  */
 import type { Script } from '#lib/core/data/index.ts';
+import type { GameFeedback } from '#lib/core/feedback/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { ROOM_PROTOCOL, type PlayerView, type SharedGrimoire } from '#lib/core/sync/room.ts';
+import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
 import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
@@ -42,6 +44,8 @@ const TABLE_KEY = 'grim-games-room-table';
 export interface RoomTable {
 	storyteller?: string;
 	travellers?: TravellerInPlay[];
+	/** The game mode and special rules, for the Script tab (Trevor, 2026-10-24). */
+	rules?: PublicRule[];
 	/** The room's game, so notes and guesses follow the game even offline (`gameKey`). */
 	gameId?: string;
 }
@@ -49,7 +53,12 @@ export interface RoomTable {
 function storedTable(code: string | undefined): RoomTable {
 	const stored = readStored<RoomTable & { code: string }>(TABLE_KEY);
 	if (!code || stored?.code !== code) return {};
-	return { storyteller: stored.storyteller, travellers: stored.travellers, gameId: stored.gameId };
+	return {
+		storyteller: stored.storyteller,
+		travellers: stored.travellers,
+		rules: stored.rules,
+		gameId: stored.gameId
+	};
 }
 
 /** The last room's table, while it is remembered. */
@@ -68,8 +77,10 @@ function setTable(code: string, table: RoomTable): void {
 	if (JSON.stringify(table) === JSON.stringify($state.snapshot(roomTable))) return;
 	roomTable.storyteller = table.storyteller;
 	roomTable.travellers = table.travellers;
+	roomTable.rules = table.rules;
 	roomTable.gameId = table.gameId;
-	const empty = !table.storyteller && !table.travellers?.length && !table.gameId;
+	const empty =
+		!table.storyteller && !table.travellers?.length && !table.rules?.length && !table.gameId;
 	writeStored(TABLE_KEY, empty ? undefined : { code, ...table });
 }
 
@@ -104,9 +115,11 @@ export class RoomPlayer {
 					if (!m.ended) this.revealed = undefined;
 					const storyteller = m.public?.storytellerName?.trim();
 					const travellers = travellersInPlay(m.public?.seats ?? []);
+					const rules = m.public?.rules;
 					setTable(code, {
 						...(storyteller ? { storyteller } : {}),
 						...(travellers.length ? { travellers } : {}),
+						...(rules?.length ? { rules } : {}),
 						...(m.gameId ? { gameId: m.gameId } : {})
 					});
 				} else if (m.type === 'script') this.script = m.script;
@@ -171,6 +184,12 @@ export class RoomPlayer {
 	scriptBallot(choices: string[]): boolean {
 		const voteId = this.view?.scriptVote?.voteId;
 		return voteId ? this.#socket.send({ type: 'script-ballot', voteId, choices }) : false;
+	}
+
+	/** Feedback on the game that ended (plan R4); a new one replaces the last. */
+	sendFeedback(feedback: GameFeedback): boolean {
+		const gameId = this.view?.endedGameId;
+		return gameId ? this.#socket.send({ type: 'feedback', gameId, feedback }) : false;
 	}
 
 	stop(): void {
