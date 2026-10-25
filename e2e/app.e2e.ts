@@ -97,14 +97,18 @@ test('the menu links the changelog page, which lists merged changes by day', asy
 	if ((await rows.count()) > 1) await expect(rows.nth(1)).not.toHaveCSS('border-top-width', '0px');
 });
 
-test('the menu links the roadmap, which lists planned items by area', async ({ page }) => {
+test('the menu links the roadmap, which lists features as done, next and later', async ({
+	page
+}) => {
 	await page.goto('/');
 	await (await theMenu(page)).getByRole('link', { name: 'Roadmap' }).tap();
 	await expect(page).toHaveURL(/\/roadmap$/);
 	await expect(page.getByRole('heading', { name: 'Roadmap', level: 1 })).toBeVisible();
 	const main = page.getByRole('main');
-	await expect(main.getByRole('heading', { name: 'Rooms and sharing', level: 2 })).toBeVisible();
-	await expect(main.getByTestId('roadmap-item').first()).toContainText('D1');
+	// Done is filled only from full history; Next and Later have features either way.
+	await expect(main.getByRole('heading', { name: 'Next', level: 2 })).toBeVisible();
+	await expect(main.getByRole('heading', { name: 'Later', level: 2 })).toBeVisible();
+	await expect(main.getByTestId('roadmap-later')).toContainText('Achievements');
 	// Done items link the change that finished them; CI's one-commit history has none.
 	for (const done of await main.locator('[data-testid="roadmap-item"][data-done] a').all())
 		await expect(done).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\//);
@@ -181,6 +185,44 @@ test('a game in progress hides the sidebar, so a stray tap cannot leave it', asy
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
 	await expect(page.locator('.app-body.bare')).toHaveCount(1);
 	await expect(page.getByRole('button', { name: 'Menu', exact: true })).toHaveCount(0);
+});
+
+// Join game and the player view are app pages, not game screens (Trevor, 2026-10-24: "join
+// game page appears to use different left sidebar", then the same of the player's Grim): the
+// same sidebar where it shows, the same hamburger otherwise.
+test('Join game and the player view have the same sidebar and menu as the other pages', async ({
+	page
+}) => {
+	const sidebar = page.getByRole('navigation', { name: 'Menu', exact: true });
+	for (const [path, current] of [
+		['/join', 'Join game'],
+		['/join/123456', 'Join game'],
+		['/play', undefined]
+	] as const) {
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.goto(path);
+		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+		await expect(sidebar).toBeVisible();
+		if (current)
+			await expect(sidebar.getByRole('link', { name: current })).toHaveAttribute(
+				'aria-current',
+				'page'
+			);
+		// One hamburger: the sidebar's, none before the title.
+		await expect(menuButton(page)).toHaveCount(1);
+		await expect(page.locator('.app-body.bare')).toHaveCount(0);
+
+		// Narrow, the hamburger sits where every app page has it and opens the same drawer.
+		await page.setViewportSize({ width: 400, height: 800 });
+		await expect(sidebar).toBeHidden();
+		const nav = await theMenu(page);
+		if (current)
+			await expect(nav.getByRole('link', { name: current })).toHaveAttribute(
+				'aria-current',
+				'page'
+			);
+		await page.keyboard.press('Escape');
+	}
 });
 
 // Trevor (2026-10-19): the phone's top and bottom bars match the palette. The page draws under

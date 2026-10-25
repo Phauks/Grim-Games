@@ -216,6 +216,26 @@ test("the board sheet's quick card opens from its header, beside the X", async (
 	await expect(shown(page).getByRole('heading')).toHaveText('You may not speak');
 });
 
+test('a quick card can be added to the cards to show with others', async ({ page }) => {
+	// Trevor (2026-10-25): a quick card goes in with other cards, like each tile's +.
+	await openSheet(page);
+	await page.getByRole('button', { name: 'Add This is the Demon to the cards to show' }).tap();
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	const add = page.getByRole('button', { name: 'Add to cards' });
+	// Held in place, usable once there are words.
+	await expect(add).toBeDisabled();
+	await page.getByRole('textbox', { name: 'Text' }).fill('You may not speak');
+	await add.tap();
+	const chain = page.getByTestId('chain-list');
+	await expect(chain.getByRole('listitem').first()).toContainText('1. This is the Demon');
+	await expect(chain.getByRole('listitem').nth(1)).toContainText('2. You may not speak');
+	await page.getByRole('button', { name: 'Show 2 cards' }).tap();
+	await expect(shown(page).getByRole('heading')).toHaveText([
+		'This is the Demon',
+		'You may not speak'
+	]);
+});
+
 test('opening a card that asks for characters leaves the keyboard closed', async ({ page }) => {
 	// Sheets never focus a field when they open (Trevor, 2026-10-19).
 	await openSheet(page);

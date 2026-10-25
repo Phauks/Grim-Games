@@ -36,6 +36,21 @@ function room() {
 }
 
 describe('a vote on the next script', () => {
+	it("keeps each script's logo, only as script-logo.ts gives one (Trevor, 2026-10-24)", () => {
+		const vote = newScriptVote('v1', 'single', [
+			{ id: 'tb', name: 'Trouble Brewing', logo: '/data/logos/tb.webp' },
+			{ id: 'a', name: 'A', logo: 'https://example.com/a.png' },
+			{ id: 'b', name: 'B', logo: 'javascript:alert(1)' },
+			{ id: 'c', name: 'C', logo: '/data/logos/../secret' }
+		])!;
+		expect(vote.options.map((o) => o.logo)).toEqual([
+			'/data/logos/tb.webp',
+			'https://example.com/a.png',
+			undefined,
+			undefined
+		]);
+	});
+
 	it('offers two or more scripts, each once, with tidy names', () => {
 		const vote = newScriptVote('v1', 'single', options)!;
 		expect(vote.options[2]).toEqual({ id: 'recent:x', name: 'Whale Buffet', author: 'Someone' });

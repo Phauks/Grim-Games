@@ -43,7 +43,42 @@ export function partsText(
 		.join('');
 }
 
-/** The note with the statements added on their own lines after anything already written. */
-export function noteText(existing: string, lines: readonly string[]): string {
-	return [existing.trim(), ...lines].filter((l) => l !== '').join('\n');
+/**
+ * The note with the statements on their own lines after anything else written there. Lines
+ * already holding statements (starting with `prefixes`) are replaced, so saving again never
+ * stacks a second pair (Trevor, 2026-10-24).
+ */
+export function noteText(
+	existing: string,
+	lines: readonly string[],
+	prefixes: readonly string[] = []
+): string {
+	return [savedStatements(existing, prefixes).rest, ...lines].filter((l) => l !== '').join('\n');
+}
+
+/** A statement saved in the Savant's note: its words and whether it was given as true. */
+export interface SavedStatement {
+	words: string;
+	truth: boolean;
+}
+
+/**
+ * The statements saved in a Savant note, read back by their True and False prefixes
+ * (`[truePrefix, falsePrefix]`), and the rest of the note without them.
+ */
+export function savedStatements(
+	note: string,
+	prefixes: readonly string[]
+): { statements: SavedStatement[]; rest: string } {
+	const [truePrefix, falsePrefix] = prefixes;
+	const statements: SavedStatement[] = [];
+	const rest: string[] = [];
+	for (const line of note.split('\n')) {
+		if (truePrefix && line.startsWith(truePrefix)) {
+			statements.push({ words: line.slice(truePrefix.length).trim(), truth: true });
+		} else if (falsePrefix && line.startsWith(falsePrefix)) {
+			statements.push({ words: line.slice(falsePrefix.length).trim(), truth: false });
+		} else rest.push(line);
+	}
+	return { statements, rest: rest.join('\n').trim() };
 }
