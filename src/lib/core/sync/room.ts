@@ -225,6 +225,8 @@ export interface HostView {
 	vote?: VoteTally;
 	/** Players' feedback on the ended game, once any has come. */
 	feedback?: FeedbackView[];
+	/** The ended game that feedback is on, so the device saves it with that game. */
+	feedbackGameId?: string;
 	/** The script vote's count, while one is open. */
 	scriptVote?: ScriptVoteTally;
 }
@@ -416,7 +418,10 @@ export function newRoom(hostKeyHash: string): RoomState {
 export function hostView(room: RoomState): HostView {
 	const view: HostView = { type: 'host-view', members: room.members, requests: room.requests };
 	if (room.vote) view.vote = tally(room, room.vote);
-	if (room.feedback?.length) view.feedback = room.feedback.map((f) => feedbackView(room, f));
+	if (room.feedback?.length && room.ended) {
+		view.feedback = room.feedback.map((f) => feedbackView(room, f));
+		view.feedbackGameId = room.ended.gameId;
+	}
 	if (room.scriptVote) {
 		view.scriptVote = tallyScriptVote(
 			room.scriptVote,

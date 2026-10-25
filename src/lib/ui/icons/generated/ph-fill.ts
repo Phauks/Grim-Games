@@ -36,6 +36,7 @@ import ph_caret_left_fill from '~icons/ph/caret-left-fill';
 import ph_caret_right_fill from '~icons/ph/caret-right-fill';
 import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_cat_fill from '~icons/ph/cat-fill';
+import ph_chat_centered_text_fill from '~icons/ph/chat-centered-text-fill';
 import ph_check_fill from '~icons/ph/check-fill';
 import ph_check_square_fill from '~icons/ph/check-square-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
@@ -169,6 +170,7 @@ import ph_spinner_fill from '~icons/ph/spinner-fill';
 import ph_square_fill from '~icons/ph/square-fill';
 import ph_square_split_horizontal_fill from '~icons/ph/square-split-horizontal-fill';
 import ph_star_fill from '~icons/ph/star-fill';
+import ph_star_half_fill from '~icons/ph/star-half-fill';
 import ph_sun_fill from '~icons/ph/sun-fill';
 import ph_sun_horizon_fill from '~icons/ph/sun-horizon-fill';
 import ph_swap_fill from '~icons/ph/swap-fill';
@@ -238,6 +240,7 @@ const icons: IconMap = {
 	'ph:caret-right-fill': ph_caret_right_fill,
 	'ph:caret-up-fill': ph_caret_up_fill,
 	'ph:cat-fill': ph_cat_fill,
+	'ph:chat-centered-text-fill': ph_chat_centered_text_fill,
 	'ph:check-fill': ph_check_fill,
 	'ph:check-square-fill': ph_check_square_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
@@ -371,6 +374,7 @@ const icons: IconMap = {
 	'ph:square-fill': ph_square_fill,
 	'ph:square-split-horizontal-fill': ph_square_split_horizontal_fill,
 	'ph:star-fill': ph_star_fill,
+	'ph:star-half-fill': ph_star_half_fill,
 	'ph:sun-fill': ph_sun_fill,
 	'ph:sun-horizon-fill': ph_sun_horizon_fill,
 	'ph:swap-fill': ph_swap_fill,

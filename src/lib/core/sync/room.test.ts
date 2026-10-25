@@ -266,6 +266,8 @@ describe('feedback after a game', () => {
 			{ id: 'f1', name: 'Alex', seatId: 'a', feedback: rated },
 			{ id: 'f2', feedback: anonymous }
 		]);
+		// Named with its game, so the Storyteller's device saves it with that game.
+		expect(hostView(room).feedbackGameId).toBe('g1');
 		// Anonymous feedback carries a room-made id, never the member id.
 		expect(JSON.stringify(hostView(room).feedback)).not.toContain('sam');
 		expect(playerView(room, 'sam').feedback).toEqual(anonymous);

@@ -85,6 +85,7 @@ import ph_skull from '~icons/ph/skull';
 import ph_sliders_horizontal from '~icons/ph/sliders-horizontal';
 import ph_sparkle from '~icons/ph/sparkle';
 import ph_speaker_high from '~icons/ph/speaker-high';
+import ph_star_half from '~icons/ph/star-half';
 import ph_sun from '~icons/ph/sun';
 import ph_swap from '~icons/ph/swap';
 import ph_tag from '~icons/ph/tag';
@@ -187,6 +188,7 @@ const icons: IconMap = {
 	'ph:sliders-horizontal': ph_sliders_horizontal,
 	'ph:sparkle': ph_sparkle,
 	'ph:speaker-high': ph_speaker_high,
+	'ph:star-half': ph_star_half,
 	'ph:sun': ph_sun,
 	'ph:swap': ph_swap,
 	'ph:tag': ph_tag,

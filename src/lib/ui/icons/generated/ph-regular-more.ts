@@ -16,6 +16,7 @@ import ph_book_open from '~icons/ph/book-open';
 import ph_calculator from '~icons/ph/calculator';
 import ph_caret_circle_down from '~icons/ph/caret-circle-down';
 import ph_cat from '~icons/ph/cat';
+import ph_chat_centered_text from '~icons/ph/chat-centered-text';
 import ph_check_square from '~icons/ph/check-square';
 import ph_circles_three from '~icons/ph/circles-three';
 import ph_clipboard from '~icons/ph/clipboard';
@@ -118,6 +119,7 @@ const icons: IconMap = {
 	'ph:calculator': ph_calculator,
 	'ph:caret-circle-down': ph_caret_circle_down,
 	'ph:cat': ph_cat,
+	'ph:chat-centered-text': ph_chat_centered_text,
 	'ph:check-square': ph_check_square,
 	'ph:circles-three': ph_circles_three,
 	'ph:clipboard': ph_clipboard,

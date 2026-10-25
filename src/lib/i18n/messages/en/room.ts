@@ -145,6 +145,11 @@ export const room = {
 	'room.feedback.accolade.atmosphere': 'Great atmosphere',
 	'room.feedback.accolade.setup': 'Smooth setup',
 	'room.feedback.accolade.final-day': 'Tense final day',
+	// What the Storyteller sees of it, saved with the finished game
+	'room.feedback.view': 'Player feedback',
+	'room.feedback.average': '{rating} of 5 from {count} rated',
+	'room.feedback.accoladeCount': '{accolade} × {count}',
+	'room.feedback.entries': 'From players',
 	// The view-only grimoire link (Specters)
 	'room.watch.title': 'Watch the grimoire',
 	'room.watch.heading': 'View grimoire',

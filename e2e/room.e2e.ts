@@ -238,6 +238,30 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 		'true'
 	);
 	await phoneContext.close();
+
+	// The Storyteller reads it from the ended game's menu; it is saved with the game on this
+	// device, so it is still there after a reload (Trevor, 2026-10-25).
+	const feedback = page.getByTestId('game-feedback');
+	async function openFeedback() {
+		await page.getByRole('button', { name: 'More', exact: true }).tap();
+		await page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Player feedback' })
+			.tap();
+		await expect(feedback).toBeVisible();
+	}
+	await openFeedback();
+	await expect(feedback.getByTestId('feedback-average')).toHaveText('3.5 of 5 from 1 rated');
+	await expect(feedback.getByTestId('feedback-accolade-counts')).toHaveText('⏱️ Great pacing × 1');
+	const entry = feedback.getByTestId('feedback-entry');
+	await expect(entry).toHaveCount(1);
+	await expect(entry).toContainText('Anonymous');
+	await expect(entry).toContainText('3.5 of 5');
+	await expect(entry).toContainText('A great night.');
+	await page.reload();
+	await openFeedback();
+	await expect(entry).toHaveCount(1);
+	await expect(entry).toContainText('A great night.');
 });
 
 test('after End game the Storyteller shares the finished grimoire with the room', async ({
