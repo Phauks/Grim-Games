@@ -23,6 +23,7 @@
 	} from '#lib/features/shell/shell.ts';
 	import { drawLock } from '#lib/features/setup/draw-lock.svelte.ts';
 	import { locale } from '#lib/i18n/locale.svelte.ts';
+	import { trackKeyboardInset } from '#lib/ui/keyboard-inset.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Toaster from '#lib/ui/primitives/Toaster.svelte';
 	import { applyAppearance } from '#lib/ui/themes/apply.ts';
@@ -46,6 +47,9 @@
 	// Asks the browser, silently, not to clear saved games and settings to free up space
 	// (Storage plan, Trevor 2026-10-18; always on, no setting, 2026-10-19).
 	$effect(() => keepData());
+
+	// Lifts dialogs above the on-screen keyboard (keyboard-inset.ts).
+	$effect(() => trackKeyboardInset());
 
 	// Holds the browser's install prompt for Settings' Install app button, which loads later.
 	$effect(() => installApp.listen());
