@@ -2,7 +2,12 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
+	import {
+		defaultAlignment,
+		type Alignment,
+		type Character,
+		type PlayerName
+	} from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -28,7 +33,8 @@
 		needsAlignment: boolean;
 		/** "Seat 3", the seat the draw goes to. */
 		seatLabel: string;
-		playerName: string;
+		/** The name already on the seat, to start the name field with. */
+		playerName: PlayerName;
 		/** Names already on other seats, left out of the names to pick from. */
 		taken?: readonly string[];
 		/**

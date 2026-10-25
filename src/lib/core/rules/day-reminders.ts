@@ -11,7 +11,7 @@
  * known) how they died. The app does not track day or night. The Storyteller can override
  * any generated reminder (hide or reword it) and add their own (`DayReminderOverride`).
  */
-import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import type { Character, CharacterId, PlayerName } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { DeathCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, impairmentOfLabel, type AbilityState, type Impairment } from './ability.ts';
@@ -37,7 +37,7 @@ export type { DeathCause };
 /** The parts of a seat the reminders read (the model's `Seat` fits, plus `deathCause`). */
 export interface DaySeat {
 	seatId: SeatId;
-	playerName?: string;
+	playerName?: PlayerName;
 	/** The character token in the grimoire; seats without one are skipped. */
 	characterId?: CharacterId;
 	dead: boolean;
@@ -85,7 +85,7 @@ export interface DayState {
 export interface CharacterRef {
 	characterId: CharacterId;
 	seatId?: SeatId;
-	playerName?: string;
+	playerName?: PlayerName;
 }
 
 export type ReminderSegment =

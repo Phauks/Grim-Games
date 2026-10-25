@@ -1692,6 +1692,13 @@ test('the script preview turns light from its sun and moon switch, and Settings 
 	await page.goto('/new');
 	const copy = page.getByTestId('script-preview').getByTestId('script-copy');
 	await copy.getByText('Chef').first().waitFor();
+	// The script's name with its logo, above the author, as players see it (Trevor, 2026-10-24).
+	const title = copy.getByTestId('script-copy-title');
+	await expect(title).toHaveText('Trouble Brewing');
+	await expect(title.getByTestId('script-logo')).toBeAttached();
+	expect((await title.boundingBox())!.y).toBeLessThan(
+		(await copy.getByTestId('script-byline').boundingBox())!.y
+	);
 	// A moon while dark, a sun once light (Trevor, 2026-10-23).
 	const light = copy.getByRole('button', { name: 'Light background' });
 	await expect(light).toHaveAttribute('aria-pressed', 'false');

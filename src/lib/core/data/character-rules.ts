@@ -17,6 +17,7 @@ import {
 } from './day-reminder-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
+import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
 	readReminderPlaceholders,
@@ -164,6 +165,8 @@ export interface CharacterRules {
 	 * https://wiki.bloodontheclocktower.com/Exorcist). Shown at the stopped step (`rules/night-alerts.ts`).
 	 */
 	stopsWaking?: StopsWaking;
+	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
+	infoTokenCharacters?: InfoTokenCharacterRules;
 }
 
 export interface StopsWaking {
@@ -355,7 +358,8 @@ export const RULE_KEYS = [
 	'reminderMovement',
 	'reminderPlaceholders',
 	'nightText',
-	'stopsWaking'
+	'stopsWaking',
+	'infoTokenCharacters'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -548,6 +552,11 @@ export function parseCharacterRules(
 			if (raw.stopsWaking.token === undefined) issues.add(`${at}.token`, 'missing');
 			else if (token) rules.stopsWaking = { token, ...(type ? { type } : {}) };
 		}
+	}
+	if (raw.infoTokenCharacters !== undefined) {
+		const at = `${path}.infoTokenCharacters`;
+		const filled = readInfoTokenCharacters(raw.infoTokenCharacters, at, issues);
+		if (filled) rules.infoTokenCharacters = filled;
 	}
 	return issues.list.length > before ? undefined : rules;
 }

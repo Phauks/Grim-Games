@@ -3,7 +3,7 @@
  * command is checked against the current game and turned into events; it never changes
  * state itself.
  */
-import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
+import type { Alignment, CharacterId, Script, PlayerName } from '#lib/core/data/index.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
@@ -45,10 +45,10 @@ export type Command =
 	 */
 	| { type: 'ChangeScript'; script: Script }
 	/** `position` is the 0-based place in the seating order; the default is the end. */
-	| { type: 'AddSeat'; playerName?: string; position?: number }
+	| { type: 'AddSeat'; playerName?: PlayerName; position?: number }
 	| { type: 'RemoveSeat'; seatId: SeatId }
 	/** An empty or missing name clears it. */
-	| { type: 'RenameSeat'; seatId: SeatId; playerName?: string }
+	| { type: 'RenameSeat'; seatId: SeatId; playerName?: PlayerName }
 	/** The Storyteller's name, shown to players; an empty or missing name clears it. */
 	| { type: 'SetStorytellerName'; name?: string }
 	/** The Storyteller's private note on a seat. Trimmed; an empty or missing note clears it. */

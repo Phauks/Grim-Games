@@ -16,6 +16,27 @@ import grim from './scripts/lint/plugin.js';
  * ever shrinks (Trevor, 2026-10-23: every Share the same). Empty since the share audit.
  */
 const SHARE_TODO = [];
+/**
+ * Files that still show a player name as plain text (grim/names-as-badges); only ever shrinks
+ * (Trevor, 2026-10-24: every player name is the grim's name badge).
+ */
+const PLAYER_BADGE_TODO = [
+	'src/lib/features/day/CountDialog.svelte',
+	'src/lib/features/day/DayPanel.svelte',
+	'src/lib/features/day/ExecutionDialog.svelte',
+	'src/lib/features/grimoire/GrimoireBoard.svelte',
+	'src/lib/features/grimoire/GuidedStep.svelte',
+	'src/lib/features/grimoire/NominationChooser.svelte',
+	'src/lib/features/grimoire/SeatChooser.svelte',
+	'src/lib/features/grimoire/SeatSheet.svelte',
+	'src/lib/features/grimoire/SeatToken.svelte',
+	'src/lib/features/modes/PairedDrawPage.svelte',
+	'src/lib/features/modes/SpectersSheet.svelte',
+	'src/lib/features/modes/TownsPage.svelte',
+	'src/lib/features/room/JoinPanel.svelte',
+	'src/lib/features/room/RoomPanel.svelte',
+	'src/lib/features/savant/SavantSheet.svelte'
+];
 
 const LOCAL_STORAGE_TODO = [
 	'src/lib/features/account/profile-scripts.svelte.ts',
@@ -150,6 +171,17 @@ export default defineConfig(
 		plugins: { grim },
 		rules: { 'grim/names-as-badges': 'error' }
 	},
+	// Player names show as PlayerBadge, the pill under a seat's token (Trevor, 2026-10-24:
+	// "wherever we invoke a player name, we should use the player name badge that is on the
+	// grim"). These files still show some as text. PLAYER_BADGE_TODO only shrinks.
+	...(PLAYER_BADGE_TODO.length
+		? [
+				{
+					files: PLAYER_BADGE_TODO,
+					rules: { 'grim/names-as-badges': ['error', { playerNames: false }] }
+				}
+			]
+		: []),
 	{
 		// Every confirmation is a ConfirmDialog: Cancel and Confirm (Trevor, 2026-10-16).
 		files: ['src/**/*.svelte'],

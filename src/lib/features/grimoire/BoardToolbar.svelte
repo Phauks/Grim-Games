@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { prepareRoom } from '#lib/features/room/host.svelte.ts';
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
+	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -84,8 +85,11 @@
 		<span class="title">Add a seat</span>
 		<Button variant="quiet" icon="close" onclick={onCancelPlacing}>Cancel</Button>
 	{:else}
-		<!-- The app's navigation; on the narrowest phones it is in More instead. -->
-		<span class="nav-menu" class:watching><NavMenuButton /></span>
+		<!-- The app's navigation; on the narrowest phones it is in More instead. A spectator's
+		     page has the app's sidebar (Trevor, 2026-10-25), whose own hamburger heads it. -->
+		{#if !(navDrawer.sidebarMounted && !navDrawer.pageButton)}<span class="nav-menu" class:watching
+				><NavMenuButton /></span
+			>{/if}
 		<!-- Icons on phones; with their words on wider screens, where there is room. A
 		     spectator's board says what it is in that room (Trevor, 2026-10-19). -->
 		<span class="spacer"

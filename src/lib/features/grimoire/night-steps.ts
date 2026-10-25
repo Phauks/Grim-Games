@@ -153,8 +153,8 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 	return id ? game.seating.filter((s) => game.seats[s].characterId === id) : [];
 }
 
-export const seatName = (game: Game, seatId: SeatId): string =>
-	game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
+/** A seat's PlayerBadge text; the one helper lives with the other seat names. */
+export { seatName } from '#lib/features/game/seat-label.ts';
 
 /** A tick belongs to one night, by the number of days before it: a new day starts afresh. */
 export const doneKey = (day: number, night: Night, step: { id: string }): string =>

@@ -1,6 +1,6 @@
 /**
  * The roadmap, kept in the repository so it ticks itself off. Each item is a feature, made of
- * the backlog plan's IDs (D1, R1-R7, B1-B6, S1-S19, P1-P2, L1-L58, G1-G13, J1-J23, W1-W6, Q1-Q2, ...):
+ * the backlog plan's IDs (D1, R1-R7, B1-B6, S1-S19, P1-P2, L1-L58, G1-G16, J1-J23, W1-W6, Q1-Q2, ...):
  * a part is finished once a merged change names its ID in brackets in its title, such as
  * "Savant info generator (L2)", and an item is done once all its parts and listed PRs are.
  * Only the features are shown. Add a new plan ID to the feature it belongs to, or a new
@@ -54,7 +54,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title:
 			'Grimoire board with a guided night: night steps, reminders, frames, the character sheet',
-		parts: ['L8', 'L18a', 'L4', 'L26']
+		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60']
 	},
 	{
 		title: 'Day view: executions, announcements, Savant reminders, player claims',
@@ -82,7 +82,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: 'One start flow: New game, then Game info during the game',
-		parts: [...range('G', 1, 3), ...range('G', 5, 7), 'G9', 'G10', 'L6', 'L14', 'L37']
+		parts: [...range('G', 1, 3), ...range('G', 5, 7), 'G9', 'G10', 'G14', 'L6', 'L14', 'L37']
 	},
 	{
 		title:

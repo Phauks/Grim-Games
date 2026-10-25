@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { NightStep, NightAlert, Impairment } from '#lib/core/rules/index.ts';
 	import { nightStepAlerts } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -48,6 +50,9 @@
 </script>
 
 <!-- In the walk-through strip the lines sit inside its step button: badges that don't open. -->
+<!-- A seat as its player name badge, as on the board. -->
+{#snippet player(seatId: SeatId)}<PlayerBadge name={seatName(game, seatId)} />{/snippet}
+
 {#snippet badge(id: string | undefined)}
 	{#if id}<CharacterBadge
 			characterId={id}
@@ -80,21 +85,21 @@
 				<Icon name={alert.impairments[0]?.reason === 'drunk' ? 'drunk' : ICON[alert.kind]} />
 				<span>
 					{#if alert.kind === 'impaired'}
-						{@render badge(sourceId(alert))} in {seatLabel(game, alert.seatId)} is {@render why(
+						{@render badge(sourceId(alert))} in {@render player(alert.seatId)} is {@render why(
 							alert.impairments
 						)}
 					{:else if alert.kind === 'blocked'}
 						{seatLabel(game, alert.seatId)}: chosen by {@render badge(sourceId(alert))}, doesn't
 						wake tonight
 					{:else if alert.kind === 'protected'}
-						{seatLabel(game, alert.seatId)} can't die{#if alert.source === 'override'}
+						{@render player(alert.seatId)} can't die{#if alert.source === 'override'}
 							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}
 					{:else if alert.kind === 'may-bounce'}
-						{seatLabel(game, alert.seatId)}: {@render badge(sourceId(alert))} may bounce the death
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} may bounce the death
 					{:else if alert.kind === 'survives-first-death'}
-						{seatLabel(game, alert.seatId)}: {@render badge(sourceId(alert))} survives the first death
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} survives the first death
 					{:else}
-						{seatLabel(game, alert.seatId)} dying sets off {@render badge(sourceId(alert))}
+						{@render player(alert.seatId)} dying sets off {@render badge(sourceId(alert))}
 					{/if}
 					{#if !alert.works && alert.kind !== 'impaired'}
 						<strong class="not">Not working:</strong> {@render why(alert.impairments)}

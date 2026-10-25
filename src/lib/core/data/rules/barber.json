@@ -34,5 +34,10 @@
 	"reminderMovement": {
 		"why": "Marks tonight’s haircuts.",
 		"relocates": "swaps two players’ characters"
+	},
+	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"]
+		}
 	}
 }

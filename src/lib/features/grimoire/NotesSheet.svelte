@@ -2,7 +2,8 @@
 	import { untrack } from 'svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
 	import NoteEditor from '#lib/ui/notes/NoteEditor.svelte';
 	import type { TitledNote } from '#lib/ui/notes/note.ts';
@@ -41,10 +42,10 @@
 	function saveSeatNote(seatId: SeatId | undefined, note: string) {
 		if (seatId && !viewOnly) grimoire.run({ type: 'SetSeatNote', seatId, note });
 	}
+	// The dialog's and field's accessible name; the heading shows the player's badge.
 	const editTitle = $derived(
-		editing === undefined
-			? ''
-			: `Note: ${game.seats[editing]?.playerName ?? `Seat ${game.seating.indexOf(editing) + 1}`}`
+		// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
+		editing === undefined ? '' : `Note: ${seatName(game, editing)}`
 	);
 
 	// ── Game notes, in the player's notebook editor (Trevor, 2026-10-23) ──
@@ -121,6 +122,7 @@
 							characterId={seat.characterId}
 							alignment={seat.alignment}
 							{label}
+							playerName={seatName(game, seatId)}
 							note={seat.note}
 							onOpen={() => edit(seatId)}
 						/>
@@ -145,11 +147,16 @@
 	{/if}
 {/snippet}
 
+{#snippet noteHeading()}Note: {#if editing !== undefined}<PlayerBadge
+			name={seatName(game, editing)}
+		/>{/if}{/snippet}
+
 <!-- Never shown to players. -->
 <SeatNoteDialog
 	bind:open={editOpen}
 	title={editTitle}
 	subtitle={editing === undefined ? undefined : seatCharacter}
+	heading={editing === undefined ? undefined : noteHeading}
 	value={editing ? (game.seats[editing]?.note ?? '') : ''}
 	readonly={viewOnly}
 	onSave={(note) => saveSeatNote(editing, note)}

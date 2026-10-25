@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { rise } from '#lib/ui/motion.ts';
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
@@ -100,7 +101,9 @@
 					<span class="count"><CountBadge count={index + 1} total={steps.length} /></span>
 				</span>
 				{#if holders.length > 0}<span class="who"
-						>{holders.map((seatId) => seatName(game, seatId)).join(', ')}</span
+						>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
+								name={seatName(game, seatId)}
+							/>{/each}</span
 					>{/if}
 				<!-- Inside the strip's fixed height, which scrolls, so nothing outside moves. -->
 				{#if asleepBy}<span class="asleep" data-testid="step-asleep"
