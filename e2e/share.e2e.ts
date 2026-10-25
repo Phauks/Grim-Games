@@ -106,9 +106,10 @@ test("the players' Grim is drawn as the board: its seats where the board has the
 		box.width * 0.05
 	);
 	expect(placed.y + placed.height / 2 - box.y).toBeLessThan(box.height * 0.45);
-	// The board's corner, with the script's name, and its vignette under the seats.
+	// The board's corner line for line (Trevor, 2026-10-24), and its vignette under the seats.
 	await expect(town.getByTestId('script-title')).toContainText('Trouble Brewing');
-	await expect(town.getByTestId('board-room-code')).toHaveCount(0);
+	await expect(town.getByTestId('board-room-code')).toBeVisible();
+	await expect(town.getByTestId('board-game-clock')).toContainText('Setup');
 	await expect(town.getByTestId('preview-vignette')).toBeAttached();
 });
 

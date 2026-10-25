@@ -30,14 +30,24 @@
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import ScriptVoteSheet from '#lib/features/room/ScriptVoteSheet.svelte';
 	import { openedByBack, readDraft, saveDraft } from '#lib/features/modes/new-game-draft.ts';
+	import { readNextGame } from '#lib/features/game/next-game.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+
+	interface Props {
+		/** In a sheet over the board (Game info's New game): the seat count of the game it
+		 *  replaces (next-game.ts). The layout, script preview included, is the same. */
+		compact?: boolean;
+	}
+	let { compact = false }: Props = $props();
 
 	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
 	onMount(() => {
 		void restoreScripts();
 		void loadOfficialData();
-		// Play on the Search page opens New game with that script chosen.
-		if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
+		// From a game, its seat count; Play on the Search page chooses that script.
+		const carried = compact ? readNextGame()?.names.length : undefined;
+		if (carried) players = carried;
+		else if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
 		// Back from the start flow puts New game back as it was (Trevor, 2026-10-23).
 		else if (openedByBack()) {
 			const draft = readDraft();

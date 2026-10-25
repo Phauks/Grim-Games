@@ -2,7 +2,7 @@
 	import AlignmentPill from './AlignmentPill.svelte';
 	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
-	import { recordNomination } from './record-nomination.ts';
+	import NominationChooser from './NominationChooser.svelte';
 	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
@@ -10,7 +10,13 @@
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
-	import { abilityState, seatNominations, type ImpairmentReason } from '#lib/core/rules/index.ts';
+	import {
+		abilityState,
+		mayNominate,
+		seatNominations,
+		votesWithoutToken,
+		type ImpairmentReason
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -310,16 +316,21 @@
 	let moving = $state<ReminderId | undefined>();
 	let moveOpen = $state(false);
 	/** Which of the seat's nominations is being chosen (Track nominations). */
-	let nominating = $state<'made' | 'received'>();
-	const nominations = $derived(seatId === undefined ? {} : seatNominations(game, seatId));
-	/** Records, changes or clears the seat's nomination, in the game's day log. */
-	function nominate(other: SeatId | undefined) {
-		const side = nominating;
-		nominating = undefined;
-		if (!side || seatId === undefined) return;
-		const pair = recordNomination(grimoire, seatId, side, other);
-		if (pair) onNominated?.(pair);
-	}
+	let nominating = $state<{ seatId: SeatId; side: 'made' | 'received' }>();
+	const nominations = $derived(
+		seatId === undefined ? { allMade: [] } : seatNominations(game, seatId)
+	);
+	/**
+	 * Dead but voting with no vote token (the Banshee killed by the Demon, `afterDeath`): no
+	 * ghost vote to spend, so the row says how many votes they have instead.
+	 */
+	const tokenFreeVotes = $derived(
+		seatId === undefined ? undefined : votesWithoutToken(game, seatId, characters)
+	);
+	/** The dead may not nominate, unless their character says so; a row already set stays editable. */
+	const canNominate = $derived(
+		seatId !== undefined && (!!nominations.made || mayNominate(game, seatId, characters))
+	);
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let menuOpen = $state(false);
 	let reminderMenuOpen = $state(false);
@@ -501,8 +512,8 @@
 					type="button"
 					class="value ghost"
 					aria-labelledby={`ghost-${seat.seatId}`}
-					aria-pressed={seat.dead ? seat.ghostVoteUsed : undefined}
-					disabled={!seat.dead}
+					aria-pressed={seat.dead && tokenFreeVotes === undefined ? seat.ghostVoteUsed : undefined}
+					disabled={!seat.dead || tokenFreeVotes !== undefined}
 					onclick={() =>
 						grimoire.run({
 							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
@@ -511,7 +522,7 @@
 				>
 					<!-- The board's badge (Trevor, 2026-10-19: one ghost vote look in and out of the sheet). -->
 					<DeadBadge
-						vote={seat.ghostVoteUsed ? 'used' : 'unused'}
+						vote={tokenFreeVotes !== undefined ? undefined : seat.ghostVoteUsed ? 'used' : 'unused'}
 						usedLook={boardLooks.current.usedGhostVote}
 						testid="sheet-ghost-vote"
 					/>
@@ -519,7 +530,13 @@
 					     the longer "None while alive", which only shows while alive: reserving that
 					     left "Not used" off centre in its button (Trevor, 2026-10-23). -->
 					<span class="ghost-text" data-reserve="Not used"
-						>{seat.dead ? (seat.ghostVoteUsed ? 'Used' : 'Not used') : 'None while alive'}</span
+						>{!seat.dead
+							? 'None while alive'
+							: tokenFreeVotes !== undefined
+								? `${tokenFreeVotes} votes`
+								: seat.ghostVoteUsed
+									? 'Used'
+									: 'Not used'}</span
 					>
 				</button>
 			</div>
@@ -534,10 +551,15 @@
 						class="value nomination"
 						aria-labelledby={`nominated-${seat.seatId}`}
 						data-testid="sheet-nominated"
-						onclick={() => (nominating = 'made')}
+						disabled={!canNominate}
+						onclick={() => seatId !== undefined && (nominating = { seatId, side: 'made' })}
 					>
 						<Icon name="nominator" />
-						<span>{nominations.made ? seatLabelFor(game, nominations.made.nominee) : 'None'}</span>
+						<span
+							>{nominations.allMade.length
+								? nominations.allMade.map((n) => seatLabelFor(game, n.nominee)).join(', ')
+								: 'None'}</span
+						>
 					</button>
 				</div>
 				<div class="row">
@@ -547,7 +569,7 @@
 						class="value nomination"
 						aria-labelledby={`nominated-by-${seat.seatId}`}
 						data-testid="sheet-nominated-by"
-						onclick={() => (nominating = 'received')}
+						onclick={() => seatId !== undefined && (nominating = { seatId, side: 'received' })}
 					>
 						<Icon name="nominated" />
 						<span
@@ -821,17 +843,7 @@
 	}}
 />
 
-<SeatChooser
-	open={nominating !== undefined}
-	title={nominating === 'received'
-		? `Who nominated ${seatLabel}?`
-		: `Who did ${seatLabel} nominate?`}
-	{game}
-	{characters}
-	exclude={seatId}
-	onNone={() => nominate(undefined)}
-	onChoose={(other) => nominate(other)}
-/>
+<NominationChooser {grimoire} {characters} bind:asking={nominating} {onNominated} />
 
 <SeatChooser
 	bind:open={moveOpen}

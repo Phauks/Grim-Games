@@ -4,12 +4,13 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
+	import { phaseText } from './phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames, gameStarts } from './device-notes.ts';
+	import { endedGames, gameStarts, nightUnderway, type EndedGame } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -38,12 +39,15 @@
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import {
 		dayNumber,
+		gamePhase,
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
 		onDeathTrigger,
 		stepNightNumbers,
 		todaysNominations,
+		mayNominate,
+		votesWithoutToken,
 		characterNominationPrompts,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
@@ -114,9 +118,7 @@
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
-	import SeatChooser from './SeatChooser.svelte';
-	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
-	import { recordNomination } from './record-nomination.ts';
+	import NominationChooser from './NominationChooser.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
@@ -124,6 +126,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import BoardCorner from './BoardCorner.svelte';
+	import { cornerLines } from './corner-lines.ts';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
@@ -151,9 +154,14 @@
 		watching?: boolean;
 		/** The Storyteller's day timer, on a spectator's board. */
 		watchedTimer?: WatchedTimer;
+		/**
+		 * A watched game the room says is over (the final grimoire on a phone, Trevor
+		 * 2026-10-24): its History steps through on this device only.
+		 */
+		over?: EndedGame;
 	}
 
-	let { grimoire, watching = false, watchedTimer }: Props = $props();
+	let { grimoire, watching = false, watchedTimer, over }: Props = $props();
 	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
@@ -193,15 +201,17 @@
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	// Who nominated and who was nominated today, for the marks on the seats (Track nominations).
 	/**
-	 * A seat's nomination marks (Trevor, 2026-10-23): on every living player, greyed until
-	 * they happen, as the ghost vote shows on the dead. Not on the dead, unless the player
-	 * was part of a nomination today (they nominated, then died, and the day goes on).
+	 * A seat's nomination marks (Trevor, 2026-10-23): on every player, greyed until they
+	 * happen, as the ghost vote shows on the dead. The dead may still be nominated but not
+	 * nominate (Trevor, 2026-10-24), so they show only the gavel, unless their character may
+	 * (`mayNominate`) or they nominated before they died.
 	 */
-	function seatNominationMarks(seat: { seatId: SeatId; dead: boolean }) {
+	function seatNominationMarks(seat: { seatId: SeatId }) {
 		if (!nominatedToday) return undefined;
 		const made = nominatedToday.made.has(seat.seatId);
 		const received = nominatedToday.received.has(seat.seatId);
-		return !seat.dead || made || received ? { made, received } : undefined;
+		const nominates = made || mayNominate(game, seat.seatId, characters);
+		return { made: nominates ? made : undefined, received };
 	}
 	const nominatedToday = $derived.by(() => {
 		if (!preferences.current.assistance.trackNominations) return undefined;
@@ -555,7 +565,7 @@
 
 	/** This game's ending, if it has ended (End game below). */
 	let endedRead = $state(0);
-	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
+	const ended = $derived(over ?? (void endedRead, endedGames.read()[game.gameId]));
 	/**
 	 * Tokens are still to be handed out (Trevor, 2026-10-19: "if there are tokens still in the
 	 * bag ... it should be Set Up"): no character chosen yet, or a bag not fully drawn. The
@@ -609,6 +619,11 @@
 		ended: !!ended,
 		busy: seatArr.arranging || !!placing
 	}));
+	// Ending the game (often at the dusk an Execution starts) closes the night's walk-through:
+	// History's strip has the bottom of the board then (Trevor, 2026-10-24).
+	$effect(() => {
+		if (ended) nw.walk = undefined;
+	});
 	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
 	let nominationAsks = $state<(NominationPrompt | CharacterNominationPrompt)[]>([]);
 	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
@@ -618,15 +633,16 @@
 			...characterNominationPrompts(grimoire.game, nomination, characters)
 		];
 	}
-	/** The seat whose nomination marks were tapped: who did they nominate? */
-	let nominatingFrom = $state<SeatId>();
-	function nominateFrom(nominee: SeatId | undefined) {
-		const seatId = nominatingFrom;
-		nominatingFrom = undefined;
-		if (seatId === undefined) return;
-		const pair = recordNomination(grimoire, seatId, 'made', nominee);
-		if (pair) nominated(pair);
+	/**
+	 * The seat whose nomination marks were tapped: who did they nominate? A player who may
+	 * not nominate (the dead) is asked who nominated them instead.
+	 */
+	let nominatingFrom = $state<{ seatId: SeatId; side: 'made' | 'received' }>();
+	function askNomination(seatId: SeatId) {
+		const made = seatNominationMarks({ seatId })?.made;
+		nominatingFrom = { seatId, side: made === undefined ? 'received' : 'made' };
 	}
+
 	let endNightOpen = $state(false);
 	let endDayOpen = $state(false);
 	/**
@@ -850,15 +866,36 @@
 	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
 	/**
 	 * The night or day in play, for the corner (Trevor, 2026-10-23): Setup until Start game,
-	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day.
+	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day. A game
+	 * with days played is past Setup even where this device has no start time (gamePhase).
 	 */
-	const phase = $derived(
-		startedAt === undefined
-			? t('day.setup')
-			: game.pastDays.length === 0 || grimoire.nightRunning || grimoire.nightUnderway
-				? t('day.nightNumber', { number: game.pastDays.length + 1 })
-				: t('day.titleNumber', { number: game.pastDays.length })
+	const phaseNow = $derived(
+		gamePhase(game.pastDays.length, {
+			begun: startedAt !== undefined,
+			nightUnderway: ended
+				? nightUnderway(
+						{ day: grimoire.nightDay, done: grimoire.nightDone },
+						game.pastDays.length,
+						true
+					)
+				: grimoire.nightRunning || grimoire.nightUnderway
+		})
 	);
+	const phase = $derived(phaseText(phaseNow));
+	/** The corner's lines, which the room's phones show too (Trevor, 2026-10-24). */
+	const cornerInfo = $derived(
+		cornerLines({
+			gameId: game.gameId,
+			phase: phaseNow,
+			startedAt,
+			endedAt: ended?.endedAt,
+			watchers: watcherCount,
+			watching
+		})
+	);
+	$effect(() => {
+		if (!watching) roomHost().showCorner(game.gameId, cornerInfo);
+	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -875,7 +912,6 @@
 	function editGameInfo(changes: GameInfoChanges) {
 		if (changes.storytellerName !== (game.storytellerName ?? ''))
 			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
-		if (changes.script) void grimoire.changeScript(changes.script);
 	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
@@ -1074,6 +1110,7 @@
 						: undefined}
 					orphan={isOrphan(seat, game.script, characters, offScriptOk)}
 					nominations={seatNominationMarks(seat)}
+					tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
 					dropTarget={seatArr.reorderTarget === seat.seatId ||
 						(remDrag.drag !== undefined &&
 							remDrag.drag.target === seat.seatId &&
@@ -1089,7 +1126,7 @@
 							: part === 'note'
 								? editNote(seat.seatId)
 								: part === 'nominate'
-									? (nominatingFrom = seat.seatId)
+									? askNomination(seat.seatId)
 									: openSeat(seat.seatId))}
 					onHold={seatArr.arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
 					onGhostVote={() =>
@@ -1215,7 +1252,7 @@
 				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
 			>
 		{/each}
-		{#if nw.walk}
+		{#if nw.walk && !ended}
 			<NightStrip
 				{grimoire}
 				steps={nw.steps}
@@ -1237,8 +1274,8 @@
 		{#if ended}
 			<HistoryStrip {grimoire}>
 				{#snippet notice()}
-					<!-- Above History's Previous and Next, out of the circle (Trevor, 2026-10-18).
-					     Tapping it offers to reopen the game. -->
+					<!-- In History's strip, out of the circle (Trevor, 2026-10-18); in the strip so
+					     ending the game moves nothing (2026-10-24). Tapping it offers to reopen. -->
 					<button
 						type="button"
 						class="game-over"
@@ -1288,11 +1325,11 @@
 		<BoardCorner
 			{game}
 			{watching}
-			{watcherCount}
+			corner={cornerInfo}
+			gamePhase={phase}
 			fitRoom={fitCorner}
 			{width}
 			{rootFont}
-			{phase}
 			{startedAt}
 			endedAt={ended?.endedAt}
 			onEdit={editGameInfo}
@@ -1334,6 +1371,9 @@
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
 	onGameInfo={() => (modeMenuOpen = true)}
+	onCharacterSelection={startedAt === undefined && !watching
+		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
+		: undefined}
 	onAddSeat={() =>
 		// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
 		startPlacing((position) => void grimoire.addSeat(position))}
@@ -1445,17 +1485,7 @@
 />
 
 <!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
-<SeatChooser
-	open={nominatingFrom !== undefined}
-	title={nominatingFrom === undefined
-		? ''
-		: `Who did ${seatLabelFor(game, nominatingFrom)} nominate?`}
-	{game}
-	{characters}
-	exclude={nominatingFrom}
-	onNone={() => nominateFrom(undefined)}
-	onChoose={(nominee) => nominateFrom(nominee)}
-/>
+<NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
@@ -1484,7 +1514,13 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			{@const town = publicProjection(game, publicTravellerTest(game.gameId, characters), layout)}
+			{@const town = publicProjection(
+				game,
+				publicTravellerTest(game.gameId, characters),
+				layout,
+				cornerInfo,
+				characters
+			)}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
 			<PlayerScriptTabs
@@ -1499,11 +1535,15 @@
 							seats: town.seats,
 							layout: town.layout,
 							storytellerName: town.storytellerName,
+							corner: town.corner,
 							gameId: game.gameId,
 							guessKey: `storyteller:${game.gameId}`
 						}}
 					/>{/snippet}
-				{#snippet notes()}<PlayerNotes notesKey={scriptKey(loadedScript!)} />{/snippet}
+				{#snippet notes()}<PlayerNotes
+						notesKey={scriptKey(loadedScript!)}
+						town={{ seats: town.seats, guessKey: `storyteller:${game.gameId}` }}
+					/>{/snippet}
 			</PlayerScriptTabs>
 		{/if}
 	</div>
@@ -1608,10 +1648,6 @@
 	/* Room under the board for the docked reminder bank, and the walk-through strip. */
 	.board {
 		margin-bottom: calc(var(--tray-h) + 2 * var(--space-2));
-	}
-	/* An ended game: the game over line sits above History's Previous and Next. */
-	.board.ended {
-		margin-bottom: calc(var(--tray-h) + var(--tap-target) + 3 * var(--space-2));
 	}
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
@@ -1731,7 +1767,8 @@
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.game-over {
-		max-width: 100%;
+		flex: none;
+		max-width: 50%;
 		min-height: var(--tap-target);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -1742,7 +1779,7 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font-family: var(--font-heading);
-		font-size: 1.1rem;
+		font-size: 0.9rem;
 		pointer-events: auto;
 	}
 	.game-over[data-team='good'] {
