@@ -5,7 +5,7 @@
 
 	/**
 	 * Report an issue beside a script's own actions (Trevor, 2026-10-23: "add report button to
-	 * those screens"), for screens whose script sits over the footer's link. The form opens as a
+	 * those screens"), for the script popups that cover the menu's Report an issue. The form opens as a
 	 * script or data report titled with the script's name; the script goes with it
 	 * (offerScriptToReports), and this device's diagnostics, as from the menu's.
 	 */
