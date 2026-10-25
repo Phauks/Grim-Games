@@ -187,13 +187,14 @@ export type Command =
 	 * `Game.prepValues[key]`, `key` from `prepValueKey`; no `value` or an empty one clears it.
 	 */
 	| { type: 'SetPrepValue'; key: string; value?: string }
-	/** Logs an execution and marks the player dead by execution, if alive. */
 	/**
 	 * Executes a player. A living player whom the grimoire says cannot die to an execution
 	 * (the Devil's Advocate, the Tea Lady, the Sailor, a "can't die" override) is logged as
-	 * executed and alive, unless `dies` says the Storyteller ruled otherwise.
+	 * executed and alive, unless `dies` says the Storyteller ruled otherwise. `savedBy` is the
+	 * character the Storyteller says saved them (the Execution sheet's Saved by, such as the
+	 * Pacifist's "might not die"), applied even when the grimoire disagrees, with a warning.
 	 */
-	| { type: 'Execute'; seatId: SeatId; dies?: boolean }
+	| { type: 'Execute'; seatId: SeatId; dies?: boolean; savedBy?: CharacterId }
 	/** Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. */
 	| { type: 'Exile'; seatId: SeatId }
 	/**

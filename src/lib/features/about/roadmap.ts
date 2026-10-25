@@ -58,7 +58,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: 'Day view: executions, announcements, Savant reminders, player claims',
-		parts: ['L12', 'L13', 'L21', 'L9', 'L28', 'L45', 'L56', 'L57', 'L58']
+		parts: ['L12', 'L13', 'L21', 'L9', 'L28', 'L45', 'L56', 'L57', 'L58', 'L61']
 	},
 	{
 		title: 'Live rooms: one join code, a script and mode vote, the next game in the same room',

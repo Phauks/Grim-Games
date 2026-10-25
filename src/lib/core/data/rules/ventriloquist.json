@@ -1,4 +1,10 @@
 {
+	"protects": {
+		"who": "marked",
+		"token": "Mad",
+		"from": "execution",
+		"storytellerDecides": true
+	},
 	"reminderTargets": {
 		"Mad": {
 			"seat": "any",
