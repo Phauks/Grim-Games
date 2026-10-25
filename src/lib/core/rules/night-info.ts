@@ -7,6 +7,8 @@
  * - an info picker for the first-night information characters (Washerwoman, Librarian,
  *   Investigator, Chef, Empath, Fortune Teller, Steward, Noble, Clockmaker): the truthful
  *   options;
+ * - for the "learn a role" characters (Washerwoman, Librarian, Investigator), those options
+ *   as rows to show, marked by the board's reminders first (`learnedRoles`);
  * - death checks for characters whose own ability kills (`night-deaths.ts`).
  *
  * Everything here is a suggestion (04-architecture.md §4: assist, never rule):
@@ -63,4 +65,10 @@ export {
 	validInformation,
 	infoRecord
 } from './night-info/picker.ts';
+export {
+	type LearnedRole,
+	type LearnedRoleReason,
+	type LearnedRoles,
+	learnedRoles
+} from './night-info/learned-roles.ts';
 export { type NightStepInfo, nightStepInfo, withNightInfo } from './night-info/steps.ts';
