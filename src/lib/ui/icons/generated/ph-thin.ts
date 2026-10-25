@@ -3,6 +3,7 @@ import type { IconMap } from '../types.ts';
 import ph_anchor_thin from '~icons/ph/anchor-thin';
 import ph_archive_thin from '~icons/ph/archive-thin';
 import ph_arrow_bend_up_right_thin from '~icons/ph/arrow-bend-up-right-thin';
+import ph_arrow_circle_right_thin from '~icons/ph/arrow-circle-right-thin';
 import ph_arrow_clockwise_thin from '~icons/ph/arrow-clockwise-thin';
 import ph_arrow_counter_clockwise_thin from '~icons/ph/arrow-counter-clockwise-thin';
 import ph_arrow_left_thin from '~icons/ph/arrow-left-thin';
@@ -10,6 +11,7 @@ import ph_arrow_right_thin from '~icons/ph/arrow-right-thin';
 import ph_arrow_square_out_thin from '~icons/ph/arrow-square-out-thin';
 import ph_arrow_u_up_left_thin from '~icons/ph/arrow-u-up-left-thin';
 import ph_arrow_u_up_right_thin from '~icons/ph/arrow-u-up-right-thin';
+import ph_arrows_clockwise_thin from '~icons/ph/arrows-clockwise-thin';
 import ph_arrows_down_up_thin from '~icons/ph/arrows-down-up-thin';
 import ph_arrows_in_thin from '~icons/ph/arrows-in-thin';
 import ph_arrows_left_right_thin from '~icons/ph/arrows-left-right-thin';
@@ -83,6 +85,7 @@ import ph_gavel_thin from '~icons/ph/gavel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
+import ph_globe_thin from '~icons/ph/globe-thin';
 import ph_hammer_thin from '~icons/ph/hammer-thin';
 import ph_hand_fist_thin from '~icons/ph/hand-fist-thin';
 import ph_hand_grabbing_thin from '~icons/ph/hand-grabbing-thin';
@@ -179,6 +182,7 @@ import ph_text_t_thin from '~icons/ph/text-t-thin';
 import ph_textbox_thin from '~icons/ph/textbox-thin';
 import ph_timer_thin from '~icons/ph/timer-thin';
 import ph_tote_thin from '~icons/ph/tote-thin';
+import ph_translate_thin from '~icons/ph/translate-thin';
 import ph_trash_thin from '~icons/ph/trash-thin';
 import ph_trash_simple_thin from '~icons/ph/trash-simple-thin';
 import ph_tree_thin from '~icons/ph/tree-thin';
@@ -205,6 +209,7 @@ const icons: IconMap = {
 	'ph:anchor-thin': ph_anchor_thin,
 	'ph:archive-thin': ph_archive_thin,
 	'ph:arrow-bend-up-right-thin': ph_arrow_bend_up_right_thin,
+	'ph:arrow-circle-right-thin': ph_arrow_circle_right_thin,
 	'ph:arrow-clockwise-thin': ph_arrow_clockwise_thin,
 	'ph:arrow-counter-clockwise-thin': ph_arrow_counter_clockwise_thin,
 	'ph:arrow-left-thin': ph_arrow_left_thin,
@@ -212,6 +217,7 @@ const icons: IconMap = {
 	'ph:arrow-square-out-thin': ph_arrow_square_out_thin,
 	'ph:arrow-u-up-left-thin': ph_arrow_u_up_left_thin,
 	'ph:arrow-u-up-right-thin': ph_arrow_u_up_right_thin,
+	'ph:arrows-clockwise-thin': ph_arrows_clockwise_thin,
 	'ph:arrows-down-up-thin': ph_arrows_down_up_thin,
 	'ph:arrows-in-thin': ph_arrows_in_thin,
 	'ph:arrows-left-right-thin': ph_arrows_left_right_thin,
@@ -285,6 +291,7 @@ const icons: IconMap = {
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
 	'ph:ghost-thin': ph_ghost_thin,
+	'ph:globe-thin': ph_globe_thin,
 	'ph:hammer-thin': ph_hammer_thin,
 	'ph:hand-fist-thin': ph_hand_fist_thin,
 	'ph:hand-grabbing-thin': ph_hand_grabbing_thin,
@@ -381,6 +388,7 @@ const icons: IconMap = {
 	'ph:textbox-thin': ph_textbox_thin,
 	'ph:timer-thin': ph_timer_thin,
 	'ph:tote-thin': ph_tote_thin,
+	'ph:translate-thin': ph_translate_thin,
 	'ph:trash-thin': ph_trash_thin,
 	'ph:trash-simple-thin': ph_trash_simple_thin,
 	'ph:tree-thin': ph_tree_thin,

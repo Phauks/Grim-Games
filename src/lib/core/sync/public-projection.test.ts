@@ -56,7 +56,7 @@ function busyGame() {
 		{ type: 'Execute', seatId: seats[1] },
 		{ type: 'UseAbility', seatId: seats[1], characterId: 'washerwoman' },
 		{ type: 'DayNote', characterId: 'washerwoman', seatId: seats[1], text: 'day note secret' },
-		{ type: 'SetDemonVoted', voted: true },
+		{ type: 'SetDayMark', mark: 'demon-voted', value: true },
 		{ type: 'SetGameNote', title: 'Plan', text: 'game notes secret', hidden: false },
 		{
 			type: 'RecordNightInfo',

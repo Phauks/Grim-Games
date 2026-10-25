@@ -84,7 +84,12 @@
 	let pinMode = $state<'set' | 'unlock'>('set');
 	/** The way out the PIN was asked for, taken once it's right. */
 	let pending: (() => void) | undefined;
-	function askPin(mode: 'set' | 'unlock', leave?: () => void) {
+	async function askPin(mode: 'set' | 'unlock', leave?: () => void) {
+		if (mode === 'set' && !page.state.drawLocked) {
+			lockAsked = true;
+			// Before the sheet opens (see Back while locked, below).
+			await pushState('', { drawLocked: true });
+		}
 		pending = leave;
 		pinMode = mode;
 		pinOpen = true;
@@ -97,7 +102,7 @@
 	$effect(() => {
 		if (!locked) return;
 		const release = keepScreenOn();
-		const unguard = setLeaveGuard((leave) => askPin('unlock', leave));
+		const unguard = setLeaveGuard((leave) => void askPin('unlock', leave));
 		return () => {
 			unguard();
 			release();
@@ -107,10 +112,23 @@
 	// this one before the app can say no, and Characters would show who is in the bag. So the
 	// locked draw puts an entry of its own on top: the swipe previews the locked draw itself.
 	// Landing back on the entry under it puts the entry back and asks for the PIN.
+	// The swipe shows the screen as it was when the entry went on, so it goes on as Lock is
+	// tapped, before the sheet opens: the snapshot is the draw, never the PIN being typed.
 	$effect(() => {
 		if (!locked) return;
 		untrack(() => {
 			if (!page.state.drawLocked) pushState('', { drawLocked: true });
+		});
+	});
+	// Closing Lock the draw without locking takes the entry off again.
+	let lockAsked = false;
+	$effect(() => {
+		const open = pinOpen;
+		untrack(() => {
+			if (open) return;
+			const asked = lockAsked;
+			lockAsked = false;
+			if (asked && !locked && page.state.drawLocked) history.back();
 		});
 	});
 	/** The draw's entry was on top, so its going means Back (not a reload, which drops it). */
@@ -121,9 +139,8 @@
 			const back = wasOnTop && !onTop;
 			wasOnTop = !!onTop;
 			if (!back || !locked) return;
-			pushState('', { drawLocked: true });
 			// The right PIN unlocks and stays here; Back then leaves as on an unlocked draw.
-			askPin('unlock');
+			void pushState('', { drawLocked: true }).then(() => askPin('unlock'));
 		});
 	});
 
@@ -208,7 +225,7 @@
 				label={locked ? t('setup.lock.unlock') : t('setup.lock.lock')}
 				aria-pressed={locked}
 				data-testid="draw-lock"
-				onclick={() => askPin(locked ? 'unlock' : 'set')}
+				onclick={() => void askPin(locked ? 'unlock' : 'set')}
 			/>
 		{/if}
 	{/snippet}

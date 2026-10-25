@@ -369,9 +369,10 @@
 			</Button>
 		{/if}
 		{#if hidden}
+			<!-- A gear, as it opens settings for the rules; the shuffle read as "randomise" (Trevor, 2026-10-25). -->
 			<Button
 				variant="quiet"
-				icon="random"
+				icon="settings"
 				onclick={() => go(resolve('/grimoire/[gameId]/extras', { gameId }))}
 			>
 				{t('modes.extras.title')}

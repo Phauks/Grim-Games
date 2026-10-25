@@ -76,11 +76,14 @@ accountSync.register(KIND, {
 	}
 });
 
-/** What was stored, and whether it may be written (not when a newer build wrote it). */
-function read(): { state: ProfilesState; writable: boolean } {
+/**
+ * What was stored, whether it may be written (not when a newer build wrote it), and whether it
+ * is on the device yet (not on first run until something is saved).
+ */
+function read(): { state: ProfilesState; writable: boolean; kept: boolean } {
 	const raw = readStored(PROFILES_STORAGE_KEY);
 	const state = parseProfilesState(raw);
-	if (state) return { state, writable: true };
+	if (state) return { state, writable: true, kept: true };
 	// First run: the settings in use become the first profile.
 	const id = crypto.randomUUID();
 	const first: ProfilesState = {
@@ -94,13 +97,13 @@ function read(): { state: ProfilesState; writable: boolean } {
 		typeof raw === 'object' &&
 		raw !== null &&
 		(raw as { schemaVersion?: unknown }).schemaVersion !== 1;
-	return { state: first, writable: !newer };
+	return { state: first, writable: !newer, kept: false };
 }
 
 class SettingsProfiles {
 	#stored = read();
 	#state = $state.raw<ProfilesState>(this.#stored.state);
-	#games = parseGameProfiles(readStored(GAMES_KEY));
+	#games = $state.raw(parseGameProfiles(readStored(GAMES_KEY)));
 	/** The background for all games has been read, so the active profile can follow it. */
 	#ready = $state(false);
 	/** A switch is writing another profile's values; they aren't edits to record. */
@@ -120,6 +123,11 @@ class SettingsProfiles {
 
 	get activeId(): string {
 		return this.#state.activeId;
+	}
+
+	/** Which profile each game uses, by game id. */
+	get gameProfiles(): Readonly<Record<string, string>> {
+		return this.#games;
 	}
 
 	get(id: string): SettingsProfile | undefined {
@@ -270,6 +278,7 @@ class SettingsProfiles {
 			for (const id of old.keys()) if (!kept.has(id)) this.#push(id, undefined);
 		}
 		if (!this.#stored.writable) return;
+		this.#stored.kept = true;
 		if (!writeStored(PROFILES_STORAGE_KEY, next)) {
 			reportError(new Error('Settings profiles were not saved on this device'), {
 				area: 'settings'
@@ -353,6 +362,9 @@ class SettingsProfiles {
 
 	#setGame(gameId: string, profileId: string): void {
 		if (this.#games[gameId] === profileId) return;
+		// The first run's profile is made afresh on each visit until it is saved: save it now, so
+		// the game keeps naming it (and its row counts the game).
+		if (!this.#stored.kept) this.#save({ ...this.#state });
 		this.#games = { ...this.#games, [gameId]: profileId };
 		writeStored(GAMES_KEY, this.#games);
 	}

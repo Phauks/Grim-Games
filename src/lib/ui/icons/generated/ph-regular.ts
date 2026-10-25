@@ -4,6 +4,7 @@ import ph_arrow_bend_up_right from '~icons/ph/arrow-bend-up-right';
 import ph_arrow_clockwise from '~icons/ph/arrow-clockwise';
 import ph_arrow_counter_clockwise from '~icons/ph/arrow-counter-clockwise';
 import ph_arrow_square_out from '~icons/ph/arrow-square-out';
+import ph_arrows_clockwise from '~icons/ph/arrows-clockwise';
 import ph_arrows_down_up from '~icons/ph/arrows-down-up';
 import ph_arrows_in from '~icons/ph/arrows-in';
 import ph_arrows_left_right from '~icons/ph/arrows-left-right';
@@ -91,6 +92,7 @@ import ph_tag from '~icons/ph/tag';
 import ph_text_aa from '~icons/ph/text-aa';
 import ph_text_t from '~icons/ph/text-t';
 import ph_timer from '~icons/ph/timer';
+import ph_translate from '~icons/ph/translate';
 import ph_trash from '~icons/ph/trash';
 import ph_upload_simple from '~icons/ph/upload-simple';
 import ph_user_circle from '~icons/ph/user-circle';
@@ -106,6 +108,7 @@ const icons: IconMap = {
 	'ph:arrow-clockwise': ph_arrow_clockwise,
 	'ph:arrow-counter-clockwise': ph_arrow_counter_clockwise,
 	'ph:arrow-square-out': ph_arrow_square_out,
+	'ph:arrows-clockwise': ph_arrows_clockwise,
 	'ph:arrows-down-up': ph_arrows_down_up,
 	'ph:arrows-in': ph_arrows_in,
 	'ph:arrows-left-right': ph_arrows_left_right,
@@ -193,6 +196,7 @@ const icons: IconMap = {
 	'ph:text-aa': ph_text_aa,
 	'ph:text-t': ph_text_t,
 	'ph:timer': ph_timer,
+	'ph:translate': ph_translate,
 	'ph:trash': ph_trash,
 	'ph:upload-simple': ph_upload_simple,
 	'ph:user-circle': ph_user_circle,

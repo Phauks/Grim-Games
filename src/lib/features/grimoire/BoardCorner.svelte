@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { ScriptMeta } from '#lib/core/data/index.ts';
 	import type { Game } from '#lib/core/model/index.ts';
 	import { gameClock } from '#lib/core/rules/index.ts';
@@ -50,6 +51,11 @@
 		titleH?: number;
 		/** How wide the corner may be now; under two rem it is hidden. */
 		room?: number;
+		/**
+		 * A status above the corner, out of the corner's own size (the board's Game over:
+		 * Trevor, 2026-10-25, so History's strip keeps its room for the change shown).
+		 */
+		status?: Snippet;
 	}
 
 	let {
@@ -71,7 +77,8 @@
 		titleW = $bindable(0),
 		titleH = $bindable(0),
 		// eslint-disable-next-line no-useless-assignment -- bindable: the board reads it
-		room = $bindable(0)
+		room = $bindable(0),
+		status
 	}: Props = $props();
 
 	/**
@@ -208,14 +215,17 @@
 		bind:clientWidth={titleW}
 		bind:clientHeight={titleH}
 	>
-		<!-- Who watches the view-only grimoire, above the name (Trevor, 2026-10-22); held
-		     off the title's own height so the corner's measurements stay as they are. -->
-		{#if watcherCount > 0}<span
-				class="watchers"
-				role="status"
-				aria-label={t('room.watching', { count: watcherCount })}
-				data-testid="board-watchers"
-				><Icon name="watchers" /><span aria-hidden="true">{watcherCount}</span></span
+		<!-- The status, then who watches the view-only grimoire, above the name (Trevor,
+		     2026-10-22); held off the title's own height so the corner's measurements stay as
+		     they are. -->
+		{#if status || watcherCount > 0}<span class="above"
+				>{@render status?.()}{#if watcherCount > 0}<span
+						class="watchers"
+						role="status"
+						aria-label={t('room.watching', { count: watcherCount })}
+						data-testid="board-watchers"
+						><Icon name="watchers" /><span aria-hidden="true">{watcherCount}</span></span
+					>{/if}</span
 			>{/if}
 		<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
 		{#if game}<ModeMenu
@@ -270,6 +280,8 @@
 				>{@render clockLine(false)}</span
 			>{/if}
 	</p>
+{:else if status}
+	<p class="corner-title corner-status">{@render status()}</p>
 {/if}
 
 <style>
@@ -300,10 +312,28 @@
 		text-shadow: 0 0 0.3em var(--surface);
 		pointer-events: none;
 	}
-	.watchers {
+	/* Above the corner, as wide as it needs: the corner's room is for the name. Shown even
+	   where the name has no room, and tappable though the corner is not. */
+	.corner-title > .above {
 		position: absolute;
 		left: 0;
 		bottom: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-1);
+		width: max-content;
+		max-width: 70vw;
+		padding-bottom: var(--space-1);
+		overflow: visible;
+		visibility: visible;
+		pointer-events: auto;
+	}
+	.corner-status {
+		max-width: 70vw;
+		pointer-events: auto;
+	}
+	.watchers {
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);

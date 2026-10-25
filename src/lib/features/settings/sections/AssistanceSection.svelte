@@ -16,6 +16,7 @@
 	import { qrPicture } from '#lib/ui/share/qr-picture.svelte.ts';
 	import QrCode from '#lib/ui/primitives/QrCode.svelte';
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
+	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 
 	/** A room's join link, as the share screen's QR carries, for the preview only. */
@@ -36,10 +37,10 @@
 	/>
 {/snippet}
 
-<h3>{t('settings.groupNight')}</h3>
+<SettingHeading title={t('settings.groupNight')} first />
 {#each STORYTELLER_GROUPS.night as key (key)}{@render toggle(key)}{/each}
 
-<h3>{t('settings.groupSetup')}</h3>
+<SettingHeading title={t('settings.groupSetup')} />
 <!-- What face-down bag tiles show (Trevor, 2026-10-16: a dropdown, not a switch). -->
 <SettingSelect
 	label={t('settings.tileLabels')}
@@ -80,7 +81,7 @@
 	onChange={(ownWording) => preferences.update({ ownWording })}
 />
 
-<h3>{t('settings.groupDay')}</h3>
+<SettingHeading title={t('settings.groupDay')} />
 {#each STORYTELLER_GROUPS.day as key (key)}{@render toggle(key)}{/each}
 <!-- The day timer's own choices, the same values as on the timer (Trevor, 2026-10-17). -->
 <SettingSelect
@@ -123,7 +124,7 @@
 />
 <TimerPerPlayerRow />
 
-<h3>{t('settings.groupShare')}</h3>
+<SettingHeading title={t('settings.groupShare')} />
 <!-- Also on Share, beside the view-only link, where it is used. -->
 <SettingToggle
 	label={t('settings.hideWatchLink')}
@@ -156,16 +157,5 @@
 	.qr-preview {
 		width: min(100%, calc(12 * var(--u)));
 		margin-inline: auto;
-	}
-	h3 {
-		margin: var(--space-5) 0 var(--space-1);
-		font-family: var(--font-control);
-		font-size: 0.75rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--on-surface-muted);
-	}
-	h3:first-of-type {
-		margin-top: 0;
 	}
 </style>

@@ -3,7 +3,7 @@
 import type { CharacterLookup } from '#lib/core/model/index.ts';
 import { endReasonCharacter, type EndReason } from '#lib/core/rules/index.ts';
 
-const LABELS = { 'demon-dead': 'Demon died', 'two-alive': '2 alive', other: 'Other' } as const;
+const LABELS = { 'demon-dead': 'Demon execution', 'two-alive': '2 alive', other: 'Other' } as const;
 
 export function endReasonLabel(reason: EndReason, characters: CharacterLookup): string {
 	const id = endReasonCharacter(reason);

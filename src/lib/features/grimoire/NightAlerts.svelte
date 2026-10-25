@@ -10,7 +10,7 @@
 
 	/**
 	 * Game state that matters for a night step (Trevor, 2026-10-16): who is drunk or
-	 * poisoned, and for a step that can kill, who is protected, may bounce the death, survives
+	 * poisoned, who doesn't wake tonight (the Exorcist's Demon), and for a step that can kill, who is protected, may bounce the death, survives
 	 * it or sets something off by dying. Short state lines with badges; the rules are core's
 	 * `nightStepAlerts`, worked out from the tokens on the board.
 	 */
@@ -39,6 +39,7 @@
 	};
 	const ICON = {
 		impaired: 'poisoned',
+		blocked: 'warning',
 		protected: 'protected',
 		'may-bounce': 'warning',
 		'survives-first-death': 'protected',
@@ -87,6 +88,9 @@
 						{@render badge(sourceId(alert))} in {@render player(alert.seatId)} is {@render why(
 							alert.impairments
 						)}
+					{:else if alert.kind === 'blocked'}
+						{@render player(alert.seatId)}: chosen by {@render badge(sourceId(alert))}, doesn't wake
+						tonight
 					{:else if alert.kind === 'protected'}
 						{@render player(alert.seatId)} can't die{#if alert.source === 'override'}
 							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}

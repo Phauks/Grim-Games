@@ -20,23 +20,7 @@ const SHARE_TODO = [];
  * Files that still show a player name as plain text (grim/names-as-badges); only ever shrinks
  * (Trevor, 2026-10-24: every player name is the grim's name badge).
  */
-const PLAYER_BADGE_TODO = [
-	'src/lib/features/day/CountDialog.svelte',
-	'src/lib/features/day/DayPanel.svelte',
-	'src/lib/features/day/ExecutionDialog.svelte',
-	'src/lib/features/grimoire/GrimoireBoard.svelte',
-	'src/lib/features/grimoire/GuidedStep.svelte',
-	'src/lib/features/grimoire/NominationChooser.svelte',
-	'src/lib/features/grimoire/SeatChooser.svelte',
-	'src/lib/features/grimoire/SeatSheet.svelte',
-	'src/lib/features/grimoire/SeatToken.svelte',
-	'src/lib/features/modes/PairedDrawPage.svelte',
-	'src/lib/features/modes/SpectersSheet.svelte',
-	'src/lib/features/modes/TownsPage.svelte',
-	'src/lib/features/room/JoinPanel.svelte',
-	'src/lib/features/room/RoomPanel.svelte',
-	'src/lib/features/savant/SavantSheet.svelte'
-];
+const PLAYER_BADGE_TODO = [];
 
 const LOCAL_STORAGE_TODO = [
 	'src/lib/features/account/profile-scripts.svelte.ts',

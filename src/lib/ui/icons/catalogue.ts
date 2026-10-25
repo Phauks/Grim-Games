@@ -58,6 +58,7 @@ export const ICON_SLOTS = {
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
 	appearance: { label: 'Appearance', choices: ['ph:palette', 'ph:paint-brush'] },
+	language: { label: 'Language', choices: ['ph:translate', 'ph:globe'] },
 	fonts: { label: 'Fonts', choices: ['ph:text-aa', 'ph:text-t'] },
 	icons: { label: 'Icons', choices: ['ph:shapes', 'ph:smiley'] },
 	/** Board and Tokens settings, each its own (Trevor, 2026-10-19). */
@@ -69,6 +70,8 @@ export const ICON_SLOTS = {
 	about: { label: 'About', choices: ['ph:identification-card', 'ph:info'] },
 	back: { label: 'Back', choices: ['ph:caret-left', 'ph:arrow-left'] },
 	forward: { label: 'Forward', choices: ['ph:caret-right', 'ph:arrow-right'] },
+	/** The arrow on a player's guess pill: the next guess becomes the main one (Trevor, 2026-10-25). */
+	nextGuess: { label: 'Next guess', choices: ['ph:arrows-clockwise', 'ph:arrow-circle-right'] },
 	check: { label: 'Selected', choices: ['ph:check'] },
 	random: { label: 'Random selection', choices: ['ph:shuffle', 'ph:dice-five'] },
 	clearSelection: { label: 'Clear selection', choices: ['ph:eraser', 'ph:x-circle'] },

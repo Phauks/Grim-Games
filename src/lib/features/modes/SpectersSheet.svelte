@@ -1,7 +1,8 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Character, GameData } from '#lib/core/data/index.ts';
 	import type { Game, SeatId } from '#lib/core/model/index.ts';
-	import { seatNumber } from '#lib/core/model/index.ts';
 	import type { DayStep, GameMode } from '#lib/core/modes/index.ts';
 	import type { VoteTally } from '#lib/core/sync/room.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -91,7 +92,8 @@
 
 	const host = roomHost();
 	const seats = $derived(game.seating);
-	const spectators = $derived(host.members.filter((m) => m.seatId === undefined).length);
+	// Only phones connected now: the room keeps phones from earlier games (2026-10-25).
+	const spectators = $derived(host.connectedUnseated.length);
 
 	// The last count stays shown after the vote closes, so the Storyteller can act on it.
 	let last = $state.raw<VoteTally | undefined>();
@@ -104,12 +106,6 @@
 		const top = Math.max(...shown.options.map((o) => shown.counts[o] ?? 0));
 		return new Set(shown.options.filter((o) => (shown.counts[o] ?? 0) === top));
 	});
-
-	function label(seatId: SeatId): string {
-		const number = t('common.seat', { number: seatNumber(game, seatId) ?? 0 });
-		const name = game.seats[seatId]?.playerName;
-		return name ? `${number} · ${name}` : number;
-	}
 
 	function openVote() {
 		last = undefined;
@@ -191,7 +187,7 @@
 			<ol class="tally" data-testid="specters-tally">
 				{#each seats as seatId (seatId)}
 					<li data-most={most.has(seatId) || undefined}>
-						<span>{label(seatId)}</span>
+						<PlayerBadge name={seatName(game, seatId)} />
 						<span class="count">{shown?.counts[seatId] ?? 0}</span>
 					</li>
 				{/each}

@@ -1,12 +1,9 @@
 <script lang="ts" module>
-	import type { SeatId as DraftSeat } from '#lib/core/model/index.ts';
-
 	/**
-	 * What the phone typed or chose in each room before asking. The panel is drawn again when the
-	 * room's script arrives (the page gains its tabs), and that must not lose it.
+	 * What the phone typed in each room before saving. The panel is drawn again when the room's
+	 * script arrives (the page gains its tabs), and that must not lose it.
 	 */
-	const drafts: Record<string, { name: string; seat: DraftSeat | ''; placed?: DraftSeat | '' }> =
-		{};
+	const drafts: Record<string, { name: string }> = {};
 </script>
 
 <script lang="ts">
@@ -30,6 +27,7 @@
 	import ScriptBallot from './ScriptBallot.svelte';
 	import FeedbackSheet from './FeedbackSheet.svelte';
 	import VoteChoice from './VoteChoice.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 	import { followRoomScript } from './room-script.svelte.ts';
@@ -42,8 +40,9 @@
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
-	 * over /play's tabs, which says where this phone sits and opens a sheet for its name, seat
-	 * and initials (plan J12: no Room tab), and the Specters vote.
+	 * over /play's tabs, which says where this phone sits and opens a sheet for its name and
+	 * initials (plan J12: no Room tab), and the Specters vote. The player sets only the name
+	 * that shows; the Storyteller seats them (Trevor, 2026-10-25).
 	 */
 	interface Props {
 		/** The room's code; undefined shows the code form. */
@@ -72,8 +71,6 @@
 	let player = $state.raw<RoomPlayer>();
 	let typed = $state('');
 	let name = $state('');
-	/** '' is "any seat". */
-	let seat = $state<SeatId | ''>('');
 
 	$effect(() => {
 		if (!valid) return;
@@ -83,12 +80,10 @@
 		player = p;
 		const draft = drafts[valid];
 		name = draft?.name ?? untrack(() => p.view?.me.name ?? p.savedName);
-		seat = draft?.seat ?? '';
-		lastPlaced = draft?.placed;
 		return () => releaseRoom(p);
 	});
 	$effect(() => {
-		if (valid) drafts[valid] = { name, seat, placed: lastPlaced };
+		if (valid) drafts[valid] = { name };
 	});
 
 	// The player's avatar and frame go to the room as they pick them (plan R6).
@@ -130,20 +125,9 @@
 	$effect(() => {
 		if (view?.request || mine) untrack(() => onSeated?.());
 	});
-	// The seat this phone has, or asked for, is the one chosen when the room opens again.
-	const placed = $derived(
-		view ? (view.request ? (view.request.seatId ?? '') : (mine ?? '')) : undefined
-	);
-	/** The seat the room last gave or held, so only a change to it moves the choice. */
-	let lastPlaced: SeatId | '' | undefined;
-	$effect(() => {
-		if (placed === undefined || placed === lastPlaced) return;
-		lastPlaced = placed;
-		seat = placed;
-	});
-	/** Asking again for the seat and name this phone already has changes nothing. */
+	/** The name this phone has, or asked for: saving it again changes nothing. */
 	const unchanged = $derived(
-		!!view && !view.request && !!mine && seat === mine && name.trim() === view.me.name
+		!!view && name.trim() === (view.request?.name ?? (mine ? view.me.name : undefined))
 	);
 	const seatName = (seatId?: SeatId) => {
 		const s = seats.find((x) => x.seatId === seatId);
@@ -159,8 +143,7 @@
 				: view.ended.winner === 'evil'
 					? t('room.gameOverEvil')
 					: t('room.gameOver');
-		if (view.request)
-			return t('room.waiting', { name: view.request.name, seat: seatName(view.request.seatId) });
+		if (view.request) return t('room.waiting', { name: view.request.name });
 		if (mine) return t('room.seated', { seat: seatName(mine), name: view.me.name ?? '' });
 		if (view.me.name) return t('room.unseated', { name: view.me.name });
 		return t('room.choose');
@@ -290,11 +273,12 @@
 		return true;
 	}
 
+	/** Sends the name; a seated player keeps their seat, and a new one waits to be seated. */
 	function ask(event: SubmitEvent) {
 		event.preventDefault();
 		const n = name.trim();
 		if (!n || !player) return;
-		player.ask(n, seat || undefined);
+		player.ask(n, view?.request?.seatId ?? mine);
 		editing = false;
 	}
 </script>
@@ -411,52 +395,12 @@
 					onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
 				/>
 			</ClearableField>
-			<fieldset>
-				<legend>{t('room.yourSeat')}</legend>
-				<div class="seats">
-					<label class="seat">
-						<input type="radio" bind:group={seat} value="" />
-						<span>{t('room.anySeat')}</span>
-					</label>
-					{#each seats as s (s.seatId)}
-						<label class="seat" data-mine={s.seatId === mine || undefined}>
-							<input type="radio" bind:group={seat} value={s.seatId} />
-							<span>{t('common.seat', { number: s.seatNumber })}</span>
-							<span class="sub">
-								{s.seatId === mine
-									? t('room.mine')
-									: (s.playerName ??
-										(view?.takenSeats.includes(s.seatId) ? t('room.taken') : t('room.empty')))}
-							</span>
-						</label>
-					{/each}
-				</div>
-			</fieldset>
-			<!-- Ask is the sheet's Confirm; withdrawing a request or leaving a seat sit at the
-			     bottom left, always there and usable when they apply, so nothing moves. -->
 			<ModalActions
 				onCancel={() => (editing = false)}
 				submit
 				disabled={!name.trim() || unchanged || status !== 'open'}
-				confirmLabel={t('room.ask')}
-			>
-				{#snippet start()}
-					<Button
-						variant="quiet"
-						disabled={!view?.request || status !== 'open'}
-						onclick={() => player?.cancel()}
-					>
-						{t('room.cancelRequest')}
-					</Button>
-					<Button
-						variant="quiet"
-						disabled={!mine || status !== 'open'}
-						onclick={() => player?.leaveSeat()}
-					>
-						{t('room.leaveSeat')}
-					</Button>
-				{/snippet}
-			</ModalActions>
+				confirmLabel={t('common.save')}
+			/>
 		</form>
 	</Dialog>
 {/if}
@@ -473,7 +417,9 @@
 					pressed={vote?.choice === option}
 					disabled={status !== 'open'}
 					onclick={() => player?.vote(option)}
-					>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</VoteChoice
+					>{#if s?.playerName}<PlayerBadge name={s.playerName} />{:else}{t('common.seat', {
+							number: s?.seatNumber ?? 0
+						})}{/if}</VoteChoice
 				>
 			</li>
 		{/each}
@@ -612,50 +558,6 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font: var(--font-control);
-	}
-	fieldset {
-		margin: 0;
-		padding: 0;
-		border: 0;
-		min-width: 0;
-	}
-	legend {
-		margin-bottom: var(--space-2);
-		padding: 0;
-	}
-	.seats {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
-		gap: var(--space-2);
-	}
-	.seat {
-		display: grid;
-		align-content: center;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-		cursor: pointer;
-	}
-	.seat:has(input:checked) {
-		border-color: var(--accent);
-		background: var(--surface-selected);
-	}
-	.seat:has(input:focus-visible) {
-		outline: 2px solid var(--accent);
-		outline-offset: 2px;
-	}
-	.seat input {
-		position: absolute;
-		opacity: 0;
-		pointer-events: none;
-	}
-	.sub {
-		overflow: hidden;
-		color: var(--on-surface-muted);
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	.ability {
 		margin: 0 0 var(--space-2);

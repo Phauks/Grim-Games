@@ -10,7 +10,8 @@
 		STEP_FOCUS_LABEL
 	} from '#lib/features/grimoire/StepFocusSetting.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
-	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
+	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
 	import BoardLooksRows from './BoardLooksRows.svelte';
 	import BoardPreview from './BoardPreview.svelte';
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
@@ -51,19 +52,18 @@
 	</SettingRow>
 
 	<!-- The corner's lines, the same choices as the eyes in Game info (Trevor, 2026-10-24). -->
-	<h3>{t('settings.groupCorner')}</h3>
+	<SettingHeading title={t('settings.groupCorner')} />
 	{#each CORNER_LINES as line (line)}<CornerLineToggle {line} />{/each}
 
-	<h3>{t('settings.groupRules')}</h3>
+	<SettingHeading title={t('settings.groupRules')} />
 	<RulesLooksRows />
 </SettingGroup>
 
 <!-- Where reminders sit, apart and closed, marked with a warning before it is touched, since
      leaving them where dropped turns a lot off (Trevor, 2026-10-23). Its Confirm still lists
      what changes (Trevor, 2026-10-17). The board's ⋯ > Board opens this section too. -->
-<Collapsible
+<SettingCollapsible
 	title={t('settings.boardAdvanced')}
-	level={3}
 	storageKey="settings-board-advanced"
 	defaultOpen={false}
 	count={3}
@@ -83,15 +83,4 @@
 		checked={boardLooks.current.holdMoves}
 		onChange={(on) => boardLooks.update({ holdMoves: on })}
 	/>
-</Collapsible>
-
-<style>
-	h3 {
-		margin: var(--space-5) 0 var(--space-1);
-		font-family: var(--font-control);
-		font-size: 0.75rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--on-surface-muted);
-	}
-</style>
+</SettingCollapsible>
