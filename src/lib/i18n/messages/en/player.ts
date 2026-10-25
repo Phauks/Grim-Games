@@ -22,6 +22,8 @@ export const player = {
 	},
 	'player.grim.traveller': 'Traveller: {name}',
 	'player.grim.guess': 'your guess: {name}',
+	'player.grim.guesses': 'Guesses',
+	'player.grim.nextGuess': 'Next guess',
 	'player.grim.generic': 'Guess a type or alignment',
 	'player.grim.hasNote': 'your note',
 	'player.grim.noteTitle': 'Note: {name}',
@@ -32,6 +34,7 @@ export const player = {
 
 	'player.recommendedTravellers': 'Recommended Travellers',
 	'player.jinxes': 'Jinxes',
+	'player.modeAndRules': 'Game mode and special rules',
 	'player.chooseScript': 'Choose a script',
 	'player.findScript': 'Find a script',
 	'player.breakdown': 'Players',

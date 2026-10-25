@@ -17,7 +17,8 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
@@ -226,12 +227,9 @@
 				: undefined
 	);
 
+	/** True, False, or the seats it depends on (a `seats` slot, drawn as their badges). */
 	function truthLabel(s: SavantStatement): string {
-		if (s.truth === 'either') {
-			return t('savant.dependsOn', {
-				seats: s.dependsOn.map((x) => seatLabel(game, x)).join(', ')
-			});
-		}
+		if (s.truth === 'either') return t('savant.dependsOn', { seats: slot('seats') });
 		return s.truth === 'true' ? t('savant.true') : t('savant.false');
 	}
 
@@ -267,9 +265,14 @@
 	size="full"
 	title={seatId === undefined
 		? t('savant.title')
-		: t('savant.titleSeat', { seat: seatLabel(game, seatId) })}
+		: // eslint-disable-next-line grim/names-as-badges -- the accessible name; the heading shows the badge
+			t('savant.titleSeat', { seat: seatLabel(game, seatId) })}
 	pinAside={false}
 >
+	{#snippet heading()}{#if seatId === undefined}{t('savant.title')}{:else}<Sentence
+				text={t('savant.titleSeat', { seat: slot('seat') })}
+				>{#snippet fill()}<PlayerBadge name={seatName(game, seatId)} />{/snippet}</Sentence
+			>{/if}{/snippet}
 	{#snippet headActions()}
 		<IconButton
 			icon="showToPlayer"
@@ -367,7 +370,14 @@
 								>{assumed[i] ? t('savant.checkTrue') : t('savant.checkFalse')}</Chip
 							>
 						{:else if line}
-							<span class="verdict" data-truth={line.truth}>{truthLabel(line)}</span>
+							<span class="verdict" data-truth={line.truth}
+								><Sentence text={truthLabel(line)}
+									>{#snippet fill()}{#each line.truth === 'either' ? line.dependsOn : [] as x, k (k)}{k >
+											0
+												? ', '
+												: ''}<PlayerBadge name={seatName(game, x)} />{/each}{/snippet}</Sentence
+								></span
+							>
 							{#each line.why as reason, j (j)}
 								<span class="why-part" data-testid="savant-why-part"
 									>{@render parts(reason)}{#if j < line.why.length - 1};{/if}</span
@@ -398,10 +408,9 @@
 
 {#snippet parts(
 	list: readonly SavantPart[]
-)}{#each list as part, j (j)}{#if 'text' in part}{part.text}{:else if 'seat' in part}{seatLabel(
-				game,
-				part.seat
-			)}{:else if 'character' in part}<CharacterBadge
+)}{#each list as part, j (j)}{#if 'text' in part}{part.text}{:else if 'seat' in part}<PlayerBadge
+				name={seatName(game, part.seat)}
+			/>{:else if 'character' in part}<CharacterBadge
 				characterId={part.character}
 				character={characters.get(part.character)}
 			/>{:else if 'type' in part}{TYPE_NAMES[part.type]}{:else}{part.number}{/if}{/each}{/snippet}

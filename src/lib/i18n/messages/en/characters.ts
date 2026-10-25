@@ -109,8 +109,6 @@ export const characters = {
 	'characters.setupMovesName': 'Setup notation moves name',
 	'characters.setupMovesNameHelp':
 		'Shortens the name on the token so it stays clear of the flower.',
-	'characters.colour.reset': 'Reset',
-	'characters.colour.resetOne': 'Reset {colour}',
 	'characters.contrast.face': 'Text on tokens',
 	'characters.contrast.reminder': 'Text on reminders',
 	'characters.contrast.good': '{ratio}:1, easy to read',

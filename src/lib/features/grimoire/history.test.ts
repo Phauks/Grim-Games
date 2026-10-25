@@ -114,7 +114,7 @@ describe('historyItems', () => {
 			(s) => ({ type: 'RenameSeat', seatId: first(s), playerName: 'Ana' }),
 			(s) => ({ type: 'RenameSeat', seatId: second(s), playerName: 'Ben' }),
 			(s) => ({ type: 'Nominate', nominator: first(s), nominee: second(s) }),
-			() => ({ type: 'SetDemonVoted', voted: true })
+			() => ({ type: 'SetDayMark', mark: 'demon-voted', value: true })
 		);
 		const [voted, nominated] = historyItems(session.log.entries, session.log.cursor, characters);
 		expect(nominated.parts).toEqual([

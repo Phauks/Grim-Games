@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
-	import type { NightStep } from '#lib/core/rules/index.ts';
+	import type { DayMark, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
@@ -99,6 +99,7 @@
 	import { fromScript, scriptLogo, scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
+	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
 	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
 	import PlayerNotes from '#lib/features/player/PlayerNotes.svelte';
@@ -684,7 +685,13 @@
 		endDayOpen = true;
 		return true;
 	}
-	function executeAndEndDay(seatId: SeatId | undefined, save?: CharacterId | 'dies'): void {
+	function executeAndEndDay(
+		seatId: SeatId | undefined,
+		save: CharacterId | 'dies' | undefined,
+		marks: Partial<Record<DayMark, boolean>>
+	): void {
+		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
+			grimoire.run({ type: 'SetDayMark', mark, value });
 		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
 		if (seatId && !logged)
 			grimoire.run({
@@ -1294,24 +1301,7 @@
 			/>
 		{/if}
 		{#if ended}
-			<HistoryStrip {grimoire}>
-				{#snippet notice()}
-					<!-- In History's strip, out of the circle (Trevor, 2026-10-18); in the strip so
-					     ending the game moves nothing (2026-10-24). Tapping it offers to reopen. -->
-					<button
-						type="button"
-						class="game-over"
-						data-testid="game-over"
-						data-team={ended.winner}
-						disabled={watching}
-						onclick={() => (reopenOpen = true)}
-					>
-						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
-							? ' · Shown from History'
-							: ''}
-					</button>
-				{/snippet}
-			</HistoryStrip>
+			<HistoryStrip {grimoire} />
 		{:else}
 			<ReminderBank
 				{grimoire}
@@ -1359,7 +1349,27 @@
 			bind:titleW
 			bind:titleH
 			bind:room={corner}
-		/>
+		>
+			{#snippet status()}
+				{#if ended}
+					<!-- Above Game info (the corner), out of History's strip so the strip keeps
+					     its room for the change shown (Trevor, 2026-10-25); held off the corner's
+					     size, so ending the game moves nothing. Tapping it offers to reopen. -->
+					<button
+						type="button"
+						class="game-over"
+						data-testid="game-over"
+						data-team={ended.winner}
+						disabled={watching}
+						onclick={() => (reopenOpen = true)}
+					>
+						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
+							? ' · Shown from History'
+							: ''}
+					</button>
+				{/if}
+			{/snippet}
+		</BoardCorner>
 		{#if showTimer}
 			<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. -->
 			<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
@@ -1554,6 +1564,7 @@
 				players={game.seating.length}
 				inPlay={charactersInPlay(game)}
 				travellers={travellersInPlay(town.seats)}
+				rules={gameSheetRules(game.gameId)}
 			>
 				{#snippet grim()}<PlayerGrim
 						script={loadedScript!}
@@ -1794,7 +1805,7 @@
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.game-over {
 		flex: none;
-		max-width: 50%;
+		max-width: 100%;
 		min-height: var(--tap-target);
 		overflow: hidden;
 		text-overflow: ellipsis;

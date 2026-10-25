@@ -2,6 +2,7 @@
 import type { IconMap } from '../types.ts';
 import ph_anchor from '~icons/ph/anchor';
 import ph_archive from '~icons/ph/archive';
+import ph_arrow_circle_right from '~icons/ph/arrow-circle-right';
 import ph_arrow_left from '~icons/ph/arrow-left';
 import ph_arrow_right from '~icons/ph/arrow-right';
 import ph_arrow_u_up_left from '~icons/ph/arrow-u-up-left';
@@ -44,6 +45,7 @@ import ph_flower from '~icons/ph/flower';
 import ph_folder_simple from '~icons/ph/folder-simple';
 import ph_frame_corners from '~icons/ph/frame-corners';
 import ph_gear_six from '~icons/ph/gear-six';
+import ph_globe from '~icons/ph/globe';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
@@ -105,6 +107,7 @@ import ph_x_circle from '~icons/ph/x-circle';
 const icons: IconMap = {
 	'ph:anchor': ph_anchor,
 	'ph:archive': ph_archive,
+	'ph:arrow-circle-right': ph_arrow_circle_right,
 	'ph:arrow-left': ph_arrow_left,
 	'ph:arrow-right': ph_arrow_right,
 	'ph:arrow-u-up-left': ph_arrow_u_up_left,
@@ -147,6 +150,7 @@ const icons: IconMap = {
 	'ph:folder-simple': ph_folder_simple,
 	'ph:frame-corners': ph_frame_corners,
 	'ph:gear-six': ph_gear_six,
+	'ph:globe': ph_globe,
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,

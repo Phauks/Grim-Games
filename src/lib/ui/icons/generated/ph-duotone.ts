@@ -3,6 +3,7 @@ import type { IconMap } from '../types.ts';
 import ph_anchor_duotone from '~icons/ph/anchor-duotone';
 import ph_archive_duotone from '~icons/ph/archive-duotone';
 import ph_arrow_bend_up_right_duotone from '~icons/ph/arrow-bend-up-right-duotone';
+import ph_arrow_circle_right_duotone from '~icons/ph/arrow-circle-right-duotone';
 import ph_arrow_clockwise_duotone from '~icons/ph/arrow-clockwise-duotone';
 import ph_arrow_counter_clockwise_duotone from '~icons/ph/arrow-counter-clockwise-duotone';
 import ph_arrow_left_duotone from '~icons/ph/arrow-left-duotone';
@@ -10,6 +11,7 @@ import ph_arrow_right_duotone from '~icons/ph/arrow-right-duotone';
 import ph_arrow_square_out_duotone from '~icons/ph/arrow-square-out-duotone';
 import ph_arrow_u_up_left_duotone from '~icons/ph/arrow-u-up-left-duotone';
 import ph_arrow_u_up_right_duotone from '~icons/ph/arrow-u-up-right-duotone';
+import ph_arrows_clockwise_duotone from '~icons/ph/arrows-clockwise-duotone';
 import ph_arrows_down_up_duotone from '~icons/ph/arrows-down-up-duotone';
 import ph_arrows_in_duotone from '~icons/ph/arrows-in-duotone';
 import ph_arrows_left_right_duotone from '~icons/ph/arrows-left-right-duotone';
@@ -84,6 +86,7 @@ import ph_gavel_duotone from '~icons/ph/gavel-duotone';
 import ph_gear_duotone from '~icons/ph/gear-duotone';
 import ph_gear_six_duotone from '~icons/ph/gear-six-duotone';
 import ph_ghost_duotone from '~icons/ph/ghost-duotone';
+import ph_globe_duotone from '~icons/ph/globe-duotone';
 import ph_hammer_duotone from '~icons/ph/hammer-duotone';
 import ph_hand_fist_duotone from '~icons/ph/hand-fist-duotone';
 import ph_hand_grabbing_duotone from '~icons/ph/hand-grabbing-duotone';
@@ -181,6 +184,7 @@ import ph_text_t_duotone from '~icons/ph/text-t-duotone';
 import ph_textbox_duotone from '~icons/ph/textbox-duotone';
 import ph_timer_duotone from '~icons/ph/timer-duotone';
 import ph_tote_duotone from '~icons/ph/tote-duotone';
+import ph_translate_duotone from '~icons/ph/translate-duotone';
 import ph_trash_duotone from '~icons/ph/trash-duotone';
 import ph_trash_simple_duotone from '~icons/ph/trash-simple-duotone';
 import ph_tree_duotone from '~icons/ph/tree-duotone';
@@ -207,6 +211,7 @@ const icons: IconMap = {
 	'ph:anchor-duotone': ph_anchor_duotone,
 	'ph:archive-duotone': ph_archive_duotone,
 	'ph:arrow-bend-up-right-duotone': ph_arrow_bend_up_right_duotone,
+	'ph:arrow-circle-right-duotone': ph_arrow_circle_right_duotone,
 	'ph:arrow-clockwise-duotone': ph_arrow_clockwise_duotone,
 	'ph:arrow-counter-clockwise-duotone': ph_arrow_counter_clockwise_duotone,
 	'ph:arrow-left-duotone': ph_arrow_left_duotone,
@@ -214,6 +219,7 @@ const icons: IconMap = {
 	'ph:arrow-square-out-duotone': ph_arrow_square_out_duotone,
 	'ph:arrow-u-up-left-duotone': ph_arrow_u_up_left_duotone,
 	'ph:arrow-u-up-right-duotone': ph_arrow_u_up_right_duotone,
+	'ph:arrows-clockwise-duotone': ph_arrows_clockwise_duotone,
 	'ph:arrows-down-up-duotone': ph_arrows_down_up_duotone,
 	'ph:arrows-in-duotone': ph_arrows_in_duotone,
 	'ph:arrows-left-right-duotone': ph_arrows_left_right_duotone,
@@ -288,6 +294,7 @@ const icons: IconMap = {
 	'ph:gear-duotone': ph_gear_duotone,
 	'ph:gear-six-duotone': ph_gear_six_duotone,
 	'ph:ghost-duotone': ph_ghost_duotone,
+	'ph:globe-duotone': ph_globe_duotone,
 	'ph:hammer-duotone': ph_hammer_duotone,
 	'ph:hand-fist-duotone': ph_hand_fist_duotone,
 	'ph:hand-grabbing-duotone': ph_hand_grabbing_duotone,
@@ -385,6 +392,7 @@ const icons: IconMap = {
 	'ph:textbox-duotone': ph_textbox_duotone,
 	'ph:timer-duotone': ph_timer_duotone,
 	'ph:tote-duotone': ph_tote_duotone,
+	'ph:translate-duotone': ph_translate_duotone,
 	'ph:trash-duotone': ph_trash_duotone,
 	'ph:trash-simple-duotone': ph_trash_simple_duotone,
 	'ph:tree-duotone': ph_tree_duotone,

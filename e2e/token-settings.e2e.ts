@@ -58,7 +58,14 @@ test('a token colour can be changed, warns when hard to read, and resets', async
 	const dialog = await openTokens(page);
 	const contrast = dialog.getByTestId('token-contrast').first();
 	await expect(contrast).toContainText('easy to read');
-	const reset = dialog.getByRole('button', { name: 'Reset Token text' });
+	// The reset icon beside the name, as on every setting (described by the name).
+	const name = await dialog
+		.getByText('Token text', { exact: true })
+		.and(dialog.locator('[id]'))
+		.getAttribute('id');
+	const reset = dialog
+		.getByRole('button', { name: 'Reset to default' })
+		.and(dialog.locator(`[aria-describedby="${name}"]`));
 	await expect(reset).toBeDisabled();
 
 	// Pale text on the pale faces is flagged, in place (no layout change).

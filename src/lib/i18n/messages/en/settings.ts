@@ -14,6 +14,8 @@ export const settings = {
 	'settings.storyteller': 'Storyteller',
 	'settings.reset': 'Reset settings',
 	'settings.data': 'Data',
+	'settings.sectionLanguage': 'Language',
+	'settings.language': 'Language',
 	'settings.theme': 'Theme',
 	'settings.sectionTheme': 'Theme',
 	'settings.sectionText': 'Text',
@@ -32,6 +34,19 @@ export const settings = {
 	'settings.profileDeleteTitle': 'Delete {name}?',
 	'settings.profileDeleteText': 'Games that used it switch to the default profile.',
 	'settings.profileInUse': 'In use',
+	'settings.profileBackgroundNone': 'No background',
+	'settings.profileBackgroundScript': "Script's background",
+	'settings.profileBackgroundImage': 'Own picture',
+	'settings.profileTextSize': 'Text {size}',
+	'settings.profileChanges': {
+		one: '{count} change',
+		other: '{count} changes'
+	},
+	'settings.profileNoGames': 'No saved games',
+	'settings.profileGames': {
+		one: '{count} saved game, last {date}',
+		other: '{count} saved games, last {date}'
+	},
 	'settings.sectionTokens': 'Tokens',
 	'settings.colorGroup.surfaces': 'Backgrounds',
 	'settings.colorGroup.text': 'Text',

@@ -38,7 +38,7 @@
 	</span>
 {/snippet}
 
-<div class="frame-setting" data-testid={testid}>
+<div class="frame-setting" data-setting data-testid={testid}>
 	<SettingSelect
 		{label}
 		{description}

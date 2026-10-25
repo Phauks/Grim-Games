@@ -3,6 +3,7 @@ import type { IconMap } from '../types.ts';
 import ph_anchor_bold from '~icons/ph/anchor-bold';
 import ph_archive_bold from '~icons/ph/archive-bold';
 import ph_arrow_bend_up_right_bold from '~icons/ph/arrow-bend-up-right-bold';
+import ph_arrow_circle_right_bold from '~icons/ph/arrow-circle-right-bold';
 import ph_arrow_clockwise_bold from '~icons/ph/arrow-clockwise-bold';
 import ph_arrow_counter_clockwise_bold from '~icons/ph/arrow-counter-clockwise-bold';
 import ph_arrow_left_bold from '~icons/ph/arrow-left-bold';
@@ -10,6 +11,7 @@ import ph_arrow_right_bold from '~icons/ph/arrow-right-bold';
 import ph_arrow_square_out_bold from '~icons/ph/arrow-square-out-bold';
 import ph_arrow_u_up_left_bold from '~icons/ph/arrow-u-up-left-bold';
 import ph_arrow_u_up_right_bold from '~icons/ph/arrow-u-up-right-bold';
+import ph_arrows_clockwise_bold from '~icons/ph/arrows-clockwise-bold';
 import ph_arrows_down_up_bold from '~icons/ph/arrows-down-up-bold';
 import ph_arrows_in_bold from '~icons/ph/arrows-in-bold';
 import ph_arrows_left_right_bold from '~icons/ph/arrows-left-right-bold';
@@ -84,6 +86,7 @@ import ph_gavel_bold from '~icons/ph/gavel-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
+import ph_globe_bold from '~icons/ph/globe-bold';
 import ph_hammer_bold from '~icons/ph/hammer-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
 import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
@@ -181,6 +184,7 @@ import ph_text_t_bold from '~icons/ph/text-t-bold';
 import ph_textbox_bold from '~icons/ph/textbox-bold';
 import ph_timer_bold from '~icons/ph/timer-bold';
 import ph_tote_bold from '~icons/ph/tote-bold';
+import ph_translate_bold from '~icons/ph/translate-bold';
 import ph_trash_bold from '~icons/ph/trash-bold';
 import ph_trash_simple_bold from '~icons/ph/trash-simple-bold';
 import ph_tree_bold from '~icons/ph/tree-bold';
@@ -207,6 +211,7 @@ const icons: IconMap = {
 	'ph:anchor-bold': ph_anchor_bold,
 	'ph:archive-bold': ph_archive_bold,
 	'ph:arrow-bend-up-right-bold': ph_arrow_bend_up_right_bold,
+	'ph:arrow-circle-right-bold': ph_arrow_circle_right_bold,
 	'ph:arrow-clockwise-bold': ph_arrow_clockwise_bold,
 	'ph:arrow-counter-clockwise-bold': ph_arrow_counter_clockwise_bold,
 	'ph:arrow-left-bold': ph_arrow_left_bold,
@@ -214,6 +219,7 @@ const icons: IconMap = {
 	'ph:arrow-square-out-bold': ph_arrow_square_out_bold,
 	'ph:arrow-u-up-left-bold': ph_arrow_u_up_left_bold,
 	'ph:arrow-u-up-right-bold': ph_arrow_u_up_right_bold,
+	'ph:arrows-clockwise-bold': ph_arrows_clockwise_bold,
 	'ph:arrows-down-up-bold': ph_arrows_down_up_bold,
 	'ph:arrows-in-bold': ph_arrows_in_bold,
 	'ph:arrows-left-right-bold': ph_arrows_left_right_bold,
@@ -288,6 +294,7 @@ const icons: IconMap = {
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,
 	'ph:ghost-bold': ph_ghost_bold,
+	'ph:globe-bold': ph_globe_bold,
 	'ph:hammer-bold': ph_hammer_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
 	'ph:hand-grabbing-bold': ph_hand_grabbing_bold,
@@ -385,6 +392,7 @@ const icons: IconMap = {
 	'ph:textbox-bold': ph_textbox_bold,
 	'ph:timer-bold': ph_timer_bold,
 	'ph:tote-bold': ph_tote_bold,
+	'ph:translate-bold': ph_translate_bold,
 	'ph:trash-bold': ph_trash_bold,
 	'ph:trash-simple-bold': ph_trash_simple_bold,
 	'ph:tree-bold': ph_tree_bold,

@@ -3,6 +3,7 @@ import type { IconMap } from '../types.ts';
 import ph_anchor_light from '~icons/ph/anchor-light';
 import ph_archive_light from '~icons/ph/archive-light';
 import ph_arrow_bend_up_right_light from '~icons/ph/arrow-bend-up-right-light';
+import ph_arrow_circle_right_light from '~icons/ph/arrow-circle-right-light';
 import ph_arrow_clockwise_light from '~icons/ph/arrow-clockwise-light';
 import ph_arrow_counter_clockwise_light from '~icons/ph/arrow-counter-clockwise-light';
 import ph_arrow_left_light from '~icons/ph/arrow-left-light';
@@ -10,6 +11,7 @@ import ph_arrow_right_light from '~icons/ph/arrow-right-light';
 import ph_arrow_square_out_light from '~icons/ph/arrow-square-out-light';
 import ph_arrow_u_up_left_light from '~icons/ph/arrow-u-up-left-light';
 import ph_arrow_u_up_right_light from '~icons/ph/arrow-u-up-right-light';
+import ph_arrows_clockwise_light from '~icons/ph/arrows-clockwise-light';
 import ph_arrows_down_up_light from '~icons/ph/arrows-down-up-light';
 import ph_arrows_in_light from '~icons/ph/arrows-in-light';
 import ph_arrows_left_right_light from '~icons/ph/arrows-left-right-light';
@@ -84,6 +86,7 @@ import ph_gavel_light from '~icons/ph/gavel-light';
 import ph_gear_light from '~icons/ph/gear-light';
 import ph_gear_six_light from '~icons/ph/gear-six-light';
 import ph_ghost_light from '~icons/ph/ghost-light';
+import ph_globe_light from '~icons/ph/globe-light';
 import ph_hammer_light from '~icons/ph/hammer-light';
 import ph_hand_fist_light from '~icons/ph/hand-fist-light';
 import ph_hand_grabbing_light from '~icons/ph/hand-grabbing-light';
@@ -181,6 +184,7 @@ import ph_text_t_light from '~icons/ph/text-t-light';
 import ph_textbox_light from '~icons/ph/textbox-light';
 import ph_timer_light from '~icons/ph/timer-light';
 import ph_tote_light from '~icons/ph/tote-light';
+import ph_translate_light from '~icons/ph/translate-light';
 import ph_trash_light from '~icons/ph/trash-light';
 import ph_trash_simple_light from '~icons/ph/trash-simple-light';
 import ph_tree_light from '~icons/ph/tree-light';
@@ -207,6 +211,7 @@ const icons: IconMap = {
 	'ph:anchor-light': ph_anchor_light,
 	'ph:archive-light': ph_archive_light,
 	'ph:arrow-bend-up-right-light': ph_arrow_bend_up_right_light,
+	'ph:arrow-circle-right-light': ph_arrow_circle_right_light,
 	'ph:arrow-clockwise-light': ph_arrow_clockwise_light,
 	'ph:arrow-counter-clockwise-light': ph_arrow_counter_clockwise_light,
 	'ph:arrow-left-light': ph_arrow_left_light,
@@ -214,6 +219,7 @@ const icons: IconMap = {
 	'ph:arrow-square-out-light': ph_arrow_square_out_light,
 	'ph:arrow-u-up-left-light': ph_arrow_u_up_left_light,
 	'ph:arrow-u-up-right-light': ph_arrow_u_up_right_light,
+	'ph:arrows-clockwise-light': ph_arrows_clockwise_light,
 	'ph:arrows-down-up-light': ph_arrows_down_up_light,
 	'ph:arrows-in-light': ph_arrows_in_light,
 	'ph:arrows-left-right-light': ph_arrows_left_right_light,
@@ -288,6 +294,7 @@ const icons: IconMap = {
 	'ph:gear-light': ph_gear_light,
 	'ph:gear-six-light': ph_gear_six_light,
 	'ph:ghost-light': ph_ghost_light,
+	'ph:globe-light': ph_globe_light,
 	'ph:hammer-light': ph_hammer_light,
 	'ph:hand-fist-light': ph_hand_fist_light,
 	'ph:hand-grabbing-light': ph_hand_grabbing_light,
@@ -385,6 +392,7 @@ const icons: IconMap = {
 	'ph:textbox-light': ph_textbox_light,
 	'ph:timer-light': ph_timer_light,
 	'ph:tote-light': ph_tote_light,
+	'ph:translate-light': ph_translate_light,
 	'ph:trash-light': ph_trash_light,
 	'ph:trash-simple-light': ph_trash_simple_light,
 	'ph:tree-light': ph_tree_light,

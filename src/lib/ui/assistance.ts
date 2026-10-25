@@ -75,9 +75,9 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 			'When a reminder goes on the board for a character whose player is dead, confirm it first.'
 	},
 	demonVotedButton: {
-		label: 'Demon voted button',
+		label: 'Demon voted and Minion nominated buttons',
 		description:
-			'While a Flowergirl is in play, a Demon voted button on her row of the day, for her night answer.'
+			'While a Flowergirl or Town Crier is in play, a button on their row of the day for their night answer.'
 	},
 	savantInfo: {
 		label: 'Suggest Savant information',

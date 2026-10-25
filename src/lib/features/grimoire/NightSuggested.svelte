@@ -6,16 +6,19 @@
 		AnswerValue,
 		Impairment,
 		InfoPicker,
+		LearnedRole,
+		LearnedRoles,
 		NightAnswer,
 		NightStep,
 		Reliability,
 		ValidInfo,
 		Why
 	} from '#lib/core/rules/index.ts';
-	import { validInformation } from '#lib/core/rules/index.ts';
+	import { learnedRoles, validInformation } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
@@ -131,11 +134,39 @@
 	};
 	const ALIGNMENT: Record<string, string> = { good: 'Good', evil: 'Evil' };
 
+	/**
+	 * The roles a "learn a role" step could show (Trevor, 2026-10-25: the Investigator's
+	 * Minion), from core's `learnedRoles`: the row the board's reminders mark first, then true
+	 * ones, then each player who may register as the type, whose character is picked here.
+	 */
+	const rolePickers = $derived(
+		info?.kind === 'picker'
+			? info.pickers.flatMap((picker) => {
+					const roles = learnedRoles(game, picker, characters);
+					return roles && (roles.rows.length > 0 || roles.none || roles.anyOther)
+						? [{ picker, roles }]
+						: [];
+				})
+			: []
+	);
+	const rowKey = (p: InfoPicker, row: LearnedRole) =>
+		JSON.stringify([p.seatId, row.target, row.reason, row.marked ?? false]);
+	/** The character picked for a row that offers several (a Recluse shown as a Minion). */
+	let shownAs = $state<Record<string, CharacterId>>({});
+	const shownRole = (p: InfoPicker, row: LearnedRole): CharacterId | undefined =>
+		row.characterIds.length === 1 ? row.characterIds[0] : shownAs[rowKey(p, row)];
+	/** One badge per character the strip's line names, in row order. */
+	const roleIds = (all: readonly { roles: LearnedRoles }[]) => [
+		...new Set(all.flatMap(({ roles }) => roles.rows.flatMap((r) => r.characterIds.slice(0, 1))))
+	];
+
 	const showAnswers = $derived(assistance.nightAnswers);
 	const showPickers = $derived(assistance.infoSuggestions);
 	const has = $derived(
 		(info?.kind === 'answer' && showAnswers && info.answers.length > 0) ||
-			(info?.kind === 'picker' && showPickers && numberPickers.length > 0) ||
+			(info?.kind === 'picker' &&
+				showPickers &&
+				(numberPickers.length > 0 || rolePickers.length > 0)) ||
 			(info?.kind === 'death' &&
 				showAnswers &&
 				info.checks.some((c) => c.verdict && c.verdict.kind !== 'choose'))
@@ -151,6 +182,7 @@
 			text: string;
 			seats?: readonly SeatId[];
 			valid?: typeof validLists;
+			roles?: CharacterId[];
 		} => {
 			if (!info || !has) return { text: '' };
 			if (info.kind === 'answer') {
@@ -160,7 +192,11 @@
 					? { characterId: a.value, text: note }
 					: { text: `${valueText(a)}${note}` };
 			}
-			if (info.kind === 'picker') return { text: '', valid: validLists };
+			if (info.kind === 'picker') {
+				return rolePickers.length > 0
+					? { text: '', roles: roleIds(rolePickers) }
+					: { text: '', valid: validLists };
+			}
 			const v = info.checks.find((c) => c.verdict && c.verdict.kind !== 'choose')?.verdict;
 			if (v?.kind === 'dies') return { text: 'Dead: ', seats: v.seatIds };
 			if (v?.kind === 'ask') return { text: 'Dead? ', seats: v.ifYes };
@@ -243,7 +279,11 @@
 				/>{/each}{#each line.valid ?? [] as v, n (n)}{n ? ', ' : ''}{#if v.seatId}<PlayerBadge
 						name={name(v.seatId)}
 					/>
-				{/if}{v.list}{/each}</span
+				{/if}{v.list}{/each}{#each line.roles ?? [] as id, n (id)}{n ? ', ' : ''}<CharacterBadge
+					characterId={id}
+					character={characters.get(id)}
+					interactive={false}
+				/>{/each}</span
 		>{/if}
 {:else if has && info}
 	<!-- A plain section under its heading, like the step's others (Trevor, 2026-10-19). -->
@@ -294,6 +334,37 @@
 						{#if hasWhy(p.why)}{@render whyBlock(p.why)}{/if}
 					</li>
 				{/each}
+				{#each rolePickers as { picker: p, roles } (p.seatId)}
+					<li data-unreliable={p.unreliable ? '' : undefined}>
+						{#if rolePickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span>{/if}
+						<ul class="valid" aria-label="Valid information" data-testid="learned-roles">
+							{#each roles.rows as row (rowKey(p, row))}
+								{@render roleRow(p, row)}
+							{/each}
+							{#if roles.none}
+								<li data-reason={roles.none}>
+									<span class="main option"><strong>None</strong></span>
+									{@render reasonTag(roles.none)}
+									{#if onShowNumber}
+										<Button variant="quiet" onclick={() => onShowNumber(0)}>Show to player</Button>
+									{/if}
+								</li>
+							{/if}
+							{#if roles.anyOther}
+								<li data-reason={roles.anyOther}>
+									<span class="main option"><strong>Any other</strong></span>
+									{@render reasonTag(roles.anyOther)}
+								</li>
+							{/if}
+						</ul>
+						<!-- Who may register otherwise is in the rows; only why any info is allowed here. -->
+						{#each flags(p).filter((f) => !f.seats) as flag (flag.text)}
+							<span class="flag" class:warn={p.unreliable || p.mustBeFalse}>
+								{#if p.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
+							</span>
+						{/each}
+					</li>
+				{/each}
 			{:else}
 				{#each info.checks as c (c.seatId)}
 					{@const v = c.verdict}
@@ -311,6 +382,69 @@
 		</ul>
 	</section>
 {/if}
+
+{#snippet reasonTag(reason: LearnedRole['reason'], registered: readonly SeatId[] = [])}
+	{#if reason === 'registers'}<span class="tag">Registers: {@render players(registered)}</span
+		>{:else if reason === 'unreliable'}<span class="tag warn"
+			><Icon name="warning" />Not reliable</span
+		>{:else if reason === 'vortox'}<span class="tag warn">Vortox</span
+		>{:else if reason === 'invalid'}<span class="tag warn"><Icon name="warning" />Not valid</span
+		>{/if}
+{/snippet}
+
+<!--
+	One role to show: the character (picked here when several are allowed), the player who is
+	it and the second player, and Show to player for the character's token.
+-->
+{#snippet roleRow(p: InfoPicker, row: LearnedRole)}
+	{@const key = rowKey(p, row)}
+	{@const id = shownRole(p, row)}
+	<li data-reason={row.reason} data-marked={row.marked ? '' : undefined}>
+		<span class="main option">
+			{#if row.characterIds.length === 1}
+				<CharacterBadge
+					characterId={row.characterIds[0]}
+					character={characters.get(row.characterIds[0])}
+				/>
+			{:else}
+				<Select
+					label="Shown as"
+					hideLabel
+					placeholder="Shown as"
+					value={id}
+					options={row.characterIds.map((c) => ({
+						value: c,
+						// eslint-disable-next-line grim/names-as-badges -- the option's accessible name and typeahead text; it shows as the badge (the item snippet)
+						label: characters.get(c)?.name ?? c
+					}))}
+					onChange={(c) => (shownAs = { ...shownAs, [key]: c })}
+				>
+					{#snippet item(option)}<CharacterBadge
+							characterId={option.value}
+							character={characters.get(option.value)}
+							interactive={false}
+						/>{/snippet}
+					{#snippet selected(option)}<CharacterBadge
+							characterId={option.value}
+							character={characters.get(option.value)}
+							interactive={false}
+						/>{/snippet}
+				</Select>
+			{/if}
+			<PlayerBadge name={name(row.target)} />
+			<span class="with">and</span>
+			{#if row.other}<PlayerBadge name={name(row.other)} />{:else}<span class="with"
+					>any other player</span
+				>{/if}
+		</span>
+		{#if row.marked}<span class="tag">Marked</span>{/if}
+		{@render reasonTag(row.reason, row.registered)}
+		{#if onShow}
+			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
+			>
+		{/if}
+	</li>
+{/snippet}
 
 <!-- Why, beside the information; its reliability is already in the flags above it. -->
 {#snippet whyBlock(why: Why)}

@@ -21,7 +21,7 @@
 
 <!-- One colour on one line: its name and reset, a contrast warning slot that is always there
      (so nothing moves), and the swatch that opens the colour picker (Trevor, 2026-10-18). -->
-<div class="color">
+<div class="color" data-setting>
 	<label class="label" for="{id}-input">{label}</label>
 	<button
 		class="reset"
@@ -57,9 +57,12 @@
 		gap: var(--space-2);
 		min-height: var(--tap-target);
 	}
+	/* The same name as every other setting (Trevor, 2026-10-24). */
 	.label {
 		font-family: var(--font-control);
-		color: var(--on-surface);
+		font-weight: var(--font-control-weight);
+		color: var(--heading);
+		letter-spacing: 0.03em;
 		overflow-wrap: anywhere;
 	}
 	.reset,

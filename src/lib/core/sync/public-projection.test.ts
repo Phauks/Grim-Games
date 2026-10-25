@@ -56,7 +56,7 @@ function busyGame() {
 		{ type: 'Execute', seatId: seats[1] },
 		{ type: 'UseAbility', seatId: seats[1], characterId: 'washerwoman' },
 		{ type: 'DayNote', characterId: 'washerwoman', seatId: seats[1], text: 'day note secret' },
-		{ type: 'SetDemonVoted', voted: true },
+		{ type: 'SetDayMark', mark: 'demon-voted', value: true },
 		{ type: 'SetGameNote', title: 'Plan', text: 'game notes secret', hidden: false },
 		{
 			type: 'RecordNightInfo',
@@ -122,6 +122,18 @@ describe('publicProjection', () => {
 		expect(publicProjection(game, undefined, undefined, { modes: [] }).corner).toEqual({
 			modes: []
 		});
+	});
+
+	it('carries the game mode and special rules, and nothing for a Standard game', () => {
+		const { game } = busyGame();
+		expect(publicProjection(game)).not.toHaveProperty('rules');
+		const rules = [
+			{ id: 'mode', name: 'Mode' },
+			{ id: 'rule', name: 'Rule', text: 'Text.' }
+		];
+		expect(publicProjection(game, undefined, undefined, undefined, undefined, rules).rules).toEqual(
+			rules
+		);
 	});
 
 	it('leaks no characters, alignments, reminders, overrides, bluffs, rule characters or bag', () => {

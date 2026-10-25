@@ -16,14 +16,16 @@
 	import { modeLabel } from './labels.ts';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import { shownAbout } from './own-wording.svelte.ts';
-	import { RULE_SWITCHES, switched, switchOn, type SwitchChoices } from './rule-switches.ts';
+	import { switched, type SwitchChoices } from './rule-switches.ts';
 
 	/**
 	 * New game's special rules (Trevor, 2026-10-18: rules stack on a game mode, modes don't
 	 * mix): one switch per rule, on in the order chosen. Two that set the same part
 	 * differently are listed as conflicts; they warn, never stop the game starting. Each rule
 	 * shows its description under its switch (Trevor, 2026-10-19), or the author's own rule text
-	 * until he has approved one; everything else is behind Inspect.
+	 * until he has approved one; everything else is behind Inspect. A rule's own switches are
+	 * set on the Special rules in this game screen at Start game, not here, to keep this list
+	 * clean (Trevor, 2026-10-24).
 	 * Design: /mnt/project-files/world-cup-rules/format-design.md.
 	 */
 	interface Props {
@@ -32,14 +34,13 @@
 		/** The chosen rules' ids, in the order chosen. */
 		ruleIds: readonly string[];
 		onChange: (ids: string[]) => void;
-		/** The Storyteller's choices for rules' own switches (rule-switches.ts). */
+		/** The Storyteller's choices for rules' own switches (rule-switches.ts), for Inspect. */
 		choices: SwitchChoices;
-		onSwitch: (choices: SwitchChoices) => void;
 		/** Add mode, which also takes a rule file. */
 		onadd: () => void;
 	}
 
-	let { open = $bindable(), mode, ruleIds, onChange, choices, onSwitch, onadd }: Props = $props();
+	let { open = $bindable(), mode, ruleIds, onChange, choices, onadd }: Props = $props();
 
 	const rules = $derived(allRules());
 	const chosen = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
@@ -157,17 +158,6 @@
 				{#each shown as rule (rule.id)}
 					<li>
 						{@render ruleRow(rule, true)}
-						<!-- A rule's own switches: always there, so nothing moves; usable while it is on. -->
-						{#each RULE_SWITCHES[rule.id] ?? [] as sw (sw.id)}
-							<div class="switch">
-								<Toggle
-									label={t(sw.label(rule.id))}
-									checked={switchOn(choices, rule.id, sw)}
-									disabled={!ruleIds.includes(rule.id)}
-									onChange={(on) => onSwitch({ ...choices, [`${rule.id}:${sw.id}`]: on })}
-								/>
-							</div>
-						{/each}
 					</li>
 				{:else}
 					<li class="muted">{t('common.none')}</li>
@@ -223,9 +213,6 @@
 		min-width: 0;
 	}
 	/* A rule's own switch, indented under its description. */
-	.switch {
-		padding-left: var(--space-4);
-	}
 	/* The description under its switch, quieter, always there so nothing moves. */
 	.description {
 		margin: 0;
