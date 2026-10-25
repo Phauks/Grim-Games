@@ -52,10 +52,10 @@
 <!-- One line per role: its name, a sample in the applied font and the font's drop-down, side
      by side to save space; with each sample beside its own choice nothing needs pinning to
      the top (Trevor, 2026-10-18). The sample cuts off with "…", so a font change moves nothing. -->
-<div class="fonts" data-testid={testid}>
+<div class="fonts" data-setting data-testid={testid}>
 	<dl>
 		{#each roles as role (role)}
-			<div class="line" data-role={role}>
+			<div class="line" data-setting data-role={role}>
 				<dt id="{id}-{role}">{FONT_ROLE_INFO[role].label}</dt>
 				<dd
 					class="sample"
@@ -97,24 +97,24 @@
 </div>
 
 <style>
-	.fonts {
-		margin-bottom: var(--space-5);
-	}
+	/* Each font is a setting like any other: a line between them and under the last
+	   (Trevor, 2026-10-24). */
 	dl {
-		display: grid;
-		gap: var(--space-1);
 		margin: 0;
 	}
 	.line {
+		padding-block: var(--space-2);
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.3fr);
 		align-items: center;
 		gap: var(--space-2);
 	}
+	/* The same name as every other setting (Trevor, 2026-10-24). */
 	dt {
 		font-family: var(--font-control);
-		font-size: 0.75rem;
-		color: var(--on-surface-muted);
+		font-weight: var(--font-control-weight);
+		color: var(--heading);
+		letter-spacing: 0.03em;
 		overflow-wrap: anywhere;
 	}
 	dd {

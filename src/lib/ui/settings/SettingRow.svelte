@@ -40,8 +40,8 @@
 </script>
 
 <!-- One setting: a visible label, an optional hint and its control. Rows are divided by a
-     thin line (Trevor, 2026-10-18). -->
-<div class="row" data-layout={layout}>
+     thin line (Trevor, 2026-10-18), drawn for every `data-setting` in ui/base.css. -->
+<div class="row" data-setting data-layout={layout}>
 	<div class="grid">
 		<div class="head">
 			<span class="label" id={labelId}>{label}</span>
@@ -76,10 +76,6 @@
 	.row {
 		container-type: inline-size;
 		padding-block: var(--space-3);
-	}
-	/* A thin line between settings, whatever kind of row comes before. */
-	:global(.row) + .row {
-		border-top: 1px solid var(--border);
 	}
 	.grid {
 		display: grid;
