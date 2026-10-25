@@ -207,6 +207,8 @@ export const setup = {
 
 	'setup.reveal.name': 'Name',
 	'setup.reveal.pickName': 'Pick your name',
+	'setup.reveal.inRoom': 'In the room',
+	'setup.reveal.earlierGames': 'Earlier games',
 	'setup.reveal.locked': 'Enter your name to see your character',
 	'setup.reveal.alignment': 'Alignment',
 	'setup.reveal.good': 'Good',
