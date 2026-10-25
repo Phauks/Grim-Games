@@ -1,7 +1,13 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/types.ts';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
-	import { executionSavers, protection } from '#lib/core/rules/index.ts';
+	import {
+		executionSavers,
+		protection,
+		suggestedMark,
+		unsetMarks,
+		type DayMark
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -11,6 +17,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 
 	/**
 	 * Ending a day asks who was executed (Trevor, 2026-10-22: "execution button instead of the
@@ -25,11 +32,15 @@
 		/** Chosen to start with when nothing is logged yet (a seat's status chose Executed). */
 		chosen?: SeatId;
 		/**
-		 * The player executed, or undefined for no execution, and the Storyteller's Saved by:
-		 * a character, `dies` for None, or undefined to leave it to the grimoire. The dialog
-		 * closes first.
+		 * The player executed, or undefined for no execution; the Storyteller's Saved by: a
+		 * character, `dies` for None, or undefined to leave it to the grimoire; and today's
+		 * facts still unmarked, as confirmed here. The dialog closes first.
 		 */
-		onConfirm: (seatId: SeatId | undefined, save?: CharacterId | 'dies') => void;
+		onConfirm: (
+			seatId: SeatId | undefined,
+			save: CharacterId | 'dies' | undefined,
+			marks: Partial<Record<DayMark, boolean>>
+		) => void;
 	}
 
 	let { open = $bindable(), game, characters, chosen, onConfirm }: Props = $props();
@@ -40,8 +51,18 @@
 	const executed = $derived(
 		game.today.entries.findLast((e) => e.kind === 'execution')?.seatId as SeatId | undefined
 	);
+	/**
+	 * Today's yes-or-no facts nobody marked (Trevor, 2026-10-24: "On day end, it should confirm
+	 * demon did not vote"): each is asked here, off unless what was recorded says yes (a Minion's
+	 * recorded nomination), and Confirm marks it either way.
+	 */
+	let marks = $state<Partial<Record<DayMark, boolean>>>({});
 	$effect(() => {
-		if (open) choice = executed ?? chosen;
+		if (!open) return;
+		choice = executed ?? chosen;
+		marks = Object.fromEntries(
+			unsetMarks(game, characters).map((m) => [m, suggestedMark(game, m, characters) ?? false])
+		);
 	});
 
 	const DIES = 'dies';
@@ -155,10 +176,11 @@
 	disabled={choice === undefined}
 	onConfirm={() =>
 		choice === NONE || choice === undefined
-			? onConfirm(undefined)
+			? onConfirm(undefined, undefined, { ...marks })
 			: onConfirm(
 					choice as SeatId,
-					saveOff || save === OVERRIDE ? undefined : (save as CharacterId | 'dies')
+					saveOff || save === OVERRIDE ? undefined : (save as CharacterId | 'dies'),
+					{ ...marks }
 				)}
 >
 	<div class="execution" data-testid="execution">
@@ -201,6 +223,13 @@
 						/>{/if}{/if}
 			{/if}
 		</p>
+		{#each Object.keys(marks) as DayMark[] as mark (mark)}
+			<Toggle
+				label={t(`day.mark.${mark}`)}
+				checked={marks[mark] === true}
+				onChange={(checked) => (marks[mark] = checked)}
+			/>
+		{/each}
 	</div>
 </ConfirmDialog>
 

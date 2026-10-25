@@ -17,6 +17,7 @@ import {
 } from './day-reminder-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
+import { readDayMark, type DayMarkRule } from './day-mark-rules.ts';
 import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
 import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
@@ -162,6 +163,8 @@ export interface CharacterRules {
 	reminderPlaceholders?: ReminderPlaceholderRules;
 	/** Our own night text in place of the original (`rules/night-text.ts`). */
 	nightText?: NightTextRules;
+	/** A fact about today the Storyteller marks for its night answer (`rules/day-marks.ts`). */
+	dayMark?: DayMarkRule;
 	/** Its token on a player stops them waking tonight (`stops-waking-rules.ts`). */
 	stopsWaking?: StopsWaking;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
@@ -358,6 +361,7 @@ export const RULE_KEYS = [
 	'reminderMovement',
 	'reminderPlaceholders',
 	'nightText',
+	'dayMark',
 	'stopsWaking',
 	'infoTokenCharacters'
 ] as const satisfies readonly (keyof CharacterRules)[];
@@ -540,6 +544,10 @@ export function parseCharacterRules(
 	if (raw.nightText !== undefined) {
 		const nightText = readNightText(raw.nightText, `${path}.nightText`, issues);
 		if (nightText) rules.nightText = nightText;
+	}
+	if (raw.dayMark !== undefined) {
+		const dayMark = readDayMark(raw.dayMark, `${path}.dayMark`, issues, reminders);
+		if (dayMark) rules.dayMark = dayMark;
 	}
 	if (raw.stopsWaking !== undefined) {
 		const at = `${path}.stopsWaking`;

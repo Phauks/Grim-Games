@@ -36,5 +36,10 @@
 	"reminderMovement": {
 		"fixed": ["Demon Voted", "Demon Not Voted"],
 		"why": "Marks this character’s own state, so it stays on its seat."
+	},
+	"dayMark": {
+		"mark": "demon-voted",
+		"yes": "Demon Voted",
+		"no": "Demon Not Voted"
 	}
 }

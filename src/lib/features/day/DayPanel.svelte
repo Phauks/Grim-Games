@@ -1,9 +1,15 @@
 <script lang="ts">
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { Game, SeatId } from '#lib/core/model/index.ts';
 	import {
 		blockThreshold,
+		dayMarkOf,
+		dayMarkSeats,
+		dayMarkValue,
 		dayReminders,
+		marksInPlay,
+		markToken,
+		type DayMark,
 		dayClaim,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
@@ -49,14 +55,14 @@
 
 	const g = $derived(game.game);
 	const seats = $derived(g.seating.map((id) => g.seats[id]));
-	const hasFlowergirl = $derived(seats.some((s) => s.characterId === 'flowergirl'));
 	/**
-	 * The Flowergirl learns each night whether the Demon voted today (Trevor, 2026-10-19:
-	 * "we need quick action in day for that"): one tap on her own row (Trevor, 2026-10-23:
-	 * L43, not at the top of the day). Today's mark is the day log's, so it starts unset each
-	 * new day and History can undo it.
+	 * Today's yes-or-no facts a character learns at night (its `dayMark` rule): whether the
+	 * Demon voted for the Flowergirl (Trevor, 2026-10-19: "we need quick action in day for
+	 * that"), whether a Minion nominated for the Town Crier (Trevor, 2026-10-24). One tap on
+	 * the character's own row (L43), confirmed, and its tokens swap on the board. Today's mark
+	 * is the day log's, so it starts unset each new day and History can undo it.
 	 */
-	const demonVoted = $derived(g.today.demonVoted === true);
+	const marks = $derived(marksInPlay(g, game.characters));
 
 	// ── Confirming a change: what it is now, and what it will be ──
 	// TPI's reminder token text (game data, not interface text).
@@ -70,6 +76,8 @@
 		after: string;
 		characterId: CharacterId;
 		seatId: SeatId;
+		/** The reminder tokens the `now` and `after` slots show; No Ability by default. */
+		tokens?: { now?: ReminderLabel; after?: ReminderLabel };
 		run: () => void;
 	}
 	let pending = $state<Pending>();
@@ -136,6 +144,26 @@
 			(r) => r.characterId === characterId && r.label === NO_ABILITY
 		);
 		if (token) game.run({ type: 'RemoveReminder', reminderId: token.reminderId });
+	}
+
+	/** Marks one of today's facts after a confirm showing the token it swaps (Trevor, 2026-10-24). */
+	function askMark(mark: DayMark, value: boolean) {
+		const first = dayMarkSeats(g, game.characters, mark)[0];
+		if (!first) return;
+		const { seatId, characterId, rule } = first;
+		const who = t('day.who', { character: slot('character'), seat: slot('seat') });
+		const now = markToken(rule, dayMarkValue(g, mark));
+		const after = markToken(rule, value);
+		ask({
+			action: t(`day.mark.${mark}`),
+			title: t(value ? `day.markYes.${mark}` : `day.markNo.${mark}`),
+			now: now ? t('day.markHas', { who, reminder: slot('now') }) : t('day.markUnset'),
+			after: t('day.markHas', { who, reminder: slot('after') }),
+			characterId,
+			seatId,
+			tokens: { now, after },
+			run: () => game.run({ type: 'SetDayMark', mark, value })
+		});
 	}
 
 	// ── Pre-day reminders ──
@@ -215,10 +243,10 @@
 		(isOnceOnlyDayAbility(characterId, game.characters) ||
 			noteClaim(characterId) !== undefined ||
 			savantButton(characterId) ||
-			demonVotedButton(characterId));
-	/** The Flowergirl's Demon voted, on her row while its setting is on (L43). */
-	const demonVotedButton = (characterId: CharacterId | undefined) =>
-		characterId === 'flowergirl' && assistance.demonVotedButton;
+			markButton(characterId) !== undefined);
+	/** A day mark's button on its character's row, while its setting is on (L43). */
+	const markButton = (characterId: CharacterId | undefined) =>
+		assistance.demonVotedButton ? dayMarkOf(characterId, game.characters)?.mark : undefined;
 	/**
 	 * The Savant's information for today, recommended until it is set (Trevor, 2026-10-20: L5):
 	 * with "Suggest Savant information" on, where the grimoire can open its sheet.
@@ -291,14 +319,12 @@
 		>
 			{t(claim === 'guesses' ? 'day.guesses' : 'day.statement')}
 		</Chip>
-	{:else if demonVotedButton(characterId)}
-		<Chip
-			pressed={demonVoted}
-			data-testid="demon-voted"
-			onclick={() => game.run({ type: 'SetDemonVoted', voted: !demonVoted })}
-		>
-			<span class="tick" data-on={demonVoted || undefined}><Icon name="check" /></span>{t(
-				'day.demonVoted'
+	{:else if markButton(characterId)}
+		{@const mark = markButton(characterId)!}
+		{@const on = dayMarkValue(g, mark) === true}
+		<Chip pressed={on} data-testid={mark} onclick={() => askMark(mark, !on)}>
+			<span class="tick" data-on={on || undefined}><Icon name="check" /></span>{t(
+				`day.mark.${mark}`
 			)}
 		</Chip>
 	{:else if characterId && savantButton(characterId)}
@@ -329,15 +355,17 @@
 	<div class="sections">
 		<DayAnnouncements {game} />
 
-		<!-- The Flowergirl's switch, when it isn't in the toolbar. -->
-		{#if hasFlowergirl && !assistance.demonVotedButton}
-			<div class="demon-voted">
-				<Toggle
-					label={t('day.demonVoted')}
-					checked={g.today.demonVoted === true}
-					onChange={(checked) => game.run({ type: 'SetDemonVoted', voted: checked })}
-				/>
-			</div>
+		<!-- Each day mark's switch, when its button isn't on the character's row. -->
+		{#if !assistance.demonVotedButton}
+			{#each marks as mark (mark)}
+				<div class="demon-voted">
+					<Toggle
+						label={t(`day.mark.${mark}`)}
+						checked={dayMarkValue(g, mark) === true}
+						onChange={(checked) => askMark(mark, checked)}
+					/>
+				</div>
+			{/each}
 		{/if}
 
 		{#if assistance.preDayReminders}
@@ -465,8 +493,8 @@
 		/>{/if}{/snippet}
 {#snippet pendingSlot(name: string)}{#if name === 'seat'}{#if pending}<PlayerBadge
 				name={game.seatName(pending.seatId)}
-			/>{/if}{:else if name === 'reminder'}<ReminderToken
-			label={NO_ABILITY}
+			/>{/if}{:else if name === 'reminder' || name === 'now' || name === 'after'}<ReminderToken
+			label={name === 'reminder' ? NO_ABILITY : (pending?.tokens?.[name] ?? NO_ABILITY)}
 			character={pending ? game.characters.get(pending.characterId) : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
 
@@ -562,6 +590,13 @@
 	}
 	:global(.footer) .day-end {
 		align-items: stretch;
+	}
+	/*
+	 * A long button ("Minion nominated") drops under the state on a narrow phone with large
+	 * text, rather than widening the row past the screen.
+	 */
+	.reminders li :global(.footer) {
+		flex-wrap: wrap;
 	}
 	:global(.footer) .day-end :global(.chip) {
 		border: 0;
