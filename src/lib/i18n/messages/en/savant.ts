@@ -21,6 +21,8 @@ export const savant = {
 	'savant.checkTrue': 'You check: true',
 	'savant.checkFalse': 'You check: false',
 	'savant.use': 'Use these',
+	'savant.earlier': 'Earlier days',
+	'savant.today': 'Today',
 	'savant.noteTrue': 'True: {statement}',
 	'savant.noteFalse': 'False: {statement}'
 } as const;

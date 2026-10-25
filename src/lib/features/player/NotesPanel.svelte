@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ScratchThumb from '#lib/ui/scratch/ScratchThumb.svelte';
 	import { padShape } from '#lib/ui/scratch/pad-shape.svelte.ts';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
+	import type { CharacterId } from '#lib/core/data/index.ts';
+	import SeatNoteEntry from '#lib/features/grimoire/SeatNoteEntry.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
 	interface Props {
@@ -15,18 +17,23 @@
 		onOpenNote: (noteId: string) => void;
 		onAddScratch: () => void;
 		onOpenScratch: (pad: ScratchPadState) => void;
+		/** The seats of the game this phone is in, with the player's note on each, if any. */
+		seats?: readonly { seatId: string; name: string; note?: string; characterId?: CharacterId }[];
+		onOpenSeat?: (seatId: string) => void;
 	}
 
-	let { notes, pads, onAdd, onOpenNote, onAddScratch, onOpenScratch }: Props = $props();
+	let { notes, pads, onAdd, onOpenNote, onAddScratch, onOpenScratch, seats, onOpenSeat }: Props =
+		$props();
 </script>
 
 <div class="notes">
 	<section aria-labelledby="my-notes">
+		<!-- New ones start from a dashed card in the list itself, not a button in the header
+		     (Trevor, 2026-10-24). -->
 		<div class="head">
 			<h2 id="my-notes">{t('player.myNotes')}</h2>
-			<Button icon="add" onclick={onAdd}>{t('player.newNote')}</Button>
 		</div>
-		<NoteCards {notes} onOpen={onOpenNote} />
+		<NoteCards {notes} onOpen={onOpenNote} {onAdd} />
 	</section>
 
 	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16). Several pads, kept like
@@ -34,30 +41,58 @@
 	<section aria-labelledby="scratch-pads">
 		<div class="head">
 			<h2 id="scratch-pads">{t('scratch.pads')}</h2>
-			<Button icon="add" disabled={!pads} onclick={onAddScratch}>{t('scratch.newPad')}</Button>
 		</div>
-		{#if pads?.length}
-			<ul class="pads" style:--pad-shape={padShape.ratio}>
-				{#each pads as pad (pad.key)}
-					<li>
-						<button type="button" class="row" data-pad={pad.key} onclick={() => onOpenScratch(pad)}>
-							<span class="title">{pad.title.trim() || t('scratch.untitled')}</span>
-							<!-- The same box whether drawn on or hidden, so nothing moves. -->
-							<span class="thumb">
-								{#if pad.hidden}
-									<span class="preview" data-hidden>{t('scratch.hidden')}</span>
-								{:else}
-									<ScratchThumb {pad} />
-								{/if}
-							</span>
-						</button>
+		<ul class="pads" style:--pad-shape={padShape.ratio}>
+			{#each pads ?? [] as pad (pad.key)}
+				<li>
+					<button type="button" class="row" data-pad={pad.key} onclick={() => onOpenScratch(pad)}>
+						<span class="title">{pad.title.trim() || t('scratch.untitled')}</span>
+						<!-- The same box whether drawn on or hidden, so nothing moves. -->
+						<span class="thumb">
+							{#if pad.hidden}
+								<span class="preview" data-hidden>{t('scratch.hidden')}</span>
+							{:else}
+								<ScratchThumb {pad} />
+							{/if}
+						</span>
+					</button>
+				</li>
+			{/each}
+			<!-- As the notes' "+ New note" (NoteCards): a dashed edge, as tall as a pad. -->
+			<li>
+				<button
+					type="button"
+					class="row add"
+					data-testid="new-pad"
+					disabled={!pads}
+					onclick={onAddScratch}
+					><span class="title"><Icon name="add" />{t('scratch.newPad')}</span></button
+				>
+			</li>
+		</ul>
+	</section>
+
+	<!-- A note on each player, written here or from the Grim tab, as the Storyteller's Notes
+	     list one per player (Trevor, 2026-10-24). Only while this phone is in a game. -->
+	{#if seats}
+		<section aria-labelledby="seat-notes">
+			<div class="head">
+				<h2 id="seat-notes">{t('player.seatNotes')}</h2>
+			</div>
+			<ul class="seat-notes">
+				{#each seats as seat (seat.seatId)}
+					<li data-seat-note={seat.seatId}>
+						<SeatNoteEntry
+							characterId={seat.characterId}
+							label={seat.name}
+							note={seat.note}
+							onOpen={() => onOpenSeat?.(seat.seatId)}
+						/>
 					</li>
 				{/each}
 			</ul>
-		{:else}
-			<p class="none">{t('common.none')}</p>
-		{/if}
-	</section>
+		</section>
+	{/if}
 </div>
 
 <style>
@@ -108,6 +143,20 @@
 	.row:hover {
 		background: var(--surface-selected);
 	}
+	li {
+		display: grid;
+	}
+	.add {
+		align-content: center;
+		border-style: dashed;
+		background: transparent;
+		color: var(--on-surface-muted);
+	}
+	.add .title {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
 	.title {
 		font-family: var(--font-control);
 		font-weight: 600;
@@ -128,6 +177,11 @@
 	/* Pads two to a row on a phone, each preview the shape of this screen's pad: tall on a
 	   phone (Trevor, 2026-10-19: "2x2 on mobile"), wide on a desktop (Trevor, 2026-10-23), so
 	   no paper shows that could never be written on. */
+	.seat-notes {
+		display: grid;
+		grid-template-columns: none;
+		gap: 0;
+	}
 	.pads {
 		grid-template-columns: repeat(auto-fill, minmax(min(45%, calc(12 * var(--u))), 1fr));
 	}
@@ -141,9 +195,5 @@
 	.thumb :global(canvas) {
 		position: absolute;
 		inset: 0;
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 </style>

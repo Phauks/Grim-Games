@@ -222,39 +222,42 @@
 	<QrPicture />
 {/snippet}
 
-<!-- A dialog, not a popover, with the QR code on top while the settings scroll under it
-     (Trevor, 2026-10-23), so every change shows at once and no list ends up under its edge. -->
+<!-- A dialog, not a popover, so no list ends up under its edge: the QR code on the left and
+     its settings on the right (Trevor, 2026-10-24), or the code on top of them on a phone,
+     so every change shows at once. -->
 <Dialog bind:open={centreOpen} title={t('share.qrSettings')}>
-	<div class="preview" data-testid="qr-preview">
-		{#if url && fitsQrCode(url)}
-			<QrCode
-				value={url}
-				label={qrLabel}
-				center={middle}
-				centerShape={middleShape}
-				modules={preferences.current.qrModules}
-				finders={preferences.current.qrFinders}
-			/>
-		{:else}
-			<p class="placeholder">{url ? t('share.tooLong') : pending}</p>
-		{/if}
-	</div>
+	{#snippet aside()}
+		<div class="preview" data-testid="qr-preview">
+			{#if url && fitsQrCode(url)}
+				<QrCode
+					value={url}
+					label={qrLabel}
+					center={middle}
+					centerShape={middleShape}
+					modules={preferences.current.qrModules}
+					finders={preferences.current.qrFinders}
+				/>
+			{:else}
+				<p class="placeholder">{url ? t('share.tooLong') : pending}</p>
+			{/if}
+		</div>
+	{/snippet}
 	<div class="centre"><QrCentreSetting /></div>
 </Dialog>
 
 <style>
-	/* Held at the top of the dialog as it scrolls, over a backing of the dialog's own colour. */
+	/* The dialog's aside: small on top of a phone's settings, the pane's width beside them. */
 	.preview {
-		position: sticky;
-		top: calc(-1 * var(--space-4));
-		z-index: 1;
 		display: grid;
 		justify-items: center;
-		padding-block: var(--space-4) var(--space-3);
-		background: var(--dialog-background);
 	}
 	.preview > :global(*) {
 		width: min(45%, calc(10 * var(--u)));
+	}
+	@container dialog-panes (min-width: 36rem) {
+		.preview > :global(*) {
+			width: 100%;
+		}
 	}
 	.centre {
 		display: grid;

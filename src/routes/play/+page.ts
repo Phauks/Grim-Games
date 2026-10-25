@@ -1,5 +1,5 @@
 import type { Chrome } from '#lib/features/shell/shell.ts';
 
-// Player view fills the screen as the Storyteller's board does (Trevor, 2026-10-19): no
-// sidebar; its own menu button opens the menu.
-export const load = (): { chrome: Chrome } => ({ chrome: 'game' });
+// The player view keeps the app's sidebar, as Join game does (Trevor, 2026-10-24: its menu
+// looked different). Leaving a loaded script still asks first (PlayerView's LeaveGuard).
+export const load = (): { chrome: Chrome } => ({ chrome: 'app' });

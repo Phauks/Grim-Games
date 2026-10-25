@@ -81,13 +81,14 @@
 		padding-inline: var(--space-2);
 		padding-bottom: var(--space-2);
 	}
+	/* Its end (the day's button) runs the strip's full height to its right edge (Trevor, 2026-10-24). */
 	.footer {
 		display: flex;
-		align-items: center;
+		align-items: stretch;
 		gap: var(--space-2);
 		min-height: var(--tap-target);
 		margin-inline: calc(-1 * var(--space-2));
-		padding: var(--space-1) var(--space-3);
+		padding: 0 0 0 var(--space-3);
 		border-top: var(--card-border);
 		/* A see-through tint of the text (the hover tint), so the list's edge still shows. */
 		background: var(--surface-hover);

@@ -5,14 +5,6 @@
 	import UpdateChanges from '#lib/features/about/UpdateChanges.svelte';
 	import { updateCheck } from '#lib/features/about/update-check.svelte.ts';
 	import DiagnosticsPanel from '#lib/features/errors/DiagnosticsPanel.svelte';
-	import { diagnosticsText } from '#lib/features/errors/diagnostics.ts';
-	import {
-		diagnosticsView,
-		refreshDiagnostics
-	} from '#lib/features/errors/diagnostics-view.svelte.ts';
-	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
-	import type { MessageKey } from '#lib/i18n/catalog.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import DiagnosticsActions from '#lib/features/errors/DiagnosticsActions.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { ADVANCED_KEY } from './about-advanced.ts';
@@ -40,18 +32,6 @@
 	$effect(() => {
 		if (updateCheck.ready) void updateCheck.loadChanges();
 	});
-
-	// Report an issue sits in About itself, not in Advanced (Trevor, 2026-10-19), and still
-	// attaches this device's diagnostics, gathering them first when Advanced was never opened.
-	async function report() {
-		if (!diagnosticsView.current) await refreshDiagnostics();
-		const diagnostics = diagnosticsView.current;
-		const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
-		reportDialog.show({
-			kind: 'bug',
-			details: diagnostics ? diagnosticsText(diagnostics, label) : undefined
-		});
-	}
 
 	// "Checked 18:58" today, with the date on other days.
 	function checkedText(at: number): string {
@@ -132,9 +112,6 @@
 			<UpdateChanges changes={updateCheck.changes} />
 		</Dialog>
 	{/if}
-	<div class="report">
-		<Button onclick={() => void report()}><Icon name="report" />{t('errors.diag.report')}</Button>
-	</div>
 	<OfficialNotice />
 	<!-- Diagnostics, closed beneath About (Trevor, 2026-10-18); the version and commit show once,
      above, though the copied diagnostics still carry them. /diagnostics opens it. -->
@@ -185,8 +162,5 @@
 		text-overflow: ellipsis;
 		font-size: 0.85rem;
 		color: var(--on-surface-muted);
-	}
-	.report {
-		margin-top: var(--space-3);
 	}
 </style>

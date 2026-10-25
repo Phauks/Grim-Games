@@ -5,10 +5,10 @@
  * a dead nominator). Special rules that act on a nomination read them from here.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import type { NominatedEffect } from '#lib/core/data/character-rules.ts';
+import type { AfterDeath, NominatedEffect } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
 
@@ -19,15 +19,53 @@ export function todaysNominations(game: Game): Nomination[] {
 	return game.today.entries.filter((e): e is Nomination => e.kind === 'nomination');
 }
 
-/** A seat's part in today's nominations: the one it made and the one it received, if any. */
+/**
+ * A seat's part in today's nominations: the latest it made (`allMade` has every one, for a
+ * player who may nominate more than once) and the one it received, if any.
+ */
 export function seatNominations(
 	game: Game,
 	seatId: SeatId
-): { made?: Nomination; received?: Nomination } {
+): { made?: Nomination; received?: Nomination; allMade: Nomination[] } {
 	const today = todaysNominations(game);
-	const made = today.find((n) => n.nominator === seatId);
+	const allMade = today.filter((n) => n.nominator === seatId);
+	const made = allMade.at(-1);
 	const received = today.find((n) => n.nominee === seatId);
-	return { ...(made ? { made } : {}), ...(received ? { received } : {}) };
+	return { ...(made ? { made } : {}), ...(received ? { received } : {}), allMade };
+}
+
+/**
+ * What a dead player's character still lets them do (`afterDeath`, the Banshee killed by the
+ * Demon), or undefined: alive, no such rule, or a death of another cause. A death whose cause
+ * was not recorded counts, so the Storyteller is still offered the choice.
+ */
+export function afterDeath(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): AfterDeath | undefined {
+	if (!registersAsDead(game, seatId)) return undefined;
+	const characterId = trueCharacter(game, seatId, characters);
+	const rule = characterId === undefined ? undefined : rulesOf(characterId, characters)?.afterDeath;
+	if (!rule) return undefined;
+	const cause = game.seats[seatId]?.deathCause;
+	if (cause === undefined || rule.cause.includes(cause)) return rule;
+	return rule.cause.includes('demon') && characters.get(cause)?.type === 'demon' ? rule : undefined;
+}
+
+/**
+ * How many nominations a player may make today (https://wiki.bloodontheclocktower.com/Glossary,
+ * "Nomination"): one while alive, none once dead, unless their character says otherwise
+ * (`afterDeath`).
+ */
+export function nominationsPerDay(game: Game, seatId: SeatId, characters: CharacterLookup): number {
+	if (!registersAsDead(game, seatId)) return 1;
+	return afterDeath(game, seatId, characters)?.nominations ?? 0;
+}
+
+/** Whether a player may nominate at all today (`nominationsPerDay`). */
+export function mayNominate(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	return nominationsPerDay(game, seatId, characters) > 0;
 }
 
 /** A character's ability a nomination sets off, for the board to offer (warn, never lock). */

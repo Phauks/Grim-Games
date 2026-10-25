@@ -14,13 +14,13 @@ import {
 	getSeat,
 	isKnownReminder,
 	isOnScript,
-	registersAsDead,
 	looseReminders,
 	reminderHolder,
 	replacedBy,
 	ruleReminders,
 	trueCharacter,
 	type CharacterGuess,
+	type CharacterLookup,
 	type DayEntry,
 	type DeathCause,
 	type Game,
@@ -32,6 +32,8 @@ import {
 } from '#lib/core/model/index.ts';
 import {
 	DAY_GROUPS,
+	guessLimit,
+	nominationsPerDay,
 	type DayReminderOverride,
 	type Night,
 	type NightStepOverride
@@ -128,6 +130,9 @@ export function offScript(game: Game, script: Script, ctx: EngineContext): Chara
 		for (const r of tile.reminders) ids.add(r.characterId);
 	}
 	return [...ids].filter((id) => {
+		// A generic reminder belongs to no character, so no script lists it (Trevor,
+		// 2026-10-24: "generic is not on the script").
+		if (id === GENERIC_REMINDER_ID) return false;
 		const type = ctx.characters.get(id)?.type;
 		const exempt = type === 'traveller' || type === 'fabled' || type === 'loric';
 		return !exempt && !isOnScript(script, id);
@@ -426,6 +431,23 @@ export function guessesOf(
 	}));
 }
 
+/**
+ * Warns when a note holds more guesses than its character may make (`guessLimit`, the
+ * Juggler's 5: https://wiki.bloodontheclocktower.com/Juggler). A warning: the Storyteller
+ * decides.
+ */
+export function checkGuessLimit(
+	ctx: EngineContext,
+	characterId: CharacterId,
+	count: number,
+	warn: Warn
+): void {
+	const limit = guessLimit(characterId, ctx.characters);
+	if (limit !== undefined && count > limit) {
+		warn('too-many-guesses', `the ${characterOf(ctx, characterId).name} guesses at most ${limit}`);
+	}
+}
+
 /** The reminder token a character places when its once-only ability is used. */
 export const NO_ABILITY_LABEL = 'No Ability';
 
@@ -438,10 +460,12 @@ export function hasPlacedReminder(game: Game, reminderId: string): boolean {
 /**
  * Checks a nomination. Each player may nominate once per day and be nominated once per
  * day, and dead players may not nominate (https://wiki.bloodontheclocktower.com/Glossary,
- * "Nomination"). These are warnings: abilities break them, and the Storyteller decides.
+ * "Nomination") unless their character says they may, and how often (`nominationsPerDay`).
+ * These are warnings: abilities break them, and the Storyteller decides.
  */
 export function checkNomination(
 	game: Game,
+	characters: CharacterLookup,
 	nominator: string,
 	nominee: string,
 	warn: Warn,
@@ -451,8 +475,9 @@ export function checkNomination(
 		(e): e is Extract<DayEntry, { kind: 'nomination' }> =>
 			e.kind === 'nomination' && e.entryId !== ignore
 	);
-	if (registersAsDead(game, nominator)) warn('dead-nominator', 'dead players may not nominate');
-	if (others.some((e) => e.nominator === nominator)) {
+	const allowed = nominationsPerDay(game, nominator, characters);
+	if (allowed === 0) warn('dead-nominator', 'dead players may not nominate');
+	if (others.filter((e) => e.nominator === nominator).length >= Math.max(allowed, 1)) {
 		warn('already-nominated', 'this player has already nominated today');
 	}
 	if (others.some((e) => e.nominee === nominee)) {

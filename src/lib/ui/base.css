@@ -172,6 +172,10 @@ textarea {
 	outline: 3px solid var(--focus);
 	outline-offset: 2px;
 }
+/* A seat's face holding a character's token rings once, around the seat (SeatDisc). */
+:is(button, a, [role='button']):focus-visible [data-token-face] [data-token-face] {
+	outline: none;
+}
 
 /* Text fields draw their ring inside their own border, following its rounded corners, so a
    sheet or dialog that scrolls can never clip it into stray bars (Trevor, 2026-10-16). */
