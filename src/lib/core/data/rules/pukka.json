@@ -13,6 +13,15 @@
 			"note": "On last night's poisoned player when they die."
 		}
 	},
+	"impairs": {
+		"tokens": {
+			"Poisoned": {
+				"reason": "poisoned",
+				"on": "carrier",
+				"whileWorks": true
+			}
+		}
+	},
 	"setupPrep": {
 		"none": "its tokens mark what a player chooses at night, placed when they choose"
 	},
