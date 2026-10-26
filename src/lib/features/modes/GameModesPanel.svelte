@@ -153,6 +153,7 @@
 	let roleRecycling = $state<boolean | undefined>();
 	let jinxedPairs = $state<JinxedPairs>('allow');
 	let ivoryDraft = $state(false);
+	let oneType = $state<boolean | undefined>();
 	const draft = $derived(
 		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
 	);
@@ -363,7 +364,12 @@
 				data,
 				loaded: loaded[0],
 				...(draft
-					? { roleRecycling: roleRecycling ?? draft.recycleUnchosen, jinxedPairs, ivoryDraft }
+					? {
+							roleRecycling: roleRecycling ?? draft.recycleUnchosen,
+							jinxedPairs,
+							ivoryDraft,
+							oneTypePerOffer: oneType ?? draft.oneTypePerOffer
+						}
 					: {}),
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
@@ -397,6 +403,7 @@
 						roleRecycling = undefined;
 						jinxedPairs = 'allow';
 						ivoryDraft = false;
+						oneType = undefined;
 						campaignId = 'new';
 					}}
 				/>
@@ -479,6 +486,12 @@
 							description={t('modes.ivoryDraftHint')}
 							checked={ivoryDraft}
 							onChange={(on) => (ivoryDraft = on)}
+						/>
+						<SettingToggle
+							label={t('modes.oneTypePerOffer')}
+							description={t('modes.oneTypePerOfferHint')}
+							checked={oneType ?? draft.oneTypePerOffer}
+							onChange={(on) => (oneType = on)}
 						/>
 					{/if}
 					<div class="setting">
