@@ -1,6 +1,6 @@
 /**
  * The roadmap, kept in the repository so it ticks itself off. Each item is a feature, made of
- * the backlog plan's IDs (D1, R1-R8, B1-B6, S1-S22, P1-P2, L1-L65, G1-G16, J1-J23, W1-W6, Q1-Q2, U1-U4, ...):
+ * the backlog plan's IDs (D1, R1-R9, B1-B6, S1-S22, P1-P2, L1-L65, G1-G16, J1-J23, W1-W6, Q1-Q2, U1-U4, ...):
  * a part is finished once a merged change names its ID in brackets in its title, such as
  * "Savant info generator (L2)", and an item is done once all its parts and listed PRs are.
  * Only the features are shown. Add a new plan ID to the feature it belongs to, or a new
@@ -172,6 +172,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: 'Co-Storytelling: two Storytellers on one game', parts: ['Y2'], later: true },
 	{ title: 'Achievements and History stats', parts: ['A1'], later: true },
+	{
+		title: 'Game replay: step through a saved game with a filterable history beside the grim',
+		parts: ['R9'],
+		later: true
+	},
 	{ title: 'Alternate art packs', parts: ['P2'], later: true },
 	{ title: 'A new app logo', parts: ['O1'], later: true }
 ];
