@@ -2630,10 +2630,14 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	expect(ratio).toBeCloseTo(box!.width / box!.height, 1);
 	await page.keyboard.press('Escape');
 
-	// The same from History.
+	// The same from History, which opens the board first so the picture is the board
+	// (Trevor, 2026-10-26).
 	await page.goto('/history');
 	await page.getByRole('button', { name: /^Export Trouble Brewing ended/ }).tap();
 	await expect(page.getByRole('dialog', { name: 'Export game' })).toBeVisible();
+	await expect(page).toHaveURL(/\/grimoire\/[^/#]+$/);
+	await expect(page.locator('.grimoire')).toBeAttached();
+	expect((await read('Image')).name).toBe('trouble-brewing.png');
 });
 
 test("a finished game is shared to the players' phones, without the notes", async ({

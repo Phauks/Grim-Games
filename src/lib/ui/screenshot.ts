@@ -31,3 +31,13 @@ export async function screenshot(
 		filter: (node) => !skipped(node)
 	});
 }
+
+/** A picture as a data: URL, to put inside a file such as a game recap. */
+export function dataUrl(blob: Blob): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(String(reader.result));
+		reader.onerror = () => reject(reader.error ?? new Error('could not read the image'));
+		reader.readAsDataURL(blob);
+	});
+}

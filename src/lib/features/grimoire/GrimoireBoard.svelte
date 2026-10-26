@@ -143,6 +143,7 @@
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { screenshot } from '#lib/ui/screenshot.ts';
+	import { EXPORT_HASH } from '#lib/features/history/export-hash.ts';
 	import GameFeedbackSheet from '#lib/features/room/GameFeedbackSheet.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import EndGameDialogs from './EndGameDialogs.svelte';
@@ -578,6 +579,12 @@
 	}
 	// The setup flow's last step lands here with its setup reminders in the bank.
 	onMount(() => {
+		// History's Export opens the board first, so the picture is the board (Trevor, 2026-10-26).
+		if (location.hash === EXPORT_HASH) {
+			exportOpen = true;
+			replaceState(resolve('/grimoire/[gameId]', { gameId: game.gameId }), {});
+			return;
+		}
 		if (location.hash === DAY_HASH) {
 			dayOpen = true;
 			replaceState(resolve('/grimoire/[gameId]', { gameId: game.gameId }), {});
@@ -829,23 +836,20 @@
 	let feedbackOpen = $state(false);
 	/** The whole board as drawn, for Export's picture (Trevor, 2026-10-26). */
 	let grimoireEl = $state<HTMLElement>();
-	const capture = () => {
+	const capture = (type?: 'image/png' | 'image/jpeg') => {
 		if (!grimoireEl) throw new Error('the board is not shown');
-		return screenshot(grimoireEl);
+		return screenshot(grimoireEl, type);
 	};
 	const exportGame = async () => {
 		const session = grimoire.open.session;
 		const cursor = grimoire.open.savedCursor;
 		return {
-			source: {
-				game: gameAt(session.log.entries, cursor) ?? game,
-				entries: session.log.entries,
-				cursor,
-				characters,
-				winner: ended?.winner,
-				reason: ended?.reason
-			},
-			layout
+			game: gameAt(session.log.entries, cursor) ?? game,
+			entries: session.log.entries,
+			cursor,
+			characters,
+			winner: ended?.winner,
+			reason: ended?.reason
 		};
 	};
 	// Reopening puts it back in Resume game.
