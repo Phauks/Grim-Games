@@ -83,6 +83,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import SeatNotesDialog from '#lib/ui/notes/SeatNotesDialog.svelte';
 	import { deleteSeatNote, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
+	import { notesLine } from './seat-notes.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 
@@ -165,11 +166,6 @@
 	/** The player's own reminders, hidden by the eye with their guesses. */
 	const visible = $derived(hiding ? {} : reminders);
 	let noteOpen = $state(false);
-	/** The seat's notes on one line in its sheet: each one's title, or its first line. */
-	const notesLine = (seatId: string) =>
-		(notes[seatId] ?? [])
-			.map((n) => n.title.trim() || (n.hidden ? t('player.hidden') : n.text.trim().split('\n')[0]))
-			.join(', ');
 
 	/**
 	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), in place of
@@ -562,15 +558,14 @@
 				/>{:else}<span class="row-none">{t('common.none')}</span>{/each}</span
 		></button
 	>
-	<!-- The player's own notes on this seat, as the Storyteller has per player (Trevor,
-	     2026-10-24; several since 2026-10-26); they show on the Notes tab too. -->
+	<!-- The player's own notes on this seat (Trevor, 2026-10-24; several since 2026-10-26). -->
 	<button
 		type="button"
 		class="row seat-note"
 		data-testid="seat-note"
 		onclick={() => (noteOpen = true)}
 		><span class="row-label">{t('player.notes')}</span><span class="seat-note-text"
-			>{(chosen && notesLine(chosen.seatId)) || t('common.none')}</span
+			>{(chosen && notesLine(notes[chosen.seatId], t('player.hidden'))) || t('common.none')}</span
 		></button
 	>
 	<!-- Which seat is this player's own, for when the room did not seat them (Trevor,

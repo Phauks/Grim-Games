@@ -2827,6 +2827,8 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 test('the Storyteller keeps game and player notes in one sheet, marked on the token', async ({
 	page
 }) => {
+	// Game notes, then several notes on a player, from three places: longer than the default.
+	test.setTimeout(60_000);
 	await startGame(page);
 	const seat = await openSeat(page, 1);
 	await nameSeat(seat, 'Ana');
