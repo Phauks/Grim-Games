@@ -60,7 +60,8 @@
 	}
 </script>
 
-<div class="toolbar" role="toolbar" aria-label="Grimoire">
+<!-- Left out of the board's picture (screenshot.ts): it is the app's, not the game's. -->
+<div class="toolbar" role="toolbar" aria-label="Grimoire" data-screenshot="skip">
 	{#if seatArr.arranging}
 		<span class="title arranging-title">Arrange seats</span>
 		<span class="spacer"></span>

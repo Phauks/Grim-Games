@@ -2572,7 +2572,7 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 		const file = await download;
 		const path = `test-results/export-${test.info().project.name}-${file.suggestedFilename()}`;
 		await file.saveAs(path);
-		return { name: file.suggestedFilename(), text: readFileSync(path, 'utf8') };
+		return { name: file.suggestedFilename(), text: readFileSync(path, 'utf8'), path };
 	};
 	const recap = await read('Download');
 	expect(recap.name).toMatch(/^trouble-brewing-.*\.html$/);
@@ -2586,6 +2586,13 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	expect((await read('Download')).text).not.toContain('Secret word: lantern');
 	const image = await read('Image');
 	expect(image.name).toBe('trouble-brewing.png');
+	// Trevor, 2026-10-26: the image is the board on screen, not a drawn copy, so it has the
+	// board's own shape (a PNG's width and height are at bytes 16 and 20).
+	const png = readFileSync(image.path);
+	const box = await page.locator('.grimoire').boundingBox();
+	expect(box).not.toBeNull();
+	const ratio = png.readUInt32BE(16) / png.readUInt32BE(20);
+	expect(ratio).toBeCloseTo(box!.width / box!.height, 1);
 	await page.keyboard.press('Escape');
 
 	// The same from History.

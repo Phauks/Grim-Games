@@ -142,6 +142,7 @@
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
+	import { screenshot } from '#lib/ui/screenshot.ts';
 	import GameFeedbackSheet from '#lib/features/room/GameFeedbackSheet.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import EndGameDialogs from './EndGameDialogs.svelte';
@@ -804,6 +805,12 @@
 	let exportOpen = $state(false);
 	/** Players' feedback on the finished game, saved on this device (Trevor, 2026-10-25). */
 	let feedbackOpen = $state(false);
+	/** The whole board as drawn, for Export's picture (Trevor, 2026-10-26). */
+	let grimoireEl = $state<HTMLElement>();
+	const capture = () => {
+		if (!grimoireEl) throw new Error('the board is not shown');
+		return screenshot(grimoireEl);
+	};
 	const exportGame = async () => {
 		const session = grimoire.open.session;
 		const cursor = grimoire.open.savedCursor;
@@ -1034,7 +1041,7 @@
 	</ul>
 {/snippet}
 
-<div class="grimoire">
+<div class="grimoire" bind:this={grimoireEl}>
 	<!-- The strip's share of the board's height, to size tokens without it (sizingHeight). -->
 	<div
 		class="strip-measure"
@@ -1521,7 +1528,7 @@
 
 <NotesSheet bind:this={notesSheet} bind:open={notesOpen} {grimoire} />
 
-<ExportGameDialog bind:open={exportOpen} load={exportGame} />
+<ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />
 {#if !watching}
 	<GameFeedbackSheet bind:open={feedbackOpen} {game} />
 {/if}
