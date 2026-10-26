@@ -1480,6 +1480,52 @@ test("a Traveller's seat on the players' Grim takes only Good or Evil", async ({
 	await phoneContext.close();
 });
 
+test("a player marks their own seat on the players' Grim, and it glows", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-26): "Allow marking a person as self in own grim", and "special glow or
+	// effect on self in grim". A phone the room has not seated marks a seat as its own.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seat = phone.getByTestId('grim-seat').nth(2);
+	await expect(phone.locator('[data-testid="grim-seat"][data-mine]')).toHaveCount(0);
+	await seat.tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
+	const me = sheet.getByRole('checkbox', { name: 'This is me' });
+	await expect(me).not.toBeChecked();
+	await sheet.getByText('This is me', { exact: true }).tap();
+	await expect(me).toBeChecked();
+	await expect(seat).toHaveAttribute('data-mine');
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 3: Seat 3, you');
+	await phone.keyboard.press('Escape');
+	// Kept on this phone for the game.
+	await phone.reload();
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(seat).toHaveAttribute('data-mine');
+	// One seat at a time, and it can be taken off.
+	await phone.getByTestId('grim-seat').nth(4).tap();
+	await phone
+		.getByRole('dialog', { name: 'Seat 5 · Seat 5' })
+		.getByText('This is me', { exact: true })
+		.tap();
+	await expect(phone.locator('[data-testid="grim-seat"][data-mine]')).toHaveCount(1);
+	await expect(phone.getByTestId('grim-seat').nth(4)).toHaveAttribute('data-mine');
+	await phone
+		.getByRole('dialog', { name: 'Seat 5 · Seat 5' })
+		.getByText('This is me', { exact: true })
+		.tap();
+	await expect(phone.locator('[data-testid="grim-seat"][data-mine]')).toHaveCount(0);
+	await phoneContext.close();
+});
+
 test("a Banshee the Demon killed shows two votes and no ghost vote on the players' Grim", async ({
 	page,
 	browser
@@ -1623,15 +1669,23 @@ test("on a laptop the player's screen shows the script's logo, and the guess she
 	expect(start.max).toBeGreaterThan(0);
 	// From the foot of the screen, over the character list, which runs on below it (the rows
 	// above the list can push Empath itself out of view).
+	// The lowest point near the foot that is over one of the list's buttons, whatever rows sit
+	// above the list.
 	const at = (await empath.boundingBox())!;
-	const foot = phone.viewportSize()!.height * 0.95;
+	const height = phone.viewportSize()!.height;
+	let foot = 0;
 	await expect
-		.poll(() =>
-			phone.evaluate(
-				([x, y]) => !!document.elementFromPoint(x, y)?.closest('[role="dialog"] button'),
-				[at.x + at.width / 2, foot]
-			)
-		)
+		.poll(async () => {
+			foot = await phone.evaluate(
+				([x, h]) => {
+					for (let y = h * 0.95; y > h * 0.7; y -= 4)
+						if (document.elementFromPoint(x, y)?.closest('[role="dialog"] button')) return y;
+					return 0;
+				},
+				[at.x + at.width / 2, height]
+			);
+			return foot > 0;
+		})
 		.toBe(true);
 	await phone.mouse.move(at.x + at.width / 2, foot);
 	await phone.mouse.wheel(0, start.max + 200);

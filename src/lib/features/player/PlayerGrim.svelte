@@ -49,6 +49,9 @@
 		toggleGuess,
 		travellerGuess,
 		travellerTeam,
+		readSelf,
+		selfSeat,
+		writeSelf,
 		writeGuesses,
 		type GenericGuess,
 		type GuessMark,
@@ -107,17 +110,25 @@
 
 	const table = $derived(town ?? player?.view?.public);
 	const seats = $derived(table?.seats ?? []);
-	const mine = $derived(player?.view?.me.seatId);
 	/** Where this game's guesses and seat notes are kept: per game (`gameKey`). */
 	const kept = $derived(
 		display ? undefined : town ? town.guessKey : code ? gameKey(code) : undefined
 	);
 	let guesses = $state<Guesses>({});
+	/** The seat this player marked as theirs; else the one the room gave them. */
+	let marked = $state<string>();
+	const mine = $derived(selfSeat(marked, player?.view?.me.seatId));
+	function markSelf(seatId: string, on: boolean) {
+		if (!kept) return;
+		marked = on ? seatId : '';
+		writeSelf(kept, marked);
+	}
 	/** The player's own note on each seat (Trevor, 2026-10-24), shared with the Notes tab. */
 	// Set in an effect, not a derived, so the derived below follows the notes it reads.
 	let book = $state<ReturnType<typeof seatNotes>>();
 	$effect.pre(() => {
 		guesses = kept ? readGuesses(kept) : {};
+		marked = kept ? readSelf(kept) : undefined;
 		book = kept ? seatNotes(kept) : undefined;
 	});
 	const notes = $derived(book?.notes ?? {});
@@ -437,6 +448,13 @@
 			>{(chosen && notes[chosen.seatId]) || t('common.none')}</span
 		></button
 	>
+	<!-- Which seat is this player's own, for when the room did not seat them (Trevor,
+	     2026-10-26); it glows on the grim. -->
+	<SettingToggle
+		label={t('player.grim.thisIsMe')}
+		checked={!!chosen && chosen.seatId === mine}
+		onChange={(on) => chosen && markSelf(chosen.seatId, on)}
+	/>
 	<!-- Also in Settings > Player: one switch for every seat. -->
 	<SettingToggle
 		label={t('player.guessesOnTokens')}
@@ -618,10 +636,25 @@
 		transform: translate(-50%, -50%);
 		cursor: pointer;
 	}
+	/* Your own seat glows (Trevor, 2026-10-26: "special glow or effect on self in grim"),
+	   breathing slowly unless motion is reduced. In the text colour, not the accent, since red
+	   or blue would read as an alignment (the accent is red in some themes). */
 	.seat[data-mine] :global(.disc) {
-		outline: calc(0.2 * var(--u)) solid var(--accent);
+		outline: calc(0.2 * var(--u)) solid var(--on-surface);
 		outline-offset: calc(0.2 * var(--u));
 		border-radius: 50%;
+		box-shadow: 0 0 calc(1.25 * var(--u)) calc(0.5 * var(--u)) var(--on-surface);
+		animation: self-glow 2.4s ease-in-out infinite;
+	}
+	@keyframes self-glow {
+		50% {
+			box-shadow: 0 0 calc(0.6 * var(--u)) calc(0.2 * var(--u)) var(--on-surface);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.seat[data-mine] :global(.disc) {
+			animation: none;
+		}
 	}
 	/* A guess is the player's own, so it never looks like something the town was told. */
 	.seat[data-guess] :global(.face) {

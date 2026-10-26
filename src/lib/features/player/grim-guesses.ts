@@ -132,3 +132,25 @@ export function readGuesses(room: string): Guesses {
 export function writeGuesses(room: string, guesses: Guesses): void {
 	writeStored(key(room), guesses);
 }
+
+const selfKey = (room: string) => `grim-games:play:self:${room}`;
+
+/**
+ * The seat this player marked as their own on their Grim tab (Trevor, 2026-10-26: "allow
+ * marking a person as self in own grim"), kept per game like the guesses. `''` when they
+ * marked none, so the seat the Storyteller gave them can be unmarked too; undefined when they
+ * never chose, and the room's seat counts.
+ */
+export function readSelf(room: string): string | undefined {
+	const raw = readStored(selfKey(room));
+	return typeof raw === 'string' ? raw : undefined;
+}
+
+export function writeSelf(room: string, seatId: string): void {
+	writeStored(selfKey(room), seatId);
+}
+
+/** The player's own seat: the one they marked, else the one the room gave them. */
+export function selfSeat(marked: string | undefined, roomSeat: string | undefined) {
+	return marked === undefined ? roomSeat : marked || undefined;
+}
