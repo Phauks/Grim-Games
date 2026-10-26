@@ -68,7 +68,7 @@
 
 <!-- The one About in the app: its own page in the menu's App group, since it holds no settings
      (2026-10-23; it was a Settings section before). -->
-<Page title={t('shell.about')} width="text">
+<Page title={t('shell.about')}>
 	<p>{t('shell.aboutIntro')}</p>
 	<dl>
 		<dt>{t('shell.aboutVersion')}</dt>

@@ -34,7 +34,7 @@ export function cornerLines(options: {
 		...(lines.version && options.version ? { version: options.version } : {}),
 		...(lines.players && options.players ? { players: options.players } : {}),
 		...(own && lines['join-code'] ? { joinCode: true } : {}),
-		...(lines['game-time'] ? { phase: options.phase } : {}),
+		...(lines.phase ? { phase: options.phase } : {}),
 		...(own && lines['game-time']
 			? {
 					gameTime: {

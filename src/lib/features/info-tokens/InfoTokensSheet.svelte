@@ -70,6 +70,12 @@
 
 	let showOpen = $state(false);
 	let shown = $state<Card[]>([]);
+	/**
+	 * Opened at one card (`openWith`): closing the player view closes the sheet too, straight
+	 * back to what opened it, such as a night step (Trevor, 2026-10-26). Going back to the list
+	 * keeps the sheet.
+	 */
+	let direct = false;
 
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const known = (ids: readonly CharacterId[]) =>
@@ -98,7 +104,10 @@
 
 	// Each time the sheet opens it starts at the list.
 	$effect(() => {
-		if (!open && !showOpen) view = { kind: 'list' };
+		if (!open && !showOpen) {
+			view = { kind: 'list' };
+			direct = false;
+		}
 	});
 
 	let wasOpen = false;
@@ -159,6 +168,7 @@
 	 */
 	export function openWith(token: InfoToken, filled?: FilledInfoToken) {
 		open = true;
+		direct = true;
 		choose(token, false, undefined, filled);
 	}
 
@@ -174,6 +184,11 @@
 		if (adding) chainCards = [...chainCards, card];
 		else show([card]);
 		adding = false;
+	}
+
+	function toList() {
+		direct = false;
+		view = { kind: 'list' };
 	}
 
 	/** The player view opens over the sheet, which stays open under it (Trevor, 2026-10-17). */
@@ -227,7 +242,7 @@
 				onlyAlignment={view.filled?.othersAlignment}
 			/>
 			<ModalActions
-				onCancel={() => (view = { kind: 'list' })}
+				onCancel={toList}
 				onConfirm={() => use(token.text, order(filled, picked))}
 				disabled={picked.length === 0}
 			/>
@@ -247,14 +262,20 @@
 					</li>
 				{/each}
 			</ul>
-			<ModalActions onCancel={() => (view = { kind: 'list' })} />
+			<ModalActions onCancel={toList} />
 		{/if}
 	</ErrorBoundary>
 	<!--
 		Inside the sheet, so the sheet stays open under the player view (Trevor, 2026-10-17);
 		outside the boundary, so a crash in the sheet never closes it.
 	-->
-	<ShowToPlayer bind:open={showOpen} cards={shownCards} />
+	<ShowToPlayer
+		bind:open={showOpen}
+		cards={shownCards}
+		onclose={() => {
+			if (direct) open = false;
+		}}
+	/>
 </BottomSheet>
 
 <style>

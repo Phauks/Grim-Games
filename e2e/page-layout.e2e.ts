@@ -129,3 +129,21 @@ for (const width of [undefined, 1280, 1600]) {
 		expect(await boxes()).toEqual(first);
 	});
 }
+
+// Trevor (2026-10-26): Support and About had narrower text than Roadmap and Changelog. Every
+// sidebar page shares Page's one width, so their main areas line up at every window size.
+test('About and Support are as wide as Roadmap and Changelog', async ({ page }) => {
+	// A desktop window, where the old narrow text width showed.
+	await page.setViewportSize({ width: 1280, height: 800 });
+	const widths: Record<string, number> = {};
+	for (const path of ['/roadmap', '/changelog', '/about', '/support']) {
+		await page.goto(path);
+		const main = page.getByRole('main');
+		await expect(main.getByRole('heading', { level: 1 })).toBeVisible();
+		const box = (await main.boundingBox())!;
+		widths[path] = Math.round(box.width);
+	}
+	expect(widths['/about']).toBe(widths['/roadmap']);
+	expect(widths['/support']).toBe(widths['/roadmap']);
+	expect(widths['/changelog']).toBe(widths['/roadmap']);
+});

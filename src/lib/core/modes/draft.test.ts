@@ -4,10 +4,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { baseCounts } from '#lib/core/rules/distribution.ts';
 import {
+	canRedraft,
 	canRefuse,
+	redraft,
 	refuseOffer,
 	seatsLeft,
 	answerAsk,
@@ -40,6 +43,15 @@ describe('offers', () => {
 		expect(canRefuse(s)).toBe(false);
 		expect(refuseOffer(s, random)).toBe(s);
 		expect(s.discarded).toHaveLength(5);
+	});
+
+	it('go straight from three to one with a single mulligan (Grimbits’ 3 → 1)', () => {
+		const random = seeded();
+		let s = startDraft({ ...config, offers: [3, 1] }, baseCounts(7), tb, random);
+		expect(s.offer).toHaveLength(3);
+		s = refuseOffer(s, random);
+		expect(s.offer).toHaveLength(1);
+		expect(canRefuse(s)).toBe(false);
 	});
 
 	it('only offer types with an open slot, so a full draft matches the counts', () => {
@@ -189,6 +201,17 @@ describe('characters another needs in play', () => {
 	const take = (s: ReturnType<typeof startDraft>, id: string) =>
 		takeOffer({ ...s, offer: [id] }, id, seeded());
 
+	it('deals nothing with the Storyteller’s switch off (Grimbits’ “Don’t force a King”)', () => {
+		const random = seeded(2);
+		const s = startDraft(
+			{ ...config, modifiers: true, dealsRequired: false },
+			baseCounts(7),
+			tb.concat(data.characters.filter((c) => c.id === 'choirboy' || c.id === 'king')),
+			random
+		);
+		expect(s.requires).toBeUndefined();
+	});
+
 	it('deals the King to the next seat after a Choirboy, with no refusing (https://wiki.bloodontheclocktower.com/Choirboy)', () => {
 		const s = take(startDraft(live, baseCounts(8), all, seeded()), 'choirboy');
 		expect(s.offer).toEqual(['king']);
@@ -279,5 +302,107 @@ describe('characters hidden as a drafted Townsfolk', () => {
 		expect(pickableCharacters(SUSHI_BUFFET, data.characters).map((c) => c.id)).not.toContain(
 			'drunk'
 		);
+	});
+});
+
+// Ivory draft, as Grimbits' tool offers: at most one character that can make an extra evil
+// player, the kind the Spirit of Ivory limits (https://wiki.bloodontheclocktower.com/Spirit_of_Ivory).
+describe('Ivory draft', () => {
+	const pick = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
+	const counts = { townsfolk: 2, outsider: 1, minion: 0, demon: 0 };
+	const afterGoon = (ivory: boolean, pool = pick('bountyhunter', 'cultleader', 'chef')) => {
+		const random = seeded(5);
+		const s = startDraft(
+			{ ...config, offers: [3, 2, 1], ivory },
+			counts,
+			[...pick('goon'), ...pool],
+			random
+		);
+		return takeOffer({ ...s, offer: ['goon'] }, 'goon', random);
+	};
+
+	it('marks the characters that make an extra evil player', () => {
+		const marked = data.characters.filter((c) => rulesOf(c.id)?.makesExtraEvil).map((c) => c.id);
+		expect(marked.sort()).toEqual(
+			[
+				'bountyhunter',
+				'cultleader',
+				'fanggu',
+				'goon',
+				'legion',
+				'lordoftyphon',
+				'mezepheles',
+				'ogre',
+				'politician'
+			].sort()
+		);
+	});
+
+	it('offers no other once one is drafted', () => {
+		expect(afterGoon(true).offer).toEqual(['chef']);
+		expect(afterGoon(false).offer).toHaveLength(3);
+	});
+
+	it('still offers one when nothing else fills the seat', () => {
+		expect(afterGoon(true, pick('bountyhunter')).offer).toEqual(['bountyhunter']);
+	});
+});
+
+// Grimbits' Redraft: the Storyteller lets the last player draft again, optionally of one type.
+describe('redraft', () => {
+	it('goes back to before the last pick, sets the kept character aside and offers anew', () => {
+		const random = seeded(3);
+		const start = startDraft(config, baseCounts(7), tb, random);
+		const kept = start.offer[0];
+		const s = takeOffer(start, kept, random);
+		expect(canRedraft(s)).toBe(true);
+		const again = redraft(s, undefined, random);
+		expect(again.picks).toEqual([]);
+		expect(again.slots).toEqual(start.slots);
+		expect(again.discarded).toContain(kept);
+		expect(again.offer).toHaveLength(3);
+		expect(again.offer).not.toContain(kept);
+		expect(canRedraft(again)).toBe(false);
+	});
+
+	it('undoes a setup change the kept character made (the Baron’s +2 Outsiders)', () => {
+		const random = seeded(4);
+		const start = startDraft({ ...config, modifiers: true }, baseCounts(7), tb, random);
+		const s = takeOffer({ ...start, offer: ['baron'] }, 'baron', random);
+		expect(draftTotal(s, 'outsider')).toBe(2);
+		expect(draftTotal(redraft(s, undefined, random), 'outsider')).toBe(0);
+	});
+
+	it('offers only the named type, on refusals too', () => {
+		const random = seeded(5);
+		const start = startDraft(config, baseCounts(7), tb, random);
+		let s = redraft(takeOffer(start, start.offer[0], random), 'minion', random);
+		const typeOf = (id: string) => data.byId.get(id)?.type;
+		expect(s.offer.every((id) => typeOf(id) === 'minion')).toBe(true);
+		s = refuseOffer(s, random);
+		expect(s.offer.every((id) => typeOf(id) === 'minion')).toBe(true);
+		const next = takeOffer(s, s.offer[0], random);
+		expect(next.onlyType).toBeUndefined();
+	});
+});
+
+// Grimbits lets the Storyteller reject a drafted Legion: the player picks again
+// (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Legion).
+describe('rejecting a drafted character whose setup change is asked', () => {
+	it('drafts again from before the pick, with nothing left to ask', () => {
+		const random = seeded(6);
+		const start = startDraft(
+			{ ...config, modifiers: true },
+			baseCounts(7),
+			tb.concat(data.characters.filter((c) => c.id === 'legion')),
+			random
+		);
+		const s = takeOffer({ ...start, offer: ['legion'] }, 'legion', random);
+		expect(s.ask).toBeDefined();
+		const again = redraft(s, undefined, random);
+		expect(again.ask).toBeUndefined();
+		expect(again.picks).toEqual([]);
+		expect(again.slots).toEqual(start.slots);
+		expect(again.offer).not.toContain('legion');
 	});
 });

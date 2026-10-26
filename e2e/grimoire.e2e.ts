@@ -142,6 +142,41 @@ async function openStep(page: Page, title: string) {
 	return dialog;
 }
 
+/**
+ * Counts animation frames, from now until `stop` is called, in which neither the open night
+ * step `title` nor a player view is up: the board showing for a moment between them.
+ */
+async function watchStep(page: Page, title: string) {
+	await page.evaluate((title) => {
+		const w = window as unknown as { stepGaps: number; stepWatch: boolean };
+		w.stepGaps = 0;
+		w.stepWatch = true;
+		const frame = () => {
+			if (!w.stepWatch) return;
+			const step = [
+				...document.querySelectorAll('[data-scope="dialog"][data-part="content"]')
+			].some(
+				(e) =>
+					e.getAttribute('data-state') === 'open' &&
+					getComputedStyle(e).opacity === '1' &&
+					e.querySelector('[data-part="title"]')?.textContent?.trim() === title
+			);
+			if (!step && !document.querySelector('[data-testid="show-to-player"][open]')) w.stepGaps++;
+			requestAnimationFrame(frame);
+		};
+		requestAnimationFrame(frame);
+	}, title);
+	return async () => {
+		// Long enough for any closing or opening animation to have run.
+		await page.waitForTimeout(600);
+		return page.evaluate(() => {
+			const w = window as unknown as { stepGaps: number; stepWatch: boolean };
+			w.stepWatch = false;
+			return w.stepGaps;
+		});
+	};
+}
+
 /** End night in the bank, confirmed. */
 async function endNight(page: Page) {
 	await bankNight(page, 'End night').tap();
@@ -428,7 +463,7 @@ test('history, add seat and remove', async ({ page }) => {
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 });
 
-test('an orphan character is flagged and names are suggested', async ({ page }) => {
+test('an orphan character is flagged, and old names are not suggested', async ({ page }) => {
 	await startGame(page);
 	let sheet = await openSeat(page, 1);
 	await nameSeat(sheet, 'Zed');
@@ -439,17 +474,14 @@ test('an orphan character is flagged and names are suggested', async ({ page }) 
 	await expect(sheet.getByText('Not on the script')).toBeVisible();
 	await expect(seatLabelled(page, 'Seat 1: Zed, Zombuul, not on the script')).toBeAttached();
 
-	// A name used before on this device is offered on another seat, once nobody has it.
+	// Names come only from the room's phones, never from earlier seats or games (Trevor,
+	// 2026-10-26): with no room, a name used before is not offered.
 	await nameSeat(sheet, 'Amy');
 	await closeSheet(page);
 	sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
 	await sheet.getByRole('textbox', { name: 'Player name' }).fill('Z');
-	await sheet
-		.getByRole('group', { name: 'Name suggestions' })
-		.getByRole('button', { name: 'Zed' })
-		.tap();
-	await expect(page.getByRole('heading', { name: 'Zed' })).toBeVisible();
+	await expect(sheet.getByRole('group', { name: 'Name suggestions' })).toHaveCount(0);
 });
 
 test('Travellers join as a new seat, and Fabled sit in the middle', async ({ page }) => {
@@ -1022,10 +1054,13 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	await tiles.getByRole('button', { name: 'You are (Imp)', exact: true }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
-	// The step stays open under the sheet, for the rest of the Imp's turn.
+	// The step stays open under the card, for the rest of the Imp's turn: closing the card goes
+	// straight back to it, not to the info tokens list (Trevor, 2026-10-26).
+	const gaps = await watchStep(page, 'Imp');
 	await shown.getByRole('button', { name: 'Close' }).tap();
-	await page.keyboard.press('Escape');
 	await expect(step).toBeVisible();
+	await expect(page.getByRole('dialog', { name: 'Info tokens' })).toHaveCount(0);
+	expect(await gaps()).toBe(0);
 });
 
 test("the Demon's step says when the Exorcist's choice stops it waking", async ({ page }) => {
@@ -1181,7 +1216,7 @@ test('the join code shows under the script name, a Board setting, read only', as
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	// The day or night and Game time join the code's line where a phone's corner has no line
 	// to spare for them.
-	const codeLine = new RegExp(`^Join code ${shown}(\\s*·\\s*Game time Setup)?$`);
+	const codeLine = new RegExp(`^Join code ${shown}( · Setup)?( · Game time Setup)?$`);
 	await expect(corner).toHaveText(codeLine);
 	// Only read: Share is the toolbar's button, not the corner (Trevor, 2026-10-24).
 	await expect(page.getByRole('button', { name: /Join code/ })).toHaveCount(0);
@@ -2595,10 +2630,14 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	expect(ratio).toBeCloseTo(box!.width / box!.height, 1);
 	await page.keyboard.press('Escape');
 
-	// The same from History.
+	// The same from History, which opens the board first so the picture is the board
+	// (Trevor, 2026-10-26).
 	await page.goto('/history');
 	await page.getByRole('button', { name: /^Export Trouble Brewing ended/ }).tap();
 	await expect(page.getByRole('dialog', { name: 'Export game' })).toBeVisible();
+	await expect(page).toHaveURL(/\/grimoire\/[^/#]+$/);
+	await expect(page.locator('.grimoire')).toBeAttached();
+	expect((await read('Image')).name).toBe('trouble-brewing.png');
 });
 
 test("a finished game is shared to the players' phones, without the notes", async ({
@@ -3857,8 +3896,12 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await minionInfo.getByRole('button', { name: 'Show This is the Demon' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('This is the Demon');
+	// Closing the card goes straight back to the step, never the board in between (Trevor,
+	// 2026-10-26: it flashed the grim).
+	const gaps = await watchStep(page, 'Minion info');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(minionInfo).toBeVisible();
+	expect(await gaps()).toBe(0);
 
 	// Demon info with no bluffs yet: its Minions, and a way to choose the bluffs.
 	await minionInfo.getByRole('button', { name: 'Next step' }).tap();
@@ -3980,6 +4023,52 @@ test('the Investigator step lists each Minion, and the Recluse as a Minion you p
 	await show.tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown).toContainText('Baron');
+});
+
+// Trevor (2026-10-26): with a Recluse and a Butler in play and the Librarian's Outsider
+// reminder on the Recluse, the Recluse row comes first and stands out; the Butler stays as an
+// alternative (https://wiki.bloodontheclocktower.com/Librarian).
+test('the Librarian step puts the Outsider its reminder marks first, emphasised', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Librarian'],
+		[2, 'Butler'],
+		[3, 'Recluse'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 3' });
+	await picker
+		.getByRole('group', { name: 'Librarian' })
+		.getByRole('button', { name: 'Outsider' })
+		.tap();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	const strip = await walkTo(page, 'Librarian');
+	const line = strip.getByTestId('night-suggested');
+	await expect(line).toHaveText(/^Valid Information:\s*Recluse\s*,\s*Butler\s*$/);
+	await expect(line.locator('.item.marked')).toHaveText('Recluse');
+
+	const step = await openStep(page, 'Librarian');
+	const rows = step.getByTestId('learned-roles').getByRole('listitem');
+	await expect(rows).toHaveCount(2);
+	await expect(rows.first()).toHaveAttribute('data-marked', '');
+	await expect(rows.first()).toContainText('Recluse');
+	await expect(rows.first()).toContainText('Marked');
+	await expect(rows.nth(1)).toContainText('Butler');
+	await expect(rows.nth(1)).not.toHaveAttribute('data-marked');
 });
 
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({
@@ -5115,7 +5204,24 @@ test('the corner’s Game info closes when a seat opens', async ({ page }) => {
 	await corner.tap();
 	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
 	await expect(info).toBeVisible();
-	await openSeat(page, 1);
+	// A seat where the popover leaves part of it clear: it covers most of a phone's board.
+	const clear = await page.getByTestId('seat').evaluateAll((seats) => {
+		for (const [index, seat] of seats.entries()) {
+			const box = seat.getBoundingClientRect();
+			for (const fx of [0.5, 0.15, 0.85])
+				for (const fy of [0.5, 0.15, 0.85]) {
+					const x = box.width * fx;
+					const y = box.height * fy;
+					const at = document.elementFromPoint(box.x + x, box.y + y);
+					if (at && seat.contains(at)) return { index, x, y };
+				}
+		}
+	});
+	expect(clear).toBeDefined();
+	await page
+		.getByTestId('seat')
+		.nth(clear!.index)
+		.tap({ position: { x: clear!.x, y: clear!.y } });
 	await expect(info).toBeHidden();
 });
 

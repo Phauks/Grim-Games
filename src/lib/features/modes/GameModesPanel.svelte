@@ -152,6 +152,15 @@
 	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
 	let roleRecycling = $state<boolean | undefined>();
 	let jinxedPairs = $state<JinxedPairs>('allow');
+	let ivoryDraft = $state(false);
+	let oneType = $state<boolean | undefined>();
+	/**
+	 * Mulligans, as Grimbits' draft tool offers: two refusals (3 → 2 → 1) or one (3 → 1). Kept
+	 * as the offer sizes joined, so the drop-down's value is a string.
+	 */
+	const MULLIGANS = ['3,2,1', '3,1'] as const;
+	let mulligans = $state<string | undefined>();
+	let dealsRequired = $state(true);
 	const draft = $derived(
 		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
 	);
@@ -361,7 +370,16 @@
 				restrictions,
 				data,
 				loaded: loaded[0],
-				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen, jinxedPairs } : {}),
+				...(draft
+					? {
+							roleRecycling: roleRecycling ?? draft.recycleUnchosen,
+							jinxedPairs,
+							ivoryDraft,
+							oneTypePerOffer: oneType ?? draft.oneTypePerOffer,
+							offers: (mulligans ?? draft.offers.join(',')).split(',').map(Number),
+							dealsRequired
+						}
+					: {}),
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
 			saveDraft({ gameId: open.game.gameId });
@@ -393,6 +411,10 @@
 						restrictions = NO_RESTRICTIONS;
 						roleRecycling = undefined;
 						jinxedPairs = 'allow';
+						ivoryDraft = false;
+						oneType = undefined;
+						mulligans = undefined;
+						dealsRequired = true;
 						campaignId = 'new';
 					}}
 				/>
@@ -469,6 +491,34 @@
 								label: t(`modes.jinxedPairs.${value}`)
 							}))}
 							onChange={(v) => (jinxedPairs = v)}
+						/>
+						<SettingToggle
+							label={t('modes.ivoryDraft')}
+							description={t('modes.ivoryDraftHint')}
+							checked={ivoryDraft}
+							onChange={(on) => (ivoryDraft = on)}
+						/>
+						<SettingToggle
+							label={t('modes.oneTypePerOffer')}
+							description={t('modes.oneTypePerOfferHint')}
+							checked={oneType ?? draft.oneTypePerOffer}
+							onChange={(on) => (oneType = on)}
+						/>
+						<SettingSelect
+							label={t('modes.mulligans')}
+							value={mulligans ?? draft.offers.join(',')}
+							defaultValue={draft.offers.join(',')}
+							options={[...new Set([draft.offers.join(','), ...MULLIGANS])].map((value) => ({
+								value,
+								label: value.split(',').join(' → ')
+							}))}
+							onChange={(v) => (mulligans = v)}
+						/>
+						<SettingToggle
+							label={t('modes.dealsRequired')}
+							description={t('modes.dealsRequiredHint')}
+							checked={dealsRequired}
+							onChange={(on) => (dealsRequired = on)}
 						/>
 					{/if}
 					<div class="setting">
