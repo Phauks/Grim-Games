@@ -435,6 +435,11 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await expect(ivory).not.toBeChecked();
 	await modesPanel(page).getByText('Ivory draft', { exact: true }).tap();
 	await expect(ivory).toBeChecked();
+	// Don't mix types, as Grimbits' draft tool offers: the mode's own setting (off).
+	const oneType = modesPanel(page).getByRole('checkbox', { name: 'Don’t mix types' });
+	await expect(oneType).not.toBeChecked();
+	await modesPanel(page).getByText('Don’t mix types', { exact: true }).tap();
+	await expect(oneType).toBeChecked();
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -445,6 +450,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	expect(record.roleRecycling).toBe(true);
 	expect(record.jinxedPairs).toBe('reduce');
 	expect(record.ivoryDraft).toBe(true);
+	expect(record.oneTypePerOffer).toBe(true);
 	// The draft knows each character's jinxed partners
 	// (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
 	await drawTile(page);
@@ -456,6 +462,10 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	expect(state.config.jinxes).toBe('reduce');
 	expect(state.jinxed.heretic).toContain('baron');
 	expect(state.config.ivory).toBe(true);
+	expect(state.config.oneTypePerOffer).toBe(true);
+	// The first offer is all one character type.
+	const types = new Set(state.offer.map((id: string) => state.types[id]));
+	expect(types.size).toBe(1);
 	expect(state.extraEvil).toContain('goon');
 });
 

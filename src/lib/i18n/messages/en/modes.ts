@@ -274,6 +274,8 @@ export const modes = {
 	'modes.jinxedPairs.reduce': 'Less likely',
 	'modes.jinxedPairs.allow': 'Allow',
 	'modes.ivoryDraft': 'Ivory draft',
+	'modes.oneTypePerOffer': 'Don’t mix types',
+	'modes.oneTypePerOfferHint': 'Every character in one offer is of one character type.',
 	'modes.ivoryDraftHint': 'At most one character that can make an extra evil player is drafted.',
 	'modes.settings': 'Game mode settings',
 	'modes.campaign.chooseHint': 'Start a new campaign, or carry on one you have played before.',

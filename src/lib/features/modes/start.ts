@@ -32,6 +32,8 @@ interface StartInput<G> {
 	jinxedPairs?: JinxedPairs;
 	/** The Storyteller's Ivory draft choice for a draft mode. */
 	ivoryDraft?: boolean;
+	/** The Storyteller's Don't mix types choice for a draft mode. */
+	oneTypePerOffer?: boolean;
 	/** Creates and saves the game with the mode's script. */
 	create: (script: Script) => Promise<G>;
 }
@@ -82,7 +84,8 @@ export async function startInMode<
 		restrictions: input.restrictions,
 		...(input.roleRecycling !== undefined ? { roleRecycling: input.roleRecycling } : {}),
 		...(input.jinxedPairs !== undefined ? { jinxedPairs: input.jinxedPairs } : {}),
-		...(input.ivoryDraft !== undefined ? { ivoryDraft: input.ivoryDraft } : {})
+		...(input.ivoryDraft !== undefined ? { ivoryDraft: input.ivoryDraft } : {}),
+		...(input.oneTypePerOffer !== undefined ? { oneTypePerOffer: input.oneTypePerOffer } : {})
 	});
 	seedInPlay(open.game.gameId, open.game.seating.length, inPlayFor(mode));
 	if (campaignRule(mode))

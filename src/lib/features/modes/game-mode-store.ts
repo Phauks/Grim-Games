@@ -32,6 +32,8 @@ export interface GameModeRecord {
 	jinxedPairs?: JinxedPairs;
 	/** Ivory draft for a draft: at most one character that makes an extra evil player. */
 	ivoryDraft?: boolean;
+	/** Don't mix types for a draft: each offer is of one character type. Left out, the mode's. */
+	oneTypePerOffer?: boolean;
 }
 
 const KEY = (gameId: GameId) => `grim-games:game-mode:v2:${gameId}`;
@@ -49,7 +51,9 @@ const recycling = (r: {
 	roleRecycling?: unknown;
 	jinxedPairs?: unknown;
 	ivoryDraft?: unknown;
+	oneTypePerOffer?: unknown;
 }) => ({
+	...(typeof r.oneTypePerOffer === 'boolean' ? { oneTypePerOffer: r.oneTypePerOffer } : {}),
 	...(typeof r.roleRecycling === 'boolean' ? { roleRecycling: r.roleRecycling } : {}),
 	...(typeof r.ivoryDraft === 'boolean' ? { ivoryDraft: r.ivoryDraft } : {}),
 	...((JINXED_PAIRS as readonly unknown[]).includes(r.jinxedPairs)
