@@ -31,7 +31,7 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	const tablet = await tabletContext.newPage();
 	await tablet.goto('/join');
 	const more = tablet.getByRole('button', { name: 'More ways to join' });
-	const open = tablet.getByRole('button', { name: 'Public Town' });
+	const open = tablet.getByRole('menuitem', { name: 'Public Town' });
 	await more.tap();
 	await expect(open).toBeDisabled();
 	await tablet.keyboard.press('Escape');
