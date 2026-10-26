@@ -192,8 +192,11 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await expect(list.getByRole('button', { name: 'Atheist', exact: true })).toHaveCount(0);
 });
 
-/** Starts a 5-player Trouble Brewing game in `mode`; it opens on the draft or choose screen. */
-async function startIn(page: Page, mode: string) {
+/**
+ * Starts a 5-player Trouble Brewing game in `mode`; it opens on the draft or choose screen.
+ * `setting`, when given, is a New game switch to turn on first.
+ */
+async function startIn(page: Page, mode: string, setting?: string) {
 	await page.goto('/new');
 	await chooseMode(page, mode);
 	const panel = modesPanel(page);
@@ -201,6 +204,7 @@ async function startIn(page: Page, mode: string) {
 	const script = panel.getByRole('radiogroup', { name: 'Script' });
 	if (await script.count()) await script.getByText('Trouble Brewing').tap();
 	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
+	if (setting) await panel.locator('[data-setting]').getByText(setting, { exact: true }).tap();
 	await panel.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 }
@@ -380,6 +384,58 @@ test('Sushi Buffet asks which Minion ability a drafted Alchemist has, or later',
 	expect(state.abilities).toEqual({ 0: 'baron' });
 	expect(state.pool).not.toContain('baron');
 	expect(state.slots.outsider).toBe(before.slots.outsider + 2);
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): the Marionette keeps a Minion seat out of
+// the draft; once the Demon is known, the Storyteller picks a good neighbour of the Demon to be
+// it (https://wiki.bloodontheclocktower.com/Marionette).
+test('Sushi Buffet with Marionette on: a good neighbour of the Demon is really the Marionette', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet', 'Marionette');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const state = await page.evaluate(
+		(key) => JSON.parse(localStorage.getItem(key)!).state,
+		`grim-games:mode-deal:v1:${gameId}`
+	);
+	// Five players: 3 Townsfolk, 1 Minion and the Demon; the Minion seat is the Marionette's.
+	expect(state.reserved).toBe(true);
+	expect(state.config.reserve).toEqual({ id: 'marionette', type: 'minion', nextTo: 'demon' });
+	expect(state.slots.minion).toBe(0);
+	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
+	await keepFirst(page);
+	for (let seat = 2; seat <= 5; seat++) {
+		await drawTile(page);
+		await keepFirst(page);
+	}
+	const drafted = await page.evaluate(
+		(key) => JSON.parse(localStorage.getItem(key)!).state,
+		`grim-games:mode-deal:v1:${gameId}`
+	);
+	// A real Atheist, drafted by chance, leaves no Demon, so no Marionette (its setup change).
+	const hasDemon = drafted.picks.some((id: string) => drafted.types[id] === 'demon');
+	await page.getByRole('button', { name: 'Finish' }).tap();
+	const drunk = page.getByTestId('draft-hidden');
+	if (
+		await drunk.waitFor({ timeout: 2000 }).then(
+			() => true,
+			() => false
+		)
+	)
+		await drunk.getByRole('button', { name: 'None', exact: true }).tap();
+	if (!hasDemon) {
+		await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+		return;
+	}
+	const reserved = page.getByTestId('reserved-seats').getByRole('listitem');
+	await expect(reserved.last()).toHaveText('None');
+	// The Demon's two neighbours, then None.
+	await expect(reserved).toHaveCount(3);
+	await reserved.first().getByRole('button').first().tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await expect(page.getByText('Is The Marionette').first()).toBeVisible();
 });
 
 // Trevor (2026-10-26): "modifiers are made dynamically for outsider count", as Grimbits' draft
