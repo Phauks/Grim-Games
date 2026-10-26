@@ -80,15 +80,23 @@
 			storytellerName?: string;
 			corner?: PublicCorner;
 			/** The board's own game, whose background this town shows. */
-			gameId: string;
-			guessKey: string;
+			gameId?: string;
+			/** Where the guesses and seat notes are kept; a display keeps none. */
+			guessKey?: string;
+			/** The room's code for the corner, where it isn't this device's own room. */
+			roomCode?: string;
 		};
+		/**
+		 * A Public Town display (Trevor, 2026-10-26): the town alone, filling its box, with
+		 * nothing to tap and nothing of this device's own on it (no guesses, notes or "you").
+		 */
+		display?: boolean;
 	}
 
-	let { script, town }: Props = $props();
+	let { script, town, display = false }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
-	const code = town ? town.guessKey : lastRoom();
+	const code = town ? (town.roomCode ?? town.guessKey) : lastRoom();
 	// svelte-ignore state_referenced_locally
 	const player = !town && code ? useRoom(code) : undefined;
 	$effect(() => () => {
@@ -99,7 +107,9 @@
 	const seats = $derived(table?.seats ?? []);
 	const mine = $derived(player?.view?.me.seatId);
 	/** Where this game's guesses and seat notes are kept: per game (`gameKey`). */
-	const kept = $derived(town ? town.guessKey : code ? gameKey(code) : undefined);
+	const kept = $derived(
+		display ? undefined : town ? town.guessKey : code ? gameKey(code) : undefined
+	);
 	let guesses = $state<Guesses>({});
 	/** The player's own note on each seat (Trevor, 2026-10-24), shared with the Notes tab. */
 	// Set in an effect, not a derived, so the derived below follows the notes it reads.
@@ -266,6 +276,7 @@
 {:else}
 	<div
 		class="town"
+		class:display
 		bind:clientWidth={width}
 		bind:clientHeight={height}
 		style:--name-scale={boardLooks.current.nameSize}
@@ -304,8 +315,11 @@
 			<!-- The player's avatar unless their own guess is set to show over it (plan R6). -->
 			{@const shown =
 				known ?? (seat.avatar && !playerSettings.current.guessesOnTokens ? undefined : guessed)}
-			<button
-				type="button"
+			<!-- A display's seats are only drawn: nothing on the table's tablet can be tapped. -->
+			<svelte:element
+				this={display ? 'div' : 'button'}
+				type={display ? undefined : 'button'}
+				role={display ? 'img' : undefined}
 				class="seat"
 				data-mine={seat.seatId === mine || undefined}
 				data-guess={(!known && !!guessed && shown === guessed) || undefined}
@@ -313,7 +327,7 @@
 				style:top="{point?.y ?? 50}%"
 				aria-label={label(seat)}
 				data-testid="grim-seat"
-				onclick={(event) => choose(seat, event)}
+				onclick={display ? undefined : (event: MouseEvent) => choose(seat, event)}
 			>
 				<SeatDisc
 					{size}
@@ -339,7 +353,7 @@
 							{size}
 						/>{:else if shown}<CharacterToken character={shown} {size} />{/if}
 				{/snippet}
-			</button>
+			</svelte:element>
 		{/each}
 		<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
 		     2026-10-24); nothing to open or share here. -->
@@ -347,7 +361,7 @@
 			meta={script.meta}
 			storytellerName={table?.storytellerName}
 			corner={table?.corner}
-			roomCode={town ? roomHost().code : code}
+			roomCode={town ? (town.roomCode ?? roomHost().code) : code}
 			logo={logo && !logoFailed ? logo : undefined}
 			watching
 			fitRoom={fitCorner}
@@ -548,6 +562,14 @@
 		border-radius: var(--radius-md);
 		width: 100%;
 		height: 75dvh;
+	}
+	/* A Public Town display fills the screen it is given. */
+	.town.display {
+		height: 100%;
+		border-radius: 0;
+	}
+	.display .seat {
+		cursor: default;
 	}
 	/* Faint behind the seats, as on the board. */
 	.town :global(.town-logo) {

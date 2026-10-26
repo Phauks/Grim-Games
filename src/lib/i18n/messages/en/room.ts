@@ -172,5 +172,8 @@ export const room = {
 	'room.watch.wrongPassword': 'Wrong password, or the Storyteller has turned Grim view off.',
 	'room.watch.tooManyTries': 'Too many wrong tries. Wait a few minutes, then try again.',
 	'room.watch.badLink': 'This link is incomplete. Ask the Storyteller for it again.',
-	'room.watch.home': 'Home'
+	'room.watch.home': 'Home',
+	// Public Town: a display in the middle of the table (Trevor, 2026-10-26)
+	'room.town.title': 'Public Town',
+	'room.town.waiting': 'Waiting for the Storyteller’s game…'
 } as const;

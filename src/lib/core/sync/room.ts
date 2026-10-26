@@ -154,7 +154,13 @@ export type ClientMessage =
 	 * First message on every socket. Keys never go in the URL. `protocol` is missing from
 	 * apps built before it existed, which speak protocol 1.
 	 */
-	| { type: 'hello'; role: 'host' | 'player' | 'viewer'; key: string; protocol?: number }
+	| {
+			type: 'hello';
+			/** `town`: a Public Town display (`TownView`); its key is ignored, as it sends nothing. */
+			role: 'host' | 'player' | 'viewer' | 'town';
+			key: string;
+			protocol?: number;
+	  }
 	// From a player.
 	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
 	| { type: 'request'; name: string; seatId?: SeatId }
@@ -300,6 +306,17 @@ export interface PlayerView {
 	};
 }
 
+/**
+ * What a Public Town display sees (Trevor, 2026-10-26): a tablet in the middle of the table
+ * showing the town as everyone there knows it, and nothing else. It is not a member, so it
+ * takes no seat, casts no vote and is in no count; it is sent only what every phone is.
+ */
+export interface TownView {
+	type: 'town-view';
+	public?: PublicGameState;
+	gameId?: string;
+}
+
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
 export interface ScriptView {
 	type: 'script';
@@ -323,6 +340,7 @@ export type ServerMessage =
 	| HostView
 	| RevealView
 	| PlayerView
+	| TownView
 	| ScriptView
 	| GrimoireView
 	/** To the Storyteller: how many are watching through the view-only link right now. */
@@ -462,6 +480,14 @@ export function playerView(
 		if (room.vote.ability) view.vote.ability = room.vote.ability;
 		if (choice !== undefined) view.vote.choice = choice;
 	}
+	return view;
+}
+
+/** What a Public Town display sees: the public table alone (`TownView`). */
+export function townView(room: RoomState): TownView {
+	const view: TownView = { type: 'town-view' };
+	if (room.public) view.public = room.public;
+	if (room.gameId) view.gameId = room.gameId;
 	return view;
 }
 

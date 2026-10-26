@@ -338,6 +338,13 @@
 			<Button disabled={!found?.grimView} onclick={() => (grimViewOpen = true)}
 				>{t('room.grimView')}</Button
 			>
+			<!-- A tablet for the middle of the table shows the players' grim alone (Public Town,
+			     Trevor 2026-10-26); always here, like Join, so nothing moves. -->
+			<Button
+				disabled={!canJoin}
+				onclick={() => lookup && void goto(resolve('/town/[code]', { code: lookup.code }))}
+				>{t('room.town.title')}</Button
+			>
 			<!-- A camera icon, not words (Trevor, 2026-10-23). -->
 			<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
 		</div>
