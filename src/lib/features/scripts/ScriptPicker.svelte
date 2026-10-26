@@ -81,6 +81,32 @@
 		width > 0 && width < 56 * parseFloat(getComputedStyle(document.documentElement).fontSize)
 	);
 
+	/**
+	 * The list and details reach the bottom of the screen (Trevor, 2026-10-26): the table
+	 * takes whatever height is left under the search, never less than the clamp in the styles.
+	 */
+	let tableBox = $state<HTMLElement>();
+	let fillHeight = $state<number>();
+	$effect(() => {
+		const box = tableBox;
+		const page = box?.closest('main');
+		if (!box || !page) return;
+		const measure = () => {
+			const table = box.getBoundingClientRect();
+			const top = table.top + window.scrollY;
+			const below = page.getBoundingClientRect().bottom - table.bottom;
+			fillHeight = Math.floor(document.documentElement.clientHeight - top - below);
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(page);
+		window.addEventListener('resize', measure);
+		return () => {
+			observer.disconnect();
+			window.removeEventListener('resize', measure);
+		};
+	});
+
 	let checkOpen = $state(false);
 
 	// The search box (toolbar) and sources (title row) live on the page (`ScriptSearchBar`).
@@ -304,12 +330,16 @@
 
 <!-- The list on the left, the shown script's details on the right; on a phone the details
      slide over the list and Back returns to it. -->
-<div class="panes" bind:clientWidth={width}>
+<div
+	class="panes"
+	bind:clientWidth={width}
+	style:--fill-height={fillHeight === undefined ? undefined : `${fillHeight}px`}
+>
 	<div class="grid" class:open={paneOpen}>
 		<div class="picker" inert={narrow && paneOpen}>
 			<!-- One fixed height for every source, so switching moves nothing below. -->
 			<div class="body">
-				<div class="table" data-testid="picker-table">
+				<div class="table" data-testid="picker-table" bind:this={tableBox}>
 					<DataTable
 						label={t('scripts.picker.table')}
 						{columns}
@@ -347,7 +377,12 @@
 			</section>
 		</div>
 
-		<aside class="pane" aria-label={t('scripts.details.label')} inert={narrow && !paneOpen}>
+		<aside
+			class="pane"
+			data-testid="script-pane"
+			aria-label={t('scripts.details.label')}
+			inert={narrow && !paneOpen}
+		>
 			<div class="pane-scroll">
 				<ScriptView
 					listing={baseListing}
@@ -464,8 +499,9 @@
 <style>
 	.panes {
 		container: script-panes / inline-size;
-		/* The table's height, which the details beside it share on a wide screen. */
-		--table-height: clamp(22rem, 60dvh, 36rem);
+		/* The table's height, which the details beside it share on a wide screen: down to the
+		   bottom of the screen, or the clamp where that is less. */
+		--table-height: max(clamp(22rem, 60dvh, 36rem), var(--fill-height, 0rem));
 	}
 	.grid {
 		position: relative;

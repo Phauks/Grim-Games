@@ -4,6 +4,8 @@
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import type {
 		AnswerValue,
+		ChosenPlayers,
+		ChosenPlayersRow,
 		Impairment,
 		InfoPicker,
 		LearnedRole,
@@ -14,7 +16,7 @@
 		ValidInfo,
 		Why
 	} from '#lib/core/rules/index.ts';
-	import { learnedRoles, validInformation } from '#lib/core/rules/index.ts';
+	import { chosenPlayers, learnedRoles, validInformation } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -155,10 +157,54 @@
 	let shownAs = $state<Record<string, CharacterId>>({});
 	const shownRole = (p: InfoPicker, row: LearnedRole): CharacterId | undefined =>
 		row.characterIds.length === 1 ? row.characterIds[0] : shownAs[rowKey(p, row)];
-	/** One badge per character the strip's line names, in row order. */
-	const roleIds = (all: readonly { roles: LearnedRoles }[]) => [
-		...new Set(all.flatMap(({ roles }) => roles.rows.flatMap((r) => r.characterIds.slice(0, 1))))
-	];
+	/**
+	 * One badge per character the strip's line names, in row order, the ones the board's
+	 * reminders mark emphasised (Trevor, 2026-10-26).
+	 */
+	const roleIds = (all: readonly { roles: LearnedRoles }[]) => {
+		const out: { id: CharacterId; marked: boolean }[] = [];
+		for (const { roles } of all) {
+			for (const r of roles.rows) {
+				const id = r.characterIds[0];
+				const seen = out.find((o) => o.id === id);
+				if (seen) seen.marked ||= !!r.marked;
+				else if (id) out.push({ id, marked: !!r.marked });
+			}
+		}
+		return out;
+	};
+
+	/**
+	 * The players a "learn players" step could show (Steward, Noble), from core's
+	 * `chosenPlayers`: the ones the board's Know reminders mark first (Trevor, 2026-10-26).
+	 */
+	const playerPickers = $derived(
+		info?.kind === 'picker'
+			? info.pickers.flatMap((picker) => {
+					const players = chosenPlayers(game, picker);
+					return players && (players.rows.length > 0 || players.anyOther)
+						? [{ picker, players }]
+						: [];
+				})
+			: []
+	);
+	const playerRowKey = (p: InfoPicker, row: ChosenPlayersRow) =>
+		JSON.stringify([p.seatId, row.target, row.seats, row.reason, row.exact ?? false]);
+	/** The players the strip's line names: the marked rows' players, else each row's player. */
+	const playerSeats = (all: readonly { players: ChosenPlayers }[]) => {
+		const out: { seatId: SeatId; marked: boolean }[] = [];
+		for (const { players } of all) {
+			const marked = players.rows.filter((r) => r.marked);
+			for (const r of marked.length > 0 ? marked : players.rows) {
+				for (const seatId of r.exact ? [r.target, ...r.seats] : [r.target]) {
+					const seen = out.find((o) => o.seatId === seatId);
+					if (seen) seen.marked ||= !!r.marked;
+					else out.push({ seatId, marked: !!r.marked });
+				}
+			}
+		}
+		return out;
+	};
 
 	const showAnswers = $derived(assistance.nightAnswers);
 	const showPickers = $derived(assistance.infoSuggestions);
@@ -166,7 +212,7 @@
 		(info?.kind === 'answer' && showAnswers && info.answers.length > 0) ||
 			(info?.kind === 'picker' &&
 				showPickers &&
-				(numberPickers.length > 0 || rolePickers.length > 0)) ||
+				(numberPickers.length > 0 || rolePickers.length > 0 || playerPickers.length > 0)) ||
 			(info?.kind === 'death' &&
 				showAnswers &&
 				info.checks.some((c) => c.verdict && c.verdict.kind !== 'choose'))
@@ -182,7 +228,8 @@
 			text: string;
 			seats?: readonly SeatId[];
 			valid?: typeof validLists;
-			roles?: CharacterId[];
+			roles?: { id: CharacterId; marked: boolean }[];
+			players?: { seatId: SeatId; marked: boolean }[];
 		} => {
 			if (!info || !has) return { text: '' };
 			if (info.kind === 'answer') {
@@ -193,9 +240,12 @@
 					: { text: `${valueText(a)}${note}` };
 			}
 			if (info.kind === 'picker') {
-				return rolePickers.length > 0
-					? { text: '', roles: roleIds(rolePickers) }
-					: { text: '', valid: validLists };
+				return {
+					text: '',
+					...(rolePickers.length > 0 ? { roles: roleIds(rolePickers) } : {}),
+					...(playerPickers.length > 0 ? { players: playerSeats(playerPickers) } : {}),
+					...(rolePickers.length === 0 && playerPickers.length === 0 ? { valid: validLists } : {})
+				};
 			}
 			const v = info.checks.find((c) => c.verdict && c.verdict.kind !== 'choose')?.verdict;
 			if (v?.kind === 'dies') return { text: 'Dead: ', seats: v.seatIds };
@@ -279,11 +329,19 @@
 				/>{/each}{#each line.valid ?? [] as v, n (n)}{n ? ', ' : ''}{#if v.seatId}<PlayerBadge
 						name={name(v.seatId)}
 					/>
-				{/if}{v.list}{/each}{#each line.roles ?? [] as id, n (id)}{n ? ', ' : ''}<CharacterBadge
-					characterId={id}
-					character={characters.get(id)}
-					interactive={false}
-				/>{/each}</span
+				{/if}{v.list}{/each}{#each line.roles ?? [] as { id, marked }, n (id)}{n ? ', ' : ''}<span
+					class="item"
+					class:marked
+					>{#if marked}<Icon name="reminder" />{/if}<CharacterBadge
+						characterId={id}
+						character={characters.get(id)}
+						interactive={false}
+					/></span
+				>{/each}{#each line.players ?? [] as { seatId, marked }, n (seatId)}{n ? ', ' : ''}<span
+					class="item"
+					class:marked
+					>{#if marked}<Icon name="reminder" />{/if}<PlayerBadge name={name(seatId)} /></span
+				>{/each}</span
 		>{/if}
 {:else if has && info}
 	<!-- A plain section under its heading, like the step's others (Trevor, 2026-10-19). -->
@@ -365,6 +423,41 @@
 						{/each}
 					</li>
 				{/each}
+				{#each playerPickers as { picker: p, players: choices } (p.seatId)}
+					<li data-unreliable={p.unreliable ? '' : undefined}>
+						{#if playerPickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span
+							>{/if}
+						<ul class="valid" aria-label="Valid information" data-testid="chosen-players">
+							{#each choices.rows as row (playerRowKey(p, row))}
+								<li data-reason={row.reason} data-marked={row.marked ? '' : undefined}>
+									<span class="main option">
+										{#if row.exact}{@render players([
+												row.target,
+												...row.seats
+											])}{:else}{@render player(row.target)}{#if row.seats.length > 0}<span
+													class="with">and two of</span
+												>
+												{@render players(row.seats)}{/if}{/if}
+									</span>
+									{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span
+										>{/if}
+									{@render reasonTag(row.reason, row.registered)}
+								</li>
+							{/each}
+							{#if choices.anyOther}
+								<li data-reason={choices.anyOther}>
+									<span class="main option"><strong>Any other</strong></span>
+									{@render reasonTag(choices.anyOther)}
+								</li>
+							{/if}
+						</ul>
+						{#each flags(p).filter((f) => !f.seats) as flag (flag.text)}
+							<span class="flag" class:warn={p.unreliable || p.mustBeFalse}>
+								{#if p.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
+							</span>
+						{/each}
+					</li>
+				{/each}
 			{:else}
 				{#each info.checks as c (c.seatId)}
 					{@const v = c.verdict}
@@ -437,7 +530,7 @@
 					>any other player</span
 				>{/if}
 		</span>
-		{#if row.marked}<span class="tag">Marked</span>{/if}
+		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
 		{@render reasonTag(row.reason, row.registered)}
 		{#if onShow}
 			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
@@ -586,6 +679,29 @@
 	}
 	.tag.warn {
 		color: var(--evil);
+	}
+	/*
+	 * A row the character's reminders on the board mark: the one the Storyteller already
+	 * chose, emphasised above the other valid rows (Trevor, 2026-10-26).
+	 */
+	.valid > li[data-marked] {
+		padding: var(--space-1) var(--space-2);
+		border-radius: var(--radius-sm);
+		background: var(--surface-selected);
+	}
+	.valid > li[data-marked] + li {
+		border-top: none;
+	}
+	.tag.marked,
+	.item.marked {
+		color: var(--heading);
+		font-weight: 600;
+	}
+	.item {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		--icon-size: 1em;
 	}
 	.compact {
 		display: block;

@@ -17,20 +17,32 @@
  * With `modifiers` on, a character that needs another in play (its `setupModifier` `requires`:
  * the Choirboy needs the King, the Huntsman the Damsel) gets it, as Grimbits' tool does: the
  * next seat to draft is offered only that character and can't refuse it, told which character
- * in play put it there. A Townsfolk seat makes room for it when its type has none open (the
+ * in play put it there (unless `dealsRequired` is off: Grimbits' "Don't force a King when
+ * Choirboy is drafted"). A Townsfolk seat makes room for it when its type has none open (the
  * Damsel, https://wiki.bloodontheclocktower.com/Huntsman). It is not forced when it is already
  * drafted, or when no seat can take it.
  *
  * Jinxed pairs (`jinxes`, the Storyteller's choice on New game, as in Grimbits' tool): with
- * `block` (the default), a character jinxed with one already drafted is not offered, unless
- * nothing else can fill the open seats; with `reduce`, it is half as likely to be offered;
- * with `allow`, jinxes don't matter. A jinxed pair in play puts the Djinn in play
+ * `allow` (the default: Trevor, 2026-10-26, "just because a character is jinxed doesn't mean
+ * that it cannot be on the script"), jinxes don't matter; with `block`, a character jinxed with
+ * one already drafted is not offered, unless nothing else can fill the open seats; with
+ * `reduce`, it is half as likely to be offered. A jinxed pair in play puts the Djinn in play
  * (https://wiki.bloodontheclocktower.com/Djinn), and some pairs can't both be in play at all
  * (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
+ *
+ * Ivory draft (`ivory`, the Storyteller's choice on New game, as in Grimbits' tool): at most
+ * one character that can make an extra evil player (its `makesExtraEvil` rule, the kind the
+ * Spirit of Ivory limits: https://wiki.bloodontheclocktower.com/Spirit_of_Ivory) is drafted;
+ * once one is, the others aren't offered, unless nothing else can fill the open seats.
+ *
+ * Redraft (Grimbits' tool): the Storyteller lets the last player draft again, optionally naming
+ * the character type. The draft goes back to just before that pick, with the character they
+ * kept set aside, so any setup change it made is undone too.
  *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
 import { setupModifierFor, type CountOp } from '#lib/core/rules/setup-modifiers.ts';
 
@@ -42,9 +54,13 @@ export interface DraftConfig {
 	modifiers?: boolean;
 	/** How a character jinxed with one already drafted is offered; left out, as `allow`. */
 	jinxes?: JinxedPairs;
+	/** Ivory draft: at most one character that makes an extra evil player. */
+	ivory?: boolean;
+	/** With `modifiers`, deal a character another needs in play; left out, on. */
+	dealsRequired?: boolean;
 }
 
-export const JINXED_PAIRS = ['block', 'reduce', 'allow'] as const;
+export const JINXED_PAIRS = ['allow', 'reduce', 'block'] as const;
 export type JinxedPairs = (typeof JINXED_PAIRS)[number];
 
 /**
@@ -94,6 +110,12 @@ export interface DraftState {
 	forcedBy?: CharacterId;
 	/** Each pool character's jinxed partners in the pool, unless `config.jinxes` is `allow`. */
 	jinxed?: Record<CharacterId, CharacterId[]>;
+	/** The pool characters that make an extra evil player, when `config.ivory` is on. */
+	extraEvil?: CharacterId[];
+	/** The draft as it was before the last pick, for a redraft. */
+	previous?: Omit<DraftState, 'previous'>;
+	/** A redraft's character type: this seat's offers are of it while it has open seats. */
+	onlyType?: SeatedType;
 }
 
 /** A character dealt to the next seat because `by` needs it in play. */
@@ -103,6 +125,10 @@ export interface ForcedPick {
 }
 
 type Random = () => number;
+
+/** Its own rules (a custom character's) or our rules file's. */
+const makesExtraEvil = (c: Character) =>
+	(c.edition === undefined ? c.rules : rulesOf(c.id))?.makesExtraEvil === true;
 
 const isSeated = (type: string): type is SeatedType =>
 	(SEATED_TYPES as readonly string[]).includes(type);
@@ -124,14 +150,15 @@ export function startDraft(
 			)
 		: undefined;
 	const ids = new Set(seated.map((c) => c.id));
-	const requires = config.modifiers
-		? Object.fromEntries(
-				seated.flatMap((c) => {
-					const needs = setupModifierFor(c)?.requires;
-					return needs && ids.has(needs) ? [[c.id, needs]] : [];
-				})
-			)
-		: {};
+	const requires =
+		config.modifiers && config.dealsRequired !== false
+			? Object.fromEntries(
+					seated.flatMap((c) => {
+						const needs = setupModifierFor(c)?.requires;
+						return needs && ids.has(needs) ? [[c.id, needs]] : [];
+					})
+				)
+			: {};
 	const jinxed: Record<CharacterId, CharacterId[]> = {};
 	if ((config.jinxes ?? 'allow') !== 'allow') {
 		for (const {
@@ -142,6 +169,7 @@ export function startDraft(
 			(jinxed[b] ??= []).push(a);
 		}
 	}
+	const extraEvil = config.ivory ? seated.filter(makesExtraEvil).map((c) => c.id) : [];
 	const state: DraftState = {
 		config,
 		slots: { ...counts },
@@ -153,7 +181,8 @@ export function startDraft(
 		offerIndex: 0,
 		...(modifiers ? { modifiers } : {}),
 		...(Object.keys(requires).length > 0 ? { requires } : {}),
-		...(Object.keys(jinxed).length > 0 ? { jinxed } : {})
+		...(Object.keys(jinxed).length > 0 ? { jinxed } : {}),
+		...(extraEvil.length > 0 ? { extraEvil } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
 }
@@ -180,6 +209,8 @@ export function refuseOffer(state: DraftState, random: Random): DraftState {
 export function takeOffer(state: DraftState, id: CharacterId, random: Random): DraftState {
 	if (!state.offer.includes(id)) return state;
 	const type = state.types[id];
+	const previous: DraftState = { ...state };
+	delete previous.previous;
 	let next = setAside(
 		state,
 		state.offer.filter((x) => x !== id)
@@ -189,9 +220,11 @@ export function takeOffer(state: DraftState, id: CharacterId, random: Random): D
 		pool: next.pool.filter((x) => x !== id),
 		picks: [...state.picks, id],
 		slots: { ...next.slots, [type]: next.slots[type] - 1 },
-		offerIndex: 0
+		offerIndex: 0,
+		previous
 	};
 	delete next.forcedBy;
+	delete next.onlyType;
 	next = forceRequired(next, id);
 	const ops = next.modifiers?.[id] ?? [];
 	if (ops.length > 0) {
@@ -221,6 +254,36 @@ export function answerAsk(state: DraftState, total: number, random: Random): Dra
  * The next seat's offer: the first character still to be forced, which can't be refused, or
  * else a fresh offer. A forced character whose type no longer has an open seat is dropped.
  */
+/**
+ * Whether the last pick can be drafted again; also while its setup change waits on the
+ * Storyteller, so a Legion can be rejected (Grimbits: the player picks again).
+ */
+export const canRedraft = (state: DraftState) => state.previous !== undefined;
+
+/**
+ * The last player drafts again: the draft as it was before their pick, the character they kept
+ * set aside, and a fresh offer, of `type` only when given.
+ */
+export function redraft(
+	state: DraftState,
+	type: SeatedType | undefined,
+	random: Random
+): DraftState {
+	const back = state.previous;
+	const kept = state.picks.at(-1);
+	if (!back || kept === undefined || !canRedraft(state)) return state;
+	let next: DraftState = {
+		...back,
+		pool: back.pool.filter((x) => x !== kept),
+		discarded: [...back.discarded.filter((x) => x !== kept), kept],
+		offerIndex: 0
+	};
+	delete next.forcedBy;
+	if (type && next.slots[type] > 0) next = { ...next, onlyType: type };
+	else delete next.onlyType;
+	return withOffer(next, next.config.offers[0] ?? 1, random);
+}
+
 function nextOffer(state: DraftState, random: Random): DraftState {
 	let next = state;
 	while (next.forced?.length) {
@@ -365,11 +428,21 @@ function withOffer(state: DraftState, size: number, random: Random): DraftState 
 
 function makeOffer(state: DraftState, size: number, random: Random): CharacterId[] {
 	let candidates = state.pool.filter((id) => state.slots[state.types[id]] > 0);
+	if (state.onlyType) {
+		const of = candidates.filter((id) => state.types[id] === state.onlyType);
+		if (of.length > 0) candidates = of;
+	}
 	const picked = new Set(state.picks);
 	const clashes = (id: CharacterId) => state.jinxed?.[id]?.some((x) => picked.has(x)) ?? false;
 	if (state.config.jinxes === 'block') {
 		// Blocked unless nothing else can fill the open seats, so the draft can always finish.
 		const clear = candidates.filter((id) => !clashes(id));
+		if (clear.length > 0) candidates = clear;
+	}
+	if (state.extraEvil?.some((id) => picked.has(id))) {
+		// Ivory draft: one is in, so no other, unless nothing else can fill the open seats.
+		const others = new Set(state.extraEvil);
+		const clear = candidates.filter((id) => !others.has(id));
 		if (clear.length > 0) candidates = clear;
 	}
 	if (state.config.oneTypePerOffer && candidates.length > 0) {

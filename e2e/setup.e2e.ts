@@ -358,12 +358,20 @@ test('Fabled and Loric are added from their own closed sections, not to the bag'
 });
 
 // Trevor, 2026-10-18: New game's count stopped at 15; stress tests need more players.
-test('New game and character selection take more than 15 players', async ({ page }) => {
-	await selectionFor(page, 24);
+// Trevor, 2026-10-26: New game stops at 20 for one game; character selection goes on to 40.
+test('New game takes up to 20 players, and character selection more', async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	const more = page.getByRole('button', { name: 'More players' });
+	for (let n = 8; n < 20; n++) await more.tap();
+	await expect(page.getByTestId('player-count')).toHaveText('20');
+	await expect(more).toBeDisabled();
+
+	await selectionFor(page, 20);
 	// Beyond 15 the sheet's 15+ column applies (https://wiki.bloodontheclocktower.com/Setup).
 	await expect(page.getByTestId('setup-table').locator('thead [data-current]')).toHaveText('15+');
 	await page.getByRole('button', { name: 'More players' }).tap();
-	await expect(page.getByTestId('player-count')).toHaveText('25');
+	await expect(page.getByTestId('player-count')).toHaveText('21');
 });
 
 // Trevor, 2026-10-26: New game made seats for 40, Character selection lowered it to 10, and
@@ -576,44 +584,28 @@ test('with Require a name, the token stays hidden until a name is typed', async 
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 });
 
-test('the player picks their name from names used before, instead of typing', async ({ page }) => {
-	// Trevor, 2026-10-19: on the pass-the-phone draw, "select your name from a list".
+test('with no room, the draw offers no names, even ones kept by earlier builds', async ({
+	page
+}) => {
+	// Trevor, 2026-10-26: "all that should matter is what people names are connected to ppl
+	// scanned into the room".
 	await selectionFor(page, 5);
 	await page.evaluate(() =>
-		localStorage.setItem('grim-games:player-names:v1', JSON.stringify(['Ana', 'Ben']))
+		localStorage.setItem('grim-games:player-names:v1', JSON.stringify(['Ana', 'Alex']))
 	);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
-	const reveal = page.getByTestId('reveal');
-	await reveal.getByRole('button', { name: 'Pick your name' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
-	await expect(sheet.getByRole('button')).toHaveText(['Ana', 'Ben']);
-	await sheet.getByRole('button', { name: 'Ben' }).tap();
-	await expect(sheet).toBeHidden();
-	await expect(reveal.getByRole('textbox', { name: 'Name' })).toHaveValue('Ben');
-	await page.getByRole('button', { name: 'Confirm' }).tap();
-
-	// Ben has a seat now, so the next player is offered Ana only.
-	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
-	await reveal.getByRole('button', { name: 'Pick your name' }).tap();
-	await expect(sheet.getByRole('button')).toHaveText(['Ana']);
-	await sheet.getByRole('button', { name: 'Ana' }).tap();
-	await page.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByRole('button', { name: 'Tile 2, drawn' })).toBeDisabled();
+	await expect(
+		page.getByTestId('reveal').getByRole('button', { name: 'Pick your name' })
+	).toBeDisabled();
 });
 
-test("the names to pick are the room's phones first, then names from earlier games", async ({
-	page,
-	browser
-}, testInfo) => {
-	// Trevor, 2026-10-25: a brand-new game offered names from earlier games as if they were
-	// this game's; those now sit under their own heading.
+test("the player picks their name from the room's phones", async ({ page, browser }, testInfo) => {
+	// Trevor, 2026-10-19: on the draw, "select your name from a list"; 2026-10-26: only the
+	// names of phones in the room.
 	await selectionFor(page, 5);
 	const setup = new URL(page.url()).pathname;
-	await page.evaluate(() =>
-		localStorage.setItem('grim-games:player-names:v1', JSON.stringify(['Ana', 'Alex']))
-	);
 	await page.goto(setup.replace(/\/setup$/, '/room'));
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
@@ -631,14 +623,18 @@ test("the names to pick are the room's phones first, then names from earlier gam
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
-	await page.getByTestId('reveal').getByRole('button', { name: 'Pick your name' }).tap();
+	const reveal = page.getByTestId('reveal');
+	await reveal.getByRole('button', { name: 'Pick your name' }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
-	await expect(sheet.getByRole('region', { name: 'In the room' }).getByRole('button')).toHaveText([
-		'Alex'
-	]);
-	await expect(sheet.getByRole('region', { name: 'Earlier games' }).getByRole('button')).toHaveText(
-		['Ana']
-	);
+	await expect(sheet.getByRole('button')).toHaveText(['Alex']);
+	await sheet.getByRole('button', { name: 'Alex' }).tap();
+	await expect(sheet).toBeHidden();
+	await expect(reveal.getByRole('textbox', { name: 'Name' })).toHaveValue('Alex');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+
+	// Alex has a seat now, so the next player has no name to pick.
+	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
+	await expect(reveal.getByRole('button', { name: 'Pick your name' })).toBeDisabled();
 	await phoneContext.close();
 });
 
@@ -1394,6 +1390,27 @@ test('the locked draw goes into history only after the PIN sheet has gone', asyn
 		before
 	);
 	for (const push of pushes) expect(push).toEqual({ dialog: false, digits: '' });
+});
+
+// Trevor (2026-10-26, playtest): one PIN per game. Set on the first lock, it stays after
+// unlocking, so locking again is one tap; Forgot PIN removes it, and the next lock sets one.
+test('the game keeps its PIN: locking again needs no new one', async ({ page }) => {
+	await lockedDraw(page);
+	const lock = page.getByTestId('draw-lock');
+	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
+	await lock.tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'false');
+	// One tap locks again, with no Lock the draw sheet.
+	await lock.tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.getByRole('dialog', { name: 'Lock the draw' })).toHaveCount(0);
+	// The same PIN unlocks it.
+	await lock.tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({

@@ -126,6 +126,17 @@ export function pickableCharacters(mode: GameMode, characters: readonly Characte
 }
 
 /**
+ * Characters a player can secretly be while holding the Townsfolk they kept: an Outsider
+ * with an "Is The …" token, the Drunk (https://wiki.bloodontheclocktower.com/Drunk). A draft
+ * can't offer it (`pickableCharacters`), so the Storyteller picks which drafted Townsfolk is
+ * really it once the draft is done, as Grimbits' draft tool does
+ * (https://grimbits.com/draft-buffet/).
+ */
+export function hiddenAsTownsfolk(characters: readonly Character[]): Character[] {
+	return characters.filter((c) => c.type === 'outsider' && isReplacedAfterDraw(c));
+}
+
+/**
  * Whether this app runs the part as the mode sets it; any other part is shown in Inspect and
  * run by the Storyteller. Parts a mode leaves out are standard, which the app always runs.
  */

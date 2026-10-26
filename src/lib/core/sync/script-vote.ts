@@ -7,6 +7,7 @@
  */
 
 /** How players vote: one script, any number of them, or all of them in order. */
+import type { PlayerName } from '#lib/core/data/index.ts';
 import { authorLogo, editionLogo, LOGO_EDITIONS } from '#lib/core/data/script-logo.ts';
 
 export type ScriptVoteKind = 'single' | 'multiple' | 'ranked';
@@ -34,6 +35,12 @@ export interface ScriptVoteOption {
 	 * from a game-mode vote and from apps before it.
 	 */
 	characters?: ScriptVoteCharacter[];
+}
+
+/** Someone counted in the vote: their name, if they gave one, and whether they have voted. */
+export interface VotePerson {
+	name?: PlayerName;
+	voted: boolean;
 }
 
 /** A character on an offered script, as BotC Scripts lists one: enough for a badge. */
@@ -94,8 +101,16 @@ export interface ScriptVoteTally {
 	out?: Record<string, number>;
 	/** A ranked vote: the option with more than half the ballots; none on a tie. */
 	winner?: string;
+	/** A ranked vote: each round's count of the options still in (rankedRunoff). */
+	rounds?: Record<string, number>[];
 	voted: number;
 	members: number;
+	/**
+	 * Who is counted, in the room's order, and whether each has voted: never what they chose
+	 * (Trevor, 2026-10-26: the same accurate, live count for players and the Storyteller).
+	 * `name` is absent for a phone that has not given one yet.
+	 */
+	people?: VotePerson[];
 	endsAt?: number;
 	finalCall?: true;
 	showTally?: true;
@@ -280,6 +295,7 @@ export function tallyScriptVote(vote: ScriptVote, memberIds: readonly string[]):
 		points,
 		...(runoff ? { out: runoff.out } : {}),
 		...(runoff?.winner ? { winner: runoff.winner } : {}),
+		...(runoff ? { rounds: runoff.rounds } : {}),
 		voted: counted.length,
 		members: members.size,
 		...(vote.endsAt !== undefined ? { endsAt: vote.endsAt } : {}),

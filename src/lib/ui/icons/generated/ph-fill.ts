@@ -133,6 +133,7 @@ import ph_moon_stars_fill from '~icons/ph/moon-stars-fill';
 import ph_note_pencil_fill from '~icons/ph/note-pencil-fill';
 import ph_notepad_fill from '~icons/ph/notepad-fill';
 import ph_paint_brush_fill from '~icons/ph/paint-brush-fill';
+import ph_paint_bucket_fill from '~icons/ph/paint-bucket-fill';
 import ph_palette_fill from '~icons/ph/palette-fill';
 import ph_pause_fill from '~icons/ph/pause-fill';
 import ph_pause_circle_fill from '~icons/ph/pause-circle-fill';
@@ -345,6 +346,7 @@ const icons: IconMap = {
 	'ph:note-pencil-fill': ph_note_pencil_fill,
 	'ph:notepad-fill': ph_notepad_fill,
 	'ph:paint-brush-fill': ph_paint_brush_fill,
+	'ph:paint-bucket-fill': ph_paint_bucket_fill,
 	'ph:palette-fill': ph_palette_fill,
 	'ph:pause-fill': ph_pause_fill,
 	'ph:pause-circle-fill': ph_pause_circle_fill,

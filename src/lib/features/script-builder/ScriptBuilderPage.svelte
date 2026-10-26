@@ -12,7 +12,12 @@
 		type GameData,
 		type LoadedScript
 	} from '#lib/core/data/index.ts';
-	import { builtScriptJson, EXPECTED_SCRIPT_COUNTS, scriptFacts } from '#lib/core/rules/index.ts';
+	import {
+		builtScriptJson,
+		expectedScriptCounts,
+		MAX_EXPECTED_COUNT,
+		scriptFacts
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
@@ -50,6 +55,7 @@
 	import type { ScriptRow } from '#lib/features/library/ScriptPane.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import { fileNameFor } from '#lib/ui/download.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
@@ -271,8 +277,13 @@
 	const infoPage = $derived(
 		info ? (homebrewSet?.credits[info.id]?.url ?? d.credits[info.id]?.url) || undefined : undefined
 	);
-	/** What a full or Teensyville script usually has of each seated type: a guide, never a limit. */
-	const expected = $derived(EXPECTED_SCRIPT_COUNTS[d.teensyville ? 'teensyville' : 'full']);
+	/**
+	 * What the script should have of each seated type: a full or Teensyville script's usual
+	 * counts, or what the builder set (Trevor, 2026-10-26). A guide, never a limit.
+	 */
+	const size = $derived(d.teensyville ? 'teensyville' : 'full');
+	const expected = $derived(expectedScriptCounts(size, d.expected));
+	let expectedOpen = $state(false);
 	const savedRecord = $derived(recentScripts.list.find((s) => s.scriptId === d.editing));
 	const isSaved = $derived(
 		!!savedRecord && !!builtJson && sameScript(savedRecord, { json: builtJson })
@@ -457,6 +468,18 @@
 					checked={!!d.teensyville}
 					onChange={(on) => draft.setTeensyville(on)}
 				/>
+				<!-- Each type's count to check against, when this script differs (Trevor, 2026-10-26). -->
+				<div class="expected">
+					<span id="builder-expected-label">{t('script-builder.expected')}</span>
+					<Button
+						variant="field"
+						aria-labelledby="builder-expected-label builder-expected"
+						id="builder-expected"
+						data-testid="builder-expected"
+						onclick={() => (expectedOpen = true)}
+						>{SEATED.map((type) => expected[type]).join(' / ')}</Button
+					>
+				</div>
 				<!-- Always shown, so opening a script never moves the page. -->
 				<p class="variation" data-testid="variation-of">
 					<span>{t('script-builder.variationOf')}</span>
@@ -729,6 +752,31 @@
 	</div>
 </Dialog>
 
+<Dialog bind:open={expectedOpen} title={t('script-builder.expected')}>
+	{#snippet headActions()}<IconButton
+			icon="reset"
+			label={t('script-builder.expectedReset')}
+			disabled={!d.expected}
+			onclick={() => draft.resetExpected()}
+		/>{/snippet}
+	<div class="expected-steppers">
+		{#each SEATED as type (type)}
+			<span class="label" data-type={type}>{TYPE_PLURALS[type]}</span>
+			<Stepper
+				value={expected[type]}
+				label={TYPE_PLURALS[type]}
+				lessLabel={t('script-builder.expectedLess', { type: TYPE_PLURALS[type] })}
+				moreLabel={t('script-builder.expectedMore', { type: TYPE_PLURALS[type] })}
+				min={0}
+				max={MAX_EXPECTED_COUNT}
+				typeable
+				testid="expected-set-{type}"
+				onchange={(n) => draft.setExpected(type, n)}
+			/>
+		{/each}
+	</div>
+</Dialog>
+
 <ConfirmDialog
 	bind:open={replaceOpen}
 	title={t('script-builder.openReplace', { name: replacing?.name || t('common.none') })}
@@ -760,6 +808,22 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
+	}
+	/* A row like the Teensyville switch above it: its name, then the control at the end. */
+	.expected {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		min-height: var(--tap-target);
+		font-family: var(--font-control);
+	}
+	.expected-steppers {
+		display: grid;
+		grid-template-columns: auto auto;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2) var(--space-4);
 	}
 	.variation {
 		display: flex;

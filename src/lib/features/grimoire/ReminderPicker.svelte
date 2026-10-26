@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import ReminderGroupRow from '#lib/features/characters/ReminderGroupRow.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -178,50 +178,43 @@
 	</div>
 	<ul class="list">
 		{#each groups as group (group.character.id)}
-			<li>
-				<span class="who">
-					<CharacterToken character={group.character} size={32} />
-					<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
-					<span class="name">{group.character.name}</span>
-				</span>
-				<span class="chips" role="group" aria-label={group.character.name}>
-					{#each group.labels as label (label)}
-						{@const reminder = { characterId: group.character.id, label }}
-						{#each copies(reminder) as copy, i (i)}
-							<button
-								type="button"
-								class="chip"
-								class:misfit={!copy.on && misfit(reminder)}
-								data-misfit={!copy.on && misfit(reminder) ? '' : undefined}
-								aria-label={copy.label}
-								title={!copy.on && misfit(reminder) ? 'Not a usual place for it' : undefined}
-								aria-pressed={copy.on}
-								disabled={copy.done && !copy.holder}
-								onclick={() => toggle(reminder, copy)}
+			<ReminderGroupRow character={group.character}>
+				{#each group.labels as label (label)}
+					{@const reminder = { characterId: group.character.id, label }}
+					{#each copies(reminder) as copy, i (i)}
+						<button
+							type="button"
+							class="chip"
+							class:misfit={!copy.on && misfit(reminder)}
+							data-misfit={!copy.on && misfit(reminder) ? '' : undefined}
+							aria-label={copy.label}
+							title={!copy.on && misfit(reminder) ? 'Not a usual place for it' : undefined}
+							aria-pressed={copy.on}
+							disabled={copy.done && !copy.holder}
+							onclick={() => toggle(reminder, copy)}
+						>
+							<ReminderToken {label} character={group.character} done={copy.done} />
+							{#if copy.count !== undefined}<span class="count-badge" aria-hidden="true"
+									>×{copy.count}</span
+								>{/if}
+							<!-- Who has it; the line is kept when empty, so nothing moves. -->
+							<span class="holder" aria-hidden="true" data-testid="reminder-holder"
+								>{copy.holder ? holderName(copy.holder.seatId) : ''}</span
 							>
-								<ReminderToken {label} character={group.character} done={copy.done} />
-								{#if copy.count !== undefined}<span class="count-badge" aria-hidden="true"
-										>×{copy.count}</span
-									>{/if}
-								<!-- Who has it; the line is kept when empty, so nothing moves. -->
-								<span class="holder" aria-hidden="true" data-testid="reminder-holder"
-									>{copy.holder ? holderName(copy.holder.seatId) : ''}</span
-								>
-							</button>
-						{/each}
-						<!-- Always there for a script's own character, so nothing moves when it is needed. -->
-						{#if canAddCopy(group.character)}
-							<button
-								type="button"
-								class="chip another"
-								aria-label={`Add another ${label}`}
-								disabled={!usedUp(reminder)}
-								onclick={() => addCopy(reminder)}><Icon name="add" /></button
-							>
-						{/if}
+						</button>
 					{/each}
-				</span>
-			</li>
+					<!-- Always there for a script's own character, so nothing moves when it is needed. -->
+					{#if canAddCopy(group.character)}
+						<button
+							type="button"
+							class="chip another"
+							aria-label={`Add another ${label}`}
+							disabled={!usedUp(reminder)}
+							onclick={() => addCopy(reminder)}><Icon name="add" /></button
+						>
+					{/if}
+				{/each}
+			</ReminderGroupRow>
 		{/each}
 	</ul>
 </Dialog>
@@ -257,34 +250,6 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		list-style: none;
-	}
-	.list li {
-		display: grid;
-		/* The chips column may shrink, so its chips wrap instead of widening the dialog. */
-		grid-template-columns: minmax(calc(8 * var(--u)), 35%) minmax(0, 1fr);
-		align-items: center;
-		gap: var(--space-2);
-		padding: calc(0.125 * var(--u)) 0;
-		border-bottom: 1px solid var(--border);
-	}
-	.who {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-width: 0;
-	}
-	.name {
-		overflow: hidden;
-		font-family: var(--font-character);
-		font-size: 0.85rem;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-		padding: var(--space-1) 0;
 	}
 	/* Big, easy targets (Trevor, 2026-10-16). The Reminder size setting is for the board only
 	   (Trevor, 2026-10-19), so a sheet never outgrows the screen. */

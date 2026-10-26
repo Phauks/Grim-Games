@@ -42,7 +42,7 @@
 	import SeatMenu from './SeatMenu.svelte';
 	import SeatReminderMenu from './SeatReminderMenu.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
-	import { pastNames, suggestNames } from './device-notes.ts';
+	import { suggestNames } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ReminderPicker from './ReminderPicker.svelte';
@@ -103,21 +103,17 @@
 		seat?.alignment === 'evil' ? 'Evil' : seat?.alignment === 'good' ? 'Good' : 'None'
 	);
 
-	// ── Name, with suggestions from names used before on this device ──
+	// ── Name, with suggestions from the room's phones (Trevor, 2026-10-26) ──
 	// A different seat (or the same seat renamed elsewhere) resets the field.
 	let typed = $derived(seat?.playerName ?? '');
-	let past = $state<string[]>([]);
-	$effect(() => {
-		if (open) past = pastNames.read();
-	});
 	const taken = $derived(
 		game.seating.flatMap((id) =>
 			id !== seatId && game.seats[id].playerName ? [game.seats[id].playerName!] : []
 		)
 	);
-	// The room's phones connected now without a seat come before names from earlier games.
+	// Only the room's phones connected now without a seat, never names from earlier games.
 	const inRoom = $derived(roomHost().connectedUnseated.flatMap((m) => (m.name ? [m.name] : [])));
-	const suggestions = $derived(suggestNames([...inRoom, ...past], typed, taken));
+	const suggestions = $derived(suggestNames(inRoom, typed, taken));
 
 	// The name is edited in place in the sheet's header: the input takes the name's spot.
 	let editingName = $state(false);
@@ -450,7 +446,7 @@
 	/>
 	{#if seat && seatId}
 		<div class="sheet">
-			<!-- Names used before on this device, laid over the sheet so nothing moves. -->
+			<!-- The room's phones' names, laid over the sheet so nothing moves. -->
 			{#if editingName && suggestions.length > 0}
 				<div class="suggestions" aria-label="Name suggestions" role="group">
 					{#each suggestions as name (name)}
