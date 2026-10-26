@@ -48,7 +48,8 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await nameSeat(page, board, 2, 'Alex');
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 2 as Alex.');
+	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '2');
+	await expect(phone.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
 	// Nothing to see before the deal.
 	await expect(phone.getByTestId('your-character')).toHaveCount(0);
 
@@ -115,7 +116,8 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Sam');
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await nameSeat(page, board, 1, 'Sam');
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 1 as Sam.');
+	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
+	await expect(phone.getByRole('button', { name: 'Your settings: Sam' })).toBeVisible();
 	await page.goto(`${board}/room`);
 	await page.getByText('Players can see their character', { exact: true }).tap();
 

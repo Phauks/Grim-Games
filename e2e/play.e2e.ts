@@ -105,7 +105,6 @@ test('the settings cog at the top sets the text size, Pinch to zoom and the shee
 	// players. Move name into an edit button in the top", then "a settings cog in player script
 	// view where they select various text sizes settings and their name".
 	const cog = page.getByRole('button', { name: 'Your settings' });
-	await expect(cog).toHaveText('Settings');
 	await cog.tap();
 	const sheet = page.getByRole('dialog', { name: 'Your settings' });
 	await expect(sheet).toBeVisible();
@@ -205,9 +204,11 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 	const menu = page.getByRole('button', { name: 'Menu', exact: true });
 	const title = page.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
 	const [m, h] = [(await menu.boundingBox())!, (await title.boundingBox())!];
-	// Level with the title's first line: on a phone, three header buttons can wrap the name.
-	expect(Math.abs(m.y - h.y)).toBeLessThan(m.height / 2);
-	expect(m.x + m.width).toBeLessThanOrEqual(h.x);
+	// Level with the header's buttons, the title under them (Trevor, 2026-10-26: "move the
+	// script name down from the top of player view, still in header area, but lower").
+	const cog = (await page.getByRole('button', { name: 'Your settings' }).boundingBox())!;
+	expect(Math.abs(m.y - cog.y)).toBeLessThan(m.height / 2);
+	expect(h.y).toBeGreaterThanOrEqual(m.y + m.height - 1);
 
 	await menu.tap();
 	const drawer = page.getByRole('dialog', { name: APP_NAME });
@@ -560,12 +561,12 @@ test('the header shares the script from an icon and has no Code button', async (
 	await expect(page.getByTestId('script-byline')).toHaveCount(0);
 	// Players are already in a script, so there is no code to enter here (Trevor, 2026-10-16).
 	await expect(page.getByRole('button', { name: 'Code', exact: true })).toHaveCount(0);
-	// Print and Share sit on the title's line, phones included (Trevor, 2026-10-19).
+	// Print and Share sit on one line above the title, phones included (Trevor, 2026-10-19;
+	// the title moved under them 2026-10-26).
 	const title = await page.getByRole('heading', { name: 'Code Night', level: 1 }).boundingBox();
 	for (const name of ['Print script', 'Share script']) {
 		const icon = await page.getByRole('button', { name }).boundingBox();
-		expect(icon!.y).toBeLessThan(title!.y + title!.height);
-		expect(icon!.y + icon!.height).toBeGreaterThan(title!.y);
+		expect(icon!.y + icon!.height).toBeLessThanOrEqual(title!.y + 1);
 	}
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
@@ -676,12 +677,23 @@ test('a jinxed character shows its partners beside its name, and tapping shows t
 	expect(line).toBe('solid');
 });
 
-test('the title line’s sheet background, Print and Share are one kind of button', async ({
+test('the title line’s sheet background, Print, Share and settings cog are one kind of button', async ({
 	page
 }) => {
-	// Trevor, 2026-10-26: the paint bucket "should be the same as other buttons it is in the same line as".
+	// Trevor, 2026-10-26: the paint bucket "should be the same as other buttons it is in the same
+	// line as"; then "Settings cog should be like other buttons for players".
 	const row = page.getByRole('banner').or(page.locator('header')).first();
-	await expectMatchingIconRow(row, ['Sheet background', 'Print script', 'Share script']);
+	await expectMatchingIconRow(row, [
+		'Sheet background',
+		'Print script',
+		'Share script',
+		'Your settings'
+	]);
+	// The script's name sits under them, clear of the buttons and the hamburger (Trevor,
+	// 2026-10-26: "move the script name down from the top of player view").
+	const cog = (await row.getByRole('button', { name: 'Your settings' }).boundingBox())!;
+	const title = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
+	expect(title.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
 });
 
 test('the Script sheet can be made compact from Settings', async ({ page }) => {
@@ -916,7 +928,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await page.goto(`/join/${code}`);
 	const row = page.getByTestId('you-row');
 	await expect(page.getByTestId('join-status')).toHaveText(
-		'Set your name with Settings at the top.'
+		'Set your name with the settings cog at the top.'
 	);
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await page.getByTestId('you-button').tap();
@@ -924,9 +936,10 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await sheet.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await sheet.getByRole('button', { name: 'Save' }).tap();
 	await expect(sheet).toBeHidden();
-	await expect(page.getByTestId('join-status')).toHaveText('You are in the room as Alex.');
-	// The name shows on You at the top (plan E2).
-	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toHaveText('Alex');
+	await expect(page.getByTestId('join-status')).toHaveText('');
+	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	// The cog at the top is named for it (plan E2).
+	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
 
 	// The row stays over every tab.
 	await openTab(page, 'Notes');
@@ -945,6 +958,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 
 	// /play itself shows the same room, while the phone is in it.
 	await page.goto('/play');
-	await expect(page.getByTestId('join-status')).toHaveText('You are in the room as Alex.');
+	await expect(page.getByTestId('join-status')).toHaveText('');
+	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
 	await st.context().close();
 });

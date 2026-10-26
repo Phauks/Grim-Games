@@ -109,7 +109,8 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await sheet.getByRole('button', { name: 'Save' }).tap();
 	// Saving closes the sheet.
 	await expect(sheet).toBeHidden();
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in the room as Alex.');
+	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expect(phone.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
 	// Joining moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
 	// script"); the Room tab keeps the seat's state.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
@@ -127,7 +128,8 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(alex).toHaveText(/^Alex\s*No seat$/);
 	await nameSeat(page, 3, 'Alex');
 
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
+	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(phone.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(phone.getByTestId('grim-seat').nth(2)).toHaveAttribute(
 		'aria-label',
@@ -137,7 +139,8 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	const rename = await seatSheet(phone);
 	await rename.getByRole('textbox', { name: 'Your name' }).fill('Alex K');
 	await rename.getByRole('button', { name: 'Save' }).tap();
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex K.');
+	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(phone.getByRole('button', { name: 'Your settings: Alex K' })).toBeVisible();
 	await page.goto(`${board}/room`);
 	await expect(alex).toHaveText(/^Alex K\s*Seat 3$/);
 
@@ -157,7 +160,8 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
 	// A phone with a seat opens on the script.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex K.');
+	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(phone.getByRole('button', { name: 'Your settings: Alex K' })).toBeVisible();
 	const again = await seatSheet(phone);
 	await expect(again.getByRole('textbox', { name: 'Your name' })).toHaveValue('Alex K');
 	await expect(again.getByRole('button', { name: 'Save' })).toBeDisabled();
@@ -200,7 +204,7 @@ test('End game keeps the room open and tells its phones the game is over', async
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
-	await expect(status).toHaveText('Set your name with Settings at the top.');
+	await expect(status).toHaveText('Set your name with the settings cog at the top.');
 
 	await page.goto(board);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -226,7 +230,7 @@ test('End game keeps the room open and tells its phones the game is over', async
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(status).toHaveText('Set your name with Settings at the top.');
+	await expect(status).toHaveText('Set your name with the settings cog at the top.');
 	await phoneContext.close();
 });
 
@@ -244,7 +248,7 @@ test('once the game has ended the Storyteller can close the room, which sends ev
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await expect(phone.getByTestId('join-status')).toHaveText(
-		'Set your name with Settings at the top.'
+		'Set your name with the settings cog at the top.'
 	);
 
 	await page.goto(board);
@@ -287,7 +291,7 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
-	await expect(status).toHaveText('Set your name with Settings at the top.');
+	await expect(status).toHaveText('Set your name with the settings cog at the top.');
 	// Hidden until the game is over.
 	const rate = phone.getByRole('button', { name: 'Rate game' });
 	await expect(rate).toHaveCount(0);
@@ -384,7 +388,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
-	await expect(status).toHaveText('Set your name with Settings at the top.');
+	await expect(status).toHaveText('Set your name with the settings cog at the top.');
 	// Not there during the game, where it would do nothing (Trevor, 2026-10-25).
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	const finalSwitch = phone.getByRole('checkbox', { name: 'Final grimoire' });
@@ -440,7 +444,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(status).toHaveText('Set your name with Settings at the top.');
+	await expect(status).toHaveText('Set your name with the settings cog at the top.');
 	await expect(final).toHaveCount(0);
 	await expect(finalSwitch).toHaveCount(0);
 	await phoneContext.close();
@@ -518,7 +522,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
-	await expect(status).toHaveText('Set your name with Settings at the top.');
+	await expect(status).toHaveText('Set your name with the settings cog at the top.');
 
 	await page.goto(board);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -671,7 +675,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	// The same room carries the next game: its script, and seats to ask for again.
-	await expect(status).toHaveText('Set your name with Settings at the top.');
+	await expect(status).toHaveText('Set your name with the settings cog at the top.');
 	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
 	await phoneContext.close();
 });
@@ -946,7 +950,7 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await expect(phone.getByTestId('join-status')).toHaveText(
-		'Set your name with Settings at the top.'
+		'Set your name with the settings cog at the top.'
 	);
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 	await expect(phone.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
@@ -2080,7 +2084,8 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
 	await nameSeat(page, 3, 'Alex Kim');
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex Kim.');
+	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(phone.getByRole('button', { name: 'Your settings: Alex Kim' })).toBeVisible();
 
 	// On the board: the seat has no character yet, so the initials are its face.
 	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex Kim"]');

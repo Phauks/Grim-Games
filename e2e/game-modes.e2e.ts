@@ -2328,8 +2328,13 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 	await expectMatchingIconRow(choice.locator('xpath=..'), [
 		'Sheet background',
 		'Print script',
-		'Share script'
+		'Share script',
+		'Your settings'
 	]);
+	// The name under the buttons, as on /play (Trevor, 2026-10-26).
+	const cog = (await sheet.getByRole('button', { name: 'Your settings' }).boundingBox())!;
+	const name = (await sheet.getByRole('heading', { name: 'Trouble Brewing' }).boundingBox())!;
+	expect(name.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
 	await trigger.tap();
 	await page.getByRole('option', { name: 'Grey' }).tap();
 	await expect(sheet.getByTestId('script-copy')).toHaveCSS(
@@ -2346,4 +2351,30 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 	const sections = sheet.getByTestId('script-copy').locator('.sheet > section');
 	await expect(sections.nth(1)).not.toHaveCSS('border-top-width', '0px');
 	await expect(sections.first()).toHaveCSS('border-top-width', '0px');
+});
+
+test('the Script sheet has the players’ settings cog, opening their own sheet', async ({
+	page
+}) => {
+	// Trevor, 2026-10-26: "settings does not show up in storyteller view of player view. This
+	// should always be parity and invoke same parts".
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	await sheet.getByRole('button', { name: 'Your settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Your settings' });
+	await expect(settings.getByRole('slider', { name: 'Text size' })).toBeVisible();
+	// No room phone here, so no name to set.
+	await expect(settings.getByRole('textbox', { name: 'Your name' })).toHaveCount(0);
+	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
+	await page.getByRole('option', { name: 'Compact', exact: true }).tap();
+	// The Script sheet underneath changes at once (it is hidden from the accessibility tree
+	// while the settings sheet is open, so found by its copy).
+	await expect(page.locator('[data-testid="script-copy"] [data-density="compact"]')).toHaveCount(1);
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
+	await expect(sheet).toBeVisible();
 });

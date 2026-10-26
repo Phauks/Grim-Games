@@ -2,7 +2,7 @@
 	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextSizeRows from '#lib/features/settings/sections/TextSizeRows.svelte';
@@ -14,9 +14,11 @@
 	 * The player screen's own settings (plan E2, Trevor 2026-10-26: "easier access to
 	 * accessibility, zoom, font size for players. Move name into an edit button in the top";
 	 * then "a settings cog in player script view where they select various text sizes settings
-	 * and their name"): a cog at the top of the page with this phone's name in its room beside
-	 * it, opening one sheet with that name, then Text size, Pinch to zoom and the Script sheet's
-	 * density, which change the page at once, as in Settings > Text and Settings > Player.
+	 * and their name"): a cog among the title's icon buttons, the same button as Print and Share
+	 * beside it (Trevor, 2026-10-26: "Settings cog should be like other buttons for players"),
+	 * opening one sheet with this phone's name in its room, then Text size, Pinch to zoom and
+	 * the Script sheet's density, which change the page at once, as in Settings > Text and
+	 * Settings > Player. The board's Script shows it too, without the name (parity).
 	 */
 	interface Props {
 		/** The room this phone is in; without one there is no name to set. */
@@ -58,15 +60,14 @@
 	}
 </script>
 
-<!-- The cog, with the name it shows in the room, or "Settings" before it has one. -->
-<Button
-	variant="quiet"
+<!-- The cog; its name says the name this phone shows in the room, once it has one. -->
+<IconButton
 	icon="settings"
 	aria-haspopup="dialog"
-	aria-label={me ? t('room.yourSettingsNamed', { name: me }) : t('room.yourSettings')}
+	label={me ? t('room.yourSettingsNamed', { name: me }) : t('room.yourSettings')}
 	data-testid="you-button"
-	onclick={() => (open = true)}><span class="name">{me || t('settings.title')}</span></Button
->
+	onclick={() => (open = true)}
+/>
 
 <Dialog bind:open title={t('room.yourSettings')}>
 	<form onsubmit={save}>
@@ -101,15 +102,6 @@
 		gap: var(--space-3);
 		align-content: start;
 		min-width: 0;
-	}
-	/* A long name never widens the line: it ends in an ellipsis. */
-	.name {
-		display: inline-block;
-		vertical-align: bottom;
-		max-width: calc(10 * var(--u));
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	.rows {
 		display: grid;
