@@ -79,7 +79,12 @@
 	}
 
 	const offlineCode = $derived(offline ? made?.offline : undefined);
-	const url = $derived(offline ? offlineCode?.url : (roomLink ?? made?.url));
+	// `made` is read first, every time: in a room the room's link used to stand in for it, and
+	// the offline code then never showed once its link arrived (2026-10-26).
+	const url = $derived.by(() => {
+		const link = made;
+		return offline ? link?.offline?.url : (roomLink ?? link?.url);
+	});
 </script>
 
 <div class="panel">

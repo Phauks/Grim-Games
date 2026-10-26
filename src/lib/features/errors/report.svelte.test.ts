@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { handleError } from '../../../hooks.client.ts';
 import { errorLog, installGlobalErrorHandlers, MAX_LOGGED, reportError } from './report.svelte.ts';
 
 describe('reportError', () => {
@@ -37,6 +38,39 @@ describe('reportError', () => {
 		expect(errorLog.unseen).toEqual([]);
 		expect(errorLog.entries).toHaveLength(1);
 		errorLog.open = false;
+	});
+});
+
+describe('pages that could not open', () => {
+	afterEach(() => errorLog.clear());
+
+	// Trevor, 2026-10-26: "This page could not open" with nothing in Details to say why.
+	const navigation = (path: string) =>
+		({ url: new URL(path, location.origin) }) as Parameters<typeof handleError>[0]['event'];
+
+	it('log the error against the page that failed, not the one navigated from', () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		void handleError({
+			kind: 'unknown',
+			error: new Error('broken page'),
+			status: 500,
+			message: 'Internal Error',
+			event: navigation('/new')
+		} as Parameters<typeof handleError>[0]);
+		expect(errorLog.entries[0]).toMatchObject({ message: 'broken page', page: '/new' });
+	});
+
+	it('log a missing build file quietly, so Details names it if the fresh load fails too', () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		void handleError({
+			kind: 'unknown',
+			error: new TypeError('Failed to fetch dynamically imported module: /_app/x.js'),
+			status: 500,
+			message: 'Internal Error',
+			event: navigation('/games')
+		} as Parameters<typeof handleError>[0]);
+		expect(errorLog.entries[0]).toMatchObject({ area: 'update', page: '/games' });
+		expect(errorLog.unseen).toEqual([]);
 	});
 });
 
