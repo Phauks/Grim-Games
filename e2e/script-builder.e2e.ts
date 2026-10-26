@@ -522,6 +522,39 @@ test('the counts show what a full or Teensyville script usually has', async ({ p
 	await expect(page.getByTestId('expected-townsfolk')).toHaveText('/6');
 });
 
+// Trevor, 2026-10-26: some scripts have 1 Demon, some 4, some 5 or 6 Outsiders or Minions.
+test("each type's expected count can be set for this script, and set back", async ({ page }) => {
+	await page.goto('/build-script');
+	await character(page, 'Imp').tap();
+	// Found by its type, as the dialog hides the page from the accessibility tree.
+	const demons = page.getByTestId('builder-counts').locator('[data-type="demon"]');
+	await expect(page.getByTestId('expected-demon')).toHaveText('/4');
+	await expect(demons).toHaveAttribute('data-off', '');
+
+	await page.getByTestId('builder-expected').tap();
+	const dialog = page.getByRole('dialog', { name: 'Expected counts' });
+	for (let i = 0; i < 3; i++) {
+		await dialog.getByRole('button', { name: 'Fewer Demons expected' }).tap();
+	}
+	await dialog.getByRole('button', { name: 'More Outsiders expected' }).tap();
+	await dialog.getByRole('button', { name: 'More Outsiders expected' }).tap();
+	await expect(page.getByTestId('expected-demon')).toHaveText('/1');
+	await expect(page.getByTestId('expected-outsider')).toHaveText('/6');
+	// One Demon on a one-Demon script: no longer marked.
+	await expect(demons).not.toHaveAttribute('data-off');
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByTestId('builder-expected')).toHaveText('13 / 6 / 4 / 1');
+
+	// Remembered with the builder, until set back to the usual counts.
+	await page.reload();
+	await expect(page.getByTestId('expected-demon')).toHaveText('/1');
+	await page.getByTestId('builder-expected').tap();
+	await dialog.getByRole('button', { name: 'Back to the usual counts' }).tap();
+	await expect(page.getByTestId('expected-demon')).toHaveText('/4');
+	await expect(page.getByTestId('expected-outsider')).toHaveText('/4');
+	await expect(dialog.getByRole('button', { name: 'Back to the usual counts' })).toBeDisabled();
+});
+
 // Trevor, 2026-10-18: see the script's JSON before downloading it; Save sits in the header.
 test('Download shows the JSON first, with Copy and Download', async ({ page }) => {
 	await page.goto('/build-script');
