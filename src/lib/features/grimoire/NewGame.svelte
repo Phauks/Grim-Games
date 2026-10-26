@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { NEW_GAME_MAX_PLAYERS } from '#lib/features/setup/selection.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -144,7 +145,12 @@
 				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
 			</PageSection>
 			<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
-			<PlayerCountSheet {players} onChange={(n) => (players = n)} {maxPlayers} />
+			<PlayerCountSheet
+				{players}
+				onChange={(n) => (players = n)}
+				max={NEW_GAME_MAX_PLAYERS}
+				{maxPlayers}
+			/>
 			<Button
 				variant="accent"
 				icon="grimoire"
