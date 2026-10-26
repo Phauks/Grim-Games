@@ -4021,6 +4021,52 @@ test('the Investigator step lists each Minion, and the Recluse as a Minion you p
 	await expect(shown).toContainText('Baron');
 });
 
+// Trevor (2026-10-26): with a Recluse and a Butler in play and the Librarian's Outsider
+// reminder on the Recluse, the Recluse row comes first and stands out; the Butler stays as an
+// alternative (https://wiki.bloodontheclocktower.com/Librarian).
+test('the Librarian step puts the Outsider its reminder marks first, emphasised', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Librarian'],
+		[2, 'Butler'],
+		[3, 'Recluse'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 3' });
+	await picker
+		.getByRole('group', { name: 'Librarian' })
+		.getByRole('button', { name: 'Outsider' })
+		.tap();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	const strip = await walkTo(page, 'Librarian');
+	const line = strip.getByTestId('night-suggested');
+	await expect(line).toHaveText(/^Valid Information:\s*Recluse\s*,\s*Butler\s*$/);
+	await expect(line.locator('.item.marked')).toHaveText('Recluse');
+
+	const step = await openStep(page, 'Librarian');
+	const rows = step.getByTestId('learned-roles').getByRole('listitem');
+	await expect(rows).toHaveCount(2);
+	await expect(rows.first()).toHaveAttribute('data-marked', '');
+	await expect(rows.first()).toContainText('Recluse');
+	await expect(rows.first()).toContainText('Marked');
+	await expect(rows.nth(1)).toContainText('Butler');
+	await expect(rows.nth(1)).not.toHaveAttribute('data-marked');
+});
+
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({
 	page
 }) => {
