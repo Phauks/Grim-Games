@@ -15,9 +15,11 @@ import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { standInKind } from '#lib/core/rules/bag-plan.ts';
 
 /**
- * What one phone shows its player. `alignment` is set only when the player is told it: a
- * Traveller's, or one that differs from the character's own (the Storyteller's choice).
- * A role with only an alignment says just "You are Evil" (a Traveller, plan item 3).
+ * What one phone shows its player. `alignment` is set only when the player is told it: one
+ * that differs from the character's own (the Storyteller's choice). A Traveller's role is
+ * only their alignment, "You are Evil" (Trevor, 2026-10-26, plan H2: "no draw, just good or
+ * evil"): they chose their character in front of everyone
+ * (https://wiki.bloodontheclocktower.com/Travellers), so the alignment is the secret.
  */
 export interface SeatRole {
 	characterId?: CharacterId;
@@ -41,20 +43,19 @@ export function seatRoles(game: Game, characters: CharacterLookup): Record<SeatI
 		const seat = game.seats[seatId];
 		const truth = seat?.characterId && characters.get(seat.characterId);
 		if (!seat || !truth) continue;
+		if (truth.type === 'traveller') {
+			// Nothing to tell until the Storyteller has chosen it.
+			if (seat.alignment) roles[seatId] = { alignment: seat.alignment };
+			continue;
+		}
 		const shows = shownBy.get(seatId);
 		if (shows === undefined && standInKind(truth)) continue;
 		const role: SeatRole = { characterId: shows ?? truth.id };
-		const told = truth.type === 'traveller' || seat.alignment !== defaultAlignment(truth.type);
-		if (seat.alignment && told) role.alignment = seat.alignment;
+		if (seat.alignment && seat.alignment !== defaultAlignment(truth.type))
+			role.alignment = seat.alignment;
 		roles[seatId] = role;
 	}
 	return roles;
-}
-
-/** Seats with a character whose player can't be shown it (see `seatRoles`). */
-export function withheldSeats(game: Game, characters: CharacterLookup): SeatId[] {
-	const roles = seatRoles(game, characters);
-	return game.seating.filter((id) => game.seats[id]?.characterId && !roles[id]);
 }
 
 /** A role as one string, so the room can tell whether a player has seen this one. */
