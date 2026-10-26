@@ -421,6 +421,11 @@
 		element: board
 	}));
 	const shown = $derived(seatArr.shown);
+	/**
+	 * The seat picked up by a hold (Trevor, 2026-10-26): it lifts and the rest of the board
+	 * darkens, so it is plain the seat can now be dragged.
+	 */
+	const heldSeat = $derived(seatArr.arranging ? undefined : seatArr.drag?.seatId);
 
 	// Rotating moves the players, not the places: a hand-placed spot or a gap stays where it
 	// is and whoever now sits there takes it. Also after History restores a rotation.
@@ -1049,6 +1054,7 @@
 	<div
 		class="board"
 		class:arranging={seatArr.arranging}
+		class:holding={heldSeat !== undefined}
 		class:walking={nw.walk !== undefined}
 		class:ended={!!ended}
 		style:--tray-h="{chip + 30}px"
@@ -1165,6 +1171,7 @@
 					<div
 						class="chip-slot"
 						data-seat={i + 1}
+						class:held={heldSeat === seat.seatId}
 						class:dragging={dragged}
 						class:extra={extras.has(reminder.reminderId)}
 						data-extra={extras.has(reminder.reminderId) ? '' : undefined}
@@ -1690,6 +1697,16 @@
 	.slot.dragging {
 		z-index: 2;
 		cursor: grabbing;
+	}
+	/* A held seat lifts and everything else on the board darkens (Trevor, 2026-10-26). */
+	.holding .slot.dragging {
+		scale: 1.12;
+	}
+	.holding .slot:not(.dragging),
+	.holding .chip-slot:not(.held),
+	.holding .tethers {
+		opacity: 0.35;
+		transition: opacity 0.15s;
 	}
 	.place-spot {
 		position: absolute;
