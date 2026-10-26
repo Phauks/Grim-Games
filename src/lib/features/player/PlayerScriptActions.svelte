@@ -5,10 +5,15 @@
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
 	import SheetBackgroundSelect from './SheetBackgroundSelect.svelte';
 	import PrintScriptButton from './PrintScriptButton.svelte';
+	import YouButton from '#lib/features/room/YouButton.svelte';
 
 	/**
-	 * The light background switch, Print and Share for the players' script: /play's title line, and the Script the
-	 * Storyteller opens from the board, which matches it exactly (Trevor, 2026-10-19).
+	 * The light background switch, Print, Share and the player's settings cog: /play's title
+	 * line, and the Script the Storyteller opens from the board, which matches it exactly
+	 * (Trevor, 2026-10-19; the cog too, 2026-10-26: "This should always be parity and invoke
+	 * same parts so we don't have to rebuild"). Before a script is loaded only the cog shows:
+	 * there is nothing to print or share yet (Trevor, 2026-10-23), but a phone in a room still
+	 * needs its name.
 	 */
 	interface Props {
 		script: LoadedScript | undefined;
@@ -17,9 +22,11 @@
 		share: Shareable | undefined;
 		/** The live room this device is in, whose link and join code Share hands on. */
 		room?: string;
+		/** The room this phone has joined, whose name the cog sets; none on the board. */
+		joined?: string;
 	}
 
-	let { script, version, share, room }: Props = $props();
+	let { script, version, share, room, joined }: Props = $props();
 	const target = $derived.by(() => {
 		if (!share) return undefined;
 		const from = share;
@@ -28,14 +35,17 @@
 </script>
 
 <!-- One switch for the Script and Night tabs, beside Print and Share (Trevor, 2026-10-23). -->
-<SheetBackgroundSelect compact />
-<PrintScriptButton {script} {version} />
-<ShareControl
-	what="script"
-	title={script?.name ?? 'Script'}
-	author={script?.meta.author}
-	{version}
-	logo={script ? scriptLogo(script) : undefined}
-	{target}
-	{room}
-/>
+{#if script}
+	<SheetBackgroundSelect compact />
+	<PrintScriptButton {script} {version} />
+	<ShareControl
+		what="script"
+		title={script.name}
+		author={script.meta.author}
+		{version}
+		logo={scriptLogo(script)}
+		{target}
+		{room}
+	/>
+{/if}
+<YouButton room={joined} />

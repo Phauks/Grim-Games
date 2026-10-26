@@ -180,6 +180,7 @@ export const modes = {
 	'modes.deal.picks': 'Chosen',
 	'modes.deal.askTitle': 'Setup change',
 	'modes.deal.forced': 'This is your character, because this one is in play: ',
+	'modes.deal.turned': 'Choose a {type} instead, because this one is in play: ',
 	'modes.deal.askCount': 'How many {type} in all?',
 	'modes.deal.askKeep': 'Keep {count}',
 	'modes.deal.hiddenTitle': 'Hidden character',

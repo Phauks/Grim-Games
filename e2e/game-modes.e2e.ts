@@ -254,6 +254,8 @@ async function keepFirst(page: Page): Promise<string> {
 		else await asked.first().getByRole('button').first().tap();
 		await expect(page.getByTestId(which!)).toBeHidden();
 	}
+	// Lil' Monsta turns its player into a Minion: they draft again, offered Minions only.
+	if (await page.getByTestId('turned-by').isVisible()) return keepFirst(page);
 	return id;
 }
 
@@ -534,6 +536,43 @@ test('Sushi Buffet ends with a drafted Lord of Typhon’s two neighbours becomin
 	await expect(
 		page.getByRole('button', { name: new RegExp(`^Seat 5: .*${names[1]}$`) })
 	).toBeVisible();
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): Lil' Monsta is never dealt, so its player
+// becomes a Minion and picks their Minion (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
+test('Sushi Buffet turns the player who drafts Lil’ Monsta into a Minion of their choice', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const key = `grim-games:mode-deal:v1:${gameId}`;
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = ['lilmonsta'];
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, key);
+	await page.reload();
+	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
+	await rows(page).first().tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	// The same player chooses again, told why, from Minions only.
+	await expect(page.getByTestId('turned-by')).toContainText("Lil' Monsta");
+	const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).state, key);
+	expect(state.picks).toEqual([]);
+	expect(state.undealt).toEqual(['lilmonsta']);
+	expect(state.slots.demon).toBe(0);
+	for (const id of state.offer) expect(state.types[id]).toBe('minion');
+	await keepFirst(page);
+	const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).state, key);
+	expect(after.picks).toHaveLength(1);
+	expect(after.types[after.picks[0]]).toBe('minion');
+	for (let seat = 2; seat <= 5; seat++) {
+		await drawTile(page);
+		await keepFirst(page);
+	}
+	await expect(page.getByRole('button', { name: 'Finish' })).toBeEnabled();
 });
 
 // Trevor (2026-10-26): "modifiers are made dynamically for outsider count", as Grimbits' draft
@@ -2289,8 +2328,13 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 	await expectMatchingIconRow(choice.locator('xpath=..'), [
 		'Sheet background',
 		'Print script',
-		'Share script'
+		'Share script',
+		'Your settings'
 	]);
+	// The name under the buttons, as on /play (Trevor, 2026-10-26).
+	const cog = (await sheet.getByRole('button', { name: 'Your settings' }).boundingBox())!;
+	const name = (await sheet.getByRole('heading', { name: 'Trouble Brewing' }).boundingBox())!;
+	expect(name.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
 	await trigger.tap();
 	await page.getByRole('option', { name: 'Grey' }).tap();
 	await expect(sheet.getByTestId('script-copy')).toHaveCSS(
@@ -2307,4 +2351,30 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 	const sections = sheet.getByTestId('script-copy').locator('.sheet > section');
 	await expect(sections.nth(1)).not.toHaveCSS('border-top-width', '0px');
 	await expect(sections.first()).toHaveCSS('border-top-width', '0px');
+});
+
+test('the Script sheet has the players’ settings cog, opening their own sheet', async ({
+	page
+}) => {
+	// Trevor, 2026-10-26: "settings does not show up in storyteller view of player view. This
+	// should always be parity and invoke same parts".
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	await sheet.getByRole('button', { name: 'Your settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Your settings' });
+	await expect(settings.getByRole('slider', { name: 'Text size' })).toBeVisible();
+	// No room phone here, so no name to set.
+	await expect(settings.getByRole('textbox', { name: 'Your name' })).toHaveCount(0);
+	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
+	await page.getByRole('option', { name: 'Compact', exact: true }).tap();
+	// The Script sheet underneath changes at once (it is hidden from the accessibility tree
+	// while the settings sheet is open, so found by its copy).
+	await expect(page.locator('[data-testid="script-copy"] [data-density="compact"]')).toHaveCount(1);
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
+	await expect(sheet).toBeVisible();
 });

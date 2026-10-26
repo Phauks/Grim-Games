@@ -1598,8 +1598,16 @@
 	<GameFeedbackSheet bind:open={feedbackOpen} {game} />
 {/if}
 
-<!-- Exactly what players see on /play (Trevor, 2026-10-19): byline, Print, Share and tabs. -->
-<Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">
+<!-- Exactly what players see on /play (Trevor, 2026-10-19): byline, Print, Share and tabs, the
+     settings cog, and the logo and name under the buttons (Trevor, 2026-10-26). -->
+{#snippet scriptLogoLead()}<ScriptLogo src={boardLogo} class="title-logo" />{/snippet}
+<Dialog
+	bind:open={scriptOpen}
+	title={game.script.meta?.name || 'Script'}
+	size="max"
+	titleBelow
+	lead={boardLogo ? scriptLogoLead : undefined}
+>
 	{#snippet headActions()}
 		<PlayerScriptActions
 			script={loadedScript}

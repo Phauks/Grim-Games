@@ -27,6 +27,11 @@
 		subtitle?: Snippet;
 		/** Extra icon buttons in the header, just before Close (e.g. "Open wiki"). */
 		headActions?: Snippet;
+		/**
+		 * The title on its own line under the header's buttons, as on the player screen whose
+		 * copy this is (the board's Script, Trevor 2026-10-26).
+		 */
+		titleBelow?: boolean;
 		/** False hides the ✕, for a dialog whose `lead` already closes it (the menu drawer). */
 		closeButton?: boolean;
 		/**
@@ -69,6 +74,7 @@
 		heading,
 		subtitle,
 		headActions,
+		titleBelow = false,
 		closeButton = true,
 		scroll = true,
 		aside,
@@ -118,7 +124,7 @@
 		/>
 		<Dialog.Positioner style={layerStyle(layer, 'content')}>
 			<Dialog.Content data-size={size} data-panes={aside ? '' : undefined}>
-				<div class="head">
+				<div class="head" data-title-below={titleBelow || undefined}>
 					<div class="titled" class:with-lead={!!lead}>
 						{#if lead}<span class="lead">{@render lead()}</span>{/if}
 						<Dialog.Title
@@ -281,6 +287,18 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
+	}
+	/* The buttons and Close on the first row, the title under them. */
+	.head[data-title-below] {
+		flex-wrap: wrap;
+		row-gap: var(--space-1);
+	}
+	.head[data-title-below] .titled {
+		order: 1;
+		flex-basis: 100%;
+	}
+	.head[data-title-below] .head-actions {
+		margin-left: auto;
 	}
 	.head-actions {
 		flex: none;

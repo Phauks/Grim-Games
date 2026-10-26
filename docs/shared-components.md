@@ -97,6 +97,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - Copying text, with its toast: `ui/clipboard.ts` (`copyText`) (enforced by review)
 - Every Share button (code, QR, link, Copy, refresh, Share, send a file): `ui/share/SharePanel.svelte`; a script's Share is `features/scripts/ShareControl.svelte`, which shows the room's link and join code when the device is in a room, and its link comes from `scriptShareable` (`features/scripts/share-codes.ts`) (enforced by `grim/share-panel` (`SHARE_TODO`), `e2e/share.e2e.ts`)
 - A script's tabs (Characters, Night order, Grim, Notes, Room): `features/player/PlayerScriptTabs.svelte`, with `PlayerGrim` and `PlayerNotes`: /play and the board's Script sheet show the same screens, and a Public Town display (/town) shows `PlayerGrim` with `display` (enforced by review)
+- The script's title-line buttons (sheet background, Print, Share, the player's settings cog): `features/player/PlayerScriptActions.svelte`, with `features/room/YouButton.svelte` as an `IconButton`: /play's title line and the board's Script sheet header, so the Storyteller sees the players' exact buttons (Trevor, 2026-10-26) (enforced by `e2e/play.e2e.ts`, `e2e/game-modes.e2e.ts`)
 - A player's avatar (their initials) on a token face: `ui/seating/AvatarFace.svelte`; ids and `initialsOf` in `core/avatars` (enforced by review)
 - A setting in Settings (or where it is used): a row, a switch, a colour, a heading over a run, a closing group: `ui/settings/` `SettingRow` (and `SettingToggle`, `SettingSelect`, `SettingSlider`, `SettingChoice`, `SettingColor`), `SettingHeading`, `SettingCollapsible`, `SettingGroup` (with a preview); each carries `data-setting`, and `ui/base.css` draws the line between any two (enforced by `e2e/settings-framework.e2e.ts`)
 - Text size and Pinch to zoom outside Settings (the player screen's settings cog): `features/settings/sections/TextSizeRows.svelte` (Settings > Text uses it too) (enforced by `e2e/play.e2e.ts`)
@@ -149,7 +150,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Extra evil makers (`modes/draft.ts` Ivory draft; the kind the Spirit of Ivory limits; new): `makesExtraEvil`, new
 - Hidden character it may really be (`modes/draft.ts`, the Atheist's Drunk; new): `orHiddenAs`, new
 - Gained not-in-play ability (`modes/draft.ts`, the Alchemist's Minion; new): `gainsAbilityOf`, new
-- Players turned into another type (`modes/draft.ts`, the Kazali, the Lord of Typhon; new): `turnsPlayersInto`, new
+- Players turned into another type (`modes/draft-seats.ts`: Kazali, Lord of Typhon, Lil' Monsta): `turnsPlayersInto`, new
 
 ## Lists that only shrink
 
