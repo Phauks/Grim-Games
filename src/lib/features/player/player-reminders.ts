@@ -102,3 +102,17 @@ export function scriptReminderGroups(characters: readonly Character[]): PlayerRe
 
 /** A placed reminder's key in a list: one of each token per seat. */
 export const placedKey = (r: PlayerReminder): string => [r.characterId, r.label].join(':');
+
+/**
+ * The picker's two parts (Trevor, 2026-10-26: "search and guess"): the characters this player
+ * guessed on any seat, or knows (a Traveller), first; then the rest, in script order.
+ */
+export function guessesFirst<T extends { character: Character }>(
+	groups: readonly T[],
+	first: readonly CharacterId[]
+): { first: T[]; rest: T[] } {
+	return {
+		first: groups.filter((g) => first.includes(g.character.id)),
+		rest: groups.filter((g) => !first.includes(g.character.id))
+	};
+}
