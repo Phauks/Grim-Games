@@ -33,6 +33,7 @@ import {
 import {
 	DAY_GROUPS,
 	guessLimit,
+	extraNominationOpen,
 	nominationsPerDay,
 	type DayReminderOverride,
 	type Night,
@@ -461,6 +462,8 @@ export function hasPlacedReminder(game: Game, reminderId: string): boolean {
  * Checks a nomination. Each player may nominate once per day and be nominated once per
  * day, and dead players may not nominate (https://wiki.bloodontheclocktower.com/Glossary,
  * "Nomination") unless their character says they may, and how often (`nominationsPerDay`).
+ * The once-a-day limits are lifted for a nominator whose character allows another nomination
+ * after the day's first execution (`extraNominationOpen`, the Butcher).
  * These are warnings: abilities break them, and the Storyteller decides.
  */
 export function checkNomination(
@@ -477,6 +480,8 @@ export function checkNomination(
 	);
 	const allowed = nominationsPerDay(game, nominator, characters);
 	if (allowed === 0) warn('dead-nominator', 'dead players may not nominate');
+	// The Butcher's extra nomination after the day's first execution: no once-a-day limits.
+	if (extraNominationOpen(game, nominator, characters, ignore)) return;
 	if (others.filter((e) => e.nominator === nominator).length >= Math.max(allowed, 1)) {
 		warn('already-nominated', 'this player has already nominated today');
 	}

@@ -201,3 +201,45 @@ test('a Banshee the Demon killed nominates twice a day and votes twice with no t
 				.and(page.locator('[data-on]'))
 		).toHaveCount(1);
 });
+
+test('after the day’s first execution the Butcher nominates again, with no warning', async ({
+	page
+}) => {
+	// Trevor (2026-10-26): nomination tracking accounts for the Butcher's extra nomination. After
+	// the day's first execution, the Butcher may nominate again, even a player already
+	// nominated (https://wiki.bloodontheclocktower.com/Butcher). Here the Virgin's execution of
+	// a Townsfolk nominator is that first execution, as it keeps the day going
+	// (https://wiki.bloodontheclocktower.com/Virgin).
+	await startGame(page);
+	await trackNominations(page);
+	for (const [number, name, offScript] of [
+		[1, 'Butcher', true],
+		[2, 'Chef', false],
+		[3, 'Virgin', false]
+	] as const) {
+		const seat = await openSeat(page, number);
+		await seat.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${number}` });
+		if (offScript) await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name: new RegExp(`^${name}(,|$)`) }).tap();
+		// A Traveller asks for their alignment.
+		if (offScript)
+			await page
+				.getByRole('dialog', { name: 'Alignment' })
+				.getByRole('button', { name: 'Decide later' })
+				.tap();
+		await closeSheet(page);
+	}
+	await nominate(page, 1, 4);
+	await nominate(page, 2, 3);
+	const ask = page.getByRole('alertdialog', { name: /^Virgin: execute/ });
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	// The Butcher nominates again, Seat 4 a second time: a new nomination, no warning.
+	await nominate(page, 1, 4);
+	await expect(page.getByText('That player has already nominated today.')).toHaveCount(0);
+	await expect(page.getByText('That player has already been nominated today.')).toHaveCount(0);
+	const seat = await openSeat(page, 1);
+	await expect(seat.getByTestId('sheet-nominated')).toHaveText('Seat 4, Seat 4');
+	await closeSheet(page);
+});

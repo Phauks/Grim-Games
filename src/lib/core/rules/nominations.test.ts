@@ -4,6 +4,7 @@ import { dispatch, type Command } from '#lib/core/engine/index.ts';
 import { castGame } from '#lib/core/model/fixtures.test-support.ts';
 import {
 	characterNominationPrompts,
+	extraNominationOpen,
 	mayNominate,
 	nominationsPerDay,
 	seatNominations,
@@ -108,6 +109,45 @@ describe('mayNominate', () => {
 		expect(nominationsPerDay(session.game, seats[0], ctx.characters)).toBe(1);
 		const second = dispatch(session, nominate(0, 2)(seats), ctx);
 		expect(second.ok && second.warnings.map((w) => w.code)).toEqual(['already-nominated']);
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Butcher: after the day's first execution, the Butcher
+// may nominate again, even having nominated, and may nominate a player already nominated today
+// (the Butcher's rules file, `nominationsAfterExecution`).
+describe('extraNominationOpen', () => {
+	const execute =
+		(seat: number) =>
+		(s: string[]): Command => ({ type: 'Execute', seatId: s[seat] });
+	const codes = (result: ReturnType<typeof dispatch>) =>
+		result.ok ? result.warnings.map((w) => w.code) : ['refused'];
+
+	it('lets the Butcher nominate once more after an execution, with no once-a-day limits', () => {
+		const { session, ctx, seats } = castGame(
+			['butcher', 'empath', 'monk', 'imp'],
+			nominate(0, 1),
+			nominate(1, 2),
+			execute(2)
+		);
+		expect(extraNominationOpen(session.game, seats[0], ctx.characters)).toBe(true);
+		expect(extraNominationOpen(session.game, seats[1], ctx.characters)).toBe(false);
+		// The Butcher nominated already, and Seat 2 was nominated already.
+		const again = dispatch(session, nominate(0, 1)(seats), ctx);
+		expect(codes(again)).toEqual([]);
+		if (!again.ok) throw new Error('refused');
+		expect(extraNominationOpen(again.session.game, seats[0], ctx.characters)).toBe(false);
+		// Only once: a third nomination warns again.
+		expect(codes(dispatch(again.session, nominate(0, 3)(seats), ctx))).toContain(
+			'already-nominated'
+		);
+		// Others keep their limits.
+		expect(codes(dispatch(session, nominate(1, 3)(seats), ctx))).toContain('already-nominated');
+	});
+
+	it('is closed before the day has an execution', () => {
+		const { session, ctx, seats } = castGame(['butcher', 'empath', 'imp'], nominate(0, 1));
+		expect(extraNominationOpen(session.game, seats[0], ctx.characters)).toBe(false);
+		expect(codes(dispatch(session, nominate(0, 2)(seats), ctx))).toContain('already-nominated');
 	});
 });
 
