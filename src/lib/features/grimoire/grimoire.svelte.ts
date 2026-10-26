@@ -16,10 +16,10 @@ import {
 import type { Reminder, ReminderId } from '#lib/core/model/index.ts';
 import {
 	bankCopies,
+	forgetPastNames,
 	forgetUpsideDownMarks,
 	nightUnderway,
 	nightViews,
-	pastNames,
 	reminderCopyIds,
 	reminderSpots,
 	seatLayouts,
@@ -36,6 +36,7 @@ export class Grimoire {
 
 	constructor(readonly open: OpenGame) {
 		forgetUpsideDownMarks();
+		forgetPastNames();
 		this.layout = seatLayouts.read(open.game.gameId);
 		this.reminderSpots = reminderSpots.read(open.game.gameId);
 		this.copies = reminderCopyIds.read(open.game.gameId);
@@ -339,7 +340,7 @@ export class Grimoire {
 	}
 
 	rename(seatId: SeatId, name: string): void {
-		if (this.run({ type: 'RenameSeat', seatId, playerName: name })) pastNames.remember(name);
+		this.run({ type: 'RenameSeat', seatId, playerName: name });
 	}
 
 	/** Adds a seat at the end of the seating order; returns its id. */

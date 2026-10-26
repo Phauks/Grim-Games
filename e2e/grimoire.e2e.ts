@@ -428,7 +428,7 @@ test('history, add seat and remove', async ({ page }) => {
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 });
 
-test('an orphan character is flagged and names are suggested', async ({ page }) => {
+test('an orphan character is flagged, and old names are not suggested', async ({ page }) => {
 	await startGame(page);
 	let sheet = await openSeat(page, 1);
 	await nameSeat(sheet, 'Zed');
@@ -439,17 +439,14 @@ test('an orphan character is flagged and names are suggested', async ({ page }) 
 	await expect(sheet.getByText('Not on the script')).toBeVisible();
 	await expect(seatLabelled(page, 'Seat 1: Zed, Zombuul, not on the script')).toBeAttached();
 
-	// A name used before on this device is offered on another seat, once nobody has it.
+	// Names come only from the room's phones, never from earlier seats or games (Trevor,
+	// 2026-10-26): with no room, a name used before is not offered.
 	await nameSeat(sheet, 'Amy');
 	await closeSheet(page);
 	sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
 	await sheet.getByRole('textbox', { name: 'Player name' }).fill('Z');
-	await sheet
-		.getByRole('group', { name: 'Name suggestions' })
-		.getByRole('button', { name: 'Zed' })
-		.tap();
-	await expect(page.getByRole('heading', { name: 'Zed' })).toBeVisible();
+	await expect(sheet.getByRole('group', { name: 'Name suggestions' })).toHaveCount(0);
 });
 
 test('Travellers join as a new seat, and Fabled sit in the middle', async ({ page }) => {
