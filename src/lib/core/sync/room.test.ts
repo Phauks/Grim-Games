@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
+	canCallTown,
+	CALL_TOWN_GAP_MS,
 	canReveal,
 	castVote,
 	closeVote,
@@ -492,5 +494,14 @@ describe('the view-only grimoire link', () => {
 		expect(isSharedGrimoire({ saved: [] })).toBe(false);
 		expect(isSharedGrimoire({})).toBe(false);
 		expect(isSharedGrimoire(null)).toBe(false);
+	});
+});
+
+// Plan U2 (Trevor, 2026-10-26): Back to town makes every phone sound; repeated taps don't.
+describe('Back to town', () => {
+	it('goes out the first time and again once the gap has passed', () => {
+		expect(canCallTown(undefined, 1000)).toBe(true);
+		expect(canCallTown(1000, 1000 + CALL_TOWN_GAP_MS - 1)).toBe(false);
+		expect(canCallTown(1000, 1000 + CALL_TOWN_GAP_MS)).toBe(true);
 	});
 });

@@ -34,6 +34,8 @@
 	defaultValue={1}
 	onChange={setVolume}
 />
+<!-- One switch for every alert: the timer running out and a Back to town call. -->
+<VibrateToggle />
 
 <SettingHeading title={t('day.timer')} />
 <!-- Each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
@@ -48,4 +50,16 @@
 		playSound(timerSound);
 	}}
 />
-<VibrateToggle />
+
+<!-- What this phone plays when the Storyteller calls Back to town (plan U2). -->
+<SettingHeading title={t('room.callTown')} />
+<SettingSelect
+	label={t('settings.callSound')}
+	value={preferences.current.callSound}
+	options={TIMER_SOUNDS.map((sound) => ({ value: sound, label: t(`day.timerSound.${sound}`) }))}
+	defaultValue="clocktower"
+	onChange={(callSound) => {
+		preferences.update({ callSound });
+		playSound(callSound);
+	}}
+/>

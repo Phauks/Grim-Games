@@ -19,6 +19,8 @@
 		onHistory: () => void;
 		onBluffs: () => void;
 		onNotes: () => void;
+		/** Back to town (plan U2): only while players' phones can be in a room. */
+		onCallTown?: () => void;
 		onGameInfo: () => void;
 		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
 		onCharacterSelection?: () => void;
@@ -39,6 +41,7 @@
 		onHistory,
 		onBluffs,
 		onNotes,
+		onCallTown,
 		onGameInfo,
 		onCharacterSelection,
 		onAddSeat,
@@ -61,6 +64,12 @@
 		<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}>Demon bluffs</Button>
 		<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>
+		{#if onCallTown}
+			<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
+			<Button variant="quiet" icon="sound" onclick={() => fromMenu(onCallTown)}>
+				{t('room.callTown')}
+			</Button>
+		{/if}
 		{#if gameInfo}
 			<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
 		{/if}

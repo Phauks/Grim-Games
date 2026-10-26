@@ -172,3 +172,21 @@ export function playSound(sound: TimerSound, volume = preferences.current.soundV
 			return;
 	}
 }
+
+/**
+ * The Storyteller called everyone back to town (plan U2): this phone plays its Back to town
+ * sound and vibrates, as its settings say.
+ */
+export function hearCallTown(): void {
+	if (preferences.current.timerVibrate) vibrate();
+	playSound(preferences.current.callSound);
+}
+
+/**
+ * Browsers only let a page make a sound it wasn't tapped for once it has been tapped. A
+ * phone in a room may sound at any time, so the first tap anywhere unlocks it.
+ */
+export function unlockOnFirstTap(): void {
+	if (typeof window === 'undefined') return;
+	window.addEventListener('pointerdown', unlockSound, { once: true, capture: true });
+}

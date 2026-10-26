@@ -334,6 +334,14 @@ export class RoomHost {
 		this.#socket?.send({ type: 'close-vote' });
 	}
 
+	/**
+	 * Calls every player back to town (plan U2): each phone in the room sounds and vibrates.
+	 * False when the room can't be reached.
+	 */
+	callTown(): boolean {
+		return this.#socket?.send({ type: 'call-town' }) ?? false;
+	}
+
 	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */
 	endedGame = $state<string>();
 	/** The game whose final grimoire the room's phones were sent (Share grim, R5). */

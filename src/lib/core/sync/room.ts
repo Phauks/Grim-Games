@@ -218,6 +218,8 @@ export type ClientMessage =
 	/** Ends the vote after FINAL_CALL_SECONDS, so phones have a last chance (2026-10-26). */
 	| { type: 'end-script-vote' }
 	| { type: 'close-script-vote' }
+	/** Calls every player back to town: their phones sound and vibrate (plan U2). */
+	| { type: 'call-town' }
 	| { type: 'close' };
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
@@ -327,8 +329,21 @@ export type ServerMessage =
 	| GrimoireView
 	/** To the Storyteller: how many are watching through the view-only link right now. */
 	| { type: 'watchers'; count: number }
+	/**
+	 * To the players: the Storyteller calls everyone back to town (plan U2). Sent once, never
+	 * kept, so a phone that joins later doesn't sound; older apps ignore it.
+	 */
+	| { type: 'call-town' }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
+
+/** Back to town calls closer together than this are dropped, so phones don't keep ringing. */
+export const CALL_TOWN_GAP_MS = 5000;
+
+/** Whether a Back to town call at `now` goes out, given when the last one did. */
+export function canCallTown(last: number | undefined, now: number): boolean {
+	return last === undefined || now - last >= CALL_TOWN_GAP_MS;
+}
 
 /**
  * `too-old`: the app must update before it can use the room; the room itself is fine.
