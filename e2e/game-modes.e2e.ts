@@ -446,6 +446,11 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await mulligans.tap();
 	await page.getByRole('option', { name: '3 → 1', exact: true }).tap();
 	await expect(mulligans).toHaveText(/3 → 1/);
+	// Deal needed characters (a Choirboy's King), on by default; Grimbits can turn it off.
+	const needed = modesPanel(page).getByRole('checkbox', { name: 'Deal needed characters' });
+	await expect(needed).toBeChecked();
+	await modesPanel(page).getByText('Deal needed characters', { exact: true }).tap();
+	await expect(needed).not.toBeChecked();
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -458,6 +463,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	expect(record.ivoryDraft).toBe(true);
 	expect(record.oneTypePerOffer).toBe(true);
 	expect(record.offers).toEqual([3, 1]);
+	expect(record.dealsRequired).toBe(false);
 	// The draft knows each character's jinxed partners
 	// (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
 	await drawTile(page);
@@ -471,6 +477,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	expect(state.config.ivory).toBe(true);
 	expect(state.config.oneTypePerOffer).toBe(true);
 	expect(state.config.offers).toEqual([3, 1]);
+	expect(state.requires).toBeUndefined();
 	// The first offer is all one character type.
 	const types = new Set(state.offer.map((id: string) => state.types[id]));
 	expect(types.size).toBe(1);

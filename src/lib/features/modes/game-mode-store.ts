@@ -36,6 +36,8 @@ export interface GameModeRecord {
 	oneTypePerOffer?: boolean;
 	/** Mulligans for a draft: each offer's size in turn (3 → 2 → 1 or 3 → 1). Left out, the mode's. */
 	offers?: number[];
+	/** Deal needed characters for a draft (a Choirboy's King). Left out, on. */
+	dealsRequired?: boolean;
 }
 
 const KEY = (gameId: GameId) => `grim-games:game-mode:v2:${gameId}`;
@@ -55,7 +57,9 @@ const recycling = (r: {
 	ivoryDraft?: unknown;
 	oneTypePerOffer?: unknown;
 	offers?: unknown;
+	dealsRequired?: unknown;
 }) => ({
+	...(typeof r.dealsRequired === 'boolean' ? { dealsRequired: r.dealsRequired } : {}),
 	...(Array.isArray(r.offers) &&
 	r.offers.length > 0 &&
 	r.offers.every((n) => Number.isInteger(n) && n > 0)

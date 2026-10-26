@@ -160,6 +160,7 @@
 	 */
 	const MULLIGANS = ['3,2,1', '3,1'] as const;
 	let mulligans = $state<string | undefined>();
+	let dealsRequired = $state(true);
 	const draft = $derived(
 		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
 	);
@@ -375,7 +376,8 @@
 							jinxedPairs,
 							ivoryDraft,
 							oneTypePerOffer: oneType ?? draft.oneTypePerOffer,
-							offers: (mulligans ?? draft.offers.join(',')).split(',').map(Number)
+							offers: (mulligans ?? draft.offers.join(',')).split(',').map(Number),
+							dealsRequired
 						}
 					: {}),
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
@@ -412,6 +414,7 @@
 						ivoryDraft = false;
 						oneType = undefined;
 						mulligans = undefined;
+						dealsRequired = true;
 						campaignId = 'new';
 					}}
 				/>
@@ -510,6 +513,12 @@
 								label: value.split(',').join(' → ')
 							}))}
 							onChange={(v) => (mulligans = v)}
+						/>
+						<SettingToggle
+							label={t('modes.dealsRequired')}
+							description={t('modes.dealsRequiredHint')}
+							checked={dealsRequired}
+							onChange={(on) => (dealsRequired = on)}
 						/>
 					{/if}
 					<div class="setting">

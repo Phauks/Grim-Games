@@ -277,6 +277,9 @@ export const modes = {
 	'modes.ivoryDraft': 'Ivory draft',
 	'modes.oneTypePerOffer': 'Don’t mix types',
 	'modes.mulligans': 'Mulligans',
+	'modes.dealsRequired': 'Deal needed characters',
+	'modes.dealsRequiredHint':
+		'A drafted character that needs another in play gets it: the next player is offered only that one.',
 	'modes.oneTypePerOfferHint': 'Every character in one offer is of one character type.',
 	'modes.ivoryDraftHint': 'At most one character that can make an extra evil player is drafted.',
 	'modes.settings': 'Game mode settings',
