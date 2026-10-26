@@ -72,16 +72,17 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	// It fills the screen with the town alone, not the app (Trevor, 2026-10-26: "not the app
 	// itself, but that part of it"), whose own corner then holds the way back.
 	await fullScreen.tap();
-	expect(await tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid'))).toBe(
-		'public-town'
-	);
+	// The request settles after the tap, so wait for it.
+	await expect
+		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
+		.toBe('public-town');
 	const exit = tablet
 		.getByTestId('public-town')
 		.getByRole('button', { name: 'Full screen', exact: true });
 	await expect(exit).toHaveAttribute('aria-pressed', 'true');
 	await expect(town).toBeVisible();
 	await exit.tap();
-	expect(await tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
 	await expect(exit).toHaveCount(0);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
 
