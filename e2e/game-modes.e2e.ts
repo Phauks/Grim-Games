@@ -483,6 +483,59 @@ test('Sushi Buffet ends with a drafted Kazali choosing which players are which M
 	).toBeVisible();
 });
 
+// Grimbits' draft (https://grimbits.com/draft-buffet/): the Lord of Typhon's neighbours become
+// Minions, so the evil players sit in a line with it in the middle
+// (https://wiki.bloodontheclocktower.com/Lord_of_Typhon).
+test('Sushi Buffet ends with a drafted Lord of Typhon’s two neighbours becoming Minions', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const key = `grim-games:mode-deal:v1:${gameId}`;
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = ['lordoftyphon'];
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, key);
+	await page.reload();
+	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
+	await keepFirst(page);
+	// Its +1 Minion and both Minion seats are its neighbours', so no one drafts a Minion.
+	const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).state, key);
+	expect(state.slots.minion).toBe(0);
+	for (let seat = 2; seat <= 5; seat++) {
+		await drawTile(page);
+		await keepFirst(page);
+	}
+	await page.getByRole('button', { name: 'Finish' }).tap();
+	const drunk = page.getByTestId('draft-hidden');
+	const convert = page.getByTestId('draft-convert');
+	await expect(drunk.or(convert)).toBeVisible();
+	if (await drunk.isVisible()) await drunk.getByRole('button', { name: 'None', exact: true }).tap();
+	// Seat 1 drafted it, so its neighbours are Seats 2 and 5; each picks a Minion.
+	const seats = page.getByTestId('convert-seats').getByRole('listitem');
+	await expect(seats).toHaveText([/Seat 2/, /Seat 5/, /Done/]);
+	const names: string[] = [];
+	for (const seat of ['Seat 2', 'Seat 5']) {
+		await seats.filter({ hasText: seat }).getByRole('button').first().tap();
+		const minion = page
+			.getByTestId('convert-character')
+			.locator('button[data-character-id]')
+			.first();
+		names.push((await minion.innerText()).split('\n')[0].trim());
+		await minion.tap();
+	}
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await expect(
+		page.getByRole('button', { name: new RegExp(`^Seat 2: .*${names[0]}$`) })
+	).toBeVisible();
+	await expect(
+		page.getByRole('button', { name: new RegExp(`^Seat 5: .*${names[1]}$`) })
+	).toBeVisible();
+});
+
 // Trevor (2026-10-26): "modifiers are made dynamically for outsider count", as Grimbits' draft
 // does (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Godfather).
 test('Sushi Buffet asks the Storyteller for a drafted Godfather’s Outsiders before the next tile', async ({

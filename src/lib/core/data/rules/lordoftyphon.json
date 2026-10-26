@@ -52,5 +52,9 @@
 			}
 		]
 	},
-	"makesExtraEvil": true
+	"makesExtraEvil": true,
+	"turnsPlayersInto": {
+		"type": "minion",
+		"players": "neighbours"
+	}
 }

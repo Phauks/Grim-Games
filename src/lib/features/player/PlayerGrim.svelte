@@ -33,10 +33,12 @@
 	import {
 		readPlayerReminders,
 		placedKey,
+		addGenericReminder,
+		reminderWords,
 		remindersOn,
+		setGenericLook,
 		toggleReminder,
 		writePlayerReminders,
-		type PlayerReminder,
 		type PlayerReminders
 	} from './player-reminders.ts';
 	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
@@ -221,10 +223,16 @@
 			...seats.flatMap((seat) => seat.traveller ?? [])
 		])
 	]);
-	function toggleSeatReminder(reminder: PlayerReminder) {
+	function saveReminders(change: (seatId: string) => PlayerReminders) {
 		if (!kept || !chosen) return;
-		reminders = toggleReminder(reminders, chosen.seatId, reminder);
+		reminders = change(chosen.seatId);
 		writePlayerReminders(kept, reminders);
+	}
+	/** A new generic token on the chosen seat (Trevor, 2026-10-26), whose id the picker edits. */
+	function addGeneric() {
+		const id = crypto.randomUUID();
+		saveReminders((seatId) => addGenericReminder(reminders, seatId, id));
+		return id;
 	}
 
 	// The Storyteller's background, vignette and logo, the same on every device whatever its own
@@ -319,7 +327,7 @@
 		if (guessed.length) parts.push(t('player.grim.guess', { name: guessed.join(', ') }));
 		const placed = remindersOn(visible, seat.seatId);
 		if (placed.length)
-			parts.push(t('player.grim.hasReminders', { labels: placed.map((r) => r.label).join(', ') }));
+			parts.push(t('player.grim.hasReminders', { labels: placed.map(reminderWords).join(', ') }));
 		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
 		return parts.join(', ');
 	}
@@ -514,7 +522,7 @@
 		onclick={() => (remindersOpen = true)}
 		><span class="row-label">{t('player.grim.reminders')}</span><span class="chips"
 			>{#each chosen ? remindersOn(reminders, chosen.seatId) : [] as reminder (placedKey(reminder))}<ReminderToken
-					label={reminder.label}
+					label={reminderWords(reminder)}
 					character={characterOf(reminder.characterId)}
 				/>{:else}<span class="row-none">{t('common.none')}</span>{/each}</span
 		></button
@@ -564,7 +572,10 @@
 	characters={script.characters}
 	placed={chosen ? remindersOn(reminders, chosen.seatId) : []}
 	characterOf={(id) => characterOf(id)}
-	onToggle={toggleSeatReminder}
+	onToggle={(r) => saveReminders((seatId) => toggleReminder(reminders, seatId, r))}
+	onAddGeneric={addGeneric}
+	onGenericLook={(id, look) =>
+		saveReminders((seatId) => setGenericLook(reminders, seatId, id, look))}
 	guessed={firstReminders}
 />
 

@@ -78,7 +78,8 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A seat's note mark (the disc on the token's lower right rim; tapping it opens the note): `ui/seating/SeatNoteMark.svelte`: the board's seats and a player's grim (enforced by review)
 - A pill of small marks over a token's top rim (one tap target): `ui/seating/RimPill.svelte`: the board's nominations (top left) and a player's other guesses on their grim (top right, `features/player/GuessMarks.svelte`) (enforced by review)
 - A reminder name: `features/characters/ReminderToken.svelte` (enforced by `grim/names-as-badges`)
-- One character's reminders in a reminders picker (token, name, chips that wrap): `features/characters/ReminderGroupRow.svelte`: the board's "Reminders for Seat N" (`grimoire/ReminderPicker`) and a player's own grim (`player/PlayerReminderPicker`) (enforced by review)
+- One character's reminders in a reminders picker (token, name, chips that wrap), or a named row without a character (the player's Generic row): `features/characters/ReminderGroupRow.svelte`: the board's "Reminders for Seat N" (`grimoire/ReminderPicker`) and a player's own grim (`player/PlayerReminderPicker`) (enforced by review)
+- A generic ∞ token's look editor (preview beside text, symbol, colour, fill; red Delete): `features/grimoire/GenericLookDialog.svelte`: the board's ∞ token (`grimoire/GenericTokenDialog`) and a player's generic tokens (`player/PlayerReminderPicker`) (enforced by review)
 - A player name (sheets, dialogs, History, sentences): `ui/seating/PlayerBadge.svelte`: the pill under a seat's token, inline; `seatName` (`features/game/seat-label.ts`) gives its text, the name or "Seat 3". CharacterBadge, CharacterRow and CharacterEntry draw it for `playerName` (enforced by `grim/names-as-badges` (PLAYER_BADGE_TODO))
 - An entry headed by a character: `features/characters/CharacterEntry.svelte` (jinxes, announcements; a character with an ability uses CharacterRow) (enforced by review)
 - Opening a saved game for a screen (loading, none, too new): `features/game/WithSavedGame.svelte` (`prepare`, `fallback` snippet) (enforced by review)
@@ -148,7 +149,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Extra evil makers (`modes/draft.ts` Ivory draft; the kind the Spirit of Ivory limits; new): `makesExtraEvil`, new
 - Hidden character it may really be (`modes/draft.ts`, the Atheist's Drunk; new): `orHiddenAs`, new
 - Gained not-in-play ability (`modes/draft.ts`, the Alchemist's Minion; new): `gainsAbilityOf`, new
-- Players turned into another type (`modes/draft.ts`, the Kazali's Minions; new): `turnsPlayersInto`, new
+- Players turned into another type (`modes/draft.ts`, the Kazali, the Lord of Typhon; new): `turnsPlayersInto`, new
 
 ## Lists that only shrink
 
