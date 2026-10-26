@@ -1,14 +1,5 @@
-<script lang="ts" module>
-	/**
-	 * What the phone typed in each room before saving. The panel is drawn again when the room's
-	 * script arrives (the page gains its tabs), and that must not lose it.
-	 */
-	const drafts: Record<string, { name: string }> = {};
-</script>
-
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -16,7 +7,6 @@
 	import { normaliseRoomCode, ROOM_CODE_LENGTH, scannedRoom } from '#lib/core/sync/room-code.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
@@ -45,9 +35,9 @@
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
-	 * over /play's tabs, which says where this phone sits and opens a sheet for its name and
-	 * initials (plan J12: no Room tab), and the Specters vote. The player sets only the name
-	 * that shows; the Storyteller seats them (Trevor, 2026-10-25).
+	 * over /play's tabs, which says where this phone sits (plan J12: no Room tab), and the
+	 * Specters vote. The player sets only the name that shows, from You on the title line
+	 * (YouDialog, plan E2); the Storyteller seats them (Trevor, 2026-10-25).
 	 */
 	interface Props {
 		/** The room's code; undefined shows the code form. */
@@ -77,20 +67,13 @@
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
 	let typed = $state('');
-	let name = $state('');
 
 	$effect(() => {
 		if (!valid) return;
-		// Only the code is tracked. Opening the room reads settings (the avatar, the frame), and a
-		// view arriving later must not wipe a name being typed.
+		// Only the code is tracked: opening the room reads settings (the avatar, the frame).
 		const p = untrack(() => useRoom(valid));
 		player = p;
-		const draft = drafts[valid];
-		name = draft?.name ?? untrack(() => p.view?.me.name ?? p.savedName);
 		return () => releaseRoom(p);
-	});
-	$effect(() => {
-		if (valid) drafts[valid] = { name };
 	});
 
 	// The player's avatar and frame go to the room as they pick them (plan R6).
@@ -142,8 +125,6 @@
 	$effect(() => {
 		if (view?.me.name || mine) untrack(() => onSeated?.());
 	});
-	/** The name this phone has: saving it again changes nothing. */
-	const unchanged = $derived(!!view && name.trim() === view.me.name);
 	const seatName = (seatId?: SeatId) => {
 		const s = seats.find((x) => x.seatId === seatId);
 		return s ? t('room.seatLower', { number: s.seatNumber }) : t('room.anySeatLower');
@@ -237,13 +218,6 @@
 	});
 
 	/*
-	 * Name, seat and initials are one sheet away: the whole "You" row opens it (plan J12), so
-	 * the phone lands on the script (Trevor, 2026-10-23) with its next step in view. Asking
-	 * closes it.
-	 */
-	let editing = $state(false);
-
-	/*
 	 * Grim view (plan D1, Trevor 2026-10-22: "grim view by password or direct link. drop
 	 * spectate"): the room code and the Storyteller's password open the view-only grimoire.
 	 * Players without a seat (Specters) join as players.
@@ -321,15 +295,6 @@
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		void goto(`${resolve('/play')}${url.hash}`);
 		return true;
-	}
-
-	/** Sends the name; a seated player keeps their seat, and a new one waits to be seated. */
-	function ask(event: SubmitEvent) {
-		event.preventDefault();
-		const n = name.trim();
-		if (!n || !player) return;
-		player.setName(n);
-		editing = false;
 	}
 </script>
 
@@ -440,18 +405,11 @@
 		/>{/if}
 {:else if inRoom}
 	<div class="you-line">
-		<!-- One tap target, the whole row (Trevor: whole-row tap), with the pencil it opens by. -->
-		<button
-			type="button"
-			class="you"
-			data-testid="you-row"
-			aria-haspopup="dialog"
-			onclick={() => (editing = true)}
-		>
+		<!-- Where this phone sits; the name is set from You on the title line (plan E2, Trevor
+		     2026-10-26: "move name into an edit button in the top"). -->
+		<p class="you" data-testid="you-row">
 			<span class="summary" role="status" data-testid="join-status">{summary}</span>
-			<Icon name="edit" />
-			<span class="visually-hidden">{t('room.editYou')}</span>
-		</button>
+		</p>
 		<!-- Only during the day, when the Storyteller shows it (Trevor, 2026-10-26); it shares
 		     the row's height, so nothing below moves. -->
 		{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
@@ -462,27 +420,6 @@
 			>
 		{/if}
 	</div>
-	<Dialog bind:open={editing} title={t('room.you')}>
-		<form onsubmit={ask}>
-			<label for="player-name">{t('room.yourName')}</label>
-			<ClearableField bind:value={name}>
-				<input
-					id="player-name"
-					bind:value={name}
-					maxlength="40"
-					autocomplete="nickname"
-					enterkeyhint="done"
-					onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-				/>
-			</ClearableField>
-			<ModalActions
-				onCancel={() => (editing = false)}
-				submit
-				disabled={!name.trim() || unchanged || status !== 'open'}
-				confirmLabel={t('common.save')}
-			/>
-		</form>
-	</Dialog>
 	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 
@@ -588,7 +525,7 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	/* Where this phone sits, and the pencil for its sheet, in one row over the tabs. */
+	/* Where this phone sits, with the ballot or Rate beside it, in one row over the tabs. */
 	.you-line {
 		display: flex;
 		align-items: stretch;
@@ -603,22 +540,11 @@
 		box-sizing: border-box;
 		min-width: 0;
 		min-height: var(--tap-target);
+		margin: 0;
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-	}
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 	/* Two lines reserved, so a longer status never moves the tabs. */
 	.summary {
@@ -627,18 +553,6 @@
 		min-height: 2.8em;
 		margin: 0;
 		align-content: center;
-	}
-	input:not([type='radio']) {
-		box-sizing: border-box;
-		width: 100%;
-		min-width: 0;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font: var(--font-control);
 	}
 	.ability {
 		margin: 0 0 var(--space-2);
