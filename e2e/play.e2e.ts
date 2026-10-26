@@ -859,18 +859,14 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// Joining lands on the script, with the room's row over the tabs; its sheet takes a name.
 	await page.goto(`/join/${code}`);
 	const row = page.getByTestId('you-row');
-	await expect(page.getByTestId('join-status')).toHaveText(
-		'Type the name to show.'
-	);
+	await expect(page.getByTestId('join-status')).toHaveText('Type the name to show.');
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await row.tap();
 	const sheet = page.getByRole('dialog', { name: 'You', exact: true });
 	await sheet.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await sheet.getByRole('button', { name: 'Save' }).tap();
 	await expect(sheet).toBeHidden();
-	await expect(page.getByTestId('join-status')).toHaveText(
-		'You are in the room as Alex.'
-	);
+	await expect(page.getByTestId('join-status')).toHaveText('You are in the room as Alex.');
 
 	// The row stays over every tab.
 	await openTab(page, 'Notes');
@@ -889,8 +885,6 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 
 	// /play itself shows the same room, while the phone is in it.
 	await page.goto('/play');
-	await expect(page.getByTestId('join-status')).toHaveText(
-		'You are in the room as Alex.'
-	);
+	await expect(page.getByTestId('join-status')).toHaveText('You are in the room as Alex.');
 	await st.context().close();
 });
