@@ -8,7 +8,9 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { RoomState } from './room.ts';
 import { parseSeatRole, roleKey, type SeatRole } from './seat-roles.ts';
 
-/** The roles the room holds for one game. */
+export type { SeatRole };
+
+/** The roles the room holds for one game; another game's are ignored until replaced. */
 export interface RoomRoles {
 	gameId: string;
 	/** Players may see their roles now; while off, the room holds none. */
@@ -41,14 +43,6 @@ export function setRoles(room: RoomState, gameId: unknown, show: unknown, raw: u
 	}
 	const seen = room.roles?.gameId === gameId ? room.roles.seen : {};
 	return { ...room, roles: { gameId, show, seats, seen } };
-}
-
-/** Characters belong to their game: a new one starts with none. */
-export function withoutRoles(room: RoomState): RoomState {
-	if (!room.roles) return room;
-	const { roles: _gone, ...rest } = room;
-	void _gone;
-	return rest;
 }
 
 /** The roles of the game on the table, if the room has any. */

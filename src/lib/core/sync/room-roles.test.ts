@@ -77,8 +77,10 @@ describe('players’ own characters in the room', () => {
 	});
 
 	it('forgets every character when a new game starts', () => {
-		const r = publish(roleSeen(setRoles(room(), 'g1', true, roles), 'alex'), 'g2', table('a'));
-		expect(r.roles).toBeUndefined();
-		expect(hostView(r).rolesSeen).toBeUndefined();
+		const r = publish(roleSeen(setRoles(room(), 'g1', true, roles), 'alex'), 'g2', table('a', 'b'));
+		expect(playerView(r, 'alex').role).toBeUndefined();
+		expect(hostView(r).rolesSeen).toEqual([]);
+		// The new game's roles start with nobody having looked.
+		expect(hostView(setRoles(r, 'g2', true, roles)).rolesSeen).toEqual([]);
 	});
 });

@@ -4,8 +4,7 @@
  * `Room` Durable Object applies. Shared by the Worker and the app so both sides agree.
  *
  * The room holds public state only, unless the Storyteller turns on the view-only grimoire
- * link (`SharedGrimoire`) or lets players see their own characters (`RoomRoles`), each sent
- * only to its own phone. Phones ask (a name, a seat); the Storyteller approves, and only
+ * link (`SharedGrimoire`) or players' own characters (`RoomRoles`). Phones ask (a name, a seat); the Storyteller approves, and only
  * then does the grimoire change, through its own commands.
  */
 import type { Alignment, Script } from '#lib/core/data/index.ts';
@@ -22,8 +21,7 @@ import {
 	type ScriptVoteTally
 } from './script-vote.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
-import { memberRole, seatsSeen, withoutRoles, type RoomRoles } from './room-roles.ts';
-import type { SeatRole } from './seat-roles.ts';
+import { memberRole, seatsSeen, type RoomRoles, type SeatRole } from './room-roles.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -369,6 +367,11 @@ export type ServerMessage =
 	 * kept, so a phone that joins later doesn't sound; older apps ignore it.
 	 */
 	| { type: 'call-town' }
+	/**
+	 * To the Storyteller's device: send the whole grimoire while an admin watches from Live
+	 * games (plan J31), or stop. The app shows nothing for it; older apps ignore it.
+	 */
+	| { type: 'grimoire-wanted'; on: boolean }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 
@@ -653,9 +656,7 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 	const seats = new Set(state.seats.map((s) => s.seatId));
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
-	const base = newGame
-		? withoutRoles(closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)))
-		: room;
+	const base = newGame ? closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)) : room;
 	return {
 		...base,
 		gameId,
