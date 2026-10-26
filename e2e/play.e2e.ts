@@ -869,7 +869,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await sheet.getByRole('button', { name: 'Save' }).tap();
 	await expect(sheet).toBeHidden();
 	await expect(page.getByTestId('join-status')).toHaveText(
-		'Waiting for the Storyteller to approve Alex.'
+		'You are in the room as Alex, without a seat yet.'
 	);
 
 	// The row stays over every tab.
@@ -890,7 +890,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// /play itself shows the same room, while the phone is in it.
 	await page.goto('/play');
 	await expect(page.getByTestId('join-status')).toHaveText(
-		'Waiting for the Storyteller to approve Alex.'
+		'You are in the room as Alex, without a seat yet.'
 	);
 	await st.context().close();
 });

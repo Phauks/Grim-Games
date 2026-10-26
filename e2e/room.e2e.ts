@@ -4,8 +4,9 @@ import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
-// Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
-// seat and name, the Storyteller approves, and the seat is named in the grimoire.
+// Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
+// name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
+// approval step (Trevor, 2026-10-26: "we don't approve anymore").
 
 /** Types a room code into Join game's code boxes. */
 async function typeCode(phone: Page, code: string) {
@@ -68,9 +69,9 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	// Saving closes the sheet.
 	await expect(sheet).toBeHidden();
 	await expect(phone.getByTestId('join-status')).toHaveText(
-		'Waiting for the Storyteller to approve Alex.'
+		'You are in the room as Alex, without a seat yet.'
 	);
-	// Asking moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
+	// Joining moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
 	// script"); the Room tab keeps the seat's state.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	// In a room, Share script hands on the room, as the board's does (Trevor, 2026-10-23).
@@ -81,13 +82,12 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await phone.keyboard.press('Escape');
 	await expect(passOn).toBeHidden();
 
-	// The request starts on the first free seat; the Storyteller can pick another.
-	const request = page.getByRole('listitem', { name: 'Alex asks for any seat' });
-	await expect(request.getByRole('combobox', { name: 'Seat for Alex' })).toContainText('Seat 1');
-	await request.getByRole('combobox', { name: 'Seat for Alex' }).tap();
+	// The phone is listed with no seat straight away; the Storyteller picks one.
+	const seatFor = page.getByRole('combobox', { name: 'Seat for Alex' });
+	await expect(seatFor).toContainText('No seat');
+	await seatFor.tap();
 	await page.getByRole('option', { name: 'Seat 3', exact: true }).tap();
-	await request.getByRole('button', { name: 'Approve' }).tap();
-	await expect(page.getByRole('listitem').filter({ hasText: 'Alex · Seat 3' })).toBeVisible();
+	await expect(seatFor).toContainText('Seat 3');
 
 	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
@@ -95,6 +95,12 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 		'aria-label',
 		/^Seat 3: Alex/
 	);
+	// A seated player's new name goes on their seat, with no approval either.
+	const rename = await seatSheet(phone);
+	await rename.getByRole('textbox', { name: 'Your name' }).fill('Alex K');
+	await rename.getByRole('button', { name: 'Save' }).tap();
+	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex K.');
+	await expect(page.getByRole('combobox', { name: 'Seat for Alex K' })).toContainText('Seat 3');
 
 	// Coming back (Trevor, 2026-10-19: "it booted me out like I had not joined it yet"): Join
 	// game lists the room, and opening it shows the seat this phone already has. Resume game
@@ -112,15 +118,15 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
 	// A phone with a seat opens on the script.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
+	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex K.');
 	const again = await seatSheet(phone);
-	await expect(again.getByRole('textbox', { name: 'Your name' })).toHaveValue('Alex');
+	await expect(again.getByRole('textbox', { name: 'Your name' })).toHaveValue('Alex K');
 	await expect(again.getByRole('button', { name: 'Save' })).toBeDisabled();
 	await phone.keyboard.press('Escape');
 
-	// Approving named the seat on the board, as an ordinary change.
+	// Seating, and the new name, named the seat on the board, as ordinary changes.
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
-	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex"]')).toBeVisible();
+	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex K"]')).toBeVisible();
 
 	// Under the code: connected, with who is in the room (Trevor, 2026-10-20).
 	await page.goto(`${board}/room`);
@@ -1522,10 +1528,8 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	// Initials are always on, with no switch (Trevor, 2026-10-25).
 	await expect(you.getByText('Initials on your seat', { exact: true })).toHaveCount(0);
 	await you.getByRole('button', { name: 'Save' }).tap();
-	const request = page.getByRole('listitem', { name: 'Alex Kim asks for any seat' });
-	await request.getByRole('combobox', { name: 'Seat for Alex Kim' }).tap();
+	await page.getByRole('combobox', { name: 'Seat for Alex Kim' }).tap();
 	await page.getByRole('option', { name: 'Seat 3', exact: true }).tap();
-	await request.getByRole('button', { name: 'Approve' }).tap();
 	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex Kim.');
 
 	// On the board: the seat has no character yet, so the initials are its face.
