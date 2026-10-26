@@ -18,6 +18,7 @@ export const modes = {
 	'modes.newGame.askText':
 		'This game moves to History when the new one starts. The room and players stay.',
 	'modes.info.watchers': 'Watching',
+	'modes.info.phase': 'Day or night',
 	'modes.info.onBoard': '{line} on the board',
 	'modes.info.rules': 'Special rules',
 	'modes.info.download': 'Download script',

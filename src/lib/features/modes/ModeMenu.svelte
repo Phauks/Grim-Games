@@ -168,11 +168,13 @@
 					}
 				]
 			: []),
-		// The day or night before the length, as on the corner's line (Trevor, 2026-10-24).
+		// The day or night and the length, each a line with its own eye (Trevor, 2026-10-26).
+		{ key: 'phase', label: t('modes.info.phase'), value: phase },
 		{
 			key: 'game-time',
 			label: t('history.gameLength'),
-			value: phase && gameLength ? `${phase} · ${gameLength}` : (phase ?? gameLength)
+			// "Setup" until the first night, as on the corner (Trevor, 2026-10-24).
+			value: gameLength ?? (phase === t('day.setup') ? phase : undefined)
 		},
 		{
 			key: 'watchers',
