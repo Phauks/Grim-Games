@@ -63,6 +63,8 @@
 	const openRoom = (code: string) => void goto(resolve('/join/[code]', { code }));
 
 	let data = $state<GameData>();
+	/** A room vote is open, so its ballot takes the place of the tabs. */
+	let voting = $state(false);
 	let error = $state<string>();
 	// The whole player screen, its dialogs and sheets included, takes the sheet background
 	// (Trevor, 2026-10-25); leaving it brings back the app theme.
@@ -218,9 +220,13 @@
 		<PlayerRoom
 			initialCode={join ? (join.code ?? null) : undefined}
 			onCode={join ? openRoom : undefined}
+			onVoting={(v) => (voting = v)}
 		/>
 	{/if}
-	{#if error || (join && choosing)}
+	{#if voting}
+		<!-- A room vote is open: its ballot, under the room row, is the screen (Trevor,
+		     2026-10-26: "voting should be its own screen. Not a popup"). -->
+	{:else if error || (join && choosing)}
 		<!-- No script yet: the room sends its own once the phone is in, and the tabs follow. -->
 	{:else if choosing}
 		<!-- Only when no script is loaded; no Change script once there is one (Trevor). -->

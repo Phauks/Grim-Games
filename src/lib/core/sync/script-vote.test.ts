@@ -172,6 +172,10 @@ describe('a vote on the next script', () => {
 			expect(tally.points).toEqual({ tb: 3, bmr: 1, 'recent:x': 1 });
 			expect(tally.out).toEqual({ 'recent:x': 1 });
 			expect(tally.winner).toBe('tb');
+			expect(tally.rounds).toEqual([
+				{ tb: 2, bmr: 1, 'recent:x': 1 },
+				{ tb: 3, bmr: 1 }
+			]);
 			expect(tally.voted).toBe(4);
 			expect(tally.members).toBe(4);
 		});
@@ -215,11 +219,14 @@ describe('a vote on the next script', () => {
 		r = castScriptBallot(r, 'bo', 'v1', ['bmr']);
 		expect(playerView(r, 'alex').scriptVote).not.toHaveProperty('tally');
 		r = showScriptVoteTally(r, true);
+		// Who has voted, never what they chose (Trevor, 2026-10-26: the same stats for all).
 		expect(playerView(r, 'alex').scriptVote?.tally).toEqual({
 			points: { tb: 0, bmr: 1, 'recent:x': 0 },
 			voted: 1,
-			members: 3
+			members: 3,
+			people: [{ voted: false }, { voted: true }, { voted: false }]
 		});
+		expect(hostView(r).scriptVote?.people).toEqual(playerView(r, 'alex').scriptVote?.tally?.people);
 		// Counted over the phones here now, as the Storyteller's count is.
 		expect(playerView(r, 'alex', new Set(['alex'])).scriptVote?.tally?.members).toBe(2);
 		expect(showScriptVoteTally(r, true)).toBe(r);
