@@ -144,15 +144,11 @@
 	const points = $derived(keepInside(seatPoints(ids, layout, board), board, size / 2 + unit));
 
 	/**
-	 * The board's corner lines, with the Players line always there and worked out from the
-	 * seats (Trevor, 2026-10-26: players shouldn't have to count): the standard split, which is
-	 * all the table can know.
+	 * The players and the split by type, worked out from the seats so nobody counts (Trevor,
+	 * 2026-10-26, plan E1): the standard split, which is all the table can know. A line of its
+	 * own over the town, so the corner keeps its room among the seats.
 	 */
-	const corner = $derived.by(() => {
-		const players = tablePlayersLine(seats);
-		const shown = table?.corner;
-		return players ? { modes: [], ...shown, players } : shown;
-	});
+	const counts = $derived(tablePlayersLine(seats));
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
 	let rootFont = $state(16);
@@ -276,6 +272,7 @@
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
+	<p class="counts" data-testid="grim-counts">{t('modes.info.players')}: {counts}</p>
 	<div
 		class="town"
 		bind:clientWidth={width}
@@ -358,7 +355,7 @@
 		<BoardCorner
 			meta={script.meta}
 			storytellerName={table?.storytellerName}
-			{corner}
+			corner={table?.corner}
 			roomCode={town ? roomHost().code : code}
 			logo={logo && !logoFailed ? logo : undefined}
 			watching
@@ -545,6 +542,11 @@
 		position: relative;
 		height: 75dvh;
 		margin-bottom: calc(2 * var(--tray-h, var(--tap-target)));
+	}
+	.counts {
+		margin: 0 0 var(--space-2);
+		color: var(--on-surface-muted);
+		font-size: 0.9rem;
 	}
 	.none {
 		margin: 0;
