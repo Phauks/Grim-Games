@@ -79,6 +79,8 @@
 	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
+	import TownCounts from './TownCounts.svelte';
+	import GenericGuessGrid from './GenericGuessGrid.svelte';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -360,6 +362,7 @@
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
+	<TownCounts {seats} />
 	<div
 		class="town"
 		class:display
@@ -549,19 +552,12 @@
 	/>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
 	     characters; a Traveller's seat has only Good and Evil, and no characters. -->
-	<ul class="generic" aria-label={t('player.grim.generic')}>
-		{#each guessChoices as g (g.key)}
-			<li>
-				<button
-					type="button"
-					aria-pressed={!!chosen && guessesOf(guesses, chosen.seatId).includes(g.key)}
-					data-guess-key={g.key}
-					onclick={() => guess(g.key)}
-					><AlignmentPill alignment={g.team} text={genericLabel(g)} /></button
-				>
-			</li>
-		{/each}
-	</ul>
+	<GenericGuessGrid
+		choices={guessChoices}
+		label={genericLabel}
+		pressed={(key) => !!chosen && guessesOf(guesses, chosen.seatId).includes(key)}
+		onGuess={guess}
+	/>
 	{#if !chosen?.traveller}<CharacterPicker
 			characters={script.characters}
 			selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
@@ -650,31 +646,6 @@
 		white-space: nowrap;
 	}
 	/* Two rows of three on a phone, one row where there is room. */
-	.generic {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(30%, calc(7 * var(--u))), 1fr));
-		gap: var(--space-1);
-		margin: 0 0 var(--space-2);
-		padding: 0;
-		list-style: none;
-	}
-	.generic button {
-		display: grid;
-		place-items: center;
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-1);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		font: inherit;
-		touch-action: manipulation;
-		cursor: pointer;
-	}
-	.generic button[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--surface-selected);
-	}
 	.tools {
 		display: flex;
 		align-items: center;

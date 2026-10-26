@@ -108,7 +108,11 @@
 	import { scriptKey } from '#lib/features/player/notebook.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
-	import { playersLine } from '#lib/features/modes/players-line.ts';
+	import {
+		dealtSeats,
+		playersLine,
+		standardPlayersLine
+	} from '#lib/features/modes/players-line.ts';
 	import { savedChoiceFor } from '#lib/features/modes/script-choices.svelte.ts';
 	import {
 		publicTravellerTest,
@@ -946,8 +950,14 @@
 			players: playersLine(game, characters)
 		})
 	);
+	// Phones get the table's standard split, never the grimoire's: a Baron's extra Outsiders
+	// are the Storyteller's to know (https://wiki.bloodontheclocktower.com/Baron).
 	$effect(() => {
-		if (!watching) roomHost().showCorner(game.gameId, cornerInfo);
+		if (!watching)
+			roomHost().showCorner(game.gameId, {
+				...cornerInfo,
+				...(cornerInfo.players ? { players: standardPlayersLine(game.seating.length) } : {})
+			});
 	});
 	// Players see the day timer during the day only (Trevor, 2026-10-26).
 	$effect(() => {
@@ -1596,7 +1606,7 @@
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
 			<PlayerScriptTabs
 				script={loadedScript}
-				players={game.seating.length}
+				players={dealtSeats(town.seats).dealt}
 				inPlay={charactersInPlay(game)}
 				travellers={travellersInPlay(town.seats)}
 				rules={gameSheetRules(game.gameId)}

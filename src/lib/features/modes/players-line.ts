@@ -39,10 +39,37 @@ export function playersLine(game: Game, characters: CharacterLookup | undefined)
 	return `${seats.length} (${parts.join(', ')})`;
 }
 
-/** The standard split for a table of this size, as the Players row gives it (a sample). */
-export function standardPlayersLine(players: number): string {
-	const split = splitPlayers(players);
-	return `${players} (${SEATED_TYPES.map((type) => count(type, split.counts[type])).join(', ')})`;
+/**
+ * The standard split for a table of `players` seats, `travellers` of them Travellers, as the
+ * Players row gives it: a sample in Settings, and the line every phone in a room shows (Trevor,
+ * 2026-10-26: players shouldn't have to work it out). Only what the table can count: a setup
+ * change such as the Baron's is the Storyteller's secret, so it never shows here.
+ */
+export function standardPlayersLine(players: number, travellers?: number): string {
+	const split = splitPlayers(players, travellers);
+	const parts = [
+		...SEATED_TYPES.map((type) => count(type, split.counts[type])),
+		...(split.travellers > 0 ? [count('traveller', split.travellers)] : [])
+	];
+	return `${players} (${parts.join(', ')})`;
+}
+
+/**
+ * The Players line from the seats as the table knows them (a room's public seats): every
+ * seat, those the town knows are Travellers told apart. Undefined with no seats.
+ */
+export function tablePlayersLine(seats: readonly { traveller?: string }[]): string | undefined {
+	if (!seats.length) return undefined;
+	return standardPlayersLine(seats.length, dealtSeats(seats).travellers);
+}
+
+/** The seats taking characters from the bag, and the Travellers the town knows about. */
+export function dealtSeats(seats: readonly { traveller?: string }[]): {
+	dealt: number;
+	travellers: number;
+} {
+	const travellers = seats.filter((s) => s.traveller).length;
+	return { dealt: seats.length - travellers, travellers };
 }
 
 /**
