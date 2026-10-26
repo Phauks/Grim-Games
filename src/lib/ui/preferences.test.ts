@@ -93,6 +93,7 @@ describe('parsePreferences', () => {
 			callSound: 'buzzer',
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
+			timerForPlayers: 'timer',
 			qrCentre: 'picture',
 			qrPictureWhole: true,
 			qrPictureZoom: 1.5,

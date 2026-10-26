@@ -30,6 +30,8 @@ export interface GameModeRecord {
 	roleRecycling?: boolean;
 	/** Jinxed pairs for a draft: blocked, less likely or allowed. Left out, allowed. */
 	jinxedPairs?: JinxedPairs;
+	/** Ivory draft for a draft: at most one character that makes an extra evil player. */
+	ivoryDraft?: boolean;
 }
 
 const KEY = (gameId: GameId) => `grim-games:game-mode:v2:${gameId}`;
@@ -43,8 +45,13 @@ function restrictionsOf(value: unknown): StorytellerRestrictions {
 	return { banned: ids(r.banned), allowed: ids(r.allowed) };
 }
 
-const recycling = (r: { roleRecycling?: unknown; jinxedPairs?: unknown }) => ({
+const recycling = (r: {
+	roleRecycling?: unknown;
+	jinxedPairs?: unknown;
+	ivoryDraft?: unknown;
+}) => ({
 	...(typeof r.roleRecycling === 'boolean' ? { roleRecycling: r.roleRecycling } : {}),
+	...(typeof r.ivoryDraft === 'boolean' ? { ivoryDraft: r.ivoryDraft } : {}),
 	...((JINXED_PAIRS as readonly unknown[]).includes(r.jinxedPairs)
 		? { jinxedPairs: r.jinxedPairs as JinxedPairs }
 		: {})

@@ -31,7 +31,7 @@
 {#if notFound}
 	<!-- Compact (Trevor, 2026-10-19): the Fool and the joke on the left, a thin line, the ways out
 	     stacked on the right. No Back: the sidebar navigates. -->
-	<Page title={t('errors.pageNotFound')} width="text">
+	<Page title={t('errors.pageNotFound')}>
 		<div class="not-found" data-testid="not-found">
 			<figure class="fool">
 				<!-- The icon's box is reserved while the character data loads. -->
@@ -59,7 +59,7 @@
 	</Page>
 {:else}
 	<!-- Details is always in the title row, so nothing moves. -->
-	<Page title={t('errors.somethingWentWrong')} width="text">
+	<Page title={t('errors.somethingWentWrong')}>
 		{#snippet actions()}
 			<Button variant="quiet" onclick={() => errorLog.showDetails()}>{t('errors.details')}</Button>
 			<Button href={resolve('/')}>{t('errors.home')}</Button>

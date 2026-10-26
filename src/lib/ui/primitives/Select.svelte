@@ -2,6 +2,8 @@
 	import { createListCollection, Select } from '@ark-ui/svelte/select';
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
+	import IconButton from './IconButton.svelte';
 	import { onLayerOpen } from './layers.ts';
 
 	interface Option {
@@ -42,6 +44,12 @@
 		disabled?: boolean;
 		/** False lets the list be as wide as its options (a closed control smaller than them). */
 		listFitsTrigger?: boolean;
+		/**
+		 * The closed control is this icon on an IconButton, the very button beside it in a row of
+		 * icon buttons (Print, Share), so it can never look different from them (Trevor,
+		 * 2026-10-26). `label` is its name and tooltip; the list is as wide as its options.
+		 */
+		icon?: IconSlot;
 	}
 
 	let {
@@ -59,7 +67,8 @@
 		item,
 		selected,
 		disabled,
-		listFitsTrigger = true
+		listFitsTrigger = true,
+		icon
 	}: Props = $props();
 
 	let open = $state(false);
@@ -149,20 +158,33 @@
 	onValueChange={(details) => change(details.value as T[])}
 	ids={labelledBy ? { label: labelledBy } : undefined}
 	{disabled}
-	positioning={{ strategy: 'fixed', sameWidth: listFitsTrigger, fitViewport: true, gutter: 4 }}
+	positioning={{
+		strategy: 'fixed',
+		sameWidth: listFitsTrigger && !icon,
+		fitViewport: true,
+		gutter: 4
+	}}
 	lazyMount
 	unmountOnExit
 >
 	{#if !labelledBy}
-		<Select.Label class={hideLabel ? 'visually-hidden' : undefined}>{label}</Select.Label>
+		<Select.Label class={hideLabel || icon ? 'visually-hidden' : undefined}>{label}</Select.Label>
 	{/if}
 	<Select.Control>
-		<Select.Trigger>
-			<span class="value">
-				{#if current && selected && !multiple}{@render selected(current)}{:else}{shown}{/if}
-			</span>
-			<Select.Indicator><Icon name="forward" /></Select.Indicator>
-		</Select.Trigger>
+		{#if icon}
+			<Select.Trigger>
+				{#snippet asChild(props)}
+					<IconButton {...props()} {icon} {label} />
+				{/snippet}
+			</Select.Trigger>
+		{:else}
+			<Select.Trigger>
+				<span class="value">
+					{#if current && selected && !multiple}{@render selected(current)}{:else}{shown}{/if}
+				</span>
+				<Select.Indicator><Icon name="forward" /></Select.Indicator>
+			</Select.Trigger>
+		{/if}
 	</Select.Control>
 	<Select.Positioner>
 		<Select.Content>
@@ -196,7 +218,8 @@
 		clip-path: inset(50%);
 		white-space: nowrap;
 	}
-	:global([data-scope='select'][data-part='trigger']) {
+	/* An `icon` trigger is an IconButton and keeps that look alone. */
+	:global([data-scope='select'][data-part='trigger']:not(.icon-button)) {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -213,7 +236,7 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
-	:global([data-scope='select'][data-part='trigger'][data-state='open']) {
+	:global([data-scope='select'][data-part='trigger'][data-state='open']:not(.icon-button)) {
 		border-color: var(--choice-selected-border);
 	}
 	:global([data-scope='select'][data-part='trigger']:focus-visible) {

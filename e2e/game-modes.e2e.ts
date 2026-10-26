@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { expectMatchingIconRow } from './icon-row.ts';
 import { openSettingsDialog } from './shell.ts';
 
 /**
@@ -429,6 +430,11 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await jinxed.tap();
 	await page.getByRole('option', { name: 'Less likely', exact: true }).tap();
 	await expect(jinxed).toHaveText(/Less likely/);
+	// Ivory draft, as Grimbits' draft tool offers: off by default.
+	const ivory = modesPanel(page).getByRole('checkbox', { name: 'Ivory draft' });
+	await expect(ivory).not.toBeChecked();
+	await modesPanel(page).getByText('Ivory draft', { exact: true }).tap();
+	await expect(ivory).toBeChecked();
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -438,6 +444,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	);
 	expect(record.roleRecycling).toBe(true);
 	expect(record.jinxedPairs).toBe('reduce');
+	expect(record.ivoryDraft).toBe(true);
 	// The draft knows each character's jinxed partners
 	// (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
 	await drawTile(page);
@@ -448,6 +455,8 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	);
 	expect(state.config.jinxes).toBe('reduce');
 	expect(state.jinxed.heretic).toContain('baron');
+	expect(state.config.ivory).toBe(true);
+	expect(state.extraEvil).toContain('goon');
 });
 
 test('with our own wording on, each mode shows its About description', async ({ page }) => {
@@ -1955,14 +1964,14 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 	const choice = sheet.getByTestId('sheet-background');
 	await expect(choice).toHaveCount(1);
 	await expect(sheet.getByTestId('script-copy').getByTestId('sheet-background')).toHaveCount(0);
-	// Drawn like Print beside it: a borderless icon button of the same size (Trevor, 2026-10-26).
+	// The same button as Print and Share beside it (Trevor, 2026-10-26).
 	const trigger = choice.getByRole('combobox', { name: 'Sheet background' });
-	const print = sheet.getByRole('button', { name: 'Print script' });
-	await expect(trigger).toHaveCSS('border-top-width', '0px');
 	await expect(trigger.locator('[data-icon="ph:paint-bucket"]')).toBeVisible();
-	const [triggerBox, printBox] = [await trigger.boundingBox(), await print.boundingBox()];
-	expect(triggerBox?.width).toBeCloseTo(printBox?.width ?? 0, 0);
-	expect(triggerBox?.height).toBeCloseTo(printBox?.height ?? 0, 0);
+	await expectMatchingIconRow(choice.locator('xpath=..'), [
+		'Sheet background',
+		'Print script',
+		'Share script'
+	]);
 	await trigger.tap();
 	await page.getByRole('option', { name: 'Grey' }).tap();
 	await expect(sheet.getByTestId('script-copy')).toHaveCSS(

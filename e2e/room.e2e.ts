@@ -50,6 +50,32 @@ async function startGame(page: Page, storyteller?: string) {
 	return new URL(page.url()).pathname;
 }
 
+test("Your games shows each room's whole line on a phone, however long the Storyteller's name", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-26: "I can't see all text beneath name of script" when rejoining.
+	const board = await startGame(page, 'Trevor Goldsmith');
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toBeVisible();
+	await phone.goto('/join');
+	const row = phone.getByTestId('recent-rooms').getByRole('button');
+	await expect(row).toContainText('Storyteller: Trevor Goldsmith');
+	await expect(row).toContainText(String(new Date().getFullYear()));
+	// No line is cut short with an ellipsis.
+	const cut = await row
+		.locator('.recent-line')
+		.evaluateAll((lines) => lines.filter((l) => l.scrollWidth > l.clientWidth).length);
+	expect(cut).toBe(0);
+	await phoneContext.close();
+});
+
 test('a phone joins with a name, and the Storyteller seats it', async ({
 	page,
 	browser

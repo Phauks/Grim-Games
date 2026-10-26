@@ -16,5 +16,6 @@
 	},
 	"reminderMovement": {
 		"why": "Follows whoever chose the Goon tonight."
-	}
+	},
+	"makesExtraEvil": true
 }

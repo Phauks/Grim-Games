@@ -11,6 +11,8 @@ import {
 	isOver,
 	isRunning,
 	parseSharedTimer,
+	parsePublicTimer,
+	dayLeft,
 	pause,
 	remaining,
 	reset,
@@ -113,5 +115,35 @@ describe('the timer spectators see (Trevor, 2026-10-19)', () => {
 		expect(
 			parseSharedTimer({ durationMs: 1, elapsedMs: 0, startedAt: 'soon', mode: 'down' })
 		).toBeUndefined();
+	});
+});
+
+describe("players' day timer (Trevor, 2026-10-26: sun or timer for players)", () => {
+	it('keeps the timer and how it looks', () => {
+		expect(
+			parsePublicTimer({
+				durationMs: 60_000,
+				elapsedMs: 0,
+				startedAt: 9,
+				mode: 'down',
+				look: 'sun'
+			})
+		).toEqual({ durationMs: 60_000, elapsedMs: 0, startedAt: 9, mode: 'down', look: 'sun' });
+	});
+
+	it('drops a timer with no look, or a malformed one', () => {
+		expect(parsePublicTimer({ durationMs: 60_000, elapsedMs: 0, mode: 'down' })).toBeUndefined();
+		expect(
+			parsePublicTimer({ durationMs: 60_000, elapsedMs: 0, mode: 'down', look: 'moon' })
+		).toBeUndefined();
+		expect(parsePublicTimer(undefined)).toBeUndefined();
+	});
+
+	it("says how much of the day's time is left, from 1 down to 0", () => {
+		const t = start(dayTimer(2), 0);
+		expect(dayLeft(dayTimer(2), 99_000)).toBe(1);
+		expect(dayLeft(t, 15_000)).toBe(0.75);
+		expect(dayLeft(t, 60_000)).toBe(0);
+		expect(dayLeft(t, 90_000)).toBe(0);
 	});
 });

@@ -217,7 +217,8 @@ export const setup = {
 	'setup.lock.lock': 'Lock the draw',
 	'setup.lock.unlock': 'Unlock the draw',
 	'setup.lock.setTitle': 'Lock the draw',
-	'setup.lock.setBody': 'Players can draw, but leaving the draw needs this PIN.',
+	'setup.lock.setBody':
+		'Players can draw, but leaving the draw needs this PIN. It stays the PIN for this game.',
 	'setup.lock.pin': 'PIN',
 	'setup.lock.again': 'PIN again',
 	'setup.lock.mismatch': 'The PINs are different.',

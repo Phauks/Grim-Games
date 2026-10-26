@@ -945,6 +945,10 @@
 	$effect(() => {
 		if (!watching) roomHost().showCorner(game.gameId, cornerInfo);
 	});
+	// Players see the day timer during the day only (Trevor, 2026-10-26).
+	$effect(() => {
+		if (!watching) roomHost().showDay(game.gameId, phaseNow.kind === 'day' && !ended);
+	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
