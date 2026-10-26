@@ -355,6 +355,11 @@ export type ServerMessage =
 	 * kept, so a phone that joins later doesn't sound; older apps ignore it.
 	 */
 	| { type: 'call-town' }
+	/**
+	 * To the Storyteller's device: send the whole grimoire while an admin watches from Live
+	 * games (plan J31), or stop. The app shows nothing for it; older apps ignore it.
+	 */
+	| { type: 'grimoire-wanted'; on: boolean }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 
