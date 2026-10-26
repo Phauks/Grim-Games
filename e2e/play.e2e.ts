@@ -860,7 +860,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await page.goto(`/join/${code}`);
 	const row = page.getByTestId('you-row');
 	await expect(page.getByTestId('join-status')).toHaveText(
-		'Type the name to show, and the Storyteller will seat you.'
+		'Type the name to show.'
 	);
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await row.tap();
@@ -869,7 +869,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await sheet.getByRole('button', { name: 'Save' }).tap();
 	await expect(sheet).toBeHidden();
 	await expect(page.getByTestId('join-status')).toHaveText(
-		'You are in the room as Alex, without a seat yet.'
+		'You are in the room as Alex.'
 	);
 
 	// The row stays over every tab.
@@ -890,7 +890,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// /play itself shows the same room, while the phone is in it.
 	await page.goto('/play');
 	await expect(page.getByTestId('join-status')).toHaveText(
-		'You are in the room as Alex, without a seat yet.'
+		'You are in the room as Alex.'
 	);
 	await st.context().close();
 });

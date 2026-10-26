@@ -7,7 +7,6 @@
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
@@ -47,19 +46,11 @@
 		refreshOpen = true;
 	}
 	const seats = $derived(seatsInOrder(game.game));
-	const seatLabel = (seatId?: SeatId) => {
+	/** A phone sits where its name is on the board, so the list only says which seat. */
+	const seatNumber = (seatId?: SeatId) => {
 		const i = seats.findIndex((s) => s.seatId === seatId);
-		if (i < 0) return t('room.noSeat');
-		const name = seats[i].playerName;
-		return name
-			? // eslint-disable-next-line grim/names-as-badges -- plain text for the seat drop-down and the row's aria label; the row shows a PlayerBadge
-				t('room.seatWithName', { number: i + 1, name })
-			: t('common.seat', { number: i + 1 });
+		return i < 0 ? t('room.noSeat') : t('common.seat', { number: i + 1 });
 	};
-	const seatOptions = $derived([
-		{ value: '' as SeatId | '', label: t('room.noSeat') },
-		...seats.map((s) => ({ value: s.seatId as SeatId | '', label: seatLabel(s.seatId) }))
-	]);
 	const link = $derived(
 		host.code ? `${location.origin}${resolve('/join/[code]', { code: host.code })}` : ''
 	);
@@ -140,8 +131,8 @@
 
 <!--
 	Share: the room code and QR, and who is in the room. Players join with just
-	their name (Trevor, 2026-10-26: "we don't approve anymore"); picking a seat for
-	one names it on the board (a normal, undoable change).
+	their name (Trevor, 2026-10-26: "we don't approve anymore"), and sit in the seat
+	the board names with it ("I wanna drop the seat picking").
 -->
 {#snippet scriptCenter()}
 	<ScriptQrCenter {logo} name={scriptName} bind:failed={logoFailed} />
@@ -273,14 +264,7 @@
 					{#each seated as member (member.memberId)}
 						<li class="member">
 							<strong>{member.name}</strong>
-							<Select
-								label={t('room.seatFor', { name: member.name ?? '' })}
-								hideLabel
-								disabled={!connected}
-								value={member.seatId ?? ''}
-								options={seatOptions}
-								onChange={(v) => host.seat(member, v || undefined)}
-							/>
+							<span class="seat-number">{seatNumber(member.seatId)}</span>
 						</li>
 					{/each}
 				</ul>
