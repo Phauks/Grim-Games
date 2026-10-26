@@ -24,11 +24,7 @@ import {
 	DAY_SECONDS_PER_ALIVE_MAX,
 	DAY_SECONDS_PER_ALIVE_MIN
 } from '#lib/core/rules/day-timer.ts';
-import {
-	defaultAmbienceChoices,
-	parseAmbienceChoices,
-	type AmbienceChoice
-} from '#lib/core/sound/ambience.ts';
+import { DEFAULT_AMBIENCE, parseAmbience } from '#lib/core/sound/ambience.ts';
 
 /**
  * Per-device look-and-feel preferences (04-architecture.md §9). Separate from game state
@@ -105,8 +101,10 @@ export interface Preferences {
 	ambienceOn: boolean;
 	/** How loud day and night sound plays, under the device's volume (plan U3). */
 	ambienceLevel: number;
-	/** Which day and night sounds play, and how often each call comes (plan U3). */
-	ambience: Record<string, AmbienceChoice>;
+	/** The recording that plays in the night, by id (plan U3). */
+	nightAmbience: string;
+	/** The recording that plays in the day, by id (plan U3). */
+	dayAmbience: string;
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
@@ -236,7 +234,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	callSound: 'clocktower',
 	ambienceOn: false,
 	ambienceLevel: 0.6,
-	ambience: defaultAmbienceChoices(),
+	nightAmbience: DEFAULT_AMBIENCE.night,
+	dayAmbience: DEFAULT_AMBIENCE.day,
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	timerForPlayers: 'sun',
@@ -328,7 +327,8 @@ export function parsePreferences(raw: unknown): Preferences {
 			AMBIENCE_LEVEL,
 			DEFAULT_PREFERENCES.ambienceLevel
 		),
-		ambience: parseAmbienceChoices(input.ambience),
+		nightAmbience: parseAmbience('night', input.nightAmbience),
+		dayAmbience: parseAmbience('day', input.dayAmbience),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
 			: DEFAULT_PREFERENCES.timerMode,

@@ -12,7 +12,6 @@ import {
 } from './preferences.ts';
 import { DEFAULT_ASSISTANCE } from './assistance.ts';
 import { grimoire } from './themes/grimoire/theme.ts';
-import { defaultAmbienceChoices } from '#lib/core/sound/ambience.ts';
 
 const prefs = (change: Partial<Preferences> = {}): Preferences => ({
 	...DEFAULT_PREFERENCES,
@@ -94,7 +93,8 @@ describe('parsePreferences', () => {
 			callSound: 'buzzer',
 			ambienceOn: true,
 			ambienceLevel: 0.3,
-			ambience: { ...defaultAmbienceChoices(), owl: 'often', rain: 'on' },
+			nightAmbience: 'night-loons',
+			dayAmbience: 'weather-rain-wood',
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
 			timerForPlayers: 'timer',
@@ -153,15 +153,19 @@ describe('parsePreferences', () => {
 		const prefs = parsePreferences({});
 		expect(prefs.ambienceOn).toBe(false);
 		expect(prefs.ambienceLevel).toBe(0.6);
-		expect(prefs.ambience.owl).toBe('sometimes');
+		expect(prefs.nightAmbience).toBe('night-meadow');
+		expect(prefs.dayAmbience).toBe('day-forest');
 		const chosen = parsePreferences({
 			ambienceOn: true,
 			ambienceLevel: 9,
-			ambience: { owl: 'off' }
+			nightAmbience: 'fire-crackle',
+			dayAmbience: 'night-loons'
 		});
 		expect(chosen.ambienceOn).toBe(true);
 		expect(chosen.ambienceLevel).toBe(1);
-		expect(chosen.ambience.owl).toBe('off');
+		expect(chosen.nightAmbience).toBe('fire-crackle');
+		// A night recording is not offered in the day.
+		expect(chosen.dayAmbience).toBe('day-forest');
 	});
 
 	it('gives character icons the one icon size saved before the split', () => {

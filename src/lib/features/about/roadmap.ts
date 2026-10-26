@@ -1,6 +1,6 @@
 /**
  * The roadmap, kept in the repository so it ticks itself off. Each item is a feature, made of
- * the backlog plan's IDs (D1, R1-R9, B1-B6, S1-S22, P1-P2, L1-L65, G1-G16, J1-J23, W1-W6, Q1-Q2, U1-U4, ...):
+ * the backlog plan's IDs (D1, R1-R9, B1-B6, S1-S22, P1-P2, L1-L65, G1-G16, J1-J23, W1-W6, Q1-Q2, U1-U7, ...):
  * a part is finished once a merged change names its ID in brackets in its title, such as
  * "Savant info generator (L2)", and an item is done once all its parts and listed PRs are.
  * Only the features are shown. Add a new plan ID to the feature it belongs to, or a new
@@ -157,8 +157,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
 	{
-		title: 'Sound: every sound in one place, Back to town, day and night ambience, your own sounds',
-		parts: ['U1', 'U2', 'U3', 'U4']
+		title:
+			'Sound: every sound in one place, Back to town, day and night ambience, a soundboard, sounds for your actions, your own sounds',
+		parts: ['U1', 'U2', 'U3', 'U4', 'U6', 'U7']
 	},
 	{
 		title: 'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover',

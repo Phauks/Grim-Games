@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
 // Day and night sound (plan U3, Trevor 2026-10-26: "Ambient sound during the day or night",
-// recorded parts the Storyteller picks): off until turned on, and only once the first night
-// begins does the board fetch and play its recordings.
+// one recording at a time, Trevor's pick of the same day): off until turned on, and only once
+// the first night begins does the board fetch and play the night's recording.
 
 test('day and night sound plays recordings on the board once the night begins', async ({
 	page
@@ -27,15 +27,14 @@ test('day and night sound plays recordings on the board once the night begins', 
 	await expect(on).not.toBeChecked();
 	// Every row is in place while it is off, disabled.
 	await expect(settings.getByRole('slider', { name: 'Level' })).toBeDisabled();
-	await settings.getByRole('button', { name: /Night sounds/ }).tap();
-	const owl = settings.getByRole('combobox', { name: 'Owl' });
-	await expect(owl).toContainText('Sometimes');
-	await expect(owl).toBeDisabled();
-	await expect(settings.getByRole('checkbox', { name: 'Crickets' })).toBeDisabled();
+	const night = settings.getByRole('combobox', { name: 'Night sound' });
+	await expect(night).toContainText('Evening meadow');
+	await expect(night).toBeDisabled();
+	await expect(settings.getByRole('combobox', { name: 'Day sound' })).toBeDisabled();
 
 	await settings.getByText('Play on the board', { exact: true }).tap();
 	await expect(on).toBeChecked();
-	await expect(owl).toBeEnabled();
+	await expect(night).toBeEnabled();
 	await expect(settings.getByRole('slider', { name: 'Level' })).toBeEnabled();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(settings).toBeHidden();
@@ -62,7 +61,10 @@ test('day and night sound plays recordings on the board once the night begins', 
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 
-	// The night's loops start at once: crickets and wind by default.
-	await expect.poll(() => fetched).toContain('/sounds/ambience/crickets.mp3');
-	expect(fetched).toContain('/sounds/ambience/wind.mp3');
+	// The night's recording starts at once, the Evening meadow by default, and it is the only
+	// one playing.
+	await expect.poll(() => fetched).toContain('/sounds/ambience/night-meadow.mp3');
+	expect(fetched.filter((path) => path.startsWith('/sounds/ambience/night-'))).toEqual([
+		'/sounds/ambience/night-meadow.mp3'
+	]);
 });

@@ -18,7 +18,8 @@ registerSettingsSection({
 			callSound: DEFAULT_PREFERENCES.callSound,
 			ambienceOn: DEFAULT_PREFERENCES.ambienceOn,
 			ambienceLevel: DEFAULT_PREFERENCES.ambienceLevel,
-			ambience: DEFAULT_PREFERENCES.ambience
+			nightAmbience: DEFAULT_PREFERENCES.nightAmbience,
+			dayAmbience: DEFAULT_PREFERENCES.dayAmbience
 		}),
 	profile: true,
 	order: 36

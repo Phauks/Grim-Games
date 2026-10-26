@@ -1,42 +1,34 @@
 import {
-	AMBIENCE_PATH,
-	AMBIENCE_SOUNDS,
-	ambienceFiles,
-	ambienceFor,
-	callVariation,
-	nextCallDelay,
-	pickFile,
-	type AmbienceRate,
-	type AmbienceSound
+	ambienceMix,
+	ambienceUrl,
+	type AmbienceMix,
+	type AmbienceScene
 } from '#lib/core/sound/ambience.ts';
 import { keepOffline } from '#lib/features/offline/keep-offline.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { audio, unlockOnFirstTap } from './sound.ts';
 
 /**
- * Plays day and night sound on the board (plan U3, Trevor 2026-10-26): the recorded loops of
- * the scene under its calls, each call at a random time with a little change of speed,
- * loudness and side (`#lib/core/sound/ambience.ts`). A new scene fades in over the old one.
- * The recordings are fetched when first played, so a device that never turns this on never
- * downloads them; a missing one is left out.
+ * Plays day and night sound on the board (plan U3, Trevor 2026-10-26): the recording chosen
+ * for the scene, looped (`#lib/core/sound/ambience.ts`). One plays at a time; a new scene or
+ * a new choice fades in over the old one. A recording is fetched when first played, so a
+ * device that never turns this on never downloads one; a missing one is left out.
  */
 
-/** Seconds a sound takes to fade in or out. */
+/** Seconds a recording takes to fade in or out. */
 const FADE = 3;
 
-interface Layer {
-	sound: AmbienceSound;
+interface Playing {
+	id: string;
 	gain: GainNode;
 	source?: AudioBufferSourceNode;
-	timer?: ReturnType<typeof setTimeout>;
-	last?: string;
 }
 
 const buffers = new Map<string, Promise<AudioBuffer | undefined>>();
 
 /** A recording, decoded once per page; undefined when it can't be fetched or decoded. */
-function buffer(ctx: AudioContext, file: string): Promise<AudioBuffer | undefined> {
-	const url = `${AMBIENCE_PATH}/${file}`;
+function buffer(ctx: AudioContext, mix: AmbienceMix): Promise<AudioBuffer | undefined> {
+	const url = ambienceUrl(mix);
 	let decoded = buffers.get(url);
 	if (!decoded) {
 		decoded = fetch(url)
@@ -51,129 +43,86 @@ function buffer(ctx: AudioContext, file: string): Promise<AudioBuffer | undefine
 	return decoded;
 }
 
-/** The level every day and night sound plays at, under the device's volume. */
+/** The level day and night sound plays at, under the device's volume. */
 function busLevel(): number {
 	return preferences.current.ambienceLevel * preferences.current.soundVolume;
 }
 
-/** A call's rate as chosen now, or undefined when it has been turned off. */
-function rateOf(sound: AmbienceSound): AmbienceRate | undefined {
-	const choice = preferences.current.ambience[sound.id] ?? sound.choice;
-	return choice === 'off' || choice === 'on' ? undefined : choice;
-}
-
-/** Plays one of a call's files now, through `output`. */
-async function playCall(
-	ctx: AudioContext,
-	output: AudioNode,
-	sound: AmbienceSound,
-	last?: string
-): Promise<string> {
-	const file = pickFile(sound.files, last);
-	const data = await buffer(ctx, file);
-	if (!data || ctx.state !== 'running') return file;
-	const { speed, gain, pan } = callVariation();
-	const source = ctx.createBufferSource();
-	source.buffer = data;
-	source.playbackRate.value = speed;
-	const level = ctx.createGain();
-	level.gain.value = sound.level * gain;
-	let node: AudioNode = source.connect(level);
-	// Safari before 14.1 has no stereo panner; the call plays centred there.
-	if (typeof ctx.createStereoPanner === 'function') {
-		const panner = ctx.createStereoPanner();
-		panner.pan.value = pan;
-		node = node.connect(panner);
-	}
-	node.connect(output);
-	source.start();
-	return file;
+/** The recording chosen for a scene. */
+function chosen(scene: AmbienceScene): AmbienceMix | undefined {
+	return ambienceMix(
+		scene === 'night' ? preferences.current.nightAmbience : preferences.current.dayAmbience
+	);
 }
 
 class Ambience {
 	#bus: GainNode | undefined;
-	#layers = new Map<string, Layer>();
-	#keptOffline = false;
+	#playing: Playing | undefined;
+	#kept = new Set<string>();
 
 	/**
-	 * Plays this scene's sounds as the preferences choose, fading out any that stop; null
-	 * stops them all. Reads the preferences, so an effect that calls it follows their changes.
+	 * Plays this scene's recording as the preferences choose, fading out the one before; null
+	 * stops it. Reads the preferences, so an effect that calls it follows their changes.
 	 */
-	sync(scene: 'night' | 'day' | null): void {
+	sync(scene: AmbienceScene | null): void {
 		const on = preferences.current.ambienceOn && scene !== null;
-		const wanted = on ? ambienceFor(scene, preferences.current.ambience) : [];
+		const mix = on ? chosen(scene) : undefined;
 		const level = busLevel();
-		for (const [id, layer] of this.#layers) {
-			if (!wanted.some((sound) => sound.id === id)) this.#fadeOut(id, layer);
-		}
-		if (wanted.length === 0) return;
+		if (this.#playing && this.#playing.id !== mix?.id) this.#fadeOut(this.#playing);
+		if (!mix) return;
 		const ctx = audio();
 		if (!ctx) return;
 		// The board may open before any tap, as after a reload.
 		if (ctx.state === 'suspended') unlockOnFirstTap();
-		if (!this.#keptOffline) {
-			// Every recording, so a game later on with no signal still has them all.
-			this.#keptOffline = true;
-			keepOffline(ambienceFiles());
-		}
+		this.#keepOffline();
 		if (!this.#bus) {
 			this.#bus = ctx.createGain();
 			this.#bus.connect(ctx.destination);
 		}
 		this.#bus.gain.setTargetAtTime(level, ctx.currentTime, 0.1);
-		for (const sound of wanted) {
-			if (!this.#layers.has(sound.id)) this.#start(ctx, this.#bus, sound);
-		}
+		if (this.#playing?.id !== mix.id) this.#start(ctx, this.#bus, mix);
 	}
 
-	#start(ctx: AudioContext, bus: GainNode, sound: AmbienceSound): void {
+	/** Stores both scenes' recordings, so a game later on with no signal still has them. */
+	#keepOffline(): void {
+		const urls = (['night', 'day'] as const)
+			.map((scene) => chosen(scene))
+			.filter((mix) => mix !== undefined)
+			.map(ambienceUrl)
+			.filter((url) => !this.#kept.has(url));
+		for (const url of urls) this.#kept.add(url);
+		keepOffline(urls);
+	}
+
+	#start(ctx: AudioContext, bus: GainNode, mix: AmbienceMix): void {
 		const gain = ctx.createGain();
 		gain.connect(bus);
-		const layer: Layer = { sound, gain };
-		this.#layers.set(sound.id, layer);
-		if (sound.kind === 'call') {
-			gain.gain.value = 1;
-			// The first call comes sooner than the rest, so a new scene is heard to begin.
-			const rate = rateOf(sound);
-			if (rate) this.#nextCall(ctx, layer, nextCallDelay(rate) / 2);
-			return;
-		}
+		const playing: Playing = { id: mix.id, gain };
+		this.#playing = playing;
 		gain.gain.setValueAtTime(0, ctx.currentTime);
-		gain.gain.linearRampToValueAtTime(sound.level, ctx.currentTime + FADE);
-		void buffer(ctx, sound.files[0]).then((data) => {
-			if (!data || this.#layers.get(sound.id) !== layer) return;
+		gain.gain.linearRampToValueAtTime(1, ctx.currentTime + FADE);
+		void buffer(ctx, mix).then((data) => {
+			if (!data || this.#playing !== playing) return;
 			const source = ctx.createBufferSource();
 			source.buffer = data;
 			source.loop = true;
 			source.connect(gain);
-			// From a random point, so the same loop never starts the same way.
+			// From a random point, so the same recording never starts the same way.
 			source.start(0, Math.random() * data.duration);
-			layer.source = source;
+			playing.source = source;
 		});
 	}
 
-	#nextCall(ctx: AudioContext, layer: Layer, seconds: number): void {
-		layer.timer = setTimeout(async () => {
-			if (this.#layers.get(layer.sound.id) !== layer) return;
-			layer.last = await playCall(ctx, layer.gain, layer.sound, layer.last);
-			const rate = rateOf(layer.sound);
-			if (rate && this.#layers.get(layer.sound.id) === layer) {
-				this.#nextCall(ctx, layer, nextCallDelay(rate));
-			}
-		}, seconds * 1000);
-	}
-
-	#fadeOut(id: string, layer: Layer): void {
-		this.#layers.delete(id);
-		clearTimeout(layer.timer);
+	#fadeOut(playing: Playing): void {
+		if (this.#playing === playing) this.#playing = undefined;
 		const ctx = audio();
 		if (!ctx) return;
-		layer.gain.gain.cancelScheduledValues(ctx.currentTime);
-		layer.gain.gain.setValueAtTime(layer.gain.gain.value, ctx.currentTime);
-		layer.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + FADE);
+		playing.gain.gain.cancelScheduledValues(ctx.currentTime);
+		playing.gain.gain.setValueAtTime(playing.gain.gain.value, ctx.currentTime);
+		playing.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + FADE);
 		setTimeout(() => {
-			layer.source?.stop();
-			layer.gain.disconnect();
+			playing.source?.stop();
+			playing.gain.disconnect();
 		}, FADE * 1000);
 	}
 }
@@ -183,28 +132,29 @@ export const ambience = new Ambience();
 let preview: { source: AudioBufferSourceNode; gain: GainNode } | undefined;
 
 /**
- * Plays a sound once, as chosen in Settings, so a storyteller hears what they picked: a call
- * once, a loop for a few seconds. Cuts off the one before.
+ * Plays a few seconds of a recording, as chosen in Settings, so a storyteller hears what they
+ * picked. Cuts off the one before.
  */
 export async function previewAmbience(id: string): Promise<void> {
 	stopPreview();
-	const sound = AMBIENCE_SOUNDS.find((each) => each.id === id);
+	const mix = ambienceMix(id);
 	const ctx = audio();
-	if (!sound || !ctx) return;
+	if (!mix || !ctx) return;
 	if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
-	const data = await buffer(ctx, pickFile(sound.files, undefined));
+	const data = await buffer(ctx, mix);
 	if (!data) return;
 	stopPreview();
 	const source = ctx.createBufferSource();
 	const gain = ctx.createGain();
 	source.buffer = data;
-	const level = sound.level * busLevel();
-	const length = sound.kind === 'loop' ? 4 : data.duration;
-	gain.gain.setValueAtTime(level, ctx.currentTime);
-	gain.gain.setValueAtTime(level, ctx.currentTime + length - 0.5);
+	const level = busLevel();
+	const length = Math.min(6, data.duration);
+	gain.gain.setValueAtTime(0, ctx.currentTime);
+	gain.gain.linearRampToValueAtTime(level, ctx.currentTime + 0.5);
+	gain.gain.setValueAtTime(level, ctx.currentTime + length - 1);
 	gain.gain.linearRampToValueAtTime(0, ctx.currentTime + length);
 	source.connect(gain).connect(ctx.destination);
-	source.start(0, sound.kind === 'loop' ? Math.random() * Math.max(0, data.duration - length) : 0);
+	source.start(0, Math.random() * Math.max(0, data.duration - length));
 	source.stop(ctx.currentTime + length);
 	preview = { source, gain };
 }
