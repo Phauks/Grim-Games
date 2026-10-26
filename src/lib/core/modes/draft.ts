@@ -5,6 +5,11 @@
  * back in the pool when `recycleUnchosen` is set. Only types with an open slot are offered,
  * so every pick fits the setup counts. Rules: https://grimbits.com/draft-buffet/.
  *
+ * Credit: the draft's rules and options (setup changes as drafted, needed characters, jinxed
+ * pairs, Ivory draft, Don't mix types, the Drunk pick, redrafts) follow Grimbits' Sushi Buffet
+ * Draft tool, https://grimbits.com/draft-buffet/, by its described behaviour; none of its code
+ * was read or copied. Its 3 → 1 mulligan isn't offered (Trevor, 2026-10-26).
+ *
  * The slots start as the setup counts for the player count. With `modifiers` on (the mode's
  * setup modifiers `as-chosen`), a drafted character's setup modifier (its `setupModifier`
  * rule) changes the slots still open, as Grimbits' tool does (Trevor, 2026-10-26: "modifiers

@@ -6,6 +6,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import DayPanel from './DayPanel.svelte';
 	import { LiveDay } from './live-day.svelte.ts';
 
@@ -42,6 +43,8 @@
 	size="max"
 	scroll={false}
 >
+	<!-- The grim cover, from the day as from the board's ⋯ (Trevor, 2026-10-26). -->
+	{#snippet headActions()}<CoverButton />{/snippet}
 	<div class="body">
 		<DayPanel game={day} {assistance} {onSavant} />
 	</div>

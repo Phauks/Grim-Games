@@ -279,7 +279,6 @@ export const modes = {
 	'modes.jinxedPairs.allow': 'Allow',
 	'modes.ivoryDraft': 'Ivory draft',
 	'modes.oneTypePerOffer': 'Don’t mix types',
-	'modes.mulligans': 'Mulligans',
 	'modes.dealsRequired': 'Deal needed characters',
 	'modes.dealsRequiredHint':
 		'A drafted character that needs another in play gets it: the next player is offered only that one.',

@@ -38,7 +38,7 @@ export default defineConfig({
 		// ADMIN_EMAILS: admins from the start, as Trevor is in Cloudflare (e2e/reports.e2e.ts).
 		// ADMINS_TRUST_PREVIEW_SIGN_IN: admin accounts count although local sign-in shows its code.
 		// Both configs: the app's DATA binding needs the shared data Worker running beside it.
-		command: `npm run build && npx wrangler dev -c wrangler.jsonc -c wrangler.data.jsonc --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off --var ADMIN_EMAILS:phone-admin-1@example.com,phone-admin-2@example.com,tablet-admin-1@example.com,tablet-admin-2@example.com --var ADMINS_TRUST_PREVIEW_SIGN_IN:on`,
+		command: `npm run build && npx wrangler dev -c wrangler.jsonc -c wrangler.data.jsonc --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off --var ADMIN_EMAILS:phone-admin-1@example.com,phone-admin-2@example.com,phone-admin-3@example.com,tablet-admin-1@example.com,tablet-admin-2@example.com,tablet-admin-3@example.com --var ADMINS_TRUST_PREVIEW_SIGN_IN:on`,
 		url: `http://localhost:${PORT}/api/health`,
 		reuseExistingServer: !process.env.CI,
 		timeout: 180_000
