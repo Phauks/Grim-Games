@@ -48,17 +48,6 @@ export interface BoardLooks {
 	 * players pick with their avatar, the Storyteller sets the board's default).
 	 */
 	defaultFrame: FrameId;
-	/**
-	 * Holding a seat's token lights its character's reminders, wherever they are ('character',
-	 * Trevor 2026-10-19), or the reminders placed on that seat, whoever's they are ('seat',
-	 * Trevor 2026-10-23).
-	 */
-	holdLights: 'character' | 'seat';
-	/**
-	 * Holding a seat's token, then dragging, moves it as Arrange seats does: anywhere, or onto
-	 * another seat to change the order (Trevor, 2026-10-25: a choice to show Storytellers).
-	 */
-	holdMoves: boolean;
 }
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
@@ -80,9 +69,7 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	nameOffset: 0,
 	reminders: 'seat',
 	usedGhostVote: 'hollow',
-	defaultFrame: DEFAULT_FRAME,
-	holdLights: 'character',
-	holdMoves: false
+	defaultFrame: DEFAULT_FRAME
 };
 const KEY = 'grim.boardLooks';
 
@@ -115,10 +102,9 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
 		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the
 		// board (Trevor, 2026-10-23). So is `dragSource`: a dragged reminder no longer names
-		// where it came from (Trevor, 2026-10-24).
-		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME,
-		holdLights: value.holdLights === 'seat' ? 'seat' : 'character',
-		holdMoves: value.holdMoves === true
+		// where it came from (Trevor, 2026-10-24). `holdLights` and `holdMoves` too: holding a
+		// seat's token only moves it now (Trevor, 2026-10-26).
+		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME
 	};
 }
 
