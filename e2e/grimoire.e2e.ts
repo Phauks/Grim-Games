@@ -5503,6 +5503,10 @@ test('holding a seat token, then dragging, moves the seat; a hold alone opens no
 	await page.mouse.move(start.x, start.y);
 	await page.mouse.down();
 	await page.waitForTimeout(700);
+	// Held: the seat lifts and the rest of the board darkens (Trevor, 2026-10-26).
+	await expect(page.locator('.board')).toHaveClass(/holding/);
+	await expect(page.locator('.slot.dragging')).toHaveCount(1);
+	await expect(page.locator('.slot:not(.dragging)').first()).toHaveCSS('opacity', '0.35');
 	await page.mouse.move((start.x + to.x) / 2, (start.y + to.y) / 2, { steps: 4 });
 	await page.mouse.move(to.x, to.y, { steps: 4 });
 	await page.mouse.up();
@@ -5511,6 +5515,7 @@ test('holding a seat token, then dragging, moves the seat; a hold alone opens no
 	expect(Math.abs(moved.y - to.y)).toBeLessThan(4);
 	expect(await centre(2)).toEqual(seat2);
 	await expect(sheet).toBeHidden();
+	await expect(page.locator('.board')).not.toHaveClass(/holding/);
 	// A tap still opens the seat.
 	await openSeat(page, 1);
 	await closeSheet(page);
