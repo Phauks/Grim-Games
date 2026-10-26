@@ -8,6 +8,8 @@ import {
 	mainGuess,
 	parseGuesses,
 	toggleGuess,
+	travellerGuess,
+	travellerTeam,
 	type Guesses
 } from './grim-guesses.ts';
 
@@ -87,5 +89,23 @@ describe('generic guesses (Trevor, 2026-10-24)', () => {
 			'team:good',
 			'team:evil'
 		]);
+	});
+});
+
+describe("a Traveller's seat (Trevor, 2026-10-26)", () => {
+	it('is marked Good or Evil only, one at a time', () => {
+		let guesses = travellerGuess({}, 's1', 'team:evil');
+		expect(guessesOf(guesses, 's1')).toEqual(['team:evil']);
+		expect(travellerTeam(guesses, 's1')?.team).toBe('evil');
+		guesses = travellerGuess(guesses, 's1', 'team:good');
+		expect(guessesOf(guesses, 's1')).toEqual(['team:good']);
+		expect(travellerGuess(guesses, 's1', 'team:good')).toEqual({});
+	});
+
+	it('ignores a character guess left on the seat', () => {
+		const guesses: Guesses = { s1: ['imp', 'type:minion'] };
+		expect(travellerTeam(guesses, 's1')).toBeUndefined();
+		expect(travellerTeam({ s1: ['imp', 'team:evil'] }, 's1')?.team).toBe('evil');
+		expect(travellerGuess(guesses, 's1', 'imp')).toEqual({});
 	});
 });

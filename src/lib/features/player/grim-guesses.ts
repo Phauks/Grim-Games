@@ -103,6 +103,23 @@ export function cycleGuess(guesses: Guesses, seatId: string): Guesses {
 	return first === undefined ? guesses : withList(guesses, seatId, [...rest, first]);
 }
 
+/**
+ * A Traveller's seat: the town knows the character, so a player marks only Good or Evil
+ * (Trevor, 2026-10-26). Tapping the alignment it already has takes it off; the other replaces
+ * it.
+ */
+export function travellerGuess(guesses: Guesses, seatId: string, key: string): Guesses {
+	const team = travellerTeam(guesses, seatId);
+	return withList(guesses, seatId, team?.key === key || !genericGuess(key) ? [] : [key]);
+}
+
+/** The alignment a player marked a Traveller's seat with, if any. */
+export function travellerTeam(guesses: Guesses, seatId: string): GenericGuess | undefined {
+	return guessesOf(guesses, seatId)
+		.map(genericGuess)
+		.find((g) => g && !g.type);
+}
+
 /** None: the seat has no guesses. */
 export function clearGuesses(guesses: Guesses, seatId: string): Guesses {
 	return withList(guesses, seatId, []);

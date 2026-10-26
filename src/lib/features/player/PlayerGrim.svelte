@@ -47,6 +47,8 @@
 		mainGuess,
 		readGuesses,
 		toggleGuess,
+		travellerGuess,
+		travellerTeam,
 		writeGuesses,
 		type GenericGuess,
 		type GuessMark,
@@ -216,11 +218,25 @@
 	 * Trevor 2026-10-25); the sheet stays open so the next can be added.
 	 */
 	function guess(characterId: CharacterId) {
-		if (chosen) save(toggleGuess(guesses, chosen.seatId, characterId));
+		if (!chosen) return;
+		save(
+			chosen.traveller
+				? travellerGuess(guesses, chosen.seatId, characterId)
+				: toggleGuess(guesses, chosen.seatId, characterId)
+		);
 	}
+	/** Only Good or Evil for a Traveller's seat, whose character the town knows (Trevor, 2026-10-26). */
+	const guessChoices = $derived(
+		chosen?.traveller ? GENERIC_GUESSES.filter((g) => !g.type) : GENERIC_GUESSES
+	);
 	/** The seat's guesses, main first, as the token, its pill and the sheet show them. */
 	const listed = (seatId: string) =>
-		guessesOf(guesses, seatId).map((id) => {
+		(seats.find((s) => s.seatId === seatId)?.traveller
+			? guessesOf(guesses, seatId).filter(
+					(id) => genericGuess(id)?.type === undefined && !!genericGuess(id)
+				)
+			: guessesOf(guesses, seatId)
+		).map((id) => {
 			const generic = genericGuess(id);
 			return generic
 				? { id, generic, label: genericLabel(generic) }
@@ -238,7 +254,9 @@
 		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
 		const traveller = characterOf(seat.traveller);
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
-		const guessed = guessesOf(guesses, seat.seatId).map(guessName).filter(Boolean);
+		const guessed = listed(seat.seatId)
+			.map((g) => guessName(g.id))
+			.filter(Boolean);
 		if (guessed.length) parts.push(t('player.grim.guess', { name: guessed.join(', ') }));
 		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
 		return parts.join(', ');
@@ -289,10 +307,12 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
-			{@const main = guessesOf(guesses, seat.seatId)[0]}
+			<!-- A Traveller's seat takes only an alignment, shown in its icon's colour. -->
+			{@const team = known ? travellerTeam(guesses, seat.seatId)?.team : undefined}
+			{@const main = known ? undefined : guessesOf(guesses, seat.seatId)[0]}
 			{@const generic = genericGuess(main)}
 			{@const guessed = generic ?? characterOf(main)}
-			{@const others = listed(seat.seatId)
+			{@const others = (known ? [] : listed(seat.seatId))
 				.slice(1)
 				.flatMap((g): GuessMark[] =>
 					g.generic
@@ -337,7 +357,11 @@
 							guess={shown}
 							label={genericLabel(shown)}
 							{size}
-						/>{:else if shown}<CharacterToken character={shown} {size} />{/if}
+						/>{:else if shown}<CharacterToken
+							character={shown}
+							alignment={shown === known ? team : undefined}
+							{size}
+						/>{/if}
 				{/snippet}
 			</button>
 		{/each}
@@ -406,9 +430,9 @@
 		onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
 	/>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
-	     characters. -->
+	     characters; a Traveller's seat has only Good and Evil, and no characters. -->
 	<ul class="generic" aria-label={t('player.grim.generic')}>
-		{#each GENERIC_GUESSES as g (g.key)}
+		{#each guessChoices as g (g.key)}
 			<li>
 				<button
 					type="button"
@@ -420,12 +444,12 @@
 			</li>
 		{/each}
 	</ul>
-	<CharacterPicker
-		characters={script.characters}
-		selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
-		onSelect={(id) => guess(id)}
-		onNone={() => chosen && save(clearGuesses(guesses, chosen.seatId))}
-	/>
+	{#if !chosen?.traveller}<CharacterPicker
+			characters={script.characters}
+			selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
+			onSelect={(id) => guess(id)}
+			onNone={() => chosen && save(clearGuesses(guesses, chosen.seatId))}
+		/>{/if}
 </BottomSheet>
 
 <SeatNoteDialog
