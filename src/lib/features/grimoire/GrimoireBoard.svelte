@@ -355,7 +355,7 @@
 			hasFace: seats[i]?.characterId !== undefined,
 			name: nameBoxes[i]?.box,
 			dead: !!seats[i]?.dead,
-			note: !!seats[i]?.note,
+			note: !!seats[i]?.notes?.length,
 			nameOffset: boardLooks.current.nameOffset
 		});
 	}
@@ -487,7 +487,7 @@
 	let notesOpen = $state(false);
 	let notesSheet = $state<ReturnType<typeof NotesSheet>>();
 	/**
-	 * A seat's pen mark opens just that player's note, not the whole sheet (Trevor,
+	 * A seat's pen mark opens just that player's notes, not the whole sheet (Trevor,
 	 * 2026-10-19: less to take in). After the tap's click, so it doesn't land in the field.
 	 */
 	function editNote(seatId: SeatId) {

@@ -109,7 +109,7 @@
 					? `${seat.alignment}`
 					: '',
 			orphan ? 'not on the script' : '',
-			seat.note ? 'has a note' : '',
+			seat.notes?.length ? 'has a note' : '',
 			seat.reminders.length
 				? `${seat.reminders.length} reminder${seat.reminders.length === 1 ? '' : 's'}`
 				: ''
@@ -224,8 +224,8 @@
 				><Icon name="nominated" /></span
 			></RimPill
 		>{/if}
-	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
-	{#if seat.note}<SeatNoteMark />{/if}
+	<!-- The Storyteller's notes on this player, lower right (never shown to players). -->
+	{#if seat.notes?.length}<SeatNoteMark />{/if}
 {/snippet}
 
 <button
