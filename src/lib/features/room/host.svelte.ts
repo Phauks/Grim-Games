@@ -12,6 +12,7 @@ import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts'
 import type { Script } from '#lib/core/data/index.ts';
 import { toSavedGame } from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
+import type { GamePhase, PlayersPhase } from '#lib/core/rules/game-phase.ts';
 import {
 	publicProjection,
 	type PublicCorner,
@@ -104,8 +105,10 @@ export class RoomHost {
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
 	#choosing = false;
-	/** The game whose board shows a day now, when one does: players see its timer (showDay). */
-	#dayOf = $state<string>();
+	/** Where the open board's game is up to (showPhase): players see it, and the day's timer. */
+	#phase = $state.raw<{ gameId: string; phase: GamePhase }>();
+	/** The day the Storyteller called Back to town in, which is Town until it ends. */
+	#town = $state.raw<{ gameId: string; number: number }>();
 	/** What the open board's corner shows, for the phones' corners (showCorner). */
 	#corner = $state<{ gameId: string; corner: PublicCorner }>();
 	#ended:
@@ -277,6 +280,7 @@ export class RoomHost {
 				// Where the board draws the seats, so phones draw the town the same way (plan J13).
 				const layout = notes ? parseSeatLayout(notes().layout) : seatLayouts.read(game.game.gameId);
 				const corner = this.#corner?.gameId === game.game.gameId ? this.#corner.corner : undefined;
+				const now = this.#playersPhase(game.game.gameId);
 				const state = publicProjection(
 					game.game,
 					publicTravellerTest(game.game.gameId, game.characters),
@@ -284,7 +288,8 @@ export class RoomHost {
 					corner,
 					game.characters,
 					gameSheetRules(game.game.gameId),
-					this.#dayOf === game.game.gameId ? liveDayTimer.forPlayers : undefined
+					now?.kind === 'day' ? liveDayTimer.forPlayers : undefined,
+					now
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
@@ -319,12 +324,24 @@ export class RoomHost {
 	}
 
 	/**
-	 * Whether the open board is in a day (Trevor, 2026-10-26): only then do players' phones
-	 * get the day timer, as the Storyteller's `timerForPlayers` setting shows it.
+	 * Where the open board's game is up to, or nothing once it has ended (Trevor, 2026-10-26):
+	 * players' phones show it as their status line, with the day timer during the day.
 	 */
-	showDay(gameId: string, day: boolean): void {
-		const next = day ? gameId : undefined;
-		if (next !== this.#dayOf && (day || this.#dayOf === gameId)) this.#dayOf = next;
+	showPhase(gameId: string, phase: GamePhase | undefined): void {
+		if (!phase) {
+			if (this.#phase?.gameId === gameId) this.#phase = undefined;
+			return;
+		}
+		const next = { gameId, phase: $state.snapshot(phase) as GamePhase };
+		if (JSON.stringify(next) !== JSON.stringify(this.#phase)) this.#phase = next;
+	}
+
+	/** The board's phase, with a day called Back to town shown as Town (plan J29). */
+	#playersPhase(gameId: string): PlayersPhase | undefined {
+		const phase = this.#phase?.gameId === gameId ? this.#phase.phase : undefined;
+		if (phase?.kind !== 'day') return phase;
+		const town = this.#town?.gameId === gameId && this.#town.number === phase.number;
+		return town ? { kind: 'town', number: phase.number } : phase;
 	}
 
 	/** Opens a spectators' vote on these seats, replacing any open one. False when offline. */
@@ -348,7 +365,12 @@ export class RoomHost {
 	 * False when the room can't be reached.
 	 */
 	callTown(): boolean {
-		return this.#socket?.send({ type: 'call-town' }) ?? false;
+		const sent = this.#socket?.send({ type: 'call-town' }) ?? false;
+		// The rest of the day is Town on players' phones (Trevor, 2026-10-26).
+		const day = this.#phase?.phase;
+		if (sent && day?.kind === 'day')
+			this.#town = { gameId: this.#phase!.gameId, number: day.number };
+		return sent;
 	}
 
 	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */
