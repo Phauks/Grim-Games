@@ -1727,8 +1727,10 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 	await sheet.getByTestId('seat-reminders').tap();
 	const picker = phone.getByRole('dialog', { name: 'Reminders for Seat 2' });
 	const list = picker.getByTestId('player-reminder-list');
-	await expect(list.locator('li').first()).toHaveText('Your guesses');
-	await expect(list.getByRole('group').first()).toHaveAccessibleName('Fortune Teller');
+	// The Storyteller's generic token on top, then the characters guessed.
+	await expect(list.getByRole('group').first()).toHaveAccessibleName('Generic');
+	await expect(list.locator('li.part').first()).toHaveText('Your guesses');
+	await expect(list.getByRole('group').nth(1)).toHaveAccessibleName('Fortune Teller');
 	// The search finds a token by its character's name or its own words.
 	const search = picker.getByRole('searchbox', { name: 'Search reminders' });
 	await expect(search).not.toBeFocused();
@@ -1765,6 +1767,50 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 		.getByRole('button', { name: 'Poisoned: take off' })
 		.tap();
 	await expect(token).toHaveCount(0);
+	await phoneContext.close();
+});
+
+test("a player puts generic tokens with numbers or notes on their own Grim's seats", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-26): "Give them access to the generic token reminders for those 1/2/3
+	// custom note ones". The Storyteller's ∞ token, as many as wanted, each with its own text.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await phone.getByTestId('grim-seat').nth(2).tap();
+	await phone.getByTestId('seat-reminders').tap();
+	const picker = phone.getByRole('dialog', { name: 'Reminders for Seat 3' });
+	const add = picker.getByRole('button', { name: 'Add a generic token' });
+	const text = phone.getByTestId('reminder-note');
+	for (const words of ['1', '2']) {
+		await add.tap();
+		await text.fill(words);
+		await text.press('Enter');
+		await phone.keyboard.press('Escape');
+		await expect(text).toBeHidden();
+	}
+	const here = picker.getByRole('group', { name: 'On this seat' }).getByRole('button');
+	await expect(here).toHaveText(['1', '2']);
+	// A placed one opens its look again, where it can be deleted.
+	await here.first().tap();
+	await phone.getByRole('button', { name: 'Delete token' }).tap();
+	await expect(here).toHaveText(['2']);
+	await phone.keyboard.press('Escape');
+	await phone.keyboard.press('Escape');
+	const placed = phone.getByTestId('player-grim').getByTestId('board-reminder');
+	await expect(placed).toHaveAccessibleName('Generic reminder: 2');
+	// Kept on this phone for the game.
+	await phone.reload();
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(placed).toHaveAccessibleName('Generic reminder: 2');
 	await phoneContext.close();
 });
 
