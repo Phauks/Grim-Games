@@ -605,7 +605,8 @@
 		z-index: 2;
 		padding: 0 var(--space-2);
 		border-radius: 999px; /* px-ok: pill */
-		background: color-mix(in srgb, var(--surface) 70%, transparent);
+		background: var(--surface-raised);
+		opacity: 0.9;
 	}
 	.seat[data-mine] :global(.disc) {
 		outline: calc(0.2 * var(--u)) solid var(--accent);
