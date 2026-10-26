@@ -600,6 +600,9 @@ test('after a game the room votes on the next script, and the next game opens in
 	// While the vote is open the ballot is the phone's screen, in place of the tabs.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveCount(0);
 
+	// No Play while the vote is open (Trevor, 2026-10-26).
+	await expect(results.getByRole('button', { name: 'Play' })).toHaveCount(0);
+
 	// One button ends it (Trevor, 2026-10-26: "duplicative end vote and close vote"): phones
 	// get a final call ("15 second final vote warning"), then it is New vote.
 	await sheet.getByRole('button', { name: 'End vote' }).tap();
@@ -677,8 +680,8 @@ test('New game opens a room for the vote before any game or script', async ({
 	page,
 	browser
 }, testInfo) => {
-	// Two votes, the first ended with its 15-second final call (Trevor, 2026-10-26).
-	test.setTimeout(90_000);
+	// Two votes, each ended with its 15-second final call (Trevor, 2026-10-26).
+	test.setTimeout(120_000);
 	// Trevor, 2026-10-23: "allow storytellers to create rooms without having selected a
 	// script", so the table can gather and vote first.
 	await page.goto('/new');
@@ -713,6 +716,24 @@ test('New game opens a room for the vote before any game or script', async ({
 	await sheet.getByRole('button', { name: 'New vote' }).tap({ timeout: 20_000 });
 	await expect(ballot).toHaveCount(0);
 
+	// Back to New game for a Storyteller who decides not to use the vote (Trevor, 2026-10-26);
+	// an open vote is cancelled on the way, so it leaves the phones too.
+	await sheet.getByRole('button', { name: 'Back', exact: true }).tap();
+	await expect(page).toHaveURL(/\/new$/);
+	await page.getByRole('link', { name: 'Room vote' }).tap();
+	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
+	await sheet
+		.getByRole('radiogroup', { name: 'Add a script' })
+		.getByText('Bad Moon Rising', { exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
+	await sheet.getByRole('button', { name: 'Open vote' }).tap();
+	await expect(ballot).toBeVisible();
+	await sheet.getByRole('button', { name: 'Cancel vote' }).tap();
+	await expect(page).toHaveURL(/\/new$/);
+	await expect(ballot).toHaveCount(0);
+	await page.getByRole('link', { name: 'Room vote' }).tap();
+
 	// A vote on the game mode the same way (Trevor, 2026-10-23), five of them: not capped at
 	// two or three. Its winner becomes New game's mode.
 	await sheet.getByRole('combobox', { name: 'Vote on' }).tap();
@@ -746,9 +767,16 @@ test('New game opens a room for the vote before any game or script', async ({
 	await expect(modeBallot.getByRole('button', { name: /^Details of/ })).toHaveCount(0);
 	const results = modeSheet.getByTestId('script-vote-results').getByRole('listitem');
 	await expect(results.filter({ hasText: 'Sushi Buffet' })).toContainText('Votes: 1');
+	// Play comes once the vote has ended, after its final call.
+	await expect(results.getByRole('button', { name: 'Play' })).toHaveCount(0);
+	await modeSheet.getByRole('button', { name: 'End vote' }).tap();
+	await expect(modeSheet.getByRole('button', { name: 'New vote' })).toBeVisible({
+		timeout: 20_000
+	});
 	await results.filter({ hasText: 'Sushi Buffet' }).getByRole('button', { name: 'Play' }).tap();
 	await expect(modeBallot).toHaveCount(0);
 	await expect(page.getByRole('combobox', { name: 'Game mode' })).toHaveText(/Sushi Buffet/);
+
 	await phoneContext.close();
 });
 

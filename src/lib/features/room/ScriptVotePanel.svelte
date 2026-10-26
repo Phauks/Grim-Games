@@ -12,6 +12,7 @@
 		VOTE_SUBJECTS,
 		type ScriptVoteCharacter,
 		type ScriptVoteKind,
+		type ScriptVoteOption,
 		type VoteSubject
 	} from '#lib/core/sync/script-vote.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -53,9 +54,11 @@
 		modes: { value: string; label: string }[];
 		/** The Storyteller picked this game mode from the count. */
 		onPickMode: (id: string) => void;
+		/** Back to New game without the vote. */
+		onBack: () => void;
 	}
 
-	let { choices, onPick, modes, onPickMode }: Props = $props();
+	let { choices, onPick, modes, onPickMode, onBack }: Props = $props();
 
 	const host = roomHost();
 	// The base three's characters, for their details on the ballot.
@@ -164,6 +167,15 @@
 		else showTally = show;
 	}
 
+	/**
+	 * Back to New game when the Storyteller decides not to use the vote (Trevor, 2026-10-26); an
+	 * open vote is closed first, so it leaves the phones too.
+	 */
+	function back() {
+		if (tally) host.closeScriptVote();
+		onBack();
+	}
+
 	function pick(id: string) {
 		const mode = tally?.subject === 'mode';
 		host.closeScriptVote();
@@ -171,6 +183,10 @@
 		else onPick(id);
 	}
 </script>
+
+{#snippet play(option: ScriptVoteOption)}
+	<Button onclick={() => pick(option.id)}>{t('room.scriptVote.play')}</Button>
+{/snippet}
 
 <!-- Its own screen, so it only goes away when the Storyteller leaves it (Trevor, 2026-10-26:
      "As the one running the vote, it goes away really easily"). -->
@@ -195,13 +211,16 @@
 		>
 			<div class="scripts">
 				{#if tally}
-					<!-- The same count players see (Trevor, 2026-10-26), with Play on each row. -->
+					<!-- The same count players see (Trevor, 2026-10-26), with Play on each row only once
+					     the vote has ended (Trevor, 2026-10-26: "should not be able to play a script
+					     until they close a vote"). -->
 					<div data-testid="script-vote-results">
-						<VoteStats kind={tally.kind} options={tally.options} {tally}>
-							{#snippet action(option)}
-								<Button onclick={() => pick(option.id)}>{t('room.scriptVote.play')}</Button>
-							{/snippet}
-						</VoteStats>
+						<VoteStats
+							kind={tally.kind}
+							options={tally.options}
+							{tally}
+							action={ended ? play : undefined}
+						/>
 					</div>
 				{:else}
 					<Select
@@ -293,6 +312,9 @@
 				/>
 			</div>
 			<div class="end">
+				<Button onclick={back}
+					>{t(tally ? 'room.scriptVote.cancel' : 'room.scriptVote.back')}</Button
+				>
 				{#if tally && !ended}
 					<!-- One button (Trevor, 2026-10-26: "duplicative end vote and close vote"): End
 					     vote gives phones a final call, then it is New vote. -->
