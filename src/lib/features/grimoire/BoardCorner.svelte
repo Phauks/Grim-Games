@@ -113,14 +113,16 @@
 	const clockStart = $derived(corner?.gameTime?.startedAt);
 	const clockEnd = $derived(corner?.gameTime?.endedAt);
 	/**
-	 * The night or day in play (Trevor, 2026-10-23), on Game time's line and under its eye.
-	 * Before the game starts Game time already says Setup, so the phase waits for the first night.
+	 * The night or day in play (Trevor, 2026-10-23): a line of its own with its own eye, above
+	 * Game time (Trevor, 2026-10-26). Setup before the first night, so nothing moves then.
 	 */
 	const begun = $derived(!!corner?.gameTime?.begun);
-	const showPhase = $derived(!!corner?.phase && !(showGameClock && !begun));
+	const showPhase = $derived(!!corner?.phase);
 	const phase = $derived(corner?.phase ? phaseText(corner.phase) : undefined);
-	/** The phase and Game time share one line, so the day or night never costs the corner one. */
+	/** The day or night and Game time, kept together where the corner has room for them. */
 	const showClockLine = $derived(showGameClock || showPhase);
+	/** Between lines that share one: Svelte trims plain spaces at a block's edges. */
+	const SEPARATOR = ' · ';
 	let clockNow = $state(Date.now());
 	$effect(() => {
 		if (!showGameClock || clockStart === undefined || clockEnd !== undefined) return;
@@ -183,12 +185,13 @@
 	});
 </script>
 
-<!-- The day or night, then Game time: on a line of their own, or after the join code where the
-     corner has no line to spare (shared), where Game time's label is for screen readers only. -->
+<!-- The day or night, then Game time: a line each, or after the join code where the corner has
+     no lines to spare (shared), where Game time's label is for screen readers only. -->
 {#snippet clockLine(shared: boolean)}
-	{#if showPhase}<span data-testid="board-phase">{phase}</span>{/if}{#if showPhase && showGameClock}
-		·
-	{/if}{#if showGameClock}<span data-testid="board-game-clock"
+	{#if showPhase}<span data-testid="board-phase" class:line={!shared}>{phase}</span
+		>{/if}{#if shared && showPhase && showGameClock}{SEPARATOR}{/if}{#if showGameClock}<span
+			data-testid="board-game-clock"
+			class:line={!shared}
 			>{#if shared}<span class="visually-hidden">{t('history.gameLength')}</span>{:else}{t(
 					'history.gameLength'
 				)}:{/if}
@@ -200,8 +203,7 @@
 	<span class="room-code-line"
 		>{t('room.joinCode')}
 		<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
-		>{#if showClockLine && !clockFits}
-			· {@render clockLine(true)}{/if}</span
+		>{#if showClockLine && !clockFits}{SEPARATOR}{@render clockLine(true)}{/if}</span
 	>
 {/snippet}
 
@@ -386,6 +388,11 @@
 		font-size: 0.7rem;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+	.game-clock .line {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 	.room-code .code,
 	.game-clock .code {
