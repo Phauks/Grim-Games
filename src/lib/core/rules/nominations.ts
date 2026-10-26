@@ -5,7 +5,8 @@
  * a dead nominator). Special rules that act on a nomination read them from here.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import type { AfterDeath, NominatedEffect } from '#lib/core/data/character-rules.ts';
+import type { AfterDeath } from '#lib/core/data/after-death-rules.ts';
+import type { NominatedEffect } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -21,7 +22,7 @@ export function todaysNominations(game: Game): Nomination[] {
 
 /**
  * A seat's part in today's nominations: the latest it made (`allMade` has every one, for a
- * player who may nominate more than once) and the one it received, if any.
+ * player who may nominate more than once) and the latest it received, if any.
  */
 export function seatNominations(
 	game: Game,
@@ -30,7 +31,7 @@ export function seatNominations(
 	const today = todaysNominations(game);
 	const allMade = today.filter((n) => n.nominator === seatId);
 	const made = allMade.at(-1);
-	const received = today.find((n) => n.nominee === seatId);
+	const received = today.findLast((n) => n.nominee === seatId);
 	return { ...(made ? { made } : {}), ...(received ? { received } : {}), allMade };
 }
 
@@ -66,6 +67,33 @@ export function nominationsPerDay(game: Game, seatId: SeatId, characters: Charac
 /** Whether a player may nominate at all today (`nominationsPerDay`). */
 export function mayNominate(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	return nominationsPerDay(game, seatId, characters) > 0;
+}
+
+/**
+ * Whether `nominator`'s next nomination today is an extra one their character allows after the
+ * day's first execution (`nominationsAfterExecution`, the Butcher): the once-a-day limits don't
+ * apply to it, for them or their nominee. Only while their ability works. `ignore` leaves out a
+ * nomination being changed.
+ */
+export function extraNominationOpen(
+	game: Game,
+	nominator: SeatId,
+	characters: CharacterLookup,
+	ignore?: string
+): boolean {
+	const characterId = trueCharacter(game, nominator, characters);
+	const extra =
+		characterId === undefined
+			? undefined
+			: rulesOf(characterId, characters)?.nominationsAfterExecution;
+	if (!extra || !abilityState(game, nominator, characters).works) return false;
+	const entries = game.today.entries.filter((e) => e.entryId !== ignore);
+	const first = entries.findIndex((e) => e.kind === 'execution');
+	if (first < 0) return false;
+	const since = entries
+		.slice(first + 1)
+		.filter((e) => e.kind === 'nomination' && e.nominator === nominator).length;
+	return since < extra;
 }
 
 /** A character's ability a nomination sets off, for the board to offer (warn, never lock). */
