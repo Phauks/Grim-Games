@@ -185,6 +185,7 @@
 						layout: table.layout,
 						storytellerName: table.storytellerName,
 						corner: table.corner,
+						look: table.look,
 						roomCode: room
 					}}
 				/>

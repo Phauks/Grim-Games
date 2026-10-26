@@ -1398,6 +1398,18 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 		(await page.getByTestId('day-timer').getByRole('timer').textContent()) ?? ''
 	);
 
+	// The board's background is the Storyteller's, not the viewer's own (Trevor, 2026-10-26).
+	await expect(viewer.getByTestId('board-background')).toHaveCount(0);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button', { name: 'Green felt' })
+		.tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(viewer.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+
 	// A seat opens its character to read, never the seat sheet.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
