@@ -30,6 +30,7 @@ import {
 	ALIGNMENTS,
 	CHARACTER_TYPES,
 	type Alignment,
+	type CharacterId,
 	type CharacterType,
 	type ReminderLabel
 } from './types.ts';
@@ -178,6 +179,13 @@ export interface CharacterRules {
 	 * Sushi Buffet's Ivory draft drafts at most one such character (`modes/draft.ts`).
 	 */
 	makesExtraEvil?: boolean;
+	/**
+	 * A hidden character (one with no token of its own, such as the Drunk) the Storyteller may
+	 * make this character's player instead, who then thinks they are this character. Sushi
+	 * Buffet asks when it is drafted, as Grimbits' draft tool does for the Atheist
+	 * (https://grimbits.com/draft-buffet/; `modes/draft.ts`).
+	 */
+	orHiddenAs?: CharacterId;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -337,7 +345,8 @@ export const RULE_KEYS = [
 	'dayMark',
 	'stopsWaking',
 	'infoTokenCharacters',
-	'makesExtraEvil'
+	'makesExtraEvil',
+	'orHiddenAs'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -541,6 +550,8 @@ export function parseCharacterRules(
 	}
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
+	const hiddenAs = readString(raw, 'orHiddenAs', path, issues, false);
+	if (hiddenAs !== undefined) rules.orHiddenAs = hiddenAs;
 	return issues.list.length > before ? undefined : rules;
 }
 

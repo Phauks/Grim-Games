@@ -183,6 +183,10 @@ export const modes = {
 	'modes.deal.askCount': 'How many {type} in all?',
 	'modes.deal.askKeep': 'Keep {count}',
 	'modes.deal.hiddenTitle': 'Hidden character',
+	'modes.deal.hiddenChoice':
+		'Is this player as drafted, or really this character, thinking they are the one drafted? ',
+	'modes.deal.asDrafted': 'As drafted',
+	'modes.deal.reallyHidden': 'Really hidden',
 	'modes.deal.hiddenPrompt': 'Which player who drafted a Townsfolk is really this character? ',
 	'modes.deal.noOptions': 'No character fits. Change the open slots or the restricted characters.',
 	'modes.sources': 'Sources',
