@@ -1913,7 +1913,15 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 	const choice = sheet.getByTestId('sheet-background');
 	await expect(choice).toHaveCount(1);
 	await expect(sheet.getByTestId('script-copy').getByTestId('sheet-background')).toHaveCount(0);
-	await choice.getByRole('combobox', { name: 'Sheet background' }).tap();
+	// Drawn like Print beside it: a borderless icon button of the same size (Trevor, 2026-10-26).
+	const trigger = choice.getByRole('combobox', { name: 'Sheet background' });
+	const print = sheet.getByRole('button', { name: 'Print script' });
+	await expect(trigger).toHaveCSS('border-top-width', '0px');
+	await expect(trigger.locator('[data-icon="ph:paint-bucket"]')).toBeVisible();
+	const [triggerBox, printBox] = [await trigger.boundingBox(), await print.boundingBox()];
+	expect(triggerBox?.width).toBeCloseTo(printBox?.width ?? 0, 0);
+	expect(triggerBox?.height).toBeCloseTo(printBox?.height ?? 0, 0);
+	await trigger.tap();
 	await page.getByRole('option', { name: 'Grey' }).tap();
 	await expect(sheet.getByTestId('script-copy')).toHaveCSS(
 		'background-color',
