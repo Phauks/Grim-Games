@@ -18,6 +18,8 @@ export function cornerLineLabel(line: CornerLine): string {
 			return t('modes.info.rules');
 		case 'join-code':
 			return t('room.joinCode');
+		case 'phase':
+			return t('modes.info.phase');
 		case 'game-time':
 			return t('history.gameLength');
 		case 'watchers':

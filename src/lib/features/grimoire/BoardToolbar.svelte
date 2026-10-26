@@ -112,7 +112,7 @@
 		>
 		<!-- Last, after ⋯, as its symbol alone (Trevor, 2026-10-24); the symbol says on or off,
 		     and one button either way, so the toolbar never moves (two states = a toggle). -->
-		<FullScreenButton />
+		<FullScreenButton outlined />
 	{/if}
 </div>
 

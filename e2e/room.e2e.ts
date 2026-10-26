@@ -67,6 +67,8 @@ test("Your games shows each room's whole line on a phone, however long the Story
 	await phone.goto('/join');
 	const row = phone.getByTestId('recent-rooms').getByRole('button');
 	await expect(row).toContainText('Storyteller: Trevor Goldsmith');
+	// The code form names no Storyteller before a room is joined (Trevor, 2026-10-26).
+	await expect(phone.getByText('Storyteller: Trevor Goldsmith', { exact: true })).toHaveCount(0);
 	await expect(row).toContainText(String(new Date().getFullYear()));
 	// No line is cut short with an ellipsis.
 	const cut = await row
@@ -175,7 +177,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 		.getByRole('alertdialog', { name: 'Make a new code?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(phone.getByRole('alert')).toHaveText('This room is closed, or the code is wrong.');
+	await expect(phone.getByRole('alert')).toHaveText('The Storyteller closed this room.');
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await expect(page.getByTestId('share-code')).not.toHaveText(code.replace(/^(\d{3})/, '$1 '));
 	// A closed room leaves the list.
@@ -224,6 +226,48 @@ test('End game keeps the room open and tells its phones the game is over', async
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(status).toHaveText('Type the name to show.');
+	await phoneContext.close();
+});
+
+test('once the game has ended the Storyteller can close the room, which sends every phone out', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-26: Close room beside New game in ⋯, only after the game has ended.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toHaveText('Type the name to show.');
+
+	await page.goto(board);
+	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(menu.getByRole('button', { name: 'Close room' })).toHaveCount(0);
+	await menu.getByRole('button', { name: 'End game' }).tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
+
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(menu.getByRole('button', { name: 'New game' })).toBeVisible();
+	await menu.getByRole('button', { name: 'Close room' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Close the room?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(phone.getByRole('alert')).toHaveText('The Storyteller closed this room.');
+	// The room is gone: its code opens nothing, and the menu has no Close room.
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByRole('alert')).toHaveText('This room is closed, or the code is wrong.');
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(menu.getByRole('button', { name: 'Close room' })).toHaveCount(0);
 	await phoneContext.close();
 });
 

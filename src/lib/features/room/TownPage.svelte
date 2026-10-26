@@ -111,6 +111,15 @@
 	 * Town can show the timer as well"); their board sends it during the day only.
 	 */
 	const dayTimer = $derived(showTown ? dayTimers.parsePublicTimer(table?.timer) : undefined);
+
+	// Full screen shows the town alone, not the app (Trevor, 2026-10-26).
+	let stage = $state<HTMLDivElement>();
+	let inFullScreen = $state(false);
+	$effect(() => {
+		const sync = () => (inFullScreen = !!stage && document.fullscreenElement === stage);
+		document.addEventListener('fullscreenchange', sync);
+		return () => document.removeEventListener('fullscreenchange', sync);
+	});
 </script>
 
 <!-- The player screen's title line: the script's logo and name, its byline, Print and Share. -->
@@ -131,9 +140,9 @@
 				share={shareable}
 				room={room ?? undefined}
 			/>{/if}
-		<!-- Top right, last, as on the board (Trevor, 2026-10-26: "we will definitely need a
-		     button to allow fullscreen in the top right corner"). -->
-		<FullScreenButton />
+		<!-- Top right, last (Trevor, 2026-10-26: "we will definitely need a button to allow
+		     fullscreen in the top right corner"); it fills the screen with the town alone. -->
+		{#if stage}<FullScreenButton target={stage} />{/if}
 	{/snippet}
 	{#snippet subtitle()}
 		<ScriptByline
@@ -144,8 +153,14 @@
 		/>&nbsp;
 	{/snippet}
 
-	<div data-testid="public-town">
+	<div class="stage" bind:this={stage} data-testid="public-town">
 		{#if showTown && script && table && room}
+			<!-- In full screen the title line is gone, so the day timer and the way back sit in
+			     the town's own top right corner. -->
+			{#if inFullScreen}<div class="exit">
+					{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
+					<span class="exit-button"><FullScreenButton target={stage} /></span>
+				</div>{/if}
 			<PlayerGrim
 				{script}
 				display
@@ -174,6 +189,28 @@
 		flex: none;
 		width: 1.8em;
 		height: 1.8em;
+	}
+	/* Full screen: the town fills the screen, on the page's own background. */
+	.stage:fullscreen {
+		position: relative;
+		background: var(--surface);
+	}
+	.stage:fullscreen :global([data-testid='player-grim']) {
+		height: 100dvh;
+		border-radius: 0;
+	}
+	.exit {
+		position: absolute;
+		top: var(--space-2);
+		right: var(--space-2);
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.exit-button {
+		border-radius: 50%;
+		background: var(--board-bar-background);
 	}
 	.message {
 		display: grid;

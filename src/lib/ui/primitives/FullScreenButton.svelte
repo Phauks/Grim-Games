@@ -9,24 +9,37 @@
 	 * status bar he wants to keep. The symbol says on or off, one button either way, so nothing
 	 * beside it moves (two states = a toggle).
 	 */
+	interface Props {
+		/**
+		 * The part of the page that goes full screen; the whole app without it. Public Town
+		 * shows only the town (Trevor, 2026-10-26: "not the app itself, but that part of it").
+		 */
+		target?: HTMLElement;
+		/** Drawn like its neighbours: outlined on the board's toolbar, plain in a title line. */
+		outlined?: boolean;
+	}
+
+	let { target, outlined = false }: Props = $props();
+
 	const canFullScreen =
 		document.fullscreenEnabled === true && !matchMedia('(display-mode: standalone)').matches;
-	let fullScreen = $state(!!document.fullscreenElement);
+	let current = $state.raw(document.fullscreenElement);
 	$effect(() => {
-		const sync = () => (fullScreen = !!document.fullscreenElement);
+		const sync = () => (current = document.fullscreenElement);
 		document.addEventListener('fullscreenchange', sync);
 		return () => document.removeEventListener('fullscreenchange', sync);
 	});
+	const fullScreen = $derived(target ? current === target : !!current);
 	function toggle() {
 		if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-		else void document.documentElement.requestFullscreen().catch(() => {});
+		else void (target ?? document.documentElement).requestFullscreen().catch(() => {});
 	}
 </script>
 
 {#if canFullScreen}<IconButton
 		icon={fullScreen ? 'exitFullScreen' : 'fullScreen'}
 		label="Full screen"
-		outlined
+		{outlined}
 		aria-pressed={fullScreen}
 		onclick={toggle}
 	/>{/if}

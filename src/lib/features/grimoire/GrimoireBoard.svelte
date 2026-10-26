@@ -1442,6 +1442,7 @@
 	onFeedback={watching ? undefined : () => (feedbackOpen = true)}
 	onReopen={() => (reopenOpen = true)}
 	onNewGame={watching ? undefined : () => newGameSheet?.begin()}
+	onCloseRoom={!watching && roomHost().code ? () => roomHost().close() : undefined}
 	onEnd={() => (endOpen = true)}
 />
 {#if !watching}<NewGameSheet
