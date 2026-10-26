@@ -123,12 +123,10 @@
 	$effect(() => onStoryteller?.(storyteller));
 	const mine = $derived(view?.me.seatId);
 	$effect(() => {
-		if (view?.request || mine) untrack(() => onSeated?.());
+		if (view?.me.name || mine) untrack(() => onSeated?.());
 	});
-	/** The name this phone has, or asked for: saving it again changes nothing. */
-	const unchanged = $derived(
-		!!view && name.trim() === (view.request?.name ?? (mine ? view.me.name : undefined))
-	);
+	/** The name this phone has: saving it again changes nothing. */
+	const unchanged = $derived(!!view && name.trim() === view.me.name);
 	const seatName = (seatId?: SeatId) => {
 		const s = seats.find((x) => x.seatId === seatId);
 		return s ? t('room.seatLower', { number: s.seatNumber }) : t('room.anySeatLower');
@@ -143,7 +141,6 @@
 				: view.ended.winner === 'evil'
 					? t('room.gameOverEvil')
 					: t('room.gameOver');
-		if (view.request) return t('room.waiting', { name: view.request.name });
 		if (mine) return t('room.seated', { seat: seatName(mine), name: view.me.name ?? '' });
 		if (view.me.name) return t('room.unseated', { name: view.me.name });
 		return t('room.choose');
@@ -278,7 +275,7 @@
 		event.preventDefault();
 		const n = name.trim();
 		if (!n || !player) return;
-		player.ask(n, view?.request?.seatId ?? mine);
+		player.setName(n);
 		editing = false;
 	}
 </script>

@@ -2,7 +2,6 @@ import { DurableObject } from 'cloudflare:workers';
 import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import {
 	canReveal,
-	cancelRequest,
 	castScriptBallot,
 	castVote,
 	closeScriptVote,
@@ -23,14 +22,15 @@ import {
 	publish,
 	receiveFeedback,
 	reopenGame,
-	request,
-	resolve,
 	roomPreview,
+	seat,
+	setName,
 	setChoosing,
 	setViewers,
 	supportsProtocol,
 	unseat,
 	viewerFailed,
+	withoutRequests,
 	viewersLocked,
 	type ViewerFails,
 	type GrimoireView,
@@ -75,7 +75,8 @@ async function sha256(text: string): Promise<string> {
  */
 export class Room extends DurableObject<RoomEnv> {
 	private async load(): Promise<RoomState | undefined> {
-		return this.ctx.storage.get<RoomState>('room');
+		const room = await this.ctx.storage.get<RoomState>('room');
+		return room && withoutRequests(room);
 	}
 
 	/** Pushes the expiry back; called on every connection and message. */
@@ -188,9 +189,7 @@ export class Room extends DurableObject<RoomEnv> {
 		if (who.role === 'player') {
 			const id = who.memberId;
 			if (message.type === 'request') {
-				room = request(room, id, message, Date.now(), crypto.randomUUID());
-			} else if (message.type === 'cancel-request') {
-				room = cancelRequest(room, id);
+				room = setName(room, id, message);
 			} else if (message.type === 'leave-seat') {
 				room = unseat(room, id);
 			} else if (message.type === 'look') {
@@ -270,16 +269,11 @@ export class Room extends DurableObject<RoomEnv> {
 				}
 				return;
 			}
-			case 'resolve':
-				room = resolve(
-					room,
-					message.requestId,
-					message.accept === true,
-					typeof message.seatId === 'string' ? message.seatId : undefined
-				);
-				break;
 			case 'unseat':
 				room = unseat(room, message.memberId);
+				break;
+			case 'seat':
+				room = seat(room, message.memberId, message.seatId);
 				break;
 			case 'open-vote':
 				room = openVote(room, message.voteId, message.options, message.ability);

@@ -158,16 +158,10 @@ export class RoomPlayer {
 		return readStored<string>(NAME_KEY) ?? '';
 	}
 
-	/** Asks to sit in `seatId` (or anywhere) as `name`; replaces an earlier request. */
-	ask(name: string, seatId?: SeatId): boolean {
+	/** Sets this phone's name in the room; the Storyteller seats it (no approval, 2026-10-26). */
+	setName(name: string): boolean {
 		writeStored(NAME_KEY, name);
-		return this.#socket.send(
-			seatId ? { type: 'request', name, seatId } : { type: 'request', name }
-		);
-	}
-
-	cancel(): void {
-		this.#socket.send({ type: 'cancel-request' });
+		return this.#socket.send({ type: 'request', name });
 	}
 
 	leaveSeat(): void {

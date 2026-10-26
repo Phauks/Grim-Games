@@ -45,7 +45,7 @@ export interface RoomMember {
 	frame?: FrameId;
 }
 
-/** "Sit in this seat as this name", or just a name, waiting for the Storyteller. */
+/** A name (and seat) waiting for the Storyteller, from before players joined without approval. */
 export interface RoomRequest {
 	requestId: string;
 	memberId: string;
@@ -62,7 +62,7 @@ export interface RoomState {
 	gameId?: string;
 	public?: PublicGameState;
 	members: RoomMember[];
-	/** At most one per member, oldest first. */
+	/** Rooms saved before players joined without approval (2026-10-26); `withoutRequests` empties it. */
 	requests: RoomRequest[];
 	/** A spectators' vote the Storyteller has open (Specters), if any. */
 	vote?: SpectatorVote;
@@ -159,8 +159,8 @@ export type ClientMessage =
 	 */
 	| { type: 'hello'; role: 'host' | 'player' | 'viewer'; key: string; protocol?: number }
 	// From a player.
+	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
 	| { type: 'request'; name: string; seatId?: SeatId }
-	| { type: 'cancel-request' }
 	| { type: 'leave-seat' }
 	/** The player's avatar and frame (plan R6); a missing one clears it. */
 	| { type: 'look'; avatar?: string; frame?: string }
@@ -177,9 +177,9 @@ export type ClientMessage =
 	 * their current script, so players can read it before seats are assigned.
 	 */
 	| { type: 'script'; script: Script }
-	/** `seatId` puts the player in a different seat from the one they asked for. */
-	| { type: 'resolve'; requestId: string; accept: boolean; seatId?: SeatId }
 	| { type: 'unseat'; memberId: string }
+	/** Puts a named member in a seat (players join without approval, Trevor 2026-10-26). */
+	| { type: 'seat'; memberId: string; seatId: SeatId }
 	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }
 	| { type: 'close-vote' }
 	/**
@@ -221,6 +221,7 @@ export * from './room-preview.ts';
 export interface HostView {
 	type: 'host-view';
 	members: RoomMember[];
+	/** Always empty now; kept for Storytellers' apps built while players asked. */
 	requests: RoomRequest[];
 	/** The open vote's count of spectators' choices; absent when no vote is open. */
 	vote?: VoteTally;
@@ -258,7 +259,6 @@ export interface PlayerView {
 	 */
 	gameId?: string;
 	me: RoomMember;
-	request?: Pick<RoomRequest, 'name' | 'seatId'>;
 	/** Seats someone in the room already sits in. */
 	takenSeats: SeatId[];
 	/** The open vote, shown to spectators only. */
@@ -404,7 +404,6 @@ function tally(
 
 export function playerView(room: RoomState, memberId: string): PlayerView {
 	const me = room.members.find((m) => m.memberId === memberId) ?? { memberId };
-	const request = room.requests.find((r) => r.memberId === memberId);
 	const view: PlayerView = {
 		type: 'player-view',
 		me,
@@ -433,16 +432,12 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 		if (room.vote.ability) view.vote.ability = room.vote.ability;
 		if (choice !== undefined) view.vote.choice = choice;
 	}
-	if (request) {
-		view.request = { name: request.name };
-		if (request.seatId) view.request.seatId = request.seatId;
-	}
 	return view;
 }
 
 /**
  * Adds a member on first hello; `null` when the room is full. A full room first lets go of
- * phones from earlier games: members with no seat and no request whose phone is not connected
+ * phones from earlier games: members with no seat whose phone is not connected
  * (`present`), so a room in use for many games never fills with phones that left.
  */
 export function join(
@@ -453,10 +448,7 @@ export function join(
 	if (room.members.some((m) => m.memberId === memberId)) return room;
 	let members = room.members;
 	if (members.length >= MAX_MEMBERS && present) {
-		const asking = new Set(room.requests.map((r) => r.memberId));
-		members = members.filter(
-			(m) => m.seatId !== undefined || asking.has(m.memberId) || present.has(m.memberId)
-		);
+		members = members.filter((m) => m.seatId !== undefined || present.has(m.memberId));
 	}
 	if (members.length >= MAX_MEMBERS) return null;
 	return { ...room, members: [...members, { memberId }] };
@@ -472,25 +464,37 @@ function seatExists(room: RoomState, seatId: SeatId): boolean {
 	return room.public?.seats.some((s) => s.seatId === seatId) ?? false;
 }
 
-/** A player's request replaces any earlier one of theirs. Invalid requests change nothing. */
-export function request(
-	room: RoomState,
-	memberId: string,
-	raw: { name: unknown; seatId?: unknown },
-	at: number,
-	requestId: string
-): RoomState {
+/**
+ * A player's name, set straight away: players no longer wait for approval (Trevor, 2026-10-26:
+ * "we don't approve anymore"); the Storyteller seats them. Any request of theirs, and any seat
+ * an older app asks for, is dropped. Invalid names change nothing.
+ */
+export function setName(room: RoomState, memberId: string, raw: { name: unknown }): RoomState {
 	const name = cleanName(raw.name);
-	if (!name || !room.members.some((m) => m.memberId === memberId)) return room;
-	const next: RoomRequest = { requestId, memberId, name, at };
-	if (raw.seatId !== undefined) {
-		if (typeof raw.seatId !== 'string' || !seatExists(room, raw.seatId as SeatId)) return room;
-		next.seatId = raw.seatId as SeatId;
-	}
-	return { ...room, requests: [...room.requests.filter((r) => r.memberId !== memberId), next] };
+	const member = room.members.find((m) => m.memberId === memberId);
+	if (!name || !member) return room;
+	const asked = room.requests.some((r) => r.memberId === memberId);
+	if (member.name === name && !asked) return room;
+	return setMember(cancelRequest(room, memberId), memberId, { name });
 }
 
-export function cancelRequest(room: RoomState, memberId: string): RoomState {
+/** The Storyteller seats a named member, moving anyone else out of that seat. */
+export function seat(room: RoomState, memberId: string, seatId: unknown): RoomState {
+	const member = room.members.find((m) => m.memberId === memberId);
+	if (!member?.name || typeof seatId !== 'string' || !seatExists(room, seatId as SeatId)) {
+		return room;
+	}
+	return setMember(room, memberId, { seatId: seatId as SeatId });
+}
+
+/** Rooms saved while players still asked: each request's name becomes the member's name. */
+export function withoutRequests(room: RoomState): RoomState {
+	if (room.requests.length === 0) return room;
+	const named = room.requests.reduce((r, req) => setName(r, req.memberId, req), room);
+	return { ...named, requests: [] };
+}
+
+function cancelRequest(room: RoomState, memberId: string): RoomState {
 	return { ...room, requests: room.requests.filter((r) => r.memberId !== memberId) };
 }
 
@@ -540,26 +544,6 @@ export function setLook(
 	return { ...room, members: room.members.map((m) => (m.memberId === memberId ? updated : m)) };
 }
 
-/**
- * The Storyteller's answer. Accepting records the name (and seat); the Storyteller's own
- * device renames the seat in the grimoire, so the room only remembers who sits where.
- */
-export function resolve(
-	room: RoomState,
-	requestId: string,
-	accept: boolean,
-	seatId?: SeatId
-): RoomState {
-	const found = room.requests.find((r) => r.requestId === requestId);
-	if (!found) return room;
-	const rest = { ...room, requests: room.requests.filter((r) => r.requestId !== requestId) };
-	if (!accept) return rest;
-	const change: Partial<RoomMember> = { name: found.name };
-	const seat = seatId ?? found.seatId;
-	if (seat && seatExists(room, seat)) change.seatId = seat;
-	return setMember(rest, found.memberId, change);
-}
-
 export function unseat(room: RoomState, memberId: string): RoomState {
 	return setMember(room, memberId, { seatId: undefined });
 }
@@ -582,13 +566,7 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 			keep(m.seatId) || m.seatId === undefined
 				? m
 				: { memberId: m.memberId, ...nameOf(m), ...lookOf(m) }
-		),
-		requests: room.requests.map((r) => {
-			if (r.seatId === undefined || keep(r.seatId)) return r;
-			const { seatId: _gone, ...without } = r;
-			void _gone;
-			return without;
-		})
+		)
 	};
 }
 
