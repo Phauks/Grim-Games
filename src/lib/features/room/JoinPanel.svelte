@@ -379,20 +379,23 @@
 			<Icon name="edit" />
 			<span class="visually-hidden">{t('room.editYou')}</span>
 		</button>
-		<!-- Always here; usable while a script vote is open, so a closed ballot can be opened
-		     again (Trevor, 2026-10-26) and nothing moves. -->
-		<IconButton
-			icon="vote"
-			label={t('room.scriptVote.ballot')}
-			outlined
-			aria-haspopup="dialog"
-			disabled={!view?.scriptVote}
-			onclick={() => (balloting = true)}
-		/>
-		<!-- Always here; usable once the game is over (plan R4), so nothing moves. -->
-		<Button disabled={!view?.endedGameId} aria-haspopup="dialog" onclick={() => (rating = true)}
-			>{t('room.feedback.open')}</Button
-		>
+		<!-- Only while a script vote is open, so a closed ballot can be opened again (Trevor,
+		     2026-10-26); it shares the row's height, so nothing below moves. -->
+		{#if view?.scriptVote}
+			<IconButton
+				icon="vote"
+				label={t('room.scriptVote.ballot')}
+				outlined
+				aria-haspopup="dialog"
+				onclick={() => (balloting = true)}
+			/>
+		{/if}
+		<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
+		{#if view?.endedGameId}
+			<Button aria-haspopup="dialog" onclick={() => (rating = true)}
+				>{t('room.feedback.open')}</Button
+			>
+		{/if}
 	</div>
 	<Dialog bind:open={editing} title={t('room.you')}>
 		<form onsubmit={ask}>
