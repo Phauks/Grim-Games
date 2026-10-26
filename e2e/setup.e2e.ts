@@ -605,12 +605,8 @@ test("the names to pick are the room's phones first, then names from earlier gam
 	await phone.getByTestId('you-row').tap();
 	const you = phone.getByRole('dialog', { name: 'You', exact: true });
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await you.getByRole('button', { name: 'Ask the Storyteller' }).tap();
-	await page
-		.getByRole('listitem', { name: /^Alex asks for/ })
-		.getByRole('button', { name: 'Approve' })
-		.tap();
-	await expect(page.getByRole('listitem').filter({ hasText: 'Alex' })).toBeVisible();
+	await you.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByRole('combobox', { name: 'Seat for Alex' })).toBeVisible();
 
 	await page.goto(setup);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
