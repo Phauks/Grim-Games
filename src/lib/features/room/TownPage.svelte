@@ -107,12 +107,6 @@
 
 	// Full screen shows the town alone, not the app (Trevor, 2026-10-26).
 	let stage = $state<HTMLDivElement>();
-	let inFullScreen = $state(false);
-	$effect(() => {
-		const sync = () => (inFullScreen = !!stage && document.fullscreenElement === stage);
-		document.addEventListener('fullscreenchange', sync);
-		return () => document.removeEventListener('fullscreenchange', sync);
-	});
 </script>
 
 <!-- The player screen's title line: the script's logo and name, its byline, Print and Share. -->
@@ -131,9 +125,6 @@
 				share={shareable}
 				room={room ?? undefined}
 			/>{/if}
-		<!-- Top right, last (Trevor, 2026-10-26: "we will definitely need a button to allow
-		     fullscreen in the top right corner"); it fills the screen with the town alone. -->
-		{#if stage}<FullScreenButton target={stage} />{/if}
 	{/snippet}
 	{#snippet subtitle()}
 		<ScriptByline
@@ -146,9 +137,10 @@
 
 	<div class="stage" bind:this={stage} data-testid="public-town">
 		{#if showTown && script && table && room}
-			<!-- In full screen the title line is gone, so the way back sits in the town's own
-			     top right corner. -->
-			{#if inFullScreen}<div class="exit"><FullScreenButton target={stage} /></div>{/if}
+			<!-- In the town's own top right corner, in and out of full screen (Trevor, 2026-10-26:
+			     "supposed to be in the town square, and makes it so the townsquare takes up the
+			     whole screen"); the board's corner lines are top left. -->
+			{#if stage}<div class="full-screen"><FullScreenButton target={stage} /></div>{/if}
 			<PlayerGrim
 				{script}
 				display
@@ -178,16 +170,19 @@
 		width: 1.8em;
 		height: 1.8em;
 	}
-	/* Full screen: the town fills the screen, on the page's own background. */
-	.stage:fullscreen {
+	/* The town's top right corner holds full screen. In full screen the town fills the screen,
+	   on the page's own background. */
+	.stage {
 		position: relative;
+	}
+	.stage:fullscreen {
 		background: var(--surface);
 	}
 	.stage:fullscreen :global([data-testid='player-grim']) {
 		height: 100dvh;
 		border-radius: 0;
 	}
-	.exit {
+	.full-screen {
 		position: absolute;
 		top: var(--space-2);
 		right: var(--space-2);
