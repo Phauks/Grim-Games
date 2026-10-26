@@ -15,6 +15,8 @@ export const settings = {
 	'settings.reset': 'Reset settings',
 	'settings.data': 'Data',
 	'settings.sectionLanguage': 'Language',
+	'settings.sectionSound': 'Sound',
+	'settings.soundVolume': 'Volume',
 	'settings.language': 'Language',
 	'settings.theme': 'Theme',
 	'settings.sectionTheme': 'Theme',

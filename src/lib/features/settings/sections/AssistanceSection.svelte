@@ -3,11 +3,9 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
-	import { canVibrate, playTimerSound, vibrateTimer } from '#lib/features/day/timer-sound.ts';
 	import { canKeepAwake } from '#lib/features/day/timer-wake-lock.ts';
 	import TimerPerPlayerRow from '#lib/features/day/TimerPerPlayerRow.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { TIMER_SOUNDS } from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
@@ -83,28 +81,8 @@
 
 <SettingHeading title={t('settings.groupDay')} />
 {#each STORYTELLER_GROUPS.day as key (key)}{@render toggle(key)}{/each}
-<!-- The day timer's own choices, the same values as on the timer (Trevor, 2026-10-17). -->
-<SettingSelect
-	label={t('day.timerSoundTitle')}
-	value={preferences.current.timerSound}
-	options={TIMER_SOUNDS.map((sound) => ({ value: sound, label: t(`day.timerSound.${sound}`) }))}
-	defaultValue="bell"
-	disabled={preferences.current.timerMode === 'up'}
-	onChange={(timerSound) => {
-		preferences.update({ timerSound });
-		playTimerSound(timerSound);
-	}}
-/>
-<SettingToggle
-	label={t('day.timerVibrate')}
-	description={canVibrate() ? undefined : t('day.timerVibrateUnavailable')}
-	checked={canVibrate() && preferences.current.timerVibrate}
-	disabled={!canVibrate()}
-	onChange={(timerVibrate) => {
-		preferences.update({ timerVibrate });
-		if (timerVibrate) vibrateTimer();
-	}}
-/>
+<!-- The day timer's own choices, the same values as on the timer (Trevor, 2026-10-17); its
+     sound and vibration are in Settings > Sound (plan U1). -->
 <SettingToggle
 	label={t('day.timerKeepAwake')}
 	description={canKeepAwake() ? undefined : t('day.timerKeepAwakeUnavailable')}
