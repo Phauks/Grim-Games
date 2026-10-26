@@ -7,7 +7,11 @@
  *   carry a four-word code, which still opens);
  * - `#s=1.<data>`: the script's TPI JSON itself, deflated and base64url-encoded. Works
  *   offline and with no server, so it is the fallback when a code can't be made.
+ *
+ * `&o=1` after `#e=` or `#s=` marks an offline code (Trevor, 2026-10-26): the phone got the
+ * script with no internet, so it knows the rest of the game is not coming to it.
  */
+import { qrFrames } from '#lib/core/codes/qr-frames.ts';
 import type { BotcScriptsRef } from './botcscripts-api.ts';
 import { normaliseShareCode } from './share-codes-api.ts';
 
@@ -126,6 +130,11 @@ export function sharedRefFromHash(hash: string): SharedRef | undefined {
 	return payload ? { kind: 'inline', payload } : undefined;
 }
 
+/** Whether a location hash is an offline code's (`&o=1`). */
+export function isOfflineHash(hash: string): boolean {
+	return new URLSearchParams(hash.replace(/^#/, '')).get('o') === '1';
+}
+
 /** The hash (with `#`) for a shared script. */
 export function sharedRefHash(ref: SharedRef): string {
 	switch (ref.kind) {
@@ -153,4 +162,32 @@ export async function shareLink(
 	path: SharePath = '/play'
 ): Promise<string> {
 	return `${origin}${path}${sharedRefHash({ kind: 'inline', payload: await encodeSharedScript(json) })}`;
+}
+
+/** An offline code's link up to this many bytes is one QR code; a longer one animates. */
+export const OFFLINE_SINGLE_MAX = 1000;
+
+/**
+ * A script for phones with no internet (Trevor, 2026-10-26): its link on /play with the
+ * whole script in it (`#e=` or `#s=`, never a code the server holds) and `&o=1`. When the link
+ * is too long for one code, `frames` cycle on screen and the app's scanner collects them;
+ * `tooLarge` when even that would take too long.
+ */
+export interface OfflineCode {
+	url: string;
+	frames?: string[];
+	tooLarge?: true;
+}
+
+export async function offlineCode(
+	origin: string,
+	from: { edition?: string; json: unknown }
+): Promise<OfflineCode> {
+	const ref: SharedRef = from.edition
+		? { kind: 'edition', edition: from.edition }
+		: { kind: 'inline', payload: await encodeSharedScript(from.json) };
+	const url = `${origin}/play${sharedRefHash(ref)}&o=1`;
+	if (new TextEncoder().encode(url).length <= OFFLINE_SINGLE_MAX) return { url };
+	const frames = qrFrames(url);
+	return frames ? { url, frames } : { url, tooLarge: true };
 }
