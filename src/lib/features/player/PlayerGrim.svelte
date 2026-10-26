@@ -83,8 +83,7 @@
 	import GuessMarks from './GuessMarks.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import SeatNotesDialog from '#lib/ui/notes/SeatNotesDialog.svelte';
-	import { deleteSeatNote, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
-	import { notesLine } from './seat-notes.ts';
+	import { deleteSeatNote, notesLine, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 
@@ -244,7 +243,7 @@
 					hasFace: true,
 					name: names[i]?.box,
 					dead: seat.dead,
-					note: !!notes[seat.seatId]?.length,
+					note: !!notes[seat.seatId],
 					nameOffset: boardLooks.current.nameOffset
 				})
 			})),
@@ -362,7 +361,7 @@
 		const placed = remindersOn(visible, seat.seatId);
 		if (placed.length)
 			parts.push(t('player.grim.hasReminders', { labels: placed.map((r) => r.label).join(', ') }));
-		if (notes[seat.seatId]?.length) parts.push(t('player.grim.hasNote'));
+		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
 		return parts.join(', ');
 	}
 	/* eslint-enable grim/names-as-badges */
@@ -462,13 +461,11 @@
 					avatar={seat.avatar}
 					usedVote={boardLooks.current.usedGhostVote}
 					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
-					marks={notes[seat.seatId]?.length || (others.length && shown === guessed)
-						? marks
-						: undefined}
+					marks={notes[seat.seatId] || (others.length && shown === guessed) ? marks : undefined}
 				/>
 				{#snippet marks()}
 					<!-- The board's own mark (SeatNoteMark): tapping it opens the note, as on the board. -->
-					{#if notes[seat.seatId]?.length}<SeatNoteMark />{/if}
+					{#if notes[seat.seatId]}<SeatNoteMark />{/if}
 					{#if others.length && shown === guessed}<GuessMarks {others} />{/if}
 				{/snippet}
 				{#snippet face()}

@@ -15,7 +15,7 @@ import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 export const SEAT_NOTES_VERSION = 2;
 
-/** Seat id to the player's notes on it, oldest first. */
+/** Seat id to the player's notes on it, oldest first; a seat with none has no entry. */
 export type SeatNotes = Record<string, TitledNote[]>;
 
 /** A note as written: no `noteId` adds it. */
