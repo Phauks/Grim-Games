@@ -20,5 +20,6 @@
 	},
 	"deathCause": {
 		"none": "changes alignment"
-	}
+	},
+	"makesExtraEvil": true
 }

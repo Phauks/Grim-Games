@@ -29,9 +29,15 @@
  * (https://wiki.bloodontheclocktower.com/Djinn), and some pairs can't both be in play at all
  * (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
  *
+ * Ivory draft (`ivory`, the Storyteller's choice on New game, as in Grimbits' tool): at most
+ * one character that can make an extra evil player (its `makesExtraEvil` rule, the kind the
+ * Spirit of Ivory limits: https://wiki.bloodontheclocktower.com/Spirit_of_Ivory) is drafted;
+ * once one is, the others aren't offered, unless nothing else can fill the open seats.
+ *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
 import { setupModifierFor, type CountOp } from '#lib/core/rules/setup-modifiers.ts';
 
@@ -43,6 +49,8 @@ export interface DraftConfig {
 	modifiers?: boolean;
 	/** How a character jinxed with one already drafted is offered; left out, as `allow`. */
 	jinxes?: JinxedPairs;
+	/** Ivory draft: at most one character that makes an extra evil player. */
+	ivory?: boolean;
 }
 
 export const JINXED_PAIRS = ['allow', 'reduce', 'block'] as const;
@@ -95,6 +103,8 @@ export interface DraftState {
 	forcedBy?: CharacterId;
 	/** Each pool character's jinxed partners in the pool, unless `config.jinxes` is `allow`. */
 	jinxed?: Record<CharacterId, CharacterId[]>;
+	/** The pool characters that make an extra evil player, when `config.ivory` is on. */
+	extraEvil?: CharacterId[];
 }
 
 /** A character dealt to the next seat because `by` needs it in play. */
@@ -104,6 +114,10 @@ export interface ForcedPick {
 }
 
 type Random = () => number;
+
+/** Its own rules (a custom character's) or our rules file's. */
+const makesExtraEvil = (c: Character) =>
+	(c.edition === undefined ? c.rules : rulesOf(c.id))?.makesExtraEvil === true;
 
 const isSeated = (type: string): type is SeatedType =>
 	(SEATED_TYPES as readonly string[]).includes(type);
@@ -143,6 +157,7 @@ export function startDraft(
 			(jinxed[b] ??= []).push(a);
 		}
 	}
+	const extraEvil = config.ivory ? seated.filter(makesExtraEvil).map((c) => c.id) : [];
 	const state: DraftState = {
 		config,
 		slots: { ...counts },
@@ -154,7 +169,8 @@ export function startDraft(
 		offerIndex: 0,
 		...(modifiers ? { modifiers } : {}),
 		...(Object.keys(requires).length > 0 ? { requires } : {}),
-		...(Object.keys(jinxed).length > 0 ? { jinxed } : {})
+		...(Object.keys(jinxed).length > 0 ? { jinxed } : {}),
+		...(extraEvil.length > 0 ? { extraEvil } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
 }
@@ -371,6 +387,12 @@ function makeOffer(state: DraftState, size: number, random: Random): CharacterId
 	if (state.config.jinxes === 'block') {
 		// Blocked unless nothing else can fill the open seats, so the draft can always finish.
 		const clear = candidates.filter((id) => !clashes(id));
+		if (clear.length > 0) candidates = clear;
+	}
+	if (state.extraEvil?.some((id) => picked.has(id))) {
+		// Ivory draft: one is in, so no other, unless nothing else can fill the open seats.
+		const others = new Set(state.extraEvil);
+		const clear = candidates.filter((id) => !others.has(id));
 		if (clear.length > 0) candidates = clear;
 	}
 	if (state.config.oneTypePerOffer && candidates.length > 0) {
