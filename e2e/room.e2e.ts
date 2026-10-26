@@ -686,8 +686,10 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 
 	await phone.getByRole('tab', { name: 'Notes' }).tap();
-	await phone.getByRole('button', { name: 'New note' }).tap();
-	const editor = phone.getByRole('dialog', { name: 'Note' });
+	// The player's own notes, not a seat's (each seat has its own "+ New note" too).
+	const myNotes = phone.getByRole('region', { name: 'My notes' });
+	await myNotes.getByRole('button', { name: 'New note' }).tap();
+	const editor = phone.getByRole('dialog', { name: 'Note', exact: true });
 	await editor.getByRole('textbox', { name: 'Title' }).fill('Game one');
 	await phone.keyboard.press('Escape');
 	await expect(phone.locator('[data-note]').filter({ hasText: 'Game one' })).toHaveCount(1);
