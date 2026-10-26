@@ -201,6 +201,11 @@ export class RoomPlayer {
 		return voteId ? this.#socket.send({ type: 'script-ballot', voteId, choices }) : false;
 	}
 
+	/** Tells the Storyteller this player has seen their character (Trevor, 2026-10-26). */
+	roleSeen(): void {
+		this.#socket.send({ type: 'role-seen' });
+	}
+
 	/** Feedback on the game that ended (plan R4); a new one replaces the last. */
 	sendFeedback(feedback: GameFeedback): boolean {
 		const gameId = this.view?.endedGameId;

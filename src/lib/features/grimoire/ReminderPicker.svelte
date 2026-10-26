@@ -5,6 +5,9 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
+	import { matchesReminderSearch } from '#lib/features/characters/character-search.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatMisses } from './board.ts';
 	import {
@@ -31,7 +34,11 @@
 	let { open = $bindable(), grimoire, seatId, title, onRemove, onMove }: Props = $props();
 
 	const characters = $derived(grimoire.open.characters);
-	const groups = $derived(reminderGroups(grimoire.game, characters));
+	/** The same search as a player's reminders (Trevor, 2026-10-26). */
+	let query = $state('');
+	const groups = $derived(
+		reminderGroups(grimoire.game, characters).filter((g) => matchesReminderSearch(g, query))
+	);
 	// Each token can be placed once unless the game gives more copies; used-up ones stay in
 	// place, disabled, so nothing moves.
 	const left = $derived(
@@ -175,6 +182,7 @@
 				<span class="none">None</span>
 			{/each}
 		</div>
+		<SearchField label={t('common.searchReminders')} bind:value={query} />
 	</div>
 	<ul class="list">
 		{#each groups as group (group.character.id)}

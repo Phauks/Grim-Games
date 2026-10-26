@@ -27,6 +27,7 @@
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
+	import YourCharacter from './YourCharacter.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
@@ -410,6 +411,8 @@
 		<p class="you" data-testid="you-row">
 			<span class="summary" role="status" data-testid="join-status">{summary}</span>
 		</p>
+		<!-- Only while the Storyteller lets players see their character (Trevor, 2026-10-26). -->
+		{#if player}<YourCharacter {player} />{/if}
 		<!-- Only during the day, when the Storyteller shows it (Trevor, 2026-10-26); it shares
 		     the row's height, so nothing below moves. -->
 		{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}

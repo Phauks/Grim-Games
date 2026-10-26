@@ -227,25 +227,29 @@ async function keepFirst(page: Page): Promise<string> {
 	await expect(reveal).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(reveal).toBeHidden();
-	// A drafted Atheist may really be the Drunk: keep it as drafted.
-	const choice = page.getByTestId('draft-hidden-choice');
-	if (
-		await choice.waitFor({ timeout: 1000 }).then(
-			() => true,
-			() => false
-		)
-	)
-		await choice.getByRole('button', { name: 'As drafted' }).tap();
-	// A drafted Godfather, Xaan or the like asks the Storyteller for a count: keep the lowest.
-	const ask = page.getByTestId('draft-ask');
+	// The Storyteller answers what a drafted character asks, in turn: an Atheist kept as drafted
+	// (not the Drunk), an Alchemist's ability later, and the lowest count for a Godfather, Xaan
+	// or the like (Legion asks more than one count).
+	const asked = page.locator(
+		'[data-testid="draft-hidden-choice"], [data-testid="draft-ability"], [data-testid="draft-ask"]'
+	);
 	const shown = () =>
-		ask.waitFor({ timeout: 1000 }).then(
-			() => true,
-			() => false
-		);
-	// Legion or an Atheist asks more than one count in turn.
-	for (let n = 0; n < 5 && (await shown()); n++) await ask.getByRole('button').first().tap();
-	await expect(ask).toBeHidden();
+		asked
+			.first()
+			.waitFor({ timeout: 1000 })
+			.then(
+				() => true,
+				() => false
+			);
+	for (let n = 0; n < 6 && (await shown()); n++) {
+		const which = await asked.first().getAttribute('data-testid');
+		if (which === 'draft-hidden-choice')
+			await asked.first().getByRole('button', { name: 'As drafted' }).tap();
+		else if (which === 'draft-ability')
+			await asked.first().getByRole('button', { name: 'Later' }).tap();
+		else await asked.first().getByRole('button').first().tap();
+		await expect(page.getByTestId(which!)).toBeHidden();
+	}
 	return id;
 }
 
@@ -344,6 +348,38 @@ test('Sushi Buffet asks whether a drafted Atheist is really the Drunk', async ({
 	await page.getByRole('button', { name: 'Finish' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
 	await expect(page.getByText('Is The Drunk').first()).toBeVisible();
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/) lets a drafted Alchemist take a Minion
+// ability that changes setup now (https://wiki.bloodontheclocktower.com/Alchemist): the Baron's
+// +2 Outsiders apply (https://wiki.bloodontheclocktower.com/Baron).
+test('Sushi Buffet asks which Minion ability a drafted Alchemist has, or later', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const key = `grim-games:mode-deal:v1:${gameId}`;
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = ['alchemist'];
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, key);
+	await page.reload();
+	const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).state, key);
+	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
+	await rows(page).first().tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Setup change' });
+	const options = dialog.getByTestId('ability-options').getByRole('listitem');
+	await expect(options.last()).toHaveText('Later');
+	await options.filter({ hasText: 'Baron' }).getByRole('button', { name: 'Has this' }).tap();
+	await expect(dialog).toBeHidden();
+	const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).state, key);
+	expect(state.abilities).toEqual({ 0: 'baron' });
+	expect(state.pool).not.toContain('baron');
+	expect(state.slots.outsider).toBe(before.slots.outsider + 2);
 });
 
 // Trevor (2026-10-26): "modifiers are made dynamically for outsider count", as Grimbits' draft

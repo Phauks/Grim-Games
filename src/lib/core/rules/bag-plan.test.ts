@@ -11,6 +11,7 @@ import { placeableSetupReminders, setupReminders } from './setup-reminders.ts';
 import {
 	analyseSelection,
 	bagSlots,
+	dealPairs,
 	nextDrawSeat,
 	planBag,
 	randomSelection,
@@ -363,6 +364,38 @@ describe('the draw', () => {
 		const held = run(session, ctx, { type: 'DrawTile', seatId: seats[0] });
 		// A seat holding a tile is skipped until the draw is confirmed or put back.
 		expect(nextDrawSeat(held.game)).toBe(seats[1]);
+	});
+
+	it('deals every tile in the bag to an empty seat, skipping a seat that holds one', () => {
+		const { session, ctx, seats } = drawGame();
+		const held = run(session, ctx, { type: 'DrawTile', seatId: seats[1] });
+		const { pairs, seatsShort } = dealPairs(held.game, () => 0.5);
+		expect(seatsShort).toBe(0);
+		expect(pairs.map((p) => p.seatId)).toEqual([seats[0], seats[2], seats[3], seats[4]]);
+		expect(new Set(pairs.map((p) => p.tileId))).toEqual(new Set(held.game.bag!.order));
+		const dealt = run(
+			held,
+			ctx,
+			...pairs.flatMap((p) => [
+				{ type: 'DrawTile' as const, seatId: p.seatId, tileId: p.tileId },
+				{ type: 'ConfirmDraw' as const, tileId: p.tileId }
+			])
+		);
+		expect(seats.filter((id) => dealt.game.seats[id].characterId)).toHaveLength(4);
+		expect(dealt.game.bag!.order).toEqual([]);
+	});
+
+	it('deals in an order set by the random numbers, not the bag order', () => {
+		const { session } = drawGame();
+		const first = dealPairs(session.game, () => 0).pairs.map((p) => p.tileId);
+		const other = dealPairs(session.game, () => 0.99).pairs.map((p) => p.tileId);
+		expect(first).not.toEqual(other);
+	});
+
+	it('says how many tiles have no empty seat', () => {
+		const { session, ctx, seats } = drawGame();
+		const removed = run(session, ctx, { type: 'RemoveSeat', seatId: seats[4] });
+		expect(dealPairs(removed.game, Math.random).seatsShort).toBe(1);
 	});
 
 	it('numbers every tile once and keeps the numbers through the draw', () => {

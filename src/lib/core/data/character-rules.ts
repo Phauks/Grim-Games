@@ -30,9 +30,11 @@ import {
 	ALIGNMENTS,
 	CHARACTER_TYPES,
 	type Alignment,
+	SEATED_TYPES,
 	type CharacterId,
 	type CharacterType,
-	type ReminderLabel
+	type ReminderLabel,
+	type SeatedType
 } from './types.ts';
 import {
 	checkKeys,
@@ -186,6 +188,13 @@ export interface CharacterRules {
 	 * (https://grimbits.com/draft-buffet/; `modes/draft.ts`).
 	 */
 	orHiddenAs?: CharacterId;
+	/**
+	 * Its player has the ability of a not-in-play character of this type, so that character's
+	 * setup change applies too: the Alchemist's Minion ability
+	 * (https://wiki.bloodontheclocktower.com/Alchemist). Sushi Buffet asks which when it is
+	 * drafted, or later, as Grimbits' draft tool does (`modes/draft.ts`).
+	 */
+	gainsAbilityOf?: SeatedType;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -346,7 +355,8 @@ export const RULE_KEYS = [
 	'stopsWaking',
 	'infoTokenCharacters',
 	'makesExtraEvil',
-	'orHiddenAs'
+	'orHiddenAs',
+	'gainsAbilityOf'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -552,6 +562,8 @@ export function parseCharacterRules(
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
 	const hiddenAs = readString(raw, 'orHiddenAs', path, issues, false);
 	if (hiddenAs !== undefined) rules.orHiddenAs = hiddenAs;
+	const gains = readEnum(raw, 'gainsAbilityOf', SEATED_TYPES, path, issues, false);
+	if (gains !== undefined) rules.gainsAbilityOf = gains;
 	return issues.list.length > before ? undefined : rules;
 }
 

@@ -51,6 +51,12 @@
  * the character they drafted) and skips the setup change; keeping it applies the change. Only
  * hidden characters in `config.hidden` (those on the script) are asked about, each once.
  *
+ * A gained ability (Grimbits' tool, for the Alchemist): with `modifiers` on, a drafted character
+ * whose player has a not-in-play character's ability (`gainsAbilityOf`: the Alchemist's Minion,
+ * https://wiki.bloodontheclocktower.com/Alchemist) asks the Storyteller which, among those of
+ * that type whose setup change would apply (the Baron's +2 Outsiders), or Later. A chosen
+ * character leaves the pool, so it stays out of play, and its setup change applies.
+ *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
@@ -72,6 +78,12 @@ export interface DraftConfig {
 	dealsRequired?: boolean;
 	/** Hidden characters on the script a drafted character may really be (`orHiddenAs`). */
 	hidden?: CharacterId[];
+}
+
+/** The Storyteller chooses which ability of `options` the last pick has, or none yet. */
+export interface AbilityChoice {
+	characterId: CharacterId;
+	options: CharacterId[];
 }
 
 /** The Storyteller chooses whether the last pick is really `hidden`, thinking it is the pick. */
@@ -142,6 +154,12 @@ export interface DraftState {
 	choice?: HiddenChoice;
 	/** Seats (by pick index) that are really a hidden character, thinking they are their pick. */
 	hiddenSeats?: Record<number, CharacterId>;
+	/** Each pool character whose player gains a not-in-play ability of a type (`gainsAbilityOf`). */
+	gains?: Record<CharacterId, SeatedType>;
+	/** The gained ability the Storyteller chooses now; no offer is made until they do. */
+	ability?: AbilityChoice;
+	/** Seats (by pick index) with a gained character's ability, chosen in the draft. */
+	abilities?: Record<number, CharacterId>;
 }
 
 /** A character dealt to the next seat because `by` needs it in play. */
@@ -205,6 +223,14 @@ export function startDraft(
 				})
 			)
 		: {};
+	const gains: Record<CharacterId, SeatedType> = config.modifiers
+		? Object.fromEntries(
+				seated.flatMap((c) => {
+					const type = rulesFor(c)?.gainsAbilityOf;
+					return type ? [[c.id, type]] : [];
+				})
+			)
+		: {};
 	const state: DraftState = {
 		config,
 		slots: { ...counts },
@@ -218,7 +244,8 @@ export function startDraft(
 		...(Object.keys(requires).length > 0 ? { requires } : {}),
 		...(Object.keys(jinxed).length > 0 ? { jinxed } : {}),
 		...(extraEvil.length > 0 ? { extraEvil } : {}),
-		...(Object.keys(orHidden).length > 0 ? { orHidden } : {})
+		...(Object.keys(orHidden).length > 0 ? { orHidden } : {}),
+		...(Object.keys(gains).length > 0 ? { gains } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
 }
@@ -265,18 +292,56 @@ export function takeOffer(state: DraftState, id: CharacterId, random: Random): D
 	const hidden = next.orHidden?.[id];
 	if (hidden && !Object.values(next.hiddenSeats ?? {}).includes(hidden))
 		return { ...next, choice: { characterId: id, hidden }, offer: [] };
-	return applyChanges(next, id, random);
+	return askAbility(next, id, random);
 }
 
-/** Queues the kept character's setup changes; asks the Storyteller or makes the next offer. */
-function applyChanges(state: DraftState, id: CharacterId, random: Random): DraftState {
+/**
+ * The kept character's gained ability, asked when a character of its type would change setup
+ * (the Baron for an Alchemist); else its own setup changes.
+ */
+function askAbility(state: DraftState, id: CharacterId, random: Random): DraftState {
+	const type = state.gains?.[id];
+	const options = type
+		? state.pool.filter((x) => state.types[x] === type && (state.modifiers?.[x]?.length ?? 0) > 0)
+		: [];
+	if (options.length > 0) return { ...state, ability: { characterId: id, options }, offer: [] };
+	return applyChanges(state, [id], random);
+}
+
+/**
+ * The Storyteller's choice of the last pick's gained ability: `chosen` leaves the pool, so it
+ * stays out of play, and its setup change applies; none (Later) changes nothing now.
+ */
+export function answerAbility(
+	state: DraftState,
+	chosen: CharacterId | undefined,
+	random: Random
+): DraftState {
+	const ability = state.ability;
+	if (!ability || (chosen !== undefined && !ability.options.includes(chosen))) return state;
+	let next: DraftState = { ...state };
+	delete next.ability;
+	if (chosen === undefined) return applyChanges(next, [ability.characterId], random);
+	const seat = next.picks.lastIndexOf(ability.characterId);
+	next = {
+		...next,
+		pool: next.pool.filter((x) => x !== chosen),
+		abilities: { ...(next.abilities ?? {}), [seat]: chosen }
+	};
+	return applyChanges(next, [ability.characterId, chosen], random);
+}
+
+/**
+ * Queues the setup changes of `ids` (the kept character, and any ability it gained); asks the
+ * Storyteller or makes the next offer.
+ */
+function applyChanges(state: DraftState, ids: readonly CharacterId[], random: Random): DraftState {
 	let next = state;
-	const ops = next.modifiers?.[id] ?? [];
-	if (ops.length > 0) {
-		next = advance({
-			...next,
-			pending: [...(next.pending ?? []), ...ops.map((op) => ({ characterId: id, op }))]
-		});
+	const changes = ids.flatMap((id) =>
+		(next.modifiers?.[id] ?? []).map((op) => ({ characterId: id, op }))
+	);
+	if (changes.length > 0) {
+		next = advance({ ...next, pending: [...(next.pending ?? []), ...changes] });
 		if (next.ask) return { ...next, offer: [] };
 	}
 	return nextOffer(next, random);
@@ -291,7 +356,7 @@ export function answerHidden(state: DraftState, isHidden: boolean, random: Rando
 	if (!choice) return state;
 	const next: DraftState = { ...state };
 	delete next.choice;
-	if (!isHidden) return applyChanges(next, choice.characterId, random);
+	if (!isHidden) return askAbility(next, choice.characterId, random);
 	const seat = next.picks.lastIndexOf(choice.characterId);
 	return nextOffer(
 		{ ...next, hiddenSeats: { ...(next.hiddenSeats ?? {}), [seat]: choice.hidden } },
