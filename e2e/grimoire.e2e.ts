@@ -142,6 +142,41 @@ async function openStep(page: Page, title: string) {
 	return dialog;
 }
 
+/**
+ * Counts animation frames, from now until `stop` is called, in which neither the open night
+ * step `title` nor a player view is up: the board showing for a moment between them.
+ */
+async function watchStep(page: Page, title: string) {
+	await page.evaluate((title) => {
+		const w = window as unknown as { stepGaps: number; stepWatch: boolean };
+		w.stepGaps = 0;
+		w.stepWatch = true;
+		const frame = () => {
+			if (!w.stepWatch) return;
+			const step = [
+				...document.querySelectorAll('[data-scope="dialog"][data-part="content"]')
+			].some(
+				(e) =>
+					e.getAttribute('data-state') === 'open' &&
+					getComputedStyle(e).opacity === '1' &&
+					e.querySelector('[data-part="title"]')?.textContent?.trim() === title
+			);
+			if (!step && !document.querySelector('[data-testid="show-to-player"][open]')) w.stepGaps++;
+			requestAnimationFrame(frame);
+		};
+		requestAnimationFrame(frame);
+	}, title);
+	return async () => {
+		// Long enough for any closing or opening animation to have run.
+		await page.waitForTimeout(600);
+		return page.evaluate(() => {
+			const w = window as unknown as { stepGaps: number; stepWatch: boolean };
+			w.stepWatch = false;
+			return w.stepGaps;
+		});
+	};
+}
+
 /** End night in the bank, confirmed. */
 async function endNight(page: Page) {
 	await bankNight(page, 'End night').tap();
@@ -1022,10 +1057,13 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	await tiles.getByRole('button', { name: 'You are (Imp)', exact: true }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
-	// The step stays open under the sheet, for the rest of the Imp's turn.
+	// The step stays open under the card, for the rest of the Imp's turn: closing the card goes
+	// straight back to it, not to the info tokens list (Trevor, 2026-10-26).
+	const gaps = await watchStep(page, 'Imp');
 	await shown.getByRole('button', { name: 'Close' }).tap();
-	await page.keyboard.press('Escape');
 	await expect(step).toBeVisible();
+	await expect(page.getByRole('dialog', { name: 'Info tokens' })).toHaveCount(0);
+	expect(await gaps()).toBe(0);
 });
 
 test("the Demon's step says when the Exorcist's choice stops it waking", async ({ page }) => {
@@ -3850,8 +3888,12 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await minionInfo.getByRole('button', { name: 'Show This is the Demon' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('This is the Demon');
+	// Closing the card goes straight back to the step, never the board in between (Trevor,
+	// 2026-10-26: it flashed the grim).
+	const gaps = await watchStep(page, 'Minion info');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(minionInfo).toBeVisible();
+	expect(await gaps()).toBe(0);
 
 	// Demon info with no bluffs yet: its Minions, and a way to choose the bluffs.
 	await minionInfo.getByRole('button', { name: 'Next step' }).tap();
