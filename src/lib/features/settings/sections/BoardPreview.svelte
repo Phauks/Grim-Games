@@ -239,10 +239,13 @@
 		{#if lines['join-code']}<span class="preview-room-code" data-testid="preview-room-code"
 				>{t('room.joinCode')} <span class="code">{SAMPLE_CODE}</span></span
 			>{/if}
-		<!-- The night or day in play and Game time, one line as on the board; sample ones here. -->
+		<!-- Day or night and Game time, each its own line under its own eye as on the board;
+		     sample ones here. -->
+		{#if lines.phase}<span class="preview-room-code" data-testid="preview-phase"
+				>{t('day.nightNumber', { number: 2 })}</span
+			>{/if}
 		{#if lines['game-time']}<span class="preview-room-code" data-testid="preview-game-clock"
-				><span data-testid="preview-phase">{t('day.nightNumber', { number: 2 })}</span> ·
-				{t('history.gameLength')} <span class="code">1:23:45</span></span
+				>{t('history.gameLength')} <span class="code">1:23:45</span></span
 			>{/if}
 	</p>
 	<ul class="bank" aria-label={t('settings.previewBank')} data-testid="preview-bank">
