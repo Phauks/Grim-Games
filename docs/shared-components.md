@@ -147,6 +147,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Game end (`game-end.ts`, `end-reason.ts`)                                                           | `gameEnd`                             | moved |
 | Extra evil makers (`modes/draft.ts` Ivory draft; the kind the Spirit of Ivory limits; new)          | `makesExtraEvil`                      | new   |
 | Hidden character it may really be (`modes/draft.ts`, the Atheist's Drunk; new)                      | `orHiddenAs`                          | new   |
+| Gained not-in-play ability (`modes/draft.ts`, the Alchemist's Minion; new)                          | `gainsAbilityOf`                      | new   |
 
 ## Lists that only shrink
 
