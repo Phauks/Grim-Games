@@ -2062,7 +2062,7 @@ test("on a laptop the player's screen shows the script's logo, and the guess she
 	await laptop.close();
 });
 
-test("a player's initials and frame go on their seat, and their guess shows over them only if they choose", async ({
+test("a player's initials and frame go on their seat, and their avatar is in the cycle of guesses", async ({
 	page,
 	browser
 }, testInfo) => {
@@ -2101,25 +2101,36 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	await expect(seat.locator('svg[data-frame="clock"]')).toBeAttached();
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 
-	// Every phone at the table sees it; a guess shows over it only once that is switched on.
+	// Every phone at the table sees it. A guess goes on the token, and the avatar joins the
+	// guesses' cycle, so the pill brings it back (Trevor, 2026-10-26).
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	const mine = phone.getByTestId('grim-seat').nth(2);
 	await expect(mine.getByTestId('avatar-face')).toHaveText('AK');
 	await mine.tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Alex Kim' });
-	// The switch above the picker pushes it down on a phone: scroll first, so the tap is not
-	// taken as part of the sheet's own scroll.
 	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });
 	await empath.scrollIntoViewIfNeeded();
 	await expect(empath).toBeInViewport();
 	await empath.tap();
+	// The sheet's cycle: the guess in front, then the avatar.
+	const cycle = sheet.getByTestId('seat-guesses').getByRole('button');
+	await expect(cycle).toHaveCount(2);
+	await expect(cycle.first()).toContainText('Empath');
+	await expect(cycle.last()).toHaveAccessibleName('Avatar');
 	await phone.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(mine).toHaveAttribute('aria-label', /your guess: Empath/);
-	await expect(mine.getByTestId('avatar-face')).toBeVisible();
-	await mine.tap();
-	await sheet.getByText('Guesses over avatars', { exact: true }).tap();
-	await expect(mine.getByTestId('avatar-face')).toHaveCount(0);
+	await expect(mine).toHaveAttribute('data-guess', 'true');
+	const pill = mine.getByTestId('guess-marks');
+	await expect(pill.getByRole('img', { name: 'Avatar' })).toBeVisible();
+	await pill.tap();
+	await expect(sheet).toBeHidden();
+	await expect(mine).not.toHaveAttribute('data-guess', 'true');
+	await expect(pill.getByRole('img', { name: 'Empath' })).toBeVisible();
+	await expect(mine.getByTestId('avatar-face')).toHaveText('AK');
+	// Still the player's guess, behind the avatar.
+	await expect(mine).toHaveAttribute('aria-label', /your guess: Empath/);
+	await pill.tap();
 	await expect(mine).toHaveAttribute('data-guess', 'true');
 	await phoneContext.close();
 });
