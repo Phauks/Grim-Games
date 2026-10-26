@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { baseCounts } from '#lib/core/rules/distribution.ts';
 import {
@@ -16,6 +17,8 @@ import {
 	takeOffer,
 	type DraftConfig
 } from './draft.ts';
+import { SUSHI_BUFFET } from './library/sushi-buffet.ts';
+import { hiddenAsTownsfolk, pickableCharacters } from './pool.ts';
 
 const data = committedGameData();
 const tb = data.characters.filter((c) => c.edition === 'tb');
@@ -266,5 +269,59 @@ describe('jinxed pairs', () => {
 		expect(rate('reduce')).toBeCloseTo(1 / 3, 1);
 		expect(rate('allow')).toBeCloseTo(1 / 2, 1);
 		expect(rate(undefined)).toBeCloseTo(1 / 2, 1);
+	});
+});
+
+// The Drunk thinks they are a Townsfolk (https://wiki.bloodontheclocktower.com/Drunk), so the
+// Storyteller picks a drafted Townsfolk to be it; the Marionette is a Minion, so not here.
+describe('characters hidden as a drafted Townsfolk', () => {
+	it('are the Drunk among official characters', () => {
+		expect(hiddenAsTownsfolk(data.characters).map((c) => c.id)).toEqual(['drunk']);
+		expect(pickableCharacters(SUSHI_BUFFET, data.characters).map((c) => c.id)).not.toContain(
+			'drunk'
+		);
+	});
+});
+
+// Ivory draft, as Grimbits' tool offers: at most one character that can make an extra evil
+// player, the kind the Spirit of Ivory limits (https://wiki.bloodontheclocktower.com/Spirit_of_Ivory).
+describe('Ivory draft', () => {
+	const pick = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
+	const counts = { townsfolk: 2, outsider: 1, minion: 0, demon: 0 };
+	const afterGoon = (ivory: boolean, pool = pick('bountyhunter', 'cultleader', 'chef')) => {
+		const random = seeded(5);
+		const s = startDraft(
+			{ ...config, offers: [3, 2, 1], ivory },
+			counts,
+			[...pick('goon'), ...pool],
+			random
+		);
+		return takeOffer({ ...s, offer: ['goon'] }, 'goon', random);
+	};
+
+	it('marks the characters that make an extra evil player', () => {
+		const marked = data.characters.filter((c) => rulesOf(c.id)?.makesExtraEvil).map((c) => c.id);
+		expect(marked.sort()).toEqual(
+			[
+				'bountyhunter',
+				'cultleader',
+				'fanggu',
+				'goon',
+				'legion',
+				'lordoftyphon',
+				'mezepheles',
+				'ogre',
+				'politician'
+			].sort()
+		);
+	});
+
+	it('offers no other once one is drafted', () => {
+		expect(afterGoon(true).offer).toEqual(['chef']);
+		expect(afterGoon(false).offer).toHaveLength(3);
+	});
+
+	it('still offers one when nothing else fills the seat', () => {
+		expect(afterGoon(true, pick('bountyhunter')).offer).toEqual(['bountyhunter']);
 	});
 });

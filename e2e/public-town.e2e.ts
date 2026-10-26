@@ -59,6 +59,18 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await expect(tablet.getByRole('button', { name: 'Print script' })).toBeVisible();
 	await expect(tablet.getByRole('button', { name: 'Share script' })).toBeVisible();
 	await expect(tablet.getByRole('button', { name: 'Menu' }).first()).toBeVisible();
+	// Full screen, last in the title line's top right corner (Trevor, 2026-10-26: "we will
+	// definitely need a button to allow fullscreen in the top right corner").
+	const fullScreen = tablet.getByRole('button', { name: 'Full screen', exact: true });
+	const share = (await tablet.getByRole('button', { name: 'Share script' }).boundingBox())!;
+	const corner = (await fullScreen.boundingBox())!;
+	expect(corner.x).toBeGreaterThan(share.x);
+	expect(Math.abs(corner.y - share.y)).toBeLessThan(2);
+	await fullScreen.tap();
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	expect(await tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
+	await fullScreen.tap();
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
 
 	// The display is not a player: the Storyteller's room counts no one.
 	await expect(page.getByTestId('status-players')).toHaveText('0 players');

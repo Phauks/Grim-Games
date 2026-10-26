@@ -179,6 +179,8 @@ export const modes = {
 	'modes.deal.forced': 'This is your character, because this one is in play: ',
 	'modes.deal.askCount': 'How many {type} in all?',
 	'modes.deal.askKeep': 'Keep {count}',
+	'modes.deal.hiddenTitle': 'Hidden character',
+	'modes.deal.hiddenPrompt': 'Which player who drafted a Townsfolk is really this character? ',
 	'modes.deal.noOptions': 'No character fits. Change the open slots or the restricted characters.',
 	'modes.sources': 'Sources',
 	'modes.authors': 'Authors',
@@ -272,6 +274,8 @@ export const modes = {
 	'modes.jinxedPairs.block': 'Block',
 	'modes.jinxedPairs.reduce': 'Less likely',
 	'modes.jinxedPairs.allow': 'Allow',
+	'modes.ivoryDraft': 'Ivory draft',
+	'modes.ivoryDraftHint': 'At most one character that can make an extra evil player is drafted.',
 	'modes.settings': 'Game mode settings',
 	'modes.campaign.chooseHint': 'Start a new campaign, or carry on one you have played before.',
 	'modes.restrictedHint':

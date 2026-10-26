@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { NEW_GAME_MAX_PLAYERS } from '#lib/features/setup/selection.svelte.ts';
 	import { onMount, type Snippet } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -151,6 +152,7 @@
 	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
 	let roleRecycling = $state<boolean | undefined>();
 	let jinxedPairs = $state<JinxedPairs>('allow');
+	let ivoryDraft = $state(false);
 	const draft = $derived(
 		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
 	);
@@ -210,11 +212,13 @@
 					: 'per-town'
 				: 'one'
 	);
-	// Separate towns each need a full game's players (5 to 15); one town goes up to the
-	// game's seat limit, like character selection (Trevor, 2026-10-18).
+	// Separate towns each need a full game's players (5 to 15). One game goes up to 20, and
+	// towns sharing their players up to the game's seat limit (Trevor, 2026-10-26).
 	const split = $derived(towns && !towns.samePlayers ? towns.count : 1);
 	const minPlayers = $derived(MIN_PLAYERS * split);
-	const maxPlayers = $derived(split > 1 ? MAX_PLAYERS * split : MAX_SEATS);
+	const maxPlayers = $derived(
+		split > 1 ? MAX_PLAYERS * split : (towns?.count ?? 1) > 1 ? MAX_SEATS : NEW_GAME_MAX_PLAYERS
+	);
 	const total = $derived(Math.min(maxPlayers, Math.max(minPlayers, players)));
 	/**
 	 * Separate towns each set their own count, with the setup sheet once per town (Trevor,
@@ -358,7 +362,9 @@
 				restrictions,
 				data,
 				loaded: loaded[0],
-				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen, jinxedPairs } : {}),
+				...(draft
+					? { roleRecycling: roleRecycling ?? draft.recycleUnchosen, jinxedPairs, ivoryDraft }
+					: {}),
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
 			saveDraft({ gameId: open.game.gameId });
@@ -390,6 +396,7 @@
 						restrictions = NO_RESTRICTIONS;
 						roleRecycling = undefined;
 						jinxedPairs = 'allow';
+						ivoryDraft = false;
 						campaignId = 'new';
 					}}
 				/>
@@ -466,6 +473,12 @@
 								label: t(`modes.jinxedPairs.${value}`)
 							}))}
 							onChange={(v) => (jinxedPairs = v)}
+						/>
+						<SettingToggle
+							label={t('modes.ivoryDraft')}
+							description={t('modes.ivoryDraftHint')}
+							checked={ivoryDraft}
+							onChange={(on) => (ivoryDraft = on)}
 						/>
 					{/if}
 					<div class="setting">

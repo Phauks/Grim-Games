@@ -310,7 +310,9 @@
 					{characters}
 					step={step.id}
 					onShow={(card) => {
-						open = false;
+						// Over the open step, as with a suggestion's Show to player: closing it here showed
+						// the board for a moment when the player view closed (Trevor, 2026-10-26).
+						shownId = undefined;
 						shownCard = card;
 						showOpen = true;
 					}}
@@ -372,6 +374,16 @@
 			{/if}
 		{/if}
 	</div>
+	<!--
+		Inside the step, which stays open under it, so closing it goes straight back to the step
+		with nothing in between (Trevor, 2026-10-26), and the step's modal never hides it from
+		screen readers.
+	-->
+	<ShowToPlayer
+		bind:open={showOpen}
+		characters={shownCharacter ? [{ character: shownCharacter }] : []}
+		cards={shownCard && [shownCard]}
+	/>
 </Dialog>
 
 <SeatChooser
@@ -393,14 +405,6 @@
 </SeatChooser>
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
-
-<!-- Closing the player view returns to this step (Trevor, 2026-10-16). -->
-<ShowToPlayer
-	bind:open={showOpen}
-	characters={shownCharacter ? [{ character: shownCharacter }] : []}
-	cards={shownCard && [shownCard]}
-	onclose={() => (open = true)}
-/>
 
 <style>
 	.scroll {

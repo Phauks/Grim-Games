@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { expectMatchingIconRow } from './icon-row.ts';
 import { openSettingsDialog } from './shell.ts';
 
 /**
@@ -270,8 +271,33 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	expect(new Set(kept).size).toBe(5);
 	await expect(bagTiles(page)).toHaveCount(0);
 	await page.getByRole('button', { name: 'Finish' }).tap();
+	// The Drunk is never offered: the Storyteller picks a drafted Townsfolk to be it, or none
+	// (https://wiki.bloodontheclocktower.com/Drunk).
+	const hidden = page.getByRole('dialog', { name: 'Hidden character' });
+	await expect(hidden.getByTestId('draft-hidden')).toBeVisible();
+	await hidden.getByRole('button', { name: 'None', exact: true }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await expect(page.getByText('Is The Drunk')).toHaveCount(0);
 	await noSidewaysScroll(page);
+});
+
+test('Sushi Buffet ends with the Storyteller picking which drafted Townsfolk is the Drunk', async ({
+	page
+}) => {
+	// Grimbits' draft hides the Drunk among drafted Townsfolk (https://grimbits.com/draft-buffet/).
+	await startIn(page, 'Sushi Buffet');
+	for (let seat = 1; seat <= 5; seat++) {
+		await drawTile(page);
+		await keepFirst(page);
+	}
+	await page.getByRole('button', { name: 'Finish' }).tap();
+	const hidden = page.getByRole('dialog', { name: 'Hidden character' });
+	const seats = hidden.getByTestId('hidden-seats').getByRole('listitem');
+	// One row per seat that drafted a Townsfolk, then None.
+	await expect(seats.last()).toHaveText('None');
+	await seats.first().getByRole('button').first().tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await expect(page.getByText('Is The Drunk').first()).toBeVisible();
 });
 
 // Trevor (2026-10-26): "modifiers are made dynamically for outsider count", as Grimbits' draft
@@ -404,6 +430,11 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await jinxed.tap();
 	await page.getByRole('option', { name: 'Less likely', exact: true }).tap();
 	await expect(jinxed).toHaveText(/Less likely/);
+	// Ivory draft, as Grimbits' draft tool offers: off by default.
+	const ivory = modesPanel(page).getByRole('checkbox', { name: 'Ivory draft' });
+	await expect(ivory).not.toBeChecked();
+	await modesPanel(page).getByText('Ivory draft', { exact: true }).tap();
+	await expect(ivory).toBeChecked();
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -413,6 +444,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	);
 	expect(record.roleRecycling).toBe(true);
 	expect(record.jinxedPairs).toBe('reduce');
+	expect(record.ivoryDraft).toBe(true);
 	// The draft knows each character's jinxed partners
 	// (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
 	await drawTile(page);
@@ -423,6 +455,8 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	);
 	expect(state.config.jinxes).toBe('reduce');
 	expect(state.jinxed.heretic).toContain('baron');
+	expect(state.config.ivory).toBe(true);
+	expect(state.extraEvil).toContain('goon');
 });
 
 test('with our own wording on, each mode shows its About description', async ({ page }) => {
@@ -475,6 +509,16 @@ async function pick(page: Page, names: readonly string[]) {
 	for (const name of names)
 		await page.getByRole('button', { name, exact: true }).and(page.locator('[aria-pressed]')).tap();
 }
+
+// Trevor, 2026-10-26: one game stops at 20 players; towns sharing their players go to 40.
+test('Two games at once takes more than 20 players', async ({ page }) => {
+	await page.goto('/new');
+	await chooseMode(page, 'Two games at once');
+	const more = modesPanel(page).getByRole('button', { name: 'More players' });
+	for (let n = 8; n < 21; n++) await more.tap();
+	await expect(modesPanel(page).getByTestId('player-count')).toHaveText('21');
+	await expect(more).toBeEnabled();
+});
 
 test('Two games at once: one setup for both bags, then one token for both games', async ({
 	page
@@ -1920,7 +1964,15 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 	const choice = sheet.getByTestId('sheet-background');
 	await expect(choice).toHaveCount(1);
 	await expect(sheet.getByTestId('script-copy').getByTestId('sheet-background')).toHaveCount(0);
-	await choice.getByRole('combobox', { name: 'Sheet background' }).tap();
+	// The same button as Print and Share beside it (Trevor, 2026-10-26).
+	const trigger = choice.getByRole('combobox', { name: 'Sheet background' });
+	await expect(trigger.locator('[data-icon="ph:paint-bucket"]')).toBeVisible();
+	await expectMatchingIconRow(choice.locator('xpath=..'), [
+		'Sheet background',
+		'Print script',
+		'Share script'
+	]);
+	await trigger.tap();
 	await page.getByRole('option', { name: 'Grey' }).tap();
 	await expect(sheet.getByTestId('script-copy')).toHaveCSS(
 		'background-color',

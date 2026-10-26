@@ -134,3 +134,30 @@ export function parseSharedTimer(value: unknown): SharedDayTimer | undefined {
 		mode: mode as DayTimerMode
 	};
 }
+
+/**
+ * How players' phones show the Storyteller's day timer (Trevor, 2026-10-26: "sun or timer
+ * for players", the Storyteller decides): a sun that sinks as the day's time runs out, or
+ * the clock itself.
+ */
+export const PLAYER_TIMER_LOOKS = ['sun', 'timer'] as const;
+export type PlayerTimerLook = (typeof PLAYER_TIMER_LOOKS)[number];
+
+/** The Storyteller's timer as players' phones get it, with how to show it. */
+export interface PublicDayTimer extends SharedDayTimer {
+	look: PlayerTimerLook;
+}
+
+/** A players' timer from the room, or undefined when it is missing or malformed. */
+export function parsePublicTimer(value: unknown): PublicDayTimer | undefined {
+	const timer = parseSharedTimer(value);
+	const look = (value as { look?: unknown } | undefined)?.look;
+	if (!timer || !PLAYER_TIMER_LOOKS.includes(look as PlayerTimerLook)) return undefined;
+	return { ...timer, look: look as PlayerTimerLook };
+}
+
+/** The share of the day's time still to come: 1 before it starts, 0 at the target or past it. */
+export function dayLeft(t: DayTimer, now: number): number {
+	if (t.durationMs <= 0) return 0;
+	return Math.min(1, Math.max(0, 1 - elapsed(t, now) / t.durationMs));
+}

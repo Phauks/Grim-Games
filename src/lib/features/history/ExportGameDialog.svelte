@@ -15,15 +15,18 @@
 	 * Saves a finished game (Trevor, 2026-10-19): one HTML file with the history log, the
 	 * final grimoire and the Storyteller's notes, each part chosen here, or the grimoire on
 	 * its own as a PNG. The board's ⋯ menu and History open it, and Share passes the game on
-	 * to the players' phones (ShareRecapDialog).
+	 * to the players' phones (ShareRecapDialog). From the board, the grimoire is a screenshot
+	 * of the board itself (Trevor, 2026-10-26); elsewhere it is drawn from the game.
 	 */
 	interface Props {
 		open: boolean;
 		/** The game to save: loaded when asked, so History needn't open every game. */
 		load: () => Promise<{ source: RecapSource; layout: SeatLayout }>;
+		/** The board's picture as it is on screen, when the board is behind this dialog. */
+		capture?: () => Promise<Blob>;
 	}
 
-	let { open = $bindable(), load }: Props = $props();
+	let { open = $bindable(), load, capture }: Props = $props();
 
 	let parts = $state<RecapParts>({ log: true, image: true, notes: true });
 	let busy = $state(false);
@@ -35,6 +38,7 @@
 	}
 
 	async function picture(source: RecapSource, layout: SeatLayout, caption: string) {
+		if (capture) return capture();
 		await document.fonts?.ready;
 		return grimoireImage(source.game, source.characters, layout, caption);
 	}

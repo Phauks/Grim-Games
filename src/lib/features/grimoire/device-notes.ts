@@ -1,6 +1,5 @@
 /**
  * Small things the grimoire keeps on this device, outside the game's event log:
- * - player names used before, offered as suggestions when naming a seat;
  * - where seats are drawn on this screen (oval or circle, gaps, seats placed by hand). The
  *   seating order is game state; how it is laid out on one device is not.
  *
@@ -16,12 +15,14 @@ import {
 	type SeatPoint
 } from '#lib/ui/seating/seat-layout.ts';
 
-const NAMES_KEY = 'grim-games:player-names:v1';
+/**
+ * Earlier builds kept names used before on this device, offered when naming a seat. Only the
+ * room's phones are offered now (Trevor, 2026-10-26), so the old list is removed.
+ */
+const OLD_NAMES_KEY = 'grim-games:player-names:v1';
 const FLIPPED_PREFIX = 'grim-games:upside-down:v1:';
 const LAYOUT_KEY = (gameId: GameId) => `grim-games:seat-layout:v1:${gameId}`;
 const END_DISMISSED_KEY = (gameId: GameId) => `grim-games:game-end-dismissed:v1:${gameId}`;
-/** How many past names are remembered. */
-export const MAX_NAMES = 60;
 
 function readList(key: string): string[] {
 	try {
@@ -39,14 +40,6 @@ function writeList(key: string, list: readonly string[]): void {
 	} catch {
 		// Storage full or blocked: suggestions are a convenience.
 	}
-}
-
-/** Adds a name to the front of a recent-names list (case-insensitive, no duplicates). */
-export function rememberName(list: readonly string[], name: string): string[] {
-	const trimmed = name.trim();
-	if (!trimmed) return [...list];
-	const key = trimmed.toLocaleLowerCase();
-	return [trimmed, ...list.filter((n) => n.toLocaleLowerCase() !== key)].slice(0, MAX_NAMES);
 }
 
 /**
@@ -73,12 +66,10 @@ export function suggestNames(
 	return [...starts, ...contains].slice(0, limit);
 }
 
-export const pastNames = {
-	read: (): string[] => readList(NAMES_KEY),
-	remember(name: string): void {
-		writeList(NAMES_KEY, rememberName(readList(NAMES_KEY), name));
-	}
-};
+/** Removes the names list earlier builds kept. */
+export function forgetPastNames(): void {
+	writeList(OLD_NAMES_KEY, []);
+}
 
 /**
  * Earlier builds kept a device-only "upside down" mark per seat. An upside-down token means

@@ -50,6 +50,32 @@ async function startGame(page: Page, storyteller?: string) {
 	return new URL(page.url()).pathname;
 }
 
+test("Your games shows each room's whole line on a phone, however long the Storyteller's name", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-26: "I can't see all text beneath name of script" when rejoining.
+	const board = await startGame(page, 'Trevor Goldsmith');
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toBeVisible();
+	await phone.goto('/join');
+	const row = phone.getByTestId('recent-rooms').getByRole('button');
+	await expect(row).toContainText('Storyteller: Trevor Goldsmith');
+	await expect(row).toContainText(String(new Date().getFullYear()));
+	// No line is cut short with an ellipsis.
+	const cut = await row
+		.locator('.recent-line')
+		.evaluateAll((lines) => lines.filter((l) => l.scrollWidth > l.clientWidth).length);
+	expect(cut).toBe(0);
+	await phoneContext.close();
+});
+
 test('a phone joins with a name, and the Storyteller seats it', async ({
 	page,
 	browser
@@ -1091,6 +1117,8 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	// A password field (Trevor, 2026-10-22): masked, with an eye button that shows it.
 	const password = watch.getByLabel('Grim view password', { exact: true });
 	await expect(password).toHaveAttribute('type', 'password');
+	// In the plain account font, not the capitals-only control font, so case reads exactly.
+	await expect(password).not.toHaveCSS('font-family', /Cinzel/);
 	// In its place, but off while the link is.
 	await expect(password).toBeDisabled();
 	await watch.getByText('View-only grimoire link', { exact: true }).tap();
@@ -1135,6 +1163,7 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	const ask = phone.getByRole('dialog', { name: 'Grim view' });
 	const typed = ask.getByLabel('Grim view password', { exact: true });
 	await expect(typed).toHaveAttribute('type', 'password');
+	await expect(typed).not.toHaveCSS('font-family', /Cinzel/);
 	await expect(ask.getByRole('button', { name: 'Show password' })).toBeVisible();
 	await typed.fill('candle');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
