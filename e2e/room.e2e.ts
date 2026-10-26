@@ -2018,3 +2018,37 @@ test('Scan a code says so when the code is not a room', async ({ browser }, test
 	await expect(scanner).toBeHidden();
 	await phoneContext.close();
 });
+
+test("Share on a player's Grim tab blurs the guesses behind it", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-26, playtest): with Share open on a phone, the players around it could
+	// read its guesses on the Grim behind it.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(phone.getByTestId('grim-seat')).toHaveCount(8);
+	await phone.getByRole('button', { name: 'Share script' }).tap();
+	await expect(phone.getByRole('dialog', { name: /^Share / })).toBeVisible();
+	const filter = await phone
+		.locator("[data-scope='dialog'][data-part='backdrop']")
+		.last()
+		.evaluate((el) => getComputedStyle(el).backdropFilter);
+	expect(filter).toContain('blur');
+	await phoneContext.close();
+
+	// The board's Script dialog shows the same Grim tab; closing it leaves the board blurred
+	// behind its own sheets.
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(page.locator(':root')).toHaveAttribute('data-board-shown', '');
+});
