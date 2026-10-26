@@ -334,26 +334,27 @@
 	/* eslint-enable grim/names-as-badges */
 </script>
 
-<!-- The eye and the cover always, so nothing moves when the Final grimoire switch comes. -->
-<div class="tools">
-	<HideContentsButton
-		hidden={hiding}
-		onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
-		testid="hide-guesses"
-	/>
-	<CoverButton />
-	<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
+<!-- The eye and the cover always, so nothing moves when the Final grimoire switch comes. A
+     Public Town display has neither: all it shows is public (Trevor, 2026-10-26). -->
+{#if !display}<div class="tools">
+		<HideContentsButton
+			hidden={hiding}
+			onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
+			testid="hide-guesses"
+		/>
+		<CoverButton />
+		<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
 	     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
-	{#if !town && final}
-		<span class="final-switch"
-			><Toggle
-				label={t('room.finalGrimoire')}
-				checked={showFinal}
-				onChange={(on) => (showFinal = on)}
-			/></span
-		>
-	{/if}
-</div>
+		{#if !town && final}
+			<span class="final-switch"
+				><Toggle
+					label={t('room.finalGrimoire')}
+					checked={showFinal}
+					onChange={(on) => (showFinal = on)}
+				/></span
+			>
+		{/if}
+	</div>{/if}
 {#if final && showFinal}
 	<div class="final" data-testid="final-grimoire">
 		<SharedBoard shared={final.grimoire} {over} />
@@ -361,7 +362,9 @@
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
-	<TownCounts {seats} />
+	<!-- Not on a display: its corner shows the count when the Storyteller has it on (Trevor,
+	     2026-10-26: "that information will be in the bottom left"). -->
+	{#if !display}<TownCounts {seats} />{/if}
 	<div
 		class="town"
 		class:display

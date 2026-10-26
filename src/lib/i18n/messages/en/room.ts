@@ -202,6 +202,7 @@ export const room = {
 	// Public Town: a display in the middle of the table (Trevor, 2026-10-26)
 	'room.town.title': 'Public Town',
 	'room.town.waiting': 'Waiting for the Storyteller’s game…',
+	'room.town.settings': 'Public Town settings',
 	// Live games: admins watch any open room, unseen (plan J31, Trevor 2026-10-26)
 	'room.liveGames.title': 'Live games',
 	'room.liveGames.code': 'Code',

@@ -86,6 +86,19 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	const corner = (await fullScreen.boundingBox())!;
 	expect(corner.x + corner.width).toBeGreaterThan(box.x + box.width * 0.85);
 	expect(corner.y).toBeLessThan(box.y + box.height * 0.15);
+	// Only public things show, so no eye, cover or count over the town (Trevor, 2026-10-26: "no
+	// need for a eyeball or hide grim view"; the count is the corner's, when it is on).
+	const stage = tablet.getByTestId('public-town');
+	await expect(stage.getByTestId('hide-guesses')).toHaveCount(0);
+	await expect(stage.getByTestId('grim-counts')).toHaveCount(0);
+	expect((await stage.boundingBox())!.y).toBeCloseTo(box.y, 0);
+	// A settings cog beside it, kept in place and off until there are settings (Trevor,
+	// 2026-10-26: "pre-emptively place a setting cog next to full screen").
+	const cog = stage.getByRole('button', { name: 'Public Town settings' });
+	await expect(cog).toBeDisabled();
+	const gear = (await cog.boundingBox())!;
+	expect(gear.x + gear.width).toBeLessThanOrEqual(corner.x + 1);
+	expect(Math.abs(gear.y - corner.y)).toBeLessThan(2);
 	await fullScreen.tap();
 	// The request settles after the tap, so wait for it.
 	await expect
@@ -96,6 +109,8 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	const screen = tablet.viewportSize()!;
 	expect(Math.round(filled.width)).toBe(screen.width);
 	expect(Math.round(filled.height)).toBe(screen.height);
+	// The grim starts at the top of the screen: nothing above it takes room.
+	expect(Math.round(filled.y)).toBe(0);
 	await fullScreen.tap();
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
