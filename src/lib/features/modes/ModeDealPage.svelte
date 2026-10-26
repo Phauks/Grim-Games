@@ -102,6 +102,7 @@
 						recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen,
 						oneTypePerOffer: record?.oneTypePerOffer ?? assignment.oneTypePerOffer,
 						offers: record?.offers ?? assignment.offers,
+						dealsRequired: record?.dealsRequired ?? true,
 						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen',
 						jinxes: record?.jinxedPairs ?? 'allow',
 						ivory: record?.ivoryDraft ?? false

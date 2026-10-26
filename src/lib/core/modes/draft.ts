@@ -17,7 +17,8 @@
  * With `modifiers` on, a character that needs another in play (its `setupModifier` `requires`:
  * the Choirboy needs the King, the Huntsman the Damsel) gets it, as Grimbits' tool does: the
  * next seat to draft is offered only that character and can't refuse it, told which character
- * in play put it there. A Townsfolk seat makes room for it when its type has none open (the
+ * in play put it there (unless `dealsRequired` is off: Grimbits' "Don't force a King when
+ * Choirboy is drafted"). A Townsfolk seat makes room for it when its type has none open (the
  * Damsel, https://wiki.bloodontheclocktower.com/Huntsman). It is not forced when it is already
  * drafted, or when no seat can take it.
  *
@@ -51,6 +52,8 @@ export interface DraftConfig {
 	jinxes?: JinxedPairs;
 	/** Ivory draft: at most one character that makes an extra evil player. */
 	ivory?: boolean;
+	/** With `modifiers`, deal a character another needs in play; left out, on. */
+	dealsRequired?: boolean;
 }
 
 export const JINXED_PAIRS = ['allow', 'reduce', 'block'] as const;
@@ -139,14 +142,15 @@ export function startDraft(
 			)
 		: undefined;
 	const ids = new Set(seated.map((c) => c.id));
-	const requires = config.modifiers
-		? Object.fromEntries(
-				seated.flatMap((c) => {
-					const needs = setupModifierFor(c)?.requires;
-					return needs && ids.has(needs) ? [[c.id, needs]] : [];
-				})
-			)
-		: {};
+	const requires =
+		config.modifiers && config.dealsRequired !== false
+			? Object.fromEntries(
+					seated.flatMap((c) => {
+						const needs = setupModifierFor(c)?.requires;
+						return needs && ids.has(needs) ? [[c.id, needs]] : [];
+					})
+				)
+			: {};
 	const jinxed: Record<CharacterId, CharacterId[]> = {};
 	if ((config.jinxes ?? 'allow') !== 'allow') {
 		for (const {

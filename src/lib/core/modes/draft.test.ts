@@ -199,6 +199,17 @@ describe('characters another needs in play', () => {
 	const take = (s: ReturnType<typeof startDraft>, id: string) =>
 		takeOffer({ ...s, offer: [id] }, id, seeded());
 
+	it('deals nothing with the Storyteller’s switch off (Grimbits’ “Don’t force a King”)', () => {
+		const random = seeded(2);
+		const s = startDraft(
+			{ ...config, modifiers: true, dealsRequired: false },
+			baseCounts(7),
+			tb.concat(data.characters.filter((c) => c.id === 'choirboy' || c.id === 'king')),
+			random
+		);
+		expect(s.requires).toBeUndefined();
+	});
+
 	it('deals the King to the next seat after a Choirboy, with no refusing (https://wiki.bloodontheclocktower.com/Choirboy)', () => {
 		const s = take(startDraft(live, baseCounts(8), all, seeded()), 'choirboy');
 		expect(s.offer).toEqual(['king']);

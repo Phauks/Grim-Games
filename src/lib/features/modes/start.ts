@@ -36,6 +36,8 @@ interface StartInput<G> {
 	oneTypePerOffer?: boolean;
 	/** The Storyteller's Mulligans choice for a draft mode: each offer's size in turn. */
 	offers?: number[];
+	/** The Storyteller's Deal needed characters choice for a draft mode. */
+	dealsRequired?: boolean;
 	/** Creates and saves the game with the mode's script. */
 	create: (script: Script) => Promise<G>;
 }
@@ -88,7 +90,8 @@ export async function startInMode<
 		...(input.jinxedPairs !== undefined ? { jinxedPairs: input.jinxedPairs } : {}),
 		...(input.ivoryDraft !== undefined ? { ivoryDraft: input.ivoryDraft } : {}),
 		...(input.oneTypePerOffer !== undefined ? { oneTypePerOffer: input.oneTypePerOffer } : {}),
-		...(input.offers !== undefined ? { offers: input.offers } : {})
+		...(input.offers !== undefined ? { offers: input.offers } : {}),
+		...(input.dealsRequired !== undefined ? { dealsRequired: input.dealsRequired } : {})
 	});
 	seedInPlay(open.game.gameId, open.game.seating.length, inPlayFor(mode));
 	if (campaignRule(mode))
