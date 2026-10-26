@@ -196,7 +196,7 @@ export interface CharacterRules {
 	 * drafted, or later, as Grimbits' draft tool does (`modes/draft.ts`).
 	 */
 	gainsAbilityOf?: SeatedType;
-	/** Players it turns into another type at setup (the Kazali's Minions; `turns-players-rules.ts`). */
+	/** Players it turns into another type at setup (the Kazali; `turns-players-rules.ts`). */
 	turnsPlayersInto?: TurnsPlayersInto;
 }
 

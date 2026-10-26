@@ -353,7 +353,8 @@
 
 	/**
 	 * A drafted character that turns players into another type (Grimbits' draft: the Kazali's
-	 * Minions): the Storyteller picks which players become which, last. A game has one Demon, so
+	 * Minions, the Lord of Typhon's neighbours): the Storyteller picks which players become which,
+	 * last. A game has one Demon, so
 	 * one such character at most.
 	 */
 	const conversion = $derived(
@@ -368,7 +369,8 @@
 			...(reservedAt !== undefined ? [reservedAt] : [])
 		];
 		const good = (i: number) => !['minion', 'demon'].includes(byId.get(picks[i])?.type ?? '');
-		return picks.flatMap((_, i) => (good(i) && !taken.includes(i) ? [i] : []));
+		const among = conversion.seats ?? picks.map((_, i) => i);
+		return among.filter((i) => good(i) && !taken.includes(i));
 	});
 	const convertOptions = $derived.by(() => {
 		if (!conversion || progress?.kind !== 'draft') return [];
