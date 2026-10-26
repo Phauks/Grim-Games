@@ -42,7 +42,7 @@ export const room = {
 	'room.join': 'Join as player',
 	'room.grimView': 'Grim view',
 	'room.moreWays': 'More ways to join',
-	'room.scanNotRoom': "That code is not a game's room code.",
+	'room.scanNotRoom': "That code is not a game's room code or a script.",
 	'room.gameToJoin': 'Game to join',
 	'room.lookingUp': 'Looking for the game…',
 	'room.noGame': 'No open game has this code.',

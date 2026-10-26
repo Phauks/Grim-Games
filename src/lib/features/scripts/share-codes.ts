@@ -19,7 +19,9 @@ import {
 	decodeSharedScript,
 	SharedLinkError,
 	encodeSharedScript,
+	offlineCode,
 	sharedRefHash,
+	type OfflineCode,
 	type SharePath,
 	type SharedRef
 } from './share.ts';
@@ -46,6 +48,10 @@ export function scriptShareable(script: LoadedScript, saved?: Shareable): Sharea
 export interface ShareTarget {
 	url: string;
 	code?: string;
+	/** The same script as an offline code, for phones with no internet (2026-10-26). */
+	offline: OfflineCode;
+	/** No code could be made (no internet, or the Worker refused): the long link is used. */
+	fellBack?: true;
 }
 
 /** Fetches the script stored under a share code. */
@@ -161,20 +167,24 @@ export async function shareTargetFor(
 	path: SharePath = '/play'
 ): Promise<ShareTarget> {
 	const link = (ref: SharedRef) => `${origin}${path}${sharedRefHash(ref)}`;
+	const offline = await offlineCode(origin, saved);
 	if (saved.edition) {
-		return { url: link({ kind: 'edition', edition: saved.edition }) };
+		return { url: link({ kind: 'edition', edition: saved.edition }), offline };
 	}
 	if (saved.source.kind === 'botcscripts') {
 		const { scriptId, version } = saved.source;
-		return { url: link({ kind: 'botcscripts', ref: { kind: 'script', scriptId, version } }) };
+		return {
+			url: link({ kind: 'botcscripts', ref: { kind: 'script', scriptId, version } }),
+			offline
+		};
 	}
 	try {
 		const code = await codeFor(saved);
-		return { url: link({ kind: 'code', code }), code };
+		return { url: link({ kind: 'code', code }), code, offline };
 	} catch {
 		// Offline or refused: the long link needs no server.
 		const payload = await encodeSharedScript(saved.json);
-		return { url: link({ kind: 'inline', payload }) };
+		return { url: link({ kind: 'inline', payload }), offline, fellBack: true };
 	}
 }
 
