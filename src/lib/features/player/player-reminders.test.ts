@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/index.ts';
 import {
 	MAX_SEAT_REMINDERS,
+	addGenericReminder,
 	guessesFirst,
 	hasReminder,
 	parsePlayerReminders,
+	reminderWords,
 	scriptReminderGroups,
+	setGenericLook,
 	toggleReminder
 } from './player-reminders.ts';
 
@@ -40,6 +43,31 @@ describe("reminder tokens on a player's own grim", () => {
 		expect(
 			parsePlayerReminders({ s1: 'Poisoned', s2: [3, { label: 'Dead' }, dead, dead], s3: [] })
 		).toEqual({ s2: [dead] });
+	});
+
+	it('holds several generic tokens on a seat, each with its own text and symbol', () => {
+		let reminders = addGenericReminder({}, 's1', 'g1');
+		reminders = addGenericReminder(reminders, 's1', 'g2');
+		reminders = setGenericLook(reminders, 's1', 'g1', { note: '2', symbolColour: 'gold' });
+		const [one, two] = reminders.s1;
+		expect(one).toMatchObject({ id: 'g1', note: '2', symbolColour: 'gold' });
+		expect(reminderWords(one)).toBe('2');
+		expect(reminderWords(two)).toBe('∞');
+		// Emptied, the text goes; a second tap on the same id takes it off.
+		reminders = setGenericLook(reminders, 's1', 'g1', { note: undefined });
+		expect(reminders.s1[0]).not.toHaveProperty('note');
+		expect(toggleReminder(reminders, 's1', two).s1).toHaveLength(1);
+	});
+
+	it('drops a generic token with no id or a look it does not know', () => {
+		expect(
+			parsePlayerReminders({
+				s1: [
+					{ characterId: 'generic', label: '' },
+					{ characterId: 'generic', label: 'x', id: 'g', symbolColour: 'pink', symbolFill: 1 }
+				]
+			})
+		).toEqual({ s1: [{ characterId: 'generic', label: '', id: 'g' }] });
 	});
 
 	it('lists the characters a player guessed first, then the rest in script order', () => {
