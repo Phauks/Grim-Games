@@ -23,6 +23,7 @@ function routes(dir = 'src/routes'): string[] {
 const ANY_ID: Record<string, string> = {
 	'/campaigns/[campaignId]': '/campaigns/none',
 	'/join/[code]': '/join/000000',
+	'/live-games/[code]': '/live-games/000000',
 	'/recap/[id]': '/recap/none',
 	'/town/[code]': '/town/000000',
 	'/towns/[groupId]': '/towns/none',
