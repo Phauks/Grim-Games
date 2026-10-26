@@ -3536,10 +3536,10 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 		.tap();
 	await closeSheet(page);
 	await menu(page, 'Add Fabled or Loric');
-	await page
-		.getByRole('dialog', { name: 'Add Fabled or Loric' })
-		.getByRole('button', { name: 'Angel', exact: true })
-		.tap();
+	const adding = page.getByRole('dialog', { name: 'Add Fabled or Loric' });
+	await adding.getByRole('button', { name: 'Angel', exact: true }).tap();
+	// A drag that starts while the dialog is still closing lands on its backdrop (CI, PR #638).
+	await expect(adding).toBeHidden();
 	const all = page.getByRole('list', { name: 'Reminder bank' });
 	const angel = page.getByRole('list', { name: 'Fabled and Loric' }).getByRole('button', {
 		name: 'Angel'
