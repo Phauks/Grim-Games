@@ -26,6 +26,7 @@ export const room = {
 	'room.connecting': 'Connecting…',
 	'room.offline': 'Offline: reconnecting. The game carries on here.',
 	'room.tooOld': `This room needs a newer version of ${APP_NAME}. Refresh to update, then try again.`,
+	'room.grimoireTooNew': `The Storyteller has a newer version of ${APP_NAME}. Refresh to update and see the grimoire.`,
 	'room.noSeat': 'No seat',
 	'room.playersInRoom': 'Players in the room',
 	'room.refresh': 'New code',
