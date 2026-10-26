@@ -85,7 +85,7 @@
 	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
-	import { tablePlayersLine } from '#lib/features/modes/players-line.ts';
+	import TownCounts from './TownCounts.svelte';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -197,13 +197,6 @@
 	// As on the board: each seat keeps one --u (16px) clear of the edge.
 	const unit = 16;
 	const points = $derived(keepInside(seatPoints(ids, layout, board), board, size / 2 + unit));
-
-	/**
-	 * The players and the split by type, worked out from the seats so nobody counts (Trevor,
-	 * 2026-10-26, plan E1): the standard split, which is all the table can know. A line of its
-	 * own over the town, so the corner keeps its room among the seats.
-	 */
-	const counts = $derived(tablePlayersLine(seats));
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
 	let rootFont = $state(16);
@@ -398,7 +391,7 @@
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
-	<p class="counts" data-testid="grim-counts">{t('modes.info.players')}: {counts}</p>
+	<TownCounts {seats} />
 	<div
 		class="town"
 		class:display
@@ -729,11 +722,6 @@
 		position: relative;
 		height: 75dvh;
 		margin-bottom: calc(2 * var(--tray-h, var(--tap-target)));
-	}
-	.counts {
-		margin: 0 0 var(--space-2);
-		color: var(--on-surface-muted);
-		font-size: 0.9rem;
 	}
 	.none {
 		margin: 0;
