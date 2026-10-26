@@ -170,6 +170,29 @@ test('if the app cannot start, a plain screen shows the error with Reload and Re
 	);
 });
 
+test('a browser that blocks site storage gets a screen that says how to allow it', async ({
+	page
+}) => {
+	// What Brave Shields, or any browser set to block all cookies, does to the page's storage.
+	await page.addInitScript(() => {
+		for (const name of ['localStorage', 'sessionStorage'])
+			Object.defineProperty(window, name, {
+				get() {
+					throw new DOMException('Access is denied for this document.', 'SecurityError');
+				}
+			});
+	});
+	await page.goto('/');
+	const screen = page.locator('#boot-failure');
+	await expect(screen).toBeVisible();
+	await expect(screen.getByRole('heading')).toHaveText(`${APP_NAME} couldn't start`);
+	await expect(screen).toContainText('This browser blocks site storage here');
+	const reload = screen.getByRole('button', { name: 'Reload' });
+	expect((await reload.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+	await expect(screen.getByRole('button', { name: 'Load the latest version' })).toHaveCount(0);
+	await expect(screen.getByRole('link', { name: 'Copy and report on GitHub' })).toHaveCount(0);
+});
+
 test('a working app never shows the boot-failure screen', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
