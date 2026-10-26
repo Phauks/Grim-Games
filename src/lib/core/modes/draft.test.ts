@@ -12,7 +12,10 @@ import {
 	canRefuse,
 	redraft,
 	refuseOffer,
+	reservedHidden,
+	reservedSeats,
 	seatsLeft,
+	answerAbility,
 	answerAsk,
 	answerHidden,
 	draftTotal,
@@ -459,5 +462,76 @@ describe('a drafted character that may really be a hidden one', () => {
 		expect(draftTotal(s, 'minion')).toBe(0);
 		expect(draftTotal(s, 'demon')).toBe(0);
 		expect(s.ask?.type).toBe('outsider');
+	});
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): a drafted Alchemist may take a Minion
+// ability now when it changes setup, or later. The Alchemist has a not-in-play Minion ability
+// (https://wiki.bloodontheclocktower.com/Alchemist), so the Baron's +2 Outsiders apply
+// (https://wiki.bloodontheclocktower.com/Baron).
+describe('a drafted character that gains another character’s ability', () => {
+	const alchemist = data.characters.filter((c) => c.id === 'alchemist');
+	const start = () =>
+		startDraft({ ...config, modifiers: true }, baseCounts(7), tb.concat(alchemist), seeded(4));
+	const kept = () => takeOffer({ ...start(), offer: ['alchemist'] }, 'alchemist', seeded(4));
+
+	it('is named by its rules file', () => {
+		expect(rulesOf('alchemist')?.gainsAbilityOf).toBe('minion');
+		expect(start().gains).toEqual({ alchemist: 'minion' });
+	});
+
+	it('asks which Minion ability, among those that change setup, with no offer meanwhile', () => {
+		const s = kept();
+		expect(s.ability?.characterId).toBe('alchemist');
+		expect(s.ability?.options).toContain('baron');
+		expect(s.ability?.options).not.toContain('poisoner');
+		expect(s.offer).toEqual([]);
+	});
+
+	it('applies the chosen ability’s setup change and keeps that Minion out of play', () => {
+		const before = kept();
+		const s = answerAbility(before, 'baron', seeded(4));
+		expect(s.ability).toBeUndefined();
+		expect(s.abilities).toEqual({ 0: 'baron' });
+		expect(s.pool).not.toContain('baron');
+		expect(draftTotal(s, 'outsider')).toBe(draftTotal(before, 'outsider') + 2);
+		expect(s.offer.length).toBeGreaterThan(0);
+	});
+
+	it('changes nothing now when the ability is chosen later', () => {
+		const before = kept();
+		const s = answerAbility(before, undefined, seeded(4));
+		expect(s.abilities).toBeUndefined();
+		expect(s.slots).toEqual(before.slots);
+		expect(s.pool).toContain('baron');
+	});
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): the Marionette keeps a Minion seat out of
+// the draft and one more Townsfolk is drafted; the Marionette is a good player next to the Demon
+// (https://wiki.bloodontheclocktower.com/Marionette).
+describe('a reserved hidden character', () => {
+	const marionette = () => reservedHidden(data.characters).find((r) => r.id === 'marionette')!;
+
+	it('is found from its token’s target rule', () => {
+		expect(marionette()).toEqual({ id: 'marionette', type: 'minion', nextTo: 'demon' });
+		expect(reservedHidden(data.characters).map((r) => r.id)).not.toContain('drunk');
+	});
+
+	it('keeps a Minion seat out of the draft for one more Townsfolk', () => {
+		const counts = baseCounts(7);
+		const s = startDraft({ ...config, reserve: marionette() }, counts, tb, seeded(5));
+		expect(s.reserved).toBe(true);
+		expect(s.slots.minion).toBe(counts.minion - 1);
+		expect(s.slots.townsfolk).toBe(counts.townsfolk + 1);
+	});
+
+	it('may be the nearest good player each way from the Demon, skipping evil ones', () => {
+		const s = {
+			...startDraft(config, baseCounts(5), tb, seeded(5)),
+			picks: ['chef', 'poisoner', 'imp', 'empath', 'saint']
+		};
+		expect(reservedSeats(s, marionette())).toEqual([0, 3]);
+		expect(reservedSeats(s, marionette(), [0])).toEqual([3]);
 	});
 });

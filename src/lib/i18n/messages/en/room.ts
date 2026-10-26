@@ -175,6 +175,7 @@ export const room = {
 	'room.roles.noPhone': 'No phone',
 	'room.roles.noCharacter': 'No character',
 	'room.roles.withheld': 'Show on this device',
+	'room.roles.noAlignment': 'No alignment yet',
 	'room.role.open': 'Your character',
 	'room.role.good': 'You are Good',
 	'room.role.evil': 'You are Evil',

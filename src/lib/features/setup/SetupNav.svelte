@@ -24,10 +24,15 @@
 -->
 <nav class="setup-nav pinned-bottom" aria-label={t('setup.nav')}>
 	<div class="bar">
-		{#if onBack}<Button variant="quiet" icon="back" disabled={backDisabled} onclick={onBack}
-				>{backLabel}</Button
+		{#if onBack}<Button
+				variant="quiet"
+				icon="back"
+				disabled={backDisabled}
+				onclick={onBack}
+				data-way-back>{backLabel}</Button
 			>
-		{:else}<Button variant="quiet" icon="back" href={backHref}>{backLabel}</Button>{/if}
+		{:else}<Button variant="quiet" icon="back" href={backHref} data-way-back>{backLabel}</Button
+			>{/if}
 		{@render next()}
 	</div>
 </nav>

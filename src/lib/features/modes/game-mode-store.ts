@@ -32,6 +32,8 @@ export interface GameModeRecord {
 	jinxedPairs?: JinxedPairs;
 	/** Ivory draft for a draft: at most one character that makes an extra evil player. */
 	ivoryDraft?: boolean;
+	/** Marionette for a draft: a Minion seat is kept for a hidden Marionette next to the Demon. */
+	marionette?: boolean;
 	/** Don't mix types for a draft: each offer is of one character type. Left out, the mode's. */
 	oneTypePerOffer?: boolean;
 	/** Deal needed characters for a draft (a Choirboy's King). Left out, on. */
@@ -53,6 +55,7 @@ const recycling = (r: {
 	roleRecycling?: unknown;
 	jinxedPairs?: unknown;
 	ivoryDraft?: unknown;
+	marionette?: unknown;
 	oneTypePerOffer?: unknown;
 	dealsRequired?: unknown;
 }) => ({
@@ -60,6 +63,7 @@ const recycling = (r: {
 	...(typeof r.oneTypePerOffer === 'boolean' ? { oneTypePerOffer: r.oneTypePerOffer } : {}),
 	...(typeof r.roleRecycling === 'boolean' ? { roleRecycling: r.roleRecycling } : {}),
 	...(typeof r.ivoryDraft === 'boolean' ? { ivoryDraft: r.ivoryDraft } : {}),
+	...(typeof r.marionette === 'boolean' ? { marionette: r.marionette } : {}),
 	...((JINXED_PAIRS as readonly unknown[]).includes(r.jinxedPairs)
 		? { jinxedPairs: r.jinxedPairs as JinxedPairs }
 		: {})

@@ -312,7 +312,7 @@
 				/>
 			</div>
 			<div class="end">
-				<Button onclick={back}
+				<Button onclick={back} data-way-back
 					>{t(tally ? 'room.scriptVote.cancel' : 'room.scriptVote.back')}</Button
 				>
 				{#if tally && !ended}

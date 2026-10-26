@@ -39,6 +39,8 @@ export const player = {
 	'player.grim.reminders': 'Reminders',
 	'player.grim.remindersTitle': 'Reminders for {name}',
 	'player.grim.onThisSeat': 'On this seat',
+	'player.grim.yourGuesses': 'Your guesses',
+	'player.grim.onTheScript': 'On the script',
 	'player.grim.takeOff': '{label}: take off',
 	'player.grim.hasReminders': 'your reminders: {labels}',
 	'player.seatNotes': 'Players',

@@ -5,7 +5,7 @@ import {
 	testCharacters,
 	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
-import { parseSeatRole, roleKey, seatRoles, withheldSeats } from './seat-roles.ts';
+import { parseSeatRole, roleKey, seatRoles } from './seat-roles.ts';
 
 describe('the character each phone shows its player', () => {
 	it('is the seat’s character, with no alignment when it is the character’s own', () => {
@@ -22,7 +22,7 @@ describe('the character each phone shows its player', () => {
 		});
 	});
 
-	it('tells a player an alignment the Storyteller changed, and a Traveller theirs', () => {
+	it('tells a player an alignment the Storyteller changed, and a Traveller only theirs', () => {
 		const { session, ctx, seats } = newGame(2);
 		const game = run(
 			session,
@@ -32,7 +32,8 @@ describe('the character each phone shows its player', () => {
 		).game;
 		expect(seatRoles(game, testCharacters)).toEqual({
 			[seats[0]]: { characterId: 'chef', alignment: 'evil' },
-			[seats[1]]: { characterId: 'scapegoat', alignment: 'good' }
+			// https://wiki.bloodontheclocktower.com/Travellers: the town knows who a Traveller is.
+			[seats[1]]: { alignment: 'good' }
 		});
 	});
 
@@ -53,7 +54,17 @@ describe('the character each phone shows its player', () => {
 		).game;
 		expect(game.seats[seats[0]].characterId).toBe('lunatic');
 		expect(seatRoles(game, testCharacters)).toEqual({ [seats[0]]: { characterId: 'imp' } });
-		expect(withheldSeats(game, testCharacters)).toEqual([]);
+	});
+
+	it('leaves out a Traveller whose alignment is not chosen yet', () => {
+		const { session, ctx, seats } = newGame(1);
+		const game = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[0],
+			characterId: 'scapegoat'
+		}).game;
+		expect(game.seats[seats[0]].alignment).toBeUndefined();
+		expect(seatRoles(game, testCharacters)).toEqual({});
 	});
 
 	it('leaves out a character shown something else when no tile says what', () => {
@@ -64,7 +75,6 @@ describe('the character each phone shows its player', () => {
 			characterId: 'lunatic'
 		}).game;
 		expect(seatRoles(game, testCharacters)).toEqual({});
-		expect(withheldSeats(game, testCharacters)).toEqual([seats[0]]);
 	});
 
 	it('follows the seat once its character changes after the draw', () => {

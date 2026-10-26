@@ -13,6 +13,7 @@ import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 import { travellersInPlay, type TravellerInPlay } from '#lib/features/player/travellers-in-play.ts';
 import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
+import { dealtSeats } from '#lib/features/modes/players-line.ts';
 import { hearCallTown, unlockOnFirstTap } from '#lib/features/sound/sound.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -51,6 +52,11 @@ export interface RoomTable {
 	rules?: PublicRule[];
 	/** The room's game, so notes and guesses follow the game even offline (`gameKey`). */
 	gameId?: string;
+	/**
+	 * Seats taking characters from the bag (Travellers the town knows about left out), so the
+	 * Script tab's Players breakdown shows the table's column (Trevor, 2026-10-26).
+	 */
+	players?: number;
 }
 
 function storedTable(code: string | undefined): RoomTable {
@@ -60,7 +66,8 @@ function storedTable(code: string | undefined): RoomTable {
 		storyteller: stored.storyteller,
 		travellers: stored.travellers,
 		rules: stored.rules,
-		gameId: stored.gameId
+		gameId: stored.gameId,
+		players: stored.players
 	};
 }
 
@@ -82,8 +89,13 @@ function setTable(code: string, table: RoomTable): void {
 	roomTable.travellers = table.travellers;
 	roomTable.rules = table.rules;
 	roomTable.gameId = table.gameId;
+	roomTable.players = table.players;
 	const empty =
-		!table.storyteller && !table.travellers?.length && !table.rules?.length && !table.gameId;
+		!table.storyteller &&
+		!table.travellers?.length &&
+		!table.rules?.length &&
+		!table.gameId &&
+		!table.players;
 	writeStored(TABLE_KEY, empty ? undefined : { code, ...table });
 }
 
@@ -120,11 +132,13 @@ export class RoomPlayer {
 					const storyteller = m.public?.storytellerName?.trim();
 					const travellers = travellersInPlay(m.public?.seats ?? []);
 					const rules = m.public?.rules;
+					const players = dealtSeats(m.public?.seats ?? []).dealt;
 					setTable(code, {
 						...(storyteller ? { storyteller } : {}),
 						...(travellers.length ? { travellers } : {}),
 						...(rules?.length ? { rules } : {}),
-						...(m.gameId ? { gameId: m.gameId } : {})
+						...(m.gameId ? { gameId: m.gameId } : {}),
+						...(players ? { players } : {})
 					});
 				} else if (m.type === 'script') this.script = m.script;
 				else if (m.type === 'reveal') {

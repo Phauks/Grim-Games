@@ -1498,7 +1498,12 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Game time ticks, so it is read as the board shows it, not to the second.
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
-	// Each line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
+	// The phone works out the players and the split by type itself, over the town (Trevor,
+	// 2026-10-26: so players don't have to), whatever the board's corner shows.
+	await expect(phone.getByTestId('grim-counts')).toHaveText(
+		'Players: 8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)'
+	);
+	// Each corner line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
 	const info = await openGameInfo(page);
 	await info.getByRole('button', { name: 'Author on the board' }).tap();
 	await info.getByRole('button', { name: 'Players on the board' }).tap();
@@ -1506,6 +1511,13 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await expect(info).toBeHidden();
 	await expect(corner).not.toContainText('by The Pandemonium Institute');
 	await expect(corner.getByTestId('board-players')).toContainText('Players: 8');
+	// The Script tab's Players breakdown has the table's column picked.
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+	await expect(phone.getByRole('button', { name: '8 players', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
@@ -1703,12 +1715,28 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	// A guess on another seat puts its character first (Trevor, 2026-10-26: "search and guess").
+	await phone.getByTestId('grim-seat').nth(3).tap();
+	await phone
+		.getByRole('dialog', { name: 'Seat 4 · Seat 4' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await phone.keyboard.press('Escape');
 	const seat = phone.getByTestId('grim-seat').nth(1);
 	await seat.tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
 	await expect(sheet.getByTestId('seat-reminders')).toContainText('None');
 	await sheet.getByTestId('seat-reminders').tap();
 	const picker = phone.getByRole('dialog', { name: 'Reminders for Seat 2' });
+	const list = picker.getByTestId('player-reminder-list');
+	await expect(list.locator('li').first()).toHaveText('Your guesses');
+	await expect(list.getByRole('group').first()).toHaveAccessibleName('Fortune Teller');
+	// The search finds a token by its character's name or its own words.
+	const search = picker.getByRole('searchbox', { name: 'Search reminders' });
+	await expect(search).not.toBeFocused();
+	await search.fill('poison');
+	await expect(list.getByRole('group')).toHaveCount(1);
+	await search.fill('');
 	const poisoned = picker
 		.getByRole('group', { name: 'Poisoner' })
 		.getByRole('button', { name: 'Poisoned' });

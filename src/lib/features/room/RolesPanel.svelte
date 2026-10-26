@@ -25,7 +25,10 @@
 
 	function stateOf(seatId: string, characterId: string | undefined): string {
 		if (!characterId) return t('room.roles.noCharacter');
-		if (!roles[seatId]) return t('room.roles.withheld');
+		if (!roles[seatId])
+			return game.characters.get(characterId)?.type === 'traveller'
+				? t('room.roles.noAlignment')
+				: t('room.roles.withheld');
 		if (!phones.has(seatId)) return t('room.roles.noPhone');
 		if (seen.has(seatId)) return t('room.roles.seen');
 		return shown ? t('room.roles.notSeen') : t('room.roles.hidden');

@@ -1,4 +1,5 @@
 {
+	"gainsAbilityOf": "minion",
 	"reminderTargets": {
 		"Is The Alchemist": {
 			"seat": "self",
