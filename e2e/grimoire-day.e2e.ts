@@ -702,6 +702,56 @@ test('Execution names the player executed, who dies before tonight', async ({ pa
 	await expect(boardSeat(page, 'Seat 2')).not.toHaveAccessibleName(/dead/);
 });
 
+// https://wiki.bloodontheclocktower.com/Butcher: after the day's first execution, the Butcher
+// may nominate again.
+test('Execution offers to keep the day going while the Butcher may still nominate', async ({
+	page
+}) => {
+	await startGame(page);
+	// Trevor (2026-10-26): "Offer to keep the day going".
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: /^Butcher(,|$)/ }).tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: 'Decide later' })
+		.tap();
+	await closeSeat(page);
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	const keep = ask.getByRole('checkbox', { name: 'Keep the day going', includeHidden: true });
+	// There from the start, so choosing never moves the buttons; off until a choice allows it.
+	await expect(keep).toBeDisabled();
+	const choose = async (choice: string) => {
+		await ask.getByRole('combobox', { name: 'Execution' }).tap();
+		await page.getByRole('option', { name: new RegExp(`^${choice}(\\s|$)`) }).tap();
+	};
+	// The Butcher executed dies, so has no nomination left.
+	await choose('Seat 1');
+	await expect(keep).toBeDisabled();
+	await choose('Seat 2');
+	await expect(keep).toBeEnabled();
+	await expect(keep).not.toBeChecked();
+	await ask.getByText('Keep the day going', { exact: true }).tap();
+	await expect(keep).toBeChecked();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	// Seat 2 is executed and the day goes on.
+	await expect(ask).toBeHidden();
+	await expect(day).toBeVisible();
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	// The day sheet hides the board from the accessibility tree, so its mark is read instead.
+	await expect(boardSeat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
+	// Execution again, with today's execution chosen: off, so Confirm ends the day.
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await expect(ask.getByRole('combobox', { name: 'Execution' })).toContainText('Seat 2');
+	await expect(keep).not.toBeChecked();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+});
+
 test("Executed in a seat's status during the day asks as Execution does; a Sailor does not die", async ({
 	page
 }) => {

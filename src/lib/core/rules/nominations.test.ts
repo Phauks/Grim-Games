@@ -5,8 +5,10 @@ import { castGame } from '#lib/core/model/fixtures.test-support.ts';
 import {
 	characterNominationPrompts,
 	extraNominationOpen,
+	extraNominators,
 	mayNominate,
 	nominationsPerDay,
+	nominatorsAfterExecution,
 	seatNominations,
 	todaysNominations
 } from './nominations.ts';
@@ -148,6 +150,48 @@ describe('extraNominationOpen', () => {
 		const { session, ctx, seats } = castGame(['butcher', 'empath', 'imp'], nominate(0, 1));
 		expect(extraNominationOpen(session.game, seats[0], ctx.characters)).toBe(false);
 		expect(codes(dispatch(session, nominate(0, 2)(seats), ctx))).toContain('already-nominated');
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Butcher: Execution offers to keep the day going while
+// an execution would leave the Butcher's extra nomination to use.
+describe('nominatorsAfterExecution', () => {
+	it('names the Butcher once the chosen player would be executed', () => {
+		const { session, ctx, seats } = castGame(['butcher', 'empath', 'imp'], nominate(0, 1));
+		expect(extraNominators(session.game, ctx.characters)).toEqual([seats[0]]);
+		expect(
+			nominatorsAfterExecution(session.game, { seatId: seats[1], dies: true }, ctx.characters)
+		).toEqual([seats[0]]);
+		// No execution chosen and none logged: nobody yet.
+		expect(nominatorsAfterExecution(session.game, undefined, ctx.characters)).toEqual([]);
+	});
+
+	it('leaves out a Butcher the execution kills, and keeps one it saves', () => {
+		const { session, ctx, seats } = castGame(['butcher', 'empath', 'imp']);
+		expect(
+			nominatorsAfterExecution(session.game, { seatId: seats[0], dies: true }, ctx.characters)
+		).toEqual([]);
+		expect(
+			nominatorsAfterExecution(session.game, { seatId: seats[0], dies: false }, ctx.characters)
+		).toEqual([seats[0]]);
+	});
+
+	it('reads a logged execution, and is empty once the extra nomination is used', () => {
+		const execute = (s: string[]): Command => ({ type: 'Execute', seatId: s[1] });
+		const logged = castGame(['butcher', 'empath', 'monk', 'imp'], execute);
+		expect(nominatorsAfterExecution(logged.session.game, undefined, logged.ctx.characters)).toEqual(
+			[logged.seats[0]]
+		);
+		const used = castGame(['butcher', 'empath', 'monk', 'imp'], execute, nominate(0, 2));
+		expect(nominatorsAfterExecution(used.session.game, undefined, used.ctx.characters)).toEqual([]);
+	});
+
+	it('is empty with no player who may nominate after an execution', () => {
+		const { session, ctx, seats } = castGame(['chef', 'empath', 'imp']);
+		expect(extraNominators(session.game, ctx.characters)).toEqual([]);
+		expect(
+			nominatorsAfterExecution(session.game, { seatId: seats[1], dies: true }, ctx.characters)
+		).toEqual([]);
 	});
 });
 
