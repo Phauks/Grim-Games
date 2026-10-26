@@ -166,6 +166,11 @@ export const scripts = {
 	'scripts.share.qr': 'QR code for {title}',
 	'scripts.share.failed': 'The link could not be made.',
 	'scripts.share.making': 'Making the link…',
+	'scripts.share.offline': 'Offline code',
+	'scripts.share.offlineDescription':
+		'For phones with no internet: they scan it with Scan a code on Join game. Only the script goes across.',
+	'scripts.share.offlineCaption': 'Offline: script only',
+	'scripts.share.offlineQr': 'Offline code for {title}',
 
 	// Loading errors
 	'scripts.error.tooLarge': 'This file is too large to be a script.',

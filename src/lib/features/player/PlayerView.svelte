@@ -23,7 +23,10 @@
 	import type { FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 	import { fetchSharedRef, scriptShareable } from '#lib/features/scripts/share-codes.ts';
-	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
+	import { isOfflineHash, sharedRefFromHash } from '#lib/features/scripts/share.ts';
+	import type { LoadedScript } from '#lib/core/data/index.ts';
+	import OfflineGame from './OfflineGame.svelte';
+	import { markOfflineScript, offlineScript } from './offline-script.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { scriptKey } from './notebook.ts';
@@ -106,6 +109,12 @@
 	let checking = $state<ScriptLoadResult>();
 	let checkingSource: ScriptSource = { kind: 'share' };
 	let checkOpen = $state(false);
+	/** The link being opened is an offline code's (`&o=1`), so the game shows as offline. */
+	let fromOffline = false;
+	async function useScript(loaded: LoadedScript, source: ScriptSource) {
+		await chooseScript(loaded, source);
+		markOfflineScript(fromOffline ? scriptKey(loaded) : undefined);
+	}
 	/** Runs the Script check on fetched script text, or uses it straight away when clean. */
 	async function useFetched(fetched: FetchedScript) {
 		const result = loadScriptText(fetched.text, await loadOfficialData());
@@ -113,12 +122,13 @@
 			checking = result;
 			checkingSource = fetched.source;
 			checkOpen = true;
-		} else await chooseScript(result.script, fetched.source);
+		} else await useScript(result.script, fetched.source);
 	}
 
 	async function openSharedLink() {
 		const ref = sharedRefFromHash(location.hash);
 		if (!ref) return;
+		fromOffline = isOfflineHash(location.hash);
 		history.replaceState(history.state, '', location.pathname + location.search);
 		try {
 			await useFetched(await fetchSharedRef(ref));
@@ -175,6 +185,9 @@
 			: scriptKey(script);
 	});
 
+	/** The script came from an offline code and no room sent it: the game is offline. */
+	const offline = $derived(!!script && !inRoom && !join && offlineScript.key === scriptKey(script));
+
 	const version = $derived(
 		scriptVersion(currentScript.current === script ? currentScript.saved : undefined, script?.meta)
 	);
@@ -224,6 +237,7 @@
 			onCode={join ? openRoom : undefined}
 			onVoting={(v) => (voting = v)}
 		/>
+		{#if offline}<OfflineGame />{/if}
 	{/if}
 	{#if voting}
 		<!-- A room vote is open: its ballot, under the room row, is the screen (Trevor,
@@ -280,7 +294,7 @@
 	result={checking}
 	onconfirm={() => {
 		const loaded = checking?.script;
-		if (loaded) void chooseScript(loaded, checkingSource);
+		if (loaded) void useScript(loaded, checkingSource);
 	}}
 />
 

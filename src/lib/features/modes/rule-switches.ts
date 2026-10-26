@@ -96,7 +96,7 @@ const DJINN: readonly RuleSwitch[] = [
 	}
 ];
 
-/** Duplicate Characters with Demons repeating too; our wording, hidden until approved. */
+/** Duplicate Characters with Demons repeating too; our wording (approved 2026-10-26). */
 export const DUPLICATE_DEMONS = 'You may put more than one copy of a character in the bag.';
 
 /**

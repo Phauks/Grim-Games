@@ -15,9 +15,11 @@
 		onRead: (text: string) => boolean;
 		/** Shown over the picture when a code was read but was not one wanted. */
 		problem?: string;
+		/** Shown over the picture while a code is being read, e.g. an animated code's frames. */
+		progress?: string;
 	}
 
-	let { onRead, problem }: Props = $props();
+	let { onRead, problem, progress }: Props = $props();
 
 	let video = $state<HTMLVideoElement>();
 	let phase = $state<'starting' | 'running' | 'denied' | 'none' | 'failed'>('starting');
@@ -83,6 +85,8 @@
 		<p class="over" role="alert">{message}</p>
 	{:else if problem}
 		<p class="over bottom" role="alert">{problem}</p>
+	{:else if progress}
+		<p class="over bottom" role="status">{progress}</p>
 	{/if}
 </div>
 

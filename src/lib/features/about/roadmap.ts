@@ -181,6 +181,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: "Rules as data: every character's rules in its own file, none in code", parts: ['K1'] },
 	{ title: 'Buttons that stand out, with End game in red', parts: ['S11'] },
 	{
+		title: 'Offline games: share the script with no internet, by QR code or animated QR code',
+		parts: ['N1', 'N2']
+	},
+	{
 		title: 'Accounts and sync: saved games and scripts on every device',
 		parts: ['Y1'],
 		later: true
