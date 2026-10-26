@@ -86,6 +86,7 @@ describe('parsePreferences', () => {
 			tileOrderRandom: true,
 			ownWording: true,
 			hideWatchLink: true,
+			soundVolume: 0.35,
 			timerSound: 'buzzer',
 			timerMode: 'up',
 			timerVibrate: false,
@@ -127,6 +128,15 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({ timerKeepAwake: 'yes' }).timerKeepAwake).toBe(true);
 		expect(parsePreferences({ timerKeepAwake: false }).timerKeepAwake).toBe(false);
 		expect(parsePreferences({ timerMode: 'sideways' }).timerMode).toBe('down');
+	});
+
+	// Plan U1: one volume for every sound, silent to full, saved by older builds as nothing.
+	it('reads the sound volume inside its range, full when unknown', () => {
+		expect(parsePreferences({}).soundVolume).toBe(1);
+		expect(parsePreferences({ soundVolume: 0 }).soundVolume).toBe(0);
+		expect(parsePreferences({ soundVolume: 0.42 }).soundVolume).toBe(0.4);
+		expect(parsePreferences({ soundVolume: 3 }).soundVolume).toBe(1);
+		expect(parsePreferences({ soundVolume: 'loud' }).soundVolume).toBe(1);
 	});
 
 	it('gives character icons the one icon size saved before the split', () => {
