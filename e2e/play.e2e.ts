@@ -98,6 +98,52 @@ test('the player view is a reading page, with no Storyteller controls', async ({
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
 
+test('the settings cog at the top sets the text size, Pinch to zoom and the sheet layout', async ({
+	page
+}) => {
+	// Plan E2 (Trevor, 2026-10-26): "easier access to accessibility, zoom, font size for
+	// players. Move name into an edit button in the top", then "a settings cog in player script
+	// view where they select various text sizes settings and their name".
+	const cog = page.getByRole('button', { name: 'Your settings' });
+	await expect(cog).toHaveText('Settings');
+	await cog.tap();
+	const sheet = page.getByRole('dialog', { name: 'Your settings' });
+	await expect(sheet).toBeVisible();
+	// Not in a room: there is no name to set yet.
+	await expect(sheet.getByRole('textbox', { name: 'Your name' })).toHaveCount(0);
+	const size = sheet.getByRole('slider', { name: 'Text size' });
+	await size.fill('1.25');
+	await expect(size).toHaveAttribute('aria-valuetext', '125%');
+	expect(
+		await page.evaluate(() =>
+			getComputedStyle(document.documentElement).getPropertyValue('--text-scale')
+		)
+	).toBe('1.25');
+	const zoom = sheet.getByRole('checkbox', { name: 'Pinch to zoom', includeHidden: true });
+	await expect(zoom).not.toBeChecked();
+	await sheet.getByText('Pinch to zoom', { exact: true }).tap();
+	await expect(zoom).toBeChecked();
+	await sheet.getByRole('combobox', { name: 'Script sheet layout' }).tap();
+	await page.getByRole('option', { name: 'Compact', exact: true }).tap();
+	await expect(page.locator('[data-density="compact"]')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	// The same settings as Settings > Text.
+	await openSettings(page);
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const back = settings.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await settings.getByRole('button', { name: 'Text', exact: true }).tap();
+	await expect(settings.getByRole('slider', { name: 'Text size' })).toHaveAttribute(
+		'aria-valuetext',
+		'125%'
+	);
+	await expect(
+		settings.getByRole('checkbox', { name: 'Pinch to zoom', includeHidden: true })
+	).toBeChecked();
+});
+
 test("the script's name never breaks inside a word, beside its logo and buttons", async ({
 	page
 }) => {
@@ -865,17 +911,22 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	const shown = (await st.getByTestId('share-code').textContent())!;
 	const code = shown.replace(/\s/g, '');
 
-	// Joining lands on the script, with the room's row over the tabs; its sheet takes a name.
+	// Joining lands on the script, with the room's row over the tabs; You on the title line
+	// takes a name (plan E2).
 	await page.goto(`/join/${code}`);
 	const row = page.getByTestId('you-row');
-	await expect(page.getByTestId('join-status')).toHaveText('Type the name to show.');
+	await expect(page.getByTestId('join-status')).toHaveText(
+		'Set your name with Settings at the top.'
+	);
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
-	await row.tap();
-	const sheet = page.getByRole('dialog', { name: 'You', exact: true });
+	await page.getByTestId('you-button').tap();
+	const sheet = page.getByRole('dialog', { name: 'Your settings' });
 	await sheet.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await sheet.getByRole('button', { name: 'Save' }).tap();
 	await expect(sheet).toBeHidden();
 	await expect(page.getByTestId('join-status')).toHaveText('You are in the room as Alex.');
+	// The name shows on You at the top (plan E2).
+	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toHaveText('Alex');
 
 	// The row stays over every tab.
 	await openTab(page, 'Notes');
