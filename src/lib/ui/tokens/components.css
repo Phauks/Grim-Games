@@ -1,9 +1,11 @@
 /*
  * Component tokens: the third token layer (palette -> semantic -> component). They only
  * reference semantic tokens, so a theme restyles components by changing semantic tokens,
- * or overrides one of these through `Theme.components`.
+ * or overrides one of these through `Theme.components`. An element with `data-board-colours`
+ * (themeColours) resolves them again against its own colours.
  */
-:root {
+:root,
+[data-board-colours] {
 	--page-background: var(--surface-texture, var(--surface));
 
 	--button-background: var(--button);

@@ -23,6 +23,8 @@ export interface ReportOptions {
 	notify?: boolean;
 	/** Set by the global handlers for errors nothing caught. */
 	handled?: boolean;
+	/** The page it happened on, when not the one showing: a navigation's destination. */
+	page?: string;
 }
 
 function read(): AppError[] {
@@ -50,13 +52,16 @@ class ErrorLog {
 	/** The details dialog. */
 	open = $state(false);
 
-	report(error: unknown, { area, notify = true, handled = true }: ReportOptions): AppError {
+	report(
+		error: unknown,
+		{ area, notify = true, handled = true, page = currentPage() }: ReportOptions
+	): AppError {
 		const now = Date.now();
 		const { name, message } = describeThrown(error);
 		const index = this.entries.findIndex((e) => e.key === errorKey(area, name, message));
 		const entry = recordError(
 			error,
-			{ area, page: currentPage(), handled, now },
+			{ area, page, handled, now },
 			index >= 0 ? this.entries[index] : undefined
 		);
 		this.entries = [entry, ...this.entries.filter((_, i) => i !== index)].slice(0, MAX_LOGGED);

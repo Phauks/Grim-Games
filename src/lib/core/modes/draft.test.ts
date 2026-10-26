@@ -9,6 +9,7 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { baseCounts } from '#lib/core/rules/distribution.ts';
 import {
 	canRedraft,
+	conversions,
 	canRefuse,
 	redraft,
 	refuseOffer,
@@ -533,5 +534,104 @@ describe('a reserved hidden character', () => {
 		};
 		expect(reservedSeats(s, marionette())).toEqual([0, 3]);
 		expect(reservedSeats(s, marionette(), [0])).toEqual([3]);
+	});
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): no Minions are drafted with a Kazali,
+// which then picks which players are which Minions
+// (https://wiki.bloodontheclocktower.com/Kazali).
+describe('a drafted character that turns players into another type', () => {
+	const kazali = data.characters.filter((c) => c.id === 'kazali');
+	const start = () =>
+		startDraft({ ...config, modifiers: true }, baseCounts(7), tb.concat(kazali), seeded(6));
+
+	it('is named by its rules file, with the type’s usual count', () => {
+		expect(rulesOf('kazali')?.turnsPlayersInto).toEqual({ type: 'minion', players: 'chosen' });
+		expect(start().turns).toEqual({
+			kazali: { type: 'minion', players: 'chosen', usual: baseCounts(7).minion }
+		});
+	});
+
+	it('turns as many players as the usual Minion count once drafted', () => {
+		const s = { ...start(), picks: ['chef', 'kazali', 'empath'] };
+		expect(conversions(s)).toEqual([
+			{ characterId: 'kazali', seat: 1, type: 'minion', players: 'chosen', count: 1 }
+		]);
+	});
+
+	it('turns fewer players for each Minion already drafted, and none when undrafted', () => {
+		expect(conversions({ ...start(), picks: ['poisoner', 'kazali'] })).toEqual([]);
+		expect(conversions({ ...start(), picks: ['chef'] })).toEqual([]);
+	});
+
+	it('is not counted without setup changes', () => {
+		const s = startDraft(config, baseCounts(7), tb.concat(kazali), seeded(6));
+		expect(conversions({ ...s, picks: ['kazali'] })).toEqual([]);
+	});
+});
+
+describe('a conversion beside a reserved hidden character', () => {
+	it('turns one fewer player when the reserved character is of the type (the Marionette)', () => {
+		const reserve = reservedHidden(data.characters).find((r) => r.id === 'marionette')!;
+		const kazali = data.characters.filter((c) => c.id === 'kazali');
+		const s = startDraft(
+			{ ...config, modifiers: true, reserve },
+			baseCounts(7),
+			tb.concat(kazali),
+			seeded(6)
+		);
+		expect(conversions({ ...s, picks: ['kazali'] })).toEqual([]);
+	});
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): the Lord of Typhon's neighbours become
+// Minions, so the evil players sit in a line with it in the middle
+// (https://wiki.bloodontheclocktower.com/Lord_of_Typhon).
+describe('a drafted character whose neighbours turn into another type', () => {
+	const typhon = data.characters.filter((c) => c.id === 'lordoftyphon');
+	const start = () =>
+		startDraft({ ...config, modifiers: true }, baseCounts(7), tb.concat(typhon), seeded(7));
+	// Every seat drafted.
+	const none = { townsfolk: 0, outsider: 0, minion: 0, demon: 0 };
+
+	it('is named by its rules file', () => {
+		expect(rulesOf('lordoftyphon')?.turnsPlayersInto).toEqual({
+			type: 'minion',
+			players: 'neighbours'
+		});
+	});
+
+	it('keeps its +1 Minion and both neighbours’ seats out of the draft', () => {
+		const before = start();
+		let s = takeOffer({ ...before, offer: ['lordoftyphon'] }, 'lordoftyphon', seeded(7));
+		// Its Outsiders are asked: keep them.
+		if (s.ask) s = answerAsk(s, s.ask.current, seeded(7));
+		expect(s.slots.minion).toBe(0);
+		expect(draftTotal(s, 'townsfolk')).toBe(draftTotal(before, 'townsfolk') + 1);
+	});
+
+	it('turns its two neighbours, but not one that drafted a Minion', () => {
+		const s = start();
+		const picks = ['chef', 'lordoftyphon', 'empath', 'monk', 'saint', 'butler', 'washerwoman'];
+		expect(conversions({ ...s, picks, slots: none })).toEqual([
+			{
+				characterId: 'lordoftyphon',
+				seat: 1,
+				type: 'minion',
+				players: 'neighbours',
+				count: 2,
+				seats: [0, 2]
+			}
+		]);
+		const both = ['poisoner', 'lordoftyphon', 'empath', 'monk', 'saint', 'butler', 'chef'];
+		const done = { ...s, picks: both, slots: none };
+		expect(conversions(done)[0].seats).toEqual([2]);
+	});
+
+	it('wraps round: the last seat’s neighbour is the first', () => {
+		const s = start();
+		const picks = ['chef', 'empath', 'monk', 'saint', 'butler', 'washerwoman', 'lordoftyphon'];
+		const done = { ...s, picks, slots: none };
+		expect(conversions(done)[0].seats).toEqual([0, 5]);
 	});
 });

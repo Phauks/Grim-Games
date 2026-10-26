@@ -148,10 +148,12 @@ export interface Seat {
 	/** At most one override per field. */
 	overrides: SeatOverride[];
 	/**
-	 * The Storyteller's private note about this player (Trevor, 2026-10-16), e.g. the
-	 * Mezepheles' word or the Amnesiac's ability. Never in the public projection.
+	 * The Storyteller's private notes about this player (Trevor, 2026-10-16), e.g. the
+	 * Mezepheles' word or the Amnesiac's ability: titled, several per player like the game's
+	 * own notes (Trevor, 2026-10-26), oldest first. Never in the public projection. Absent
+	 * until one is written.
 	 */
-	note?: string;
+	notes?: GameNote[];
 	/**
 	 * The frame the player picked for their token on their own phone (L4), carried with their
 	 * avatar. Undefined shows the board's default frame. Purely decorative.
@@ -305,7 +307,7 @@ export interface DayLog {
 
 /**
  * One of the Storyteller's notes on the game (Trevor, 2026-10-23: "allow for multiple notes,
- * each gets a title", as the player's notebook does).
+ * each gets a title", as the player's notebook does), or on one player (`Seat.notes`).
  */
 export interface GameNote {
 	noteId: string;
@@ -358,7 +360,7 @@ export interface Game {
 	prepValues?: Record<string, string>;
 	/**
 	 * The Storyteller's titled notes on the game as a whole (Trevor, 2026-10-19; several since
-	 * 2026-10-23, like a player's notebook), beside each seat's own note, oldest first.
+	 * 2026-10-23, like a player's notebook), beside each seat's own notes, oldest first.
 	 * Private: never in the public projection. Absent until one is written.
 	 */
 	notes?: GameNote[];

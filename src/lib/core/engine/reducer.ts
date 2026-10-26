@@ -105,7 +105,10 @@ function liftHeldReminder(
 }
 
 /** A shallow copy without the given keys. */
-/** The note an old game's single general note becomes (`GameNotesSet`). */
+/**
+ * The note an old game's single general note becomes (`GameNotesSet`), and so does an old
+ * seat's single note (`SeatNoteSet`).
+ */
 const LEGACY_NOTE = 'n1';
 
 /** The game with these notes, or none when the list is empty. */
@@ -113,15 +116,21 @@ function withNotes(game: Game, notes: GameNote[]): Game {
 	return notes.length ? { ...game, notes } : omit(game, 'notes');
 }
 
-/** Replaces the note with this id in place, or adds it at the end. */
+/** The notes with the one of this id replaced in place, or it added at the end. */
+function putNote(notes: readonly GameNote[] = [], note: GameNote): GameNote[] {
+	return notes.some((n) => n.noteId === note.noteId)
+		? notes.map((n) => (n.noteId === note.noteId ? note : n))
+		: [...notes, note];
+}
+
+/** Replaces the game note with this id in place, or adds it at the end. */
 function setNote(game: Game, note: GameNote): Game {
-	const notes = game.notes ?? [];
-	return withNotes(
-		game,
-		notes.some((n) => n.noteId === note.noteId)
-			? notes.map((n) => (n.noteId === note.noteId ? note : n))
-			: [...notes, note]
-	);
+	return withNotes(game, putNote(game.notes, note));
+}
+
+/** The seat with these notes, or none when the list is empty. */
+function withSeatNotes(seat: Seat, notes: GameNote[]): Seat {
+	return notes.length ? { ...seat, notes } : omit(seat, 'notes');
 }
 
 function omit<T extends object, K extends keyof T>(value: T, ...keys: K[]): Omit<T, K> {
@@ -196,7 +205,31 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			);
 		case 'SeatNoteSet':
 			return updateSeat(game, event.seatId, (seat) =>
-				event.note === undefined ? omit(seat, 'note') : { ...seat, note: event.note }
+				event.note === undefined
+					? withSeatNotes(
+							seat,
+							(seat.notes ?? []).filter((n) => n.noteId !== LEGACY_NOTE)
+						)
+					: withSeatNotes(
+							seat,
+							putNote(seat.notes, {
+								noteId: LEGACY_NOTE,
+								title: '',
+								text: event.note,
+								hidden: false
+							})
+						)
+			);
+		case 'SeatNoteSaved':
+			return updateSeat(game, event.seatId, (seat) =>
+				withSeatNotes(seat, putNote(seat.notes, event.note))
+			);
+		case 'SeatNoteDeleted':
+			return updateSeat(game, event.seatId, (seat) =>
+				withSeatNotes(
+					seat,
+					(seat.notes ?? []).filter((n) => n.noteId !== event.noteId)
+				)
 			);
 		case 'SeatLookSet':
 			return updateSeat(game, event.seatId, (seat) => {

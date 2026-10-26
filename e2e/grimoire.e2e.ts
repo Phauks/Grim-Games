@@ -2589,10 +2589,12 @@ async function endWithNote(page: Page) {
 		.tap();
 	await closeSheet(page);
 	await menu(page, 'Notes');
-	await page.getByRole('button', { name: 'Notes for Seat 1: None' }).tap();
-	const notes = page.getByRole('dialog', { name: 'Note: Seat 1' });
-	await notes.getByRole('textbox').tap();
-	await page.keyboard.type('Secret word: lantern');
+	await page
+		.getByRole('group', { name: 'Notes for Seat 1' })
+		.getByRole('button', { name: 'New note' })
+		.tap();
+	const notes = page.getByRole('dialog', { name: 'Note', exact: true });
+	await notes.getByRole('textbox', { name: 'Text' }).fill('Secret word: lantern');
 	await notes.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
 	await menu(page, 'End game');
@@ -2833,6 +2835,8 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 test('the Storyteller keeps game and player notes in one sheet, marked on the token', async ({
 	page
 }) => {
+	// Game notes, then several notes on a player, from three places: longer than the default.
+	test.setTimeout(60_000);
 	await startGame(page);
 	const seat = await openSeat(page, 1);
 	await nameSeat(seat, 'Ana');
@@ -2846,13 +2850,14 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await expect(sheet.locator('li[data-seat]')).toHaveCount(8);
 	// Game notes as the player's notebook keeps them (Trevor, 2026-10-23): several, each with a
 	// title, starting as a "+ New note" card with a dashed edge.
-	const add = sheet.getByTestId('new-note');
-	const cards = sheet.locator('[data-note]');
+	const gameNotes = sheet.getByRole('region', { name: 'Game' });
+	const add = gameNotes.getByTestId('new-note');
+	const cards = gameNotes.locator('[data-note]');
 	await expect(cards).toHaveCount(0);
 	await expect(add).toHaveText('New note');
 	await expect(add).toHaveCSS('border-top-style', 'dashed');
 	await add.tap();
-	const gameDialog = page.getByRole('dialog', { name: 'Note' });
+	const gameDialog = page.getByRole('dialog', { name: 'Note', exact: true });
 	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Fang Gu');
 	await gameDialog.getByRole('textbox', { name: 'Text' }).fill('Ana asked about the Fang Gu');
 	await gameDialog.getByRole('button', { name: 'Close' }).tap();
@@ -2881,53 +2886,50 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await expect(cards).toHaveText(/^\s*Fang Gu\s*Hidden\s*$/);
 	await page.screenshot({ path: `test-results/game-notes-${test.info().project.name}.png` });
 
-	const notes = sheet.getByRole('button', { name: /^Notes for Seat 1 \(Ana\):/ });
-	await expect(notes).toHaveAccessibleName('Notes for Seat 1 (Ana): None');
-	await notes.tap();
-	// "Note: Ana", the character on the next line (Trevor, 2026-10-19).
-	const dialog = page.getByRole('dialog', { name: 'Note: Ana' });
-	const field = dialog.getByRole('textbox');
-	await expect(dialog.getByText('None', { exact: true })).toBeVisible();
-	// Nothing grabs focus (and the keyboard) when it opens; Enter starts a new line.
-	await expect(field).not.toBeFocused();
-	await field.tap();
-	await page.keyboard.type('Secret word: lantern');
-	await page.keyboard.press('Enter');
-	await page.keyboard.type('Amnesiac: learns a Minion');
-	await expect(dialog).toBeVisible();
-	// No resize grip; the field grows with its lines instead (Trevor, 2026-10-19).
-	await expect(field).toHaveCSS('resize', 'none');
-	const height = (await field.boundingBox())?.height ?? 0;
-	for (let i = 0; i < 6; i++) await page.keyboard.press('Enter');
-	expect((await field.boundingBox())?.height ?? 0).toBeGreaterThan(height);
-	for (let i = 0; i < 6; i++) await page.keyboard.press('Backspace');
-	// No Save or Cancel (Trevor, 2026-10-17): closing it any way keeps the note.
-	await expect(dialog.getByRole('button', { name: 'Save' })).toHaveCount(0);
-	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(dialog).toBeHidden();
-	await expect(notes).toContainText('Secret word: lantern');
-	// Dismissed without a button (as a swipe down does), it keeps the edit too.
-	await notes.tap();
-	await field.tap();
-	await page.keyboard.press('Control+End');
-	await page.keyboard.type(' (kept)');
+	// Several titled notes per player too, as the same cards (Trevor, 2026-10-26).
+	const player = sheet.getByRole('group', { name: 'Notes for Seat 1 (Ana)' });
+	const playerCards = player.locator('[data-note]');
+	await expect(playerCards).toHaveCount(0);
+	await expect(player.getByTestId('new-note')).toHaveCSS('border-top-style', 'dashed');
+	await player.getByTestId('new-note').tap();
+	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Word');
+	await gameDialog.getByRole('textbox', { name: 'Text' }).fill('Secret word: lantern');
+	await gameDialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(playerCards).toHaveText(/^\s*Word\s*Secret word: lantern\s*$/);
+	// Dismissed without a button (as a swipe down does), a note is kept too.
+	await player.getByTestId('new-note').tap();
+	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Claim');
+	await gameDialog.getByRole('textbox', { name: 'Text' }).fill('Chef: 1');
 	await page.keyboard.press('Escape');
-	await expect(dialog).toBeHidden();
-	await expect(notes).toContainText('(kept)');
+	await expect(playerCards).toHaveText([/Word/, /Claim/]);
+	// The game's notes are untouched.
+	await expect(cards).toHaveCount(1);
 	await closeSheet(page);
 
 	await expect(seatLabelled(page, 'Seat 1: Ana, no character, has a note')).toBeAttached();
 	const mark = page.getByTestId('note-mark');
 	await expect(mark).toHaveCount(1);
-	// Tapping the pen mark opens just that player's note (Trevor, 2026-10-19).
+	// Tapping the pen mark opens just that player's notes (Trevor, 2026-10-19).
 	await mark.tap();
+	// "Notes: Ana", the character on the next line (Trevor, 2026-10-19).
+	const dialog = page.getByRole('dialog', { name: 'Notes: Ana' });
+	const seatCards = dialog.locator('[data-note]');
 	await expect(dialog).toBeVisible();
-	await expect(field).toHaveValue(/Secret word: lantern/);
+	await expect(dialog.getByText('None', { exact: true })).toBeVisible();
+	await expect(seatCards).toHaveText([/Word/, /Claim/]);
 	await expect(sheet).toBeHidden();
 	await expect(page.getByRole('button', { name: 'Edit player name' })).toHaveCount(0);
+	// A note opens over the player's notes, and its trash deletes it after asking.
+	await seatCards.nth(1).tap();
+	await gameDialog.getByRole('button', { name: 'Delete note' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Delete this note?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(seatCards).toHaveText([/Word/]);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
-	// The seat's own ⋯ menu edits the same notes (Trevor, 2026-10-19).
+	// The seat's own ⋯ menu opens the same notes (Trevor, 2026-10-19).
 	const again = await openSeat(page, 1);
 	await again.getByRole('button', { name: 'Choose' }).tap();
 	await page
@@ -2937,24 +2939,25 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await again.getByRole('button', { name: 'Seat actions' }).tap();
 	await page.getByRole('dialog', { name: 'Ana' }).getByRole('button', { name: 'Notes' }).tap();
 	await expect(dialog).toBeVisible();
-	await expect(field).toHaveValue(/Secret word: lantern/);
 	await expect(dialog.locator('[data-character-id="poisoner"]')).toBeVisible();
+	await dialog.getByTestId('new-note').tap();
+	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Bluffs');
+	await gameDialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(seatCards).toHaveText([/Word/, /Bluffs/]);
 	await page.screenshot({ path: `test-results/seat-note-${test.info().project.name}.png` });
-	await field.tap();
-	await page.keyboard.press('Control+End');
-	await page.keyboard.type(' (from the seat)');
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
 	await closeSheet(page);
 	await menu(page, 'Notes');
-	await expect(notes).toContainText('(from the seat)');
+	await expect(playerCards).toHaveText([/Word/, /Bluffs/]);
 	await closeSheet(page);
 	// Saved with the game, and listed in History.
 	await page.reload();
 	await expect(page.getByTestId('note-mark')).toHaveCount(1);
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
-	await expect(history).toContainText('Note on Ana');
+	await expect(history).toContainText('Note on Ana: Word');
+	await expect(history).toContainText('Deleted a note on Ana');
 	await expect(history).toContainText('Game note: Fang Gu');
 	await expect(history).toContainText('Deleted a game note');
 });
@@ -4148,7 +4151,7 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes Cover the screen( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens \| (Navigation )?Report an issue \| End game$/
+		/^History Demon bluffs Notes Cover the screen( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens Sound \| (Navigation )?Report an issue \| End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu

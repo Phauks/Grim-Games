@@ -90,6 +90,10 @@ describe('parsePreferences', () => {
 			timerMode: 'up',
 			timerVibrate: false,
 			callSound: 'buzzer',
+			ambienceOn: true,
+			ambienceLevel: 0.3,
+			nightAmbience: 'night-loons',
+			dayAmbience: 'weather-rain-wood',
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
 			timerForPlayers: 'timer',
@@ -141,6 +145,26 @@ describe('parsePreferences', () => {
 		// Plan U2: the Back to town sound, the clock tower by default.
 		expect(parsePreferences({}).callSound).toBe('clocktower');
 		expect(parsePreferences({ callSound: 'gong' }).callSound).toBe('clocktower');
+	});
+
+	// Plan U3: day and night sound is off until turned on, and older builds saved none.
+	it('reads day and night sound, off by default', () => {
+		const prefs = parsePreferences({});
+		expect(prefs.ambienceOn).toBe(false);
+		expect(prefs.ambienceLevel).toBe(0.6);
+		expect(prefs.nightAmbience).toBe('night-meadow');
+		expect(prefs.dayAmbience).toBe('day-forest');
+		const chosen = parsePreferences({
+			ambienceOn: true,
+			ambienceLevel: 9,
+			nightAmbience: 'fire-crackle',
+			dayAmbience: 'night-loons'
+		});
+		expect(chosen.ambienceOn).toBe(true);
+		expect(chosen.ambienceLevel).toBe(1);
+		expect(chosen.nightAmbience).toBe('fire-crackle');
+		// A night recording is not offered in the day.
+		expect(chosen.dayAmbience).toBe('day-forest');
 	});
 
 	it('gives character icons the one icon size saved before the split', () => {

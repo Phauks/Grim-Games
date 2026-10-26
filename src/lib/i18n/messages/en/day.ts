@@ -4,6 +4,8 @@ export const day = {
 	'day.titleNumber': 'Day {number}',
 	'day.nightNumber': 'Night {number}',
 	'day.setup': 'Setup',
+	/** Players' status line once the Storyteller calls Back to town (Trevor, 2026-10-26). */
+	'day.town': 'Town',
 	'day.endDayConfirm': 'End the day?',
 	'day.keepDayGoing': 'Keep the day going',
 	'day.execution': 'Execution',

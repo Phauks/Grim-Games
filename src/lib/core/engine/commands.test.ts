@@ -131,26 +131,74 @@ describe('seats', () => {
 		expect(same.ok && codes(same)).toEqual(['no-change']);
 	});
 
-	it("keeps the Storyteller's note on a seat, trimmed, undoable and clearable", () => {
+	it("keeps the Storyteller's titled notes on a seat, several, trimmed, undoable and deletable", () => {
+		// Several notes per player, as the game's own (Trevor, 2026-10-26).
 		const { session, ctx, seats } = newGame(names);
-		const s = run(session, ctx, {
+		const note = {
+			seatId: seats[2],
+			title: ' Word ',
+			text: '  banana\nAsked twice ',
+			hidden: false
+		};
+		const s = run(session, ctx, { type: 'SetSeatNote', ...note });
+		expect(s.game.seats[seats[2]].notes).toEqual([
+			{ noteId: 'n1', title: 'Word', text: 'banana\nAsked twice', hidden: false }
+		]);
+		expect('notes' in undo(s).game.seats[seats[2]]).toBe(false);
+		// A second note goes after the first; editing one keeps its place.
+		const two = run(s, ctx, {
 			type: 'SetSeatNote',
 			seatId: seats[2],
-			note: '  Word: banana\nAsked twice '
+			title: 'Claim',
+			text: 'Chef: 1',
+			hidden: true
 		});
-		expect(s.game.seats[seats[2]].note).toBe('Word: banana\nAsked twice');
-		expect('note' in undo(s).game.seats[seats[2]]).toBe(false);
+		const edited = run(two, ctx, { type: 'SetSeatNote', noteId: 'n1', ...note, text: 'apple' });
+		expect(
+			edited.game.seats[seats[2]].notes?.map((n) => [n.noteId, n.title, n.text, n.hidden])
+		).toEqual([
+			['n1', 'Word', 'apple', false],
+			['n2', 'Claim', 'Chef: 1', true]
+		]);
+		// Each seat counts its own notes.
+		const other = run(edited, ctx, { type: 'SetSeatNote', ...note, seatId: seats[0] });
+		expect(other.game.seats[seats[0]].notes?.map((n) => n.noteId)).toEqual(['n1']);
 		const same = dispatch(
-			s,
-			{ type: 'SetSeatNote', seatId: seats[2], note: 'Word: banana\nAsked twice' },
+			edited,
+			{ type: 'SetSeatNote', noteId: 'n1', ...note, text: 'apple' },
 			ctx
 		);
 		expect(same.ok && codes(same)).toEqual(['no-change']);
-		const cleared = run(s, ctx, { type: 'SetSeatNote', seatId: seats[2], note: ' ' });
-		expect('note' in cleared.game.seats[seats[2]]).toBe(false);
-		expect(refused(s, ctx, { type: 'SetSeatNote', seatId: 'nobody', note: 'x' })).toBe(
+		const blank = dispatch(
+			s,
+			{ type: 'SetSeatNote', seatId: seats[2], title: ' ', text: '', hidden: false },
+			ctx
+		);
+		expect(blank.ok && codes(blank)).toEqual(['no-change']);
+		const deleted = run(edited, ctx, { type: 'DeleteSeatNote', seatId: seats[2], noteId: 'n1' });
+		expect(deleted.game.seats[seats[2]].notes?.map((n) => n.noteId)).toEqual(['n2']);
+		const none = run(deleted, ctx, { type: 'DeleteSeatNote', seatId: seats[2], noteId: 'n2' });
+		expect('notes' in none.game.seats[seats[2]]).toBe(false);
+		expect(refused(s, ctx, { type: 'DeleteSeatNote', seatId: seats[2], noteId: 'n9' })).toBe(
+			'unknown-note'
+		);
+		expect(refused(s, ctx, { type: 'SetSeatNote', noteId: 'n9', ...note })).toBe('unknown-note');
+		expect(refused(s, ctx, { type: 'SetSeatNote', ...note, seatId: 'nobody' })).toBe(
 			'unknown-seat'
 		);
+	});
+
+	it("replays an older game's single seat note as the seat's first, untitled note", () => {
+		const { session, seats } = newGame(names);
+		const game = applyEvent(session.game, { type: 'SeatNoteSet', seatId: seats[1], note: 'Word' });
+		expect(game.seats[seats[1]].notes).toEqual([
+			{ noteId: 'n1', title: '', text: 'Word', hidden: false }
+		]);
+		const edited = applyEvent(game, { type: 'SeatNoteSet', seatId: seats[1], note: 'Word 2' });
+		expect(edited.seats[seats[1]].notes?.map((n) => n.text)).toEqual(['Word 2']);
+		expect(
+			'notes' in applyEvent(game, { type: 'SeatNoteSet', seatId: seats[1] }).seats[seats[1]]
+		).toBe(false);
 	});
 
 	it("keeps the avatar and frame a seat's player picked, and clears them (plan R6)", () => {
@@ -224,10 +272,16 @@ describe('seats', () => {
 		const s = run(
 			session,
 			ctx,
-			{ type: 'SetSeatNote', seatId: seats[0], note: 'Amnesiac: learns a yes/no' },
+			{
+				type: 'SetSeatNote',
+				seatId: seats[0],
+				title: '',
+				text: 'Amnesiac: learns a yes/no',
+				hidden: false
+			},
 			{ type: 'SwapSeats', seatA: seats[0], seatB: seats[4] }
 		);
-		expect(s.game.seats[seats[0]].note).toBe('Amnesiac: learns a yes/no');
+		expect(s.game.seats[seats[0]].notes?.[0].text).toBe('Amnesiac: learns a yes/no');
 		expect(s.game.seating.at(-1)).toBe(seats[0]);
 	});
 

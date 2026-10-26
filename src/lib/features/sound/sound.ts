@@ -11,7 +11,8 @@ import type { TimerSound } from '#lib/ui/preferences.ts';
  */
 let context: AudioContext | undefined;
 
-function audio(): AudioContext | undefined {
+/** The app's one audio context, which day and night sound shares; none where unsupported. */
+export function audio(): AudioContext | undefined {
 	if (context) return context;
 	const Ctor =
 		globalThis.AudioContext ??

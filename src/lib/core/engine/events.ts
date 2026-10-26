@@ -35,8 +35,14 @@ export type GameEvent =
 	| { type: 'SeatAdded'; seatId: SeatId; position: number; playerName?: PlayerName }
 	| { type: 'SeatRemoved'; seatId: SeatId }
 	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: PlayerName }
-	/** No `note` clears it. */
+	/**
+	 * The single note on a seat of games saved before 2026-10-26; replayed as the seat's
+	 * untitled note `n1`. No `note` clears it. Never written now.
+	 */
 	| { type: 'SeatNoteSet'; seatId: SeatId; note?: string }
+	/** Adds or replaces the seat's note with `note.noteId`. */
+	| { type: 'SeatNoteSaved'; seatId: SeatId; note: GameNote }
+	| { type: 'SeatNoteDeleted'; seatId: SeatId; noteId: string }
 	/** The seat's avatar and frame; a missing one clears it. */
 	| { type: 'SeatLookSet'; seatId: SeatId; avatar?: AvatarId; frame?: FrameId }
 	/**

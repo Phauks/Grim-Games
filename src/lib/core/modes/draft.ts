@@ -63,6 +63,15 @@
  * draft, and one more Townsfolk is drafted instead. Once everyone has drafted, the Storyteller
  * picks which good neighbour of that type is really it (`reservedSeats`).
  *
+ * Players turned into another type (Grimbits' tool, for the Kazali and the Lord of Typhon): with
+ * `modifiers` on, a drafted character that turns players into characters of a type
+ * (`turnsPlayersInto`) has the Storyteller pick, once everyone has drafted, which character each
+ * becomes (`conversions`). The Kazali's are players the Storyteller picks, as many as the setup
+ * counts gave that type less those drafted (https://wiki.bloodontheclocktower.com/Kazali). The
+ * Lord of Typhon's are its two neighbours, so the evil players sit in a line with it in the
+ * middle (https://wiki.bloodontheclocktower.com/Lord_of_Typhon): when it is drafted, that many
+ * open seats of the type become Townsfolk seats, so no one else drafts them.
+ *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
@@ -70,6 +79,7 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
 import { setupModifierFor, type CountOp } from '#lib/core/rules/setup-modifiers.ts';
 import { isReplacedAfterDraw, replacementReminder } from '#lib/core/rules/bag-characters.ts';
+import type { TurnsPlayersInto } from '#lib/core/data/turns-players-rules.ts';
 
 export interface DraftConfig {
 	offers: number[];
@@ -135,6 +145,57 @@ export function reservedSeats(
 	});
 	return [...seats].filter((i) => !taken.includes(i)).sort((a, b) => a - b);
 }
+
+/** Players a drafted character turns into characters of `type`, once everyone has drafted. */
+export interface Conversion {
+	characterId: CharacterId;
+	/** The seat (by pick index) that drafted it. */
+	seat: number;
+	/** The seats to turn, for `neighbours`; any good seat otherwise. */
+	seats?: number[];
+	type: SeatedType;
+	players: TurnsPlayersInto['players'];
+	/** How many players to turn. */
+	count: number;
+}
+
+/**
+ * The conversions the drafted characters make (`turnsPlayersInto`): for `chosen`, the usual
+ * count of the type less those already drafted or reserved (the Kazali's Minions); for
+ * `neighbours`, those of its two neighbours not of the type yet (the Lord of Typhon's).
+ */
+export function conversions(state: DraftState): Conversion[] {
+	return state.picks.flatMap((id, seat): Conversion[] => {
+		const turns = state.turns?.[id];
+		if (!turns) return [];
+		if (turns.players === 'neighbours') {
+			const seats = neighbours(state, seat).filter(
+				(i) => i < state.picks.length && !isEvil(state, state.picks[i])
+			);
+			const { type, players } = turns;
+			return seats.length > 0
+				? [{ characterId: id, seat, type, players, count: seats.length, seats }]
+				: [];
+		}
+		// A reserved hidden character of the type (the Marionette) is one of them already.
+		const kept = state.reserved && state.config.reserve?.type === turns.type ? 1 : 0;
+		const count = Math.max(0, turns.usual - drafted(state, turns.type) - kept);
+		return count > 0
+			? [{ characterId: id, seat, type: turns.type, players: turns.players, count }]
+			: [];
+	});
+}
+
+/** The seats either side of `seat` (by pick index) once every seat has drafted. */
+function neighbours(state: DraftState, seat: number): number[] {
+	const n = state.picks.length + seatsLeft(state);
+	if (n < 2) return [];
+	const either = new Set([(seat - 1 + n) % n, (seat + 1) % n]);
+	return [...either].filter((i) => i !== seat).sort((a, b) => a - b);
+}
+
+const isEvil = (state: DraftState, id: CharacterId) =>
+	state.types[id] === 'minion' || state.types[id] === 'demon';
 
 /** The Storyteller chooses which ability of `options` the last pick has, or none yet. */
 export interface AbilityChoice {
@@ -216,6 +277,8 @@ export interface DraftState {
 	ability?: AbilityChoice;
 	/** Seats (by pick index) with a gained character's ability, chosen in the draft. */
 	abilities?: Record<number, CharacterId>;
+	/** Each pool character that turns players into a type, with the type's usual count. */
+	turns?: Record<CharacterId, TurnsPlayersInto & { usual: number }>;
 	/** `config.reserve` kept its seat out of the draft (there was one of its type to keep). */
 	reserved?: boolean;
 }
@@ -289,6 +352,14 @@ export function startDraft(
 				})
 			)
 		: {};
+	const turns: NonNullable<DraftState['turns']> = config.modifiers
+		? Object.fromEntries(
+				seated.flatMap((c) => {
+					const into = rulesFor(c)?.turnsPlayersInto;
+					return into ? [[c.id, { ...into, usual: counts[into.type] }]] : [];
+				})
+			)
+		: {};
 	const reserved = config.reserve !== undefined && counts[config.reserve.type] > 0;
 	const slots =
 		reserved && config.reserve
@@ -313,6 +384,7 @@ export function startDraft(
 		...(extraEvil.length > 0 ? { extraEvil } : {}),
 		...(Object.keys(orHidden).length > 0 ? { orHidden } : {}),
 		...(Object.keys(gains).length > 0 ? { gains } : {}),
+		...(Object.keys(turns).length > 0 ? { turns } : {}),
 		...(reserved ? { reserved } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
@@ -405,14 +477,31 @@ export function answerAbility(
  */
 function applyChanges(state: DraftState, ids: readonly CharacterId[], random: Random): DraftState {
 	let next = state;
-	const changes = ids.flatMap((id) =>
-		(next.modifiers?.[id] ?? []).map((op) => ({ characterId: id, op }))
-	);
+	const changes = ids.flatMap((id) => [
+		...(next.modifiers?.[id] ?? []).map((op) => ({ characterId: id, op })),
+		...keptForNeighbours(next, id)
+	]);
 	if (changes.length > 0) {
 		next = advance({ ...next, pending: [...(next.pending ?? []), ...changes] });
 		if (next.ask) return { ...next, offer: [] };
 	}
 	return nextOffer(next, random);
+}
+
+/**
+ * A drafted character whose neighbours turn into a type (the Lord of Typhon's Minions): as many
+ * open seats of it as neighbours not of it already become Townsfolk seats, after its own setup
+ * change, so no one else drafts them.
+ */
+function keptForNeighbours(state: DraftState, id: CharacterId): PendingChange[] {
+	const turns = state.turns?.[id];
+	if (turns?.players !== 'neighbours') return [];
+	const seat = state.picks.lastIndexOf(id);
+	const known = (i: number) => i < state.picks.length && isEvil(state, state.picks[i]);
+	const count = neighbours(state, seat).filter((i) => !known(i)).length;
+	return count > 0
+		? [{ characterId: id, op: { kind: 'delta', type: turns.type, values: [-count] } }]
+		: [];
 }
 
 /**

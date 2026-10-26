@@ -13,6 +13,7 @@ import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
 import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
+import type { SharedGrimoire } from './shared-grimoire.ts';
 import { feedbackView, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 import {
 	type ScriptVote,
@@ -22,6 +23,8 @@ import {
 } from './script-vote.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
 import { memberRole, seatsSeen, type RoomRoles, type SeatRole } from './room-roles.ts';
+
+export { isSharedGrimoire, MAX_GRIMOIRE_BYTES, type SharedGrimoire } from './shared-grimoire.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -84,6 +87,8 @@ export interface RoomState {
 	feedback?: MemberFeedback[];
 	/** Each seat's own character, for its own phone (Trevor, 2026-10-26); per game. */
 	roles?: RoomRoles;
+	/** When the Storyteller's app was built (room-version.ts). */
+	storytellerBuiltAt?: string;
 }
 
 /**
@@ -99,26 +104,6 @@ export interface GameOver {
 
 /** The longest end reason a game-over message carries: `character:` and an id. */
 export const MAX_END_REASON = 80;
-
-/**
- * The Storyteller's whole grimoire, for the view-only link (Trevor, 2026-10-18: Specters
- * spectators watch the grimoire, after promising not to spoil the game). Only the
- * Storyteller's device sends it and only viewers with the link's key receive it; the room
- * relays it as given, and each viewer checks `saved` as a saved game before showing it.
- */
-export interface SharedGrimoire {
-	/** The game as the Storyteller's device saves it (`SavedGame`). */
-	saved: Record<string, unknown>;
-	/** Where that device draws the seats, and its reminders' spots and copies (device notes). */
-	layout?: unknown;
-	reminderSpots?: unknown;
-	copies?: unknown;
-	/** The day timer as it is on that device (`SharedDayTimer`), so spectators see it run. */
-	timer?: unknown;
-}
-
-/** A whole game's history with a homebrew script: well above `MAX_SCRIPT_BYTES`. */
-export const MAX_GRIMOIRE_BYTES = 1024 * 1024;
 
 /**
  * Specters (https://www.youtube.com/watch?v=-R34QbIgDh8): spectators share one ability and
@@ -139,19 +124,6 @@ export const MAX_VOTE_OPTIONS = MAX_MEMBERS;
 /** The longest ability text a vote carries. */
 export const MAX_VOTE_ABILITY = 500;
 
-/**
- * The room protocol this build speaks. The Worker updates the moment a build deploys, but an
- * open app keeps its build until the user taps Refresh, so the two can differ for hours.
- * Changes to these messages stay backward compatible (new optional fields only); when one
- * cannot, bump `ROOM_PROTOCOL` and raise `MIN_ROOM_PROTOCOL` so older apps are told to update.
- */
-export const ROOM_PROTOCOL = 2;
-/**
- * The oldest protocol the room still accepts. 2 (2026-10-22): the room stays open after End
- * game and says the game is over (`game-over`); an older app would show the game as running.
- */
-export const MIN_ROOM_PROTOCOL = 2;
-
 export type ClientMessage =
 	/**
 	 * First message on every socket. Keys never go in the URL. `protocol` is missing from
@@ -163,6 +135,8 @@ export type ClientMessage =
 			role: 'host' | 'player' | 'viewer' | 'town';
 			key: string;
 			protocol?: number;
+			/** When this app's build was made (ISO); the Storyteller's is passed on to phones. */
+			builtAt?: string;
 	  }
 	// From a player.
 	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
@@ -237,6 +211,7 @@ export type ClientMessage =
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
 export { roleSeen, setRoles, type RoomRoles } from './room-roles.ts';
+export * from './room-version.ts';
 export {
 	castScriptBallot,
 	closeScriptVote,
@@ -301,6 +276,8 @@ export interface PlayerView {
 	 * is setting up the next game, since that one has nothing to rate yet (Trevor, 2026-10-26).
 	 */
 	endedGameId?: string;
+	/** When the Storyteller's app was built: a phone built earlier looks for the update. */
+	storytellerBuiltAt?: string;
 	/** The Storyteller is choosing the next script. */
 	choosing?: true;
 	/** The script vote, while one is open, with this phone's own ballot. */
@@ -410,12 +387,6 @@ export function isScript(value: unknown): value is Script {
 	);
 }
 
-/** True when the room still speaks the protocol of the app that said this hello. */
-export function supportsProtocol(protocol: unknown): boolean {
-	const version = protocol === undefined ? 1 : protocol;
-	return typeof version === 'number' && Number.isInteger(version) && version >= MIN_ROOM_PROTOCOL;
-}
-
 export function newRoom(hostKeyHash: string): RoomState {
 	return { hostKeyHash, members: [], requests: [] };
 }
@@ -484,6 +455,7 @@ export function playerView(
 	};
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;
+	if (room.storytellerBuiltAt) view.storytellerBuiltAt = room.storytellerBuiltAt;
 	if (room.ended && room.ended.gameId === room.gameId) {
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
@@ -777,13 +749,6 @@ export function setViewers(room: RoomState, keyHash: unknown, password?: unknown
 		viewerKeyHash: keyHash,
 		...(password === true ? { viewerPassword: true } : {})
 	};
-}
-
-/** A light shape check of a grimoire for viewers: they check the saved game themselves. */
-export function isSharedGrimoire(value: unknown): value is SharedGrimoire {
-	if (typeof value !== 'object' || value === null) return false;
-	const { saved } = value as { saved?: unknown };
-	return typeof saved === 'object' && saved !== null && !Array.isArray(saved);
 }
 
 /** Parses a socket message; anything malformed is `null` and ignored. */

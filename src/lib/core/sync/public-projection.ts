@@ -15,7 +15,11 @@ import {
 import type { CharacterId, PlayerName } from '#lib/core/data/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { publicVotesWithoutToken } from '#lib/core/rules/voting.ts';
-import type { GamePhase } from '#lib/core/rules/game-phase.ts';
+import {
+	parsePlayersPhase,
+	type GamePhase,
+	type PlayersPhase
+} from '#lib/core/rules/game-phase.ts';
 import { parsePublicTimer, type PublicDayTimer } from '#lib/core/rules/day-timer.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
@@ -106,6 +110,51 @@ export interface PublicCorner {
 }
 
 /**
+ * The board's background as the Storyteller shows it (Trevor, 2026-10-26: "even if player
+ * changes settings for their theme, the background for the shared grim should be the
+ * same"), so every phone, Public Town and Grim view draws the town on the same background.
+ * Font sizes stay each device's own, for accessibility.
+ */
+export interface PublicLook {
+	/**
+	 * `script` for the script's own image, or a built-in background by id. Left out for none,
+	 * and for a picture of the Storyteller's own, which stays on their device.
+	 */
+	background?: string;
+	/** How dark the vignette is, 0 to 1, while it is on. */
+	vignette?: number;
+	/** How visible the script's logo is, 0 to 1, while it is shown. */
+	logo?: number;
+}
+
+/** Longest background id a look carries: a word, never a link or a picture. */
+const MAX_BACKGROUND_ID = 32;
+
+const share = (value: unknown) =>
+	typeof value === 'number' && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : undefined;
+
+/**
+ * A look as sent by another device, field by field: anything malformed is left out, so a
+ * phone draws no background rather than something the Storyteller never chose.
+ */
+export function parsePublicLook(raw: unknown): PublicLook | undefined {
+	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+	const { background, vignette, logo } = raw as Record<string, unknown>;
+	const look: PublicLook = {};
+	if (
+		typeof background === 'string' &&
+		background.length <= MAX_BACKGROUND_ID &&
+		/^[a-z][a-z0-9-]*$/.test(background)
+	)
+		look.background = background;
+	const dark = share(vignette);
+	if (dark !== undefined) look.vignette = dark;
+	const faint = share(logo);
+	if (faint !== undefined) look.logo = faint;
+	return look;
+}
+
+/**
  * The game mode, unless Standard, then each special rule, with the words its About shows: the
  * table plays by them, so every copy of the script lists them (Trevor, 2026-10-24).
  */
@@ -132,6 +181,13 @@ export interface PublicGameState {
 	 * 2026-10-26); left out when the Storyteller keeps it to themself.
 	 */
 	timer?: PublicDayTimer;
+	/**
+	 * Setup, the night, the day or Town, for the status line on players' phones (Trevor,
+	 * 2026-10-26); left out when the board shows no game in play.
+	 */
+	now?: PlayersPhase;
+	/** Left out until the Storyteller's board is open. */
+	look?: PublicLook;
 }
 
 /** The corner's lines only, field by field, like everything else here. */
@@ -188,6 +244,8 @@ function appearsDead(seat: Seat): boolean {
  * @param characters The game's characters, for what the town learns of a death (`votes`).
  * @param rules The game mode and special rules, kept by the game modes feature.
  * @param timer The day timer and how players see it, or nothing when they don't.
+ * @param now Where the game is up to, for the players' status line.
+ * @param look The board's background, vignette and logo, from the Storyteller's board.
  */
 export function publicProjection(
 	game: Game,
@@ -196,17 +254,22 @@ export function publicProjection(
 	corner?: PublicCorner,
 	characters?: CharacterLookup,
 	rules: readonly PublicRule[] = [],
-	timer?: PublicDayTimer
+	timer?: PublicDayTimer,
+	now?: PlayersPhase,
+	look?: PublicLook
 ): PublicGameState {
 	const drawn = layout && boardLayout(layout);
 	// Field by field, so nothing else rides along with it.
 	const clock = parsePublicTimer(timer);
+	const phase = parsePlayersPhase(now);
 	return {
 		...(game.storytellerName ? { storytellerName: game.storytellerName } : {}),
 		...(drawn ? { layout: drawn } : {}),
 		...(corner ? { corner: boardCorner(corner) } : {}),
 		...(rules.length ? { rules: rules.map((r) => ({ ...r })) } : {}),
 		...(clock ? { timer: clock } : {}),
+		...(phase ? { now: phase } : {}),
+		...(look ? { look: parsePublicLook(look) } : {}),
 		seats: seatsInOrder(game).map((seat, i) => {
 			const view: PublicSeat = {
 				seatId: seat.seatId,
