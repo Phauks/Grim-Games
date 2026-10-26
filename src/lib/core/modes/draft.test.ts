@@ -121,7 +121,8 @@ describe('setup modifiers as drafted', () => {
 	const bmr = data.characters.filter((c) => c.edition === 'bmr');
 	const snv = data.characters.filter((c) => c.edition === 'snv');
 	const all = data.characters;
-	const draft = (pool: readonly Character[] = tb, players = 8) => startDraft(live, baseCounts(players), pool, seeded());
+	const draft = (pool: readonly Character[] = tb, players = 8) =>
+		startDraft(live, baseCounts(players), pool, seeded());
 	const take = (s: ReturnType<typeof draft>, id: string) =>
 		takeOffer({ ...s, offer: [id] }, id, seeded());
 

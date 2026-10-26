@@ -205,10 +205,7 @@
 	 * made dynamically for outsider count"): the Storyteller chooses before the next tile.
 	 */
 	const ask = $derived(progress?.kind === 'draft' ? progress.state.ask : undefined);
-	let askOpen = $state(false);
-	$effect(() => {
-		askOpen = ask !== undefined && !revealOpen && !choosing;
-	});
+	let askOpen = $derived(ask !== undefined && !revealOpen && !choosing);
 	function answer(total: number) {
 		if (progress?.kind !== 'draft') return;
 		save({ kind: 'draft', state: answerAsk(progress.state, total, Math.random) });
