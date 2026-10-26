@@ -152,7 +152,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Extra evil makers (`modes/draft.ts` Ivory draft; the kind the Spirit of Ivory limits; new)          | `makesExtraEvil`                      | new   |
 | Hidden character it may really be (`modes/draft.ts`, the Atheist's Drunk; new)                      | `orHiddenAs`                          | new   |
 | Gained not-in-play ability (`modes/draft.ts`, the Alchemist's Minion; new)                          | `gainsAbilityOf`                      | new   |
-| Players turned into another type (`modes/draft.ts`, the Kazali, the Lord of Typhon; new)            | `turnsPlayersInto`                    | new   |
+| Players turned into another type (`modes/draft-seats.ts`: Kazali, Lord of Typhon, Lil' Monsta)      | `turnsPlayersInto`                    | new   |
 
 ## Lists that only shrink
 

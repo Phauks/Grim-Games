@@ -10,6 +10,7 @@ import { baseCounts } from '#lib/core/rules/distribution.ts';
 import {
 	canRedraft,
 	conversions,
+	draftedTurned,
 	canRefuse,
 	redraft,
 	refuseOffer,
@@ -633,5 +634,37 @@ describe('a drafted character whose neighbours turn into another type', () => {
 		const picks = ['chef', 'empath', 'monk', 'saint', 'butler', 'washerwoman', 'lordoftyphon'];
 		const done = { ...s, picks, slots: none };
 		expect(conversions(done)[0].seats).toEqual([0, 5]);
+	});
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): Lil' Monsta is never dealt, so its player
+// becomes a Minion and picks their Minion (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
+describe('a drafted character that turns its own player into another type', () => {
+	const monsta = data.characters.filter((c) => c.id === 'lilmonsta');
+	const start = () =>
+		startDraft({ ...config, modifiers: true }, baseCounts(7), tb.concat(monsta), seeded(8));
+
+	it('is named by its rules file, and offered by a draft though never dealt', () => {
+		expect(rulesOf('lilmonsta')?.turnsPlayersInto).toEqual({ type: 'minion', players: 'drafter' });
+		expect(draftedTurned(data.characters).map((c) => c.id)).toEqual(['lilmonsta']);
+	});
+
+	it('leaves no Demon seat, adds a Minion and offers the same seat only Minions', () => {
+		const before = start();
+		const s = takeOffer({ ...before, offer: ['lilmonsta'] }, 'lilmonsta', seeded(8));
+		expect(s.picks).toEqual([]);
+		expect(s.undealt).toEqual(['lilmonsta']);
+		expect(s.turnedBy).toBe('lilmonsta');
+		expect(s.slots.demon).toBe(0);
+		expect(s.slots.minion).toBe(before.slots.minion + 1);
+		// The Demon's seat is the extra Minion's: as many good seats as before.
+		expect(s.slots.townsfolk + s.slots.outsider).toBe(
+			before.slots.townsfolk + before.slots.outsider
+		);
+		expect(s.offer.length).toBeGreaterThan(0);
+		expect(s.offer.every((id) => s.types[id] === 'minion')).toBe(true);
+		const next = takeOffer(s, s.offer[0], seeded(8));
+		expect(next.picks).toEqual([s.offer[0]]);
+		expect(next.turnedBy).toBeUndefined();
 	});
 });

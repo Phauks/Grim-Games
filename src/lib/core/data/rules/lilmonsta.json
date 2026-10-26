@@ -76,5 +76,9 @@
 		"you-are": {
 			"characters": ["self"]
 		}
+	},
+	"turnsPlayersInto": {
+		"type": "minion",
+		"players": "drafter"
 	}
 }

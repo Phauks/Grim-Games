@@ -11,9 +11,11 @@ import { checkKeys, describe, isObject, readEnum, type Issues } from './validate
  * - `chosen`: as many as the setup counts give that type, picked by the character (the Kazali's
  *   Minions, https://wiki.bloodontheclocktower.com/Kazali);
  * - `neighbours`: its two neighbours, so the evil players sit in a line with it in the middle
- *   (the Lord of Typhon's Minions, https://wiki.bloodontheclocktower.com/Lord_of_Typhon).
+ *   (the Lord of Typhon's Minions, https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
+ * - `drafter`: the player who drafts it, as the character itself is not dealt (Lil' Monsta's
+ *   Minions, https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
  */
-export const TURNS_PLAYERS = ['chosen', 'neighbours'] as const;
+export const TURNS_PLAYERS = ['chosen', 'neighbours', 'drafter'] as const;
 
 export interface TurnsPlayersInto {
 	type: SeatedType;
