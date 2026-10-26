@@ -27,6 +27,11 @@ describe('suggestNames', () => {
 		expect(suggestNames(past, '', ['alex'])).toEqual(['Sam', 'Samira', 'Jess', 'Rosa']);
 		expect(suggestNames(past, 'Sam', [])).toEqual(['Samira']);
 	});
+	it('offers a name once, where it first appears, when lists are joined', () => {
+		expect(suggestNames(['Jess', 'Ana', ...past], '', [])).toEqual(
+			['Jess', 'Ana', 'Sam', 'Alex', 'Samira', 'Rosa'].slice(0, 6)
+		);
+	});
 });
 
 describe('parseBankCopies', () => {

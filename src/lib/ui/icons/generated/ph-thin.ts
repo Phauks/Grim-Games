@@ -50,6 +50,7 @@ import ph_clipboard_thin from '~icons/ph/clipboard-thin';
 import ph_clipboard_text_thin from '~icons/ph/clipboard-text-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_club_thin from '~icons/ph/club-thin';
+import ph_coffee_thin from '~icons/ph/coffee-thin';
 import ph_coin_thin from '~icons/ph/coin-thin';
 import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
@@ -90,6 +91,7 @@ import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
 import ph_globe_thin from '~icons/ph/globe-thin';
 import ph_hammer_thin from '~icons/ph/hammer-thin';
+import ph_hand_coins_thin from '~icons/ph/hand-coins-thin';
 import ph_hand_fist_thin from '~icons/ph/hand-fist-thin';
 import ph_hand_grabbing_thin from '~icons/ph/hand-grabbing-thin';
 import ph_hand_heart_thin from '~icons/ph/hand-heart-thin';
@@ -260,6 +262,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-thin': ph_clipboard_text_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:club-thin': ph_club_thin,
+	'ph:coffee-thin': ph_coffee_thin,
 	'ph:coin-thin': ph_coin_thin,
 	'ph:copy-thin': ph_copy_thin,
 	'ph:copy-simple-thin': ph_copy_simple_thin,
@@ -300,6 +303,7 @@ const icons: IconMap = {
 	'ph:ghost-thin': ph_ghost_thin,
 	'ph:globe-thin': ph_globe_thin,
 	'ph:hammer-thin': ph_hammer_thin,
+	'ph:hand-coins-thin': ph_hand_coins_thin,
 	'ph:hand-fist-thin': ph_hand_fist_thin,
 	'ph:hand-grabbing-thin': ph_hand_grabbing_thin,
 	'ph:hand-heart-thin': ph_hand_heart_thin,

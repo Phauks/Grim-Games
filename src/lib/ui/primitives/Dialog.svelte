@@ -50,6 +50,11 @@
 		 * with unsaved changes asks first).
 		 */
 		beforeClose?: () => boolean;
+		/**
+		 * Shown to players (Share's join code and QR): whatever is behind it is blurred on every
+		 * screen, not just over the board, so they can't read it (Trevor, 2026-10-26).
+		 */
+		shownToPlayers?: boolean;
 	}
 
 	let {
@@ -68,7 +73,8 @@
 		scroll = true,
 		aside,
 		pinAside = true,
-		beforeClose
+		beforeClose,
+		shownToPlayers = false
 	}: Props = $props();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
@@ -106,7 +112,10 @@
 	onRequestDismiss={dismissedByParent}
 >
 	<Portal>
-		<Dialog.Backdrop style={layerStyle(layer, 'backdrop')} />
+		<Dialog.Backdrop
+			style={layerStyle(layer, 'backdrop')}
+			data-players={shownToPlayers ? '' : undefined}
+		/>
 		<Dialog.Positioner style={layerStyle(layer, 'content')}>
 			<Dialog.Content data-size={size} data-panes={aside ? '' : undefined}>
 				<div class="head">
@@ -153,7 +162,8 @@
 	/* Over the grimoire board, the board behind is blurred as well as dimmed, so nothing on it
 	   can be read while it isn't the main screen (Trevor, 2026-10-23: "for game integrity").
 	   GrimoireBoard marks the page while it is shown (board-cover.ts). */
-	:global(:root[data-board-shown] [data-scope='dialog'][data-part='backdrop']) {
+	:global(:root[data-board-shown] [data-scope='dialog'][data-part='backdrop']),
+	:global([data-scope='dialog'][data-part='backdrop'][data-players]) {
 		-webkit-backdrop-filter: blur(var(--u));
 		backdrop-filter: blur(var(--u));
 	}

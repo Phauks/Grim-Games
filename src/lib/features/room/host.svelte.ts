@@ -4,8 +4,8 @@
  * players stay in it from one game to the next.
  *
  * While a game is attached, its public projection is published on every change. Nothing a
- * phone sends changes the grimoire until the Storyteller seats it, and seating runs an ordinary
- * command, so it shows in History and can be rolled back. After that, a seated player's name,
+ * phone sends changes the grimoire until the Storyteller seats it by naming a seat on the board
+ * with the phone's name (an ordinary command, in History). After that, a seated player's name,
  * avatar and frame (plan R6) go on their seat as they change them, also as ordinary commands.
  */
 import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
@@ -17,6 +17,7 @@ import {
 	type PublicCorner,
 	type PublicGameState
 } from '#lib/core/sync/public-projection.ts';
+import { seatChanges } from '#lib/core/sync/room-seating.ts';
 import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
@@ -288,6 +289,18 @@ export class RoomHost {
 				this.#publish({ gameId: game.game.gameId, state });
 			});
 			$effect(() => {
+				// Phones sit where their name is on the board (no seat picking, Trevor 2026-10-26).
+				if (this.status !== 'open') return;
+				const seats = game.game.seating.map((id) => game.game.seats[id]);
+				for (const change of seatChanges(this.members, seats, (id) => this.isHere(id))) {
+					this.#socket?.send(
+						change.seatId
+							? { type: 'seat', memberId: change.memberId, seatId: change.seatId }
+							: { type: 'unseat', memberId: change.memberId }
+					);
+				}
+			});
+			$effect(() => {
 				const script = $state.snapshot(game.game.script) as Script;
 				if (JSON.stringify(script) === JSON.stringify(this.#script)) return;
 				this.#script = script;
@@ -314,22 +327,6 @@ export class RoomHost {
 		if (next !== this.#dayOf && (day || this.#dayOf === gameId)) this.#dayOf = next;
 	}
 
-	/**
-	 * Seats a player who joined with their name (players need no approval, Trevor 2026-10-26),
-	 * naming that seat in the grimoire. No seat unseats them.
-	 */
-	seat(member: RoomMember, seatId: SeatId | undefined): void {
-		if (!seatId) return this.unseat(member);
-		if (member.name && this.#game) {
-			this.#game.run({ type: 'RenameSeat', seatId, playerName: member.name });
-		}
-		this.#socket?.send({ type: 'seat', memberId: member.memberId, seatId });
-	}
-
-	unseat(member: RoomMember): void {
-		this.#socket?.send({ type: 'unseat', memberId: member.memberId });
-	}
-
 	/** Opens a spectators' vote on these seats, replacing any open one. False when offline. */
 	openVote(options: SeatId[], ability?: string): boolean {
 		return (
@@ -344,6 +341,14 @@ export class RoomHost {
 
 	closeVote(): void {
 		this.#socket?.send({ type: 'close-vote' });
+	}
+
+	/**
+	 * Calls every player back to town (plan U2): each phone in the room sounds and vibrates.
+	 * False when the room can't be reached.
+	 */
+	callTown(): boolean {
+		return this.#socket?.send({ type: 'call-town' }) ?? false;
 	}
 
 	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */

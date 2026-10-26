@@ -44,11 +44,10 @@
 		onGhostVote?: () => void;
 		/**
 		 * Held down (Trevor, 2026-10-19): true once the press has lasted, false when it lets go.
-		 * A hold is never a tap, so it opens nothing.
+		 * A hold is never a tap, so it opens nothing; the board picks the seat up to move it.
+		 * With a hold, the browser must not take the finger for a pan.
 		 */
 		onHold?: (holding: boolean) => void;
-		/** A hold then a drag moves the seat (boardLooks.holdMoves): no panning on the token. */
-		holdMoves?: boolean;
 		/**
 		 * Today's nominations (Trevor, 2026-10-23), while Track nominations is on: whether this
 		 * player has nominated, and was nominated. A mark not yet earned shows greyed, as the
@@ -77,7 +76,6 @@
 		onTap,
 		onGhostVote,
 		onHold,
-		holdMoves = false,
 		nominations,
 		tokenFreeVotes
 	}: Props = $props();
@@ -239,7 +237,7 @@
 	data-role={role}
 	data-misfit={misfit || undefined}
 	data-testid="seat"
-	data-hold-moves={holdMoves || undefined}
+	data-hold-moves={onHold ? '' : undefined}
 	aria-label={label}
 	style:--size="{size}px"
 	onpointerdown={pointerdown}

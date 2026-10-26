@@ -14,12 +14,14 @@
 	import {
 		bannedIn,
 		campaignRule,
+		JINXED_PAIRS,
 		modeCharacters,
 		NO_RESTRICTIONS,
 		STANDARD,
 		townSizes,
 		withRules,
 		type GameMode,
+		type JinxedPairs,
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -148,6 +150,7 @@
 	let restrictions = $state(NO_RESTRICTIONS);
 	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
 	let roleRecycling = $state<boolean | undefined>();
+	let jinxedPairs = $state<JinxedPairs>('block');
 	const draft = $derived(
 		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
 	);
@@ -355,7 +358,7 @@
 				restrictions,
 				data,
 				loaded: loaded[0],
-				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen } : {}),
+				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen, jinxedPairs } : {}),
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
 			saveDraft({ gameId: open.game.gameId });
@@ -386,6 +389,7 @@
 						modeId = v;
 						restrictions = NO_RESTRICTIONS;
 						roleRecycling = undefined;
+						jinxedPairs = 'block';
 						campaignId = 'new';
 					}}
 				/>
@@ -452,6 +456,16 @@
 							description={t('modes.roleRecyclingHint')}
 							checked={roleRecycling ?? draft.recycleUnchosen}
 							onChange={(on) => (roleRecycling = on)}
+						/>
+						<SettingSelect
+							label={t('modes.jinxedPairs')}
+							value={jinxedPairs}
+							defaultValue="block"
+							options={JINXED_PAIRS.map((value) => ({
+								value,
+								label: t(`modes.jinxedPairs.${value}`)
+							}))}
+							onChange={(v) => (jinxedPairs = v)}
 						/>
 					{/if}
 					<div class="setting">

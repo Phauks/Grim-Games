@@ -12,8 +12,10 @@ import type { GameId } from '#lib/core/model/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import {
 	parseSpecialRule,
+	JINXED_PAIRS,
 	specialRuleById,
 	upgradeModeChoice,
+	type JinxedPairs,
 	type SpecialRule,
 	type StorytellerRestrictions
 } from '#lib/core/modes/index.ts';
@@ -26,6 +28,8 @@ export interface GameModeRecord {
 	/** Role Recycling for a draft (Sushi Buffet): unchosen characters go back in the pool. The
 	 * Storyteller's choice on New game; left out, the mode's own setting. */
 	roleRecycling?: boolean;
+	/** Jinxed pairs for a draft: blocked, less likely or allowed. Left out, blocked. */
+	jinxedPairs?: JinxedPairs;
 }
 
 const KEY = (gameId: GameId) => `grim-games:game-mode:v2:${gameId}`;
@@ -39,8 +43,12 @@ function restrictionsOf(value: unknown): StorytellerRestrictions {
 	return { banned: ids(r.banned), allowed: ids(r.allowed) };
 }
 
-const recycling = (r: { roleRecycling?: unknown }) =>
-	typeof r.roleRecycling === 'boolean' ? { roleRecycling: r.roleRecycling } : {};
+const recycling = (r: { roleRecycling?: unknown; jinxedPairs?: unknown }) => ({
+	...(typeof r.roleRecycling === 'boolean' ? { roleRecycling: r.roleRecycling } : {}),
+	...((JINXED_PAIRS as readonly unknown[]).includes(r.jinxedPairs)
+		? { jinxedPairs: r.jinxedPairs as JinxedPairs }
+		: {})
+});
 
 export function readGameMode(gameId: GameId): GameModeRecord | undefined {
 	const raw = readStored(KEY(gameId));

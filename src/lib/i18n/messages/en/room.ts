@@ -4,6 +4,10 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const room = {
 	// Storyteller's page
 	'room.title': 'Share',
+	// Back to town (plan U2, Trevor's words): the Storyteller's call, and what a phone shows.
+	'room.callTown': 'Back to town',
+	'room.callTownHeard': 'Back to town',
+	'room.callTownFailed': 'Couldn’t reach the players’ phones.',
 	'room.back': 'Grimoire',
 	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',
@@ -23,8 +27,6 @@ export const room = {
 	'room.offline': 'Offline: reconnecting. The game carries on here.',
 	'room.tooOld': `This room needs a newer version of ${APP_NAME}. Refresh to update, then try again.`,
 	'room.noSeat': 'No seat',
-	'room.seatWithName': 'Seat {number} · {name}',
-	'room.seatFor': 'Seat for {name}',
 	'room.playersInRoom': 'Players in the room',
 	'room.refresh': 'New code',
 	'room.refreshTitle': 'Make a new code?',
@@ -39,6 +41,7 @@ export const room = {
 	'room.codeLabel': 'Room code from the Storyteller',
 	'room.join': 'Join as player',
 	'room.grimView': 'Grim view',
+	'room.moreWays': 'More ways to join',
 	'room.scanNotRoom': "That code is not a game's room code.",
 	'room.gameToJoin': 'Game to join',
 	'room.lookingUp': 'Looking for the game…',
@@ -55,7 +58,7 @@ export const room = {
 	'room.joining': 'Joining the room…',
 	'room.playerOffline': 'Offline: reconnecting…',
 	'room.seated': 'You are in {seat} as {name}.',
-	'room.unseated': 'You are in the room as {name}, without a seat yet.',
+	'room.unseated': 'You are in the room as {name}.',
 	'room.gameOver': 'Game over',
 	'room.gameOverGood': 'Game over: Good won',
 	'room.gameOverEvil': 'Game over: Evil won',
@@ -117,7 +120,7 @@ export const room = {
 	'room.scriptVote.addScript': 'Add a script',
 	'room.scriptVote.addMode': 'Add a game mode',
 	'room.scriptVote.join': 'Join to vote',
-	'room.choose': 'Type the name to show, and the Storyteller will seat you.',
+	'room.choose': 'Type the name to show.',
 	'room.seatLower': 'seat {number}',
 	'room.anySeatLower': 'any seat',
 	'room.yourName': 'Your name',
@@ -172,5 +175,8 @@ export const room = {
 	'room.watch.wrongPassword': 'Wrong password, or the Storyteller has turned Grim view off.',
 	'room.watch.tooManyTries': 'Too many wrong tries. Wait a few minutes, then try again.',
 	'room.watch.badLink': 'This link is incomplete. Ask the Storyteller for it again.',
-	'room.watch.home': 'Home'
+	'room.watch.home': 'Home',
+	// Public Town: a display in the middle of the table (Trevor, 2026-10-26)
+	'room.town.title': 'Public Town',
+	'room.town.waiting': 'Waiting for the Storyteller’s game…'
 } as const;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import {
 		ACCOLADES,
 		MAX_COMMENT_LENGTH,
@@ -29,8 +30,13 @@
 	let { player, open = $bindable() }: Props = $props();
 
 	let draft = $state<GameFeedback>(emptyFeedback());
+	// Only on opening: the room sends every phone a new view whenever anyone in it acts (another
+	// player sending theirs too), and following the view here wiped what was being entered.
 	$effect(() => {
-		if (open) draft = structuredClone($state.snapshot(player.view?.feedback) ?? emptyFeedback());
+		if (open)
+			draft = untrack(
+				() => structuredClone($state.snapshot(player.view?.feedback)) ?? emptyFeedback()
+			);
 	});
 
 	/** Tapping a star rates it; tapping the same star again takes off half. */

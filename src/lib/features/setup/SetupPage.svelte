@@ -10,7 +10,7 @@
 		type CharacterId,
 		type CharacterType
 	} from '#lib/core/data/index.ts';
-	import { BLUFFS_PER_SET, type Command } from '#lib/core/engine/index.ts';
+	import { BLUFFS_PER_SET, surplusSeats, type Command } from '#lib/core/engine/index.ts';
 	import {
 		analyseSelection,
 		canDuplicate,
@@ -392,13 +392,19 @@
 		else void buildBag();
 	}
 
-	/** Adds seats for extra players (never removes any), builds the bag and opens the draw. */
+	/**
+	 * Seats the player count (adding seats, or taking away empty ones New game made for a
+	 * larger count), builds the bag and opens the draw.
+	 */
 	async function buildBag() {
 		replaceOpen = false;
 		if (!game) return;
 		// A seat for each player, selected Travellers included.
 		for (let n = port.game?.seating.length ?? 0; n < analysis.players; n++) {
 			if (!send({ type: 'AddSeat' })) return;
+		}
+		for (const seatId of port.game ? surplusSeats(port.game, analysis.players) : []) {
+			if (!send({ type: 'RemoveSeat', seatId })) return;
 		}
 		const built = send({
 			type: 'BuildBag',

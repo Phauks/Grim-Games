@@ -10,7 +10,8 @@
 	import type { WatchedTimer } from './watched-timer.svelte.ts';
 	import { hold } from '#lib/ui/hold.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import { canVibrate, playTimerSound, vibrateTimer } from './timer-sound.ts';
+	import { playSound } from '#lib/features/sound/sound.ts';
+	import VibrateToggle from '#lib/features/sound/VibrateToggle.svelte';
 	import { canKeepAwake } from './timer-wake-lock.ts';
 	import TimerPerPlayerRow from './TimerPerPlayerRow.svelte';
 
@@ -48,28 +49,11 @@
 	let soundOpen = $state(false);
 	let controlsOpen = $state(false);
 	const soundLabel = (sound: TimerSound) => t(`day.timerSound.${sound}`);
-	/** Vibration on or off beside the sound, so the alarm can be either, both or neither. */
-	function chooseVibrate(timerVibrate: boolean) {
-		preferences.update({ timerVibrate });
-		if (timerVibrate) vibrateTimer();
-	}
 	function chooseSound(sound: TimerSound) {
 		preferences.update({ timerSound: sound });
-		playTimerSound(sound);
+		playSound(sound);
 	}
 </script>
-
-{#snippet vibrate()}
-	<!-- Vibration or the sound, both or neither (Trevor, 2026-10-18). Shown off and disabled,
-	     with why, on devices that cannot vibrate, so the sheet looks the same everywhere. -->
-	<SettingToggle
-		label={t('day.timerVibrate')}
-		description={canVibrate() ? undefined : t('day.timerVibrateUnavailable')}
-		checked={canVibrate() && preferences.current.timerVibrate}
-		disabled={!canVibrate()}
-		onChange={chooseVibrate}
-	/>
-{/snippet}
 
 {#snippet keepAwake()}
 	<!-- The screen stays on while the timer runs (Trevor, 2026-10-19), so it can be followed
@@ -180,7 +164,7 @@
 				disabled={preferences.current.timerMode === 'up'}
 				onChange={chooseSound}
 			/>
-			{@render vibrate()}
+			<VibrateToggle />
 			{@render keepAwake()}
 			<TimerPerPlayerRow />
 			{@render forPlayers()}
@@ -198,7 +182,7 @@
 				disabled={preferences.current.timerMode === 'up'}
 				onChange={chooseSound}
 			/>
-			{@render vibrate()}
+			<VibrateToggle />
 			{@render keepAwake()}
 			<TimerPerPlayerRow />
 			{@render forPlayers()}

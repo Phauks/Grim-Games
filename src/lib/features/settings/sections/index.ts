@@ -12,6 +12,7 @@ import ProfilesSection from '../profiles/ProfilesSection.svelte';
 import NewProfileButton from '../profiles/NewProfileButton.svelte';
 // Feature-owned sections, registered by their own modules.
 import '#lib/features/player/settings-section.ts';
+import '#lib/features/sound/settings-section.ts';
 
 // Built-in sections, grouped by topic in one list (Trevor, 2026-10-17: no audience groups;
 // every Storyteller-only setting is in Storyteller settings). Other features register theirs
