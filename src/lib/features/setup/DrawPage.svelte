@@ -88,6 +88,12 @@
 	/** The way out the PIN was asked for, taken once it's right. */
 	let pending: (() => void) | undefined;
 	async function askPin(mode: 'set' | 'unlock', leave?: () => void) {
+		if (mode === 'set' && game && drawLock.hasPin(game.gameId)) {
+			// The game's PIN is set already: locking again is one tap (Trevor, 2026-10-26).
+			if (!page.state.drawLocked) await pushState('', { drawLocked: true });
+			await drawLock.lock(game.gameId);
+			return;
+		}
 		if (mode === 'set' && !page.state.drawLocked) {
 			lockAsked = true;
 			// Before the sheet opens (see Back while locked, below).

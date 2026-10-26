@@ -18,6 +18,7 @@ export const modes = {
 	'modes.newGame.askText':
 		'This game moves to History when the new one starts. The room and players stay.',
 	'modes.info.watchers': 'Watching',
+	'modes.info.phase': 'Day or night',
 	'modes.info.onBoard': '{line} on the board',
 	'modes.info.rules': 'Special rules',
 	'modes.info.download': 'Download script',
@@ -170,6 +171,9 @@ export const modes = {
 	'modes.deal.refused': 'Refused',
 	'modes.deal.dealtType': 'Choose a {type}',
 	'modes.deal.chooseAgain': 'Choose again',
+	'modes.deal.redraft': 'Draft again',
+	'modes.deal.redraftType': 'The last player drafts again, offered:',
+	'modes.deal.redraftAny': 'Any type',
 	'modes.deal.finish': 'Finish',
 	'modes.deal.restart': 'Start again',
 	'modes.deal.restartConfirm': 'Start the draft again?',
@@ -273,6 +277,14 @@ export const modes = {
 	'modes.jinxedPairs.block': 'Block',
 	'modes.jinxedPairs.reduce': 'Less likely',
 	'modes.jinxedPairs.allow': 'Allow',
+	'modes.ivoryDraft': 'Ivory draft',
+	'modes.oneTypePerOffer': 'Don’t mix types',
+	'modes.mulligans': 'Mulligans',
+	'modes.dealsRequired': 'Deal needed characters',
+	'modes.dealsRequiredHint':
+		'A drafted character that needs another in play gets it: the next player is offered only that one.',
+	'modes.oneTypePerOfferHint': 'Every character in one offer is of one character type.',
+	'modes.ivoryDraftHint': 'At most one character that can make an extra evil player is drafted.',
 	'modes.settings': 'Game mode settings',
 	'modes.campaign.chooseHint': 'Start a new campaign, or carry on one you have played before.',
 	'modes.restrictedHint':

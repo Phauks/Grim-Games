@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import { dataUrl, grimoireImage } from '#lib/features/grimoire/grimoire-image.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
@@ -12,7 +11,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
-	import type { SeatLayout } from '#lib/ui/seating/seat-layout.ts';
+	import { dataUrl } from '#lib/ui/screenshot.ts';
 	import { buildRecap, type RecapSource } from './recap.ts';
 	import type { RecapParts } from './recap-html.ts';
 	import { recapPagePath, sharedRecap } from './recap-share-api.ts';
@@ -27,10 +26,12 @@
 	 */
 	interface Props {
 		open: boolean;
-		load: () => Promise<{ source: RecapSource; layout: SeatLayout }>;
+		load: () => Promise<RecapSource>;
+		/** The board's picture as it is on screen (screenshot.ts). */
+		capture: (type?: 'image/png' | 'image/jpeg') => Promise<Blob>;
 	}
 
-	let { open = $bindable(), load }: Props = $props();
+	let { open = $bindable(), load, capture }: Props = $props();
 
 	let parts = $state<RecapParts>({ log: true, image: true, notes: false });
 	let gameId = $state<GameId>();
@@ -49,7 +50,7 @@
 		if (!open) return;
 		let current = true;
 		load()
-			.then(({ source }) => {
+			.then((source) => {
 				if (!current) return;
 				gameId = source.game.gameId;
 				title = buildRecap(source).title;
@@ -67,21 +68,12 @@
 		busy = true;
 		failed = false;
 		try {
-			const { source, layout } = await load();
+			const source = await load();
 			const recap = buildRecap(source);
 			title = recap.title;
 			let image: string | undefined;
-			if (parts.image) {
-				await document.fonts?.ready;
-				const blob = await grimoireImage(
-					source.game,
-					source.characters,
-					layout,
-					`${recap.title} · ${recap.result}`,
-					'image/jpeg'
-				);
-				image = await dataUrl(blob);
-			}
+			// A JPEG keeps a shared recap to a few hundred KB.
+			if (parts.image) image = await dataUrl(await capture('image/jpeg'));
 			const created = await uploadRecap(sharedRecap(recap, parts, image));
 			share = { ...created, parts: { ...parts }, at: Date.now() };
 			recapShares.write(source.game.gameId, share);

@@ -115,6 +115,8 @@ export class RoomHost {
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
 	#choosing = false;
+	/** The game whose board shows a day now, when one does: players see its timer (showDay). */
+	#dayOf = $state<string>();
 	/** What the open board's corner shows, for the phones' corners (showCorner). */
 	#corner = $state<{ gameId: string; corner: PublicCorner }>();
 	#ended:
@@ -293,7 +295,8 @@ export class RoomHost {
 					layout,
 					corner,
 					game.characters,
-					gameSheetRules(game.game.gameId)
+					gameSheetRules(game.game.gameId),
+					this.#dayOf === game.game.gameId ? liveDayTimer.forPlayers : undefined
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
@@ -357,6 +360,15 @@ export class RoomHost {
 			show: roles.show,
 			...(roles.show ? { roles: roles.roles } : {})
 		});
+	}
+
+	/**
+	 * Whether the open board is in a day (Trevor, 2026-10-26): only then do players' phones
+	 * get the day timer, as the Storyteller's `timerForPlayers` setting shows it.
+	 */
+	showDay(gameId: string, day: boolean): void {
+		const next = day ? gameId : undefined;
+		if (next !== this.#dayOf && (day || this.#dayOf === gameId)) this.#dayOf = next;
 	}
 
 	/** Opens a spectators' vote on these seats, replacing any open one. False when offline. */

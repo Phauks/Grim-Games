@@ -66,8 +66,11 @@
 												code: formatRoomCode(room.code),
 												name: game.storyteller
 											})
-										: formatRoomCode(room.code)}
-								· {lastSeen.format(room.at)}{room.town ? ` · ${t('room.town.title')}` : ''}</span
+										: formatRoomCode(room.code)}</span
+							>
+							<!-- Its own line, so a phone shows all of it (Trevor, 2026-10-26). -->
+							<span class="recent-line"
+								>{lastSeen.format(room.at)}{room.town ? ` · ${t('room.town.title')}` : ''}</span
 							>
 						</span>
 					</button>
@@ -85,7 +88,7 @@
 		padding: 0;
 		list-style: none;
 	}
-	/* Two lines always, so a room's details arriving move nothing. */
+	/* Three lines always, so a room's details arriving move nothing. */
 	.recent-game {
 		display: grid;
 		grid-template-columns: calc(2.5 * var(--u)) minmax(0, 1fr);
