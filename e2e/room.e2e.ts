@@ -1322,14 +1322,24 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Game time ticks, so it is read as the board shows it, not to the second.
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
-	// Each line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
+	// The phone works out the players and the split by type itself (Trevor, 2026-10-26: so
+	// players don't have to), whatever the board shows.
+	await expect(corner.getByTestId('board-players')).toHaveText(
+		'Players: 8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)'
+	);
+	// Each other line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
 	const info = await openGameInfo(page);
 	await info.getByRole('button', { name: 'Author on the board' }).tap();
-	await info.getByRole('button', { name: 'Players on the board' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(info).toBeHidden();
 	await expect(corner).not.toContainText('by The Pandemonium Institute');
-	await expect(corner.getByTestId('board-players')).toContainText('Players: 8');
+	// The Script tab's Players breakdown has the table's column picked.
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+	await expect(phone.getByRole('button', { name: '8 players', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();

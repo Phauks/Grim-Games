@@ -59,6 +59,7 @@
 	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
+	import { tablePlayersLine } from '#lib/features/modes/players-line.ts';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -141,6 +142,17 @@
 	// As on the board: each seat keeps one --u (16px) clear of the edge.
 	const unit = 16;
 	const points = $derived(keepInside(seatPoints(ids, layout, board), board, size / 2 + unit));
+
+	/**
+	 * The board's corner lines, with the Players line always there and worked out from the
+	 * seats (Trevor, 2026-10-26: players shouldn't have to count): the standard split, which is
+	 * all the table can know.
+	 */
+	const corner = $derived.by(() => {
+		const players = tablePlayersLine(seats);
+		const shown = table?.corner;
+		return players ? { modes: [], ...shown, players } : shown;
+	});
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
 	let rootFont = $state(16);
@@ -346,7 +358,7 @@
 		<BoardCorner
 			meta={script.meta}
 			storytellerName={table?.storytellerName}
-			corner={table?.corner}
+			{corner}
 			roomCode={town ? roomHost().code : code}
 			logo={logo && !logoFailed ? logo : undefined}
 			watching
