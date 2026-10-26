@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import {
+		answerAsk,
 		canRefuse,
 		chooseOptions,
 		dealTypes,
@@ -19,7 +20,8 @@
 	import type { BagSlot } from '#lib/core/rules/index.ts';
 	import { splitPlayers, type SeatedType } from '#lib/core/rules/distribution.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import BagTiles from '#lib/features/setup/BagTiles.svelte';
 	import type { SetupGamePort } from '#lib/features/setup/game-port.ts';
 	import RevealDialog from '#lib/features/setup/RevealDialog.svelte';
@@ -86,7 +88,11 @@
 			return {
 				kind: 'draft',
 				state: startDraft(
-					{ ...assignment, recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen },
+					{
+						...assignment,
+						recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen,
+						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen'
+					},
 					split.counts,
 					pickableCharacters(mode, characters),
 					Math.random
@@ -154,7 +160,7 @@
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
 
 	function draw(slot: BagSlot) {
-		if (!progress || done || slot.state === 'drawn') return;
+		if (!progress || done || slot.state === 'drawn' || ask) return;
 		if (slot.state === 'in-bag') {
 			if (held !== undefined) return void (choosing = true);
 			save({ ...progress, held: slot.number });
@@ -192,6 +198,17 @@
 		if (revealing && name !== (game.seats[revealing.seatId]?.playerName ?? ''))
 			port.dispatch({ type: 'RenameSeat', seatId: revealing.seatId, playerName: name });
 		revealOpen = false;
+	}
+
+	/**
+	 * A drafted character's setup change that is a choice (Trevor, 2026-10-26: "modifiers are
+	 * made dynamically for outsider count"): the Storyteller chooses before the next tile.
+	 */
+	const ask = $derived(progress?.kind === 'draft' ? progress.state.ask : undefined);
+	let askOpen = $derived(ask !== undefined && !revealOpen && !choosing);
+	function answer(total: number) {
+		if (progress?.kind !== 'draft') return;
+		save({ kind: 'draft', state: answerAsk(progress.state, total, Math.random) });
 	}
 
 	function refuse() {
@@ -309,6 +326,35 @@
 	</div>
 </Dialog>
 
+<!-- Answered before the next tile, so it can't be closed without a choice. -->
+{#if ask}
+	{@const asked = byId.get(ask.characterId)}
+	<Dialog
+		bind:open={askOpen}
+		title={t('modes.deal.askTitle')}
+		closeButton={false}
+		beforeClose={() => false}
+	>
+		{#snippet subtitle()}{#if asked}<CharacterBadge
+					characterId={asked.id}
+					character={asked}
+				/>{/if}{/snippet}
+		<div class="ask" data-testid="draft-ask">
+			<p class="prompt">{t('modes.deal.askCount', { type: TYPE_PLURALS[ask.type] })}</p>
+			<div class="options">
+				{#each ask.options as total (total)}
+					<Button onclick={() => answer(total)}>{String(total)}</Button>
+				{/each}
+				{#if !ask.options.includes(ask.current)}
+					<Button onclick={() => answer(ask.current)}>
+						{t('modes.deal.askKeep', { count: ask.current })}
+					</Button>
+				{/if}
+			</div>
+		</div>
+	</Dialog>
+{/if}
+
 {#if revealing}
 	<RevealDialog
 		bind:open={revealOpen}
@@ -351,6 +397,15 @@
 	}
 	.prompt {
 		font-weight: 600;
+	}
+	.ask,
+	.options {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+	.ask {
+		flex-direction: column;
 	}
 	.list.spinning {
 		visibility: hidden;

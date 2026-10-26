@@ -3,12 +3,15 @@
  * setup modifiers apply as drafted. https://grimbits.com/draft-buffet/
  */
 import { describe, expect, it } from 'vitest';
+import type { Character } from '#lib/core/data/types.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { baseCounts } from '#lib/core/rules/distribution.ts';
 import {
 	canRefuse,
 	refuseOffer,
 	seatsLeft,
+	answerAsk,
+	draftTotal,
 	startDraft,
 	takeOffer,
 	type DraftConfig
@@ -91,7 +94,7 @@ describe('offers', () => {
 });
 
 describe('setup modifiers in a draft', () => {
-	// Trevor, 2026-10-19: "There is no automatic changes of the count of players".
+	// Without the mode's `as-chosen` modifiers, counts never change (Trevor, 2026-10-19).
 	it('a drafted Baron changes no counts (https://wiki.bloodontheclocktower.com/Baron)', () => {
 		const random = seeded();
 		let s = startDraft(config, baseCounts(8), tb, random);
@@ -108,5 +111,71 @@ describe('setup modifiers in a draft', () => {
 		s = takeOffer(s, 'godfather', random);
 		expect(s.slots).toEqual({ townsfolk: 5, outsider: 1, minion: 0, demon: 1 });
 		expect(s.offer.length).toBeGreaterThan(0);
+	});
+});
+
+// Trevor, 2026-10-26: "modifiers are made dynamically for outsider count", as Grimbits' draft
+// does (https://grimbits.com/draft-buffet/).
+describe('setup modifiers as drafted', () => {
+	const live: DraftConfig = { ...config, modifiers: true };
+	const bmr = data.characters.filter((c) => c.edition === 'bmr');
+	const snv = data.characters.filter((c) => c.edition === 'snv');
+	const all = data.characters;
+	const draft = (pool: readonly Character[] = tb, players = 8) =>
+		startDraft(live, baseCounts(players), pool, seeded());
+	const take = (s: ReturnType<typeof draft>, id: string) =>
+		takeOffer({ ...s, offer: [id] }, id, seeded());
+
+	it('a drafted Baron adds two Outsiders at once (https://wiki.bloodontheclocktower.com/Baron)', () => {
+		const s = take(draft(), 'baron');
+		expect(s.slots).toEqual({ townsfolk: 3, outsider: 3, minion: 0, demon: 1 });
+		expect(s.ask).toBeUndefined();
+		expect(s.offer.length).toBeGreaterThan(0);
+	});
+
+	it('a Fang Gu adds one Outsider and a Vigormortis removes one (https://wiki.bloodontheclocktower.com/Fang_Gu, /Vigormortis)', () => {
+		expect(take(draft(snv), 'fanggu').slots).toMatchObject({ townsfolk: 4, outsider: 2 });
+		expect(take(draft(snv), 'vigormortis').slots).toMatchObject({ townsfolk: 6, outsider: 0 });
+	});
+
+	it('asks the Storyteller for the Godfather’s −1 or +1, with no offer until then (https://wiki.bloodontheclocktower.com/Godfather)', () => {
+		const s = take(draft(bmr), 'godfather');
+		expect(s.ask).toEqual({
+			characterId: 'godfather',
+			type: 'outsider',
+			options: [0, 2],
+			current: 1
+		});
+		expect(s.offer).toEqual([]);
+		const answered = answerAsk(s, 2, seeded());
+		expect(answered.slots).toMatchObject({ townsfolk: 4, outsider: 2 });
+		expect(answered.ask).toBeUndefined();
+		expect(answered.offer.length).toBeGreaterThan(0);
+		// A count that isn't one of the options changes nothing.
+		expect(answerAsk(s, 5, seeded())).toBe(s);
+	});
+
+	it('lets the Xaan set any number of Outsiders the open seats allow (https://wiki.bloodontheclocktower.com/Xaan)', () => {
+		const s = take(draft(all), 'xaan');
+		expect(s.ask).toMatchObject({ type: 'outsider', options: [0, 1, 2, 3, 4, 5, 6], current: 1 });
+		const set = answerAsk(s, 3, seeded());
+		expect(draftTotal(set, 'outsider')).toBe(3);
+		// After that, a Baron's +2 is asked: apply it, or keep the count set.
+		const baron = take(set, 'baron');
+		expect(baron.ask).toMatchObject({ characterId: 'baron', options: [5], current: 3 });
+		expect(draftTotal(answerAsk(baron, 3, seeded()), 'outsider')).toBe(3);
+	});
+
+	it('never removes a seat already drafted: a Vigormortis after the only Outsider leaves it', () => {
+		let s = take(draft(snv), 'mutant');
+		s = take(s, 'vigormortis');
+		expect(draftTotal(s, 'outsider')).toBe(1);
+		expect(s.slots.outsider).toBe(0);
+	});
+
+	it('an Atheist takes out the evil seats still open (https://wiki.bloodontheclocktower.com/Atheist)', () => {
+		const s = take(draft(all), 'atheist');
+		expect(s.slots).toMatchObject({ minion: 0, demon: 0 });
+		expect(s.ask).toMatchObject({ characterId: 'atheist', type: 'outsider' });
 	});
 });

@@ -5,18 +5,44 @@
  * back in the pool when `recycleUnchosen` is set. Only types with an open slot are offered,
  * so every pick fits the setup counts. Rules: https://grimbits.com/draft-buffet/.
  *
- * The slots are the counts the draft starts with; no drafted character changes them (Trevor,
- * 2026-10-19: "There is no automatic changes of the count of players").
+ * The slots start as the setup counts for the player count. With `modifiers` on (the mode's
+ * setup modifiers `as-chosen`), a drafted character's setup modifier (its `setupModifier`
+ * rule) changes the slots still open, as Grimbits' tool does (Trevor, 2026-10-26: "modifiers
+ * are made dynamically for outsider count"): a fixed change (the Baron's +2 Outsiders) applies
+ * at once, and a choice (the Godfather's −1 or +1, the Xaan's any number) is asked of the
+ * Storyteller before the next offer. Once a count has been set by an "any number" change, a
+ * later fixed change is asked too (apply or keep). Without `modifiers` the counts never change
+ * (Trevor, 2026-10-19: "There is no automatic changes of the count of players").
  *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
+import { setupModifierFor, type CountOp } from '#lib/core/rules/setup-modifiers.ts';
 
 export interface DraftConfig {
 	offers: number[];
 	recycleUnchosen: boolean;
 	oneTypePerOffer: boolean;
+	/** Drafted characters' setup modifiers change the open slots (mode part `as-chosen`). */
+	modifiers?: boolean;
+}
+
+/**
+ * A count the Storyteller chooses because of a drafted character: how many of `type` the game
+ * has in all, one of `options` (lowest first). `current` is the count now, kept by "Skip".
+ */
+export interface DraftAsk {
+	characterId: CharacterId;
+	type: SeatedType;
+	options: number[];
+	current: number;
+}
+
+/** A drafted character's setup change not applied yet. */
+export interface PendingChange {
+	characterId: CharacterId;
+	op: CountOp;
 }
 
 export interface DraftState {
@@ -33,6 +59,14 @@ export interface DraftState {
 	offer: CharacterId[];
 	/** Which of `config.offers` the current offer is. */
 	offerIndex: number;
+	/** Each pool character's setup changes, when `config.modifiers` is on. */
+	modifiers?: Record<CharacterId, readonly CountOp[]>;
+	/** Setup changes still to apply, in order; the first may wait on `ask`. */
+	pending?: PendingChange[];
+	/** The count the Storyteller has to choose now; no offer is made until they do. */
+	ask?: DraftAsk;
+	/** An "any number" change has set the Outsider count. */
+	countSet?: boolean;
 }
 
 type Random = () => number;
@@ -47,6 +81,14 @@ export function startDraft(
 	random: Random
 ): DraftState {
 	const seated = pool.filter((c) => isSeated(c.type));
+	const modifiers = config.modifiers
+		? Object.fromEntries(
+				seated.flatMap((c) => {
+					const ops = setupModifierFor(c)?.ops ?? [];
+					return ops.length > 0 ? [[c.id, ops]] : [];
+				})
+			)
+		: undefined;
 	const state: DraftState = {
 		config,
 		slots: { ...counts },
@@ -55,7 +97,8 @@ export function startDraft(
 		discarded: [],
 		picks: [],
 		offer: [],
-		offerIndex: 0
+		offerIndex: 0,
+		...(modifiers ? { modifiers } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
 }
@@ -93,7 +136,97 @@ export function takeOffer(state: DraftState, id: CharacterId, random: Random): D
 		slots: { ...next.slots, [type]: next.slots[type] - 1 },
 		offerIndex: 0
 	};
+	const ops = next.modifiers?.[id] ?? [];
+	if (ops.length > 0) {
+		next = advance({
+			...next,
+			pending: [...(next.pending ?? []), ...ops.map((op) => ({ characterId: id, op }))]
+		});
+		if (next.ask) return { ...next, offer: [] };
+	}
 	return withOffer(next, state.config.offers[0] ?? 1, random);
+}
+
+/** The Storyteller chooses the count `ask` is about; a `total` not on offer is ignored. */
+export function answerAsk(state: DraftState, total: number, random: Random): DraftState {
+	const ask = state.ask;
+	if (!ask || (total !== ask.current && !ask.options.includes(total))) return state;
+	const [change, ...rest] = state.pending ?? [];
+	let next: DraftState = { ...setTotal(state, ask.type, total), pending: rest };
+	delete next.ask;
+	if (change?.op.kind === 'any' && change.op.type === 'outsider') next.countSet = true;
+	next = advance(next);
+	if (next.ask) return { ...next, offer: [] };
+	return withOffer(next, state.config.offers[0] ?? 1, random);
+}
+
+/** How many of `type` have been drafted. */
+const drafted = (state: DraftState, type: SeatedType) =>
+	state.picks.filter((id) => state.types[id] === type).length;
+
+/** How many of `type` the game has in all: drafted plus still open. */
+export const draftTotal = (state: DraftState, type: SeatedType) =>
+	drafted(state, type) + Math.max(0, state.slots[type]);
+
+/** The type a change to `type` is balanced against: Townsfolk, or Outsiders for Townsfolk. */
+const balance = (type: SeatedType): SeatedType => (type === 'townsfolk' ? 'outsider' : 'townsfolk');
+
+/** The totals `type` can reach: never below what is drafted, never past the open balance seats. */
+function range(state: DraftState, type: SeatedType): [number, number] {
+	const total = draftTotal(state, type);
+	return [drafted(state, type), total + Math.max(0, state.slots[balance(type)])];
+}
+
+const clamp = (state: DraftState, type: SeatedType, total: number) => {
+	const [min, max] = range(state, type);
+	return Math.min(max, Math.max(min, total));
+};
+
+/** The state with `type`'s total at `total` (clamped), the difference taken from its balance. */
+function setTotal(state: DraftState, type: SeatedType, total: number): DraftState {
+	const diff = clamp(state, type, total) - draftTotal(state, type);
+	if (diff === 0) return state;
+	const other = balance(type);
+	return {
+		...state,
+		slots: { ...state.slots, [type]: state.slots[type] + diff, [other]: state.slots[other] - diff }
+	};
+}
+
+/** The totals a change can give, lowest first. */
+function totalsFor(state: DraftState, op: CountOp): number[] {
+	const [min, max] = range(state, op.type);
+	const current = draftTotal(state, op.type);
+	const totals =
+		op.kind === 'any' || (op.kind === 'set' && op.values === 'most')
+			? Array.from({ length: max - min + 1 }, (_, i) => min + i)
+			: op.kind === 'set'
+				? (op.values as readonly number[]).map((v) => clamp(state, op.type, v))
+				: op.values.map((v) => clamp(state, op.type, current + v));
+	return [...new Set(totals)].sort((a, b) => a - b);
+}
+
+/**
+ * Applies pending changes in order until one needs the Storyteller: a choice of counts, or,
+ * once an "any number" change has set the Outsiders, a fixed Outsider change (apply or keep).
+ */
+function advance(state: DraftState): DraftState {
+	let next = state;
+	while (next.pending?.length) {
+		const [change, ...rest] = next.pending;
+		const { op } = change;
+		const current = draftTotal(next, op.type);
+		const options = totalsFor(next, op);
+		const keep = op.kind === 'delta' && op.type === 'outsider' && next.countSet === true;
+		if (options.length === 1 && (!keep || options[0] === current)) {
+			next = { ...setTotal(next, op.type, options[0]), pending: rest };
+			continue;
+		}
+		return { ...next, ask: { characterId: change.characterId, type: op.type, options, current } };
+	}
+	const done = { ...next };
+	delete done.pending;
+	return done;
 }
 
 function setAside(state: DraftState, ids: readonly CharacterId[]): DraftState {
