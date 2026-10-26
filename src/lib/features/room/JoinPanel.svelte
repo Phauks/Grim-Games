@@ -407,7 +407,10 @@
 	<div class="you-line">
 		<!-- Where this phone sits; the name is set from You on the title line (plan E2, Trevor
 		     2026-10-26: "move name into an edit button in the top"). -->
-		<p class="you" data-testid="you-row" data-seat={mySeat}>
+		<!-- With nothing to say (the phone has its name) the box takes no room, so the game's
+		     status starts the row (Trevor, 2026-10-26: "remove the empty space next to the game
+		     state tracker"). -->
+		<p class="you" class:quiet={!summary} data-testid="you-row" data-seat={mySeat}>
 			<span class="summary" role="status" data-testid="join-status">{summary}</span>
 		</p>
 		<!-- Only while the Storyteller lets players see their character (Trevor, 2026-10-26). -->
@@ -549,6 +552,9 @@
 		background: var(--surface-raised);
 	}
 	/* Two lines reserved, so a longer status never moves the tabs. */
+	.you.quiet {
+		display: none;
+	}
 	.summary {
 		flex: 1;
 		min-width: 0;

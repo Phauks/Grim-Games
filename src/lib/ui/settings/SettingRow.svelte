@@ -80,13 +80,19 @@
 	.grid {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: 'head' 'control' 'description';
+	}
+	/* Option cards and tables under the name read better after their hint. */
+	.row[data-layout='stacked'] .grid {
 		grid-template-areas: 'head' 'description' 'control';
 	}
-	/* Name and hint on the left, the control on the right, when there is room. */
+	/* The control in line with the name when there is room, and the hint under both, across the
+	   row (Trevor, 2026-10-26: "the settings should be in line with the name of the setting so
+	   that descriptions of those settings are below it"), as a switch's is. */
 	@container (min-width: 30rem) {
 		.row[data-layout='inline-wide'] .grid {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-			grid-template-areas: 'head control' 'description control';
+			grid-template-areas: 'head control' 'description description';
 			column-gap: var(--space-4);
 			align-items: center;
 		}
@@ -97,7 +103,7 @@
 	@container (min-width: 20rem) {
 		.row[data-layout='inline'] .grid {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-			grid-template-areas: 'head control' 'description control';
+			grid-template-areas: 'head control' 'description description';
 			column-gap: var(--space-4);
 			align-items: center;
 		}
