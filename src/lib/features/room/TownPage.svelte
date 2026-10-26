@@ -158,9 +158,6 @@
 					share={shareable}
 					room={room ?? undefined}
 				/>{/if}
-			<!-- Top right, last (Trevor, 2026-10-26: "we will definitely need a button to allow
-		     fullscreen in the top right corner"); it fills the screen with the town alone. -->
-			{#if stage}<FullScreenButton target={stage} />{/if}
 		{/snippet}
 		{#snippet subtitle()}
 			<ScriptByline
@@ -173,11 +170,13 @@
 
 		<div class="stage" bind:this={stage} data-testid="public-town">
 			{#if showTown && script && table && room}
-				<!-- In full screen the title line is gone, so the day timer and the way back sit in
-				     the town's own top right corner. -->
-				{#if inFullScreen}<div class="exit">
-						{#if phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
-						<span class="exit-button"><FullScreenButton target={stage} /></span>
+				<!-- In the town's own top right corner, in and out of full screen (Trevor, 2026-10-26:
+				     "supposed to be in the town square, and makes it so the townsquare takes up the
+				     whole screen"); the board's corner lines are top left. In full screen the title
+				     line is gone, so the game's status sits beside it. -->
+				{#if stage}<div class="full-screen">
+						{#if inFullScreen && phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
+						<span class="full-screen-button"><FullScreenButton target={stage} /></span>
 					</div>{/if}
 				<PlayerGrim
 					{script}
@@ -211,16 +210,19 @@
 		width: 1.8em;
 		height: 1.8em;
 	}
-	/* Full screen: the town fills the screen, on the page's own background. */
-	.stage:fullscreen {
+	/* The town's top right corner holds full screen. In full screen the town fills the screen,
+	   on the page's own background. */
+	.stage {
 		position: relative;
+	}
+	.stage:fullscreen {
 		background: var(--surface);
 	}
 	.stage:fullscreen :global([data-testid='player-grim']) {
 		height: 100dvh;
 		border-radius: 0;
 	}
-	.exit {
+	.full-screen {
 		position: absolute;
 		top: var(--space-2);
 		right: var(--space-2);
@@ -229,7 +231,7 @@
 		align-items: center;
 		gap: var(--space-2);
 	}
-	.exit-button {
+	.full-screen-button {
 		border-radius: 50%;
 		background: var(--board-bar-background);
 	}
