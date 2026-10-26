@@ -366,6 +366,25 @@ test('New game and character selection take more than 15 players', async ({ page
 	await expect(page.getByTestId('player-count')).toHaveText('25');
 });
 
+// Trevor, 2026-10-26: New game made seats for 40, Character selection lowered it to 10, and
+// the board still had 40 seats. The empty extra seats go when the bag is built.
+test('lowering the player count in character selection takes the extra seats away', async ({
+	page
+}) => {
+	await selectionFor(page, 12);
+	await page
+		.getByTestId('setup-table')
+		.getByRole('button', { name: '5 players', exact: true })
+		.tap();
+	await expect(page.getByTestId('player-count')).toHaveText('5');
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	await expect(page.getByRole('button', { name: /^Tile \d+$/ })).toHaveCount(5);
+	await page.goto(new URL(page.url()).pathname.replace(/\/draw$/, ''));
+	await expect(page.getByTestId('seat')).toHaveCount(5);
+});
+
 // Trevor, 2026-10-18: with every Trouble Brewing character chosen for 20 players the bag
 // holds 21 tiles (the Drunk shares a Townsfolk's); confirmed anyway, the last tile is drawn
 // to a new seat rather than left in the bag.
