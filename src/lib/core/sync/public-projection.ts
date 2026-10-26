@@ -15,7 +15,11 @@ import {
 import type { CharacterId, PlayerName } from '#lib/core/data/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { publicVotesWithoutToken } from '#lib/core/rules/voting.ts';
-import type { GamePhase } from '#lib/core/rules/game-phase.ts';
+import {
+	parsePlayersPhase,
+	type GamePhase,
+	type PlayersPhase
+} from '#lib/core/rules/game-phase.ts';
 import { parsePublicTimer, type PublicDayTimer } from '#lib/core/rules/day-timer.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
@@ -177,6 +181,11 @@ export interface PublicGameState {
 	 * 2026-10-26); left out when the Storyteller keeps it to themself.
 	 */
 	timer?: PublicDayTimer;
+	/**
+	 * Setup, the night, the day or Town, for the status line on players' phones (Trevor,
+	 * 2026-10-26); left out when the board shows no game in play.
+	 */
+	now?: PlayersPhase;
 	/** Left out until the Storyteller's board is open. */
 	look?: PublicLook;
 }
@@ -235,6 +244,7 @@ function appearsDead(seat: Seat): boolean {
  * @param characters The game's characters, for what the town learns of a death (`votes`).
  * @param rules The game mode and special rules, kept by the game modes feature.
  * @param timer The day timer and how players see it, or nothing when they don't.
+ * @param now Where the game is up to, for the players' status line.
  * @param look The board's background, vignette and logo, from the Storyteller's board.
  */
 export function publicProjection(
@@ -245,17 +255,20 @@ export function publicProjection(
 	characters?: CharacterLookup,
 	rules: readonly PublicRule[] = [],
 	timer?: PublicDayTimer,
+	now?: PlayersPhase,
 	look?: PublicLook
 ): PublicGameState {
 	const drawn = layout && boardLayout(layout);
 	// Field by field, so nothing else rides along with it.
 	const clock = parsePublicTimer(timer);
+	const phase = parsePlayersPhase(now);
 	return {
 		...(game.storytellerName ? { storytellerName: game.storytellerName } : {}),
 		...(drawn ? { layout: drawn } : {}),
 		...(corner ? { corner: boardCorner(corner) } : {}),
 		...(rules.length ? { rules: rules.map((r) => ({ ...r })) } : {}),
 		...(clock ? { timer: clock } : {}),
+		...(phase ? { now: phase } : {}),
 		...(look ? { look: parsePublicLook(look) } : {}),
 		seats: seatsInOrder(game).map((seat, i) => {
 			const view: PublicSeat = {

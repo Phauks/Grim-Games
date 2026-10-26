@@ -87,6 +87,8 @@ export interface RoomState {
 	feedback?: MemberFeedback[];
 	/** Each seat's own character, for its own phone (Trevor, 2026-10-26); per game. */
 	roles?: RoomRoles;
+	/** When the Storyteller's app was built (room-version.ts). */
+	storytellerBuiltAt?: string;
 }
 
 /**
@@ -122,19 +124,6 @@ export const MAX_VOTE_OPTIONS = MAX_MEMBERS;
 /** The longest ability text a vote carries. */
 export const MAX_VOTE_ABILITY = 500;
 
-/**
- * The room protocol this build speaks. The Worker updates the moment a build deploys, but an
- * open app keeps its build until the user taps Refresh, so the two can differ for hours.
- * Changes to these messages stay backward compatible (new optional fields only); when one
- * cannot, bump `ROOM_PROTOCOL` and raise `MIN_ROOM_PROTOCOL` so older apps are told to update.
- */
-export const ROOM_PROTOCOL = 2;
-/**
- * The oldest protocol the room still accepts. 2 (2026-10-22): the room stays open after End
- * game and says the game is over (`game-over`); an older app would show the game as running.
- */
-export const MIN_ROOM_PROTOCOL = 2;
-
 export type ClientMessage =
 	/**
 	 * First message on every socket. Keys never go in the URL. `protocol` is missing from
@@ -146,6 +135,8 @@ export type ClientMessage =
 			role: 'host' | 'player' | 'viewer' | 'town';
 			key: string;
 			protocol?: number;
+			/** When this app's build was made (ISO); the Storyteller's is passed on to phones. */
+			builtAt?: string;
 	  }
 	// From a player.
 	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
@@ -220,6 +211,7 @@ export type ClientMessage =
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
 export { roleSeen, setRoles, type RoomRoles } from './room-roles.ts';
+export * from './room-version.ts';
 export {
 	castScriptBallot,
 	closeScriptVote,
@@ -284,6 +276,8 @@ export interface PlayerView {
 	 * is setting up the next game, since that one has nothing to rate yet (Trevor, 2026-10-26).
 	 */
 	endedGameId?: string;
+	/** When the Storyteller's app was built: a phone built earlier looks for the update. */
+	storytellerBuiltAt?: string;
 	/** The Storyteller is choosing the next script. */
 	choosing?: true;
 	/** The script vote, while one is open, with this phone's own ballot. */
@@ -393,12 +387,6 @@ export function isScript(value: unknown): value is Script {
 	);
 }
 
-/** True when the room still speaks the protocol of the app that said this hello. */
-export function supportsProtocol(protocol: unknown): boolean {
-	const version = protocol === undefined ? 1 : protocol;
-	return typeof version === 'number' && Number.isInteger(version) && version >= MIN_ROOM_PROTOCOL;
-}
-
 export function newRoom(hostKeyHash: string): RoomState {
 	return { hostKeyHash, members: [], requests: [] };
 }
@@ -467,6 +455,7 @@ export function playerView(
 	};
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;
+	if (room.storytellerBuiltAt) view.storytellerBuiltAt = room.storytellerBuiltAt;
 	if (room.ended && room.ended.gameId === room.gameId) {
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;

@@ -1184,6 +1184,44 @@ test('a room tells an app too old for it to update', async ({ page, browser }, t
 	await phoneContext.close();
 });
 
+test('a phone built before the Storyteller app looks for the update, and plays on', async ({
+	page
+}) => {
+	// Trevor, 2026-10-26: an older app is nudged to update, never blocked.
+	await page.addInitScript(() => {
+		const looks = { count: 0 };
+		Object.assign(window, { looks });
+		const update = ServiceWorkerRegistration.prototype.update;
+		ServiceWorkerRegistration.prototype.update = function () {
+			looks.count++;
+			return update.call(this);
+		};
+	});
+	// The service worker from an earlier visit is in place, as it is on a phone that has the app.
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await page.routeWebSocket(/\/api\/room\//, (ws) => {
+		ws.onMessage(() =>
+			ws.send(
+				JSON.stringify({
+					type: 'player-view',
+					me: { memberId: 'me' },
+					takenSeats: [],
+					storytellerBuiltAt: '2999-01-01T00:00:00.000Z'
+				})
+			)
+		);
+	});
+	await page.goto('/join/123456');
+	await expect
+		.poll(() =>
+			page.evaluate(() => (window as unknown as { looks: { count: number } }).looks.count)
+		)
+		.toBeGreaterThan(0);
+	// Nothing is blocked: the join form is still there to use.
+	await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 test('a grimoire from a newer Storyteller app asks to update', async ({ page }) => {
 	// Trevor, 2026-10-26: an older app is nudged to update, never blocked.
 	await page.routeWebSocket(/\/api\/room\//, (ws) => {

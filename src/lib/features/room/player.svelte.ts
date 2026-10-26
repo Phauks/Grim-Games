@@ -6,10 +6,17 @@
 import type { Script } from '#lib/core/data/index.ts';
 import type { GameFeedback } from '#lib/core/feedback/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
-import { ROOM_PROTOCOL, type PlayerView, type SharedGrimoire } from '#lib/core/sync/room.ts';
+import { buildInfo } from '#lib/build-info.ts';
+import {
+	isNewerBuild,
+	ROOM_PROTOCOL,
+	type PlayerView,
+	type SharedGrimoire
+} from '#lib/core/sync/room.ts';
 import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
 import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
+import { lookForNewerBuild } from './newer-build.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 import { travellersInPlay, type TravellerInPlay } from '#lib/features/player/travellers-in-play.ts';
 import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
@@ -127,6 +134,8 @@ export class RoomPlayer {
 			(m) => {
 				if (m.type === 'player-view') {
 					this.view = m;
+					// The Storyteller's app is newer: offer its build (Trevor, 2026-10-26: nudge, never block).
+					if (isNewerBuild(m.storytellerBuiltAt, buildInfo.builtAt)) lookForNewerBuild();
 					// The game runs again, or a new one began: the finished grimoire goes.
 					if (!m.ended) this.revealed = undefined;
 					const storyteller = m.public?.storytellerName?.trim();

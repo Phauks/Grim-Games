@@ -1,10 +1,14 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { dayTimers } from '#lib/core/rules/index.ts';
+	import type { dayTimers, PlayersPhase } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { WatchedTimer } from './watched-timer.svelte.ts';
 
 	/**
+	 * A player's status line for where the game is up to (Trevor, 2026-10-26): Setup, the
+	 * night, the day with its timer, or Town once the Storyteller calls Back to town, always
+	 * with which night or day it is.
+	 *
 	 * The Storyteller's day timer on a player's phone (Trevor, 2026-10-26: "timer populates on
 	 * other screens ... sun or timer for players", the Storyteller decides). The clock as the
 	 * board shows it, or a sun (Trevor, 2026-10-26): it rises on the left and crosses the sky
@@ -13,10 +17,21 @@
 	 * time from the Storyteller only moves it faster. It only shows: nothing can be pressed.
 	 */
 	interface Props {
-		timer: dayTimers.PublicDayTimer;
+		phase: PlayersPhase;
+		/** The day's timer, while the Storyteller shows it to players. */
+		timer?: dayTimers.PublicDayTimer;
 	}
 
-	let { timer }: Props = $props();
+	let { phase, timer }: Props = $props();
+	const title = $derived(
+		phase.kind === 'setup'
+			? t('day.setup')
+			: phase.kind === 'night'
+				? t('day.nightNumber', { number: phase.number })
+				: phase.kind === 'town'
+					? t('day.town')
+					: t('day.titleNumber', { number: phase.number })
+	);
 
 	const watched = new WatchedTimer();
 	// Each copy from the room replaces the last; untracked, as set reads what it writes.
@@ -38,49 +53,81 @@
 	const path = `M${CX - R} ${HORIZON} A${R} ${R} 0 0 1 ${CX + R} ${HORIZON}`;
 </script>
 
-<div
-	class="players-timer"
-	data-testid="players-timer"
-	data-look={timer.look}
-	data-done={watched.done ? '' : undefined}
->
-	{#if timer.look === 'sun'}
-		<svg
-			viewBox="0 0 48 28"
-			role="img"
-			aria-label={t('day.sunLabel', { percent: Math.round(watched.left * 100) })}
+<div class="players-status" data-testid="players-status" data-phase={phase.kind}>
+	<span class="words">
+		<span class="title">{title}</span>
+		<!-- Town says which day it is too. -->
+		{#if phase.kind === 'town'}<span class="day"
+				>{t('day.titleNumber', { number: phase.number })}</span
+			>{/if}
+	</span>
+	{#if timer && phase.kind === 'day'}
+		<span
+			class="players-timer"
+			data-testid="players-timer"
+			data-look={timer.look}
+			data-done={watched.done ? '' : undefined}
 		>
-			<!-- The sky beneath the sun's path so far, filled from the left up to the sun. -->
-			<clipPath id="{id}-passed"><rect x="0" y="0" width={sunX} height={HORIZON} /></clipPath>
-			<path class="sky" d={sky} clip-path="url(#{id}-passed)" />
-			<path class="path" d={path} />
-			<g class="sun">
-				<circle class="glow" cx={sunX} cy={sunY} r="5.5" />
-				<circle cx={sunX} cy={sunY} r="3.5" />
-			</g>
-			<rect class="ground" x="0" y={HORIZON} width="48" height="10" />
-			<line class="horizon" x1="3" y1={HORIZON} x2="45" y2={HORIZON} />
-		</svg>
-	{:else}
-		<span class="clock" role="timer" aria-label={t('day.timer')}>{watched.clock}</span>
+			{#if timer.look === 'sun'}
+				<svg
+					viewBox="0 0 48 28"
+					role="img"
+					aria-label={t('day.sunLabel', { percent: Math.round(watched.left * 100) })}
+				>
+					<!-- The sky beneath the sun's path so far, filled from the left up to the sun. -->
+					<clipPath id="{id}-passed"><rect x="0" y="0" width={sunX} height={HORIZON} /></clipPath>
+					<path class="sky" d={sky} clip-path="url(#{id}-passed)" />
+					<path class="path" d={path} />
+					<g class="sun">
+						<circle class="glow" cx={sunX} cy={sunY} r="5.5" />
+						<circle cx={sunX} cy={sunY} r="3.5" />
+					</g>
+					<rect class="ground" x="0" y={HORIZON} width="48" height="10" />
+					<line class="horizon" x1="3" y1={HORIZON} x2="45" y2={HORIZON} />
+				</svg>
+			{:else}
+				<span class="clock" role="timer" aria-label={t('day.timer')}>{watched.clock}</span>
+			{/if}
+		</span>
 	{/if}
 </div>
 
 <style>
-	/* Beside the "You" row, in its look: the same edge, fill and corners. */
-	.players-timer {
+	/* Beside the "You" row, in its look: the same edge, fill and corners. Wide enough for the
+	   day and its sun from the start, so the row doesn't shift as the phase changes. */
+	.players-status {
 		display: inline-flex;
 		flex-shrink: 0;
 		align-items: center;
 		justify-content: center;
+		gap: var(--space-2);
 		box-sizing: border-box;
-		min-width: calc(var(--tap-target) * 1.5);
+		min-width: calc(var(--tap-target) * 3.25);
 		min-height: var(--tap-target);
 		padding: 0 var(--space-3);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
 		color: var(--on-surface);
+	}
+	.words {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		line-height: 1.2;
+	}
+	.title {
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.day {
+		color: var(--on-surface-muted);
+		font-size: 0.85em;
+		white-space: nowrap;
+	}
+	.players-timer {
+		display: inline-flex;
+		align-items: center;
 	}
 	svg {
 		width: 4rem;
@@ -119,7 +166,7 @@
 		font-weight: 700;
 		text-align: center;
 	}
-	.players-timer[data-done] {
+	.players-status:has([data-done]) {
 		border-color: var(--evil);
 	}
 	.players-timer[data-done] .clock {

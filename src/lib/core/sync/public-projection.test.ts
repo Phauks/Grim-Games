@@ -148,6 +148,15 @@ describe('publicProjection', () => {
 		).toEqual({ durationMs: 60_000, elapsedMs: 0, startedAt: 5, mode: 'down', look: 'sun' });
 	});
 
+	it("carries where the game is up to for players' status line (Trevor, 2026-10-26)", () => {
+		const { game } = busyGame();
+		expect(publicProjection(game)).not.toHaveProperty('now');
+		const town = { kind: 'town' as const, number: 2, secret: true };
+		expect(
+			publicProjection(game, undefined, undefined, undefined, undefined, [], undefined, town).now
+		).toEqual({ kind: 'town', number: 2 });
+	});
+
 	it('carries the game mode and special rules, and nothing for a Standard game', () => {
 		const { game } = busyGame();
 		expect(publicProjection(game)).not.toHaveProperty('rules');
@@ -301,7 +310,17 @@ describe('the shared look', () => {
 		const { game } = busyGame();
 		const look = { background: 'felt', vignette: 0.55, logo: 0.3, image: 'blob:secret' };
 		expect(
-			publicProjection(game, undefined, undefined, undefined, undefined, [], undefined, look).look
+			publicProjection(
+				game,
+				undefined,
+				undefined,
+				undefined,
+				undefined,
+				[],
+				undefined,
+				undefined,
+				look
+			).look
 		).toEqual({ background: 'felt', vignette: 0.55, logo: 0.3 });
 	});
 

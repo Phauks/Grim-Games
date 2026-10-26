@@ -172,6 +172,8 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(strip).toBeVisible();
 	await expect(shown).toHaveCount(0);
+	// The status line says where the game is up to (Trevor, 2026-10-26).
+	await expect(tablet.getByTestId('players-status').first()).toHaveText('Night 1');
 
 	// The day: the sun, in the title line, which keeps its place.
 	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
