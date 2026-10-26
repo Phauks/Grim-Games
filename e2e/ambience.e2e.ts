@@ -1,0 +1,68 @@
+import { expect, test } from '@playwright/test';
+import { pickScript, toBoard } from './new-game.ts';
+
+// Day and night sound (plan U3, Trevor 2026-10-26: "Ambient sound during the day or night",
+// recorded parts the Storyteller picks): off until turned on, and only once the first night
+// begins does the board fetch and play its recordings.
+
+test('day and night sound plays recordings on the board once the night begins', async ({
+	page
+}) => {
+	const fetched: string[] = [];
+	page.on('request', (request) => {
+		const path = new URL(request.url()).pathname;
+		if (path.startsWith('/sounds/ambience/')) fetched.push(path);
+	});
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+
+	// From the board's ⋯, beside the board's other settings.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Sound' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await expect(settings.getByRole('heading', { name: 'Day and night sound' })).toBeVisible();
+	const on = settings.getByRole('checkbox', { name: 'Play on the board' });
+	await expect(on).not.toBeChecked();
+	// Every row is in place while it is off, disabled.
+	await expect(settings.getByRole('slider', { name: 'Level' })).toBeDisabled();
+	await settings.getByRole('button', { name: /Night sounds/ }).tap();
+	const owl = settings.getByRole('combobox', { name: 'Owl' });
+	await expect(owl).toContainText('Sometimes');
+	await expect(owl).toBeDisabled();
+	await expect(settings.getByRole('checkbox', { name: 'Crickets' })).toBeDisabled();
+
+	await settings.getByText('Play on the board', { exact: true }).tap();
+	await expect(on).toBeChecked();
+	await expect(owl).toBeEnabled();
+	await expect(settings.getByRole('slider', { name: 'Level' })).toBeEnabled();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(settings).toBeHidden();
+	// Nothing plays in Setup, so nothing is fetched yet.
+	expect(fetched).toEqual([]);
+
+	// One character, so the bank offers Start game.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await page
+		.getByRole('list', { name: 'Reminder bank' })
+		.locator('..')
+		.getByRole('button', { name: 'Start game', exact: true })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+	const strip = page.getByTestId('night-strip');
+	await expect(strip.or(ask)).toBeVisible();
+	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+
+	// The night's loops start at once: crickets and wind by default.
+	await expect.poll(() => fetched).toContain('/sounds/ambience/crickets.mp3');
+	expect(fetched).toContain('/sounds/ambience/wind.mp3');
+});

@@ -47,6 +47,7 @@ export const shell = {
 	'shell.officialNotice':
 		"Not affiliated with The Pandemonium Institute. {game} is a trademark of Steven Medway and The Pandemonium Institute. Character data and icons from TPI's toolmaker resources under the Community Created Content policy.",
 	'shell.officialGame': 'Blood on the Clocktower',
+	'shell.soundCredits': 'Sound credits',
 	'shell.aboutAdvanced': 'Advanced',
 	'shell.checkUpdates': 'Check for updates',
 	'shell.updateCheckedAt': 'Checked {time}',

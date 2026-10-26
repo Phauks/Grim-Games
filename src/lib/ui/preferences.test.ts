@@ -12,6 +12,7 @@ import {
 } from './preferences.ts';
 import { DEFAULT_ASSISTANCE } from './assistance.ts';
 import { grimoire } from './themes/grimoire/theme.ts';
+import { defaultAmbienceChoices } from '#lib/core/sound/ambience.ts';
 
 const prefs = (change: Partial<Preferences> = {}): Preferences => ({
 	...DEFAULT_PREFERENCES,
@@ -91,6 +92,9 @@ describe('parsePreferences', () => {
 			timerMode: 'up',
 			timerVibrate: false,
 			callSound: 'buzzer',
+			ambienceOn: true,
+			ambienceLevel: 0.3,
+			ambience: { ...defaultAmbienceChoices(), owl: 'often', rain: 'on' },
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
 			qrCentre: 'picture',
@@ -141,6 +145,22 @@ describe('parsePreferences', () => {
 		// Plan U2: the Back to town sound, the clock tower by default.
 		expect(parsePreferences({}).callSound).toBe('clocktower');
 		expect(parsePreferences({ callSound: 'gong' }).callSound).toBe('clocktower');
+	});
+
+	// Plan U3: day and night sound is off until turned on, and older builds saved none.
+	it('reads day and night sound, off by default', () => {
+		const prefs = parsePreferences({});
+		expect(prefs.ambienceOn).toBe(false);
+		expect(prefs.ambienceLevel).toBe(0.6);
+		expect(prefs.ambience.owl).toBe('sometimes');
+		const chosen = parsePreferences({
+			ambienceOn: true,
+			ambienceLevel: 9,
+			ambience: { owl: 'off' }
+		});
+		expect(chosen.ambienceOn).toBe(true);
+		expect(chosen.ambienceLevel).toBe(1);
+		expect(chosen.ambience.owl).toBe('off');
 	});
 
 	it('gives character icons the one icon size saved before the split', () => {

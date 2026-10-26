@@ -24,6 +24,11 @@ import {
 	DAY_SECONDS_PER_ALIVE_MAX,
 	DAY_SECONDS_PER_ALIVE_MIN
 } from '#lib/core/rules/day-timer.ts';
+import {
+	defaultAmbienceChoices,
+	parseAmbienceChoices,
+	type AmbienceChoice
+} from '#lib/core/sound/ambience.ts';
 
 /**
  * Per-device look-and-feel preferences (04-architecture.md §9). Separate from game state
@@ -96,6 +101,12 @@ export interface Preferences {
 	timerVibrate: boolean;
 	/** The sound a player's phone makes when the Storyteller calls Back to town (plan U2). */
 	callSound: TimerSound;
+	/** Day and night sound plays on the board (plan U3). */
+	ambienceOn: boolean;
+	/** How loud day and night sound plays, under the device's volume (plan U3). */
+	ambienceLevel: number;
+	/** Which day and night sounds play, and how often each call comes (plan U3). */
+	ambience: Record<string, AmbienceChoice>;
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
@@ -168,6 +179,8 @@ export const TEXT_SCALE: ScaleRange = { min: 0.75, max: 1.5, step: 0.05 };
 export const ICON_SCALE: ScaleRange = { min: 0.75, max: 1.5, step: 0.05 };
 /** Sound volume: silent to full in 5% steps (plan U1). */
 export const SOUND_VOLUME: ScaleRange = { min: 0, max: 1, step: 0.05 };
+/** Day and night sound's level, under the device's volume (plan U3). */
+export const AMBIENCE_LEVEL: ScaleRange = { min: 0.05, max: 1, step: 0.05 };
 
 export type TextScale = number;
 export type IconScale = number;
@@ -212,6 +225,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerMode: 'down',
 	timerVibrate: true,
 	callSound: 'clocktower',
+	ambienceOn: false,
+	ambienceLevel: 0.6,
+	ambience: defaultAmbienceChoices(),
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	qrCentre: 'script',
@@ -296,6 +312,13 @@ export function parsePreferences(raw: unknown): Preferences {
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,
 		callSound: oneOf(TIMER_SOUNDS, input.callSound, DEFAULT_PREFERENCES.callSound),
+		ambienceOn: input.ambienceOn === true,
+		ambienceLevel: parseScale(
+			input.ambienceLevel,
+			AMBIENCE_LEVEL,
+			DEFAULT_PREFERENCES.ambienceLevel
+		),
+		ambience: parseAmbienceChoices(input.ambience),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
 			: DEFAULT_PREFERENCES.timerMode,
