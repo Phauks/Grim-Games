@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
 	decodeSharedScript,
 	encodeSharedScript,
+	isOfflineHash,
+	offlineCode,
+	OFFLINE_SINGLE_MAX,
 	shareLink,
 	sharedRefFromHash,
 	sharedRefHash,
 	type SharedRef
 } from './share.ts';
+import { QrFrameCollector } from '#lib/core/codes/qr-frames.ts';
 
 const script = [
 	{ id: '_meta', name: 'Ünïcode & “quotes”', author: 'Trevor' },
@@ -70,5 +74,49 @@ describe('share links', () => {
 		]) {
 			expect(sharedRefFromHash(hash)).toBeUndefined();
 		}
+	});
+});
+
+describe('offline codes', () => {
+	const origin = 'https://grim.example';
+
+	it('names an edition without the script, marked offline', async () => {
+		const code = await offlineCode(origin, { edition: 'tb', json: ['tb'] });
+		expect(code).toEqual({ url: `${origin}/play#e=tb&o=1` });
+		const hash = new URL(code.url).hash;
+		expect(isOfflineHash(hash)).toBe(true);
+		expect(sharedRefFromHash(hash)).toEqual({ kind: 'edition', edition: 'tb' });
+	});
+
+	it('carries a short script whole in one code, and reads back', async () => {
+		const code = await offlineCode(origin, { json: script });
+		expect(code.frames).toBeUndefined();
+		expect(new TextEncoder().encode(code.url).length).toBeLessThanOrEqual(OFFLINE_SINGLE_MAX);
+		const ref = sharedRefFromHash(new URL(code.url).hash);
+		expect(ref?.kind).toBe('inline');
+		expect(await decodeSharedScript((ref as { payload: string }).payload)).toEqual(script);
+	});
+
+	it('animates a long script, and the frames rebuild its link', async () => {
+		// Homebrew: characters with their own long text don't compress to one code.
+		const long = [
+			{ id: '_meta', name: 'Long' },
+			...Array.from({ length: 40 }, (_, i) => ({
+				id: `own${i}`,
+				name: `Own ${i}`,
+				team: 'townsfolk',
+				ability: `${i} ${crypto.randomUUID()} ${crypto.randomUUID()}`
+			}))
+		];
+		const code = await offlineCode(origin, { json: long });
+		expect(code.frames!.length).toBeGreaterThan(1);
+		const collector = new QrFrameCollector();
+		const done = code.frames!.map((f) => collector.add(f)).at(-1);
+		expect(done).toEqual({ kind: 'done', text: code.url });
+	});
+
+	it('is not offline without the mark', () => {
+		expect(isOfflineHash('#s=1.abc')).toBe(false);
+		expect(isOfflineHash('#e=tb&o=1')).toBe(true);
 	});
 });

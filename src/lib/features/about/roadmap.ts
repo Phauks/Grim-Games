@@ -1,6 +1,6 @@
 /**
  * The roadmap, kept in the repository so it ticks itself off. Each item is a feature, made of
- * the backlog plan's IDs (D1, R1-R9, B1-B6, S1-S22, P1-P2, L1-L65, G1-G16, J1-J23, W1-W6, Q1-Q2, U1-U4, ...):
+ * the backlog plan's IDs (D1, R1-R9, B1-B6, S1-S22, P1-P2, L1-L65, G1-G16, J1-J23, W1-W9, Q1-Q2, U1-U4, ...):
  * a part is finished once a merged change names its ID in brackets in its title, such as
  * "Savant info generator (L2)", and an item is done once all its parts and listed PRs are.
  * Only the features are shown. Add a new plan ID to the feature it belongs to, or a new
@@ -79,7 +79,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J26',
 			'J27',
 			'J29',
-			'J30'
+			'J30',
+			'J31'
 		]
 	},
 	{
@@ -96,8 +97,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J28',
 			'J32',
 			'L18b',
-			...range('W', 1, 6),
-			'W9'
+			...range('W', 1, 9),
+			...range('E', 1, 3)
 		]
 	},
 	{
@@ -162,8 +163,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['U1', 'U2', 'U3', 'U4']
 	},
 	{
-		title: 'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover',
-		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24']
+		title:
+			'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover, dealing to phones',
+		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2']
 	},
 	{
 		title:
@@ -180,6 +182,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: "Rules as data: every character's rules in its own file, none in code", parts: ['K1'] },
 	{ title: 'Buttons that stand out, with End game in red', parts: ['S11'] },
+	{
+		title: 'Offline games: share the script with no internet, by QR code or animated QR code',
+		parts: ['N1', 'N2']
+	},
 	{
 		title: 'Accounts and sync: saved games and scripts on every device',
 		parts: ['Y1'],

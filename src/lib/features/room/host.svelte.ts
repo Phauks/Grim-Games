@@ -46,6 +46,7 @@ import { gameFeedback } from './game-feedback.svelte.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
 import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
+import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
 
 const STORAGE_KEY = 'grim-games-room-host';
 
@@ -56,6 +57,8 @@ interface StoredRoom {
 	viewerKey?: string;
 	/** The Grim view password that key was made from, if the Storyteller set one. */
 	viewerPassword?: string;
+	/** The game whose players may see their own characters now (Trevor, 2026-10-26). */
+	rolesShown?: string;
 }
 
 /** The board's own notes a viewer needs to draw the grimoire as this device does. */
@@ -100,6 +103,19 @@ export class RoomHost {
 	grimoireTooLarge = $state(false);
 	/** How many are watching through the view-only link now (Trevor, 2026-10-20). */
 	watchers = $state(0);
+	/**
+	 * The game whose players may see their own character on their phone (Trevor, 2026-10-26:
+	 * "can turn on and off when ppl can see it"). Off until turned on, and per game.
+	 */
+	rolesShown = $state<string>();
+	/** Seats whose player has held their character to see it (Trevor, 2026-10-26). */
+	rolesSeen = $state.raw<readonly SeatId[]>([]);
+	#roles: { gameId: string; show: boolean; roles: Record<SeatId, SeatRole> } | undefined;
+	/**
+	 * An admin is watching from Live games (plan J31): the whole grimoire goes to the room as
+	 * for the view-only link, but nothing on this device says so, and the room keeps no copy.
+	 */
+	#grimoireWanted = $state(false);
 	#viewerKeyHash: string | undefined;
 	#grimoire: SharedGrimoire | undefined;
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
@@ -123,6 +139,7 @@ export class RoomHost {
 	constructor() {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
 		if (stored?.code && stored.key) {
+			this.rolesShown = stored.rolesShown;
 			this.viewerPassword = stored.viewerKey ? stored.viewerPassword : undefined;
 			if (stored.viewerKey) void this.#useViewerKey(stored.viewerKey);
 			this.#connect(stored);
@@ -268,7 +285,7 @@ export class RoomHost {
 		this.#stopWatching = $effect.root(() => {
 			// The whole grimoire, for the view-only link while it is on.
 			$effect(() => {
-				if (!this.viewerKey) return;
+				if (!this.viewerKey && !this.#grimoireWanted) return;
 				const saved = toSavedGame(game.session, Date.now());
 				this.#queueGrimoire({
 					saved: saved as unknown as Record<string, unknown>,
@@ -292,6 +309,16 @@ export class RoomHost {
 					now
 				);
 				this.#publish({ gameId: game.game.gameId, state });
+			});
+			// Each seat's own character, for its own phone, while players may see theirs.
+			$effect(() => {
+				const gameId = game.game.gameId;
+				const show = this.rolesShown === gameId;
+				const roles = show ? seatRoles(game.game, game.characters) : {};
+				const next = { gameId, show, roles };
+				if (JSON.stringify(next) === JSON.stringify(this.#roles)) return;
+				this.#roles = next;
+				this.#sendRoles();
 			});
 			$effect(() => {
 				// Phones sit where their name is on the board (no seat picking, Trevor 2026-10-26).
@@ -321,6 +348,28 @@ export class RoomHost {
 	showCorner(gameId: string, corner: PublicCorner): void {
 		const shown = { gameId, corner: $state.snapshot(corner) as PublicCorner };
 		if (JSON.stringify(shown) !== JSON.stringify(this.#corner)) this.#corner = shown;
+	}
+
+	/** Lets the players of game `gameId` see their own characters, or hides them again. */
+	showRoles(gameId: GameId, on: boolean): void {
+		this.rolesShown = on ? gameId : undefined;
+		const stored = readStored<StoredRoom>(STORAGE_KEY);
+		if (!stored) return;
+		const { rolesShown: _old, ...rest } = stored;
+		void _old;
+		writeStored(STORAGE_KEY, on ? { ...rest, rolesShown: gameId } : rest);
+	}
+
+	#sendRoles(): void {
+		const roles = this.#roles;
+		// Sent after the game's public state, which the room checks the seats against.
+		if (!roles || roles.gameId !== this.#published?.gameId) return;
+		this.#socket?.send({
+			type: 'roles',
+			gameId: roles.gameId,
+			show: roles.show,
+			...(roles.show ? { roles: roles.roles } : {})
+		});
 	}
 
 	/**
@@ -497,12 +546,17 @@ export class RoomHost {
 			this.present = message.present;
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
+			this.rolesSeen = message.rolesSeen ?? [];
 			// Saved with the ended game, as the room forgets it once a game runs again.
 			if (message.feedback && message.feedbackGameId) {
 				gameFeedback.save(message.feedbackGameId, message.feedback);
 			}
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
+		} else if (message.type === 'grimoire-wanted') {
+			this.#grimoireWanted = message.on;
+			// After a reconnect it may already be on, with the grimoire made: send it again.
+			if (message.on) this.#sendGrimoire();
 		} else if (message.type === 'refused' && message.reason === 'too-old') {
 			// The room is still this device's: keep it for after the update.
 		} else if (message.type === 'refused' || message.type === 'closed') {
@@ -547,10 +601,12 @@ export class RoomHost {
 	}
 
 	#sendGrimoire(): void {
-		if (!this.#grimoire || !this.#viewerKeyHash) return;
+		if (!this.#grimoire || (!this.#viewerKeyHash && !this.#grimoireWanted)) return;
 		const message = { type: 'grimoire', grimoire: this.#grimoire } as const;
-		this.grimoireTooLarge = JSON.stringify(message).length > MAX_GRIMOIRE_BYTES;
-		if (!this.grimoireTooLarge) this.#socket?.send(message);
+		const tooLarge = JSON.stringify(message).length > MAX_GRIMOIRE_BYTES;
+		// Said only for the view-only link: an admin's watching shows nowhere here.
+		if (this.#viewerKeyHash) this.grimoireTooLarge = tooLarge;
+		if (!tooLarge) this.#socket?.send(message);
 	}
 
 	#publish(published: { gameId: string; state: PublicGameState }): void {
@@ -562,6 +618,7 @@ export class RoomHost {
 
 	#resend(): void {
 		if (this.#published) this.#socket?.send({ type: 'publish', ...this.#published });
+		this.#sendRoles();
 		this.#sendEnded();
 		if (this.#choosing) this.#socket?.send({ type: 'choosing', on: true });
 		if (this.#script) this.#socket?.send({ type: 'script', script: this.#script });
@@ -586,6 +643,7 @@ export class RoomHost {
 		this.#socket?.stop();
 		this.#socket = undefined;
 		this.watchers = 0;
+		this.#grimoireWanted = false;
 		this.code = undefined;
 		this.members = [];
 		this.present = undefined;
@@ -594,6 +652,9 @@ export class RoomHost {
 		this.viewerKey = undefined;
 		this.viewerPassword = undefined;
 		this.revealedGame = undefined;
+		this.rolesShown = undefined;
+		this.rolesSeen = [];
+		this.#roles = undefined;
 		this.#viewerKeyHash = undefined;
 		this.#grimoire = undefined;
 		clearTimeout(this.#grimoireTimer);

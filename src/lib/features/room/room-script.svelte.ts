@@ -9,6 +9,7 @@ import {
 	currentScript,
 	restoreScripts
 } from '#lib/features/scripts/current-script.svelte.ts';
+import { lookForNewerBuild } from './newer-build.ts';
 
 const sameScript = (a: LoadedScript, b: LoadedScript) =>
 	JSON.stringify(scriptToJson(a)) === JSON.stringify(scriptToJson(b));
@@ -29,7 +30,9 @@ export async function followRoomScript(
 	code: string
 ): Promise<LoadedScript | undefined> {
 	const [data] = await Promise.all([loadOfficialData(), restoreScripts()]);
-	const { script: loaded } = fromScript(script, data);
+	const { script: loaded, missing } = fromScript(script, data);
+	// Characters this build doesn't know yet come from the Storyteller's newer build.
+	if (missing.length) lookForNewerBuild();
 	if (loaded.characters.length === 0) return undefined;
 	const current = currentScript.current;
 	if (current && sameScript(current, loaded)) {
