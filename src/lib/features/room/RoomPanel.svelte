@@ -18,6 +18,7 @@
 	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
+	import RolesPanel from './RolesPanel.svelte';
 
 	interface Props {
 		game: OpenGame;
@@ -270,6 +271,7 @@
 					{/each}
 				</ul>
 			{/if}
+			<RolesPanel {game} />
 		</section>
 	</div>
 {/snippet}

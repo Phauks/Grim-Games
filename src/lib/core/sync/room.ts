@@ -4,7 +4,7 @@
  * `Room` Durable Object applies. Shared by the Worker and the app so both sides agree.
  *
  * The room holds public state only, unless the Storyteller turns on the view-only grimoire
- * link (`SharedGrimoire`). Phones ask (a name, a seat); the Storyteller approves, and only
+ * link (`SharedGrimoire`) or players' own characters (`RoomRoles`). Phones ask (a name, a seat); the Storyteller approves, and only
  * then does the grimoire change, through its own commands.
  */
 import type { Alignment, Script } from '#lib/core/data/index.ts';
@@ -21,6 +21,7 @@ import {
 	type ScriptVoteTally
 } from './script-vote.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
+import { memberRole, seatsSeen, type RoomRoles, type SeatRole } from './room-roles.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -81,7 +82,9 @@ export interface RoomState {
 	scriptVote?: ScriptVote;
 	/** Players' feedback on the ended game, one per member; cleared with `ended`. */
 	feedback?: MemberFeedback[];
-	/** When the Storyteller's app was built (room-build.ts). */
+	/** Each seat's own character, for its own phone (Trevor, 2026-10-26); per game. */
+	roles?: RoomRoles;
+	/** When the Storyteller's app was built (room-version.ts). */
 	storytellerBuiltAt?: string;
 }
 
@@ -138,19 +141,6 @@ export const MAX_VOTE_OPTIONS = MAX_MEMBERS;
 /** The longest ability text a vote carries. */
 export const MAX_VOTE_ABILITY = 500;
 
-/**
- * The room protocol this build speaks. The Worker updates the moment a build deploys, but an
- * open app keeps its build until the user taps Refresh, so the two can differ for hours.
- * Changes to these messages stay backward compatible (new optional fields only); when one
- * cannot, bump `ROOM_PROTOCOL` and raise `MIN_ROOM_PROTOCOL` so older apps are told to update.
- */
-export const ROOM_PROTOCOL = 2;
-/**
- * The oldest protocol the room still accepts. 2 (2026-10-22): the room stays open after End
- * game and says the game is over (`game-over`); an older app would show the game as running.
- */
-export const MIN_ROOM_PROTOCOL = 2;
-
 export type ClientMessage =
 	/**
 	 * First message on every socket. Keys never go in the URL. `protocol` is missing from
@@ -180,6 +170,7 @@ export type ClientMessage =
 	 * withdraws it (Trevor, 2026-10-26).
 	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
+	| { type: 'role-seen' } // The player held their character to see it (2026-10-26).
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**
@@ -228,13 +219,16 @@ export type ClientMessage =
 	/** Ends the vote after FINAL_CALL_SECONDS, so phones have a last chance (2026-10-26). */
 	| { type: 'end-script-vote' }
 	| { type: 'close-script-vote' }
+	/** Each seat's own character while players may see them; `show: false` takes them back. */
+	| { type: 'roles'; gameId: string; show: boolean; roles?: Record<SeatId, SeatRole> }
 	/** Calls every player back to town: their phones sound and vibrate (plan U2). */
 	| { type: 'call-town' }
 	| { type: 'close' };
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
-export * from './room-build.ts';
+export { roleSeen, setRoles, type RoomRoles } from './room-roles.ts';
+export * from './room-version.ts';
 export {
 	castScriptBallot,
 	closeScriptVote,
@@ -262,6 +256,7 @@ export interface HostView {
 	 * so lists and counts use this to leave out phones from earlier games (2026-10-25).
 	 */
 	present?: string[];
+	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
 }
 
 export interface VoteTally {
@@ -319,6 +314,7 @@ export interface PlayerView {
 			'points' | 'out' | 'winner' | 'rounds' | 'voted' | 'members' | 'people'
 		>;
 	};
+	role?: SeatRole; // This player's own character, while players may see theirs.
 }
 
 /**
@@ -408,12 +404,6 @@ export function isScript(value: unknown): value is Script {
 	);
 }
 
-/** True when the room still speaks the protocol of the app that said this hello. */
-export function supportsProtocol(protocol: unknown): boolean {
-	const version = protocol === undefined ? 1 : protocol;
-	return typeof version === 'number' && Number.isInteger(version) && version >= MIN_ROOM_PROTOCOL;
-}
-
 export function newRoom(hostKeyHash: string): RoomState {
 	return { hostKeyHash, members: [], requests: [] };
 }
@@ -436,6 +426,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (room.scriptVote) view.scriptVote = scriptVoteCount(room, present);
 	if (present)
 		view.present = room.members.flatMap((m) => (present.has(m.memberId) ? [m.memberId] : []));
+	if (room.roles) view.rolesSeen = seatsSeen(room);
 	return view;
 }
 
@@ -491,6 +482,8 @@ export function playerView(
 		if (mine) view.feedback = mine.feedback;
 	}
 	if (room.choosing) view.choosing = true;
+	const role = memberRole(room, memberId);
+	if (role) view.role = role;
 	if (room.scriptVote) {
 		const { voteId, kind, subject, options, ballots, endsAt, finalCall } = room.scriptVote;
 		view.scriptVote = { voteId, kind, options, ...(subject ? { subject } : {}) };
