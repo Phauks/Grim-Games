@@ -179,8 +179,7 @@ export type ClientMessage =
 	 * withdraws it (Trevor, 2026-10-26).
 	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
-	/** The player held their character to see it (Trevor, 2026-10-26). */
-	| { type: 'role-seen' }
+	| { type: 'role-seen' } // The player held their character to see it (2026-10-26).
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**
@@ -265,8 +264,7 @@ export interface HostView {
 	 * so lists and counts use this to leave out phones from earlier games (2026-10-25).
 	 */
 	present?: string[];
-	/** Seats whose player has seen the character they have now, while the room holds roles. */
-	rolesSeen?: SeatId[];
+	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
 }
 
 export interface VoteTally {
@@ -298,7 +296,10 @@ export interface PlayerView {
 	ended?: Omit<GameOver, 'gameId'>;
 	/** The feedback this phone sent on the ended game. */
 	feedback?: GameFeedback;
-	/** The game that ended, for the feedback a phone sends on it. */
+	/**
+	 * The game that ended, for the feedback a phone sends on it; left out once the Storyteller
+	 * is setting up the next game, since that one has nothing to rate yet (Trevor, 2026-10-26).
+	 */
 	endedGameId?: string;
 	/** The Storyteller is choosing the next script. */
 	choosing?: true;
@@ -319,8 +320,7 @@ export interface PlayerView {
 			'points' | 'out' | 'winner' | 'rounds' | 'voted' | 'members' | 'people'
 		>;
 	};
-	/** This player's own character, while the Storyteller lets players see theirs. */
-	role?: SeatRole;
+	role?: SeatRole; // This player's own character, while players may see theirs.
 }
 
 /**
@@ -488,7 +488,7 @@ export function playerView(
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
 		view.ended = ended;
-		view.endedGameId = room.ended.gameId;
+		if (!room.choosing && !room.scriptVote) view.endedGameId = room.ended.gameId;
 		const mine = room.feedback?.find((f) => f.memberId === memberId);
 		if (mine) view.feedback = mine.feedback;
 	}

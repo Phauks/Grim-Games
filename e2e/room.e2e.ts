@@ -3,6 +3,7 @@ import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
+import { aimCamera, qrSrc } from './camera.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
 // name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
@@ -528,9 +529,13 @@ test('after a game the room votes on the next script, and the next game opens in
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(status).toHaveText('Game over');
+	const rate = phone.getByRole('button', { name: 'Rate game' });
+	await expect(rate).toBeVisible();
 
 	await page.goto('/new');
 	await expect(status).toHaveText('The Storyteller is choosing a script.');
+	// The next game is being set up, so there is nothing to rate (Trevor, 2026-10-26).
+	await expect(rate).toHaveCount(0);
 	// Its own screen (Trevor, 2026-10-26: "voting should be its own screen. Not a popup").
 	await page.getByRole('link', { name: 'Room vote' }).tap();
 	await expect(page).toHaveURL(/\/vote$/);
@@ -1941,31 +1946,6 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	await phoneContext.close();
 });
 
-/**
- * Points a page's camera at a picture: getUserMedia gives a stream drawn from it, as a phone's
- * back camera would see the code on the Storyteller's screen.
- */
-async function aimCamera(phone: Page, src: string) {
-	await phone.addInitScript((src) => {
-		navigator.mediaDevices.getUserMedia = async () => {
-			const image = new Image();
-			image.src = src;
-			await image.decode();
-			const canvas = document.createElement('canvas');
-			canvas.width = canvas.height = 480;
-			const context = canvas.getContext('2d')!;
-			const draw = () => {
-				context.fillStyle = '#fff';
-				context.fillRect(0, 0, 480, 480);
-				context.drawImage(image, 40, 40, 400, 400);
-				requestAnimationFrame(draw);
-			};
-			draw();
-			return canvas.captureStream(10);
-		};
-	}, src);
-}
-
 test("Scan a code on Join game reads the Share screen's QR code into the code boxes", async ({
 	page,
 	browser
@@ -2004,15 +1984,17 @@ test("Scan a code on Join game reads the Share screen's QR code into the code bo
 test('Scan a code says so when the code is not a room', async ({ browser }, testInfo) => {
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
-	// A QR code for a script link, which is not a room.
-	const svg = renderSVG('https://grimbinder.com/play#e=tb', { border: 2 });
-	await aimCamera(phone, `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`);
+	// A link that is neither a room nor a script (a script's opens it: offline-share.e2e.ts).
+	await aimCamera(phone, qrSrc(renderSVG('https://example.com/menu', { border: 2 })));
 	await phone.goto('/join');
 	await phone.getByRole('button', { name: 'Scan a code' }).tap();
 	const scanner = phone.getByRole('dialog', { name: 'Scan a code' });
-	await expect(scanner.getByRole('alert')).toHaveText("That code is not a game's room code.", {
-		timeout: 15_000
-	});
+	await expect(scanner.getByRole('alert')).toHaveText(
+		"That code is not a game's room code or a script.",
+		{
+			timeout: 15_000
+		}
+	);
 	await expect(phone).toHaveURL(/\/join$/);
 	await scanner.getByRole('button', { name: 'Close' }).tap();
 	await expect(scanner).toBeHidden();
