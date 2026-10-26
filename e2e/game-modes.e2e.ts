@@ -227,16 +227,29 @@ async function keepFirst(page: Page): Promise<string> {
 	await expect(reveal).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(reveal).toBeHidden();
-	// A drafted Godfather, Xaan or the like asks the Storyteller for a count: keep the lowest.
-	const ask = page.getByTestId('draft-ask');
+	// The Storyteller answers what a drafted character asks, in turn: an Atheist kept as drafted
+	// (not the Drunk), an Alchemist's ability later, and the lowest count for a Godfather, Xaan
+	// or the like (Legion asks more than one count).
+	const asked = page.locator(
+		'[data-testid="draft-hidden-choice"], [data-testid="draft-ability"], [data-testid="draft-ask"]'
+	);
 	const shown = () =>
-		ask.waitFor({ timeout: 1000 }).then(
-			() => true,
-			() => false
-		);
-	// Legion or an Atheist asks more than one count in turn.
-	for (let n = 0; n < 5 && (await shown()); n++) await ask.getByRole('button').first().tap();
-	await expect(ask).toBeHidden();
+		asked
+			.first()
+			.waitFor({ timeout: 1000 })
+			.then(
+				() => true,
+				() => false
+			);
+	for (let n = 0; n < 6 && (await shown()); n++) {
+		const which = await asked.first().getAttribute('data-testid');
+		if (which === 'draft-hidden-choice')
+			await asked.first().getByRole('button', { name: 'As drafted' }).tap();
+		else if (which === 'draft-ability')
+			await asked.first().getByRole('button', { name: 'Later' }).tap();
+		else await asked.first().getByRole('button').first().tap();
+		await expect(page.getByTestId(which!)).toBeHidden();
+	}
 	return id;
 }
 
@@ -298,6 +311,75 @@ test('Sushi Buffet ends with the Storyteller picking which drafted Townsfolk is 
 	await seats.first().getByRole('button').first().tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
 	await expect(page.getByText('Is The Drunk').first()).toBeVisible();
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/) lets a drafted Atheist really be the Drunk,
+// who thinks they are a Townsfolk (https://wiki.bloodontheclocktower.com/Drunk).
+test('Sushi Buffet asks whether a drafted Atheist is really the Drunk', async ({ page }) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	// The held tile's offer is the Atheist.
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const key = `grim-games:mode-deal:v1:${gameId}`;
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = ['atheist'];
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, key);
+	await page.reload();
+	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
+	await rows(page).first().tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const choice = page.getByRole('dialog', { name: 'Setup change' });
+	await expect(choice.getByTestId('draft-hidden-choice')).toBeVisible();
+	await expect(choice.getByText('Drunk')).toBeVisible();
+	await choice.getByRole('button', { name: 'Really hidden' }).tap();
+	await expect(choice).toBeHidden();
+	const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).state, key);
+	expect(state.hiddenSeats).toEqual({ 0: 'drunk' });
+	// No setup change: the game keeps its evil seats.
+	expect(state.slots.minion + state.slots.demon).toBeGreaterThan(0);
+	for (let seat = 2; seat <= 5; seat++) {
+		await drawTile(page);
+		await keepFirst(page);
+	}
+	// The Drunk is placed already, so Finish asks no more.
+	await page.getByRole('button', { name: 'Finish' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await expect(page.getByText('Is The Drunk').first()).toBeVisible();
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/) lets a drafted Alchemist take a Minion
+// ability that changes setup now (https://wiki.bloodontheclocktower.com/Alchemist): the Baron's
+// +2 Outsiders apply (https://wiki.bloodontheclocktower.com/Baron).
+test('Sushi Buffet asks which Minion ability a drafted Alchemist has, or later', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const key = `grim-games:mode-deal:v1:${gameId}`;
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = ['alchemist'];
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, key);
+	await page.reload();
+	const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).state, key);
+	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
+	await rows(page).first().tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Setup change' });
+	const options = dialog.getByTestId('ability-options').getByRole('listitem');
+	await expect(options.last()).toHaveText('Later');
+	await options.filter({ hasText: 'Baron' }).getByRole('button', { name: 'Has this' }).tap();
+	await expect(dialog).toBeHidden();
+	const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).state, key);
+	expect(state.abilities).toEqual({ 0: 'baron' });
+	expect(state.pool).not.toContain('baron');
+	expect(state.slots.outsider).toBe(before.slots.outsider + 2);
 });
 
 // Trevor (2026-10-26): "modifiers are made dynamically for outsider count", as Grimbits' draft
@@ -500,12 +582,6 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await expect(oneType).not.toBeChecked();
 	await modesPanel(page).getByText('Don’t mix types', { exact: true }).tap();
 	await expect(oneType).toBeChecked();
-	// Mulligans: two refusals (3 → 2 → 1, the mode's) or one (3 → 1).
-	const mulligans = modesPanel(page).getByRole('combobox', { name: 'Mulligans' });
-	await expect(mulligans).toHaveText(/3 → 2 → 1/);
-	await mulligans.tap();
-	await page.getByRole('option', { name: '3 → 1', exact: true }).tap();
-	await expect(mulligans).toHaveText(/3 → 1/);
 	// Deal needed characters (a Choirboy's King), on by default; Grimbits can turn it off.
 	const needed = modesPanel(page).getByRole('checkbox', { name: 'Deal needed characters' });
 	await expect(needed).toBeChecked();
@@ -522,7 +598,6 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	expect(record.jinxedPairs).toBe('reduce');
 	expect(record.ivoryDraft).toBe(true);
 	expect(record.oneTypePerOffer).toBe(true);
-	expect(record.offers).toEqual([3, 1]);
 	expect(record.dealsRequired).toBe(false);
 	// The draft knows each character's jinxed partners
 	// (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
@@ -536,7 +611,8 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	expect(state.jinxed.heretic).toContain('baron');
 	expect(state.config.ivory).toBe(true);
 	expect(state.config.oneTypePerOffer).toBe(true);
-	expect(state.config.offers).toEqual([3, 1]);
+	// Offers of 3, then 2, then 1: Trevor (2026-10-26) dropped Grimbits' 3 → 1 option.
+	expect(state.config.offers).toEqual([3, 2, 1]);
 	expect(state.requires).toBeUndefined();
 	// The first offer is all one character type.
 	const types = new Set(state.offer.map((id: string) => state.types[id]));

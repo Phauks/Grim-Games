@@ -26,6 +26,7 @@ export const room = {
 	'room.connecting': 'Connecting…',
 	'room.offline': 'Offline: reconnecting. The game carries on here.',
 	'room.tooOld': `This room needs a newer version of ${APP_NAME}. Refresh to update, then try again.`,
+	'room.grimoireTooNew': `The Storyteller has a newer version of ${APP_NAME}. Refresh to update and see the grimoire.`,
 	'room.noSeat': 'No seat',
 	'room.playersInRoom': 'Players in the room',
 	'room.refresh': 'New code',
@@ -47,7 +48,7 @@ export const room = {
 	'room.join': 'Join as player',
 	'room.grimView': 'Grim view',
 	'room.moreWays': 'More ways to join',
-	'room.scanNotRoom': "That code is not a game's room code.",
+	'room.scanNotRoom': "That code is not a game's room code or a script.",
 	'room.gameToJoin': 'Game to join',
 	'room.lookingUp': 'Looking for the game…',
 	'room.noGame': 'No open game has this code.',
@@ -163,6 +164,20 @@ export const room = {
 	'room.feedback.average': '{rating} of 5 from {count} rated',
 	'room.feedback.accoladeCount': '{accolade} × {count}',
 	'room.feedback.entries': 'From players',
+	// Players' own characters on their phones (Trevor, 2026-10-26)
+	'room.roles.heading': 'Characters on phones',
+	'room.roles.toggle': 'Players can see their character',
+	'room.roles.hint': 'Each seated player holds to see their own character on their phone.',
+	'room.roles.seats': 'Who has seen theirs',
+	'room.roles.seen': 'Seen',
+	'room.roles.notSeen': 'Not seen',
+	'room.roles.hidden': 'Hidden',
+	'room.roles.noPhone': 'No phone',
+	'room.roles.noCharacter': 'No character',
+	'room.roles.withheld': 'Show on this device',
+	'room.role.open': 'Your character',
+	'room.role.good': 'You are Good',
+	'room.role.evil': 'You are Evil',
 	// The view-only grimoire link (Specters)
 	'room.watch.title': 'Watch the grimoire',
 	'room.watch.heading': 'View grimoire',
@@ -194,5 +209,17 @@ export const room = {
 	'room.watch.home': 'Home',
 	// Public Town: a display in the middle of the table (Trevor, 2026-10-26)
 	'room.town.title': 'Public Town',
-	'room.town.waiting': 'Waiting for the Storyteller’s game…'
+	'room.town.waiting': 'Waiting for the Storyteller’s game…',
+	// Live games: admins watch any open room, unseen (plan J31, Trevor 2026-10-26)
+	'room.liveGames.title': 'Live games',
+	'room.liveGames.code': 'Code',
+	'room.liveGames.script': 'Script',
+	'room.liveGames.storyteller': 'Storyteller',
+	'room.liveGames.phase': 'Phase',
+	'room.liveGames.seated': 'Seated',
+	'room.liveGames.seatedOf': '{seated} of {seats}',
+	'room.liveGames.phones': 'Phones',
+	'room.liveGames.active': 'Last active',
+	'room.liveGames.loadFailed': 'Could not load live games',
+	'room.liveGames.adminsOnly': 'Only admin accounts see live games.'
 } as const;

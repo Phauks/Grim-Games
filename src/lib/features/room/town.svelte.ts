@@ -3,18 +3,24 @@
  * the town as everyone there knows it, and nothing else. It joins with the room's code alone,
  * as a phone does, but is no member: it sends nothing, and the room sends it only the public
  * table and the script (`TownView`).
+ *
+ * An admin watching from Live games (plan J31) uses the same view over the admins' route,
+ * unseen, and also gets the whole grimoire while the room has it.
  */
 import type { Script } from '#lib/core/data/index.ts';
-import { ROOM_PROTOCOL, type TownView } from '#lib/core/sync/room.ts';
+import { liveGamePath } from '#lib/core/sync/live-games.ts';
+import { ROOM_PROTOCOL, type SharedGrimoire, type TownView } from '#lib/core/sync/room.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 
 export class RoomTown {
 	view = $state.raw<TownView>();
 	/** The game's script, once the Storyteller's device has sent it. */
 	script = $state.raw<Script>();
+	/** An admin's only: the whole grimoire, while the room has it. */
+	grimoire = $state.raw<SharedGrimoire>();
 	readonly #socket: RoomSocket;
 
-	constructor(code: string) {
+	constructor(code: string, admin = false) {
 		this.#socket = new RoomSocket(
 			code,
 			// The room ignores a display's key; a hello still carries one.
@@ -22,7 +28,11 @@ export class RoomTown {
 			(m) => {
 				if (m.type === 'town-view') this.view = m;
 				else if (m.type === 'script') this.script = m.script;
-			}
+				else if (m.type === 'grimoire' && admin) this.grimoire = m.grimoire;
+			},
+			// Each connection starts again from what the room holds then.
+			() => (this.grimoire = undefined),
+			admin ? liveGamePath(code) : undefined
 		);
 	}
 

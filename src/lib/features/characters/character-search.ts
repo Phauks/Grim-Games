@@ -17,6 +17,21 @@ export function matchesSearch(character: Character, query: string): boolean {
 	return words.every((w) => haystack.includes(w));
 }
 
+/**
+ * Whether a character's reminder tokens match a reminders picker's search: every word of the
+ * query in its name or in one of its tokens' words, ignoring case and accents. The whole row
+ * stays, so a token is always seen beside whose it is (Trevor, 2026-10-26).
+ */
+export function matchesReminderSearch(
+	group: { character: Character; labels: readonly string[] },
+	query: string
+): boolean {
+	const words = foldForSearch(query).split(/\s+/).filter(Boolean);
+	if (words.length === 0) return true;
+	const haystack = foldForSearch([group.character.name, ...group.labels].join(' '));
+	return words.every((w) => haystack.includes(w));
+}
+
 /** Every character type, in the order the game lists them. */
 export const PICKER_TYPES: readonly CharacterType[] = [
 	'townsfolk',
