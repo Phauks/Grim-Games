@@ -29,6 +29,14 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	// Join game opens it with the room's code, from ⋯ beside Join as player (Trevor,
 	// 2026-10-26: "more advanced").
 	const tabletContext = await browser.newContext({ ...testInfo.project.use });
+	// The table's tablet runs the installed app (display-mode: standalone).
+	await tabletContext.addInitScript(() => {
+		const real = window.matchMedia.bind(window);
+		window.matchMedia = (query: string) =>
+			query === '(display-mode: standalone)'
+				? ({ ...real(query), matches: true, media: query } as MediaQueryList)
+				: real(query);
+	});
 	const tablet = await tabletContext.newPage();
 	await tablet.goto('/join');
 	const more = tablet.getByRole('button', { name: 'More ways to join' });
@@ -60,36 +68,36 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await expect(tablet.getByRole('button', { name: 'Print script' })).toBeVisible();
 	await expect(tablet.getByRole('button', { name: 'Share script' })).toBeVisible();
 	await expect(tablet.getByRole('button', { name: 'Menu' }).first()).toBeVisible();
-	// Full screen, last in the title line's top right corner (Trevor, 2026-10-26: "we will
-	// definitely need a button to allow fullscreen in the top right corner").
-	const fullScreen = tablet.getByRole('button', { name: 'Full screen', exact: true });
-	const share = (await tablet.getByRole('button', { name: 'Share script' }).boundingBox())!;
-	const corner = (await fullScreen.boundingBox())!;
-	expect(corner.x).toBeGreaterThan(share.x);
-	expect(Math.abs(corner.y - share.y)).toBeLessThan(2);
-	// Drawn like Print and Share beside it (Trevor, 2026-10-26: "it looks different from the
-	// others in the line").
+	// The title line's buttons all look alike (Trevor, 2026-10-26).
 	await expectMatchingIconRow(tablet.getByRole('banner').or(tablet.locator('header')).first(), [
 		'Sheet background',
 		'Print script',
-		'Share script',
-		'Full screen'
+		'Share script'
 	]);
-	// It fills the screen with the town alone, not the app (Trevor, 2026-10-26: "not the app
-	// itself, but that part of it"), whose own corner then holds the way back.
+	// Full screen sits in the town's own top right corner, and the town alone fills the screen
+	// (Trevor, 2026-10-26: "supposed to be in the town square, and makes it so the townsquare
+	// takes up the whole screen"). This tablet runs as the installed app, which hides the
+	// board's full screen but not the town's (Trevor, on his phone: "don't see full screen
+	// button to enlarge town grim").
+	const fullScreen = tablet
+		.getByTestId('public-town')
+		.getByRole('button', { name: 'Full screen', exact: true });
+	const box = (await town.boundingBox())!;
+	const corner = (await fullScreen.boundingBox())!;
+	expect(corner.x + corner.width).toBeGreaterThan(box.x + box.width * 0.85);
+	expect(corner.y).toBeLessThan(box.y + box.height * 0.15);
 	await fullScreen.tap();
 	// The request settles after the tap, so wait for it.
 	await expect
 		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
 		.toBe('public-town');
-	const exit = tablet
-		.getByTestId('public-town')
-		.getByRole('button', { name: 'Full screen', exact: true });
-	await expect(exit).toHaveAttribute('aria-pressed', 'true');
-	await expect(town).toBeVisible();
-	await exit.tap();
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	const filled = (await town.boundingBox())!;
+	const screen = tablet.viewportSize()!;
+	expect(Math.round(filled.width)).toBe(screen.width);
+	expect(Math.round(filled.height)).toBe(screen.height);
+	await fullScreen.tap();
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
-	await expect(exit).toHaveCount(0);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
 
 	// The display is not a player: the Storyteller's room counts no one.
@@ -200,5 +208,59 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 		.getByRole('button', { name: 'Full screen', exact: true })
 		.tap();
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	await tabletContext.close();
+});
+
+test("every shared grim has the Storyteller's background, whatever the device's own theme", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-26): "Even if player changes settings for their theme, the background for
+	// the shared grim should be the same. Although font settings may be different."
+	const board = await startGame(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button', { name: 'Green felt' })
+		.tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+
+	// The tablet's own sheet background is parchment, which themes its whole screen.
+	const tabletContext = await browser.newContext({ ...testInfo.project.use });
+	await tabletContext.addInitScript(() =>
+		localStorage.setItem(
+			'grim-games:player-settings:v1',
+			JSON.stringify({ sheetBackground: 'parchment' })
+		)
+	);
+	const tablet = await tabletContext.newPage();
+	await tablet.goto(`/town/${code}`);
+	const town = tablet.getByTestId('player-grim');
+	await expect(town.getByTestId('grim-seat')).toHaveCount(8);
+	await expect(town.getByTestId('preview-background')).toHaveAttribute('data-preset', 'felt');
+	await expect(town.getByTestId('preview-vignette')).toBeAttached();
+	// The town keeps the board's colours, not the parchment around it.
+	const colours = await town.evaluate((el) => ({
+		town: getComputedStyle(el).getPropertyValue('--surface').trim(),
+		page: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim()
+	}));
+	expect(colours.page).not.toBe(colours.town);
+	expect(colours.town).toBe('#140b0b');
+
+	// A change on the board reaches it.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await settings
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button', { name: 'Night sky' })
+		.tap();
+	await expect(town.getByTestId('preview-background')).toHaveAttribute('data-preset', 'night');
 	await tabletContext.close();
 });

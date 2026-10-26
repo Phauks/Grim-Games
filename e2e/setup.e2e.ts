@@ -1696,7 +1696,7 @@ test('selecting a character moves nothing, and its lock picks it when not yet ch
 // Trevor, backlog L25: a custom script can leave out how its own characters go in the bag
 // (Blood on Hope's Peak's Ultimate Imposter thinks it is another character, like the
 // Drunk). The ⋯ on Characters sets it for the game.
-test('the ⋯ sets how a custom script’s own character goes in the bag', async ({ page }) => {
+test('Bag draw sets how a custom script’s own character goes in the bag', async ({ page }) => {
 	await page.addInitScript(() => {
 		localStorage.setItem(
 			'grim-games:scripts:quick-play',
@@ -1733,7 +1733,13 @@ test('the ⋯ sets how a custom script’s own character goes in the bag', async
 	const check = page.getByTestId('setup-check');
 	await expect(check).not.toContainText(/Imposter\s*: \+1 Townsfolk in the bag/);
 
-	await page.getByRole('button', { name: 'Script characters in the bag' }).tap();
+	// In the Bag draw sheet, not a ⋯ on the title row (Trevor, 2026-10-26).
+	await expect(page.getByRole('button', { name: 'Script characters in the bag' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await page
+		.getByTestId('bag-settings')
+		.getByRole('button', { name: 'Script characters in the bag' })
+		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Script characters in the bag' });
 	const role = dialog.getByRole('combobox', { name: 'Imposter' });
 	await expect(role).toHaveText('Dealt as itself');

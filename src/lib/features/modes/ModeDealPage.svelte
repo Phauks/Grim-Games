@@ -11,6 +11,7 @@
 		canRedraft,
 		canRefuse,
 		chooseOptions,
+		conversions,
 		dealTypes,
 		hiddenAsTownsfolk,
 		pickableCharacters,
@@ -52,6 +53,7 @@
 	import { readGameMode } from './game-mode-store.ts';
 	import { gameModeOf } from './game-mode.ts';
 	import OfferReels from './OfferReels.svelte';
+	import DraftConversion from './DraftConversion.svelte';
 
 	/**
 	 * Characters for a mode that doesn't put characters in the bag, on the Storyteller's
@@ -347,9 +349,43 @@
 			: []
 	);
 	let placing = $state(false);
+	let reservedAt = $state<number | undefined>();
+
+	/**
+	 * A drafted character that turns players into another type (Grimbits' draft: the Kazali's
+	 * Minions): the Storyteller picks which players become which, last. A game has one Demon, so
+	 * one such character at most.
+	 */
+	const conversion = $derived(
+		progress?.kind === 'draft' ? conversions(progress.state)[0] : undefined
+	);
+	const convertSeats = $derived.by(() => {
+		if (!conversion) return [];
+		const taken = [
+			conversion.seat,
+			...Object.keys(hiddenSeats).map(Number),
+			...(drunkAt !== undefined ? [drunkAt] : []),
+			...(reservedAt !== undefined ? [reservedAt] : [])
+		];
+		const good = (i: number) => !['minion', 'demon'].includes(byId.get(picks[i])?.type ?? '');
+		return picks.flatMap((_, i) => (good(i) && !taken.includes(i) ? [i] : []));
+	});
+	const convertOptions = $derived.by(() => {
+		if (!conversion || progress?.kind !== 'draft') return [];
+		const used = [
+			...picks,
+			...Object.values(progress.state.abilities ?? {}),
+			...(reservedCharacter ? [reservedCharacter.id] : [])
+		];
+		return pickableCharacters(mode, characters).filter(
+			(c) => c.type === conversion.type && !used.includes(c.id)
+		);
+	});
+	let converting = $state(false);
 
 	function finishTapped() {
 		drunkAt = undefined;
+		reservedAt = undefined;
 		if (hidden && townsfolkSeats.length > 0) hiding = true;
 		else afterHidden();
 	}
@@ -362,12 +398,19 @@
 
 	function afterHidden() {
 		if (reservedCharacter && reserveSeats.length > 0) placing = true;
+		else afterReserved(undefined);
+	}
+
+	function afterReserved(at: number | undefined) {
+		placing = false;
+		reservedAt = at;
+		if (conversion && convertSeats.length > 0) converting = true;
 		else void finish();
 	}
 
-	async function finish(reservedAt?: number) {
+	async function finish(turned: Record<number, CharacterId> = {}) {
 		hiding = false;
-		placing = false;
+		converting = false;
 		const placed: Record<number, Character> = {};
 		if (hidden && drunkAt !== undefined) placed[drunkAt] = hidden;
 		if (reservedCharacter && reservedAt !== undefined) placed[reservedAt] = reservedCharacter;
@@ -378,6 +421,8 @@
 		const built = port.dispatch({
 			type: 'BuildBag',
 			tiles: picks.map((id, i) => {
+				const into = turned[i];
+				if (into) return { shows: into, grimoire: into };
 				const reminder = tokenAt(i);
 				return { shows: id, grimoire: id, ...(reminder ? { reminders: [reminder] } : {}) };
 			}),
@@ -648,14 +693,27 @@
 				{#each reserveSeats as i (i)}
 					{@const kept = byId.get(picks[i])}
 					<li>
-						<Button onclick={() => void finish(i)}>{label(seats[i])}</Button>
+						<Button onclick={() => afterReserved(i)}>{label(seats[i])}</Button>
 						{#if kept}<CharacterBadge characterId={kept.id} character={kept} />{/if}
 					</li>
 				{/each}
-				<li><Button onclick={() => void finish()}>{t('common.none')}</Button></li>
+				<li><Button onclick={() => afterReserved(undefined)}>{t('common.none')}</Button></li>
 			</ul>
 		</div>
 	</Dialog>
+{/if}
+
+{#if conversion && converting}
+	<DraftConversion
+		bind:open={converting}
+		{conversion}
+		by={byId.get(conversion.characterId)}
+		seats={convertSeats}
+		seatLabel={(i) => label(seats[i])}
+		kept={(i) => byId.get(picks[i])}
+		characters={convertOptions}
+		onDone={(turned) => void finish(turned)}
+	/>
 {/if}
 
 {#if revealing}

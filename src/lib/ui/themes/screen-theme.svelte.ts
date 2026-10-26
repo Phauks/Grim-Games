@@ -10,3 +10,15 @@ class ScreenTheme {
 }
 
 export const screenTheme = new ScreenTheme();
+
+/**
+ * A theme's own colours as inline custom properties, for the part of a themed screen the whole
+ * table shares: the town on the players' Grim tab keeps the board's colours whatever sheet
+ * background a player picked (Trevor, 2026-10-26). The element also carries
+ * `data-board-colours`, so the component tokens (components.css) resolve against them there.
+ */
+export function themeColours(theme: Theme): string {
+	return Object.entries({ ...theme.tokens, ...theme.components })
+		.map(([name, value]) => `${name}: ${value}`)
+		.join('; ');
+}

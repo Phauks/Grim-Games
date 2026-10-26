@@ -17,6 +17,7 @@ import type { GamePhase, PlayersPhase } from '#lib/core/rules/game-phase.ts';
 import {
 	publicProjection,
 	type PublicCorner,
+	type PublicLook,
 	type PublicGameState
 } from '#lib/core/sync/public-projection.ts';
 import { seatChanges } from '#lib/core/sync/room-seating.ts';
@@ -128,6 +129,8 @@ export class RoomHost {
 	#town = $state.raw<{ gameId: string; number: number }>();
 	/** What the open board's corner shows, for the phones' corners (showCorner). */
 	#corner = $state<{ gameId: string; corner: PublicCorner }>();
+	/** The open board's background, vignette and logo, for every shared grim (showLook). */
+	#look = $state<{ gameId: string; look: PublicLook }>();
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -291,7 +294,8 @@ export class RoomHost {
 				this.#queueGrimoire({
 					saved: saved as unknown as Record<string, unknown>,
 					...(notes?.() ?? storedNotes(game.game.gameId)),
-					timer: liveDayTimer.shared
+					timer: liveDayTimer.shared,
+					...this.#lookOf(game.game.gameId)
 				});
 			});
 			$effect(() => {
@@ -307,7 +311,8 @@ export class RoomHost {
 					game.characters,
 					gameSheetRules(game.game.gameId),
 					now?.kind === 'day' ? liveDayTimer.forPlayers : undefined,
-					now
+					now,
+					this.#lookOf(game.game.gameId).look
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
@@ -349,6 +354,19 @@ export class RoomHost {
 	showCorner(gameId: string, corner: PublicCorner): void {
 		const shown = { gameId, corner: $state.snapshot(corner) as PublicCorner };
 		if (JSON.stringify(shown) !== JSON.stringify(this.#corner)) this.#corner = shown;
+	}
+
+	/**
+	 * The board's background as it shows now, so the players' grim, Public Town and Grim view
+	 * draw the town on the same one, whatever each device's own settings (Trevor, 2026-10-26).
+	 */
+	showLook(gameId: string, look: PublicLook): void {
+		const shown = { gameId, look: $state.snapshot(look) as PublicLook };
+		if (JSON.stringify(shown) !== JSON.stringify(this.#look)) this.#look = shown;
+	}
+
+	#lookOf(gameId: string): { look?: PublicLook } {
+		return this.#look?.gameId === gameId ? { look: this.#look.look } : {};
 	}
 
 	/** Lets the players of game `gameId` see their own characters, or hides them again. */
@@ -440,7 +458,8 @@ export class RoomHost {
 			gameId,
 			grimoire: {
 				saved: saved as unknown as Record<string, unknown>,
-				...(notes ?? storedNotes(gameId))
+				...(notes ?? storedNotes(gameId)),
+				...this.#lookOf(gameId)
 			}
 		} as const;
 		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;

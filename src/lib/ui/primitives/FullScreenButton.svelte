@@ -3,10 +3,12 @@
 
 	/**
 	 * Full screen, for those who don't know their browser's own way (Trevor, 2026-10-23): the
-	 * board's toolbar and Public Town's title line. Only where the browser can: iPhone Safari
-	 * can't for a page, so the button isn't there. Not in the installed app (Trevor,
-	 * 2026-10-23): it already has no address bar, and full screen would only take the clock and
-	 * status bar he wants to keep. The symbol says on or off, one button either way, so nothing
+	 * board's toolbar and Public Town's top right corner. Only where the browser can: iPhone Safari
+	 * can't for a page, so the button isn't there. The whole app's full screen is not in the
+	 * installed app (Trevor, 2026-10-23): it already has no address bar, and full screen would
+	 * only take the clock and status bar he wants to keep. A part of the page, such as Public
+	 * Town's town, still fills the screen there (Trevor, 2026-10-26, on his phone: "don't see
+	 * full screen button to enlarge town grim"). The symbol says on or off, one button either way, so nothing
 	 * beside it moves (two states = a toggle).
 	 */
 	interface Props {
@@ -15,14 +17,14 @@
 		 * shows only the town (Trevor, 2026-10-26: "not the app itself, but that part of it").
 		 */
 		target?: HTMLElement;
-		/** Drawn like its neighbours: outlined on the board's toolbar, plain in a title line. */
+		/** Drawn like its neighbours: outlined on the board's toolbar, plain over the town. */
 		outlined?: boolean;
 	}
 
 	let { target, outlined = false }: Props = $props();
 
-	const canFullScreen =
-		document.fullscreenEnabled === true && !matchMedia('(display-mode: standalone)').matches;
+	const installed = matchMedia('(display-mode: standalone)').matches;
+	const canFullScreen = $derived(document.fullscreenEnabled === true && (!installed || !!target));
 	let current = $state.raw(document.fullscreenElement);
 	$effect(() => {
 		const sync = () => (current = document.fullscreenElement);
