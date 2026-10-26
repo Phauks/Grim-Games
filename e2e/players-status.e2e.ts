@@ -2,9 +2,11 @@ import { expect, test } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 
 // The Storyteller's day timer on players' phones (Trevor, 2026-10-26: "timer populates on
-// other screens, as sun not timer (sun or timer for players)"; the Storyteller decides).
+// other screens, as sun not timer (sun or timer for players)"; the Storyteller decides), in a
+// status line for where the game is up to ("During Town Phase, it says Town, during night it
+// says night ... and also reiterates which day it is").
 
-test("players' phones show the day timer during the day, as a sun or the clock", async ({
+test("players' phones show where the game is up to, with the day timer as a sun or the clock", async ({
 	page,
 	browser
 }, testInfo) => {
@@ -26,7 +28,9 @@ test("players' phones show the day timer during the day, as a sun or the clock",
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await expect(phone.getByTestId('you-row')).toBeVisible();
+	const status = phone.getByTestId('players-status');
 	const shown = phone.getByTestId('players-timer');
+	await expect(status).toHaveText('Setup');
 
 	// One character, so the bank offers Start game; the first night shows no timer.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
@@ -45,6 +49,8 @@ test("players' phones show the day timer during the day, as a sun or the clock",
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(strip).toBeVisible();
+	await expect(status).toHaveText('Night 1');
+	const nightWidth = (await status.boundingBox())!.width;
 	await expect(shown).toHaveCount(0);
 
 	// The day: a sun by default, rising on the left while the day's time is all to come.
@@ -55,6 +61,7 @@ test("players' phones show the day timer during the day, as a sun or the clock",
 		.tap();
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	await expect(day).toBeVisible();
+	await expect(status).toContainText('Day 1');
 	await expect(shown).toHaveAttribute('data-look', 'sun');
 	await expect(shown.getByRole('img')).toHaveAttribute(
 		'aria-label',
@@ -62,7 +69,9 @@ test("players' phones show the day timer during the day, as a sun or the clock",
 	);
 	// It shares the "You" row's height, so nothing below it moves.
 	const row = (await phone.getByTestId('you-row').boundingBox())!;
-	const sun = (await shown.boundingBox())!;
+	const sun = (await status.boundingBox())!;
+	// The same width as at night, so the row doesn't shift as the phase changes.
+	expect(Math.abs(sun.width - nightWidth)).toBeLessThanOrEqual(1);
 	expect(sun.y).toBeGreaterThanOrEqual(row.y - 1);
 	expect(sun.y + sun.height).toBeLessThanOrEqual(row.y + row.height + 1);
 
@@ -88,5 +97,18 @@ test("players' phones show the day timer during the day, as a sun or the clock",
 	await controls.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
 	await page.getByRole('option', { name: 'Hidden', exact: true }).tap();
 	await expect(shown).toHaveCount(0);
+	// The status line still says which day it is.
+	await expect(status).toHaveText('Day 1');
+	await page.keyboard.press('Escape');
+	await expect(controls).toBeHidden();
+
+	// Back to town: the rest of the day is Town, still saying which day.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	await menu.getByRole('button', { name: 'Back to town' }).tap();
+	await expect(menu).toBeHidden();
+	await expect(status).toHaveAttribute('data-phase', 'town');
+	await expect(status).toContainText('Town');
+	await expect(status).toContainText('Day 1');
 	await phoneContext.close();
 });
