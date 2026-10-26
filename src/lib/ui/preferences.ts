@@ -89,8 +89,13 @@ export interface Preferences {
 	timerSound: TimerSound;
 	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
 	timerMode: TimerMode;
-	/** The device vibrates when the day timer runs out (Trevor, 2026-10-18). */
+	/**
+	 * The device vibrates with its alerts: the day timer running out (Trevor, 2026-10-18) and
+	 * a Back to town call (plan U2).
+	 */
 	timerVibrate: boolean;
+	/** The sound a player's phone makes when the Storyteller calls Back to town (plan U2). */
+	callSound: TimerSound;
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
@@ -206,6 +211,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerSound: 'bell',
 	timerMode: 'down',
 	timerVibrate: true,
+	callSound: 'clocktower',
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	qrCentre: 'script',
@@ -289,6 +295,7 @@ export function parsePreferences(raw: unknown): Preferences {
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,
+		callSound: oneOf(TIMER_SOUNDS, input.callSound, DEFAULT_PREFERENCES.callSound),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
 			: DEFAULT_PREFERENCES.timerMode,

@@ -1377,6 +1377,9 @@
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
+	onCallTown={!watching && !ended && roomHost().code
+		? () => roomHost().callTown() || toast(t('room.callTownFailed'))
+		: undefined}
 	onGameInfo={() => (modeMenuOpen = true)}
 	onCharacterSelection={startedAt === undefined && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))

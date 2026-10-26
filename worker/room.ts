@@ -1,6 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import {
+	canCallTown,
 	canReveal,
 	castScriptBallot,
 	castVote,
@@ -78,6 +79,9 @@ async function sha256(text: string): Promise<string> {
  * public table and their own place in it.
  */
 export class Room extends DurableObject<RoomEnv> {
+	/** When the last Back to town call went out; forgotten if the room sleeps, which is fine. */
+	private lastCallTown: number | undefined;
+
 	private async load(): Promise<RoomState | undefined> {
 		const room = await this.ctx.storage.get<RoomState>('room');
 		return room && withoutRequests(room);
@@ -325,6 +329,18 @@ export class Room extends DurableObject<RoomEnv> {
 			case 'close-script-vote':
 				room = closeScriptVote(room);
 				break;
+			case 'call-town': {
+				// Not kept: only phones here now hear it (plan U2).
+				const now = Date.now();
+				if (!canCallTown(this.lastCallTown, now)) return;
+				this.lastCallTown = now;
+				const text = JSON.stringify({ type: 'call-town' } satisfies ServerMessage);
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'player') socket.send(text);
+				}
+				return;
+			}
 			case 'close':
 				this.broadcastClosed('Room closed');
 				await this.ctx.storage.deleteAll();

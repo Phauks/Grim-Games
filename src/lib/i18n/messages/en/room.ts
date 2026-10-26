@@ -4,6 +4,10 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const room = {
 	// Storyteller's page
 	'room.title': 'Share',
+	// Back to town (plan U2, Trevor's words): the Storyteller's call, and what a phone shows.
+	'room.callTown': 'Back to town',
+	'room.callTownHeard': 'Back to town',
+	'room.callTownFailed': 'Couldn’t reach the players’ phones.',
 	'room.back': 'Grimoire',
 	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',

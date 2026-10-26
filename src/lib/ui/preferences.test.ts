@@ -90,6 +90,7 @@ describe('parsePreferences', () => {
 			timerSound: 'buzzer',
 			timerMode: 'up',
 			timerVibrate: false,
+			callSound: 'buzzer',
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
 			qrCentre: 'picture',
@@ -137,6 +138,9 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({ soundVolume: 0.42 }).soundVolume).toBe(0.4);
 		expect(parsePreferences({ soundVolume: 3 }).soundVolume).toBe(1);
 		expect(parsePreferences({ soundVolume: 'loud' }).soundVolume).toBe(1);
+		// Plan U2: the Back to town sound, the clock tower by default.
+		expect(parsePreferences({}).callSound).toBe('clocktower');
+		expect(parsePreferences({ callSound: 'gong' }).callSound).toBe('clocktower');
 	});
 
 	it('gives character icons the one icon size saved before the split', () => {

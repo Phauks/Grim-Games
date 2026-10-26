@@ -17,6 +17,7 @@ export const settings = {
 	'settings.sectionLanguage': 'Language',
 	'settings.sectionSound': 'Sound',
 	'settings.soundVolume': 'Volume',
+	'settings.callSound': 'Back to town sound',
 	'settings.language': 'Language',
 	'settings.theme': 'Theme',
 	'settings.sectionTheme': 'Theme',
