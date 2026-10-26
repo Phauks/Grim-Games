@@ -1674,12 +1674,28 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	// A guess on another seat puts its character first (Trevor, 2026-10-26: "search and guess").
+	await phone.getByTestId('grim-seat').nth(3).tap();
+	await phone
+		.getByRole('dialog', { name: 'Seat 4 · Seat 4' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await phone.keyboard.press('Escape');
 	const seat = phone.getByTestId('grim-seat').nth(1);
 	await seat.tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
 	await expect(sheet.getByTestId('seat-reminders')).toContainText('None');
 	await sheet.getByTestId('seat-reminders').tap();
 	const picker = phone.getByRole('dialog', { name: 'Reminders for Seat 2' });
+	const list = picker.getByTestId('player-reminder-list');
+	await expect(list.locator('li').first()).toHaveText('Your guesses');
+	await expect(list.getByRole('group').first()).toHaveAccessibleName('Fortune Teller');
+	// The search finds a token by its character's name or its own words.
+	const search = picker.getByRole('searchbox', { name: 'Search reminders' });
+	await expect(search).not.toBeFocused();
+	await search.fill('poison');
+	await expect(list.getByRole('group')).toHaveCount(1);
+	await search.fill('');
 	const poisoned = picker
 		.getByRole('group', { name: 'Poisoner' })
 		.getByRole('button', { name: 'Poisoned' });

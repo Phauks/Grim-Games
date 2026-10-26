@@ -641,6 +641,14 @@ test("reminders: add several from the picker, this seat's first, then move and r
 	// secretly the Drunk.
 	await expect(picker.getByRole('group', { name: 'Drunk' })).toContainText('Is The Drunk');
 	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
+	// The same search as a player's reminders (Trevor, 2026-10-26): a character's name or its
+	// tokens' words; it never takes focus when the picker opens.
+	const search = picker.getByRole('searchbox', { name: 'Search reminders' });
+	await expect(search).not.toBeFocused();
+	await search.fill('drunk');
+	await expect(picker.getByRole('group', { name: 'Poisoner' })).toHaveCount(0);
+	await expect(picker.getByRole('group', { name: 'Drunk' })).toBeVisible();
+	await search.fill('');
 	const poisoner = picker.getByRole('group', { name: 'Poisoner' });
 	await poisoner.getByRole('button', { name: 'Poisoned' }).tap();
 	await picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first().tap();

@@ -238,6 +238,15 @@
 			board
 		).at.map((spots) => spots.map((p) => toPercent(p, board)));
 	});
+	/** The characters this player guessed on any seat, and the Travellers the town knows. */
+	const firstReminders = $derived([
+		...new Set([
+			...Object.values(guesses)
+				.flat()
+				.filter((id) => !genericGuess(id)),
+			...seats.flatMap((seat) => seat.traveller ?? [])
+		])
+	]);
 	function toggleSeatReminder(reminder: PlayerReminder) {
 		if (!kept || !chosen) return;
 		reminders = toggleReminder(reminders, chosen.seatId, reminder);
@@ -587,6 +596,7 @@
 	placed={chosen ? remindersOn(reminders, chosen.seatId) : []}
 	characterOf={(id) => characterOf(id)}
 	onToggle={toggleSeatReminder}
+	guessed={firstReminders}
 />
 
 <SeatNoteDialog
