@@ -4,13 +4,24 @@
  * per game (`gameKey`), like the player's guesses; nothing here reaches the room.
  */
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
+import { GENERIC_REMINDER_ID, SYMBOL_COLOURS, type GenericLook } from '#lib/core/model/index.ts';
 import { byLabel } from '#lib/features/grimoire/reminders.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
-export interface PlayerReminder {
+/**
+ * A script character's token, or a generic one (Trevor, 2026-10-26: "the generic token
+ * reminders for those 1/2/3 custom note ones"): `GENERIC_REMINDER_ID` with its own `id`, no
+ * label and the Storyteller's generic look (text, symbol, colour).
+ */
+export interface PlayerReminder extends GenericLook {
 	characterId: CharacterId;
 	label: ReminderLabel;
+	/** A generic token's own id, since a seat may hold several. */
+	id?: string;
 }
+
+export const isGenericReminder = (r: PlayerReminder): boolean =>
+	r.characterId === GENERIC_REMINDER_ID;
 
 /** Seat id to its reminders, in the order placed. */
 export type PlayerReminders = Record<string, PlayerReminder[]>;
@@ -23,7 +34,21 @@ const MAX_SEATS = 40;
 const key = (room: string) => `grim-games:play:reminders:${room}`;
 
 const same = (a: PlayerReminder, b: PlayerReminder) =>
-	a.characterId === b.characterId && a.label === b.label;
+	a.id || b.id ? a.id === b.id : a.characterId === b.characterId && a.label === b.label;
+
+/** The text a generic token may hold, as on the board. */
+const MAX_NOTE = 200;
+
+/** A generic token's look, field by field; anything else is dropped. */
+function genericLook(r: Record<string, unknown>): GenericLook {
+	const look: GenericLook = {};
+	if (typeof r.note === 'string' && r.note.trim()) look.note = r.note.slice(0, MAX_NOTE);
+	if (typeof r.symbol === 'string' && r.symbol) look.symbol = r.symbol;
+	if (SYMBOL_COLOURS.includes(r.symbolColour as never))
+		look.symbolColour = r.symbolColour as GenericLook['symbolColour'];
+	if (r.symbolFill === true) look.symbolFill = true;
+	return look;
+}
 
 /** Reads stored reminders, dropping anything malformed. */
 export function parsePlayerReminders(raw: unknown): PlayerReminders {
@@ -34,9 +59,18 @@ export function parsePlayerReminders(raw: unknown): PlayerReminders {
 		const list: PlayerReminder[] = [];
 		for (const r of value) {
 			if (typeof r !== 'object' || r === null) continue;
-			const { characterId, label } = r as Record<string, unknown>;
+			const fields = r as Record<string, unknown>;
+			const { characterId, label, id } = fields;
 			if (typeof characterId !== 'string' || typeof label !== 'string' || !characterId) continue;
-			const reminder = { characterId: characterId as CharacterId, label: label as ReminderLabel };
+			let reminder: PlayerReminder = {
+				characterId: characterId as CharacterId,
+				label: label as ReminderLabel
+			};
+			if (characterId === GENERIC_REMINDER_ID) {
+				// Saved before generic tokens had ids (never), or damaged: not one to keep.
+				if (typeof id !== 'string' || !id) continue;
+				reminder = { ...reminder, label: '' as ReminderLabel, id, ...genericLook(fields) };
+			}
 			if (!list.some((o) => same(o, reminder))) list.push(reminder);
 		}
 		if (list.length) entries.push([seatId, list.slice(0, MAX_SEAT_REMINDERS)]);
@@ -100,8 +134,36 @@ export function scriptReminderGroups(characters: readonly Character[]): PlayerRe
 	});
 }
 
-/** A placed reminder's key in a list: one of each token per seat. */
-export const placedKey = (r: PlayerReminder): string => [r.characterId, r.label].join(':');
+/** A placed reminder's key in a list: one of each token per seat, or a generic one's id. */
+export const placedKey = (r: PlayerReminder): string => r.id ?? [r.characterId, r.label].join(':');
+
+/** The words a token shows: its label, or a generic one's text (∞ without). */
+export const reminderWords = (r: PlayerReminder): ReminderLabel =>
+	(isGenericReminder(r) ? r.note || '∞' : r.label) as ReminderLabel;
+
+/** Puts a new, blank generic token on a seat, last; `id` names it. */
+export function addGenericReminder(
+	reminders: PlayerReminders,
+	seatId: string,
+	id: string
+): PlayerReminders {
+	return toggleReminder(reminders, seatId, {
+		characterId: GENERIC_REMINDER_ID as CharacterId,
+		label: '' as ReminderLabel,
+		id
+	});
+}
+
+/** Changes a generic token's look; empty fields go back to none. */
+export function setGenericLook(
+	reminders: PlayerReminders,
+	seatId: string,
+	id: string,
+	look: GenericLook
+): PlayerReminders {
+	const list = remindersOn(reminders, seatId).map((r) => (r.id === id ? { ...r, ...look } : r));
+	return parsePlayerReminders({ ...reminders, [seatId]: list });
+}
 
 /**
  * The picker's two parts (Trevor, 2026-10-26: "search and guess"): the characters this player

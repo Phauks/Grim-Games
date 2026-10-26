@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
@@ -8,7 +8,12 @@
 	import { fitReminders } from '#lib/features/grimoire/reminder-fan.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
-	import { placedKey, remindersOn, type PlayerReminders } from './player-reminders.ts';
+	import {
+		isGenericReminder,
+		placedKey,
+		remindersOn,
+		type PlayerReminders
+	} from './player-reminders.ts';
 	import type { SeatNotes } from './seat-notes.ts';
 
 	/**
@@ -74,7 +79,13 @@
 		{@const p = fan[i]?.[k] ?? points[i]}
 		<div class="chip-slot" style:left="{p?.x ?? 50}%" style:top="{p?.y ?? 50}%">
 			<BoardReminder
-				label={reminder.label}
+				label={isGenericReminder(reminder)
+					? ((reminder.note ?? '') as ReminderLabel)
+					: reminder.label}
+				infinite={isGenericReminder(reminder)}
+				symbol={reminder.symbol}
+				symbolColour={reminder.symbolColour}
+				symbolFill={reminder.symbolFill}
 				character={characterOf(reminder.characterId)}
 				size={chip}
 				onTap={() => onOpen(seat)}
