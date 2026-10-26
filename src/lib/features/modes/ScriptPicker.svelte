@@ -152,6 +152,16 @@
 	function toCustom() {
 		if (!custom) choose(CUSTOM);
 	}
+	/**
+	 * Typing a name brings the search to the top of the screen, so its picks open under it
+	 * and the keyboard pushes nothing up (Trevor, 2026-10-26).
+	 */
+	function raise(event: FocusEvent) {
+		toCustom();
+		if (!(event.target instanceof HTMLInputElement)) return;
+		const row = event.currentTarget as HTMLElement;
+		requestAnimationFrame(() => row.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+	}
 	let browsing = $state(false);
 	let libraryBrowser = $state<LibraryBrowser>();
 
@@ -181,7 +191,7 @@
 		options={choices}
 		onChange={choose}
 	/>
-	<div class="search" onpointerdown={toCustom} onfocusin={toCustom}>
+	<div class="search" onpointerdown={toCustom} onfocusin={raise}>
 		<Combobox
 			label={t('modes.scriptSearch.label')}
 			hideLabel
@@ -248,6 +258,8 @@
 		min-width: 0;
 	}
 	.search {
+		/* Room above it when raised for typing. */
+		scroll-margin-top: var(--space-3);
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);

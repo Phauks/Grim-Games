@@ -8,7 +8,7 @@
 
 	/**
 	 * The board's ⋯ menu: the game's less frequent actions, the seats, the board's settings,
-	 * the app's items, then End game. Each item closes the menu before it acts.
+	 * the app's items, then New game and End game. Each item closes the menu before it acts.
 	 */
 	interface Props {
 		open: boolean;
@@ -31,6 +31,8 @@
 		/** Players' feedback on the ended game; not for a spectator's board. */
 		onFeedback?: () => void;
 		onReopen: () => void;
+		/** New game, which asks to end this one first; not on a spectator's board. */
+		onNewGame?: () => void;
 		onEnd: () => void;
 	}
 
@@ -50,6 +52,7 @@
 		onExport,
 		onFeedback,
 		onReopen,
+		onNewGame,
 		onEnd
 	}: Props = $props();
 
@@ -133,7 +136,14 @@
 				</Button>
 			{/if}
 			<Button variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}>Reopen game</Button>
-		{:else}
+		{/if}
+		<!-- New game here, not in the sidebar (Trevor, 2026-10-26); it asks to end this game. -->
+		{#if onNewGame}
+			<Button variant="quiet" icon="add" onclick={() => fromMenu(onNewGame)}>
+				{t('setup.newGame')}
+			</Button>
+		{/if}
+		{#if !ended}
 			<Button variant="danger" icon="close" onclick={() => fromMenu(onEnd)}>End game</Button>
 		{/if}
 	</div>
