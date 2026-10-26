@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { expectMatchingIconRow } from './icon-row.ts';
 import { toBoard } from './new-game.ts';
 
 // Public Town (Trevor, 2026-10-26): "an additional tablet could be used to display the player
@@ -68,7 +69,12 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	expect(Math.abs(corner.y - share.y)).toBeLessThan(2);
 	// Drawn like Print and Share beside it (Trevor, 2026-10-26: "it looks different from the
 	// others in the line").
-	await expect(fullScreen).not.toHaveAttribute('data-outlined');
+	await expectMatchingIconRow(tablet.getByRole('banner').or(tablet.locator('header')).first(), [
+		'Sheet background',
+		'Print script',
+		'Share script',
+		'Full screen'
+	]);
 	// It fills the screen with the town alone, not the app (Trevor, 2026-10-26: "not the app
 	// itself, but that part of it"), whose own corner then holds the way back.
 	await fullScreen.tap();
