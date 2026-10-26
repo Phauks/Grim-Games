@@ -4044,7 +4044,7 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens \| (Navigation )?Report an issue \| New game End game$/
+		/^History Demon bluffs Notes( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens Sound \| (Navigation )?Report an issue \| New game End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu
