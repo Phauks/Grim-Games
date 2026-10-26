@@ -16,9 +16,11 @@ test('Game info shows the join code, the day or night, Game time and watchers; t
 	let info = await openGameInfo(page);
 	const row = (field: string) => info.locator(`tr[data-field="${field}"] td:last-child`);
 	await expect(row('join-code')).toHaveText('None');
-	// The day or night and Game time are lines of their own (Trevor, 2026-10-26).
+	// Game phase and Game time are lines of their own (Trevor, 2026-10-26); only Game phase
+	// says Setup ("game time should no longer say setup").
+	await expect(info.locator('tr[data-field="phase"] th')).toHaveText('Game phase');
 	await expect(row('phase')).toHaveText('Setup');
-	await expect(row('game-time')).toHaveText('Setup');
+	await expect(row('game-time')).toHaveText('0:00');
 	await expect(row('watchers')).toHaveText('None');
 
 	// The join code opens Share, which opens the room; its code then shows in Game info.
@@ -80,16 +82,23 @@ test('an eye on each Game info line chooses what the board corner shows, as Sett
 	const players = info.getByRole('button', { name: 'Players on the board' });
 	await expect(players).toHaveAttribute('aria-pressed', 'false');
 	await players.tap();
-	// The day or night and Game time each have their own eye (Trevor, 2026-10-26).
-	const phaseEye = info.getByRole('button', { name: 'Day or night on the board' });
+	// Game phase and Game time each have their own eye (Trevor, 2026-10-26).
+	const phaseEye = info.getByRole('button', { name: 'Game phase on the board' });
 	await expect(phaseEye).toHaveAttribute('aria-pressed', 'true');
+	// Level with the label it belongs to (Trevor, 2026-10-26: "eyeballs in game info seem
+	// slightly higher than the thing they identify with").
+	const eyeBox = (await phaseEye.locator('svg').boundingBox())!;
+	const labelBox = (await info.locator('tr[data-field="phase"] th').boundingBox())!;
+	expect(Math.abs(eyeBox.y + eyeBox.height / 2 - (labelBox.y + labelBox.height / 2))).toBeLessThan(
+		2
+	);
 	await phaseEye.tap();
 	await page.keyboard.press('Escape');
 	await expect(info).toBeHidden();
 	await expect(corner).not.toContainText('by The Pandemonium Institute');
 	await expect(page.getByTestId('board-players')).toBeAttached();
 	await expect(page.getByTestId('board-phase')).toHaveCount(0);
-	await expect(page.getByTestId('board-game-clock')).toContainText('Setup');
+	await expect(page.getByTestId('board-game-clock')).toContainText('0:00');
 
 	// The same choices in Settings > Board (⋯ > Board), and after a reload.
 	await page.reload();
