@@ -375,6 +375,38 @@ test('Sushi Buffet lets the last player draft again, offered one character type'
 	await expect(again).toBeDisabled();
 });
 
+// Grimbits lets the Storyteller reject a drafted Legion, and the player picks again
+// (https://grimbits.com/draft-buffet/): any asked setup change can be answered by a redraft.
+test('Sushi Buffet can answer a drafted character’s setup change with a redraft', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await keepFirst(page);
+	// As if the kept character's Outsider count were asked (a Legion's or a Godfather's).
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = [];
+		deal.state.pending = [
+			{ characterId: 'godfather', op: { kind: 'delta', type: 'outsider', values: [-1, 1] } }
+		];
+		deal.state.ask = { characterId: 'godfather', type: 'outsider', options: [0, 1], current: 0 };
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, `grim-games:mode-deal:v1:${gameId}`);
+	await page.reload();
+	const ask = page.getByRole('dialog', { name: 'Setup change' });
+	await ask.getByRole('button', { name: 'Draft again' }).tap();
+	await expect(ask).toBeHidden();
+	const state = await page.evaluate(
+		(key) => JSON.parse(localStorage.getItem(key)!).state,
+		`grim-games:mode-deal:v1:${gameId}`
+	);
+	expect(state.ask).toBeUndefined();
+	expect(state.picks).toEqual([]);
+	expect(state.offer).toHaveLength(3);
+});
+
 // Grimbits' draft deals the King once a Choirboy is drafted
 // (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Choirboy).
 test('Sushi Buffet offers only the King after a Choirboy, saying why, with no refusing', async ({

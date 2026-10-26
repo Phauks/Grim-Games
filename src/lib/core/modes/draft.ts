@@ -254,9 +254,11 @@ export function answerAsk(state: DraftState, total: number, random: Random): Dra
  * The next seat's offer: the first character still to be forced, which can't be refused, or
  * else a fresh offer. A forced character whose type no longer has an open seat is dropped.
  */
-/** Whether the last pick can be drafted again. */
-export const canRedraft = (state: DraftState) =>
-	state.previous !== undefined && state.ask === undefined;
+/**
+ * Whether the last pick can be drafted again; also while its setup change waits on the
+ * Storyteller, so a Legion can be rejected (Grimbits: the player picks again).
+ */
+export const canRedraft = (state: DraftState) => state.previous !== undefined;
 
 /**
  * The last player drafts again: the draft as it was before their pick, the character they kept
