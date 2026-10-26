@@ -32,6 +32,19 @@
 			(function () {
 				var errors = [];
 				var BUILD = '%sveltekit.version%';
+				// Games and settings live on the device, so the app can't run where the browser
+				// refuses this site storage (Brave Shields or a browser set to block all cookies):
+				// reading localStorage then throws SecurityError. Say so instead of failing in pieces.
+				var storageBlocked = false;
+				try {
+					window.localStorage.getItem('grim-games:storage-check');
+				} catch (e) {
+					storageBlocked = !!e && e.name === 'SecurityError';
+				}
+				var STORAGE_HELP =
+					'This browser blocks site storage here, and your games and settings are kept on this device. ' +
+					'Allow cookies and site data for this site, then reload. In Brave, tap the lion in the address bar, ' +
+					'open Advanced controls and stop blocking cookies.';
 				// Query strings and hashes can carry share links or room secrets: never copy them.
 				function scrub(text) {
 					return String(text).replace(
@@ -88,14 +101,18 @@
 					location.reload();
 				}
 				function show() {
-					if (booted() || document.getElementById('boot-failure')) return;
-					var details = errors.length
-						? errors.join('\n\n')
-						: 'No error was caught: the app never started.';
+					if (document.getElementById('boot-failure')) return;
+					// With storage blocked the app may draw a page and then fail, so don't wait for that.
+					if (!storageBlocked && booted()) return;
+					var details = storageBlocked
+						? STORAGE_HELP
+						: errors.length
+							? errors.join('\n\n')
+							: 'No error was caught: the app never started.';
 					var box = el(
 						'div',
 						'',
-						'position:fixed;inset:0;z-index:1000;overflow:auto;padding:24px 16px;background:#1c130e;color:#efe2c4;font:16px/1.4 Georgia,serif;'
+						'position:fixed;inset:0;z-index:2147483647;overflow:auto;padding:24px 16px;background:#1c130e;color:#efe2c4;font:16px/1.4 Georgia,serif;'
 					);
 					box.id = 'boot-failure';
 					box.setAttribute('role', 'alert');
@@ -103,11 +120,13 @@
 						el('h1', "Grimbinder couldn't start", 'margin:0 0 8px;font-size:1.4rem;color:#e0b95b;')
 					);
 					box.appendChild(
-						el(
-							'pre',
-							details,
-							'margin:0 0 12px;padding:12px;max-height:40vh;overflow:auto;white-space:pre-wrap;word-break:break-word;background:#000;border-radius:8px;font:13px/1.4 ui-monospace,monospace;'
-						)
+						storageBlocked
+							? el('p', details, 'margin:0 0 12px;')
+							: el(
+									'pre',
+									details,
+									'margin:0 0 12px;padding:12px;max-height:40vh;overflow:auto;white-space:pre-wrap;word-break:break-word;background:#000;border-radius:8px;font:13px/1.4 ui-monospace,monospace;'
+								)
 					);
 					box.appendChild(el('p', BUILD, 'margin:0 0 16px;font-size:0.85rem;opacity:0.75;'));
 					var reload = el('button', 'Reload', BUTTON);
@@ -131,9 +150,12 @@
 					};
 					report.target = '_blank';
 					report.rel = 'noopener';
-					box.append(reload, latest, report);
+					// Blocked storage isn't a bug to report, and there is no offline copy to drop.
+					if (storageBlocked) box.append(reload);
+					else box.append(reload, latest, report);
 					document.body.appendChild(box);
 				}
+				if (storageBlocked) addEventListener('DOMContentLoaded', show);
 				// Give the app time to load its chunks on a slow connection; sooner once it has failed.
 				addEventListener('load', function () {
 					setTimeout(function () {
