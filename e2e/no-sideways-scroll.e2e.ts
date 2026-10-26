@@ -17,6 +17,7 @@ const STATIC_ROUTES = [
 	'/changelog',
 	'/roadmap',
 	'/privacy',
+	'/support',
 	'/reference',
 	'/scripts',
 	'/settings',

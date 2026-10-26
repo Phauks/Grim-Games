@@ -132,6 +132,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S4', 'S6', 'S12', 'S17', 'S19', 'S20']
 	},
 	{ title: 'Install as an app', parts: ['S1'] },
+	{ title: 'A Support page with a Ko-fi link', parts: ['S23'] },
 	{
 		title: 'Settings profiles: save your board and settings, and pick one for each game',
 		parts: ['S18', 'S21']

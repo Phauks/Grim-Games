@@ -50,6 +50,7 @@ import ph_clipboard_fill from '~icons/ph/clipboard-fill';
 import ph_clipboard_text_fill from '~icons/ph/clipboard-text-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
+import ph_coffee_fill from '~icons/ph/coffee-fill';
 import ph_coin_fill from '~icons/ph/coin-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
@@ -90,6 +91,7 @@ import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
 import ph_globe_fill from '~icons/ph/globe-fill';
 import ph_hammer_fill from '~icons/ph/hammer-fill';
+import ph_hand_coins_fill from '~icons/ph/hand-coins-fill';
 import ph_hand_fist_fill from '~icons/ph/hand-fist-fill';
 import ph_hand_grabbing_fill from '~icons/ph/hand-grabbing-fill';
 import ph_hand_heart_fill from '~icons/ph/hand-heart-fill';
@@ -260,6 +262,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-fill': ph_clipboard_text_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
+	'ph:coffee-fill': ph_coffee_fill,
 	'ph:coin-fill': ph_coin_fill,
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
@@ -300,6 +303,7 @@ const icons: IconMap = {
 	'ph:ghost-fill': ph_ghost_fill,
 	'ph:globe-fill': ph_globe_fill,
 	'ph:hammer-fill': ph_hammer_fill,
+	'ph:hand-coins-fill': ph_hand_coins_fill,
 	'ph:hand-fist-fill': ph_hand_fist_fill,
 	'ph:hand-grabbing-fill': ph_hand_grabbing_fill,
 	'ph:hand-heart-fill': ph_hand_heart_fill,
