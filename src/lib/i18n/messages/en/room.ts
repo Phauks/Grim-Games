@@ -116,6 +116,8 @@ export const room = {
 	'room.scriptVote.new': 'New vote',
 	'room.scriptVote.page': 'Room vote',
 	'room.scriptVote.end': 'End vote',
+	'room.scriptVote.back': 'Back',
+	'room.scriptVote.cancel': 'Cancel vote',
 	'room.scriptVote.finalCall': 'Final call: voting closes in {time}',
 	'room.scriptVote.timeLimit': 'Time limit',
 	'room.scriptVote.noLimit': 'No time limit',
