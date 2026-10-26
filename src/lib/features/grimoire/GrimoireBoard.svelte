@@ -961,9 +961,9 @@
 				...(cornerInfo.players ? { players: standardPlayersLine(game.seating.length) } : {})
 			});
 	});
-	// Players see the day timer during the day only (Trevor, 2026-10-26).
+	// Players see where the game is up to, and the day timer during the day (Trevor, 2026-10-26).
 	$effect(() => {
-		if (!watching) roomHost().showDay(game.gameId, phaseNow.kind === 'day' && !ended);
+		if (!watching) roomHost().showPhase(game.gameId, ended ? undefined : phaseNow);
 	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
