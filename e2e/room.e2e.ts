@@ -1085,11 +1085,16 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	const phone = await phoneContext.newPage();
 	await phone.goto('/join');
 	const grimView = phone.getByRole('button', { name: 'Grim view' });
+	// Grim view waits behind ⋯, so Join as player is the one big button (Trevor, 2026-10-26).
+	const more = phone.getByRole('button', { name: 'More ways to join' });
 	await typeCode(phone, code);
 	await expect(phone.getByTestId('room-preview')).toContainText('Trouble Brewing');
 	// No password set: only joining as a player.
 	await expect(phone.getByRole('button', { name: 'Join as player' })).toBeEnabled();
+	await expect(grimView).toHaveCount(0);
+	await more.tap();
 	await expect(grimView).toBeDisabled();
+	await phone.keyboard.press('Escape');
 
 	await password.fill('lantern');
 	const eye = watch.getByRole('button', { name: 'Show password' });
@@ -1106,6 +1111,7 @@ test('the room code and a Grim view password open the grimoire, as the link does
 
 	await phone.reload();
 	await typeCode(phone, code);
+	await more.tap();
 	await expect(grimView).toBeEnabled();
 	// A wrong password says so.
 	await grimView.tap();
@@ -1126,6 +1132,7 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	// The right one opens the same grimoire the link does.
 	await phone.goto('/join');
 	await typeCode(phone, code);
+	await more.tap();
 	await grimView.tap();
 	await ask.getByLabel('Grim view password', { exact: true }).fill('lantern');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
@@ -1787,7 +1794,7 @@ async function aimCamera(phone: Page, src: string) {
 	}, src);
 }
 
-test("Scan a code on Join game reads the Share screen's QR code and joins its room", async ({
+test("Scan a code on Join game reads the Share screen's QR code into the code boxes", async ({
 	page,
 	browser
 }, testInfo) => {
@@ -1807,9 +1814,18 @@ test("Scan a code on Join game reads the Share screen's QR code and joins its ro
 	await phone.goto('/join');
 	await phone.getByRole('button', { name: 'Scan a code' }).tap();
 	await expect(phone.getByRole('dialog', { name: 'Scan a code' })).toBeVisible();
-	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`), { timeout: 15_000 });
-	await expect(phone.getByTestId('join-status')).toBeVisible();
+	// The code fills the boxes and shows its game, so the phone still picks Join as player or
+	// ⋯ > Public Town (Trevor, 2026-10-26: one QR for both).
+	await expect(phone.getByTestId('room-preview')).toContainText('Trouble Brewing', {
+		timeout: 15_000
+	});
 	await expect(phone.getByRole('dialog', { name: 'Scan a code' })).toBeHidden();
+	await expect(phone.getByRole('textbox', { name: 'Room code from the Storyteller' })).toHaveValue(
+		code
+	);
+	await phone.getByRole('button', { name: 'Join as player' }).tap();
+	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
+	await expect(phone.getByTestId('join-status')).toBeVisible();
 	await phoneContext.close();
 });
 

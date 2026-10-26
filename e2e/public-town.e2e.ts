@@ -25,16 +25,22 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 
-	// Join game opens it with the room's code, beside Join as player.
+	// Join game opens it with the room's code, from ⋯ beside Join as player (Trevor,
+	// 2026-10-26: "more advanced").
 	const tabletContext = await browser.newContext({ ...testInfo.project.use });
 	const tablet = await tabletContext.newPage();
 	await tablet.goto('/join');
+	const more = tablet.getByRole('button', { name: 'More ways to join' });
 	const open = tablet.getByRole('button', { name: 'Public Town' });
+	await more.tap();
 	await expect(open).toBeDisabled();
+	await tablet.keyboard.press('Escape');
+	await expect(open).toHaveCount(0);
 	const field = tablet.getByRole('textbox', { name: 'Room code from the Storyteller' });
 	await field.tap();
 	await field.pressSequentially(code);
 	await expect(tablet.getByTestId('room-preview')).toContainText('Trouble Brewing');
+	await more.tap();
 	await open.tap();
 	await expect(tablet).toHaveURL(new RegExp(`/town/${code}$`));
 
@@ -46,8 +52,13 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await expect(town.getByRole('button')).toHaveCount(0);
 	await seats.nth(1).tap();
 	await expect(tablet.getByRole('dialog')).toHaveCount(0);
-	// The app's menu stays top left, as on every screen.
-	await expect(tablet.getByRole('button', { name: 'Menu' })).toBeVisible();
+	// The top of the app is the player screen's (Trevor, 2026-10-26: "same as storyteller/player
+	// shared grim"): the script's name and byline, Print and Share, and the app's menu.
+	await expect(tablet.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	await expect(tablet.getByTestId('script-byline')).toContainText('The Pandemonium Institute');
+	await expect(tablet.getByRole('button', { name: 'Print script' })).toBeVisible();
+	await expect(tablet.getByRole('button', { name: 'Share script' })).toBeVisible();
+	await expect(tablet.getByRole('button', { name: 'Menu' }).first()).toBeVisible();
 
 	// The display is not a player: the Storyteller's room counts no one.
 	await expect(page.getByTestId('status-players')).toHaveText('0 players');
@@ -69,6 +80,16 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 		'aria-label',
 		'Seat 1: Seat 1, dead, ghost vote not used'
 	);
+
+	// Your games opens it the way it was last opened (Trevor, 2026-10-26: "shouldn't it reopen
+	// to that mode").
+	await tablet.goto('/join');
+	const recent = tablet.getByTestId('recent-rooms').getByRole('button');
+	await expect(recent).toHaveCount(1);
+	await expect(recent).toContainText('Public Town');
+	await recent.tap();
+	await expect(tablet).toHaveURL(new RegExp(`/town/${code}$`));
+	await expect(seats).toHaveCount(8);
 	await tabletContext.close();
 });
 

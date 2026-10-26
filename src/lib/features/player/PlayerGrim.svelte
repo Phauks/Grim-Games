@@ -92,8 +92,8 @@
 			roomCode?: string;
 		};
 		/**
-		 * A Public Town display (Trevor, 2026-10-26): the town alone, filling its box, with
-		 * nothing to tap and nothing of this device's own on it (no guesses, notes or "you").
+		 * A Public Town display (Trevor, 2026-10-26): the town as /play draws it, with nothing to
+		 * tap and nothing of this device's own on it (no guesses, notes or "you").
 		 */
 		display?: boolean;
 	}
@@ -604,11 +604,6 @@
 		border-radius: var(--radius-md);
 		width: 100%;
 		height: 75dvh;
-	}
-	/* A Public Town display fills the screen it is given. */
-	.town.display {
-		height: 100%;
-		border-radius: 0;
 	}
 	.display .seat {
 		cursor: default;
