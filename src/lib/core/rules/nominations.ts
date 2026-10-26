@@ -96,6 +96,58 @@ export function extraNominationOpen(
 	return since < extra;
 }
 
+/**
+ * Players whose ability may give them a nomination after an execution
+ * (`nominationsAfterExecution`) and works now, whether or not today has an execution yet.
+ */
+export function extraNominators(game: Game, characters: CharacterLookup): SeatId[] {
+	return game.seating.filter((seatId) => {
+		const characterId = trueCharacter(game, seatId, characters);
+		return (
+			characterId !== undefined &&
+			!!rulesOf(characterId, characters)?.nominationsAfterExecution &&
+			abilityState(game, seatId, characters).works
+		);
+	});
+}
+
+/**
+ * Who may still nominate once `executed` is executed today (`extraNominationOpen`, as if that
+ * execution were logged), for Execution to offer keeping the day going. A player the execution
+ * kills is left out. With no `executed`, today's log as it stands.
+ */
+export function nominatorsAfterExecution(
+	game: Game,
+	executed: { seatId: SeatId; dies: boolean } | undefined,
+	characters: CharacterLookup
+): SeatId[] {
+	const logged =
+		!executed ||
+		game.today.entries.some((e) => e.kind === 'execution' && e.seatId === executed.seatId);
+	const after: Game = logged
+		? game
+		: {
+				...game,
+				today: {
+					...game.today,
+					entries: [
+						...game.today.entries,
+						{
+							kind: 'execution',
+							entryId: 'pending' as DayEntry['entryId'],
+							seatId: executed.seatId,
+							died: executed.dies
+						}
+					]
+				}
+			};
+	return game.seating.filter(
+		(seatId) =>
+			!(executed?.dies && executed.seatId === seatId && !logged) &&
+			extraNominationOpen(after, seatId, characters)
+	);
+}
+
 /** A character's ability a nomination sets off, for the board to offer (warn, never lock). */
 export interface CharacterNominationPrompt {
 	kind: NominatedEffect;

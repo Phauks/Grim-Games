@@ -690,7 +690,8 @@
 	function executeAndEndDay(
 		seatId: SeatId | undefined,
 		save: CharacterId | 'dies' | undefined,
-		marks: Partial<Record<DayMark, boolean>>
+		marks: Partial<Record<DayMark, boolean>>,
+		keepGoing: boolean
 	): void {
 		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
 			grimoire.run({ type: 'SetDayMark', mark, value });
@@ -701,7 +702,8 @@
 				seatId,
 				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {})
 			});
-		endDay();
+		// Keep the day going (Trevor, 2026-10-26): a player may still nominate after it.
+		if (!keepGoing) endDay();
 	}
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
