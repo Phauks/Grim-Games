@@ -440,6 +440,12 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await expect(oneType).not.toBeChecked();
 	await modesPanel(page).getByText('Don’t mix types', { exact: true }).tap();
 	await expect(oneType).toBeChecked();
+	// Mulligans: two refusals (3 → 2 → 1, the mode's) or one (3 → 1).
+	const mulligans = modesPanel(page).getByRole('combobox', { name: 'Mulligans' });
+	await expect(mulligans).toHaveText(/3 → 2 → 1/);
+	await mulligans.tap();
+	await page.getByRole('option', { name: '3 → 1', exact: true }).tap();
+	await expect(mulligans).toHaveText(/3 → 1/);
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -451,6 +457,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	expect(record.jinxedPairs).toBe('reduce');
 	expect(record.ivoryDraft).toBe(true);
 	expect(record.oneTypePerOffer).toBe(true);
+	expect(record.offers).toEqual([3, 1]);
 	// The draft knows each character's jinxed partners
 	// (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
 	await drawTile(page);
@@ -463,6 +470,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	expect(state.jinxed.heretic).toContain('baron');
 	expect(state.config.ivory).toBe(true);
 	expect(state.config.oneTypePerOffer).toBe(true);
+	expect(state.config.offers).toEqual([3, 1]);
 	// The first offer is all one character type.
 	const types = new Set(state.offer.map((id: string) => state.types[id]));
 	expect(types.size).toBe(1);

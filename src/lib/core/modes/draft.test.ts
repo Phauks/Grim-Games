@@ -43,6 +43,15 @@ describe('offers', () => {
 		expect(s.discarded).toHaveLength(5);
 	});
 
+	it('go straight from three to one with a single mulligan (Grimbits’ 3 → 1)', () => {
+		const random = seeded();
+		let s = startDraft({ ...config, offers: [3, 1] }, baseCounts(7), tb, random);
+		expect(s.offer).toHaveLength(3);
+		s = refuseOffer(s, random);
+		expect(s.offer).toHaveLength(1);
+		expect(canRefuse(s)).toBe(false);
+	});
+
 	it('only offer types with an open slot, so a full draft matches the counts', () => {
 		const random = seeded(7);
 		const counts = baseCounts(7);

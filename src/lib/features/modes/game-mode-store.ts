@@ -34,6 +34,8 @@ export interface GameModeRecord {
 	ivoryDraft?: boolean;
 	/** Don't mix types for a draft: each offer is of one character type. Left out, the mode's. */
 	oneTypePerOffer?: boolean;
+	/** Mulligans for a draft: each offer's size in turn (3 → 2 → 1 or 3 → 1). Left out, the mode's. */
+	offers?: number[];
 }
 
 const KEY = (gameId: GameId) => `grim-games:game-mode:v2:${gameId}`;
@@ -52,7 +54,13 @@ const recycling = (r: {
 	jinxedPairs?: unknown;
 	ivoryDraft?: unknown;
 	oneTypePerOffer?: unknown;
+	offers?: unknown;
 }) => ({
+	...(Array.isArray(r.offers) &&
+	r.offers.length > 0 &&
+	r.offers.every((n) => Number.isInteger(n) && n > 0)
+		? { offers: r.offers as number[] }
+		: {}),
 	...(typeof r.oneTypePerOffer === 'boolean' ? { oneTypePerOffer: r.oneTypePerOffer } : {}),
 	...(typeof r.roleRecycling === 'boolean' ? { roleRecycling: r.roleRecycling } : {}),
 	...(typeof r.ivoryDraft === 'boolean' ? { ivoryDraft: r.ivoryDraft } : {}),

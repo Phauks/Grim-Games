@@ -101,6 +101,7 @@
 						...assignment,
 						recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen,
 						oneTypePerOffer: record?.oneTypePerOffer ?? assignment.oneTypePerOffer,
+						offers: record?.offers ?? assignment.offers,
 						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen',
 						jinxes: record?.jinxedPairs ?? 'allow',
 						ivory: record?.ivoryDraft ?? false
@@ -348,7 +349,7 @@
 		{#if slotMachine && progress?.kind === 'draft' && assignment?.kind === 'draft'}
 			<OfferReels
 				offer={options}
-				size={assignment.offers[0] ?? options.length}
+				size={progress.state.config.offers[0] ?? options.length}
 				{reel}
 				bind:spinning={offerSpinning}
 			/>
