@@ -7,8 +7,10 @@
 	/**
 	 * The Storyteller's day timer on a player's phone (Trevor, 2026-10-26: "timer populates on
 	 * other screens ... sun or timer for players", the Storyteller decides). The clock as the
-	 * board shows it, or a sun that sinks to the horizon as the day's time runs out. It only
-	 * shows: nothing on it can be pressed.
+	 * board shows it, or a sun (Trevor, 2026-10-26): it rises on the left and crosses the sky
+	 * to set on the right as the day's time runs out, filling the sky beneath its path. At the
+	 * right the time is all but up; it waits there until the Storyteller ends the day, and less
+	 * time from the Storyteller only moves it faster. It only shows: nothing can be pressed.
 	 */
 	interface Props {
 		timer: dayTimers.PublicDayTimer;
@@ -23,8 +25,17 @@
 		untrack(() => watched.set(next));
 	});
 	$effect(() => () => watched.stop());
-	/** The sun's height over the horizon, in the drawing's units: 13 at the start, 0 at the end. */
-	const rise = $derived(13 * watched.left);
+	const id = $props.id();
+	/** The sun's path: half a circle over the horizon, left to right, in the drawing's units. */
+	const CX = 24;
+	const HORIZON = 24;
+	const R = 17;
+	/** Where the sun is along its path: the share of the day's time used. */
+	const angle = $derived(Math.PI * watched.left);
+	const sunX = $derived(CX + R * Math.cos(angle));
+	const sunY = $derived(HORIZON - R * Math.sin(angle));
+	const sky = `M${CX - R} ${HORIZON} A${R} ${R} 0 0 1 ${CX + R} ${HORIZON} Z`;
+	const path = `M${CX - R} ${HORIZON} A${R} ${R} 0 0 1 ${CX + R} ${HORIZON}`;
 </script>
 
 <div
@@ -35,16 +46,20 @@
 >
 	{#if timer.look === 'sun'}
 		<svg
-			viewBox="0 0 40 28"
+			viewBox="0 0 48 28"
 			role="img"
 			aria-label={t('day.sunLabel', { percent: Math.round(watched.left * 100) })}
 		>
-			<g class="sun" transform="translate(0 {-rise})">
-				<circle class="glow" cx="20" cy="22" r="8" />
-				<circle cx="20" cy="22" r="5.5" />
+			<!-- The sky beneath the sun's path so far, filled from the left up to the sun. -->
+			<clipPath id="{id}-passed"><rect x="0" y="0" width={sunX} height={HORIZON} /></clipPath>
+			<path class="sky" d={sky} clip-path="url(#{id}-passed)" />
+			<path class="path" d={path} />
+			<g class="sun">
+				<circle class="glow" cx={sunX} cy={sunY} r="5.5" />
+				<circle cx={sunX} cy={sunY} r="3.5" />
 			</g>
-			<rect class="ground" x="0" y="22" width="40" height="6" />
-			<line class="horizon" x1="2" y1="22" x2="38" y2="22" />
+			<rect class="ground" x="0" y={HORIZON} width="48" height="10" />
+			<line class="horizon" x1="3" y1={HORIZON} x2="45" y2={HORIZON} />
 		</svg>
 	{:else}
 		<span class="clock" role="timer" aria-label={t('day.timer')}>{watched.clock}</span>
@@ -68,8 +83,8 @@
 		color: var(--on-surface);
 	}
 	svg {
-		width: 3rem;
-		height: 2.1rem;
+		width: 4rem;
+		height: 2.35rem;
 		overflow: hidden;
 	}
 	/* The heading's gold, so it reads as a sun on every theme. */
@@ -78,6 +93,16 @@
 	}
 	.glow {
 		opacity: 0.3;
+	}
+	.sky {
+		fill: var(--heading);
+		opacity: 0.45;
+	}
+	.path {
+		fill: none;
+		stroke: var(--on-surface-muted);
+		stroke-width: 0.75;
+		stroke-dasharray: 1.5 1.5;
 	}
 	/* Below the horizon the sun is hidden by the ground, the row's own fill. */
 	.ground {

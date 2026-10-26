@@ -47,7 +47,7 @@ test("players' phones show the day timer during the day, as a sun or the clock",
 	await expect(strip).toBeVisible();
 	await expect(shown).toHaveCount(0);
 
-	// The day: a sun by default, high while the day's time is all to come.
+	// The day: a sun by default, rising on the left while the day's time is all to come.
 	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'End the night?' })
@@ -66,7 +66,7 @@ test("players' phones show the day timer during the day, as a sun or the clock",
 	expect(sun.y).toBeGreaterThanOrEqual(row.y - 1);
 	expect(sun.y + sun.height).toBeLessThanOrEqual(row.y + row.height + 1);
 
-	// The Storyteller starts it, and the sun begins to sink. 4:00 for 8 players, so 1% is 2.4s.
+	// The Storyteller starts it, and the sun sets off across the sky. 4:00 for 8 players, so 1% is 2.4s.
 	await day.getByRole('button', { name: 'Start timer' }).tap();
 	await expect(shown.getByRole('img')).toHaveAttribute(
 		'aria-label',
