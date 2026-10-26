@@ -9,6 +9,7 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { baseCounts } from '#lib/core/rules/distribution.ts';
 import {
 	canRedraft,
+	conversions,
 	canRefuse,
 	redraft,
 	refuseOffer,
@@ -533,5 +534,52 @@ describe('a reserved hidden character', () => {
 		};
 		expect(reservedSeats(s, marionette())).toEqual([0, 3]);
 		expect(reservedSeats(s, marionette(), [0])).toEqual([3]);
+	});
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): no Minions are drafted with a Kazali,
+// which then picks which players are which Minions
+// (https://wiki.bloodontheclocktower.com/Kazali).
+describe('a drafted character that turns players into another type', () => {
+	const kazali = data.characters.filter((c) => c.id === 'kazali');
+	const start = () =>
+		startDraft({ ...config, modifiers: true }, baseCounts(7), tb.concat(kazali), seeded(6));
+
+	it('is named by its rules file, with the type’s usual count', () => {
+		expect(rulesOf('kazali')?.turnsPlayersInto).toEqual({ type: 'minion', players: 'chosen' });
+		expect(start().turns).toEqual({
+			kazali: { type: 'minion', players: 'chosen', usual: baseCounts(7).minion }
+		});
+	});
+
+	it('turns as many players as the usual Minion count once drafted', () => {
+		const s = { ...start(), picks: ['chef', 'kazali', 'empath'] };
+		expect(conversions(s)).toEqual([
+			{ characterId: 'kazali', seat: 1, type: 'minion', players: 'chosen', count: 1 }
+		]);
+	});
+
+	it('turns fewer players for each Minion already drafted, and none when undrafted', () => {
+		expect(conversions({ ...start(), picks: ['poisoner', 'kazali'] })).toEqual([]);
+		expect(conversions({ ...start(), picks: ['chef'] })).toEqual([]);
+	});
+
+	it('is not counted without setup changes', () => {
+		const s = startDraft(config, baseCounts(7), tb.concat(kazali), seeded(6));
+		expect(conversions({ ...s, picks: ['kazali'] })).toEqual([]);
+	});
+});
+
+describe('a conversion beside a reserved hidden character', () => {
+	it('turns one fewer player when the reserved character is of the type (the Marionette)', () => {
+		const reserve = reservedHidden(data.characters).find((r) => r.id === 'marionette')!;
+		const kazali = data.characters.filter((c) => c.id === 'kazali');
+		const s = startDraft(
+			{ ...config, modifiers: true, reserve },
+			baseCounts(7),
+			tb.concat(kazali),
+			seeded(6)
+		);
+		expect(conversions({ ...s, picks: ['kazali'] })).toEqual([]);
 	});
 });
