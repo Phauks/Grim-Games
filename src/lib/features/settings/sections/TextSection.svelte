@@ -1,18 +1,12 @@
 <script lang="ts">
-	import { intl, t } from '#lib/i18n/locale.svelte.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import {
-		DEFAULT_PREFERENCES,
-		TEXT_ALIGNS,
-		TEXT_SCALE,
-		type TextAlign
-	} from '#lib/ui/preferences.ts';
+	import { DEFAULT_PREFERENCES, TEXT_ALIGNS, type TextAlign } from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
-	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import FontPreview from './FontPreview.svelte';
 	import { TEXT_FONT_ROLES } from './font-roles.ts';
 	import RulesTermsSection from './RulesTermsSection.svelte';
+	import TextSizeRows from './TextSizeRows.svelte';
 
 	const alignLabels = $derived<Record<TextAlign, string>>({
 		left: t('settings.alignLeft'),
@@ -24,15 +18,7 @@
      alignment and the rules-term underline. Character names and Reminder tokens fonts are in
      Tokens, beside their previews (Trevor, 2026-10-18). -->
 <FontPreview roles={TEXT_FONT_ROLES} />
-<SettingSlider
-	label={t('settings.textSize')}
-	description={t('settings.textSizeHelp')}
-	value={preferences.current.textScale}
-	defaultValue={DEFAULT_PREFERENCES.textScale}
-	{...TEXT_SCALE}
-	format={(scale) => intl.number(scale, { style: 'percent' })}
-	onChange={(textScale) => preferences.update({ textScale })}
-/>
+<TextSizeRows />
 <SettingSelect
 	label={t('settings.textAlign')}
 	description={t('settings.textAlignHelp')}
@@ -40,11 +26,5 @@
 	defaultValue={DEFAULT_PREFERENCES.textAlign}
 	options={TEXT_ALIGNS.map((align) => ({ value: align, label: alignLabels[align] }))}
 	onChange={(textAlign) => preferences.update({ textAlign: textAlign as TextAlign })}
-/>
-<SettingToggle
-	label={t('settings.allowZoom')}
-	description={t('settings.allowZoomHelp')}
-	checked={preferences.current.allowZoom}
-	onChange={(allowZoom) => preferences.update({ allowZoom })}
 />
 <RulesTermsSection />

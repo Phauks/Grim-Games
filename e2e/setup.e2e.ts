@@ -613,8 +613,8 @@ test("the player picks their name from the room's phones", async ({ page, browse
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await phone.getByTestId('you-row').tap();
-	const you = phone.getByRole('dialog', { name: 'You', exact: true });
+	await phone.getByTestId('you-button').tap();
+	const you = phone.getByRole('dialog', { name: 'Your settings' });
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex');
