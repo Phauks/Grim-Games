@@ -138,8 +138,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
 	{
-		title: 'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover',
-		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24']
+		title:
+			'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover, dealing to phones',
+		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2']
 	},
 	{
 		title:

@@ -19,6 +19,8 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import { pastNames, suggestNames } from '#lib/features/grimoire/device-notes.ts';
 	import { reelsMove, spinReel } from './reel.ts';
+	import HoldToSee from '#lib/ui/primitives/HoldToSee.svelte';
+	import { noLongPress } from '#lib/ui/no-long-press.ts';
 
 	interface Props {
 		open: boolean;
@@ -134,14 +136,6 @@
 		if (visible) shownOnce = true;
 	});
 	const canConfirm = $derived(revealed && (!holdToReveal || seen) && !spinning);
-	function hold(on: boolean) {
-		held = on;
-		if (on) seen = true;
-	}
-	// The page hidden (another app, the lock button) hides the token again.
-	function onVisibility() {
-		if (document.visibilityState !== 'visible') held = false;
-	}
 
 	/** Set once this reveal is confirmed, so closing it doesn't confirm it again. */
 	let confirmed = false;
@@ -173,28 +167,9 @@
 		else if (revealed) return;
 		else if (name.trim() !== '') revealed = true;
 	}
-
-	/**
-	 * Android Chrome buzzes about half a second into any long press, after the token is
-	 * already showing, so the buzz matched nothing (Trevor, 2026-10-25: "remove or correct
-	 * timing"). Cancelling the touch's default stops the long-press gesture and its buzz; the
-	 * hold itself runs on Pointer Events, which still fire. Svelte's own touch handlers are
-	 * passive, so this one is added by hand.
-	 */
-	function noLongPress(node: HTMLElement) {
-		const stop = (event: Event) => event.cancelable && event.preventDefault();
-		node.addEventListener('touchstart', stop, { passive: false });
-		// The image's own long-press menu too.
-		node.addEventListener('contextmenu', stop);
-		return () => {
-			node.removeEventListener('touchstart', stop);
-			node.removeEventListener('contextmenu', stop);
-		};
-	}
 </script>
 
 <svelte:window onkeydown={onWindowKey} />
-<svelte:document onvisibilitychange={onVisibility} />
 
 <!--
 	The player's own reveal. A drawn tile is never put back (Trevor, 2026-10-15): closing the
@@ -223,34 +198,14 @@
 				<div class="face" data-testid="reveal-face">
 					{#if face.label}<p class="town">{face.label}</p>{/if}
 					{#if holdToReveal && revealed}
-						<!-- Held down to show; let go (or lose the pointer) to hide again. -->
-						<button
-							type="button"
-							class="token hold"
-							data-testid="reveal-hold"
-							aria-pressed={held}
-							aria-label={t('setup.reveal.hold')}
-							onpointerdown={(e) => {
-								e.currentTarget.setPointerCapture?.(e.pointerId);
-								hold(true);
-							}}
-							onpointerup={() => hold(false)}
-							onpointercancel={() => hold(false)}
-							onlostpointercapture={() => hold(false)}
-							onkeydown={(e) => {
-								if (e.key === ' ' && !e.repeat) {
-									e.preventDefault();
-									hold(true);
-								}
-							}}
-							onkeyup={(e) => e.key === ' ' && hold(false)}
-							onblur={() => hold(false)}
+						<HoldToSee
+							label={t('setup.reveal.hold')}
+							testid="reveal-hold"
+							bind:held
+							onhold={(on) => on && (seen = true)}
 						>
-							{#if held}<CharacterToken
-									character={spinning ?? face.character}
-									size={pair ? 120 : 160}
-								/>{:else}<span class="hidden-token">{t('setup.reveal.hold')}</span>{/if}
-						</button>
+							<CharacterToken character={spinning ?? face.character} size={pair ? 120 : 160} />
+						</HoldToSee>
 					{:else}
 						<div class="token" data-testid="reveal-token" data-spinning={spinning ? '' : undefined}>
 							{#if revealed}<CharacterToken
@@ -362,18 +317,6 @@
 		place-items: center;
 		min-width: calc(10 * var(--u));
 		min-height: calc(10 * var(--u));
-	}
-	/* The hold button is the token's own box: no button look, no text selection or callout. */
-	.hold {
-		padding: 0;
-		border: 0;
-		border-radius: 50%;
-		background: none;
-		color: inherit;
-		touch-action: none;
-		user-select: none;
-		-webkit-touch-callout: none;
-		-webkit-user-select: none;
 	}
 	.hidden-token {
 		display: grid;

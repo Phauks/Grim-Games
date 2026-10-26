@@ -4,7 +4,8 @@
  * `Room` Durable Object applies. Shared by the Worker and the app so both sides agree.
  *
  * The room holds public state only, unless the Storyteller turns on the view-only grimoire
- * link (`SharedGrimoire`). Phones ask (a name, a seat); the Storyteller approves, and only
+ * link (`SharedGrimoire`) or lets players see their own characters (`RoomRoles`), each sent
+ * only to its own phone. Phones ask (a name, a seat); the Storyteller approves, and only
  * then does the grimoire change, through its own commands.
  */
 import type { Alignment, Script } from '#lib/core/data/index.ts';
@@ -21,6 +22,8 @@ import {
 	type ScriptVoteTally
 } from './script-vote.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
+import { memberRole, seatsSeen, type RoomRoles } from './room-roles.ts';
+import type { SeatRole } from './seat-roles.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -81,6 +84,8 @@ export interface RoomState {
 	scriptVote?: ScriptVote;
 	/** Players' feedback on the ended game, one per member; cleared with `ended`. */
 	feedback?: MemberFeedback[];
+	/** Each seat's own character, for its own phone (Trevor, 2026-10-26); per game. */
+	roles?: RoomRoles;
 }
 
 /**
@@ -170,6 +175,8 @@ export type ClientMessage =
 	 * withdraws it (Trevor, 2026-10-26).
 	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
+	/** The player held their character to see it (Trevor, 2026-10-26). */
+	| { type: 'role-seen' }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**
@@ -218,10 +225,16 @@ export type ClientMessage =
 	/** Ends the vote after FINAL_CALL_SECONDS, so phones have a last chance (2026-10-26). */
 	| { type: 'end-script-vote' }
 	| { type: 'close-script-vote' }
+	/**
+	 * Every seat's own character for game `gameId`, while players may see them; `show: false`
+	 * takes them all back (Trevor, 2026-10-26).
+	 */
+	| { type: 'roles'; gameId: string; show: boolean; roles?: Record<SeatId, SeatRole> }
 	| { type: 'close' };
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
+export { roleSeen, setRoles, type RoomRoles } from './room-roles.ts';
 export {
 	castScriptBallot,
 	closeScriptVote,
@@ -249,6 +262,8 @@ export interface HostView {
 	 * so lists and counts use this to leave out phones from earlier games (2026-10-25).
 	 */
 	present?: string[];
+	/** Seats whose player has seen the character they have now, while the room holds roles. */
+	rolesSeen?: SeatId[];
 }
 
 export interface VoteTally {
@@ -298,6 +313,8 @@ export interface PlayerView {
 		/** The count, when the Storyteller lets players see it (Trevor, 2026-10-26). */
 		tally?: Pick<ScriptVoteTally, 'points' | 'out' | 'winner' | 'voted' | 'members'>;
 	};
+	/** This player's own character, while the Storyteller lets players see theirs. */
+	role?: SeatRole;
 }
 
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
@@ -385,6 +402,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (room.scriptVote) view.scriptVote = scriptVoteCount(room, present);
 	if (present)
 		view.present = room.members.flatMap((m) => (present.has(m.memberId) ? [m.memberId] : []));
+	if (room.roles) view.rolesSeen = seatsSeen(room);
 	return view;
 }
 
@@ -439,6 +457,8 @@ export function playerView(
 		if (mine) view.feedback = mine.feedback;
 	}
 	if (room.choosing) view.choosing = true;
+	const role = memberRole(room, memberId);
+	if (role) view.role = role;
 	if (room.scriptVote) {
 		const { voteId, kind, subject, options, ballots, endsAt, finalCall } = room.scriptVote;
 		view.scriptVote = { voteId, kind, options, ...(subject ? { subject } : {}) };
@@ -587,7 +607,9 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 	const seats = new Set(state.seats.map((s) => s.seatId));
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
-	const base = newGame ? closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)) : room;
+	const base = newGame
+		? withoutRoles(closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)))
+		: room;
 	return {
 		...base,
 		gameId,
@@ -674,6 +696,14 @@ export function canReveal(room: RoomState, gameId: unknown): boolean {
 /** The game `gameId` runs again; nothing changes if it was not the one that ended. */
 export function reopenGame(room: RoomState, gameId: unknown): RoomState {
 	return room.ended?.gameId === gameId ? withoutEnded(room) : room;
+}
+
+/** Characters belong to their game. */
+function withoutRoles(room: RoomState): RoomState {
+	if (!room.roles) return room;
+	const { roles: _gone, ...rest } = room;
+	void _gone;
+	return rest;
 }
 
 function withoutEnded(room: RoomState): RoomState {

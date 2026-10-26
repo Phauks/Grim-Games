@@ -196,6 +196,13 @@ export const setup = {
 	'setup.tileEmoji.taco': 'Taco',
 
 	'setup.draw': 'Draw',
+	'setup.deal': 'Deal',
+	'setup.deal.title': 'Deal at random?',
+	'setup.deal.body': {
+		one: 'The tile left in the bag goes to an empty seat at random, whether or not that player has a phone.',
+		other:
+			'The {count} tiles left in the bag go to the empty seats at random, whether or not those players have a phone.'
+	},
 	'setup.draw.noBag': 'No bag. Select characters and build the bag first.',
 	'setup.draw.bag': 'Bag',
 	'setup.draw.held': 'Held',

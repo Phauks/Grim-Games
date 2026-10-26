@@ -4,7 +4,7 @@
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { SeatId, TileId } from '#lib/core/model/index.ts';
-	import { bagSlots, nextDrawSeat } from '#lib/core/rules/index.ts';
+	import { bagSlots, dealPairs, nextDrawSeat } from '#lib/core/rules/index.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -29,6 +29,9 @@
 	import { onMount, untrack } from 'svelte';
 	import { pushState } from '$app/navigation';
 	import { page } from '$app/state';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 
 	interface Props {
 		port: SetupGamePort;
@@ -198,6 +201,27 @@
 		draw(pick.tileId, pick.state);
 	}
 
+	/*
+	 * Deal (Trevor, 2026-10-26: "auto select characters and send to players"): every tile left
+	 * goes to an empty seat at random, phone or not (some players use a physical token), and
+	 * the players in the room can see theirs on their phone straight away if the Storyteller
+	 * leaves the switch on.
+	 */
+	let dealOpen = $state(false);
+	let dealShow = $state(true);
+	const hasRoom = $derived(!!roomHost().code);
+	function deal() {
+		if (!game) return;
+		for (let i = 0; i < dealPairs(game, Math.random).seatsShort; i++) send({ type: 'AddSeat' });
+		const current = port.game;
+		if (!current) return;
+		for (const { seatId, tileId } of dealPairs(current, Math.random).pairs) {
+			if (!send({ type: 'DrawTile', seatId, tileId })) return;
+			if (!send({ type: 'ConfirmDraw', tileId })) return;
+		}
+		if (hasRoom && dealShow) roomHost().showRoles(current.gameId, true);
+	}
+
 	function confirm(details: { playerName: string; alignment?: Alignment }) {
 		if (!tile?.drawnBySeat) return;
 		const seatId = tile.drawnBySeat;
@@ -219,6 +243,13 @@
 	{#snippet actions()}
 		<!-- Locked: only the lock itself; Bag settings and Join can't be used (Trevor, 2026-10-19). -->
 		{#if !locked}<SetupActions {port} />{/if}
+		<!-- Deal (Trevor, 2026-10-26): disabled once the bag is empty, so nothing moves. -->
+		{#if !locked && game}<IconButton
+				icon="random"
+				label={t('setup.deal')}
+				disabled={inBag === 0}
+				onclick={() => (dealOpen = true)}
+			/>{/if}
 		{#if game}
 			<IconButton
 				icon="lock"
@@ -286,6 +317,17 @@
 	{/if}
 {/if}
 
+<ConfirmDialog bind:open={dealOpen} title={t('setup.deal.title')} onConfirm={deal}>
+	<p class="deal-text">{t('setup.deal.body', { count: inBag })}</p>
+	<!-- Off and disabled without a room, so the dialog is the same size either way. -->
+	<SettingToggle
+		label={t('room.roles.toggle')}
+		checked={hasRoom && dealShow}
+		disabled={!hasRoom}
+		onChange={(on) => (dealShow = on)}
+	/>
+</ConfirmDialog>
+
 {#if game}
 	<PinDialog bind:open={pinOpen} gameId={game.gameId} mode={pinMode} onDone={pinDone} />
 {/if}
@@ -294,6 +336,9 @@
 	:global(.draw-title-logo) {
 		width: 1.5em;
 		height: 1.5em;
+	}
+	.deal-text {
+		margin: 0;
 	}
 	.hand-back {
 		margin: var(--space-2) 0;

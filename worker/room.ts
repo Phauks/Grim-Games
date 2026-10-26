@@ -24,6 +24,8 @@ import {
 	publish,
 	receiveFeedback,
 	reopenGame,
+	roleSeen,
+	setRoles,
 	roomPreview,
 	seat,
 	setName,
@@ -204,6 +206,10 @@ export class Room extends DurableObject<RoomEnv> {
 				room = receiveFeedback(room, id, message.gameId, message.feedback, crypto.randomUUID());
 			} else if (message.type === 'script-ballot') {
 				room = castScriptBallot(room, id, message.voteId, message.choices, Date.now());
+			} else if (message.type === 'role-seen') {
+				const next = roleSeen(room, id);
+				if (next === room) return;
+				room = next;
 			} else return;
 			await this.save(room);
 			return;
@@ -313,6 +319,9 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			case 'close-script-vote':
 				room = closeScriptVote(room);
+				break;
+			case 'roles':
+				room = setRoles(room, message.gameId, message.show, message.roles);
 				break;
 			case 'close':
 				this.broadcastClosed('Room closed');
