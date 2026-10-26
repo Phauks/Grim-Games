@@ -26,6 +26,7 @@
 	import BoardBackdrop from '#lib/features/grimoire/BoardBackdrop.svelte';
 	import BoardCorner from '#lib/features/grimoire/BoardCorner.svelte';
 	import { drawnLook } from '#lib/features/grimoire/shared-look.ts';
+	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import { screenTheme, themeColours } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import { cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
 	import PlayerSeatReminders from './PlayerSeatReminders.svelte';
@@ -107,6 +108,9 @@
 			corner?: PublicCorner;
 			/** The board's background, as it shares it with every grim of the game. */
 			look?: PublicLook;
+			/** The board's own picture, on the Storyteller's device; else the room's (pictureRoom). */
+			picture?: Blob;
+			pictureRoom?: string;
 			/** Where the guesses and seat notes are kept; a display keeps none. */
 			guessKey?: string;
 			/** The room's code for the corner, where it isn't this device's own room. */
@@ -238,6 +242,17 @@
 	// The Storyteller's background, vignette and logo, the same on every device whatever its own
 	// settings or theme (Trevor, 2026-10-26); the script's own image only as a web link.
 	const look = $derived(drawnLook(parsePublicLook(table?.look)));
+	// The room's picture (Trevor, 2026-10-26: "Images should be uploaded and shared"), or the
+	// board's own one on the Storyteller's device.
+	const pictureRoom = $derived(town ? (town.pictureRoom ?? town.roomCode) : code);
+	let pictureUrl = $state<string>();
+	$effect(() => {
+		const picture = town?.picture;
+		pictureUrl = picture && URL.createObjectURL(picture);
+		return () => {
+			if (picture) URL.revokeObjectURL(pictureUrl!);
+		};
+	});
 	const scriptImage = $derived(
 		/^https:\/\//.test(script.meta?.background ?? '') ? script.meta?.background : undefined
 	);
@@ -356,7 +371,7 @@
 </div>
 {#if final && showFinal}
 	<div class="final" data-testid="final-grimoire">
-		<SharedBoard shared={final.grimoire} {over} />
+		<SharedBoard shared={final.grimoire} {over} room={code} />
 	</div>
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
@@ -375,7 +390,12 @@
 	>
 		<BoardBackdrop
 			contained
-			url={look.script ? scriptImage : undefined}
+			url={pictureUrl ??
+				(look.image && pictureRoom
+					? roomImagePath(pictureRoom, look.image)
+					: look.script
+						? scriptImage
+						: undefined)}
 			preset={look.preset}
 			vignette={look.vignette}
 		/>

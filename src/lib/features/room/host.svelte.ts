@@ -46,6 +46,7 @@ import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { gameFeedback } from './game-feedback.svelte.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
+import { uploadRoomImage } from './room-images.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
 import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
@@ -131,6 +132,9 @@ export class RoomHost {
 	#corner = $state<{ gameId: string; corner: PublicCorner }>();
 	/** The open board's background, vignette and logo, for every shared grim (showLook). */
 	#look = $state<{ gameId: string; look: PublicLook }>();
+	/** The board's own picture while its look has one, and its name in the room once uploaded. */
+	#picture = $state.raw<Blob>();
+	#uploaded = $state.raw<{ picture: Blob; code: string; hash: string }>();
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -360,13 +364,38 @@ export class RoomHost {
 	 * The board's background as it shows now, so the players' grim, Public Town and Grim view
 	 * draw the town on the same one, whatever each device's own settings (Trevor, 2026-10-26).
 	 */
-	showLook(gameId: string, look: PublicLook): void {
+	showLook(gameId: string, look: PublicLook, picture?: Blob): void {
 		const shown = { gameId, look: $state.snapshot(look) as PublicLook };
 		if (JSON.stringify(shown) !== JSON.stringify(this.#look)) this.#look = shown;
+		this.#picture = look.background === 'image' ? picture : undefined;
+		this.#uploadPicture();
+	}
+
+	/** Uploads the board's picture to the open room, once, so the table's grims show it too. */
+	#uploadPicture(): void {
+		const picture = this.#picture;
+		const code = this.code;
+		const stored = readStored<StoredRoom>(STORAGE_KEY);
+		if (!picture || !code || stored?.code !== code) return;
+		if (this.#uploaded?.picture === picture && this.#uploaded.code === code) return;
+		uploadRoomImage(code, stored.key, picture)
+			.then((hash) => {
+				if (this.#picture === picture && this.code === code)
+					this.#uploaded = { picture, code, hash };
+			})
+			// Not shared until the next try (a new look, or the room again): no background.
+			.catch(() => undefined);
 	}
 
 	#lookOf(gameId: string): { look?: PublicLook } {
-		return this.#look?.gameId === gameId ? { look: this.#look.look } : {};
+		if (this.#look?.gameId !== gameId) return {};
+		const { look } = this.#look;
+		const uploaded = this.#uploaded;
+		const named =
+			look.background === 'image' &&
+			uploaded?.picture === this.#picture &&
+			uploaded?.code === this.code;
+		return { look: named ? { ...look, image: uploaded!.hash } : look };
 	}
 
 	/** Lets the players of game `gameId` see their own characters, or hides them again. */
@@ -541,6 +570,7 @@ export class RoomHost {
 	#connect(room: StoredRoom): void {
 		this.#socket?.stop();
 		this.code = room.code;
+		this.#uploadPicture();
 		this.#socket = new RoomSocket(
 			room.code,
 			{
