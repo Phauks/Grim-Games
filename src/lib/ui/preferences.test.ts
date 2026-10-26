@@ -85,7 +85,6 @@ describe('parsePreferences', () => {
 			slotMachine: true,
 			tileOrderRandom: true,
 			ownWording: true,
-			hideWatchLink: true,
 			soundVolume: 0.35,
 			timerSound: 'buzzer',
 			timerMode: 'up',

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import { roomJoinLink } from './join-link.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { editionLogo, logoInScriptJson } from '#lib/core/data/script-logo.ts';
 	import { editionScript } from '#lib/core/data/index.ts';
@@ -117,9 +117,7 @@
 			label: t('room.scriptVote.minutes', { count: m })
 		}))
 	];
-	const link = $derived(
-		host.code ? `${location.origin}${resolve('/join/[code]', { code: host.code })}` : undefined
-	);
+	const link = $derived(host.code ? roomJoinLink(host.code) : undefined);
 	const kinds = SCRIPT_VOTE_KINDS.map((value) => ({
 		value,
 		label: t(`room.scriptVote.kind.${value}`)
