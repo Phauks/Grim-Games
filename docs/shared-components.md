@@ -144,6 +144,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Night information and answers (`night-info.ts`)                                                     | `learns`, `answers`                   | moved |
 | Game end (`game-end.ts`, `end-reason.ts`)                                                           | `gameEnd`                             | moved |
 | Extra evil makers (`modes/draft.ts` Ivory draft; the kind the Spirit of Ivory limits; new)          | `makesExtraEvil`                      | new   |
+| Hidden character it may really be (`modes/draft.ts`, the Atheist's Drunk; new)                      | `orHiddenAs`                          | new   |
 
 ## Lists that only shrink
 
