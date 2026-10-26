@@ -14,6 +14,7 @@ import {
 	refuseOffer,
 	seatsLeft,
 	answerAsk,
+	answerHidden,
 	draftTotal,
 	startDraft,
 	takeOffer,
@@ -404,5 +405,59 @@ describe('rejecting a drafted character whose setup change is asked', () => {
 		expect(again.picks).toEqual([]);
 		expect(again.slots).toEqual(start.slots);
 		expect(again.offer).not.toContain('legion');
+	});
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): a drafted Atheist may really be the
+// Drunk, who thinks they are a Townsfolk (https://wiki.bloodontheclocktower.com/Drunk), or
+// a real Atheist, whose game has no evil characters (https://wiki.bloodontheclocktower.com/Atheist).
+describe('a drafted character that may really be a hidden one', () => {
+	const atheist = data.characters.filter((c) => c.id === 'atheist');
+	const start = (hidden: string[] = ['drunk']) =>
+		startDraft(
+			{ ...config, modifiers: true, hidden },
+			baseCounts(7),
+			tb.concat(atheist),
+			seeded(3)
+		);
+
+	it('is named by its rules file', () => {
+		expect(rulesOf('atheist')?.orHiddenAs).toBe('drunk');
+		expect(start().orHidden).toEqual({ atheist: 'drunk' });
+		expect(start([]).orHidden).toBeUndefined();
+	});
+
+	it('asks the Storyteller before its setup change, with no offer meanwhile', () => {
+		const s = takeOffer({ ...start(), offer: ['atheist'] }, 'atheist', seeded(3));
+		expect(s.choice).toEqual({ characterId: 'atheist', hidden: 'drunk' });
+		expect(s.offer).toEqual([]);
+		expect(s.ask).toBeUndefined();
+		expect(canRedraft(s)).toBe(true);
+	});
+
+	it('as the Drunk: marks the seat and keeps the evil seats', () => {
+		const first = start();
+		const s = answerHidden(
+			takeOffer({ ...first, offer: ['atheist'] }, 'atheist', seeded(3)),
+			true,
+			seeded(3)
+		);
+		expect(s.choice).toBeUndefined();
+		expect(s.hiddenSeats).toEqual({ 0: 'drunk' });
+		expect(s.slots.minion).toBe(first.slots.minion);
+		expect(s.slots.demon).toBe(first.slots.demon);
+		expect(s.offer.length).toBeGreaterThan(0);
+	});
+
+	it('as the Atheist: takes out every evil seat, then asks the Outsiders', () => {
+		const s = answerHidden(
+			takeOffer({ ...start(), offer: ['atheist'] }, 'atheist', seeded(3)),
+			false,
+			seeded(3)
+		);
+		expect(s.hiddenSeats).toBeUndefined();
+		expect(draftTotal(s, 'minion')).toBe(0);
+		expect(draftTotal(s, 'demon')).toBe(0);
+		expect(s.ask?.type).toBe('outsider');
 	});
 });

@@ -21,6 +21,7 @@ export interface NavItem {
 		| '/info-tokens'
 		| '/account'
 		| '/reports'
+		| '/live-games'
 		| '/about'
 		| '/support'
 		| '/changelog'
@@ -106,6 +107,14 @@ export const REPORTS_ITEM: NavItem = {
 	path: '/reports',
 	label: 'shell.navReports',
 	icon: 'report'
+};
+
+/** Every open room, to watch unseen (plan J31); in the Admin group, for admins only. */
+export const LIVE_GAMES_ITEM: NavItem = {
+	id: 'live-games',
+	path: '/live-games',
+	label: 'shell.navLiveGames',
+	icon: 'watchers'
 };
 
 /**

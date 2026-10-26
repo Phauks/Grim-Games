@@ -6,6 +6,14 @@ export const player = {
 	'player.pageTitle': `Player view · ${APP_NAME}`,
 	'player.loadFailed': 'Could not load the script: {error}',
 	'player.loading': 'Loading…',
+	'player.offline.row': 'Offline game: only the script came across',
+	'player.offline.more': 'What an offline game has',
+	'player.offline.title': 'Offline game',
+	'player.offline.hereTitle': 'On this phone',
+	'player.offline.here': 'The script, the night order, jinxes, your notes and your own grim.',
+	'player.offline.notHereTitle': 'Not coming to this phone',
+	'player.offline.notHere':
+		'The town, votes, the timer, your character and the final grimoire. The Storyteller tells the table, or players join the room once there is internet.',
 	'player.tab.script': 'Script',
 	'player.tab.night': 'Night',
 	'player.tab.grim': 'Grim',
@@ -76,6 +84,7 @@ export const player = {
 	'player.sheetBackground.charcoal': 'Charcoal',
 	'player.frame': 'Your frame',
 	'player.guessesOnTokens': 'Guesses over avatars',
+	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
 	'player.guessesOnTokensDetail':
 		"Your guess of a seat's character shows on its token in place of the player's avatar.",
 	'player.frameStoryteller': "Storyteller's choice",

@@ -1,5 +1,10 @@
 import type { CombinedParts } from '#lib/core/modes/index.ts';
-import { DJINN_THREE_ALIVE, INFINITE_NAMED, PLUS_ONE_NAMED } from './rule-switches.ts';
+import {
+	DJINN_THREE_ALIVE,
+	DUPLICATE_DEMONS,
+	INFINITE_NAMED,
+	PLUS_ONE_NAMED
+} from './rule-switches.ts';
 
 /**
  * Built-in mode and special rule descriptions Trevor has approved (2026-10-18: "You write game mode
@@ -119,7 +124,12 @@ export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly st
 	// is with its 3-player switch on (rule-switches.ts).
 	'warrens:parts.ruleChanges[0]':
 		'While 5 or more players are alive, when an evil player nominates another living evil player, and neither is a Traveller, swap their character tokens straight away. Each learns their new character when they next wake at night.',
-	'djinns-bargain:parts.ruleChanges[0]': [DJINN_BARGAIN, `${DJINN_BARGAIN} ${DJINN_THREE_ALIVE}`]
+	'djinns-bargain:parts.ruleChanges[0]': [DJINN_BARGAIN, `${DJINN_BARGAIN} ${DJINN_THREE_ALIVE}`],
+	// Approved 2026-10-26 (decision card); the second is with the Duplicate Demons switch on.
+	'duplicate-characters:parts.duplicates': [
+		'You may put more than one copy of any character but a Demon in the bag.',
+		DUPLICATE_DEMONS
+	]
 };
 
 /** Whether a built-in instruction is text Trevor approved for that part. */

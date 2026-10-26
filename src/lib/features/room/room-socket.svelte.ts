@@ -5,6 +5,7 @@
  */
 import type { ClientMessage, RefusedReason, ServerMessage } from '#lib/core/sync/room.ts';
 import { setDiagnostic } from '#lib/features/errors/diagnostics.ts';
+import { lookForNewerBuild } from './newer-build.ts';
 
 export type RoomStatus = 'connecting' | 'open' | 'offline' | 'refused' | 'closed';
 
@@ -24,14 +25,18 @@ export class RoomSocket {
 	#stopped = false;
 	#unregister: () => void;
 
-	/** `onOpen` runs after each hello, to resend what the room may have missed. */
+	/**
+	 * `onOpen` runs after each hello, to resend what the room may have missed. `path` is the
+	 * room's address, for another route to it (an admin's, plan J31).
+	 */
 	constructor(
 		code: string,
 		hello: ClientMessage,
 		onMessage: (message: ServerMessage) => void,
-		onOpen?: () => void
+		onOpen?: () => void,
+		path = `/api/room/${code}`
 	) {
-		this.#url = `${location.origin.replace(/^http/, 'ws')}/api/room/${code}`;
+		this.#url = `${location.origin.replace(/^http/, 'ws')}${path}`;
 		this.#hello = hello;
 		this.#onMessage = onMessage;
 		this.#onOpen = onOpen;
@@ -85,7 +90,7 @@ export class RoomSocket {
 				this.refusedReason = message.reason;
 				this.#stopped = true;
 				// The room needs a newer build: look for it now, so the update prompt shows.
-				if (message.reason === 'too-old') checkForUpdate();
+				if (message.reason === 'too-old') lookForNewerBuild();
 			} else if (message.type === 'closed') {
 				this.status = 'closed';
 				this.#stopped = true;
@@ -109,13 +114,6 @@ export class RoomSocket {
 		this.#attempt = 0;
 		this.#connect();
 	};
-}
-
-function checkForUpdate(): void {
-	navigator.serviceWorker
-		?.getRegistration()
-		.then((registration) => registration?.update())
-		.catch(() => {});
 }
 
 /** A random 32-byte key in hex: this device's secret for one room. */
