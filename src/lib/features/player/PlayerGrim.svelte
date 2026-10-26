@@ -11,6 +11,8 @@
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import HideContentsButton from '#lib/ui/primitives/HideContentsButton.svelte';
+	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import SharedBoard from '#lib/features/room/SharedBoard.svelte';
 	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
@@ -108,7 +110,12 @@
 		guesses = kept ? readGuesses(kept) : {};
 		book = kept ? seatNotes(kept) : undefined;
 	});
-	const notes = $derived(book?.notes ?? {});
+	/**
+	 * The eye (Trevor, 2026-10-26: "Hide grim guesses, eyeball feature like we use in notes"):
+	 * on, the town shows only what the table knows, with none of this player's guesses or notes.
+	 */
+	const hiding = $derived(playerSettings.current.hideGuesses);
+	const notes = $derived(hiding ? {} : (book?.notes ?? {}));
 	let noteOpen = $state(false);
 
 	/**
@@ -190,6 +197,8 @@
 	let open = $state(false);
 	let chosen = $state<PublicSeat>();
 	function choose(seat: PublicSeat, event?: MouseEvent) {
+		// Hidden guesses never open in a sheet either.
+		if (hiding) return;
 		chosen = seat;
 		// The note mark opens the note itself, as the board's does (Trevor, 2026-10-25), and
 		// the guess pill makes the next guess the main one.
@@ -238,7 +247,7 @@
 		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
 		const traveller = characterOf(seat.traveller);
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
-		const guessed = guessesOf(guesses, seat.seatId).map(guessName).filter(Boolean);
+		const guessed = hiding ? [] : guessesOf(guesses, seat.seatId).map(guessName).filter(Boolean);
 		if (guessed.length) parts.push(t('player.grim.guess', { name: guessed.join(', ') }));
 		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
 		return parts.join(', ');
@@ -246,17 +255,26 @@
 	/* eslint-enable grim/names-as-badges */
 </script>
 
-<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
-     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
-{#if !town && final}
-	<div class="tools">
-		<Toggle
-			label={t('room.finalGrimoire')}
-			checked={showFinal}
-			onChange={(on) => (showFinal = on)}
-		/>
-	</div>
-{/if}
+<!-- The eye and the cover always, so nothing moves when the Final grimoire switch comes. -->
+<div class="tools">
+	<HideContentsButton
+		hidden={hiding}
+		onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
+		testid="hide-guesses"
+	/>
+	<CoverButton />
+	<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
+	     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
+	{#if !town && final}
+		<span class="final-switch"
+			><Toggle
+				label={t('room.finalGrimoire')}
+				checked={showFinal}
+				onChange={(on) => (showFinal = on)}
+			/></span
+		>
+	{/if}
+</div>
 {#if final && showFinal}
 	<div class="final" data-testid="final-grimoire">
 		<SharedBoard shared={final.grimoire} {over} />
@@ -289,10 +307,10 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
-			{@const main = guessesOf(guesses, seat.seatId)[0]}
+			{@const main = hiding ? undefined : guessesOf(guesses, seat.seatId)[0]}
 			{@const generic = genericGuess(main)}
 			{@const guessed = generic ?? characterOf(main)}
-			{@const others = listed(seat.seatId)
+			{@const others = (hiding ? [] : listed(seat.seatId))
 				.slice(1)
 				.flatMap((g): GuessMark[] =>
 					g.generic
@@ -525,8 +543,12 @@
 	}
 	.tools {
 		display: flex;
-		justify-content: flex-end;
+		align-items: center;
+		gap: var(--space-1);
 		margin-bottom: var(--space-2);
+	}
+	.final-switch {
+		margin-inline-start: auto;
 	}
 	/* The Storyteller's board, with room under it for History's Previous and Next. */
 	.final {

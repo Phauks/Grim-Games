@@ -126,6 +126,7 @@ import ph_mask_sad_light from '~icons/ph/mask-sad-light';
 import ph_megaphone_light from '~icons/ph/megaphone-light';
 import ph_minus_light from '~icons/ph/minus-light';
 import ph_minus_circle_light from '~icons/ph/minus-circle-light';
+import ph_monitor_light from '~icons/ph/monitor-light';
 import ph_moon_light from '~icons/ph/moon-light';
 import ph_moon_stars_light from '~icons/ph/moon-stars-light';
 import ph_note_pencil_light from '~icons/ph/note-pencil-light';
@@ -149,6 +150,7 @@ import ph_prohibit_inset_light from '~icons/ph/prohibit-inset-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
 import ph_qr_code_light from '~icons/ph/qr-code-light';
 import ph_question_light from '~icons/ph/question-light';
+import ph_rectangle_light from '~icons/ph/rectangle-light';
 import ph_scales_light from '~icons/ph/scales-light';
 import ph_scan_light from '~icons/ph/scan-light';
 import ph_scroll_light from '~icons/ph/scroll-light';
@@ -336,6 +338,7 @@ const icons: IconMap = {
 	'ph:megaphone-light': ph_megaphone_light,
 	'ph:minus-light': ph_minus_light,
 	'ph:minus-circle-light': ph_minus_circle_light,
+	'ph:monitor-light': ph_monitor_light,
 	'ph:moon-light': ph_moon_light,
 	'ph:moon-stars-light': ph_moon_stars_light,
 	'ph:note-pencil-light': ph_note_pencil_light,
@@ -359,6 +362,7 @@ const icons: IconMap = {
 	'ph:push-pin-light': ph_push_pin_light,
 	'ph:qr-code-light': ph_qr_code_light,
 	'ph:question-light': ph_question_light,
+	'ph:rectangle-light': ph_rectangle_light,
 	'ph:scales-light': ph_scales_light,
 	'ph:scan-light': ph_scan_light,
 	'ph:scroll-light': ph_scroll_light,

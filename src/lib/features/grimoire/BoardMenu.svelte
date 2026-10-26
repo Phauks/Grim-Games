@@ -5,6 +5,7 @@
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 
 	/**
 	 * The board's ⋯ menu: the game's less frequent actions, the seats, the board's settings,
@@ -54,6 +55,8 @@
 		open = false;
 		action();
 	}
+	/** The grim cover (Trevor, 2026-10-26), as the day sheet's own (CoverButton). */
+	let covering = $state(false);
 </script>
 
 <Dialog bind:open title="Grimoire">
@@ -61,6 +64,9 @@
 		<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}>Demon bluffs</Button>
 		<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>
+		<Button variant="quiet" icon="cover" onclick={() => fromMenu(() => (covering = true))}>
+			{t('show.cover')}
+		</Button>
 		{#if gameInfo}
 			<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
 		{/if}
@@ -129,6 +135,7 @@
 		{/if}
 	</div>
 </Dialog>
+<ShowToPlayer bind:open={covering} blank />
 
 <style>
 	.menu {

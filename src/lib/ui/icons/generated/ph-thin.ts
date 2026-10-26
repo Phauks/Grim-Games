@@ -126,6 +126,7 @@ import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
 import ph_megaphone_thin from '~icons/ph/megaphone-thin';
 import ph_minus_thin from '~icons/ph/minus-thin';
 import ph_minus_circle_thin from '~icons/ph/minus-circle-thin';
+import ph_monitor_thin from '~icons/ph/monitor-thin';
 import ph_moon_thin from '~icons/ph/moon-thin';
 import ph_moon_stars_thin from '~icons/ph/moon-stars-thin';
 import ph_note_pencil_thin from '~icons/ph/note-pencil-thin';
@@ -149,6 +150,7 @@ import ph_prohibit_inset_thin from '~icons/ph/prohibit-inset-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
+import ph_rectangle_thin from '~icons/ph/rectangle-thin';
 import ph_scales_thin from '~icons/ph/scales-thin';
 import ph_scan_thin from '~icons/ph/scan-thin';
 import ph_scroll_thin from '~icons/ph/scroll-thin';
@@ -336,6 +338,7 @@ const icons: IconMap = {
 	'ph:megaphone-thin': ph_megaphone_thin,
 	'ph:minus-thin': ph_minus_thin,
 	'ph:minus-circle-thin': ph_minus_circle_thin,
+	'ph:monitor-thin': ph_monitor_thin,
 	'ph:moon-thin': ph_moon_thin,
 	'ph:moon-stars-thin': ph_moon_stars_thin,
 	'ph:note-pencil-thin': ph_note_pencil_thin,
@@ -359,6 +362,7 @@ const icons: IconMap = {
 	'ph:push-pin-thin': ph_push_pin_thin,
 	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
+	'ph:rectangle-thin': ph_rectangle_thin,
 	'ph:scales-thin': ph_scales_thin,
 	'ph:scan-thin': ph_scan_thin,
 	'ph:scroll-thin': ph_scroll_thin,

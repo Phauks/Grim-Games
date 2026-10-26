@@ -126,6 +126,7 @@ import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
 import ph_megaphone_duotone from '~icons/ph/megaphone-duotone';
 import ph_minus_duotone from '~icons/ph/minus-duotone';
 import ph_minus_circle_duotone from '~icons/ph/minus-circle-duotone';
+import ph_monitor_duotone from '~icons/ph/monitor-duotone';
 import ph_moon_duotone from '~icons/ph/moon-duotone';
 import ph_moon_stars_duotone from '~icons/ph/moon-stars-duotone';
 import ph_note_pencil_duotone from '~icons/ph/note-pencil-duotone';
@@ -149,6 +150,7 @@ import ph_prohibit_inset_duotone from '~icons/ph/prohibit-inset-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
+import ph_rectangle_duotone from '~icons/ph/rectangle-duotone';
 import ph_scales_duotone from '~icons/ph/scales-duotone';
 import ph_scan_duotone from '~icons/ph/scan-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
@@ -336,6 +338,7 @@ const icons: IconMap = {
 	'ph:megaphone-duotone': ph_megaphone_duotone,
 	'ph:minus-duotone': ph_minus_duotone,
 	'ph:minus-circle-duotone': ph_minus_circle_duotone,
+	'ph:monitor-duotone': ph_monitor_duotone,
 	'ph:moon-duotone': ph_moon_duotone,
 	'ph:moon-stars-duotone': ph_moon_stars_duotone,
 	'ph:note-pencil-duotone': ph_note_pencil_duotone,
@@ -359,6 +362,7 @@ const icons: IconMap = {
 	'ph:push-pin-duotone': ph_push_pin_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
+	'ph:rectangle-duotone': ph_rectangle_duotone,
 	'ph:scales-duotone': ph_scales_duotone,
 	'ph:scan-duotone': ph_scan_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,

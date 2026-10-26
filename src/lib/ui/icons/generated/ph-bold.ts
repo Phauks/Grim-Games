@@ -126,6 +126,7 @@ import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_megaphone_bold from '~icons/ph/megaphone-bold';
 import ph_minus_bold from '~icons/ph/minus-bold';
 import ph_minus_circle_bold from '~icons/ph/minus-circle-bold';
+import ph_monitor_bold from '~icons/ph/monitor-bold';
 import ph_moon_bold from '~icons/ph/moon-bold';
 import ph_moon_stars_bold from '~icons/ph/moon-stars-bold';
 import ph_note_pencil_bold from '~icons/ph/note-pencil-bold';
@@ -149,6 +150,7 @@ import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
+import ph_rectangle_bold from '~icons/ph/rectangle-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
 import ph_scan_bold from '~icons/ph/scan-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
@@ -336,6 +338,7 @@ const icons: IconMap = {
 	'ph:megaphone-bold': ph_megaphone_bold,
 	'ph:minus-bold': ph_minus_bold,
 	'ph:minus-circle-bold': ph_minus_circle_bold,
+	'ph:monitor-bold': ph_monitor_bold,
 	'ph:moon-bold': ph_moon_bold,
 	'ph:moon-stars-bold': ph_moon_stars_bold,
 	'ph:note-pencil-bold': ph_note_pencil_bold,
@@ -359,6 +362,7 @@ const icons: IconMap = {
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
+	'ph:rectangle-bold': ph_rectangle_bold,
 	'ph:scales-bold': ph_scales_bold,
 	'ph:scan-bold': ph_scan_bold,
 	'ph:scroll-bold': ph_scroll_bold,

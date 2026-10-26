@@ -63,6 +63,7 @@ import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_lock from '~icons/ph/lock';
 import ph_megaphone from '~icons/ph/megaphone';
 import ph_minus_circle from '~icons/ph/minus-circle';
+import ph_monitor from '~icons/ph/monitor';
 import ph_moon from '~icons/ph/moon';
 import ph_notepad from '~icons/ph/notepad';
 import ph_paint_brush from '~icons/ph/paint-brush';
@@ -168,6 +169,7 @@ const icons: IconMap = {
 	'ph:lock': ph_lock,
 	'ph:megaphone': ph_megaphone,
 	'ph:minus-circle': ph_minus_circle,
+	'ph:monitor': ph_monitor,
 	'ph:moon': ph_moon,
 	'ph:notepad': ph_notepad,
 	'ph:paint-brush': ph_paint_brush,
