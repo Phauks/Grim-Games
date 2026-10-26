@@ -50,6 +50,11 @@
 </span>
 
 <style>
+	/* Beside the name in a title (/play, the board's Script), as tall as two lines of it at most. */
+	:global(.script-logo.title-logo) {
+		width: 1.8em;
+		height: 1.8em;
+	}
 	/* The image is laid over the box, so its size is always the box's and never the picture's
 	   own (about 500px for TPI's logos), whatever a browser makes of percentage heights. */
 	.script-logo {

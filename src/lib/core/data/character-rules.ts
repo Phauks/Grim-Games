@@ -26,6 +26,7 @@ import {
 import { readSetupPrep, type SetupPrepRules } from './setup-prep-rules.ts';
 import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
+import { readTurnsPlayersInto, type TurnsPlayersInto } from './turns-players-rules.ts';
 import {
 	ALIGNMENTS,
 	CHARACTER_TYPES,
@@ -195,6 +196,8 @@ export interface CharacterRules {
 	 * drafted, or later, as Grimbits' draft tool does (`modes/draft.ts`).
 	 */
 	gainsAbilityOf?: SeatedType;
+	/** Players it turns into another type at setup (the Kazali; `turns-players-rules.ts`). */
+	turnsPlayersInto?: TurnsPlayersInto;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -356,7 +359,8 @@ export const RULE_KEYS = [
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'orHiddenAs',
-	'gainsAbilityOf'
+	'gainsAbilityOf',
+	'turnsPlayersInto'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -564,6 +568,8 @@ export function parseCharacterRules(
 	if (hiddenAs !== undefined) rules.orHiddenAs = hiddenAs;
 	const gains = readEnum(raw, 'gainsAbilityOf', SEATED_TYPES, path, issues, false);
 	if (gains !== undefined) rules.gainsAbilityOf = gains;
+	const turns = readTurnsPlayersInto(raw.turnsPlayersInto, path, issues);
+	if (turns) rules.turnsPlayersInto = turns;
 	return issues.list.length > before ? undefined : rules;
 }
 

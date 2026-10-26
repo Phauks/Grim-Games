@@ -60,6 +60,7 @@
 		type NominationPrompt
 	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
+	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -118,7 +119,8 @@
 		publicTravellerTest,
 		travellersInPlay
 	} from '#lib/features/player/travellers-in-play.ts';
-	import { publicProjection } from '#lib/core/sync/public-projection.ts';
+	import { publicProjection, type PublicLook } from '#lib/core/sync/public-projection.ts';
+	import { drawnLook } from './shared-look.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
@@ -357,7 +359,7 @@
 			hasFace: seats[i]?.characterId !== undefined,
 			name: nameBoxes[i]?.box,
 			dead: !!seats[i]?.dead,
-			note: !!seats[i]?.note,
+			note: !!seats[i]?.notes?.length,
 			nameOffset: boardLooks.current.nameOffset
 		});
 	}
@@ -489,7 +491,7 @@
 	let notesOpen = $state(false);
 	let notesSheet = $state<ReturnType<typeof NotesSheet>>();
 	/**
-	 * A seat's pen mark opens just that player's note, not the whole sheet (Trevor,
+	 * A seat's pen mark opens just that player's notes, not the whole sheet (Trevor,
 	 * 2026-10-19: less to take in). After the tap's click, so it doesn't land in the field.
 	 */
 	function editNote(seatId: SeatId) {
@@ -897,6 +899,20 @@
 	// A report sent from the board carries the game's script, never the game (Trevor, 2026-10-22).
 	offerScriptToReports(() => loadedScript);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
+	/** The look this board shares, or, watching, the look its Storyteller shared (Trevor, 2026-10-26). */
+	let ownLook = $state<PublicLook>();
+	const look = $derived(watching ? grimoire.look : ownLook);
+	const logoOpacity = $derived(
+		watching
+			? drawnLook(grimoire.look).logo
+			: boardLooks.current.logo
+				? boardLooks.current.logoOpacity
+				: undefined
+	);
+	function shareLook(shown: PublicLook) {
+		ownLook = shown;
+		roomHost().showLook(game.gameId, shown);
+	}
 	/** Share links to the saved script when it is the game's, as /play's does (parity). */
 	const scriptShare = $derived.by(() => {
 		if (!scriptOpen || !loadedScript) return undefined;
@@ -1098,7 +1114,12 @@
 		style:--strip-h={STRIP_H}
 		bind:clientHeight={stripReserve}
 	></div>
-	<GameBackdrop {game} logo={boardLogo || undefined} />
+	<GameBackdrop
+		{game}
+		logo={boardLogo || undefined}
+		watched={watching ? { look: grimoire.look } : undefined}
+		onlook={shareLook}
+	/>
 	<BoardToolbar
 		{grimoire}
 		{watching}
@@ -1125,11 +1146,11 @@
 		bind:this={board}
 	>
 		<!-- The script's logo, faint behind the seats (Trevor, 2026-10-18: his switch and opacity). -->
-		{#if boardLooks.current.logo && boardLogo}
+		{#if logoOpacity !== undefined && boardLogo}
 			<ScriptLogo
 				src={boardLogo}
 				class="board-logo"
-				--logo-opacity={boardLooks.current.logoOpacity}
+				--logo-opacity={logoOpacity}
 				--logo-h={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
@@ -1441,6 +1462,9 @@
 	</div>
 </div>
 
+<!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
+<BoardAmbience scene={watching || ended || phaseNow.kind === 'setup' ? null : phaseNow.kind} />
+
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <BoardMenu
 	bind:open={menuOpen}
@@ -1587,8 +1611,16 @@
 	<GameFeedbackSheet bind:open={feedbackOpen} {game} />
 {/if}
 
-<!-- Exactly what players see on /play (Trevor, 2026-10-19): byline, Print, Share and tabs. -->
-<Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">
+<!-- Exactly what players see on /play (Trevor, 2026-10-19): byline, Print, Share and tabs, the
+     settings cog, and the logo and name under the buttons (Trevor, 2026-10-26). -->
+{#snippet scriptLogoLead()}<ScriptLogo src={boardLogo} class="title-logo" />{/snippet}
+<Dialog
+	bind:open={scriptOpen}
+	title={game.script.meta?.name || 'Script'}
+	size="max"
+	titleBelow
+	lead={boardLogo ? scriptLogoLead : undefined}
+>
 	{#snippet headActions()}
 		<PlayerScriptActions
 			script={loadedScript}
@@ -1631,7 +1663,7 @@
 							layout: town.layout,
 							storytellerName: town.storytellerName,
 							corner: town.corner,
-							gameId: game.gameId,
+							look,
 							guessKey: `storyteller:${game.gameId}`
 						}}
 					/>{/snippet}

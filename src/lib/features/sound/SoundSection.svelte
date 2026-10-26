@@ -5,6 +5,7 @@
 	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
+	import AmbienceSettings from './AmbienceSettings.svelte';
 	import { playSound } from './sound.ts';
 	import VibrateToggle from './VibrateToggle.svelte';
 
@@ -63,3 +64,5 @@
 		playSound(callSound);
 	}}
 />
+
+<AmbienceSettings />

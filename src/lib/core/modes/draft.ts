@@ -57,19 +57,27 @@
  * that type whose setup change would apply (the Baron's +2 Outsiders), or Later. A chosen
  * character leaves the pool, so it stays out of play, and its setup change applies.
  *
- * A reserved hidden character (Grimbits' tool, for the Marionette): with `config.reserve`, a
- * hidden character whose token goes next to another type (the Marionette next to the Demon,
- * https://wiki.bloodontheclocktower.com/Marionette) keeps a seat of its own type out of the
- * draft, and one more Townsfolk is drafted instead. Once everyone has drafted, the Storyteller
- * picks which good neighbour of that type is really it (`reservedSeats`).
+ * Hidden characters reserved at the start (the Marionette) and players turned into another type
+ * (the Kazali's, the Lord of Typhon's, Lil' Monsta's Minions) are worked out in `draft-seats.ts`.
  *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
 import { setupModifierFor, type CountOp } from '#lib/core/rules/setup-modifiers.ts';
-import { isReplacedAfterDraw, replacementReminder } from '#lib/core/rules/bag-characters.ts';
+import type { TurnsPlayersInto } from '#lib/core/data/turns-players-rules.ts';
+import { isSeated, keptForNeighbours, rulesFor, type ReservedHidden } from './draft-seats.ts';
+
+export {
+	conversions,
+	draftedTurned,
+	reservedHidden,
+	reservedSeats,
+	turnableSeats,
+	turnOptions,
+	type Conversion,
+	type ReservedHidden
+} from './draft-seats.ts';
 
 export interface DraftConfig {
 	offers: number[];
@@ -87,53 +95,6 @@ export interface DraftConfig {
 	hidden?: CharacterId[];
 	/** A hidden character that keeps a seat of its type out of the draft (the Marionette). */
 	reserve?: ReservedHidden;
-}
-
-/** A hidden character drafted as a good player, next to a seat of `nextTo` (`reservedHidden`). */
-export interface ReservedHidden {
-	id: CharacterId;
-	type: SeatedType;
-	nextTo: SeatedType;
-}
-
-/**
- * The script's hidden characters that are evil but dealt as good, placed next to a type: the
- * Marionette, whose "Is The Marionette" token goes on a good neighbour of the Demon (its
- * reminder target rule).
- */
-export function reservedHidden(characters: readonly Character[]): ReservedHidden[] {
-	return characters.flatMap((c) => {
-		if ((c.type !== 'minion' && c.type !== 'demon') || !isReplacedAfterDraw(c)) return [];
-		const label = replacementReminder(c)?.label;
-		const nextTo = label ? rulesFor(c)?.reminderTargets?.[label]?.neighbour?.ofType : undefined;
-		return nextTo && isSeated(nextTo) ? [{ id: c.id, type: c.type, nextTo }] : [];
-	});
-}
-
-/**
- * The seats (by pick index) that may be a reserved hidden character: the nearest good seat each
- * way round from every seat of `nextTo`, skipping evil ones, leaving out seats in `taken`.
- */
-export function reservedSeats(
-	state: DraftState,
-	reserve: ReservedHidden,
-	taken: readonly number[] = []
-): number[] {
-	const { picks, types } = state;
-	const evil = (i: number) => types[picks[i]] === 'minion' || types[picks[i]] === 'demon';
-	const seats = new Set<number>();
-	picks.forEach((id, i) => {
-		if (types[id] !== reserve.nextTo) return;
-		for (const step of [-1, 1]) {
-			for (let n = 1; n < picks.length; n++) {
-				const j = (i + step * n + picks.length) % picks.length;
-				if (evil(j)) continue;
-				seats.add(j);
-				break;
-			}
-		}
-	});
-	return [...seats].filter((i) => !taken.includes(i)).sort((a, b) => a - b);
 }
 
 /** The Storyteller chooses which ability of `options` the last pick has, or none yet. */
@@ -216,6 +177,12 @@ export interface DraftState {
 	ability?: AbilityChoice;
 	/** Seats (by pick index) with a gained character's ability, chosen in the draft. */
 	abilities?: Record<number, CharacterId>;
+	/** The character in play that turned this seat's player into the type it is offered. */
+	turnedBy?: CharacterId;
+	/** Characters drafted and in play but dealt to no one (Lil' Monsta). */
+	undealt?: CharacterId[];
+	/** Each pool character that turns players into a type, with the type's usual count. */
+	turns?: Record<CharacterId, TurnsPlayersInto & { usual: number }>;
 	/** `config.reserve` kept its seat out of the draft (there was one of its type to keep). */
 	reserved?: boolean;
 }
@@ -228,12 +195,7 @@ export interface ForcedPick {
 
 type Random = () => number;
 
-/** Its own rules (a custom character's) or our rules file's. */
-const rulesFor = (c: Character) => (c.edition === undefined ? c.rules : rulesOf(c.id));
 const makesExtraEvil = (c: Character) => rulesFor(c)?.makesExtraEvil === true;
-
-const isSeated = (type: string): type is SeatedType =>
-	(SEATED_TYPES as readonly string[]).includes(type);
 
 export function startDraft(
 	config: DraftConfig,
@@ -289,6 +251,14 @@ export function startDraft(
 				})
 			)
 		: {};
+	const turns: NonNullable<DraftState['turns']> = config.modifiers
+		? Object.fromEntries(
+				seated.flatMap((c) => {
+					const into = rulesFor(c)?.turnsPlayersInto;
+					return into ? [[c.id, { ...into, usual: counts[into.type] }]] : [];
+				})
+			)
+		: {};
 	const reserved = config.reserve !== undefined && counts[config.reserve.type] > 0;
 	const slots =
 		reserved && config.reserve
@@ -313,6 +283,7 @@ export function startDraft(
 		...(extraEvil.length > 0 ? { extraEvil } : {}),
 		...(Object.keys(orHidden).length > 0 ? { orHidden } : {}),
 		...(Object.keys(gains).length > 0 ? { gains } : {}),
+		...(Object.keys(turns).length > 0 ? { turns } : {}),
 		...(reserved ? { reserved } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
@@ -356,6 +327,21 @@ export function takeOffer(state: DraftState, id: CharacterId, random: Random): D
 	};
 	delete next.forcedBy;
 	delete next.onlyType;
+	delete next.turnedBy;
+	const turns = next.turns?.[id];
+	if (turns?.players === 'drafter') {
+		// Not dealt: the player drafts again, of the type it turns them into.
+		next = {
+			...next,
+			picks: state.picks,
+			slots: { ...next.slots, [type]: next.slots[type] + 1 },
+			undealt: [...(next.undealt ?? []), id],
+			onlyType: turns.type,
+			turnedBy: id
+		};
+		delete next.previous;
+		return applyChanges(next, [id], random);
+	}
 	next = forceRequired(next, id);
 	const hidden = next.orHidden?.[id];
 	if (hidden && !Object.values(next.hiddenSeats ?? {}).includes(hidden))
@@ -405,9 +391,10 @@ export function answerAbility(
  */
 function applyChanges(state: DraftState, ids: readonly CharacterId[], random: Random): DraftState {
 	let next = state;
-	const changes = ids.flatMap((id) =>
-		(next.modifiers?.[id] ?? []).map((op) => ({ characterId: id, op }))
-	);
+	const changes = ids.flatMap((id) => [
+		...(next.modifiers?.[id] ?? []).map((op) => ({ characterId: id, op })),
+		...keptForNeighbours(next, id)
+	]);
 	if (changes.length > 0) {
 		next = advance({ ...next, pending: [...(next.pending ?? []), ...changes] });
 		if (next.ask) return { ...next, offer: [] };
@@ -475,7 +462,7 @@ export function redraft(
 	};
 	delete next.forcedBy;
 	if (type && next.slots[type] > 0) next = { ...next, onlyType: type };
-	else delete next.onlyType;
+	else if (!next.turnedBy) delete next.onlyType;
 	return withOffer(next, next.config.offers[0] ?? 1, random);
 }
 

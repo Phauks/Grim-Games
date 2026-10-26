@@ -6,12 +6,14 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import type { SetupGamePort } from './game-port.ts';
 
 	/**
-	 * The ⋯ for a custom script's parts the Storyteller can't otherwise reach (Trevor, backlog
-	 * L25): how each of its own characters goes in the bag. Some scripts leave out TPI's
+	 * A custom script's parts the Storyteller can't otherwise reach (Trevor, backlog L25): how
+	 * each of its own characters goes in the bag. A row of the Bag draw sheet, shown only when
+	 * the script has characters of its own (Trevor, 2026-10-26: no ⋯ on the title row). Some scripts leave out TPI's
 	 * `special` data, so a character that thinks it is another (Blood on Hope's Peak's
 	 * Ultimate Imposter, like the Drunk) was dealt as itself. Changes this game's script.
 	 */
@@ -42,12 +44,13 @@
 	}
 </script>
 
-<IconButton
-	icon="more"
-	label={t('setup.scriptCharacters')}
-	disabled={own.length === 0}
-	onclick={() => (open = true)}
-/>
+{#if own.length > 0}
+	<SettingRow label={t('setup.scriptCharacters')}>
+		{#snippet control()}
+			<IconButton icon="edit" label={t('setup.scriptCharacters')} onclick={() => (open = true)} />
+		{/snippet}
+	</SettingRow>
+{/if}
 <Dialog bind:open title={t('setup.scriptCharacters')}>
 	<div class="roles" data-testid="script-characters">
 		{#each own as character (character.id)}

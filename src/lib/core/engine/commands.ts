@@ -52,8 +52,19 @@ export type Command =
 	| { type: 'RenameSeat'; seatId: SeatId; playerName?: PlayerName }
 	/** The Storyteller's name, shown to players; an empty or missing name clears it. */
 	| { type: 'SetStorytellerName'; name?: string }
-	/** The Storyteller's private note on a seat. Trimmed; an empty or missing note clears it. */
-	| { type: 'SetSeatNote'; seatId: SeatId; note?: string }
+	/**
+	 * Writes one of the Storyteller's private notes on a seat, trimmed, as `SetGameNote` does:
+	 * no `noteId` adds a new one (nothing when it is blank).
+	 */
+	| {
+			type: 'SetSeatNote';
+			seatId: SeatId;
+			noteId?: string;
+			title: string;
+			text: string;
+			hidden: boolean;
+	  }
+	| { type: 'DeleteSeatNote'; seatId: SeatId; noteId: string }
 	/**
 	 * The avatar and frame the seat's player picked on their phone (plan R6, L4); a missing one
 	 * clears it. Sent by the live room, never typed by the Storyteller.

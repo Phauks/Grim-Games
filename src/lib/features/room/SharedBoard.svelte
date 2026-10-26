@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { migrateSavedGame, SavedGameError } from '#lib/core/engine/index.ts';
 	import type { SharedGrimoire } from '#lib/core/sync/room.ts';
+	import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
 	import { dayTimers } from '#lib/core/rules/index.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -62,6 +63,7 @@
 			drawn.layout = parseSeatLayout(next.layout);
 			drawn.reminderSpots = parseReminderSpots(next.reminderSpots);
 			drawn.copies = parseReminderCopyIds(next.copies);
+			drawn.look = parsePublicLook(next.look);
 			timer.set(dayTimers.parseSharedTimer(next.timer));
 			board = drawn;
 			onProblem?.(undefined);

@@ -5,6 +5,7 @@
 	import { padShape } from '#lib/ui/scratch/pad-shape.svelte.ts';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
+	import type { TitledNote } from '#lib/ui/notes/note.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import SeatNoteEntry from '#lib/features/grimoire/SeatNoteEntry.svelte';
 	import type { PlayerNote } from './notebook.ts';
@@ -17,13 +18,27 @@
 		onOpenNote: (noteId: string) => void;
 		onAddScratch: () => void;
 		onOpenScratch: (pad: ScratchPadState) => void;
-		/** The seats of the game this phone is in, with the player's note on each, if any. */
-		seats?: readonly { seatId: string; name: string; note?: string; characterId?: CharacterId }[];
-		onOpenSeat?: (seatId: string) => void;
+		/** The seats of the game this phone is in, with the player's notes on each. */
+		seats?: readonly {
+			seatId: string;
+			name: string;
+			notes: readonly TitledNote[];
+			characterId?: CharacterId;
+		}[];
+		/** Opens a seat's note, or a new one without `noteId`. */
+		onOpenSeatNote?: (seatId: string, noteId?: string) => void;
 	}
 
-	let { notes, pads, onAdd, onOpenNote, onAddScratch, onOpenScratch, seats, onOpenSeat }: Props =
-		$props();
+	let {
+		notes,
+		pads,
+		onAdd,
+		onOpenNote,
+		onAddScratch,
+		onOpenScratch,
+		seats,
+		onOpenSeatNote
+	}: Props = $props();
 </script>
 
 <div class="notes">
@@ -72,8 +87,8 @@
 		</ul>
 	</section>
 
-	<!-- A note on each player, written here or from the Grim tab, as the Storyteller's Notes
-	     list one per player (Trevor, 2026-10-24). Only while this phone is in a game. -->
+	<!-- Notes on each player, written here or from the Grim tab, as the Storyteller's Notes
+	     list them per player (Trevor, 2026-10-24). Only while this phone is in a game. -->
 	{#if seats}
 		<section aria-labelledby="seat-notes">
 			<div class="head">
@@ -85,8 +100,9 @@
 						<SeatNoteEntry
 							characterId={seat.characterId}
 							label={seat.name}
-							note={seat.note}
-							onOpen={() => onOpenSeat?.(seat.seatId)}
+							notes={seat.notes}
+							onOpen={(noteId) => onOpenSeatNote?.(seat.seatId, noteId)}
+							onAdd={() => onOpenSeatNote?.(seat.seatId)}
 						/>
 					</li>
 				{/each}

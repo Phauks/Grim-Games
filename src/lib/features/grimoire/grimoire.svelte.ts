@@ -1,3 +1,4 @@
+import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 import { dawnGames, type Command } from '#lib/core/engine/index.ts';
 import { demonToBecome, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
@@ -33,6 +34,8 @@ import {
  */
 export class Grimoire {
 	layout = $state.raw<SeatLayout>(DEFAULT_SEAT_LAYOUT);
+	/** Someone else's board: the background its Storyteller shared (Grim view). */
+	look = $state.raw<PublicLook>();
 
 	constructor(readonly open: OpenGame) {
 		forgetUpsideDownMarks();

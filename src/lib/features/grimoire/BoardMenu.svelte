@@ -116,6 +116,14 @@
 		>
 			Tokens
 		</Button>
+		<!-- Day and night sound and the rest, beside the game they play over (plan U3). -->
+		<Button
+			variant="quiet"
+			icon="sound"
+			onclick={() => fromMenu(() => settingsDialog.showOnly('sound'))}
+		>
+			{t('settings.sectionSound')}
+		</Button>
 		<!-- The board's settings apart from the app's items (Trevor, 2026-10-23). -->
 		<hr class="menu-rule" />
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
