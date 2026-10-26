@@ -142,3 +142,69 @@ test('Public Town with a wrong or closed code says so', async ({ page }) => {
 	await expect(page.getByRole('alert')).toHaveText('This room is closed, or the code is wrong.');
 	await expect(page.getByTestId('player-grim')).toHaveCount(0);
 });
+
+test("Public Town shows the Storyteller's day timer during the day, as phones do", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-26: "During day, public Town can show the timer as well".
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+
+	const tabletContext = await browser.newContext({ ...testInfo.project.use });
+	const tablet = await tabletContext.newPage();
+	await tablet.goto(`/town/${code}`);
+	await expect(tablet.getByTestId('player-grim').getByTestId('grim-seat')).toHaveCount(8);
+	const shown = tablet.getByTestId('players-timer');
+	const title = tablet.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
+	const before = (await title.boundingBox())!;
+
+	// One character, so the bank offers Start game; the first night shows no timer.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const seat = page.locator('[data-scope="drawer"][data-part="content"]');
+	await seat.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(seat).toBeHidden();
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+	const strip = page.getByTestId('night-strip');
+	await expect(strip.or(ask)).toBeVisible();
+	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(strip).toBeVisible();
+	await expect(shown).toHaveCount(0);
+
+	// The day: the sun, in the title line, which keeps its place.
+	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await expect(shown).toHaveAttribute('data-look', 'sun');
+	await expect(shown.getByRole('img')).toHaveAttribute(
+		'aria-label',
+		'Day timer: 100% of the day left'
+	);
+	const after = (await title.boundingBox())!;
+	expect(Math.abs(after.y - before.y)).toBeLessThan(2);
+	// In full screen the title line is gone, so it moves to the town's own corner.
+	await tablet.getByRole('button', { name: 'Full screen', exact: true }).tap();
+	await expect
+		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
+		.toBe('public-town');
+	await expect(tablet.getByTestId('public-town').getByTestId('players-timer')).toBeVisible();
+	await tablet
+		.getByTestId('public-town')
+		.getByRole('button', { name: 'Full screen', exact: true })
+		.tap();
+	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	await tabletContext.close();
+});

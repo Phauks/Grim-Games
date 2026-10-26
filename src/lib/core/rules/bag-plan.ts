@@ -391,6 +391,33 @@ export function nextDrawSeat(game: Game): SeatId | undefined {
 	return game.seating.find((id) => game.seats[id].characterId === undefined && !holding.has(id));
 }
 
+/**
+ * Deal (Trevor, 2026-10-26: "auto select characters and send to players"): every tile still
+ * in the bag goes to an empty seat at random, in place of each player drawing one. Seats
+ * holding a drawn tile keep it. Returns the pairs to draw and confirm, and how many tiles
+ * have no empty seat (the Storyteller adds seats first, as the draw does: warn, never lock).
+ */
+export function dealPairs(
+	game: Game,
+	random: () => number
+): { pairs: { seatId: SeatId; tileId: TileId }[]; seatsShort: number } {
+	const tiles = [...(game.bag?.order ?? [])];
+	for (let i = tiles.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+	}
+	const holding = new Set(
+		Object.values(game.bag?.tiles ?? {})
+			.filter((t) => t.drawnBySeat !== undefined && !t.confirmed)
+			.map((t) => t.drawnBySeat)
+	);
+	const seats = game.seating.filter(
+		(id) => game.seats[id].characterId === undefined && !holding.has(id)
+	);
+	const pairs = seats.slice(0, tiles.length).map((seatId, i) => ({ seatId, tileId: tiles[i] }));
+	return { pairs, seatsShort: Math.max(0, tiles.length - seats.length) };
+}
+
 /** A numbered place on the draw screen. */
 export interface BagSlot {
 	tileId: TileId;

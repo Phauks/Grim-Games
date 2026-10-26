@@ -5,6 +5,7 @@
  */
 import type { ClientMessage, RefusedReason, ServerMessage } from '#lib/core/sync/room.ts';
 import { setDiagnostic } from '#lib/features/errors/diagnostics.ts';
+import { lookForNewerBuild } from './newer-build.ts';
 
 export type RoomStatus = 'connecting' | 'open' | 'offline' | 'refused' | 'closed';
 
@@ -89,7 +90,7 @@ export class RoomSocket {
 				this.refusedReason = message.reason;
 				this.#stopped = true;
 				// The room needs a newer build: look for it now, so the update prompt shows.
-				if (message.reason === 'too-old') checkForUpdate();
+				if (message.reason === 'too-old') lookForNewerBuild();
 			} else if (message.type === 'closed') {
 				this.status = 'closed';
 				this.#stopped = true;
@@ -113,13 +114,6 @@ export class RoomSocket {
 		this.#attempt = 0;
 		this.#connect();
 	};
-}
-
-function checkForUpdate(): void {
-	navigator.serviceWorker
-		?.getRegistration()
-		.then((registration) => registration?.update())
-		.catch(() => {});
 }
 
 /** A random 32-byte key in hex: this device's secret for one room. */

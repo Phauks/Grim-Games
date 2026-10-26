@@ -10,6 +10,7 @@
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import BagTiles from '#lib/features/setup/BagTiles.svelte';
 	import RevealDialog from '#lib/features/setup/RevealDialog.svelte';
+	import SetupNav from '#lib/features/setup/SetupNav.svelte';
 	import { tileMarks } from '#lib/features/setup/tile-face.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
@@ -204,15 +205,21 @@
 				}}
 			/>
 		{/if}
-		<div class="done">
+	</ErrorBoundary>
+	<!-- The start flow's bar, as on one town's Draw: Back to the review, Done to the towns. -->
+	<SetupNav
+		backHref={resolve('/towns/[groupId]/review', { groupId })}
+		backLabel={t('modes.towns.reviewTitle')}
+	>
+		{#snippet next()}
 			<Button
 				variant="accent"
 				icon="forward"
 				disabled={!pairs || inBag > 0}
 				href={resolve('/towns/[groupId]', { groupId })}>{t('modes.towns.drawDone')}</Button
 			>
-		</div>
-	</ErrorBoundary>
+		{/snippet}
+	</SetupNav>
 </Page>
 
 {#if shown && halves}
@@ -237,10 +244,5 @@
 <style>
 	p {
 		margin: 0;
-	}
-	.done {
-		display: flex;
-		justify-content: flex-end;
-		margin-top: var(--space-3);
 	}
 </style>

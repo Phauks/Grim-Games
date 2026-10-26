@@ -183,6 +183,15 @@ export const modes = {
 	'modes.deal.askCount': 'How many {type} in all?',
 	'modes.deal.askKeep': 'Keep {count}',
 	'modes.deal.hiddenTitle': 'Hidden character',
+	'modes.deal.reservedPrompt': 'Which good neighbour of the {type} is really this character? ',
+	'modes.deal.hiddenChoice':
+		'Is this player as drafted, or really this character, thinking they are the one drafted? ',
+	'modes.deal.asDrafted': 'As drafted',
+	'modes.deal.abilityPrompt':
+		'Which ability does this player have? Only abilities that change setup are listed.',
+	'modes.deal.abilityTake': 'Has this',
+	'modes.deal.abilityLater': 'Later',
+	'modes.deal.reallyHidden': 'Really hidden',
 	'modes.deal.hiddenPrompt': 'Which player who drafted a Townsfolk is really this character? ',
 	'modes.deal.noOptions': 'No character fits. Change the open slots or the restricted characters.',
 	'modes.sources': 'Sources',
@@ -278,6 +287,9 @@ export const modes = {
 	'modes.jinxedPairs.reduce': 'Less likely',
 	'modes.jinxedPairs.allow': 'Allow',
 	'modes.ivoryDraft': 'Ivory draft',
+	'modes.marionette': 'Marionette',
+	'modes.marionetteHint':
+		'A Minion seat is kept for the Marionette and one more Townsfolk is drafted. At the end, pick which good neighbour of the Demon is really the Marionette.',
 	'modes.oneTypePerOffer': 'Don’t mix types',
 	'modes.dealsRequired': 'Deal needed characters',
 	'modes.dealsRequiredHint':

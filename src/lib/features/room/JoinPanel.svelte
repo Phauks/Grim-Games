@@ -23,6 +23,8 @@
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
+	import { QrFrameCollector } from '#lib/core/codes/qr-frames.ts';
+	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import ScriptBallot from './ScriptBallot.svelte';
@@ -35,6 +37,7 @@
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
+	import YourCharacter from './YourCharacter.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
@@ -268,12 +271,26 @@
 	 */
 	let scanning = $state(false);
 	let scanProblem = $state('');
+	/** An animated code's frames read so far (offline codes, Trevor 2026-10-26). */
+	let scanProgress = $state('');
+	let frames = new QrFrameCollector();
 	$effect(() => {
-		if (!scanning) scanProblem = '';
+		if (scanning) return;
+		scanProblem = '';
+		scanProgress = '';
+		frames = new QrFrameCollector();
 	});
 	function scanned(text: string): boolean {
-		const room = scannedRoom(text);
+		const frame = frames.add(text);
+		if (frame?.kind === 'frame') {
+			scanProblem = '';
+			scanProgress = t('share.scan.frames', { read: frame.read, total: frame.total });
+			return false;
+		}
+		const read = frame?.kind === 'done' ? frame.text : text;
+		const room = scannedRoom(read);
 		if (!room) {
+			if (openScannedScript(read)) return true;
 			scanProblem = t('room.scanNotRoom');
 			return false;
 		}
@@ -285,6 +302,25 @@
 		// The key stays in the hash, which never reaches the server; the path is resolved.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		else void goto(`${resolve('/watch/[code]', { code: room.code })}#${room.key}`);
+		return true;
+	}
+
+	/**
+	 * A script's link (a Share screen's QR code, or an offline code, Trevor 2026-10-26) opens
+	 * on this app's own /play, whichever site made it, so an offline code needs no internet.
+	 */
+	function openScannedScript(text: string): boolean {
+		let url: URL;
+		try {
+			url = new URL(text.trim());
+		} catch {
+			return false;
+		}
+		if (!/\/(play|scripts)\/?$/.test(url.pathname) || !sharedRefFromHash(url.hash)) return false;
+		scanning = false;
+		// The script travels in the hash, which never reaches the server; the path is resolved.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		void goto(`${resolve('/play')}${url.hash}`);
 		return true;
 	}
 
@@ -381,7 +417,7 @@
 		</div>
 	</form>
 	<Dialog bind:open={scanning} title={t('share.scan')}>
-		{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} />{/if}
+		{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} progress={scanProgress} />{/if}
 	</Dialog>
 	<Dialog bind:open={grimViewOpen} title={t('room.grimView')}>
 		<form class="grim-view" onsubmit={grimView}>
@@ -417,6 +453,8 @@
 			<Icon name="edit" />
 			<span class="visually-hidden">{t('room.editYou')}</span>
 		</button>
+		<!-- Only while the Storyteller lets players see their character (Trevor, 2026-10-26). -->
+		{#if player}<YourCharacter {player} />{/if}
 		<!-- Only during the day, when the Storyteller shows it (Trevor, 2026-10-26); it shares
 		     the row's height, so nothing below moves. -->
 		{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}

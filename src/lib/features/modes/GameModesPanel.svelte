@@ -153,6 +153,7 @@
 	let roleRecycling = $state<boolean | undefined>();
 	let jinxedPairs = $state<JinxedPairs>('allow');
 	let ivoryDraft = $state(false);
+	let marionette = $state(false);
 	let oneType = $state<boolean | undefined>();
 	let dealsRequired = $state(true);
 	const draft = $derived(
@@ -369,6 +370,7 @@
 							roleRecycling: roleRecycling ?? draft.recycleUnchosen,
 							jinxedPairs,
 							ivoryDraft,
+							marionette,
 							oneTypePerOffer: oneType ?? draft.oneTypePerOffer,
 							dealsRequired
 						}
@@ -405,6 +407,7 @@
 						roleRecycling = undefined;
 						jinxedPairs = 'allow';
 						ivoryDraft = false;
+						marionette = false;
 						oneType = undefined;
 						dealsRequired = true;
 						campaignId = 'new';
@@ -489,6 +492,12 @@
 							description={t('modes.ivoryDraftHint')}
 							checked={ivoryDraft}
 							onChange={(on) => (ivoryDraft = on)}
+						/>
+						<SettingToggle
+							label={t('modes.marionette')}
+							description={t('modes.marionetteHint')}
+							checked={marionette}
+							onChange={(on) => (marionette = on)}
 						/>
 						<SettingToggle
 							label={t('modes.oneTypePerOffer')}

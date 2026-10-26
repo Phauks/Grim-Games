@@ -3,6 +3,7 @@ import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
+import { aimCamera, qrSrc } from './camera.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
 // name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
@@ -1179,6 +1180,28 @@ test('a room tells an app too old for it to update', async ({ page, browser }, t
 	await phoneContext.close();
 });
 
+test('a grimoire from a newer Storyteller app asks to update', async ({ page }) => {
+	// Trevor, 2026-10-26: an older app is nudged to update, never blocked.
+	await page.routeWebSocket(/\/api\/room\//, (ws) => {
+		ws.onMessage(() =>
+			ws.send(
+				JSON.stringify({
+					type: 'grimoire',
+					grimoire: { saved: { schemaVersion: 9999, gameId: 'newer' } }
+				})
+			)
+		);
+	});
+	await page.goto(`/watch/123456#${'a'.repeat(64)}`);
+	await page
+		.getByRole('alertdialog', { name: 'Before you watch' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(page.getByTestId('watch-status').getByRole('alert')).toHaveText(
+		`The Storyteller has a newer version of ${APP_NAME}. Refresh to update and see the grimoire.`
+	);
+});
+
 test('the room code and a Grim view password open the grimoire, as the link does', async ({
 	page,
 	browser
@@ -1473,7 +1496,12 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Game time ticks, so it is read as the board shows it, not to the second.
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
-	// Each line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
+	// The phone works out the players and the split by type itself, over the town (Trevor,
+	// 2026-10-26: so players don't have to), whatever the board's corner shows.
+	await expect(phone.getByTestId('grim-counts')).toHaveText(
+		'Players: 8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)'
+	);
+	// Each corner line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
 	const info = await openGameInfo(page);
 	await info.getByRole('button', { name: 'Author on the board' }).tap();
 	await info.getByRole('button', { name: 'Players on the board' }).tap();
@@ -1481,6 +1509,13 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await expect(info).toBeHidden();
 	await expect(corner).not.toContainText('by The Pandemonium Institute');
 	await expect(corner.getByTestId('board-players')).toContainText('Players: 8');
+	// The Script tab's Players breakdown has the table's column picked.
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+	await expect(phone.getByRole('button', { name: '8 players', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
@@ -1678,12 +1713,28 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	// A guess on another seat puts its character first (Trevor, 2026-10-26: "search and guess").
+	await phone.getByTestId('grim-seat').nth(3).tap();
+	await phone
+		.getByRole('dialog', { name: 'Seat 4 · Seat 4' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await phone.keyboard.press('Escape');
 	const seat = phone.getByTestId('grim-seat').nth(1);
 	await seat.tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
 	await expect(sheet.getByTestId('seat-reminders')).toContainText('None');
 	await sheet.getByTestId('seat-reminders').tap();
 	const picker = phone.getByRole('dialog', { name: 'Reminders for Seat 2' });
+	const list = picker.getByTestId('player-reminder-list');
+	await expect(list.locator('li').first()).toHaveText('Your guesses');
+	await expect(list.getByRole('group').first()).toHaveAccessibleName('Fortune Teller');
+	// The search finds a token by its character's name or its own words.
+	const search = picker.getByRole('searchbox', { name: 'Search reminders' });
+	await expect(search).not.toBeFocused();
+	await search.fill('poison');
+	await expect(list.getByRole('group')).toHaveCount(1);
+	await search.fill('');
 	const poisoned = picker
 		.getByRole('group', { name: 'Poisoner' })
 		.getByRole('button', { name: 'Poisoned' });
@@ -1945,31 +1996,6 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	await phoneContext.close();
 });
 
-/**
- * Points a page's camera at a picture: getUserMedia gives a stream drawn from it, as a phone's
- * back camera would see the code on the Storyteller's screen.
- */
-async function aimCamera(phone: Page, src: string) {
-	await phone.addInitScript((src) => {
-		navigator.mediaDevices.getUserMedia = async () => {
-			const image = new Image();
-			image.src = src;
-			await image.decode();
-			const canvas = document.createElement('canvas');
-			canvas.width = canvas.height = 480;
-			const context = canvas.getContext('2d')!;
-			const draw = () => {
-				context.fillStyle = '#fff';
-				context.fillRect(0, 0, 480, 480);
-				context.drawImage(image, 40, 40, 400, 400);
-				requestAnimationFrame(draw);
-			};
-			draw();
-			return canvas.captureStream(10);
-		};
-	}, src);
-}
-
 test("Scan a code on Join game reads the Share screen's QR code into the code boxes", async ({
 	page,
 	browser
@@ -2008,17 +2034,53 @@ test("Scan a code on Join game reads the Share screen's QR code into the code bo
 test('Scan a code says so when the code is not a room', async ({ browser }, testInfo) => {
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
-	// A QR code for a script link, which is not a room.
-	const svg = renderSVG('https://grimbinder.com/play#e=tb', { border: 2 });
-	await aimCamera(phone, `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`);
+	// A link that is neither a room nor a script (a script's opens it: offline-share.e2e.ts).
+	await aimCamera(phone, qrSrc(renderSVG('https://example.com/menu', { border: 2 })));
 	await phone.goto('/join');
 	await phone.getByRole('button', { name: 'Scan a code' }).tap();
 	const scanner = phone.getByRole('dialog', { name: 'Scan a code' });
-	await expect(scanner.getByRole('alert')).toHaveText("That code is not a game's room code.", {
-		timeout: 15_000
-	});
+	await expect(scanner.getByRole('alert')).toHaveText(
+		"That code is not a game's room code or a script.",
+		{
+			timeout: 15_000
+		}
+	);
 	await expect(phone).toHaveURL(/\/join$/);
 	await scanner.getByRole('button', { name: 'Close' }).tap();
 	await expect(scanner).toBeHidden();
 	await phoneContext.close();
+});
+
+test("Share on a player's Grim tab blurs the guesses behind it", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-26, playtest): with Share open on a phone, the players around it could
+	// read its guesses on the Grim behind it.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(phone.getByTestId('grim-seat')).toHaveCount(8);
+	await phone.getByRole('button', { name: 'Share script' }).tap();
+	await expect(phone.getByRole('dialog', { name: /^Share / })).toBeVisible();
+	const filter = await phone
+		.locator("[data-scope='dialog'][data-part='backdrop']")
+		.last()
+		.evaluate((el) => getComputedStyle(el).backdropFilter);
+	expect(filter).toContain('blur');
+	await phoneContext.close();
+
+	// The board's Script dialog shows the same Grim tab; closing it leaves the board blurred
+	// behind its own sheets.
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(page.locator(':root')).toHaveAttribute('data-board-shown', '');
 });

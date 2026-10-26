@@ -15,4 +15,5 @@
 	label={t('shell.navLabel')}
 	aria-expanded={navDrawer.expanded}
 	onclick={() => navDrawer.toggle()}
+	data-way-back
 />

@@ -85,7 +85,20 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title: "Player screen: the script, the town's grim, notes, avatars and frames",
-		parts: ['R6', 'R7', 'R8', 'J10', 'J11', 'J12', 'J13', 'J21', 'J28', 'L18b', ...range('W', 1, 9)]
+		parts: [
+			'R6',
+			'R7',
+			'R8',
+			'J10',
+			'J11',
+			'J12',
+			'J13',
+			'J21',
+			'J28',
+			'L18b',
+			...range('W', 1, 9),
+			...range('E', 1, 3)
+		]
 	},
 	{
 		title: 'One start flow: New game, then Game info during the game',
@@ -149,8 +162,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['U1', 'U2', 'U3', 'U4']
 	},
 	{
-		title: 'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover',
-		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24']
+		title:
+			'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover, dealing to phones',
+		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2']
 	},
 	{
 		title:
@@ -167,6 +181,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: "Rules as data: every character's rules in its own file, none in code", parts: ['K1'] },
 	{ title: 'Buttons that stand out, with End game in red', parts: ['S11'] },
+	{
+		title: 'Offline games: share the script with no internet, by QR code or animated QR code',
+		parts: ['N1', 'N2']
+	},
 	{
 		title: 'Accounts and sync: saved games and scripts on every device',
 		parts: ['Y1'],

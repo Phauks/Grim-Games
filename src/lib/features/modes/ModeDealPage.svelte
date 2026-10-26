@@ -5,7 +5,9 @@
 	import { resolve } from '$app/paths';
 	import { fromScript, type Character, type CharacterId } from '#lib/core/data/index.ts';
 	import {
+		answerAbility,
 		answerAsk,
+		answerHidden,
 		canRedraft,
 		canRefuse,
 		chooseOptions,
@@ -14,6 +16,8 @@
 		pickableCharacters,
 		redraft,
 		refuseOffer,
+		reservedHidden,
+		reservedSeats,
 		seatsLeft,
 		STANDARD,
 		startDraft,
@@ -21,7 +25,12 @@
 	} from '#lib/core/modes/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { replacementReminder, scriptJinxes, type BagSlot } from '#lib/core/rules/index.ts';
+	import {
+		isReplacedAfterDraw,
+		replacementReminder,
+		scriptJinxes,
+		type BagSlot
+	} from '#lib/core/rules/index.ts';
 	import { SEATED_TYPES, splitPlayers, type SeatedType } from '#lib/core/rules/distribution.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -106,7 +115,9 @@
 						dealsRequired: record?.dealsRequired ?? true,
 						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen',
 						jinxes: record?.jinxedPairs ?? 'allow',
-						ivory: record?.ivoryDraft ?? false
+						ivory: record?.ivoryDraft ?? false,
+						hidden: characters.filter(isReplacedAfterDraw).map((c) => c.id),
+						...(record?.marionette ? { reserve: reservedHidden(characters)[0] } : {})
 					},
 					split.counts,
 					pickableCharacters(mode, characters),
@@ -145,7 +156,12 @@
 		progress?.kind === 'draft' ? progress.state.picks : (progress?.picks ?? [])
 	);
 	const done = $derived(
-		progress?.kind === 'draft' ? seatsLeft(progress.state) === 0 : picks.length >= seats.length
+		progress?.kind === 'draft'
+			? seatsLeft(progress.state) === 0 &&
+					!progress.state.ask &&
+					!progress.state.choice &&
+					!progress.state.ability
+			: picks.length >= seats.length
 	);
 	const seatId = $derived(seats[picks.length]);
 	const label = (id: SeatId | undefined) => (id ? seatLabel(game, id) : t('common.none'));
@@ -176,7 +192,7 @@
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
 
 	function draw(slot: BagSlot) {
-		if (!progress || done || slot.state === 'drawn' || ask) return;
+		if (!progress || done || slot.state === 'drawn' || ask || choice || ability) return;
 		if (slot.state === 'in-bag') {
 			if (held !== undefined) return void (choosing = true);
 			save({ ...progress, held: slot.number });
@@ -229,6 +245,28 @@
 		save({ kind: 'draft', state: answerAsk(progress.state, total, Math.random) });
 	}
 
+	/**
+	 * A drafted character that may really be a hidden one (Grimbits' draft: the Atheist may be
+	 * the Drunk): the Storyteller chooses before the next tile.
+	 */
+	const choice = $derived(progress?.kind === 'draft' ? progress.state.choice : undefined);
+	let choiceOpen = $derived(choice !== undefined && !revealOpen && !choosing);
+	function answerChoice(isHidden: boolean) {
+		if (progress?.kind !== 'draft') return;
+		save({ kind: 'draft', state: answerHidden(progress.state, isHidden, Math.random) });
+	}
+
+	/**
+	 * A drafted character that gains a not-in-play character's ability (Grimbits' draft: the
+	 * Alchemist's Minion ability): the Storyteller chooses one that changes setup, or Later.
+	 */
+	const ability = $derived(progress?.kind === 'draft' ? progress.state.ability : undefined);
+	let abilityOpen = $derived(ability !== undefined && !revealOpen && !choosing);
+	function answerGained(chosen: CharacterId | undefined) {
+		if (progress?.kind !== 'draft') return;
+		save({ kind: 'draft', state: answerAbility(progress.state, chosen, Math.random) });
+	}
+
 	function refuse() {
 		if (progress?.kind !== 'draft') return;
 		save({ kind: 'draft', state: refuseOffer(progress.state, Math.random) });
@@ -275,29 +313,74 @@
 	 * 2026-10-26, "force a drunk"). That seat's tile carries its "Is The Drunk" token, which
 	 * the setup reminders then suggest on the seat, as after an ordinary draw.
 	 */
+	const hiddenSeats = $derived(
+		progress?.kind === 'draft' ? (progress.state.hiddenSeats ?? {}) : {}
+	);
+	// Not asked again when a drafted character's hidden choice already made a seat it.
 	const hidden = $derived(
-		progress?.kind === 'draft' ? hiddenAsTownsfolk(characters)[0] : undefined
+		progress?.kind === 'draft'
+			? hiddenAsTownsfolk(characters).find((c) => !Object.values(hiddenSeats).includes(c.id))
+			: undefined
 	);
 	const townsfolkSeats = $derived(
 		picks.flatMap((id, i) => (byId.get(id)?.type === 'townsfolk' ? [i] : []))
 	);
 	let hiding = $state(false);
+	let drunkAt = $state<number | undefined>();
+
+	/**
+	 * The Marionette, with its New game switch on (Grimbits' draft): a Minion seat was kept out
+	 * of the draft, so the Storyteller picks which good neighbour of the Demon is really it.
+	 */
+	const reserve = $derived(
+		progress?.kind === 'draft' && progress.state.reserved
+			? progress.state.config.reserve
+			: undefined
+	);
+	const reservedCharacter = $derived(reserve ? byId.get(reserve.id) : undefined);
+	const reserveSeats = $derived(
+		progress?.kind === 'draft' && reserve
+			? reservedSeats(progress.state, reserve, [
+					...Object.keys(hiddenSeats).map(Number),
+					...(drunkAt !== undefined ? [drunkAt] : [])
+				])
+			: []
+	);
+	let placing = $state(false);
 
 	function finishTapped() {
+		drunkAt = undefined;
 		if (hidden && townsfolkSeats.length > 0) hiding = true;
+		else afterHidden();
+	}
+
+	function chooseHidden(at: number | undefined) {
+		hiding = false;
+		drunkAt = at;
+		afterHidden();
+	}
+
+	function afterHidden() {
+		if (reservedCharacter && reserveSeats.length > 0) placing = true;
 		else void finish();
 	}
 
-	async function finish(hiddenAt?: number) {
+	async function finish(reservedAt?: number) {
 		hiding = false;
-		const token = hidden && hiddenAt !== undefined ? replacementReminder(hidden) : undefined;
+		placing = false;
+		const placed: Record<number, Character> = {};
+		if (hidden && drunkAt !== undefined) placed[drunkAt] = hidden;
+		if (reservedCharacter && reservedAt !== undefined) placed[reservedAt] = reservedCharacter;
+		const tokenAt = (i: number) => {
+			const as = byId.get(hiddenSeats[i]) ?? placed[i];
+			return as ? replacementReminder(as) : undefined;
+		};
 		const built = port.dispatch({
 			type: 'BuildBag',
-			tiles: picks.map((id, i) => ({
-				shows: id,
-				grimoire: id,
-				...(token && i === hiddenAt ? { reminders: [token] } : {})
-			})),
+			tiles: picks.map((id, i) => {
+				const reminder = tokenAt(i);
+				return { shows: id, grimoire: id, ...(reminder ? { reminders: [reminder] } : {}) };
+			}),
 			includeTravellers: false,
 			shuffle: false
 		});
@@ -444,6 +527,81 @@
 	</Dialog>
 {/if}
 
+<!-- Answered before the next tile, as a setup change is. -->
+{#if choice}
+	{@const drafted = byId.get(choice.characterId)}
+	{@const really = byId.get(choice.hidden)}
+	<Dialog
+		bind:open={choiceOpen}
+		title={t('modes.deal.askTitle')}
+		closeButton={false}
+		beforeClose={() => false}
+	>
+		{#snippet subtitle()}{#if drafted}<CharacterBadge
+					characterId={drafted.id}
+					character={drafted}
+				/>{/if}{/snippet}
+		<div class="ask" data-testid="draft-hidden-choice">
+			<p class="prompt">
+				{t('modes.deal.hiddenChoice')}{#if really}<CharacterBadge
+						characterId={really.id}
+						character={really}
+					/>{/if}
+			</p>
+			<div class="options">
+				<Button onclick={() => answerChoice(false)}>{t('modes.deal.asDrafted')}</Button>
+				<Button onclick={() => answerChoice(true)}>{t('modes.deal.reallyHidden')}</Button>
+				{#if progress?.kind === 'draft' && canRedraft(progress.state)}
+					<Button icon="undo" onclick={() => draftAgain(undefined)}>
+						{t('modes.deal.redraft')}
+					</Button>
+				{/if}
+			</div>
+		</div>
+	</Dialog>
+{/if}
+
+<!-- Answered before the next tile, as a setup change is. -->
+{#if ability}
+	{@const drafted = byId.get(ability.characterId)}
+	<Dialog
+		bind:open={abilityOpen}
+		title={t('modes.deal.askTitle')}
+		closeButton={false}
+		beforeClose={() => false}
+	>
+		{#snippet subtitle()}{#if drafted}<CharacterBadge
+					characterId={drafted.id}
+					character={drafted}
+				/>{/if}{/snippet}
+		<div class="ask" data-testid="draft-ability">
+			<p class="prompt">{t('modes.deal.abilityPrompt')}</p>
+			<!-- Each ability that changes setup now, then Later. -->
+			<ul class="seats" data-testid="ability-options">
+				{#each ability.options as id (id)}
+					{@const option = byId.get(id)}
+					{#if option}
+						<li>
+							<Button onclick={() => answerGained(id)}>{t('modes.deal.abilityTake')}</Button>
+							<CharacterBadge characterId={option.id} character={option} />
+						</li>
+					{/if}
+				{/each}
+				<li>
+					<Button onclick={() => answerGained(undefined)}>{t('modes.deal.abilityLater')}</Button>
+				</li>
+			</ul>
+			{#if progress?.kind === 'draft' && canRedraft(progress.state)}
+				<div class="options">
+					<Button icon="undo" onclick={() => draftAgain(undefined)}>
+						{t('modes.deal.redraft')}
+					</Button>
+				</div>
+			{/if}
+		</div>
+	</Dialog>
+{/if}
+
 <Dialog bind:open={redrafting} title={t('modes.deal.redraft')}>
 	<div class="ask" data-testid="redraft">
 		<p class="prompt">{t('modes.deal.redraftType')}</p>
@@ -465,6 +623,29 @@
 			<!-- Each seat that drafted a Townsfolk, with what it drafted beside it. -->
 			<ul class="seats" data-testid="hidden-seats">
 				{#each townsfolkSeats as i (i)}
+					{@const kept = byId.get(picks[i])}
+					<li>
+						<Button onclick={() => chooseHidden(i)}>{label(seats[i])}</Button>
+						{#if kept}<CharacterBadge characterId={kept.id} character={kept} />{/if}
+					</li>
+				{/each}
+				<li><Button onclick={() => chooseHidden(undefined)}>{t('common.none')}</Button></li>
+			</ul>
+		</div>
+	</Dialog>
+{/if}
+
+{#if reservedCharacter && reserve}
+	<Dialog bind:open={placing} title={t('modes.deal.hiddenTitle')}>
+		<div class="ask" data-testid="draft-reserved">
+			<p class="prompt">
+				{t('modes.deal.reservedPrompt', {
+					type: TYPE_LABELS[reserve.nextTo]
+				})}<CharacterBadge characterId={reservedCharacter.id} character={reservedCharacter} />
+			</p>
+			<!-- Each good neighbour, with what it drafted beside it. -->
+			<ul class="seats" data-testid="reserved-seats">
+				{#each reserveSeats as i (i)}
 					{@const kept = byId.get(picks[i])}
 					<li>
 						<Button onclick={() => void finish(i)}>{label(seats[i])}</Button>

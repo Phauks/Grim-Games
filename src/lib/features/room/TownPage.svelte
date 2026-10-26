@@ -4,8 +4,10 @@
 	import { resolve } from '$app/paths';
 	import { fromScript, type LoadedScript } from '#lib/core/data/index.ts';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
+	import { dayTimers } from '#lib/core/rules/index.ts';
 	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+	import PlayersDayTimer from '#lib/features/day/PlayersDayTimer.svelte';
 	import { keepScreenAwake } from '#lib/features/day/timer-wake-lock.ts';
 	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
@@ -110,9 +112,20 @@
 	});
 	const table = $derived(town?.view?.public);
 	const showTown = $derived(!message && !!script && !!table?.seats.length);
+	/**
+	 * The Storyteller's day timer, as phones show it (Trevor, 2026-10-26: "During day, public
+	 * Town can show the timer as well"); their board sends it during the day only.
+	 */
+	const dayTimer = $derived(showTown ? dayTimers.parsePublicTimer(table?.timer) : undefined);
 
 	// Full screen shows the town alone, not the app (Trevor, 2026-10-26).
 	let stage = $state<HTMLDivElement>();
+	let inFullScreen = $state(false);
+	$effect(() => {
+		const sync = () => (inFullScreen = !!stage && document.fullscreenElement === stage);
+		document.addEventListener('fullscreenchange', sync);
+		return () => document.removeEventListener('fullscreenchange', sync);
+	});
 	/** An admin's grimoire, once drawn. */
 	let boardReady = $state(false);
 	let boardProblem = $state<string>();
@@ -135,6 +148,8 @@
 				/>{/if}
 		{/snippet}
 		{#snippet actions()}
+			<!-- A tap target high, as the buttons beside it, so the title line keeps its height. -->
+			{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
 			{#if script}<PlayerScriptActions
 					{script}
 					{version}
@@ -155,8 +170,12 @@
 			{#if showTown && script && table && room}
 				<!-- In the town's own top right corner, in and out of full screen (Trevor, 2026-10-26:
 				     "supposed to be in the town square, and makes it so the townsquare takes up the
-				     whole screen"); the board's corner lines are top left. -->
-				{#if stage}<div class="full-screen"><FullScreenButton target={stage} /></div>{/if}
+				     whole screen"); the board's corner lines are top left. In full screen the title
+				     line is gone, so the day timer sits beside it. -->
+				{#if stage}<div class="full-screen">
+						{#if inFullScreen && dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
+						<span class="full-screen-button"><FullScreenButton target={stage} /></span>
+					</div>{/if}
 				<PlayerGrim
 					{script}
 					display
@@ -206,6 +225,11 @@
 		top: var(--space-2);
 		right: var(--space-2);
 		z-index: 1;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.full-screen-button {
 		border-radius: 50%;
 		background: var(--board-bar-background);
 	}
