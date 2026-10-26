@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { Game } from '#lib/core/model/index.ts';
+	import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BoardBackdrop from './BoardBackdrop.svelte';
 	import { boardBackground } from './board-background.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
+	import { drawnLook, lookOf } from './shared-look.ts';
 
 	/**
 	 * The game's background on the board: the choice kept on this device for this game (or all
@@ -13,9 +15,16 @@
 		game: Game;
 		/** The script's logo, offered as a background choice. */
 		logo?: string;
+		/**
+		 * Someone else's board (Grim view, a finished grimoire): drawn on the look its
+		 * Storyteller shared, never this device's own background (Trevor, 2026-10-26).
+		 */
+		watched?: { look?: PublicLook };
+		/** Told the look this board shows, for every shared grim of the game. */
+		onlook?: (look: PublicLook) => void;
 	}
 
-	let { game, logo }: Props = $props();
+	let { game, logo, watched, onlook }: Props = $props();
 
 	// ── Background: an image of the Storyteller's own, kept on this device ──
 	let background = $state<BackgroundChoice>({ kind: 'none' });
@@ -71,10 +80,22 @@
 		}
 		backgroundUrl = background.kind === 'script' ? scriptBackground : undefined;
 	});
+	$effect(() => {
+		if (!watched) onlook?.(lookOf(background, boardLooks.current));
+	});
+	const shared = $derived(watched && drawnLook(watched.look));
 </script>
 
-<BoardBackdrop
-	url={backgroundUrl}
-	preset={background.kind === 'preset' ? background.id : undefined}
-	vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
-/>
+{#if shared}
+	<BoardBackdrop
+		url={shared.script ? scriptBackground : undefined}
+		preset={shared.preset}
+		vignette={shared.vignette}
+	/>
+{:else}
+	<BoardBackdrop
+		url={backgroundUrl}
+		preset={background.kind === 'preset' ? background.id : undefined}
+		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
+	/>
+{/if}

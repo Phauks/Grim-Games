@@ -2,7 +2,12 @@
 	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId, LoadedScript } from '#lib/core/data/index.ts';
-	import type { PublicCorner, PublicSeat } from '#lib/core/sync/public-projection.ts';
+	import {
+		parsePublicLook,
+		type PublicCorner,
+		type PublicLook,
+		type PublicSeat
+	} from '#lib/core/sync/public-projection.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -20,11 +25,8 @@
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 	import BoardBackdrop from '#lib/features/grimoire/BoardBackdrop.svelte';
 	import BoardCorner from '#lib/features/grimoire/BoardCorner.svelte';
-	import {
-		backgroundFor,
-		readBackground,
-		type BackgroundChoice
-	} from '#lib/features/grimoire/backgrounds.ts';
+	import { drawnLook } from '#lib/features/grimoire/shared-look.ts';
+	import { screenTheme, themeColours } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import { cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
 	import PlayerSeatReminders from './PlayerSeatReminders.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -101,8 +103,8 @@
 			layout?: PublicSeatLayout;
 			storytellerName?: string;
 			corner?: PublicCorner;
-			/** The board's own game, whose background this town shows. */
-			gameId?: string;
+			/** The board's background, as it shares it with every grim of the game. */
+			look?: PublicLook;
 			/** Where the guesses and seat notes are kept; a display keeps none. */
 			guessKey?: string;
 			/** The room's code for the corner, where it isn't this device's own room. */
@@ -225,25 +227,14 @@
 		writePlayerReminders(kept, reminders);
 	}
 
-	// This device's background for the board: the game's own on the Storyteller's, else the
-	// one for every game. The script's own image is only a web link (backgrounds.ts).
-	let background = $state<BackgroundChoice>({ kind: 'none' });
-	$effect(() => {
-		const gameId = town?.gameId;
-		(gameId ? backgroundFor(gameId) : readBackground('default'))
-			.then((choice) => (background = choice ?? { kind: 'none' }))
-			.catch(() => (background = { kind: 'none' }));
-	});
-	let backgroundUrl = $state<string | undefined>();
-	$effect(() => {
-		if (background.kind === 'image') {
-			const url = URL.createObjectURL(background.image);
-			backgroundUrl = url;
-			return () => URL.revokeObjectURL(url);
-		}
-		const link = script.meta?.background ?? '';
-		backgroundUrl = background.kind === 'script' && /^https:\/\//.test(link) ? link : undefined;
-	});
+	// The Storyteller's background, vignette and logo, the same on every device whatever its own
+	// settings or theme (Trevor, 2026-10-26); the script's own image only as a web link.
+	const look = $derived(drawnLook(parsePublicLook(table?.look)));
+	const scriptImage = $derived(
+		/^https:\/\//.test(script.meta?.background ?? '') ? script.meta?.background : undefined
+	);
+	// The board's own colours in the town, not the player's sheet background.
+	const boardColours = $derived(screenTheme.current ? themeColours(preferences.theme) : undefined);
 	const logo = $derived(scriptLogo(script));
 	let logoFailed = $state(false);
 
@@ -370,19 +361,21 @@
 		bind:clientHeight={height}
 		style:--name-scale={boardLooks.current.nameSize}
 		style:--name-offset={boardLooks.current.nameOffset}
+		style={boardColours}
+		data-board-colours={boardColours ? '' : undefined}
 		data-testid="player-grim"
 	>
 		<BoardBackdrop
 			contained
-			url={backgroundUrl}
-			preset={background.kind === 'preset' ? background.id : undefined}
-			vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
+			url={look.script ? scriptImage : undefined}
+			preset={look.preset}
+			vignette={look.vignette}
 		/>
-		{#if boardLooks.current.logo && logo && !logoFailed}
+		{#if look.logo !== undefined && logo && !logoFailed}
 			<ScriptLogo
 				src={logo}
 				class="town-logo"
-				--logo-opacity={boardLooks.current.logoOpacity}
+				--logo-opacity={look.logo}
 				onfail={() => (logoFailed = true)}
 			/>
 		{/if}
@@ -675,6 +668,11 @@
 		border-radius: var(--radius-md);
 		width: 100%;
 		height: 75dvh;
+	}
+	/* On a themed screen the town keeps the board's own surface, as on the Storyteller's. */
+	.town[data-board-colours] {
+		background: var(--page-background);
+		color: var(--on-surface);
 	}
 	.display .seat {
 		cursor: default;

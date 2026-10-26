@@ -13,6 +13,7 @@ import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
 import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
+import type { SharedGrimoire } from './shared-grimoire.ts';
 import { feedbackView, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 import {
 	type ScriptVote,
@@ -22,6 +23,8 @@ import {
 } from './script-vote.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
 import { memberRole, seatsSeen, type RoomRoles, type SeatRole } from './room-roles.ts';
+
+export { isSharedGrimoire, MAX_GRIMOIRE_BYTES, type SharedGrimoire } from './shared-grimoire.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -101,26 +104,6 @@ export interface GameOver {
 
 /** The longest end reason a game-over message carries: `character:` and an id. */
 export const MAX_END_REASON = 80;
-
-/**
- * The Storyteller's whole grimoire, for the view-only link (Trevor, 2026-10-18: Specters
- * spectators watch the grimoire, after promising not to spoil the game). Only the
- * Storyteller's device sends it and only viewers with the link's key receive it; the room
- * relays it as given, and each viewer checks `saved` as a saved game before showing it.
- */
-export interface SharedGrimoire {
-	/** The game as the Storyteller's device saves it (`SavedGame`). */
-	saved: Record<string, unknown>;
-	/** Where that device draws the seats, and its reminders' spots and copies (device notes). */
-	layout?: unknown;
-	reminderSpots?: unknown;
-	copies?: unknown;
-	/** The day timer as it is on that device (`SharedDayTimer`), so spectators see it run. */
-	timer?: unknown;
-}
-
-/** A whole game's history with a homebrew script: well above `MAX_SCRIPT_BYTES`. */
-export const MAX_GRIMOIRE_BYTES = 1024 * 1024;
 
 /**
  * Specters (https://www.youtube.com/watch?v=-R34QbIgDh8): spectators share one ability and
@@ -766,13 +749,6 @@ export function setViewers(room: RoomState, keyHash: unknown, password?: unknown
 		viewerKeyHash: keyHash,
 		...(password === true ? { viewerPassword: true } : {})
 	};
-}
-
-/** A light shape check of a grimoire for viewers: they check the saved game themselves. */
-export function isSharedGrimoire(value: unknown): value is SharedGrimoire {
-	if (typeof value !== 'object' || value === null) return false;
-	const { saved } = value as { saved?: unknown };
-	return typeof saved === 'object' && saved !== null && !Array.isArray(saved);
 }
 
 /** Parses a socket message; anything malformed is `null` and ignored. */

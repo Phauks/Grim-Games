@@ -210,3 +210,57 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
 	await tabletContext.close();
 });
+
+test("every shared grim has the Storyteller's background, whatever the device's own theme", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-26): "Even if player changes settings for their theme, the background for
+	// the shared grim should be the same. Although font settings may be different."
+	const board = await startGame(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button', { name: 'Green felt' })
+		.tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+
+	// The tablet's own sheet background is parchment, which themes its whole screen.
+	const tabletContext = await browser.newContext({ ...testInfo.project.use });
+	await tabletContext.addInitScript(() =>
+		localStorage.setItem(
+			'grim-games:player-settings:v1',
+			JSON.stringify({ sheetBackground: 'parchment' })
+		)
+	);
+	const tablet = await tabletContext.newPage();
+	await tablet.goto(`/town/${code}`);
+	const town = tablet.getByTestId('player-grim');
+	await expect(town.getByTestId('grim-seat')).toHaveCount(8);
+	await expect(town.getByTestId('preview-background')).toHaveAttribute('data-preset', 'felt');
+	await expect(town.getByTestId('preview-vignette')).toBeAttached();
+	// The town keeps the board's colours, not the parchment around it.
+	const colours = await town.evaluate((el) => ({
+		town: getComputedStyle(el).getPropertyValue('--surface').trim(),
+		page: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim()
+	}));
+	expect(colours.page).not.toBe(colours.town);
+	expect(colours.town).toBe('#140b0b');
+
+	// A change on the board reaches it.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await settings
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button', { name: 'Night sky' })
+		.tap();
+	await expect(town.getByTestId('preview-background')).toHaveAttribute('data-preset', 'night');
+	await tabletContext.close();
+});
