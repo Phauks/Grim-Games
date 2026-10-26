@@ -12,6 +12,9 @@
 		canRefuse,
 		chooseOptions,
 		conversions,
+		turnableSeats,
+		turnOptions,
+		draftedTurned,
 		dealTypes,
 		hiddenAsTownsfolk,
 		pickableCharacters,
@@ -54,6 +57,7 @@
 	import { gameModeOf } from './game-mode.ts';
 	import OfferReels from './OfferReels.svelte';
 	import DraftConversion from './DraftConversion.svelte';
+	import DraftSeatList from './DraftSeatList.svelte';
 
 	/**
 	 * Characters for a mode that doesn't put characters in the bag, on the Storyteller's
@@ -122,7 +126,10 @@
 						...(record?.marionette ? { reserve: reservedHidden(characters)[0] } : {})
 					},
 					split.counts,
-					pickableCharacters(mode, characters),
+					// Lil' Monsta is never dealt, but drafted it turns its player into a Minion.
+					mode.parts.setupModifiers?.kind === 'as-chosen'
+						? [...pickableCharacters(mode, characters), ...draftedTurned(characters)]
+						: pickableCharacters(mode, characters),
 					Math.random,
 					jinxes
 				)
@@ -216,9 +223,11 @@
 		const tile = held;
 		const seat = seatId;
 		const bag = { drawn: [...drawn, tile], held: undefined };
-		if (progress.kind === 'draft')
-			save({ kind: 'draft', state: takeOffer(progress.state, id, Math.random), ...bag });
-		else save({ ...progress, picks: [...progress.picks, id], ...bag });
+		if (progress.kind === 'draft') {
+			const next = takeOffer(progress.state, id, Math.random);
+			// Turned into another type (Lil' Monsta's Minion): the same player drafts again.
+			save({ kind: 'draft', state: next, ...(next.turnedBy ? {} : bag) });
+		} else save({ ...progress, picks: [...progress.picks, id], ...bag });
 		choosing = false;
 		const character = byId.get(id);
 		if (character) {
@@ -232,6 +241,7 @@
 		if (revealing && name !== (game.seats[revealing.seatId]?.playerName ?? ''))
 			port.dispatch({ type: 'RenameSeat', seatId: revealing.seatId, playerName: name });
 		revealOpen = false;
+		if (turnedBy && held !== undefined) choosing = true;
 	}
 
 	/**
@@ -241,6 +251,8 @@
 	const ask = $derived(progress?.kind === 'draft' ? progress.state.ask : undefined);
 	/** The character in play that sets this seat's only offer (the Choirboy's King). */
 	const forcedBy = $derived(progress?.kind === 'draft' ? progress.state.forcedBy : undefined);
+	/** The character in play that turned this seat's player into the type offered (Lil' Monsta). */
+	const turnedBy = $derived(progress?.kind === 'draft' ? progress.state.turnedBy : undefined);
 	let askOpen = $derived(ask !== undefined && !revealOpen && !choosing);
 	function answer(total: number) {
 		if (progress?.kind !== 'draft') return;
@@ -328,6 +340,9 @@
 		picks.flatMap((id, i) => (byId.get(id)?.type === 'townsfolk' ? [i] : []))
 	);
 	let hiding = $state(false);
+	// A seat (by pick index) as the Storyteller's lists of seats show it, with what it drafted.
+	const seatName = (i: number) => label(seats[i]);
+	const kept = (i: number) => byId.get(picks[i]);
 	let drunkAt = $state<number | undefined>();
 
 	/**
@@ -360,29 +375,16 @@
 	const conversion = $derived(
 		progress?.kind === 'draft' ? conversions(progress.state)[0] : undefined
 	);
-	const convertSeats = $derived.by(() => {
-		if (!conversion) return [];
-		const taken = [
-			conversion.seat,
-			...Object.keys(hiddenSeats).map(Number),
-			...(drunkAt !== undefined ? [drunkAt] : []),
-			...(reservedAt !== undefined ? [reservedAt] : [])
-		];
-		const good = (i: number) => !['minion', 'demon'].includes(byId.get(picks[i])?.type ?? '');
-		const among = conversion.seats ?? picks.map((_, i) => i);
-		return among.filter((i) => good(i) && !taken.includes(i));
-	});
-	const convertOptions = $derived.by(() => {
-		if (!conversion || progress?.kind !== 'draft') return [];
-		const used = [
-			...picks,
-			...Object.values(progress.state.abilities ?? {}),
-			...(reservedCharacter ? [reservedCharacter.id] : [])
-		];
-		return pickableCharacters(mode, characters).filter(
-			(c) => c.type === conversion.type && !used.includes(c.id)
-		);
-	});
+	const convertSeats = $derived(
+		progress?.kind === 'draft' && conversion
+			? turnableSeats(progress.state, conversion, [drunkAt, reservedAt])
+			: []
+	);
+	const convertOptions = $derived(
+		progress?.kind === 'draft' && conversion
+			? turnOptions(progress.state, conversion, pickableCharacters(mode, characters))
+			: []
+	);
 	let converting = $state(false);
 
 	function finishTapped() {
@@ -498,7 +500,14 @@
 	<div class="choose">
 		<p class="seat">{label(seatId)}</p>
 		<!-- A character another needs in play (Grimbits' draft): the player is told which. -->
-		{#if forcedBy}
+		{#if turnedBy && progress?.kind === 'draft' && progress.state.onlyType}
+			{@const by = byId.get(turnedBy)}
+			<p class="prompt" data-testid="turned-by">
+				{t('modes.deal.turned', {
+					type: TYPE_LABELS[progress.state.onlyType]
+				})}{#if by}<CharacterBadge characterId={by.id} character={by} />{/if}
+			</p>
+		{:else if forcedBy}
 			{@const by = byId.get(forcedBy)}
 			<p class="prompt" data-testid="forced-by">
 				{t('modes.deal.forced')}{#if by}<CharacterBadge characterId={by.id} character={by} />{/if}
@@ -667,17 +676,15 @@
 			<p class="prompt">
 				{t('modes.deal.hiddenPrompt')}<CharacterBadge characterId={hidden.id} character={hidden} />
 			</p>
-			<!-- Each seat that drafted a Townsfolk, with what it drafted beside it. -->
-			<ul class="seats" data-testid="hidden-seats">
-				{#each townsfolkSeats as i (i)}
-					{@const kept = byId.get(picks[i])}
-					<li>
-						<Button onclick={() => chooseHidden(i)}>{label(seats[i])}</Button>
-						{#if kept}<CharacterBadge characterId={kept.id} character={kept} />{/if}
-					</li>
-				{/each}
-				<li><Button onclick={() => chooseHidden(undefined)}>{t('common.none')}</Button></li>
-			</ul>
+			<DraftSeatList
+				seats={townsfolkSeats}
+				seatLabel={seatName}
+				{kept}
+				onPick={chooseHidden}
+				last={t('common.none')}
+				onLast={() => chooseHidden(undefined)}
+				testid="hidden-seats"
+			/>
 		</div>
 	</Dialog>
 {/if}
@@ -690,17 +697,15 @@
 					type: TYPE_LABELS[reserve.nextTo]
 				})}<CharacterBadge characterId={reservedCharacter.id} character={reservedCharacter} />
 			</p>
-			<!-- Each good neighbour, with what it drafted beside it. -->
-			<ul class="seats" data-testid="reserved-seats">
-				{#each reserveSeats as i (i)}
-					{@const kept = byId.get(picks[i])}
-					<li>
-						<Button onclick={() => afterReserved(i)}>{label(seats[i])}</Button>
-						{#if kept}<CharacterBadge characterId={kept.id} character={kept} />{/if}
-					</li>
-				{/each}
-				<li><Button onclick={() => afterReserved(undefined)}>{t('common.none')}</Button></li>
-			</ul>
+			<DraftSeatList
+				seats={reserveSeats}
+				seatLabel={seatName}
+				{kept}
+				onPick={afterReserved}
+				last={t('common.none')}
+				onLast={() => afterReserved(undefined)}
+				testid="reserved-seats"
+			/>
 		</div>
 	</Dialog>
 {/if}
@@ -711,8 +716,8 @@
 		{conversion}
 		by={byId.get(conversion.characterId)}
 		seats={convertSeats}
-		seatLabel={(i) => label(seats[i])}
-		kept={(i) => byId.get(picks[i])}
+		seatLabel={seatName}
+		{kept}
 		characters={convertOptions}
 		onDone={(turned) => void finish(turned)}
 	/>

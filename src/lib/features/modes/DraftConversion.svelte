@@ -5,8 +5,8 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import DraftSeatList from './DraftSeatList.svelte';
 
 	/**
 	 * Once everyone has drafted, a drafted character that turns players into another type (the
@@ -57,17 +57,16 @@
 	{#if at === undefined}
 		<div class="ask" data-testid="draft-convert">
 			<p class="prompt">{t('modes.deal.convertSeat', { type })}</p>
-			<!-- Each seat that may be turned, with what it drafted beside it. -->
-			<ul class="seats" data-testid="convert-seats">
-				{#each left as i (i)}
-					{@const drafted = kept(i)}
-					<li>
-						<Button onclick={() => (at = i)}>{seatLabel(i)}</Button>
-						{#if drafted}<CharacterBadge characterId={drafted.id} character={drafted} />{/if}
-					</li>
-				{/each}
-				<li><Button onclick={() => onDone(turned)}>{t('modes.deal.convertStop')}</Button></li>
-			</ul>
+			<!-- Each seat that may be turned. -->
+			<DraftSeatList
+				seats={left}
+				{seatLabel}
+				{kept}
+				onPick={(i) => (at = i)}
+				last={t('modes.deal.convertStop')}
+				onLast={() => onDone(turned)}
+				testid="convert-seats"
+			/>
 		</div>
 	{:else}
 		<div class="choose" data-testid="convert-character">
@@ -108,17 +107,5 @@
 	.list {
 		display: flex;
 		flex-direction: column;
-	}
-	.seats {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-	.seats li {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding-block: var(--space-1);
-		border-bottom: var(--card-border);
 	}
 </style>
