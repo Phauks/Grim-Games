@@ -1,3 +1,4 @@
+import type { GameNote } from '#lib/core/model/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	MAX_SEATS,
@@ -6,8 +7,44 @@ import {
 	refuse,
 	seatNumberNames,
 	seatOf,
-	type Deciders
+	type Deciders,
+	type Warn
 } from './shared.ts';
+
+/**
+ * The note a `SetGameNote` or `SetSeatNote` writes into `notes`, trimmed, or undefined when
+ * nothing changes: a new note with nothing in it is not kept. A new note takes the next
+ * free `n<number>` id.
+ */
+function writtenNote(
+	notes: readonly GameNote[] = [],
+	command: { noteId?: string; title: string; text: string; hidden: boolean },
+	warn: Warn
+): GameNote | undefined {
+	const before = command.noteId
+		? (notes.find((n) => n.noteId === command.noteId) ??
+			refuse('unknown-note', `no note ${command.noteId}`))
+		: undefined;
+	const title = command.title.trim();
+	const text = command.text.trim();
+	if (!before && !title && !text) {
+		warn('no-change', 'a new note with nothing in it is not kept');
+		return undefined;
+	}
+	if (
+		before &&
+		before.title === title &&
+		before.text === text &&
+		before.hidden === command.hidden
+	) {
+		warn('no-change', 'the note is unchanged');
+		return undefined;
+	}
+	const noteId =
+		before?.noteId ??
+		`n${notes.reduce((max, n) => Math.max(max, Number(n.noteId.slice(1)) || 0), 0) + 1}`;
+	return { noteId, title, text, hidden: command.hidden };
+}
 
 /** Seats, the script, the Storyteller name and game notes. */
 export const SEATS_DECIDERS: Deciders<
@@ -17,6 +54,7 @@ export const SEATS_DECIDERS: Deciders<
 	| 'RenameSeat'
 	| 'SetStorytellerName'
 	| 'SetSeatNote'
+	| 'DeleteSeatNote'
 	| 'SetSeatLook'
 	| 'SetGameNote'
 	| 'DeleteGameNote'
@@ -95,14 +133,15 @@ export const SEATS_DECIDERS: Deciders<
 
 	SetSeatNote(game, command, ctx, warn) {
 		const seat = seatOf(game, command.seatId);
-		const note = command.note?.trim() || undefined;
-		if (note === seat.note) {
-			warn('no-change', 'the note is unchanged');
-			return [];
-		}
-		const event: GameEvent = { type: 'SeatNoteSet', seatId: seat.seatId };
-		if (note !== undefined) event.note = note;
-		return [event];
+		const note = writtenNote(seat.notes, command, warn);
+		return note ? [{ type: 'SeatNoteSaved', seatId: seat.seatId, note }] : [];
+	},
+
+	DeleteSeatNote(game, command) {
+		const seat = seatOf(game, command.seatId);
+		if (!seat.notes?.some((n) => n.noteId === command.noteId))
+			refuse('unknown-note', `no note ${command.noteId}`);
+		return [{ type: 'SeatNoteDeleted', seatId: seat.seatId, noteId: command.noteId }];
 	},
 
 	SetSeatLook(game, command, ctx, warn) {
@@ -118,30 +157,8 @@ export const SEATS_DECIDERS: Deciders<
 	},
 
 	SetGameNote(game, command, ctx, warn) {
-		const notes = game.notes ?? [];
-		const before = command.noteId
-			? (notes.find((n) => n.noteId === command.noteId) ??
-				refuse('unknown-note', `no note ${command.noteId}`))
-			: undefined;
-		const title = command.title.trim();
-		const text = command.text.trim();
-		if (!before && !title && !text) {
-			warn('no-change', 'a new note with nothing in it is not kept');
-			return [];
-		}
-		if (
-			before &&
-			before.title === title &&
-			before.text === text &&
-			before.hidden === command.hidden
-		) {
-			warn('no-change', 'the note is unchanged');
-			return [];
-		}
-		const noteId =
-			before?.noteId ??
-			`n${notes.reduce((max, n) => Math.max(max, Number(n.noteId.slice(1)) || 0), 0) + 1}`;
-		return [{ type: 'GameNoteSet', note: { noteId, title, text, hidden: command.hidden } }];
+		const note = writtenNote(game.notes, command, warn);
+		return note ? [{ type: 'GameNoteSet', note }] : [];
 	},
 
 	DeleteGameNote(game, command) {

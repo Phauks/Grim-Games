@@ -231,6 +231,12 @@ function describeEvent(
 			return event.note
 				? [text('Note on '), seatPart(before, event.seatId)]
 				: [text('Cleared the note on '), seatPart(before, event.seatId)];
+		case 'SeatNoteSaved':
+			return event.note.title
+				? [text('Note on '), seatPart(before, event.seatId), text(`: ${event.note.title}`)]
+				: [text('Note on '), seatPart(before, event.seatId)];
+		case 'SeatNoteDeleted':
+			return [text('Deleted a note on '), seatPart(before, event.seatId)];
 		case 'SeatLookSet':
 			return [text('Avatar and frame for '), seatPart(before, event.seatId)];
 		case 'GameNotesSet':

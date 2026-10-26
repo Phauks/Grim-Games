@@ -613,8 +613,8 @@ test("the player picks their name from the room's phones", async ({ page, browse
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await phone.getByTestId('you-row').tap();
-	const you = phone.getByRole('dialog', { name: 'You', exact: true });
+	await phone.getByTestId('you-button').tap();
+	const you = phone.getByRole('dialog', { name: 'Your settings' });
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex');
@@ -1696,7 +1696,7 @@ test('selecting a character moves nothing, and its lock picks it when not yet ch
 // Trevor, backlog L25: a custom script can leave out how its own characters go in the bag
 // (Blood on Hope's Peak's Ultimate Imposter thinks it is another character, like the
 // Drunk). The ⋯ on Characters sets it for the game.
-test('the ⋯ sets how a custom script’s own character goes in the bag', async ({ page }) => {
+test('Bag draw sets how a custom script’s own character goes in the bag', async ({ page }) => {
 	await page.addInitScript(() => {
 		localStorage.setItem(
 			'grim-games:scripts:quick-play',
@@ -1733,7 +1733,13 @@ test('the ⋯ sets how a custom script’s own character goes in the bag', async
 	const check = page.getByTestId('setup-check');
 	await expect(check).not.toContainText(/Imposter\s*: \+1 Townsfolk in the bag/);
 
-	await page.getByRole('button', { name: 'Script characters in the bag' }).tap();
+	// In the Bag draw sheet, not a ⋯ on the title row (Trevor, 2026-10-26).
+	await expect(page.getByRole('button', { name: 'Script characters in the bag' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await page
+		.getByTestId('bag-settings')
+		.getByRole('button', { name: 'Script characters in the bag' })
+		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Script characters in the bag' });
 	const role = dialog.getByRole('combobox', { name: 'Imposter' });
 	await expect(role).toHaveText('Dealt as itself');

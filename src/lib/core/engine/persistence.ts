@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 18;
+export const SAVED_GAME_VERSION = 19;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -209,6 +209,14 @@ const migrateV16toV17: Migration = (doc) => ({ ...doc, schemaVersion: 17 });
  */
 const migrateV17toV18: Migration = (doc) => ({ ...doc, schemaVersion: 18 });
 
+/**
+ * Version 19 (2026-10-26) gave each seat several titled notes, like the game's (`Seat.notes`,
+ * the `SeatNoteSaved` and `SeatNoteDeleted` events). The log needs no change: an older game's
+ * `SeatNoteSet` replays as the seat's untitled first note. The bump makes older builds refuse
+ * a version 19 save instead of failing on the unknown events.
+ */
+const migrateV18toV19: Migration = (doc) => ({ ...doc, schemaVersion: 19 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -227,7 +235,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	14: migrateV14toV15,
 	15: migrateV15toV16,
 	16: migrateV16toV17,
-	17: migrateV17toV18
+	17: migrateV17toV18,
+	18: migrateV18toV19
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {

@@ -14,6 +14,7 @@
 		remindersOn,
 		type PlayerReminders
 	} from './player-reminders.ts';
+	import type { SeatNotes } from './seat-notes.ts';
 
 	/**
 	 * The player's own reminders on their grim (Trevor, 2026-10-26), lined up in front of each
@@ -31,7 +32,7 @@
 		/** Each seat's name box, which its reminders keep clear of. */
 		names: readonly { box: Box }[];
 		/** Seats with the player's note mark. */
-		notes: Readonly<Record<string, string>>;
+		notes: Readonly<SeatNotes>;
 		characterOf: (id: CharacterId) => Character | undefined;
 		onOpen: (seat: PublicSeat) => void;
 	}

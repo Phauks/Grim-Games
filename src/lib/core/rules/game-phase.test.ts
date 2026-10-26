@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gamePhase } from './game-phase.ts';
+import { gamePhase, parsePlayersPhase } from './game-phase.ts';
 
 describe('game phase', () => {
 	it('is Setup until the first night begins, then Night 1', () => {
@@ -25,5 +25,29 @@ describe('game phase', () => {
 			kind: 'night',
 			number: 4
 		});
+	});
+});
+
+describe("players' phase", () => {
+	it('reads Setup, a night, a day and Town from the room', () => {
+		expect(parsePlayersPhase({ kind: 'setup', number: 3 })).toEqual({ kind: 'setup' });
+		expect(parsePlayersPhase({ kind: 'night', number: 2 })).toEqual({ kind: 'night', number: 2 });
+		expect(parsePlayersPhase({ kind: 'town', number: 1, extra: 'x' })).toEqual({
+			kind: 'town',
+			number: 1
+		});
+	});
+
+	it('drops anything else', () => {
+		for (const value of [
+			undefined,
+			null,
+			'day',
+			{ kind: 'dusk', number: 1 },
+			{ kind: 'day' },
+			{ kind: 'day', number: 0 },
+			{ kind: 'day', number: 1.5 }
+		])
+			expect(parsePlayersPhase(value)).toBeUndefined();
 	});
 });

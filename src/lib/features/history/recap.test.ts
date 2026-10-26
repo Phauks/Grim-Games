@@ -15,7 +15,13 @@ function finished() {
 	const { session, seats } = castGame(
 		TB,
 		{ type: 'NewDay' },
-		(s): Command => ({ type: 'SetSeatNote', seatId: s[1], note: 'Claimed Chef, true' }),
+		(s): Command => ({
+			type: 'SetSeatNote',
+			seatId: s[1],
+			title: '',
+			text: 'Claimed Chef, true',
+			hidden: false
+		}),
 		(s): Command => ({
 			type: 'DayNote',
 			characterId: 'gossip',

@@ -60,6 +60,7 @@
 		type NominationPrompt
 	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
+	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -355,7 +356,7 @@
 			hasFace: seats[i]?.characterId !== undefined,
 			name: nameBoxes[i]?.box,
 			dead: !!seats[i]?.dead,
-			note: !!seats[i]?.note,
+			note: !!seats[i]?.notes?.length,
 			nameOffset: boardLooks.current.nameOffset
 		});
 	}
@@ -487,7 +488,7 @@
 	let notesOpen = $state(false);
 	let notesSheet = $state<ReturnType<typeof NotesSheet>>();
 	/**
-	 * A seat's pen mark opens just that player's note, not the whole sheet (Trevor,
+	 * A seat's pen mark opens just that player's notes, not the whole sheet (Trevor,
 	 * 2026-10-19: less to take in). After the tap's click, so it doesn't land in the field.
 	 */
 	function editNote(seatId: SeatId) {
@@ -959,9 +960,9 @@
 				...(cornerInfo.players ? { players: standardPlayersLine(game.seating.length) } : {})
 			});
 	});
-	// Players see the day timer during the day only (Trevor, 2026-10-26).
+	// Players see where the game is up to, and the day timer during the day (Trevor, 2026-10-26).
 	$effect(() => {
-		if (!watching) roomHost().showDay(game.gameId, phaseNow.kind === 'day' && !ended);
+		if (!watching) roomHost().showPhase(game.gameId, ended ? undefined : phaseNow);
 	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
@@ -1427,6 +1428,9 @@
 		</div>
 	</div>
 </div>
+
+<!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
+<BoardAmbience scene={watching || ended || phaseNow.kind === 'setup' ? null : phaseNow.kind} />
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <BoardMenu

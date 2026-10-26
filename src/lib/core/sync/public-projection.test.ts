@@ -148,6 +148,15 @@ describe('publicProjection', () => {
 		).toEqual({ durationMs: 60_000, elapsedMs: 0, startedAt: 5, mode: 'down', look: 'sun' });
 	});
 
+	it("carries where the game is up to for players' status line (Trevor, 2026-10-26)", () => {
+		const { game } = busyGame();
+		expect(publicProjection(game)).not.toHaveProperty('now');
+		const town = { kind: 'town' as const, number: 2, secret: true };
+		expect(
+			publicProjection(game, undefined, undefined, undefined, undefined, [], undefined, town).now
+		).toEqual({ kind: 'town', number: 2 });
+	});
+
 	it('carries the game mode and special rules, and nothing for a Standard game', () => {
 		const { game } = busyGame();
 		expect(publicProjection(game)).not.toHaveProperty('rules');
@@ -234,8 +243,15 @@ describe('publicProjection', () => {
 
 	it("leaks no Storyteller's seat notes", () => {
 		const { session, ctx, seats } = newGame(5);
-		const s = run(session, ctx, { type: 'SetSeatNote', seatId: seats[0], note: 'secret word' });
+		const s = run(session, ctx, {
+			type: 'SetSeatNote',
+			seatId: seats[0],
+			title: 'secret title',
+			text: 'secret word',
+			hidden: false
+		});
 		expect(JSON.stringify(publicProjection(s.game))).not.toContain('secret word');
+		expect(JSON.stringify(publicProjection(s.game))).not.toContain('secret title');
 	});
 
 	it('leaks no night-order or day-reminder overrides', () => {

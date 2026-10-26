@@ -41,6 +41,7 @@
 	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
 	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
 	import PlayerRoom from './PlayerRoom.svelte';
+	import YouButton from '#lib/features/room/YouButton.svelte';
 	import { gameKey, lastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
@@ -68,6 +69,8 @@
 	let data = $state<GameData>();
 	/** A room vote is open, so its ballot takes the place of the tabs. */
 	let voting = $state(false);
+	/** The room this phone is in, whose name the You sheet sets. */
+	let joinedRoom = $state<string>();
 	let error = $state<string>();
 	// The whole player screen, its dialogs and sheets included, takes the sheet background
 	// (Trevor, 2026-10-25); leaving it brings back the app theme.
@@ -217,13 +220,20 @@
 	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). The
 	     Storyteller only for the room this script came from: Join game's code form shows none
 	     (Trevor, 2026-10-26: "even before i have joined a game, it say a storyteller"). -->
+	<!-- Your name and the text size, one tap from every tab, at the end of the byline's line,
+	     which keeps the title's room for its words (plan E2, Trevor 2026-10-26). -->
 	{#snippet subtitle()}
-		<ScriptByline
-			author={script?.meta.author}
-			{version}
-			storyteller={inRoom && inRoom === lastRoom() ? roomTable.storyteller : undefined}
-			inline
-		/>&nbsp;
+		<span class="subline">
+			<span class="by"
+				><ScriptByline
+					author={script?.meta.author}
+					{version}
+					storyteller={inRoom && inRoom === lastRoom() ? roomTable.storyteller : undefined}
+					inline
+				/>&nbsp;</span
+			>
+			<YouButton room={joinedRoom} />
+		</span>
 	{/snippet}
 
 	{#if error}
@@ -236,6 +246,7 @@
 			initialCode={join ? (join.code ?? null) : undefined}
 			onCode={join ? openRoom : undefined}
 			onVoting={(v) => (voting = v)}
+			onRoom={(room) => (joinedRoom = room)}
 		/>
 		{#if offline}<OfflineGame />{/if}
 	{/if}
@@ -304,6 +315,15 @@
 		flex: none;
 		width: 1.8em;
 		height: 1.8em;
+	}
+	.subline {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.by {
+		flex: 1;
+		min-width: 0;
 	}
 	.choose {
 		display: grid;

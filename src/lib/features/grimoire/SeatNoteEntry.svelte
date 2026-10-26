@@ -1,11 +1,14 @@
 <script lang="ts">
 	import type { Alignment, CharacterId, PlayerName } from '#lib/core/data/index.ts';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
+	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
+	import type { TitledNote } from '#lib/ui/notes/note.ts';
 
 	/**
-	 * One player's note in a list of them, headed by their character, seat and name (Trevor,
+	 * One player's notes in a list of them, headed by their character, seat and name (Trevor,
 	 * 2026-10-19): the Storyteller's Notes sheet, and a player's Notes tab with the character
-	 * they guess (Trevor, 2026-10-24). Tapping the note opens its editor (SeatNoteDialog).
+	 * they guess (Trevor, 2026-10-24). The notes are cards, as the game's notes, ending in a
+	 * dashed "+ New note" (Trevor, 2026-10-26: several notes per player).
 	 */
 	interface Props {
 		/** The seat's character, or the player's guess of it; the label alone without one. */
@@ -15,37 +18,17 @@
 		label: string;
 		/** The player's badge text ("Ana", or "Seat 3"); the label when not given. */
 		playerName?: PlayerName;
-		note: string | undefined;
-		onOpen: () => void;
+		notes: readonly TitledNote[];
+		onOpen: (noteId: string) => void;
+		/** Absent when notes can't be added (a game opened to view only). */
+		onAdd?: () => void;
 	}
 
-	let { characterId, alignment, label, playerName = label, note, onOpen }: Props = $props();
+	let { characterId, alignment, label, playerName = label, notes, onOpen, onAdd }: Props = $props();
 </script>
 
 <CharacterEntry {characterId} {alignment} {playerName} {label}>
-	<button
-		type="button"
-		class="note"
-		aria-label={note ? `Notes for ${label}: ${note}` : `Notes for ${label}: None`}
-		onclick={onOpen}>{note ?? 'None'}</button
-	>
+	<div role="group" aria-label={`Notes for ${label}`}>
+		<NoteCards {notes} {onOpen} {onAdd} />
+	</div>
 </CharacterEntry>
-
-<style>
-	/* The note as it reads in its editor: the list's own text, every line kept. */
-	.note {
-		display: block;
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: transparent;
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-		cursor: pointer;
-	}
-</style>
