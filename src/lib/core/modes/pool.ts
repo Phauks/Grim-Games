@@ -159,7 +159,12 @@ export function runsPart(mode: { parts: CombinedParts }, part: ModePart | RulePa
 			// Separate towns split the players evenly (towns.ts townSizes).
 			return !p.counts || p.counts.kind === 'standard' || p.counts.kind === 'per-town';
 		case 'setupModifiers':
-			return !p.setupModifiers || p.setupModifiers.kind === 'standard';
+			return (
+				!p.setupModifiers ||
+				p.setupModifiers.kind === 'standard' ||
+				// A draft applies each drafted character's change (draft.ts).
+				(p.setupModifiers.kind === 'as-chosen' && p.assignment?.kind === 'draft')
+			);
 		case 'assignment':
 			return !p.assignment || p.assignment.kind === 'bag';
 		case 'duplicates':

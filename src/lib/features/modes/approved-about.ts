@@ -74,8 +74,6 @@ export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly st
 	'flesh-and-bone:parts.ruleChanges[0]':
 		'The Choirboy and Huntsman work differently once the King or Damsel is out of the campaign. The rules page says how.',
 	'sushi-buffet:parts.bluffs': 'The Demon receives no bluffs.',
-	'sushi-buffet:parts.setupModifiers':
-		'Drafted characters never change the counts: the draft keeps the setup sheet’s counts for the player count, so a Baron adds no Outsiders.',
 	'sushi-buffet:parts.assignment':
 		'Each player is offered 3 characters, of any types, and keeps one, or refuses them for 2 new ones, then for a last one. Characters not selected may be recycled; that is the Storyteller’s choice.',
 	'two-towns-and-a-boomdandy:parts.ruleChanges[0]':
