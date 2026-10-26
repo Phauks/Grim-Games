@@ -109,6 +109,9 @@ export const ICON_SLOTS = {
 	 */
 	edit: { label: 'Edit', choices: ['ph:pencil-simple', 'ph:user-switch'] },
 	move: { label: 'Move', choices: ['ph:arrow-bend-up-right'] },
+	/** One place higher or lower in a list the user orders, e.g. a ranked ballot (2026-10-26). */
+	moveUp: { label: 'Move up', choices: ['ph:arrow-up', 'ph:caret-up'] },
+	moveDown: { label: 'Move down', choices: ['ph:arrow-down', 'ph:caret-down'] },
 	traveller: { label: 'Traveller', choices: ['ph:person-simple-walk', 'ph:user-plus'] },
 	fabled: { label: 'Fabled and Loric', choices: ['ph:sparkle'] },
 	grimoire: { label: 'Grimoire', choices: ['ph:users-four', 'ph:circle-dashed'] },

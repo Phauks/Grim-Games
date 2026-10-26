@@ -374,13 +374,14 @@ export class RoomHost {
 
 	/**
 	 * Opens a vote on the next script, replacing any open one, with a time limit in minutes
-	 * if given. False when offline.
+	 * if given, and the count shown to players when `showTally`. False when offline.
 	 */
 	openScriptVote(
 		kind: ScriptVoteKind,
 		options: ScriptVoteOption[],
 		minutes?: number,
-		subject: VoteSubject = 'script'
+		subject: VoteSubject = 'script',
+		showTally = false
 	): boolean {
 		return (
 			this.#socket?.send({
@@ -389,9 +390,20 @@ export class RoomHost {
 				kind,
 				options,
 				...(minutes !== undefined ? { minutes } : {}),
-				...(subject === 'mode' ? { subject } : {})
+				...(subject === 'mode' ? { subject } : {}),
+				...(showTally ? { showTally } : {})
 			}) ?? false
 		);
+	}
+
+	/** Shows players the open script vote's count, or hides it (Trevor, 2026-10-26). */
+	showScriptVoteTally(show: boolean): void {
+		this.#socket?.send({ type: 'script-vote-tally', show });
+	}
+
+	/** Ends the script vote after a final call to phones (Trevor, 2026-10-26). */
+	endScriptVote(): void {
+		this.#socket?.send({ type: 'end-script-vote' });
 	}
 
 	closeScriptVote(): void {

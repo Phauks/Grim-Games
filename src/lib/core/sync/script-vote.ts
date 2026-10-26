@@ -28,6 +28,19 @@ export interface ScriptVoteOption {
 	 * the logo next to the script's name): TPI's edition logo or the author's https link.
 	 */
 	logo?: string;
+	/**
+	 * The script's characters, for its details on the ballot (Trevor, 2026-10-26: players can
+	 * view details of each script): ids, and a homebrew character's own name and team. Absent
+	 * from a game-mode vote and from apps before it.
+	 */
+	characters?: ScriptVoteCharacter[];
+}
+
+/** A character on an offered script, as BotC Scripts lists one: enough for a badge. */
+export interface ScriptVoteCharacter {
+	id: string;
+	name?: string;
+	team?: string;
 }
 
 /**
@@ -36,11 +49,19 @@ export interface ScriptVoteOption {
  */
 export const SCRIPT_VOTE_MINUTES = [1, 2, 3, 5, 10] as const;
 
+/**
+ * When the Storyteller ends the vote early, phones get this long to vote before it closes
+ * (Trevor, 2026-10-26: "give 15 second final vote warning to players").
+ */
+export const FINAL_CALL_SECONDS = 15;
+
 export const MIN_SCRIPT_VOTE_OPTIONS = 2;
 /** A practical ceiling, so one vote can't flood every phone; the only place it is set. */
 export const MAX_SCRIPT_VOTE_OPTIONS = 12;
 const MAX_ID = 200;
 const MAX_TEXT = 120;
+/** As many characters as BotC Scripts' own reader keeps (readEntries). */
+const MAX_CHARACTERS = 60;
 
 export interface ScriptVote {
 	voteId: string;
@@ -52,6 +73,10 @@ export interface ScriptVote {
 	ballots: Record<string, string[]>;
 	/** When the time limit runs out (epoch ms, the room's clock); no limit when absent. */
 	endsAt?: number;
+	/** The Storyteller ended it early: the last FINAL_CALL_SECONDS before `endsAt`. */
+	finalCall?: true;
+	/** Players see the count too (Trevor, 2026-10-26); the Storyteller only when absent. */
+	showTally?: true;
 }
 
 /** What the Storyteller's device sees of the vote: points per option, and who voted. */
@@ -61,13 +86,19 @@ export interface ScriptVoteTally {
 	subject?: 'mode';
 	options: ScriptVoteOption[];
 	/**
-	 * Per option id: votes for a single or multiple choice; for a ranked vote, points by
-	 * position (first of three gets 3, then 2, then 1), so the highest is the town's pick.
+	 * Per option id: votes for a single or multiple choice; for a ranked vote, its votes in
+	 * the last round of the instant runoff (rankedRunoff).
 	 */
 	points: Record<string, number>;
+	/** A ranked vote: the round each option was dropped in, from 1, for those dropped. */
+	out?: Record<string, number>;
+	/** A ranked vote: the option with more than half the ballots; none on a tie. */
+	winner?: string;
 	voted: number;
 	members: number;
 	endsAt?: number;
+	finalCall?: true;
+	showTally?: true;
 }
 
 const MAX_LOGO = 500;
@@ -82,6 +113,23 @@ function logoOf(value: unknown): string | undefined {
 const text = (value: unknown) =>
 	typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT) : '';
 
+/** An offered script's characters, each id once; `undefined` when there are none. */
+function charactersOf(value: unknown): ScriptVoteCharacter[] | undefined {
+	if (!Array.isArray(value)) return undefined;
+	const seen = new Set<string>();
+	const list: ScriptVoteCharacter[] = [];
+	for (const raw of value) {
+		if (list.length >= MAX_CHARACTERS) break;
+		const { id, name, team } = (raw ?? {}) as Record<string, unknown>;
+		if (typeof id !== 'string' || !id || id.length > 40 || seen.has(id)) continue;
+		seen.add(id);
+		const shown = text(name).slice(0, 60);
+		const side = text(team).slice(0, 20);
+		list.push({ id, ...(shown ? { name: shown } : {}), ...(side ? { team: side } : {}) });
+	}
+	return list.length ? list : undefined;
+}
+
 /**
  * A vote from what the Storyteller sent; `undefined` when it isn't one. `minutes` sets a time
  * limit from `now` when it is one of SCRIPT_VOTE_MINUTES; anything else means no limit.
@@ -92,30 +140,34 @@ export function newScriptVote(
 	options: unknown,
 	minutes?: unknown,
 	now = 0,
-	subject?: unknown
+	subject?: unknown,
+	showTally?: unknown
 ): ScriptVote | undefined {
 	if (typeof voteId !== 'string' || !voteId || voteId.length > MAX_ID) return undefined;
 	if (!SCRIPT_VOTE_KINDS.includes(kind as ScriptVoteKind) || !Array.isArray(options)) return;
 	const seen = new Set<string>();
 	const clean: ScriptVoteOption[] = [];
 	for (const raw of options) {
-		const { id, name, author, logo } = (raw ?? {}) as Record<string, unknown>;
+		const { id, name, author, logo, characters } = (raw ?? {}) as Record<string, unknown>;
 		if (typeof id !== 'string' || !id || id.length > MAX_ID || seen.has(id)) continue;
 		const shown = text(name);
 		if (!shown) continue;
 		seen.add(id);
 		const by = text(author);
 		const image = logoOf(logo);
+		const cast = charactersOf(characters);
 		clean.push({
 			id,
 			name: shown,
 			...(by ? { author: by } : {}),
-			...(image ? { logo: image } : {})
+			...(image ? { logo: image } : {}),
+			...(cast ? { characters: cast } : {})
 		});
 	}
 	if (clean.length < MIN_SCRIPT_VOTE_OPTIONS || clean.length > MAX_SCRIPT_VOTE_OPTIONS) return;
 	const vote: ScriptVote = { voteId, kind: kind as ScriptVoteKind, options: clean, ballots: {} };
 	if (subject === 'mode') vote.subject = 'mode';
+	if (showTally === true) vote.showTally = true;
 	if (SCRIPT_VOTE_MINUTES.includes(minutes as (typeof SCRIPT_VOTE_MINUTES)[number])) {
 		vote.endsAt = now + (minutes as number) * 60_000;
 	}
@@ -128,8 +180,21 @@ export function scriptVoteEnded(vote: { endsAt?: number }, now: number): boolean
 }
 
 /**
+ * Ends the vote early: phones get FINAL_CALL_SECONDS more, or what is left of the time limit
+ * if that is sooner (Trevor, 2026-10-26). Once ended or in its final call, nothing changes.
+ */
+export function endScriptVoteSoon(vote: ScriptVote, now: number): ScriptVote {
+	if (vote.finalCall || scriptVoteEnded(vote, now)) return vote;
+	const soon = now + FINAL_CALL_SECONDS * 1000;
+	if (vote.endsAt !== undefined && vote.endsAt <= soon) return vote;
+	return { ...vote, endsAt: soon, finalCall: true };
+}
+
+/**
  * A player's ballot, checked against the vote: one choice for a single choice, at least one
- * for a multiple choice, every option once for a ranking. `undefined` when it doesn't fit.
+ * for a multiple choice or a ranking, in order for a ranking, which need not place every
+ * option (Trevor, 2026-10-26). `undefined` when it doesn't fit; an empty ballot is a
+ * withdrawn vote, which castScriptBallot handles before this.
  */
 export function cleanBallot(vote: ScriptVote, choices: unknown): string[] | undefined {
 	if (!Array.isArray(choices)) return undefined;
@@ -138,21 +203,74 @@ export function cleanBallot(vote: ScriptVote, choices: unknown): string[] | unde
 	const unique = [...new Set(choices as string[])];
 	if (unique.length !== choices.length || unique.length === 0) return undefined;
 	if (vote.kind === 'single' && unique.length !== 1) return undefined;
-	if (vote.kind === 'ranked' && unique.length !== ids.size) return undefined;
 	return unique;
+}
+
+/**
+ * An instant runoff over ranked ballots (Trevor, 2026-10-26: "attempt for majority from 1
+ * vote. If 1 vote does not win, remove any votes for lowest and move down"). Each round
+ * counts every ballot for its highest option still in; an option with more than half the
+ * ballots still counting wins. Otherwise the lowest is dropped and its ballots move to their
+ * next choice. Lowest ties go to the one with fewer votes in the latest earlier round where
+ * they differ, then to the one offered later. When every option left has the same count,
+ * there is no winner and the Storyteller decides.
+ */
+export function rankedRunoff(
+	optionIds: readonly string[],
+	ballots: readonly (readonly string[])[]
+): { rounds: Record<string, number>[]; out: Record<string, number>; winner?: string } {
+	const left = [...optionIds];
+	const rounds: Record<string, number>[] = [];
+	const out: Record<string, number> = {};
+	while (left.length) {
+		const counts = Object.fromEntries(left.map((id) => [id, 0]));
+		let counting = 0;
+		for (const ballot of ballots) {
+			const top = ballot.find((id) => id in counts);
+			if (top === undefined) continue;
+			counts[top]++;
+			counting++;
+		}
+		rounds.push(counts);
+		const values = left.map((id) => counts[id]);
+		const most = Math.max(...values);
+		if (counting > 0 && most * 2 > counting) {
+			return { rounds, out, winner: left.find((id) => counts[id] === most) };
+		}
+		const least = Math.min(...values);
+		if (least === most) break;
+		const tied = left.filter((id) => counts[id] === least);
+		let drop = tied[tied.length - 1];
+		for (let r = rounds.length - 2; r >= 0 && tied.length > 1; r--) {
+			const fewest = Math.min(...tied.map((id) => rounds[r][id]));
+			const still = tied.filter((id) => rounds[r][id] === fewest);
+			if (still.length < tied.length) {
+				tied.splice(0, tied.length, ...still);
+				drop = tied[tied.length - 1];
+			}
+		}
+		out[drop] = rounds.length;
+		left.splice(left.indexOf(drop), 1);
+	}
+	return { rounds, out };
 }
 
 export function tallyScriptVote(vote: ScriptVote, memberIds: readonly string[]): ScriptVoteTally {
 	const points = Object.fromEntries(vote.options.map((o) => [o.id, 0]));
 	const members = new Set(memberIds);
-	let voted = 0;
-	for (const [memberId, ballot] of Object.entries(vote.ballots)) {
-		if (!members.has(memberId)) continue;
-		voted++;
-		ballot.forEach((id, i) => {
-			if (!(id in points)) return;
-			points[id] += vote.kind === 'ranked' ? vote.options.length - i : 1;
-		});
+	const counted = Object.entries(vote.ballots).flatMap(([memberId, ballot]) =>
+		members.has(memberId) ? [ballot] : []
+	);
+	let runoff: ReturnType<typeof rankedRunoff> | undefined;
+	if (vote.kind === 'ranked') {
+		runoff = rankedRunoff(
+			vote.options.map((o) => o.id),
+			counted
+		);
+		// Each option's votes in the last round it was in.
+		for (const round of runoff.rounds) Object.assign(points, round);
+	} else {
+		for (const ballot of counted) for (const id of ballot) if (id in points) points[id]++;
 	}
 	return {
 		voteId: vote.voteId,
@@ -160,8 +278,12 @@ export function tallyScriptVote(vote: ScriptVote, memberIds: readonly string[]):
 		...(vote.subject ? { subject: vote.subject } : {}),
 		options: vote.options,
 		points,
-		voted,
+		...(runoff ? { out: runoff.out } : {}),
+		...(runoff?.winner ? { winner: runoff.winner } : {}),
+		voted: counted.length,
 		members: members.size,
-		...(vote.endsAt !== undefined ? { endsAt: vote.endsAt } : {})
+		...(vote.endsAt !== undefined ? { endsAt: vote.endsAt } : {}),
+		...(vote.finalCall ? { finalCall: true as const } : {}),
+		...(vote.showTally ? { showTally: true as const } : {})
 	};
 }

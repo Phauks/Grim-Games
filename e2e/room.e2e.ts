@@ -408,6 +408,8 @@ test('after a game the room votes on the next script, and the next game opens in
 	page,
 	browser
 }, testInfo) => {
+	// A whole game, then the vote with each of its controls (Trevor, 2026-10-26).
+	test.setTimeout(120_000);
 	// Trevor, 2026-10-20 (plan R1): the same room for the next game, a script vote by single
 	// choice, multiple choice or ranking, and "Storyteller is choosing a script" meanwhile.
 	const board = await startGame(page);
@@ -479,20 +481,74 @@ test('after a game the room votes on the next script, and the next game opens in
 	// The room's code stays on the vote, for players not in the room yet (Trevor, 2026-10-23).
 	await expect(sheet.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
 
-	// The phone ranks them; the Storyteller sees points by place.
+	// The phone ranks them, then votes (Trevor, 2026-10-26: "I chose my choices but can't
+	// vote, change, or review details"); nothing is sent until Vote.
 	const ballot = phone.getByRole('dialog', { name: 'Vote on the next script' });
 	await expect(ballot.getByText('Tap the scripts in order, your favourite first.')).toBeVisible();
 	await expect(ballot.getByTestId('script-vote-time')).toHaveText(/^Time left: [12]:\d\d$/);
-	await ballot.getByRole('button', { name: /Bad Moon Rising/ }).tap();
-	await ballot.getByRole('button', { name: /Trouble Brewing/ }).tap();
-	await expect(ballot.getByRole('button', { name: /Bad Moon Rising/ })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	const vote = ballot.getByRole('button', { name: 'Vote', exact: true });
+	await expect(vote).toBeDisabled();
+	await ballot.locator('[aria-pressed]').filter({ hasText: 'Trouble Brewing' }).tap();
+	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 0 of 1');
+	// Rearranged: a ranking lists its order, and each placed script moves up or down.
+	const rows = ballot.getByTestId('script-ballot').getByRole('listitem');
+	await expect(rows).toHaveText([/^1\s*Trouble Brewing/, /^2\s*Bad Moon Rising/]);
+	await expect(ballot.getByRole('button', { name: 'Move Trouble Brewing up' })).toBeDisabled();
+	await ballot.getByRole('button', { name: 'Move Bad Moon Rising up' }).tap();
+	await expect(rows).toHaveText([/^1\s*Bad Moon Rising/, /^2\s*Trouble Brewing/]);
+	await vote.tap();
 	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
+	const change = ballot.getByRole('button', { name: 'Change vote' });
+	await expect(change).toBeDisabled();
+	// A ranking is an instant runoff (Trevor, 2026-10-26): a majority of first choices wins.
 	const results = sheet.getByTestId('script-vote-results').getByRole('listitem');
-	await expect(results.filter({ hasText: 'Bad Moon Rising' })).toContainText('Points: 2');
-	await expect(results.filter({ hasText: 'Trouble Brewing' })).toContainText('Points: 1');
+	await expect(results.filter({ hasText: 'Bad Moon Rising' })).toContainText('Winner · Votes: 1');
+	await expect(results.filter({ hasText: 'Trouble Brewing' })).toContainText('Votes: 0');
+
+	// Each script's details: its author and characters.
+	await ballot.getByRole('button', { name: 'Details of Bad Moon Rising' }).tap();
+	const details = phone.getByRole('dialog', { name: 'Script details' });
+	await expect(details.getByTestId('script-details-name')).toHaveText('Bad Moon Rising');
+	await expect(details.getByText('The Pandemonium Institute')).toBeVisible();
+	await expect(details.getByTestId('script-characters')).toContainText('Grandmother');
+	await details.getByRole('button', { name: 'Close' }).tap();
+	await expect(details).toHaveCount(0);
+	await expect(ballot).toBeVisible();
+
+	// Backing out takes the ballot back; voting again puts it in.
+	await ballot.getByRole('button', { name: 'Withdraw vote' }).tap();
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 0 of 1');
+	await expect(ballot.getByRole('button', { name: 'Withdraw vote' })).toBeDisabled();
+	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
+	await vote.tap();
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
+
+	// The Storyteller lets players see the count (Trevor, 2026-10-26).
+	await expect(ballot.getByTestId('vote-count')).toHaveCount(0);
+	await sheet.getByText('Players see the count', { exact: true }).tap();
+	await expect(
+		ballot
+			.locator('[aria-pressed]')
+			.filter({ hasText: 'Bad Moon Rising' })
+			.getByTestId('vote-count')
+	).toHaveText('Winner · Votes: 1');
+	await expect(ballot.getByTestId('script-ballot-count')).toHaveText('Voted: 1 of 1');
+
+	// A closed ballot opens again from the room row.
+	await phone.keyboard.press('Escape');
+	await expect(ballot).toHaveCount(0);
+	await phone.getByRole('button', { name: 'Ballot' }).tap();
+	await expect(ballot).toBeVisible();
+
+	// Ending early gives phones a final call (Trevor, 2026-10-26: "15 second final vote
+	// warning"); it opens the ballot on a phone that had closed it.
+	await phone.keyboard.press('Escape');
+	await sheet.getByRole('button', { name: 'End vote' }).tap();
+	await expect(ballot.getByTestId('script-vote-time')).toHaveText(
+		/^Final call: voting closes in 0:1\d$/
+	);
+	await expect(sheet.getByRole('button', { name: 'End vote' })).toBeDisabled();
 
 	// Playing the winner closes the vote and chooses it on New game.
 	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
@@ -583,7 +639,8 @@ test('New game opens a room for the vote before any game or script', async ({
 	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
 	const ballot = phone.getByRole('dialog', { name: 'Vote on the next script' });
-	await ballot.getByRole('button', { name: /Bad Moon Rising/ }).tap();
+	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
+	await ballot.getByRole('button', { name: 'Vote', exact: true }).tap();
 	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
 	await sheet.getByRole('button', { name: 'Close vote' }).tap();
 	await expect(ballot).toHaveCount(0);
@@ -614,7 +671,12 @@ test('New game opens a room for the vote before any game or script', async ({
 	const modeBallot = phone.getByRole('dialog', { name: 'Vote on the game mode' });
 	await expect(modeBallot.getByText('Pick the game mode you want to play next.')).toBeVisible();
 	await expect(modeBallot.getByTestId('script-ballot').getByRole('listitem')).toHaveCount(5);
-	await modeBallot.getByRole('button', { name: /Sushi Buffet/ }).tap();
+	await modeBallot.locator('[aria-pressed]').filter({ hasText: 'Sushi Buffet' }).tap();
+	await modeBallot.getByRole('button', { name: 'Vote', exact: true }).tap();
+	// A game mode has no script details.
+	await expect(modeBallot.locator('[aria-pressed]').filter({ hasText: '^Details of' })).toHaveCount(
+		0
+	);
 	const results = modeSheet.getByTestId('script-vote-results').getByRole('listitem');
 	await expect(results.filter({ hasText: 'Sushi Buffet' })).toContainText('Votes: 1');
 	await results.filter({ hasText: 'Sushi Buffet' }).getByRole('button', { name: 'Play' }).tap();
