@@ -52,4 +52,5 @@
 	{modes}
 	onPick={(id) => play({ subject: 'script', id })}
 	onPickMode={(id) => play({ subject: 'mode', id })}
+	onBack={() => void goto(resolve('/new'))}
 />

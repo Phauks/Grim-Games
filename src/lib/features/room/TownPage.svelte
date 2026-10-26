@@ -110,6 +110,15 @@
 	});
 	const table = $derived(town?.view?.public);
 	const showTown = $derived(!message && !!script && !!table?.seats.length);
+
+	// Full screen shows the town alone, not the app (Trevor, 2026-10-26).
+	let stage = $state<HTMLDivElement>();
+	let inFullScreen = $state(false);
+	$effect(() => {
+		const sync = () => (inFullScreen = !!stage && document.fullscreenElement === stage);
+		document.addEventListener('fullscreenchange', sync);
+		return () => document.removeEventListener('fullscreenchange', sync);
+	});
 	/** An admin's grimoire, once drawn. */
 	let boardReady = $state(false);
 	let boardProblem = $state<string>();
@@ -138,9 +147,9 @@
 					share={shareable}
 					room={room ?? undefined}
 				/>{/if}
-			<!-- Top right, last, as on the board (Trevor, 2026-10-26: "we will definitely need a
-		     button to allow fullscreen in the top right corner"). -->
-			<FullScreenButton />
+			<!-- Top right, last (Trevor, 2026-10-26: "we will definitely need a button to allow
+		     fullscreen in the top right corner"); it fills the screen with the town alone. -->
+			{#if stage}<FullScreenButton target={stage} />{/if}
 		{/snippet}
 		{#snippet subtitle()}
 			<ScriptByline
@@ -151,8 +160,11 @@
 			/>&nbsp;
 		{/snippet}
 
-		<div data-testid="public-town">
+		<div class="stage" bind:this={stage} data-testid="public-town">
 			{#if showTown && script && table && room}
+				<!-- In full screen the title line is gone, so the way back sits in the town's own
+			     top right corner. -->
+				{#if inFullScreen}<div class="exit"><FullScreenButton target={stage} /></div>{/if}
 				<PlayerGrim
 					{script}
 					display
@@ -184,6 +196,23 @@
 		flex: none;
 		width: 1.8em;
 		height: 1.8em;
+	}
+	/* Full screen: the town fills the screen, on the page's own background. */
+	.stage:fullscreen {
+		position: relative;
+		background: var(--surface);
+	}
+	.stage:fullscreen :global([data-testid='player-grim']) {
+		height: 100dvh;
+		border-radius: 0;
+	}
+	.exit {
+		position: absolute;
+		top: var(--space-2);
+		right: var(--space-2);
+		z-index: 1;
+		border-radius: 50%;
+		background: var(--board-bar-background);
 	}
 	.message {
 		display: grid;

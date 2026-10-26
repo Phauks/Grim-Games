@@ -305,7 +305,9 @@
 				? t('room.notACode')
 				: player?.refusedReason === 'too-old'
 					? t('room.tooOld')
-					: t('room.closedOrWrong')}
+					: status === 'closed'
+						? t('room.closedByStoryteller')
+						: t('room.closedOrWrong')}
 		</p>
 	{/if}
 	<form class="code-form" onsubmit={enterCode}>

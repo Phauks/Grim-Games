@@ -6,11 +6,13 @@
 	import { fromScript, type Character, type CharacterId } from '#lib/core/data/index.ts';
 	import {
 		answerAsk,
+		canRedraft,
 		canRefuse,
 		chooseOptions,
 		dealTypes,
 		hiddenAsTownsfolk,
 		pickableCharacters,
+		redraft,
 		refuseOffer,
 		seatsLeft,
 		STANDARD,
@@ -20,7 +22,7 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { replacementReminder, scriptJinxes, type BagSlot } from '#lib/core/rules/index.ts';
-	import { splitPlayers, type SeatedType } from '#lib/core/rules/distribution.ts';
+	import { SEATED_TYPES, splitPlayers, type SeatedType } from '#lib/core/rules/distribution.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
@@ -100,6 +102,9 @@
 					{
 						...assignment,
 						recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen,
+						oneTypePerOffer: record?.oneTypePerOffer ?? assignment.oneTypePerOffer,
+						offers: record?.offers ?? assignment.offers,
+						dealsRequired: record?.dealsRequired ?? true,
 						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen',
 						jinxes: record?.jinxedPairs ?? 'allow',
 						ivory: record?.ivoryDraft ?? false
@@ -230,6 +235,29 @@
 		save({ kind: 'draft', state: refuseOffer(progress.state, Math.random) });
 	}
 
+	/**
+	 * Redraft (Grimbits' draft): the Storyteller lets the last player draft again, of any type
+	 * or one they name. Their tile goes back to them, so it opens the new offer.
+	 */
+	let redrafting = $state(false);
+	const previousSlots = $derived(
+		progress?.kind === 'draft' ? progress.state.previous?.slots : undefined
+	);
+	const redraftTypes = $derived(
+		previousSlots ? SEATED_TYPES.filter((type) => previousSlots[type] > 0) : []
+	);
+	function draftAgain(type: SeatedType | undefined) {
+		redrafting = false;
+		if (progress?.kind !== 'draft' || !canRedraft(progress.state)) return;
+		const last = drawn.at(-1);
+		save({
+			kind: 'draft',
+			state: redraft(progress.state, type, Math.random),
+			drawn: drawn.slice(0, -1),
+			held: last
+		});
+	}
+
 	/** The Storyteller asks the last player to choose again (Whale Buffet's reconsider). */
 	function chooseAgain() {
 		if (progress?.kind !== 'choose' || progress.picks.length === 0) return;
@@ -306,6 +334,15 @@
 	>
 		{#snippet next()}
 			<span class="footer">
+				{#if progress?.kind === 'draft'}
+					<Button
+						icon="undo"
+						disabled={!canRedraft(progress.state) || held !== undefined}
+						onclick={() => (redrafting = true)}
+					>
+						{t('modes.deal.redraft')}
+					</Button>
+				{/if}
 				{#if progress?.kind === 'choose' && assignment?.kind === 'choose-own' && assignment.reconsider}
 					<Button
 						icon="undo"
@@ -347,7 +384,7 @@
 		{#if slotMachine && progress?.kind === 'draft' && assignment?.kind === 'draft'}
 			<OfferReels
 				offer={options}
-				size={assignment.offers[0] ?? options.length}
+				size={progress.state.config.offers[0] ?? options.length}
 				{reel}
 				bind:spinning={offerSpinning}
 			/>
@@ -397,10 +434,28 @@
 						{t('modes.deal.askKeep', { count: ask.current })}
 					</Button>
 				{/if}
+				<!-- Or the player drafts again, as Grimbits does for a rejected Legion. -->
+				{#if progress?.kind === 'draft' && canRedraft(progress.state)}
+					<Button icon="undo" onclick={() => draftAgain(undefined)}>
+						{t('modes.deal.redraft')}
+					</Button>
+				{/if}
 			</div>
 		</div>
 	</Dialog>
 {/if}
+
+<Dialog bind:open={redrafting} title={t('modes.deal.redraft')}>
+	<div class="ask" data-testid="redraft">
+		<p class="prompt">{t('modes.deal.redraftType')}</p>
+		<div class="options">
+			<Button onclick={() => draftAgain(undefined)}>{t('modes.deal.redraftAny')}</Button>
+			{#each redraftTypes as type (type)}
+				<Button onclick={() => draftAgain(type)}>{TYPE_LABELS[type]}</Button>
+			{/each}
+		</div>
+	</div>
+</Dialog>
 
 {#if hidden}
 	<Dialog bind:open={hiding} title={t('modes.deal.hiddenTitle')}>

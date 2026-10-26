@@ -30,6 +30,11 @@ export const room = {
 	'room.playersInRoom': 'Players in the room',
 	'room.refresh': 'New code',
 	'room.refreshTitle': 'Make a new code?',
+	'room.closeRoom': 'Close room',
+	'room.closeRoomTitle': 'Close the room?',
+	'room.closeRoomText':
+		'Every phone leaves the room and its code stops working. The grimoire is not changed.',
+	'room.closedByStoryteller': 'The Storyteller closed this room.',
 	'room.refreshText':
 		"Everyone's phone leaves the room and the old code stops working. The grimoire is not changed.",
 	// Players' join pages
@@ -116,6 +121,8 @@ export const room = {
 	'room.scriptVote.new': 'New vote',
 	'room.scriptVote.page': 'Room vote',
 	'room.scriptVote.end': 'End vote',
+	'room.scriptVote.back': 'Back',
+	'room.scriptVote.cancel': 'Cancel vote',
 	'room.scriptVote.finalCall': 'Final call: voting closes in {time}',
 	'room.scriptVote.timeLimit': 'Time limit',
 	'room.scriptVote.noLimit': 'No time limit',
