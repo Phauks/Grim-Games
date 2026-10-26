@@ -36,3 +36,16 @@ export async function openSettingsDialog(page: Page) {
 	await expect(dialog).toBeVisible();
 	return dialog;
 }
+
+/**
+ * Every screen has a way back (Trevor, 2026-10-26): the hamburger, or a game or start-flow
+ * screen's own Back. The browser's and phone's back never count: the installed iPhone app has
+ * none on screen. The controls that count carry `data-way-back`; one must show, ready to tap.
+ */
+export async function expectWayBack(page: Page) {
+	const ways = page.locator('[data-way-back]').filter({ visible: true });
+	await expect(ways.first()).toBeVisible();
+	await expect
+		.poll(() => ways.evaluateAll((all) => all.some((el) => !el.matches(':disabled'))))
+		.toBe(true);
+}

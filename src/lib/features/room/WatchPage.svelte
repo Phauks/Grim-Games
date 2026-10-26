@@ -76,7 +76,7 @@
 						: t('room.watch.waiting')
 					: '')}
 		</p>
-		<Button href={resolve('/')} icon="back">{t('room.watch.home')}</Button>
+		<Button href={resolve('/')} icon="back" data-way-back>{t('room.watch.home')}</Button>
 	</main>
 {/if}
 

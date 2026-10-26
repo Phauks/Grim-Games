@@ -27,6 +27,11 @@
 	}
 
 	let { icon, href, variant = 'solid', children, ...rest }: Props = $props();
+	// A link keeps only the data attributes (test ids, data-way-back): button attributes such as
+	// `disabled` mean nothing on it.
+	const linkData = $derived(
+		Object.fromEntries(Object.entries(rest).filter(([key]) => key.startsWith('data-')))
+	);
 </script>
 
 {#if href}
@@ -37,6 +42,7 @@
 		{href}
 		target={href.startsWith('https://') ? '_blank' : undefined}
 		rel={href.startsWith('https://') ? 'noopener noreferrer' : undefined}
+		{...linkData}
 	>
 		{#if icon}<Icon name={icon} />{/if}
 		<span>{@render children()}</span>
