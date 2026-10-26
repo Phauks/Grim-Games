@@ -108,6 +108,8 @@
 	import { scriptKey } from '#lib/features/player/notebook.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
+	import { playersLine } from '#lib/features/modes/players-line.ts';
+	import { savedChoiceFor } from '#lib/features/modes/script-choices.svelte.ts';
 	import {
 		publicTravellerTest,
 		travellersInPlay
@@ -139,6 +141,7 @@
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
+	import GameFeedbackSheet from '#lib/features/room/GameFeedbackSheet.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import EndGameDialogs from './EndGameDialogs.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
@@ -808,6 +811,8 @@
 	});
 	// A finished game can be saved as a recap (Trevor, 2026-10-19), as it was when it ended.
 	let exportOpen = $state(false);
+	/** Players' feedback on the finished game, saved on this device (Trevor, 2026-10-25). */
+	let feedbackOpen = $state(false);
 	const exportGame = async () => {
 		const session = grimoire.open.session;
 		const cursor = grimoire.open.savedCursor;
@@ -910,7 +915,9 @@
 			startedAt,
 			endedAt: ended?.endedAt,
 			watchers: watcherCount,
-			watching
+			watching,
+			version: scriptVersion(undefined, game.script.meta) ?? savedChoiceFor(game.script)?.version,
+			players: playersLine(game, characters)
 		})
 	);
 	$effect(() => {
@@ -1409,6 +1416,7 @@
 	onAddRule={() => rules?.add()}
 	onArrange={() => seatArr.start()}
 	onExport={() => (exportOpen = true)}
+	onFeedback={watching ? undefined : () => (feedbackOpen = true)}
 	onReopen={() => (reopenOpen = true)}
 	onEnd={() => (endOpen = true)}
 />
@@ -1521,6 +1529,9 @@
 <NotesSheet bind:this={notesSheet} bind:open={notesOpen} {grimoire} />
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} />
+{#if !watching}
+	<GameFeedbackSheet bind:open={feedbackOpen} {game} />
+{/if}
 
 <!-- Exactly what players see on /play (Trevor, 2026-10-19): byline, Print, Share and tabs. -->
 <Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">

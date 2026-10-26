@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
-import { nameStoryteller, toBoard } from './new-game.ts';
+import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
@@ -242,6 +242,30 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 		'true'
 	);
 	await phoneContext.close();
+
+	// The Storyteller reads it from the ended game's menu; it is saved with the game on this
+	// device, so it is still there after a reload (Trevor, 2026-10-25).
+	const feedback = page.getByTestId('game-feedback');
+	async function openFeedback() {
+		await page.getByRole('button', { name: 'More', exact: true }).tap();
+		await page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Player feedback' })
+			.tap();
+		await expect(feedback).toBeVisible();
+	}
+	await openFeedback();
+	await expect(feedback.getByTestId('feedback-average')).toHaveText('3.5 of 5 from 1 rated');
+	await expect(feedback.getByTestId('feedback-accolade-counts')).toHaveText('⏱️ Great pacing × 1');
+	const entry = feedback.getByTestId('feedback-entry');
+	await expect(entry).toHaveCount(1);
+	await expect(entry).toContainText('Anonymous');
+	await expect(entry).toContainText('3.5 of 5');
+	await expect(entry).toContainText('A great night.');
+	await page.reload();
+	await openFeedback();
+	await expect(entry).toHaveCount(1);
+	await expect(entry).toContainText('A great night.');
 });
 
 test('after End game the Storyteller shares the finished grimoire with the room', async ({
@@ -1230,6 +1254,14 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Game time ticks, so it is read as the board shows it, not to the second.
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
+	// Each line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
+	const info = await openGameInfo(page);
+	await info.getByRole('button', { name: 'Author on the board' }).tap();
+	await info.getByRole('button', { name: 'Players on the board' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeHidden();
+	await expect(corner).not.toContainText('by The Pandemonium Institute');
+	await expect(corner.getByTestId('board-players')).toContainText('Players: 8');
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();

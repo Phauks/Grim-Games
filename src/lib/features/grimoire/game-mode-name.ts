@@ -19,8 +19,14 @@ export function gameModeName(gameId: GameId): string | undefined {
  * The board's corner gives each its own line (Trevor, 2026-10-19).
  */
 export function gameModeNames(gameId: GameId): string[] {
+	const { mode, rules } = gameModeParts(gameId);
+	return [...(mode ? [mode] : []), ...rules];
+}
+
+/** The mode's name, unless Standard, and the rules' names apart: the corner has an eye each. */
+export function gameModeParts(gameId: GameId): { mode?: string; rules: string[] } {
 	const record = readGameMode(gameId);
-	if (!record) return [];
+	if (!record) return { rules: [] };
 	const mode = record.modeId !== STANDARD.id ? findMode(record.modeId)?.name : undefined;
-	return [...(mode ? [mode] : []), ...record.rules.map((r) => r.name)];
+	return { ...(mode ? { mode } : {}), rules: record.rules.map((r) => r.name) };
 }

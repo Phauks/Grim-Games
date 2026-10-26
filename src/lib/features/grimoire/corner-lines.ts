@@ -7,11 +7,11 @@
 import type { GameId } from '#lib/core/model/index.ts';
 import type { PublicCorner, PublicPhase } from '#lib/core/sync/public-projection.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
-import { gameModeNames } from './game-mode-name.ts';
+import { gameModeParts } from './game-mode-name.ts';
 
 /**
- * The corner's lines as this device's Board settings show them. A spectator's board
- * (`watching`) has no join code or Game time of its own.
+ * The corner's lines as this device's eyes show them (Game info and Settings > Board; Trevor,
+ * 2026-10-24). A spectator's board (`watching`) has no join code or Game time of its own.
  */
 export function cornerLines(options: {
 	gameId: GameId;
@@ -20,14 +20,22 @@ export function cornerLines(options: {
 	endedAt?: number;
 	watchers: number;
 	watching: boolean;
+	/** The script's version and the players line, as Game info gives them. */
+	version?: string;
+	players?: string;
 }): PublicCorner {
-	const { assistance } = preferences.current;
+	const lines = preferences.current.cornerLines;
 	const own = !options.watching;
+	const { mode, rules } = gameModeParts(options.gameId);
 	return {
-		modes: gameModeNames(options.gameId),
-		...(own && assistance.roomCode ? { joinCode: true } : {}),
-		...(assistance.boardPhase ? { phase: options.phase } : {}),
-		...(own && assistance.gameClock
+		modes: [...(mode && lines.mode ? [mode] : []), ...(lines.rules ? rules : [])],
+		...(lines.author ? {} : { author: false }),
+		...(lines.storyteller ? {} : { storyteller: false }),
+		...(lines.version && options.version ? { version: options.version } : {}),
+		...(lines.players && options.players ? { players: options.players } : {}),
+		...(own && lines['join-code'] ? { joinCode: true } : {}),
+		...(lines['game-time'] ? { phase: options.phase } : {}),
+		...(own && lines['game-time']
 			? {
 					gameTime: {
 						begun: options.phase.kind !== 'setup',
@@ -36,6 +44,6 @@ export function cornerLines(options: {
 					}
 				}
 			: {}),
-		...(options.watchers > 0 ? { watchers: options.watchers } : {})
+		...(lines.watchers && options.watchers > 0 ? { watchers: options.watchers } : {})
 	};
 }

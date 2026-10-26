@@ -38,6 +38,7 @@ import ph_caret_left_thin from '~icons/ph/caret-left-thin';
 import ph_caret_right_thin from '~icons/ph/caret-right-thin';
 import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_cat_thin from '~icons/ph/cat-thin';
+import ph_chat_centered_text_thin from '~icons/ph/chat-centered-text-thin';
 import ph_check_thin from '~icons/ph/check-thin';
 import ph_check_square_thin from '~icons/ph/check-square-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
@@ -172,6 +173,7 @@ import ph_spinner_thin from '~icons/ph/spinner-thin';
 import ph_square_thin from '~icons/ph/square-thin';
 import ph_square_split_horizontal_thin from '~icons/ph/square-split-horizontal-thin';
 import ph_star_thin from '~icons/ph/star-thin';
+import ph_star_half_thin from '~icons/ph/star-half-thin';
 import ph_sun_thin from '~icons/ph/sun-thin';
 import ph_sun_horizon_thin from '~icons/ph/sun-horizon-thin';
 import ph_swap_thin from '~icons/ph/swap-thin';
@@ -244,6 +246,7 @@ const icons: IconMap = {
 	'ph:caret-right-thin': ph_caret_right_thin,
 	'ph:caret-up-thin': ph_caret_up_thin,
 	'ph:cat-thin': ph_cat_thin,
+	'ph:chat-centered-text-thin': ph_chat_centered_text_thin,
 	'ph:check-thin': ph_check_thin,
 	'ph:check-square-thin': ph_check_square_thin,
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
@@ -378,6 +381,7 @@ const icons: IconMap = {
 	'ph:square-thin': ph_square_thin,
 	'ph:square-split-horizontal-thin': ph_square_split_horizontal_thin,
 	'ph:star-thin': ph_star_thin,
+	'ph:star-half-thin': ph_star_half_thin,
 	'ph:sun-thin': ph_sun_thin,
 	'ph:sun-horizon-thin': ph_sun_horizon_thin,
 	'ph:swap-thin': ph_swap_thin,

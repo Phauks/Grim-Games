@@ -96,6 +96,12 @@ export interface PublicCorner {
 	gameTime?: { begun: boolean; startedAt?: number; endedAt?: number };
 	/** Spectators on the view-only link. */
 	watchers?: number;
+	/** False when the board hides the author's or Storyteller's line (a build before had both). */
+	author?: false;
+	storyteller?: false;
+	/** The script's version and the player count with its split by type, when shown. */
+	version?: string;
+	players?: string;
 }
 
 /**
@@ -124,7 +130,8 @@ export interface PublicGameState {
 
 /** The corner's lines only, field by field, like everything else here. */
 function boardCorner(corner: PublicCorner): PublicCorner {
-	const { modes, joinCode, phase, gameTime, watchers } = corner;
+	const { modes, joinCode, phase, gameTime, watchers, author, storyteller, version, players } =
+		corner;
 	const view: PublicCorner = { modes: modes.map(String) };
 	if (joinCode) view.joinCode = true;
 	if (phase)
@@ -137,6 +144,10 @@ function boardCorner(corner: PublicCorner): PublicCorner {
 			...(gameTime.endedAt !== undefined ? { endedAt: gameTime.endedAt } : {})
 		};
 	if (watchers) view.watchers = watchers;
+	if (author === false) view.author = false;
+	if (storyteller === false) view.storyteller = false;
+	if (version) view.version = String(version);
+	if (players) view.players = String(players);
 	return view;
 }
 

@@ -38,6 +38,7 @@ import ph_caret_left_light from '~icons/ph/caret-left-light';
 import ph_caret_right_light from '~icons/ph/caret-right-light';
 import ph_caret_up_light from '~icons/ph/caret-up-light';
 import ph_cat_light from '~icons/ph/cat-light';
+import ph_chat_centered_text_light from '~icons/ph/chat-centered-text-light';
 import ph_check_light from '~icons/ph/check-light';
 import ph_check_square_light from '~icons/ph/check-square-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
@@ -172,6 +173,7 @@ import ph_spinner_light from '~icons/ph/spinner-light';
 import ph_square_light from '~icons/ph/square-light';
 import ph_square_split_horizontal_light from '~icons/ph/square-split-horizontal-light';
 import ph_star_light from '~icons/ph/star-light';
+import ph_star_half_light from '~icons/ph/star-half-light';
 import ph_sun_light from '~icons/ph/sun-light';
 import ph_sun_horizon_light from '~icons/ph/sun-horizon-light';
 import ph_swap_light from '~icons/ph/swap-light';
@@ -244,6 +246,7 @@ const icons: IconMap = {
 	'ph:caret-right-light': ph_caret_right_light,
 	'ph:caret-up-light': ph_caret_up_light,
 	'ph:cat-light': ph_cat_light,
+	'ph:chat-centered-text-light': ph_chat_centered_text_light,
 	'ph:check-light': ph_check_light,
 	'ph:check-square-light': ph_check_square_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
@@ -378,6 +381,7 @@ const icons: IconMap = {
 	'ph:square-light': ph_square_light,
 	'ph:square-split-horizontal-light': ph_square_split_horizontal_light,
 	'ph:star-light': ph_star_light,
+	'ph:star-half-light': ph_star_half_light,
 	'ph:sun-light': ph_sun_light,
 	'ph:sun-horizon-light': ph_sun_horizon_light,
 	'ph:swap-light': ph_swap_light,
