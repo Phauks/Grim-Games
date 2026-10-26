@@ -437,7 +437,12 @@
 	<Dialog bind:open title={t('modes.info.title')} headActions={edit}>{@render actions()}</Dialog>
 {/if}
 {#if onEdit}
-	<NewGameSheet bind:this={newGameSheet} {game} started={startedAt !== undefined} />
+	<NewGameSheet
+		bind:this={newGameSheet}
+		{game}
+		started={startedAt !== undefined}
+		ended={endedAt !== undefined}
+	/>
 	<GameInfoEditDialog
 		bind:open={editing}
 		initial={{ storytellerName: game.storytellerName ?? '' }}

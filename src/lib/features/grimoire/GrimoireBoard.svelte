@@ -137,6 +137,7 @@
 	import RuleCharacters from './RuleCharacters.svelte';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
+	import NewGameSheet from '#lib/features/modes/NewGameSheet.svelte';
 	import { extraReminders, isGeneric, isSeatsReminder, reminderWords } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
@@ -876,6 +877,8 @@
 		return scriptShareable(loadedScript, same ? currentScript.saved : undefined);
 	});
 	let menuOpen = $state(false);
+	/** ⋯'s New game, which asks to end this game first (Trevor, 2026-10-26). */
+	let newGameSheet = $state<NewGameSheet>();
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
 	let infoSheet = $state<ReturnType<typeof InfoTokensSheet>>();
@@ -1418,8 +1421,15 @@
 	onExport={() => (exportOpen = true)}
 	onFeedback={watching ? undefined : () => (feedbackOpen = true)}
 	onReopen={() => (reopenOpen = true)}
+	onNewGame={watching ? undefined : () => newGameSheet?.begin()}
 	onEnd={() => (endOpen = true)}
 />
+{#if !watching}<NewGameSheet
+		bind:this={newGameSheet}
+		{game}
+		started={startedAt !== undefined}
+		ended={!!ended}
+	/>{/if}
 
 <ModeMenu
 	{game}

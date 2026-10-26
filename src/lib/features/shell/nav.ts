@@ -44,7 +44,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 		id: 'games',
 		label: 'shell.navSectionGames',
 		items: [
-			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
+			// New game is on Resume game and the board's ⋯ menu, not here (Trevor, 2026-10-26).
 			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'resume' },
 			// Typing a room code: the other way in besides scanning the QR (Trevor, 2026-10-18).
 			{ id: 'join', path: '/join', label: 'shell.navJoinGame', icon: 'join' },

@@ -19,7 +19,6 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	await menu.tap();
 	for (const name of [
 		'Home',
-		'New game',
 		'Resume game',
 		'Join game',
 		'History',
@@ -41,7 +40,9 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	await expect(drawer.getByRole('link').first()).toHaveText('Home');
 	await expect(
 		drawer.getByRole('list', { name: 'Play', exact: true }).getByRole('link')
-	).toHaveText(['New game', 'Resume game', 'Join game', 'History']);
+	).toHaveText(['Resume game', 'Join game', 'History']);
+	// New game is on Resume game and the board's ⋯ menu instead (Trevor, 2026-10-26).
+	await expect(drawer.getByRole('link', { name: 'New game' })).toHaveCount(0);
 	await expect(drawer.getByRole('list', { name: 'Prepare' }).getByRole('link')).toHaveText([
 		'Search',
 		'Library',

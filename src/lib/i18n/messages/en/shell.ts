@@ -11,7 +11,6 @@ export const shell = {
 	'shell.navSectionYou': 'You',
 	'shell.navSectionApp': 'App',
 	'shell.navHome': 'Home',
-	'shell.navNewGame': 'New game',
 	'shell.navResumeGame': 'Resume game',
 	'shell.navJoinGame': 'Join game',
 	'shell.navHistory': 'History',
