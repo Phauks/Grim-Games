@@ -229,6 +229,19 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	await sheet.getByRole('button', { name: 'Star 4' }).tap();
 	await sheet.getByRole('button', { name: 'Star 4' }).tap();
 	await expect(sheet.getByTestId('feedback-rating')).toHaveText('3.5 of 5');
+	// Someone else acting in the room meanwhile keeps what is being entered (Trevor's playtest,
+	// 2026-10-25: a rating vanished while the table rated at once).
+	const otherContext = await browser.newContext({ ...testInfo.project.use });
+	const other = await otherContext.newPage();
+	await other.goto(`/join/${code}`);
+	await expect(other.getByTestId('join-status')).toHaveText('Game over: Good won');
+	await other.getByRole('button', { name: 'Rate game' }).tap();
+	const otherSheet = other.getByRole('dialog', { name: 'Rate this game' });
+	await otherSheet.getByRole('button', { name: 'Star 2' }).tap();
+	await otherSheet.getByRole('button', { name: 'Send' }).tap();
+	await expect(otherSheet).toHaveCount(0);
+	await otherContext.close();
+	await expect(sheet.getByTestId('feedback-rating')).toHaveText('3.5 of 5');
 	await sheet.getByRole('button', { name: /Great pacing/ }).tap();
 	await expect(sheet.getByRole('button', { name: /Great pacing/ })).toHaveAttribute(
 		'aria-pressed',
@@ -261,17 +274,18 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 		await expect(feedback).toBeVisible();
 	}
 	await openFeedback();
-	await expect(feedback.getByTestId('feedback-average')).toHaveText('3.5 of 5 from 1 rated');
+	// 3.5 and 2 average to 2.75, shown to the half star.
+	await expect(feedback.getByTestId('feedback-average')).toHaveText('3 of 5 from 2 rated');
 	await expect(feedback.getByTestId('feedback-accolade-counts')).toHaveText('⏱️ Great pacing × 1');
-	const entry = feedback.getByTestId('feedback-entry');
-	await expect(entry).toHaveCount(1);
+	const entries = feedback.getByTestId('feedback-entry');
+	await expect(entries).toHaveCount(2);
+	const entry = entries.filter({ hasText: 'A great night.' });
 	await expect(entry).toContainText('Anonymous');
 	await expect(entry).toContainText('3.5 of 5');
-	await expect(entry).toContainText('A great night.');
 	await page.reload();
 	await openFeedback();
+	await expect(entries).toHaveCount(2);
 	await expect(entry).toHaveCount(1);
-	await expect(entry).toContainText('A great night.');
 });
 
 test('after End game the Storyteller shares the finished grimoire with the room', async ({
