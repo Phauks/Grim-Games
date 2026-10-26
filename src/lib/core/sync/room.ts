@@ -304,7 +304,10 @@ export interface PlayerView {
 		/** The Storyteller ended the vote early; it closes at `endsAt`. */
 		finalCall?: true;
 		/** The count, when the Storyteller lets players see it (Trevor, 2026-10-26). */
-		tally?: Pick<ScriptVoteTally, 'points' | 'out' | 'winner' | 'voted' | 'members'>;
+		tally?: Pick<
+			ScriptVoteTally,
+			'points' | 'out' | 'winner' | 'rounds' | 'voted' | 'members' | 'people'
+		>;
 	};
 }
 
@@ -479,13 +482,18 @@ export function playerView(
 		if (finalCall) view.scriptVote.finalCall = true;
 		if (ballots[memberId]) view.scriptVote.choices = ballots[memberId];
 		if (room.scriptVote.showTally) {
-			const { points, out, winner, voted, members } = scriptVoteCount(room, present);
+			const { points, out, winner, rounds, voted, members, people } = scriptVoteCount(
+				room,
+				present
+			);
 			view.scriptVote.tally = {
 				points,
 				voted,
 				members,
 				...(out ? { out } : {}),
-				...(winner ? { winner } : {})
+				...(winner ? { winner } : {}),
+				...(rounds ? { rounds } : {}),
+				...(people ? { people } : {})
 			};
 		}
 	}

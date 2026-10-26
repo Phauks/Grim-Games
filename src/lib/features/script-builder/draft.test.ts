@@ -9,6 +9,7 @@ describe('script builder draft', () => {
 			author: 'T',
 			scriptVersion: '1.2',
 			teensyville: true,
+			expected: { demon: 1, outsider: 6 },
 			ids: ['chef', 'lantern'],
 			homebrew: { lantern: { id: 'lantern', team: 'outsider' } },
 			credits: { lantern: { creator: 'DJ', url: 'https://botchomebrew.wiki/c/lantern' } },
@@ -20,6 +21,16 @@ describe('script builder draft', () => {
 
 	it('keeps Teensyville only when it is set', () => {
 		expect(parseDraft({ version: 3, ids: [], teensyville: 'yes' }).teensyville).toBeUndefined();
+	});
+
+	it('keeps only whole expected counts of seated types', () => {
+		const raw = {
+			version: 3,
+			ids: [],
+			expected: { demon: 1, minion: -1, outsider: 2.5, fabled: 2 }
+		};
+		expect(parseDraft(raw).expected).toEqual({ demon: 1 });
+		expect(parseDraft({ version: 3, ids: [], expected: { minion: 'x' } }).expected).toBeUndefined();
 	});
 
 	it('judges an opened script Teensyville by its size, and an empty one full', () => {

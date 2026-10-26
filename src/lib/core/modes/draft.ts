@@ -22,9 +22,10 @@
  * drafted, or when no seat can take it.
  *
  * Jinxed pairs (`jinxes`, the Storyteller's choice on New game, as in Grimbits' tool): with
- * `block` (the default), a character jinxed with one already drafted is not offered, unless
- * nothing else can fill the open seats; with `reduce`, it is half as likely to be offered;
- * with `allow`, jinxes don't matter. A jinxed pair in play puts the Djinn in play
+ * `allow` (the default: Trevor, 2026-10-26, "just because a character is jinxed doesn't mean
+ * that it cannot be on the script"), jinxes don't matter; with `block`, a character jinxed with
+ * one already drafted is not offered, unless nothing else can fill the open seats; with
+ * `reduce`, it is half as likely to be offered. A jinxed pair in play puts the Djinn in play
  * (https://wiki.bloodontheclocktower.com/Djinn), and some pairs can't both be in play at all
  * (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
  *
@@ -44,7 +45,7 @@ export interface DraftConfig {
 	jinxes?: JinxedPairs;
 }
 
-export const JINXED_PAIRS = ['block', 'reduce', 'allow'] as const;
+export const JINXED_PAIRS = ['allow', 'reduce', 'block'] as const;
 export type JinxedPairs = (typeof JINXED_PAIRS)[number];
 
 /**

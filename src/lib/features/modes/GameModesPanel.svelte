@@ -150,7 +150,7 @@
 	let restrictions = $state(NO_RESTRICTIONS);
 	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
 	let roleRecycling = $state<boolean | undefined>();
-	let jinxedPairs = $state<JinxedPairs>('block');
+	let jinxedPairs = $state<JinxedPairs>('allow');
 	const draft = $derived(
 		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
 	);
@@ -389,7 +389,7 @@
 						modeId = v;
 						restrictions = NO_RESTRICTIONS;
 						roleRecycling = undefined;
-						jinxedPairs = 'block';
+						jinxedPairs = 'allow';
 						campaignId = 'new';
 					}}
 				/>
@@ -460,7 +460,7 @@
 						<SettingSelect
 							label={t('modes.jinxedPairs')}
 							value={jinxedPairs}
-							defaultValue="block"
+							defaultValue="allow"
 							options={JINXED_PAIRS.map((value) => ({
 								value,
 								label: t(`modes.jinxedPairs.${value}`)

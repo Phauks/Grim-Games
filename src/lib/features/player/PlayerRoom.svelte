@@ -15,9 +15,11 @@
 		initialCode?: string | null;
 		/** A typed code was entered; without it the panel switches rooms in place. */
 		onCode?: (code: string) => void;
+		/** Told whether a room vote is open: its ballot is then the page (Trevor, 2026-10-26). */
+		onVoting?: (voting: boolean) => void;
 	}
 
-	let { initialCode, onCode }: Props = $props();
+	let { initialCode, onCode, onVoting }: Props = $props();
 	// svelte-ignore state_referenced_locally
 	let code = $state(initialCode === undefined ? lastRoom() : (initialCode ?? undefined));
 </script>
@@ -27,5 +29,6 @@
 		{code}
 		onCode={(c) => (onCode ? onCode(c) : (code = c))}
 		entry={initialCode !== undefined}
+		{onVoting}
 	/>
 {/key}

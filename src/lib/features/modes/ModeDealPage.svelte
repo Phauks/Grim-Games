@@ -100,7 +100,7 @@
 						...assignment,
 						recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen,
 						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen',
-						jinxes: record?.jinxedPairs ?? 'block'
+						jinxes: record?.jinxedPairs ?? 'allow'
 					},
 					split.counts,
 					pickableCharacters(mode, characters),

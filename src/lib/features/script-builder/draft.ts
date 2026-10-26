@@ -2,7 +2,13 @@
  * The script being built, kept on this device so leaving the page loses nothing. Versioned,
  * because a newer build can read a draft an older one wrote (CLAUDE.md).
  */
-import type { HomebrewEntries, HomebrewEntry } from '#lib/core/rules/script-builder.ts';
+import {
+	MAX_EXPECTED_COUNT,
+	type HomebrewEntries,
+	type HomebrewEntry
+} from '#lib/core/rules/script-builder.ts';
+import type { TypeCounts } from '#lib/core/rules/distribution.ts';
+import { SEATED_TYPES } from '#lib/core/data/types.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { ScriptSource, VariationOf } from '#lib/features/scripts/saved-scripts.ts';
 import { TEENSYVILLE_MAX_CHARACTERS } from '#lib/features/scripts/picker-rows.ts';
@@ -32,6 +38,12 @@ export interface ScriptDraft {
 	 * its size again (`sizeOfScript`).
 	 */
 	teensyville?: true;
+	/**
+	 * The count of a type this script should have, where the builder set one instead of the
+	 * size's usual count (Trevor, 2026-10-26: some scripts have 1 Demon, some 4). Optional like
+	 * `teensyville`, and kept with the draft only.
+	 */
+	expected?: Partial<TypeCounts>;
 	/** Chosen characters, in the order they were chosen (saving sorts them). */
 	ids: CharacterId[];
 	/** Definitions of the chosen homebrew characters, by id, as their source wrote them. */
@@ -59,6 +71,19 @@ function readVariationOf(raw: unknown): VariationOf | undefined {
 	return { name: raw.name, source: raw.source as unknown as ScriptSource, json: raw.json };
 }
 
+function readExpected(raw: unknown): Partial<TypeCounts> | undefined {
+	if (!isObject(raw)) return undefined;
+	const set = Object.fromEntries(
+		SEATED_TYPES.flatMap((type) => {
+			const n = raw[type];
+			return Number.isInteger(n) && (n as number) >= 0 && (n as number) <= MAX_EXPECTED_COUNT
+				? [[type, n]]
+				: [];
+		})
+	);
+	return Object.keys(set).length ? set : undefined;
+}
+
 function readHomebrew(raw: unknown): Record<CharacterId, HomebrewEntry> {
 	if (!isObject(raw)) return {};
 	return Object.fromEntries(
@@ -84,6 +109,7 @@ export function parseDraft(raw: unknown): ScriptDraft {
 	if (!isObject(raw)) return emptyDraft();
 	if (raw.version !== 1 && raw.version !== 2 && raw.version !== DRAFT_VERSION) return emptyDraft();
 	const variationOf = readVariationOf(raw.variationOf);
+	const expected = readExpected(raw.expected);
 	const ids = Array.isArray(raw.ids) ? raw.ids.filter((id) => typeof id === 'string') : [];
 	return {
 		version: DRAFT_VERSION,
@@ -91,6 +117,7 @@ export function parseDraft(raw: unknown): ScriptDraft {
 		author: text(raw.author),
 		...(text(raw.scriptVersion) ? { scriptVersion: text(raw.scriptVersion) } : {}),
 		...(raw.teensyville === true ? { teensyville: true as const } : {}),
+		...(expected ? { expected } : {}),
 		ids: [...new Set(ids)],
 		homebrew: readHomebrew(raw.homebrew),
 		credits: readCredits(raw.credits),
