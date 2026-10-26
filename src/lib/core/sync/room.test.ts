@@ -25,6 +25,7 @@ import {
 	ROOM_PROTOCOL,
 	roomPreview,
 	setLook,
+	setChoosing,
 	setName,
 	setViewers,
 	supportsProtocol,
@@ -311,6 +312,8 @@ describe('feedback after a game', () => {
 		// The phone sends feedback for the game that ended.
 		expect(playerView(room, 'sam').endedGameId).toBe('g1');
 		expect(playerView(roomWith('sam'), 'sam').endedGameId).toBeUndefined();
+		// Not once the Storyteller is setting up the next game.
+		expect(playerView(setChoosing(room, true), 'sam').endedGameId).toBeUndefined();
 		expect(playerView(room, 'alex').feedback).toEqual(rated);
 	});
 

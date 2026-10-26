@@ -153,13 +153,8 @@
 	let roleRecycling = $state<boolean | undefined>();
 	let jinxedPairs = $state<JinxedPairs>('allow');
 	let ivoryDraft = $state(false);
+	let marionette = $state(false);
 	let oneType = $state<boolean | undefined>();
-	/**
-	 * Mulligans, as Grimbits' draft tool offers: two refusals (3 → 2 → 1) or one (3 → 1). Kept
-	 * as the offer sizes joined, so the drop-down's value is a string.
-	 */
-	const MULLIGANS = ['3,2,1', '3,1'] as const;
-	let mulligans = $state<string | undefined>();
 	let dealsRequired = $state(true);
 	const draft = $derived(
 		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
@@ -375,8 +370,8 @@
 							roleRecycling: roleRecycling ?? draft.recycleUnchosen,
 							jinxedPairs,
 							ivoryDraft,
+							marionette,
 							oneTypePerOffer: oneType ?? draft.oneTypePerOffer,
-							offers: (mulligans ?? draft.offers.join(',')).split(',').map(Number),
 							dealsRequired
 						}
 					: {}),
@@ -412,8 +407,8 @@
 						roleRecycling = undefined;
 						jinxedPairs = 'allow';
 						ivoryDraft = false;
+						marionette = false;
 						oneType = undefined;
-						mulligans = undefined;
 						dealsRequired = true;
 						campaignId = 'new';
 					}}
@@ -499,20 +494,16 @@
 							onChange={(on) => (ivoryDraft = on)}
 						/>
 						<SettingToggle
+							label={t('modes.marionette')}
+							description={t('modes.marionetteHint')}
+							checked={marionette}
+							onChange={(on) => (marionette = on)}
+						/>
+						<SettingToggle
 							label={t('modes.oneTypePerOffer')}
 							description={t('modes.oneTypePerOfferHint')}
 							checked={oneType ?? draft.oneTypePerOffer}
 							onChange={(on) => (oneType = on)}
-						/>
-						<SettingSelect
-							label={t('modes.mulligans')}
-							value={mulligans ?? draft.offers.join(',')}
-							defaultValue={draft.offers.join(',')}
-							options={[...new Set([draft.offers.join(','), ...MULLIGANS])].map((value) => ({
-								value,
-								label: value.split(',').join(' → ')
-							}))}
-							onChange={(v) => (mulligans = v)}
 						/>
 						<SettingToggle
 							label={t('modes.dealsRequired')}

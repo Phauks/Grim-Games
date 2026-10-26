@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/index.ts';
 import {
 	MAX_SEAT_REMINDERS,
+	guessesFirst,
 	hasReminder,
 	parsePlayerReminders,
 	scriptReminderGroups,
@@ -39,6 +40,13 @@ describe("reminder tokens on a player's own grim", () => {
 		expect(
 			parsePlayerReminders({ s1: 'Poisoned', s2: [3, { label: 'Dead' }, dead, dead], s3: [] })
 		).toEqual({ s2: [dead] });
+	});
+
+	it('lists the characters a player guessed first, then the rest in script order', () => {
+		const at = (id: string) => ({ character: { id } as unknown as Character });
+		const { first, rest } = guessesFirst([at('a'), at('b'), at('c')], ['c', 'x']);
+		expect(first.map((g) => g.character.id)).toEqual(['c']);
+		expect(rest.map((g) => g.character.id)).toEqual(['a', 'b']);
 	});
 
 	it("offers every reminder of the script's characters, in script order", () => {

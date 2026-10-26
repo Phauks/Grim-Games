@@ -20,7 +20,7 @@ export const DUPLICATE_CHARACTERS: SpecialRule = {
 			kind: 'allowed',
 			extrasMayBeDrunk: false,
 			notTypes: ['demon'],
-			// Our own wording, hidden until Trevor approves it (approved-about.ts).
+			// Our own wording, approved 2026-10-26 (approved-about.ts).
 			instructions: 'You may put more than one copy of any character but a Demon in the bag.'
 		}
 	}

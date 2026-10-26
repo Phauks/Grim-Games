@@ -28,8 +28,8 @@
 		<p>
 			{APP_NAME} has no analytics, no advertising and no tracking cookies. Your games and settings stay
 			on your device. Our server stores a custom script only when you share it, a live room's public table
-			only while it is open (and the whole grimoire only while its view-only link is on), a report only
-			when you send one, and your account only if you sign in.
+			only while it is open (and the whole grimoire only while its view-only link is on or an admin watches),
+			a report only when you send one, and your account only if you sign in.
 		</p>
 	</PageSection>
 	<PageSection title="What stays on your device">
@@ -143,7 +143,7 @@
 			The room holds what everyone at the table can already see: each seat's number and player name,
 			who looks dead, today's nominations and executions, and the script. It never holds characters,
 			reminders, notes or anything else in the grimoire, unless the Storyteller turns on its
-			view-only grimoire link.
+			view-only grimoire link or one of the site's admins watches (below).
 		</p>
 		<p>
 			The view-only link lets spectators watch the whole grimoire live: the game and its history,
@@ -151,6 +151,12 @@
 			holds a copy of all of it. Turning the link off deletes that copy and stops the link, and so
 			does closing the room. The link's key is in the part of the address after #, which browsers
 			never send to our server.
+		</p>
+		<p>
+			The site's admins can watch any open room, view-only, to look after the service. They see what
+			the room holds, and the Storyteller and players are not shown that they are watching. While an
+			admin watches, the Storyteller's device sends the room the whole grimoire, and it is deleted
+			when they stop.
 		</p>
 		<ul>
 			<li>Phones join with a name, and only the Storyteller sees it until they seat that phone.</li>

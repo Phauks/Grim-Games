@@ -641,6 +641,14 @@ test("reminders: add several from the picker, this seat's first, then move and r
 	// secretly the Drunk.
 	await expect(picker.getByRole('group', { name: 'Drunk' })).toContainText('Is The Drunk');
 	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
+	// The same search as a player's reminders (Trevor, 2026-10-26): a character's name or its
+	// tokens' words; it never takes focus when the picker opens.
+	const search = picker.getByRole('searchbox', { name: 'Search reminders' });
+	await expect(search).not.toBeFocused();
+	await search.fill('drunk');
+	await expect(picker.getByRole('group', { name: 'Poisoner' })).toHaveCount(0);
+	await expect(picker.getByRole('group', { name: 'Drunk' })).toBeVisible();
+	await search.fill('');
 	const poisoner = picker.getByRole('group', { name: 'Poisoner' });
 	await poisoner.getByRole('button', { name: 'Poisoned' }).tap();
 	await picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first().tap();
@@ -3536,10 +3544,10 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 		.tap();
 	await closeSheet(page);
 	await menu(page, 'Add Fabled or Loric');
-	await page
-		.getByRole('dialog', { name: 'Add Fabled or Loric' })
-		.getByRole('button', { name: 'Angel', exact: true })
-		.tap();
+	const adding = page.getByRole('dialog', { name: 'Add Fabled or Loric' });
+	await adding.getByRole('button', { name: 'Angel', exact: true }).tap();
+	// A drag that starts while the dialog is still closing lands on its backdrop (CI, PR #638).
+	await expect(adding).toBeHidden();
 	const all = page.getByRole('list', { name: 'Reminder bank' });
 	const angel = page.getByRole('list', { name: 'Fabled and Loric' }).getByRole('button', {
 		name: 'Angel'
@@ -4140,7 +4148,7 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens Sound \| (Navigation )?Report an issue \| End game$/
+		/^History Demon bluffs Notes Cover the screen( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens Sound \| (Navigation )?Report an issue \| End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu

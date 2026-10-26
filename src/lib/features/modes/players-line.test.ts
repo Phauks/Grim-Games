@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { castGame, newGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
-import { playersLine, ruleCharactersLine } from './players-line.ts';
+import {
+	playersLine,
+	ruleCharactersLine,
+	standardPlayersLine,
+	tablePlayersLine
+} from './players-line.ts';
 
 describe('Game info’s Players row', () => {
 	it('gives the standard split for the table before characters are assigned', () => {
@@ -38,5 +43,23 @@ describe('Game info’s Players row', () => {
 		// No player is a Fabled (Trevor, 2026-10-20).
 		expect(ruleCharactersLine(session.game, testCharacters)).toBe('1 Fabled');
 		expect(ruleCharactersLine(newGame(8).session.game, testCharacters)).toBe('');
+	});
+});
+
+describe('the Players line the table can count', () => {
+	// Setup counts by player count: https://wiki.bloodontheclocktower.com/Setup
+	it('gives the standard split for the seats, Travellers apart', () => {
+		expect(standardPlayersLine(8)).toBe('8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)');
+		expect(tablePlayersLine([{}, {}, {}, {}, {}, {}, { traveller: 'gunslinger' }])).toBe(
+			'7 (3 Townsfolk, 1 Outsider, 1 Minion, 1 Demon, 1 Traveller)'
+		);
+		expect(tablePlayersLine([])).toBeUndefined();
+	});
+
+	it('never shows a setup change, which is the Storyteller’s secret', () => {
+		// With a Baron in play the grimoire has 3 Outsiders (https://wiki.bloodontheclocktower.com/Baron);
+		// the table still sees the standard split for 8.
+		const seats = Array.from({ length: 8 }, () => ({}));
+		expect(tablePlayersLine(seats)).toBe('8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)');
 	});
 });

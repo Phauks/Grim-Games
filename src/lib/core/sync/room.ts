@@ -4,7 +4,7 @@
  * `Room` Durable Object applies. Shared by the Worker and the app so both sides agree.
  *
  * The room holds public state only, unless the Storyteller turns on the view-only grimoire
- * link (`SharedGrimoire`). Phones ask (a name, a seat); the Storyteller approves, and only
+ * link (`SharedGrimoire`) or players' own characters (`RoomRoles`). Phones ask (a name, a seat); the Storyteller approves, and only
  * then does the grimoire change, through its own commands.
  */
 import type { Alignment, Script } from '#lib/core/data/index.ts';
@@ -21,6 +21,7 @@ import {
 	type ScriptVoteTally
 } from './script-vote.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
+import { memberRole, seatsSeen, type RoomRoles, type SeatRole } from './room-roles.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -81,6 +82,8 @@ export interface RoomState {
 	scriptVote?: ScriptVote;
 	/** Players' feedback on the ended game, one per member; cleared with `ended`. */
 	feedback?: MemberFeedback[];
+	/** Each seat's own character, for its own phone (Trevor, 2026-10-26); per game. */
+	roles?: RoomRoles;
 }
 
 /**
@@ -176,6 +179,7 @@ export type ClientMessage =
 	 * withdraws it (Trevor, 2026-10-26).
 	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
+	| { type: 'role-seen' } // The player held their character to see it (2026-10-26).
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**
@@ -224,12 +228,15 @@ export type ClientMessage =
 	/** Ends the vote after FINAL_CALL_SECONDS, so phones have a last chance (2026-10-26). */
 	| { type: 'end-script-vote' }
 	| { type: 'close-script-vote' }
+	/** Each seat's own character while players may see them; `show: false` takes them back. */
+	| { type: 'roles'; gameId: string; show: boolean; roles?: Record<SeatId, SeatRole> }
 	/** Calls every player back to town: their phones sound and vibrate (plan U2). */
 	| { type: 'call-town' }
 	| { type: 'close' };
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
+export { roleSeen, setRoles, type RoomRoles } from './room-roles.ts';
 export {
 	castScriptBallot,
 	closeScriptVote,
@@ -257,6 +264,7 @@ export interface HostView {
 	 * so lists and counts use this to leave out phones from earlier games (2026-10-25).
 	 */
 	present?: string[];
+	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
 }
 
 export interface VoteTally {
@@ -288,7 +296,10 @@ export interface PlayerView {
 	ended?: Omit<GameOver, 'gameId'>;
 	/** The feedback this phone sent on the ended game. */
 	feedback?: GameFeedback;
-	/** The game that ended, for the feedback a phone sends on it. */
+	/**
+	 * The game that ended, for the feedback a phone sends on it; left out once the Storyteller
+	 * is setting up the next game, since that one has nothing to rate yet (Trevor, 2026-10-26).
+	 */
 	endedGameId?: string;
 	/** The Storyteller is choosing the next script. */
 	choosing?: true;
@@ -309,6 +320,7 @@ export interface PlayerView {
 			'points' | 'out' | 'winner' | 'rounds' | 'voted' | 'members' | 'people'
 		>;
 	};
+	role?: SeatRole; // This player's own character, while players may see theirs.
 }
 
 /**
@@ -355,6 +367,11 @@ export type ServerMessage =
 	 * kept, so a phone that joins later doesn't sound; older apps ignore it.
 	 */
 	| { type: 'call-town' }
+	/**
+	 * To the Storyteller's device: send the whole grimoire while an admin watches from Live
+	 * games (plan J31), or stop. The app shows nothing for it; older apps ignore it.
+	 */
+	| { type: 'grimoire-wanted'; on: boolean }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 
@@ -421,6 +438,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (room.scriptVote) view.scriptVote = scriptVoteCount(room, present);
 	if (present)
 		view.present = room.members.flatMap((m) => (present.has(m.memberId) ? [m.memberId] : []));
+	if (room.roles) view.rolesSeen = seatsSeen(room);
 	return view;
 }
 
@@ -470,11 +488,13 @@ export function playerView(
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
 		view.ended = ended;
-		view.endedGameId = room.ended.gameId;
+		if (!room.choosing && !room.scriptVote) view.endedGameId = room.ended.gameId;
 		const mine = room.feedback?.find((f) => f.memberId === memberId);
 		if (mine) view.feedback = mine.feedback;
 	}
 	if (room.choosing) view.choosing = true;
+	const role = memberRole(room, memberId);
+	if (role) view.role = role;
 	if (room.scriptVote) {
 		const { voteId, kind, subject, options, ballots, endsAt, finalCall } = room.scriptVote;
 		view.scriptVote = { voteId, kind, options, ...(subject ? { subject } : {}) };

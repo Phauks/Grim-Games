@@ -11,6 +11,8 @@
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import HideContentsButton from '#lib/ui/primitives/HideContentsButton.svelte';
+	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import SharedBoard from '#lib/features/room/SharedBoard.svelte';
 	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
@@ -23,15 +25,8 @@
 		readBackground,
 		type BackgroundChoice
 	} from '#lib/features/grimoire/backgrounds.ts';
-	import {
-		avoidBoxes,
-		cornerObstacles,
-		nameBoxes,
-		toPercent,
-		toPx
-	} from '#lib/features/grimoire/board-geometry.ts';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
-	import { fitReminders } from '#lib/features/grimoire/reminder-fan.ts';
+	import { cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
+	import PlayerSeatReminders from './PlayerSeatReminders.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import {
 		readPlayerReminders,
@@ -49,6 +44,7 @@
 	import type { PublicSeatLayout } from '#lib/core/sync/public-projection.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import {
 		DEFAULT_SEAT_LAYOUT,
@@ -83,6 +79,8 @@
 	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
+	import TownCounts from './TownCounts.svelte';
+	import GenericGuessGrid from './GenericGuessGrid.svelte';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -154,7 +152,17 @@
 		marked = kept ? readSelf(kept) : undefined;
 		book = kept ? seatNotes(kept) : undefined;
 	});
-	const notes = $derived(book?.notes ?? {});
+	/**
+	 * The eye (Trevor, 2026-10-26: "Hide grim guesses, eyeball feature like we use in notes"):
+	 * on, the town shows only what the table knows, with none of this player's guesses or notes.
+	 */
+	const hiding = $derived(playerSettings.current.hideGuesses);
+	const notes = $derived(hiding ? {} : (book?.notes ?? {}));
+	/** The player's own reminders, hidden by the eye with their guesses. */
+	const visible = $derived(hiding ? {} : reminders);
+	// Share, the QR code and every sheet blur the Grim behind them, as over the board
+	// (Trevor, 2026-10-26: players at the table could read guesses behind Share).
+	$effect(() => markBoardShown());
 	let noteOpen = $state(false);
 
 	/**
@@ -202,42 +210,15 @@
 	);
 	const fitCorner = (h: number) => cornerRoom(cornerBoxes, board, h + 4, 4 + 8);
 
-	/**
-	 * Each seat's reminders, lined up in front of it towards the middle as on the board
-	 * (reminder-fan.ts), at the board's reminder size and never under a finger's tap target.
-	 */
-	const chip = $derived(
-		Math.max(
-			44,
-			Math.round(
-				Math.max(30, Math.min(48, size * 0.5)) * preferences.current.tokenAppearance.reminderScale
-			)
-		)
-	);
-	const fan = $derived.by(() => {
-		if (width <= 0 || height <= 0) return seats.map(() => []);
-		return fitReminders(
-			seats.map((seat, i) => ({
-				seat: toPx(points[i], board),
-				middle: { x: width / 2, y: height / 2 },
-				count: remindersOn(reminders, seat.seatId).length,
-				size,
-				chip,
-				avoid: avoidBoxes({
-					centre: toPx(points[i], board),
-					size,
-					// Every seat's name is a badge on its rim (SeatDisc).
-					hasFace: true,
-					name: names[i]?.box,
-					dead: seat.dead,
-					note: !!notes[seat.seatId],
-					nameOffset: boardLooks.current.nameOffset
-				})
-			})),
-			[],
-			board
-		).at.map((spots) => spots.map((p) => toPercent(p, board)));
-	});
+	/** The characters this player guessed on any seat, and the Travellers the town knows. */
+	const firstReminders = $derived([
+		...new Set([
+			...Object.values(guesses)
+				.flat()
+				.filter((id) => !genericGuess(id)),
+			...seats.flatMap((seat) => seat.traveller ?? [])
+		])
+	]);
 	function toggleSeatReminder(reminder: PlayerReminder) {
 		if (!kept || !chosen) return;
 		reminders = toggleReminder(reminders, chosen.seatId, reminder);
@@ -275,6 +256,8 @@
 	let open = $state(false);
 	let chosen = $state<PublicSeat>();
 	function choose(seat: PublicSeat, event?: MouseEvent) {
+		// Hidden guesses never open in a sheet either.
+		if (hiding) return;
 		chosen = seat;
 		// The note mark opens the note itself, as the board's does (Trevor, 2026-10-25), and
 		// the guess pill makes the next guess the main one.
@@ -337,11 +320,13 @@
 		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
 		const traveller = characterOf(seat.traveller);
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
-		const guessed = listed(seat.seatId)
-			.map((g) => guessName(g.id))
-			.filter(Boolean);
+		const guessed = hiding
+			? []
+			: listed(seat.seatId)
+					.map((g) => guessName(g.id))
+					.filter(Boolean);
 		if (guessed.length) parts.push(t('player.grim.guess', { name: guessed.join(', ') }));
-		const placed = remindersOn(reminders, seat.seatId);
+		const placed = remindersOn(visible, seat.seatId);
 		if (placed.length)
 			parts.push(t('player.grim.hasReminders', { labels: placed.map((r) => r.label).join(', ') }));
 		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
@@ -350,17 +335,26 @@
 	/* eslint-enable grim/names-as-badges */
 </script>
 
-<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
-     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
-{#if !town && final}
-	<div class="tools">
-		<Toggle
-			label={t('room.finalGrimoire')}
-			checked={showFinal}
-			onChange={(on) => (showFinal = on)}
-		/>
-	</div>
-{/if}
+<!-- The eye and the cover always, so nothing moves when the Final grimoire switch comes. -->
+<div class="tools">
+	<HideContentsButton
+		hidden={hiding}
+		onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
+		testid="hide-guesses"
+	/>
+	<CoverButton />
+	<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
+	     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
+	{#if !town && final}
+		<span class="final-switch"
+			><Toggle
+				label={t('room.finalGrimoire')}
+				checked={showFinal}
+				onChange={(on) => (showFinal = on)}
+			/></span
+		>
+	{/if}
+</div>
 {#if final && showFinal}
 	<div class="final" data-testid="final-grimoire">
 		<SharedBoard shared={final.grimoire} {over} />
@@ -368,6 +362,7 @@
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
+	<TownCounts {seats} />
 	<div
 		class="town"
 		class:display
@@ -395,11 +390,11 @@
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
 			<!-- A Traveller's seat takes only an alignment, shown in its icon's colour. -->
-			{@const team = known ? travellerTeam(guesses, seat.seatId)?.team : undefined}
-			{@const main = known ? undefined : guessesOf(guesses, seat.seatId)[0]}
+			{@const team = known && !hiding ? travellerTeam(guesses, seat.seatId)?.team : undefined}
+			{@const main = known || hiding ? undefined : guessesOf(guesses, seat.seatId)[0]}
 			{@const generic = genericGuess(main)}
 			{@const guessed = generic ?? characterOf(main)}
-			{@const others = (known ? [] : listed(seat.seatId))
+			{@const others = (known || hiding ? [] : listed(seat.seatId))
 				.slice(1)
 				.flatMap((g): GuessMark[] =>
 					g.generic
@@ -457,22 +452,20 @@
 		{/each}
 		<!-- The player's own reminders, in front of each seat as on the board; a tap opens the
 		     seat's reminders. -->
-		{#each seats as seat, i (seat.seatId)}
-			{#each remindersOn(reminders, seat.seatId) as reminder, k (placedKey(reminder))}
-				{@const p = fan[i]?.[k] ?? points[i]}
-				<div class="chip-slot" style:left="{p?.x ?? 50}%" style:top="{p?.y ?? 50}%">
-					<BoardReminder
-						label={reminder.label}
-						character={characterOf(reminder.characterId)}
-						size={chip}
-						onTap={() => {
-							chosen = seat;
-							remindersOpen = true;
-						}}
-					/>
-				</div>
-			{/each}
-		{/each}
+		<PlayerSeatReminders
+			{seats}
+			{points}
+			{board}
+			{size}
+			reminders={visible}
+			{names}
+			{notes}
+			{characterOf}
+			onOpen={(seat) => {
+				chosen = seat;
+				remindersOpen = true;
+			}}
+		/>
 		<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
 		     2026-10-24); nothing to open or share here. -->
 		<BoardCorner
@@ -559,19 +552,12 @@
 	/>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
 	     characters; a Traveller's seat has only Good and Evil, and no characters. -->
-	<ul class="generic" aria-label={t('player.grim.generic')}>
-		{#each guessChoices as g (g.key)}
-			<li>
-				<button
-					type="button"
-					aria-pressed={!!chosen && guessesOf(guesses, chosen.seatId).includes(g.key)}
-					data-guess-key={g.key}
-					onclick={() => guess(g.key)}
-					><AlignmentPill alignment={g.team} text={genericLabel(g)} /></button
-				>
-			</li>
-		{/each}
-	</ul>
+	<GenericGuessGrid
+		choices={guessChoices}
+		label={genericLabel}
+		pressed={(key) => !!chosen && guessesOf(guesses, chosen.seatId).includes(key)}
+		onGuess={guess}
+	/>
 	{#if !chosen?.traveller}<CharacterPicker
 			characters={script.characters}
 			selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
@@ -587,6 +573,7 @@
 	placed={chosen ? remindersOn(reminders, chosen.seatId) : []}
 	characterOf={(id) => characterOf(id)}
 	onToggle={toggleSeatReminder}
+	guessed={firstReminders}
 />
 
 <SeatNoteDialog
@@ -659,35 +646,14 @@
 		white-space: nowrap;
 	}
 	/* Two rows of three on a phone, one row where there is room. */
-	.generic {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(30%, calc(7 * var(--u))), 1fr));
-		gap: var(--space-1);
-		margin: 0 0 var(--space-2);
-		padding: 0;
-		list-style: none;
-	}
-	.generic button {
-		display: grid;
-		place-items: center;
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-1);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		font: inherit;
-		touch-action: manipulation;
-		cursor: pointer;
-	}
-	.generic button[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--surface-selected);
-	}
 	.tools {
 		display: flex;
-		justify-content: flex-end;
+		align-items: center;
+		gap: var(--space-1);
 		margin-bottom: var(--space-2);
+	}
+	.final-switch {
+		margin-inline-start: auto;
 	}
 	/* The Storyteller's board, with room under it for History's Previous and Next. */
 	.final {
@@ -755,11 +721,6 @@
 		.seat[data-mine] :global(.disc) {
 			animation: none;
 		}
-	}
-	.chip-slot {
-		position: absolute;
-		translate: -50% -50%;
-		z-index: 1;
 	}
 	/* A guess is the player's own, so it never looks like something the town was told. */
 	.seat[data-guess] :global(.face) {

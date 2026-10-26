@@ -20,7 +20,12 @@
 
 <main>
 	<header>
-		<Button href={resolve('/grimoire/[gameId]', { gameId })} icon="back" variant="quiet">
+		<Button
+			href={resolve('/grimoire/[gameId]', { gameId })}
+			icon="back"
+			variant="quiet"
+			data-way-back
+		>
 			{t('room.back')}
 		</Button>
 		<h1>{t('room.title')}</h1>

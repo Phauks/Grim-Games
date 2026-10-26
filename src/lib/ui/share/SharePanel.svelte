@@ -56,6 +56,16 @@
 		 */
 		file?: File;
 		onFileFailed?: () => void;
+		/**
+		 * An animated code in the QR's place (offline games, Trevor 2026-10-26): frames shown one
+		 * after another, which the app's own scanner collects. Drawn without a middle.
+		 */
+		frames?: string[];
+		/**
+		 * No middle, so the code uses the lowest error correction and stays small enough to read
+		 * off another phone's screen (offline codes, which carry a whole script).
+		 */
+		plain?: boolean;
 	}
 
 	let {
@@ -72,15 +82,30 @@
 		qrCaption,
 		hidden = false,
 		file,
-		onFileFailed
+		onFileFailed,
+		frames,
+		plain = false
 	}: Props = $props();
+
+	/** Long enough for a phone to read a frame, short enough to loop in a few seconds. */
+	const FRAME_MS = 350;
+	let frame = $state(0);
+	$effect(() => {
+		if (!frames?.length) return;
+		frame = 0;
+		const count = frames.length;
+		const timer = setInterval(() => (frame = (frame + 1) % count), FRAME_MS);
+		return () => clearInterval(timer);
+	});
 	/*
 	 * The middle of the QR is the Storyteller's choice (plan R1): the caller's (the script's
 	 * logo or name), their own picture, or nothing. Set here or in Settings.
 	 */
 	const centre = $derived(preferences.current.qrCentre);
 	const usePicture = $derived(centre === 'picture' && !!qrPicture.current);
-	const middle = $derived(centre === 'none' ? undefined : usePicture ? pictureCentre : qrCenter);
+	const middle = $derived(
+		centre === 'none' || plain ? undefined : usePicture ? pictureCentre : qrCenter
+	);
 	const middleShape = $derived(usePicture ? 'square' : qrCenterShape);
 	let centreOpen = $state(false);
 	const id = $props.id();
@@ -158,7 +183,15 @@
 		</div>
 	{/if}
 	<div class="qr" class:hidden={url && hidden}>
-		{#if url && fitsQrCode(url)}
+		{#if frames?.length}
+			<QrCode
+				value={frames[frame % frames.length]}
+				label={qrLabel}
+				caption={qrCaption}
+				modules={preferences.current.qrModules}
+				finders={preferences.current.qrFinders}
+			/>
+		{:else if url && fitsQrCode(url)}
 			<!-- Hidden keeps the QR's place, covered, so nothing moves. -->
 			<QrCode
 				value={url}

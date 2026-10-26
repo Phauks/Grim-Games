@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { foldForSearch, matchesSearch, searchGroups } from './character-search.ts';
+import {
+	foldForSearch,
+	matchesReminderSearch,
+	matchesSearch,
+	searchGroups
+} from './character-search.ts';
 
 const data = committedGameData();
 const get = (id: string) => data.byId.get(id)!;
@@ -39,5 +44,15 @@ describe('character search', () => {
 		// "em" is in the Empath's name and in other abilities ("them").
 		const ids = searchGroups(chars, 'em')[0].characters.map((c) => c.id);
 		expect(ids[0]).toBe('empath');
+	});
+});
+
+describe('reminder search', () => {
+	const sailor = { character: get('sailor'), labels: ['Drunk'] };
+	it("matches a character's name or its tokens' words, whatever the case", () => {
+		expect(matchesReminderSearch(sailor, 'SAIL')).toBe(true);
+		expect(matchesReminderSearch(sailor, 'dr')).toBe(true);
+		expect(matchesReminderSearch(sailor, 'poisoned')).toBe(false);
+		expect(matchesReminderSearch(sailor, '')).toBe(true);
 	});
 });
