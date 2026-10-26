@@ -15,15 +15,12 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import { feedbackView, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 import {
-	cleanBallot,
-	newScriptVote,
-	scriptVoteEnded,
-	tallyScriptVote,
 	type ScriptVote,
 	type ScriptVoteKind,
 	type ScriptVoteOption,
 	type ScriptVoteTally
 } from './script-vote.ts';
+import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -168,7 +165,10 @@ export type ClientMessage =
 	| { type: 'vote'; voteId: string; choice: SeatId }
 	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
 	| { type: 'feedback'; gameId: string; feedback: GameFeedback }
-	/** A player's ballot in the script vote; a new one replaces the last. */
+	/**
+	 * A player's ballot in the script vote; a new one replaces the last, and an empty one
+	 * withdraws it (Trevor, 2026-10-26).
+	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
@@ -210,12 +210,25 @@ export type ClientMessage =
 			minutes?: number;
 			/** A vote on the game mode; a script vote when absent. */
 			subject?: 'mode';
+			/** Players see the count too (Trevor, 2026-10-26). */
+			showTally?: boolean;
 	  }
+	/** Shows players the count, or hides it, while the vote is open. */
+	| { type: 'script-vote-tally'; show: boolean }
+	/** Ends the vote after FINAL_CALL_SECONDS, so phones have a last chance (2026-10-26). */
+	| { type: 'end-script-vote' }
 	| { type: 'close-script-vote' }
 	| { type: 'close' };
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
+export {
+	castScriptBallot,
+	closeScriptVote,
+	endScriptVote,
+	openScriptVote,
+	showScriptVoteTally
+} from './room-script-vote.ts';
 
 /** What the Storyteller's device sees. */
 export interface HostView {
@@ -280,6 +293,10 @@ export interface PlayerView {
 		choices?: string[];
 		/** When the time limit runs out (epoch ms, the room's clock). */
 		endsAt?: number;
+		/** The Storyteller ended the vote early; it closes at `endsAt`. */
+		finalCall?: true;
+		/** The count, when the Storyteller lets players see it (Trevor, 2026-10-26). */
+		tally?: Pick<ScriptVoteTally, 'points' | 'out' | 'winner' | 'voted' | 'members'>;
 	};
 }
 
@@ -365,13 +382,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 		view.feedback = room.feedback.map((f) => feedbackView(room, f));
 		view.feedbackGameId = room.ended.gameId;
 	}
-	if (room.scriptVote) {
-		const ballots = room.scriptVote.ballots;
-		view.scriptVote = tallyScriptVote(
-			room.scriptVote,
-			room.members.filter((m) => here(m, !!ballots[m.memberId])).map((m) => m.memberId)
-		);
-	}
+	if (room.scriptVote) view.scriptVote = scriptVoteCount(room, present);
 	if (present)
 		view.present = room.members.flatMap((m) => (present.has(m.memberId) ? [m.memberId] : []));
 	return view;
@@ -402,7 +413,15 @@ function tally(
 	};
 }
 
-export function playerView(room: RoomState, memberId: string): PlayerView {
+/**
+ * What one player's phone sees. `present` is as for hostView, so a count players are shown
+ * matches the Storyteller's.
+ */
+export function playerView(
+	room: RoomState,
+	memberId: string,
+	present?: ReadonlySet<string>
+): PlayerView {
 	const me = room.members.find((m) => m.memberId === memberId) ?? { memberId };
 	const request = room.requests.find((r) => r.memberId === memberId);
 	const view: PlayerView = {
@@ -422,10 +441,21 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 	}
 	if (room.choosing) view.choosing = true;
 	if (room.scriptVote) {
-		const { voteId, kind, subject, options, ballots, endsAt } = room.scriptVote;
+		const { voteId, kind, subject, options, ballots, endsAt, finalCall } = room.scriptVote;
 		view.scriptVote = { voteId, kind, options, ...(subject ? { subject } : {}) };
 		if (endsAt !== undefined) view.scriptVote.endsAt = endsAt;
+		if (finalCall) view.scriptVote.finalCall = true;
 		if (ballots[memberId]) view.scriptVote.choices = ballots[memberId];
+		if (room.scriptVote.showTally) {
+			const { points, out, winner, voted, members } = scriptVoteCount(room, present);
+			view.scriptVote.tally = {
+				points,
+				voted,
+				members,
+				...(out ? { out } : {}),
+				...(winner ? { winner } : {})
+			};
+		}
 	}
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
@@ -683,48 +713,6 @@ export function setChoosing(room: RoomState, on: unknown): RoomState {
 	const { choosing: _off, ...rest } = room;
 	void _off;
 	return rest;
-}
-
-/** Opens a vote on the next script, replacing any open one; a malformed one changes nothing. */
-export function openScriptVote(
-	room: RoomState,
-	voteId: unknown,
-	kind: unknown,
-	options: unknown,
-	minutes?: unknown,
-	now = 0,
-	subject?: unknown
-): RoomState {
-	const vote = newScriptVote(voteId, kind, options, minutes, now, subject);
-	return vote ? { ...room, scriptVote: vote } : room;
-}
-
-export function closeScriptVote(room: RoomState): RoomState {
-	if (!room.scriptVote) return room;
-	const { scriptVote: _closed, ...rest } = room;
-	void _closed;
-	return rest;
-}
-
-/**
- * A member's ballot in the open script vote; a stale or malformed one, or one after the time
- * limit ran out at `now`, is ignored.
- */
-export function castScriptBallot(
-	room: RoomState,
-	memberId: string,
-	voteId: unknown,
-	choices: unknown,
-	now = 0
-): RoomState {
-	const vote = room.scriptVote;
-	if (!vote || voteId !== vote.voteId || !room.members.some((m) => m.memberId === memberId)) {
-		return room;
-	}
-	if (scriptVoteEnded(vote, now)) return room;
-	const ballot = cleanBallot(vote, choices);
-	if (!ballot) return room;
-	return { ...room, scriptVote: { ...vote, ballots: { ...vote.ballots, [memberId]: ballot } } };
 }
 
 /**

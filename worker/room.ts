@@ -6,6 +6,7 @@ import {
 	castScriptBallot,
 	castVote,
 	closeScriptVote,
+	endScriptVote,
 	closeVote,
 	gameOver,
 	hostView,
@@ -16,6 +17,7 @@ import {
 	MAX_SCRIPT_BYTES,
 	newRoom,
 	openScriptVote,
+	showScriptVoteTally,
 	openVote,
 	parseClientMessage,
 	setLook,
@@ -305,8 +307,15 @@ export class Room extends DurableObject<RoomEnv> {
 					message.options,
 					message.minutes,
 					Date.now(),
-					message.subject
+					message.subject,
+					message.showTally
 				);
+				break;
+			case 'script-vote-tally':
+				room = showScriptVoteTally(room, message.show);
+				break;
+			case 'end-script-vote':
+				room = endScriptVote(room, Date.now());
 				break;
 			case 'close-script-vote':
 				room = closeScriptVote(room);
@@ -383,11 +392,14 @@ export class Room extends DurableObject<RoomEnv> {
 	/** Stores the room and sends every device its updated view. */
 	private async save(room: RoomState): Promise<void> {
 		await this.ctx.storage.put('room', room);
-		const host = JSON.stringify(hostView(room, this.present()));
+		const present = this.present();
+		const host = JSON.stringify(hostView(room, present));
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
 			if (!who || who.role === 'viewer') continue;
-			socket.send(who.role === 'host' ? host : JSON.stringify(playerView(room, who.memberId)));
+			socket.send(
+				who.role === 'host' ? host : JSON.stringify(playerView(room, who.memberId, present))
+			);
 		}
 	}
 

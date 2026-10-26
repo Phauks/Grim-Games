@@ -153,6 +153,8 @@
 	const vote = $derived(view?.vote);
 	let voting = $state(false);
 	let rating = $state(false);
+	/** The script vote's ballot, which also opens by itself for each new vote. */
+	let balloting = $state(false);
 	let seenVote: string | undefined;
 	$effect(() => {
 		const id = vote?.voteId;
@@ -377,6 +379,16 @@
 			<Icon name="edit" />
 			<span class="visually-hidden">{t('room.editYou')}</span>
 		</button>
+		<!-- Always here; usable while a script vote is open, so a closed ballot can be opened
+		     again (Trevor, 2026-10-26) and nothing moves. -->
+		<IconButton
+			icon="vote"
+			label={t('room.scriptVote.ballot')}
+			outlined
+			aria-haspopup="dialog"
+			disabled={!view?.scriptVote}
+			onclick={() => (balloting = true)}
+		/>
 		<!-- Always here; usable once the game is over (plan R4), so nothing moves. -->
 		<Button disabled={!view?.endedGameId} aria-haspopup="dialog" onclick={() => (rating = true)}
 			>{t('room.feedback.open')}</Button
@@ -426,7 +438,10 @@
 	</ul>
 </Dialog>
 
-{#if player}<ScriptBallot {player} /><FeedbackSheet {player} bind:open={rating} />{/if}
+{#if player}<ScriptBallot {player} bind:open={balloting} /><FeedbackSheet
+		{player}
+		bind:open={rating}
+	/>{/if}
 
 <style>
 	form {

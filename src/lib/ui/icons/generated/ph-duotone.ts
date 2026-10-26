@@ -6,11 +6,13 @@ import ph_arrow_bend_up_right_duotone from '~icons/ph/arrow-bend-up-right-duoton
 import ph_arrow_circle_right_duotone from '~icons/ph/arrow-circle-right-duotone';
 import ph_arrow_clockwise_duotone from '~icons/ph/arrow-clockwise-duotone';
 import ph_arrow_counter_clockwise_duotone from '~icons/ph/arrow-counter-clockwise-duotone';
+import ph_arrow_down_duotone from '~icons/ph/arrow-down-duotone';
 import ph_arrow_left_duotone from '~icons/ph/arrow-left-duotone';
 import ph_arrow_right_duotone from '~icons/ph/arrow-right-duotone';
 import ph_arrow_square_out_duotone from '~icons/ph/arrow-square-out-duotone';
 import ph_arrow_u_up_left_duotone from '~icons/ph/arrow-u-up-left-duotone';
 import ph_arrow_u_up_right_duotone from '~icons/ph/arrow-u-up-right-duotone';
+import ph_arrow_up_duotone from '~icons/ph/arrow-up-duotone';
 import ph_arrows_clockwise_duotone from '~icons/ph/arrows-clockwise-duotone';
 import ph_arrows_down_up_duotone from '~icons/ph/arrows-down-up-duotone';
 import ph_arrows_in_duotone from '~icons/ph/arrows-in-duotone';
@@ -214,11 +216,13 @@ const icons: IconMap = {
 	'ph:arrow-circle-right-duotone': ph_arrow_circle_right_duotone,
 	'ph:arrow-clockwise-duotone': ph_arrow_clockwise_duotone,
 	'ph:arrow-counter-clockwise-duotone': ph_arrow_counter_clockwise_duotone,
+	'ph:arrow-down-duotone': ph_arrow_down_duotone,
 	'ph:arrow-left-duotone': ph_arrow_left_duotone,
 	'ph:arrow-right-duotone': ph_arrow_right_duotone,
 	'ph:arrow-square-out-duotone': ph_arrow_square_out_duotone,
 	'ph:arrow-u-up-left-duotone': ph_arrow_u_up_left_duotone,
 	'ph:arrow-u-up-right-duotone': ph_arrow_u_up_right_duotone,
+	'ph:arrow-up-duotone': ph_arrow_up_duotone,
 	'ph:arrows-clockwise-duotone': ph_arrows_clockwise_duotone,
 	'ph:arrows-down-up-duotone': ph_arrows_down_up_duotone,
 	'ph:arrows-in-duotone': ph_arrows_in_duotone,

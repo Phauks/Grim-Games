@@ -6,14 +6,18 @@ import {
 	openScriptVote,
 	castScriptBallot,
 	closeScriptVote,
+	endScriptVote,
+	showScriptVoteTally,
 	hostView,
 	playerView,
 	setChoosing
 } from './room.ts';
 import {
+	FINAL_CALL_SECONDS,
 	MAX_SCRIPT_VOTE_OPTIONS,
 	cleanBallot,
 	newScriptVote,
+	rankedRunoff,
 	tallyScriptVote
 } from './script-vote.ts';
 import type { PublicGameState } from './public-projection.ts';
@@ -75,17 +79,157 @@ describe('a vote on the next script', () => {
 		expect(cleanBallot(multiple, ['tb', 'tb'])).toBeUndefined();
 		const ranked = newScriptVote('v', 'ranked', options)!;
 		expect(cleanBallot(ranked, ['bmr', 'tb', 'recent:x'])).toEqual(['bmr', 'tb', 'recent:x']);
-		expect(cleanBallot(ranked, ['bmr', 'tb'])).toBeUndefined();
+		// A ranking need not place every script (Trevor, 2026-10-26: players rearrange what
+		// they selected).
+		expect(cleanBallot(ranked, ['bmr', 'tb'])).toEqual(['bmr', 'tb']);
+		expect(cleanBallot(ranked, [])).toBeUndefined();
 		expect(cleanBallot(ranked, ['bmr', 'tb', 'snv'])).toBeUndefined();
 	});
 
-	it('ranks five scripts by points from the number on offer', () => {
-		const five = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, name: id.toUpperCase() }));
-		const vote = {
-			...newScriptVote('v', 'ranked', five)!,
-			ballots: { alex: ['e', 'd', 'c', 'b', 'a'], bo: ['a', 'e', 'b', 'c', 'd'] }
-		};
-		expect(tallyScriptVote(vote, ['alex', 'bo']).points).toEqual({ a: 6, b: 5, c: 5, d: 5, e: 9 });
+	it("keeps each script's characters for its details, homebrew with name and team", () => {
+		const vote = newScriptVote('v', 'single', [
+			{
+				id: 'a',
+				name: 'A',
+				characters: [
+					{ id: 'washerwoman' },
+					{ id: 'washerwoman' },
+					{ id: 'pilgrim', name: '  The   Pilgrim ', team: 'townsfolk' },
+					{ id: '' },
+					'imp'
+				]
+			},
+			{ id: 'b', name: 'B', characters: [] }
+		])!;
+		expect(vote.options[0].characters).toEqual([
+			{ id: 'washerwoman' },
+			{ id: 'pilgrim', name: 'The Pilgrim', team: 'townsfolk' }
+		]);
+		expect(vote.options[1]).not.toHaveProperty('characters');
+	});
+
+	// Trevor, 2026-10-26: "Rank choice voting should attempt for majority from 1 vote. If 1
+	// vote does not win, remove any votes for lowest and move down".
+	describe('a ranked vote is an instant runoff', () => {
+		it('wins outright with more than half the first choices', () => {
+			const result = rankedRunoff(['a', 'b', 'c'], [['a'], ['a', 'b'], ['b', 'a']]);
+			expect(result).toEqual({ rounds: [{ a: 2, b: 1, c: 0 }], out: {}, winner: 'a' });
+		});
+
+		it('drops the lowest and moves its ballots to their next choice', () => {
+			const ballots = [['a'], ['a'], ['b'], ['b'], ['c', 'b']];
+			expect(rankedRunoff(['a', 'b', 'c'], ballots)).toEqual({
+				rounds: [
+					{ a: 2, b: 2, c: 1 },
+					{ a: 2, b: 3 }
+				],
+				out: { c: 1 },
+				winner: 'b'
+			});
+		});
+
+		it('counts a ballot with no choices left as no longer counting', () => {
+			// After c goes, its ballot counts for nothing: 2 of the 3 left is a majority.
+			const result = rankedRunoff(['a', 'b', 'c'], [['a'], ['a'], ['b'], ['c']]);
+			expect(result.out).toEqual({ c: 1 });
+			expect(result.winner).toBe('a');
+			expect(result.rounds[1]).toEqual({ a: 2, b: 1 });
+		});
+
+		it('breaks a tie for lowest by an earlier round, then by the order offered', () => {
+			// Round 2: b and c tie for lowest; b had fewer in round 1, so b goes, though c is
+			// offered later.
+			const a = Array.from({ length: 4 }, () => ['a']);
+			const c = Array.from({ length: 3 }, () => ['c']);
+			const earlier = rankedRunoff(['a', 'b', 'c', 'd'], [...a, ['b'], ['b'], ...c, ['d', 'b']]);
+			expect(earlier.out).toEqual({ d: 1, b: 2 });
+			expect(earlier.winner).toBe('a');
+			// No earlier round tells them apart: the one offered later goes.
+			expect(rankedRunoff(['a', 'b', 'c'], [['a'], ['a'], ['b'], ['c']]).out).toEqual({ c: 1 });
+		});
+
+		it('has no winner when every script left has the same count', () => {
+			expect(rankedRunoff(['a', 'b'], [['a'], ['b']])).toEqual({
+				rounds: [{ a: 1, b: 1 }],
+				out: {}
+			});
+			expect(rankedRunoff(['a', 'b'], []).winner).toBeUndefined();
+		});
+
+		it('gives the Storyteller each script’s last-round votes, when it went, and the winner', () => {
+			const vote = {
+				...newScriptVote('v', 'ranked', options)!,
+				ballots: {
+					alex: ['tb', 'bmr'],
+					bo: ['bmr', 'tb'],
+					cy: ['recent:x', 'tb'],
+					dee: ['tb'],
+					gone: ['recent:x', 'bmr']
+				}
+			};
+			// Someone who left the room no longer counts.
+			const tally = tallyScriptVote(vote, ['alex', 'bo', 'cy', 'dee']);
+			expect(tally.points).toEqual({ tb: 3, bmr: 1, 'recent:x': 1 });
+			expect(tally.out).toEqual({ 'recent:x': 1 });
+			expect(tally.winner).toBe('tb');
+			expect(tally.voted).toBe(4);
+			expect(tally.members).toBe(4);
+		});
+	});
+
+	// Trevor, 2026-10-26: "can back out".
+	it('takes back a ballot that is withdrawn', () => {
+		let r = openScriptVote(room(), 'v1', 'multiple', options);
+		r = castScriptBallot(r, 'alex', 'v1', ['tb']);
+		expect(hostView(r).scriptVote?.voted).toBe(1);
+		r = castScriptBallot(r, 'alex', 'v1', []);
+		expect(hostView(r).scriptVote?.voted).toBe(0);
+		expect(playerView(r, 'alex').scriptVote?.choices).toBeUndefined();
+		expect(castScriptBallot(r, 'alex', 'v1', [])).toBe(r);
+	});
+
+	// Trevor, 2026-10-26: "Allow storyteller to end vote early, upon doing so, give 15 second
+	// final vote warning to players".
+	it('ends early after a final call', () => {
+		let r = openScriptVote(room(), 'v1', 'single', options, undefined, 0);
+		r = endScriptVote(r, 5000);
+		const closes = 5000 + FINAL_CALL_SECONDS * 1000;
+		expect(r.scriptVote).toMatchObject({ endsAt: closes, finalCall: true });
+		expect(playerView(r, 'alex').scriptVote).toMatchObject({ endsAt: closes, finalCall: true });
+		expect(hostView(r).scriptVote?.finalCall).toBe(true);
+		// Ending again does not push the close back.
+		expect(endScriptVote(r, 9000)).toBe(r);
+		expect(castScriptBallot(r, 'alex', 'v1', ['tb'], closes - 1).scriptVote?.ballots.alex).toEqual([
+			'tb'
+		]);
+		expect(castScriptBallot(r, 'alex', 'v1', ['tb'], closes)).toBe(r);
+		// A time limit that runs out sooner stands.
+		const soon = openScriptVote(room(), 'v1', 'single', options, 1, 0);
+		expect(endScriptVote(soon, 50_000)).toBe(soon);
+		expect(endScriptVote(room(), 0)).toEqual(room());
+	});
+
+	// Trevor, 2026-10-26: "storytellers can see if they want to let players see the vote".
+	it('shows players the count only when the Storyteller lets them', () => {
+		let r = openScriptVote(room(), 'v1', 'single', options);
+		r = castScriptBallot(r, 'bo', 'v1', ['bmr']);
+		expect(playerView(r, 'alex').scriptVote).not.toHaveProperty('tally');
+		r = showScriptVoteTally(r, true);
+		expect(playerView(r, 'alex').scriptVote?.tally).toEqual({
+			points: { tb: 0, bmr: 1, 'recent:x': 0 },
+			voted: 1,
+			members: 3
+		});
+		// Counted over the phones here now, as the Storyteller's count is.
+		expect(playerView(r, 'alex', new Set(['alex'])).scriptVote?.tally?.members).toBe(2);
+		expect(showScriptVoteTally(r, true)).toBe(r);
+		expect(showScriptVoteTally(r, 'yes')).toBe(r);
+		expect(playerView(showScriptVoteTally(r, false), 'alex').scriptVote).not.toHaveProperty(
+			'tally'
+		);
+		const shown = openScriptVote(room(), 'v2', 'ranked', options, undefined, 0, undefined, true);
+		expect(shown.scriptVote?.showTally).toBe(true);
+		expect(playerView(shown, 'cy').scriptVote?.tally?.voted).toBe(0);
 	});
 
 	// Trevor, 2026-10-23: "Room vote should allow for voting on a game mode as well".
@@ -100,22 +244,6 @@ describe('a vote on the next script', () => {
 		expect(
 			playerView(openScriptVote(room(), 'v1', 'single', modes), 'alex').scriptVote
 		).not.toHaveProperty('subject');
-	});
-
-	it('counts votes, or points by position for a ranking', () => {
-		const ranked = {
-			...newScriptVote('v', 'ranked', options)!,
-			ballots: {
-				alex: ['tb', 'bmr', 'recent:x'],
-				bo: ['bmr', 'tb', 'recent:x'],
-				gone: ['recent:x', 'tb', 'bmr']
-			}
-		};
-		// Someone who left the room no longer counts.
-		const tally = tallyScriptVote(ranked, ['alex', 'bo', 'cy']);
-		expect(tally.points).toEqual({ tb: 5, bmr: 5, 'recent:x': 2 });
-		expect(tally.voted).toBe(2);
-		expect(tally.members).toBe(3);
 	});
 
 	it('runs in the room: phones see it with their own ballot, the Storyteller the count', () => {

@@ -3,7 +3,9 @@ import type { IconMap } from '../types.ts';
 import ph_arrow_bend_up_right from '~icons/ph/arrow-bend-up-right';
 import ph_arrow_clockwise from '~icons/ph/arrow-clockwise';
 import ph_arrow_counter_clockwise from '~icons/ph/arrow-counter-clockwise';
+import ph_arrow_down from '~icons/ph/arrow-down';
 import ph_arrow_square_out from '~icons/ph/arrow-square-out';
+import ph_arrow_up from '~icons/ph/arrow-up';
 import ph_arrows_clockwise from '~icons/ph/arrows-clockwise';
 import ph_arrows_down_up from '~icons/ph/arrows-down-up';
 import ph_arrows_in from '~icons/ph/arrows-in';
@@ -108,7 +110,9 @@ const icons: IconMap = {
 	'ph:arrow-bend-up-right': ph_arrow_bend_up_right,
 	'ph:arrow-clockwise': ph_arrow_clockwise,
 	'ph:arrow-counter-clockwise': ph_arrow_counter_clockwise,
+	'ph:arrow-down': ph_arrow_down,
 	'ph:arrow-square-out': ph_arrow_square_out,
+	'ph:arrow-up': ph_arrow_up,
 	'ph:arrows-clockwise': ph_arrows_clockwise,
 	'ph:arrows-down-up': ph_arrows_down_up,
 	'ph:arrows-in': ph_arrows_in,

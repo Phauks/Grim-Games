@@ -6,11 +6,13 @@ import ph_arrow_bend_up_right_fill from '~icons/ph/arrow-bend-up-right-fill';
 import ph_arrow_circle_right_fill from '~icons/ph/arrow-circle-right-fill';
 import ph_arrow_clockwise_fill from '~icons/ph/arrow-clockwise-fill';
 import ph_arrow_counter_clockwise_fill from '~icons/ph/arrow-counter-clockwise-fill';
+import ph_arrow_down_fill from '~icons/ph/arrow-down-fill';
 import ph_arrow_left_fill from '~icons/ph/arrow-left-fill';
 import ph_arrow_right_fill from '~icons/ph/arrow-right-fill';
 import ph_arrow_square_out_fill from '~icons/ph/arrow-square-out-fill';
 import ph_arrow_u_up_left_fill from '~icons/ph/arrow-u-up-left-fill';
 import ph_arrow_u_up_right_fill from '~icons/ph/arrow-u-up-right-fill';
+import ph_arrow_up_fill from '~icons/ph/arrow-up-fill';
 import ph_arrows_clockwise_fill from '~icons/ph/arrows-clockwise-fill';
 import ph_arrows_down_up_fill from '~icons/ph/arrows-down-up-fill';
 import ph_arrows_in_fill from '~icons/ph/arrows-in-fill';
@@ -214,11 +216,13 @@ const icons: IconMap = {
 	'ph:arrow-circle-right-fill': ph_arrow_circle_right_fill,
 	'ph:arrow-clockwise-fill': ph_arrow_clockwise_fill,
 	'ph:arrow-counter-clockwise-fill': ph_arrow_counter_clockwise_fill,
+	'ph:arrow-down-fill': ph_arrow_down_fill,
 	'ph:arrow-left-fill': ph_arrow_left_fill,
 	'ph:arrow-right-fill': ph_arrow_right_fill,
 	'ph:arrow-square-out-fill': ph_arrow_square_out_fill,
 	'ph:arrow-u-up-left-fill': ph_arrow_u_up_left_fill,
 	'ph:arrow-u-up-right-fill': ph_arrow_u_up_right_fill,
+	'ph:arrow-up-fill': ph_arrow_up_fill,
 	'ph:arrows-clockwise-fill': ph_arrows_clockwise_fill,
 	'ph:arrows-down-up-fill': ph_arrows_down_up_fill,
 	'ph:arrows-in-fill': ph_arrows_in_fill,

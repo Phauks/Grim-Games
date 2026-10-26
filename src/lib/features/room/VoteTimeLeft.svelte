@@ -9,11 +9,13 @@
 	interface Props {
 		/** When the time limit runs out (epoch ms); nothing shows without one. */
 		endsAt: number | undefined;
+		/** The Storyteller ended the vote early: the last seconds say so (Trevor, 2026-10-26). */
+		finalCall?: boolean;
 		/** Told whether the time is up, for the caller to stop taking taps. */
 		onEnded?: (ended: boolean) => void;
 	}
 
-	let { endsAt, onEnded }: Props = $props();
+	let { endsAt, finalCall = false, onEnded }: Props = $props();
 
 	let now = $state(Date.now());
 	$effect(() => {
@@ -31,8 +33,17 @@
 </script>
 
 {#if left !== undefined}
-	<p class="time-left" data-testid="script-vote-time" data-ended={left === 0 || undefined}>
-		{left === 0 ? t('room.scriptVote.ended') : t('room.scriptVote.timeLeft', { time: clock(left) })}
+	<p
+		class="time-left"
+		data-testid="script-vote-time"
+		data-ended={left === 0 || undefined}
+		data-final={(finalCall && left > 0) || undefined}
+	>
+		{left === 0
+			? t('room.scriptVote.ended')
+			: t(finalCall ? 'room.scriptVote.finalCall' : 'room.scriptVote.timeLeft', {
+					time: clock(left)
+				})}
 	</p>
 {/if}
 
@@ -42,7 +53,8 @@
 		font-variant-numeric: tabular-nums;
 		color: var(--on-surface-muted);
 	}
-	.time-left[data-ended] {
+	.time-left[data-ended],
+	.time-left[data-final] {
 		color: var(--on-surface);
 		font-weight: 600;
 	}

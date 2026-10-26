@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { editionLogo, logoInScriptJson } from '#lib/core/data/script-logo.ts';
+	import { editionScript } from '#lib/core/data/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import {
 		MAX_SCRIPT_VOTE_OPTIONS,
@@ -9,9 +10,12 @@
 		SCRIPT_VOTE_KINDS,
 		SCRIPT_VOTE_MINUTES,
 		VOTE_SUBJECTS,
+		type ScriptVoteCharacter,
 		type ScriptVoteKind,
 		type VoteSubject
 	} from '#lib/core/sync/script-vote.ts';
+	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { readEntries } from '#lib/features/scripts/botcscripts-api.ts';
 	import ScriptPicker from '#lib/features/modes/ScriptPicker.svelte';
 	import type {
 		ScriptChoice,
@@ -22,8 +26,10 @@
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import { roomHost } from './host.svelte.ts';
+	import { scriptVoteCountLabel } from './script-vote-count.ts';
 	import VoteTimeLeft from './VoteTimeLeft.svelte';
 
 	/**
@@ -35,7 +41,10 @@
 	 * be limited to 2 or 3"). The same vote can be on the game mode, from New game's own list
 	 * of modes (Trevor, 2026-10-23). While the vote is open the sheet shows the
 	 * room's code and QR, so players not in the room yet can join and vote (Trevor,
-	 * 2026-10-23), and the time left when the Storyteller set a limit.
+	 * 2026-10-23), and the time left when the Storyteller set a limit. Trevor, 2026-10-26: the
+	 * Storyteller can let players see the count, before or during the vote, and end it early
+	 * with a final call on every phone; each script carries its characters, so players can
+	 * read its details; a ranking is counted as an instant runoff.
 	 */
 	interface Props {
 		open: boolean;
@@ -52,6 +61,10 @@
 	let { open = $bindable(), choices, onPick, modes, onPickMode }: Props = $props();
 
 	const host = roomHost();
+	// The base three's characters, for their details on the ballot.
+	$effect(() => {
+		if (open) void loadOfficialData();
+	});
 	const tally = $derived(host.scriptVote);
 	let subject = $state<VoteSubject>('script');
 	const onMode = $derived(subject === 'mode');
@@ -92,6 +105,9 @@
 		subject = next;
 		picked = [];
 	}
+	/** Players see the count too; off keeps the ballot secret, as before. */
+	let showTally = $state(false);
+	let ended = $state(false);
 	const NO_LIMIT = 'none';
 	let minutes = $state<string>(NO_LIMIT);
 	const limits = [
@@ -121,17 +137,34 @@
 			const choice = choices.find((c) => c.value === id);
 			if (!choice) return [];
 			const logo = editionLogo(choice.value) ?? logoInScriptJson(choice.json);
+			const edition = editionOf(choice);
+			const author = choice.author ?? edition?.meta?.author;
+			const characters = choice.json
+				? readEntries(choice.json)
+				: (edition?.characters.map((c): ScriptVoteCharacter => ({ id: c.id })) ?? []);
 			return [
 				{
 					id,
 					name: choice.label,
-					...(choice.author ? { author: choice.author } : {}),
-					...(logo ? { logo } : {})
+					...(author ? { author } : {}),
+					...(logo ? { logo } : {}),
+					...(characters.length ? { characters } : {})
 				}
 			];
 		});
 		const limit = minutes === NO_LIMIT ? undefined : Number(minutes);
-		if (host.openScriptVote(kind, options, limit, subject)) picked = [];
+		if (host.openScriptVote(kind, options, limit, subject, showTally)) picked = [];
+	}
+
+	/** One of the base three, for its author and characters in its details on the ballot. */
+	function editionOf(choice: ScriptChoiceOption) {
+		const data = officialData.current;
+		return !choice.json && data ? editionScript(choice.value, data) : undefined;
+	}
+
+	function setShowTally(show: boolean) {
+		if (tally) host.showScriptVoteTally(show);
+		else showTally = show;
 	}
 
 	function pick(id: string) {
@@ -167,14 +200,9 @@
 				{#if tally}
 					<ul class="results" data-testid="script-vote-results">
 						{#each tally.options as option (option.id)}
-							<li>
+							<li data-winner={tally.winner === option.id || undefined}>
 								<span class="name">{option.name}</span>
-								<span class="points"
-									>{t(
-										tally.kind === 'ranked' ? 'room.scriptVote.points' : 'room.scriptVote.votes',
-										{ count: tally.points[option.id] ?? 0 }
-									)}</span
-								>
+								<span class="points">{scriptVoteCountLabel(tally.kind, tally, option.id)}</span>
 								<Button onclick={() => pick(option.id)}>{t('room.scriptVote.play')}</Button>
 							</li>
 						{/each}
@@ -248,7 +276,11 @@
 					/>
 				</section>
 				{#if tally}
-					<VoteTimeLeft endsAt={tally.endsAt} />
+					<VoteTimeLeft
+						endsAt={tally.endsAt}
+						finalCall={!!tally.finalCall}
+						onEnded={(e) => (ended = e)}
+					/>
 					<p class="count" data-testid="script-vote-count">
 						{t('room.scriptVote.voted', { voted: tally.voted, members: tally.members })}
 					</p>
@@ -260,9 +292,20 @@
 						onChange={(v) => (minutes = v)}
 					/>
 				{/if}
+				<!-- Before and during the vote, in the same place (Trevor, 2026-10-26). -->
+				<Toggle
+					label={t('room.scriptVote.showTally')}
+					checked={tally ? !!tally.showTally : showTally}
+					onChange={setShowTally}
+				/>
 			</div>
 			<div class="end">
 				{#if tally}
+					<!-- Ends it after a final call on every phone (Trevor, 2026-10-26); Close
+					     vote takes it off the phones at once. -->
+					<Button disabled={!!tally.finalCall || ended} onclick={() => host.endScriptVote()}
+						>{t('room.scriptVote.end')}</Button
+					>
 					<Button variant="danger" onclick={() => host.closeScriptVote()}
 						>{t('room.scriptVote.close')}</Button
 					>
@@ -298,6 +341,7 @@
 	.end {
 		display: flex;
 		justify-content: flex-end;
+		gap: var(--space-2);
 	}
 	/* The sheet's width, not the window's: a computer's panel and a tablet's sheet alike. */
 	@container (min-width: 30rem) {
@@ -363,5 +407,10 @@
 	}
 	.points {
 		font-variant-numeric: tabular-nums;
+	}
+	/* The instant runoff's winner (Trevor, 2026-10-26). */
+	.results li[data-winner] .points {
+		color: var(--accent);
+		font-weight: 600;
 	}
 </style>
