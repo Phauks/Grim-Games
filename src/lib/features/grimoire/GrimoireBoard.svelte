@@ -60,6 +60,7 @@
 		type NominationPrompt
 	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
+	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -1427,6 +1428,9 @@
 		</div>
 	</div>
 </div>
+
+<!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
+<BoardAmbience scene={watching || ended || phaseNow.kind === 'setup' ? null : phaseNow.kind} />
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <BoardMenu
