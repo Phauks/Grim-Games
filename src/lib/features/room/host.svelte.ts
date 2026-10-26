@@ -42,6 +42,7 @@ import {
 } from '#lib/features/grimoire/device-notes.ts';
 import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
+import { gameFeedback } from './game-feedback.svelte.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
 import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
@@ -449,6 +450,10 @@ export class RoomHost {
 			this.requests = message.requests;
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
+			// Saved with the ended game, as the room forgets it once a game runs again.
+			if (message.feedback && message.feedbackGameId) {
+				gameFeedback.save(message.feedbackGameId, message.feedback);
+			}
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
 		} else if (message.type === 'refused' && message.reason === 'too-old') {

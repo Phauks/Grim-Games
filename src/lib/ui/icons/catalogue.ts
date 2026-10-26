@@ -142,6 +142,8 @@ export const ICON_SLOTS = {
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
 	/** Someone is watching the view-only grimoire (Trevor, 2026-10-20). */
 	watchers: { label: 'Watching', choices: ['ph:eye', 'ph:binoculars'] },
+	/** Players' feedback on a finished game (Trevor, 2026-10-25). */
+	feedback: { label: 'Player feedback', choices: ['ph:star-half', 'ph:chat-centered-text'] },
 	/** What an info token asks for when shown, on its tile (Trevor, 2026-10-18). */
 	asksText: { label: 'Asks for words', choices: ['ph:text-t', 'ph:textbox'] },
 	asksNumber: { label: 'Asks for a number', choices: ['ph:hash', 'ph:calculator'] },

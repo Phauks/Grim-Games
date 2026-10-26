@@ -38,6 +38,7 @@ import ph_caret_left_duotone from '~icons/ph/caret-left-duotone';
 import ph_caret_right_duotone from '~icons/ph/caret-right-duotone';
 import ph_caret_up_duotone from '~icons/ph/caret-up-duotone';
 import ph_cat_duotone from '~icons/ph/cat-duotone';
+import ph_chat_centered_text_duotone from '~icons/ph/chat-centered-text-duotone';
 import ph_check_duotone from '~icons/ph/check-duotone';
 import ph_check_square_duotone from '~icons/ph/check-square-duotone';
 import ph_circle_dashed_duotone from '~icons/ph/circle-dashed-duotone';
@@ -172,6 +173,7 @@ import ph_spinner_duotone from '~icons/ph/spinner-duotone';
 import ph_square_duotone from '~icons/ph/square-duotone';
 import ph_square_split_horizontal_duotone from '~icons/ph/square-split-horizontal-duotone';
 import ph_star_duotone from '~icons/ph/star-duotone';
+import ph_star_half_duotone from '~icons/ph/star-half-duotone';
 import ph_sun_duotone from '~icons/ph/sun-duotone';
 import ph_sun_horizon_duotone from '~icons/ph/sun-horizon-duotone';
 import ph_swap_duotone from '~icons/ph/swap-duotone';
@@ -244,6 +246,7 @@ const icons: IconMap = {
 	'ph:caret-right-duotone': ph_caret_right_duotone,
 	'ph:caret-up-duotone': ph_caret_up_duotone,
 	'ph:cat-duotone': ph_cat_duotone,
+	'ph:chat-centered-text-duotone': ph_chat_centered_text_duotone,
 	'ph:check-duotone': ph_check_duotone,
 	'ph:check-square-duotone': ph_check_square_duotone,
 	'ph:circle-dashed-duotone': ph_circle_dashed_duotone,
@@ -378,6 +381,7 @@ const icons: IconMap = {
 	'ph:square-duotone': ph_square_duotone,
 	'ph:square-split-horizontal-duotone': ph_square_split_horizontal_duotone,
 	'ph:star-duotone': ph_star_duotone,
+	'ph:star-half-duotone': ph_star_half_duotone,
 	'ph:sun-duotone': ph_sun_duotone,
 	'ph:sun-horizon-duotone': ph_sun_horizon_duotone,
 	'ph:swap-duotone': ph_swap_duotone,
