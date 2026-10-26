@@ -218,8 +218,15 @@ describe('publicProjection', () => {
 
 	it("leaks no Storyteller's seat notes", () => {
 		const { session, ctx, seats } = newGame(5);
-		const s = run(session, ctx, { type: 'SetSeatNote', seatId: seats[0], note: 'secret word' });
+		const s = run(session, ctx, {
+			type: 'SetSeatNote',
+			seatId: seats[0],
+			title: 'secret title',
+			text: 'secret word',
+			hidden: false
+		});
 		expect(JSON.stringify(publicProjection(s.game))).not.toContain('secret word');
+		expect(JSON.stringify(publicProjection(s.game))).not.toContain('secret title');
 	});
 
 	it('leaks no night-order or day-reminder overrides', () => {

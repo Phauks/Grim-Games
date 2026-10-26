@@ -1586,7 +1586,7 @@ test("a Banshee the Demon killed shows two votes and no ghost vote on the player
 	await phoneContext.close();
 });
 
-test('a player writes a note on a seat from the Grim tab, and the Notes tab lists it', async ({
+test('a player writes notes on a seat from the Grim tab, and the Notes tab lists them', async ({
 	page,
 	browser
 }, testInfo) => {
@@ -1608,35 +1608,56 @@ test('a player writes a note on a seat from the Grim tab, and the Notes tab list
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
 	await expect(sheet.getByTestId('seat-note')).toContainText('None');
 	await sheet.getByTestId('seat-note').tap();
-	const editor = phone.getByRole('dialog', { name: 'Note: Seat 3' });
-	await editor.getByTestId('note-editor').fill('Claims Chef: 1');
+	// Several titled notes per player, as the game's notes (Trevor, 2026-10-26).
+	const notes = phone.getByRole('dialog', { name: 'Notes: Seat 3' });
+	const cards = notes.locator('[data-note]');
+	const editor = phone.getByRole('dialog', { name: 'Note', exact: true });
+	await expect(cards).toHaveCount(0);
+	await notes.getByTestId('new-note').tap();
+	await editor.getByRole('textbox', { name: 'Title' }).fill('Claim');
+	await editor.getByRole('textbox', { name: 'Text' }).fill('Claims Chef: 1');
 	// Kept as it closes, with no Save.
 	await editor.getByRole('button', { name: 'Close' }).tap();
-	await expect(sheet.getByTestId('seat-note')).toContainText('Claims Chef: 1');
+	await expect(cards).toHaveText(/^\s*Claim\s*Claims Chef: 1\s*$/);
+	await notes.getByTestId('new-note').tap();
+	await editor.getByRole('textbox', { name: 'Text' }).fill('Quiet all day');
+	await editor.getByRole('button', { name: 'Close' }).tap();
+	await expect(cards).toHaveText([/Claim/, /Quiet all day/]);
+	await notes.getByRole('button', { name: 'Close' }).tap();
+	// The seat's sheet lists them on one line.
+	await expect(sheet.getByTestId('seat-note')).toContainText('Claim, Quiet all day');
 	await phone.keyboard.press('Escape');
 	await expect(seats.nth(2).getByTestId('note-mark')).toBeVisible();
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your note');
-	// The board's own note mark, which opens the note straight away, as on the board (Trevor,
+	// The board's own note mark, which opens the notes straight away, as on the board (Trevor,
 	// 2026-10-25: the same icon and the same behaviour).
 	await seats.nth(2).getByTestId('note-mark').tap();
-	await expect(editor.getByTestId('note-editor')).toHaveValue('Claims Chef: 1');
+	await expect(cards).toHaveText([/Claim/, /Quiet all day/]);
 	await expect(sheet).toHaveCount(0);
-	await editor.getByRole('button', { name: 'Close' }).tap();
+	await notes.getByRole('button', { name: 'Close' }).tap();
 
-	// The Notes tab lists every seat with its note, and opens the same editor.
+	// The Notes tab lists every seat with its notes, and opens the same editor.
 	await phone.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(phone.getByRole('heading', { name: 'Players' })).toBeVisible();
 	const row = phone.locator('[data-seat-note]').nth(2);
-	await expect(row).toContainText('Claims Chef: 1');
-	await expect(phone.locator('[data-seat-note]').first()).toContainText('None');
-	await row.getByRole('button').tap();
-	await editor.getByTestId('note-editor').fill('Claims Chef: 0');
+	await expect(row.locator('[data-note]')).toHaveText([/Claim/, /Quiet all day/]);
+	await expect(phone.locator('[data-seat-note]').first().locator('[data-note]')).toHaveCount(0);
+	await row.locator('[data-note]').first().tap();
+	await editor.getByRole('textbox', { name: 'Text' }).fill('Claims Chef: 0');
 	await editor.getByRole('button', { name: 'Close' }).tap();
-	await expect(row).toContainText('Claims Chef: 0');
+	await expect(row.locator('[data-note]').first()).toContainText('Claims Chef: 0');
+	await row.getByTestId('new-note').tap();
+	await editor.getByRole('textbox', { name: 'Text' }).fill('Voted for Ana');
+	await editor.getByRole('button', { name: 'Close' }).tap();
+	await expect(row.locator('[data-note]')).toHaveCount(3);
 	// On this phone only, and kept after a reload.
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(phone.locator('[data-seat-note]').nth(2)).toContainText('Claims Chef: 0');
+	await expect(phone.locator('[data-seat-note]').nth(2).locator('[data-note]')).toHaveText([
+		/Claims Chef: 0/,
+		/Quiet all day/,
+		/Voted for Ana/
+	]);
 	await phoneContext.close();
 });
 
