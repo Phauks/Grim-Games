@@ -1216,7 +1216,7 @@ test('the join code shows under the script name, a Board setting, read only', as
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	// The day or night and Game time join the code's line where a phone's corner has no line
 	// to spare for them.
-	const codeLine = new RegExp(`^Join code ${shown}(\\s*·\\s*Game time Setup)?$`);
+	const codeLine = new RegExp(`^Join code ${shown}( · Setup)?( · Game time Setup)?$`);
 	await expect(corner).toHaveText(codeLine);
 	// Only read: Share is the toolbar's button, not the corner (Trevor, 2026-10-24).
 	await expect(page.getByRole('button', { name: /Join code/ })).toHaveCount(0);
@@ -2630,10 +2630,14 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	expect(ratio).toBeCloseTo(box!.width / box!.height, 1);
 	await page.keyboard.press('Escape');
 
-	// The same from History.
+	// The same from History, which opens the board first so the picture is the board
+	// (Trevor, 2026-10-26).
 	await page.goto('/history');
 	await page.getByRole('button', { name: /^Export Trouble Brewing ended/ }).tap();
 	await expect(page.getByRole('dialog', { name: 'Export game' })).toBeVisible();
+	await expect(page).toHaveURL(/\/grimoire\/[^/#]+$/);
+	await expect(page.locator('.grimoire')).toBeAttached();
+	expect((await read('Image')).name).toBe('trouble-brewing.png');
 });
 
 test("a finished game is shared to the players' phones, without the notes", async ({
@@ -4021,6 +4025,52 @@ test('the Investigator step lists each Minion, and the Recluse as a Minion you p
 	await expect(shown).toContainText('Baron');
 });
 
+// Trevor (2026-10-26): with a Recluse and a Butler in play and the Librarian's Outsider
+// reminder on the Recluse, the Recluse row comes first and stands out; the Butler stays as an
+// alternative (https://wiki.bloodontheclocktower.com/Librarian).
+test('the Librarian step puts the Outsider its reminder marks first, emphasised', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Librarian'],
+		[2, 'Butler'],
+		[3, 'Recluse'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 3' });
+	await picker
+		.getByRole('group', { name: 'Librarian' })
+		.getByRole('button', { name: 'Outsider' })
+		.tap();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	const strip = await walkTo(page, 'Librarian');
+	const line = strip.getByTestId('night-suggested');
+	await expect(line).toHaveText(/^Valid Information:\s*Recluse\s*,\s*Butler\s*$/);
+	await expect(line.locator('.item.marked')).toHaveText('Recluse');
+
+	const step = await openStep(page, 'Librarian');
+	const rows = step.getByTestId('learned-roles').getByRole('listitem');
+	await expect(rows).toHaveCount(2);
+	await expect(rows.first()).toHaveAttribute('data-marked', '');
+	await expect(rows.first()).toContainText('Recluse');
+	await expect(rows.first()).toContainText('Marked');
+	await expect(rows.nth(1)).toContainText('Butler');
+	await expect(rows.nth(1)).not.toHaveAttribute('data-marked');
+});
+
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({
 	page
 }) => {
@@ -5154,7 +5204,24 @@ test('the corner’s Game info closes when a seat opens', async ({ page }) => {
 	await corner.tap();
 	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
 	await expect(info).toBeVisible();
-	await openSeat(page, 1);
+	// A seat where the popover leaves part of it clear: it covers most of a phone's board.
+	const clear = await page.getByTestId('seat').evaluateAll((seats) => {
+		for (const [index, seat] of seats.entries()) {
+			const box = seat.getBoundingClientRect();
+			for (const fx of [0.5, 0.15, 0.85])
+				for (const fy of [0.5, 0.15, 0.85]) {
+					const x = box.width * fx;
+					const y = box.height * fy;
+					const at = document.elementFromPoint(box.x + x, box.y + y);
+					if (at && seat.contains(at)) return { index, x, y };
+				}
+		}
+	});
+	expect(clear).toBeDefined();
+	await page
+		.getByTestId('seat')
+		.nth(clear!.index)
+		.tap({ position: { x: clear!.x, y: clear!.y } });
 	await expect(info).toBeHidden();
 });
 

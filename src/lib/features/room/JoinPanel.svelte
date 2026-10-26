@@ -40,6 +40,8 @@
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
+	import PlayersDayTimer from '#lib/features/day/PlayersDayTimer.svelte';
+	import { dayTimers } from '#lib/core/rules/index.ts';
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
@@ -115,6 +117,13 @@
 	});
 
 	const view = $derived(player?.view);
+	/**
+	 * The Storyteller's day timer, as they chose to show it (Trevor, 2026-10-26); their board
+	 * sends it during the day only.
+	 */
+	const dayTimer = $derived(
+		view?.endedGameId ? undefined : dayTimers.parsePublicTimer(view?.public?.timer)
+	);
 	const status = $derived(player?.status);
 	/** In a room (not the code form): the script, your seat and the table show. */
 	const inRoom = $derived(!!valid && status !== 'refused' && status !== 'closed');
@@ -331,7 +340,9 @@
 				? t('room.notACode')
 				: player?.refusedReason === 'too-old'
 					? t('room.tooOld')
-					: t('room.closedOrWrong')}
+					: status === 'closed'
+						? t('room.closedByStoryteller')
+						: t('room.closedOrWrong')}
 		</p>
 	{/if}
 	<form class="code-form" onsubmit={enterCode}>
@@ -441,6 +452,9 @@
 			<Icon name="edit" />
 			<span class="visually-hidden">{t('room.editYou')}</span>
 		</button>
+		<!-- Only during the day, when the Storyteller shows it (Trevor, 2026-10-26); it shares
+		     the row's height, so nothing below moves. -->
+		{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
 		<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
 		{#if view?.endedGameId}
 			<Button aria-haspopup="dialog" onclick={() => (rating = true)}

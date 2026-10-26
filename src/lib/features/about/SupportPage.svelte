@@ -6,7 +6,7 @@
 </script>
 
 <!-- Beneath About in the menu's App group (Trevor, 2026-10-26). -->
-<Page title={t('shell.support')} width="text">
+<Page title={t('shell.support')}>
 	<p>{t('shell.supportIntro')}</p>
 	<!-- In place but disabled until there is a link, so nothing moves when it arrives. -->
 	{#if KOFI_URL}

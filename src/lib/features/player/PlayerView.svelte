@@ -214,12 +214,14 @@
 	{#snippet actions()}
 		{#if script}<PlayerScriptActions {script} {version} share={shareable} room={inRoom} />{/if}
 	{/snippet}
-	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). -->
+	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). The
+	     Storyteller only for the room this script came from: Join game's code form shows none
+	     (Trevor, 2026-10-26: "even before i have joined a game, it say a storyteller"). -->
 	{#snippet subtitle()}
 		<ScriptByline
 			author={script?.meta.author}
 			{version}
-			storyteller={roomTable.storyteller}
+			storyteller={inRoom && inRoom === lastRoom() ? roomTable.storyteller : undefined}
 			inline
 		/>&nbsp;
 	{/snippet}

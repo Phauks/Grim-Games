@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
+	import { TIMER_FOR_PLAYERS, TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -64,6 +64,20 @@
 		checked={canKeepAwake() && preferences.current.timerKeepAwake}
 		disabled={!canKeepAwake()}
 		onChange={(on) => live.setKeepAwake(on)}
+	/>
+{/snippet}
+
+{#snippet forPlayers()}
+	<!-- How players' phones show this timer in a live room (Trevor, 2026-10-26); also in
+	     Settings > Storyteller > Day. -->
+	<Select
+		label={t('day.timerForPlayers')}
+		value={preferences.current.timerForPlayers}
+		options={TIMER_FOR_PLAYERS.map((value) => ({
+			value,
+			label: t(`day.timerForPlayers.${value}`)
+		}))}
+		onChange={(timerForPlayers) => preferences.update({ timerForPlayers })}
 	/>
 {/snippet}
 
@@ -153,6 +167,7 @@
 			<VibrateToggle />
 			{@render keepAwake()}
 			<TimerPerPlayerRow />
+			{@render forPlayers()}
 		</div>
 	</BottomSheet>
 {:else}
@@ -170,6 +185,7 @@
 			<VibrateToggle />
 			{@render keepAwake()}
 			<TimerPerPlayerRow />
+			{@render forPlayers()}
 		</div>
 	</BottomSheet>
 {/if}

@@ -87,6 +87,10 @@
 	.icon-button:active {
 		background: var(--surface-selected);
 	}
+	/* A menu or list it opens (aria-expanded), while open. */
+	.icon-button[aria-expanded='true'] {
+		background: var(--surface-selected);
+	}
 	/* A switch (aria-pressed), when on. */
 	.icon-button[aria-pressed='true'] {
 		background: var(--surface-selected);

@@ -774,15 +774,29 @@ describe('relevant misregistration and why', () => {
 		const near = game(['empath', 'recluse', 'slayer', 'imp', 'monk']);
 		const q = infoPicker(near.game, near.seats[0], 'empath', characters)!;
 		expect(q.misregister).toEqual([near.seats[1]]);
+		// The Empath counts evil players, so only the Recluse's alignment is offered: good as
+		// they are, or evil (Trevor, 2026-10-26), not each character type too.
 		expect(q.why.alternatives).toEqual([
 			{
 				seatId: near.seats[1],
 				source: 'recluse',
-				as: expect.arrayContaining([
-					{ alignment: 'evil', type: 'outsider', value: { kind: 'number', value: 1 } }
-				])
+				as: [{ alignment: 'evil', value: { kind: 'number', value: 1 } }]
 			}
 		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Clockmaker: steps from the Demon to its nearest
+	// Minion, so a Recluse matters only by character type, never by alignment.
+	it('Clockmaker: a Recluse is offered by character type only', () => {
+		const { game: g, seats } = game(['clockmaker', 'imp', 'recluse', 'slayer', 'poisoner']);
+		const p = infoPicker(g, seats[0], 'clockmaker', characters)!;
+		const [alt] = p.why.alternatives;
+		expect(alt.seatId).toBe(seats[2]);
+		expect(alt.as.length).toBeGreaterThan(0);
+		for (const way of alt.as) {
+			expect(way.alignment).toBeUndefined();
+			expect(way.type).toBeDefined();
+		}
 	});
 
 	// https://wiki.bloodontheclocktower.com/Empath: a dead player in between is skipped, so
