@@ -16,6 +16,7 @@
 	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import FullScreenButton from '#lib/ui/primitives/FullScreenButton.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import { sheetTheme } from '#lib/ui/themes/sheet-backgrounds.ts';
@@ -121,6 +122,9 @@
 				share={shareable}
 				room={room ?? undefined}
 			/>{/if}
+		<!-- Top right, last, as on the board (Trevor, 2026-10-26: "we will definitely need a
+		     button to allow fullscreen in the top right corner"). -->
+		<FullScreenButton />
 	{/snippet}
 	{#snippet subtitle()}
 		<ScriptByline

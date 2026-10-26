@@ -358,12 +358,20 @@ test('Fabled and Loric are added from their own closed sections, not to the bag'
 });
 
 // Trevor, 2026-10-18: New game's count stopped at 15; stress tests need more players.
-test('New game and character selection take more than 15 players', async ({ page }) => {
-	await selectionFor(page, 24);
+// Trevor, 2026-10-26: New game stops at 20 for one game; character selection goes on to 40.
+test('New game takes up to 20 players, and character selection more', async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	const more = page.getByRole('button', { name: 'More players' });
+	for (let n = 8; n < 20; n++) await more.tap();
+	await expect(page.getByTestId('player-count')).toHaveText('20');
+	await expect(more).toBeDisabled();
+
+	await selectionFor(page, 20);
 	// Beyond 15 the sheet's 15+ column applies (https://wiki.bloodontheclocktower.com/Setup).
 	await expect(page.getByTestId('setup-table').locator('thead [data-current]')).toHaveText('15+');
 	await page.getByRole('button', { name: 'More players' }).tap();
-	await expect(page.getByTestId('player-count')).toHaveText('25');
+	await expect(page.getByTestId('player-count')).toHaveText('21');
 });
 
 // Trevor, 2026-10-26: New game made seats for 40, Character selection lowered it to 10, and
