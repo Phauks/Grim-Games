@@ -10,6 +10,7 @@
  */
 import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import type { Script } from '#lib/core/data/index.ts';
+import { buildInfo } from '#lib/build-info.ts';
 import { toSavedGame } from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
 import {
@@ -501,7 +502,13 @@ export class RoomHost {
 		this.code = room.code;
 		this.#socket = new RoomSocket(
 			room.code,
-			{ type: 'hello', role: 'host', key: room.key, protocol: ROOM_PROTOCOL },
+			{
+				type: 'hello',
+				role: 'host',
+				key: room.key,
+				protocol: ROOM_PROTOCOL,
+				builtAt: buildInfo.builtAt
+			},
 			(m) => this.#receive(m),
 			() => this.#resend()
 		);
