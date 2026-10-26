@@ -178,6 +178,8 @@ export const modes = {
 	'modes.deal.forced': 'This is your character, because this one is in play: ',
 	'modes.deal.askCount': 'How many {type} in all?',
 	'modes.deal.askKeep': 'Keep {count}',
+	'modes.deal.hiddenTitle': 'Hidden character',
+	'modes.deal.hiddenPrompt': 'Which player who drafted a Townsfolk is really this character? ',
 	'modes.deal.noOptions': 'No character fits. Change the open slots or the restricted characters.',
 	'modes.sources': 'Sources',
 	'modes.authors': 'Authors',

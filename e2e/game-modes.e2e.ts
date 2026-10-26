@@ -270,8 +270,33 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	expect(new Set(kept).size).toBe(5);
 	await expect(bagTiles(page)).toHaveCount(0);
 	await page.getByRole('button', { name: 'Finish' }).tap();
+	// The Drunk is never offered: the Storyteller picks a drafted Townsfolk to be it, or none
+	// (https://wiki.bloodontheclocktower.com/Drunk).
+	const hidden = page.getByRole('dialog', { name: 'Hidden character' });
+	await expect(hidden.getByTestId('draft-hidden')).toBeVisible();
+	await hidden.getByRole('button', { name: 'None', exact: true }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await expect(page.getByText('Is The Drunk')).toHaveCount(0);
 	await noSidewaysScroll(page);
+});
+
+test('Sushi Buffet ends with the Storyteller picking which drafted Townsfolk is the Drunk', async ({
+	page
+}) => {
+	// Grimbits' draft hides the Drunk among drafted Townsfolk (https://grimbits.com/draft-buffet/).
+	await startIn(page, 'Sushi Buffet');
+	for (let seat = 1; seat <= 5; seat++) {
+		await drawTile(page);
+		await keepFirst(page);
+	}
+	await page.getByRole('button', { name: 'Finish' }).tap();
+	const hidden = page.getByRole('dialog', { name: 'Hidden character' });
+	const seats = hidden.getByTestId('hidden-seats').getByRole('listitem');
+	// One row per seat that drafted a Townsfolk, then None.
+	await expect(seats.last()).toHaveText('None');
+	await seats.first().getByRole('button').first().tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await expect(page.getByText('Is The Drunk').first()).toBeVisible();
 });
 
 // Trevor (2026-10-26): "modifiers are made dynamically for outsider count", as Grimbits' draft
