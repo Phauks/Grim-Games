@@ -434,6 +434,12 @@
 						{t('modes.deal.askKeep', { count: ask.current })}
 					</Button>
 				{/if}
+				<!-- Or the player drafts again, as Grimbits does for a rejected Legion. -->
+				{#if progress?.kind === 'draft' && canRedraft(progress.state)}
+					<Button icon="undo" onclick={() => draftAgain(undefined)}>
+						{t('modes.deal.redraft')}
+					</Button>
+				{/if}
 			</div>
 		</div>
 	</Dialog>

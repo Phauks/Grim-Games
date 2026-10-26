@@ -385,3 +385,24 @@ describe('redraft', () => {
 		expect(next.onlyType).toBeUndefined();
 	});
 });
+
+// Grimbits lets the Storyteller reject a drafted Legion: the player picks again
+// (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Legion).
+describe('rejecting a drafted character whose setup change is asked', () => {
+	it('drafts again from before the pick, with nothing left to ask', () => {
+		const random = seeded(6);
+		const start = startDraft(
+			{ ...config, modifiers: true },
+			baseCounts(7),
+			tb.concat(data.characters.filter((c) => c.id === 'legion')),
+			random
+		);
+		const s = takeOffer({ ...start, offer: ['legion'] }, 'legion', random);
+		expect(s.ask).toBeDefined();
+		const again = redraft(s, undefined, random);
+		expect(again.ask).toBeUndefined();
+		expect(again.picks).toEqual([]);
+		expect(again.slots).toEqual(start.slots);
+		expect(again.offer).not.toContain('legion');
+	});
+});
