@@ -458,9 +458,13 @@ test('after a game the room votes on the next script, and the next game opens in
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(status).toHaveText('Game over');
+	const rate = phone.getByRole('button', { name: 'Rate game' });
+	await expect(rate).toBeVisible();
 
 	await page.goto('/new');
 	await expect(status).toHaveText('The Storyteller is choosing a script.');
+	// The next game is being set up, so there is nothing to rate (Trevor, 2026-10-26).
+	await expect(rate).toHaveCount(0);
 	await page.getByRole('button', { name: 'Room vote' }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Vote on the next script' });
 	// Scripts are found with New game's own controls (Trevor, 2026-10-23) and added in turn.
