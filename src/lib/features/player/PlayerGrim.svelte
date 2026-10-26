@@ -51,6 +51,7 @@
 	import type { PublicSeatLayout } from '#lib/core/sync/public-projection.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import {
 		DEFAULT_SEAT_LAYOUT,
@@ -164,6 +165,9 @@
 	const notes = $derived(hiding ? {} : (book?.notes ?? {}));
 	/** The player's own reminders, hidden by the eye with their guesses. */
 	const visible = $derived(hiding ? {} : reminders);
+	// Share, the QR code and every sheet blur the Grim behind them, as over the board
+	// (Trevor, 2026-10-26: players at the table could read guesses behind Share).
+	$effect(() => markBoardShown());
 	let noteOpen = $state(false);
 
 	/**
