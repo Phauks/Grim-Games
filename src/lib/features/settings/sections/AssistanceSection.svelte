@@ -7,7 +7,7 @@
 	import { canKeepAwake } from '#lib/features/day/timer-wake-lock.ts';
 	import TimerPerPlayerRow from '#lib/features/day/TimerPerPlayerRow.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { TIMER_SOUNDS } from '#lib/ui/preferences.ts';
+	import { TIMER_FOR_PLAYERS, TIMER_SOUNDS } from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
@@ -123,6 +123,16 @@
 	onChange={(timerMode) => preferences.update({ timerMode })}
 />
 <TimerPerPlayerRow />
+<SettingSelect
+	label={t('day.timerForPlayers')}
+	value={preferences.current.timerForPlayers}
+	options={TIMER_FOR_PLAYERS.map((value) => ({
+		value,
+		label: t(`day.timerForPlayers.${value}`)
+	}))}
+	defaultValue="sun"
+	onChange={(timerForPlayers) => preferences.update({ timerForPlayers })}
+/>
 
 <SettingHeading title={t('settings.groupShare')} />
 <!-- Also on Share, beside the view-only link, where it is used. -->

@@ -1,0 +1,92 @@
+import { expect, test } from '@playwright/test';
+import { toBoard } from './new-game.ts';
+
+// The Storyteller's day timer on players' phones (Trevor, 2026-10-26: "timer populates on
+// other screens, as sun not timer (sun or timer for players)"; the Storyteller decides).
+
+test("players' phones show the day timer during the day, as a sun or the clock", async ({
+	page,
+	browser
+}, testInfo) => {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	const board = new URL(page.url()).pathname;
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('you-row')).toBeVisible();
+	const shown = phone.getByTestId('players-timer');
+
+	// One character, so the bank offers Start game; the first night shows no timer.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const seat = page.locator('[data-scope="drawer"][data-part="content"]');
+	await seat.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(seat).toBeHidden();
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+	const strip = page.getByTestId('night-strip');
+	await expect(strip.or(ask)).toBeVisible();
+	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(strip).toBeVisible();
+	await expect(shown).toHaveCount(0);
+
+	// The day: a sun by default, high while the day's time is all to come.
+	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day).toBeVisible();
+	await expect(shown).toHaveAttribute('data-look', 'sun');
+	await expect(shown.getByRole('img')).toHaveAttribute(
+		'aria-label',
+		'Day timer: 100% of the day left'
+	);
+	// It shares the "You" row's height, so nothing below it moves.
+	const row = (await phone.getByTestId('you-row').boundingBox())!;
+	const sun = (await shown.boundingBox())!;
+	expect(sun.y).toBeGreaterThanOrEqual(row.y - 1);
+	expect(sun.y + sun.height).toBeLessThanOrEqual(row.y + row.height + 1);
+
+	// The Storyteller starts it, and the sun begins to sink. 4:00 for 8 players, so 1% is 2.4s.
+	await day.getByRole('button', { name: 'Start timer' }).tap();
+	await expect(shown.getByRole('img')).toHaveAttribute(
+		'aria-label',
+		/^Day timer: (9\d)% of the day left$/,
+		{ timeout: 10_000 }
+	);
+
+	// The timer's own sheet on the board says how players see it: the clock itself.
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
+	const controls = page.getByTestId('timer-sheet');
+	await controls.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Timer', exact: true }).tap();
+	await expect(shown).toHaveAttribute('data-look', 'timer');
+	await expect(shown.getByRole('timer')).toHaveText(/^3:[0-5]\d$/);
+
+	// Hidden keeps it to the Storyteller.
+	await controls.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Hidden', exact: true }).tap();
+	await expect(shown).toHaveCount(0);
+	await phoneContext.close();
+});

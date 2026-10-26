@@ -94,6 +94,11 @@ export interface Preferences {
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
 	timerPerPlayer: number;
 	/**
+	 * How players' phones show the day timer in a live room (Trevor, 2026-10-26: "sun or timer
+	 * for players", the Storyteller decides).
+	 */
+	timerForPlayers: TimerForPlayers;
+	/**
 	 * What goes in the middle of a share QR code (Trevor, 2026-10-20, plan R1): the script's
 	 * logo (or its name), the Storyteller's own picture, or nothing.
 	 */
@@ -127,6 +132,10 @@ export type QrFinders = (typeof QR_FINDERS)[number];
 
 export const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
+
+/** How players' phones show the day timer: a sun, the clock, or not at all. */
+export const TIMER_FOR_PLAYERS = ['sun', 'timer', 'off'] as const;
+export type TimerForPlayers = (typeof TIMER_FOR_PLAYERS)[number];
 
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */
 export const TIMER_SOUNDS = ['bell', 'chime', 'clocktower', 'buzzer', 'none'] as const;
@@ -203,6 +212,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerVibrate: true,
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
+	timerForPlayers: 'sun',
 	qrCentre: 'script',
 	qrPictureWhole: false,
 	qrPictureZoom: 1,
@@ -294,6 +304,7 @@ export function parsePreferences(raw: unknown): Preferences {
 			typeof input.timerKeepAwake === 'boolean'
 				? input.timerKeepAwake
 				: DEFAULT_PREFERENCES.timerKeepAwake,
+		timerForPlayers: oneOf(TIMER_FOR_PLAYERS, input.timerForPlayers, 'sun'),
 		timerPerPlayer:
 			Number.isInteger(input.timerPerPlayer) &&
 			(input.timerPerPlayer as number) >= DAY_SECONDS_PER_ALIVE_MIN &&

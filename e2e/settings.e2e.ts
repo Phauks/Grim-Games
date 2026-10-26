@@ -237,12 +237,22 @@ test('the day timer sound and mode are in Storyteller settings', async ({ page }
 	const dialog = await openSettings(page, 'Storyteller');
 	await dialog.getByRole('combobox', { name: 'Timer sound' }).tap();
 	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
-	await dialog.getByRole('combobox', { name: 'Day timer' }).tap();
+	await dialog.getByRole('combobox', { name: 'Day timer', exact: true }).tap();
 	await page.getByRole('option', { name: 'Stopwatch' }).tap();
+	// How players' phones show it (Trevor, 2026-10-26): a sun unless chosen otherwise.
+	const forPlayers = dialog.getByRole('combobox', { name: 'Day timer on players’ phones' });
+	await expect(forPlayers).toContainText('Sun');
+	await forPlayers.tap();
+	await page.getByRole('option', { name: 'Timer', exact: true }).tap();
 	await page.reload();
 	const again = await openSettings(page, 'Storyteller');
 	await expect(again.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
-	await expect(again.getByRole('combobox', { name: 'Day timer' })).toContainText('Stopwatch');
+	await expect(again.getByRole('combobox', { name: 'Day timer', exact: true })).toContainText(
+		'Stopwatch'
+	);
+	await expect(again.getByRole('combobox', { name: 'Day timer on players’ phones' })).toContainText(
+		'Timer'
+	);
 	// The time per living player too (Trevor, 2026-10-19), typed or stepped.
 	const seconds = again.getByTestId('timer-per-player');
 	await expect(seconds).toHaveValue('30');
