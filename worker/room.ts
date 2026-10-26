@@ -32,6 +32,7 @@ import {
 	setName,
 	setChoosing,
 	setViewers,
+	setStorytellerBuild,
 	supportsProtocol,
 	townView,
 	unseat,
@@ -210,6 +211,9 @@ export class Room extends DurableObject<RoomEnv> {
 					return;
 				}
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
+				// Phones built before the Storyteller's app hear of it, and look for the update.
+				const built = setStorytellerBuild(room, message.builtAt);
+				if (built !== room) await this.save((room = built));
 				send(ws, hostView(room, this.present()));
 				send(ws, { type: 'watchers', count: this.watchers() });
 				if (this.admins() > 0) send(ws, { type: 'grimoire-wanted', on: true });

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import JoinPanel from '#lib/features/room/JoinPanel.svelte';
 	import { lastRoom } from '#lib/features/room/player.svelte.ts';
+	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
 
 	/**
 	 * The live room on /play (plan J12, Trevor 2026-10-23: no Room tab): Join game's code form
@@ -17,9 +18,11 @@
 		onCode?: (code: string) => void;
 		/** Told whether a room vote is open: its ballot is then the page (Trevor, 2026-10-26). */
 		onVoting?: (voting: boolean) => void;
+		/** The room this phone is in now, for the settings cog (plan E2); undefined when none. */
+		onRoom?: (room: string | undefined) => void;
 	}
 
-	let { initialCode, onCode, onVoting }: Props = $props();
+	let { initialCode, onCode, onVoting, onRoom }: Props = $props();
 	// svelte-ignore state_referenced_locally
 	let code = $state(initialCode === undefined ? lastRoom() : (initialCode ?? undefined));
 </script>
@@ -30,5 +33,7 @@
 		onCode={(c) => (onCode ? onCode(c) : (code = c))}
 		entry={initialCode !== undefined}
 		{onVoting}
+		onJoined={(joined) =>
+			onRoom?.(joined ? (normaliseRoomCode(code ?? '') ?? undefined) : undefined)}
 	/>
 {/key}

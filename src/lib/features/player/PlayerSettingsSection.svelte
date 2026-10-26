@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
-	import { playerSettings, SHEET_DENSITIES } from './player-settings.svelte.ts';
+	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
+	import DensityRow from './DensityRow.svelte';
 	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -37,14 +38,8 @@
 	onChange={(hideGuesses) => playerSettings.update({ hideGuesses })}
 />
 
-<SettingSelect
-	label={t('player.density')}
-	description={t('player.densityDetail')}
-	value={playerSettings.current.density}
-	options={SHEET_DENSITIES.map((value) => ({ value, label: t(`player.density.${value}`) }))}
-	defaultValue="normal"
-	onChange={(density) => playerSettings.update({ density })}
-/>
+<!-- Also in the player screen's own settings (plan E2). -->
+<DensityRow />
 
 <!-- Also at the top of every script sheet (Trevor, 2026-10-23; colours 2026-10-24). -->
 <SettingSelect
