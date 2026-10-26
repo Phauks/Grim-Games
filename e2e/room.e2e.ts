@@ -1101,7 +1101,7 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto('/join');
-	const grimView = phone.getByRole('button', { name: 'Grim view' });
+	const grimView = phone.getByRole('menuitem', { name: 'Grim view' });
 	// Grim view waits behind ⋯, so Join as player is the one big button (Trevor, 2026-10-26).
 	const more = phone.getByRole('button', { name: 'More ways to join' });
 	await typeCode(phone, code);

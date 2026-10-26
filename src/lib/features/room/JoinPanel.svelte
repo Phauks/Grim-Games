@@ -20,7 +20,7 @@
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
@@ -238,8 +238,6 @@
 	 * Players without a seat (Specters) join as players.
 	 */
 	let grimViewOpen = $state(false);
-	let moreOpen = $state(false);
-	let moreButton = $state<HTMLButtonElement>();
 	let grimPassword = $state('');
 	async function grimView(event: SubmitEvent) {
 		event.preventDefault();
@@ -347,39 +345,30 @@
 			<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
 			<!-- Grim view and Public Town are for fewer people, so they wait behind ⋯ and Join as
 			     player stays the one big button (Trevor, 2026-10-26). -->
-			<IconButton
-				icon="more"
+			<Menu
 				label={t('room.moreWays')}
-				bind:ref={moreButton}
-				aria-haspopup="dialog"
-				aria-expanded={moreOpen}
-				onclick={() => (moreOpen = !moreOpen)}
+				items={[
+					// Disabled until the room has a Grim view password.
+					{
+						value: 'grim-view',
+						label: t('room.grimView'),
+						disabled: !found?.grimView,
+						onSelect: () => (grimViewOpen = true)
+					},
+					// A tablet for the middle of the table shows the players' grim (Public Town,
+					// Trevor 2026-10-26).
+					{
+						value: 'town',
+						label: t('room.town.title'),
+						disabled: !canJoin,
+						onSelect: () => {
+							if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
+						}
+					}
+				]}
 			/>
 		</div>
 	</form>
-	<Popover bind:open={moreOpen} title={t('room.moreWays')} anchor={moreButton}>
-		<div class="more">
-			<!-- Disabled until the room has a Grim view password. -->
-			<Button
-				variant="quiet"
-				disabled={!found?.grimView}
-				onclick={() => {
-					moreOpen = false;
-					grimViewOpen = true;
-				}}>{t('room.grimView')}</Button
-			>
-			<!-- A tablet for the middle of the table shows the players' grim alone (Public Town,
-			     Trevor 2026-10-26). -->
-			<Button
-				variant="quiet"
-				disabled={!canJoin}
-				onclick={() => {
-					moreOpen = false;
-					if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
-				}}>{t('room.town.title')}</Button
-			>
-		</div>
-	</Popover>
 	<Dialog bind:open={scanning} title={t('share.scan')}>
 		{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} />{/if}
 	</Dialog>
@@ -537,9 +526,6 @@
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: var(--space-2);
-	}
-	.more {
-		display: grid;
 	}
 	.grim-view {
 		display: grid;
