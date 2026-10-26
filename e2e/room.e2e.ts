@@ -1091,6 +1091,8 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	// A password field (Trevor, 2026-10-22): masked, with an eye button that shows it.
 	const password = watch.getByLabel('Grim view password', { exact: true });
 	await expect(password).toHaveAttribute('type', 'password');
+	// In the plain account font, not the capitals-only control font, so case reads exactly.
+	await expect(password).not.toHaveCSS('font-family', /Cinzel/);
 	// In its place, but off while the link is.
 	await expect(password).toBeDisabled();
 	await watch.getByText('View-only grimoire link', { exact: true }).tap();
@@ -1135,6 +1137,7 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	const ask = phone.getByRole('dialog', { name: 'Grim view' });
 	const typed = ask.getByLabel('Grim view password', { exact: true });
 	await expect(typed).toHaveAttribute('type', 'password');
+	await expect(typed).not.toHaveCSS('font-family', /Cinzel/);
 	await expect(ask.getByRole('button', { name: 'Show password' })).toBeVisible();
 	await typed.fill('candle');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();

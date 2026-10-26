@@ -380,6 +380,7 @@
 				maxlength={64}
 				type="password"
 				autocomplete="off"
+				plain
 			/>
 			<ModalActions
 				onCancel={() => (grimViewOpen = false)}
