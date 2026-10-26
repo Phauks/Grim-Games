@@ -36,6 +36,7 @@
 		keepInside,
 		parseSeatLayout,
 		seatPoints,
+		seatPointsFacing,
 		seatTokenSize
 	} from '#lib/ui/seating/seat-layout.ts';
 	import {
@@ -82,10 +83,16 @@
 			/** The board's own game, whose background this town shows. */
 			gameId: string;
 			guessKey: string;
+			/** Mock-up only: the seat this player sits in. */
+			me?: string;
 		};
+		/** Mock-up only: start with the player's own seat at the bottom. */
+		meAtBottom?: boolean;
 	}
 
-	let { script, town }: Props = $props();
+	let { script, town, meAtBottom = false }: Props = $props();
+	// svelte-ignore state_referenced_locally
+	let facing = $state(meAtBottom);
 
 	// svelte-ignore state_referenced_locally
 	const code = town ? town.guessKey : lastRoom();
@@ -97,7 +104,7 @@
 
 	const table = $derived(town ?? player?.view?.public);
 	const seats = $derived(table?.seats ?? []);
-	const mine = $derived(player?.view?.me.seatId);
+	const mine = $derived(town ? town.me : player?.view?.me.seatId);
 	/** Where this game's guesses and seat notes are kept: per game (`gameKey`). */
 	const kept = $derived(town ? town.guessKey : code ? gameKey(code) : undefined);
 	let guesses = $state<Guesses>({});
@@ -140,7 +147,11 @@
 	);
 	// As on the board: each seat keeps one --u (16px) clear of the edge.
 	const unit = 16;
-	const points = $derived(keepInside(seatPoints(ids, layout, board), board, size / 2 + unit));
+	const points = $derived(
+		facing && mine
+			? seatPointsFacing(ids, layout, board, mine, size / 2 + unit)
+			: keepInside(seatPoints(ids, layout, board), board, size / 2 + unit)
+	);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
 	let rootFont = $state(16);
@@ -278,6 +289,15 @@
 			preset={background.kind === 'preset' ? background.id : undefined}
 			vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
 		/>
+		<!-- Mock-up: always here, so nothing moves; off and greyed until this phone has a seat. -->
+		<div class="facing" data-testid="me-at-bottom">
+			<Toggle
+				label="Me at the bottom"
+				checked={facing && !!mine}
+				disabled={!mine}
+				onChange={(on) => (facing = on)}
+			/>
+		</div>
 		{#if boardLooks.current.logo && logo && !logoFailed}
 			<ScriptLogo
 				src={logo}
@@ -571,6 +591,21 @@
 		font: inherit;
 		transform: translate(-50%, -50%);
 		cursor: pointer;
+	}
+	.seat {
+		transition:
+			left 0.4s ease,
+			top 0.4s ease;
+	}
+	/* Over the board, top right, as a label over the board is: a translucent dark pill. */
+	.facing {
+		position: absolute;
+		top: var(--space-1);
+		right: var(--space-1);
+		z-index: 2;
+		padding: 0 var(--space-2);
+		border-radius: 999px; /* px-ok: pill */
+		background: color-mix(in srgb, var(--surface) 70%, transparent);
 	}
 	.seat[data-mine] :global(.disc) {
 		outline: calc(0.2 * var(--u)) solid var(--accent);

@@ -325,3 +325,61 @@ export function parseSeatLayout(value: unknown): SeatLayout {
 	}
 	return layout;
 }
+
+/**
+ * Where each seat is drawn for one player who wants their own seat at the bottom, like a
+ * map with "you are here" nearest them. Only the drawing turns: seating order, and so who
+ * neighbours whom, stays as it is, and every token and name stays upright.
+ *
+ * On the plain ring each seat slides round the ring by the same number of places, so the
+ * ring still fills the board. Once any seat is placed by hand the whole town turns as one
+ * piece about the board's middle instead (on the board's own shape, so a tall phone stays
+ * filled), and shrinks only if it must to stay on the board; groups stay together.
+ */
+export function seatPointsFacing(
+	seatIds: readonly string[],
+	layout: SeatLayout,
+	board: BoardSize,
+	me: string,
+	/** Kept clear of the board's edges, in px, as `keepInside`. */
+	margin: number
+): SeatPoint[] {
+	const at = seatIds.indexOf(me);
+	if (at < 0) return keepInside(seatPoints(seatIds, layout, board), board, margin);
+	if (Object.keys(layout.placed).length === 0) {
+		const starts = ringSlots(seatIds, layout);
+		const total = Math.max(starts[seatIds.length], 1);
+		// Half way round from the top is the bottom.
+		const shift = 0.5 - starts[at] / total;
+		const { rx, ry } = ringRadii(layout.shape, board);
+		const angleAt = ringAngles(rx, ry, board);
+		const points = seatIds.map((_, i) => {
+			const t = angleAt(starts[i] / total + shift);
+			return { x: 50 + rx * Math.sin(t), y: 50 - ry * Math.cos(t) };
+		});
+		return keepInside(points, board, margin);
+	}
+	// Turned on the board's own shape (percentages), so the town still fills a tall phone
+	// instead of shrinking to fit across it.
+	const all = seatPoints(seatIds, layout, board);
+	const mine = all[at];
+	const fromMiddle = { dx: mine.x - 50, dy: mine.y - 50 };
+	if (Math.hypot(fromMiddle.dx, fromMiddle.dy) < 1) return keepInside(all, board, margin);
+	// The angle from the top, clockwise; the turn takes this seat to the bottom.
+	const turn = Math.PI - Math.atan2(fromMiddle.dx, -fromMiddle.dy);
+	const cos = Math.cos(turn);
+	const sin = Math.sin(turn);
+	const turned = all.map(({ x, y }) => {
+		const dx = x - 50;
+		const dy = y - 50;
+		return { dx: dx * cos - dy * sin, dy: dy * cos + dx * sin };
+	});
+	const { width, height } = board;
+	const halfX = width > 0 ? Math.max(50 - (margin / width) * 100, 1) : 50;
+	const halfY = height > 0 ? Math.max(50 - (margin / height) * 100, 1) : 50;
+	const reach = Math.max(
+		1,
+		...turned.map(({ dx, dy }) => Math.max(Math.abs(dx) / halfX, Math.abs(dy) / halfY))
+	);
+	return turned.map(({ dx, dy }) => ({ x: 50 + dx / reach, y: 50 + dy / reach }));
+}
