@@ -14,6 +14,13 @@
  * later fixed change is asked too (apply or keep). Without `modifiers` the counts never change
  * (Trevor, 2026-10-19: "There is no automatic changes of the count of players").
  *
+ * With `modifiers` on, a character that needs another in play (its `setupModifier` `requires`:
+ * the Choirboy needs the King, the Huntsman the Damsel) gets it, as Grimbits' tool does: the
+ * next seat to draft is offered only that character and can't refuse it, told which character
+ * in play put it there. A Townsfolk seat makes room for it when its type has none open (the
+ * Damsel, https://wiki.bloodontheclocktower.com/Huntsman). It is not forced when it is already
+ * drafted, or when no seat can take it.
+ *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
@@ -67,6 +74,18 @@ export interface DraftState {
 	ask?: DraftAsk;
 	/** An "any number" change has set the Outsider count. */
 	countSet?: boolean;
+	/** The character each pool character needs in play (the Choirboy's King). */
+	requires?: Record<CharacterId, CharacterId>;
+	/** Characters still to deal because another needs them, in order. */
+	forced?: ForcedPick[];
+	/** The character in play that put the current offer's only character there. */
+	forcedBy?: CharacterId;
+}
+
+/** A character dealt to the next seat because `by` needs it in play. */
+export interface ForcedPick {
+	id: CharacterId;
+	by: CharacterId;
 }
 
 type Random = () => number;
@@ -89,6 +108,15 @@ export function startDraft(
 				})
 			)
 		: undefined;
+	const ids = new Set(seated.map((c) => c.id));
+	const requires = config.modifiers
+		? Object.fromEntries(
+				seated.flatMap((c) => {
+					const needs = setupModifierFor(c)?.requires;
+					return needs && ids.has(needs) ? [[c.id, needs]] : [];
+				})
+			)
+		: {};
 	const state: DraftState = {
 		config,
 		slots: { ...counts },
@@ -98,7 +126,8 @@ export function startDraft(
 		picks: [],
 		offer: [],
 		offerIndex: 0,
-		...(modifiers ? { modifiers } : {})
+		...(modifiers ? { modifiers } : {}),
+		...(Object.keys(requires).length > 0 ? { requires } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
 }
@@ -136,6 +165,8 @@ export function takeOffer(state: DraftState, id: CharacterId, random: Random): D
 		slots: { ...next.slots, [type]: next.slots[type] - 1 },
 		offerIndex: 0
 	};
+	delete next.forcedBy;
+	next = forceRequired(next, id);
 	const ops = next.modifiers?.[id] ?? [];
 	if (ops.length > 0) {
 		next = advance({
@@ -144,7 +175,7 @@ export function takeOffer(state: DraftState, id: CharacterId, random: Random): D
 		});
 		if (next.ask) return { ...next, offer: [] };
 	}
-	return withOffer(next, state.config.offers[0] ?? 1, random);
+	return nextOffer(next, random);
 }
 
 /** The Storyteller chooses the count `ask` is about; a `total` not on offer is ignored. */
@@ -157,7 +188,54 @@ export function answerAsk(state: DraftState, total: number, random: Random): Dra
 	if (change?.op.kind === 'any' && change.op.type === 'outsider') next.countSet = true;
 	next = advance(next);
 	if (next.ask) return { ...next, offer: [] };
-	return withOffer(next, state.config.offers[0] ?? 1, random);
+	return nextOffer(next, random);
+}
+
+/**
+ * The next seat's offer: the first character still to be forced, which can't be refused, or
+ * else a fresh offer. A forced character whose type no longer has an open seat is dropped.
+ */
+function nextOffer(state: DraftState, random: Random): DraftState {
+	let next = state;
+	while (next.forced?.length) {
+		const [first, ...rest] = next.forced;
+		next = { ...next, forced: rest };
+		if (next.slots[next.types[first.id]] <= 0) continue;
+		return {
+			...next,
+			offer: [first.id],
+			offerIndex: Math.max(0, next.config.offers.length - 1),
+			forcedBy: first.by
+		};
+	}
+	if (next.forced) {
+		next = { ...next };
+		delete next.forced;
+	}
+	return withOffer(next, next.config.offers[0] ?? 1, random);
+}
+
+/**
+ * Queues the character `id` needs in play, unless it is drafted or queued already, taking it out
+ * of the pool. Its type needs an open seat; a Townsfolk seat becomes one when none is open.
+ */
+function forceRequired(state: DraftState, id: CharacterId): DraftState {
+	const needs = state.requires?.[id];
+	if (!needs || state.picks.includes(needs) || state.forced?.some((f) => f.id === needs))
+		return state;
+	const type = state.types[needs];
+	let slots = state.slots;
+	if (slots[type] <= 0) {
+		if (type === 'townsfolk' || slots.townsfolk <= 0) return state;
+		slots = { ...slots, townsfolk: slots.townsfolk - 1, [type]: slots[type] + 1 };
+	}
+	return {
+		...state,
+		slots,
+		pool: state.pool.filter((x) => x !== needs),
+		discarded: state.discarded.filter((x) => x !== needs),
+		forced: [...(state.forced ?? []), { id: needs, by: id }]
+	};
 }
 
 /** How many of `type` have been drafted. */

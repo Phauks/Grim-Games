@@ -175,6 +175,7 @@ export const modes = {
 	'modes.deal.restartConfirm': 'Start the draft again?',
 	'modes.deal.picks': 'Chosen',
 	'modes.deal.askTitle': 'Setup change',
+	'modes.deal.forced': 'This is your character, because this one is in play: ',
 	'modes.deal.askCount': 'How many {type} in all?',
 	'modes.deal.askKeep': 'Keep {count}',
 	'modes.deal.noOptions': 'No character fits. Change the open slots or the restricted characters.',
