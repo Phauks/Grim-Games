@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { fromScript, type Character, type CharacterId } from '#lib/core/data/index.ts';
 	import {
+		answerAbility,
 		answerAsk,
 		answerHidden,
 		canRedraft,
@@ -153,7 +154,10 @@
 	);
 	const done = $derived(
 		progress?.kind === 'draft'
-			? seatsLeft(progress.state) === 0 && !progress.state.ask && !progress.state.choice
+			? seatsLeft(progress.state) === 0 &&
+					!progress.state.ask &&
+					!progress.state.choice &&
+					!progress.state.ability
 			: picks.length >= seats.length
 	);
 	const seatId = $derived(seats[picks.length]);
@@ -185,7 +189,7 @@
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
 
 	function draw(slot: BagSlot) {
-		if (!progress || done || slot.state === 'drawn' || ask || choice) return;
+		if (!progress || done || slot.state === 'drawn' || ask || choice || ability) return;
 		if (slot.state === 'in-bag') {
 			if (held !== undefined) return void (choosing = true);
 			save({ ...progress, held: slot.number });
@@ -247,6 +251,17 @@
 	function answerChoice(isHidden: boolean) {
 		if (progress?.kind !== 'draft') return;
 		save({ kind: 'draft', state: answerHidden(progress.state, isHidden, Math.random) });
+	}
+
+	/**
+	 * A drafted character that gains a not-in-play character's ability (Grimbits' draft: the
+	 * Alchemist's Minion ability): the Storyteller chooses one that changes setup, or Later.
+	 */
+	const ability = $derived(progress?.kind === 'draft' ? progress.state.ability : undefined);
+	let abilityOpen = $derived(ability !== undefined && !revealOpen && !choosing);
+	function answerGained(chosen: CharacterId | undefined) {
+		if (progress?.kind !== 'draft') return;
+		save({ kind: 'draft', state: answerAbility(progress.state, chosen, Math.random) });
 	}
 
 	function refuse() {
@@ -503,6 +518,47 @@
 					</Button>
 				{/if}
 			</div>
+		</div>
+	</Dialog>
+{/if}
+
+<!-- Answered before the next tile, as a setup change is. -->
+{#if ability}
+	{@const drafted = byId.get(ability.characterId)}
+	<Dialog
+		bind:open={abilityOpen}
+		title={t('modes.deal.askTitle')}
+		closeButton={false}
+		beforeClose={() => false}
+	>
+		{#snippet subtitle()}{#if drafted}<CharacterBadge
+					characterId={drafted.id}
+					character={drafted}
+				/>{/if}{/snippet}
+		<div class="ask" data-testid="draft-ability">
+			<p class="prompt">{t('modes.deal.abilityPrompt')}</p>
+			<!-- Each ability that changes setup now, then Later. -->
+			<ul class="seats" data-testid="ability-options">
+				{#each ability.options as id (id)}
+					{@const option = byId.get(id)}
+					{#if option}
+						<li>
+							<Button onclick={() => answerGained(id)}>{t('modes.deal.abilityTake')}</Button>
+							<CharacterBadge characterId={option.id} character={option} />
+						</li>
+					{/if}
+				{/each}
+				<li>
+					<Button onclick={() => answerGained(undefined)}>{t('modes.deal.abilityLater')}</Button>
+				</li>
+			</ul>
+			{#if progress?.kind === 'draft' && canRedraft(progress.state)}
+				<div class="options">
+					<Button icon="undo" onclick={() => draftAgain(undefined)}>
+						{t('modes.deal.redraft')}
+					</Button>
+				</div>
+			{/if}
 		</div>
 	</Dialog>
 {/if}
