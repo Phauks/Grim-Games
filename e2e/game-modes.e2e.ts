@@ -228,15 +228,14 @@ async function keepFirst(page: Page): Promise<string> {
 	await expect(reveal).toBeHidden();
 	// A drafted Godfather, Xaan or the like asks the Storyteller for a count: keep the lowest.
 	const ask = page.getByTestId('draft-ask');
-	if (
-		await ask.waitFor({ timeout: 1000 }).then(
+	const shown = () =>
+		ask.waitFor({ timeout: 1000 }).then(
 			() => true,
 			() => false
-		)
-	) {
-		await ask.getByRole('button').first().tap();
-		await expect(ask).toBeHidden();
-	}
+		);
+	// Legion or an Atheist asks more than one count in turn.
+	for (let n = 0; n < 5 && (await shown()); n++) await ask.getByRole('button').first().tap();
+	await expect(ask).toBeHidden();
 	return id;
 }
 
@@ -305,6 +304,30 @@ test('Sushi Buffet asks the Storyteller for a drafted Godfather’s Outsiders be
 	// The held tile opens the next offer.
 	await bagTiles(page).first().tap();
 	await expect(rows(page)).toHaveCount(3);
+});
+
+// Grimbits' draft deals the King once a Choirboy is drafted
+// (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Choirboy).
+test('Sushi Buffet offers only the King after a Choirboy, saying why, with no refusing', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = ['king'];
+		deal.state.offerIndex = 2;
+		deal.state.forcedBy = 'choirboy';
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, `grim-games:mode-deal:v1:${gameId}`);
+	await page.reload();
+	await bagTiles(page).first().tap();
+	await expect(page.getByTestId('forced-by')).toContainText('Choirboy');
+	await expect(rows(page)).toHaveCount(1);
+	await expect(rows(page).first()).toHaveAttribute('data-character-id', 'king');
+	await expect(page.getByRole('button', { name: 'Refuse offer' })).toBeDisabled();
 });
 
 test('Sushi Buffet with the slot machine on: reels spin in each offer, one more crossed out per refusal', async ({

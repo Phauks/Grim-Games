@@ -179,3 +179,40 @@ describe('setup modifiers as drafted', () => {
 		expect(s.ask).toMatchObject({ characterId: 'atheist', type: 'outsider' });
 	});
 });
+
+// Grimbits' draft forces the character another needs (https://grimbits.com/draft-buffet/).
+describe('characters another needs in play', () => {
+	const live: DraftConfig = { ...config, modifiers: true };
+	const all = data.characters;
+	const take = (s: ReturnType<typeof startDraft>, id: string) =>
+		takeOffer({ ...s, offer: [id] }, id, seeded());
+
+	it('deals the King to the next seat after a Choirboy, with no refusing (https://wiki.bloodontheclocktower.com/Choirboy)', () => {
+		const s = take(startDraft(live, baseCounts(8), all, seeded()), 'choirboy');
+		expect(s.offer).toEqual(['king']);
+		expect(s.forcedBy).toBe('choirboy');
+		expect(canRefuse(s)).toBe(false);
+		expect(s.pool).not.toContain('king');
+		const next = takeOffer(s, 'king', seeded());
+		expect(next.picks).toEqual(['choirboy', 'king']);
+		expect(next.forcedBy).toBeUndefined();
+		expect(next.offer).toHaveLength(3);
+	});
+
+	it('makes room for the Damsel in a Townsfolk seat after a Huntsman (https://wiki.bloodontheclocktower.com/Huntsman)', () => {
+		let s = startDraft(live, baseCounts(8), all, seeded());
+		s = take(s, 'mutant');
+		// The one Outsider seat is drafted, so the Damsel takes a Townsfolk seat.
+		s = take(s, 'huntsman');
+		expect(s.offer).toEqual(['damsel']);
+		expect(s.slots).toMatchObject({ townsfolk: 3, outsider: 1 });
+	});
+
+	it('forces nothing when the King is already drafted, or without the mode’s modifiers', () => {
+		let s = take(startDraft(live, baseCounts(8), all, seeded()), 'king');
+		s = take(s, 'choirboy');
+		expect(s.forcedBy).toBeUndefined();
+		const off = take(startDraft(config, baseCounts(8), all, seeded()), 'choirboy');
+		expect(off.forcedBy).toBeUndefined();
+	});
+});

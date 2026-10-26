@@ -205,6 +205,8 @@
 	 * made dynamically for outsider count"): the Storyteller chooses before the next tile.
 	 */
 	const ask = $derived(progress?.kind === 'draft' ? progress.state.ask : undefined);
+	/** The character in play that sets this seat's only offer (the Choirboy's King). */
+	const forcedBy = $derived(progress?.kind === 'draft' ? progress.state.forcedBy : undefined);
 	let askOpen = $derived(ask !== undefined && !revealOpen && !choosing);
 	function answer(total: number) {
 		if (progress?.kind !== 'draft') return;
@@ -292,11 +294,19 @@
 >
 	<div class="choose">
 		<p class="seat">{label(seatId)}</p>
-		<p class="prompt">
-			{dealtType
-				? t('modes.deal.dealtType', { type: TYPE_LABELS[dealtType] })
-				: t('modes.deal.offer')}
-		</p>
+		<!-- A character another needs in play (Grimbits' draft): the player is told which. -->
+		{#if forcedBy}
+			{@const by = byId.get(forcedBy)}
+			<p class="prompt" data-testid="forced-by">
+				{t('modes.deal.forced')}{#if by}<CharacterBadge characterId={by.id} character={by} />{/if}
+			</p>
+		{:else}
+			<p class="prompt">
+				{dealtType
+					? t('modes.deal.dealtType', { type: TYPE_LABELS[dealtType] })
+					: t('modes.deal.offer')}
+			</p>
+		{/if}
 		{#if slotMachine && progress?.kind === 'draft' && assignment?.kind === 'draft'}
 			<OfferReels
 				offer={options}
