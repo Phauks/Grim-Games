@@ -32,8 +32,6 @@ export interface LiveGame {
 	phones: number;
 	/** Night, day or setup, once the Storyteller's board is open. */
 	phase?: PublicPhase;
-	/** True while the room holds the whole grimoire, so an admin sees more than the table. */
-	grimoire: boolean;
 }
 
 export interface LiveGameList {
@@ -45,15 +43,13 @@ export function liveGame(
 	room: RoomState,
 	script: Script | undefined,
 	phones: number,
-	grimoire: boolean,
 	active: number
 ): LiveGame {
 	const game: LiveGame = {
 		code,
 		active,
 		preview: roomPreview(room, script),
-		phones,
-		grimoire
+		phones
 	};
 	const phase = room.public?.corner?.phase;
 	if (phase) game.phase = phase;

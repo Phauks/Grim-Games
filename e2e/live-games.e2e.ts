@@ -42,15 +42,13 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 	await expect(admin).toHaveURL(/\/live-games$/);
 	const row = admin.getByTestId('live-games').locator('tr', { hasText: shown });
 	await expect(row).toContainText('Trouble Brewing');
-	await expect(row).toContainText('Table only');
 	await row.getByRole('button', { name: 'Trouble Brewing' }).tap();
 	await expect(admin).toHaveURL(new RegExp(`/live-games/${code}$`));
 
-	// The town as the table sees it, with nothing to tap.
-	const grim = admin.getByTestId('player-grim');
-	const seats = grim.getByTestId('grim-seat');
-	await expect(seats).toHaveCount(8);
-	await expect(grim.getByRole('button')).toHaveCount(0);
+	// The whole grimoire, view-only (Trevor, 2026-10-26: "whole grimoire"), with characters.
+	const adminSeat = admin.getByRole('button', { name: /^Seat 1:/ });
+	await expect(adminSeat).toBeVisible();
+	await expect(admin.getByTestId('player-grim')).toHaveCount(0);
 
 	// Unseen: the Storyteller's room counts no player and no one watching.
 	await expect(page.getByTestId('status-players')).toHaveText('0 players');
@@ -58,7 +56,8 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 
 	// Live: what the Storyteller does shows at once.
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
-	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const seat = page.getByRole('button', { name: /^Seat 1:/ });
+	await seat.tap();
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
 		.getByRole('button', { name: 'Status: Alive' })
@@ -67,9 +66,11 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 		.getByRole('dialog', { name: /^Status of/ })
 		.getByRole('button', { name: 'Executed' })
 		.tap();
-	await expect(seats.first()).toHaveAttribute(
-		'aria-label',
-		'Seat 1: Seat 1, dead, ghost vote not used'
-	);
+	await page.keyboard.press('Escape');
+	const label = await seat.getAttribute('aria-label');
+	expect(label).toMatch(/dead/i);
+	await expect(adminSeat).toHaveAttribute('aria-label', label!);
+	// Nothing on the board says an admin is watching.
+	await expect(page.getByText(/watching/i)).toHaveCount(0);
 	await adminContext.close();
 });

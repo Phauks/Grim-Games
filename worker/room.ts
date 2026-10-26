@@ -137,10 +137,9 @@ export class Room extends DurableObject<RoomEnv> {
 		const room = await this.load();
 		if (!room) return undefined;
 		const script = await this.ctx.storage.get<ScriptView>('script');
-		const grimoire = (await this.ctx.storage.get<GrimoireView>('grimoire')) !== undefined;
 		const expires = await this.ctx.storage.getAlarm();
 		const active = expires === null ? Date.now() : expires - ROOM_IDLE_MS;
-		return liveGame(code, room, script?.script, this.present().size, grimoire, active);
+		return liveGame(code, room, script?.script, this.present().size, active);
 	}
 
 	async fetch(request: Request): Promise<Response> {
@@ -188,6 +187,8 @@ export class Room extends DurableObject<RoomEnv> {
 			send(ws, townView(room));
 			const grimoire = await this.ctx.storage.get<GrimoireView>('grimoire');
 			if (grimoire) send(ws, grimoire);
+			// The Storyteller's device sends the grimoire from now on, if it isn't already.
+			this.tellGrimoireWanted();
 			return;
 		}
 		await this.touch();
@@ -209,6 +210,7 @@ export class Room extends DurableObject<RoomEnv> {
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
 				send(ws, hostView(room, this.present()));
 				send(ws, { type: 'watchers', count: this.watchers() });
+				if (this.admins() > 0) send(ws, { type: 'grimoire-wanted', on: true });
 				return;
 			}
 			if (message.role === 'viewer') {
@@ -325,8 +327,6 @@ export class Room extends DurableObject<RoomEnv> {
 				await this.ctx.storage.delete('grimoire');
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					// An admin reconnects at once and so sees the room without it.
-					if (to?.role === 'admin') socket.close(1012, 'Grimoire gone');
 					if (to?.role !== 'viewer') continue;
 					send(socket, { type: 'refused', reason: 'not-viewer' });
 					socket.close(4403, 'Link turned off');
@@ -336,9 +336,11 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			}
 			case 'grimoire': {
-				if (!room.viewerKeyHash || !isSharedGrimoire(message.grimoire)) return;
+				const admins = this.admins() > 0;
+				if ((!room.viewerKeyHash && !admins) || !isSharedGrimoire(message.grimoire)) return;
 				const view: GrimoireView = { type: 'grimoire', grimoire: message.grimoire };
-				await this.ctx.storage.put('grimoire', view);
+				// Kept only for the view-only link; an admin's copy is passed on and never stored.
+				if (room.viewerKeyHash) await this.ctx.storage.put('grimoire', view);
 				const text = JSON.stringify(view);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
@@ -424,6 +426,7 @@ export class Room extends DurableObject<RoomEnv> {
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const who = ws.deserializeAttachment() as Attachment | null;
 		if (who?.role === 'viewer') this.tellWatchers(ws);
+		if (who?.role === 'admin') this.tellGrimoireWanted(ws);
 		if (who?.role === 'player') {
 			const room = await this.load();
 			if (room) this.tellHost(room, ws);
@@ -459,6 +462,26 @@ export class Room extends DurableObject<RoomEnv> {
 				count++;
 		}
 		return count;
+	}
+
+	/** Admins watching from Live games now, leaving out one that is going. */
+	private admins(going?: WebSocket): number {
+		let count = 0;
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'admin' && socket !== going && socket.readyState === WebSocket.OPEN)
+				count++;
+		}
+		return count;
+	}
+
+	/** Tells the Storyteller's device whether an admin wants the whole grimoire now. */
+	private tellGrimoireWanted(going?: WebSocket): void {
+		const text = JSON.stringify({ type: 'grimoire-wanted', on: this.admins(going) > 0 });
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'host') socket.send(text);
+		}
 	}
 
 	/** Sends the Storyteller's device how many are watching. */

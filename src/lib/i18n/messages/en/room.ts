@@ -204,9 +204,6 @@ export const room = {
 	'room.liveGames.seated': 'Seated',
 	'room.liveGames.seatedOf': '{seated} of {seats}',
 	'room.liveGames.phones': 'Phones',
-	'room.liveGames.grimoire': 'Grimoire',
-	'room.liveGames.grimoireShared': 'Whole grimoire',
-	'room.liveGames.grimoireTable': 'Table only',
 	'room.liveGames.active': 'Last active',
 	'room.liveGames.loadFailed': 'Could not load live games',
 	'room.liveGames.adminsOnly': 'Only admin accounts see live games.'

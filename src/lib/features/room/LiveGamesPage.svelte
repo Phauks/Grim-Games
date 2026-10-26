@@ -34,11 +34,8 @@
 		g.preview.seats === undefined
 			? t('common.none')
 			: t('room.liveGames.seatedOf', { seated: g.preview.seated ?? 0, seats: g.preview.seats });
-	const grimoire = (g: LiveGame) =>
-		g.grimoire ? t('room.liveGames.grimoireShared') : t('room.liveGames.grimoireTable');
 
-	type Column =
-		'code' | 'script' | 'storyteller' | 'phase' | 'seated' | 'phones' | 'grimoire' | 'active';
+	type Column = 'code' | 'script' | 'storyteller' | 'phase' | 'seated' | 'phones' | 'active';
 	const columns = $derived<DataColumn<Column, LiveGame>[]>([
 		{
 			id: 'code',
@@ -84,14 +81,6 @@
 			width: '8%',
 			wide: true,
 			value: (g) => g.phones
-		},
-		{
-			id: 'grimoire',
-			flush: true,
-			label: t('room.liveGames.grimoire'),
-			width: '12%',
-			wide: true,
-			value: grimoire
 		},
 		{
 			id: 'active',
@@ -173,8 +162,6 @@
 						{seated(game)}
 					{:else if column.id === 'phones'}
 						{game.phones}
-					{:else if column.id === 'grimoire'}
-						{grimoire(game)}
 					{:else}
 						{time.format(game.active)}
 					{/if}
