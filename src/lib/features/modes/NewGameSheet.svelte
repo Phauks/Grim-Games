@@ -19,9 +19,11 @@
 		game: Game;
 		/** Start game was tapped (Game time runs). */
 		started: boolean;
+		/** Already ended: in History, so there is nothing to ask. */
+		ended?: boolean;
 	}
 
-	let { game, started }: Props = $props();
+	let { game, started, ended = false }: Props = $props();
 
 	let asking = $state(false);
 	let open = $state(false);
@@ -29,7 +31,7 @@
 	/** Game info's New game: asks first when there is a game to end. */
 	export function begin() {
 		const drop = !started && notBegun(game);
-		if (drop) show(true);
+		if (drop || ended) show(drop);
 		else asking = true;
 	}
 	function show(drop: boolean) {

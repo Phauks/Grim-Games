@@ -7,8 +7,11 @@
 
 	interface Props extends HTMLButtonAttributes {
 		icon?: IconSlot;
-		/** Renders a link styled as a button; pass a path from `resolve()` in `$app/paths`. */
-		href?: ResolvedPathname;
+		/**
+		 * Renders a link styled as a button; pass a path from `resolve()` in `$app/paths`, or an
+		 * https address, which opens in a new tab.
+		 */
+		href?: ResolvedPathname | `https://${string}`;
 		/** `accent` is the one main action in a group (e.g. Refresh). */
 		/**
 		 * `danger` marks a destructive action: a red fill, with the text colour of every other
@@ -27,11 +30,18 @@
 </script>
 
 {#if href}
-	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- href is already resolved -->
-	<a class="button" data-variant={variant} {href}>
+	<!-- eslint-disable svelte/no-navigation-without-resolve -- href is already resolved, or https -->
+	<a
+		class="button"
+		data-variant={variant}
+		{href}
+		target={href.startsWith('https://') ? '_blank' : undefined}
+		rel={href.startsWith('https://') ? 'noopener noreferrer' : undefined}
+	>
 		{#if icon}<Icon name={icon} />{/if}
 		<span>{@render children()}</span>
 	</a>
+	<!-- eslint-enable svelte/no-navigation-without-resolve -->
 {:else}
 	<button class="button" data-variant={variant} type="button" {...rest}>
 		{#if icon}<Icon name={icon} />{/if}

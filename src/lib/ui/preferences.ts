@@ -83,12 +83,19 @@ export interface Preferences {
 	 * 2026-10-21); Copy and Share still work.
 	 */
 	hideWatchLink: boolean;
+	/** How loud every app sound plays on this device, 0 (silent) to 1 (plan U1). */
+	soundVolume: number;
 	/** The sound when the day timer runs out (Trevor, 2026-10-17). */
 	timerSound: TimerSound;
 	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
 	timerMode: TimerMode;
-	/** The device vibrates when the day timer runs out (Trevor, 2026-10-18). */
+	/**
+	 * The device vibrates with its alerts: the day timer running out (Trevor, 2026-10-18) and
+	 * a Back to town call (plan U2).
+	 */
 	timerVibrate: boolean;
+	/** The sound a player's phone makes when the Storyteller calls Back to town (plan U2). */
+	callSound: TimerSound;
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
@@ -159,6 +166,8 @@ export interface ScaleRange {
 export const TEXT_SCALE: ScaleRange = { min: 0.75, max: 1.5, step: 0.05 };
 /** Icon size, same range as text. */
 export const ICON_SCALE: ScaleRange = { min: 0.75, max: 1.5, step: 0.05 };
+/** Sound volume: silent to full in 5% steps (plan U1). */
+export const SOUND_VOLUME: ScaleRange = { min: 0, max: 1, step: 0.05 };
 
 export type TextScale = number;
 export type IconScale = number;
@@ -198,9 +207,11 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	tileOrderRandom: false,
 	ownWording: false,
 	hideWatchLink: false,
+	soundVolume: 1,
 	timerSound: 'bell',
 	timerMode: 'down',
 	timerVibrate: true,
+	callSound: 'clocktower',
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	qrCentre: 'script',
@@ -280,9 +291,11 @@ export function parsePreferences(raw: unknown): Preferences {
 		qrPictureCorners: oneOf(QR_PICTURE_CORNERS, input.qrPictureCorners, 'rounded'),
 		qrModules: oneOf(QR_MODULES, input.qrModules, 'square'),
 		qrFinders: oneOf(QR_FINDERS, input.qrFinders, 'square'),
+		soundVolume: parseScale(input.soundVolume, SOUND_VOLUME, DEFAULT_PREFERENCES.soundVolume),
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,
+		callSound: oneOf(TIMER_SOUNDS, input.callSound, DEFAULT_PREFERENCES.callSound),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
 			: DEFAULT_PREFERENCES.timerMode,

@@ -50,6 +50,7 @@ import ph_clipboard_bold from '~icons/ph/clipboard-bold';
 import ph_clipboard_text_bold from '~icons/ph/clipboard-text-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
+import ph_coffee_bold from '~icons/ph/coffee-bold';
 import ph_coin_bold from '~icons/ph/coin-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
@@ -90,6 +91,7 @@ import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
 import ph_globe_bold from '~icons/ph/globe-bold';
 import ph_hammer_bold from '~icons/ph/hammer-bold';
+import ph_hand_coins_bold from '~icons/ph/hand-coins-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
 import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
 import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
@@ -131,6 +133,7 @@ import ph_moon_stars_bold from '~icons/ph/moon-stars-bold';
 import ph_note_pencil_bold from '~icons/ph/note-pencil-bold';
 import ph_notepad_bold from '~icons/ph/notepad-bold';
 import ph_paint_brush_bold from '~icons/ph/paint-brush-bold';
+import ph_paint_bucket_bold from '~icons/ph/paint-bucket-bold';
 import ph_palette_bold from '~icons/ph/palette-bold';
 import ph_pause_bold from '~icons/ph/pause-bold';
 import ph_pause_circle_bold from '~icons/ph/pause-circle-bold';
@@ -260,6 +263,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-bold': ph_clipboard_text_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
+	'ph:coffee-bold': ph_coffee_bold,
 	'ph:coin-bold': ph_coin_bold,
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
@@ -300,6 +304,7 @@ const icons: IconMap = {
 	'ph:ghost-bold': ph_ghost_bold,
 	'ph:globe-bold': ph_globe_bold,
 	'ph:hammer-bold': ph_hammer_bold,
+	'ph:hand-coins-bold': ph_hand_coins_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
 	'ph:hand-grabbing-bold': ph_hand_grabbing_bold,
 	'ph:hand-heart-bold': ph_hand_heart_bold,
@@ -341,6 +346,7 @@ const icons: IconMap = {
 	'ph:note-pencil-bold': ph_note_pencil_bold,
 	'ph:notepad-bold': ph_notepad_bold,
 	'ph:paint-brush-bold': ph_paint_brush_bold,
+	'ph:paint-bucket-bold': ph_paint_bucket_bold,
 	'ph:palette-bold': ph_palette_bold,
 	'ph:pause-bold': ph_pause_bold,
 	'ph:pause-circle-bold': ph_pause_circle_bold,

@@ -1,9 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
-// A new script means a new game, never a change mid-game (Trevor, 2026-10-24): Game info's
-// New game opens "a tiny modal version of the new game screen", and the room, seat count
-// and player names carry over.
+// A new script means a new game, never a change mid-game (Trevor, 2026-10-24): New game in
+// the board's ⋯ menu opens "a tiny modal version of the new game screen", and the room, seat
+// count and player names carry over. It was in Game info until 2026-10-26, and is on ⋯ only
+// once the game has ended, in End game's place (Trevor, 2026-10-26).
 
 async function openGameInfo(page: Page) {
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -18,6 +19,29 @@ async function openGameInfo(page: Page) {
 	return page.getByRole('dialog', { name: 'Game info', exact: true });
 }
 
+/** Ends the game from ⋯, with Good winning. */
+async function endGame(page: Page) {
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game' })
+		.tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
+}
+
+/** New game is in the board's ⋯ menu once the game has ended (Trevor, 2026-10-26). */
+async function newGameFromMenu(page: Page) {
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'New game' })
+		.tap();
+}
+
 async function startTroubleBrewing(page: Page) {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
@@ -25,7 +49,7 @@ async function startTroubleBrewing(page: Page) {
 	await toBoard(page);
 }
 
-test('New game in Game info asks first, then starts the next game with the same players', async ({
+test('New game in the board menu, once the game ends, starts the next game with the same players', async ({
 	page
 }) => {
 	await startTroubleBrewing(page);
@@ -44,27 +68,21 @@ test('New game in Game info asks first, then starts the next game with the same 
 	await expect(sheet).toBeHidden();
 
 	// The pencil no longer changes the script.
-	let info = await openGameInfo(page);
+	const info = await openGameInfo(page);
+	await expect(info.getByRole('button', { name: 'New game' })).toHaveCount(0);
 	await info.getByTestId('game-info-edit').tap();
 	const edit = page.getByRole('dialog', { name: 'Edit game info' });
 	await expect(edit.getByRole('radiogroup', { name: 'Script' })).toHaveCount(0);
 	await edit.getByRole('button', { name: 'Cancel' }).tap();
 
-	// A game under way is ended only after asking; Cancel keeps it.
-	info = await openGameInfo(page);
-	await info.getByTestId('game-info-new-game').tap();
-	const ask = page.getByRole('alertdialog', { name: 'Start a new game?' });
-	await ask.getByRole('button', { name: 'Cancel' }).tap();
-	await expect(ask).toBeHidden();
-	await expect(page.getByRole('dialog', { name: 'New game' })).toHaveCount(0);
-
-	info = await openGameInfo(page);
-	await info.getByTestId('game-info-new-game').tap();
-	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	// The game is ended first; New game then opens with nothing to ask.
+	await endGame(page);
+	await newGameFromMenu(page);
+	await expect(page.getByRole('alertdialog', { name: 'Start a new game?' })).toHaveCount(0);
 	// New game in a sheet over the board: script, mode and room vote, and the same script
 	// preview as the New game screen (Trevor, 2026-10-24).
 	const newGame = page.getByRole('dialog', { name: 'New game' });
-	await expect(newGame.getByRole('button', { name: 'Room vote' })).toBeVisible();
+	await expect(newGame.getByRole('link', { name: 'Room vote' })).toBeVisible();
 	const preview = newGame.getByTestId('script-preview');
 	await expect(preview).toContainText('Washerwoman');
 	await newGame
@@ -87,9 +105,7 @@ test('New game in Game info asks first, then starts the next game with the same 
 	await expect(page.getByTestId('game-over')).toBeVisible();
 });
 
-test('before anything happens, New game opens straight away and closing it changes nothing', async ({
-	page
-}) => {
+test('closing New game from an ended game changes nothing', async ({ page }) => {
 	await startTroubleBrewing(page);
 	// Character selection is on ⋯ until Start game.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -98,19 +114,14 @@ test('before anything happens, New game opens straight away and closing it chang
 	await page.keyboard.press('Escape');
 	await expect(more).toBeHidden();
 
-	const info = await openGameInfo(page);
-	await info.getByTestId('game-info-new-game').tap();
-	await expect(page.getByRole('alertdialog', { name: 'Start a new game?' })).toHaveCount(0);
+	await endGame(page);
+	await newGameFromMenu(page);
 	const newGame = page.getByRole('dialog', { name: 'New game' });
 	await expect(newGame).toBeVisible();
 	await newGame.getByRole('button', { name: 'Close' }).tap();
 	await expect(newGame).toBeHidden();
 	await expect(page.getByTestId('script-title')).toContainText('Trouble Brewing');
-	await expect(page.getByTestId('game-over')).toHaveCount(0);
-
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await more.getByRole('button', { name: 'Character selection' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
 });
 
 test('players carry only into the game started from that sheet, never a later one', async ({
@@ -127,16 +138,16 @@ test('players carry only into the game started from that sheet, never a later on
 	const board = page.url();
 
 	// The sheet is left without starting or closing it: a reload, or leaving the board.
-	const info = await openGameInfo(page);
-	await info.getByTestId('game-info-new-game').tap();
+	await endGame(page);
+	await newGameFromMenu(page);
 	await expect(page.getByRole('dialog', { name: 'New game' })).toBeVisible();
 	await page.reload();
 
-	// A brand-new game from New game starts with no names, and the old game runs on.
+	// A brand-new game from New game starts with no names, and the old game stays as it was.
 	await startTroubleBrewing(page);
 	expect(page.url()).not.toBe(board);
 	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 1:"]')).toBeAttached();
 	await expect(page.locator('[data-testid="seat"][aria-label*="Ana"]')).toHaveCount(0);
 	await page.goto(board);
-	await expect(page.getByTestId('game-over')).toHaveCount(0);
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
 });

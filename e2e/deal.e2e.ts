@@ -8,6 +8,18 @@ import { pickScript } from './new-game.ts';
 const choice = (page: Page, name: string) =>
 	page.getByRole('button', { name, exact: true }).and(page.locator('[aria-pressed]'));
 
+/** Names seat `number` on the board: a phone with that name sits there (Trevor, 2026-10-26). */
+async function nameSeat(page: Page, board: string, number: number, name: string) {
+	await page.goto(board);
+	await page.getByRole('button', { name: new RegExp(`^Seat ${number}:`) }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
+	await sheet.getByRole('textbox', { name: 'Player name' }).fill(name);
+	await sheet.getByRole('textbox', { name: 'Player name' }).press('Enter');
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+}
+
 test('Deal gives every seat a character, and a seated phone holds to see its own', async ({
 	page,
 	browser
@@ -35,9 +47,7 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	const you = phone.getByRole('dialog', { name: 'You', exact: true });
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await you.getByRole('button', { name: 'Save' }).tap();
-	const seatFor = page.getByRole('combobox', { name: 'Seat for Alex' });
-	await seatFor.tap();
-	await page.getByRole('option', { name: 'Seat 2', exact: true }).tap();
+	await nameSeat(page, board, 2, 'Alex');
 	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 2 as Alex.');
 	// Nothing to see before the deal.
 	await expect(phone.getByTestId('your-character')).toHaveCount(0);

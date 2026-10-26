@@ -12,15 +12,25 @@ import {
 } from './script-vote.ts';
 import type { RoomState } from './room.ts';
 
-/** The script vote's count over members here now, or who have voted anyway. */
+/**
+ * The script vote's count over members here now, or who have voted anyway, with who they
+ * are and whether each has voted.
+ */
 export function scriptVoteCount(room: RoomState, present?: ReadonlySet<string>): ScriptVoteTally {
 	const vote = room.scriptVote!;
-	return tallyScriptVote(
-		vote,
-		room.members
-			.filter((m) => !present || present.has(m.memberId) || !!vote.ballots[m.memberId])
-			.map((m) => m.memberId)
+	const counted = room.members.filter(
+		(m) => !present || present.has(m.memberId) || !!vote.ballots[m.memberId]
 	);
+	return {
+		...tallyScriptVote(
+			vote,
+			counted.map((m) => m.memberId)
+		),
+		people: counted.map((m) => ({
+			...(m.name ? { name: m.name } : {}),
+			voted: !!vote.ballots[m.memberId]
+		}))
+	};
 }
 
 /** Opens a vote on the next script, replacing any open one; a malformed one changes nothing. */

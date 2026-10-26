@@ -1,6 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import {
+	canCallTown,
 	canReveal,
 	castScriptBallot,
 	castVote,
@@ -32,6 +33,7 @@ import {
 	setChoosing,
 	setViewers,
 	supportsProtocol,
+	townView,
 	unseat,
 	viewerFailed,
 	withoutRequests,
@@ -64,7 +66,8 @@ const ROOM_IDLE_MS = 24 * 60 * 60 * 1000;
 const MAX_MESSAGE_BYTES = 64 * 1024;
 const KEY_PATTERN = /^[0-9a-f]{32,128}$/;
 
-type Attachment = { role: 'host' } | { role: 'player'; memberId: string } | { role: 'viewer' };
+type Attachment =
+	{ role: 'host' } | { role: 'player'; memberId: string } | { role: 'viewer' } | { role: 'town' };
 
 async function sha256(text: string): Promise<string> {
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -78,6 +81,9 @@ async function sha256(text: string): Promise<string> {
  * public table and their own place in it.
  */
 export class Room extends DurableObject<RoomEnv> {
+	/** When the last Back to town call went out; forgotten if the room sleeps, which is fine. */
+	private lastCallTown: number | undefined;
+
 	private async load(): Promise<RoomState | undefined> {
 		const room = await this.ctx.storage.get<RoomState>('room');
 		return room && withoutRequests(room);
@@ -171,6 +177,15 @@ export class Room extends DurableObject<RoomEnv> {
 				this.tellWatchers();
 				return;
 			}
+			if (message.role === 'town') {
+				// A Public Town display: the public table and the script, as every phone has
+				// them, and no member, so it is in no list or count.
+				ws.serializeAttachment({ role: 'town' } satisfies Attachment);
+				const script = await this.ctx.storage.get<ScriptView>('script');
+				if (script) send(ws, script);
+				send(ws, townView(room));
+				return;
+			}
 			const memberId = hash.slice(0, 24);
 			const joined = join(room, memberId, this.present());
 			if (!joined) {
@@ -188,7 +203,7 @@ export class Room extends DurableObject<RoomEnv> {
 			if (reveal && canReveal(room, reveal.gameId)) send(ws, reveal);
 			return;
 		}
-		if (!who || who.role === 'viewer') return;
+		if (!who || who.role === 'viewer' || who.role === 'town') return;
 
 		if (who.role === 'player') {
 			const id = who.memberId;
@@ -244,7 +259,7 @@ export class Room extends DurableObject<RoomEnv> {
 				const text = JSON.stringify(view);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'player') socket.send(text);
+					if (to?.role === 'player' || to?.role === 'town') socket.send(text);
 				}
 				return;
 			}
@@ -323,6 +338,18 @@ export class Room extends DurableObject<RoomEnv> {
 			case 'roles':
 				room = setRoles(room, message.gameId, message.show, message.roles);
 				break;
+			case 'call-town': {
+				// Not kept: only phones here now hear it (plan U2).
+				const now = Date.now();
+				if (!canCallTown(this.lastCallTown, now)) return;
+				this.lastCallTown = now;
+				const text = JSON.stringify({ type: 'call-town' } satisfies ServerMessage);
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'player') socket.send(text);
+				}
+				return;
+			}
 			case 'close':
 				this.broadcastClosed('Room closed');
 				await this.ctx.storage.deleteAll();
@@ -397,11 +424,16 @@ export class Room extends DurableObject<RoomEnv> {
 		await this.ctx.storage.put('room', room);
 		const present = this.present();
 		const host = JSON.stringify(hostView(room, present));
+		const town = JSON.stringify(townView(room));
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
 			if (!who || who.role === 'viewer') continue;
 			socket.send(
-				who.role === 'host' ? host : JSON.stringify(playerView(room, who.memberId, present))
+				who.role === 'host'
+					? host
+					: who.role === 'town'
+						? town
+						: JSON.stringify(playerView(room, who.memberId, present))
 			);
 		}
 	}

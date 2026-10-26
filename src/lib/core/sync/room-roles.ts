@@ -43,6 +43,14 @@ export function setRoles(room: RoomState, gameId: unknown, show: unknown, raw: u
 	return { ...room, roles: { gameId, show, seats, seen } };
 }
 
+/** Characters belong to their game: a new one starts with none. */
+export function withoutRoles(room: RoomState): RoomState {
+	if (!room.roles) return room;
+	const { roles: _gone, ...rest } = room;
+	void _gone;
+	return rest;
+}
+
 /** The roles of the game on the table, if the room has any. */
 function current(room: RoomState): RoomRoles | undefined {
 	return room.roles?.gameId === room.gameId ? room.roles : undefined;

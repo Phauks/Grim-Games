@@ -13,6 +13,9 @@ import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 import { travellersInPlay, type TravellerInPlay } from '#lib/features/player/travellers-in-play.ts';
 import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
+import { hearCallTown, unlockOnFirstTap } from '#lib/features/sound/sound.ts';
+import { t } from '#lib/i18n/locale.svelte.ts';
+import { toast } from '#lib/ui/primitives/toaster.ts';
 
 const STORAGE_KEY = 'grim-games-room-player';
 
@@ -103,6 +106,7 @@ export class RoomPlayer {
 
 	constructor(code: string) {
 		this.code = code;
+		unlockOnFirstTap();
 		writeStoredText(LAST_ROOM_KEY, code);
 		rememberRoom(code);
 		this.#socket = new RoomSocket(
@@ -125,6 +129,9 @@ export class RoomPlayer {
 				} else if (m.type === 'script') this.script = m.script;
 				else if (m.type === 'reveal') {
 					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
+				} else if (m.type === 'call-town') {
+					hearCallTown();
+					toast(t('room.callTownHeard'));
 				}
 			},
 			() => this.sendLook()

@@ -1,10 +1,10 @@
 /**
  * Settings profiles (plan S18, Trevor 2026-10-23: "save backgrounds and settings as
  * profiles, and when they are starting a game, they can shift between profiles"). A profile is
- * a named set of the Theme, Text, Icons, Board, Tokens and Storyteller settings. What belongs to
- * the device (Player, Data, Account, Allow zoom, language, a game's own background) is never in
- * one. Profiles sync with a signed-in account; an uploaded background picture stays on the
- * device that added it (an account document is at most 1 MB).
+ * a named set of the Theme, Text, Icons, Board, Tokens, Storyteller and Sound settings. What
+ * belongs to the device (Player, Data, Account, Allow zoom, volume, language, a game's own
+ * background) is never in one. Profiles sync with a signed-in account; an uploaded background
+ * picture stays on the device that added it (an account document is at most 1 MB).
  */
 import {
 	PRESETS,
@@ -16,7 +16,10 @@ import { parseStepFocus, type StepFocus } from '#lib/features/grimoire/step-focu
 import { parsePreferences, type Preferences } from '#lib/ui/preferences.ts';
 
 /** Preferences that stay with the device whichever profile is in use. */
-export const DEVICE_PREFERENCES = ['allowZoom'] as const satisfies readonly (keyof Preferences)[];
+export const DEVICE_PREFERENCES = [
+	'allowZoom',
+	'soundVolume'
+] as const satisfies readonly (keyof Preferences)[];
 type DevicePreference = (typeof DEVICE_PREFERENCES)[number];
 
 /** The background for all games, as a profile keeps it; a picture is only marked, not kept. */

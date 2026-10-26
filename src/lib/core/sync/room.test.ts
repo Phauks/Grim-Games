@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
+	canCallTown,
+	CALL_TOWN_GAP_MS,
 	canReveal,
 	castVote,
 	closeVote,
@@ -26,6 +28,7 @@ import {
 	setName,
 	setViewers,
 	supportsProtocol,
+	townView,
 	unseat,
 	viewerFailed,
 	viewersLocked,
@@ -267,6 +270,23 @@ describe('the end of a game', () => {
 	});
 });
 
+describe('a Public Town display', () => {
+	it('sees the public table and the game, and nothing about any member or vote', () => {
+		let room = seated(roomWith('alex', 'sam'), 'alex', 'Alex', 'b');
+		room = openVote(room, 'v1', ['a', 'b']);
+		room = gameOver(room, 'g1', 'good');
+		expect(townView(room)).toEqual({
+			type: 'town-view',
+			public: room.public,
+			gameId: 'g1'
+		});
+	});
+
+	it('sees an empty table before the Storyteller publishes one', () => {
+		expect(townView(newRoom('hash'))).toEqual({ type: 'town-view' });
+	});
+});
+
 describe('feedback after a game', () => {
 	const rated = { version: 1, rating: 4.5, accolades: ['pacing'], anonymous: false };
 	const anonymous = { version: 1, comment: 'Great night', accolades: [], anonymous: true };
@@ -492,5 +512,14 @@ describe('the view-only grimoire link', () => {
 		expect(isSharedGrimoire({ saved: [] })).toBe(false);
 		expect(isSharedGrimoire({})).toBe(false);
 		expect(isSharedGrimoire(null)).toBe(false);
+	});
+});
+
+// Plan U2 (Trevor, 2026-10-26): Back to town makes every phone sound; repeated taps don't.
+describe('Back to town', () => {
+	it('goes out the first time and again once the gap has passed', () => {
+		expect(canCallTown(undefined, 1000)).toBe(true);
+		expect(canCallTown(1000, 1000 + CALL_TOWN_GAP_MS - 1)).toBe(false);
+		expect(canCallTown(1000, 1000 + CALL_TOWN_GAP_MS)).toBe(true);
 	});
 });

@@ -197,14 +197,17 @@ export function relevantSeats(
 
 /**
  * For each relevant player, what the result is when only they register otherwise: worlds
- * that agree with the default world on everyone else.
+ * that agree with the default world on everyone else. Only what the result checks is kept
+ * (Trevor, 2026-10-26): the Empath counts evil players, so a Recluse is good or evil, not
+ * each alignment and character type in turn.
  */
 export function alternatives(
 	game: Game,
 	regs: readonly Registration[],
 	relevant: readonly SeatId[],
 	worlds: readonly RegistrationWorld[],
-	value?: (w: RegistrationWorld) => AnswerValue | undefined
+	value?: (w: RegistrationWorld) => AnswerValue | undefined,
+	result: (w: RegistrationWorld) => string = (w) => JSON.stringify(value?.(w))
 ): WhyAlternative[] {
 	const [base] = worlds;
 	if (!base) return [];
@@ -212,21 +215,33 @@ export function alternatives(
 		.filter((r) => relevant.includes(r.seatId))
 		.map((r) => {
 			const baseKey = worldKey(game, base, r.seatId);
+			const own = worlds.filter((w) => worldKey(game, w, r.seatId) === baseKey);
+			const ways = own.map((w) => ({
+				w,
+				alignment: w.alignment(r.seatId),
+				type: w.type(r.seatId),
+				result: result(w)
+			}));
+			// A part matters when changing only it changes the result.
+			const differs = (same: 'alignment' | 'type', other: 'alignment' | 'type') =>
+				ways.some((a) =>
+					ways.some((b) => a[same] === b[same] && a[other] !== b[other] && a.result !== b.result)
+				);
+			let alignmentMatters = differs('type', 'alignment');
+			let typeMatters = differs('alignment', 'type');
+			if (!alignmentMatters && !typeMatters) alignmentMatters = typeMatters = true;
+			const keyOf = (way: (typeof ways)[number]) =>
+				`${alignmentMatters ? way.alignment : ''}/${typeMatters ? way.type : ''}`;
 			const as: WhyAlternative['as'] = [];
-			const seen = new Set<string>();
-			for (const w of worlds.slice(1)) {
-				if (worldKey(game, w, r.seatId) !== baseKey) continue;
-				const alignment = w.alignment(r.seatId);
-				const type = w.type(r.seatId);
-				const key = `${alignment}/${type}`;
-				if (key === `${base.alignment(r.seatId)}/${base.type(r.seatId)}` || seen.has(key)) {
-					continue;
-				}
+			const seen = new Set<string>([keyOf(ways[0])]);
+			for (const way of ways.slice(1)) {
+				const key = keyOf(way);
+				if (seen.has(key)) continue;
 				seen.add(key);
-				const v = value?.(w);
+				const v = value?.(way.w);
 				as.push({
-					...(alignment ? { alignment } : {}),
-					...(type ? { type } : {}),
+					...(alignmentMatters && way.alignment ? { alignment: way.alignment } : {}),
+					...(typeMatters && way.type ? { type: way.type } : {}),
 					...(v ? { value: v } : {})
 				});
 			}
@@ -251,12 +266,13 @@ export function byWorld(
 	const regs = otherRegistrations(game, seatId, characters);
 	const worlds = registrationWorlds(game, characters, regs);
 	const values = worlds.map(valueIn);
-	const relevant = relevantSeats(game, regs, worlds, (w) => JSON.stringify(valueIn(w)));
+	const result = (w: RegistrationWorld) => JSON.stringify(valueIn(w));
+	const relevant = relevantSeats(game, regs, worlds, result);
 	return {
 		worlds,
 		possible: possibleValues(values),
 		relevant,
-		alternatives: alternatives(game, regs, relevant, worlds, valueIn)
+		alternatives: alternatives(game, regs, relevant, worlds, valueIn, result)
 	};
 }
 

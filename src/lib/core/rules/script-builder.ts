@@ -10,6 +10,7 @@ import type { GameData } from '#lib/core/data/game-data.ts';
 import { sortByStandardOrder } from '#lib/core/data/sort-order.ts';
 import {
 	CHARACTER_TYPES,
+	SEATED_TYPES,
 	type CharacterId,
 	type CharacterType,
 	type ScriptMeta
@@ -94,3 +95,21 @@ export const EXPECTED_SCRIPT_COUNTS: Readonly<Record<ScriptSize, Readonly<TypeCo
 	full: { townsfolk: 13, outsider: 4, minion: 4, demon: 4 },
 	teensyville: { townsfolk: 6, outsider: 2, minion: 2, demon: 2 }
 };
+
+/** The most of one type a script's expected count can be set to. */
+export const MAX_EXPECTED_COUNT = 40;
+
+/**
+ * What a script is measured against: the size's usual counts, with any type the builder set
+ * itself in their place (Trevor, 2026-10-26: some scripts have 1 Demon, some 4, some 5 or 6
+ * Outsiders or Minions). Still a guide, never a limit.
+ */
+export function expectedScriptCounts(
+	size: ScriptSize,
+	set: Readonly<Partial<TypeCounts>> = {}
+): TypeCounts {
+	const usual = EXPECTED_SCRIPT_COUNTS[size];
+	return Object.fromEntries(
+		SEATED_TYPES.map((type) => [type, set[type] ?? usual[type]])
+	) as TypeCounts;
+}

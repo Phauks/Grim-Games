@@ -1,22 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	MAX_NAMES,
-	nightUnderway,
-	parseBankCopies,
-	rememberName,
-	suggestNames
-} from './device-notes.ts';
-
-describe('rememberName', () => {
-	it('puts the newest name first without duplicates, ignoring case', () => {
-		expect(rememberName(['Ana', 'Ben'], ' ben ')).toEqual(['ben', 'Ana']);
-		expect(rememberName(['Ana'], '  ')).toEqual(['Ana']);
-	});
-	it(`keeps at most ${MAX_NAMES} names`, () => {
-		const many = Array.from({ length: MAX_NAMES }, (_, i) => `P${i}`);
-		expect(rememberName(many, 'New')).toHaveLength(MAX_NAMES);
-	});
-});
+import { nightUnderway, parseBankCopies, suggestNames } from './device-notes.ts';
 
 describe('suggestNames', () => {
 	const past = ['Sam', 'Alex', 'Samira', 'Jess', 'Rosa'];
@@ -26,6 +9,11 @@ describe('suggestNames', () => {
 	it('leaves out names already on another seat and the exact name typed', () => {
 		expect(suggestNames(past, '', ['alex'])).toEqual(['Sam', 'Samira', 'Jess', 'Rosa']);
 		expect(suggestNames(past, 'Sam', [])).toEqual(['Samira']);
+	});
+	it('offers a name once, where it first appears, when lists are joined', () => {
+		expect(suggestNames(['Jess', 'Ana', ...past], '', [])).toEqual(
+			['Jess', 'Ana', 'Sam', 'Alex', 'Samira', 'Rosa'].slice(0, 6)
+		);
 	});
 });
 

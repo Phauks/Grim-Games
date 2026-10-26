@@ -30,6 +30,8 @@ describe('settings profile values', () => {
 	it('start from the app defaults and leave out what stays with the device', () => {
 		expect(values.preferences).toEqual(withoutDevicePreferences(DEFAULT_PREFERENCES));
 		expect(values.preferences).not.toHaveProperty('allowZoom');
+		// Volume belongs to the device's speaker, not a profile (plan U1).
+		expect(values.preferences).not.toHaveProperty('soundVolume');
 		expect(values.boardLooks).toEqual(DEFAULT_BOARD_LOOKS);
 		expect(values.background).toEqual({ kind: 'none' });
 	});

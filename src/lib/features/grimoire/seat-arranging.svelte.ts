@@ -29,11 +29,6 @@ export interface ArrangeContext {
 	board: BoardSize;
 	/** The board element, for turning a pointer into a point on it. */
 	element: HTMLElement | undefined;
-	/**
-	 * Holding a seat, then dragging, moves it outside Arrange seats too (Settings > Board,
-	 * boardLooks.holdMoves; Trevor 2026-10-25, to try with Storytellers).
-	 */
-	holdMoves?: boolean;
 }
 
 interface Drag {
@@ -57,7 +52,10 @@ export class SeatArranging {
 	 */
 	front = $state<SeatId | undefined>();
 	#pressedAt = { x: 0, y: 0 };
-	/** A press outside Arrange seats that becomes a drag once it is a hold (holdMoves). */
+	/**
+	 * A press outside Arrange seats, which becomes a drag once it is a hold: holding a seat's
+	 * token moves it (Trevor, 2026-10-25; the only thing a hold does, 2026-10-26).
+	 */
 	#pressed: (Drag & { target: HTMLElement }) | undefined;
 	#context: () => ArrangeContext;
 
@@ -133,10 +131,9 @@ export class SeatArranging {
 
 	dragStart(event: PointerEvent, seatId: SeatId, at: SeatPoint) {
 		this.front = seatId;
-		const { element, holdMoves } = this.#context();
+		const { element } = this.#context();
 		this.#pressed = undefined;
 		if (this.drag || !element) return;
-		if (!this.arranging && !holdMoves) return;
 		const p = this.#boardPoint(event, element);
 		this.#pressedAt = { x: event.clientX, y: event.clientY };
 		const drag = {
@@ -147,7 +144,7 @@ export class SeatArranging {
 			moved: false
 		};
 		if (!this.arranging) {
-			// Not yet: a tap opens the seat and a short press lights its reminders, as before.
+			// Not yet: a tap still opens the seat.
 			// The token itself takes the pointer once held, so its own release (ending the hold,
 			// swallowing the click) still runs as the event bubbles up to this slot.
 			const token = (event.target as HTMLElement | null)?.closest?.<HTMLElement>(
@@ -160,7 +157,7 @@ export class SeatArranging {
 		this.drag = drag;
 	}
 
-	/** The seat pressed is now held (SeatToken's onHold): with holdMoves, dragging moves it. */
+	/** The seat pressed is now held (SeatToken's onHold): dragging moves it. */
 	held(seatId: SeatId) {
 		const pressed = this.#pressed;
 		this.#pressed = undefined;

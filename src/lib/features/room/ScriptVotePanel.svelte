@@ -21,25 +21,23 @@
 		ScriptChoice,
 		ScriptChoiceOption
 	} from '#lib/features/modes/script-choices.svelte.ts';
-	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import { roomHost } from './host.svelte.ts';
-	import { scriptVoteCountLabel } from './script-vote-count.ts';
+	import VoteStats from './VoteStats.svelte';
 	import VoteTimeLeft from './VoteTimeLeft.svelte';
 
 	/**
 	 * The room's vote on the next script (Trevor, 2026-10-20, plan R1): the Storyteller offers
-	 * scripts, players vote on their phones, and the Storyteller picks from the count. New game
-	 * shows it; the room only counts. Scripts are found with New game's own script controls
+	 * scripts, players vote on their phones, and the Storyteller picks from the count. Its own
+	 * screen, /vote, reached from New game (Trevor, 2026-10-26); the room only counts. Scripts are found with New game's own script controls
 	 * (Trevor, 2026-10-23: "same search controls as available outside in new game mode") and
 	 * added in rows, any number up to MAX_SCRIPT_VOTE_OPTIONS (Trevor, 2026-10-23: "should not
 	 * be limited to 2 or 3"). The same vote can be on the game mode, from New game's own list
-	 * of modes (Trevor, 2026-10-23). While the vote is open the sheet shows the
+	 * of modes (Trevor, 2026-10-23). While the vote is open the screen shows the
 	 * room's code and QR, so players not in the room yet can join and vote (Trevor,
 	 * 2026-10-23), and the time left when the Storyteller set a limit. Trevor, 2026-10-26: the
 	 * Storyteller can let players see the count, before or during the vote, and end it early
@@ -47,7 +45,6 @@
 	 * read its details; a ranking is counted as an instant runoff.
 	 */
 	interface Props {
-		open: boolean;
 		/** The scripts New game offers, by its own ids. */
 		choices: ScriptChoiceOption[];
 		/** The Storyteller picked this script from the count. */
@@ -58,12 +55,12 @@
 		onPickMode: (id: string) => void;
 	}
 
-	let { open = $bindable(), choices, onPick, modes, onPickMode }: Props = $props();
+	let { choices, onPick, modes, onPickMode }: Props = $props();
 
 	const host = roomHost();
 	// The base three's characters, for their details on the ballot.
 	$effect(() => {
-		if (open) void loadOfficialData();
+		void loadOfficialData();
 	});
 	const tally = $derived(host.scriptVote);
 	let subject = $state<VoteSubject>('script');
@@ -170,21 +167,21 @@
 	function pick(id: string) {
 		const mode = tally?.subject === 'mode';
 		host.closeScriptVote();
-		open = false;
 		if (mode) onPickMode(id);
 		else onPick(id);
 	}
 </script>
 
-<BottomSheet
-	bind:open
-	title={t(
-		(tally ? tally.subject === 'mode' : onMode)
-			? 'room.scriptVote.modeTitle'
-			: 'room.scriptVote.title'
-	)}
-	wide
->
+<!-- Its own screen, so it only goes away when the Storyteller leaves it (Trevor, 2026-10-26:
+     "As the one running the vote, it goes away really easily"). -->
+<div class="screen">
+	<h2>
+		{t(
+			(tally ? tally.subject === 'mode' : onMode)
+				? 'room.scriptVote.modeTitle'
+				: 'room.scriptVote.title'
+		)}
+	</h2>
 	<!-- Two columns on a tablet or wider (Trevor, 2026-10-23): the scripts on the left; the
 	     room's code and QR, the time and the count on the right, from before the vote opens
 	     so players can join first. One column on a phone, the scripts first. -->
@@ -198,15 +195,14 @@
 		>
 			<div class="scripts">
 				{#if tally}
-					<ul class="results" data-testid="script-vote-results">
-						{#each tally.options as option (option.id)}
-							<li data-winner={tally.winner === option.id || undefined}>
-								<span class="name">{option.name}</span>
-								<span class="points">{scriptVoteCountLabel(tally.kind, tally, option.id)}</span>
+					<!-- The same count players see (Trevor, 2026-10-26), with Play on each row. -->
+					<div data-testid="script-vote-results">
+						<VoteStats kind={tally.kind} options={tally.options} {tally}>
+							{#snippet action(option)}
 								<Button onclick={() => pick(option.id)}>{t('room.scriptVote.play')}</Button>
-							</li>
-						{/each}
-					</ul>
+							{/snippet}
+						</VoteStats>
+					</div>
 				{:else}
 					<Select
 						label={t('room.scriptVote.subject')}
@@ -281,9 +277,6 @@
 						finalCall={!!tally.finalCall}
 						onEnded={(e) => (ended = e)}
 					/>
-					<p class="count" data-testid="script-vote-count">
-						{t('room.scriptVote.voted', { voted: tally.voted, members: tally.members })}
-					</p>
 				{:else}
 					<Select
 						label={t('room.scriptVote.timeLimit')}
@@ -300,29 +293,32 @@
 				/>
 			</div>
 			<div class="end">
-				{#if tally}
-					<!-- Ends it after a final call on every phone (Trevor, 2026-10-26); Close
-					     vote takes it off the phones at once. -->
-					<Button disabled={!!tally.finalCall || ended} onclick={() => host.endScriptVote()}
+				{#if tally && !ended}
+					<!-- One button (Trevor, 2026-10-26: "duplicative end vote and close vote"): End
+					     vote gives phones a final call, then it is New vote. -->
+					<Button disabled={!!tally.finalCall} onclick={() => host.endScriptVote()}
 						>{t('room.scriptVote.end')}</Button
 					>
-					<Button variant="danger" onclick={() => host.closeScriptVote()}
-						>{t('room.scriptVote.close')}</Button
-					>
+				{:else if tally}
+					<Button onclick={() => host.closeScriptVote()}>{t('room.scriptVote.new')}</Button>
 				{:else}
-					<ModalActions
-						onCancel={() => (open = false)}
-						submit
-						disabled={!ready || !host.code}
-						confirmLabel={t('room.scriptVote.open')}
-					/>
+					<Button type="submit" variant="accent" disabled={!ready || !host.code}
+						>{t('room.scriptVote.open')}</Button
+					>
 				{/if}
 			</div>
 		</form>
 	</div>
-</BottomSheet>
+</div>
 
 <style>
+	.screen {
+		display: grid;
+		gap: var(--space-3);
+	}
+	h2 {
+		margin: 0;
+	}
 	.vote {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -387,30 +383,5 @@
 	}
 	.name.none {
 		color: var(--on-surface-muted);
-	}
-	.count {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
-	.results {
-		display: grid;
-		gap: var(--space-2);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.results li {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto auto;
-		align-items: center;
-		gap: var(--space-3);
-	}
-	.points {
-		font-variant-numeric: tabular-nums;
-	}
-	/* The instant runoff's winner (Trevor, 2026-10-26). */
-	.results li[data-winner] .points {
-		color: var(--accent);
-		font-weight: 600;
 	}
 </style>

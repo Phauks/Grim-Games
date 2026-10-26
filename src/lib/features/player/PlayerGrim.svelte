@@ -23,7 +23,26 @@
 		readBackground,
 		type BackgroundChoice
 	} from '#lib/features/grimoire/backgrounds.ts';
-	import { cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
+	import {
+		avoidBoxes,
+		cornerObstacles,
+		nameBoxes,
+		toPercent,
+		toPx
+	} from '#lib/features/grimoire/board-geometry.ts';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import { fitReminders } from '#lib/features/grimoire/reminder-fan.ts';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import {
+		readPlayerReminders,
+		placedKey,
+		remindersOn,
+		toggleReminder,
+		writePlayerReminders,
+		type PlayerReminder,
+		type PlayerReminders
+	} from './player-reminders.ts';
+	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
 	import { cornerRoom } from '#lib/features/grimoire/corner-room.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
@@ -47,6 +66,11 @@
 		mainGuess,
 		readGuesses,
 		toggleGuess,
+		travellerGuess,
+		travellerTeam,
+		readSelf,
+		selfSeat,
+		writeSelf,
 		writeGuesses,
 		type GenericGuess,
 		type GuessMark,
@@ -80,15 +104,23 @@
 			storytellerName?: string;
 			corner?: PublicCorner;
 			/** The board's own game, whose background this town shows. */
-			gameId: string;
-			guessKey: string;
+			gameId?: string;
+			/** Where the guesses and seat notes are kept; a display keeps none. */
+			guessKey?: string;
+			/** The room's code for the corner, where it isn't this device's own room. */
+			roomCode?: string;
 		};
+		/**
+		 * A Public Town display (Trevor, 2026-10-26): the town as /play draws it, with nothing to
+		 * tap and nothing of this device's own on it (no guesses, notes or "you").
+		 */
+		display?: boolean;
 	}
 
-	let { script, town }: Props = $props();
+	let { script, town, display = false }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
-	const code = town ? town.guessKey : lastRoom();
+	const code = town ? (town.roomCode ?? town.guessKey) : lastRoom();
 	// svelte-ignore state_referenced_locally
 	const player = !town && code ? useRoom(code) : undefined;
 	$effect(() => () => {
@@ -97,15 +129,29 @@
 
 	const table = $derived(town ?? player?.view?.public);
 	const seats = $derived(table?.seats ?? []);
-	const mine = $derived(player?.view?.me.seatId);
 	/** Where this game's guesses and seat notes are kept: per game (`gameKey`). */
-	const kept = $derived(town ? town.guessKey : code ? gameKey(code) : undefined);
+	const kept = $derived(
+		display ? undefined : town ? town.guessKey : code ? gameKey(code) : undefined
+	);
 	let guesses = $state<Guesses>({});
+	/** The reminder tokens this player put on seats (Trevor, 2026-10-26), kept as guesses are. */
+	let reminders = $state<PlayerReminders>({});
+	let remindersOpen = $state(false);
+	/** The seat this player marked as theirs; else the one the room gave them. */
+	let marked = $state<string>();
+	const mine = $derived(selfSeat(marked, player?.view?.me.seatId));
+	function markSelf(seatId: string, on: boolean) {
+		if (!kept) return;
+		marked = on ? seatId : '';
+		writeSelf(kept, marked);
+	}
 	/** The player's own note on each seat (Trevor, 2026-10-24), shared with the Notes tab. */
 	// Set in an effect, not a derived, so the derived below follows the notes it reads.
 	let book = $state<ReturnType<typeof seatNotes>>();
 	$effect.pre(() => {
 		guesses = kept ? readGuesses(kept) : {};
+		reminders = kept ? readPlayerReminders(kept) : {};
+		marked = kept ? readSelf(kept) : undefined;
 		book = kept ? seatNotes(kept) : undefined;
 	});
 	const notes = $derived(book?.notes ?? {});
@@ -148,16 +194,55 @@
 		void preferences.current;
 		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 	});
+	const names = $derived(
+		nameBoxes({ names: seats.map(nameOf), seats: points, size, unit, rootFont, board })
+	);
 	const cornerBoxes = $derived(
-		cornerObstacles(
-			points,
-			nameBoxes({ names: seats.map(nameOf), seats: points, size, unit, rootFont, board }),
-			size,
-			boardLooks.current.nameOffset,
-			board
-		)
+		cornerObstacles(points, names, size, boardLooks.current.nameOffset, board)
 	);
 	const fitCorner = (h: number) => cornerRoom(cornerBoxes, board, h + 4, 4 + 8);
+
+	/**
+	 * Each seat's reminders, lined up in front of it towards the middle as on the board
+	 * (reminder-fan.ts), at the board's reminder size and never under a finger's tap target.
+	 */
+	const chip = $derived(
+		Math.max(
+			44,
+			Math.round(
+				Math.max(30, Math.min(48, size * 0.5)) * preferences.current.tokenAppearance.reminderScale
+			)
+		)
+	);
+	const fan = $derived.by(() => {
+		if (width <= 0 || height <= 0) return seats.map(() => []);
+		return fitReminders(
+			seats.map((seat, i) => ({
+				seat: toPx(points[i], board),
+				middle: { x: width / 2, y: height / 2 },
+				count: remindersOn(reminders, seat.seatId).length,
+				size,
+				chip,
+				avoid: avoidBoxes({
+					centre: toPx(points[i], board),
+					size,
+					// Every seat's name is a badge on its rim (SeatDisc).
+					hasFace: true,
+					name: names[i]?.box,
+					dead: seat.dead,
+					note: !!notes[seat.seatId],
+					nameOffset: boardLooks.current.nameOffset
+				})
+			})),
+			[],
+			board
+		).at.map((spots) => spots.map((p) => toPercent(p, board)));
+	});
+	function toggleSeatReminder(reminder: PlayerReminder) {
+		if (!kept || !chosen) return;
+		reminders = toggleReminder(reminders, chosen.seatId, reminder);
+		writePlayerReminders(kept, reminders);
+	}
 
 	// This device's background for the board: the game's own on the Storyteller's, else the
 	// one for every game. The script's own image is only a web link (backgrounds.ts).
@@ -216,11 +301,25 @@
 	 * Trevor 2026-10-25); the sheet stays open so the next can be added.
 	 */
 	function guess(characterId: CharacterId) {
-		if (chosen) save(toggleGuess(guesses, chosen.seatId, characterId));
+		if (!chosen) return;
+		save(
+			chosen.traveller
+				? travellerGuess(guesses, chosen.seatId, characterId)
+				: toggleGuess(guesses, chosen.seatId, characterId)
+		);
 	}
+	/** Only Good or Evil for a Traveller's seat, whose character the town knows (Trevor, 2026-10-26). */
+	const guessChoices = $derived(
+		chosen?.traveller ? GENERIC_GUESSES.filter((g) => !g.type) : GENERIC_GUESSES
+	);
 	/** The seat's guesses, main first, as the token, its pill and the sheet show them. */
 	const listed = (seatId: string) =>
-		guessesOf(guesses, seatId).map((id) => {
+		(seats.find((s) => s.seatId === seatId)?.traveller
+			? guessesOf(guesses, seatId).filter(
+					(id) => genericGuess(id)?.type === undefined && !!genericGuess(id)
+				)
+			: guessesOf(guesses, seatId)
+		).map((id) => {
 			const generic = genericGuess(id);
 			return generic
 				? { id, generic, label: genericLabel(generic) }
@@ -238,8 +337,13 @@
 		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
 		const traveller = characterOf(seat.traveller);
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
-		const guessed = guessesOf(guesses, seat.seatId).map(guessName).filter(Boolean);
+		const guessed = listed(seat.seatId)
+			.map((g) => guessName(g.id))
+			.filter(Boolean);
 		if (guessed.length) parts.push(t('player.grim.guess', { name: guessed.join(', ') }));
+		const placed = remindersOn(reminders, seat.seatId);
+		if (placed.length)
+			parts.push(t('player.grim.hasReminders', { labels: placed.map((r) => r.label).join(', ') }));
 		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
 		return parts.join(', ');
 	}
@@ -266,6 +370,7 @@
 {:else}
 	<div
 		class="town"
+		class:display
 		bind:clientWidth={width}
 		bind:clientHeight={height}
 		style:--name-scale={boardLooks.current.nameSize}
@@ -289,10 +394,12 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
-			{@const main = guessesOf(guesses, seat.seatId)[0]}
+			<!-- A Traveller's seat takes only an alignment, shown in its icon's colour. -->
+			{@const team = known ? travellerTeam(guesses, seat.seatId)?.team : undefined}
+			{@const main = known ? undefined : guessesOf(guesses, seat.seatId)[0]}
 			{@const generic = genericGuess(main)}
 			{@const guessed = generic ?? characterOf(main)}
-			{@const others = listed(seat.seatId)
+			{@const others = (known ? [] : listed(seat.seatId))
 				.slice(1)
 				.flatMap((g): GuessMark[] =>
 					g.generic
@@ -304,8 +411,11 @@
 			<!-- The player's avatar unless their own guess is set to show over it (plan R6). -->
 			{@const shown =
 				known ?? (seat.avatar && !playerSettings.current.guessesOnTokens ? undefined : guessed)}
-			<button
-				type="button"
+			<!-- A display's seats are only drawn: nothing on the table's tablet can be tapped. -->
+			<svelte:element
+				this={display ? 'div' : 'button'}
+				type={display ? undefined : 'button'}
+				role={display ? 'img' : undefined}
 				class="seat"
 				data-mine={seat.seatId === mine || undefined}
 				data-guess={(!known && !!guessed && shown === guessed) || undefined}
@@ -313,7 +423,7 @@
 				style:top="{point?.y ?? 50}%"
 				aria-label={label(seat)}
 				data-testid="grim-seat"
-				onclick={(event) => choose(seat, event)}
+				onclick={display ? undefined : (event: MouseEvent) => choose(seat, event)}
 			>
 				<SeatDisc
 					{size}
@@ -337,9 +447,31 @@
 							guess={shown}
 							label={genericLabel(shown)}
 							{size}
-						/>{:else if shown}<CharacterToken character={shown} {size} />{/if}
+						/>{:else if shown}<CharacterToken
+							character={shown}
+							alignment={shown === known ? team : undefined}
+							{size}
+						/>{/if}
 				{/snippet}
-			</button>
+			</svelte:element>
+		{/each}
+		<!-- The player's own reminders, in front of each seat as on the board; a tap opens the
+		     seat's reminders. -->
+		{#each seats as seat, i (seat.seatId)}
+			{#each remindersOn(reminders, seat.seatId) as reminder, k (placedKey(reminder))}
+				{@const p = fan[i]?.[k] ?? points[i]}
+				<div class="chip-slot" style:left="{p?.x ?? 50}%" style:top="{p?.y ?? 50}%">
+					<BoardReminder
+						label={reminder.label}
+						character={characterOf(reminder.characterId)}
+						size={chip}
+						onTap={() => {
+							chosen = seat;
+							remindersOpen = true;
+						}}
+					/>
+				</div>
+			{/each}
 		{/each}
 		<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
 		     2026-10-24); nothing to open or share here. -->
@@ -347,7 +479,7 @@
 			meta={script.meta}
 			storytellerName={table?.storytellerName}
 			corner={table?.corner}
-			roomCode={town ? roomHost().code : code}
+			roomCode={town ? (town.roomCode ?? roomHost().code) : code}
 			logo={logo && !logoFailed ? logo : undefined}
 			watching
 			fitRoom={fitCorner}
@@ -388,6 +520,19 @@
 			{/each}
 		</ul>
 	</div>
+	<!-- The reminder tokens this player put on the seat (Trevor, 2026-10-26); a tap opens them. -->
+	<button
+		type="button"
+		class="row seat-note"
+		data-testid="seat-reminders"
+		onclick={() => (remindersOpen = true)}
+		><span class="row-label">{t('player.grim.reminders')}</span><span class="chips"
+			>{#each chosen ? remindersOn(reminders, chosen.seatId) : [] as reminder (placedKey(reminder))}<ReminderToken
+					label={reminder.label}
+					character={characterOf(reminder.characterId)}
+				/>{:else}<span class="row-none">{t('common.none')}</span>{/each}</span
+		></button
+	>
 	<!-- The player's own note on this seat, as the Storyteller has one per player (Trevor,
 	     2026-10-24); it shows on the Notes tab too. -->
 	<button
@@ -399,6 +544,13 @@
 			>{(chosen && notes[chosen.seatId]) || t('common.none')}</span
 		></button
 	>
+	<!-- Which seat is this player's own, for when the room did not seat them (Trevor,
+	     2026-10-26); it glows on the grim. -->
+	<SettingToggle
+		label={t('player.grim.thisIsMe')}
+		checked={!!chosen && chosen.seatId === mine}
+		onChange={(on) => chosen && markSelf(chosen.seatId, on)}
+	/>
 	<!-- Also in Settings > Player: one switch for every seat. -->
 	<SettingToggle
 		label={t('player.guessesOnTokens')}
@@ -406,9 +558,9 @@
 		onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
 	/>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
-	     characters. -->
+	     characters; a Traveller's seat has only Good and Evil, and no characters. -->
 	<ul class="generic" aria-label={t('player.grim.generic')}>
-		{#each GENERIC_GUESSES as g (g.key)}
+		{#each guessChoices as g (g.key)}
 			<li>
 				<button
 					type="button"
@@ -420,13 +572,22 @@
 			</li>
 		{/each}
 	</ul>
-	<CharacterPicker
-		characters={script.characters}
-		selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
-		onSelect={(id) => guess(id)}
-		onNone={() => chosen && save(clearGuesses(guesses, chosen.seatId))}
-	/>
+	{#if !chosen?.traveller}<CharacterPicker
+			characters={script.characters}
+			selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
+			onSelect={(id) => guess(id)}
+			onNone={() => chosen && save(clearGuesses(guesses, chosen.seatId))}
+		/>{/if}
 </BottomSheet>
+
+<PlayerReminderPicker
+	bind:open={remindersOpen}
+	name={chosen ? nameOf(chosen) : ''}
+	characters={script.characters}
+	placed={chosen ? remindersOn(reminders, chosen.seatId) : []}
+	characterOf={(id) => characterOf(id)}
+	onToggle={toggleSeatReminder}
+/>
 
 <SeatNoteDialog
 	bind:open={noteOpen}
@@ -549,6 +710,9 @@
 		width: 100%;
 		height: 75dvh;
 	}
+	.display .seat {
+		cursor: default;
+	}
 	/* Faint behind the seats, as on the board. */
 	.town :global(.town-logo) {
 		position: absolute;
@@ -572,10 +736,30 @@
 		transform: translate(-50%, -50%);
 		cursor: pointer;
 	}
+	/* Your own seat glows (Trevor, 2026-10-26: "special glow or effect on self in grim"),
+	   breathing slowly unless motion is reduced. In the text colour, not the accent, since red
+	   or blue would read as an alignment (the accent is red in some themes). */
 	.seat[data-mine] :global(.disc) {
-		outline: calc(0.2 * var(--u)) solid var(--accent);
+		outline: calc(0.2 * var(--u)) solid var(--on-surface);
 		outline-offset: calc(0.2 * var(--u));
 		border-radius: 50%;
+		box-shadow: 0 0 calc(1.25 * var(--u)) calc(0.5 * var(--u)) var(--on-surface);
+		animation: self-glow 2.4s ease-in-out infinite;
+	}
+	@keyframes self-glow {
+		50% {
+			box-shadow: 0 0 calc(0.6 * var(--u)) calc(0.2 * var(--u)) var(--on-surface);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.seat[data-mine] :global(.disc) {
+			animation: none;
+		}
+	}
+	.chip-slot {
+		position: absolute;
+		translate: -50% -50%;
+		z-index: 1;
 	}
 	/* A guess is the player's own, so it never looks like something the town was told. */
 	.seat[data-guess] :global(.face) {

@@ -14,6 +14,8 @@ export const MIN_SELECT_PLAYERS = 5;
  * (https://wiki.bloodontheclocktower.com/Setup); the bag check warns when they're missing.
  */
 export const MAX_SELECT_PLAYERS = MAX_SEATS;
+/** New game's most players for one game; towns sharing their players go to MAX_SEATS (Trevor, 2026-10-26). */
+export const NEW_GAME_MAX_PLAYERS = 20;
 const DEFAULT_PLAYERS = 8;
 const KEY = 'grim-games:setup-selection';
 

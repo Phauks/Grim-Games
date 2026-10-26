@@ -358,12 +358,39 @@ test('Fabled and Loric are added from their own closed sections, not to the bag'
 });
 
 // Trevor, 2026-10-18: New game's count stopped at 15; stress tests need more players.
-test('New game and character selection take more than 15 players', async ({ page }) => {
-	await selectionFor(page, 24);
+// Trevor, 2026-10-26: New game stops at 20 for one game; character selection goes on to 40.
+test('New game takes up to 20 players, and character selection more', async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	const more = page.getByRole('button', { name: 'More players' });
+	for (let n = 8; n < 20; n++) await more.tap();
+	await expect(page.getByTestId('player-count')).toHaveText('20');
+	await expect(more).toBeDisabled();
+
+	await selectionFor(page, 20);
 	// Beyond 15 the sheet's 15+ column applies (https://wiki.bloodontheclocktower.com/Setup).
 	await expect(page.getByTestId('setup-table').locator('thead [data-current]')).toHaveText('15+');
 	await page.getByRole('button', { name: 'More players' }).tap();
-	await expect(page.getByTestId('player-count')).toHaveText('25');
+	await expect(page.getByTestId('player-count')).toHaveText('21');
+});
+
+// Trevor, 2026-10-26: New game made seats for 40, Character selection lowered it to 10, and
+// the board still had 40 seats. The empty extra seats go when the bag is built.
+test('lowering the player count in character selection takes the extra seats away', async ({
+	page
+}) => {
+	await selectionFor(page, 12);
+	await page
+		.getByTestId('setup-table')
+		.getByRole('button', { name: '5 players', exact: true })
+		.tap();
+	await expect(page.getByTestId('player-count')).toHaveText('5');
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	await expect(page.getByRole('button', { name: /^Tile \d+$/ })).toHaveCount(5);
+	await page.goto(new URL(page.url()).pathname.replace(/\/draw$/, ''));
+	await expect(page.getByTestId('seat')).toHaveCount(5);
 });
 
 // Trevor, 2026-10-18: with every Trouble Brewing character chosen for 20 players the bag
@@ -557,31 +584,58 @@ test('with Require a name, the token stays hidden until a name is typed', async 
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 });
 
-test('the player picks their name from names used before, instead of typing', async ({ page }) => {
-	// Trevor, 2026-10-19: on the pass-the-phone draw, "select your name from a list".
+test('with no room, the draw offers no names, even ones kept by earlier builds', async ({
+	page
+}) => {
+	// Trevor, 2026-10-26: "all that should matter is what people names are connected to ppl
+	// scanned into the room".
 	await selectionFor(page, 5);
 	await page.evaluate(() =>
-		localStorage.setItem('grim-games:player-names:v1', JSON.stringify(['Ana', 'Ben']))
+		localStorage.setItem('grim-games:player-names:v1', JSON.stringify(['Ana', 'Alex']))
 	);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	await expect(
+		page.getByTestId('reveal').getByRole('button', { name: 'Pick your name' })
+	).toBeDisabled();
+});
+
+test("the player picks their name from the room's phones", async ({ page, browser }, testInfo) => {
+	// Trevor, 2026-10-19: on the draw, "select your name from a list"; 2026-10-26: only the
+	// names of phones in the room.
+	await selectionFor(page, 5);
+	const setup = new URL(page.url()).pathname;
+	await page.goto(setup.replace(/\/setup$/, '/room'));
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByTestId('you-row').tap();
+	const you = phone.getByRole('dialog', { name: 'You', exact: true });
+	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
+	await you.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex');
+
+	await page.goto(setup);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
 	const reveal = page.getByTestId('reveal');
 	await reveal.getByRole('button', { name: 'Pick your name' }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
-	await expect(sheet.getByRole('button')).toHaveText(['Ana', 'Ben']);
-	await sheet.getByRole('button', { name: 'Ben' }).tap();
+	await expect(sheet.getByRole('button')).toHaveText(['Alex']);
+	await sheet.getByRole('button', { name: 'Alex' }).tap();
 	await expect(sheet).toBeHidden();
-	await expect(reveal.getByRole('textbox', { name: 'Name' })).toHaveValue('Ben');
+	await expect(reveal.getByRole('textbox', { name: 'Name' })).toHaveValue('Alex');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 
-	// Ben has a seat now, so the next player is offered Ana only.
+	// Alex has a seat now, so the next player has no name to pick.
 	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
-	await reveal.getByRole('button', { name: 'Pick your name' }).tap();
-	await expect(sheet.getByRole('button')).toHaveText(['Ana']);
-	await sheet.getByRole('button', { name: 'Ana' }).tap();
-	await page.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByRole('button', { name: 'Tile 2, drawn' })).toBeDisabled();
+	await expect(reveal.getByRole('button', { name: 'Pick your name' })).toBeDisabled();
+	await phoneContext.close();
 });
 
 test('type groups and the setup sheet close from their header and stay closed', async ({

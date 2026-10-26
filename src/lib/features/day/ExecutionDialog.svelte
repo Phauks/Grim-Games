@@ -3,6 +3,8 @@
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 	import {
 		executionSavers,
+		extraNominators,
+		nominatorsAfterExecution,
 		protection,
 		suggestedMark,
 		unsetMarks,
@@ -34,12 +36,14 @@
 		/**
 		 * The player executed, or undefined for no execution; the Storyteller's Saved by: a
 		 * character, `dies` for None, or undefined to leave it to the grimoire; and today's
-		 * facts still unmarked, as confirmed here. The dialog closes first.
+		 * facts still unmarked, as confirmed here; and whether to keep the day going instead of
+		 * ending it. The dialog closes first.
 		 */
 		onConfirm: (
 			seatId: SeatId | undefined,
 			save: CharacterId | 'dies' | undefined,
-			marks: Partial<Record<DayMark, boolean>>
+			marks: Partial<Record<DayMark, boolean>>,
+			keepGoing: boolean
 		) => void;
 	}
 
@@ -57,9 +61,11 @@
 	 * recorded nomination), and Confirm marks it either way.
 	 */
 	let marks = $state<Partial<Record<DayMark, boolean>>>({});
+	let keepGoing = $state(false);
 	$effect(() => {
 		if (!open) return;
 		choice = executed ?? chosen;
+		keepGoing = false;
 		marks = Object.fromEntries(
 			unsetMarks(game, characters).map((m) => [m, suggestedMark(game, m, characters) ?? false])
 		);
@@ -110,6 +116,20 @@
 	const savedByNow = $derived(
 		saveOff || save === DIES ? undefined : save === OVERRIDE ? OVERRIDE : save
 	);
+
+	/**
+	 * Keep the day going (Trevor, 2026-10-26, on the Butcher): while a player could still
+	 * nominate after this execution (`nominationsAfterExecution`), Confirm may record it and
+	 * leave the day open; off to start with, so Confirm ends the day as before. The switch is
+	 * there whenever such a player is in play, and disabled while the choice gives none.
+	 */
+	const extraShown = $derived(extraNominators(game, characters).length > 0);
+	const keepAvailable = $derived.by(() => {
+		if (!extraShown || !choice || choice === NONE) return false;
+		const seatId = choice as SeatId;
+		const dies = !game.seats[seatId]?.dead && savedByNow === undefined;
+		return nominatorsAfterExecution(game, { seatId, dies }, characters).length > 0;
+	});
 
 	const options = $derived.by(() => {
 		const nominees: SeatId[] = [];
@@ -176,11 +196,12 @@
 	disabled={choice === undefined}
 	onConfirm={() =>
 		choice === NONE || choice === undefined
-			? onConfirm(undefined, undefined, { ...marks })
+			? onConfirm(undefined, undefined, { ...marks }, false)
 			: onConfirm(
 					choice as SeatId,
 					saveOff || save === OVERRIDE ? undefined : (save as CharacterId | 'dies'),
-					{ ...marks }
+					{ ...marks },
+					keepAvailable && keepGoing
 				)}
 >
 	<div class="execution" data-testid="execution">
@@ -230,6 +251,14 @@
 				onChange={(checked) => (marks[mark] = checked)}
 			/>
 		{/each}
+		{#if extraShown}
+			<Toggle
+				label={t('day.keepDayGoing')}
+				checked={keepAvailable && keepGoing}
+				disabled={!keepAvailable}
+				onChange={(checked) => (keepGoing = checked)}
+			/>
+		{/if}
 	</div>
 </ConfirmDialog>
 

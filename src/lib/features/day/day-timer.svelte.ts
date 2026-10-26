@@ -1,6 +1,6 @@
 import { dayTimers } from '#lib/core/rules/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
-import { playTimerSound, unlockTimerSound, vibrateTimer } from './timer-sound.ts';
+import { playSound, unlockSound, vibrate } from '#lib/features/sound/sound.ts';
 import { keepScreenAwake } from './timer-wake-lock.ts';
 
 const { adjust, dayTimer, elapsed, isFresh, isOver, isRunning, pause, remaining, shown, start } =
@@ -91,7 +91,7 @@ class LiveDayTimer {
 		}
 		this.#timer = start(this.#timer, this.now, this.mode);
 		if (!this.running) return;
-		unlockTimerSound();
+		unlockSound();
 		this.#signalled = this.done;
 		this.#ticker = setInterval(() => this.#tick(), 250);
 		keepScreenAwake(preferences.current.timerKeepAwake);
@@ -129,9 +129,9 @@ class LiveDayTimer {
 		}
 		if (!this.#signalled) {
 			this.#signalled = true;
-			if (preferences.current.timerVibrate) vibrateTimer();
+			if (preferences.current.timerVibrate) vibrate();
 			// A stopwatch has no sound (Trevor, 2026-10-23); its setting shows disabled.
-			if (this.mode === 'down') playTimerSound(preferences.current.timerSound);
+			if (this.mode === 'down') playSound(preferences.current.timerSound);
 		}
 	}
 

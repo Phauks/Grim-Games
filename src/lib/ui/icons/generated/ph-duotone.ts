@@ -50,6 +50,7 @@ import ph_clipboard_duotone from '~icons/ph/clipboard-duotone';
 import ph_clipboard_text_duotone from '~icons/ph/clipboard-text-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
 import ph_club_duotone from '~icons/ph/club-duotone';
+import ph_coffee_duotone from '~icons/ph/coffee-duotone';
 import ph_coin_duotone from '~icons/ph/coin-duotone';
 import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
@@ -90,6 +91,7 @@ import ph_gear_six_duotone from '~icons/ph/gear-six-duotone';
 import ph_ghost_duotone from '~icons/ph/ghost-duotone';
 import ph_globe_duotone from '~icons/ph/globe-duotone';
 import ph_hammer_duotone from '~icons/ph/hammer-duotone';
+import ph_hand_coins_duotone from '~icons/ph/hand-coins-duotone';
 import ph_hand_fist_duotone from '~icons/ph/hand-fist-duotone';
 import ph_hand_grabbing_duotone from '~icons/ph/hand-grabbing-duotone';
 import ph_hand_heart_duotone from '~icons/ph/hand-heart-duotone';
@@ -131,6 +133,7 @@ import ph_moon_stars_duotone from '~icons/ph/moon-stars-duotone';
 import ph_note_pencil_duotone from '~icons/ph/note-pencil-duotone';
 import ph_notepad_duotone from '~icons/ph/notepad-duotone';
 import ph_paint_brush_duotone from '~icons/ph/paint-brush-duotone';
+import ph_paint_bucket_duotone from '~icons/ph/paint-bucket-duotone';
 import ph_palette_duotone from '~icons/ph/palette-duotone';
 import ph_pause_duotone from '~icons/ph/pause-duotone';
 import ph_pause_circle_duotone from '~icons/ph/pause-circle-duotone';
@@ -260,6 +263,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-duotone': ph_clipboard_text_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
 	'ph:club-duotone': ph_club_duotone,
+	'ph:coffee-duotone': ph_coffee_duotone,
 	'ph:coin-duotone': ph_coin_duotone,
 	'ph:copy-duotone': ph_copy_duotone,
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
@@ -300,6 +304,7 @@ const icons: IconMap = {
 	'ph:ghost-duotone': ph_ghost_duotone,
 	'ph:globe-duotone': ph_globe_duotone,
 	'ph:hammer-duotone': ph_hammer_duotone,
+	'ph:hand-coins-duotone': ph_hand_coins_duotone,
 	'ph:hand-fist-duotone': ph_hand_fist_duotone,
 	'ph:hand-grabbing-duotone': ph_hand_grabbing_duotone,
 	'ph:hand-heart-duotone': ph_hand_heart_duotone,
@@ -341,6 +346,7 @@ const icons: IconMap = {
 	'ph:note-pencil-duotone': ph_note_pencil_duotone,
 	'ph:notepad-duotone': ph_notepad_duotone,
 	'ph:paint-brush-duotone': ph_paint_brush_duotone,
+	'ph:paint-bucket-duotone': ph_paint_bucket_duotone,
 	'ph:palette-duotone': ph_palette_duotone,
 	'ph:pause-duotone': ph_pause_duotone,
 	'ph:pause-circle-duotone': ph_pause_circle_duotone,
