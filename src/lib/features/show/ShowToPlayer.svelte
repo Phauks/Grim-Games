@@ -17,10 +17,22 @@
 		 * 2026-10-16). Given, `title` and `characters` are not used.
 		 */
 		cards?: readonly ShownInfoCard[];
+		/**
+		 * The grim cover (Trevor, 2026-10-26: "Grim cover, no info at all"): the same opaque
+		 * screen with nothing on it but the close button, for when someone looks at the phone.
+		 */
+		blank?: boolean;
 		onclose?: () => void;
 	}
 
-	let { open = $bindable(false), title, characters = [], cards, onclose }: Props = $props();
+	let {
+		open = $bindable(false),
+		title,
+		characters = [],
+		cards,
+		blank = false,
+		onclose
+	}: Props = $props();
 
 	let dialog = $state<HTMLDialogElement>();
 	let track = $state<HTMLDivElement>();
@@ -45,6 +57,7 @@
 	});
 
 	const label = $derived.by(() => {
+		if (blank) return t('show.covered');
 		// Outside the error boundary, so it must not throw: the dialog has to stay up.
 		try {
 			const card = shownCards[current] ?? shownCards[0];
@@ -100,7 +113,7 @@
 	bind:this={dialog}
 	class="show"
 	aria-label={label}
-	data-testid="show-to-player"
+	data-testid={blank ? 'grim-cover' : 'show-to-player'}
 	oncancel={(event) => {
 		event.preventDefault();
 		close();
@@ -123,7 +136,9 @@
 			full screen and the grimoire never shows through; the close button stays above it.
 		-->
 		<ErrorBoundary area="show">
-			{#if together}
+			{#if blank}
+				<!-- Nothing at all: not even what is covered. -->
+			{:else if together}
 				<div class="together" style:--count={shownCards.length}>
 					{#each shownCards as card, i (i)}
 						<section

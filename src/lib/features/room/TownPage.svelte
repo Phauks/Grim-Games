@@ -25,6 +25,7 @@
 	import { forgetRoom } from './player.svelte.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import { RoomTown } from './town.svelte.ts';
+	import SharedBoard from './SharedBoard.svelte';
 
 	/**
 	 * Public Town (Trevor, 2026-10-26): a tablet in the middle of the table showing the
@@ -32,12 +33,17 @@
 	 * "same as storyteller/player shared grim"), except that it sets no guesses or notes. It
 	 * opens with the room's code alone, as a phone joins, but is no player: the room sends it
 	 * only what every phone already has. The screen stays on while it shows.
+	 *
+	 * `admin`: an admin watching from Live games (plan J31), over the admins' route and unseen.
+	 * While the room holds the whole grimoire it shows that, view-only, as the Grim view link
+	 * does; otherwise the town as the table sees it. Nothing is remembered on this device.
 	 */
 	interface Props {
 		code: string;
+		admin?: boolean;
 	}
 
-	let { code }: Props = $props();
+	let { code, admin = false }: Props = $props();
 
 	const room = $derived(normaliseRoomCode(code));
 	let town = $state.raw<RoomTown>();
@@ -45,13 +51,13 @@
 
 	onMount(() => {
 		if (room) {
-			town = new RoomTown(room);
+			town = new RoomTown(room, admin);
 			// Your games on Join game opens it here again (Trevor, 2026-10-26).
-			rememberRoom(room, undefined, true);
+			if (!admin) rememberRoom(room, undefined, true);
 		}
-		keepScreenAwake(true);
+		if (!admin) keepScreenAwake(true);
 		return () => {
-			keepScreenAwake(false);
+			if (!admin) keepScreenAwake(false);
 			town?.stop();
 		};
 	});
@@ -75,7 +81,7 @@
 				const { script: loaded } = fromScript(sent, data);
 				if (cancelled || loaded.characters.length === 0) return;
 				script = loaded;
-				if (room) rememberRoom(room, loaded.name, true);
+				if (room && !admin) rememberRoom(room, loaded.name, true);
 			})
 			.catch(() => {});
 		return () => (cancelled = true);
@@ -102,7 +108,7 @@
 	);
 	// A closed room leaves Your games, as it does for a phone.
 	$effect(() => {
-		if (room && (status === 'refused' || status === 'closed')) forgetRoom(room);
+		if (room && !admin && (status === 'refused' || status === 'closed')) forgetRoom(room);
 	});
 	const table = $derived(town?.view?.public);
 	const showTown = $derived(!message && !!script && !!table?.seats.length);
@@ -120,68 +126,81 @@
 		document.addEventListener('fullscreenchange', sync);
 		return () => document.removeEventListener('fullscreenchange', sync);
 	});
+	/** An admin's grimoire, once drawn. */
+	let boardReady = $state(false);
+	let boardProblem = $state<string>();
+	const showBoard = $derived(admin && !message && !!town?.grimoire && !boardProblem);
 </script>
 
-<!-- The player screen's title line: the script's logo and name, its byline, Print and Share. -->
-<Page title={script?.name ?? t('room.town.title')} iconActions>
-	{#snippet lead()}
-		{#if logo && !logoFailed}<ScriptLogo
-				src={logo}
-				class="title-logo"
-				onfail={() => (logoFailed = true)}
-			/>{/if}
-	{/snippet}
-	{#snippet actions()}
-		<!-- A tap target high, as the buttons beside it, so the title line keeps its height. -->
-		{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
-		{#if script}<PlayerScriptActions
-				{script}
-				{version}
-				share={shareable}
-				room={room ?? undefined}
-			/>{/if}
-		<!-- Top right, last (Trevor, 2026-10-26: "we will definitely need a button to allow
+{#if showBoard}<SharedBoard
+		shared={town?.grimoire}
+		onReady={(r) => (boardReady = r)}
+		onProblem={(p) => (boardProblem = p)}
+	/>{/if}
+{#if !(showBoard && boardReady)}
+	<!-- The player screen's title line: the script's logo and name, its byline, Print and Share. -->
+	<Page title={script?.name ?? t('room.town.title')} iconActions>
+		{#snippet lead()}
+			{#if logo && !logoFailed}<ScriptLogo
+					src={logo}
+					class="title-logo"
+					onfail={() => (logoFailed = true)}
+				/>{/if}
+		{/snippet}
+		{#snippet actions()}
+			<!-- A tap target high, as the buttons beside it, so the title line keeps its height. -->
+			{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
+			{#if script}<PlayerScriptActions
+					{script}
+					{version}
+					share={shareable}
+					room={room ?? undefined}
+				/>{/if}
+			<!-- Top right, last (Trevor, 2026-10-26: "we will definitely need a button to allow
 		     fullscreen in the top right corner"); it fills the screen with the town alone. -->
-		{#if stage}<FullScreenButton target={stage} />{/if}
-	{/snippet}
-	{#snippet subtitle()}
-		<ScriptByline
-			author={script?.meta.author}
-			{version}
-			storyteller={table?.storytellerName?.trim() || undefined}
-			inline
-		/>&nbsp;
-	{/snippet}
+			{#if stage}<FullScreenButton target={stage} />{/if}
+		{/snippet}
+		{#snippet subtitle()}
+			<ScriptByline
+				author={script?.meta.author}
+				{version}
+				storyteller={table?.storytellerName?.trim() || undefined}
+				inline
+			/>&nbsp;
+		{/snippet}
 
-	<div class="stage" bind:this={stage} data-testid="public-town">
-		{#if showTown && script && table && room}
-			<!-- In full screen the title line is gone, so the day timer and the way back sit in
-			     the town's own top right corner. -->
-			{#if inFullScreen}<div class="exit">
-					{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
-					<span class="exit-button"><FullScreenButton target={stage} /></span>
-				</div>{/if}
-			<PlayerGrim
-				{script}
-				display
-				town={{
-					seats: table.seats,
-					layout: table.layout,
-					storytellerName: table.storytellerName,
-					corner: table.corner,
-					roomCode: room
-				}}
-			/>
-		{:else}
-			<div class="message" data-testid="town-status">
-				<p role={message ? 'alert' : 'status'}>
-					{message ?? (status === 'offline' ? t('room.playerOffline') : t('room.town.waiting'))}
-				</p>
-				{#if message}<Button href={resolve('/join')}>{t('room.joinTitle')}</Button>{/if}
-			</div>
-		{/if}
-	</div>
-</Page>
+		<div class="stage" bind:this={stage} data-testid="public-town">
+			{#if showTown && script && table && room}
+				<!-- In full screen the title line is gone, so the day timer and the way back sit in
+				     the town's own top right corner. -->
+				{#if inFullScreen}<div class="exit">
+						{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
+						<span class="exit-button"><FullScreenButton target={stage} /></span>
+					</div>{/if}
+				<PlayerGrim
+					{script}
+					display
+					town={{
+						seats: table.seats,
+						layout: table.layout,
+						storytellerName: table.storytellerName,
+						corner: table.corner,
+						roomCode: room
+					}}
+				/>
+			{:else}
+				<div class="message" data-testid="town-status">
+					<p role={message ? 'alert' : 'status'}>
+						{message ?? (status === 'offline' ? t('room.playerOffline') : t('room.town.waiting'))}
+					</p>
+					{#if message}<Button href={resolve(admin ? '/live-games' : '/join')}
+							>{admin ? t('room.liveGames.title') : t('room.joinTitle')}</Button
+						>{/if}
+				</div>
+			{/if}
+		</div>
+	</Page>
+{/if}
 
 <style>
 	/* Beside the name in the title, as on /play. */

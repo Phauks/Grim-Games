@@ -1,34 +1,8 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { listedAdmin, signIn } from './admin.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { pickScript, toBoard } from './new-game.ts';
 import { menuButton, theMenu } from './shell.ts';
-
-async function signIn(page: Page, email: string) {
-	await page.goto('/account');
-	await page.getByLabel('Email address').fill(email);
-	await page.getByRole('button', { name: 'Email me a code' }).tap();
-	const code = (await page.getByTestId('preview-code').locator('strong').textContent()) ?? '';
-	await page.getByLabel(`Code sent to ${email}`).fill(code);
-	await page.getByRole('button', { name: 'Sign in' }).tap();
-	// A new account accepts the privacy policy first; a local server reused between runs
-	// already has the admin accounts.
-	const privacy = page.getByRole('alertdialog', { name: 'Privacy policy' });
-	const signedIn = page.getByTestId('account-email');
-	await expect(privacy.or(signedIn).first()).toBeVisible();
-	if (await privacy.isVisible()) {
-		await privacy.getByText('I accept the Privacy policy', { exact: true }).tap();
-		await privacy.getByRole('button', { name: 'Confirm' }).tap();
-	}
-	await expect(signedIn).toHaveText(email);
-}
-
-/**
- * An admin from the start, named in ADMIN_EMAILS like Trevor in Cloudflare (playwright.config.ts).
- * One per test and project, since tests run in parallel and a new code replaces the last.
- */
-function listedAdmin(testInfo: TestInfo, n: 1 | 2): string {
-	return `${testInfo.project.name}-admin-${n}@example.com`;
-}
 
 test('a report sent from the menu reaches the inbox, where it can be triaged and deleted', async ({
 	page

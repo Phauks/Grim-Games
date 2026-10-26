@@ -13,6 +13,7 @@
 		isCurrent,
 		NAV_SECTIONS,
 		REPORTS_ITEM,
+		LIVE_GAMES_ITEM,
 		type NavItem
 	} from './nav.ts';
 	import { openSettings } from './shell.ts';
@@ -63,7 +64,9 @@
 	{/each}
 	{#if account.admin}
 		<h3 id="{listId}-admin">{t('shell.navSectionAdmin')}</h3>
-		<ul aria-labelledby="{listId}-admin">{@render link(REPORTS_ITEM)}</ul>
+		<ul aria-labelledby="{listId}-admin">
+			{@render link(REPORTS_ITEM)}{@render link(LIVE_GAMES_ITEM)}
+		</ul>
 	{/if}
 	<!-- Account and Settings, last in the sidebar and the drawer alike (2026-10-22). -->
 	<h3 id="{listId}-you">{t('shell.navSectionYou')}</h3>
