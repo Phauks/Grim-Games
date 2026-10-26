@@ -50,6 +50,11 @@ export interface InfoOption {
 	 * Recluse as evil): allowed, the Storyteller's call, and abnormal for the Mathematician.
 	 */
 	registered?: SeatId[];
+	/**
+	 * For a players picker, the player the option turns on: the Steward's good player, the
+	 * evil one of the Noble's three.
+	 */
+	pivot?: SeatId;
 }
 
 /** For a number picker: the true number and every number registration allows. */
@@ -205,12 +210,13 @@ function optionsIn(
 		}
 		case 'good-player':
 			// https://wiki.bloodontheclocktower.com/Steward: one good player.
-			return others.filter((s) => !evil(s)).map((s) => ({ seats: [s] }));
+			return others.filter((s) => !evil(s)).map((s) => ({ seats: [s], pivot: s }));
 		case 'one-evil-of-three':
 			// https://wiki.bloodontheclocktower.com/Noble: three players, exactly one evil.
-			return choose(others, 3)
-				.filter((trio) => trio.filter(evil).length === 1)
-				.map((trio) => ({ seats: trio }));
+			return choose(others, 3).flatMap((trio) => {
+				const bad = trio.filter(evil);
+				return bad.length === 1 ? [{ seats: trio, pivot: bad[0] }] : [];
+			});
 	}
 }
 
@@ -305,9 +311,8 @@ export function infoPicker(
 	const worlds = registrationWorlds(game, characters, all.registrations);
 	const optionsOf = (w: RegistrationWorld) =>
 		optionsIn(game, seatId, characterId, spec, characters, w);
-	const relevant = relevantSeats(game, all.registrations, worlds, (w) =>
-		JSON.stringify(optionsOf(w).map(optionKey).sort())
-	);
+	const result = (w: RegistrationWorld) => JSON.stringify(optionsOf(w).map(optionKey).sort());
+	const relevant = relevantSeats(game, all.registrations, worlds, result);
 	const r = onlyRelevant(all, relevant);
 	// A number is one value; other pickers have many options, so no single alternative.
 	const numberIn = (w: RegistrationWorld): AnswerValue | undefined => {
@@ -335,7 +340,7 @@ export function infoPicker(
 		anyAllowed: r.unreliable !== undefined,
 		why: {
 			facts: pickerFacts(game, seatId, characterId, spec, characters, worlds[0]),
-			alternatives: alternatives(game, all.registrations, relevant, worlds, numberIn)
+			alternatives: alternatives(game, all.registrations, relevant, worlds, numberIn, result)
 		},
 		reminders: spec.reminders ?? {},
 		wiki: wikiOf(characterId, characters)

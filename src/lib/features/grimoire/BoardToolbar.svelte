@@ -3,6 +3,7 @@
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import FullScreenButton from '#lib/ui/primitives/FullScreenButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { SeatArranging } from './seat-arranging.svelte.ts';
@@ -39,28 +40,10 @@
 		onShare,
 		onMore
 	}: Props = $props();
-
-	// ── Full screen, for those who don't know their browser's own way (Trevor, 2026-10-23).
-	// Only where the browser can: iPhone Safari can't for a page, so the button isn't there. ──
-	/**
-	 * Not in the installed app (Trevor, 2026-10-23): it already has no address bar, and full
-	 * screen would only take the clock and status bar he wants to keep.
-	 */
-	const canFullScreen =
-		document.fullscreenEnabled === true && !matchMedia('(display-mode: standalone)').matches;
-	let fullScreen = $state(!!document.fullscreenElement);
-	$effect(() => {
-		const sync = () => (fullScreen = !!document.fullscreenElement);
-		document.addEventListener('fullscreenchange', sync);
-		return () => document.removeEventListener('fullscreenchange', sync);
-	});
-	function toggleFullScreen() {
-		if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-		else void document.documentElement.requestFullscreen().catch(() => {});
-	}
 </script>
 
-<div class="toolbar" role="toolbar" aria-label="Grimoire">
+<!-- Left out of the board's picture (screenshot.ts): it is the app's, not the game's. -->
+<div class="toolbar" role="toolbar" aria-label="Grimoire" data-screenshot="skip">
 	{#if seatArr.arranging}
 		<span class="title arranging-title">Arrange seats</span>
 		<span class="spacer"></span>
@@ -129,13 +112,7 @@
 		>
 		<!-- Last, after ⋯, as its symbol alone (Trevor, 2026-10-24); the symbol says on or off,
 		     and one button either way, so the toolbar never moves (two states = a toggle). -->
-		{#if canFullScreen}<IconButton
-				icon={fullScreen ? 'exitFullScreen' : 'fullScreen'}
-				label="Full screen"
-				outlined
-				aria-pressed={fullScreen}
-				onclick={toggleFullScreen}
-			/>{/if}
+		<FullScreenButton outlined />
 	{/if}
 </div>
 

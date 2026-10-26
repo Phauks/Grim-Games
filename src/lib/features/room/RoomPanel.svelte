@@ -192,6 +192,7 @@
 				disabled={!host.viewerKey}
 				oncommit={setPassword}
 				testid="grim-view-password"
+				plain
 			/>
 			<!-- Streaming: the QR and link can stay off screen (Trevor, 2026-10-21). -->
 			<SettingToggle

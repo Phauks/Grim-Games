@@ -66,6 +66,7 @@ import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_minus from '~icons/ph/minus';
 import ph_moon_stars from '~icons/ph/moon-stars';
 import ph_note_pencil from '~icons/ph/note-pencil';
+import ph_paint_bucket from '~icons/ph/paint-bucket';
 import ph_palette from '~icons/ph/palette';
 import ph_pause from '~icons/ph/pause';
 import ph_pen_nib from '~icons/ph/pen-nib';
@@ -174,6 +175,7 @@ const icons: IconMap = {
 	'ph:minus': ph_minus,
 	'ph:moon-stars': ph_moon_stars,
 	'ph:note-pencil': ph_note_pencil,
+	'ph:paint-bucket': ph_paint_bucket,
 	'ph:palette': ph_palette,
 	'ph:pause': ph_pause,
 	'ph:pen-nib': ph_pen_nib,

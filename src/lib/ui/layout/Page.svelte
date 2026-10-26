@@ -11,8 +11,6 @@
 		hideTitle?: boolean;
 		/** Before the title, in the same heading (the locked draw's script logo). */
 		lead?: Snippet;
-		/** `page`: the window's width up to --page-max. `text`: running text at --measure. */
-		width?: 'page' | 'text';
 		/** Buttons at the end of the title row; on a narrow page, in their own row under it. */
 		actions?: Snippet;
 		/**
@@ -44,7 +42,6 @@
 		title,
 		hideTitle = false,
 		lead,
-		width = 'page',
 		actions,
 		iconActions = false,
 		subtitle,
@@ -61,12 +58,13 @@
 </script>
 
 <!--
-	The frame of every page reached from the sidebar (Trevor, 2026-10-17): one width and gutter,
+	The frame of every page reached from the sidebar (Trevor, 2026-10-17): one width and gutter
+	with no narrower variant, so About and Support match Roadmap and Changelog (Trevor, 2026-10-26);
 	the title row with its actions at the end (under the title on a phone), then an optional
 	toolbar, then the content.
 	No Back button: the sidebar navigates. Overlays (dialogs, sheets) go beside it, not inside.
 -->
-<main class="page" data-width={width}>
+<main class="page">
 	<PageMenuButton />
 	<header class="head" class:visually-hidden={hideTitle}>
 		<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
@@ -115,9 +113,6 @@
 	.menu-room {
 		flex: none;
 		width: max(0rem, calc(var(--menu-inset) + var(--tap-target) - var(--page-gutter)));
-	}
-	.page[data-width='text'] {
-		max-width: calc(var(--measure) + 2 * var(--page-gutter));
 	}
 	.head {
 		display: grid;

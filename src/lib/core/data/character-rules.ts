@@ -172,6 +172,12 @@ export interface CharacterRules {
 	stopsWaking?: StopsWaking;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
+	/**
+	 * The ability can make an extra evil player: turn a good player evil or bring one more evil
+	 * player in, as the Spirit of Ivory limits (https://wiki.bloodontheclocktower.com/Spirit_of_Ivory).
+	 * Sushi Buffet's Ivory draft drafts at most one such character (`modes/draft.ts`).
+	 */
+	makesExtraEvil?: boolean;
 }
 
 /** What a player may also register as, besides their true alignment and character type. */
@@ -330,7 +336,8 @@ export const RULE_KEYS = [
 	'nightText',
 	'dayMark',
 	'stopsWaking',
-	'infoTokenCharacters'
+	'infoTokenCharacters',
+	'makesExtraEvil'
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -532,6 +539,8 @@ export function parseCharacterRules(
 		const filled = readInfoTokenCharacters(raw.infoTokenCharacters, at, issues);
 		if (filled) rules.infoTokenCharacters = filled;
 	}
+	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
+	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
 	return issues.list.length > before ? undefined : rules;
 }
 

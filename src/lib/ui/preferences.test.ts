@@ -97,6 +97,7 @@ describe('parsePreferences', () => {
 			ambience: { ...defaultAmbienceChoices(), owl: 'often', rain: 'on' },
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
+			timerForPlayers: 'timer',
 			qrCentre: 'picture',
 			qrPictureWhole: true,
 			qrPictureZoom: 1.5,

@@ -132,6 +132,22 @@ describe('publicProjection', () => {
 		});
 	});
 
+	it('carries the day timer as the Storyteller shows it to players (Trevor, 2026-10-26)', () => {
+		const { game } = busyGame();
+		expect(publicProjection(game)).not.toHaveProperty('timer');
+		const timer = {
+			durationMs: 60_000,
+			elapsedMs: 0,
+			startedAt: 5,
+			mode: 'down' as const,
+			look: 'sun' as const,
+			grimoire: 'secret'
+		};
+		expect(
+			publicProjection(game, undefined, undefined, undefined, undefined, [], timer).timer
+		).toEqual({ durationMs: 60_000, elapsedMs: 0, startedAt: 5, mode: 'down', look: 'sun' });
+	});
+
 	it('carries the game mode and special rules, and nothing for a Standard game', () => {
 		const { game } = busyGame();
 		expect(publicProjection(game)).not.toHaveProperty('rules');

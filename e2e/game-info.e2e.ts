@@ -4,7 +4,7 @@ import { openGameInfo, pickScript, toBoard } from './new-game.ts';
 // Game info has every line the board corner can show, so a phone whose corner has no room
 // still reads them (Trevor, 2026-10-23: "on mobile I can't see the join code or game time").
 
-test('Game info shows the join code, the day or night with Game time, and watchers; the code opens Share', async ({
+test('Game info shows the join code, the day or night, Game time and watchers; the code opens Share', async ({
 	page
 }) => {
 	await page.clock.install();
@@ -16,7 +16,8 @@ test('Game info shows the join code, the day or night with Game time, and watche
 	let info = await openGameInfo(page);
 	const row = (field: string) => info.locator(`tr[data-field="${field}"] td:last-child`);
 	await expect(row('join-code')).toHaveText('None');
-	// The day or night leads Game time, as on the corner (Trevor, 2026-10-24).
+	// The day or night and Game time are lines of their own (Trevor, 2026-10-26).
+	await expect(row('phase')).toHaveText('Setup');
 	await expect(row('game-time')).toHaveText('Setup');
 	await expect(row('watchers')).toHaveText('None');
 
@@ -52,7 +53,8 @@ test('Game info shows the join code, the day or night with Game time, and watche
 
 	info = await openGameInfo(page);
 	await expect(row('join-code')).toHaveText(shown);
-	await expect(row('game-time')).toHaveText(/^Night 1 · 1:0\d$/);
+	await expect(row('phase')).toHaveText('Night 1');
+	await expect(row('game-time')).toHaveText(/^1:0\d$/);
 });
 
 test('an eye on each Game info line chooses what the board corner shows, as Settings > Board does', async ({
@@ -78,10 +80,16 @@ test('an eye on each Game info line chooses what the board corner shows, as Sett
 	const players = info.getByRole('button', { name: 'Players on the board' });
 	await expect(players).toHaveAttribute('aria-pressed', 'false');
 	await players.tap();
+	// The day or night and Game time each have their own eye (Trevor, 2026-10-26).
+	const phaseEye = info.getByRole('button', { name: 'Day or night on the board' });
+	await expect(phaseEye).toHaveAttribute('aria-pressed', 'true');
+	await phaseEye.tap();
 	await page.keyboard.press('Escape');
 	await expect(info).toBeHidden();
 	await expect(corner).not.toContainText('by The Pandemonium Institute');
 	await expect(page.getByTestId('board-players')).toBeAttached();
+	await expect(page.getByTestId('board-phase')).toHaveCount(0);
+	await expect(page.getByTestId('board-game-clock')).toContainText('Setup');
 
 	// The same choices in Settings > Board (⋯ > Board), and after a reload.
 	await page.reload();

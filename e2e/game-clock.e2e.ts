@@ -12,10 +12,10 @@ test('the board shows how long the game has run since the first night began', as
 	await toBoard(page);
 	const clock = page.getByTestId('board-game-clock');
 	// In place before the first night, so nothing moves when it starts: Game time says Setup
-	// (Trevor, 2026-10-24), so the night or day in play waits for the first night.
-	await expect(clock).toHaveText(/^\s*Game time:\s*Setup\s*$/);
+	// (Trevor, 2026-10-24), and so does the day or night's own line (Trevor, 2026-10-26).
+	await expect(clock).toHaveText(/^\s*Game time:?\s*Setup\s*$/);
 	const phase = page.getByTestId('board-phase');
-	await expect(phase).toHaveCount(0);
+	await expect(phase).toHaveText('Setup');
 	const corner = page.getByTestId('script-title');
 	const height = (await corner.boundingBox())?.height;
 
