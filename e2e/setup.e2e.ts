@@ -1338,6 +1338,27 @@ test('the locked draw goes into history only after the PIN sheet has gone', asyn
 	for (const push of pushes) expect(push).toEqual({ dialog: false, digits: '' });
 });
 
+// Trevor (2026-10-26, playtest): one PIN per game. Set on the first lock, it stays after
+// unlocking, so locking again is one tap; Forgot PIN removes it, and the next lock sets one.
+test('the game keeps its PIN: locking again needs no new one', async ({ page }) => {
+	await lockedDraw(page);
+	const lock = page.getByTestId('draw-lock');
+	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
+	await lock.tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'false');
+	// One tap locks again, with no Lock the draw sheet.
+	await lock.tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.getByRole('dialog', { name: 'Lock the draw' })).toHaveCount(0);
+	// The same PIN unlocks it.
+	await lock.tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'false');
+});
+
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
 	page
 }) => {

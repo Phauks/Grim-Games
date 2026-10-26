@@ -7,6 +7,10 @@
  * It is a deterrent, not security (clearing the site's data undoes it), and "Forgot PIN"
  * always unlocks after a visible countdown, so the Storyteller is never locked out.
  *
+ * One PIN per game (Trevor, 2026-10-26): set the first time the draw is locked, it stays on
+ * after unlocking, so locking again is one tap and every locked Storyteller screen of the
+ * game takes the same PIN. Forgot PIN removes it, so the next lock sets a new one.
+ *
  * Used by the Draw page, the board route (asks for the PIN while the game's draw is locked)
  * and the app shell (hides the sidebar and header while `lockedGame` is set).
  */
@@ -30,6 +34,8 @@ interface StoredLock {
 	fails: number;
 	/** No entry is checked before this time (ms since 1970). */
 	waitUntil: number;
+	/** False once unlocked with the PIN kept; locks saved before it existed are locked. */
+	locked: boolean;
 }
 
 function readLock(gameId: string): StoredLock | undefined {
@@ -41,7 +47,8 @@ function readLock(gameId: string): StoredLock | undefined {
 		salt: raw.salt,
 		hash: raw.hash,
 		fails: Number.isInteger(raw.fails) ? (raw.fails as number) : 0,
-		waitUntil: typeof raw.waitUntil === 'number' ? raw.waitUntil : 0
+		waitUntil: typeof raw.waitUntil === 'number' ? raw.waitUntil : 0,
+		locked: raw.locked !== false
 	};
 }
 
@@ -75,10 +82,17 @@ class DrawLock {
 		this.#listen();
 		void this.#version;
 		const id = readStored<string>(LOCKED_GAME_KEY);
-		return typeof id === 'string' && readLock(id) ? id : undefined;
+		return typeof id === 'string' && readLock(id)?.locked ? id : undefined;
 	}
 
 	isLocked(gameId: string): boolean {
+		this.#listen();
+		void this.#version;
+		return readLock(gameId)?.locked === true;
+	}
+
+	/** The game has its PIN, so locking needs no new one. */
+	hasPin(gameId: string): boolean {
 		this.#listen();
 		void this.#version;
 		return readLock(gameId) !== undefined;
@@ -90,9 +104,16 @@ class DrawLock {
 		return readLock(gameId)?.waitUntil ?? 0;
 	}
 
-	async lock(gameId: string, pin: string): Promise<void> {
-		const salt = toHex(crypto.getRandomValues(new Uint8Array(16)));
-		const lock: StoredLock = { v: 1, salt, hash: await hashPin(salt, pin), fails: 0, waitUntil: 0 };
+	/** Locks with a new PIN, or without one with the game's own PIN. */
+	async lock(gameId: string, pin?: string): Promise<void> {
+		const kept = readLock(gameId);
+		let lock: StoredLock;
+		if (pin !== undefined) {
+			const salt = toHex(crypto.getRandomValues(new Uint8Array(16)));
+			const hash = await hashPin(salt, pin);
+			lock = { v: 1, salt, hash, fails: 0, waitUntil: 0, locked: true };
+		} else if (kept) lock = { ...kept, locked: true };
+		else return;
 		writeStored(drawLockKey(gameId), lock);
 		writeStored(LOCKED_GAME_KEY, gameId);
 		this.#version++;
@@ -101,10 +122,13 @@ class DrawLock {
 	/** Checks a PIN; a wrong one counts towards the wait (core/rules/draw-lock.ts). */
 	async unlock(gameId: string, pin: string, now = Date.now()): Promise<UnlockResult> {
 		const lock = readLock(gameId);
-		if (!lock) return 'ok';
+		if (!lock?.locked) return 'ok';
 		if (now < lock.waitUntil) return 'wait';
 		if ((await hashPin(lock.salt, pin)) === lock.hash) {
-			this.clear(gameId);
+			// Unlocked, the PIN stays for the next lock.
+			writeStored(drawLockKey(gameId), { ...lock, fails: 0, waitUntil: 0, locked: false });
+			if (readStored(LOCKED_GAME_KEY) === gameId) writeStored(LOCKED_GAME_KEY, undefined);
+			this.#version++;
 			return 'ok';
 		}
 		const fails = lock.fails + 1;
@@ -113,7 +137,7 @@ class DrawLock {
 		return 'wrong';
 	}
 
-	/** Removes the lock: the right PIN, or "Forgot PIN" once its countdown has run. */
+	/** Removes the lock and its PIN: "Forgot PIN" once its countdown has run. */
 	clear(gameId: string): void {
 		writeStored(drawLockKey(gameId), undefined);
 		if (readStored(LOCKED_GAME_KEY) === gameId) writeStored(LOCKED_GAME_KEY, undefined);
