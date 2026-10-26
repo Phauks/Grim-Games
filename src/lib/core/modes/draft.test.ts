@@ -216,3 +216,55 @@ describe('characters another needs in play', () => {
 		expect(off.forcedBy).toBeUndefined();
 	});
 });
+
+/**
+ * Jinxed pairs, as Grimbits' tool's option: blocked, less likely, or allowed. The Heretic and
+ * the Baron are jinxed so that only one can be in play
+ * (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
+ */
+describe('jinxed pairs', () => {
+	const pick = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
+	const jinxes = data.jinxes.all;
+	const counts = { townsfolk: 0, outsider: 1, minion: 1, demon: 0 };
+	const afterHeretic = (jinxed: DraftConfig['jinxes'], seed: number, offers = [3, 2, 1]) => {
+		const random = seeded(seed);
+		const s = startDraft(
+			{ ...config, offers, jinxes: jinxed },
+			counts,
+			pick('heretic', 'baron', 'poisoner'),
+			random,
+			jinxes
+		);
+		// The Heretic's seat drafts first, so nothing else is set aside.
+		return takeOffer({ ...s, offer: ['heretic'] }, 'heretic', random);
+	};
+
+	it('block a character jinxed with one drafted', () => {
+		for (let seed = 1; seed < 20; seed++)
+			expect(afterHeretic('block', seed).offer).toEqual(['poisoner']);
+	});
+
+	it('still offer a blocked character when nothing else fills the seat', () => {
+		const random = seeded(3);
+		const s = startDraft(
+			{ ...config, jinxes: 'block' },
+			counts,
+			pick('heretic', 'baron'),
+			random,
+			jinxes
+		);
+		expect(takeOffer(s, 'heretic', random).offer).toEqual(['baron']);
+	});
+
+	it('make a jinxed character half as likely with reduce, and leave it alone with allow', () => {
+		const rate = (jinxed: DraftConfig['jinxes']) => {
+			let n = 0;
+			for (let seed = 1; seed <= 2000; seed++)
+				if (afterHeretic(jinxed, seed, [1, 1, 1]).offer[0] === 'baron') n++;
+			return n / 2000;
+		};
+		expect(rate('reduce')).toBeCloseTo(1 / 3, 1);
+		expect(rate('allow')).toBeCloseTo(1 / 2, 1);
+		expect(rate(undefined)).toBeCloseTo(1 / 2, 1);
+	});
+});

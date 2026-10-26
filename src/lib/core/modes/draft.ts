@@ -21,6 +21,13 @@
  * Damsel, https://wiki.bloodontheclocktower.com/Huntsman). It is not forced when it is already
  * drafted, or when no seat can take it.
  *
+ * Jinxed pairs (`jinxes`, the Storyteller's choice on New game, as in Grimbits' tool): with
+ * `block` (the default), a character jinxed with one already drafted is not offered, unless
+ * nothing else can fill the open seats; with `reduce`, it is half as likely to be offered;
+ * with `allow`, jinxes don't matter. A jinxed pair in play puts the Djinn in play
+ * (https://wiki.bloodontheclocktower.com/Djinn), and some pairs can't both be in play at all
+ * (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
+ *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
@@ -33,7 +40,12 @@ export interface DraftConfig {
 	oneTypePerOffer: boolean;
 	/** Drafted characters' setup modifiers change the open slots (mode part `as-chosen`). */
 	modifiers?: boolean;
+	/** How a character jinxed with one already drafted is offered; left out, as `allow`. */
+	jinxes?: JinxedPairs;
 }
+
+export const JINXED_PAIRS = ['block', 'reduce', 'allow'] as const;
+export type JinxedPairs = (typeof JINXED_PAIRS)[number];
 
 /**
  * A count the Storyteller chooses because of a drafted character: how many of `type` the game
@@ -80,6 +92,8 @@ export interface DraftState {
 	forced?: ForcedPick[];
 	/** The character in play that put the current offer's only character there. */
 	forcedBy?: CharacterId;
+	/** Each pool character's jinxed partners in the pool, unless `config.jinxes` is `allow`. */
+	jinxed?: Record<CharacterId, CharacterId[]>;
 }
 
 /** A character dealt to the next seat because `by` needs it in play. */
@@ -97,7 +111,8 @@ export function startDraft(
 	config: DraftConfig,
 	counts: TypeCounts,
 	pool: readonly Character[],
-	random: Random
+	random: Random,
+	jinxes: readonly { characters: readonly [CharacterId, CharacterId] }[] = []
 ): DraftState {
 	const seated = pool.filter((c) => isSeated(c.type));
 	const modifiers = config.modifiers
@@ -117,6 +132,16 @@ export function startDraft(
 				})
 			)
 		: {};
+	const jinxed: Record<CharacterId, CharacterId[]> = {};
+	if ((config.jinxes ?? 'allow') !== 'allow') {
+		for (const {
+			characters: [a, b]
+		} of jinxes) {
+			if (a === b || !ids.has(a) || !ids.has(b)) continue;
+			(jinxed[a] ??= []).push(b);
+			(jinxed[b] ??= []).push(a);
+		}
+	}
 	const state: DraftState = {
 		config,
 		slots: { ...counts },
@@ -127,7 +152,8 @@ export function startDraft(
 		offer: [],
 		offerIndex: 0,
 		...(modifiers ? { modifiers } : {}),
-		...(Object.keys(requires).length > 0 ? { requires } : {})
+		...(Object.keys(requires).length > 0 ? { requires } : {}),
+		...(Object.keys(jinxed).length > 0 ? { jinxed } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
 }
@@ -339,6 +365,13 @@ function withOffer(state: DraftState, size: number, random: Random): DraftState 
 
 function makeOffer(state: DraftState, size: number, random: Random): CharacterId[] {
 	let candidates = state.pool.filter((id) => state.slots[state.types[id]] > 0);
+	const picked = new Set(state.picks);
+	const clashes = (id: CharacterId) => state.jinxed?.[id]?.some((x) => picked.has(x)) ?? false;
+	if (state.config.jinxes === 'block') {
+		// Blocked unless nothing else can fill the open seats, so the draft can always finish.
+		const clear = candidates.filter((id) => !clashes(id));
+		if (clear.length > 0) candidates = clear;
+	}
 	if (state.config.oneTypePerOffer && candidates.length > 0) {
 		// A type with open slots, weighted by how many are open.
 		const open = SEATED_TYPES.filter(
@@ -349,10 +382,14 @@ function makeOffer(state: DraftState, size: number, random: Random): CharacterId
 		const type = open.find((t) => (roll -= state.slots[t]) < 0) ?? open[open.length - 1];
 		candidates = candidates.filter((id) => state.types[id] === type);
 	}
-	const picked: CharacterId[] = [];
+	// Each candidate weighs 1; one jinxed with a drafted character weighs ½ with `reduce`.
+	const weight = (id: CharacterId) => (state.config.jinxes === 'reduce' && clashes(id) ? 0.5 : 1);
+	const offer: CharacterId[] = [];
 	const left = [...candidates];
-	while (picked.length < size && left.length > 0) {
-		picked.push(left.splice(Math.floor(random() * left.length), 1)[0]);
+	while (offer.length < size && left.length > 0) {
+		let roll = random() * left.reduce((n, id) => n + weight(id), 0);
+		const i = left.findIndex((id) => (roll -= weight(id)) < 0);
+		offer.push(left.splice(i < 0 ? left.length - 1 : i, 1)[0]);
 	}
-	return picked;
+	return offer;
 }
