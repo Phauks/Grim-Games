@@ -50,6 +50,7 @@ import ph_clipboard_light from '~icons/ph/clipboard-light';
 import ph_clipboard_text_light from '~icons/ph/clipboard-text-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_club_light from '~icons/ph/club-light';
+import ph_coffee_light from '~icons/ph/coffee-light';
 import ph_coin_light from '~icons/ph/coin-light';
 import ph_copy_light from '~icons/ph/copy-light';
 import ph_copy_simple_light from '~icons/ph/copy-simple-light';
@@ -90,6 +91,7 @@ import ph_gear_six_light from '~icons/ph/gear-six-light';
 import ph_ghost_light from '~icons/ph/ghost-light';
 import ph_globe_light from '~icons/ph/globe-light';
 import ph_hammer_light from '~icons/ph/hammer-light';
+import ph_hand_coins_light from '~icons/ph/hand-coins-light';
 import ph_hand_fist_light from '~icons/ph/hand-fist-light';
 import ph_hand_grabbing_light from '~icons/ph/hand-grabbing-light';
 import ph_hand_heart_light from '~icons/ph/hand-heart-light';
@@ -260,6 +262,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-light': ph_clipboard_text_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:club-light': ph_club_light,
+	'ph:coffee-light': ph_coffee_light,
 	'ph:coin-light': ph_coin_light,
 	'ph:copy-light': ph_copy_light,
 	'ph:copy-simple-light': ph_copy_simple_light,
@@ -300,6 +303,7 @@ const icons: IconMap = {
 	'ph:ghost-light': ph_ghost_light,
 	'ph:globe-light': ph_globe_light,
 	'ph:hammer-light': ph_hammer_light,
+	'ph:hand-coins-light': ph_hand_coins_light,
 	'ph:hand-fist-light': ph_hand_fist_light,
 	'ph:hand-grabbing-light': ph_hand_grabbing_light,
 	'ph:hand-heart-light': ph_hand_heart_light,
