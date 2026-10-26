@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, newGame, run } from '#lib/core/model/fixtures.test-support.ts';
-import { NoopSyncProvider, publicProjection } from './public-projection.ts';
+import { NoopSyncProvider, parsePublicLook, publicProjection } from './public-projection.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
 
@@ -148,6 +148,15 @@ describe('publicProjection', () => {
 		).toEqual({ durationMs: 60_000, elapsedMs: 0, startedAt: 5, mode: 'down', look: 'sun' });
 	});
 
+	it("carries where the game is up to for players' status line (Trevor, 2026-10-26)", () => {
+		const { game } = busyGame();
+		expect(publicProjection(game)).not.toHaveProperty('now');
+		const town = { kind: 'town' as const, number: 2, secret: true };
+		expect(
+			publicProjection(game, undefined, undefined, undefined, undefined, [], undefined, town).now
+		).toEqual({ kind: 'town', number: 2 });
+	});
+
 	it('carries the game mode and special rules, and nothing for a Standard game', () => {
 		const { game } = busyGame();
 		expect(publicProjection(game)).not.toHaveProperty('rules');
@@ -234,8 +243,15 @@ describe('publicProjection', () => {
 
 	it("leaks no Storyteller's seat notes", () => {
 		const { session, ctx, seats } = newGame(5);
-		const s = run(session, ctx, { type: 'SetSeatNote', seatId: seats[0], note: 'secret word' });
+		const s = run(session, ctx, {
+			type: 'SetSeatNote',
+			seatId: seats[0],
+			title: 'secret title',
+			text: 'secret word',
+			hidden: false
+		});
 		expect(JSON.stringify(publicProjection(s.game))).not.toContain('secret word');
+		expect(JSON.stringify(publicProjection(s.game))).not.toContain('secret title');
 	});
 
 	it('leaks no night-order or day-reminder overrides', () => {
@@ -293,6 +309,40 @@ describe('publicProjection', () => {
 			false
 		);
 		expect(publicProjection(s.game).seats.some((seat) => 'traveller' in seat)).toBe(false);
+	});
+});
+
+describe('the shared look', () => {
+	it("carries the board's background, vignette and logo, and nothing else", () => {
+		const { game } = busyGame();
+		const look = { background: 'felt', vignette: 0.55, logo: 0.3, image: 'blob:secret' };
+		expect(
+			publicProjection(
+				game,
+				undefined,
+				undefined,
+				undefined,
+				undefined,
+				[],
+				undefined,
+				undefined,
+				look
+			).look
+		).toEqual({ background: 'felt', vignette: 0.55, logo: 0.3 });
+	});
+
+	it('leaves out a look until the board sends one', () => {
+		expect(publicProjection(busyGame().game).look).toBeUndefined();
+	});
+
+	it('drops anything malformed from another device', () => {
+		expect(parsePublicLook(undefined)).toBeUndefined();
+		expect(parsePublicLook([])).toBeUndefined();
+		expect(parsePublicLook({ background: 'https://example.com/a.png' })).toEqual({});
+		expect(parsePublicLook({ background: 'x'.repeat(33) })).toEqual({});
+		expect(parsePublicLook({ vignette: 'dark', logo: Number.NaN })).toEqual({});
+		expect(parsePublicLook({ vignette: 3, logo: -1 })).toEqual({ vignette: 1, logo: 0 });
+		expect(parsePublicLook({ background: 'script' })).toEqual({ background: 'script' });
 	});
 });
 

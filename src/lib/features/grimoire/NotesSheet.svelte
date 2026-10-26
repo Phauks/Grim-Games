@@ -1,23 +1,22 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
-	import NoteEditor from '#lib/ui/notes/NoteEditor.svelte';
-	import type { TitledNote } from '#lib/ui/notes/note.ts';
+	import NoteDraftEditor from '#lib/ui/notes/NoteDraftEditor.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import SeatNoteDialog from '#lib/ui/notes/SeatNoteDialog.svelte';
+	import SeatNotesDialog from '#lib/ui/notes/SeatNotesDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import SeatNoteEntry from './SeatNoteEntry.svelte';
 
 	/**
 	 * Every note in the game on one screen (Trevor, 2026-10-19): the game's titled notes as
 	 * the player's notebook shows them, ending in a dashed "+ New note" (Trevor, 2026-10-23),
-	 * then each player's note, headed by their character, seat and name. Player notes live
-	 * here, not in the seat sheet; a seat's pen mark or its ⋯ Notes opens just that note's
-	 * editor (`edit`). Never shown to players.
+	 * then each player's notes, headed by their character, seat and name, as the same cards
+	 * (Trevor, 2026-10-26: several notes per player). Player notes live here, not in the seat
+	 * sheet; a seat's pen mark or its ⋯ Notes opens just that player's notes (`edit`). Never
+	 * shown to players.
 	 */
 	interface Props {
 		open: boolean;
@@ -30,75 +29,43 @@
 	const characters = $derived(grimoire.open.characters);
 	const viewOnly = $derived(grimoire.open.viewOnly);
 
-	// ── Editing one seat's note (SeatNoteDialog: saved as it closes, one History entry) ──
-	let editOpen = $state(false);
+	// ── One player's notes (SeatNotesDialog), from their pen mark or ⋯ Notes ──
+	let seatOpen = $state(false);
 	let editing = $state<SeatId>();
 
-	/** Opens a seat's note editor; also used straight from its ⋯ menu, without the sheet. */
+	/** Opens a seat's notes; also used straight from its ⋯ menu, without the sheet. */
 	export function edit(seatId: SeatId) {
 		editing = seatId;
-		editOpen = true;
+		seatOpen = true;
 	}
-	function saveSeatNote(seatId: SeatId | undefined, note: string) {
-		if (seatId && !viewOnly) grimoire.run({ type: 'SetSeatNote', seatId, note });
-	}
-	// The dialog's and field's accessible name; the heading shows the player's badge.
+	// The dialog's accessible name; the heading shows the player's badge.
 	const editTitle = $derived(
 		// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
-		editing === undefined ? '' : `Note: ${seatName(game, editing)}`
+		editing === undefined ? '' : `Notes: ${seatName(game, editing)}`
 	);
 
-	// ── Game notes, in the player's notebook editor (Trevor, 2026-10-23) ──
-	let gameNoteOpen = $state(false);
-	/** The note as it is being written; a new one has no id until it is kept. */
-	let gameDraft = $state<TitledNote>();
-
-	function openGameNote(noteId?: string) {
-		const note = game.notes?.find((n) => n.noteId === noteId);
-		gameDraft = note ? { ...note } : { noteId: '', title: '', text: '', hidden: false };
-		gameNoteOpen = true;
+	// ── A note opened from this sheet: the game's (no seat) or a player's ──
+	let editor = $state<ReturnType<typeof NoteDraftEditor>>();
+	/** Whose note the sheet's editor has open; undefined for a game note. */
+	let noteSeat = $state<SeatId>();
+	function openNote(seatId: SeatId | undefined, noteId?: string) {
+		noteSeat = seatId;
+		editor?.edit(noteId);
 	}
+	const seatNotes = (seatId: SeatId | undefined) => (seatId && game.seats[seatId]?.notes) || [];
 
-	function saveGameNote() {
-		const note = gameDraft;
-		if (!note || viewOnly) return;
-		const { title, text, hidden } = note;
-		if (note.noteId) {
-			const before = game.notes?.find((n) => n.noteId === note.noteId);
-			if (!before) return;
-			if (before.title === title.trim() && before.text === text.trim() && before.hidden === hidden)
-				return;
-			grimoire.run({ type: 'SetGameNote', noteId: note.noteId, title, text, hidden });
-		} else if (title.trim() || text.trim()) {
-			grimoire.run({ type: 'SetGameNote', title, text, hidden });
-		}
+	type Written = { noteId?: string; title: string; text: string; hidden: boolean };
+	function saveNote(seatId: SeatId | undefined, note: Written) {
+		if (viewOnly) return;
+		if (seatId) grimoire.run({ type: 'SetSeatNote', seatId, ...note });
+		else grimoire.run({ type: 'SetGameNote', ...note });
 	}
-	$effect(() => {
-		if (gameNoteOpen) return;
-		untrack(() => {
-			saveGameNote();
-			gameDraft = undefined;
-		});
-	});
-
-	function deleteGameNote() {
-		const id = gameDraft?.noteId;
-		gameDraft = undefined;
-		if (id && !viewOnly) grimoire.run({ type: 'DeleteGameNote', noteId: id });
+	function deleteNote(seatId: SeatId | undefined, noteId: string) {
+		if (viewOnly) return;
+		if (seatId) grimoire.run({ type: 'DeleteSeatNote', seatId, noteId });
+		else grimoire.run({ type: 'DeleteGameNote', noteId });
 	}
 </script>
-
-<svelte:document
-	onvisibilitychange={() => {
-		if (document.visibilityState !== 'hidden') return;
-		if (gameNoteOpen) {
-			saveGameNote();
-			// A new note is kept now, so it is edited, not added again, when the app returns.
-			const added = gameDraft && !gameDraft.noteId ? game.notes?.at(-1) : undefined;
-			if (added && gameDraft) gameDraft = { ...gameDraft, noteId: added.noteId };
-		}
-	}}
-/>
 
 <BottomSheet bind:open title="Notes">
 	<div class="notes" data-testid="notes-sheet">
@@ -106,8 +73,8 @@
 			<h3 id="notes-game">Game</h3>
 			<NoteCards
 				notes={game.notes ?? []}
-				onOpen={openGameNote}
-				onAdd={viewOnly ? undefined : () => openGameNote()}
+				onOpen={(noteId) => openNote(undefined, noteId)}
+				onAdd={viewOnly ? undefined : () => openNote(undefined)}
 			/>
 		</section>
 		<section aria-labelledby="notes-players">
@@ -123,8 +90,9 @@
 							alignment={seat.alignment}
 							{label}
 							playerName={seatName(game, seatId)}
-							note={seat.note}
-							onOpen={() => edit(seatId)}
+							notes={seat.notes ?? []}
+							onOpen={(noteId) => openNote(seatId, noteId)}
+							onAdd={viewOnly ? undefined : () => openNote(seatId)}
 						/>
 					</li>
 				{/each}
@@ -134,7 +102,7 @@
 </BottomSheet>
 
 {#snippet seatCharacter()}
-	<!-- "Note: Ana", then her character on its own line (Trevor, 2026-10-19). -->
+	<!-- "Notes: Ana", then their character on its own line (Trevor, 2026-10-19). -->
 	{@const seat = editing ? game.seats[editing] : undefined}
 	{#if seat?.characterId}
 		<CharacterBadge
@@ -147,27 +115,28 @@
 	{/if}
 {/snippet}
 
-{#snippet noteHeading()}Note: {#if editing !== undefined}<PlayerBadge
+{#snippet noteHeading()}Notes: {#if editing !== undefined}<PlayerBadge
 			name={seatName(game, editing)}
 		/>{/if}{/snippet}
 
 <!-- Never shown to players. -->
-<SeatNoteDialog
-	bind:open={editOpen}
+<SeatNotesDialog
+	bind:open={seatOpen}
 	title={editTitle}
 	subtitle={editing === undefined ? undefined : seatCharacter}
 	heading={editing === undefined ? undefined : noteHeading}
-	value={editing ? (game.seats[editing]?.note ?? '') : ''}
+	notes={seatNotes(editing)}
 	readonly={viewOnly}
-	onSave={(note) => saveSeatNote(editing, note)}
+	onSave={(note) => saveNote(editing, note)}
+	onDelete={(noteId) => deleteNote(editing, noteId)}
 />
 
-<NoteEditor
-	bind:open={gameNoteOpen}
-	note={gameDraft}
+<NoteDraftEditor
+	bind:this={editor}
+	notes={noteSeat ? seatNotes(noteSeat) : (game.notes ?? [])}
 	readonly={viewOnly}
-	onChange={(patch) => gameDraft && (gameDraft = { ...gameDraft, ...patch })}
-	onDelete={deleteGameNote}
+	onSave={(note) => saveNote(noteSeat, note)}
+	onDelete={(noteId) => deleteNote(noteSeat, noteId)}
 />
 
 <style>

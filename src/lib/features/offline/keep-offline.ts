@@ -26,8 +26,12 @@ export function iconUrls(characters: readonly Character[]): string[] {
 
 /** Stores these characters' icons for offline use. Does nothing without a service worker. */
 export function keepIconsOffline(characters: readonly Character[]): void {
+	keepOffline(iconUrls(characters));
+}
+
+/** Stores these files for offline use now. Does nothing without a service worker. */
+export function keepOffline(urls: string[]): void {
 	if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-	const urls = iconUrls(characters);
 	if (urls.length === 0) return;
 	const message: KeepOfflineMessage = { type: 'KEEP_OFFLINE', urls };
 	navigator.serviceWorker.ready.then((reg) => reg.active?.postMessage(message)).catch(() => {});
