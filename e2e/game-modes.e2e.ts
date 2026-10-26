@@ -347,6 +347,34 @@ test('Sushi Buffet allows jinxed pairs by default', async ({ page }) => {
 	expect(state.jinxed).toBeUndefined();
 });
 
+// Grimbits' Redraft: the Storyteller lets the last player draft again, optionally of one type.
+test('Sushi Buffet lets the last player draft again, offered one character type', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	const again = page.getByRole('button', { name: 'Draft again' });
+	await expect(again).toBeDisabled();
+	await drawTile(page);
+	const kept = await keepFirst(page);
+	await again.tap();
+	const dialog = page.getByTestId('redraft');
+	await dialog.getByRole('button', { name: 'Minion', exact: true }).tap();
+	await expect(dialog).toBeHidden();
+	// Their tile is back with them: it opens the new offer.
+	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
+	await expect(rows(page).first()).toBeVisible();
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const state = await page.evaluate(
+		(key) => JSON.parse(localStorage.getItem(key)!).state,
+		`grim-games:mode-deal:v1:${gameId}`
+	);
+	expect(state.picks).toEqual([]);
+	expect(state.discarded).toContain(kept);
+	expect(state.offer.every((id: string) => state.types[id] === 'minion')).toBe(true);
+	await expect(again).toBeDisabled();
+});
+
 // Grimbits' draft deals the King once a Choirboy is drafted
 // (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Choirboy).
 test('Sushi Buffet offers only the King after a Choirboy, saying why, with no refusing', async ({

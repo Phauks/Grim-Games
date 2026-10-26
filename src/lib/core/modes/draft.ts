@@ -35,6 +35,10 @@
  * Spirit of Ivory limits: https://wiki.bloodontheclocktower.com/Spirit_of_Ivory) is drafted;
  * once one is, the others aren't offered, unless nothing else can fill the open seats.
  *
+ * Redraft (Grimbits' tool): the Storyteller lets the last player draft again, optionally naming
+ * the character type. The draft goes back to just before that pick, with the character they
+ * kept set aside, so any setup change it made is undone too.
+ *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
@@ -108,6 +112,10 @@ export interface DraftState {
 	jinxed?: Record<CharacterId, CharacterId[]>;
 	/** The pool characters that make an extra evil player, when `config.ivory` is on. */
 	extraEvil?: CharacterId[];
+	/** The draft as it was before the last pick, for a redraft. */
+	previous?: Omit<DraftState, 'previous'>;
+	/** A redraft's character type: this seat's offers are of it while it has open seats. */
+	onlyType?: SeatedType;
 }
 
 /** A character dealt to the next seat because `by` needs it in play. */
@@ -201,6 +209,8 @@ export function refuseOffer(state: DraftState, random: Random): DraftState {
 export function takeOffer(state: DraftState, id: CharacterId, random: Random): DraftState {
 	if (!state.offer.includes(id)) return state;
 	const type = state.types[id];
+	const previous: DraftState = { ...state };
+	delete previous.previous;
 	let next = setAside(
 		state,
 		state.offer.filter((x) => x !== id)
@@ -210,9 +220,11 @@ export function takeOffer(state: DraftState, id: CharacterId, random: Random): D
 		pool: next.pool.filter((x) => x !== id),
 		picks: [...state.picks, id],
 		slots: { ...next.slots, [type]: next.slots[type] - 1 },
-		offerIndex: 0
+		offerIndex: 0,
+		previous
 	};
 	delete next.forcedBy;
+	delete next.onlyType;
 	next = forceRequired(next, id);
 	const ops = next.modifiers?.[id] ?? [];
 	if (ops.length > 0) {
@@ -242,6 +254,34 @@ export function answerAsk(state: DraftState, total: number, random: Random): Dra
  * The next seat's offer: the first character still to be forced, which can't be refused, or
  * else a fresh offer. A forced character whose type no longer has an open seat is dropped.
  */
+/** Whether the last pick can be drafted again. */
+export const canRedraft = (state: DraftState) =>
+	state.previous !== undefined && state.ask === undefined;
+
+/**
+ * The last player drafts again: the draft as it was before their pick, the character they kept
+ * set aside, and a fresh offer, of `type` only when given.
+ */
+export function redraft(
+	state: DraftState,
+	type: SeatedType | undefined,
+	random: Random
+): DraftState {
+	const back = state.previous;
+	const kept = state.picks.at(-1);
+	if (!back || kept === undefined || !canRedraft(state)) return state;
+	let next: DraftState = {
+		...back,
+		pool: back.pool.filter((x) => x !== kept),
+		discarded: [...back.discarded.filter((x) => x !== kept), kept],
+		offerIndex: 0
+	};
+	delete next.forcedBy;
+	if (type && next.slots[type] > 0) next = { ...next, onlyType: type };
+	else delete next.onlyType;
+	return withOffer(next, next.config.offers[0] ?? 1, random);
+}
+
 function nextOffer(state: DraftState, random: Random): DraftState {
 	let next = state;
 	while (next.forced?.length) {
@@ -386,6 +426,10 @@ function withOffer(state: DraftState, size: number, random: Random): DraftState 
 
 function makeOffer(state: DraftState, size: number, random: Random): CharacterId[] {
 	let candidates = state.pool.filter((id) => state.slots[state.types[id]] > 0);
+	if (state.onlyType) {
+		const of = candidates.filter((id) => state.types[id] === state.onlyType);
+		if (of.length > 0) candidates = of;
+	}
 	const picked = new Set(state.picks);
 	const clashes = (id: CharacterId) => state.jinxed?.[id]?.some((x) => picked.has(x)) ?? false;
 	if (state.config.jinxes === 'block') {

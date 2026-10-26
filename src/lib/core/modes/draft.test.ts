@@ -8,7 +8,9 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { baseCounts } from '#lib/core/rules/distribution.ts';
 import {
+	canRedraft,
 	canRefuse,
+	redraft,
 	refuseOffer,
 	seatsLeft,
 	answerAsk,
@@ -343,5 +345,43 @@ describe('Ivory draft', () => {
 
 	it('still offers one when nothing else fills the seat', () => {
 		expect(afterGoon(true, pick('bountyhunter')).offer).toEqual(['bountyhunter']);
+	});
+});
+
+// Grimbits' Redraft: the Storyteller lets the last player draft again, optionally of one type.
+describe('redraft', () => {
+	it('goes back to before the last pick, sets the kept character aside and offers anew', () => {
+		const random = seeded(3);
+		const start = startDraft(config, baseCounts(7), tb, random);
+		const kept = start.offer[0];
+		const s = takeOffer(start, kept, random);
+		expect(canRedraft(s)).toBe(true);
+		const again = redraft(s, undefined, random);
+		expect(again.picks).toEqual([]);
+		expect(again.slots).toEqual(start.slots);
+		expect(again.discarded).toContain(kept);
+		expect(again.offer).toHaveLength(3);
+		expect(again.offer).not.toContain(kept);
+		expect(canRedraft(again)).toBe(false);
+	});
+
+	it('undoes a setup change the kept character made (the Baron’s +2 Outsiders)', () => {
+		const random = seeded(4);
+		const start = startDraft({ ...config, modifiers: true }, baseCounts(7), tb, random);
+		const s = takeOffer({ ...start, offer: ['baron'] }, 'baron', random);
+		expect(draftTotal(s, 'outsider')).toBe(2);
+		expect(draftTotal(redraft(s, undefined, random), 'outsider')).toBe(0);
+	});
+
+	it('offers only the named type, on refusals too', () => {
+		const random = seeded(5);
+		const start = startDraft(config, baseCounts(7), tb, random);
+		let s = redraft(takeOffer(start, start.offer[0], random), 'minion', random);
+		const typeOf = (id: string) => data.byId.get(id)?.type;
+		expect(s.offer.every((id) => typeOf(id) === 'minion')).toBe(true);
+		s = refuseOffer(s, random);
+		expect(s.offer.every((id) => typeOf(id) === 'minion')).toBe(true);
+		const next = takeOffer(s, s.offer[0], random);
+		expect(next.onlyType).toBeUndefined();
 	});
 });
