@@ -26,6 +26,7 @@ import {
 	setName,
 	setViewers,
 	supportsProtocol,
+	townView,
 	unseat,
 	viewerFailed,
 	viewersLocked,
@@ -264,6 +265,23 @@ describe('the end of a game', () => {
 	it('needs protocol 2, so an older app is told to update rather than miss the end', () => {
 		expect(ROOM_PROTOCOL).toBeGreaterThanOrEqual(2);
 		expect(supportsProtocol(1)).toBe(false);
+	});
+});
+
+describe('a Public Town display', () => {
+	it('sees the public table and the game, and nothing about any member or vote', () => {
+		let room = seated(roomWith('alex', 'sam'), 'alex', 'Alex', 'b');
+		room = openVote(room, 'v1', ['a', 'b']);
+		room = gameOver(room, 'g1', 'good');
+		expect(townView(room)).toEqual({
+			type: 'town-view',
+			public: room.public,
+			gameId: 'g1'
+		});
+	});
+
+	it('sees an empty table before the Storyteller publishes one', () => {
+		expect(townView(newRoom('hash'))).toEqual({ type: 'town-view' });
 	});
 });
 
