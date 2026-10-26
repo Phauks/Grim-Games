@@ -1558,6 +1558,60 @@ test("a player marks their own seat on the players' Grim, and it glows", async (
 	await phoneContext.close();
 });
 
+test('a player puts reminder tokens on seats in their own Grim', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-26): "Reminder tokens for players to use". Any reminder of the script's
+	// characters, since a player can't see which are in play; kept on the phone for the game.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seat = phone.getByTestId('grim-seat').nth(1);
+	await seat.tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
+	await expect(sheet.getByTestId('seat-reminders')).toContainText('None');
+	await sheet.getByTestId('seat-reminders').tap();
+	const picker = phone.getByRole('dialog', { name: 'Reminders for Seat 2' });
+	const poisoned = picker
+		.getByRole('group', { name: 'Poisoner' })
+		.getByRole('button', { name: 'Poisoned' });
+	await expect(poisoned).toHaveAttribute('aria-pressed', 'false');
+	await poisoned.tap();
+	await expect(poisoned).toHaveAttribute('aria-pressed', 'true');
+	await expect(
+		picker.getByRole('group', { name: 'On this seat' }).getByRole('button', {
+			name: 'Poisoned: take off'
+		})
+	).toBeVisible();
+	await phone.keyboard.press('Escape');
+	await expect(sheet.getByTestId('seat-reminders')).toContainText('Poisoned');
+	await phone.keyboard.press('Escape');
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your reminders: Poisoned');
+	const token = phone.getByTestId('player-grim').getByTestId('board-reminder');
+	await expect(token).toHaveCount(1);
+	await expect(token).toHaveAccessibleName('Poisoned reminder');
+
+	// Kept on this phone for the game.
+	await phone.reload();
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(token).toHaveCount(1);
+	// A tap on the token opens the seat's reminders, where it comes off.
+	await token.tap();
+	await phone
+		.getByRole('dialog', { name: 'Reminders for Seat 2' })
+		.getByRole('button', { name: 'Poisoned: take off' })
+		.tap();
+	await expect(token).toHaveCount(0);
+	await phoneContext.close();
+});
+
 test("a Banshee the Demon killed shows two votes and no ghost vote on the players' Grim", async ({
 	page,
 	browser
