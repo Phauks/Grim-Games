@@ -2581,10 +2581,12 @@ async function endWithNote(page: Page) {
 		.tap();
 	await closeSheet(page);
 	await menu(page, 'Notes');
-	await page.getByRole('button', { name: 'Notes for Seat 1: None' }).tap();
-	const notes = page.getByRole('dialog', { name: 'Note: Seat 1' });
-	await notes.getByRole('textbox').tap();
-	await page.keyboard.type('Secret word: lantern');
+	await page
+		.getByRole('group', { name: 'Notes for Seat 1' })
+		.getByRole('button', { name: 'New note' })
+		.tap();
+	const notes = page.getByRole('dialog', { name: 'Note', exact: true });
+	await notes.getByRole('textbox', { name: 'Text' }).fill('Secret word: lantern');
 	await notes.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
 	await menu(page, 'End game');
