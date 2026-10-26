@@ -43,8 +43,8 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await phone.getByTestId('you-row').tap();
-	const you = phone.getByRole('dialog', { name: 'You', exact: true });
+	await phone.getByTestId('you-button').tap();
+	const you = phone.getByRole('dialog', { name: 'Your settings' });
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await nameSeat(page, board, 2, 'Alex');
@@ -110,8 +110,8 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await phone.getByTestId('you-row').tap();
-	const you = phone.getByRole('dialog', { name: 'You', exact: true });
+	await phone.getByTestId('you-button').tap();
+	const you = phone.getByRole('dialog', { name: 'Your settings' });
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Sam');
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await nameSeat(page, board, 1, 'Sam');
