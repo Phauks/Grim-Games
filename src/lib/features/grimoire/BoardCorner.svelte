@@ -121,6 +121,8 @@
 	const phase = $derived(corner?.phase ? phaseText(corner.phase) : undefined);
 	/** The day or night and Game time, kept together where the corner has room for them. */
 	const showClockLine = $derived(showGameClock || showPhase);
+	/** Between lines that share one: Svelte trims plain spaces at a block's edges. */
+	const SEPARATOR = ' · ';
 	let clockNow = $state(Date.now());
 	$effect(() => {
 		if (!showGameClock || clockStart === undefined || clockEnd !== undefined) return;
@@ -187,9 +189,9 @@
      no lines to spare (shared), where Game time's label is for screen readers only. -->
 {#snippet clockLine(shared: boolean)}
 	{#if showPhase}<span data-testid="board-phase" class:line={!shared}>{phase}</span
-		>{/if}{#if shared && showPhase && showGameClock}
-		·
-	{/if}{#if showGameClock}<span data-testid="board-game-clock" class:line={!shared}
+		>{/if}{#if shared && showPhase && showGameClock}{SEPARATOR}{/if}{#if showGameClock}<span
+			data-testid="board-game-clock"
+			class:line={!shared}
 			>{#if shared}<span class="visually-hidden">{t('history.gameLength')}</span>{:else}{t(
 					'history.gameLength'
 				)}:{/if}
@@ -201,8 +203,7 @@
 	<span class="room-code-line"
 		>{t('room.joinCode')}
 		<span class="code">{roomCode ? formatRoomCode(roomCode) : t('common.none')}</span
-		>{#if showClockLine && !clockFits}
-			· {@render clockLine(true)}{/if}</span
+		>{#if showClockLine && !clockFits}{SEPARATOR}{@render clockLine(true)}{/if}</span
 	>
 {/snippet}
 

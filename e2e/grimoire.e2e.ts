@@ -1216,7 +1216,7 @@ test('the join code shows under the script name, a Board setting, read only', as
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	// The day or night and Game time join the code's line where a phone's corner has no line
 	// to spare for them.
-	const codeLine = new RegExp(`^Join code ${shown}(\\s*·\\s*Game time Setup)?$`);
+	const codeLine = new RegExp(`^Join code ${shown}( · Setup)?( · Game time Setup)?$`);
 	await expect(corner).toHaveText(codeLine);
 	// Only read: Share is the toolbar's button, not the corner (Trevor, 2026-10-24).
 	await expect(page.getByRole('button', { name: /Join code/ })).toHaveCount(0);
@@ -5200,7 +5200,24 @@ test('the corner’s Game info closes when a seat opens', async ({ page }) => {
 	await corner.tap();
 	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
 	await expect(info).toBeVisible();
-	await openSeat(page, 1);
+	// A seat where the popover leaves part of it clear: it covers most of a phone's board.
+	const clear = await page.getByTestId('seat').evaluateAll((seats) => {
+		for (const [index, seat] of seats.entries()) {
+			const box = seat.getBoundingClientRect();
+			for (const fx of [0.5, 0.15, 0.85])
+				for (const fy of [0.5, 0.15, 0.85]) {
+					const x = box.width * fx;
+					const y = box.height * fy;
+					const at = document.elementFromPoint(box.x + x, box.y + y);
+					if (at && seat.contains(at)) return { index, x, y };
+				}
+		}
+	});
+	expect(clear).toBeDefined();
+	await page
+		.getByTestId('seat')
+		.nth(clear!.index)
+		.tap({ position: { x: clear!.x, y: clear!.y } });
 	await expect(info).toBeHidden();
 });
 
