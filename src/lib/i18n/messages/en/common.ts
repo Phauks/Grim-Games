@@ -7,6 +7,7 @@ export const common = {
 	'common.close': 'Close',
 	'common.moreTabs': 'More tabs',
 	'common.searchShortcut': 'Search (press /)',
+	'common.searchReminders': 'Search reminders',
 	'common.confirm': 'Confirm',
 	'common.none': 'None',
 	'common.hideContents': 'Hide contents',
