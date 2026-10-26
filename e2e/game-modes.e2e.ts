@@ -476,6 +476,16 @@ async function pick(page: Page, names: readonly string[]) {
 		await page.getByRole('button', { name, exact: true }).and(page.locator('[aria-pressed]')).tap();
 }
 
+// Trevor, 2026-10-26: one game stops at 20 players; towns sharing their players go to 40.
+test('Two games at once takes more than 20 players', async ({ page }) => {
+	await page.goto('/new');
+	await chooseMode(page, 'Two games at once');
+	const more = modesPanel(page).getByRole('button', { name: 'More players' });
+	for (let n = 8; n < 21; n++) await more.tap();
+	await expect(modesPanel(page).getByTestId('player-count')).toHaveText('21');
+	await expect(more).toBeEnabled();
+});
+
 test('Two games at once: one setup for both bags, then one token for both games', async ({
 	page
 }) => {
