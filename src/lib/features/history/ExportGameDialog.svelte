@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import { dataUrl, grimoireImage } from '#lib/features/grimoire/grimoire-image.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { downloadBlob, downloadFile, fileNameFor } from '#lib/ui/download.ts';
-	import type { SeatLayout } from '#lib/ui/seating/seat-layout.ts';
+	import { dataUrl } from '#lib/ui/screenshot.ts';
 	import { buildRecap, type RecapSource } from './recap.ts';
 	import { recapHtml, type RecapParts } from './recap-html.ts';
 	import ShareRecapDialog from './ShareRecapDialog.svelte';
@@ -15,15 +14,16 @@
 	 * Saves a finished game (Trevor, 2026-10-19): one HTML file with the history log, the
 	 * final grimoire and the Storyteller's notes, each part chosen here, or the grimoire on
 	 * its own as a PNG. The board's ⋯ menu and History open it, and Share passes the game on
-	 * to the players' phones (ShareRecapDialog). From the board, the grimoire is a screenshot
-	 * of the board itself (Trevor, 2026-10-26); elsewhere it is drawn from the game.
+	 * to the players' phones (ShareRecapDialog). Only the board opens it (History goes to the
+	 * board first, EXPORT_HASH), so the grimoire is a screenshot of the board itself (Trevor,
+	 * 2026-10-26: no separately drawn copy to keep up to date).
 	 */
 	interface Props {
 		open: boolean;
-		/** The game to save: loaded when asked, so History needn't open every game. */
-		load: () => Promise<{ source: RecapSource; layout: SeatLayout }>;
-		/** The board's picture as it is on screen, when the board is behind this dialog. */
-		capture?: () => Promise<Blob>;
+		/** The game to save, as it was when it ended. */
+		load: () => Promise<RecapSource>;
+		/** The board's picture as it is on screen. */
+		capture: (type?: 'image/png' | 'image/jpeg') => Promise<Blob>;
 	}
 
 	let { open = $bindable(), load, capture }: Props = $props();
@@ -37,27 +37,14 @@
 		shareOpen = true;
 	}
 
-	async function picture(source: RecapSource, layout: SeatLayout, caption: string) {
-		if (capture) return capture();
-		await document.fonts?.ready;
-		return grimoireImage(source.game, source.characters, layout, caption);
-	}
-
 	async function run(what: 'recap' | 'image') {
 		busy = true;
 		try {
-			const { source, layout } = await load();
-			const recap = buildRecap(source);
-			const caption = `${recap.title} · ${recap.result}`;
+			const recap = buildRecap(await load());
 			if (what === 'image') {
-				downloadBlob(
-					fileNameFor(recap.title, 'grimoire', 'png'),
-					await picture(source, layout, caption)
-				);
+				downloadBlob(fileNameFor(recap.title, 'grimoire', 'png'), await capture());
 			} else {
-				const image = parts.image
-					? await dataUrl(await picture(source, layout, caption))
-					: undefined;
+				const image = parts.image ? await dataUrl(await capture()) : undefined;
 				downloadFile(
 					fileNameFor(`${recap.title} ${recap.played}`, 'game', 'html'),
 					recapHtml(recap, parts, image),
@@ -103,7 +90,7 @@
 	{/snippet}
 </Dialog>
 
-<ShareRecapDialog bind:open={shareOpen} {load} />
+<ShareRecapDialog bind:open={shareOpen} {load} {capture} />
 
 <style>
 	.parts {
