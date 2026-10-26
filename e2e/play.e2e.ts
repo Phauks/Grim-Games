@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expectMatchingIconRow } from './icon-row.ts';
 import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
@@ -627,6 +628,14 @@ test('a jinxed character shows its partners beside its name, and tapping shows t
 		.first()
 		.evaluate((li) => getComputedStyle(li).borderBottomStyle);
 	expect(line).toBe('solid');
+});
+
+test('the title line’s sheet background, Print and Share are one kind of button', async ({
+	page
+}) => {
+	// Trevor, 2026-10-26: the paint bucket "should be the same as other buttons it is in the same line as".
+	const row = page.getByRole('banner').or(page.locator('header')).first();
+	await expectMatchingIconRow(row, ['Sheet background', 'Print script', 'Share script']);
 });
 
 test('the Script sheet can be made compact from Settings', async ({ page }) => {

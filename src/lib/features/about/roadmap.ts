@@ -78,12 +78,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J25',
 			'J26',
 			'J27',
-			'J29'
+			'J29',
+			'J30'
 		]
 	},
 	{
 		title: "Player screen: the script, the town's grim, notes, avatars and frames",
-		parts: ['R6', 'R7', 'R8', 'J10', 'J11', 'J12', 'J13', 'J21', 'L18b', ...range('W', 1, 9)]
+		parts: ['R6', 'R7', 'R8', 'J10', 'J11', 'J12', 'J13', 'J21', 'J28', 'L18b', ...range('W', 1, 9)]
 	},
 	{
 		title: 'One start flow: New game, then Game info during the game',

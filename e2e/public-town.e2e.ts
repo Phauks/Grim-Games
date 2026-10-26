@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { expectMatchingIconRow } from './icon-row.ts';
 import { toBoard } from './new-game.ts';
 
 // Public Town (Trevor, 2026-10-26): "an additional tablet could be used to display the player
@@ -66,10 +67,29 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	const corner = (await fullScreen.boundingBox())!;
 	expect(corner.x).toBeGreaterThan(share.x);
 	expect(Math.abs(corner.y - share.y)).toBeLessThan(2);
+	// Drawn like Print and Share beside it (Trevor, 2026-10-26: "it looks different from the
+	// others in the line").
+	await expectMatchingIconRow(tablet.getByRole('banner').or(tablet.locator('header')).first(), [
+		'Sheet background',
+		'Print script',
+		'Share script',
+		'Full screen'
+	]);
+	// It fills the screen with the town alone, not the app (Trevor, 2026-10-26: "not the app
+	// itself, but that part of it"), whose own corner then holds the way back.
 	await fullScreen.tap();
-	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
-	expect(await tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
-	await fullScreen.tap();
+	// The request settles after the tap, so wait for it.
+	await expect
+		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
+		.toBe('public-town');
+	const exit = tablet
+		.getByTestId('public-town')
+		.getByRole('button', { name: 'Full screen', exact: true });
+	await expect(exit).toHaveAttribute('aria-pressed', 'true');
+	await expect(town).toBeVisible();
+	await exit.tap();
+	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	await expect(exit).toHaveCount(0);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
 
 	// The display is not a player: the Storyteller's room counts no one.

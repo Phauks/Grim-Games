@@ -69,5 +69,6 @@
 		"you-are": {
 			"characters": ["self"]
 		}
-	}
+	},
+	"makesExtraEvil": true
 }
