@@ -267,6 +267,10 @@ export const modes = {
 	'modes.field.recycleUnchosen': 'Role Recycling',
 	'modes.roleRecycling': 'Role Recycling',
 	'modes.roleRecyclingHint': 'Declined characters return to character pool for future players.',
+	'modes.jinxedPairs': 'Jinxed pairs',
+	'modes.jinxedPairs.block': 'Block',
+	'modes.jinxedPairs.reduce': 'Less likely',
+	'modes.jinxedPairs.allow': 'Allow',
 	'modes.settings': 'Game mode settings',
 	'modes.campaign.chooseHint': 'Start a new campaign, or carry on one you have played before.',
 	'modes.restrictedHint':

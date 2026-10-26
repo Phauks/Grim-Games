@@ -13,8 +13,8 @@
 	 * found closed leaves the list.
 	 */
 	interface Props {
-		/** A room was tapped. */
-		onOpen: (code: string) => void;
+		/** A room was tapped: `town` when this device last opened it as a Public Town display. */
+		onOpen: (code: string, town: boolean) => void;
 	}
 
 	let { onOpen }: Props = $props();
@@ -52,7 +52,7 @@
 						type="button"
 						class="recent-game"
 						disabled={game === null}
-						onclick={() => onOpen(room.code)}
+						onclick={() => onOpen(room.code, !!room.town)}
 					>
 						<ScriptLogo src={game?.logo} name={game?.name ?? room.script} class="recent-logo" />
 						<span class="recent-text">
@@ -69,7 +69,9 @@
 										: formatRoomCode(room.code)}</span
 							>
 							<!-- Its own line, so a phone shows all of it (Trevor, 2026-10-26). -->
-							<span class="recent-line">{lastSeen.format(room.at)}</span>
+							<span class="recent-line"
+								>{lastSeen.format(room.at)}{room.town ? ` · ${t('room.town.title')}` : ''}</span
+							>
 						</span>
 					</button>
 				</li>

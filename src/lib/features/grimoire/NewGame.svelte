@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { NEW_GAME_MAX_PLAYERS } from '#lib/features/setup/selection.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -22,13 +23,10 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import {
 		loadScriptChoice,
-		scriptChoices,
-		searchableScripts,
 		type ScriptChoice
 	} from '#lib/features/modes/script-choices.svelte.ts';
-	import { allModes } from '#lib/features/modes/custom-modes.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import ScriptVoteSheet from '#lib/features/room/ScriptVoteSheet.svelte';
+	import { takeVotePick } from '#lib/features/room/vote-pick.ts';
 	import { openedByBack, readDraft, saveDraft } from '#lib/features/modes/new-game-draft.ts';
 	import { readNextGame } from '#lib/features/game/next-game.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -48,7 +46,11 @@
 		void loadOfficialData();
 		// From a game, its seat count; Play on the Search page chooses that script.
 		const carried = compact ? readNextGame()?.names.length : undefined;
+		// Played from the room vote's screen (Trevor, 2026-10-26), over what Back put back.
+		const voted = takeVotePick();
+		if (voted?.subject === 'mode') modeId = voted.id;
 		if (carried) players = carried;
+		else if (voted?.subject === 'script') edition = voted.id;
 		else if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
 		// Back from the start flow puts New game back as it was (Trevor, 2026-10-23).
 		else if (openedByBack()) {
@@ -63,25 +65,6 @@
 			if (host.code) host.setChoosing(false);
 		};
 	});
-	// ── The room's vote on the next script (plan R1) ──
-	let voteOpen = $state(false);
-	const voteChoices = $derived.by(() => {
-		const all = [...scriptChoices(), ...searchableScripts()];
-		return all.filter((c, i) => all.findIndex((d) => d.value === c.value) === i);
-	});
-	function openVote() {
-		const host = roomHost();
-		host.prepare();
-		host.setChoosing(true);
-		voteOpen = true;
-	}
-	/** New game's modes, Standard first, for a vote on the mode (Trevor, 2026-10-23). */
-	const voteModes = $derived(
-		[STANDARD, ...allModes().filter((m) => m.id !== STANDARD.id)].map((m) => ({
-			value: m.id,
-			label: m.name
-		}))
-	);
 	let modeId = $state(STANDARD.id);
 	// ── New game ──
 	/** An official edition, `recent:<scriptId>` or `profile:<id>` (script-choices.svelte.ts). */
@@ -154,14 +137,20 @@
 				{#snippet aside()}
 					<!-- Opens this device's room if it has none, so the table can gather and vote
 					     before any script is chosen (Trevor, 2026-10-23). -->
-					<Button variant="quiet" icon="vote" onclick={openVote}
+					<!-- The vote is its own screen (Trevor, 2026-10-26: "Not a popup"). -->
+					<Button variant="quiet" icon="vote" href={resolve('/vote')}
 						>{t('room.scriptVote.button')}</Button
 					>
 				{/snippet}
 				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
 			</PageSection>
 			<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
-			<PlayerCountSheet {players} onChange={(n) => (players = n)} {maxPlayers} />
+			<PlayerCountSheet
+				{players}
+				onChange={(n) => (players = n)}
+				max={NEW_GAME_MAX_PLAYERS}
+				{maxPlayers}
+			/>
 			<Button
 				variant="accent"
 				icon="grimoire"
@@ -171,14 +160,6 @@
 		{/snippet}
 	</GameModesPanel>
 </section>
-
-<ScriptVoteSheet
-	bind:open={voteOpen}
-	choices={voteChoices}
-	onPick={(id) => (edition = id)}
-	modes={voteModes}
-	onPickMode={(id) => (modeId = id)}
-/>
 
 <style>
 	section {

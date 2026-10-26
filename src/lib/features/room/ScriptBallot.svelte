@@ -8,14 +8,14 @@
 	import ScriptDetails from '#lib/features/scripts/ScriptDetails.svelte';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
-	import { scriptVoteCountLabel } from './script-vote-count.ts';
+	import VoteStats from './VoteStats.svelte';
 	import VoteChoice from './VoteChoice.svelte';
 	import VoteTimeLeft from './VoteTimeLeft.svelte';
 
 	/**
-	 * A phone's ballot in the room's vote on the next script (Trevor, 2026-10-20, plan R1). It
-	 * opens over the page once for each new vote, again when the Storyteller ends it early,
-	 * and from the room row's Ballot button. Taps make a draft that Vote sends (Trevor,
+	 * A phone's ballot in the room's vote on the next script (Trevor, 2026-10-20, plan R1): the
+	 * player screen's content while a vote is open (Trevor, 2026-10-26: its own screen, not a
+	 * popup), with the Storyteller's count under it when they let players see it. Taps make a draft that Vote sends (Trevor,
 	 * 2026-10-26: "I chose my choices but can't vote, change, or review details"): one script
 	 * for a single choice, any for a multiple choice, and for a ranking the scripts tapped in
 	 * order, any number of them, moved up or down. Vote again replaces the last ballot and
@@ -24,26 +24,16 @@
 	 */
 	interface Props {
 		player: RoomPlayer;
-		open?: boolean;
 	}
 
-	let { player, open = $bindable(false) }: Props = $props();
+	let { player }: Props = $props();
 
 	const vote = $derived(player.view?.scriptVote);
 	let seen: string | undefined;
-	let seenCall: string | undefined;
 	$effect(() => {
 		const id = vote?.voteId;
-		if (id && id !== seen) {
-			open = true;
-			draft = undefined;
-		}
-		if (!id) open = false;
+		if (id !== seen) draft = undefined;
 		seen = id;
-		// The Storyteller ended it early: every phone gets its last chance (Trevor, 2026-10-26).
-		const call = vote?.finalCall ? id : undefined;
-		if (call && call !== seenCall) open = true;
-		seenCall = call;
 	});
 
 	/** This phone's choices before Vote sends them; the sent ballot until the first tap. */
@@ -108,8 +98,10 @@
 	);
 </script>
 
-<!-- The same ballot for a vote on the game mode (Trevor, 2026-10-23). -->
-<Dialog bind:open title={t(mode ? 'room.scriptVote.modeTitle' : 'room.scriptVote.title')}>
+<!-- The same ballot for a vote on the game mode (Trevor, 2026-10-23). The page's own content
+     while a vote is open, not a popup (Trevor, 2026-10-26). -->
+<section class="ballot" aria-labelledby="ballot-title" data-testid="ballot-screen">
+	<h2 id="ballot-title">{t(mode ? 'room.scriptVote.modeTitle' : 'room.scriptVote.title')}</h2>
 	<p class="lead">{lead}</p>
 	<VoteTimeLeft endsAt={vote?.endsAt} finalCall={!!vote?.finalCall} onEnded={(e) => (ended = e)} />
 	<ul class="vote" data-testid="script-ballot">
@@ -118,9 +110,6 @@
 			<li>
 				<VoteChoice
 					mark={ranked && place >= 0 ? place + 1 : ''}
-					aside={vote?.tally && vote
-						? scriptVoteCountLabel(vote.kind, vote.tally, option.id)
-						: undefined}
 					pressed={place >= 0}
 					disabled={offline}
 					onclick={() => tap(option.id)}
@@ -155,11 +144,6 @@
 			</li>
 		{/each}
 	</ul>
-	{#if vote?.tally}
-		<p class="count" data-testid="script-ballot-count">
-			{t('room.scriptVote.voted', { voted: vote.tally.voted, members: vote.tally.members })}
-		</p>
-	{/if}
 	<div class="actions">
 		<Button variant="quiet" disabled={offline || sent.length === 0} onclick={withdraw}
 			>{t('room.scriptVote.withdraw')}</Button
@@ -168,7 +152,11 @@
 			>{t(sent.length ? 'room.scriptVote.change' : 'room.scriptVote.vote')}</Button
 		>
 	</div>
-</Dialog>
+	{#if vote?.tally}
+		<!-- The Storyteller's own count, when they let players see it (Trevor, 2026-10-26). -->
+		<VoteStats kind={vote.kind} options={vote.options} tally={vote.tally} />
+	{/if}
+</section>
 
 <Dialog bind:open={detailsOpen} title={t('scripts.details.label')}>
 	{#if shown}
@@ -184,13 +172,20 @@
 </Dialog>
 
 <style>
-	.lead {
-		margin: 0 0 var(--space-3);
+	.ballot {
+		display: grid;
+		gap: var(--space-3);
+		margin-top: var(--space-3);
+	}
+	.ballot > * {
+		margin: 0;
+	}
+	h2 {
+		font-size: 1.2rem;
 	}
 	.vote {
 		display: grid;
 		gap: var(--space-1);
-		margin: 0 0 var(--space-3);
 		padding: 0;
 		list-style: none;
 	}
@@ -210,10 +205,6 @@
 		height: 1.5em;
 		margin-inline-end: var(--space-1);
 		vertical-align: middle;
-	}
-	.count {
-		margin: 0 0 var(--space-3);
-		color: var(--on-surface-muted);
 	}
 	/* Withdraw on the left, Vote bottom right (Trevor: Confirm bottom right). */
 	.actions {

@@ -133,6 +133,7 @@ import ph_moon_stars_duotone from '~icons/ph/moon-stars-duotone';
 import ph_note_pencil_duotone from '~icons/ph/note-pencil-duotone';
 import ph_notepad_duotone from '~icons/ph/notepad-duotone';
 import ph_paint_brush_duotone from '~icons/ph/paint-brush-duotone';
+import ph_paint_bucket_duotone from '~icons/ph/paint-bucket-duotone';
 import ph_palette_duotone from '~icons/ph/palette-duotone';
 import ph_pause_duotone from '~icons/ph/pause-duotone';
 import ph_pause_circle_duotone from '~icons/ph/pause-circle-duotone';
@@ -345,6 +346,7 @@ const icons: IconMap = {
 	'ph:note-pencil-duotone': ph_note_pencil_duotone,
 	'ph:notepad-duotone': ph_notepad_duotone,
 	'ph:paint-brush-duotone': ph_paint_brush_duotone,
+	'ph:paint-bucket-duotone': ph_paint_bucket_duotone,
 	'ph:palette-duotone': ph_palette_duotone,
 	'ph:pause-duotone': ph_pause_duotone,
 	'ph:pause-circle-duotone': ph_pause_circle_duotone,

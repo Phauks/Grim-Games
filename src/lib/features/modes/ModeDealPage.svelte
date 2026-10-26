@@ -3,7 +3,7 @@
 	import { backToNewGame } from './new-game-draft.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import { fromScript, type Character, type CharacterId } from '#lib/core/data/index.ts';
 	import {
 		answerAsk,
 		canRefuse,
@@ -17,7 +17,8 @@
 		takeOffer
 	} from '#lib/core/modes/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import type { BagSlot } from '#lib/core/rules/index.ts';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { scriptJinxes, type BagSlot } from '#lib/core/rules/index.ts';
 	import { splitPlayers, type SeatedType } from '#lib/core/rules/distribution.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -70,6 +71,13 @@
 		})
 	);
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
+	// TPI's jinxes and the script's own, among the draft's characters (Jinxed pairs on New game).
+	const jinxes = $derived.by(() => {
+		const data = officialData.current;
+		if (!data) return [];
+		const script = fromScript(game.script, data).script;
+		return scriptJinxes(data.jinxes, byId.keys(), script.homebrewJinxes);
+	});
 	/**
 	 * With the slot machine on (a Bag draw setting), reels run through every character a player
 	 * can get: Sushi Buffet's offers spin in 3, 2, 1, and Whale Buffet's choice is revealed as
@@ -91,11 +99,13 @@
 					{
 						...assignment,
 						recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen,
-						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen'
+						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen',
+						jinxes: record?.jinxedPairs ?? 'allow'
 					},
 					split.counts,
 					pickableCharacters(mode, characters),
-					Math.random
+					Math.random,
+					jinxes
 				)
 			};
 		if (assignment?.kind === 'choose-own')

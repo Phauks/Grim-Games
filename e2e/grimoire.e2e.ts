@@ -2572,7 +2572,7 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 		const file = await download;
 		const path = `test-results/export-${test.info().project.name}-${file.suggestedFilename()}`;
 		await file.saveAs(path);
-		return { name: file.suggestedFilename(), text: readFileSync(path, 'utf8') };
+		return { name: file.suggestedFilename(), text: readFileSync(path, 'utf8'), path };
 	};
 	const recap = await read('Download');
 	expect(recap.name).toMatch(/^trouble-brewing-.*\.html$/);
@@ -2586,6 +2586,13 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	expect((await read('Download')).text).not.toContain('Secret word: lantern');
 	const image = await read('Image');
 	expect(image.name).toBe('trouble-brewing.png');
+	// Trevor, 2026-10-26: the image is the board on screen, not a drawn copy, so it has the
+	// board's own shape (a PNG's width and height are at bytes 16 and 20).
+	const png = readFileSync(image.path);
+	const box = await page.locator('.grimoire').boundingBox();
+	expect(box).not.toBeNull();
+	const ratio = png.readUInt32BE(16) / png.readUInt32BE(20);
+	expect(ratio).toBeCloseTo(box!.width / box!.height, 1);
 	await page.keyboard.press('Escape');
 
 	// The same from History.
@@ -4037,14 +4044,14 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Trevor (2026-10-18, 2026-10-19): game actions, the seats, the settings, then End game.
 	// Storyteller names who runs the game (Trevor, 2026-10-19). A line between Tokens and
-	// Report an issue (Trevor, 2026-10-23). New game sits with End game (Trevor, 2026-10-26).
+	// Report an issue (Trevor, 2026-10-23). New game takes End game's place once the game ends (Trevor, 2026-10-26).
 	await expect(menu.getByRole('separator')).toHaveCount(4);
 	const items = menu.locator('.menu > :is(button, hr), .menu > .menu-nav > button');
 	const names = await items.evaluateAll((els) =>
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens \| (Navigation )?Report an issue \| New game End game$/
+		/^History Demon bluffs Notes( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens \| (Navigation )?Report an issue \| End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu
@@ -5519,6 +5526,59 @@ test('holding a seat token, then dragging, moves the seat; a hold alone opens no
 	// A tap still opens the seat.
 	await openSeat(page, 1);
 	await closeSheet(page);
+});
+
+test("a dragged seat's reminders go along with it, and fit around it again once dropped", async ({
+	page
+}) => {
+	// Trevor (2026-10-26): mid-drag, the reminders moved away from the token, then came back.
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await page
+		.getByRole('list', { name: 'Reminder bank' })
+		.locator('[data-testid="board-reminder"][aria-label="Dead reminder"]')
+		.first()
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Put Dead on' })
+		.getByRole('button', { name: /Seat 1/ })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: /^Mark .*dead\?$/ })
+		.getByRole('button', { name: 'Cancel' })
+		.tap();
+	await expect(page.getByRole('alertdialog')).toBeHidden();
+	const chip = page.locator('.chip-slot[data-seat="1"]');
+	await expect(chip).toHaveCount(1);
+
+	const seat = page.getByRole('button', { name: /^Seat 1:/ });
+	const centre = async (l: Locator) => {
+		const box = (await l.boundingBox())!;
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+	const from = await centre(seat);
+	const before = await centre(chip);
+	const board = (await page.locator('.board').boundingBox())!;
+	const to = { x: board.x + board.width / 2, y: board.y + board.height * 0.35 };
+	await page.mouse.move(from.x, from.y);
+	await page.mouse.down();
+	await expect(page.locator('.board')).toHaveClass(/holding/);
+	await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+	await page.mouse.move(to.x, to.y, { steps: 4 });
+	// Mid-drag the reminder keeps its place beside the token.
+	const now = await centre(seat);
+	const mid = await centre(chip);
+	expect(Math.abs(now.y - from.y)).toBeGreaterThan(40);
+	expect(Math.abs(mid.x - now.x - (before.x - from.x))).toBeLessThan(3);
+	expect(Math.abs(mid.y - now.y - (before.y - from.y))).toBeLessThan(3);
+	await page.mouse.up();
+	await expect(chip).toHaveCount(1);
 });
 
 test('the walk-through shows the character, then its player below, with the count at the top right', async ({

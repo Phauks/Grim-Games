@@ -196,7 +196,7 @@ export const FONT_ROLE_INFO: Record<FontRole, FontRoleInfo> = {
 		id: 'account',
 		label: 'Sign-in and account details',
 		description:
-			'Email, password, code and username fields when signing in, and your details on the Account page.',
+			'Email, password, code and username fields when signing in, your details on the Account page, and the Grim view password.',
 		sample: 'alex@example.com',
 		length: 'running'
 	}

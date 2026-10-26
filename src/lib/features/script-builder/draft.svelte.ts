@@ -1,4 +1,4 @@
-import type { CharacterId } from '#lib/core/data/types.ts';
+import type { CharacterId, SeatedType } from '#lib/core/data/types.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
 import type { VariationOf } from '#lib/features/scripts/saved-scripts.ts';
@@ -54,6 +54,25 @@ class ScriptBuilderDraft {
 		const next: ScriptDraft = { ...this.#draft };
 		if (teensyville) next.teensyville = true;
 		else delete next.teensyville;
+		// A new size brings its own usual counts.
+		delete next.expected;
+		this.#set(next);
+	}
+
+	/** Sets how many of a type the script should have; `undefined` goes back to the usual count. */
+	setExpected(type: SeatedType, count: number | undefined): void {
+		const expected = { ...this.#draft.expected };
+		if (count === undefined) delete expected[type];
+		else expected[type] = count;
+		const next: ScriptDraft = { ...this.#draft, expected };
+		if (!Object.keys(expected).length) delete next.expected;
+		this.#set(next);
+	}
+
+	/** Every type back to the size's usual count. */
+	resetExpected(): void {
+		const next: ScriptDraft = { ...this.#draft };
+		delete next.expected;
 		this.#set(next);
 	}
 

@@ -20,6 +20,7 @@
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
+	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
@@ -58,6 +59,8 @@
 		onStoryteller?: (name: string | undefined) => void;
 		/** Told when the phone has a seat here, or has asked for one, as it does or on its return. */
 		onSeated?: () => void;
+		/** Told whether a room vote is open, when the ballot is the page's content (2026-10-26). */
+		onVoting?: (voting: boolean) => void;
 		/**
 		 * Whether the code form shows while the phone is not in a room (Join game); /play's
 		 * own row for the last room shows nothing then.
@@ -65,7 +68,7 @@
 		entry?: boolean;
 	}
 
-	let { code, onCode, onJoined, onStoryteller, onSeated, entry = true }: Props = $props();
+	let { code, onCode, onJoined, onStoryteller, onSeated, onVoting, entry = true }: Props = $props();
 
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
@@ -114,6 +117,9 @@
 	/** In a room (not the code form): the script, your seat and the table show. */
 	const inRoom = $derived(!!valid && status !== 'refused' && status !== 'closed');
 	$effect(() => onJoined?.(inRoom));
+	/** A room vote is open: its ballot is the screen, under the room row (Trevor, 2026-10-26). */
+	const balloting = $derived(inRoom && !!view?.scriptVote);
+	$effect(() => onVoting?.(balloting));
 	// A closed or refused room is forgotten, so /play's Room tab opens on the code form.
 	$effect(() => {
 		if (valid && (status === 'refused' || status === 'closed')) forgetRoom(valid);
@@ -150,8 +156,6 @@
 	const vote = $derived(view?.vote);
 	let voting = $state(false);
 	let rating = $state(false);
-	/** The script vote's ballot, which also opens by itself for each new vote. */
-	let balloting = $state(false);
 	let seenVote: string | undefined;
 	$effect(() => {
 		const id = vote?.voteId;
@@ -265,7 +269,10 @@
 			return false;
 		}
 		scanning = false;
-		if (room.kind === 'join') openRoom(room.code);
+		// A players' code fills the boxes and shows its game, so the choice of Join as player
+		// or ⋯ (Public Town) is still the person's (Trevor, 2026-10-26: one QR, no third).
+		if (room.kind === 'join' && code === undefined) typed = room.code;
+		else if (room.kind === 'join') openRoom(room.code);
 		// The key stays in the hash, which never reaches the server; the path is resolved.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		else void goto(`${resolve('/watch/[code]', { code: room.code })}#${room.key}`);
@@ -334,19 +341,32 @@
 			<Button type="submit" variant="accent" disabled={!canJoin}>
 				{t('room.join')}
 			</Button>
-			<!-- Always here; disabled until the room has a Grim view password, so nothing moves. -->
-			<Button disabled={!found?.grimView} onclick={() => (grimViewOpen = true)}
-				>{t('room.grimView')}</Button
-			>
-			<!-- A tablet for the middle of the table shows the players' grim alone (Public Town,
-			     Trevor 2026-10-26); always here, like Join, so nothing moves. -->
-			<Button
-				disabled={!canJoin}
-				onclick={() => lookup && void goto(resolve('/town/[code]', { code: lookup.code }))}
-				>{t('room.town.title')}</Button
-			>
 			<!-- A camera icon, not words (Trevor, 2026-10-23). -->
 			<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
+			<!-- Grim view and Public Town are for fewer people, so they wait behind ⋯ and Join as
+			     player stays the one big button (Trevor, 2026-10-26). -->
+			<Menu
+				label={t('room.moreWays')}
+				items={[
+					// Disabled until the room has a Grim view password.
+					{
+						value: 'grim-view',
+						label: t('room.grimView'),
+						disabled: !found?.grimView,
+						onSelect: () => (grimViewOpen = true)
+					},
+					// A tablet for the middle of the table shows the players' grim (Public Town,
+					// Trevor 2026-10-26).
+					{
+						value: 'town',
+						label: t('room.town.title'),
+						disabled: !canJoin,
+						onSelect: () => {
+							if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
+						}
+					}
+				]}
+			/>
 		</div>
 	</form>
 	<Dialog bind:open={scanning} title={t('share.scan')}>
@@ -360,6 +380,7 @@
 				maxlength={64}
 				type="password"
 				autocomplete="off"
+				plain
 			/>
 			<ModalActions
 				onCancel={() => (grimViewOpen = false)}
@@ -368,7 +389,9 @@
 			/>
 		</form>
 	</Dialog>
-	{#if code === undefined}<YourGames onOpen={openRoom} />{/if}
+	{#if code === undefined}<YourGames
+			onOpen={(c, town) => (town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c))}
+		/>{/if}
 {:else if inRoom}
 	<div class="you-line">
 		<!-- One tap target, the whole row (Trevor: whole-row tap), with the pencil it opens by. -->
@@ -383,17 +406,6 @@
 			<Icon name="edit" />
 			<span class="visually-hidden">{t('room.editYou')}</span>
 		</button>
-		<!-- Only while a script vote is open, so a closed ballot can be opened again (Trevor,
-		     2026-10-26); it shares the row's height, so nothing below moves. -->
-		{#if view?.scriptVote}
-			<IconButton
-				icon="vote"
-				label={t('room.scriptVote.ballot')}
-				outlined
-				aria-haspopup="dialog"
-				onclick={() => (balloting = true)}
-			/>
-		{/if}
 		<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
 		{#if view?.endedGameId}
 			<Button aria-haspopup="dialog" onclick={() => (rating = true)}
@@ -422,6 +434,7 @@
 			/>
 		</form>
 	</Dialog>
+	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 
 <Dialog bind:open={voting} title={t('room.vote.title')}>
@@ -445,10 +458,7 @@
 	</ul>
 </Dialog>
 
-{#if player}<ScriptBallot {player} bind:open={balloting} /><FeedbackSheet
-		{player}
-		bind:open={rating}
-	/>{/if}
+{#if player}<FeedbackSheet {player} bind:open={rating} />{/if}
 
 <style>
 	form {

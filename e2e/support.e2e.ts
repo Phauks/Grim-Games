@@ -11,6 +11,8 @@ test('Support sits beneath About and holds the Ko-fi button', async ({ page }) =
 	await app.filter({ hasText: 'Support' }).click();
 	await expect(page).toHaveURL(/\/support$/);
 	await expect(page.getByRole('heading', { level: 1, name: 'Support' })).toBeVisible();
-	// No link yet: the button shows in place, disabled.
-	await expect(page.getByRole('button', { name: 'Support on Ko-fi' })).toBeDisabled();
+	// Trevor's Ko-fi page, in a new tab.
+	const kofi = page.getByRole('link', { name: 'Support on Ko-fi' });
+	await expect(kofi).toHaveAttribute('href', 'https://ko-fi.com/phauks');
+	await expect(kofi).toHaveAttribute('target', '_blank');
 });

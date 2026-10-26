@@ -487,8 +487,11 @@ test('after a game the room votes on the next script, and the next game opens in
 
 	await page.goto('/new');
 	await expect(status).toHaveText('The Storyteller is choosing a script.');
-	await page.getByRole('button', { name: 'Room vote' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Vote on the next script' });
+	// Its own screen (Trevor, 2026-10-26: "voting should be its own screen. Not a popup").
+	await page.getByRole('link', { name: 'Room vote' }).tap();
+	await expect(page).toHaveURL(/\/vote$/);
+	const sheet = page.getByRole('main');
+	await expect(sheet.getByRole('heading', { name: 'Vote on the next script' })).toBeVisible();
 	// Scripts are found with New game's own controls (Trevor, 2026-10-23) and added in turn.
 	const scripts = sheet.getByRole('radiogroup', { name: 'Add a script' });
 	const add = sheet.getByRole('button', { name: 'Add to vote' });
@@ -533,7 +536,7 @@ test('after a game the room votes on the next script, and the next game opens in
 
 	// The phone ranks them, then votes (Trevor, 2026-10-26: "I chose my choices but can't
 	// vote, change, or review details"); nothing is sent until Vote.
-	const ballot = phone.getByRole('dialog', { name: 'Vote on the next script' });
+	const ballot = phone.getByTestId('ballot-screen');
 	await expect(ballot.getByText('Tap the scripts in order, your favourite first.')).toBeVisible();
 	await expect(ballot.getByTestId('script-vote-time')).toHaveText(/^Time left: [12]:\d\d$/);
 	const vote = ballot.getByRole('button', { name: 'Vote', exact: true });
@@ -574,31 +577,39 @@ test('after a game the room votes on the next script, and the next game opens in
 	await vote.tap();
 	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
 
-	// The Storyteller lets players see the count (Trevor, 2026-10-26).
-	await expect(ballot.getByTestId('vote-count')).toHaveCount(0);
+	// The Storyteller lets players see the count (Trevor, 2026-10-26): the same live stats on
+	// both, with who has voted but never what they chose.
+	await expect(ballot.getByTestId('vote-stats')).toHaveCount(0);
 	await sheet.getByText('Players see the count', { exact: true }).tap();
+	const shared = ballot.getByTestId('vote-stats');
 	await expect(
-		ballot
-			.locator('[aria-pressed]')
-			.filter({ hasText: 'Bad Moon Rising' })
-			.getByTestId('vote-count')
+		shared.getByRole('listitem').filter({ hasText: 'Bad Moon Rising' }).getByTestId('vote-count')
 	).toHaveText('Winner · Votes: 1');
-	await expect(ballot.getByTestId('script-ballot-count')).toHaveText('Voted: 1 of 1');
+	await expect(shared.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
+	await expect(shared.getByTestId('vote-people')).toContainText('Voted');
+	await expect(sheet.getByTestId('vote-people')).toContainText('Voted');
+	// The runoff's rounds, one by one.
+	await sheet.getByRole('button', { name: 'Rounds' }).tap();
+	const rounds = page.getByRole('dialog', { name: 'Rounds' });
+	await expect(rounds.getByTestId('vote-rounds')).toContainText('Round 1');
+	await expect(rounds.getByTestId('vote-rounds')).toContainText(
+		'Bad Moon Rising has more than half.'
+	);
+	await rounds.getByRole('button', { name: 'Close' }).tap();
 
-	// A closed ballot opens again from the room row.
-	await phone.keyboard.press('Escape');
-	await expect(ballot).toHaveCount(0);
-	await phone.getByRole('button', { name: 'Ballot' }).tap();
-	await expect(ballot).toBeVisible();
+	// While the vote is open the ballot is the phone's screen, in place of the tabs.
+	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveCount(0);
 
-	// Ending early gives phones a final call (Trevor, 2026-10-26: "15 second final vote
-	// warning"); it opens the ballot on a phone that had closed it.
-	await phone.keyboard.press('Escape');
+	// One button ends it (Trevor, 2026-10-26: "duplicative end vote and close vote"): phones
+	// get a final call ("15 second final vote warning"), then it is New vote.
 	await sheet.getByRole('button', { name: 'End vote' }).tap();
 	await expect(ballot.getByTestId('script-vote-time')).toHaveText(
 		/^Final call: voting closes in 0:1\d$/
 	);
 	await expect(sheet.getByRole('button', { name: 'End vote' })).toBeDisabled();
+	await expect(sheet.getByRole('button', { name: 'New vote' })).toBeVisible({ timeout: 20_000 });
+	await expect(sheet.getByRole('button', { name: 'Close vote' })).toHaveCount(0);
+	await expect(ballot.getByTestId('script-vote-time')).toHaveText('Voting has closed.');
 
 	// Playing the winner closes the vote and chooses it on New game.
 	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
@@ -666,11 +677,16 @@ test('New game opens a room for the vote before any game or script', async ({
 	page,
 	browser
 }, testInfo) => {
+	// Two votes, the first ended with its 15-second final call (Trevor, 2026-10-26).
+	test.setTimeout(90_000);
 	// Trevor, 2026-10-23: "allow storytellers to create rooms without having selected a
 	// script", so the table can gather and vote first.
 	await page.goto('/new');
-	await page.getByRole('button', { name: 'Room vote' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Vote on the next script' });
+	// Its own screen (Trevor, 2026-10-26: "voting should be its own screen. Not a popup").
+	await page.getByRole('link', { name: 'Room vote' }).tap();
+	await expect(page).toHaveURL(/\/vote$/);
+	const sheet = page.getByRole('main');
+	await expect(sheet.getByRole('heading', { name: 'Vote on the next script' })).toBeVisible();
 	const joinCode = sheet.getByTestId('share-code');
 	await expect(joinCode).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await joinCode.textContent())!.replace(/\s/g, '');
@@ -688,19 +704,21 @@ test('New game opens a room for the vote before any game or script', async ({
 		.tap();
 	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
-	const ballot = phone.getByRole('dialog', { name: 'Vote on the next script' });
+	const ballot = phone.getByTestId('ballot-screen');
 	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
 	await ballot.getByRole('button', { name: 'Vote', exact: true }).tap();
 	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
-	await sheet.getByRole('button', { name: 'Close vote' }).tap();
+	// Ended with its final call, then New vote takes it off the phones.
+	await sheet.getByRole('button', { name: 'End vote' }).tap();
+	await sheet.getByRole('button', { name: 'New vote' }).tap({ timeout: 20_000 });
 	await expect(ballot).toHaveCount(0);
 
 	// A vote on the game mode the same way (Trevor, 2026-10-23), five of them: not capped at
 	// two or three. Its winner becomes New game's mode.
 	await sheet.getByRole('combobox', { name: 'Vote on' }).tap();
 	await page.getByRole('option', { name: 'Game mode' }).tap();
-	const modeSheet = page.getByRole('dialog', { name: 'Vote on the game mode' });
-	await expect(modeSheet).toBeVisible();
+	const modeSheet = page.getByRole('main');
+	await expect(modeSheet.getByRole('heading', { name: 'Vote on the game mode' })).toBeVisible();
 	const add = modeSheet.getByRole('button', { name: 'Add to vote' });
 	const modes = modeSheet.getByRole('combobox', { name: 'Add a game mode' });
 	await add.tap();
@@ -718,15 +736,14 @@ test('New game opens a room for the vote before any game or script', async ({
 		/^Mode 6\s*None\s*$/
 	]);
 	await modeSheet.getByRole('button', { name: 'Open vote' }).tap();
-	const modeBallot = phone.getByRole('dialog', { name: 'Vote on the game mode' });
+	const modeBallot = phone.getByTestId('ballot-screen');
+	await expect(modeBallot.getByRole('heading', { name: 'Vote on the game mode' })).toBeVisible();
 	await expect(modeBallot.getByText('Pick the game mode you want to play next.')).toBeVisible();
 	await expect(modeBallot.getByTestId('script-ballot').getByRole('listitem')).toHaveCount(5);
 	await modeBallot.locator('[aria-pressed]').filter({ hasText: 'Sushi Buffet' }).tap();
 	await modeBallot.getByRole('button', { name: 'Vote', exact: true }).tap();
 	// A game mode has no script details.
-	await expect(modeBallot.locator('[aria-pressed]').filter({ hasText: '^Details of' })).toHaveCount(
-		0
-	);
+	await expect(modeBallot.getByRole('button', { name: /^Details of/ })).toHaveCount(0);
 	const results = modeSheet.getByTestId('script-vote-results').getByRole('listitem');
 	await expect(results.filter({ hasText: 'Sushi Buffet' })).toContainText('Votes: 1');
 	await results.filter({ hasText: 'Sushi Buffet' }).getByRole('button', { name: 'Play' }).tap();
@@ -1100,6 +1117,8 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	// A password field (Trevor, 2026-10-22): masked, with an eye button that shows it.
 	const password = watch.getByLabel('Grim view password', { exact: true });
 	await expect(password).toHaveAttribute('type', 'password');
+	// In the plain account font, not the capitals-only control font, so case reads exactly.
+	await expect(password).not.toHaveCSS('font-family', /Cinzel/);
 	// In its place, but off while the link is.
 	await expect(password).toBeDisabled();
 	await watch.getByText('View-only grimoire link', { exact: true }).tap();
@@ -1110,12 +1129,17 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto('/join');
-	const grimView = phone.getByRole('button', { name: 'Grim view' });
+	const grimView = phone.getByRole('menuitem', { name: 'Grim view' });
+	// Grim view waits behind ⋯, so Join as player is the one big button (Trevor, 2026-10-26).
+	const more = phone.getByRole('button', { name: 'More ways to join' });
 	await typeCode(phone, code);
 	await expect(phone.getByTestId('room-preview')).toContainText('Trouble Brewing');
 	// No password set: only joining as a player.
 	await expect(phone.getByRole('button', { name: 'Join as player' })).toBeEnabled();
+	await expect(grimView).toHaveCount(0);
+	await more.tap();
 	await expect(grimView).toBeDisabled();
+	await phone.keyboard.press('Escape');
 
 	await password.fill('lantern');
 	const eye = watch.getByRole('button', { name: 'Show password' });
@@ -1132,12 +1156,14 @@ test('the room code and a Grim view password open the grimoire, as the link does
 
 	await phone.reload();
 	await typeCode(phone, code);
+	await more.tap();
 	await expect(grimView).toBeEnabled();
 	// A wrong password says so.
 	await grimView.tap();
 	const ask = phone.getByRole('dialog', { name: 'Grim view' });
 	const typed = ask.getByLabel('Grim view password', { exact: true });
 	await expect(typed).toHaveAttribute('type', 'password');
+	await expect(typed).not.toHaveCSS('font-family', /Cinzel/);
 	await expect(ask.getByRole('button', { name: 'Show password' })).toBeVisible();
 	await typed.fill('candle');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
@@ -1152,6 +1178,7 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	// The right one opens the same grimoire the link does.
 	await phone.goto('/join');
 	await typeCode(phone, code);
+	await more.tap();
 	await grimView.tap();
 	await ask.getByLabel('Grim view password', { exact: true }).fill('lantern');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
@@ -1560,6 +1587,60 @@ test("a player marks their own seat on the players' Grim, and it glows", async (
 	await phoneContext.close();
 });
 
+test('a player puts reminder tokens on seats in their own Grim', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-26): "Reminder tokens for players to use". Any reminder of the script's
+	// characters, since a player can't see which are in play; kept on the phone for the game.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seat = phone.getByTestId('grim-seat').nth(1);
+	await seat.tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
+	await expect(sheet.getByTestId('seat-reminders')).toContainText('None');
+	await sheet.getByTestId('seat-reminders').tap();
+	const picker = phone.getByRole('dialog', { name: 'Reminders for Seat 2' });
+	const poisoned = picker
+		.getByRole('group', { name: 'Poisoner' })
+		.getByRole('button', { name: 'Poisoned' });
+	await expect(poisoned).toHaveAttribute('aria-pressed', 'false');
+	await poisoned.tap();
+	await expect(poisoned).toHaveAttribute('aria-pressed', 'true');
+	await expect(
+		picker.getByRole('group', { name: 'On this seat' }).getByRole('button', {
+			name: 'Poisoned: take off'
+		})
+	).toBeVisible();
+	await phone.keyboard.press('Escape');
+	await expect(sheet.getByTestId('seat-reminders')).toContainText('Poisoned');
+	await phone.keyboard.press('Escape');
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your reminders: Poisoned');
+	const token = phone.getByTestId('player-grim').getByTestId('board-reminder');
+	await expect(token).toHaveCount(1);
+	await expect(token).toHaveAccessibleName('Poisoned reminder');
+
+	// Kept on this phone for the game.
+	await phone.reload();
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(token).toHaveCount(1);
+	// A tap on the token opens the seat's reminders, where it comes off.
+	await token.tap();
+	await phone
+		.getByRole('dialog', { name: 'Reminders for Seat 2' })
+		.getByRole('button', { name: 'Poisoned: take off' })
+		.tap();
+	await expect(token).toHaveCount(0);
+	await phoneContext.close();
+});
+
 test("a Banshee the Demon killed shows two votes and no ghost vote on the players' Grim", async ({
 	page,
 	browser
@@ -1813,7 +1894,7 @@ async function aimCamera(phone: Page, src: string) {
 	}, src);
 }
 
-test("Scan a code on Join game reads the Share screen's QR code and joins its room", async ({
+test("Scan a code on Join game reads the Share screen's QR code into the code boxes", async ({
 	page,
 	browser
 }, testInfo) => {
@@ -1833,9 +1914,18 @@ test("Scan a code on Join game reads the Share screen's QR code and joins its ro
 	await phone.goto('/join');
 	await phone.getByRole('button', { name: 'Scan a code' }).tap();
 	await expect(phone.getByRole('dialog', { name: 'Scan a code' })).toBeVisible();
-	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`), { timeout: 15_000 });
-	await expect(phone.getByTestId('join-status')).toBeVisible();
+	// The code fills the boxes and shows its game, so the phone still picks Join as player or
+	// ⋯ > Public Town (Trevor, 2026-10-26: one QR for both).
+	await expect(phone.getByTestId('room-preview')).toContainText('Trouble Brewing', {
+		timeout: 15_000
+	});
 	await expect(phone.getByRole('dialog', { name: 'Scan a code' })).toBeHidden();
+	await expect(phone.getByRole('textbox', { name: 'Room code from the Storyteller' })).toHaveValue(
+		code
+	);
+	await phone.getByRole('button', { name: 'Join as player' }).tap();
+	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
+	await expect(phone.getByTestId('join-status')).toBeVisible();
 	await phoneContext.close();
 });
 

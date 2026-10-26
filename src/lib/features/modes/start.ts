@@ -6,6 +6,7 @@ import {
 	STANDARD,
 	withRules,
 	type GameMode,
+	type JinxedPairs,
 	type SpecialRule,
 	type StorytellerRestrictions
 } from '#lib/core/modes/index.ts';
@@ -27,6 +28,8 @@ interface StartInput<G> {
 	loaded: LoadedScript;
 	/** The Storyteller's Role Recycling choice for a draft mode. */
 	roleRecycling?: boolean;
+	/** The Storyteller's Jinxed pairs choice for a draft mode. */
+	jinxedPairs?: JinxedPairs;
 	/** Creates and saves the game with the mode's script. */
 	create: (script: Script) => Promise<G>;
 }
@@ -75,7 +78,8 @@ export async function startInMode<
 		modeId: base.id,
 		rules: [...input.rules],
 		restrictions: input.restrictions,
-		...(input.roleRecycling !== undefined ? { roleRecycling: input.roleRecycling } : {})
+		...(input.roleRecycling !== undefined ? { roleRecycling: input.roleRecycling } : {}),
+		...(input.jinxedPairs !== undefined ? { jinxedPairs: input.jinxedPairs } : {})
 	});
 	seedInPlay(open.game.gameId, open.game.seating.length, inPlayFor(mode));
 	if (campaignRule(mode))
