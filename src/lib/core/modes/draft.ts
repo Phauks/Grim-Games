@@ -57,12 +57,19 @@
  * that type whose setup change would apply (the Baron's +2 Outsiders), or Later. A chosen
  * character leaves the pool, so it stays out of play, and its setup change applies.
  *
+ * A reserved hidden character (Grimbits' tool, for the Marionette): with `config.reserve`, a
+ * hidden character whose token goes next to another type (the Marionette next to the Demon,
+ * https://wiki.bloodontheclocktower.com/Marionette) keeps a seat of its own type out of the
+ * draft, and one more Townsfolk is drafted instead. Once everyone has drafted, the Storyteller
+ * picks which good neighbour of that type is really it (`reservedSeats`).
+ *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
 import { setupModifierFor, type CountOp } from '#lib/core/rules/setup-modifiers.ts';
+import { isReplacedAfterDraw, replacementReminder } from '#lib/core/rules/bag-characters.ts';
 
 export interface DraftConfig {
 	offers: number[];
@@ -78,6 +85,55 @@ export interface DraftConfig {
 	dealsRequired?: boolean;
 	/** Hidden characters on the script a drafted character may really be (`orHiddenAs`). */
 	hidden?: CharacterId[];
+	/** A hidden character that keeps a seat of its type out of the draft (the Marionette). */
+	reserve?: ReservedHidden;
+}
+
+/** A hidden character drafted as a good player, next to a seat of `nextTo` (`reservedHidden`). */
+export interface ReservedHidden {
+	id: CharacterId;
+	type: SeatedType;
+	nextTo: SeatedType;
+}
+
+/**
+ * The script's hidden characters that are evil but dealt as good, placed next to a type: the
+ * Marionette, whose "Is The Marionette" token goes on a good neighbour of the Demon (its
+ * reminder target rule).
+ */
+export function reservedHidden(characters: readonly Character[]): ReservedHidden[] {
+	return characters.flatMap((c) => {
+		if ((c.type !== 'minion' && c.type !== 'demon') || !isReplacedAfterDraw(c)) return [];
+		const label = replacementReminder(c)?.label;
+		const nextTo = label ? rulesFor(c)?.reminderTargets?.[label]?.neighbour?.ofType : undefined;
+		return nextTo && isSeated(nextTo) ? [{ id: c.id, type: c.type, nextTo }] : [];
+	});
+}
+
+/**
+ * The seats (by pick index) that may be a reserved hidden character: the nearest good seat each
+ * way round from every seat of `nextTo`, skipping evil ones, leaving out seats in `taken`.
+ */
+export function reservedSeats(
+	state: DraftState,
+	reserve: ReservedHidden,
+	taken: readonly number[] = []
+): number[] {
+	const { picks, types } = state;
+	const evil = (i: number) => types[picks[i]] === 'minion' || types[picks[i]] === 'demon';
+	const seats = new Set<number>();
+	picks.forEach((id, i) => {
+		if (types[id] !== reserve.nextTo) return;
+		for (const step of [-1, 1]) {
+			for (let n = 1; n < picks.length; n++) {
+				const j = (i + step * n + picks.length) % picks.length;
+				if (evil(j)) continue;
+				seats.add(j);
+				break;
+			}
+		}
+	});
+	return [...seats].filter((i) => !taken.includes(i)).sort((a, b) => a - b);
 }
 
 /** The Storyteller chooses which ability of `options` the last pick has, or none yet. */
@@ -160,6 +216,8 @@ export interface DraftState {
 	ability?: AbilityChoice;
 	/** Seats (by pick index) with a gained character's ability, chosen in the draft. */
 	abilities?: Record<number, CharacterId>;
+	/** `config.reserve` kept its seat out of the draft (there was one of its type to keep). */
+	reserved?: boolean;
 }
 
 /** A character dealt to the next seat because `by` needs it in play. */
@@ -231,9 +289,18 @@ export function startDraft(
 				})
 			)
 		: {};
+	const reserved = config.reserve !== undefined && counts[config.reserve.type] > 0;
+	const slots =
+		reserved && config.reserve
+			? {
+					...counts,
+					[config.reserve.type]: counts[config.reserve.type] - 1,
+					townsfolk: counts.townsfolk + 1
+				}
+			: { ...counts };
 	const state: DraftState = {
 		config,
-		slots: { ...counts },
+		slots,
 		pool: seated.map((c) => c.id),
 		types: Object.fromEntries(seated.map((c) => [c.id, c.type as SeatedType])),
 		discarded: [],
@@ -245,7 +312,8 @@ export function startDraft(
 		...(Object.keys(jinxed).length > 0 ? { jinxed } : {}),
 		...(extraEvil.length > 0 ? { extraEvil } : {}),
 		...(Object.keys(orHidden).length > 0 ? { orHidden } : {}),
-		...(Object.keys(gains).length > 0 ? { gains } : {})
+		...(Object.keys(gains).length > 0 ? { gains } : {}),
+		...(reserved ? { reserved } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
 }

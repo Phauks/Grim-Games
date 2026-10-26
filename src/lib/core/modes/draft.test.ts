@@ -12,6 +12,8 @@ import {
 	canRefuse,
 	redraft,
 	refuseOffer,
+	reservedHidden,
+	reservedSeats,
 	seatsLeft,
 	answerAbility,
 	answerAsk,
@@ -502,5 +504,34 @@ describe('a drafted character that gains another character’s ability', () => {
 		expect(s.abilities).toBeUndefined();
 		expect(s.slots).toEqual(before.slots);
 		expect(s.pool).toContain('baron');
+	});
+});
+
+// Grimbits' draft (https://grimbits.com/draft-buffet/): the Marionette keeps a Minion seat out of
+// the draft and one more Townsfolk is drafted; the Marionette is a good player next to the Demon
+// (https://wiki.bloodontheclocktower.com/Marionette).
+describe('a reserved hidden character', () => {
+	const marionette = () => reservedHidden(data.characters).find((r) => r.id === 'marionette')!;
+
+	it('is found from its token’s target rule', () => {
+		expect(marionette()).toEqual({ id: 'marionette', type: 'minion', nextTo: 'demon' });
+		expect(reservedHidden(data.characters).map((r) => r.id)).not.toContain('drunk');
+	});
+
+	it('keeps a Minion seat out of the draft for one more Townsfolk', () => {
+		const counts = baseCounts(7);
+		const s = startDraft({ ...config, reserve: marionette() }, counts, tb, seeded(5));
+		expect(s.reserved).toBe(true);
+		expect(s.slots.minion).toBe(counts.minion - 1);
+		expect(s.slots.townsfolk).toBe(counts.townsfolk + 1);
+	});
+
+	it('may be the nearest good player each way from the Demon, skipping evil ones', () => {
+		const s = {
+			...startDraft(config, baseCounts(5), tb, seeded(5)),
+			picks: ['chef', 'poisoner', 'imp', 'empath', 'saint']
+		};
+		expect(reservedSeats(s, marionette())).toEqual([0, 3]);
+		expect(reservedSeats(s, marionette(), [0])).toEqual([3]);
 	});
 });

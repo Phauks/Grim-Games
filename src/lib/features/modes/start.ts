@@ -32,6 +32,8 @@ interface StartInput<G> {
 	jinxedPairs?: JinxedPairs;
 	/** The Storyteller's Ivory draft choice for a draft mode. */
 	ivoryDraft?: boolean;
+	/** The Storyteller's Marionette choice for a draft mode. */
+	marionette?: boolean;
 	/** The Storyteller's Don't mix types choice for a draft mode. */
 	oneTypePerOffer?: boolean;
 	/** The Storyteller's Deal needed characters choice for a draft mode. */
@@ -87,6 +89,7 @@ export async function startInMode<
 		...(input.roleRecycling !== undefined ? { roleRecycling: input.roleRecycling } : {}),
 		...(input.jinxedPairs !== undefined ? { jinxedPairs: input.jinxedPairs } : {}),
 		...(input.ivoryDraft !== undefined ? { ivoryDraft: input.ivoryDraft } : {}),
+		...(input.marionette !== undefined ? { marionette: input.marionette } : {}),
 		...(input.oneTypePerOffer !== undefined ? { oneTypePerOffer: input.oneTypePerOffer } : {}),
 		...(input.dealsRequired !== undefined ? { dealsRequired: input.dealsRequired } : {})
 	});

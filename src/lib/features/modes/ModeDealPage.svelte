@@ -16,6 +16,8 @@
 		pickableCharacters,
 		redraft,
 		refuseOffer,
+		reservedHidden,
+		reservedSeats,
 		seatsLeft,
 		STANDARD,
 		startDraft,
@@ -114,7 +116,8 @@
 						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen',
 						jinxes: record?.jinxedPairs ?? 'allow',
 						ivory: record?.ivoryDraft ?? false,
-						hidden: characters.filter(isReplacedAfterDraw).map((c) => c.id)
+						hidden: characters.filter(isReplacedAfterDraw).map((c) => c.id),
+						...(record?.marionette ? { reserve: reservedHidden(characters)[0] } : {})
 					},
 					split.counts,
 					pickableCharacters(mode, characters),
@@ -323,18 +326,54 @@
 		picks.flatMap((id, i) => (byId.get(id)?.type === 'townsfolk' ? [i] : []))
 	);
 	let hiding = $state(false);
+	let drunkAt = $state<number | undefined>();
+
+	/**
+	 * The Marionette, with its New game switch on (Grimbits' draft): a Minion seat was kept out
+	 * of the draft, so the Storyteller picks which good neighbour of the Demon is really it.
+	 */
+	const reserve = $derived(
+		progress?.kind === 'draft' && progress.state.reserved
+			? progress.state.config.reserve
+			: undefined
+	);
+	const reservedCharacter = $derived(reserve ? byId.get(reserve.id) : undefined);
+	const reserveSeats = $derived(
+		progress?.kind === 'draft' && reserve
+			? reservedSeats(progress.state, reserve, [
+					...Object.keys(hiddenSeats).map(Number),
+					...(drunkAt !== undefined ? [drunkAt] : [])
+				])
+			: []
+	);
+	let placing = $state(false);
 
 	function finishTapped() {
+		drunkAt = undefined;
 		if (hidden && townsfolkSeats.length > 0) hiding = true;
+		else afterHidden();
+	}
+
+	function chooseHidden(at: number | undefined) {
+		hiding = false;
+		drunkAt = at;
+		afterHidden();
+	}
+
+	function afterHidden() {
+		if (reservedCharacter && reserveSeats.length > 0) placing = true;
 		else void finish();
 	}
 
-	async function finish(hiddenAt?: number) {
+	async function finish(reservedAt?: number) {
 		hiding = false;
-		const token = hidden && hiddenAt !== undefined ? replacementReminder(hidden) : undefined;
+		placing = false;
+		const placed: Record<number, Character> = {};
+		if (hidden && drunkAt !== undefined) placed[drunkAt] = hidden;
+		if (reservedCharacter && reservedAt !== undefined) placed[reservedAt] = reservedCharacter;
 		const tokenAt = (i: number) => {
-			const as = byId.get(hiddenSeats[i]);
-			return as ? replacementReminder(as) : token && i === hiddenAt ? token : undefined;
+			const as = byId.get(hiddenSeats[i]) ?? placed[i];
+			return as ? replacementReminder(as) : undefined;
 		};
 		const built = port.dispatch({
 			type: 'BuildBag',
@@ -584,6 +623,29 @@
 			<!-- Each seat that drafted a Townsfolk, with what it drafted beside it. -->
 			<ul class="seats" data-testid="hidden-seats">
 				{#each townsfolkSeats as i (i)}
+					{@const kept = byId.get(picks[i])}
+					<li>
+						<Button onclick={() => chooseHidden(i)}>{label(seats[i])}</Button>
+						{#if kept}<CharacterBadge characterId={kept.id} character={kept} />{/if}
+					</li>
+				{/each}
+				<li><Button onclick={() => chooseHidden(undefined)}>{t('common.none')}</Button></li>
+			</ul>
+		</div>
+	</Dialog>
+{/if}
+
+{#if reservedCharacter && reserve}
+	<Dialog bind:open={placing} title={t('modes.deal.hiddenTitle')}>
+		<div class="ask" data-testid="draft-reserved">
+			<p class="prompt">
+				{t('modes.deal.reservedPrompt', {
+					type: TYPE_LABELS[reserve.nextTo]
+				})}<CharacterBadge characterId={reservedCharacter.id} character={reservedCharacter} />
+			</p>
+			<!-- Each good neighbour, with what it drafted beside it. -->
+			<ul class="seats" data-testid="reserved-seats">
+				{#each reserveSeats as i (i)}
 					{@const kept = byId.get(picks[i])}
 					<li>
 						<Button onclick={() => void finish(i)}>{label(seats[i])}</Button>
