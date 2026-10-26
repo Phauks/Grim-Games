@@ -8,8 +8,10 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import type { SetupGamePort } from './game-port.ts';
+	import ScriptCharactersRow from './ScriptCharactersRow.svelte';
 
-	let { disabled = false }: { disabled?: boolean } = $props();
+	let { disabled = false, port }: { disabled?: boolean; port?: SetupGamePort } = $props();
 	let open = $state(false);
 </script>
 
@@ -59,6 +61,7 @@
 			checked={preferences.current.slotMachine}
 			onChange={(slotMachine) => preferences.update({ slotMachine })}
 		/>
+		{#if port}<ScriptCharactersRow {port} />{/if}
 		<div class="all">
 			<Button
 				onclick={() => {
