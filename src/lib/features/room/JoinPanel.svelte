@@ -377,10 +377,12 @@
 			<Icon name="edit" />
 			<span class="visually-hidden">{t('room.editYou')}</span>
 		</button>
-		<!-- Always here; usable once the game is over (plan R4), so nothing moves. -->
-		<Button disabled={!view?.endedGameId} aria-haspopup="dialog" onclick={() => (rating = true)}
-			>{t('room.feedback.open')}</Button
-		>
+		<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
+		{#if view?.endedGameId}
+			<Button aria-haspopup="dialog" onclick={() => (rating = true)}
+				>{t('room.feedback.open')}</Button
+			>
+		{/if}
 	</div>
 	<Dialog bind:open={editing} title={t('room.you')}>
 		<form onsubmit={ask}>

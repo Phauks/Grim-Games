@@ -199,9 +199,9 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
 	await expect(status).toHaveText('Type the name to show, and the Storyteller will seat you.');
-	// In its place all game, usable once the game is over (no reflow).
+	// Hidden until the game is over.
 	const rate = phone.getByRole('button', { name: 'Rate game' });
-	await expect(rate).toBeDisabled();
+	await expect(rate).toHaveCount(0);
 
 	await page.goto(board);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
