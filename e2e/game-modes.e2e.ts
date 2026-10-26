@@ -226,6 +226,16 @@ async function keepFirst(page: Page): Promise<string> {
 	await expect(reveal).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(reveal).toBeHidden();
+	// A drafted Godfather, Xaan or the like asks the Storyteller for a count: keep the lowest.
+	const ask = page.getByTestId('draft-ask');
+	const shown = () =>
+		ask.waitFor({ timeout: 1000 }).then(
+			() => true,
+			() => false
+		);
+	// Legion or an Atheist asks more than one count in turn.
+	for (let n = 0; n < 5 && (await shown()); n++) await ask.getByRole('button').first().tap();
+	await expect(ask).toBeHidden();
 	return id;
 }
 
@@ -262,6 +272,80 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	await page.getByRole('button', { name: 'Finish' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
 	await noSidewaysScroll(page);
+});
+
+// Trevor (2026-10-26): "modifiers are made dynamically for outsider count", as Grimbits' draft
+// does (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Godfather).
+test('Sushi Buffet asks the Storyteller for a drafted Godfather’s Outsiders before the next tile', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await expect(bagTiles(page)).toHaveCount(5);
+	// A tile drawn saves the draft on this device.
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	// The draft as it is just after a player keeps the Godfather: its −1 or +1 waits.
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = [];
+		deal.state.pending = [
+			{ characterId: 'godfather', op: { kind: 'delta', type: 'outsider', values: [-1, 1] } }
+		];
+		deal.state.ask = { characterId: 'godfather', type: 'outsider', options: [0, 1], current: 0 };
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, `grim-games:mode-deal:v1:${gameId}`);
+	await page.reload();
+	const ask = page.getByRole('dialog', { name: 'Setup change' });
+	await expect(ask).toContainText('How many Outsiders in all?');
+	await expect(ask.getByText('Godfather')).toBeVisible();
+	await ask.getByRole('button', { name: '1', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	// The held tile opens the next offer.
+	await bagTiles(page).first().tap();
+	await expect(rows(page)).toHaveCount(3);
+});
+
+// Jinxed pairs are blocked by default, as Grimbits' draft tool can do: the draft knows each
+// character's jinxed partners (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
+test('Sushi Buffet keeps each character’s jinxed partners, to block them once it is drafted', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const state = await page.evaluate(
+		(key) => JSON.parse(localStorage.getItem(key)!).state,
+		`grim-games:mode-deal:v1:${gameId}`
+	);
+	expect(state.config.jinxes).toBe('block');
+	expect(state.jinxed.heretic).toContain('baron');
+	expect(state.jinxed.baron).toContain('heretic');
+});
+
+// Grimbits' draft deals the King once a Choirboy is drafted
+// (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Choirboy).
+test('Sushi Buffet offers only the King after a Choirboy, saying why, with no refusing', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = ['king'];
+		deal.state.offerIndex = 2;
+		deal.state.forcedBy = 'choirboy';
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, `grim-games:mode-deal:v1:${gameId}`);
+	await page.reload();
+	await bagTiles(page).first().tap();
+	await expect(page.getByTestId('forced-by')).toContainText('Choirboy');
+	await expect(rows(page)).toHaveCount(1);
+	await expect(rows(page).first()).toHaveAttribute('data-character-id', 'king');
+	await expect(page.getByRole('button', { name: 'Refuse offer' })).toBeDisabled();
 });
 
 test('Sushi Buffet with the slot machine on: reels spin in each offer, one more crossed out per refusal', async ({
@@ -317,6 +401,12 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await expect(recycling).not.toBeChecked();
 	await modesPanel(page).getByText('Role Recycling').tap();
 	await expect(recycling).toBeChecked();
+	// Jinxed pairs, as Grimbits' draft tool offers: blocked by default (Trevor, 2026-10-26).
+	const jinxed = modesPanel(page).getByRole('combobox', { name: 'Jinxed pairs' });
+	await expect(jinxed).toHaveText(/Block/);
+	await jinxed.tap();
+	await page.getByRole('option', { name: 'Less likely', exact: true }).tap();
+	await expect(jinxed).toHaveText(/Less likely/);
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -325,6 +415,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 		gameId
 	);
 	expect(record.roleRecycling).toBe(true);
+	expect(record.jinxedPairs).toBe('reduce');
 });
 
 test('with our own wording on, each mode shows its About description', async ({ page }) => {

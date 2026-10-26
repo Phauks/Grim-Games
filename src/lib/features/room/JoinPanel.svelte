@@ -20,6 +20,7 @@
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
+	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
@@ -234,6 +235,8 @@
 	 * Players without a seat (Specters) join as players.
 	 */
 	let grimViewOpen = $state(false);
+	let moreOpen = $state(false);
+	let moreButton = $state<HTMLButtonElement>();
 	let grimPassword = $state('');
 	async function grimView(event: SubmitEvent) {
 		event.preventDefault();
@@ -265,7 +268,10 @@
 			return false;
 		}
 		scanning = false;
-		if (room.kind === 'join') openRoom(room.code);
+		// A players' code fills the boxes and shows its game, so the choice of Join as player
+		// or ⋯ (Public Town) is still the person's (Trevor, 2026-10-26: one QR, no third).
+		if (room.kind === 'join' && code === undefined) typed = room.code;
+		else if (room.kind === 'join') openRoom(room.code);
 		// The key stays in the hash, which never reaches the server; the path is resolved.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		else void goto(`${resolve('/watch/[code]', { code: room.code })}#${room.key}`);
@@ -334,14 +340,43 @@
 			<Button type="submit" variant="accent" disabled={!canJoin}>
 				{t('room.join')}
 			</Button>
-			<!-- Always here; disabled until the room has a Grim view password, so nothing moves. -->
-			<Button disabled={!found?.grimView} onclick={() => (grimViewOpen = true)}
-				>{t('room.grimView')}</Button
-			>
 			<!-- A camera icon, not words (Trevor, 2026-10-23). -->
 			<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
+			<!-- Grim view and Public Town are for fewer people, so they wait behind ⋯ and Join as
+			     player stays the one big button (Trevor, 2026-10-26). -->
+			<IconButton
+				icon="more"
+				label={t('room.moreWays')}
+				bind:ref={moreButton}
+				aria-haspopup="dialog"
+				aria-expanded={moreOpen}
+				onclick={() => (moreOpen = !moreOpen)}
+			/>
 		</div>
 	</form>
+	<Popover bind:open={moreOpen} title={t('room.moreWays')} anchor={moreButton}>
+		<div class="more">
+			<!-- Disabled until the room has a Grim view password. -->
+			<Button
+				variant="quiet"
+				disabled={!found?.grimView}
+				onclick={() => {
+					moreOpen = false;
+					grimViewOpen = true;
+				}}>{t('room.grimView')}</Button
+			>
+			<!-- A tablet for the middle of the table shows the players' grim alone (Public Town,
+			     Trevor 2026-10-26). -->
+			<Button
+				variant="quiet"
+				disabled={!canJoin}
+				onclick={() => {
+					moreOpen = false;
+					if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
+				}}>{t('room.town.title')}</Button
+			>
+		</div>
+	</Popover>
 	<Dialog bind:open={scanning} title={t('share.scan')}>
 		{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} />{/if}
 	</Dialog>
@@ -361,7 +396,9 @@
 			/>
 		</form>
 	</Dialog>
-	{#if code === undefined}<YourGames onOpen={openRoom} />{/if}
+	{#if code === undefined}<YourGames
+			onOpen={(c, town) => (town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c))}
+		/>{/if}
 {:else if inRoom}
 	<div class="you-line">
 		<!-- One tap target, the whole row (Trevor: whole-row tap), with the pencil it opens by. -->
@@ -510,6 +547,9 @@
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: var(--space-2);
+	}
+	.more {
+		display: grid;
 	}
 	.grim-view {
 		display: grid;

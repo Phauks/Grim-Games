@@ -154,7 +154,13 @@ export type ClientMessage =
 	 * First message on every socket. Keys never go in the URL. `protocol` is missing from
 	 * apps built before it existed, which speak protocol 1.
 	 */
-	| { type: 'hello'; role: 'host' | 'player' | 'viewer'; key: string; protocol?: number }
+	| {
+			type: 'hello';
+			/** `town`: a Public Town display (`TownView`); its key is ignored, as it sends nothing. */
+			role: 'host' | 'player' | 'viewer' | 'town';
+			key: string;
+			protocol?: number;
+	  }
 	// From a player.
 	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
 	| { type: 'request'; name: string; seatId?: SeatId }
@@ -218,6 +224,8 @@ export type ClientMessage =
 	/** Ends the vote after FINAL_CALL_SECONDS, so phones have a last chance (2026-10-26). */
 	| { type: 'end-script-vote' }
 	| { type: 'close-script-vote' }
+	/** Calls every player back to town: their phones sound and vibrate (plan U2). */
+	| { type: 'call-town' }
 	| { type: 'close' };
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
@@ -300,6 +308,17 @@ export interface PlayerView {
 	};
 }
 
+/**
+ * What a Public Town display sees (Trevor, 2026-10-26): a tablet in the middle of the table
+ * showing the town as everyone there knows it, and nothing else. It is not a member, so it
+ * takes no seat, casts no vote and is in no count; it is sent only what every phone is.
+ */
+export interface TownView {
+	type: 'town-view';
+	public?: PublicGameState;
+	gameId?: string;
+}
+
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
 export interface ScriptView {
 	type: 'script';
@@ -323,12 +342,26 @@ export type ServerMessage =
 	| HostView
 	| RevealView
 	| PlayerView
+	| TownView
 	| ScriptView
 	| GrimoireView
 	/** To the Storyteller: how many are watching through the view-only link right now. */
 	| { type: 'watchers'; count: number }
+	/**
+	 * To the players: the Storyteller calls everyone back to town (plan U2). Sent once, never
+	 * kept, so a phone that joins later doesn't sound; older apps ignore it.
+	 */
+	| { type: 'call-town' }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
+
+/** Back to town calls closer together than this are dropped, so phones don't keep ringing. */
+export const CALL_TOWN_GAP_MS = 5000;
+
+/** Whether a Back to town call at `now` goes out, given when the last one did. */
+export function canCallTown(last: number | undefined, now: number): boolean {
+	return last === undefined || now - last >= CALL_TOWN_GAP_MS;
+}
 
 /**
  * `too-old`: the app must update before it can use the room; the room itself is fine.
@@ -462,6 +495,14 @@ export function playerView(
 		if (room.vote.ability) view.vote.ability = room.vote.ability;
 		if (choice !== undefined) view.vote.choice = choice;
 	}
+	return view;
+}
+
+/** What a Public Town display sees: the public table alone (`TownView`). */
+export function townView(room: RoomState): TownView {
+	const view: TownView = { type: 'town-view' };
+	if (room.public) view.public = room.public;
+	if (room.gameId) view.gameId = room.gameId;
 	return view;
 }
 

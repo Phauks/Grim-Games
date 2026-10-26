@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openSettingsDialog } from './shell.ts';
+import { toBoard } from './new-game.ts';
 
 test('an info token is shown full screen and only the close button hides it', async ({ page }) => {
 	await page.goto('/info-tokens');
@@ -316,4 +317,31 @@ test('custom cards: bold and italic buttons, alphabetical order, and the New til
 		.getByRole('button', { name: /^(apple card|Zebra card|You are cursed|New info token)$/ })
 		.allTextContents();
 	expect(names.map((n) => n.trim())).toEqual(['apple card', 'You are cursed', 'Zebra card', 'New']);
+});
+
+test("Share blurs what is behind it, on setup's Characters screen as on the board", async ({
+	page
+}) => {
+	// Trevor, 2026-10-26 (playtest): players look at the join code, so nothing behind it may be
+	// read. The player view itself is already opaque.
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	const blurred = () =>
+		page
+			.locator("[data-scope='dialog'][data-part='backdrop']")
+			.last()
+			.evaluate((el) => getComputedStyle(el).backdropFilter);
+	await page.getByRole('button', { name: 'Share', exact: true }).tap();
+	await expect(page.getByRole('dialog', { name: 'Share' })).toBeVisible();
+	expect(await blurred()).toContain('blur');
+	await page.keyboard.press('Escape');
+	await page.goto(`${new URL(page.url()).pathname}/setup`);
+	await page.getByRole('button', { name: 'Share' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Share' })).toBeVisible();
+	expect(await blurred()).toContain('blur');
 });

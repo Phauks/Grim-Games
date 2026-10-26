@@ -141,7 +141,8 @@
 	import RuleCharacters from './RuleCharacters.svelte';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
-	import { extraReminders, isGeneric, isSeatsReminder, reminderWords } from './reminders.ts';
+	import NewGameSheet from '#lib/features/modes/NewGameSheet.svelte';
+	import { extraReminders, isGeneric, reminderWords } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
@@ -422,10 +423,14 @@
 		points,
 		size,
 		board: boardSize,
-		element: board,
-		holdMoves: boardLooks.current.holdMoves && !watching
+		element: board
 	}));
 	const shown = $derived(seatArr.shown);
+	/**
+	 * The seat picked up by a hold (Trevor, 2026-10-26): it lifts and the rest of the board
+	 * darkens, so it is plain the seat can now be dragged.
+	 */
+	const heldSeat = $derived(seatArr.arranging ? undefined : seatArr.drag?.seatId);
 
 	// Rotating moves the players, not the places: a hand-placed spot or a gap stays where it
 	// is and whoever now sits there takes it. Also after History restores a rotation.
@@ -436,22 +441,6 @@
 			grimoire.setLayout(followSeating(grimoire.layout, lastSeating, seating));
 		lastSeating = seating;
 	});
-	/**
-	 * The seat whose token is held down (Trevor, 2026-10-19): its character's reminders light
-	 * up, on the board and in the bank, and everything else dims until it is let go. With
-	 * Board > Advanced's switch (Trevor, 2026-10-23), the reminders placed on that seat light
-	 * instead, whoever's they are; none in the bank is on a seat.
-	 */
-	let holding = $state<SeatId | undefined>();
-	function lit(
-		reminder: Pick<Reminder, 'characterId' | 'ownerSeatId'> & { reminderId?: ReminderId }
-	): boolean {
-		if (holding === undefined) return false;
-		if (boardLooks.current.holdLights === 'seat')
-			return game.seats[holding].reminders.some((r) => r.reminderId === reminder.reminderId);
-		return isSeatsReminder(game, reminder, holding, characters);
-	}
-
 	// ── Seat sheet ──
 	let sheetOpen = $state(false);
 	let selected = $state<SeatId | undefined>();
@@ -694,7 +683,8 @@
 	function executeAndEndDay(
 		seatId: SeatId | undefined,
 		save: CharacterId | 'dies' | undefined,
-		marks: Partial<Record<DayMark, boolean>>
+		marks: Partial<Record<DayMark, boolean>>,
+		keepGoing: boolean
 	): void {
 		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
 			grimoire.run({ type: 'SetDayMark', mark, value });
@@ -705,7 +695,8 @@
 				seatId,
 				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {})
 			});
-		endDay();
+		// Keep the day going (Trevor, 2026-10-26): a player may still nominate after it.
+		if (!keepGoing) endDay();
 	}
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
@@ -880,6 +871,8 @@
 		return scriptShareable(loadedScript, same ? currentScript.saved : undefined);
 	});
 	let menuOpen = $state(false);
+	/** ⋯'s New game, which asks to end this game first (Trevor, 2026-10-26). */
+	let newGameSheet = $state<NewGameSheet>();
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
 	let infoSheet = $state<ReturnType<typeof InfoTokensSheet>>();
@@ -1076,6 +1069,7 @@
 	<div
 		class="board"
 		class:arranging={seatArr.arranging}
+		class:holding={heldSeat !== undefined}
 		class:walking={nw.walk !== undefined}
 		class:ended={!!ended}
 		style:--tray-h="{chip + 30}px"
@@ -1124,7 +1118,6 @@
 				class="slot"
 				class:dragging={seatArr.drag?.seatId === seat.seatId}
 				class:front={seatArr.front === seat.seatId}
-				class:dim={holding !== undefined && holding !== seat.seatId}
 				style:left="{at.x}%"
 				style:top="{at.y}%"
 				onpointerdown={(event) => seatArr.dragStart(event, seat.seatId, at)}
@@ -1165,13 +1158,9 @@
 								: part === 'nominate'
 									? askNomination(seat.seatId)
 									: openSeat(seat.seatId))}
-					onHold={seatArr.arranging
+					onHold={seatArr.arranging || watching
 						? undefined
-						: (on) => {
-								holding = on ? seat.seatId : undefined;
-								if (on) seatArr.held(seat.seatId);
-							}}
-					holdMoves={boardLooks.current.holdMoves && !watching}
+						: (on) => on && seatArr.held(seat.seatId)}
 					onGhostVote={() =>
 						!seatArr.arranging &&
 						!watching &&
@@ -1197,13 +1186,11 @@
 					<div
 						class="chip-slot"
 						data-seat={i + 1}
+						class:held={heldSeat === seat.seatId}
 						class:dragging={dragged}
 						class:extra={extras.has(reminder.reminderId)}
 						data-extra={extras.has(reminder.reminderId) ? '' : undefined}
 						class:now={nw.isStepReminder(reminder)}
-						class:lit={lit(reminder)}
-						class:dim={holding !== undefined && !lit(reminder)}
-						data-lit={lit(reminder) || undefined}
 						style:left="{p.x}%"
 						style:top="{p.y}%"
 					>
@@ -1241,9 +1228,6 @@
 				class:unassigned={!looseMode}
 				data-unassigned={looseMode ? undefined : ''}
 				class:now={nw.isStepReminder(reminder)}
-				class:lit={lit(reminder)}
-				class:dim={holding !== undefined && !lit(reminder)}
-				data-lit={lit(reminder) || undefined}
 				style:left="{p.x}%"
 				style:top="{p.y}%"
 			>
@@ -1333,7 +1317,6 @@
 				onHints={(h) => (trayHints = h)}
 				run={bankRun}
 				disabled={watching}
-				lit={holding === undefined ? undefined : lit}
 			/>
 		{/if}
 
@@ -1416,6 +1399,9 @@
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
+	onCallTown={!watching && !ended && roomHost().code
+		? () => roomHost().callTown() || toast(t('room.callTownFailed'))
+		: undefined}
 	onGameInfo={() => (modeMenuOpen = true)}
 	onCharacterSelection={startedAt === undefined && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
@@ -1428,8 +1414,15 @@
 	onExport={() => (exportOpen = true)}
 	onFeedback={watching ? undefined : () => (feedbackOpen = true)}
 	onReopen={() => (reopenOpen = true)}
+	onNewGame={watching ? undefined : () => newGameSheet?.begin()}
 	onEnd={() => (endOpen = true)}
 />
+{#if !watching}<NewGameSheet
+		bind:this={newGameSheet}
+		{game}
+		started={startedAt !== undefined}
+		ended={!!ended}
+	/>{/if}
 
 <ModeMenu
 	{game}
@@ -1601,7 +1594,7 @@
 </Dialog>
 
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
-<Dialog bind:open={phonesOpen} title={t('room.title')} size="full">
+<Dialog bind:open={phonesOpen} title={t('room.title')} size="full" shownToPlayers>
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
@@ -1730,6 +1723,16 @@
 		z-index: 2;
 		cursor: grabbing;
 	}
+	/* A held seat lifts and everything else on the board darkens (Trevor, 2026-10-26). */
+	.holding .slot.dragging {
+		scale: 1.12;
+	}
+	.holding .slot:not(.dragging),
+	.holding .chip-slot:not(.held),
+	.holding .tethers {
+		opacity: 0.35;
+		transition: opacity 0.15s;
+	}
 	.place-spot {
 		position: absolute;
 		z-index: 3;
@@ -1778,17 +1781,12 @@
 		outline: 0.15rem dashed var(--on-surface);
 		outline-offset: 0.15rem;
 	}
-	/* The walked-through step's reminders already on the board, and a held seat's (Trevor,
-	   2026-10-19; the rest fade): the bank's highlight, a ring, glow or both (Settings > Tokens). */
-	.chip-slot.now > :global(.reminder),
-	.chip-slot.lit > :global(.reminder) {
+	/* The walked-through step's reminders already on the board: the bank's highlight, a ring,
+	   glow or both (Settings > Tokens). */
+	.chip-slot.now > :global(.reminder) {
 		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
 		filter: var(--reminder-lit-glow, none);
-	}
-	.slot.dim,
-	.chip-slot.dim {
-		opacity: 0.35;
 	}
 	.chip-slot.dragging {
 		z-index: 3;

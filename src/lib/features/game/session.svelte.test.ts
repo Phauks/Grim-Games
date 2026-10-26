@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/index.ts';
 import { MemoryGameStore, type EngineContext } from '#lib/core/engine/index.ts';
 import { endedGames } from '#lib/features/grimoire/device-notes.ts';
+import { carryFrom, setNextGame } from './next-game.ts';
 import { OpenGame } from './session.svelte.ts';
 
 const chef: Character = {
@@ -96,6 +97,24 @@ describe('OpenGame', () => {
 			expect(ended.game.seats[seatId].dead).toBe(true);
 		} finally {
 			endedGames.reopen(game.game.gameId);
+		}
+	});
+
+	it('a new game from an ended one keeps when that game ended and who won', async () => {
+		const store = new MemoryGameStore();
+		const old = await OpenGame.create(data, script, 5, store, context());
+		await old.save();
+		endedGames.end(old.game.gameId, 'good');
+		const before = endedGames.read()[old.game.gameId];
+		try {
+			setNextGame(carryFrom(old.game, false));
+			let id = 0;
+			const fresh = { ...context(), newId: () => `next-${++id}` };
+			const next = await OpenGame.create(data, script, 5, store, fresh);
+			expect(next.game.gameId).not.toBe(old.game.gameId);
+			expect(endedGames.read()[old.game.gameId]).toEqual(before);
+		} finally {
+			endedGames.reopen(old.game.gameId);
 		}
 	});
 });

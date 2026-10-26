@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
-import { openMenu, openSettingsDialog } from './shell.ts';
+import { openMenu } from './shell.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -4037,14 +4037,14 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Trevor (2026-10-18, 2026-10-19): game actions, the seats, the settings, then End game.
 	// Storyteller names who runs the game (Trevor, 2026-10-19). A line between Tokens and
-	// Report an issue (Trevor, 2026-10-23).
+	// Report an issue (Trevor, 2026-10-23). New game sits with End game (Trevor, 2026-10-26).
 	await expect(menu.getByRole('separator')).toHaveCount(4);
 	const items = menu.locator('.menu > :is(button, hr), .menu > .menu-nav > button');
 	const names = await items.evaluateAll((els) =>
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens \| (Navigation )?Report an issue \| End game$/
+		/^History Demon bluffs Notes( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens \| (Navigation )?Report an issue \| New game End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu
@@ -5468,100 +5468,11 @@ test('an empty seat and a named one show their name in the same badge', async ({
 	await expect(seatLabelled(page, 'Seat 1:').locator('.name')).toHaveCount(0);
 });
 
-test("holding a seat's token lights its character's reminders and dims the rest", async ({
+test('holding a seat token, then dragging, moves the seat; a hold alone opens nothing', async ({
 	page
 }) => {
-	// Trevor (2026-10-19): holding a token on the grimoire highlights the reminder tokens
-	// assigned to that character. Two Imps, so only the held one's "Dead" token lights.
-	await startGame(page);
-	for (const number of [1, 3]) {
-		const sheet = await openSeat(page, number);
-		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
-		await page
-			.getByRole('dialog', { name: `Character for Seat ${number}` })
-			.getByRole('button', { name: 'Imp', exact: true })
-			.tap();
-		await closeSheet(page);
-	}
-	const bank = page.getByRole('list', { name: 'Reminder bank' });
-	const dead = bank.locator('[data-testid="board-reminder"][aria-label="Dead reminder"]');
-	await expect(dead).toHaveCount(2);
-	// Seat 3's copy onto Seat 2; Seat 1's stays in the bank.
-	await dead.nth(1).tap();
-	await page
-		.getByRole('dialog', { name: 'Put Dead on' })
-		.getByRole('button', { name: /None Seat 2/ })
-		.tap();
-	await page
-		.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' })
-		.getByRole('button', { name: 'Cancel' })
-		.tap();
-	await expect(page.getByRole('alertdialog')).toBeHidden();
-	const placed = page.locator('.chip-slot[data-seat="2"]');
-	await expect(placed).toHaveCount(1);
-
-	const seat = async (number: number) =>
-		(await page.getByRole('button', { name: new RegExp(`^Seat ${number}:`) }).boundingBox())!;
-	const lit = page.locator('[data-lit]');
-	const deadCell = bank.locator('li', { has: page.locator('[aria-label="Dead reminder"]') });
-	// Seat 3 held: its token on Seat 2 lights, the bank's other Imp token and other seats dim.
-	const three = await seat(3);
-	await page.mouse.move(three.x + three.width / 2, three.y + three.height / 2);
-	await page.mouse.down();
-	await expect(placed).toHaveAttribute('data-lit', 'true');
-	await expect(lit).toHaveCount(1);
-	await expect(deadCell).toHaveClass(/dim/);
-	await expect(page.locator('.slot.dim')).toHaveCount(7);
-	await page.mouse.up();
-	// Let go: nothing lit or dimmed, and the hold opened nothing.
-	await expect(lit).toHaveCount(0);
-	await expect(page.locator('.slot.dim')).toHaveCount(0);
-	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
-
-	// Seat 1 held: only its token, still in the bank, lights.
-	const one = await seat(1);
-	await page.mouse.move(one.x + one.width / 2, one.y + one.height / 2);
-	await page.mouse.down();
-	await expect(deadCell).toHaveAttribute('data-lit', 'true');
-	await expect(placed).toHaveClass(/dim/);
-	await page.mouse.up();
-	await expect(lit).toHaveCount(0);
-	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
-
-	// Board > Advanced (Trevor, 2026-10-23): the reminders on the held seat light instead,
-	// whoever's they are, so Seat 2 lights Seat 3's token and Seat 3 lights nothing.
-	await openSettingsDialog(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board' })
-		.tap();
-	await settings.getByRole('button', { name: /Advanced/ }).tap();
-	await settings.getByText("Holding a token lights its seat's reminders", { exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(settings).toBeHidden();
-	const hold = async (number: number) => {
-		const box = await seat(number);
-		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-		await page.mouse.down();
-	};
-	await hold(2);
-	await expect(placed).toHaveAttribute('data-lit', 'true');
-	await expect(lit).toHaveCount(1);
-	await expect(deadCell).toHaveClass(/dim/);
-	await page.mouse.up();
-	await expect(lit).toHaveCount(0);
-	await hold(3);
-	await expect(placed).toHaveClass(/dim/);
-	await expect(lit).toHaveCount(0);
-	await page.mouse.up();
-});
-
-test('with Hold a seat, then drag on, a held seat drags to a new place without opening', async ({
-	page
-}) => {
-	// Trevor (2026-10-25): a setting so a long press on a token then a drag moves it, to try
-	// with Storytellers before choosing the built-in behaviour. Off, a hold moves nothing.
+	// Trevor (2026-10-25, built in 2026-10-26): a long press on a token then a drag moves it,
+	// as Arrange seats does; holding a token does nothing else.
 	await startGame(page);
 	const seat = (n: number) => page.getByRole('button', { name: new RegExp(`^Seat ${n}:`) });
 	const centre = async (n: number) => {
@@ -5571,40 +5482,40 @@ test('with Hold a seat, then drag on, a held seat drags to a new place without o
 	const board = (await page.locator('.board').boundingBox())!;
 	const to = { x: board.x + board.width / 2, y: board.y + board.height * 0.3 };
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
-	const holdAndDrag = async () => {
-		const from = await centre(1);
-		await page.mouse.move(from.x, from.y);
-		await page.mouse.down();
-		await expect(page.locator('.slot.dim')).toHaveCount(7);
-		await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
-		await page.mouse.move(to.x, to.y, { steps: 4 });
-		await page.mouse.up();
-		await expect(page.locator('.slot.dim')).toHaveCount(0);
-	};
 
+	// A hold let go where it was moves nothing and opens nothing.
 	const start = await centre(1);
-	await holdAndDrag();
+	await page.mouse.move(start.x, start.y);
+	await page.mouse.down();
+	await page.waitForTimeout(700);
+	await page.mouse.up();
 	expect(await centre(1)).toEqual(start);
 	await expect(sheet).toBeHidden();
 
-	await openSettingsDialog(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board' })
-		.tap();
-	await settings.getByRole('button', { name: /Advanced/ }).tap();
-	await settings.getByText('Hold a seat, then drag, to move it', { exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(settings).toBeHidden();
+	// A quick drag, before the hold, moves nothing either.
+	await page.mouse.move(start.x, start.y);
+	await page.mouse.down();
+	await page.mouse.move(to.x, to.y, { steps: 4 });
+	await page.mouse.up();
+	expect(await centre(1)).toEqual(start);
 
 	const seat2 = await centre(2);
-	await holdAndDrag();
+	await page.mouse.move(start.x, start.y);
+	await page.mouse.down();
+	await page.waitForTimeout(700);
+	// Held: the seat lifts and the rest of the board darkens (Trevor, 2026-10-26).
+	await expect(page.locator('.board')).toHaveClass(/holding/);
+	await expect(page.locator('.slot.dragging')).toHaveCount(1);
+	await expect(page.locator('.slot:not(.dragging)').first()).toHaveCSS('opacity', '0.35');
+	await page.mouse.move((start.x + to.x) / 2, (start.y + to.y) / 2, { steps: 4 });
+	await page.mouse.move(to.x, to.y, { steps: 4 });
+	await page.mouse.up();
 	const moved = await centre(1);
 	expect(Math.abs(moved.x - to.x)).toBeLessThan(4);
 	expect(Math.abs(moved.y - to.y)).toBeLessThan(4);
 	expect(await centre(2)).toEqual(seat2);
 	await expect(sheet).toBeHidden();
+	await expect(page.locator('.board')).not.toHaveClass(/holding/);
 	// A tap still opens the seat.
 	await openSeat(page, 1);
 	await closeSheet(page);

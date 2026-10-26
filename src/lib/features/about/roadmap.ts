@@ -1,6 +1,6 @@
 /**
  * The roadmap, kept in the repository so it ticks itself off. Each item is a feature, made of
- * the backlog plan's IDs (D1, R1-R8, B1-B6, S1-S22, P1-P2, L1-L58, G1-G16, J1-J23, W1-W6, E1-E3, Q1-Q2, ...):
+ * the backlog plan's IDs (D1, R1-R8, B1-B6, S1-S22, P1-P2, L1-L65, G1-G16, J1-J23, W1-W6, E1-E3, Q1-Q2, U1-U4, ...):
  * a part is finished once a merged change names its ID in brackets in its title, such as
  * "Savant info generator (L2)", and an item is done once all its parts and listed PRs are.
  * Only the features are shown. Add a new plan ID to the feature it belongs to, or a new
@@ -76,7 +76,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J23',
 			'J24',
 			'J25',
-			'J26'
+			'J26',
+			'J27'
 		]
 	},
 	{
@@ -107,7 +108,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'G16',
 			'L6',
 			'L14',
-			'L37'
+			'L37',
+			'L64',
+			'L65'
 		]
 	},
 	{
@@ -144,11 +147,16 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S4', 'S6', 'S12', 'S17', 'S19', 'S20']
 	},
 	{ title: 'Install as an app', parts: ['S1'] },
+	{ title: 'A Support page with a Ko-fi link', parts: ['S23'] },
 	{
 		title: 'Settings profiles: save your board and settings, and pick one for each game',
 		parts: ['S18', 'S21']
 	},
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
+	{
+		title: 'Sound: every sound in one place, Back to town, day and night ambience, your own sounds',
+		parts: ['U1', 'U2', 'U3', 'U4']
+	},
 	{
 		title: 'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover',
 		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24']

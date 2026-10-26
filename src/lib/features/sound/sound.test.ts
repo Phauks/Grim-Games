@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { canVibrate } from './timer-sound.ts';
+import { canVibrate } from './sound.ts';
 
 /** A browser with or without the Vibration API, whose main pointer is coarse (touch) or fine. */
 function device(vibrate: boolean, pointer: 'coarse' | 'fine' | undefined) {

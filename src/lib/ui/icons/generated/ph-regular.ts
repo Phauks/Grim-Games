@@ -28,6 +28,7 @@ import ph_circle_dashed from '~icons/ph/circle-dashed';
 import ph_circle_notch from '~icons/ph/circle-notch';
 import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
+import ph_coffee from '~icons/ph/coffee';
 import ph_copy from '~icons/ph/copy';
 import ph_database from '~icons/ph/database';
 import ph_device_mobile from '~icons/ph/device-mobile';
@@ -135,6 +136,7 @@ const icons: IconMap = {
 	'ph:circle-notch': ph_circle_notch,
 	'ph:clipboard-text': ph_clipboard_text,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
+	'ph:coffee': ph_coffee,
 	'ph:copy': ph_copy,
 	'ph:database': ph_database,
 	'ph:device-mobile': ph_device_mobile,

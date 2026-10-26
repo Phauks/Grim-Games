@@ -36,6 +36,7 @@ test('the menu ends with App, the build line and the CCC logo; there is no foote
 	const menu = await theMenu(page);
 	await expect(menu.getByRole('list', { name: 'App', exact: true }).getByRole('link')).toHaveText([
 		'About',
+		'Support',
 		'Changelog',
 		'Roadmap',
 		'Privacy'

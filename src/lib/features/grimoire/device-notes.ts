@@ -50,8 +50,8 @@ export function rememberName(list: readonly string[], name: string): string[] {
 }
 
 /**
- * Names to suggest while typing: past names starting with what is typed (then containing
- * it), leaving out names already on another seat.
+ * Names to suggest while typing: names from `list` starting with what is typed (then
+ * containing it), each once, leaving out names already on another seat.
  */
 export function suggestNames(
 	list: readonly string[],
@@ -61,9 +61,11 @@ export function suggestNames(
 ): string[] {
 	const query = typed.trim().toLocaleLowerCase();
 	const used = new Set(taken.map((n) => n.toLocaleLowerCase()));
-	const open = list.filter(
-		(n) => !used.has(n.toLocaleLowerCase()) && n.toLocaleLowerCase() !== query
-	);
+	const open = list.filter((n, i) => {
+		const key = n.toLocaleLowerCase();
+		const first = list.findIndex((m) => m.toLocaleLowerCase() === key) === i;
+		return first && !used.has(key) && key !== query;
+	});
 	const starts = open.filter((n) => n.toLocaleLowerCase().startsWith(query));
 	const contains = query
 		? open.filter((n) => !starts.includes(n) && n.toLocaleLowerCase().includes(query))

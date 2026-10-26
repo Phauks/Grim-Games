@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
-// A new script means a new game, never a change mid-game (Trevor, 2026-10-24): Game info's
-// New game opens "a tiny modal version of the new game screen", and the room, seat count
+// A new script means a new game, never a change mid-game (Trevor, 2026-10-24): New game in
+// the board's ⋯ menu (Game info's until 2026-10-26) opens "a tiny modal version of the new game screen", and the room, seat count
 // and player names carry over.
 
 async function openGameInfo(page: Page) {
@@ -18,6 +18,15 @@ async function openGameInfo(page: Page) {
 	return page.getByRole('dialog', { name: 'Game info', exact: true });
 }
 
+/** New game is in the board's ⋯ menu (Trevor, 2026-10-26), no longer in Game info. */
+async function newGameFromMenu(page: Page) {
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'New game' })
+		.tap();
+}
+
 async function startTroubleBrewing(page: Page) {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
@@ -25,7 +34,7 @@ async function startTroubleBrewing(page: Page) {
 	await toBoard(page);
 }
 
-test('New game in Game info asks first, then starts the next game with the same players', async ({
+test('New game in the board menu asks first, then starts the next game with the same players', async ({
 	page
 }) => {
 	await startTroubleBrewing(page);
@@ -44,22 +53,21 @@ test('New game in Game info asks first, then starts the next game with the same 
 	await expect(sheet).toBeHidden();
 
 	// The pencil no longer changes the script.
-	let info = await openGameInfo(page);
+	const info = await openGameInfo(page);
+	await expect(info.getByRole('button', { name: 'New game' })).toHaveCount(0);
 	await info.getByTestId('game-info-edit').tap();
 	const edit = page.getByRole('dialog', { name: 'Edit game info' });
 	await expect(edit.getByRole('radiogroup', { name: 'Script' })).toHaveCount(0);
 	await edit.getByRole('button', { name: 'Cancel' }).tap();
 
 	// A game under way is ended only after asking; Cancel keeps it.
-	info = await openGameInfo(page);
-	await info.getByTestId('game-info-new-game').tap();
+	await newGameFromMenu(page);
 	const ask = page.getByRole('alertdialog', { name: 'Start a new game?' });
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(ask).toBeHidden();
 	await expect(page.getByRole('dialog', { name: 'New game' })).toHaveCount(0);
 
-	info = await openGameInfo(page);
-	await info.getByTestId('game-info-new-game').tap();
+	await newGameFromMenu(page);
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// New game in a sheet over the board: script, mode and room vote, and the same script
 	// preview as the New game screen (Trevor, 2026-10-24).
@@ -98,8 +106,7 @@ test('before anything happens, New game opens straight away and closing it chang
 	await page.keyboard.press('Escape');
 	await expect(more).toBeHidden();
 
-	const info = await openGameInfo(page);
-	await info.getByTestId('game-info-new-game').tap();
+	await newGameFromMenu(page);
 	await expect(page.getByRole('alertdialog', { name: 'Start a new game?' })).toHaveCount(0);
 	const newGame = page.getByRole('dialog', { name: 'New game' });
 	await expect(newGame).toBeVisible();
@@ -127,8 +134,7 @@ test('players carry only into the game started from that sheet, never a later on
 	const board = page.url();
 
 	// The sheet is left without starting or closing it: a reload, or leaving the board.
-	const info = await openGameInfo(page);
-	await info.getByTestId('game-info-new-game').tap();
+	await newGameFromMenu(page);
 	await expect(page.getByRole('dialog', { name: 'New game' })).toBeVisible();
 	await page.reload();
 

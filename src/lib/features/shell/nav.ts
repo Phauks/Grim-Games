@@ -22,6 +22,7 @@ export interface NavItem {
 		| '/account'
 		| '/reports'
 		| '/about'
+		| '/support'
 		| '/changelog'
 		| '/roadmap'
 		| '/privacy';
@@ -113,6 +114,8 @@ export const REPORTS_ITEM: NavItem = {
  */
 export const APP_ITEMS: readonly NavItem[] = [
 	{ id: 'about', path: '/about', label: 'shell.about', icon: 'about' },
+	// Beneath About (Trevor, 2026-10-26).
+	{ id: 'support', path: '/support', label: 'shell.support', icon: 'support' },
 	{ id: 'changelog', path: '/changelog', label: 'shell.changelog', icon: 'notes' },
 	{ id: 'roadmap', path: '/roadmap', label: 'shell.roadmap', icon: 'forward' },
 	{ id: 'privacy', path: '/privacy', label: 'shell.privacy', icon: 'lock' }
