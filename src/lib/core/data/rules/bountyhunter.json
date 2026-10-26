@@ -38,5 +38,6 @@
 	},
 	"reminderMovement": {
 		"why": "A new evil player is shown when the last one dies."
-	}
+	},
+	"makesExtraEvil": true
 }

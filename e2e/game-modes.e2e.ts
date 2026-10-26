@@ -429,6 +429,11 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await jinxed.tap();
 	await page.getByRole('option', { name: 'Less likely', exact: true }).tap();
 	await expect(jinxed).toHaveText(/Less likely/);
+	// Ivory draft, as Grimbits' draft tool offers: off by default.
+	const ivory = modesPanel(page).getByRole('checkbox', { name: 'Ivory draft' });
+	await expect(ivory).not.toBeChecked();
+	await modesPanel(page).getByText('Ivory draft', { exact: true }).tap();
+	await expect(ivory).toBeChecked();
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -438,6 +443,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	);
 	expect(record.roleRecycling).toBe(true);
 	expect(record.jinxedPairs).toBe('reduce');
+	expect(record.ivoryDraft).toBe(true);
 	// The draft knows each character's jinxed partners
 	// (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
 	await drawTile(page);
@@ -448,6 +454,8 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	);
 	expect(state.config.jinxes).toBe('reduce');
 	expect(state.jinxed.heretic).toContain('baron');
+	expect(state.config.ivory).toBe(true);
+	expect(state.extraEvil).toContain('goon');
 });
 
 test('with our own wording on, each mode shows its About description', async ({ page }) => {

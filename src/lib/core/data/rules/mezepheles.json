@@ -72,5 +72,6 @@
 				"reason": "Says when the Turns Evil token comes off and the ability is used."
 			}
 		}
-	}
+	},
+	"makesExtraEvil": true
 }

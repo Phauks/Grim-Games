@@ -141,6 +141,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 | Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new)             | `dayMark`                             | moved |
 | Night information and answers (`night-info.ts`)                                                     | `learns`, `answers`                   | moved |
 | Game end (`game-end.ts`, `end-reason.ts`)                                                           | `gameEnd`                             | moved |
+| Extra evil makers (`modes/draft.ts` Ivory draft; the kind the Spirit of Ivory limits; new)          | `makesExtraEvil`                      | new   |
 
 ## Lists that only shrink
 

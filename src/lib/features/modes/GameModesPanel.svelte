@@ -152,6 +152,7 @@
 	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
 	let roleRecycling = $state<boolean | undefined>();
 	let jinxedPairs = $state<JinxedPairs>('allow');
+	let ivoryDraft = $state(false);
 	const draft = $derived(
 		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
 	);
@@ -361,7 +362,9 @@
 				restrictions,
 				data,
 				loaded: loaded[0],
-				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen, jinxedPairs } : {}),
+				...(draft
+					? { roleRecycling: roleRecycling ?? draft.recycleUnchosen, jinxedPairs, ivoryDraft }
+					: {}),
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
 			saveDraft({ gameId: open.game.gameId });
@@ -393,6 +396,7 @@
 						restrictions = NO_RESTRICTIONS;
 						roleRecycling = undefined;
 						jinxedPairs = 'allow';
+						ivoryDraft = false;
 						campaignId = 'new';
 					}}
 				/>
@@ -469,6 +473,12 @@
 								label: t(`modes.jinxedPairs.${value}`)
 							}))}
 							onChange={(v) => (jinxedPairs = v)}
+						/>
+						<SettingToggle
+							label={t('modes.ivoryDraft')}
+							description={t('modes.ivoryDraftHint')}
+							checked={ivoryDraft}
+							onChange={(on) => (ivoryDraft = on)}
 						/>
 					{/if}
 					<div class="setting">
