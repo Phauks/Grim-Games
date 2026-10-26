@@ -1411,6 +1411,61 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phoneContext.close();
 });
 
+test("a Traveller's seat on the players' Grim takes only Good or Evil", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-26): "Travelers cannot set guess for other characters, only alignment."
+	// The town is told a Traveller's character (https://wiki.bloodontheclocktower.com/Travellers),
+	// so a player marks only whether they think the Traveller is good or evil.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await page.getByRole('button', { name: /^Seat 2:/ }).tap();
+	const st = page.locator('[data-scope="drawer"][data-part="content"]');
+	await st.getByRole('button', { name: 'Choose character' }).first().tap();
+	const pick = page.getByRole('dialog', { name: 'Character for Seat 2' });
+	await pick.getByRole('searchbox').fill('Scapegoat');
+	await pick.getByRole('button', { name: /^Scapegoat/ }).tap();
+	// The Storyteller's own pick of its alignment stays theirs.
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: 'Decide later' })
+		.tap();
+	await page.keyboard.press('Escape');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seat = phone.getByTestId('grim-seat').nth(1);
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 2: Seat 2, Traveller: Scapegoat');
+	await seat.tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
+	// Good and Evil, and nothing else to guess.
+	await expect(sheet.locator('[data-guess-key]')).toHaveCount(2);
+	await expect(sheet.getByRole('button', { name: 'Minion', exact: true })).toHaveCount(0);
+	await expect(sheet.getByRole('searchbox')).toHaveCount(0);
+	await sheet.getByRole('button', { name: 'Evil', exact: true }).tap();
+	await expect(seat).toHaveAttribute(
+		'aria-label',
+		'Seat 2: Seat 2, Traveller: Scapegoat, your guess: Evil'
+	);
+	// The other alignment replaces it, and the same one again takes it off.
+	await sheet.getByRole('button', { name: 'Good', exact: true }).last().tap();
+	await expect(seat).toHaveAttribute(
+		'aria-label',
+		'Seat 2: Seat 2, Traveller: Scapegoat, your guess: Good'
+	);
+	await sheet.getByRole('button', { name: 'Good', exact: true }).last().tap();
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 2: Seat 2, Traveller: Scapegoat');
+	await phone.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await phoneContext.close();
+});
+
 test("a Banshee the Demon killed shows two votes and no ghost vote on the players' Grim", async ({
 	page,
 	browser
