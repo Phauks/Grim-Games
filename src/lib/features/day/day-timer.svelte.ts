@@ -57,6 +57,14 @@ class LiveDayTimer {
 	get shared(): dayTimers.SharedDayTimer {
 		return { ...this.#timer, mode: this.mode };
 	}
+	/**
+	 * What players' phones get (Trevor, 2026-10-26): the shared timer and how to show it, by
+	 * the Storyteller's `timerForPlayers` setting, or nothing while it is Hidden.
+	 */
+	get forPlayers(): dayTimers.PublicDayTimer | undefined {
+		const look = preferences.current.timerForPlayers;
+		return look === 'off' ? undefined : { ...this.shared, look };
+	}
 	/** Start is possible: not running, and counting up or with time left. */
 	get startable(): boolean {
 		return !this.running && (this.mode === 'up' || !this.done);

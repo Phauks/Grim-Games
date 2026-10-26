@@ -1,6 +1,6 @@
 import { dayTimers } from '#lib/core/rules/index.ts';
 
-const { isFresh, isOver, isRunning, shown } = dayTimers;
+const { dayLeft, isFresh, isOver, isRunning, shown } = dayTimers;
 
 /**
  * The Storyteller's day timer on a spectator's board (Trevor, 2026-10-19: "it should sync
@@ -27,6 +27,10 @@ export class WatchedTimer {
 	}
 	get done(): boolean {
 		return !!this.#timer && isOver(this.#timer, this.now);
+	}
+	/** The share of the day's time still to come, 1 to 0, for the players' sun. */
+	get left(): number {
+		return this.#timer ? dayLeft(this.#timer, this.now) : 1;
 	}
 	get fresh(): boolean {
 		return !this.#timer || isFresh(this.#timer);
