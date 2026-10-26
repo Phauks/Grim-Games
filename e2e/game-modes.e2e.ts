@@ -720,6 +720,10 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await noSidewaysScroll(page);
 	await page.getByRole('button', { name: 'Draw', exact: true }).tap();
 	await expect(page).toHaveURL(/\/towns\/[\w-]+\/draw$/);
+	// Back to the review, as one town's Draw goes back to its Characters (Trevor, 2026-10-26).
+	await expect(
+		page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: 'Review characters' })
+	).toBeVisible();
 	for (let n = 1; n <= 5; n++) {
 		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
 		const reveal = page.getByTestId('reveal');
