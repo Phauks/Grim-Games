@@ -28,7 +28,7 @@ export interface GameModeRecord {
 	/** Role Recycling for a draft (Sushi Buffet): unchosen characters go back in the pool. The
 	 * Storyteller's choice on New game; left out, the mode's own setting. */
 	roleRecycling?: boolean;
-	/** Jinxed pairs for a draft: blocked, less likely or allowed. Left out, blocked. */
+	/** Jinxed pairs for a draft: blocked, less likely or allowed. Left out, allowed. */
 	jinxedPairs?: JinxedPairs;
 }
 
