@@ -3,7 +3,6 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import type { SeatId } from '#lib/core/model/index.ts';
 	import { normaliseRoomCode, ROOM_CODE_LENGTH, scannedRoom } from '#lib/core/sync/room-code.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -126,10 +125,8 @@
 	$effect(() => {
 		if (view?.me.name || mine) untrack(() => onSeated?.());
 	});
-	const seatName = (seatId?: SeatId) => {
-		const s = seats.find((x) => x.seatId === seatId);
-		return s ? t('room.seatLower', { number: s.seatNumber }) : t('room.anySeatLower');
-	};
+	/** The seat this phone sits in, for tests to read; the screen doesn't say it. */
+	const mySeat = $derived(seats.find((x) => x.seatId === mine)?.seatNumber);
 	const summary = $derived.by(() => {
 		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
 		if (view.choosing) return t('room.choosing');
@@ -140,8 +137,9 @@
 				: view.ended.winner === 'evil'
 					? t('room.gameOverEvil')
 					: t('room.gameOver');
-		if (mine) return t('room.seated', { seat: seatName(mine), name: view.me.name ?? '' });
-		if (view.me.name) return t('room.unseated', { name: view.me.name });
+		// Named: nothing to say, the cog at the top carries the name (Trevor, 2026-10-26: "remove
+		// you are in the room as ...").
+		if (view.me.name || mine) return '';
 		return t('room.choose');
 	});
 
@@ -408,7 +406,7 @@
 	<div class="you-line">
 		<!-- Where this phone sits; the name is set from You on the title line (plan E2, Trevor
 		     2026-10-26: "move name into an edit button in the top"). -->
-		<p class="you" data-testid="you-row">
+		<p class="you" data-testid="you-row" data-seat={mySeat}>
 			<span class="summary" role="status" data-testid="join-status">{summary}</span>
 		</p>
 		<!-- Only while the Storyteller lets players see their character (Trevor, 2026-10-26). -->

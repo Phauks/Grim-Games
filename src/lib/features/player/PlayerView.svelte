@@ -41,7 +41,6 @@
 	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
 	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
 	import PlayerRoom from './PlayerRoom.svelte';
-	import YouButton from '#lib/features/room/YouButton.svelte';
 	import { gameKey, lastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
@@ -200,7 +199,11 @@
 <svelte:window onhashchange={() => data && void openSharedLink()} />
 
 <!-- Print and Share stay on the title's line at every width (Trevor, 2026-10-19). -->
-<Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions>
+<Page
+	title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))}
+	iconActions
+	titleBelow
+>
 	<!-- The app's sidebar and hamburger, as on every app page (Trevor, 2026-10-24). -->
 	<!-- The script's logo before its name, when it has one; nothing in its place otherwise
 	     (Trevor, 2026-10-23). -->
@@ -213,27 +216,21 @@
 	{/snippet}
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. Before a game is joined or a
-	     script loaded, there is nothing to print or share, so neither shows (Trevor, 2026-10-23). -->
+	     script loaded, there is nothing to print or share, so neither shows (Trevor, 2026-10-23);
+	     the settings cog always does (plan E2). -->
 	{#snippet actions()}
-		{#if script}<PlayerScriptActions {script} {version} share={shareable} room={inRoom} />{/if}
+		<PlayerScriptActions {script} {version} share={shareable} room={inRoom} joined={joinedRoom} />
 	{/snippet}
 	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). The
 	     Storyteller only for the room this script came from: Join game's code form shows none
 	     (Trevor, 2026-10-26: "even before i have joined a game, it say a storyteller"). -->
-	<!-- Your name and the text size, one tap from every tab, at the end of the byline's line,
-	     which keeps the title's room for its words (plan E2, Trevor 2026-10-26). -->
 	{#snippet subtitle()}
-		<span class="subline">
-			<span class="by"
-				><ScriptByline
-					author={script?.meta.author}
-					{version}
-					storyteller={inRoom && inRoom === lastRoom() ? roomTable.storyteller : undefined}
-					inline
-				/>&nbsp;</span
-			>
-			<YouButton room={joinedRoom} />
-		</span>
+		<ScriptByline
+			author={script?.meta.author}
+			{version}
+			storyteller={inRoom && inRoom === lastRoom() ? roomTable.storyteller : undefined}
+			inline
+		/>&nbsp;
 	{/snippet}
 
 	{#if error}
@@ -310,21 +307,6 @@
 />
 
 <style>
-	/* Beside the name in the title, as tall as two lines of it at most. */
-	:global(.title-logo) {
-		flex: none;
-		width: 1.8em;
-		height: 1.8em;
-	}
-	.subline {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.by {
-		flex: 1;
-		min-width: 0;
-	}
 	.choose {
 		display: grid;
 		gap: var(--space-2);

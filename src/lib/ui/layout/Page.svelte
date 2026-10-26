@@ -18,6 +18,12 @@
 		 * at every width (Trevor, 2026-10-19: the bag's cog and Share beside "Draw").
 		 */
 		iconActions?: boolean;
+		/**
+		 * The title on its own line under the action row, so a row of player controls and the
+		 * hamburger never squeeze it (Trevor, 2026-10-26: "move the script name down from the
+		 * top of player view, still in header area, but lower").
+		 */
+		titleBelow?: boolean;
 		/** One muted line under the title (an author, a date, the script in play). */
 		subtitle?: Snippet;
 		/** One row under the title for search, filters and view switches. */
@@ -44,6 +50,7 @@
 		lead,
 		actions,
 		iconActions = false,
+		titleBelow = false,
 		subtitle,
 		toolbar,
 		side,
@@ -67,7 +74,11 @@
 <main class="page">
 	<PageMenuButton />
 	<header class="head" class:visually-hidden={hideTitle}>
-		<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
+		<div
+			class="title-row"
+			data-icon-actions={iconActions ? '' : undefined}
+			data-title-below={titleBelow ? '' : undefined}
+		>
 			{#if showMenu && !hideTitle}
 				<div class="start">
 					<span class="menu-room" aria-hidden="true"></span>
@@ -167,6 +178,19 @@
 		flex-wrap: nowrap;
 		justify-content: flex-end;
 	}
+	/* The actions alone on the first row, level with the hamburger; the title under them,
+	   from the page's edge. */
+	.title-row[data-title-below] {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.title-row[data-title-below] .actions {
+		order: -1;
+		min-height: var(--tap-target);
+		justify-content: flex-end;
+	}
+	.title-row[data-title-below] .menu-room {
+		display: none;
+	}
 	/* Wider pages: the actions sit at the end of the title's row; the title keeps 20u at least. */
 	@container page-head (min-width: 36rem) {
 		.title-row {
@@ -176,6 +200,9 @@
 		}
 		.actions {
 			justify-content: flex-end;
+		}
+		.title-row[data-title-below] {
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 	.subtitle {
