@@ -1,9 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { APP_NAME } from '#lib/core/app-name.ts';
-	import { t } from '#lib/i18n/locale.svelte.ts';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import SavedGamesList from '#lib/features/grimoire/SavedGamesList.svelte';
@@ -21,13 +17,6 @@
 
 <Page title="Resume game" iconActions>
 	{#snippet actions()}
-		<!-- New game left the sidebar for here and the board's ⋯ menu (Trevor, 2026-10-26). -->
-		<IconButton
-			icon="add"
-			label={t('setup.newGame')}
-			data-testid="games-new-game"
-			onclick={() => void goto(resolve('/new'))}
-		/>
 		<DeleteButton
 			label="Delete all saved games"
 			disabled={count === 0}

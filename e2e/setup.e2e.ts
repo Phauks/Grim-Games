@@ -584,6 +584,45 @@ test('the player picks their name from names used before, instead of typing', as
 	await expect(page.getByRole('button', { name: 'Tile 2, drawn' })).toBeDisabled();
 });
 
+test("the names to pick are the room's phones first, then names from earlier games", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-25: a brand-new game offered names from earlier games as if they were
+	// this game's; those now sit under their own heading.
+	await selectionFor(page, 5);
+	const setup = new URL(page.url()).pathname;
+	await page.evaluate(() =>
+		localStorage.setItem('grim-games:player-names:v1', JSON.stringify(['Ana', 'Alex']))
+	);
+	await page.goto(setup.replace(/\/setup$/, '/room'));
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByTestId('you-row').tap();
+	const you = phone.getByRole('dialog', { name: 'You', exact: true });
+	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
+	await you.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByRole('combobox', { name: 'Seat for Alex' })).toBeVisible();
+
+	await page.goto(setup);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	await page.getByTestId('reveal').getByRole('button', { name: 'Pick your name' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
+	await expect(sheet.getByRole('region', { name: 'In the room' }).getByRole('button')).toHaveText([
+		'Alex'
+	]);
+	await expect(sheet.getByRole('region', { name: 'Earlier games' }).getByRole('button')).toHaveText(
+		['Ana']
+	);
+	await phoneContext.close();
+});
+
 test('type groups and the setup sheet close from their header and stay closed', async ({
 	page
 }) => {

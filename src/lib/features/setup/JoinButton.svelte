@@ -29,6 +29,6 @@
 	onpointerdown={prepareRoom}
 	onclick={() => (open = true)}
 />
-<Dialog bind:open title={t('room.title')} size="full">
+<Dialog bind:open title={t('room.title')} size="full" shownToPlayers>
 	<RoomPanel {game} />
 </Dialog>

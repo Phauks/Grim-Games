@@ -15,6 +15,8 @@ export const settings = {
 	'settings.reset': 'Reset settings',
 	'settings.data': 'Data',
 	'settings.sectionLanguage': 'Language',
+	'settings.sectionSound': 'Sound',
+	'settings.soundVolume': 'Volume',
 	'settings.language': 'Language',
 	'settings.theme': 'Theme',
 	'settings.sectionTheme': 'Theme',
@@ -143,12 +145,6 @@ export const settings = {
 	'settings.warning': 'Warning',
 	'settings.storytellerLine': 'Storyteller: {name}',
 	'settings.boardAdvanced': 'Advanced',
-	'settings.holdLightsSeat': "Holding a token lights its seat's reminders",
-	'settings.holdLightsSeatDescription':
-		"Off: the held character's reminders light, wherever they are. On: the reminders on the held seat light, whoever's they are.",
-	'settings.holdMoves': 'Hold a seat, then drag, to move it',
-	'settings.holdMovesDescription':
-		'Holding a seat token and dragging it moves the seat, as in Arrange seats. A hold without a drag still lights its reminders.',
 	'settings.reminderModeWarning':
 		'Reminders left where dropped belong to no seat: no lines back to seats, no fitting around them, and they stay put when seats move.',
 	'settings.rulesGrouped.each': 'Individual',

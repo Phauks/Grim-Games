@@ -12,7 +12,7 @@ const points = [
 ];
 
 /** A board 200px square, its element at the page's top left. */
-function setup({ holdMoves = false } = {}) {
+function setup({ arranging = true } = {}) {
 	const runs: unknown[] = [];
 	const layouts: SeatLayout[] = [];
 	const grimoire = {
@@ -30,10 +30,9 @@ function setup({ holdMoves = false } = {}) {
 		points,
 		size: 40,
 		board: { width: 200, height: 200 },
-		element,
-		holdMoves
+		element
 	}));
-	arrange.arranging = !holdMoves;
+	arrange.arranging = arranging;
 	return { arrange, runs, layouts };
 }
 
@@ -47,8 +46,8 @@ function pointer(x: number, y: number): PointerEvent {
 }
 
 describe('SeatArranging', () => {
-	it('with holdMoves, drags a seat only once it is held (Trevor, 2026-10-25)', () => {
-		const { arrange, layouts } = setup({ holdMoves: true });
+	it('outside Arrange seats, drags a seat only once it is held (Trevor, 2026-10-25)', () => {
+		const { arrange, layouts } = setup({ arranging: false });
 		arrange.dragStart(pointer(40, 100), seating[0], points[0]);
 		arrange.dragMove(pointer(60, 120));
 		expect(arrange.drag).toBeUndefined();

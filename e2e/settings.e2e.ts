@@ -218,9 +218,7 @@ test('the board looks and background are in Board, saved with the board', async 
 		nameOffset: 0,
 		reminders: 'seat',
 		usedGhostVote: 'hollow',
-		defaultFrame: 'none',
-		holdLights: 'character',
-		holdMoves: false
+		defaultFrame: 'none'
 	});
 
 	await page.reload();
@@ -231,23 +229,31 @@ test('the board looks and background are in Board, saved with the board', async 
 	);
 });
 
-// Trevor (2026-10-17): every setting is in Settings too, including the day timer's.
-test('the day timer sound and mode are in Storyteller settings', async ({ page }) => {
+// Trevor (2026-10-17): every setting is in Settings too, including the day timer's. Its sound
+// is in Sound with every other sound (plan U1), its mode in Storyteller.
+test('the day timer sound is in Sound settings and its mode in Storyteller', async ({ page }) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Storyteller');
-	await dialog.getByRole('combobox', { name: 'Timer sound' }).tap();
+	const sound = await openSettings(page, 'Sound');
+	await sound.getByRole('combobox', { name: 'Timer sound' }).tap();
 	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
+	await page.reload();
+	const dialog = await openSettings(page, 'Storyteller');
+	await expect(dialog.getByRole('combobox', { name: 'Timer sound' })).toHaveCount(0);
 	await dialog.getByRole('combobox', { name: 'Day timer' }).tap();
 	await page.getByRole('option', { name: 'Stopwatch' }).tap();
 	await page.reload();
 	const again = await openSettings(page, 'Storyteller');
-	await expect(again.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
 	await expect(again.getByRole('combobox', { name: 'Day timer' })).toContainText('Stopwatch');
 	// The time per living player too (Trevor, 2026-10-19), typed or stepped.
 	const seconds = again.getByTestId('timer-per-player');
 	await expect(seconds).toHaveValue('30');
 	await again.getByRole('button', { name: 'More seconds per living player' }).tap();
 	await expect(seconds).toHaveValue('31');
+	// A stopwatch has no sound (Trevor, 2026-10-23), so its choice shows disabled.
+	await page.reload();
+	const soundAgain = await openSettings(page, 'Sound');
+	await expect(soundAgain.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
+	await expect(soundAgain.getByRole('combobox', { name: 'Timer sound' })).toBeDisabled();
 });
 
 test('text size changes text only: icons, spacing and buttons keep their size', async ({
@@ -343,7 +349,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	// Trevor, 2026-10-17: every Storyteller-only setting is in Storyteller settings. (Install
 	// app, where offered, sits below the list.)
 	await expect(nav.getByRole('list').getByRole('button')).toHaveText([
-		// Settings profiles first (plan S18): the next six belong to the one in use.
+		// Settings profiles first (plan S18): the next seven belong to the one in use.
 		'Profiles',
 		'Theme',
 		'Text',
@@ -351,6 +357,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Board',
 		'Tokens',
 		'Storyteller',
+		'Sound',
 		'Player',
 		'Language',
 		'Data'
@@ -418,6 +425,29 @@ test('text size is a percentage slider that applies while it moves', async ({ pa
 	);
 	expect(await rootStyle(page, '--text-scale')).toBe('1');
 	await expect(await resetButton(again, 'Text size')).toBeDisabled();
+});
+
+// Plan U1 (Trevor, 2026-10-26): one volume for every sound, kept on this device.
+test('Sound has one volume for every sound, saved on the device', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Sound');
+	const slider = dialog.getByRole('slider', { name: 'Volume' });
+	await expect(slider).toHaveAttribute('aria-valuetext', '100%');
+	await expect(dialog.getByRole('checkbox', { name: 'Vibrate' })).toBeVisible();
+	await slider.fill('0.4');
+	await expect(slider).toHaveAttribute('aria-valuetext', '40%');
+
+	await page.reload();
+	const again = await openSettings(page, 'Sound');
+	await expect(again.getByRole('slider', { name: 'Volume' })).toHaveAttribute(
+		'aria-valuetext',
+		'40%'
+	);
+	await (await resetButton(again, 'Volume')).tap();
+	await expect(again.getByRole('slider', { name: 'Volume' })).toHaveAttribute(
+		'aria-valuetext',
+		'100%'
+	);
 });
 
 test('every theme, text and icon size setting has a reset icon beside its name', async ({

@@ -1,20 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
-// Trevor's playtest (2026-10-26): New game moves out of the sidebar into the board's ⋯ menu,
-// and the current game ends before a new one starts. With no game open it is on Resume game.
+// Trevor's playtest (2026-10-26): Game info's New game moves into the board's ⋯ menu, and
+// the current game ends before a new one starts. The sidebar keeps its own New game.
 
 async function fromMenu(page: Page, name: string) {
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name }).tap();
 }
 
-test('New game is on Resume game, and in the board ⋯ menu it ends the game first', async ({
-	page
-}) => {
-	await page.goto('/games');
-	await page.getByTestId('games-new-game').tap();
-	await expect(page.getByRole('heading', { name: 'New game', level: 1 })).toBeVisible();
+test('New game in the board ⋯ menu ends the game first', async ({ page }) => {
+	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);

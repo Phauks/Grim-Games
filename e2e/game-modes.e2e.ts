@@ -226,6 +226,17 @@ async function keepFirst(page: Page): Promise<string> {
 	await expect(reveal).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(reveal).toBeHidden();
+	// A drafted Godfather, Xaan or the like asks the Storyteller for a count: keep the lowest.
+	const ask = page.getByTestId('draft-ask');
+	if (
+		await ask.waitFor({ timeout: 1000 }).then(
+			() => true,
+			() => false
+		)
+	) {
+		await ask.getByRole('button').first().tap();
+		await expect(ask).toBeHidden();
+	}
 	return id;
 }
 
@@ -262,6 +273,38 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	await page.getByRole('button', { name: 'Finish' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
 	await noSidewaysScroll(page);
+});
+
+// Trevor (2026-10-26): "modifiers are made dynamically for outsider count", as Grimbits' draft
+// does (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Godfather).
+test('Sushi Buffet asks the Storyteller for a drafted Godfather’s Outsiders before the next tile', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await expect(bagTiles(page)).toHaveCount(5);
+	// A tile drawn saves the draft on this device.
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	// The draft as it is just after a player keeps the Godfather: its −1 or +1 waits.
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = [];
+		deal.state.pending = [
+			{ characterId: 'godfather', op: { kind: 'delta', type: 'outsider', values: [-1, 1] } }
+		];
+		deal.state.ask = { characterId: 'godfather', type: 'outsider', options: [0, 1], current: 0 };
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, `grim-games:mode-deal:v1:${gameId}`);
+	await page.reload();
+	const ask = page.getByRole('dialog', { name: 'Setup change' });
+	await expect(ask).toContainText('How many Outsiders in all?');
+	await expect(ask.getByText('Godfather')).toBeVisible();
+	await ask.getByRole('button', { name: '1', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	// The held tile opens the next offer.
+	await bagTiles(page).first().tap();
+	await expect(rows(page)).toHaveCount(3);
 });
 
 test('Sushi Buffet with the slot machine on: reels spin in each offer, one more crossed out per refusal', async ({

@@ -43,6 +43,7 @@
 	import SeatReminderMenu from './SeatReminderMenu.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ReminderPicker from './ReminderPicker.svelte';
 	import SeatChooser from './SeatChooser.svelte';
@@ -114,7 +115,9 @@
 			id !== seatId && game.seats[id].playerName ? [game.seats[id].playerName!] : []
 		)
 	);
-	const suggestions = $derived(suggestNames(past, typed, taken));
+	// The room's phones connected now without a seat come before names from earlier games.
+	const inRoom = $derived(roomHost().connectedUnseated.flatMap((m) => (m.name ? [m.name] : [])));
+	const suggestions = $derived(suggestNames([...inRoom, ...past], typed, taken));
 
 	// The name is edited in place in the sheet's header: the input takes the name's spot.
 	let editingName = $state(false);
