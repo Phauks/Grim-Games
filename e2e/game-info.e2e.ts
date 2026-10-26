@@ -1,21 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
-import { pickScript, toBoard } from './new-game.ts';
+import { expect, test } from '@playwright/test';
+import { openGameInfo, pickScript, toBoard } from './new-game.ts';
 
 // Game info has every line the board corner can show, so a phone whose corner has no room
 // still reads them (Trevor, 2026-10-23: "on mobile I can't see the join code or game time").
-
-async function openGameInfo(page: Page) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	const entry = more.getByRole('button', { name: 'Game info' });
-	if (await entry.count()) await entry.tap();
-	else {
-		await page.keyboard.press('Escape');
-		await expect(more).toBeHidden();
-		await page.getByTestId('mode-menu').tap();
-	}
-	return page.getByRole('dialog', { name: 'Game info', exact: true });
-}
 
 test('Game info shows the join code, the day or night with Game time, and watchers; the code opens Share', async ({
 	page
@@ -27,7 +14,7 @@ test('Game info shows the join code, the day or night with Game time, and watche
 	await toBoard(page);
 
 	let info = await openGameInfo(page);
-	const row = (field: string) => info.locator(`tr[data-field="${field}"] td`);
+	const row = (field: string) => info.locator(`tr[data-field="${field}"] td:last-child`);
 	await expect(row('join-code')).toHaveText('None');
 	// The day or night leads Game time, as on the corner (Trevor, 2026-10-24).
 	await expect(row('game-time')).toHaveText('Setup');
@@ -66,4 +53,53 @@ test('Game info shows the join code, the day or night with Game time, and watche
 	info = await openGameInfo(page);
 	await expect(row('join-code')).toHaveText(shown);
 	await expect(row('game-time')).toHaveText(/^Night 1 · 1:0\d$/);
+});
+
+test('an eye on each Game info line chooses what the board corner shows, as Settings > Board does', async ({
+	page
+}) => {
+	// Trevor, 2026-10-24: "an eye toggle on each line in game info, and that is how it is
+	// decided what will populate in the bottom left".
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	const corner = page.getByTestId('script-title');
+	await expect(corner).toContainText('by The Pandemonium Institute');
+	await expect(page.getByTestId('board-players')).toHaveCount(0);
+
+	let info = await openGameInfo(page);
+	// Every line but the script's name, which is the way into Game info.
+	await expect(info.locator('tr[data-field="script"] [data-testid="corner-eye"]')).toHaveCount(0);
+	const author = info.getByRole('button', { name: 'Author on the board' });
+	await expect(author).toHaveAttribute('aria-pressed', 'true');
+	await author.tap();
+	await expect(author).toHaveAttribute('aria-pressed', 'false');
+	const players = info.getByRole('button', { name: 'Players on the board' });
+	await expect(players).toHaveAttribute('aria-pressed', 'false');
+	await players.tap();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeHidden();
+	await expect(corner).not.toContainText('by The Pandemonium Institute');
+	await expect(page.getByTestId('board-players')).toBeAttached();
+
+	// The same choices in Settings > Board (⋯ > Board), and after a reload.
+	await page.reload();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const authorSetting = settings.getByRole('checkbox', { name: 'Author on the board' });
+	await expect(authorSetting).not.toBeChecked();
+	await settings.getByText('Author on the board', { exact: true }).tap();
+	await expect(authorSetting).toBeChecked();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(corner).toContainText('by The Pandemonium Institute');
+	info = await openGameInfo(page);
+	await expect(info.getByRole('button', { name: 'Author on the board' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 });
