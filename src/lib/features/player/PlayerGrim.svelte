@@ -11,6 +11,8 @@
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import HideContentsButton from '#lib/ui/primitives/HideContentsButton.svelte';
+	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import SharedBoard from '#lib/features/room/SharedBoard.svelte';
 	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
@@ -49,6 +51,7 @@
 	import type { PublicSeatLayout } from '#lib/core/sync/public-projection.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import {
 		DEFAULT_SEAT_LAYOUT,
@@ -154,7 +157,17 @@
 		marked = kept ? readSelf(kept) : undefined;
 		book = kept ? seatNotes(kept) : undefined;
 	});
-	const notes = $derived(book?.notes ?? {});
+	/**
+	 * The eye (Trevor, 2026-10-26: "Hide grim guesses, eyeball feature like we use in notes"):
+	 * on, the town shows only what the table knows, with none of this player's guesses or notes.
+	 */
+	const hiding = $derived(playerSettings.current.hideGuesses);
+	const notes = $derived(hiding ? {} : (book?.notes ?? {}));
+	/** The player's own reminders, hidden by the eye with their guesses. */
+	const visible = $derived(hiding ? {} : reminders);
+	// Share, the QR code and every sheet blur the Grim behind them, as over the board
+	// (Trevor, 2026-10-26: players at the table could read guesses behind Share).
+	$effect(() => markBoardShown());
 	let noteOpen = $state(false);
 
 	/**
@@ -220,7 +233,7 @@
 			seats.map((seat, i) => ({
 				seat: toPx(points[i], board),
 				middle: { x: width / 2, y: height / 2 },
-				count: remindersOn(reminders, seat.seatId).length,
+				count: remindersOn(visible, seat.seatId).length,
 				size,
 				chip,
 				avoid: avoidBoxes({
@@ -284,6 +297,8 @@
 	let open = $state(false);
 	let chosen = $state<PublicSeat>();
 	function choose(seat: PublicSeat, event?: MouseEvent) {
+		// Hidden guesses never open in a sheet either.
+		if (hiding) return;
 		chosen = seat;
 		// The note mark opens the note itself, as the board's does (Trevor, 2026-10-25), and
 		// the guess pill makes the next guess the main one.
@@ -346,11 +361,13 @@
 		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
 		const traveller = characterOf(seat.traveller);
 		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
-		const guessed = listed(seat.seatId)
-			.map((g) => guessName(g.id))
-			.filter(Boolean);
+		const guessed = hiding
+			? []
+			: listed(seat.seatId)
+					.map((g) => guessName(g.id))
+					.filter(Boolean);
 		if (guessed.length) parts.push(t('player.grim.guess', { name: guessed.join(', ') }));
-		const placed = remindersOn(reminders, seat.seatId);
+		const placed = remindersOn(visible, seat.seatId);
 		if (placed.length)
 			parts.push(t('player.grim.hasReminders', { labels: placed.map((r) => r.label).join(', ') }));
 		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
@@ -359,17 +376,26 @@
 	/* eslint-enable grim/names-as-badges */
 </script>
 
-<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
-     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
-{#if !town && final}
-	<div class="tools">
-		<Toggle
-			label={t('room.finalGrimoire')}
-			checked={showFinal}
-			onChange={(on) => (showFinal = on)}
-		/>
-	</div>
-{/if}
+<!-- The eye and the cover always, so nothing moves when the Final grimoire switch comes. -->
+<div class="tools">
+	<HideContentsButton
+		hidden={hiding}
+		onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
+		testid="hide-guesses"
+	/>
+	<CoverButton />
+	<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
+	     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
+	{#if !town && final}
+		<span class="final-switch"
+			><Toggle
+				label={t('room.finalGrimoire')}
+				checked={showFinal}
+				onChange={(on) => (showFinal = on)}
+			/></span
+		>
+	{/if}
+</div>
 {#if final && showFinal}
 	<div class="final" data-testid="final-grimoire">
 		<SharedBoard shared={final.grimoire} {over} />
@@ -404,11 +430,11 @@
 			{@const point = points[i]}
 			{@const known = characterOf(seat.traveller)}
 			<!-- A Traveller's seat takes only an alignment, shown in its icon's colour. -->
-			{@const team = known ? travellerTeam(guesses, seat.seatId)?.team : undefined}
-			{@const main = known ? undefined : guessesOf(guesses, seat.seatId)[0]}
+			{@const team = known && !hiding ? travellerTeam(guesses, seat.seatId)?.team : undefined}
+			{@const main = known || hiding ? undefined : guessesOf(guesses, seat.seatId)[0]}
 			{@const generic = genericGuess(main)}
 			{@const guessed = generic ?? characterOf(main)}
-			{@const others = (known ? [] : listed(seat.seatId))
+			{@const others = (known || hiding ? [] : listed(seat.seatId))
 				.slice(1)
 				.flatMap((g): GuessMark[] =>
 					g.generic
@@ -467,7 +493,7 @@
 		<!-- The player's own reminders, in front of each seat as on the board; a tap opens the
 		     seat's reminders. -->
 		{#each seats as seat, i (seat.seatId)}
-			{#each remindersOn(reminders, seat.seatId) as reminder, k (placedKey(reminder))}
+			{#each remindersOn(visible, seat.seatId) as reminder, k (placedKey(reminder))}
 				{@const p = fan[i]?.[k] ?? points[i]}
 				<div class="chip-slot" style:left="{p?.x ?? 50}%" style:top="{p?.y ?? 50}%">
 					<BoardReminder
@@ -696,8 +722,12 @@
 	}
 	.tools {
 		display: flex;
-		justify-content: flex-end;
+		align-items: center;
+		gap: var(--space-1);
 		margin-bottom: var(--space-2);
+	}
+	.final-switch {
+		margin-inline-start: auto;
 	}
 	/* The Storyteller's board, with room under it for History's Previous and Next. */
 	.final {

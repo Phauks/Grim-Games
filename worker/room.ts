@@ -43,11 +43,15 @@ import {
 	type ScriptView,
 	type ServerMessage
 } from '../src/lib/core/sync/room.ts';
+import { liveGame, type LiveGame } from '../src/lib/core/sync/live-games.ts';
+import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
 
 export interface RoomEnv {
 	ROOMS: DurableObjectNamespace<Room>;
 	ROOM_JOINS: RateLimit;
 	ROOM_CREATES: RateLimit;
+	/** The open rooms' codes, for the admins' Live games (plan J31). */
+	LIVE_GAMES: DurableObjectNamespace<LiveGameIndex>;
 }
 
 /**
@@ -64,8 +68,17 @@ const ROOM_IDLE_MS = 24 * 60 * 60 * 1000;
 const MAX_MESSAGE_BYTES = 64 * 1024;
 const KEY_PATTERN = /^[0-9a-f]{32,128}$/;
 
+/**
+ * `admin`: an admin watching from Live games (plan J31). It sees the public table, the script
+ * and the grimoire when the room has it, sends nothing, and is in no list or count, so the
+ * Storyteller and the phones never know it is there.
+ */
 type Attachment =
-	{ role: 'host' } | { role: 'player'; memberId: string } | { role: 'viewer' } | { role: 'town' };
+	| { role: 'host' }
+	| { role: 'player'; memberId: string }
+	| { role: 'viewer' }
+	| { role: 'town' }
+	| { role: 'admin' };
 
 async function sha256(text: string): Promise<string> {
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -94,15 +107,39 @@ export class Room extends DurableObject<RoomEnv> {
 
 	async alarm(): Promise<void> {
 		this.broadcastClosed('Room expired');
-		await this.ctx.storage.deleteAll();
+		await this.forget();
 	}
 
-	/** Claims a fresh room for a Storyteller; false if the code is already in use. */
-	async open(hostKeyHash: string): Promise<boolean> {
+	/** Deletes the room and takes it off the admins' list. */
+	private async forget(): Promise<void> {
+		const code = await this.ctx.storage.get<string>('code');
+		await this.ctx.storage.deleteAll();
+		if (code) await liveGameIndex(this.env).remove(code);
+	}
+
+	/**
+	 * Claims a fresh room for a Storyteller; false if the code is already in use. The room keeps
+	 * its own code for the admins' list (rooms opened before it was kept are not listed).
+	 */
+	async open(hostKeyHash: string, code?: string): Promise<boolean> {
 		if (await this.load()) return false;
 		await this.ctx.storage.put('room', newRoom(hostKeyHash));
+		if (code) {
+			await this.ctx.storage.put('code', code);
+			await liveGameIndex(this.env).add(code);
+		}
 		await this.touch();
 		return true;
+	}
+
+	/** What the admins' list shows of this room (plan J31); undefined once it is gone. */
+	async liveGame(code: string): Promise<LiveGame | undefined> {
+		const room = await this.load();
+		if (!room) return undefined;
+		const script = await this.ctx.storage.get<ScriptView>('script');
+		const expires = await this.ctx.storage.getAlarm();
+		const active = expires === null ? Date.now() : expires - ROOM_IDLE_MS;
+		return liveGame(code, room, script?.script, this.present().size, active);
 	}
 
 	async fetch(request: Request): Promise<Response> {
@@ -111,10 +148,14 @@ export class Room extends DurableObject<RoomEnv> {
 			const script = room && (await this.ctx.storage.get<ScriptView>('script'));
 			return Response.json(roomPreview(room, script?.script));
 		}
-		if (room) await this.touch();
+		// Only the admins' route (worker/live-games.ts) reaches a room on this path, after
+		// checking the account. An admin's watching doesn't keep the room alive.
+		const admin = new URL(request.url).pathname.startsWith('/api/admin/');
+		if (room && !admin) await this.touch();
 		const pair = new WebSocketPair();
 		const [client, server] = Object.values(pair);
 		this.ctx.acceptWebSocket(server);
+		if (admin) server.serializeAttachment({ role: 'admin' } satisfies Attachment);
 		return new Response(null, { status: 101, webSocket: client });
 	}
 
@@ -131,6 +172,23 @@ export class Room extends DurableObject<RoomEnv> {
 		if (!room) {
 			send(ws, { type: 'refused', reason: 'no-room' });
 			ws.close(4404, 'No such room');
+			return;
+		}
+		if (who?.role === 'admin') {
+			if (message.type !== 'hello') return;
+			if (!supportsProtocol(message.protocol)) {
+				send(ws, { type: 'refused', reason: 'too-old' });
+				ws.close(4426, 'Update the app');
+				return;
+			}
+			// What the room holds now; later changes follow as they come (save, script, grimoire).
+			const script = await this.ctx.storage.get<ScriptView>('script');
+			if (script) send(ws, script);
+			send(ws, townView(room));
+			const grimoire = await this.ctx.storage.get<GrimoireView>('grimoire');
+			if (grimoire) send(ws, grimoire);
+			// The Storyteller's device sends the grimoire from now on, if it isn't already.
+			this.tellGrimoireWanted();
 			return;
 		}
 		await this.touch();
@@ -152,6 +210,7 @@ export class Room extends DurableObject<RoomEnv> {
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
 				send(ws, hostView(room, this.present()));
 				send(ws, { type: 'watchers', count: this.watchers() });
+				if (this.admins() > 0) send(ws, { type: 'grimoire-wanted', on: true });
 				return;
 			}
 			if (message.role === 'viewer') {
@@ -253,7 +312,8 @@ export class Room extends DurableObject<RoomEnv> {
 				const text = JSON.stringify(view);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'player' || to?.role === 'town') socket.send(text);
+					if (to?.role === 'player' || to?.role === 'town' || to?.role === 'admin')
+						socket.send(text);
 				}
 				return;
 			}
@@ -276,13 +336,15 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			}
 			case 'grimoire': {
-				if (!room.viewerKeyHash || !isSharedGrimoire(message.grimoire)) return;
+				const admins = this.admins() > 0;
+				if ((!room.viewerKeyHash && !admins) || !isSharedGrimoire(message.grimoire)) return;
 				const view: GrimoireView = { type: 'grimoire', grimoire: message.grimoire };
-				await this.ctx.storage.put('grimoire', view);
+				// Kept only for the view-only link; an admin's copy is passed on and never stored.
+				if (room.viewerKeyHash) await this.ctx.storage.put('grimoire', view);
 				const text = JSON.stringify(view);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'viewer') socket.send(text);
+					if (to?.role === 'viewer' || to?.role === 'admin') socket.send(text);
 				}
 				return;
 			}
@@ -343,7 +405,7 @@ export class Room extends DurableObject<RoomEnv> {
 			}
 			case 'close':
 				this.broadcastClosed('Room closed');
-				await this.ctx.storage.deleteAll();
+				await this.forget();
 				return;
 			default:
 				return;
@@ -364,6 +426,7 @@ export class Room extends DurableObject<RoomEnv> {
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const who = ws.deserializeAttachment() as Attachment | null;
 		if (who?.role === 'viewer') this.tellWatchers(ws);
+		if (who?.role === 'admin') this.tellGrimoireWanted(ws);
 		if (who?.role === 'player') {
 			const room = await this.load();
 			if (room) this.tellHost(room, ws);
@@ -401,6 +464,26 @@ export class Room extends DurableObject<RoomEnv> {
 		return count;
 	}
 
+	/** Admins watching from Live games now, leaving out one that is going. */
+	private admins(going?: WebSocket): number {
+		let count = 0;
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'admin' && socket !== going && socket.readyState === WebSocket.OPEN)
+				count++;
+		}
+		return count;
+	}
+
+	/** Tells the Storyteller's device whether an admin wants the whole grimoire now. */
+	private tellGrimoireWanted(going?: WebSocket): void {
+		const text = JSON.stringify({ type: 'grimoire-wanted', on: this.admins(going) > 0 });
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'host') socket.send(text);
+		}
+	}
+
 	/** Sends the Storyteller's device how many are watching. */
 	private tellWatchers(going?: WebSocket): void {
 		const text = JSON.stringify({ type: 'watchers', count: this.watchers(going) });
@@ -422,7 +505,7 @@ export class Room extends DurableObject<RoomEnv> {
 			socket.send(
 				who.role === 'host'
 					? host
-					: who.role === 'town'
+					: who.role === 'town' || who.role === 'admin'
 						? town
 						: JSON.stringify(playerView(room, who.memberId, present))
 			);
@@ -466,7 +549,7 @@ export async function handleRoom(
 		// 10^6 codes and rooms last a day, so a free one is found within a few tries.
 		for (let attempt = 0; attempt < 8; attempt++) {
 			const code = makeRoomCode(() => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32);
-			if (await env.ROOMS.get(env.ROOMS.idFromName(code)).open(hash)) {
+			if (await env.ROOMS.get(env.ROOMS.idFromName(code)).open(hash, code)) {
 				return Response.json({ code });
 			}
 		}

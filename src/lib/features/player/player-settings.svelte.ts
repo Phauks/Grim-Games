@@ -37,6 +37,12 @@ export interface PlayerSettings {
 	 */
 	guessesOnTokens: boolean;
 	/**
+	 * Grim tab: the player's own guesses and seat notes are hidden, as a note's contents can
+	 * be (Trevor, 2026-10-26: "Hide grim guesses, eyeball feature like we use in notes"), so a
+	 * glance at the phone shows only what the whole town knows.
+	 */
+	hideGuesses: boolean;
+	/**
 	 * The script and night order sheets' background, wherever they show (Trevor, 2026-10-24:
 	 * neutral colours in place of 2026-10-23's light switch, whose on reads as parchment).
 	 */
@@ -102,6 +108,7 @@ const DEFAULTS: PlayerSettings = {
 	print: PRINT_DEFAULTS,
 	avatar: 'initials',
 	guessesOnTokens: false,
+	hideGuesses: false,
 	sheetBackground: 'theme'
 };
 
@@ -116,6 +123,7 @@ function read(): PlayerSettings {
 			// Initials are always on (Trevor, 2026-10-25): an older build's "none" reads as them.
 			avatar: parseAvatarId(raw.avatar) ?? DEFAULTS.avatar,
 			guessesOnTokens: raw.guessesOnTokens === true,
+			hideGuesses: raw.hideGuesses === true,
 			sheetBackground:
 				SHEET_BACKGROUNDS.find((b) => b === raw.sheetBackground) ??
 				(raw.lightSheet === true ? 'parchment' : DEFAULTS.sheetBackground)

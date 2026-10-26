@@ -5,6 +5,7 @@
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import ScriptQrCenter from './ScriptQrCenter.svelte';
 	import type { ShareTarget } from './share-codes.ts';
@@ -41,39 +42,76 @@
 	let logoFailed = $state(false);
 	let made = $state.raw<ShareTarget | undefined>();
 	let failed = $state(false);
+	/**
+	 * Offline code (Trevor, 2026-10-26): the script for phones with no internet, read by the
+	 * app's own scanner; one code, or an animated one when the script is long. On by itself
+	 * when no short link could be made, such as with no internet here.
+	 */
+	let offline = $state(false);
+	let live = true;
 
-	onMount(() => {
-		// In a room the room's link is shared, so no script link is made (or uploaded).
-		if (room) return;
-		let live = true;
+	function make() {
 		target().then(
 			(t) => {
-				if (live) made = t;
+				if (!live) return;
+				made = t;
+				if (t.fellBack) offline = true;
 			},
 			(e) => {
 				if (live) failed = true;
 				reportError(e, { area: 'scripts' });
 			}
 		);
+	}
+
+	onMount(() => {
+		// In a room the room's link is shared, so no script link is made (or uploaded) until
+		// the offline code is asked for.
+		if (!room) make();
 		return () => {
 			live = false;
 		};
 	});
+
+	function setOffline(on: boolean) {
+		offline = on;
+		if (on && !made && !failed) make();
+	}
+
+	const offlineCode = $derived(offline ? made?.offline : undefined);
+	const url = $derived(offline ? offlineCode?.url : (roomLink ?? made?.url));
 </script>
 
 <div class="panel">
 	<ScriptByline {author} {version} />
 	<SharePanel
-		url={roomLink ?? made?.url}
+		{url}
 		{title}
-		qrLabel={room ? t('room.qrLabel') : t('scripts.share.qr', { title })}
+		qrLabel={offline
+			? t('scripts.share.offlineQr', { title })
+			: room
+				? t('room.qrLabel')
+				: t('scripts.share.qr', { title })}
 		pending={failed ? t('scripts.share.failed') : t('scripts.share.making')}
 		code={room ? { label: t('room.joinCode'), value: formatRoomCode(room) } : undefined}
-		text={room ? t('room.shareText', { code: formatRoomCode(room) }) : undefined}
+		text={room && !offline ? t('room.shareText', { code: formatRoomCode(room) }) : undefined}
 		qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
+		qrCaption={offline ? t('scripts.share.offlineCaption') : undefined}
+		frames={offlineCode?.frames}
+		plain={offline}
 	>
 		{#snippet qrCenter()}
 			<ScriptQrCenter {logo} name={title} bind:failed={logoFailed} />
+		{/snippet}
+		{#snippet actions()}
+			<div class="offline">
+				<Toggle
+					label={t('scripts.share.offline')}
+					description={t('scripts.share.offlineDescription')}
+					checked={offline}
+					onChange={setOffline}
+				/>
+			</div>
 		{/snippet}
 	</SharePanel>
 </div>
@@ -81,5 +119,8 @@
 <style>
 	.panel {
 		margin-top: var(--space-3);
+	}
+	.offline {
+		flex: 1;
 	}
 </style>

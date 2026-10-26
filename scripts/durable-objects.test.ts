@@ -19,9 +19,10 @@ const KEPT = {
 		ACCOUNT_NAMES: 'AccountName',
 		REPORTS: 'ReportBox',
 		SCRIPT_MIRROR: 'ScriptMirror',
-		RECAPS: 'SharedRecap'
+		RECAPS: 'SharedRecap',
+		LIVE_GAMES: 'LiveGameIndex'
 	} as Record<string, string>,
-	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7']
+	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8']
 };
 
 type Binding = { name: string; class_name: string };

@@ -17,6 +17,7 @@
 	import { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import GrimoireBoard from '#lib/features/grimoire/GrimoireBoard.svelte';
 	import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
+	import { lookForNewerBuild } from './newer-build.ts';
 
 	/**
 	 * The Storyteller's grimoire as another device sent it, drawn view-only: the view-only
@@ -65,11 +66,10 @@
 			board = drawn;
 			onProblem?.(undefined);
 		} catch (e) {
-			onProblem?.(
-				e instanceof SavedGameError && e.problem === 'too-new'
-					? t('common.gameTooNew')
-					: errorMessage(e)
-			);
+			const tooNew = e instanceof SavedGameError && e.problem === 'too-new';
+			// The Storyteller's app is newer: offer its build rather than a dead end.
+			if (tooNew) lookForNewerBuild();
+			onProblem?.(tooNew ? t('room.grimoireTooNew') : errorMessage(e));
 		}
 	}
 </script>
