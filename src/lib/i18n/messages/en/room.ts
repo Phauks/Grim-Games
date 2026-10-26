@@ -39,6 +39,7 @@ export const room = {
 	'room.codeLabel': 'Room code from the Storyteller',
 	'room.join': 'Join as player',
 	'room.grimView': 'Grim view',
+	'room.moreWays': 'More ways to join',
 	'room.scanNotRoom': "That code is not a game's room code.",
 	'room.gameToJoin': 'Game to join',
 	'room.lookingUp': 'Looking for the game…',
