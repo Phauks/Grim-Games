@@ -288,7 +288,10 @@ export interface PlayerView {
 	ended?: Omit<GameOver, 'gameId'>;
 	/** The feedback this phone sent on the ended game. */
 	feedback?: GameFeedback;
-	/** The game that ended, for the feedback a phone sends on it. */
+	/**
+	 * The game that ended, for the feedback a phone sends on it; left out once the Storyteller
+	 * is setting up the next game, since that one has nothing to rate yet (Trevor, 2026-10-26).
+	 */
 	endedGameId?: string;
 	/** The Storyteller is choosing the next script. */
 	choosing?: true;
@@ -355,6 +358,11 @@ export type ServerMessage =
 	 * kept, so a phone that joins later doesn't sound; older apps ignore it.
 	 */
 	| { type: 'call-town' }
+	/**
+	 * To the Storyteller's device: send the whole grimoire while an admin watches from Live
+	 * games (plan J31), or stop. The app shows nothing for it; older apps ignore it.
+	 */
+	| { type: 'grimoire-wanted'; on: boolean }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 
@@ -470,7 +478,7 @@ export function playerView(
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
 		view.ended = ended;
-		view.endedGameId = room.ended.gameId;
+		if (!room.choosing && !room.scriptVote) view.endedGameId = room.ended.gameId;
 		const mine = room.feedback?.find((f) => f.memberId === memberId);
 		if (mine) view.feedback = mine.feedback;
 	}

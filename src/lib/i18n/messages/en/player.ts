@@ -75,6 +75,7 @@ export const player = {
 	'player.sheetBackground.charcoal': 'Charcoal',
 	'player.frame': 'Your frame',
 	'player.guessesOnTokens': 'Guesses over avatars',
+	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
 	'player.guessesOnTokensDetail':
 		"Your guess of a seat's character shows on its token in place of the player's avatar.",
 	'player.frameStoryteller': "Storyteller's choice",

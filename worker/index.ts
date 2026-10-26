@@ -6,6 +6,7 @@ import { curatedSource } from './curated.ts';
 import { handleHomebrewScripts } from './homebrew-scripts.ts';
 import { handleHomebrewWiki } from './homebrew-wiki.ts';
 import { handleRoom, Room, type RoomEnv } from './room.ts';
+import { handleLiveGames, LiveGameIndex, type LiveGamesEnv } from './live-games.ts';
 import { handleReports, ReportBox, type ReportsEnv } from './reports.ts';
 import { handleRecap, SharedRecap, type RecapEnv } from './recap.ts';
 import { handleShare, SharedScript, type ShareEnv } from './share.ts';
@@ -20,10 +21,11 @@ import {
 import { isWorldCupYear, worldCupSource } from './world-cups.ts';
 import { COLLECTIONS } from '../src/lib/features/scripts/collection-api.ts';
 
-export { ReportBox, Room, ScriptMirror, SharedRecap, SharedScript };
+export { LiveGameIndex, ReportBox, Room, ScriptMirror, SharedRecap, SharedScript };
 export { AccountEmail, AccountName, AccountUser } from './account/objects.ts';
 
-export interface Env extends ShareEnv, RecapEnv, AccountRoutesEnv, RoomEnv, ReportsEnv, MirrorEnv {
+export interface Env
+	extends ShareEnv, RecapEnv, AccountRoutesEnv, RoomEnv, LiveGamesEnv, ReportsEnv, MirrorEnv {
 	ASSETS: Fetcher;
 }
 
@@ -44,6 +46,8 @@ export default {
 		}
 		const room = await handleRoom(request, env, url);
 		if (room) return room;
+		const liveGames = await handleLiveGames(request, env, url);
+		if (liveGames) return liveGames;
 		if (url.pathname.startsWith('/api/botcscripts/')) {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
 			return handleBotcScripts(url);

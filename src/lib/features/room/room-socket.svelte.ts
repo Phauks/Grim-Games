@@ -24,14 +24,18 @@ export class RoomSocket {
 	#stopped = false;
 	#unregister: () => void;
 
-	/** `onOpen` runs after each hello, to resend what the room may have missed. */
+	/**
+	 * `onOpen` runs after each hello, to resend what the room may have missed. `path` is the
+	 * room's address, for another route to it (an admin's, plan J31).
+	 */
 	constructor(
 		code: string,
 		hello: ClientMessage,
 		onMessage: (message: ServerMessage) => void,
-		onOpen?: () => void
+		onOpen?: () => void,
+		path = `/api/room/${code}`
 	) {
-		this.#url = `${location.origin.replace(/^http/, 'ws')}/api/room/${code}`;
+		this.#url = `${location.origin.replace(/^http/, 'ws')}${path}`;
 		this.#hello = hello;
 		this.#onMessage = onMessage;
 		this.#onOpen = onOpen;

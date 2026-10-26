@@ -48,7 +48,9 @@
 			// Our copies of other sites' script lists (worker/mirror.ts).
 			{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" },
 			// Game recaps the Storyteller shares with the players (worker/recap.ts).
-			{ "name": "RECAPS", "class_name": "SharedRecap" }
+			{ "name": "RECAPS", "class_name": "SharedRecap" },
+			// The open rooms' codes, for the admins' Live games (worker/live-games.ts).
+			{ "name": "LIVE_GAMES", "class_name": "LiveGameIndex" }
 		]
 	},
 	"migrations": [
@@ -58,7 +60,8 @@
 		{ "tag": "v4", "new_sqlite_classes": ["ReportBox"] },
 		{ "tag": "v5", "new_sqlite_classes": ["ScriptMirror"] },
 		{ "tag": "v6", "new_sqlite_classes": ["AccountName"] },
-		{ "tag": "v7", "new_sqlite_classes": ["SharedRecap"] }
+		{ "tag": "v7", "new_sqlite_classes": ["SharedRecap"] },
+		{ "tag": "v8", "new_sqlite_classes": ["LiveGameIndex"] }
 	],
 	// Nightly refresh of the stored script copies (worker/mirror.ts). Previews run no
 	// schedule; there a copy is refreshed when it is asked for and over a day old.
@@ -111,7 +114,8 @@
 				{ "name": "ACCOUNT_NAMES", "class_name": "AccountName" },
 				{ "name": "REPORTS", "class_name": "ReportBox" },
 				{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" },
-				{ "name": "RECAPS", "class_name": "SharedRecap" }
+				{ "name": "RECAPS", "class_name": "SharedRecap" },
+				{ "name": "LIVE_GAMES", "class_name": "LiveGameIndex" }
 			]
 		},
 		"ratelimits": [

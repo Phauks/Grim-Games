@@ -30,6 +30,13 @@
 	onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
 />
 
+<!-- Also the eye on the Grim tab, as a note's own (Trevor, 2026-10-26). -->
+<SettingToggle
+	label={t('player.hideGuesses')}
+	checked={playerSettings.current.hideGuesses}
+	onChange={(hideGuesses) => playerSettings.update({ hideGuesses })}
+/>
+
 <SettingSelect
 	label={t('player.density')}
 	description={t('player.densityDetail')}

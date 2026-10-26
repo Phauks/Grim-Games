@@ -99,6 +99,11 @@ export class RoomHost {
 	grimoireTooLarge = $state(false);
 	/** How many are watching through the view-only link now (Trevor, 2026-10-20). */
 	watchers = $state(0);
+	/**
+	 * An admin is watching from Live games (plan J31): the whole grimoire goes to the room as
+	 * for the view-only link, but nothing on this device says so, and the room keeps no copy.
+	 */
+	#grimoireWanted = $state(false);
 	#viewerKeyHash: string | undefined;
 	#grimoire: SharedGrimoire | undefined;
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
@@ -265,7 +270,7 @@ export class RoomHost {
 		this.#stopWatching = $effect.root(() => {
 			// The whole grimoire, for the view-only link while it is on.
 			$effect(() => {
-				if (!this.viewerKey) return;
+				if (!this.viewerKey && !this.#grimoireWanted) return;
 				const saved = toSavedGame(game.session, Date.now());
 				this.#queueGrimoire({
 					saved: saved as unknown as Record<string, unknown>,
@@ -481,6 +486,10 @@ export class RoomHost {
 			}
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
+		} else if (message.type === 'grimoire-wanted') {
+			this.#grimoireWanted = message.on;
+			// After a reconnect it may already be on, with the grimoire made: send it again.
+			if (message.on) this.#sendGrimoire();
 		} else if (message.type === 'refused' && message.reason === 'too-old') {
 			// The room is still this device's: keep it for after the update.
 		} else if (message.type === 'refused' || message.type === 'closed') {
@@ -525,10 +534,12 @@ export class RoomHost {
 	}
 
 	#sendGrimoire(): void {
-		if (!this.#grimoire || !this.#viewerKeyHash) return;
+		if (!this.#grimoire || (!this.#viewerKeyHash && !this.#grimoireWanted)) return;
 		const message = { type: 'grimoire', grimoire: this.#grimoire } as const;
-		this.grimoireTooLarge = JSON.stringify(message).length > MAX_GRIMOIRE_BYTES;
-		if (!this.grimoireTooLarge) this.#socket?.send(message);
+		const tooLarge = JSON.stringify(message).length > MAX_GRIMOIRE_BYTES;
+		// Said only for the view-only link: an admin's watching shows nowhere here.
+		if (this.#viewerKeyHash) this.grimoireTooLarge = tooLarge;
+		if (!tooLarge) this.#socket?.send(message);
 	}
 
 	#publish(published: { gameId: string; state: PublicGameState }): void {
@@ -564,6 +575,7 @@ export class RoomHost {
 		this.#socket?.stop();
 		this.#socket = undefined;
 		this.watchers = 0;
+		this.#grimoireWanted = false;
 		this.code = undefined;
 		this.members = [];
 		this.present = undefined;
