@@ -4,8 +4,10 @@
 	import { resolve } from '$app/paths';
 	import { fromScript, type LoadedScript } from '#lib/core/data/index.ts';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
+	import { dayTimers } from '#lib/core/rules/index.ts';
 	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+	import PlayersDayTimer from '#lib/features/day/PlayersDayTimer.svelte';
 	import { keepScreenAwake } from '#lib/features/day/timer-wake-lock.ts';
 	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
@@ -104,6 +106,11 @@
 	});
 	const table = $derived(town?.view?.public);
 	const showTown = $derived(!message && !!script && !!table?.seats.length);
+	/**
+	 * The Storyteller's day timer, as phones show it (Trevor, 2026-10-26: "During day, public
+	 * Town can show the timer as well"); their board sends it during the day only.
+	 */
+	const dayTimer = $derived(showTown ? dayTimers.parsePublicTimer(table?.timer) : undefined);
 </script>
 
 <!-- The player screen's title line: the script's logo and name, its byline, Print and Share. -->
@@ -116,6 +123,8 @@
 			/>{/if}
 	{/snippet}
 	{#snippet actions()}
+		<!-- A tap target high, as the buttons beside it, so the title line keeps its height. -->
+		{#if dayTimer}<PlayersDayTimer timer={dayTimer} />{/if}
 		{#if script}<PlayerScriptActions
 				{script}
 				{version}
