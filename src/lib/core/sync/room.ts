@@ -81,6 +81,8 @@ export interface RoomState {
 	scriptVote?: ScriptVote;
 	/** Players' feedback on the ended game, one per member; cleared with `ended`. */
 	feedback?: MemberFeedback[];
+	/** When the Storyteller's app was built (room-build.ts). */
+	storytellerBuiltAt?: string;
 }
 
 /**
@@ -160,6 +162,8 @@ export type ClientMessage =
 			role: 'host' | 'player' | 'viewer' | 'town';
 			key: string;
 			protocol?: number;
+			/** When this app's build was made (ISO); the Storyteller's is passed on to phones. */
+			builtAt?: string;
 	  }
 	// From a player.
 	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
@@ -230,6 +234,7 @@ export type ClientMessage =
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
+export * from './room-build.ts';
 export {
 	castScriptBallot,
 	closeScriptVote,
@@ -293,6 +298,8 @@ export interface PlayerView {
 	 * is setting up the next game, since that one has nothing to rate yet (Trevor, 2026-10-26).
 	 */
 	endedGameId?: string;
+	/** When the Storyteller's app was built: a phone built earlier looks for the update. */
+	storytellerBuiltAt?: string;
 	/** The Storyteller is choosing the next script. */
 	choosing?: true;
 	/** The script vote, while one is open, with this phone's own ballot. */
@@ -474,6 +481,7 @@ export function playerView(
 	};
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;
+	if (room.storytellerBuiltAt) view.storytellerBuiltAt = room.storytellerBuiltAt;
 	if (room.ended && room.ended.gameId === room.gameId) {
 		const { gameId: _game, ...ended } = room.ended;
 		void _game;
