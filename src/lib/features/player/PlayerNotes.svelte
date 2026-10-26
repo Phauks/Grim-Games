@@ -10,8 +10,8 @@
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 	import { gameKey, lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
-	import SeatNoteDialog from '#lib/ui/notes/SeatNoteDialog.svelte';
-	import { seatNotes, setSeatNote } from './seat-notes.svelte.ts';
+	import NoteDraftEditor from '#lib/ui/notes/NoteDraftEditor.svelte';
+	import { deleteSeatNote, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
 	import { genericGuess, readGuesses } from './grim-guesses.ts';
 
 	/**
@@ -31,7 +31,7 @@
 
 	let { notesKey, town }: Props = $props();
 
-	// The player's note on each seat, written from the Grim tab or here (Trevor, 2026-10-24).
+	// The player's notes on each seat, written from the Grim tab or here (Trevor, 2026-10-24).
 	// svelte-ignore state_referenced_locally
 	const room = town ? town.guessKey : lastRoom();
 	// svelte-ignore state_referenced_locally
@@ -57,8 +57,13 @@
 		const guess = guesses[seatId]?.[0];
 		return guess && !genericGuess(guess) ? guess : undefined;
 	};
-	let seatOpen = $state(false);
-	let seat = $state<PublicSeat>();
+	/** The seat whose note the seat-note editor has open. */
+	let seatId = $state<string>();
+	let seatEditor = $state<ReturnType<typeof NoteDraftEditor>>();
+	function openSeatNote(id: string, noteId?: string) {
+		seatId = id;
+		seatEditor?.edit(noteId);
+	}
 
 	let notebook = $state<NotebookState>();
 	$effect(() => {
@@ -120,15 +125,12 @@
 			? seats.map((s) => ({
 					seatId: s.seatId,
 					name: nameOf(s),
-					note: notesOnSeats[s.seatId],
+					notes: notesOnSeats[s.seatId] ?? [],
 					// The Traveller the town knows, or this player's own guess of a character.
 					characterId: s.traveller ?? characterGuess(s.seatId)
 				}))
 			: undefined}
-		onOpenSeat={(seatId) => {
-			seat = seats.find((s) => s.seatId === seatId);
-			seatOpen = !!seat;
-		}}
+		onOpenSeatNote={openSeatNote}
 	/>
 {/if}
 
@@ -142,11 +144,11 @@
 		/>
 	</ErrorBoundary>
 {/if}
-<SeatNoteDialog
-	bind:open={seatOpen}
-	title={seat ? t('player.grim.noteTitle', { name: nameOf(seat) }) : ''}
-	value={(seat && notesOnSeats[seat.seatId]) || ''}
-	onSave={(note) => kept && seat && setSeatNote(kept, seat.seatId, note)}
+<NoteDraftEditor
+	bind:this={seatEditor}
+	notes={(seatId && notesOnSeats[seatId]) || []}
+	onSave={(note) => kept && seatId && saveSeatNote(kept, seatId, note)}
+	onDelete={(noteId) => kept && seatId && deleteSeatNote(kept, seatId, noteId)}
 />
 {#if scratch && scratchPad}
 	<ErrorBoundary area="play">

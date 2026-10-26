@@ -6,6 +6,7 @@
 	import { updateCheck } from '#lib/features/about/update-check.svelte.ts';
 	import DiagnosticsPanel from '#lib/features/errors/DiagnosticsPanel.svelte';
 	import DiagnosticsActions from '#lib/features/errors/DiagnosticsActions.svelte';
+	import SoundCredits from '#lib/features/sound/SoundCredits.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { ADVANCED_KEY } from './about-advanced.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
@@ -113,6 +114,15 @@
 		</Dialog>
 	{/if}
 	<OfficialNotice />
+	<!-- The day and night recordings' sources (plan U3), closed so About stays short. -->
+	<PageSection
+		title={t('shell.soundCredits')}
+		collapsible
+		storageKey="about.soundCredits"
+		defaultOpen={false}
+	>
+		<SoundCredits />
+	</PageSection>
 	<!-- Diagnostics, closed beneath About (Trevor, 2026-10-18); the version and commit show once,
      above, though the copied diagnostics still carry them. /diagnostics opens it. -->
 	<PageSection

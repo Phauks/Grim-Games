@@ -9,6 +9,9 @@
  * - Cyrillic, Greek and Vietnamese font subsets, which a browser only fetches when the
  *   page has text in those scripts.
  *
+ * - day and night sound recordings (about 2.7 MB, plan U3), which only a device with day and
+ *   night sound turned on plays.
+ *
  * Those are cached on first use instead (`RUNTIME_CACHE`), and the current script's icons
  * are fetched ahead of time (`keep-offline.ts`) so a game still works with no signal.
  */
@@ -26,6 +29,8 @@ export interface KeepOfflineMessage {
 const ICONS = /^\/data\/icons\/(?!generic\/)[^/]+\//;
 /** Font subsets an English-language game does not show. */
 const OTHER_SUBSETS = /-(cyrillic|cyrillic-ext|greek|greek-ext|vietnamese)-[^/]*\.woff2$/;
+/** Sound recordings, stored once a device turns on what plays them. */
+const SOUNDS = '/sounds/';
 
 /** True for a build file the service worker should store at install time. */
 export function precached(path: string): boolean {
@@ -33,12 +38,17 @@ export function precached(path: string): boolean {
 	if (path === '/_headers') return false;
 	if (ICONS.test(path)) return false;
 	if (path.endsWith('.woff')) return false;
+	if (path.startsWith(SOUNDS)) return false;
 	return !OTHER_SUBSETS.test(path);
 }
 
 /** True for a same-origin GET the service worker should store when first fetched. */
 export function cachedOnUse(path: string): boolean {
-	return path.startsWith('/data/icons/') || path.startsWith('/_app/immutable/');
+	return (
+		path.startsWith('/data/icons/') ||
+		path.startsWith('/_app/immutable/') ||
+		path.startsWith(SOUNDS)
+	);
 }
 
 /** Prefix of each build's precache name (`grim-games-<version>`). */

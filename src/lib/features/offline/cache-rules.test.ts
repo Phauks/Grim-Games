@@ -26,14 +26,19 @@ describe('precached', () => {
 		expect(precached('/_app/immutable/assets/inter-vietnamese-400-normal.x1.woff2')).toBe(false);
 	});
 
+	it('leaves sound recordings for the devices that play them', () => {
+		expect(precached('/sounds/ambience/night-meadow.mp3')).toBe(false);
+	});
+
 	it('leaves out the Cloudflare headers file, which is never served', () => {
 		expect(precached('/_headers')).toBe(false);
 	});
 });
 
 describe('cachedOnUse', () => {
-	it('covers icons and build files, not APIs or pages', () => {
+	it('covers icons, sounds and build files, not APIs or pages', () => {
 		expect(cachedOnUse('/data/icons/tb/imp_e.webp')).toBe(true);
+		expect(cachedOnUse('/sounds/ambience/day-forest.mp3')).toBe(true);
 		expect(cachedOnUse('/_app/immutable/assets/inter-latin-400-normal.x1.woff')).toBe(true);
 		expect(cachedOnUse('/api/health')).toBe(false);
 		expect(cachedOnUse('/grimoire/abc')).toBe(false);

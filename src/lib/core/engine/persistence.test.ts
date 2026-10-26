@@ -270,6 +270,38 @@ describe('version 10 saves', () => {
 	});
 });
 
+describe('version 18 saves', () => {
+	// Before several notes per seat (Trevor, 2026-10-26): an older seat's single note
+	// (`SeatNoteSet`) opens as its untitled first note, and more can be added.
+	it("migrate with the log unchanged and keep a seat's note as its first", () => {
+		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
+		const saved = JSON.parse(JSON.stringify(toSavedGame(session, 1)));
+		saved.log.entries.push({
+			at: 2,
+			command: 'SetSeatNote',
+			events: [{ type: 'SeatNoteSet', seatId: seats[1], note: 'Secret word: lantern' }]
+		});
+		saved.log.cursor += 1;
+		const v18 = { ...saved, schemaVersion: 18 };
+		const loaded = migrateSavedGame(v18);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		expect(loaded.log).toEqual(v18.log);
+		const opened = openSession(loaded.log);
+		expect(opened.game.seats[seats[1]].notes).toEqual([
+			{ noteId: 'n1', title: '', text: 'Secret word: lantern', hidden: false }
+		]);
+		const more = run(opened, ctx, {
+			type: 'SetSeatNote',
+			seatId: seats[1],
+			title: 'Claim',
+			text: 'Chef: 1',
+			hidden: false
+		});
+		const again = openSession(migrateSavedGame(toSavedGame(more, 3)).log);
+		expect(again.game.seats[seats[1]].notes?.map((n) => n.noteId)).toEqual(['n1', 'n2']);
+	});
+});
+
 describe('migration chain', () => {
 	// A made-up history: v1 stored `name`, v2 renamed it to `title`, v3 added `tags`.
 	const chain: Record<number, Migration> = {

@@ -99,9 +99,14 @@ export function buildRecap(source: RecapSource): GameRecap {
 	for (const note of game.notes ?? []) {
 		if (note.text.trim()) notes.push({ about: note.title.trim() || 'Game', text: note.text });
 	}
+	// Each player's notes under their name, and the note's title if it has one.
 	for (const seatId of game.seating) {
-		const note = game.seats[seatId].note?.trim();
-		if (note) notes.push({ about: seatName(game, seatId), text: note });
+		for (const note of game.seats[seatId].notes ?? []) {
+			if (!note.text.trim()) continue;
+			const title = note.title.trim();
+			const who = seatName(game, seatId);
+			notes.push({ about: title ? `${who}: ${title}` : who, text: note.text });
+		}
 	}
 	[...game.pastDays, game.today].forEach((log, day) => {
 		for (const entry of log.entries) {
