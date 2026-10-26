@@ -112,7 +112,10 @@ export class OpenGame {
 			await store.delete(next.from);
 			seatLayouts.forget(next.from);
 			endedGames.reopen(next.from);
-		} else endedGames.end(next.from);
+		} else if (!endedGames.read()[next.from]) {
+			// An ended game keeps its end, winner and reason.
+			endedGames.end(next.from);
+		}
 	}
 
 	/** Opens a saved game; undefined when there is no such game. Throws `SavedGameError`. */

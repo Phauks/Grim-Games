@@ -17,7 +17,8 @@
 	import { untrack } from 'svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import { pastNames, suggestNames } from '#lib/features/grimoire/device-notes.ts';
+	import { suggestNames } from '#lib/features/grimoire/device-notes.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { reelsMove, spinReel } from './reel.ts';
 
 	interface Props {
@@ -84,9 +85,16 @@
 	);
 
 	let name = $state('');
-	// Names used before on this device, to pick instead of typing (Trevor, 2026-10-19).
-	let past = $state<string[]>([]);
-	const names = $derived(suggestNames(past, '', taken, past.length));
+	// Names to pick instead of typing (Trevor, 2026-10-19): only the room's phones connected
+	// now without a seat, never names from earlier games (Trevor, 2026-10-26).
+	const names = $derived(
+		suggestNames(
+			roomHost().connectedUnseated.flatMap((m) => (m.name ? [m.name] : [])),
+			'',
+			taken,
+			Infinity
+		)
+	);
 	let picking = $state(false);
 	let alignment = $state<Alignment | ''>('');
 	/** False while the player still has to type their name to see the token. */
@@ -97,7 +105,6 @@
 	$effect(() => {
 		if (open) {
 			name = playerName;
-			past = pastNames.read();
 			picking = false;
 			alignment = '';
 			revealed = !preferences.current.requireName || playerName.trim() !== '';
@@ -147,7 +154,6 @@
 	let confirmed = false;
 	function confirm() {
 		confirmed = true;
-		pastNames.remember(name);
 		onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) });
 	}
 	// Closed with X, Escape or a tap outside: confirmed if the character was seen.

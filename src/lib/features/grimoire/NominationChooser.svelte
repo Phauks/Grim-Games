@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { CharacterLookup, SeatId } from '#lib/core/model/index.ts';
 	import {
+		extraNominationOpen,
 		mayNominate,
 		nominationsPerDay,
 		seatNominations,
@@ -44,11 +45,13 @@
 		const ask = asking;
 		asking = undefined;
 		if (!ask) return;
-		// A player with nominations left today (the Banshee killed by the Demon) makes another.
+		// A new nomination, not a change: the seat has nominations left today (the Banshee killed
+		// by the Demon, or the Butcher after the day's first execution).
 		const another =
 			ask.side === 'made' &&
-			seatNominations(game, ask.seatId).allMade.length <
-				nominationsPerDay(game, ask.seatId, characters);
+			(extraNominationOpen(game, ask.seatId, characters) ||
+				seatNominations(game, ask.seatId).allMade.length <
+					nominationsPerDay(game, ask.seatId, characters));
 		const pair = recordNomination(grimoire, ask.seatId, ask.side, other, another);
 		if (pair) onNominated?.(pair);
 	}

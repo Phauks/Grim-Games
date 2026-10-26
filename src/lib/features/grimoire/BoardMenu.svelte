@@ -9,7 +9,7 @@
 
 	/**
 	 * The board's ⋯ menu: the game's less frequent actions, the seats, the board's settings,
-	 * the app's items, then End game. Each item closes the menu before it acts.
+	 * the app's items, then End game (New game once it has ended). Each item closes the menu before it acts.
 	 */
 	interface Props {
 		open: boolean;
@@ -20,6 +20,8 @@
 		onHistory: () => void;
 		onBluffs: () => void;
 		onNotes: () => void;
+		/** Back to town (plan U2): only while players' phones can be in a room. */
+		onCallTown?: () => void;
 		onGameInfo: () => void;
 		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
 		onCharacterSelection?: () => void;
@@ -30,6 +32,8 @@
 		/** Players' feedback on the ended game; not for a spectator's board. */
 		onFeedback?: () => void;
 		onReopen: () => void;
+		/** New game, which asks to end this one first; not on a spectator's board. */
+		onNewGame?: () => void;
 		onEnd: () => void;
 	}
 
@@ -40,6 +44,7 @@
 		onHistory,
 		onBluffs,
 		onNotes,
+		onCallTown,
 		onGameInfo,
 		onCharacterSelection,
 		onAddSeat,
@@ -48,6 +53,7 @@
 		onExport,
 		onFeedback,
 		onReopen,
+		onNewGame,
 		onEnd
 	}: Props = $props();
 
@@ -67,6 +73,12 @@
 		<Button variant="quiet" icon="cover" onclick={() => fromMenu(() => (covering = true))}>
 			{t('show.cover')}
 		</Button>
+		{#if onCallTown}
+			<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
+			<Button variant="quiet" icon="sound" onclick={() => fromMenu(onCallTown)}>
+				{t('room.callTown')}
+			</Button>
+		{/if}
 		{#if gameInfo}
 			<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
 		{/if}
@@ -130,8 +142,14 @@
 				</Button>
 			{/if}
 			<Button variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}>Reopen game</Button>
-		{:else}
+		{/if}
+		<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
+		{#if !ended}
 			<Button variant="danger" icon="close" onclick={() => fromMenu(onEnd)}>End game</Button>
+		{:else if onNewGame}
+			<Button variant="quiet" icon="add" onclick={() => fromMenu(onNewGame)}>
+				{t('setup.newGame')}
+			</Button>
 		{/if}
 	</div>
 </Dialog>

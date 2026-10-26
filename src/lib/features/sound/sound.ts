@@ -1,10 +1,13 @@
+import { preferences } from '#lib/ui/preferences.svelte.ts';
 import type { TimerSound } from '#lib/ui/preferences.ts';
 
 /**
- * The day timer's finishing sounds (Trevor, 2026-10-17), made with the Web Audio API on the
- * device, so there are no audio files to bundle or licence. The clock tower chimes play the
- * Westminster Quarters, a 1793 melody in the public domain, on synthesised bells. Browsers only allow sound after
- * a tap, so `unlockTimerSound` runs on the Start tap and the sound can play later.
+ * Every sound the app makes, in one place (plan U1, Trevor 2026-10-26: "consolidation of
+ * sound features"): one audio context, one unlock, one volume (Settings > Sound), and never
+ * two sounds at once. The sounds are made with the Web Audio API on the device, so there are
+ * no audio files to bundle or licence. The clock tower chimes play the Westminster Quarters,
+ * a 1793 melody in the public domain, on synthesised bells. Browsers only allow sound after a
+ * tap, so `unlockSound` runs on a tap (the timer's Start) and the sound can play later.
  */
 let context: AudioContext | undefined;
 
@@ -25,7 +28,7 @@ function audio(): AudioContext | undefined {
 const VIBRATION = [300, 150, 300, 150, 300];
 
 /**
- * Whether this device can vibrate for the timer. Safari on iPhone and iPad has no Vibration
+ * Whether this device can vibrate. Safari on iPhone and iPad has no Vibration
  * API; desktop Chrome and Edge have it with no motor behind it (Trevor, 2026-10-18: Vibrate
  * looked usable on his laptop), so a touch-first screen is required too. A touchscreen
  * laptop whose main pointer is coarse can still pass: browsers don't say whether a motor exists.
@@ -39,13 +42,13 @@ export function canVibrate(): boolean {
 	);
 }
 
-/** The timer's vibration, where the device has one. */
-export function vibrateTimer(): void {
+/** The app's vibration, where the device has one. */
+export function vibrate(): void {
 	if (canVibrate()) navigator.vibrate(VIBRATION);
 }
 
 /** Call from a tap, so a later sound is allowed. */
-export function unlockTimerSound(): void {
+export function unlockSound(): void {
 	const ctx = audio();
 	if (ctx?.state === 'suspended') void ctx.resume().catch(() => {});
 }
@@ -54,7 +57,7 @@ export function unlockTimerSound(): void {
 let playing: { output: GainNode; voices: OscillatorNode[] } | undefined;
 
 /** Stops the sound now playing, so two never overlap (Trevor, 2026-10-17). */
-export function stopTimerSound(): void {
+export function stopSound(): void {
 	if (!playing) return;
 	const { output, voices } = playing;
 	playing = undefined;
@@ -125,14 +128,15 @@ const WESTMINSTER_HOUR: number[][] = [
 	[B3, FS4, GS4, E4]
 ];
 
-/** Plays a timer sound, cutting off any still playing. */
-export function playTimerSound(sound: TimerSound): void {
-	stopTimerSound();
-	if (sound === 'none') return;
+/** Plays a sound at the device's volume, cutting off any still playing. */
+export function playSound(sound: TimerSound, volume = preferences.current.soundVolume): void {
+	stopSound();
+	if (sound === 'none' || volume <= 0) return;
 	const ctx = audio();
 	if (!ctx) return;
-	unlockTimerSound();
+	unlockSound();
 	const output = ctx.createGain();
+	output.gain.value = volume;
 	output.connect(ctx.destination);
 	playing = { output, voices: [] };
 	switch (sound) {
@@ -167,4 +171,22 @@ export function playTimerSound(sound: TimerSound): void {
 			for (const at of [0, 0.5, 1]) note(ctx, 220, at, 0.4, 'square', 0.15);
 			return;
 	}
+}
+
+/**
+ * The Storyteller called everyone back to town (plan U2): this phone plays its Back to town
+ * sound and vibrates, as its settings say.
+ */
+export function hearCallTown(): void {
+	if (preferences.current.timerVibrate) vibrate();
+	playSound(preferences.current.callSound);
+}
+
+/**
+ * Browsers only let a page make a sound it wasn't tapped for once it has been tapped. A
+ * phone in a room may sound at any time, so the first tap anywhere unlocks it.
+ */
+export function unlockOnFirstTap(): void {
+	if (typeof window === 'undefined') return;
+	window.addEventListener('pointerdown', unlockSound, { once: true, capture: true });
 }

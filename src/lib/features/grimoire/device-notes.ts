@@ -1,6 +1,5 @@
 /**
  * Small things the grimoire keeps on this device, outside the game's event log:
- * - player names used before, offered as suggestions when naming a seat;
  * - where seats are drawn on this screen (oval or circle, gaps, seats placed by hand). The
  *   seating order is game state; how it is laid out on one device is not.
  *
@@ -16,12 +15,14 @@ import {
 	type SeatPoint
 } from '#lib/ui/seating/seat-layout.ts';
 
-const NAMES_KEY = 'grim-games:player-names:v1';
+/**
+ * Earlier builds kept names used before on this device, offered when naming a seat. Only the
+ * room's phones are offered now (Trevor, 2026-10-26), so the old list is removed.
+ */
+const OLD_NAMES_KEY = 'grim-games:player-names:v1';
 const FLIPPED_PREFIX = 'grim-games:upside-down:v1:';
 const LAYOUT_KEY = (gameId: GameId) => `grim-games:seat-layout:v1:${gameId}`;
 const END_DISMISSED_KEY = (gameId: GameId) => `grim-games:game-end-dismissed:v1:${gameId}`;
-/** How many past names are remembered. */
-export const MAX_NAMES = 60;
 
 function readList(key: string): string[] {
 	try {
@@ -41,17 +42,9 @@ function writeList(key: string, list: readonly string[]): void {
 	}
 }
 
-/** Adds a name to the front of a recent-names list (case-insensitive, no duplicates). */
-export function rememberName(list: readonly string[], name: string): string[] {
-	const trimmed = name.trim();
-	if (!trimmed) return [...list];
-	const key = trimmed.toLocaleLowerCase();
-	return [trimmed, ...list.filter((n) => n.toLocaleLowerCase() !== key)].slice(0, MAX_NAMES);
-}
-
 /**
- * Names to suggest while typing: past names starting with what is typed (then containing
- * it), leaving out names already on another seat.
+ * Names to suggest while typing: names from `list` starting with what is typed (then
+ * containing it), each once, leaving out names already on another seat.
  */
 export function suggestNames(
 	list: readonly string[],
@@ -61,9 +54,11 @@ export function suggestNames(
 ): string[] {
 	const query = typed.trim().toLocaleLowerCase();
 	const used = new Set(taken.map((n) => n.toLocaleLowerCase()));
-	const open = list.filter(
-		(n) => !used.has(n.toLocaleLowerCase()) && n.toLocaleLowerCase() !== query
-	);
+	const open = list.filter((n, i) => {
+		const key = n.toLocaleLowerCase();
+		const first = list.findIndex((m) => m.toLocaleLowerCase() === key) === i;
+		return first && !used.has(key) && key !== query;
+	});
 	const starts = open.filter((n) => n.toLocaleLowerCase().startsWith(query));
 	const contains = query
 		? open.filter((n) => !starts.includes(n) && n.toLocaleLowerCase().includes(query))
@@ -71,12 +66,10 @@ export function suggestNames(
 	return [...starts, ...contains].slice(0, limit);
 }
 
-export const pastNames = {
-	read: (): string[] => readList(NAMES_KEY),
-	remember(name: string): void {
-		writeList(NAMES_KEY, rememberName(readList(NAMES_KEY), name));
-	}
-};
+/** Removes the names list earlier builds kept. */
+export function forgetPastNames(): void {
+	writeList(OLD_NAMES_KEY, []);
+}
 
 /**
  * Earlier builds kept a device-only "upside down" mark per seat. An upside-down token means

@@ -1,4 +1,5 @@
 {
+	"nominationsAfterExecution": 1,
 	"dayReminders": {
 		"impairable": true,
 		"reminders": [

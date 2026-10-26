@@ -18,6 +18,14 @@ describe('the rooms this phone joined', () => {
 		expect(rooms).toEqual([{ code: '111111', script: 'Trouble Brewing', at: 2 }]);
 	});
 
+	it('reopens a room the way it was last opened, as a player or a Public Town display', () => {
+		let rooms = withRecentRoom([], { code: '111111', at: 1, town: true });
+		expect(rooms).toEqual([{ code: '111111', at: 1, town: true }]);
+		expect(parseRecentRooms(rooms)).toEqual(rooms);
+		rooms = withRecentRoom(rooms, { code: '111111', at: 2 });
+		expect(rooms).toEqual([{ code: '111111', at: 2 }]);
+	});
+
 	it('ignores anything stored that is not a room', () => {
 		expect(parseRecentRooms('x')).toEqual([]);
 		expect(

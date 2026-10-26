@@ -71,6 +71,12 @@ describe('parseCharacterRules', () => {
 		expect(parse({ afterDeath: { ...afterDeath, twice: true } }).issues).toHaveLength(1);
 	});
 
+	it('reads extra nominations after an execution, and rejects a count under 1', () => {
+		expect(parse({ nominationsAfterExecution: 1 }).rules).toEqual({ nominationsAfterExecution: 1 });
+		expect(parse({ nominationsAfterExecution: 0 }).issues).toHaveLength(1);
+		expect(parse({ nominationsAfterExecution: 1.5 }).issues).toHaveLength(1);
+	});
+
 	it('reads a reminder prompt', () => {
 		expect(parse({ reminderPrompts: { Dead: 'markDead' } })).toEqual({
 			rules: { reminderPrompts: { Dead: 'markDead' } },

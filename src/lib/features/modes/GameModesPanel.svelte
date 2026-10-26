@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { NEW_GAME_MAX_PLAYERS } from '#lib/features/setup/selection.svelte.ts';
 	import { onMount, type Snippet } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -14,12 +15,14 @@
 	import {
 		bannedIn,
 		campaignRule,
+		JINXED_PAIRS,
 		modeCharacters,
 		NO_RESTRICTIONS,
 		STANDARD,
 		townSizes,
 		withRules,
 		type GameMode,
+		type JinxedPairs,
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -148,6 +151,7 @@
 	let restrictions = $state(NO_RESTRICTIONS);
 	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
 	let roleRecycling = $state<boolean | undefined>();
+	let jinxedPairs = $state<JinxedPairs>('allow');
 	const draft = $derived(
 		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
 	);
@@ -207,11 +211,13 @@
 					: 'per-town'
 				: 'one'
 	);
-	// Separate towns each need a full game's players (5 to 15); one town goes up to the
-	// game's seat limit, like character selection (Trevor, 2026-10-18).
+	// Separate towns each need a full game's players (5 to 15). One game goes up to 20, and
+	// towns sharing their players up to the game's seat limit (Trevor, 2026-10-26).
 	const split = $derived(towns && !towns.samePlayers ? towns.count : 1);
 	const minPlayers = $derived(MIN_PLAYERS * split);
-	const maxPlayers = $derived(split > 1 ? MAX_PLAYERS * split : MAX_SEATS);
+	const maxPlayers = $derived(
+		split > 1 ? MAX_PLAYERS * split : (towns?.count ?? 1) > 1 ? MAX_SEATS : NEW_GAME_MAX_PLAYERS
+	);
 	const total = $derived(Math.min(maxPlayers, Math.max(minPlayers, players)));
 	/**
 	 * Separate towns each set their own count, with the setup sheet once per town (Trevor,
@@ -355,7 +361,7 @@
 				restrictions,
 				data,
 				loaded: loaded[0],
-				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen } : {}),
+				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen, jinxedPairs } : {}),
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
 			saveDraft({ gameId: open.game.gameId });
@@ -386,6 +392,7 @@
 						modeId = v;
 						restrictions = NO_RESTRICTIONS;
 						roleRecycling = undefined;
+						jinxedPairs = 'allow';
 						campaignId = 'new';
 					}}
 				/>
@@ -452,6 +459,16 @@
 							description={t('modes.roleRecyclingHint')}
 							checked={roleRecycling ?? draft.recycleUnchosen}
 							onChange={(on) => (roleRecycling = on)}
+						/>
+						<SettingSelect
+							label={t('modes.jinxedPairs')}
+							value={jinxedPairs}
+							defaultValue="allow"
+							options={JINXED_PAIRS.map((value) => ({
+								value,
+								label: t(`modes.jinxedPairs.${value}`)
+							}))}
+							onChange={(v) => (jinxedPairs = v)}
 						/>
 					{/if}
 					<div class="setting">

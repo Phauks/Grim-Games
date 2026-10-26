@@ -28,6 +28,7 @@ import ph_circle_dashed from '~icons/ph/circle-dashed';
 import ph_circle_notch from '~icons/ph/circle-notch';
 import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
+import ph_coffee from '~icons/ph/coffee';
 import ph_copy from '~icons/ph/copy';
 import ph_database from '~icons/ph/database';
 import ph_device_mobile from '~icons/ph/device-mobile';
@@ -65,6 +66,7 @@ import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_minus from '~icons/ph/minus';
 import ph_moon_stars from '~icons/ph/moon-stars';
 import ph_note_pencil from '~icons/ph/note-pencil';
+import ph_paint_bucket from '~icons/ph/paint-bucket';
 import ph_palette from '~icons/ph/palette';
 import ph_pause from '~icons/ph/pause';
 import ph_pen_nib from '~icons/ph/pen-nib';
@@ -136,6 +138,7 @@ const icons: IconMap = {
 	'ph:circle-notch': ph_circle_notch,
 	'ph:clipboard-text': ph_clipboard_text,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
+	'ph:coffee': ph_coffee,
 	'ph:copy': ph_copy,
 	'ph:database': ph_database,
 	'ph:device-mobile': ph_device_mobile,
@@ -173,6 +176,7 @@ const icons: IconMap = {
 	'ph:minus': ph_minus,
 	'ph:moon-stars': ph_moon_stars,
 	'ph:note-pencil': ph_note_pencil,
+	'ph:paint-bucket': ph_paint_bucket,
 	'ph:palette': ph_palette,
 	'ph:pause': ph_pause,
 	'ph:pen-nib': ph_pen_nib,

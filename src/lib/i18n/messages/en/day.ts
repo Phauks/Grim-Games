@@ -5,6 +5,7 @@ export const day = {
 	'day.nightNumber': 'Night {number}',
 	'day.setup': 'Setup',
 	'day.endDayConfirm': 'End the day?',
+	'day.keepDayGoing': 'Keep the day going',
 	'day.execution': 'Execution',
 	'day.executionChoose': 'Choose',
 	'day.noExecution': 'No execution',
