@@ -183,7 +183,7 @@
 	}
 </script>
 
-<Page title={t('modes.extras.title')} width="text">
+<Page title={t('modes.extras.title')}>
 	{#snippet actions()}
 		<Button icon="random" disabled={official.length === 0} onclick={roll}>
 			{t('modes.extras.rollAll')}

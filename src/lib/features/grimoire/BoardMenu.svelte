@@ -4,11 +4,12 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
 	/**
 	 * The board's ⋯ menu: the game's less frequent actions, the seats, the board's settings,
-	 * the app's items, then New game and End game. Each item closes the menu before it acts.
+	 * the app's items, then End game (New game once it has ended). Each item closes the menu before it acts.
 	 */
 	interface Props {
 		open: boolean;
@@ -33,6 +34,11 @@
 		onReopen: () => void;
 		/** New game, which asks to end this one first; not on a spectator's board. */
 		onNewGame?: () => void;
+		/**
+		 * Close room, once the game has ended and while its room is open (Trevor, 2026-10-26):
+		 * deletes the room and sends every phone out. Asks first.
+		 */
+		onCloseRoom?: () => void;
 		onEnd: () => void;
 	}
 
@@ -53,8 +59,10 @@
 		onFeedback,
 		onReopen,
 		onNewGame,
+		onCloseRoom,
 		onEnd
 	}: Props = $props();
+	let closeRoomOpen = $state(false);
 
 	function fromMenu(action: () => void) {
 		open = false;
@@ -137,19 +145,35 @@
 			{/if}
 			<Button variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}>Reopen game</Button>
 		{/if}
-		<!-- New game here, not in the sidebar (Trevor, 2026-10-26); it asks to end this game. -->
-		{#if onNewGame}
+		<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
+		{#if !ended}
+			<Button variant="danger" icon="close" onclick={() => fromMenu(onEnd)}>End game</Button>
+		{:else if onNewGame}
 			<Button variant="quiet" icon="add" onclick={() => fromMenu(onNewGame)}>
 				{t('setup.newGame')}
 			</Button>
 		{/if}
-		{#if !ended}
-			<Button variant="danger" icon="close" onclick={() => fromMenu(onEnd)}>End game</Button>
+		{#if ended && onCloseRoom}
+			<Button variant="danger" icon="close" onclick={() => fromMenu(() => (closeRoomOpen = true))}>
+				{t('room.closeRoom')}
+			</Button>
 		{/if}
 	</div>
 </Dialog>
 
+<ConfirmDialog
+	bind:open={closeRoomOpen}
+	title={t('room.closeRoomTitle')}
+	danger
+	onConfirm={() => onCloseRoom?.()}
+>
+	<p class="dialog-text">{t('room.closeRoomText')}</p>
+</ConfirmDialog>
+
 <style>
+	.dialog-text {
+		margin: 0;
+	}
 	.menu {
 		display: grid;
 		gap: var(--space-2);

@@ -1820,3 +1820,38 @@ test("Print lists the PDF a script's source publishes, as a link", async ({ page
 	await expect(detailsName(page)).toHaveText('Carousel Ride');
 	expect(await pdfLink()).toBe(pdf);
 });
+
+// Trevor, 2026-10-26: on a wide screen the list and details stopped well short of the bottom.
+// They now reach it. A phone's list keeps its smallest height, so there the page may scroll.
+async function reachesTheBottom(page: Page) {
+	await page.goto('/scripts');
+	await expect(page.getByTestId('picker-table')).toBeVisible();
+	await expect
+		.poll(() =>
+			page.evaluate(
+				() =>
+					document.documentElement.clientHeight -
+					document.querySelector('main')!.getBoundingClientRect().bottom
+			)
+		)
+		.toBeLessThan(2);
+}
+
+test('the search list reaches the bottom of the screen', async ({ page }) => {
+	await reachesTheBottom(page);
+});
+
+test.describe('on a wide screen', () => {
+	test.use({ viewport: { width: 1500, height: 976 }, hasTouch: false, isMobile: false });
+
+	test('the search list and details fill the screen, with no page scroll', async ({ page }) => {
+		await reachesTheBottom(page);
+		const scrolls = await page.evaluate(
+			() => document.documentElement.scrollHeight - document.documentElement.clientHeight
+		);
+		expect(scrolls).toBeLessThanOrEqual(1);
+		const list = await page.getByTestId('picker-table').boundingBox();
+		const details = await page.getByTestId('script-pane').boundingBox();
+		expect(Math.abs(list!.y + list!.height - (details!.y + details!.height))).toBeLessThan(2);
+	});
+});

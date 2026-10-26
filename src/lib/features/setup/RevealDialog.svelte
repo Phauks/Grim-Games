@@ -17,7 +17,7 @@
 	import { untrack } from 'svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import { pastNames, suggestNames } from '#lib/features/grimoire/device-notes.ts';
+	import { suggestNames } from '#lib/features/grimoire/device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { reelsMove, spinReel } from './reel.ts';
 
@@ -85,11 +85,9 @@
 	);
 
 	let name = $state('');
-	// Names to pick instead of typing (Trevor, 2026-10-19): this game's first, the room's
-	// phones connected now without a seat; then names used before on this device, under their
-	// own heading, so a brand-new game never offers old names as its own (Trevor, 2026-10-25).
-	let past = $state<string[]>([]);
-	const here = $derived(
+	// Names to pick instead of typing (Trevor, 2026-10-19): only the room's phones connected
+	// now without a seat, never names from earlier games (Trevor, 2026-10-26).
+	const names = $derived(
 		suggestNames(
 			roomHost().connectedUnseated.flatMap((m) => (m.name ? [m.name] : [])),
 			'',
@@ -97,8 +95,6 @@
 			Infinity
 		)
 	);
-	const earlier = $derived(suggestNames(past, '', [...taken, ...here], past.length));
-	const names = $derived([...here, ...earlier]);
 	let picking = $state(false);
 	let alignment = $state<Alignment | ''>('');
 	/** False while the player still has to type their name to see the token. */
@@ -109,7 +105,6 @@
 	$effect(() => {
 		if (open) {
 			name = playerName;
-			past = pastNames.read();
 			picking = false;
 			alignment = '';
 			revealed = !preferences.current.requireName || playerName.trim() !== '';
@@ -159,7 +154,6 @@
 	let confirmed = false;
 	function confirm() {
 		confirmed = true;
-		pastNames.remember(name);
 		onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) });
 	}
 	// Closed with X, Escape or a tap outside: confirmed if the character was seen.
@@ -313,9 +307,9 @@
 	{/snippet}
 </Dialog>
 
-{#snippet list(options: string[])}
+<BottomSheet bind:open={picking} title={t('setup.reveal.pickName')}>
 	<ul class="names">
-		{#each options as option (option)}
+		{#each names as option (option)}
 			<li>
 				<button
 					type="button"
@@ -327,18 +321,6 @@
 			</li>
 		{/each}
 	</ul>
-{/snippet}
-
-<BottomSheet bind:open={picking} title={t('setup.reveal.pickName')}>
-	{#if here.length > 0}
-		<section aria-label={t('setup.reveal.inRoom')}>{@render list(here)}</section>
-	{/if}
-	{#if earlier.length > 0}
-		<section aria-labelledby="reveal-earlier">
-			<h3 class="earlier" id="reveal-earlier">{t('setup.reveal.earlierGames')}</h3>
-			{@render list(earlier)}
-		</section>
-	{/if}
 </BottomSheet>
 
 <style>
@@ -440,14 +422,6 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.earlier {
-		margin: var(--space-3) 0 0;
-		padding: var(--space-2);
-		border-bottom: 1px solid var(--border);
-		color: var(--on-surface-muted);
-		font-size: 0.9rem;
-		font-weight: normal;
 	}
 	.names li + li {
 		border-top: 1px solid var(--border);

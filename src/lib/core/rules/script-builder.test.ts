@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { loadScript } from '#lib/core/data/script.ts';
 import { sortByStandardOrder } from '#lib/core/data/sort-order.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { builtScriptJson, scriptOrder } from './script-builder.ts';
+import { builtScriptJson, expectedScriptCounts, scriptOrder } from './script-builder.ts';
 
 const data = committedGameData();
 
@@ -78,5 +78,33 @@ describe('builtScriptJson', () => {
 		expect(json).toEqual([{ id: '_meta', name: 'Mixed' }, 'chef', homebrew.lantern, 'imp']);
 		const result = loadScript(json, data);
 		expect(result.script?.homebrew).toEqual(['lantern']);
+	});
+});
+
+describe('expectedScriptCounts', () => {
+	it("is the size's usual counts when nothing is set", () => {
+		expect(expectedScriptCounts('full')).toEqual({
+			townsfolk: 13,
+			outsider: 4,
+			minion: 4,
+			demon: 4
+		});
+		expect(expectedScriptCounts('teensyville')).toEqual({
+			townsfolk: 6,
+			outsider: 2,
+			minion: 2,
+			demon: 2
+		});
+	});
+
+	it('takes a type the builder set in place of the usual one', () => {
+		// Trevor (2026-10-26): some scripts have 1 Demon, some 5 or 6 Outsiders or Minions.
+		expect(expectedScriptCounts('full', { demon: 1, outsider: 6 })).toEqual({
+			townsfolk: 13,
+			outsider: 6,
+			minion: 4,
+			demon: 1
+		});
+		expect(expectedScriptCounts('teensyville', { minion: 0 }).minion).toBe(0);
 	});
 });
