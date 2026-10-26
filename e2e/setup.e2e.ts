@@ -606,7 +606,7 @@ test("the names to pick are the room's phones first, then names from earlier gam
 	const you = phone.getByRole('dialog', { name: 'You', exact: true });
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
 	await you.getByRole('button', { name: 'Save' }).tap();
-	await expect(page.getByRole('combobox', { name: 'Seat for Alex' })).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex');
 
 	await page.goto(setup);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
