@@ -204,9 +204,11 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 	const menu = page.getByRole('button', { name: 'Menu', exact: true });
 	const title = page.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
 	const [m, h] = [(await menu.boundingBox())!, (await title.boundingBox())!];
-	// Level with the title's first line: on a phone, three header buttons can wrap the name.
-	expect(Math.abs(m.y - h.y)).toBeLessThan(m.height / 2);
-	expect(m.x + m.width).toBeLessThanOrEqual(h.x);
+	// Level with the header's buttons, the title under them (Trevor, 2026-10-26: "move the
+	// script name down from the top of player view, still in header area, but lower").
+	const cog = (await page.getByRole('button', { name: 'Your settings' }).boundingBox())!;
+	expect(Math.abs(m.y - cog.y)).toBeLessThan(m.height / 2);
+	expect(h.y).toBeGreaterThanOrEqual(m.y + m.height - 1);
 
 	await menu.tap();
 	const drawer = page.getByRole('dialog', { name: APP_NAME });
@@ -559,12 +561,12 @@ test('the header shares the script from an icon and has no Code button', async (
 	await expect(page.getByTestId('script-byline')).toHaveCount(0);
 	// Players are already in a script, so there is no code to enter here (Trevor, 2026-10-16).
 	await expect(page.getByRole('button', { name: 'Code', exact: true })).toHaveCount(0);
-	// Print and Share sit on the title's line, phones included (Trevor, 2026-10-19).
+	// Print and Share sit on one line above the title, phones included (Trevor, 2026-10-19;
+	// the title moved under them 2026-10-26).
 	const title = await page.getByRole('heading', { name: 'Code Night', level: 1 }).boundingBox();
 	for (const name of ['Print script', 'Share script']) {
 		const icon = await page.getByRole('button', { name }).boundingBox();
-		expect(icon!.y).toBeLessThan(title!.y + title!.height);
-		expect(icon!.y + icon!.height).toBeGreaterThan(title!.y);
+		expect(icon!.y + icon!.height).toBeLessThanOrEqual(title!.y + 1);
 	}
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
