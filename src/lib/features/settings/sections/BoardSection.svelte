@@ -20,7 +20,6 @@
 	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
-	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
 	import { CORNER_LINES } from '#lib/ui/corner-lines.ts';
 
@@ -66,21 +65,9 @@
 	title={t('settings.boardAdvanced')}
 	storageKey="settings-board-advanced"
 	defaultOpen={false}
-	count={3}
+	count={1}
 >
 	<SettingRow label={REMINDER_MODE_LABEL} warning={t('settings.reminderModeWarning')}>
 		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
 	</SettingRow>
-	<SettingToggle
-		label={t('settings.holdLightsSeat')}
-		description={t('settings.holdLightsSeatDescription')}
-		checked={boardLooks.current.holdLights === 'seat'}
-		onChange={(on) => boardLooks.update({ holdLights: on ? 'seat' : 'character' })}
-	/>
-	<SettingToggle
-		label={t('settings.holdMoves')}
-		description={t('settings.holdMovesDescription')}
-		checked={boardLooks.current.holdMoves}
-		onChange={(on) => boardLooks.update({ holdMoves: on })}
-	/>
 </SettingCollapsible>
