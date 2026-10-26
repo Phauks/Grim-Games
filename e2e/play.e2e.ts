@@ -649,6 +649,31 @@ test('the Script sheet can be made compact from Settings', async ({ page }) => {
 	expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test('the sheet background colours the whole player screen, its dialogs included', async ({
+	page
+}) => {
+	const page_ = page.locator('html');
+	await expect(page_).toHaveCSS('background-color', 'rgb(20, 11, 11)');
+	await openSettings(page);
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Player', exact: true })
+		.tap();
+	await settings.getByRole('combobox', { name: 'Sheet background' }).tap();
+	await page.getByRole('option', { name: 'Off-white', exact: true }).tap();
+	// Settings, a dialog over the player screen, follows at once (Trevor, 2026-10-25).
+	await expect(settings).toHaveCSS('color', 'rgb(27, 27, 27)');
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(page_).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+	await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#ffffff');
+	await page.reload();
+	await expect(page_).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+	// Other screens keep the app theme.
+	await page.goto('/about');
+	await expect(page_).toHaveCSS('background-color', 'rgb(20, 11, 11)');
+});
+
 test('Print script prints the sheet, then the night order and player counts', async ({ page }) => {
 	await page.evaluate(() => {
 		window.print = () => {

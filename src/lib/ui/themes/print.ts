@@ -25,7 +25,7 @@ export const LIGHT_SHEET: Readonly<Record<`--${string}`, string>> = {
 	'--on-surface-muted': '#555555',
 	'--heading': PRINT_PALETTE.ink,
 	'--border': '#0000002e',
-	'--button-edge': '#8a7a5c',
+	'--button-edge': '#76674b',
 	'--good': PRINT_PALETTE.good,
 	'--evil': PRINT_PALETTE.evil,
 	'--traveller-text': '#5c2f6e',

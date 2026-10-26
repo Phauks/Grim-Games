@@ -27,12 +27,20 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Toaster from '#lib/ui/primitives/Toaster.svelte';
 	import { applyAppearance } from '#lib/ui/themes/apply.ts';
+	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
 
-	// Before the first render, and again whenever the theme or a preference changes.
-	$effect.pre(() => applyAppearance(preferences.theme, preferences.current));
+	// Before the first render, and again whenever the theme or a preference changes. A screen
+	// with its own colours (screen-theme.svelte.ts) replaces the theme and its custom colours.
+	$effect.pre(() => {
+		const screen = screenTheme.current;
+		applyAppearance(
+			screen ?? preferences.theme,
+			screen ? { ...preferences.current, colors: {} } : preferences.current
+		);
+	});
 
 	// The interface language for this device (English until another language exists).
 	$effect(() => {
