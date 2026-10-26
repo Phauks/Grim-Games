@@ -1175,6 +1175,28 @@ test('a room tells an app too old for it to update', async ({ page, browser }, t
 	await phoneContext.close();
 });
 
+test('a grimoire from a newer Storyteller app asks to update', async ({ page }) => {
+	// Trevor, 2026-10-26: an older app is nudged to update, never blocked.
+	await page.routeWebSocket(/\/api\/room\//, (ws) => {
+		ws.onMessage(() =>
+			ws.send(
+				JSON.stringify({
+					type: 'grimoire',
+					grimoire: { saved: { schemaVersion: 9999, gameId: 'newer' } }
+				})
+			)
+		);
+	});
+	await page.goto(`/watch/123456#${'a'.repeat(64)}`);
+	await page
+		.getByRole('alertdialog', { name: 'Before you watch' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(page.getByTestId('watch-status').getByRole('alert')).toHaveText(
+		`The Storyteller has a newer version of ${APP_NAME}. Refresh to update and see the grimoire.`
+	);
+});
+
 test('the room code and a Grim view password open the grimoire, as the link does', async ({
 	page,
 	browser
