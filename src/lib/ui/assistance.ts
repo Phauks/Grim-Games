@@ -21,9 +21,6 @@ export const ASSIST_KEYS = [
 	'trackNominations',
 	'dayAfterNight',
 	'stackReminders',
-	'roomCode',
-	'gameClock',
-	'boardPhase',
 	'explainTerms'
 ] as const;
 export type AssistKey = (typeof ASSIST_KEYS)[number];
@@ -75,9 +72,9 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 			'When a reminder goes on the board for a character whose player is dead, confirm it first.'
 	},
 	demonVotedButton: {
-		label: 'Demon voted button',
+		label: 'Demon voted and Minion nominated buttons',
 		description:
-			'While a Flowergirl is in play, a Demon voted button on her row of the day, for her night answer.'
+			'While a Flowergirl or Town Crier is in play, a button on their row of the day for their night answer.'
 	},
 	savantInfo: {
 		label: 'Suggest Savant information',
@@ -106,19 +103,6 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Stack duplicate reminders',
 		description:
 			'Show several copies of one reminder as a single token with a count. Off shows each copy.'
-	},
-	roomCode: {
-		label: 'Join code on the board',
-		description: "Show the room's join code under the script's name. Tap it to open Share."
-	},
-	gameClock: {
-		label: 'Game length on the board',
-		description: 'Show how long the game has run since the first night began, under the join code.'
-	},
-	boardPhase: {
-		label: 'Day or night on the board',
-		description:
-			"Show the night or day in play, such as Night 2, under the script's name; Setup before the game starts."
 	},
 	// Shown in Settings › Rules terms, not Storyteller settings: players use it too (Trevor).
 	explainTerms: {

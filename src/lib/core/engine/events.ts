@@ -6,6 +6,7 @@
  * (`#lib/core/engine/persistence.ts`).
  */
 import type { Alignment, CharacterId, Script, PlayerName } from '#lib/core/data/index.ts';
+import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
@@ -106,7 +107,9 @@ export type GameEvent =
 	/** Replaces the entry with the same `entryId`. */
 	| { type: 'DayEntryReplaced'; entry: DayEntry }
 	| { type: 'DayEntryRemoved'; entryId: DayEntryId }
-	/** No `voted` clears the mark. */
+	/** No `value` clears the mark. */
+	| { type: 'DayMarkSet'; mark: DayMark; value?: boolean }
+	/** Version 3 to 17's Demon voted mark; replays as `DayMarkSet` for `demon-voted`. */
 	| { type: 'DemonVotedSet'; voted?: boolean }
 	/** No `value` clears it. */
 	| { type: 'PrepValueSet'; key: string; value?: string }

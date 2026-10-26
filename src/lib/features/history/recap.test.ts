@@ -40,7 +40,7 @@ describe('buildRecap', () => {
 			reason: 'demon-dead'
 		});
 		expect(recap.result).toBe('Good won');
-		expect(recap.howEnded).toBe('Demon died');
+		expect(recap.howEnded).toBe('Demon execution');
 		expect(recap.storyteller).toBeUndefined();
 		const woman = recap.seats[4];
 		expect(woman.start?.name).toBe('Scarlet Woman');

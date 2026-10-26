@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
-	cancelRequest,
 	canReveal,
 	castVote,
 	closeVote,
@@ -20,16 +19,17 @@ import {
 	publish,
 	receiveFeedback,
 	reopenGame,
-	request,
-	resolve,
+	seat,
 	ROOM_PROTOCOL,
 	roomPreview,
 	setLook,
+	setName,
 	setViewers,
 	supportsProtocol,
 	unseat,
 	viewerFailed,
 	viewersLocked,
+	withoutRequests,
 	MAX_VIEWER_FAILS,
 	VIEWER_FAIL_WINDOW_MS,
 	type RoomState
@@ -54,55 +54,54 @@ function roomWith(...members: string[]): RoomState {
 	return room;
 }
 
-describe('the live room', () => {
-	it('lets a phone ask for a seat, and only the Storyteller seats it', () => {
-		let room = roomWith('alex');
-		room = request(room, 'alex', { name: '  Alex   K ', seatId: 'b' }, 1, 'r1');
-		expect(room.requests).toEqual([
-			{ requestId: 'r1', memberId: 'alex', name: 'Alex K', seatId: 'b', at: 1 }
-		]);
-		expect(playerView(room, 'alex').me).toEqual({ memberId: 'alex' });
-		expect(playerView(room, 'alex').request).toEqual({ name: 'Alex K', seatId: 'b' });
+function seated(room: RoomState, memberId: string, name: string, seatId: string): RoomState {
+	return seat(setName(room, memberId, { name }), memberId, seatId);
+}
 
-		room = resolve(room, 'r1', true);
-		expect(room.requests).toEqual([]);
+describe('the live room', () => {
+	it('names a phone straight away, and only the Storyteller seats it', () => {
+		// No approval step (Trevor, 2026-10-26: "we don't approve anymore").
+		let room = roomWith('alex');
+		room = setName(room, 'alex', { name: '  Alex   K ' });
+		expect(room.members).toEqual([{ memberId: 'alex', name: 'Alex K' }]);
+		expect(playerView(room, 'alex').me).toEqual({ memberId: 'alex', name: 'Alex K' });
+
+		room = seat(room, 'alex', 'b');
 		expect(playerView(room, 'alex').me).toEqual({ memberId: 'alex', name: 'Alex K', seatId: 'b' });
 		expect(playerView(room, 'alex').takenSeats).toEqual(['b']);
+		// Renaming keeps the seat, and a seat an older app asks for is ignored.
+		room = setName(room, 'alex', { name: 'Alex', seatId: 'c' } as { name: string });
+		expect(room.members).toEqual([{ memberId: 'alex', name: 'Alex', seatId: 'b' }]);
 	});
 
-	it('lets the Storyteller choose a different seat', () => {
-		let room = request(roomWith('alex'), 'alex', { name: 'Alex' }, 1, 'r1');
-		room = resolve(room, 'r1', true, s('c'));
-		expect(room.members).toEqual([{ memberId: 'alex', name: 'Alex', seatId: 'c' }]);
-	});
-
-	it('drops a declined request without changing the member', () => {
-		let room = request(roomWith('alex'), 'alex', { name: 'Alex' }, 1, 'r1');
-		room = resolve(room, 'r1', false);
-		expect(room.requests).toEqual([]);
-		expect(room.members).toEqual([{ memberId: 'alex' }]);
-	});
-
-	it('keeps one request per phone, and lets it be cancelled', () => {
-		let room = request(roomWith('alex'), 'alex', { name: 'Alex', seatId: 'a' }, 1, 'r1');
-		room = request(room, 'alex', { name: 'Alex', seatId: 'c' }, 2, 'r2');
-		expect(room.requests.map((r) => r.requestId)).toEqual(['r2']);
-		expect(cancelRequest(room, 'alex').requests).toEqual([]);
-	});
-
-	it('ignores empty names, unknown seats and strangers', () => {
+	it('ignores empty names, unknown seats, unnamed phones and strangers', () => {
 		const room = roomWith('alex');
-		expect(request(room, 'alex', { name: '   ' }, 1, 'r')).toBe(room);
-		expect(request(room, 'alex', { name: 'Alex', seatId: 'zz' }, 1, 'r')).toBe(room);
-		expect(request(room, 'alex', { name: 'Alex', seatId: 7 }, 1, 'r')).toBe(room);
-		expect(request(room, 'nobody', { name: 'Eve' }, 1, 'r')).toBe(room);
-		expect(request(room, 'alex', { name: 42 }, 1, 'r')).toBe(room);
+		expect(setName(room, 'alex', { name: '   ' })).toBe(room);
+		expect(setName(room, 'alex', { name: 42 })).toBe(room);
+		expect(setName(room, 'nobody', { name: 'Eve' })).toBe(room);
+		expect(seat(room, 'alex', 'a')).toBe(room);
+		const named = setName(room, 'alex', { name: 'Alex' });
+		expect(setName(named, 'alex', { name: 'Alex' })).toBe(named);
+		expect(seat(named, 'alex', 'zz')).toBe(named);
+		expect(seat(named, 'alex', 7)).toBe(named);
+		expect(seat(named, 'nobody', 'a')).toBe(named);
+	});
+
+	it('turns requests saved before approval went into names', () => {
+		const old = { ...roomWith('alex', 'sam') };
+		old.requests = [
+			{ requestId: 'r1', memberId: 'alex', name: 'Alex', seatId: s('a'), at: 1 },
+			{ requestId: 'r2', memberId: 'gone', name: 'Eve', at: 2 }
+		];
+		const room = withoutRequests(old);
+		expect(room.requests).toEqual([]);
+		expect(room.members).toEqual([{ memberId: 'alex', name: 'Alex' }, { memberId: 'sam' }]);
+		expect(withoutRequests(room)).toBe(room);
 	});
 
 	it('moves an earlier phone out of a seat the Storyteller gives to someone else', () => {
-		let room = request(roomWith('alex', 'sam'), 'alex', { name: 'Alex', seatId: 'a' }, 1, 'r1');
-		room = resolve(room, 'r1', true);
-		room = resolve(request(room, 'sam', { name: 'Sam', seatId: 'a' }, 2, 'r2'), 'r2', true);
+		let room = seated(roomWith('alex', 'sam'), 'alex', 'Alex', 'a');
+		room = seated(room, 'sam', 'Sam', 'a');
 		expect(room.members).toEqual([
 			{ memberId: 'alex', name: 'Alex' },
 			{ memberId: 'sam', name: 'Sam', seatId: 'a' }
@@ -110,22 +109,13 @@ describe('the live room', () => {
 	});
 
 	it('unseats a player but keeps their name', () => {
-		let room = resolve(
-			request(roomWith('alex'), 'alex', { name: 'Alex', seatId: 'a' }, 1, 'r'),
-			'r',
-			true
-		);
+		let room = seated(roomWith('alex'), 'alex', 'Alex', 'a');
 		room = unseat(room, 'alex');
 		expect(room.members).toEqual([{ memberId: 'alex', name: 'Alex' }]);
 	});
 
 	it('clears seats for a removed seat or a new game, keeping names', () => {
-		let room = resolve(
-			request(roomWith('alex'), 'alex', { name: 'Alex', seatId: 'a' }, 1, 'r'),
-			'r',
-			true
-		);
-		room = request(room, 'alex', { name: 'Alex', seatId: 'b' }, 2, 'r2');
+		const room = seated(roomWith('alex'), 'alex', 'Alex', 'a');
 		expect(publish(room, 'g1', table('a', 'b')).members[0].seatId).toBe('a');
 
 		const removed = publish(room, 'g1', table('b', 'c'));
@@ -133,7 +123,6 @@ describe('the live room', () => {
 
 		const next = publish(room, 'g2', table('a', 'b'));
 		expect(next.members).toEqual([{ memberId: 'alex', name: 'Alex' }]);
-		expect(next.requests[0]).not.toHaveProperty('seatId');
 		expect(next.gameId).toBe('g2');
 	});
 
@@ -149,15 +138,15 @@ describe('the live room', () => {
 			memberId: 'alex'
 		});
 
-		room = resolve(request(room, 'alex', { name: 'Alex', seatId: 'a' }, 1, 'r1'), 'r1', true);
-		room = resolve(request(room, 'sam', { name: 'Sam', seatId: 'a' }, 2, 'r2'), 'r2', true);
+		room = seated(room, 'alex', 'Alex', 'a');
+		room = seated(room, 'sam', 'Sam', 'a');
 		expect(room.members[0]).toEqual({
 			memberId: 'alex',
 			name: 'Alex',
 			avatar: 'initials',
 			frame: 'ring'
 		});
-		room = resolve(request(room, 'alex', { name: 'Alex', seatId: 'b' }, 3, 'r3'), 'r3', true);
+		room = seat(room, 'alex', 'b');
 		expect(publish(room, 'g2', table('a', 'b')).members[0]).toEqual({
 			memberId: 'alex',
 			name: 'Alex',
@@ -179,15 +168,14 @@ describe('the live room', () => {
 
 	it('lets a full room take a new phone by dropping phones from earlier games', () => {
 		// The room keeps every phone that ever joined (2026-10-25). Once full, members with no
-		// seat, no request and no phone connected make way; seated, asking and present stay.
+		// seat and no phone connected make way; seated and present stay.
 		let room = publish(newRoom('hash'), 'g1', table('a', 'b'));
 		for (let i = 0; i < MAX_MEMBERS; i++) room = join(room, `m${i}`)!;
-		room = request(room, 'm0', { name: 'Sam', seatId: 'a' }, 1, 'r0');
-		room = resolve(room, 'r0', true);
-		room = request(room, 'm1', { name: 'Ash' }, 1, 'r1');
+		room = seated(room, 'm0', 'Sam', 'a');
+		room = setName(room, 'm1', { name: 'Ash' });
 		const present = new Set(['m2']);
 		const joined = join(room, 'new', present)!;
-		expect(joined.members.map((m) => m.memberId)).toEqual(['m0', 'm1', 'm2', 'new']);
+		expect(joined.members.map((m) => m.memberId)).toEqual(['m0', 'm2', 'new']);
 		// With everyone here, a full room still says so.
 		const everyone = new Set(room.members.map((m) => m.memberId));
 		expect(join(room, 'new', everyone)).toBeNull();
@@ -284,7 +272,7 @@ describe('feedback after a game', () => {
 	const anonymous = { version: 1, comment: 'Great night', accolades: [], anonymous: true };
 	function ended(): RoomState {
 		let room = roomWith('alex', 'sam');
-		room = resolve(request(room, 'alex', { name: 'Alex', seatId: s('a') }, 0, 'r1'), 'r1', true);
+		room = seated(room, 'alex', 'Alex', 'a');
 		return gameOver(room, 'g1', 'good');
 	}
 
@@ -295,6 +283,8 @@ describe('feedback after a game', () => {
 			{ id: 'f1', name: 'Alex', seatId: 'a', feedback: rated },
 			{ id: 'f2', feedback: anonymous }
 		]);
+		// Named with its game, so the Storyteller's device saves it with that game.
+		expect(hostView(room).feedbackGameId).toBe('g1');
 		// Anonymous feedback carries a room-made id, never the member id.
 		expect(JSON.stringify(hostView(room).feedback)).not.toContain('sam');
 		expect(playerView(room, 'sam').feedback).toEqual(anonymous);
@@ -362,7 +352,7 @@ describe('what a phone sees before it joins', () => {
 
 	it("shows the script's name, author and logo, and the table's size", () => {
 		let room = roomWith('m1', 'm2');
-		room = resolve(request(room, 'm1', { name: 'Ana', seatId: s('b') }, 1, 'r1'), 'r1', true);
+		room = seated(room, 'm1', 'Ana', 'b');
 		expect(
 			roomPreview(room, {
 				meta: { name: 'Storm Front', author: 'Kim', logo: 'https://logo.example/s.png' },
@@ -402,13 +392,11 @@ describe('what a phone sees before it joins', () => {
 
 /** Specters: spectators share one ability and vote on how it is used (https://www.youtube.com/watch?v=-R34QbIgDh8). */
 describe('a spectators’ vote', () => {
-	function seated(room: RoomState, memberId: string, seatId: string): RoomState {
-		room = request(room, memberId, { name: memberId, seatId }, 1, `r-${memberId}`);
-		return resolve(room, `r-${memberId}`, true);
-	}
+	const seatedAs = (room: RoomState, memberId: string, seatId: string) =>
+		seated(room, memberId, memberId, seatId);
 
 	it('counts only spectators, one choice each, and shows the vote to spectators only', () => {
-		let room = seated(roomWith('p', 'x', 'y'), 'p', 'a');
+		let room = seatedAs(roomWith('p', 'x', 'y'), 'p', 'a');
 		room = openVote(room, 'v1', ['a', 'b', 'b', 'nope']);
 		expect(room.vote?.options).toEqual(['a', 'b']);
 		room = castVote(room, 'x', 'v1', 'b');

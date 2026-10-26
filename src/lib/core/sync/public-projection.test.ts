@@ -56,7 +56,7 @@ function busyGame() {
 		{ type: 'Execute', seatId: seats[1] },
 		{ type: 'UseAbility', seatId: seats[1], characterId: 'washerwoman' },
 		{ type: 'DayNote', characterId: 'washerwoman', seatId: seats[1], text: 'day note secret' },
-		{ type: 'SetDemonVoted', voted: true },
+		{ type: 'SetDayMark', mark: 'demon-voted', value: true },
 		{ type: 'SetGameNote', title: 'Plan', text: 'game notes secret', hidden: false },
 		{
 			type: 'RecordNightInfo',
@@ -109,6 +109,10 @@ describe('publicProjection', () => {
 			phase: { kind: 'night', number: 2, secret: 'x' } as { kind: 'night'; number: number },
 			gameTime: { begun: true, startedAt: 1000 },
 			watchers: 3,
+			author: false as const,
+			storyteller: false as const,
+			version: '2.0',
+			players: '8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)',
 			grimoire: 'secret'
 		};
 		expect(publicProjection(game, undefined, undefined, corner).corner).toEqual({
@@ -116,7 +120,11 @@ describe('publicProjection', () => {
 			joinCode: true,
 			phase: { kind: 'night', number: 2 },
 			gameTime: { begun: true, startedAt: 1000 },
-			watchers: 3
+			watchers: 3,
+			author: false,
+			storyteller: false,
+			version: '2.0',
+			players: '8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)'
 		});
 		// Lines the board hides are left out.
 		expect(publicProjection(game, undefined, undefined, { modes: [] }).corner).toEqual({

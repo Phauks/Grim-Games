@@ -45,3 +45,17 @@ export async function toBoard(page: Page): Promise<void> {
 	else await shortcut.click();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 }
+
+/** Game info: from ⋯ where the board lists it, otherwise from the corner. */
+export async function openGameInfo(page: Page) {
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const more = page.getByRole('dialog', { name: 'Grimoire' });
+	const entry = more.getByRole('button', { name: 'Game info' });
+	if (await entry.count()) await entry.tap();
+	else {
+		await page.keyboard.press('Escape');
+		await expect(more).toBeHidden();
+		await page.getByTestId('mode-menu').tap();
+	}
+	return page.getByRole('dialog', { name: 'Game info', exact: true });
+}

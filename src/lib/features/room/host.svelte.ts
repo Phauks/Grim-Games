@@ -4,10 +4,9 @@
  * players stay in it from one game to the next.
  *
  * While a game is attached, its public projection is published on every change. Nothing a
- * phone sends changes the grimoire until the Storyteller approves it, and approving runs an
- * ordinary command, so it shows in History and can be rolled back. The one exception is a
- * seated player's avatar and frame (plan R6), which are decorative and go on their seat as
- * they pick them, also as an ordinary command.
+ * phone sends changes the grimoire until the Storyteller seats it, and seating runs an ordinary
+ * command, so it shows in History and can be rolled back. After that, a seated player's name,
+ * avatar and frame (plan R6) go on their seat as they change them, also as ordinary commands.
  */
 import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import type { Script } from '#lib/core/data/index.ts';
@@ -22,7 +21,6 @@ import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
 	type RoomMember,
-	type RoomRequest,
 	type ServerMessage,
 	type SharedGrimoire,
 	type VoteTally
@@ -42,6 +40,7 @@ import {
 } from '#lib/features/grimoire/device-notes.ts';
 import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
+import { gameFeedback } from './game-feedback.svelte.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
 import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
@@ -79,7 +78,6 @@ export class RoomHost {
 	 * every member counts as here. The room keeps phones from earlier games (2026-10-25).
 	 */
 	present = $state.raw<readonly string[]>();
-	requests = $state.raw<RoomRequest[]>([]);
 	/** The spectators' open vote and its count (Specters), if one is open. */
 	vote = $state.raw<VoteTally>();
 	/** The room's vote on the next script and its count (plan R1), if one is open. */
@@ -304,16 +302,16 @@ export class RoomHost {
 		if (JSON.stringify(shown) !== JSON.stringify(this.#corner)) this.#corner = shown;
 	}
 
-	/** Approves a request, optionally into a different seat, naming that seat in the grimoire. */
-	approve(request: RoomRequest, seatId: SeatId | undefined = request.seatId): void {
-		if (seatId && this.#game) {
-			this.#game.run({ type: 'RenameSeat', seatId, playerName: request.name });
+	/**
+	 * Seats a player who joined with their name (players need no approval, Trevor 2026-10-26),
+	 * naming that seat in the grimoire. No seat unseats them.
+	 */
+	seat(member: RoomMember, seatId: SeatId | undefined): void {
+		if (!seatId) return this.unseat(member);
+		if (member.name && this.#game) {
+			this.#game.run({ type: 'RenameSeat', seatId, playerName: member.name });
 		}
-		this.#socket?.send({ type: 'resolve', requestId: request.requestId, accept: true, seatId });
-	}
-
-	decline(request: RoomRequest): void {
-		this.#socket?.send({ type: 'resolve', requestId: request.requestId, accept: false });
+		this.#socket?.send({ type: 'seat', memberId: member.memberId, seatId });
 	}
 
 	unseat(member: RoomMember): void {
@@ -376,13 +374,14 @@ export class RoomHost {
 
 	/**
 	 * Opens a vote on the next script, replacing any open one, with a time limit in minutes
-	 * if given. False when offline.
+	 * if given, and the count shown to players when `showTally`. False when offline.
 	 */
 	openScriptVote(
 		kind: ScriptVoteKind,
 		options: ScriptVoteOption[],
 		minutes?: number,
-		subject: VoteSubject = 'script'
+		subject: VoteSubject = 'script',
+		showTally = false
 	): boolean {
 		return (
 			this.#socket?.send({
@@ -391,9 +390,20 @@ export class RoomHost {
 				kind,
 				options,
 				...(minutes !== undefined ? { minutes } : {}),
-				...(subject === 'mode' ? { subject } : {})
+				...(subject === 'mode' ? { subject } : {}),
+				...(showTally ? { showTally } : {})
 			}) ?? false
 		);
+	}
+
+	/** Shows players the open script vote's count, or hides it (Trevor, 2026-10-26). */
+	showScriptVoteTally(show: boolean): void {
+		this.#socket?.send({ type: 'script-vote-tally', show });
+	}
+
+	/** Ends the script vote after a final call to phones (Trevor, 2026-10-26). */
+	endScriptVote(): void {
+		this.#socket?.send({ type: 'end-script-vote' });
 	}
 
 	closeScriptVote(): void {
@@ -443,12 +453,15 @@ export class RoomHost {
 
 	#receive(message: ServerMessage): void {
 		if (message.type === 'host-view') {
-			this.#applyLooks(this.members, message.members);
+			this.#applySeats(this.members, message.members);
 			this.members = message.members;
 			this.present = message.present;
-			this.requests = message.requests;
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
+			// Saved with the ended game, as the room forgets it once a game runs again.
+			if (message.feedback && message.feedbackGameId) {
+				gameFeedback.save(message.feedbackGameId, message.feedback);
+			}
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
 		} else if (message.type === 'refused' && message.reason === 'too-old') {
@@ -460,18 +473,24 @@ export class RoomHost {
 	}
 
 	/**
-	 * Puts each seated player's avatar and frame on their seat (plan R6). They are decorative,
-	 * so they need no approval, but only a change is applied: a seat the Storyteller has since
-	 * changed back (by undoing) stays as it is until the player picks again or moves seat.
+	 * Puts each seated player's name, avatar and frame on their seat (plan R6). Only a change is
+	 * applied: a seat the Storyteller has since changed back (by renaming or undoing) stays as it
+	 * is until the player changes it again or moves seat.
 	 */
-	#applyLooks(before: RoomMember[], after: RoomMember[]): void {
+	#applySeats(before: RoomMember[], after: RoomMember[]): void {
 		const game = this.#game;
 		if (!game) return;
-		const key = (m: RoomMember) => `${m.seatId}|${m.avatar ?? ''}|${m.frame ?? ''}`;
-		const was: Record<string, string> = Object.fromEntries(before.map((m) => [m.memberId, key(m)]));
+		const look = (m: RoomMember) => `${m.seatId}|${m.avatar ?? ''}|${m.frame ?? ''}`;
+		const was: Record<string, RoomMember> = Object.fromEntries(before.map((m) => [m.memberId, m]));
 		for (const member of after) {
 			const seat = member.seatId && game.game.seats[member.seatId];
-			if (!seat || was[member.memberId] === key(member)) continue;
+			if (!seat) continue;
+			const old = was[member.memberId] as RoomMember | undefined;
+			const renamed = !!old && old.seatId === member.seatId && old.name !== member.name;
+			if (renamed && member.name && seat.playerName !== member.name) {
+				game.run({ type: 'RenameSeat', seatId: seat.seatId, playerName: member.name });
+			}
+			if (old && look(old) === look(member)) continue;
 			if (seat.avatar === member.avatar && seat.frame === member.frame) continue;
 			game.run({
 				type: 'SetSeatLook',
@@ -531,7 +550,6 @@ export class RoomHost {
 		this.code = undefined;
 		this.members = [];
 		this.present = undefined;
-		this.requests = [];
 		this.vote = undefined;
 		this.scriptVote = undefined;
 		this.viewerKey = undefined;

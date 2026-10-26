@@ -48,3 +48,4 @@ export * from './ability-parts.ts';
 export * from './savant.ts';
 export * from './nominations.ts';
 export * from './day-claims.ts';
+export * from './day-marks.ts';

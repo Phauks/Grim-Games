@@ -58,6 +58,7 @@ export const ICON_SLOTS = {
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
 	appearance: { label: 'Appearance', choices: ['ph:palette', 'ph:paint-brush'] },
+	language: { label: 'Language', choices: ['ph:translate', 'ph:globe'] },
 	fonts: { label: 'Fonts', choices: ['ph:text-aa', 'ph:text-t'] },
 	icons: { label: 'Icons', choices: ['ph:shapes', 'ph:smiley'] },
 	/** Board and Tokens settings, each its own (Trevor, 2026-10-19). */
@@ -69,6 +70,8 @@ export const ICON_SLOTS = {
 	about: { label: 'About', choices: ['ph:identification-card', 'ph:info'] },
 	back: { label: 'Back', choices: ['ph:caret-left', 'ph:arrow-left'] },
 	forward: { label: 'Forward', choices: ['ph:caret-right', 'ph:arrow-right'] },
+	/** The arrow on a player's guess pill: the next guess becomes the main one (Trevor, 2026-10-25). */
+	nextGuess: { label: 'Next guess', choices: ['ph:arrows-clockwise', 'ph:arrow-circle-right'] },
 	check: { label: 'Selected', choices: ['ph:check'] },
 	random: { label: 'Random selection', choices: ['ph:shuffle', 'ph:dice-five'] },
 	clearSelection: { label: 'Clear selection', choices: ['ph:eraser', 'ph:x-circle'] },
@@ -106,6 +109,9 @@ export const ICON_SLOTS = {
 	 */
 	edit: { label: 'Edit', choices: ['ph:pencil-simple', 'ph:user-switch'] },
 	move: { label: 'Move', choices: ['ph:arrow-bend-up-right'] },
+	/** One place higher or lower in a list the user orders, e.g. a ranked ballot (2026-10-26). */
+	moveUp: { label: 'Move up', choices: ['ph:arrow-up', 'ph:caret-up'] },
+	moveDown: { label: 'Move down', choices: ['ph:arrow-down', 'ph:caret-down'] },
 	traveller: { label: 'Traveller', choices: ['ph:person-simple-walk', 'ph:user-plus'] },
 	fabled: { label: 'Fabled and Loric', choices: ['ph:sparkle'] },
 	grimoire: { label: 'Grimoire', choices: ['ph:users-four', 'ph:circle-dashed'] },
@@ -139,6 +145,8 @@ export const ICON_SLOTS = {
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
 	/** Someone is watching the view-only grimoire (Trevor, 2026-10-20). */
 	watchers: { label: 'Watching', choices: ['ph:eye', 'ph:binoculars'] },
+	/** Players' feedback on a finished game (Trevor, 2026-10-25). */
+	feedback: { label: 'Player feedback', choices: ['ph:star-half', 'ph:chat-centered-text'] },
 	/** What an info token asks for when shown, on its tile (Trevor, 2026-10-18). */
 	asksText: { label: 'Asks for words', choices: ['ph:text-t', 'ph:textbox'] },
 	asksNumber: { label: 'Asks for a number', choices: ['ph:hash', 'ph:calculator'] },

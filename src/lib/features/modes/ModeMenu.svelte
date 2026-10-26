@@ -41,6 +41,9 @@
 	import { contextCharacters } from '#lib/features/characters/character-context.ts';
 	import { playersLine, ruleCharactersLine } from './players-line.ts';
 	import { savedChoiceFor } from './script-choices.svelte.ts';
+	import { cornerLineLabel } from './corner-line-labels.ts';
+	import { CORNER_LINES, type CornerLine } from '#lib/ui/corner-lines.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { sourcePage } from '#lib/features/scripts/saved-scripts.ts';
 
 	/**
@@ -179,6 +182,13 @@
 			value: watcherCount > 0 ? String(watcherCount) : undefined
 		}
 	]);
+	/** A row's eye, when it has one: every row but the script's name, which opens Game info. */
+	const lineOf = (key: string) =>
+		onEdit ? CORNER_LINES.find((line): line is CornerLine => line === key) : undefined;
+	function toggleLine(line: CornerLine) {
+		const lines = preferences.current.cornerLines;
+		preferences.update({ cornerLines: { ...lines, [line]: !lines[line] } });
+	}
 	/** What the mode and rules rows open when tapped: each one's whole Inspect (plan G5). */
 	const inspectable = $derived<Record<string, readonly (GameMode | SpecialRule)[]>>({
 		mode: base ? [base] : [],
@@ -267,7 +277,20 @@
 	<table class="info" data-testid="game-info">
 		<tbody>
 			{#each info as row (row.key)}
+				{@const line = lineOf(row.key)}
 				<tr data-field={row.key}>
+					<!-- Whether the board's corner shows this line (Trevor, 2026-10-24: "an eye
+					     toggle on each line in game info"); a tap target over the row's height. -->
+					{#if onEdit}<td class="eye-cell"
+							>{#if line}{@const shown = preferences.current.cornerLines[line]}<button
+									type="button"
+									class="eye"
+									aria-pressed={shown}
+									aria-label={t('modes.info.onBoard', { line: cornerLineLabel(line) })}
+									data-testid="corner-eye"
+									onclick={() => toggleLine(line)}><Icon name={shown ? 'show' : 'hide'} /></button
+								>{/if}</td
+						>{/if}
 					<th scope="row">{row.label}</th>
 					<td>
 						{#if inspectable[row.key]?.length}<!-- Tapped for its full details (Trevor,
@@ -346,9 +369,10 @@
 			</Button>
 		{/if}
 		{#if hidden}
+			<!-- A gear, as it opens settings for the rules; the shuffle read as "randomise" (Trevor, 2026-10-25). -->
 			<Button
 				variant="quiet"
-				icon="random"
+				icon="settings"
 				onclick={() => go(resolve('/grimoire/[gameId]/extras', { gameId }))}
 			>
 				{t('modes.extras.title')}
@@ -484,6 +508,39 @@
 	.info {
 		border-collapse: collapse;
 		margin-top: var(--space-2);
+	}
+	.eye-cell {
+		padding-right: var(--space-2);
+	}
+	/* Icon-sized in the row, so Game info keeps its height; the ::before is its tap target. */
+	.eye {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		min-height: 0;
+		height: 1lh;
+		padding: 0;
+		vertical-align: top;
+		border: 0;
+		background: none;
+		color: var(--on-surface-muted);
+		cursor: pointer;
+	}
+	/* Within the text's line, so the row keeps its height. */
+	.eye :global(svg) {
+		width: 1.1em;
+		height: 1.1em;
+	}
+	.eye[aria-pressed='true'] {
+		color: var(--heading);
+	}
+	.eye::before {
+		content: '';
+		position: absolute;
+		inset: 50% auto auto 50%;
+		min-width: var(--tap-target);
+		min-height: var(--tap-target);
+		transform: translate(-50%, -50%);
 	}
 	.info th {
 		padding-right: var(--space-3);

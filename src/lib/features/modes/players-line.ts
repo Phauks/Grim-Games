@@ -39,6 +39,12 @@ export function playersLine(game: Game, characters: CharacterLookup | undefined)
 	return `${seats.length} (${parts.join(', ')})`;
 }
 
+/** The standard split for a table of this size, as the Players row gives it (a sample). */
+export function standardPlayersLine(players: number): string {
+	const split = splitPlayers(players);
+	return `${players} (${SEATED_TYPES.map((type) => count(type, split.counts[type])).join(', ')})`;
+}
+
 /**
  * The game's Fabled and Loric, "1 Fabled, 1 Loric", on a line of their own under the
  * Players row: no player is one (Trevor, 2026-10-20). Empty when there are none.

@@ -10,6 +10,7 @@ import {
 	type IconSlot
 } from '#lib/ui/icons/catalogue.ts';
 import { DEFAULT_ASSISTANCE, parseAssistance, type Assistance } from '#lib/ui/assistance.ts';
+import { DEFAULT_CORNER_LINES, parseCornerLines, type CornerLines } from '#lib/ui/corner-lines.ts';
 import { DEFAULT_THEME_ID, isThemeId } from '#lib/ui/themes/registry.ts';
 import {
 	DEFAULT_TOKEN_APPEARANCE,
@@ -52,6 +53,8 @@ export interface Preferences {
 	tokenAppearance: TokenAppearance;
 	/** How much the app walks the Storyteller through the game. */
 	assistance: Assistance;
+	/** Which of Game info's lines the board's corner shows (corner-lines.ts). */
+	cornerLines: CornerLines;
 	/** What face-down bag tiles show on the draw screen. */
 	tileFace: TileFace;
 	/**
@@ -187,6 +190,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	iconOverrides: {},
 	tokenAppearance: DEFAULT_TOKEN_APPEARANCE,
 	assistance: DEFAULT_ASSISTANCE,
+	cornerLines: DEFAULT_CORNER_LINES,
 	tileFace: 'numbers',
 	requireName: false,
 	holdToReveal: false,
@@ -243,6 +247,7 @@ export function parsePreferences(raw: unknown): Preferences {
 		iconOverrides,
 		tokenAppearance: parseTokenAppearance(input.tokenAppearance),
 		assistance: parseAssistance(input.assistance),
+		cornerLines: parseCornerLines(input.cornerLines, input.assistance),
 		tileFace: (TILE_FACES as readonly unknown[]).includes(input.tileFace)
 			? (input.tileFace as TileFace)
 			: DEFAULT_PREFERENCES.tileFace,

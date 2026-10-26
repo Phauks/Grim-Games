@@ -194,9 +194,14 @@
 	 * passive, so this one is added by hand.
 	 */
 	function noLongPress(node: HTMLElement) {
-		const stop = (event: TouchEvent) => event.cancelable && event.preventDefault();
+		const stop = (event: Event) => event.cancelable && event.preventDefault();
 		node.addEventListener('touchstart', stop, { passive: false });
-		return () => node.removeEventListener('touchstart', stop);
+		// The image's own long-press menu too.
+		node.addEventListener('contextmenu', stop);
+		return () => {
+			node.removeEventListener('touchstart', stop);
+			node.removeEventListener('contextmenu', stop);
+		};
 	}
 </script>
 
@@ -223,7 +228,9 @@
 			/>
 		</div>
 		<!-- Hidden until a name is entered when that's required; the space stays reserved. -->
-		<div class="faces" class:pair={!!pair}>
+		<!-- No long-press anywhere on the faces, held or not: Chrome's long press on the token's
+		     image or the ability's text buzzes too (Trevor, 2026-10-25: "let's just remove it"). -->
+		<div class="faces" class:pair={!!pair} {@attach noLongPress}>
 			{#each faces as face, i (i)}
 				<div class="face" data-testid="reveal-face">
 					{#if face.label}<p class="town">{face.label}</p>{/if}
@@ -250,8 +257,6 @@
 							}}
 							onkeyup={(e) => e.key === ' ' && hold(false)}
 							onblur={() => hold(false)}
-							oncontextmenu={(e) => e.preventDefault()}
-							{@attach noLongPress}
 						>
 							{#if held}<CharacterToken
 									character={spinning ?? face.character}
@@ -348,6 +353,9 @@
 	}
 	.faces {
 		display: grid;
+		-webkit-user-select: none;
+		user-select: none;
+		-webkit-touch-callout: none;
 		gap: var(--space-3);
 		justify-items: center;
 	}

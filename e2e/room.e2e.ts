@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
-import { nameStoryteller, toBoard } from './new-game.ts';
+import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
-// Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
-// seat and name, the Storyteller approves, and the seat is named in the grimoire.
+// Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
+// name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
+// approval step (Trevor, 2026-10-26: "we don't approve anymore").
 
 /** Types a room code into Join game's code boxes. */
 async function typeCode(phone: Page, code: string) {
@@ -37,7 +38,7 @@ async function startGame(page: Page, storyteller?: string) {
 	return new URL(page.url()).pathname;
 }
 
-test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
+test('a phone joins with a name, and the Storyteller seats it', async ({
 	page,
 	browser
 }, testInfo) => {
@@ -57,20 +58,20 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	// The room is one row over the script's tabs, and its pencil sheet takes name and seat.
+	// The room is one row over the script's tabs, and its pencil sheet takes only the name: the
+	// Storyteller seats each player (Trevor, 2026-10-25: "only player interaction should be what
+	// name shows up").
 	await expect(phone.getByTestId('join-status')).toBeVisible();
 	const sheet = await seatSheet(phone);
-	// Any seat, then the table's eight.
-	await expect(sheet.getByRole('radio')).toHaveCount(9);
+	await expect(sheet.getByRole('radio')).toHaveCount(0);
 	await sheet.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await sheet.getByText('Seat 3', { exact: true }).tap();
-	await sheet.getByRole('button', { name: 'Ask the Storyteller' }).tap();
-	// Asking closes the sheet.
+	await sheet.getByRole('button', { name: 'Save' }).tap();
+	// Saving closes the sheet.
 	await expect(sheet).toBeHidden();
 	await expect(phone.getByTestId('join-status')).toHaveText(
-		'Waiting for the Storyteller: Alex, seat 3.'
+		'You are in the room as Alex, without a seat yet.'
 	);
-	// Asking moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
+	// Joining moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
 	// script"); the Room tab keeps the seat's state.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	// In a room, Share script hands on the room, as the board's does (Trevor, 2026-10-23).
@@ -81,9 +82,12 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await phone.keyboard.press('Escape');
 	await expect(passOn).toBeHidden();
 
-	const request = page.getByRole('listitem', { name: 'Alex asks for Seat 3' });
-	await request.getByRole('button', { name: 'Approve' }).tap();
-	await expect(page.getByRole('listitem').filter({ hasText: 'Alex · Seat 3' })).toBeVisible();
+	// The phone is listed with no seat straight away; the Storyteller picks one.
+	const seatFor = page.getByRole('combobox', { name: 'Seat for Alex' });
+	await expect(seatFor).toContainText('No seat');
+	await seatFor.tap();
+	await page.getByRole('option', { name: 'Seat 3', exact: true }).tap();
+	await expect(seatFor).toContainText('Seat 3');
 
 	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
@@ -91,6 +95,12 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 		'aria-label',
 		/^Seat 3: Alex/
 	);
+	// A seated player's new name goes on their seat, with no approval either.
+	const rename = await seatSheet(phone);
+	await rename.getByRole('textbox', { name: 'Your name' }).fill('Alex K');
+	await rename.getByRole('button', { name: 'Save' }).tap();
+	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex K.');
+	await expect(page.getByRole('combobox', { name: 'Seat for Alex K' })).toContainText('Seat 3');
 
 	// Coming back (Trevor, 2026-10-19: "it booted me out like I had not joined it yet"): Join
 	// game lists the room, and opening it shows the seat this phone already has. Resume game
@@ -108,15 +118,15 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
 	// A phone with a seat opens on the script.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
-	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
+	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex K.');
 	const again = await seatSheet(phone);
-	await expect(again.getByRole('radio', { name: /^Seat 3/ })).toBeChecked();
-	await expect(again.getByRole('button', { name: 'Ask the Storyteller' })).toBeDisabled();
+	await expect(again.getByRole('textbox', { name: 'Your name' })).toHaveValue('Alex K');
+	await expect(again.getByRole('button', { name: 'Save' })).toBeDisabled();
 	await phone.keyboard.press('Escape');
 
-	// Approving named the seat on the board, as an ordinary change.
+	// Seating, and the new name, named the seat on the board, as ordinary changes.
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
-	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex"]')).toBeVisible();
+	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex K"]')).toBeVisible();
 
 	// Under the code: connected, with who is in the room (Trevor, 2026-10-20).
 	await page.goto(`${board}/room`);
@@ -151,7 +161,7 @@ test('End game keeps the room open and tells its phones the game is over', async
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
-	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	await expect(status).toHaveText('Type the name to show, and the Storyteller will seat you.');
 
 	await page.goto(board);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -177,7 +187,7 @@ test('End game keeps the room open and tells its phones the game is over', async
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	await expect(status).toHaveText('Type the name to show, and the Storyteller will seat you.');
 	await phoneContext.close();
 });
 
@@ -194,10 +204,10 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
-	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
-	// In its place all game, usable once the game is over (no reflow).
+	await expect(status).toHaveText('Type the name to show, and the Storyteller will seat you.');
+	// Hidden until the game is over.
 	const rate = phone.getByRole('button', { name: 'Rate game' });
-	await expect(rate).toBeDisabled();
+	await expect(rate).toHaveCount(0);
 
 	await page.goto(board);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -238,6 +248,30 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 		'true'
 	);
 	await phoneContext.close();
+
+	// The Storyteller reads it from the ended game's menu; it is saved with the game on this
+	// device, so it is still there after a reload (Trevor, 2026-10-25).
+	const feedback = page.getByTestId('game-feedback');
+	async function openFeedback() {
+		await page.getByRole('button', { name: 'More', exact: true }).tap();
+		await page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Player feedback' })
+			.tap();
+		await expect(feedback).toBeVisible();
+	}
+	await openFeedback();
+	await expect(feedback.getByTestId('feedback-average')).toHaveText('3.5 of 5 from 1 rated');
+	await expect(feedback.getByTestId('feedback-accolade-counts')).toHaveText('⏱️ Great pacing × 1');
+	const entry = feedback.getByTestId('feedback-entry');
+	await expect(entry).toHaveCount(1);
+	await expect(entry).toContainText('Anonymous');
+	await expect(entry).toContainText('3.5 of 5');
+	await expect(entry).toContainText('A great night.');
+	await page.reload();
+	await openFeedback();
+	await expect(entry).toHaveCount(1);
+	await expect(entry).toContainText('A great night.');
 });
 
 test('after End game the Storyteller shares the finished grimoire with the room', async ({
@@ -253,7 +287,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
-	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	await expect(status).toHaveText('Type the name to show, and the Storyteller will seat you.');
 	// Not there during the game, where it would do nothing (Trevor, 2026-10-25).
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	const finalSwitch = phone.getByRole('checkbox', { name: 'Final grimoire' });
@@ -309,7 +343,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	await expect(status).toHaveText('Type the name to show, and the Storyteller will seat you.');
 	await expect(final).toHaveCount(0);
 	await expect(finalSwitch).toHaveCount(0);
 	await phoneContext.close();
@@ -374,6 +408,8 @@ test('after a game the room votes on the next script, and the next game opens in
 	page,
 	browser
 }, testInfo) => {
+	// A whole game, then the vote with each of its controls (Trevor, 2026-10-26).
+	test.setTimeout(120_000);
 	// Trevor, 2026-10-20 (plan R1): the same room for the next game, a script vote by single
 	// choice, multiple choice or ranking, and "Storyteller is choosing a script" meanwhile.
 	const board = await startGame(page);
@@ -385,7 +421,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	const status = phone.getByTestId('join-status');
-	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	await expect(status).toHaveText('Type the name to show, and the Storyteller will seat you.');
 
 	await page.goto(board);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -445,20 +481,74 @@ test('after a game the room votes on the next script, and the next game opens in
 	// The room's code stays on the vote, for players not in the room yet (Trevor, 2026-10-23).
 	await expect(sheet.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
 
-	// The phone ranks them; the Storyteller sees points by place.
+	// The phone ranks them, then votes (Trevor, 2026-10-26: "I chose my choices but can't
+	// vote, change, or review details"); nothing is sent until Vote.
 	const ballot = phone.getByRole('dialog', { name: 'Vote on the next script' });
 	await expect(ballot.getByText('Tap the scripts in order, your favourite first.')).toBeVisible();
 	await expect(ballot.getByTestId('script-vote-time')).toHaveText(/^Time left: [12]:\d\d$/);
-	await ballot.getByRole('button', { name: /Bad Moon Rising/ }).tap();
-	await ballot.getByRole('button', { name: /Trouble Brewing/ }).tap();
-	await expect(ballot.getByRole('button', { name: /Bad Moon Rising/ })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	const vote = ballot.getByRole('button', { name: 'Vote', exact: true });
+	await expect(vote).toBeDisabled();
+	await ballot.locator('[aria-pressed]').filter({ hasText: 'Trouble Brewing' }).tap();
+	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 0 of 1');
+	// Rearranged: a ranking lists its order, and each placed script moves up or down.
+	const rows = ballot.getByTestId('script-ballot').getByRole('listitem');
+	await expect(rows).toHaveText([/^1\s*Trouble Brewing/, /^2\s*Bad Moon Rising/]);
+	await expect(ballot.getByRole('button', { name: 'Move Trouble Brewing up' })).toBeDisabled();
+	await ballot.getByRole('button', { name: 'Move Bad Moon Rising up' }).tap();
+	await expect(rows).toHaveText([/^1\s*Bad Moon Rising/, /^2\s*Trouble Brewing/]);
+	await vote.tap();
 	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
+	const change = ballot.getByRole('button', { name: 'Change vote' });
+	await expect(change).toBeDisabled();
+	// A ranking is an instant runoff (Trevor, 2026-10-26): a majority of first choices wins.
 	const results = sheet.getByTestId('script-vote-results').getByRole('listitem');
-	await expect(results.filter({ hasText: 'Bad Moon Rising' })).toContainText('Points: 2');
-	await expect(results.filter({ hasText: 'Trouble Brewing' })).toContainText('Points: 1');
+	await expect(results.filter({ hasText: 'Bad Moon Rising' })).toContainText('Winner · Votes: 1');
+	await expect(results.filter({ hasText: 'Trouble Brewing' })).toContainText('Votes: 0');
+
+	// Each script's details: its author and characters.
+	await ballot.getByRole('button', { name: 'Details of Bad Moon Rising' }).tap();
+	const details = phone.getByRole('dialog', { name: 'Script details' });
+	await expect(details.getByTestId('script-details-name')).toHaveText('Bad Moon Rising');
+	await expect(details.getByText('The Pandemonium Institute')).toBeVisible();
+	await expect(details.getByTestId('script-characters')).toContainText('Grandmother');
+	await details.getByRole('button', { name: 'Close' }).tap();
+	await expect(details).toHaveCount(0);
+	await expect(ballot).toBeVisible();
+
+	// Backing out takes the ballot back; voting again puts it in.
+	await ballot.getByRole('button', { name: 'Withdraw vote' }).tap();
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 0 of 1');
+	await expect(ballot.getByRole('button', { name: 'Withdraw vote' })).toBeDisabled();
+	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
+	await vote.tap();
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
+
+	// The Storyteller lets players see the count (Trevor, 2026-10-26).
+	await expect(ballot.getByTestId('vote-count')).toHaveCount(0);
+	await sheet.getByText('Players see the count', { exact: true }).tap();
+	await expect(
+		ballot
+			.locator('[aria-pressed]')
+			.filter({ hasText: 'Bad Moon Rising' })
+			.getByTestId('vote-count')
+	).toHaveText('Winner · Votes: 1');
+	await expect(ballot.getByTestId('script-ballot-count')).toHaveText('Voted: 1 of 1');
+
+	// A closed ballot opens again from the room row.
+	await phone.keyboard.press('Escape');
+	await expect(ballot).toHaveCount(0);
+	await phone.getByRole('button', { name: 'Ballot' }).tap();
+	await expect(ballot).toBeVisible();
+
+	// Ending early gives phones a final call (Trevor, 2026-10-26: "15 second final vote
+	// warning"); it opens the ballot on a phone that had closed it.
+	await phone.keyboard.press('Escape');
+	await sheet.getByRole('button', { name: 'End vote' }).tap();
+	await expect(ballot.getByTestId('script-vote-time')).toHaveText(
+		/^Final call: voting closes in 0:1\d$/
+	);
+	await expect(sheet.getByRole('button', { name: 'End vote' })).toBeDisabled();
 
 	// Playing the winner closes the vote and chooses it on New game.
 	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
@@ -466,7 +556,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	// The same room carries the next game: its script, and seats to ask for again.
-	await expect(status).toHaveText('Choose your seat and type your name, then ask the Storyteller.');
+	await expect(status).toHaveText('Type the name to show, and the Storyteller will seat you.');
 	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
 	await phoneContext.close();
 });
@@ -499,6 +589,7 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 		.getByRole('dialog', { name: 'Seat 2 · Seat 2' })
 		.getByRole('button', { name: 'Empath', exact: true })
 		.tap();
+	await phone.keyboard.press('Escape');
 	await expect(phone.getByTestId('grim-seat').nth(1)).toHaveAttribute('data-guess', 'true');
 
 	// The same script again, in the same room.
@@ -548,7 +639,8 @@ test('New game opens a room for the vote before any game or script', async ({
 	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
 	const ballot = phone.getByRole('dialog', { name: 'Vote on the next script' });
-	await ballot.getByRole('button', { name: /Bad Moon Rising/ }).tap();
+	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
+	await ballot.getByRole('button', { name: 'Vote', exact: true }).tap();
 	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
 	await sheet.getByRole('button', { name: 'Close vote' }).tap();
 	await expect(ballot).toHaveCount(0);
@@ -579,7 +671,12 @@ test('New game opens a room for the vote before any game or script', async ({
 	const modeBallot = phone.getByRole('dialog', { name: 'Vote on the game mode' });
 	await expect(modeBallot.getByText('Pick the game mode you want to play next.')).toBeVisible();
 	await expect(modeBallot.getByTestId('script-ballot').getByRole('listitem')).toHaveCount(5);
-	await modeBallot.getByRole('button', { name: /Sushi Buffet/ }).tap();
+	await modeBallot.locator('[aria-pressed]').filter({ hasText: 'Sushi Buffet' }).tap();
+	await modeBallot.getByRole('button', { name: 'Vote', exact: true }).tap();
+	// A game mode has no script details.
+	await expect(modeBallot.locator('[aria-pressed]').filter({ hasText: '^Details of' })).toHaveCount(
+		0
+	);
 	const results = modeSheet.getByTestId('script-vote-results').getByRole('listitem');
 	await expect(results.filter({ hasText: 'Sushi Buffet' })).toContainText('Votes: 1');
 	await results.filter({ hasText: 'Sushi Buffet' }).getByRole('button', { name: 'Play' }).tap();
@@ -701,7 +798,7 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await expect(phone.getByTestId('join-status')).toHaveText(
-		'Choose your seat and type your name, then ask the Storyteller.'
+		'Type the name to show, and the Storyteller will seat you.'
 	);
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 	await expect(phone.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
@@ -1225,6 +1322,14 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Game time ticks, so it is read as the board shows it, not to the second.
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
+	// Each line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
+	const info = await openGameInfo(page);
+	await info.getByRole('button', { name: 'Author on the board' }).tap();
+	await info.getByRole('button', { name: 'Players on the board' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeHidden();
+	await expect(corner).not.toContainText('by The Pandemonium Institute');
+	await expect(corner.getByTestId('board-players')).toContainText('Players: 8');
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
@@ -1245,18 +1350,51 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	);
 	await expect(seats.first().getByTestId('dead-mark')).toHaveAttribute('data-vote', 'used');
 
-	// A guess is the player's own, on this phone only, and stays after a reload.
+	// A guess is the player's own, on this phone only, and stays after a reload. The sheet
+	// stays open, its guesses at the top, so a seat can take more than one.
 	await seats.nth(1).tap();
-	await phone
-		.getByRole('dialog', { name: 'Seat 2 · Seat 2' })
-		.getByRole('button', { name: 'Empath', exact: true })
-		.tap();
+	const seatTwo = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
+	const yours = seatTwo.getByTestId('seat-guesses');
+	await expect(yours).toHaveText(/None/);
+	await seatTwo.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	await expect(seats.nth(1)).toHaveAttribute('data-guess', 'true');
+	await expect(seats.nth(1).getByTestId('guess-marks')).toHaveCount(0);
+	// Several roles for one seat (Trevor, 2026-10-25): the newest is the main one, on the face,
+	// and the others are icons in a pill over the top-right rim.
+	await seatTwo.getByRole('button', { name: 'Spy', exact: true }).tap();
+	await expect(yours.getByRole('button')).toHaveCount(2);
+	await expect(yours.getByRole('button').first()).toHaveAttribute('aria-pressed', 'true');
+	await expect(yours.getByRole('button').first()).toContainText('Spy');
+	await phone.keyboard.press('Escape');
+	await expect(seatTwo).toBeHidden();
+	await expect(seats.nth(1)).toHaveAttribute(
+		'aria-label',
+		'Seat 2: Seat 2, your guess: Spy, Empath'
+	);
+	await expect(seats.nth(1).getByTestId('guess-mark')).toHaveCount(1);
+	await expect(seats.nth(1).getByRole('img', { name: 'Empath' })).toBeVisible();
+	// Tapping the pill makes the next guess the main one, without opening the sheet.
+	await seats.nth(1).getByTestId('guess-marks').tap();
+	await expect(seatTwo).toBeHidden();
+	await expect(seats.nth(1)).toHaveAttribute(
+		'aria-label',
+		'Seat 2: Seat 2, your guess: Empath, Spy'
+	);
+	// In the sheet, tapping a guess makes it the main one, and tapping it in the list takes it off.
+	await seats.nth(1).tap();
+	await yours.getByRole('button', { name: /Spy/ }).tap();
+	await expect(yours.getByRole('button').first()).toContainText('Spy');
+	// The picker's Spy, after the chip of the same name.
+	await seatTwo.getByRole('button', { name: 'Spy', exact: true }).last().tap();
+	await expect(yours.getByRole('button')).toHaveCount(1);
+	await phone.keyboard.press('Escape');
+	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	// Or only a type, or only good or evil (Trevor, 2026-10-24).
 	await seats.nth(2).tap();
 	const guessSheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
 	await guessSheet.getByRole('button', { name: 'Minion', exact: true }).tap();
+	await phone.keyboard.press('Escape');
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
 	await expect(seats.nth(2).getByRole('img', { name: 'Minion' })).toBeVisible();
 	await seats.nth(3).tap();
@@ -1264,6 +1402,7 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 		.getByRole('dialog', { name: 'Seat 4 · Seat 4' })
 		.getByRole('button', { name: 'Good', exact: true })
 		.tap();
+	await phone.keyboard.press('Escape');
 	await expect(seats.nth(3)).toHaveAttribute('aria-label', 'Seat 4: Seat 4, your guess: Good');
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
@@ -1450,12 +1589,9 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex Kim');
 	// Initials are always on, with no switch (Trevor, 2026-10-25).
 	await expect(you.getByText('Initials on your seat', { exact: true })).toHaveCount(0);
-	await you.getByText('Seat 3', { exact: true }).tap();
-	await you.getByRole('button', { name: 'Ask the Storyteller' }).tap();
-	await page
-		.getByRole('listitem', { name: 'Alex Kim asks for Seat 3' })
-		.getByRole('button', { name: 'Approve' })
-		.tap();
+	await you.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('combobox', { name: 'Seat for Alex Kim' }).tap();
+	await page.getByRole('option', { name: 'Seat 3', exact: true }).tap();
 	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex Kim.');
 
 	// On the board: the seat has no character yet, so the initials are its face.
@@ -1485,6 +1621,7 @@ test("a player's initials and frame go on their seat, and their guess shows over
 	await empath.scrollIntoViewIfNeeded();
 	await expect(empath).toBeInViewport();
 	await empath.tap();
+	await phone.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(mine).toHaveAttribute('aria-label', /your guess: Empath/);
 	await expect(mine.getByTestId('avatar-face')).toBeVisible();

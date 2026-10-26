@@ -2375,7 +2375,9 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toBeDisabled();
 	await prompt.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
-	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toContainText('Demon died');
+	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toContainText(
+		'Demon execution'
+	);
 	await prompt.getByRole('button', { name: 'Confirm' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
@@ -2452,16 +2454,13 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
 	// Read-only: nothing pops up in the middle (Trevor, 2026-10-18), and the game over line
-	// sits in History's strip, out of the circle, so ending moves nothing (2026-10-24).
+	// is a status above Game info, leaving History's strip its room (2026-10-25).
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
 	const over = (await page.getByTestId('game-over').boundingBox())!;
-	const strip = (await steps.boundingBox())!;
-	expect(over.y).toBeGreaterThanOrEqual(strip.y);
-	expect(over.y + over.height).toBeLessThanOrEqual(strip.y + strip.height + 1);
-	expect(over.y).toBeGreaterThanOrEqual(
-		(await page.locator('.board').boundingBox())!.y +
-			(await page.locator('.board').boundingBox())!.height
-	);
+	const corner = (await page.getByTestId('script-title').boundingBox())!;
+	await expect(steps.getByTestId('game-over')).toHaveCount(0);
+	expect(over.y + over.height).toBeLessThanOrEqual(corner.y + 1);
+	expect(over.x).toBeLessThan(corner.x + corner.width);
 	await steps.getByRole('button', { name: 'Next change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 	await expect(steps.getByRole('button', { name: 'Next change' })).toBeDisabled();
@@ -3896,7 +3895,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(shown).toContainText('Fortune Teller');
 });
 
-test('an information step suggests every valid number, and no sets of players', async ({
+test('an information step suggests every valid number, and the roles it could show', async ({
 	page
 }) => {
 	await startGame(page);
@@ -3913,11 +3912,12 @@ test('an information step suggests every valid number, and no sets of players', 
 	await give(2, 'Chef');
 	await give(3, 'Empath');
 	await give(4, 'Imp');
-	// Trevor (2026-10-18): "only show info suggest for numbers, not sets of characters".
-	// Read from the walk-through: closing a step that has setup reminders on a phone hits a
-	// dialog library crash, reported to the dialog's owner (2026-10-18).
+	// A "learn a role" step names the Townsfolk it could show (Trevor, 2026-10-25), read from
+	// the walk-through's one line (https://wiki.bloodontheclocktower.com/Washerwoman).
 	const washerwoman = await walkTo(page, 'Washerwoman');
-	await expect(washerwoman.getByTestId('night-suggested')).toHaveCount(0);
+	await expect(washerwoman.getByTestId('night-suggested')).toHaveText(
+		/^Valid Information:\s*Chef\s*,\s*Empath\s*$/
+	);
 	// No evil pair sits together: the Chef's 0 (https://wiki.bloodontheclocktower.com/Chef).
 	const chef = await openStep(page, 'Chef');
 	const rows = chef.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
@@ -3928,6 +3928,51 @@ test('an information step suggests every valid number, and no sets of players', 
 	// to give (Trevor, 2026-10-22).
 	const strip = await walkTo(page, 'Chef');
 	await expect(strip.getByTestId('night-suggested')).toHaveText('Valid Information: (0)');
+});
+
+// Trevor (2026-10-25): the Investigator's step shows which Minion it could see, and a Recluse
+// as a choice of Minion (https://wiki.bloodontheclocktower.com/Investigator, /Recluse).
+test('the Investigator step lists each Minion, and the Recluse as a Minion you pick', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Investigator'],
+		[2, 'Recluse'],
+		[3, 'Poisoner'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const step = await openStep(page, 'Investigator');
+	const rows = step.getByTestId('learned-roles').getByRole('listitem');
+	await expect(rows).toHaveCount(2);
+	await expect(rows.first()).toContainText('Poisoner');
+	await expect(rows.first()).toContainText('Seat 3');
+	await expect(rows.first()).toContainText('any other player');
+	const recluse = rows.nth(1);
+	await expect(recluse).toContainText('Registers');
+	// Nothing is shown until the Storyteller picks which Minion the Recluse is shown as.
+	const show = recluse.getByRole('button', { name: 'Show to player' });
+	await expect(show).toBeDisabled();
+	// Tapping first scrolls the row into view, and a scroll closes an open list (Select).
+	const shownAs = recluse.getByRole('combobox', { name: 'Shown as' });
+	await shownAs.scrollIntoViewIfNeeded();
+	const baron = page.getByRole('option', { name: 'Baron' });
+	await expect(async () => {
+		if (!(await baron.isVisible())) await shownAs.tap();
+		await expect(baron).toBeVisible({ timeout: 1000 });
+	}).toPass();
+	await baron.tap();
+	await show.tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown).toContainText('Baron');
 });
 
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({
@@ -5016,7 +5061,7 @@ test('the Storyteller is named on the Characters screen and renamed from the cor
 	await openGameInfo(page);
 	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
 	// One pencil in Game info's header edits what can change (Trevor, 2026-10-19).
-	await expect(info.locator('tr[data-field="storyteller"] button')).toHaveCount(0);
+	await expect(info.locator('tr[data-field="storyteller"] td:last-child button')).toHaveCount(0);
 	await info.getByTestId('game-info-edit').tap();
 	await expect(info).toBeHidden();
 	const dialog = page.getByRole('dialog', { name: 'Edit game info' });
@@ -5039,7 +5084,7 @@ test('the corner script name opens the game’s info, in a Standard game too', a
 	await startGame(page);
 	await nameStoryteller(page, 'Trev');
 	const dialog = page.getByRole('dialog', { name: 'Game info', exact: true });
-	const row = (field: string) => dialog.locator(`tr[data-field="${field}"] td`);
+	const row = (field: string) => dialog.locator(`tr[data-field="${field}"] td:last-child`);
 	await openGameInfo(page);
 	await expect(row('script')).toHaveText('Trouble Brewing');
 	await expect(row('storyteller')).toHaveText('Trev');
@@ -5862,7 +5907,7 @@ test('with Track nominations on, a seat sheet records who nominated whom under t
 	// None clears it.
 	await sheet.getByTestId('sheet-nominated-by').tap();
 	await page
-		.getByRole('dialog', { name: 'Who nominated Seat 3?' })
+		.getByRole('dialog', { name: /^Who nominated Seat 3\s?\?$/ })
 		.getByRole('button', { name: 'None', exact: true })
 		.tap();
 	await expect(sheet.getByTestId('sheet-nominated-by')).toHaveText('None');
@@ -5926,7 +5971,8 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 
 // Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented
 // nomination tracking". The Town Crier's answer comes from the nominations recorded today
-// (https://wiki.bloodontheclocktower.com/Town_Crier), and is unknown until one is.
+// (https://wiki.bloodontheclocktower.com/Town_Crier): a Minion's recorded nomination marks
+// Minion nominated and swaps his tokens (Trevor, 2026-10-24).
 test("the Town Crier's step reads today's recorded nominations", async ({ page }) => {
 	await startGame(page, 'Sects & Violets');
 	for (const [number, name] of [
@@ -5948,12 +5994,13 @@ test("the Town Crier's step reads today's recorded nominations", async ({ page }
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	await day.getByRole('button', { name: 'Close' }).tap();
 	await expect(day).toBeHidden();
-
-	const step = await openStep(page, 'Town Crier');
-	let suggested = step.getByTestId('night-suggested');
-	await expect(suggested).toContainText('No nominations recorded today');
-	await step.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(step).toBeHidden();
+	// Dawn puts his "not nominated" token on (wiki How to Run).
+	const token = (label: string) =>
+		// Placed on the board, not waiting in the reminder bank.
+		page.locator(
+			`[data-testid="board-reminder"][aria-label="${label} reminder"]:not([aria-label="Reminder bank"] *)`
+		);
+	await expect(token('Minions Not Nominated')).toHaveCount(1);
 
 	// The Witch (a Minion) nominates the Fang Gu.
 	await trackNominations(page);
@@ -5961,7 +6008,9 @@ test("the Town Crier's step reads today's recorded nominations", async ({ page }
 	await sheet.getByTestId('sheet-nominated').tap();
 	await page.getByRole('dialog', { name: 'Who did Seat 2 nominate?' }).getByText('Seat 3').tap();
 	await closeSheet(page);
-	suggested = (await openStep(page, 'Town Crier')).getByTestId('night-suggested');
+	await expect(token('Minion Nominated')).toHaveCount(1);
+	await expect(token('Minions Not Nominated')).toHaveCount(0);
+	const suggested = (await openStep(page, 'Town Crier')).getByTestId('night-suggested');
 	await expect(suggested).not.toContainText('No nominations recorded today');
 	await expect(suggested).toContainText('Yes');
 	await expect(suggested.locator('.because')).toContainText('Seat 2');

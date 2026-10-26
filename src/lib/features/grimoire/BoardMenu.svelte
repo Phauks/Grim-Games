@@ -26,6 +26,8 @@
 		onAddRule: () => void;
 		onArrange: () => void;
 		onExport: () => void;
+		/** Players' feedback on the ended game; not for a spectator's board. */
+		onFeedback?: () => void;
 		onReopen: () => void;
 		onEnd: () => void;
 	}
@@ -43,6 +45,7 @@
 		onAddRule,
 		onArrange,
 		onExport,
+		onFeedback,
 		onReopen,
 		onEnd
 	}: Props = $props();
@@ -115,6 +118,11 @@
 			<Button variant="quiet" icon="download" onclick={() => fromMenu(onExport)}>
 				Export game
 			</Button>
+			{#if onFeedback}
+				<Button variant="quiet" icon="feedback" onclick={() => fromMenu(onFeedback)}>
+					{t('room.feedback.view')}
+				</Button>
+			{/if}
 			<Button variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}>Reopen game</Button>
 		{:else}
 			<Button variant="danger" icon="close" onclick={() => fromMenu(onEnd)}>End game</Button>

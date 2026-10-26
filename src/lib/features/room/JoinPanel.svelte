@@ -1,12 +1,9 @@
 <script lang="ts" module>
-	import type { SeatId as DraftSeat } from '#lib/core/model/index.ts';
-
 	/**
-	 * What the phone typed or chose in each room before asking. The panel is drawn again when the
-	 * room's script arrives (the page gains its tabs), and that must not lose it.
+	 * What the phone typed in each room before saving. The panel is drawn again when the room's
+	 * script arrives (the page gains its tabs), and that must not lose it.
 	 */
-	const drafts: Record<string, { name: string; seat: DraftSeat | ''; placed?: DraftSeat | '' }> =
-		{};
+	const drafts: Record<string, { name: string }> = {};
 </script>
 
 <script lang="ts">
@@ -30,6 +27,7 @@
 	import ScriptBallot from './ScriptBallot.svelte';
 	import FeedbackSheet from './FeedbackSheet.svelte';
 	import VoteChoice from './VoteChoice.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 	import { followRoomScript } from './room-script.svelte.ts';
@@ -42,8 +40,9 @@
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
-	 * over /play's tabs, which says where this phone sits and opens a sheet for its name, seat
-	 * and initials (plan J12: no Room tab), and the Specters vote.
+	 * over /play's tabs, which says where this phone sits and opens a sheet for its name and
+	 * initials (plan J12: no Room tab), and the Specters vote. The player sets only the name
+	 * that shows; the Storyteller seats them (Trevor, 2026-10-25).
 	 */
 	interface Props {
 		/** The room's code; undefined shows the code form. */
@@ -72,8 +71,6 @@
 	let player = $state.raw<RoomPlayer>();
 	let typed = $state('');
 	let name = $state('');
-	/** '' is "any seat". */
-	let seat = $state<SeatId | ''>('');
 
 	$effect(() => {
 		if (!valid) return;
@@ -83,12 +80,10 @@
 		player = p;
 		const draft = drafts[valid];
 		name = draft?.name ?? untrack(() => p.view?.me.name ?? p.savedName);
-		seat = draft?.seat ?? '';
-		lastPlaced = draft?.placed;
 		return () => releaseRoom(p);
 	});
 	$effect(() => {
-		if (valid) drafts[valid] = { name, seat, placed: lastPlaced };
+		if (valid) drafts[valid] = { name };
 	});
 
 	// The player's avatar and frame go to the room as they pick them (plan R6).
@@ -128,23 +123,10 @@
 	$effect(() => onStoryteller?.(storyteller));
 	const mine = $derived(view?.me.seatId);
 	$effect(() => {
-		if (view?.request || mine) untrack(() => onSeated?.());
+		if (view?.me.name || mine) untrack(() => onSeated?.());
 	});
-	// The seat this phone has, or asked for, is the one chosen when the room opens again.
-	const placed = $derived(
-		view ? (view.request ? (view.request.seatId ?? '') : (mine ?? '')) : undefined
-	);
-	/** The seat the room last gave or held, so only a change to it moves the choice. */
-	let lastPlaced: SeatId | '' | undefined;
-	$effect(() => {
-		if (placed === undefined || placed === lastPlaced) return;
-		lastPlaced = placed;
-		seat = placed;
-	});
-	/** Asking again for the seat and name this phone already has changes nothing. */
-	const unchanged = $derived(
-		!!view && !view.request && !!mine && seat === mine && name.trim() === view.me.name
-	);
+	/** The name this phone has: saving it again changes nothing. */
+	const unchanged = $derived(!!view && name.trim() === view.me.name);
 	const seatName = (seatId?: SeatId) => {
 		const s = seats.find((x) => x.seatId === seatId);
 		return s ? t('room.seatLower', { number: s.seatNumber }) : t('room.anySeatLower');
@@ -159,8 +141,6 @@
 				: view.ended.winner === 'evil'
 					? t('room.gameOverEvil')
 					: t('room.gameOver');
-		if (view.request)
-			return t('room.waiting', { name: view.request.name, seat: seatName(view.request.seatId) });
 		if (mine) return t('room.seated', { seat: seatName(mine), name: view.me.name ?? '' });
 		if (view.me.name) return t('room.unseated', { name: view.me.name });
 		return t('room.choose');
@@ -170,6 +150,8 @@
 	const vote = $derived(view?.vote);
 	let voting = $state(false);
 	let rating = $state(false);
+	/** The script vote's ballot, which also opens by itself for each new vote. */
+	let balloting = $state(false);
 	let seenVote: string | undefined;
 	$effect(() => {
 		const id = vote?.voteId;
@@ -290,11 +272,12 @@
 		return true;
 	}
 
+	/** Sends the name; a seated player keeps their seat, and a new one waits to be seated. */
 	function ask(event: SubmitEvent) {
 		event.preventDefault();
 		const n = name.trim();
 		if (!n || !player) return;
-		player.ask(n, seat || undefined);
+		player.setName(n);
 		editing = false;
 	}
 </script>
@@ -393,10 +376,23 @@
 			<Icon name="edit" />
 			<span class="visually-hidden">{t('room.editYou')}</span>
 		</button>
-		<!-- Always here; usable once the game is over (plan R4), so nothing moves. -->
-		<Button disabled={!view?.endedGameId} aria-haspopup="dialog" onclick={() => (rating = true)}
-			>{t('room.feedback.open')}</Button
-		>
+		<!-- Only while a script vote is open, so a closed ballot can be opened again (Trevor,
+		     2026-10-26); it shares the row's height, so nothing below moves. -->
+		{#if view?.scriptVote}
+			<IconButton
+				icon="vote"
+				label={t('room.scriptVote.ballot')}
+				outlined
+				aria-haspopup="dialog"
+				onclick={() => (balloting = true)}
+			/>
+		{/if}
+		<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
+		{#if view?.endedGameId}
+			<Button aria-haspopup="dialog" onclick={() => (rating = true)}
+				>{t('room.feedback.open')}</Button
+			>
+		{/if}
 	</div>
 	<Dialog bind:open={editing} title={t('room.you')}>
 		<form onsubmit={ask}>
@@ -411,52 +407,12 @@
 					onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
 				/>
 			</ClearableField>
-			<fieldset>
-				<legend>{t('room.yourSeat')}</legend>
-				<div class="seats">
-					<label class="seat">
-						<input type="radio" bind:group={seat} value="" />
-						<span>{t('room.anySeat')}</span>
-					</label>
-					{#each seats as s (s.seatId)}
-						<label class="seat" data-mine={s.seatId === mine || undefined}>
-							<input type="radio" bind:group={seat} value={s.seatId} />
-							<span>{t('common.seat', { number: s.seatNumber })}</span>
-							<span class="sub">
-								{s.seatId === mine
-									? t('room.mine')
-									: (s.playerName ??
-										(view?.takenSeats.includes(s.seatId) ? t('room.taken') : t('room.empty')))}
-							</span>
-						</label>
-					{/each}
-				</div>
-			</fieldset>
-			<!-- Ask is the sheet's Confirm; withdrawing a request or leaving a seat sit at the
-			     bottom left, always there and usable when they apply, so nothing moves. -->
 			<ModalActions
 				onCancel={() => (editing = false)}
 				submit
 				disabled={!name.trim() || unchanged || status !== 'open'}
-				confirmLabel={t('room.ask')}
-			>
-				{#snippet start()}
-					<Button
-						variant="quiet"
-						disabled={!view?.request || status !== 'open'}
-						onclick={() => player?.cancel()}
-					>
-						{t('room.cancelRequest')}
-					</Button>
-					<Button
-						variant="quiet"
-						disabled={!mine || status !== 'open'}
-						onclick={() => player?.leaveSeat()}
-					>
-						{t('room.leaveSeat')}
-					</Button>
-				{/snippet}
-			</ModalActions>
+				confirmLabel={t('common.save')}
+			/>
 		</form>
 	</Dialog>
 {/if}
@@ -473,14 +429,19 @@
 					pressed={vote?.choice === option}
 					disabled={status !== 'open'}
 					onclick={() => player?.vote(option)}
-					>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</VoteChoice
+					>{#if s?.playerName}<PlayerBadge name={s.playerName} />{:else}{t('common.seat', {
+							number: s?.seatNumber ?? 0
+						})}{/if}</VoteChoice
 				>
 			</li>
 		{/each}
 	</ul>
 </Dialog>
 
-{#if player}<ScriptBallot {player} /><FeedbackSheet {player} bind:open={rating} />{/if}
+{#if player}<ScriptBallot {player} bind:open={balloting} /><FeedbackSheet
+		{player}
+		bind:open={rating}
+	/>{/if}
 
 <style>
 	form {
@@ -612,50 +573,6 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font: var(--font-control);
-	}
-	fieldset {
-		margin: 0;
-		padding: 0;
-		border: 0;
-		min-width: 0;
-	}
-	legend {
-		margin-bottom: var(--space-2);
-		padding: 0;
-	}
-	.seats {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
-		gap: var(--space-2);
-	}
-	.seat {
-		display: grid;
-		align-content: center;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-		cursor: pointer;
-	}
-	.seat:has(input:checked) {
-		border-color: var(--accent);
-		background: var(--surface-selected);
-	}
-	.seat:has(input:focus-visible) {
-		outline: 2px solid var(--accent);
-		outline-offset: 2px;
-	}
-	.seat input {
-		position: absolute;
-		opacity: 0;
-		pointer-events: none;
-	}
-	.sub {
-		overflow: hidden;
-		color: var(--on-surface-muted);
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	.ability {
 		margin: 0 0 var(--space-2);

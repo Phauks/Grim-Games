@@ -45,7 +45,7 @@
 	defaultValue="script"
 	onChange={change}
 />
-<div class="picture">
+<div class="picture" data-setting>
 	<!-- Its place is kept while there is no picture, so choosing one moves nothing. -->
 	<span class="thumb"
 		>{#if qrPicture.current}<img src={qrPicture.current} alt="" />{/if}</span
@@ -113,6 +113,7 @@
 
 <style>
 	.picture {
+		padding-block: var(--space-3) 0;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;

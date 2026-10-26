@@ -153,7 +153,7 @@
 			never send to our server.
 		</p>
 		<ul>
-			<li>Phones ask to join with a name, and the Storyteller approves each one.</li>
+			<li>Phones join with a name, and only the Storyteller sees it until they seat that phone.</li>
 			<li>Each device proves who it is with a random key, which the room keeps only as a hash.</li>
 			<li>A room is deleted when the Storyteller closes it, or 24 hours after it was last used.</li>
 			<li>The room code appears in our request logs; the room's contents don't.</li>

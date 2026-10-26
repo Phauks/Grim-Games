@@ -352,6 +352,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Tokens',
 		'Storyteller',
 		'Player',
+		'Language',
 		'Data'
 	]);
 	await expect(nav.getByRole('heading')).toHaveCount(0);

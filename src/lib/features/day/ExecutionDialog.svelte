@@ -1,13 +1,23 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/types.ts';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
-	import { executionSavers, protection } from '#lib/core/rules/index.ts';
+	import {
+		executionSavers,
+		protection,
+		suggestedMark,
+		unsetMarks,
+		type DayMark
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 
 	/**
 	 * Ending a day asks who was executed (Trevor, 2026-10-22: "execution button instead of the
@@ -22,11 +32,15 @@
 		/** Chosen to start with when nothing is logged yet (a seat's status chose Executed). */
 		chosen?: SeatId;
 		/**
-		 * The player executed, or undefined for no execution, and the Storyteller's Saved by:
-		 * a character, `dies` for None, or undefined to leave it to the grimoire. The dialog
-		 * closes first.
+		 * The player executed, or undefined for no execution; the Storyteller's Saved by: a
+		 * character, `dies` for None, or undefined to leave it to the grimoire; and today's
+		 * facts still unmarked, as confirmed here. The dialog closes first.
 		 */
-		onConfirm: (seatId: SeatId | undefined, save?: CharacterId | 'dies') => void;
+		onConfirm: (
+			seatId: SeatId | undefined,
+			save: CharacterId | 'dies' | undefined,
+			marks: Partial<Record<DayMark, boolean>>
+		) => void;
 	}
 
 	let { open = $bindable(), game, characters, chosen, onConfirm }: Props = $props();
@@ -37,8 +51,18 @@
 	const executed = $derived(
 		game.today.entries.findLast((e) => e.kind === 'execution')?.seatId as SeatId | undefined
 	);
+	/**
+	 * Today's yes-or-no facts nobody marked (Trevor, 2026-10-24: "On day end, it should confirm
+	 * demon did not vote"): each is asked here, off unless what was recorded says yes (a Minion's
+	 * recorded nomination), and Confirm marks it either way.
+	 */
+	let marks = $state<Partial<Record<DayMark, boolean>>>({});
 	$effect(() => {
-		if (open) choice = executed ?? chosen;
+		if (!open) return;
+		choice = executed ?? chosen;
+		marks = Object.fromEntries(
+			unsetMarks(game, characters).map((m) => [m, suggestedMark(game, m, characters) ?? false])
+		);
 	});
 
 	const DIES = 'dies';
@@ -115,7 +139,8 @@
 	{#if seat}
 		{@const character = seat.characterId ? characters.get(seat.characterId) : undefined}
 		<span class="candidate"
-			><span class="who">{option.label}</span>{#if character}<CharacterBadge
+			><span class="who"><PlayerBadge name={seatName(game, seat.seatId)} /></span
+			>{#if character}<CharacterBadge
 					characterId={character.id}
 					{character}
 					alignment={seat.alignment}
@@ -151,10 +176,11 @@
 	disabled={choice === undefined}
 	onConfirm={() =>
 		choice === NONE || choice === undefined
-			? onConfirm(undefined)
+			? onConfirm(undefined, undefined, { ...marks })
 			: onConfirm(
 					choice as SeatId,
-					saveOff || save === OVERRIDE ? undefined : (save as CharacterId | 'dies')
+					saveOff || save === OVERRIDE ? undefined : (save as CharacterId | 'dies'),
+					{ ...marks }
 				)}
 >
 	<div class="execution" data-testid="execution">
@@ -185,9 +211,11 @@
 		<!-- Its line is always there, so choosing never moves the buttons (no reflow). -->
 		<p class="saved" data-testid="execution-saved">
 			{#if savedByNow && choice}
-				{t('day.logExecutedSurvived', {
-					name: seatLabel(game, choice as SeatId)
-				})}{#if savedByNow !== OVERRIDE}{@const by =
+				<Sentence text={t('day.logExecutedSurvived', { name: slot('player') })}
+					>{#snippet fill()}<PlayerBadge
+							name={seatName(game, choice as SeatId)}
+						/>{/snippet}</Sentence
+				>{#if savedByNow !== OVERRIDE}{@const by =
 						characters.get(savedByNow)}{#if by}<CharacterBadge
 							characterId={by.id}
 							character={by}
@@ -195,6 +223,13 @@
 						/>{/if}{/if}
 			{/if}
 		</p>
+		{#each Object.keys(marks) as DayMark[] as mark (mark)}
+			<Toggle
+				label={t(`day.mark.${mark}`)}
+				checked={marks[mark] === true}
+				onChange={(checked) => (marks[mark] = checked)}
+			/>
+		{/each}
 	</div>
 </ConfirmDialog>
 
@@ -207,7 +242,8 @@
 		min-width: 0;
 	}
 	.who {
-		font-family: var(--font-player);
+		display: inline-flex;
+		min-width: 0;
 	}
 	.state {
 		display: inline-flex;

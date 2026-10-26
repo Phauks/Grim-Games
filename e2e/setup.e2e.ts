@@ -1329,6 +1329,58 @@ test('Back on a locked draw stays on the draw and asks for the PIN', async ({ pa
 	expect(page.url()).toBe(draw);
 });
 
+// Trevor (2026-10-25, Pixel): the back swipe's preview showed the Lock the draw sheet with the
+// PIN still typed in. The swipe shows the screen as it was when the draw's entry went on, so
+// that entry goes on only once the sheet has gone, and the PIN is blank as it closes.
+test('the locked draw goes into history only after the PIN sheet has gone', async ({ page }) => {
+	await page.addInitScript(() => {
+		const seen: { dialog: boolean; digits: string }[] = [];
+		(window as unknown as { pushes: typeof seen }).pushes = seen;
+		const push = history.pushState.bind(history);
+		history.pushState = (...args: Parameters<History['pushState']>) => {
+			const fields = [
+				...document.querySelectorAll<HTMLInputElement>('[data-testid="pin-dialog"] input')
+			];
+			seen.push({
+				dialog: !!document.querySelector('[data-scope="dialog"][data-part="content"]'),
+				digits: fields.map((f) => f.value).join('')
+			});
+			push(...args);
+		};
+	});
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
+	// Cancelled, Lock the draw leaves no entry of its own behind.
+	await page.getByTestId('draw-lock').tap();
+	await page
+		.getByRole('dialog', { name: 'Lock the draw' })
+		.getByRole('button', { name: 'Cancel' })
+		.tap();
+	await expect
+		.poll(() => page.evaluate(() => JSON.stringify(history.state).includes('drawLocked')))
+		.toBe(false);
+	const before = await page.evaluate(
+		() => (window as unknown as { pushes: unknown[] }).pushes.length
+	);
+	await page.getByTestId('draw-lock').tap();
+	const dialog = page.getByRole('dialog', { name: 'Lock the draw' });
+	await dialog.getByLabel('PIN', { exact: true }).fill('2468');
+	await dialog.getByLabel('PIN again').fill('2468');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
+	await expect
+		.poll(() => page.evaluate(() => (window as unknown as { pushes: unknown[] }).pushes.length))
+		.toBeGreaterThan(before);
+	const pushes = await page.evaluate(
+		(from) =>
+			(window as unknown as { pushes: { dialog: boolean; digits: string }[] }).pushes.slice(from),
+		before
+	);
+	for (const push of pushes) expect(push).toEqual({ dialog: false, digits: '' });
+});
+
 test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
 	page
 }) => {
@@ -1348,6 +1400,15 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
 	await expect(reveal.getByTestId('reveal-hold')).toHaveCount(0);
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	// No long-press buzz on the shown token or its text either (Trevor, 2026-10-25).
+	for (const id of ['reveal-token', 'reveal-name']) {
+		const buzzless = await reveal.getByTestId(id).evaluate((el) => {
+			const touch = new TouchEvent('touchstart', { cancelable: true, bubbles: true });
+			el.dispatchEvent(touch);
+			return touch.defaultPrevented;
+		});
+		expect(buzzless).toBe(true);
+	}
 	await reveal.getByRole('button', { name: 'Confirm' }).tap();
 
 	// A reload is still locked.
@@ -1388,10 +1449,16 @@ test('three wrong PINs make entry wait', async ({ page }) => {
 	await expect(pin.getByTestId('pin-message')).toHaveText(/^Try again in (30|29) seconds\.$/);
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
 	await expect(pin.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	// Forgot PIN sits behind ⋯, so Cancel and Confirm share one line (Trevor, 2026-10-25).
+	const cancel = await pin.getByRole('button', { name: 'Cancel' }).boundingBox();
+	const confirm = await pin.getByRole('button', { name: 'Confirm' }).boundingBox();
+	expect(Math.abs(cancel!.y - confirm!.y)).toBeLessThan(2);
 	// Forgot PIN counts down where everyone can see it, and can be stopped.
-	await pin.getByRole('button', { name: 'Forgot PIN' }).tap();
+	await pin.getByRole('button', { name: 'PIN options' }).tap();
+	await page.getByRole('button', { name: 'Forgot PIN' }).tap();
 	await expect(pin.getByTestId('pin-message')).toHaveText(/^Unlocking in (60|59) seconds\.$/);
-	await pin.getByRole('button', { name: 'Keep locked' }).tap();
+	await pin.getByRole('button', { name: 'PIN options' }).tap();
+	await page.getByRole('button', { name: 'Keep locked' }).tap();
 	await expect(pin.getByTestId('pin-message')).toHaveText(/^Try again in/);
 });
 

@@ -2,10 +2,10 @@ import { DurableObject } from 'cloudflare:workers';
 import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import {
 	canReveal,
-	cancelRequest,
 	castScriptBallot,
 	castVote,
 	closeScriptVote,
+	endScriptVote,
 	closeVote,
 	gameOver,
 	hostView,
@@ -16,6 +16,7 @@ import {
 	MAX_SCRIPT_BYTES,
 	newRoom,
 	openScriptVote,
+	showScriptVoteTally,
 	openVote,
 	parseClientMessage,
 	setLook,
@@ -23,14 +24,15 @@ import {
 	publish,
 	receiveFeedback,
 	reopenGame,
-	request,
-	resolve,
 	roomPreview,
+	seat,
+	setName,
 	setChoosing,
 	setViewers,
 	supportsProtocol,
 	unseat,
 	viewerFailed,
+	withoutRequests,
 	viewersLocked,
 	type ViewerFails,
 	type GrimoireView,
@@ -75,7 +77,8 @@ async function sha256(text: string): Promise<string> {
  */
 export class Room extends DurableObject<RoomEnv> {
 	private async load(): Promise<RoomState | undefined> {
-		return this.ctx.storage.get<RoomState>('room');
+		const room = await this.ctx.storage.get<RoomState>('room');
+		return room && withoutRequests(room);
 	}
 
 	/** Pushes the expiry back; called on every connection and message. */
@@ -188,9 +191,7 @@ export class Room extends DurableObject<RoomEnv> {
 		if (who.role === 'player') {
 			const id = who.memberId;
 			if (message.type === 'request') {
-				room = request(room, id, message, Date.now(), crypto.randomUUID());
-			} else if (message.type === 'cancel-request') {
-				room = cancelRequest(room, id);
+				room = setName(room, id, message);
 			} else if (message.type === 'leave-seat') {
 				room = unseat(room, id);
 			} else if (message.type === 'look') {
@@ -270,16 +271,11 @@ export class Room extends DurableObject<RoomEnv> {
 				}
 				return;
 			}
-			case 'resolve':
-				room = resolve(
-					room,
-					message.requestId,
-					message.accept === true,
-					typeof message.seatId === 'string' ? message.seatId : undefined
-				);
-				break;
 			case 'unseat':
 				room = unseat(room, message.memberId);
+				break;
+			case 'seat':
+				room = seat(room, message.memberId, message.seatId);
 				break;
 			case 'open-vote':
 				room = openVote(room, message.voteId, message.options, message.ability);
@@ -305,8 +301,15 @@ export class Room extends DurableObject<RoomEnv> {
 					message.options,
 					message.minutes,
 					Date.now(),
-					message.subject
+					message.subject,
+					message.showTally
 				);
+				break;
+			case 'script-vote-tally':
+				room = showScriptVoteTally(room, message.show);
+				break;
+			case 'end-script-vote':
+				room = endScriptVote(room, Date.now());
 				break;
 			case 'close-script-vote':
 				room = closeScriptVote(room);
@@ -383,11 +386,14 @@ export class Room extends DurableObject<RoomEnv> {
 	/** Stores the room and sends every device its updated view. */
 	private async save(room: RoomState): Promise<void> {
 		await this.ctx.storage.put('room', room);
-		const host = JSON.stringify(hostView(room, this.present()));
+		const present = this.present();
+		const host = JSON.stringify(hostView(room, present));
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
 			if (!who || who.role === 'viewer') continue;
-			socket.send(who.role === 'host' ? host : JSON.stringify(playerView(room, who.memberId)));
+			socket.send(
+				who.role === 'host' ? host : JSON.stringify(playerView(room, who.memberId, present))
+			);
 		}
 	}
 

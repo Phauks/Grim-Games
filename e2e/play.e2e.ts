@@ -649,6 +649,31 @@ test('the Script sheet can be made compact from Settings', async ({ page }) => {
 	expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test('the sheet background colours the whole player screen, its dialogs included', async ({
+	page
+}) => {
+	const page_ = page.locator('html');
+	await expect(page_).toHaveCSS('background-color', 'rgb(20, 11, 11)');
+	await openSettings(page);
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Player', exact: true })
+		.tap();
+	await settings.getByRole('combobox', { name: 'Sheet background' }).tap();
+	await page.getByRole('option', { name: 'Off-white', exact: true }).tap();
+	// Settings, a dialog over the player screen, follows at once (Trevor, 2026-10-25).
+	await expect(settings).toHaveCSS('color', 'rgb(27, 27, 27)');
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(page_).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+	await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#ffffff');
+	await page.reload();
+	await expect(page_).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+	// Other screens keep the app theme.
+	await page.goto('/about');
+	await expect(page_).toHaveCSS('background-color', 'rgb(20, 11, 11)');
+});
+
 test('Print script prints the sheet, then the night order and player counts', async ({ page }) => {
 	await page.evaluate(() => {
 		window.print = () => {
@@ -831,21 +856,20 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	const shown = (await st.getByTestId('share-code').textContent())!;
 	const code = shown.replace(/\s/g, '');
 
-	// Joining lands on the script, with the room's row over the tabs; its sheet asks for a seat.
+	// Joining lands on the script, with the room's row over the tabs; its sheet takes a name.
 	await page.goto(`/join/${code}`);
 	const row = page.getByTestId('you-row');
 	await expect(page.getByTestId('join-status')).toHaveText(
-		'Choose your seat and type your name, then ask the Storyteller.'
+		'Type the name to show, and the Storyteller will seat you.'
 	);
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await row.tap();
 	const sheet = page.getByRole('dialog', { name: 'You', exact: true });
 	await sheet.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await sheet.getByText('Seat 2', { exact: true }).tap();
-	await sheet.getByRole('button', { name: 'Ask the Storyteller' }).tap();
+	await sheet.getByRole('button', { name: 'Save' }).tap();
 	await expect(sheet).toBeHidden();
 	await expect(page.getByTestId('join-status')).toHaveText(
-		'Waiting for the Storyteller: Alex, seat 2.'
+		'You are in the room as Alex, without a seat yet.'
 	);
 
 	// The row stays over every tab.
@@ -866,7 +890,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// /play itself shows the same room, while the phone is in it.
 	await page.goto('/play');
 	await expect(page.getByTestId('join-status')).toHaveText(
-		'Waiting for the Storyteller: Alex, seat 2.'
+		'You are in the room as Alex, without a seat yet.'
 	);
 	await st.context().close();
 });

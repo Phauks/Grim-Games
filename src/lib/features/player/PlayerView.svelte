@@ -40,6 +40,10 @@
 	import PlayerRoom from './PlayerRoom.svelte';
 	import { gameKey, lastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
+	import { playerSettings } from './player-settings.svelte.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
+	import { sheetTheme } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
@@ -60,6 +64,14 @@
 
 	let data = $state<GameData>();
 	let error = $state<string>();
+	// The whole player screen, its dialogs and sheets included, takes the sheet background
+	// (Trevor, 2026-10-25); leaving it brings back the app theme.
+	$effect.pre(() => {
+		screenTheme.current = sheetTheme(playerSettings.current.sheetBackground, preferences.theme);
+		return () => {
+			screenTheme.current = undefined;
+		};
+	});
 	// Joining lands on the script (Trevor, 2026-10-23); the room is the row above the tabs.
 	let tab = $state('script');
 	// The finished grimoire shows on the Grim tab (Share grim, R5): turn to it when it arrives.

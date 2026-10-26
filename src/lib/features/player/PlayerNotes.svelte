@@ -53,7 +53,8 @@
 		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
 	const guesses = $derived(kept ? readGuesses(kept) : {});
 	const characterGuess = (seatId: string) => {
-		const guess = guesses[seatId];
+		// The main guess, the one on the token (Trevor, 2026-10-25: beside the name here).
+		const guess = guesses[seatId]?.[0];
 		return guess && !genericGuess(guess) ? guess : undefined;
 	};
 	let seatOpen = $state(false);

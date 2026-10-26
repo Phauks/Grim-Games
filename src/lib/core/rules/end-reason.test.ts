@@ -5,6 +5,8 @@
  * - https://wiki.bloodontheclocktower.com/Heretic (flips the winner, not how it was won)
  * - https://wiki.bloodontheclocktower.com/Klutz and /Fiddler (decided by public choices the
  *   grimoire doesn't hold, so only End game can say)
+ * - https://wiki.bloodontheclocktower.com/Slayer (a shot that hits the Demon kills it) and
+ *   /Golem (its kill never falls on a Demon)
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
@@ -14,6 +16,7 @@ import {
 	endCharacters,
 	endReasonCharacter,
 	isAlternateEnd,
+	killsDemon,
 	parseEndReason
 } from './end-reason.ts';
 
@@ -21,12 +24,26 @@ const execute =
 	(i: number) =>
 	(s: string[]): Command => ({ type: 'Execute', seatId: s[i] });
 
+const dead =
+	(i: number, cause: string) =>
+	(s: string[]): Command => ({ type: 'SetDead', seatId: s[i], dead: true, cause });
+
 const TB = ['washerwoman', 'chef', 'empath', 'monk', 'saint', 'poisoner', 'imp'];
 
 describe('detectedEndReason', () => {
 	it('names the usual end when the Demon dies', () => {
 		const { session } = castGame(TB, execute(6));
 		expect(detectedEndReason(session.game, characters, 'good')).toBe('demon-dead');
+	});
+
+	it('names the Slayer when its shot killed the Demon', () => {
+		const { session } = castGame(TB, dead(6, 'slayer'));
+		expect(detectedEndReason(session.game, characters, 'good')).toBe('character:slayer');
+	});
+
+	it('is the Storyteller’s call when the Demon died some other way', () => {
+		const { session } = castGame(TB, dead(6, 'other'));
+		expect(detectedEndReason(session.game, characters, 'good')).toBe('other');
 	});
 
 	it('names the character whose rule gave the winner', () => {
@@ -52,7 +69,8 @@ describe('endCharacters', () => {
 	it('lists those on the script or in a seat that can decide the game, checked ones first', () => {
 		// Trouble Brewing has the Saint and the Mayor; the Klutz is only in a seat.
 		const { session } = castGame(['klutz', 'chef', 'saint', 'poisoner', 'imp']);
-		expect(endCharacters(session.game, characters)).toEqual(['mayor', 'saint', 'klutz']);
+		// The Slayer's shot can kill the Demon.
+		expect(endCharacters(session.game, characters)).toEqual(['mayor', 'saint', 'slayer', 'klutz']);
 	});
 
 	it('adds a saved reason that is no longer in play', () => {
@@ -60,8 +78,20 @@ describe('endCharacters', () => {
 		expect(endCharacters(session.game, characters, 'character:fiddler')).toEqual([
 			'mayor',
 			'saint',
+			'slayer',
 			'fiddler'
 		]);
+	});
+});
+
+describe('killsDemon', () => {
+	it('is an ability whose kill can fall on a Demon, not a Minion’s or Demon’s', () => {
+		expect(killsDemon('slayer', characters)).toBe(true);
+		expect(killsDemon('gunslinger', characters)).toBe(true);
+		expect(killsDemon('golem', characters)).toBe(false);
+		expect(killsDemon('assassin', characters)).toBe(false);
+		expect(killsDemon('imp', characters)).toBe(false);
+		expect(killsDemon('chef', characters)).toBe(false);
 	});
 });
 

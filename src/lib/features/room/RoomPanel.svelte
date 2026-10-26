@@ -4,7 +4,6 @@
 	import { seatsInOrder, type SeatId } from '#lib/core/model/index.ts';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
-	import type { RoomMember, RoomRequest } from '#lib/core/sync/room.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -17,7 +16,7 @@
 	import { gameLine } from '#lib/features/player/byline.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
+	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
 
@@ -47,21 +46,15 @@
 		refreshKind = kind;
 		refreshOpen = true;
 	}
-	/** The seat chosen for each request, when the Storyteller picks a different one. */
-	let chosen = $state<Record<string, SeatId | ''>>({});
-
 	const seats = $derived(seatsInOrder(game.game));
 	const seatLabel = (seatId?: SeatId) => {
 		const i = seats.findIndex((s) => s.seatId === seatId);
 		if (i < 0) return t('room.noSeat');
 		const name = seats[i].playerName;
 		return name
-			? t('room.seatWithName', { number: i + 1, name })
+			? // eslint-disable-next-line grim/names-as-badges -- plain text for the seat drop-down and the row's aria label; the row shows a PlayerBadge
+				t('room.seatWithName', { number: i + 1, name })
 			: t('common.seat', { number: i + 1 });
-	};
-	const seatNumberLabel = (seatId?: SeatId) => {
-		const i = seats.findIndex((s) => s.seatId === seatId);
-		return i < 0 ? t('room.noSeat') : t('common.seat', { number: i + 1 });
 	};
 	const seatOptions = $derived([
 		{ value: '' as SeatId | '', label: t('room.noSeat') },
@@ -109,14 +102,6 @@
 	const logo = $derived(loadedScript && scriptLogo(loadedScript));
 	let logoFailed = $state(false);
 
-	function seatFor(request: RoomRequest): SeatId | '' {
-		return chosen[request.requestId] ?? request.seatId ?? '';
-	}
-
-	function holder(seatId: SeatId | ''): RoomMember | undefined {
-		return seatId ? host.members.find((m) => m.seatId === seatId) : undefined;
-	}
-
 	// The panel exists to show the code, so it opens a room straight away (if hovering or
 	// pressing the button that opened it hasn't already).
 	host.prepare();
@@ -151,16 +136,12 @@
 	function shareGrim() {
 		if (!host.reveal(game)) toast(t('room.shareGrim.failed'));
 	}
-
-	function approve(request: RoomRequest) {
-		const seatId = seatFor(request);
-		host.approve(request, seatId || undefined);
-	}
 </script>
 
 <!--
-	Share: the room code and QR, requests from phones to approve, and who is in
-	the room. Approving a seat names it on the board (a normal, undoable change).
+	Share: the room code and QR, and who is in the room. Players join with just
+	their name (Trevor, 2026-10-26: "we don't approve anymore"); picking a seat for
+	one names it on the board (a normal, undoable change).
 -->
 {#snippet scriptCenter()}
 	<ScriptQrCenter {logo} name={scriptName} bind:failed={logoFailed} />
@@ -256,7 +237,7 @@
 			/>
 		</section>
 
-		<section aria-labelledby="requests-label">
+		<section aria-labelledby="status-label">
 			<!-- How the room is doing and who is in it, under its own header (Trevor, 2026-10-20). -->
 			<h2 id="status-label">{t('room.status')}</h2>
 			<!-- One line per thing it reports (Trevor, 2026-10-20), each always in its place. -->
@@ -281,72 +262,9 @@
 					>{t('room.shareGrim.button')}</Button
 				>
 			</div>
-			<!-- The same switch as Settings > Board, here too where the code is shared (Trevor,
-			     2026-10-23). -->
-			<SettingToggle
-				label={ASSIST_LABELS.roomCode.label}
-				description={ASSIST_LABELS.roomCode.description}
-				checked={preferences.current.assistance.roomCode}
-				onChange={(roomCode) =>
-					preferences.update({
-						assistance: { ...preferences.current.assistance, roomCode }
-					})}
-			/>
-			<h2 id="requests-label">{t('room.requests')}</h2>
-			{#if host.requests.length === 0}
-				<p class="none">{t('common.none')}</p>
-			{:else}
-				<ul class="list">
-					{#each host.requests as request (request.requestId)}
-						{@const seatId = seatFor(request)}
-						{@const taken = holder(seatId)}
-						<li
-							class="request"
-							aria-label={t('room.asksFor', {
-								name: request.name,
-								seat: seatLabel(request.seatId)
-							})}
-						>
-							<p class="who">
-								<strong>{request.name}</strong>
-								<span>
-									{request.seatId
-										? t('room.asksForSeat', { seat: seatLabel(request.seatId) })
-										: t('room.asksForAnySeat')}
-								</span>
-							</p>
-							<Select
-								label={t('room.seatFor', { name: request.name })}
-								hideLabel
-								value={seatId}
-								options={seatOptions}
-								onChange={(v) => (chosen[request.requestId] = v)}
-							/>
-							<p class="note">
-								{taken
-									? taken.name
-										? t('room.movesOut', { name: taken.name })
-										: t('room.movesOutAnother')
-									: ''}
-							</p>
-							<div class="row">
-								<Button
-									variant="accent"
-									icon="check"
-									disabled={!connected}
-									onclick={() => approve(request)}
-								>
-									{t('room.approve')}
-								</Button>
-								<Button variant="quiet" disabled={!connected} onclick={() => host.decline(request)}>
-									{t('room.decline')}
-								</Button>
-							</div>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-
+			<!-- The same switch as Settings > Board and its eye in Game info, here too where the
+			     code is shared (Trevor, 2026-10-23). -->
+			<CornerLineToggle line="join-code" />
 			<h2 id="players-label">{t('room.playersInRoom')}</h2>
 			{#if seated.length === 0}
 				<p class="none">{t('common.none')}</p>
@@ -354,14 +272,15 @@
 				<ul class="list" aria-labelledby="players-label">
 					{#each seated as member (member.memberId)}
 						<li class="member">
-							<span><strong>{member.name}</strong> · {seatNumberLabel(member.seatId)}</span>
-							<Button
-								variant="quiet"
-								disabled={!connected || !member.seatId}
-								onclick={() => host.unseat(member)}
-							>
-								{t('room.unseat')}
-							</Button>
+							<strong>{member.name}</strong>
+							<Select
+								label={t('room.seatFor', { name: member.name ?? '' })}
+								hideLabel
+								disabled={!connected}
+								value={member.seatId ?? ''}
+								options={seatOptions}
+								onChange={(v) => host.seat(member, v || undefined)}
+							/>
 						</li>
 					{/each}
 				</ul>
@@ -438,11 +357,6 @@
 		display: grid;
 		gap: var(--space-2);
 	}
-	.note {
-		min-height: 1.4em;
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
 	/* Phones stack; a computer or tablet shows the code beside the lists. */
 	.layout {
 		display: grid;
@@ -452,11 +366,6 @@
 		.layout {
 			grid-template-columns: minmax(16rem, 22rem) 1fr;
 		}
-	}
-	.row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
 	}
 	.status {
 		min-height: 1.4em;
@@ -474,22 +383,11 @@
 		padding: 0;
 		list-style: none;
 	}
-	.request,
 	.member {
 		padding: var(--space-3);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
-	}
-	.request {
-		display: grid;
-		gap: var(--space-2);
-	}
-	.who {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-		margin: 0;
 	}
 	.member {
 		display: flex;

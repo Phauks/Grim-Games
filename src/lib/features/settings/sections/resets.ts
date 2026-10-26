@@ -38,7 +38,10 @@ export const resets = {
 		}),
 	icons: () => preferences.update(pick('iconSet', 'iconOverrides', 'iconScale')),
 	board: () => {
-		preferences.update({ assistance: assistanceWith(STORYTELLER_GROUPS.board) });
+		preferences.update({
+			assistance: assistanceWith(STORYTELLER_GROUPS.board),
+			...pick('cornerLines')
+		});
 		// The player name badge is set in Tokens (Trevor, 2026-10-20), so it keeps its looks.
 		const { nameSize, nameOffset } = boardLooks.current;
 		boardLooks.update({ ...DEFAULT_BOARD_LOOKS, nameSize, nameOffset });

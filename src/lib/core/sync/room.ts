@@ -15,15 +15,12 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import { feedbackView, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 import {
-	cleanBallot,
-	newScriptVote,
-	scriptVoteEnded,
-	tallyScriptVote,
 	type ScriptVote,
 	type ScriptVoteKind,
 	type ScriptVoteOption,
 	type ScriptVoteTally
 } from './script-vote.ts';
+import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
@@ -45,7 +42,7 @@ export interface RoomMember {
 	frame?: FrameId;
 }
 
-/** "Sit in this seat as this name", or just a name, waiting for the Storyteller. */
+/** A name (and seat) waiting for the Storyteller, from before players joined without approval. */
 export interface RoomRequest {
 	requestId: string;
 	memberId: string;
@@ -62,7 +59,7 @@ export interface RoomState {
 	gameId?: string;
 	public?: PublicGameState;
 	members: RoomMember[];
-	/** At most one per member, oldest first. */
+	/** Rooms saved before players joined without approval (2026-10-26); `withoutRequests` empties it. */
 	requests: RoomRequest[];
 	/** A spectators' vote the Storyteller has open (Specters), if any. */
 	vote?: SpectatorVote;
@@ -159,8 +156,8 @@ export type ClientMessage =
 	 */
 	| { type: 'hello'; role: 'host' | 'player' | 'viewer'; key: string; protocol?: number }
 	// From a player.
+	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
 	| { type: 'request'; name: string; seatId?: SeatId }
-	| { type: 'cancel-request' }
 	| { type: 'leave-seat' }
 	/** The player's avatar and frame (plan R6); a missing one clears it. */
 	| { type: 'look'; avatar?: string; frame?: string }
@@ -168,7 +165,10 @@ export type ClientMessage =
 	| { type: 'vote'; voteId: string; choice: SeatId }
 	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
 	| { type: 'feedback'; gameId: string; feedback: GameFeedback }
-	/** A player's ballot in the script vote; a new one replaces the last. */
+	/**
+	 * A player's ballot in the script vote; a new one replaces the last, and an empty one
+	 * withdraws it (Trevor, 2026-10-26).
+	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
@@ -177,9 +177,9 @@ export type ClientMessage =
 	 * their current script, so players can read it before seats are assigned.
 	 */
 	| { type: 'script'; script: Script }
-	/** `seatId` puts the player in a different seat from the one they asked for. */
-	| { type: 'resolve'; requestId: string; accept: boolean; seatId?: SeatId }
 	| { type: 'unseat'; memberId: string }
+	/** Puts a named member in a seat (players join without approval, Trevor 2026-10-26). */
+	| { type: 'seat'; memberId: string; seatId: SeatId }
 	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }
 	| { type: 'close-vote' }
 	/**
@@ -210,22 +210,38 @@ export type ClientMessage =
 			minutes?: number;
 			/** A vote on the game mode; a script vote when absent. */
 			subject?: 'mode';
+			/** Players see the count too (Trevor, 2026-10-26). */
+			showTally?: boolean;
 	  }
+	/** Shows players the count, or hides it, while the vote is open. */
+	| { type: 'script-vote-tally'; show: boolean }
+	/** Ends the vote after FINAL_CALL_SECONDS, so phones have a last chance (2026-10-26). */
+	| { type: 'end-script-vote' }
 	| { type: 'close-script-vote' }
 	| { type: 'close' };
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
+export {
+	castScriptBallot,
+	closeScriptVote,
+	endScriptVote,
+	openScriptVote,
+	showScriptVoteTally
+} from './room-script-vote.ts';
 
 /** What the Storyteller's device sees. */
 export interface HostView {
 	type: 'host-view';
 	members: RoomMember[];
+	/** Always empty now; kept for Storytellers' apps built while players asked. */
 	requests: RoomRequest[];
 	/** The open vote's count of spectators' choices; absent when no vote is open. */
 	vote?: VoteTally;
 	/** Players' feedback on the ended game, once any has come. */
 	feedback?: FeedbackView[];
+	/** The ended game that feedback is on, so the device saves it with that game. */
+	feedbackGameId?: string;
 	/** The script vote's count, while one is open. */
 	scriptVote?: ScriptVoteTally;
 	/**
@@ -256,7 +272,6 @@ export interface PlayerView {
 	 */
 	gameId?: string;
 	me: RoomMember;
-	request?: Pick<RoomRequest, 'name' | 'seatId'>;
 	/** Seats someone in the room already sits in. */
 	takenSeats: SeatId[];
 	/** The open vote, shown to spectators only. */
@@ -278,6 +293,10 @@ export interface PlayerView {
 		choices?: string[];
 		/** When the time limit runs out (epoch ms, the room's clock). */
 		endsAt?: number;
+		/** The Storyteller ended the vote early; it closes at `endsAt`. */
+		finalCall?: true;
+		/** The count, when the Storyteller lets players see it (Trevor, 2026-10-26). */
+		tally?: Pick<ScriptVoteTally, 'points' | 'out' | 'winner' | 'voted' | 'members'>;
 	};
 }
 
@@ -359,14 +378,11 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 		const votes = room.vote.votes;
 		view.vote = tally(room, room.vote, (m) => here(m, votes[m.memberId] !== undefined));
 	}
-	if (room.feedback?.length) view.feedback = room.feedback.map((f) => feedbackView(room, f));
-	if (room.scriptVote) {
-		const ballots = room.scriptVote.ballots;
-		view.scriptVote = tallyScriptVote(
-			room.scriptVote,
-			room.members.filter((m) => here(m, !!ballots[m.memberId])).map((m) => m.memberId)
-		);
+	if (room.feedback?.length && room.ended) {
+		view.feedback = room.feedback.map((f) => feedbackView(room, f));
+		view.feedbackGameId = room.ended.gameId;
 	}
+	if (room.scriptVote) view.scriptVote = scriptVoteCount(room, present);
 	if (present)
 		view.present = room.members.flatMap((m) => (present.has(m.memberId) ? [m.memberId] : []));
 	return view;
@@ -397,9 +413,16 @@ function tally(
 	};
 }
 
-export function playerView(room: RoomState, memberId: string): PlayerView {
+/**
+ * What one player's phone sees. `present` is as for hostView, so a count players are shown
+ * matches the Storyteller's.
+ */
+export function playerView(
+	room: RoomState,
+	memberId: string,
+	present?: ReadonlySet<string>
+): PlayerView {
 	const me = room.members.find((m) => m.memberId === memberId) ?? { memberId };
-	const request = room.requests.find((r) => r.memberId === memberId);
 	const view: PlayerView = {
 		type: 'player-view',
 		me,
@@ -417,10 +440,21 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 	}
 	if (room.choosing) view.choosing = true;
 	if (room.scriptVote) {
-		const { voteId, kind, subject, options, ballots, endsAt } = room.scriptVote;
+		const { voteId, kind, subject, options, ballots, endsAt, finalCall } = room.scriptVote;
 		view.scriptVote = { voteId, kind, options, ...(subject ? { subject } : {}) };
 		if (endsAt !== undefined) view.scriptVote.endsAt = endsAt;
+		if (finalCall) view.scriptVote.finalCall = true;
 		if (ballots[memberId]) view.scriptVote.choices = ballots[memberId];
+		if (room.scriptVote.showTally) {
+			const { points, out, winner, voted, members } = scriptVoteCount(room, present);
+			view.scriptVote.tally = {
+				points,
+				voted,
+				members,
+				...(out ? { out } : {}),
+				...(winner ? { winner } : {})
+			};
+		}
 	}
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
@@ -428,16 +462,12 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 		if (room.vote.ability) view.vote.ability = room.vote.ability;
 		if (choice !== undefined) view.vote.choice = choice;
 	}
-	if (request) {
-		view.request = { name: request.name };
-		if (request.seatId) view.request.seatId = request.seatId;
-	}
 	return view;
 }
 
 /**
  * Adds a member on first hello; `null` when the room is full. A full room first lets go of
- * phones from earlier games: members with no seat and no request whose phone is not connected
+ * phones from earlier games: members with no seat whose phone is not connected
  * (`present`), so a room in use for many games never fills with phones that left.
  */
 export function join(
@@ -448,10 +478,7 @@ export function join(
 	if (room.members.some((m) => m.memberId === memberId)) return room;
 	let members = room.members;
 	if (members.length >= MAX_MEMBERS && present) {
-		const asking = new Set(room.requests.map((r) => r.memberId));
-		members = members.filter(
-			(m) => m.seatId !== undefined || asking.has(m.memberId) || present.has(m.memberId)
-		);
+		members = members.filter((m) => m.seatId !== undefined || present.has(m.memberId));
 	}
 	if (members.length >= MAX_MEMBERS) return null;
 	return { ...room, members: [...members, { memberId }] };
@@ -467,25 +494,37 @@ function seatExists(room: RoomState, seatId: SeatId): boolean {
 	return room.public?.seats.some((s) => s.seatId === seatId) ?? false;
 }
 
-/** A player's request replaces any earlier one of theirs. Invalid requests change nothing. */
-export function request(
-	room: RoomState,
-	memberId: string,
-	raw: { name: unknown; seatId?: unknown },
-	at: number,
-	requestId: string
-): RoomState {
+/**
+ * A player's name, set straight away: players no longer wait for approval (Trevor, 2026-10-26:
+ * "we don't approve anymore"); the Storyteller seats them. Any request of theirs, and any seat
+ * an older app asks for, is dropped. Invalid names change nothing.
+ */
+export function setName(room: RoomState, memberId: string, raw: { name: unknown }): RoomState {
 	const name = cleanName(raw.name);
-	if (!name || !room.members.some((m) => m.memberId === memberId)) return room;
-	const next: RoomRequest = { requestId, memberId, name, at };
-	if (raw.seatId !== undefined) {
-		if (typeof raw.seatId !== 'string' || !seatExists(room, raw.seatId as SeatId)) return room;
-		next.seatId = raw.seatId as SeatId;
-	}
-	return { ...room, requests: [...room.requests.filter((r) => r.memberId !== memberId), next] };
+	const member = room.members.find((m) => m.memberId === memberId);
+	if (!name || !member) return room;
+	const asked = room.requests.some((r) => r.memberId === memberId);
+	if (member.name === name && !asked) return room;
+	return setMember(cancelRequest(room, memberId), memberId, { name });
 }
 
-export function cancelRequest(room: RoomState, memberId: string): RoomState {
+/** The Storyteller seats a named member, moving anyone else out of that seat. */
+export function seat(room: RoomState, memberId: string, seatId: unknown): RoomState {
+	const member = room.members.find((m) => m.memberId === memberId);
+	if (!member?.name || typeof seatId !== 'string' || !seatExists(room, seatId as SeatId)) {
+		return room;
+	}
+	return setMember(room, memberId, { seatId: seatId as SeatId });
+}
+
+/** Rooms saved while players still asked: each request's name becomes the member's name. */
+export function withoutRequests(room: RoomState): RoomState {
+	if (room.requests.length === 0) return room;
+	const named = room.requests.reduce((r, req) => setName(r, req.memberId, req), room);
+	return { ...named, requests: [] };
+}
+
+function cancelRequest(room: RoomState, memberId: string): RoomState {
 	return { ...room, requests: room.requests.filter((r) => r.memberId !== memberId) };
 }
 
@@ -535,26 +574,6 @@ export function setLook(
 	return { ...room, members: room.members.map((m) => (m.memberId === memberId ? updated : m)) };
 }
 
-/**
- * The Storyteller's answer. Accepting records the name (and seat); the Storyteller's own
- * device renames the seat in the grimoire, so the room only remembers who sits where.
- */
-export function resolve(
-	room: RoomState,
-	requestId: string,
-	accept: boolean,
-	seatId?: SeatId
-): RoomState {
-	const found = room.requests.find((r) => r.requestId === requestId);
-	if (!found) return room;
-	const rest = { ...room, requests: room.requests.filter((r) => r.requestId !== requestId) };
-	if (!accept) return rest;
-	const change: Partial<RoomMember> = { name: found.name };
-	const seat = seatId ?? found.seatId;
-	if (seat && seatExists(room, seat)) change.seatId = seat;
-	return setMember(rest, found.memberId, change);
-}
-
 export function unseat(room: RoomState, memberId: string): RoomState {
 	return setMember(room, memberId, { seatId: undefined });
 }
@@ -577,13 +596,7 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 			keep(m.seatId) || m.seatId === undefined
 				? m
 				: { memberId: m.memberId, ...nameOf(m), ...lookOf(m) }
-		),
-		requests: room.requests.map((r) => {
-			if (r.seatId === undefined || keep(r.seatId)) return r;
-			const { seatId: _gone, ...without } = r;
-			void _gone;
-			return without;
-		})
+		)
 	};
 }
 
@@ -678,48 +691,6 @@ export function setChoosing(room: RoomState, on: unknown): RoomState {
 	const { choosing: _off, ...rest } = room;
 	void _off;
 	return rest;
-}
-
-/** Opens a vote on the next script, replacing any open one; a malformed one changes nothing. */
-export function openScriptVote(
-	room: RoomState,
-	voteId: unknown,
-	kind: unknown,
-	options: unknown,
-	minutes?: unknown,
-	now = 0,
-	subject?: unknown
-): RoomState {
-	const vote = newScriptVote(voteId, kind, options, minutes, now, subject);
-	return vote ? { ...room, scriptVote: vote } : room;
-}
-
-export function closeScriptVote(room: RoomState): RoomState {
-	if (!room.scriptVote) return room;
-	const { scriptVote: _closed, ...rest } = room;
-	void _closed;
-	return rest;
-}
-
-/**
- * A member's ballot in the open script vote; a stale or malformed one, or one after the time
- * limit ran out at `now`, is ignored.
- */
-export function castScriptBallot(
-	room: RoomState,
-	memberId: string,
-	voteId: unknown,
-	choices: unknown,
-	now = 0
-): RoomState {
-	const vote = room.scriptVote;
-	if (!vote || voteId !== vote.voteId || !room.members.some((m) => m.memberId === memberId)) {
-		return room;
-	}
-	if (scriptVoteEnded(vote, now)) return room;
-	const ballot = cleanBallot(vote, choices);
-	if (!ballot) return room;
-	return { ...room, scriptVote: { ...vote, ballots: { ...vote.ballots, [memberId]: ballot } } };
 }
 
 /**
