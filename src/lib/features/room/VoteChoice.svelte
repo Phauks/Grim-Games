@@ -3,27 +3,22 @@
 
 	/**
 	 * One choice in a vote on a phone: the spectators' vote (Specters) and the vote on the
-	 * next script share it. `mark` is the seat number, or a ranked choice's place; `aside` is
-	 * the option's count, when the Storyteller lets players see it (Trevor, 2026-10-26).
+	 * next script share it. `mark` is the seat number, or a ranked choice's place.
 	 */
 	interface Props {
 		mark?: string | number;
-		aside?: string;
 		pressed: boolean;
 		disabled?: boolean;
 		onclick: () => void;
 		children: Snippet;
 	}
 
-	let { mark = '', aside, pressed, disabled = false, onclick, children }: Props = $props();
+	let { mark = '', pressed, disabled = false, onclick, children }: Props = $props();
 </script>
 
 <button type="button" class="choice" aria-pressed={pressed} {disabled} {onclick}>
 	<span class="mark">{mark}</span>
-	<span class="label"
-		>{@render children()}{#if aside}<span class="aside" data-testid="vote-count">{aside}</span
-			>{/if}</span
-	>
+	<span class="label">{@render children()}</span>
 </button>
 
 <style>
@@ -50,13 +45,6 @@
 	.label {
 		padding-block: var(--space-1);
 		overflow-wrap: anywhere;
-	}
-	/* The count on its own line under the name, so it never squeezes the name out. */
-	.aside {
-		display: block;
-		color: var(--on-surface-muted);
-		font-size: 0.9em;
-		font-variant-numeric: tabular-nums;
 	}
 	.choice[aria-pressed='true'] {
 		border-color: var(--accent);

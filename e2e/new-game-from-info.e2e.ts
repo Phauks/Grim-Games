@@ -64,7 +64,7 @@ test('New game in Game info asks first, then starts the next game with the same 
 	// New game in a sheet over the board: script, mode and room vote, and the same script
 	// preview as the New game screen (Trevor, 2026-10-24).
 	const newGame = page.getByRole('dialog', { name: 'New game' });
-	await expect(newGame.getByRole('button', { name: 'Room vote' })).toBeVisible();
+	await expect(newGame.getByRole('link', { name: 'Room vote' })).toBeVisible();
 	const preview = newGame.getByTestId('script-preview');
 	await expect(preview).toContainText('Washerwoman');
 	await newGame

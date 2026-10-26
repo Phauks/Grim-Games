@@ -58,6 +58,8 @@
 		onStoryteller?: (name: string | undefined) => void;
 		/** Told when the phone has a seat here, or has asked for one, as it does or on its return. */
 		onSeated?: () => void;
+		/** Told whether a room vote is open, when the ballot is the page's content (2026-10-26). */
+		onVoting?: (voting: boolean) => void;
 		/**
 		 * Whether the code form shows while the phone is not in a room (Join game); /play's
 		 * own row for the last room shows nothing then.
@@ -65,7 +67,7 @@
 		entry?: boolean;
 	}
 
-	let { code, onCode, onJoined, onStoryteller, onSeated, entry = true }: Props = $props();
+	let { code, onCode, onJoined, onStoryteller, onSeated, onVoting, entry = true }: Props = $props();
 
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
@@ -114,6 +116,9 @@
 	/** In a room (not the code form): the script, your seat and the table show. */
 	const inRoom = $derived(!!valid && status !== 'refused' && status !== 'closed');
 	$effect(() => onJoined?.(inRoom));
+	/** A room vote is open: its ballot is the screen, under the room row (Trevor, 2026-10-26). */
+	const balloting = $derived(inRoom && !!view?.scriptVote);
+	$effect(() => onVoting?.(balloting));
 	// A closed or refused room is forgotten, so /play's Room tab opens on the code form.
 	$effect(() => {
 		if (valid && (status === 'refused' || status === 'closed')) forgetRoom(valid);
@@ -150,8 +155,6 @@
 	const vote = $derived(view?.vote);
 	let voting = $state(false);
 	let rating = $state(false);
-	/** The script vote's ballot, which also opens by itself for each new vote. */
-	let balloting = $state(false);
 	let seenVote: string | undefined;
 	$effect(() => {
 		const id = vote?.voteId;
@@ -383,17 +386,6 @@
 			<Icon name="edit" />
 			<span class="visually-hidden">{t('room.editYou')}</span>
 		</button>
-		<!-- Only while a script vote is open, so a closed ballot can be opened again (Trevor,
-		     2026-10-26); it shares the row's height, so nothing below moves. -->
-		{#if view?.scriptVote}
-			<IconButton
-				icon="vote"
-				label={t('room.scriptVote.ballot')}
-				outlined
-				aria-haspopup="dialog"
-				onclick={() => (balloting = true)}
-			/>
-		{/if}
 		<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
 		{#if view?.endedGameId}
 			<Button aria-haspopup="dialog" onclick={() => (rating = true)}
@@ -422,6 +414,7 @@
 			/>
 		</form>
 	</Dialog>
+	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 
 <Dialog bind:open={voting} title={t('room.vote.title')}>
@@ -445,10 +438,7 @@
 	</ul>
 </Dialog>
 
-{#if player}<ScriptBallot {player} bind:open={balloting} /><FeedbackSheet
-		{player}
-		bind:open={rating}
-	/>{/if}
+{#if player}<FeedbackSheet {player} bind:open={rating} />{/if}
 
 <style>
 	form {
