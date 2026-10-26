@@ -306,6 +306,24 @@ test('Sushi Buffet asks the Storyteller for a drafted Godfather’s Outsiders be
 	await expect(rows(page)).toHaveCount(3);
 });
 
+// Jinxed pairs are blocked by default, as Grimbits' draft tool can do: the draft knows each
+// character's jinxed partners (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
+test('Sushi Buffet keeps each character’s jinxed partners, to block them once it is drafted', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const state = await page.evaluate(
+		(key) => JSON.parse(localStorage.getItem(key)!).state,
+		`grim-games:mode-deal:v1:${gameId}`
+	);
+	expect(state.config.jinxes).toBe('block');
+	expect(state.jinxed.heretic).toContain('baron');
+	expect(state.jinxed.baron).toContain('heretic');
+});
+
 // Grimbits' draft deals the King once a Choirboy is drafted
 // (https://grimbits.com/draft-buffet/, https://wiki.bloodontheclocktower.com/Choirboy).
 test('Sushi Buffet offers only the King after a Choirboy, saying why, with no refusing', async ({
@@ -383,6 +401,12 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await expect(recycling).not.toBeChecked();
 	await modesPanel(page).getByText('Role Recycling').tap();
 	await expect(recycling).toBeChecked();
+	// Jinxed pairs, as Grimbits' draft tool offers: blocked by default (Trevor, 2026-10-26).
+	const jinxed = modesPanel(page).getByRole('combobox', { name: 'Jinxed pairs' });
+	await expect(jinxed).toHaveText(/Block/);
+	await jinxed.tap();
+	await page.getByRole('option', { name: 'Less likely', exact: true }).tap();
+	await expect(jinxed).toHaveText(/Less likely/);
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -391,6 +415,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 		gameId
 	);
 	expect(record.roleRecycling).toBe(true);
+	expect(record.jinxedPairs).toBe('reduce');
 });
 
 test('with our own wording on, each mode shows its About description', async ({ page }) => {
