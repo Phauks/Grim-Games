@@ -12,7 +12,6 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import HideContentsButton from '#lib/ui/primitives/HideContentsButton.svelte';
-	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import SharedBoard from '#lib/features/room/SharedBoard.svelte';
 	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
@@ -335,14 +334,14 @@
 	/* eslint-enable grim/names-as-badges */
 </script>
 
-<!-- The eye and the cover always, so nothing moves when the Final grimoire switch comes. -->
+<!-- The eye always, so nothing moves when the Final grimoire switch comes. Players have no
+     grim cover (Trevor, 2026-10-26: "Players don't need grim cover button"). -->
 <div class="tools">
 	<HideContentsButton
 		hidden={hiding}
 		onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
 		testid="hide-guesses"
 	/>
-	<CoverButton />
 	<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
 	     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
 	{#if !town && final}

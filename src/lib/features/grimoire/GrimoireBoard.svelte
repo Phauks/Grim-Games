@@ -121,6 +121,8 @@
 	import { publicProjection } from '#lib/core/sync/public-projection.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NotesSheet from './NotesSheet.svelte';
@@ -390,7 +392,7 @@
 			keepClear({
 				centre: { w: centreW, h: centreH },
 				edge: boardLooks.current.rulesAt !== 'middle' ? { w: edgeW, h: edgeH } : undefined,
-				timer: showTimer ? { w: timerW, h: timerH } : undefined,
+				timer: { w: timerW, h: timerH },
 				title: { w: titleW, h: titleH },
 				board: boardSize
 			}),
@@ -966,6 +968,13 @@
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
+	/** What the grim cover shows: nothing from the grimoire (Trevor, 2026-10-26). */
+	const coverDetails = $derived<CoverDetails>({
+		logo: boardLogo || undefined,
+		name: showTitle ? game.script.meta?.name : undefined,
+		author: showTitle ? game.script.meta?.author : undefined,
+		phase
+	});
 	/**
 	 * The corner name is hidden (switched off, or no room beside the seats): Game info is
 	 * then on the ⋯ menu instead, so a mode's actions stay in reach. Otherwise only the corner
@@ -1404,17 +1413,21 @@
 				{/if}
 			{/snippet}
 		</BoardCorner>
-		{#if showTimer}
-			<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. -->
-			<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
+		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The grim
+		     cover beside it, never in a menu (Trevor, 2026-10-26), the Storyteller's only. -->
+		<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
+			{#if !watching}
+				<CoverButton gameId={game.gameId} details={coverDetails} timer={coverTimer} outlined />
+			{/if}
+			{#if showTimer}
 				<DayTimer
 					alive={livingByTeam(game).alive}
 					variant="compact"
 					readOnly={watching}
 					shown={watchedTimer}
 				/>
-			</div>
-		{/if}
+			{/if}
+		</div>
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if boardLooks.current.rulesAt === 'middle'}
@@ -1636,9 +1649,15 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
+{#snippet coverTimer()}
+	{#if showTimer}<DayTimer alive={livingByTeam(game).alive} variant="compact" />{/if}
+{/snippet}
+
 <DaySheet
 	bind:open={dayOpen}
 	game={grimoire.open}
+	cover={coverDetails}
+	{coverTimer}
 	onEndDay={() => (endDayOpen = true)}
 	onSavant={(seatId) => {
 		savantSeat = seatId;
@@ -1906,6 +1925,13 @@
 		top: var(--space-1);
 		right: var(--space-1);
 		z-index: 2;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+	/* The cover's button has the timer's solid fill, so it reads on any background. */
+	.board-timer :global(.icon-button[data-outlined]) {
+		background: var(--surface);
 	}
 	/* Small, in the board's top left corner, clear of the seats' ring. */
 	.rules-edge {

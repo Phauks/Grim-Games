@@ -6,6 +6,8 @@
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import ShownCard from './ShownCard.svelte';
 	import type { ShownCharacter, ShownInfoCard } from './shown.ts';
+	import type { Snippet } from 'svelte';
+	import { setPortalTarget } from '#lib/ui/primitives/portal-target.ts';
 
 	interface Props {
 		open?: boolean;
@@ -22,6 +24,16 @@
 		 * screen with nothing on it but the close button, for when someone looks at the phone.
 		 */
 		blank?: boolean;
+		/**
+		 * What the grim cover shows (Trevor, 2026-10-26: the timer and what isn't secret, such
+		 * as the script's logo); its PIN dialog goes here too, so it opens over the cover.
+		 */
+		children?: Snippet;
+		/**
+		 * Asked instead of closing when ✕ or Escape is used (the cover's PIN); it closes the
+		 * view itself through `open`.
+		 */
+		requestClose?: () => void;
 		onclose?: () => void;
 	}
 
@@ -31,10 +43,14 @@
 		characters = [],
 		cards,
 		blank = false,
+		children,
+		requestClose,
 		onclose
 	}: Props = $props();
 
 	let dialog = $state<HTMLDialogElement>();
+	// Dialogs opened inside it (the cover's PIN) are drawn in it, not behind it.
+	setPortalTarget(() => dialog);
 	let track = $state<HTMLDivElement>();
 	let current = $state(0);
 
@@ -75,6 +91,10 @@
 	});
 
 	function close() {
+		if (requestClose) {
+			requestClose();
+			return;
+		}
 		open = false;
 		onclose?.();
 	}
@@ -137,7 +157,8 @@
 		-->
 		<ErrorBoundary area="show">
 			{#if blank}
-				<!-- Nothing at all: not even what is covered. -->
+				<!-- Nothing secret: not even what is covered. -->
+				{@render children?.()}
 			{:else if together}
 				<div class="together" style:--count={shownCards.length}>
 					{#each shownCards as card, i (i)}
