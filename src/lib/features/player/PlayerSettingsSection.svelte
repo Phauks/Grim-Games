@@ -4,7 +4,6 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
-	import DensityRow from './DensityRow.svelte';
 	import PlayerSizeRows from './PlayerSizeRows.svelte';
 	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
@@ -34,9 +33,6 @@
 	checked={playerSettings.current.hideGuesses}
 	onChange={(hideGuesses) => playerSettings.update({ hideGuesses })}
 />
-
-<!-- Also in the player screen's own settings (plan E2). -->
-<DensityRow />
 
 <!-- Text and token sizes, also in Settings > Tokens and the player screen's cog (Trevor,
      2026-10-27). -->
