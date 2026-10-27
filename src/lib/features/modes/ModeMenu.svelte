@@ -520,7 +520,9 @@
 		font: inherit;
 		cursor: pointer;
 	}
-	/* Within the text's line, so the row keeps its height. */
+	/* Within the text's line, so the row keeps its height; the icon's own box with it, so the
+	   eye is centred in the line rather than spilling above it. */
+	.eye :global(.icon),
 	.eye :global(svg) {
 		width: 1.1em;
 		height: 1.1em;
