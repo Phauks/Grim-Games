@@ -147,7 +147,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Info token characters (`info-token-characters.ts`: the character a night step's card always shows): `infoTokenCharacters`, new
 - On-death triggers (`night-alerts.ts` `ON_DEATH`): `onDeath`, moved
 - Protection (`ability.ts`, `night-alerts.ts`): `protects`, moved
-- Impairments (`ability.ts`: the Drunk, Witch, Minstrel and Preacher): `impairs`, moved
+- Impairments (`ability.ts`, read by `impairs-rules.ts`: the Drunk, Witch, Minstrel, Preacher, Xaan; Barista's `clears`; other tokens end with their character unless an entry says they last): `impairs`, moved
 - Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw): `registersAs`, moved
 - Night killers (`night-alerts.ts` `NIGHT_KILLERS`): `kills`, moved
 - Death checks (`night-deaths.ts`: the Gambler, Acrobat, Lycanthrope and Grandmother): `deathCheck`, moved
