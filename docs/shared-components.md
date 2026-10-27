@@ -159,6 +159,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
 - Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
+- Character and alignment changes (`becomes.ts`, was `BECOMES_DEMON`: the Scarlet Woman's Is The Demon, the Mezepheles's Turns Evil, the Snake Charmer's swap): `becomes`, moved. A Demon's death by its own kill passing it on (the Imp, the Fang Gu) is `gameEnd` `death-passes`, asked by `StarPassPrompt`.
 - Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56): `dayClaim`, `guessLimit`, moved
 - Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new): `dayMark`, moved
 - Night information and answers (`night-info.ts`): `learns`, `answers`, moved

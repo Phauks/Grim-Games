@@ -84,6 +84,11 @@ export type Command =
 	 */
 	| { type: 'AssignCharacter'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }
 	| { type: 'ClearCharacter'; seatId: SeatId }
+	/**
+	 * Two players swap characters and alignments (the Snake Charmer choosing the Demon,
+	 * https://wiki.bloodontheclocktower.com/Snake_Charmer).
+	 */
+	| { type: 'SwapCharacters'; seatId: SeatId; withSeatId: SeatId }
 	| { type: 'SetAlignment'; seatId: SeatId; alignment: Alignment }
 	/**
 	 * Marks a player dead or alive. `cause` is optional when marking dead (the Storyteller

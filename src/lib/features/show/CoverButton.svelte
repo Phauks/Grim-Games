@@ -32,11 +32,28 @@
 	let open = $state(false);
 	let setPinOpen = $state(false);
 	let pinOpen = $state(false);
+	/** The PIN asked to switch the lock off, not to take the cover off. */
+	let lockPinOpen = $state(false);
+	/** The PIN set from the cover's own lock, which then switches on. */
+	let lockSetOpen = $state(false);
 	const pinNeeded = $derived(preferences.current.coverPin);
 
 	function cover() {
 		if (pinNeeded && !drawLock.hasPin(gameId)) setPinOpen = true;
 		else open = true;
+	}
+
+	/**
+	 * The lock on the cover itself (Trevor, 2026-10-27: "I can't figure out how to toggle lock
+	 * for grim cover"), the same setting as Settings > Storyteller's. Switching it on sets the
+	 * game's PIN if it has none; switching it off takes the PIN, so a player can't.
+	 */
+	function toggleLock() {
+		if (pinNeeded) {
+			if (drawLock.hasPin(gameId)) lockPinOpen = true;
+			else preferences.update({ coverPin: false });
+		} else if (drawLock.hasPin(gameId)) preferences.update({ coverPin: true });
+		else lockSetOpen = true;
 	}
 </script>
 
@@ -52,8 +69,30 @@
 	blank
 	requestClose={pinNeeded && drawLock.hasPin(gameId) ? () => (pinOpen = true) : undefined}
 >
+	<span class="lock"
+		><IconButton
+			icon="lock"
+			label={t('settings.coverPin')}
+			aria-pressed={pinNeeded}
+			data-testid="cover-lock"
+			onclick={toggleLock}
+		/></span
+	>
 	<CoverScreen {...details} {timer} {actions} />
 	<PinDialog bind:open={pinOpen} {gameId} purpose="cover" onDone={() => (open = false)} />
+	<PinDialog
+		bind:open={lockPinOpen}
+		{gameId}
+		purpose="cover"
+		onDone={() => preferences.update({ coverPin: false })}
+	/>
+	<PinDialog
+		bind:open={lockSetOpen}
+		{gameId}
+		mode="set"
+		purpose="cover"
+		onDone={() => preferences.update({ coverPin: true })}
+	/>
 </ShowToPlayer>
 <PinDialog
 	bind:open={setPinOpen}
@@ -62,3 +101,17 @@
 	purpose="cover"
 	onDone={() => (open = true)}
 />
+
+<style>
+	/* Top left, across from ✕: on or off, the lock is the Storyteller's, as Settings' is. */
+	.lock {
+		position: absolute;
+		top: calc(var(--space-2) + env(safe-area-inset-top));
+		left: calc(var(--space-2) + env(safe-area-inset-left));
+		z-index: 1;
+		--icon-size: calc(1.5 * var(--u));
+	}
+	.lock :global(.icon-button) {
+		background-color: var(--surface-raised);
+	}
+</style>
