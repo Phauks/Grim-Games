@@ -256,3 +256,7 @@ export function parsePads(raw: unknown): SoundPad[] {
 	}
 	return pads;
 }
+
+/** Where the soundboard plays while the board has a room (plan U10). */
+export const SOUND_OUTPUTS = ['device', 'town', 'both'] as const;
+export type SoundOutput = (typeof SOUND_OUTPUTS)[number];

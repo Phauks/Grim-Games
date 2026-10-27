@@ -3,6 +3,7 @@
 		BOARD_SOUNDS,
 		DEFAULT_SOUND_MIX,
 		SOUND_MIX_VOLUME,
+		SOUND_OUTPUTS,
 		soundMix,
 		type BoardSoundMix
 	} from '#lib/core/sound/soundboard.ts';
@@ -63,6 +64,17 @@
 	</SettingRow>
 	<SoundPadsDialog bind:open={padsOpen} />
 {/if}
+<!-- Where it plays while the board has a room (plan U10); the Public Town plays its own copy. -->
+<SettingSelect
+	label={t('settings.soundOutput')}
+	value={preferences.current.soundOutput}
+	options={SOUND_OUTPUTS.map((output) => ({
+		value: output,
+		label: t(`settings.soundOutput.${output}`)
+	}))}
+	defaultValue={DEFAULT_PREFERENCES.soundOutput}
+	onChange={(soundOutput) => preferences.update({ soundOutput })}
+/>
 <SettingSlider
 	label={t('settings.soundboardLevel')}
 	value={preferences.current.soundboardLevel}

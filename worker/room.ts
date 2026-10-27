@@ -37,6 +37,7 @@ import {
 	setStorytellerBuild,
 	supportsProtocol,
 	townView,
+	parseTownSound,
 	unseat,
 	viewerFailed,
 	withoutRequests,
@@ -518,6 +519,17 @@ export class Room extends DurableObject<RoomEnv> {
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
 					if (to?.role === 'player') socket.send(text);
+				}
+				return;
+			}
+			case 'town-sound': {
+				// Not kept: only the Public Town displays here now play it (plan U10).
+				const command = parseTownSound(message);
+				if (!command) return;
+				const text = JSON.stringify({ type: 'town-sound', ...command } satisfies ServerMessage);
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'town') socket.send(text);
 				}
 				return;
 			}

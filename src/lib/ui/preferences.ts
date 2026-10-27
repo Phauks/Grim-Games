@@ -31,7 +31,9 @@ import {
 	parsePads,
 	parseSoundMixes,
 	DEFAULT_PADS,
+	SOUND_OUTPUTS,
 	type ActionSound,
+	type SoundOutput,
 	type BoardSoundMix,
 	type SoundPad,
 	type SoundAction
@@ -121,6 +123,11 @@ export interface Preferences {
 	soundboardOverlap: boolean;
 	/** Each soundboard sound's own volume and loop, by sound id; only those changed. */
 	soundMixes: Record<string, BoardSoundMix>;
+	/**
+	 * Where the soundboard plays while the board has a room (plan U10): this device, the
+	 * Public Town tablet, or both. Without a room it plays here.
+	 */
+	soundOutput: SoundOutput;
 	/** The sounds and mixes placed on the soundboard, in order (Trevor, 2026-10-27). */
 	soundPads: SoundPad[];
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
@@ -263,6 +270,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	soundboardLevel: 1,
 	soundboardOverlap: false,
 	soundMixes: {},
+	soundOutput: 'device',
 	soundPads: DEFAULT_PADS.map((pad) => ({ ...pad })),
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
@@ -363,6 +371,9 @@ export function parsePreferences(raw: unknown): Preferences {
 		),
 		soundboardOverlap: input.soundboardOverlap === true,
 		soundMixes: parseSoundMixes(input.soundMixes),
+		soundOutput: (SOUND_OUTPUTS as readonly unknown[]).includes(input.soundOutput)
+			? (input.soundOutput as SoundOutput)
+			: DEFAULT_PREFERENCES.soundOutput,
 		soundPads: parsePads(input.soundPads),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)

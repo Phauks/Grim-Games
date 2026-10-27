@@ -5,6 +5,7 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { hold } from '#lib/ui/hold.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import AmbienceSettings from './AmbienceSettings.svelte';
@@ -22,11 +23,19 @@
 	 */
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 
+	// Play on (plan U10): the soundboard reaches the Public Town through this board's room.
+	$effect(() => {
+		if (!roomHost().code) return;
+		soundboard.town = (command) => roomHost().townSound(command);
+		return () => (soundboard.town = undefined);
+	});
+
 	// Levels and loops follow the mixer while sounds play, from here or from Settings.
 	$effect(() => {
 		void preferences.current.soundVolume;
 		void preferences.current.soundboardLevel;
 		void preferences.current.soundMixes;
+		void preferences.current.soundOutput;
 		soundboard.applyMix();
 	});
 

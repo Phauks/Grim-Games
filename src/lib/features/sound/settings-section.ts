@@ -25,6 +25,7 @@ registerSettingsSection({
 			soundboardLevel: DEFAULT_PREFERENCES.soundboardLevel,
 			soundboardOverlap: DEFAULT_PREFERENCES.soundboardOverlap,
 			soundMixes: DEFAULT_PREFERENCES.soundMixes,
+			soundOutput: DEFAULT_PREFERENCES.soundOutput,
 			soundPads: DEFAULT_PREFERENCES.soundPads
 		}),
 	profile: true,
