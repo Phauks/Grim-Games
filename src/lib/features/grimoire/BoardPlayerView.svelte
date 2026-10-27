@@ -20,10 +20,10 @@
 
 	/**
 	 * What players see on /play, drawn from the Storyteller's game: the script, the night order
-	 * and the town as the table knows it. The board's Script dialog has it with the
-	 * Storyteller's own notes and guesses (Trevor, 2026-10-23: "feature parity"); the grim cover
-	 * without them, its grim only drawn (Trevor, 2026-10-27: "seeing player view (script, night
-	 * order, public grim, not notes)").
+	 * and the town as the table knows it, with notes and guesses as on /play. The board's Script
+	 * dialog keeps the Storyteller's own (Trevor, 2026-10-23: "feature parity"); the grim cover
+	 * keeps the table's, blank each time (Trevor, 2026-10-27: "As if they were within the app.
+	 * We shouldn't even block notes").
 	 */
 	interface Props {
 		game: Game;
@@ -35,26 +35,20 @@
 		/** The board's own background picture, or the room it comes from (PlayerGrim). */
 		picture?: Blob;
 		pictureRoom?: string;
-		/** The Storyteller's own notes and guesses; false on the grim cover. */
-		own?: boolean;
+		/**
+		 * Where notes and guesses are kept: the Storyteller's own unless given (the grim cover
+		 * gives its table notebook, `tableNotebook`).
+		 */
+		notebook?: string;
 	}
 
-	let {
-		game,
-		script,
-		characters,
-		layout,
-		corner,
-		look,
-		picture,
-		pictureRoom,
-		own = true
-	}: Props = $props();
+	let { game, script, characters, layout, corner, look, picture, pictureRoom, notebook }: Props =
+		$props();
 
 	const town = $derived(
 		publicProjection(game, publicTravellerTest(game.gameId, characters), layout, corner, characters)
 	);
-	const guessKey = $derived(`storyteller:${game.gameId}`);
+	const guessKey = $derived(notebook ?? `storyteller:${game.gameId}`);
 </script>
 
 <PlayerScriptTabs
@@ -63,11 +57,10 @@
 	inPlay={charactersInPlay(game)}
 	travellers={travellersInPlay(town.seats)}
 	rules={gameSheetRules(game.gameId)}
-	notes={own ? notes : undefined}
+	{notes}
 >
 	{#snippet grim()}<PlayerGrim
 			{script}
-			display={!own}
 			town={{
 				seats: town.seats,
 				layout: town.layout,
@@ -82,6 +75,6 @@
 </PlayerScriptTabs>
 
 {#snippet notes()}<PlayerNotes
-		notesKey={scriptKey(script)}
+		notesKey={notebook ?? scriptKey(script)}
 		town={{ seats: town.seats, guessKey }}
 	/>{/snippet}

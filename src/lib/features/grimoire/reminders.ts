@@ -206,14 +206,21 @@ export const isGeneric = (reminder: Pick<Reminder, 'characterId'>): boolean =>
 
 /**
  * The look of a new ∞ token made from a reminder dragged onto "+ New token" (Trevor,
- * 2026-10-27): a generic reminder's or ∞ token's own text, symbol, colour and fill; any other
- * reminder's words.
+ * 2026-10-27): a generic reminder's or ∞ token's own look; any other reminder's words, with
+ * the reminder itself for its character's art and the seats it fits.
  */
 export function copiedLook(reminder: Reminder & GenericLook): GenericLook {
-	if (!isGeneric(reminder)) return { note: reminder.label };
-	const { note, symbol, symbolColour, symbolFill } = reminder;
-	return { note, symbol, symbolColour, symbolFill };
+	if (!isGeneric(reminder)) {
+		const { characterId, label } = reminder;
+		return { note: label, like: { characterId, label } };
+	}
+	const { note, symbol, symbolColour, symbolFill, like } = reminder;
+	return { note, symbol, symbolColour, symbolFill, like };
 }
+
+/** The reminder a token stands for when marking seats: the one a generic copy copies. */
+export const handReminder = (reminder: Reminder & GenericLook): Reminder =>
+	reminder.like ?? reminder;
 
 /** A reminder token's words in a sentence or heading: a generic one with no text shows ∞. */
 export const tokenLabel = (reminder: ReminderInstance | Reminder): ReminderLabel =>

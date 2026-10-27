@@ -837,6 +837,11 @@ test('a Drunk game draws only Townsfolk tokens and offers Is The Drunk on the bo
 		.getByRole('link', { name: 'Grimoire' })
 		.tap();
 	await expect(page.getByText('Is The Drunk')).toBeVisible();
+	// It comes first in the bank's setup reminders, before the Washerwoman's, as too important to
+	// miss (Trevor, 2026-10-27).
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	await expect(bank.getByRole('button', { name: 'Wrong reminder' })).toHaveCount(1);
+	await expect(bank.getByRole('listitem').first()).toContainText('Is The Drunk');
 });
 
 // The No Dashii's Townsfolk neighbours are poisoned from setup (Trevor, 2026-10-17;

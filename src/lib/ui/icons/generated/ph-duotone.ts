@@ -57,6 +57,7 @@ import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
 import ph_corners_in_duotone from '~icons/ph/corners-in-duotone';
 import ph_corners_out_duotone from '~icons/ph/corners-out-duotone';
+import ph_crop_duotone from '~icons/ph/crop-duotone';
 import ph_cross_duotone from '~icons/ph/cross-duotone';
 import ph_crown_duotone from '~icons/ph/crown-duotone';
 import ph_database_duotone from '~icons/ph/database-duotone';
@@ -158,6 +159,7 @@ import ph_question_duotone from '~icons/ph/question-duotone';
 import ph_scales_duotone from '~icons/ph/scales-duotone';
 import ph_scan_duotone from '~icons/ph/scan-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
+import ph_selection_duotone from '~icons/ph/selection-duotone';
 import ph_shapes_duotone from '~icons/ph/shapes-duotone';
 import ph_share_network_duotone from '~icons/ph/share-network-duotone';
 import ph_shield_duotone from '~icons/ph/shield-duotone';
@@ -273,6 +275,7 @@ const icons: IconMap = {
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
 	'ph:corners-in-duotone': ph_corners_in_duotone,
 	'ph:corners-out-duotone': ph_corners_out_duotone,
+	'ph:crop-duotone': ph_crop_duotone,
 	'ph:cross-duotone': ph_cross_duotone,
 	'ph:crown-duotone': ph_crown_duotone,
 	'ph:database-duotone': ph_database_duotone,
@@ -374,6 +377,7 @@ const icons: IconMap = {
 	'ph:scales-duotone': ph_scales_duotone,
 	'ph:scan-duotone': ph_scan_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,
+	'ph:selection-duotone': ph_selection_duotone,
 	'ph:shapes-duotone': ph_shapes_duotone,
 	'ph:share-network-duotone': ph_share_network_duotone,
 	'ph:shield-duotone': ph_shield_duotone,
