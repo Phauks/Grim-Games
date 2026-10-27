@@ -1,22 +1,18 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import PlayerNameRow from './PlayerNameRow.svelte';
-	import TextSizeRows from '#lib/features/settings/sections/TextSizeRows.svelte';
-	import PlayerSizeRows from '#lib/features/player/PlayerSizeRows.svelte';
-	import AvatarPictureRow from '#lib/features/player/AvatarPictureRow.svelte';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
+	import { joinedRoom } from './joined-room.svelte.ts';
 
 	/**
-	 * The player screen's own settings (plan E2, Trevor 2026-10-26: "easier access to
-	 * accessibility, zoom, font size for players. Move name into an edit button in the top";
-	 * then "a settings cog in player script view where they select various text sizes settings
-	 * and their name"): a cog among the title's icon buttons, the same button as Print and Share
-	 * beside it (Trevor, 2026-10-26: "Settings cog should be like other buttons for players"),
-	 * opening one sheet with this phone's name in its room, then Text size and Pinch to zoom,
-	 * which change the page at once, as in Settings > Text. The board's Script shows it too, without the name (parity).
+	 * The player screen's settings cog, among the title's icon buttons, the same button as Print
+	 * and Share beside it (Trevor, 2026-10-26: "Settings cog should be like other buttons for
+	 * players"). It opens the one Settings, at its list of sections, as everywhere else
+	 * (Trevor, 2026-10-27: "Change your settings into settings", one Settings everywhere);
+	 * while this phone is in a room, Settings > Player has its name there. The board's Script
+	 * shows it too (parity).
 	 */
 	interface Props {
 		/** The room this phone is in; without one there is no name to set. */
@@ -24,14 +20,15 @@
 	}
 
 	let { room }: Props = $props();
-	let open = $state(false);
 
 	let player = $state.raw<RoomPlayer>();
 	$effect(() => {
 		if (!room) return;
 		const p = useRoom(room);
 		player = p;
+		const clear = joinedRoom.set(p);
 		return () => {
+			clear();
 			releaseRoom(p);
 			player = undefined;
 		};
@@ -45,23 +42,7 @@
 <IconButton
 	icon="settings"
 	aria-haspopup="dialog"
-	label={me ? t('room.yourSettingsNamed', { name: me }) : t('room.yourSettings')}
+	label={me ? t('room.settingsNamed', { name: me }) : t('settings.title')}
 	data-testid="you-button"
-	onclick={() => (open = true)}
+	onclick={() => settingsDialog.show()}
 />
-
-<!-- Every row changes the page at once; the name opens its own modal with Save (Trevor,
-     2026-10-27). -->
-<Dialog bind:open title={t('room.yourSettings')}>
-	<div class="rows">
-		{#if player}<PlayerNameRow {player} /><AvatarPictureRow name={me} />{/if}
-		<TextSizeRows /><PlayerSizeRows />
-	</div>
-</Dialog>
-
-<style>
-	.rows {
-		display: grid;
-		min-width: 0;
-	}
-</style>

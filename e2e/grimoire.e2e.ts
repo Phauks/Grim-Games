@@ -28,19 +28,14 @@ async function menu(page: Page, action: string) {
 		.tap();
 }
 
-/** ⋯ > Settings, which opens all of Settings at Board, then the section asked for. */
+/** ⋯ > Settings, which opens all of Settings at its root, then the section asked for. */
 async function boardSettings(page: Page, section: string) {
 	await menu(page, 'Settings');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	if (section !== 'Board') {
-		// Phones show one section at a time: back to the list first.
-		const back = settings.getByRole('button', { name: 'All settings' });
-		if (await back.isVisible()) await back.tap();
-		await settings
-			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: section })
-			.tap();
-	}
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: section, exact: true })
+		.tap();
 	await expect(settings.getByRole('heading', { name: section, level: 2 })).toBeVisible();
 }
 
@@ -1145,6 +1140,45 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 	);
 });
 
+test("the Demon's step says when the Princess stops its kill tonight", async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Princess : after her day-one execution, the Demon
+	// doesn't kill tonight, so the Soldier's protection isn't listed either.
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Imp'],
+		[2, 'Princess'],
+		[3, 'Soldier']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		if (name === 'Princess') await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await closeSheet(page);
+	}
+	await walkTo(page, 'Dusk');
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const reminders = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await reminders
+		.getByRole('group', { name: 'Princess' })
+		.getByRole('button', { name: "Doesn't Kill" })
+		.tap();
+	await reminders.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	await (await walkTo(page, 'Imp')).locator('button.step .count').tap();
+	const alerts = page.getByRole('dialog', { name: 'Imp' }).getByTestId('night-alerts');
+	await expect(alerts).toContainText(/Seat 1:\s*Princess\s*, doesn't\s+kill\s+tonight/);
+	await expect(alerts).not.toContainText(/Soldier/);
+});
+
 test('a filled-in info token with room left opens its picker with the filled ones picked', async ({
 	page
 }) => {
@@ -1357,22 +1391,25 @@ test("the Board preview's bank has the board bank's outline and colour", async (
 	expect(await dialog.getByTestId('preview-bank').evaluate(look)).toEqual(board);
 });
 
-// Trevor (2026-10-23): a full screen button on the board, for those who don't know how.
-test('the board can go full screen from its toolbar, and back', async ({ page }) => {
+// Trevor (2026-10-23): full screen on the board, for those who don't know how; in ⋯ since
+// 2026-10-27 ("We can move full screen into ... Menu"), so the grim cover sits beside ☰.
+test('the board can go full screen from its ⋯ menu, and back', async ({ page }) => {
 	await startGame(page);
-	const button = page.getByRole('button', { name: 'Full screen', exact: true });
-	await expect(button).toHaveAttribute('aria-pressed', 'false');
-	// Its symbol alone, last on the toolbar after ⋯ (Trevor, 2026-10-24).
-	await expect(button).toHaveText('');
-	await expect(
-		page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button').last()
-	).toHaveAccessibleName('Full screen');
-	await button.tap();
-	await expect(button).toHaveAttribute('aria-pressed', 'true');
-	expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-	await button.tap();
-	await expect(button).toHaveAttribute('aria-pressed', 'false');
-	expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(toolbar.getByRole('button', { name: 'Full screen' })).toHaveCount(0);
+	const item = () =>
+		page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Full screen', exact: true });
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(item()).toHaveAttribute('aria-pressed', 'false');
+	await item().tap();
+	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
+	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(item()).toHaveAttribute('aria-pressed', 'true');
+	await item().tap();
+	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
@@ -2030,14 +2067,13 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	await expect(page.getByTestId('vignette')).toHaveCount(0);
 
-	// ⋯ > Settings opens all of Settings over the board, at Board (Trevor, 2026-10-27: "just
-	// open to all settings, and stop limiting to what they can access").
+	// ⋯ > Settings opens all of Settings over the board, at its root as from the navigation
+	// (Trevor, 2026-10-27: "just open to all settings", "should just go to the root"): phones
+	// see the section list, wide screens the list beside the first section.
 	await menu(page, 'Settings');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toBeVisible();
-	// Every section is in reach: phones go back to the list first.
-	const back = settings.getByRole('button', { name: 'All settings' });
-	if (await back.isVisible()) await back.tap();
+	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
+	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toHaveCount(0);
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Storyteller' })
@@ -4197,10 +4233,10 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
 	expect((await names('Game')).join(' ')).toMatch(
-		/^History Demon bluffs Notes Soundboard( Game info)?( Character selection)? End game$/
+		/^History Demon bluffs Notes( Game info)?( Character selection)? End game$/
 	);
 	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Arrange seats']);
-	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
+	expect(await names('App')).toEqual(['Settings', 'Full screen', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
 	const seats = (await group('Seats').boundingBox())!;
@@ -4210,10 +4246,10 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	} else {
 		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
 	}
-	// Settings opens all of it, at Board.
+	// Settings opens all of it, at its root.
 	await menu.getByRole('button', { name: 'Settings', exact: true }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toBeVisible();
+	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -4268,7 +4304,9 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 			.tap();
 		await closeSheet(page);
 	}
-	// The first night ends; the Empath is executed on Day 1 and the Ravenkeeper dies tonight.
+	// The first night ends; the Empath is executed on Day 1 and the Demon kills the
+	// Ravenkeeper tonight. An execution would not wake them: the Ravenkeeper wakes only on
+	// dying at night (https://wiki.bloodontheclocktower.com/Ravenkeeper).
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
@@ -4279,7 +4317,7 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 			await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
 			await page
 				.getByRole('dialog', { name: `Status of Seat ${seat}` })
-				.getByRole('button', { name: 'Executed' })
+				.getByRole('button', { name: seat === 2 ? 'Executed' : 'The Demon' })
 				.tap();
 			// During the day, Executed asks as the day's Execution does (Trevor, 2026-10-23),
 			// and its Confirm ends the day.
@@ -4289,7 +4327,7 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 				await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 				continue;
 			}
-			await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+			await expect(sheet.getByRole('button', { name: 'Status: Dead: The Demon' })).toBeVisible();
 		}
 		await closeSheet(page);
 	}

@@ -18,6 +18,7 @@
 import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
 import type {
 	ImpairmentReason,
+	PROTECTS_FROM,
 	Protects,
 	TokenImpairment
 } from '#lib/core/data/character-rules.ts';
@@ -26,6 +27,7 @@ import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
+	aliveNeighbours,
 	getSeat,
 	isTraveller,
 	trueCharacter,
@@ -106,6 +108,27 @@ function worksWhenDead(characterId: CharacterId | undefined, characters: Charact
 	return ability !== undefined && /\beven if dead\b/i.test(ability);
 }
 
+/**
+ * Whether the character whose token sits on `carrier` still has a working ability: some other
+ * player of it works, or none is in play (a token left by a gained ability, which we can't
+ * trace).
+ */
+function sourceWorks(
+	game: Game,
+	carrier: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	visiting: Set<SeatId>
+): boolean {
+	const seats = game.seating.filter(
+		(s) => s !== carrier && trueCharacter(game, s, characters) === characterId
+	);
+	return (
+		seats.length === 0 ||
+		seats.some((s) => !visiting.has(s) && abilityWorks(game, s, characters, visiting))
+	);
+}
+
 function impairmentsOf(
 	game: Game,
 	seatId: SeatId,
@@ -150,6 +173,16 @@ function impairmentsOf(
 		}
 		const reason = impairmentOfLabel(r.label);
 		if (!reason) continue;
+		// Another character's "Poisoned" or "Drunk" lasts only while that character's ability
+		// works: once its player dies, is drunk or poisoned, the effect ends at once
+		// (https://wiki.bloodontheclocktower.com/Abilities, the dead Poisoner's Slayer). Tokens
+		// that last regardless say so with an `impairs.tokens` entry (the Sweetheart's). With no
+		// player of that character in play, the token is kept: it may come from a gained ability.
+		if (
+			r.characterId !== characterId &&
+			!sourceWorks(game, seatId, r.characterId, characters, visiting)
+		)
+			continue;
 		const sourceSeat =
 			r.characterId === characterId
 				? seatId
@@ -185,15 +218,23 @@ function impairmentsOf(
 	}
 
 	// A token that impairs every other player but Travellers while it is on the board (the
-	// Minstrel's "Everyone Is Drunk": https://wiki.bloodontheclocktower.com/Minstrel).
+	// Minstrel's "Everyone Is Drunk": https://wiki.bloodontheclocktower.com/Minstrel), or only
+	// `type` players while its character's ability works (the Xaan's "X", every Townsfolk:
+	// https://wiki.bloodontheclocktower.com/Xaan).
 	const traveller = isTraveller(game, seatId, characters);
 	others: for (const other of traveller ? [] : game.seating) {
 		if (other === seatId) continue;
 		for (const token of game.seats[other].reminders) {
 			const rule = tokenImpairment(token, characters);
 			if (rule?.on !== 'others') continue;
+			if (rule.type && typeOf(game, seatId, characters) !== rule.type) continue;
 			const source = seatOfCharacter(game, token.characterId, characters) ?? other;
 			if (source === seatId) continue;
+			if (
+				rule.whileWorks &&
+				(visiting.has(source) || !abilityWorks(game, source, characters, visiting))
+			)
+				continue;
 			out.push({
 				reason: rule.reason,
 				source: { characterId: token.characterId, seatId: source, reminderId: token.reminderId },
@@ -203,7 +244,16 @@ function impairmentsOf(
 		}
 	}
 
-	return out.sort((a, b) => ORDER[a.reason] - ORDER[b.reason]);
+	// A token that makes its carrier sober and healthy while its character's ability works
+	// (the Barista's "Sober & Healthy": https://wiki.bloodontheclocktower.com/Barista). An
+	// ability that is removed outright (`no-ability`) stays removed.
+	const sober = seat.reminders.some(
+		(r) =>
+			rulesOf(r.characterId, characters)?.impairs?.clears?.includes(r.label) &&
+			sourceWorks(game, seatId, r.characterId, characters, visiting)
+	);
+	const kept = sober ? out.filter((i) => i.reason === 'no-ability') : out;
+	return kept.sort((a, b) => ORDER[a.reason] - ORDER[b.reason]);
 }
 
 function abilityWorks(
@@ -402,8 +452,8 @@ export function registrationWorlds(
 /** One ability that protects a player from a kill, and the reminder that says so if any. */
 export interface Protector {
 	source: AbilitySource;
-	/** Against the Demon's kill only, any death, or an execution only. */
-	from: 'demon' | 'any' | 'execution';
+	/** Against the Demon's kill only, any death, an execution only, or all but an execution. */
+	from: (typeof PROTECTS_FROM)[number];
 }
 
 /** What a death is from: the Demon's kill, another ability's, or the day's execution. */
@@ -411,7 +461,11 @@ export type DeathBy = 'demon' | 'other' | 'execution';
 
 /** Whether a protection stops a death `by` this: not one lasting only the night, for an execution. */
 function stops(rule: Protects, by: DeathBy): boolean {
-	return (rule.from === 'any' || rule.from === by) && !(rule.night && by === 'execution');
+	const covers =
+		rule.from === 'any' ||
+		rule.from === by ||
+		(rule.from === 'not-execution' && by !== 'execution');
+	return covers && !(rule.night && by === 'execution');
 }
 
 /**
@@ -428,6 +482,10 @@ function protectionFor(
 	const seat = getSeat(game, seatId);
 	if (!seat) return undefined;
 	const from = seatOfCharacter(game, characterId, characters);
+	if (rule.whileNeighboursGood) {
+		const near = from === undefined ? [] : aliveNeighbours(game, from);
+		if (near.length === 0 || near.some((id) => alignmentOf(game, id) !== 'good')) return undefined;
+	}
 	switch (rule.who) {
 		case 'self':
 			return trueCharacter(game, seatId, characters) === characterId

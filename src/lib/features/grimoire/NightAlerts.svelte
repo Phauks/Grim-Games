@@ -40,6 +40,7 @@
 	const ICON = {
 		impaired: 'poisoned',
 		blocked: 'warning',
+		'no-kill': 'protected',
 		protected: 'protected',
 		'may-bounce': 'warning',
 		'survives-first-death': 'protected',
@@ -91,6 +92,8 @@
 					{:else if alert.kind === 'blocked'}
 						{@render player(alert.seatId)}: chosen by {@render badge(sourceId(alert))}, doesn't wake
 						tonight
+					{:else if alert.kind === 'no-kill'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, doesn't kill tonight
 					{:else if alert.kind === 'protected'}
 						{@render player(alert.seatId)} can't die{#if alert.source === 'override'}
 							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}

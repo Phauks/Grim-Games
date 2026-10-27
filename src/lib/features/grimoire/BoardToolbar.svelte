@@ -3,14 +3,14 @@
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import FullScreenButton from '#lib/ui/primitives/FullScreenButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import type { Snippet } from 'svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { SeatArranging } from './seat-arranging.svelte.ts';
 
 	/**
-	 * The bar over the board: the app's navigation, then Day, Info tokens, Script,
-	 * Share, More and the full screen symbol. Arranging seats or placing one swaps in their own controls, at the same
+	 * The bar over the board: the app's navigation and the grim cover, then Day, Info tokens,
+	 * Script, Share and More. Arranging seats or placing one swaps in their own controls, at the same
 	 * height, so the board never moves.
 	 */
 	interface Props {
@@ -28,6 +28,8 @@
 		onScript: () => void;
 		onShare: () => void;
 		onMore: () => void;
+		/** Beside ☰: the grim cover, in the same place on the board and the day (Trevor). */
+		lead?: Snippet;
 	}
 
 	let {
@@ -41,7 +43,8 @@
 		onInfo,
 		onScript,
 		onShare,
-		onMore
+		onMore,
+		lead
 	}: Props = $props();
 </script>
 
@@ -76,6 +79,7 @@
 		{#if !(navDrawer.sidebarMounted && !navDrawer.pageButton)}<span class="nav-menu" class:watching
 				><NavMenuButton /></span
 			>{/if}
+		{@render lead?.()}
 		<!-- Icons on phones; with their words on wider screens, where there is room. A
 		     spectator's board says what it is in that room (Trevor, 2026-10-19). -->
 		<span class="spacer"
@@ -113,9 +117,6 @@
 		<Button variant="quiet" icon="more" aria-label="More" disabled={!menu} onclick={onMore}
 			><span class="tool-label">More</span></Button
 		>
-		<!-- Last, after ⋯, as its symbol alone (Trevor, 2026-10-24); the symbol says on or off,
-		     and one button either way, so the toolbar never moves (two states = a toggle). -->
-		<FullScreenButton outlined />
 	{/if}
 </div>
 

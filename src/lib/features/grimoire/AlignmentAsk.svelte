@@ -1,9 +1,10 @@
 <script lang="ts">
 	import AlignmentPill from './AlignmentPill.svelte';
-	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import type { SeatId } from '#lib/core/model/index.ts';
+	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**
@@ -12,7 +13,11 @@
 	 * (Trevor, 2026-10-17), wherever the reminder was placed from. Cancel leaves the
 	 * alignment as it is. The same for a reminder that says the player became the Demon (the
 	 * Scarlet Woman's "Is The Demon", https://wiki.bloodontheclocktower.com/Scarlet_Woman;
-	 * Trevor, 2026-10-19): it asks whether to change their character to that Demon.
+	 * Trevor, 2026-10-19): it asks whether to change their character to that Demon. Taking off
+	 * the Mezepheles's "Turns Evil" asks to make that player evil
+	 * (https://wiki.bloodontheclocktower.com/Mezepheles); the Snake Charmer's "Poisoned" on the
+	 * Demon asks to swap their characters and alignments
+	 * (https://wiki.bloodontheclocktower.com/Snake_Charmer). Rules: `becomesOffer` in core.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -41,6 +46,19 @@
 				alignment: 'evil'
 			});
 		grimoire.demonAsk = undefined;
+	}
+
+	const swap = $derived(grimoire.swapAsk);
+	let swapOpen = $state(false);
+	$effect(() => {
+		if (swap) swapOpen = true;
+	});
+	$effect(() => {
+		if (!swapOpen) grimoire.swapAsk = undefined;
+	});
+	function swapCharacters() {
+		if (swap) grimoire.run({ type: 'SwapCharacters', ...swap });
+		grimoire.swapAsk = undefined;
 	}
 
 	let open = $state(false);
@@ -113,6 +131,38 @@
 			</dd>
 			<dt>Alignment</dt>
 			<dd><AlignmentPill alignment="evil" /></dd>
+		</dl>
+	{/if}
+</ConfirmDialog>
+
+{#snippet change(seatId: SeatId, from: SeatId)}
+	{@const now = grimoire.game.seats[seatId]}
+	{@const next = grimoire.game.seats[from]}
+	<dt>Player</dt>
+	<dd><PlayerBadge name={seatName(grimoire.game, seatId)} /></dd>
+	<dt>New character</dt>
+	<dd>
+		{#if next?.characterId}<CharacterBadge
+				characterId={next.characterId}
+				character={grimoire.open.characters.get(next.characterId)}
+			/>{/if}
+	</dd>
+	<dt>New alignment</dt>
+	<dd>
+		{#if next?.alignment && now}<AlignmentPill alignment={next.alignment} />{/if}
+	</dd>
+{/snippet}
+
+<ConfirmDialog
+	bind:open={swapOpen}
+	title="Swap characters and alignments?"
+	onConfirm={swapCharacters}
+	onCancel={() => (grimoire.swapAsk = undefined)}
+>
+	{#if swap}
+		<dl class="change" data-testid="swap-ask">
+			{@render change(swap.seatId, swap.withSeatId)}
+			{@render change(swap.withSeatId, swap.seatId)}
 		</dl>
 	{/if}
 </ConfirmDialog>

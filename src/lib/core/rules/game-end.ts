@@ -188,6 +188,16 @@ function impaired(
  * - while the player with its token lives: the Lleech dies only with its host
  *   (https://wiki.bloodontheclocktower.com/Lleech).
  */
+/**
+ * Marked dead, yet still alive by its own ability (`gameEnd.aliveWhileDead`): the Zombuul after
+ * its first death, which "lives but registers as dead" and still wakes to kill
+ * (https://wiki.bloodontheclocktower.com/Zombuul), or a Lleech whose host lives
+ * (https://wiki.bloodontheclocktower.com/Lleech). Such a player keeps their night step.
+ */
+export function livesWhileDead(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	return !!game.seats[seatId]?.dead && aliveForEnd(game, seatId, characters);
+}
+
 function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	if (isAliveForWin(game, seatId)) return true;
 	const seat = game.seats[seatId];
@@ -681,24 +691,20 @@ export function suggestedWinner(ends: readonly GameEnd[]): Alignment | undefined
 }
 
 /**
- * The Demon killed itself with a Minion alive (the Imp:
- * https://wiki.bloodontheclocktower.com/Imp): the living Minions who may become the Demon, and
- * the player whose ability makes it theirs (the Scarlet Woman:
+ * The Demon died by its own kill with a player alive to take it on (the Imp's Minions,
+ * https://wiki.bloodontheclocktower.com/Imp; the Fang Gu's Outsiders, once,
+ * https://wiki.bloodontheclocktower.com/Fang_Gu): that Demon, the players who may become it,
+ * and the player whose ability makes it theirs (the Scarlet Woman:
  * https://wiki.bloodontheclocktower.com/Scarlet_Woman). Undefined once a Demon lives.
  */
 export function starPass(
 	game: Game,
 	characters: CharacterLookup
-): { minions: SeatId[]; preferred?: SeatId } | undefined {
+): { characterId: CharacterId; heirs: SeatId[]; preferred?: SeatId } | undefined {
 	const holds = demonDead(game, characters).flatMap((end) => end.holds);
-	const pass = holds.find(
-		(h) =>
-			h.rule === 'death-passes' &&
-			gameEndRules(h.characterId, characters)?.holds?.some(
-				(r) => r.kind === 'death-passes' && r.to === 'minion'
-			)
-	);
+	const pass = holds.find((h) => h.rule === 'death-passes');
 	if (!pass) return undefined;
 	const heir = holds.find((h) => h.rule === 'becomes-demon')?.seats[0];
-	return { minions: pass.seats, preferred: heir && pass.seats.includes(heir) ? heir : undefined };
+	const preferred = heir && pass.seats.includes(heir) ? heir : undefined;
+	return { characterId: pass.characterId, heirs: pass.seats, ...(preferred ? { preferred } : {}) };
 }

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { setPlayerName } from './player-name.ts';
+import { openPlayerSettings, setPlayerName } from './player-name.ts';
 import { pickScript, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
@@ -614,7 +614,7 @@ test("the player picks their name from the room's phones", async ({ page, browse
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await phone.getByTestId('you-button').tap();
+	await openPlayerSettings(phone);
 	await setPlayerName(phone, 'Alex');
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex');
 
@@ -635,6 +635,40 @@ test("the player picks their name from the room's phones", async ({ page, browse
 	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
 	await expect(reveal.getByRole('button', { name: 'Pick your name' })).toBeDisabled();
 	await phoneContext.close();
+});
+
+test('a player whose phone sleeps stays in the names list', async ({ page, browser }, testInfo) => {
+	// Bug report #3 (2026-10-27): a name left the list while the player's screen was off or the
+	// app was in the background. A closed page drops its connection the same way.
+	await selectionFor(page, 5);
+	const setup = new URL(page.url()).pathname;
+	await page.goto(setup.replace(/\/setup$/, '/room'));
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const players = page.getByRole('list', { name: 'Players in the room' });
+	// Each phone its own context, as a phone's key is kept in its storage.
+	const join = async (name: string) => {
+		const phone = await (await browser.newContext({ ...testInfo.project.use })).newPage();
+		await phone.goto(`/join/${code}`);
+		await openPlayerSettings(phone);
+		await setPlayerName(phone, name);
+		await expect(players).toContainText(name);
+		return phone;
+	};
+	const alex = await join('Alex');
+	await alex.context().close();
+	// Ben joining after Alex left means the Storyteller has heard Alex is gone.
+	const ben = await join('Ben');
+	await expect(players).toContainText('Alex');
+
+	await page.goto(setup);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	await page.getByTestId('reveal').getByRole('button', { name: 'Pick your name' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
+	await expect(sheet.getByRole('button')).toHaveText(['Alex', 'Ben']);
+	await ben.context().close();
 });
 
 test('type groups and the setup sheet close from their header and stay closed', async ({

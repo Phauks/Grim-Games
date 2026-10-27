@@ -73,5 +73,10 @@
 			}
 		}
 	},
-	"makesExtraEvil": true
+	"makesExtraEvil": true,
+	"becomes": {
+		"token": "Turns Evil",
+		"into": "evil",
+		"when": "removed"
+	}
 }

@@ -1,4 +1,12 @@
 {
+	"impairs": {
+		"tokens": {
+			"Poisoned": {
+				"reason": "poisoned",
+				"on": "carrier"
+			}
+		}
+	},
 	"reminderTargets": {
 		"Poisoned": {
 			"seat": "any",
@@ -56,5 +64,9 @@
 				"reason": "Says the old Demon, now the Snake Charmer, gets the Poisoned token."
 			}
 		}
+	},
+	"becomes": {
+		"token": "Poisoned",
+		"into": "swap"
 	}
 }

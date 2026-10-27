@@ -15,6 +15,7 @@ import {
 export const CHARACTERS_DECIDERS: Deciders<
 	| 'AssignCharacter'
 	| 'ClearCharacter'
+	| 'SwapCharacters'
 	| 'SetAlignment'
 	| 'SetDead'
 	| 'SetDeathCause'
@@ -64,6 +65,26 @@ export const CHARACTERS_DECIDERS: Deciders<
 			return [];
 		}
 		return [{ type: 'CharacterCleared', seatId: seat.seatId }];
+	},
+
+	SwapCharacters(game, command, ctx, warn) {
+		const a = seatOf(game, command.seatId);
+		const b = seatOf(game, command.withSeatId);
+		if (a.seatId === b.seatId) refuse('same-seat', 'a player cannot swap with themselves');
+		if (a.characterId === undefined || b.characterId === undefined) {
+			refuse('unknown-character', 'both players need a character to swap');
+		}
+		if (a.characterId === b.characterId && a.alignment === b.alignment) {
+			warn('no-change', 'they have the same character and alignment');
+			return [];
+		}
+		const to = (seat: typeof a, from: typeof b): GameEvent => ({
+			type: 'CharacterAssigned',
+			seatId: seat.seatId,
+			characterId: from.characterId!,
+			...(from.alignment !== undefined ? { alignment: from.alignment } : {})
+		});
+		return [to(a, b), to(b, a)];
 	},
 
 	SetAlignment(game, command, ctx, warn) {

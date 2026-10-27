@@ -3,6 +3,7 @@
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
+	import { appFullScreen } from '#lib/ui/full-screen.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -28,8 +29,6 @@
 		onNotes: () => void;
 		/** Back to town (plan U2): only while players' phones can be in a room. */
 		onCallTown?: () => void;
-		/** The soundboard (plan U6); not on a spectator's board. */
-		onSoundboard?: () => void;
 		onGameInfo: () => void;
 		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
 		onCharacterSelection?: () => void;
@@ -59,7 +58,6 @@
 		onBluffs,
 		onNotes,
 		onCallTown,
-		onSoundboard,
 		onGameInfo,
 		onCharacterSelection,
 		onAddSeat,
@@ -94,17 +92,6 @@
 			<Button disabled={watching} variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}
 				>Notes</Button
 			>
-			{#if onSoundboard}
-				<!-- Bells and other sounds at a tap (plan U6, Trevor 2026-10-26). -->
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="soundboard"
-					onclick={() => fromMenu(onSoundboard)}
-				>
-					{t('settings.soundboard')}
-				</Button>
-			{/if}
 			{#if onCallTown}
 				<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
 				<Button
@@ -200,15 +187,28 @@
 			<section class="group" aria-labelledby="board-menu-app">
 				<h3 id="board-menu-app" class="group-title">App</h3>
 				<!-- All of Settings, not only the board's sections (Trevor, 2026-10-27: "why not just
-				     open to all settings, and stop limiting to what they can access?"), at Board. -->
+				     open to all settings, and stop limiting to what they can access?"), at its root,
+				     as from the navigation (Trevor, 2026-10-27: "should just go to the root"). -->
 				<Button
 					disabled={watching}
 					variant="quiet"
 					icon="settings"
-					onclick={() => fromMenu(() => settingsDialog.show('board'))}
+					onclick={() => fromMenu(() => settingsDialog.show())}
 				>
 					{t('settings.title')}
 				</Button>
+				<!-- Here, not on the toolbar, so the grim cover can sit beside ☰ (Trevor, 2026-10-27).
+				     The symbol says on or off; where the browser can't, it isn't listed. -->
+				{#if appFullScreen.available}
+					<Button
+						variant="quiet"
+						icon={appFullScreen.on ? 'exitFullScreen' : 'fullScreen'}
+						aria-pressed={appFullScreen.on}
+						onclick={() => fromMenu(() => appFullScreen.toggle())}
+					>
+						Full screen
+					</Button>
+				{/if}
 				<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 				<span class="menu-nav">
 					<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>

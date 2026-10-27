@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { fullScreenPart } from '#lib/ui/full-screen.svelte.ts';
+	import { untrack } from 'svelte';
+	import { appFullScreen, fullScreenPart } from '#lib/ui/full-screen.svelte.ts';
 	import IconButton from './IconButton.svelte';
 
 	/**
 	 * Full screen, for those who don't know their browser's own way (Trevor, 2026-10-23): the
-	 * board's toolbar, and the top right corner of a `FullScreenStage` (Public Town's town, the
+	 * top right corner of a `FullScreenStage` (Public Town's town, the
 	 * player screen's Grim). The whole app's full screen is only where the browser can (iPhone
 	 * Safari can't for a page), and not in the installed app (Trevor, 2026-10-23): it already
 	 * has no address bar, and full screen would only take the clock and status bar he wants to
@@ -19,38 +20,33 @@
 		 * 2026-10-26: "not the app itself, but that part of it").
 		 */
 		target?: HTMLElement;
-		/** Drawn like its neighbours: outlined on the board's toolbar, plain over the town. */
+		/** Drawn like its neighbours: plain over the town. */
 		outlined?: boolean;
 	}
 
 	let { target, outlined = false }: Props = $props();
 
-	const installed = matchMedia('(display-mode: standalone)').matches;
-	const canFullScreen = $derived(!!target || (document.fullscreenEnabled === true && !installed));
-	let current = $state.raw(document.fullscreenElement);
+	const canFullScreen = $derived(!!target || appFullScreen.available);
+	// Leaving the browser's full screen (Back, Escape) lets the part go too; where the browser
+	// can't fill the screen (iPhone), the part fills the window alone and stays.
+	let wasFull = false;
 	$effect(() => {
-		const sync = () => {
-			current = document.fullscreenElement;
-			// Leaving the browser's full screen (Back, Escape) lets the part go too.
-			if (!current && target && fullScreenPart.current === target)
-				fullScreenPart.current = undefined;
-		};
-		document.addEventListener('fullscreenchange', sync);
-		return () => document.removeEventListener('fullscreenchange', sync);
+		const full = !!appFullScreen.element;
+		if (wasFull && !full && target && untrack(() => fullScreenPart.current) === target)
+			fullScreenPart.current = undefined;
+		wasFull = full;
 	});
-	const fullScreen = $derived(target ? fullScreenPart.current === target : !!current);
+	const fullScreen = $derived(target ? fullScreenPart.current === target : appFullScreen.on);
 	function toggle() {
-		if (target) {
-			if (fullScreen) {
-				fullScreenPart.current = undefined;
-				if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-			} else {
-				fullScreenPart.current = target;
-				if (document.fullscreenEnabled && !document.fullscreenElement)
-					void document.documentElement.requestFullscreen().catch(() => {});
-			}
-		} else if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-		else void document.documentElement.requestFullscreen().catch(() => {});
+		if (!target) appFullScreen.toggle();
+		else if (fullScreen) {
+			fullScreenPart.current = undefined;
+			if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+		} else {
+			fullScreenPart.current = target;
+			if (document.fullscreenEnabled && !document.fullscreenElement)
+				void document.documentElement.requestFullscreen().catch(() => {});
+		}
 	}
 </script>
 

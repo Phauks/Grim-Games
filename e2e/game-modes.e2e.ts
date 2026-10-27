@@ -2360,10 +2360,10 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 		'Sheet background',
 		'Print script',
 		'Share script',
-		'Your settings'
+		'Settings'
 	]);
 	// The name under the buttons, as on /play (Trevor, 2026-10-26).
-	const cog = (await sheet.getByRole('button', { name: 'Your settings' }).boundingBox())!;
+	const cog = (await sheet.getByTestId('you-button').boundingBox())!;
 	const name = (await sheet.getByRole('heading', { name: 'Trouble Brewing' }).boundingBox())!;
 	expect(name.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
 	await trigger.tap();
@@ -2384,7 +2384,7 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 	await expect(sections.first()).toHaveCSS('border-top-width', '0px');
 });
 
-test('the Script sheet has the players’ settings cog, opening their own sheet', async ({
+test('the Script sheet has the players’ settings cog, opening the one Settings', async ({
 	page
 }) => {
 	// Trevor, 2026-10-26: "settings does not show up in storyteller view of player view. This
@@ -2395,10 +2395,14 @@ test('the Script sheet has the players’ settings cog, opening their own sheet'
 	await toBoard(page);
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
-	await sheet.getByRole('button', { name: 'Your settings' }).tap();
-	const settings = page.getByRole('dialog', { name: 'Your settings' });
-	await expect(settings.getByRole('slider', { name: 'Text size', exact: true })).toBeVisible();
+	// The one Settings, at its list of sections (Trevor, 2026-10-27).
+	await sheet.getByTestId('you-button').tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const sections = settings.getByRole('navigation', { name: 'Settings sections' });
+	await expect(sections).toBeVisible();
 	// No room phone here, so no name to set.
+	await sections.getByRole('button', { name: 'Player', exact: true }).tap();
+	await expect(settings.getByRole('heading', { name: 'Player', level: 2 })).toBeVisible();
 	await expect(settings.getByRole('button', { name: 'Edit your name' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();

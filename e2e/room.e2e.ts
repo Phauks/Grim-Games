@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { setPlayerName } from './player-name.ts';
+import { openPlayerSettings, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
@@ -30,15 +30,10 @@ async function watchWithPassword(phone: Page, code: string, password: string) {
 }
 
 /**
- * Opens the phone's You sheet from the title line (plan E2, Trevor 2026-10-26: "move name into
- * an edit button in the top").
+ * Opens Settings > Player from the title line's cog, where the phone's name is (plan E2;
+ * Trevor 2026-10-27: one Settings everywhere).
  */
-async function seatSheet(phone: Page) {
-	await phone.getByTestId('you-button').tap();
-	const sheet = phone.getByRole('dialog', { name: 'Your settings' });
-	await expect(sheet).toBeVisible();
-	return sheet;
-}
+const seatSheet = openPlayerSettings;
 
 /** Names a seat on the board, which seats the phone with that name (no seat picking). */
 async function nameSeat(page: Page, number: number, name: string) {
@@ -122,12 +117,12 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	// name shows up").
 	await expect(phone.getByTestId('join-status')).toHaveText('');
 	const sheet = await seatSheet(phone);
-	await expect(sheet.getByRole('radio')).toHaveCount(0);
+	await expect(sheet.getByRole('radio', { name: /^Seat / })).toHaveCount(0);
 	await setPlayerName(phone, 'Alex');
 	await phone.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(phone.getByTestId('join-status')).toHaveText('');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 	// Joining moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
 	// script"); the Room tab keeps the seat's state.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
@@ -146,7 +141,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await nameSeat(page, 3, 'Alex');
 
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(phone.getByTestId('grim-seat').nth(2)).toHaveAttribute(
 		'aria-label',
@@ -157,7 +152,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await setPlayerName(phone, 'Alex K');
 	await phone.keyboard.press('Escape');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex K' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex K' })).toBeVisible();
 	await page.goto(`${board}/room`);
 	await expect(alex).toHaveText(/^Alex K\s*Seat 3$/);
 
@@ -178,7 +173,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	// A phone with a seat opens on the script.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex K' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex K' })).toBeVisible();
 	const again = await seatSheet(phone);
 	await expect(again.getByTestId('player-name')).toHaveText('Alex K');
 	await again.getByRole('button', { name: 'Edit your name' }).tap();
@@ -1535,6 +1530,10 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
+	await settings
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Green felt' })
 		.tap();
@@ -1545,6 +1544,10 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
 		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
 		.tap();
 	await settings.getByLabel('Background image file').setInputFiles({
 		name: 'table.png',
@@ -1644,11 +1647,16 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Game time ticks, so it is read as the board shows it, not to the second.
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
-	// The phone works out the players and the split by type itself, over the town (Trevor,
-	// 2026-10-26: so players don't have to), whatever the board's corner shows.
-	await expect(phone.getByTestId('grim-counts')).toHaveText(
-		'Players: 8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)'
-	);
+	// No count of its own over the town (Trevor, 2026-10-27: "remove character count"), and
+	// the Grim tab's controls sit on the town's bottom right corner, so no strip goes on them.
+	await expect(phone.getByTestId('grim-counts')).toHaveCount(0);
+	const town = (await phone.getByTestId('player-grim').boundingBox())!;
+	for (const control of ['hide-guesses', 'match-shape']) {
+		const box = (await phone.getByTestId(control).boundingBox())!;
+		expect(box.y, control).toBeGreaterThan(town.y + town.height * 0.8);
+		expect(box.y + box.height, control).toBeLessThanOrEqual(town.y + town.height);
+		expect(box.x, control).toBeGreaterThan(town.x + town.width * 0.5);
+	}
 	// Each corner line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
 	const info = await openGameInfo(page);
 	await info.getByRole('button', { name: 'Author on the board' }).tap();
@@ -2318,7 +2326,7 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
 	await nameSeat(page, 3, 'Alex Kim');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex Kim' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex Kim' })).toBeVisible();
 
 	// On the board: the seat has no character yet, so the initials are its face.
 	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex Kim"]');
