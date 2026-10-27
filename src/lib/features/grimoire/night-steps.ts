@@ -17,15 +17,17 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import {
+	keepsAbilityWhenDead,
 	MARKER_TEXT,
 	nightOrder,
+	onDeathTrigger,
 	TRAVELLER_ALIGNMENT_STEP,
 	withCharacterChangeSteps,
 	withNightInfo,
 	type Night,
 	type NightStep
 } from '#lib/core/rules/index.ts';
-import type { SpecialRule } from '#lib/core/modes/index.ts';
+import { seatHasAbility, type AbilitiesRule, type SpecialRule } from '#lib/core/modes/index.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 
 export function boardNightSteps(
@@ -151,6 +153,32 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 	if (step.changed) return [step.changed.seatId];
 	const id = step.character?.id;
 	return id ? game.seating.filter((s) => game.seats[s].characterId === id) : [];
+}
+
+/**
+ * Whether a step wakes anyone tonight, for Run Night Order and the leaf numbers: a step for
+ * no player (Dusk, Dawn), or one with a player who has their ability (alive, or as a special
+ * rule says), a dead player another character's token keeps it for (`keepsAbility`: the
+ * Vigormortis's Has Ability on a Minion it killed, https://wiki.bloodontheclocktower.com/Vigormortis),
+ * or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
+ */
+export function stepWakes(
+	game: Game,
+	step: NightStep,
+	characters: CharacterLookup,
+	tonight: { abilitiesRule?: AbilitiesRule; diedTonight: ReadonlySet<SeatId> }
+): boolean {
+	const holders = stepHolders(game, step, characters);
+	const id = step.character?.id;
+	return (
+		holders.length === 0 ||
+		holders.some(
+			(s) =>
+				seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
+				keepsAbilityWhenDead(game, s, characters) ||
+				(id !== undefined && !!onDeathTrigger(id, characters) && tonight.diedTonight.has(s))
+		)
+	);
 }
 
 /** A seat's PlayerBadge text; the one helper lives with the other seat names. */

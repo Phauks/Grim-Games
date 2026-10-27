@@ -48,16 +48,24 @@ test('a report sent from the menu reaches the inbox, where it can be triaged and
 	const report = page.getByRole('dialog', { name: new RegExp(title) });
 	await expect(report).toContainText('Show the night order on phones.');
 	await report.getByRole('combobox', { name: 'Status' }).tap();
-	await page.getByRole('option', { name: 'Accepted' }).tap();
+	// The usual work flow (Trevor, 2026-10-27): New, To do, In progress, Done, Won't fix.
+	await expect(page.getByRole('option')).toHaveText([
+		'New',
+		'To do',
+		'In progress',
+		'Done',
+		"Won't fix"
+	]);
+	await page.getByRole('option', { name: 'In progress' }).tap();
 	await report.getByRole('button', { name: 'Close' }).first().tap();
-	// Admins start filtered to New, so an accepted report leaves the list.
+	// Admins start filtered to New, so a report being worked on leaves the list.
 	await expect(row).toBeHidden();
 	await expect(report).toBeHidden();
 	await table.getByRole('button', { name: 'Filter Status (set)' }).tap();
 	const status = page.getByRole('dialog', { name: 'Filter Status' });
 	// New may have no rows left: unticked, it leaves the list, so it is tapped, not unchecked.
 	await status.getByLabel('New').click();
-	await status.getByLabel('Accepted').check();
+	await status.getByLabel('In progress').check();
 	await status.getByRole('button', { name: 'Close' }).tap();
 	await expect(row).toBeVisible();
 
