@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	orderAround,
+	clearOfCorner,
 	keepInside,
 	DEFAULT_SEAT_LAYOUT,
 	isDefaultLayout,
@@ -170,6 +171,50 @@ describe('keepInside', () => {
 	});
 	it('centres when the board is smaller than the token', () => {
 		expect(keepInside([{ x: 0, y: 0 }], { width: 10, height: 10 }, 20)).toEqual([{ x: 50, y: 50 }]);
+	});
+});
+
+describe('clearOfCorner', () => {
+	const board = { width: 400, height: 800 };
+	it('brings the ring down until the seat under the corner box is clear of it', () => {
+		// A seat at (75%, 5%) = (300px, 40px) under a 200 × 100 box in the top right.
+		const ring = [
+			{ x: 75, y: 5 },
+			{ x: 50, y: 95 }
+		];
+		const [under, bottom] = clearOfCorner(ring, [true, true], ring, board, { w: 200, h: 100 }, 30);
+		expect((under.y / 100) * board.height - 30).toBeCloseTo(100);
+		// The ring's bottom barely moves, and nothing moves sideways.
+		expect(bottom.y).toBeGreaterThan(95);
+		expect(bottom.y).toBeLessThan(96);
+		expect(under.x).toBe(75);
+	});
+	it('leaves the ring alone when no seat is under the box', () => {
+		const points = [{ x: 20, y: 5 }];
+		expect(clearOfCorner(points, [true], points, board, { w: 100, h: 100 }, 30)).toEqual(points);
+	});
+	it('leaves seats placed by hand where they were put, and the ring as it was', () => {
+		// The seat under the box was dragged away; the ring still makes room for its place.
+		const ring = [
+			{ x: 75, y: 5 },
+			{ x: 30, y: 50 }
+		];
+		const kept = clearOfCorner(ring, [true, true], ring, board, { w: 200, h: 100 }, 30)[1];
+		const [placed, other] = clearOfCorner(
+			[{ x: 10, y: 90 }, ring[1]],
+			[false, true],
+			ring,
+			board,
+			{ w: 200, h: 100 },
+			30
+		);
+		expect(placed).toEqual({ x: 10, y: 90 });
+		expect(other).toEqual(kept);
+	});
+	it('never takes more than a quarter of the board', () => {
+		const ring = [{ x: 75, y: 5 }];
+		const [p] = clearOfCorner(ring, [true], ring, board, { w: 200, h: 700 }, 30);
+		expect(p.y).toBeCloseTo(25 + 5 * 0.75);
 	});
 });
 
