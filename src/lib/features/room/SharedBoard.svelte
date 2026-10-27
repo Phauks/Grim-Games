@@ -17,7 +17,7 @@
 	} from '#lib/features/grimoire/device-notes.ts';
 	import { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import GrimoireBoard from '#lib/features/grimoire/GrimoireBoard.svelte';
-	import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
+	import { parseAspect, parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 	import { lookForNewerBuild } from './newer-build.ts';
 
 	/**
@@ -67,6 +67,7 @@
 			drawn.copies = parseReminderCopyIds(next.copies);
 			drawn.look = parsePublicLook(next.look);
 			drawn.room = room;
+			drawn.aspect = parseAspect(next.aspect);
 			timer.set(dayTimers.parseSharedTimer(next.timer));
 			board = drawn;
 			onProblem?.(undefined);
