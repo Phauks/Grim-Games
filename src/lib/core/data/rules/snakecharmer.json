@@ -1,4 +1,12 @@
 {
+	"impairs": {
+		"tokens": {
+			"Poisoned": {
+				"reason": "poisoned",
+				"on": "carrier"
+			}
+		}
+	},
 	"reminderTargets": {
 		"Poisoned": {
 			"seat": "any",
