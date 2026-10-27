@@ -22,8 +22,6 @@ import {
 	type ScriptSource
 } from './saved-scripts.ts';
 import { IdbScriptLibrary } from './script-library.ts';
-import { fetchSharedRef } from './share-codes.ts';
-import { sharedRefFromHash } from './share.ts';
 
 let library: IdbScriptLibrary | undefined;
 let current = $state.raw<{ saved: SavedScript; script: LoadedScript } | undefined>(undefined);
@@ -200,20 +198,6 @@ export async function forgetScript(scriptId: string): Promise<void> {
 	if (!lib) return;
 	await lib.delete(scriptId);
 	await refresh(await loadOfficialData(), lib);
-}
-
-/**
- * For a page a share link opens (`/play#c=…`, `#e=`, `#bs=` or `#s=`): makes the shared
- * script the current script and clears the hash. Undefined when the address has no shared
- * script. Throws an Error with a message to show when the link is damaged, the code has
- * expired, or the script has no usable characters. Unlike the Storyteller's Scripts page,
- * there is no Script check: what loads, loads.
- */
-export async function openSharedScript(): Promise<LoadedScript | undefined> {
-	const ref = sharedRefFromHash(location.hash);
-	if (!ref) return undefined;
-	history.replaceState(history.state, '', location.pathname + location.search);
-	return openScriptCode(fetchSharedRef(ref));
 }
 
 /**

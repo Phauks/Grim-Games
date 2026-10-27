@@ -102,9 +102,6 @@ export function tableFieldIds(): FieldId[] {
 	return REFERENCE_FIELDS.map((f) => f.id);
 }
 
-export const fieldById = (id: FieldId): ReferenceField =>
-	REFERENCE_FIELDS.find((f) => f.id === id)!;
-
 /** Labels for the presence filter, per field. */
 const PRESENCE_KEYS: Partial<Record<FieldId, { yes: PlainMessageKey; no: PlainMessageKey }>> = {
 	firstNight: { yes: 'reference.presence.wakes', no: 'reference.presence.notWakes' },

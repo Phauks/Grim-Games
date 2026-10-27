@@ -73,15 +73,6 @@ export async function readOutbox(userId: string): Promise<OutboxEntry[]> {
 	return result(tx.objectStore(OUTBOX).getAll(forUser(userId)) as IDBRequest<OutboxEntry[]>);
 }
 
-export async function readOutboxEntry(
-	userId: string,
-	kind: DocKind,
-	id: string
-): Promise<OutboxEntry | undefined> {
-	const tx = (await open()).transaction(OUTBOX);
-	return result(tx.objectStore(OUTBOX).get([userId, kind, id]) as IDBRequest<OutboxEntry>);
-}
-
 export async function readDocs(userId: string): Promise<StoredDoc[]> {
 	const tx = (await open()).transaction(DOCS);
 	return result(tx.objectStore(DOCS).getAll(forUser(userId)) as IDBRequest<StoredDoc[]>);

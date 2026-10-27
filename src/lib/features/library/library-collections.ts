@@ -4,10 +4,9 @@
  * a newer build can open what an older one stored (CLAUDE.md).
  */
 import { timestampName } from '#lib/core/timestamp-name.ts';
-import { cleanName, MAX_LABEL_NAME } from './library-labels.ts';
+import { cleanName } from './library-labels.ts';
 
 export const COLLECTIONS_VERSION = 1;
-export const MAX_COLLECTION_NAME = MAX_LABEL_NAME;
 
 export interface CharacterCollection {
 	id: string;
