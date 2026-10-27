@@ -162,6 +162,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S18', 'S21']
 	},
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
+	{ title: 'Search Settings for any setting by name', parts: ['S24'] },
 	{
 		title:
 			'Sound: every sound in one place, Back to town, day and night ambience, a soundboard with a mixer and hot spots, sounds for your actions, playing on Town Square or another speaker, your own sounds',

@@ -5,6 +5,8 @@ export const settings = {
 	'settings.title': 'Settings',
 	'settings.sections': 'Settings sections',
 	'settings.allSettings': 'All settings',
+	'settings.search': 'Search settings',
+	'settings.searchResults': 'Settings found',
 	'settings.themeText': 'Theme and text',
 	'settings.groupNight': 'Night',
 	'settings.groupSetup': 'Bag draw',

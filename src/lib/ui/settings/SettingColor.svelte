@@ -21,7 +21,7 @@
 
 <!-- One colour on one line: its name and reset, a contrast warning slot that is always there
      (so nothing moves), and the swatch that opens the colour picker (Trevor, 2026-10-18). -->
-<div class="color" data-setting>
+<div class="color" data-setting data-search-label={label}>
 	<label class="label" for="{id}-input">{label}</label>
 	<button
 		class="reset"

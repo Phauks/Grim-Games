@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { say, t } from '#lib/i18n/locale.svelte.ts';
+	import { tick } from 'svelte';
+	import { locale, say, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import BackButton from '#lib/ui/primitives/BackButton.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -11,6 +12,9 @@
 	import { installApp } from './install-app.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ProfileSelect from './profiles/ProfileSelect.svelte';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
+	import { searchSettings, type SettingEntry } from './settings-search.ts';
+	import { readSettings, revealSetting } from './settings-search-dom.ts';
 
 	const sections = settingsSections();
 	// Wide screens always show a section (the first by default); narrow screens show the list
@@ -27,6 +31,34 @@
 		void active?.id;
 		if (content) content.scrollTop = 0;
 	});
+
+	// Search across every section (Trevor, 2026-10-27). The settings are read from the
+	// sections themselves, drawn once out of sight when a search starts, so a result is always
+	// what Settings shows, in the language in use; read again after a language change.
+	let query = $state('');
+	let found = $state<SettingEntry[] | null>(null);
+	let indexHost = $state<HTMLElement>();
+	const searching = $derived(query.trim() !== '');
+	const results = $derived(found ? searchSettings(found, query) : []);
+	$effect(() => {
+		void locale.current;
+		found = null;
+	});
+	$effect(() => {
+		if (settingsDialog.open) return;
+		query = '';
+		found = null;
+	});
+	$effect(() => {
+		const host = indexHost;
+		if (host) void tick().then(() => (found = readSettings(host)));
+	});
+
+	async function pick(entry: SettingEntry) {
+		settingsDialog.section = entry.section;
+		await tick();
+		if (content) await revealSetting(content, entry);
+	}
 </script>
 
 <Dialog bind:open={settingsDialog.open} title={t('settings.title')} size="full">
@@ -35,20 +67,46 @@
 		data-view={settingsDialog.only ? 'only' : settingsDialog.section ? 'section' : 'list'}
 	>
 		{#if !settingsDialog.only}<nav aria-label={t('settings.sections')}>
-				<ul>
-					{#each sections as section (section.id)}
-						<li>
-							<button
-								aria-current={section.id === active?.id ? 'page' : undefined}
-								onclick={() => (settingsDialog.section = section.id)}
-							>
-								<Icon name={section.icon} />
-								<span class="label">{sectionLabel(section.label, say)}</span>
-								<span class="chevron"><Icon name="forward" /></span>
-							</button>
-						</li>
-					{/each}
-				</ul>
+				<div class="search">
+					<SearchField
+						bind:value={query}
+						label={t('settings.search')}
+						placeholder={t('settings.search')}
+						testid="settings-search"
+					/>
+				</div>
+				{#if searching}
+					<ul aria-label={t('settings.searchResults')} data-testid="settings-results">
+						{#each results as entry (`${entry.section}:${entry.index}`)}
+							<li>
+								<button onclick={() => void pick(entry)}>
+									{#each sections.filter((s) => s.id === entry.section) as where (where.id)}<Icon
+											name={where.icon}
+										/>{/each}
+									<span class="label"
+										>{entry.label}<span class="where">{entry.sectionLabel}</span></span
+									>
+									<span class="chevron"><Icon name="forward" /></span>
+								</button>
+							</li>
+						{:else}
+							<li class="none">{found ? t('common.none') : ''}</li>
+						{/each}
+					</ul>
+				{:else}<ul>
+						{#each sections as section (section.id)}
+							<li>
+								<button
+									aria-current={section.id === active?.id ? 'page' : undefined}
+									onclick={() => (settingsDialog.section = section.id)}
+								>
+									<Icon name={section.icon} />
+									<span class="label">{sectionLabel(section.label, say)}</span>
+									<span class="chevron"><Icon name="forward" /></span>
+								</button>
+							</li>
+						{/each}
+					</ul>{/if}
 				<!-- At the very bottom (Trevor, 2026-10-20), only where the browser can install it. -->
 				{#if installApp.way}<div class="install">
 						<Button
@@ -86,6 +144,13 @@
 			</section>
 		{/if}
 	</div>
+	{#if searching && !found}<div class="index" hidden inert bind:this={indexHost}>
+			{#each sections as section (section.id)}
+				<div data-section={section.id} data-section-label={sectionLabel(section.label, say)}>
+					<section.component />
+				</div>
+			{/each}
+		</div>{/if}
 </Dialog>
 
 <Dialog bind:open={installSteps} title={t('settings.homeScreen')}>
@@ -161,6 +226,36 @@
 	}
 	.label {
 		flex: 1;
+	}
+	/* The search stays above the list while it scrolls; room is kept above it for the
+	   profile card. */
+	.search {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		padding-bottom: var(--space-2);
+		background: var(--dialog-background);
+	}
+	/* A result: the setting's name, and under it the section it is in. */
+	.where {
+		display: block;
+		font-size: 0.8rem;
+		color: var(--on-surface-muted);
+	}
+	nav button:has(.where) {
+		padding-block: var(--space-1);
+	}
+	.none {
+		display: flex;
+		align-items: center;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-3);
+		color: var(--on-surface-muted);
+	}
+	/* The setting a result opened, marked for a moment so the eye lands on it. */
+	.content :global([data-search-hit]) {
+		background: var(--surface-selected);
+		transition: background var(--duration-slow);
 	}
 	.install {
 		margin-top: var(--space-4);
