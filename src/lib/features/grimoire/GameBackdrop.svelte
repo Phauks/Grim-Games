@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Game } from '#lib/core/model/index.ts';
 	import type { PublicLook } from '#lib/core/sync/public-projection.ts';
+	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BoardBackdrop from './BoardBackdrop.svelte';
 	import { boardBackground } from './board-background.svelte.ts';
@@ -19,9 +20,9 @@
 		 * Someone else's board (Grim view, a finished grimoire): drawn on the look its
 		 * Storyteller shared, never this device's own background (Trevor, 2026-10-26).
 		 */
-		watched?: { look?: PublicLook };
-		/** Told the look this board shows, for every shared grim of the game. */
-		onlook?: (look: PublicLook) => void;
+		watched?: { look?: PublicLook; room?: string };
+		/** Told the look this board shows, and its picture, for every shared grim of the game. */
+		onlook?: (look: PublicLook, picture?: Blob) => void;
 	}
 
 	let { game, logo, watched, onlook }: Props = $props();
@@ -81,14 +82,22 @@
 		backgroundUrl = background.kind === 'script' ? scriptBackground : undefined;
 	});
 	$effect(() => {
-		if (!watched) onlook?.(lookOf(background, boardLooks.current));
+		if (!watched)
+			onlook?.(
+				lookOf(background, boardLooks.current),
+				background.kind === 'image' ? background.image : undefined
+			);
 	});
 	const shared = $derived(watched && drawnLook(watched.look));
 </script>
 
 {#if shared}
 	<BoardBackdrop
-		url={shared.script ? scriptBackground : undefined}
+		url={shared.image && watched?.room
+			? roomImagePath(watched.room, shared.image)
+			: shared.script
+				? scriptBackground
+				: undefined}
 		preset={shared.preset}
 		vignette={shared.vignette}
 	/>

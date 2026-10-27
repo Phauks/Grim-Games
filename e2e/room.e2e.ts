@@ -1475,6 +1475,22 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 		.tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(viewer.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+	// A picture of the Storyteller's own reaches it through the room too.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await settings.getByLabel('Background image file').setInputFiles({
+		name: 'table.png',
+		mimeType: 'image/png',
+		buffer: Buffer.from(
+			'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGNoUFAAIgYIBQAWjgMBwmTFJwAAAABJRU5ErkJggg==',
+			'base64'
+		)
+	});
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(viewer.getByTestId('board-background')).toHaveAttribute(
+		'style',
+		/\/api\/room\/\d{6}\/image\/[0-9a-f]{64}/
+	);
 
 	// A seat opens its character to read, never the seat sheet.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
