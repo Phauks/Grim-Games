@@ -78,6 +78,10 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	expect(Math.abs(sun.width - nightWidth)).toBeLessThanOrEqual(1);
 	expect(Math.abs(sun.y - night.y)).toBeLessThanOrEqual(1);
 	expect(Math.abs(sun.height - night.height)).toBeLessThanOrEqual(1);
+	// The sun's sky spans most of the row (Trevor, 2026-10-27: "a sun that takes up 80% of the
+	// width"), drawn as a slice of a circle.
+	const sky = (await shown.getByRole('img').boundingBox())!;
+	expect(sky.width).toBeGreaterThan(sun.width * 0.6);
 
 	// A tap opens the day's counts, the Storyteller's own numbers (Trevor, 2026-10-27).
 	await status.tap();
