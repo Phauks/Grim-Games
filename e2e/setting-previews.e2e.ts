@@ -24,7 +24,7 @@ const NEEDS: Record<string, string> = {
  * are measured (the mode and rules take the author's line in the board's corner).
  */
 const HIDDEN_BY: Record<string, string[]> = {
-	'Author on the board': ['Game mode on the board', 'Special rules on the board']
+	Author: ['Game mode', 'Special rules']
 };
 /** Kinds of control a setting row holds, as their roles and inputs. */
 const CONTROLS = [

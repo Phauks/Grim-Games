@@ -15,7 +15,7 @@
 	import PlayerCounts from './PlayerCounts.svelte';
 	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
 	import { groupByType } from './player-script.ts';
-	import { playerSettings, type SheetDensity } from './player-settings.svelte.ts';
+	import type { SheetDensity } from './player-settings.svelte.ts';
 	import type { TravellerInPlay } from './travellers-in-play.ts';
 
 	interface Props {
@@ -42,7 +42,7 @@
 		rules?: readonly PublicRule[];
 		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
 		showBreakdown?: boolean;
-		/** Overrides the reader's density setting (printing picks whatever fits one page). */
+		/** Printing picks whatever fits one page; on screen it is always Normal. */
 		density?: SheetDensity;
 	}
 
@@ -70,7 +70,7 @@
 	const noJinxInPlay = $derived(
 		!!playing && !jinxes.some((j) => j.characters.every((id) => playing.has(id)))
 	);
-	const density = $derived(fixed ?? playerSettings.current.density);
+	const density = $derived(fixed ?? 'normal');
 	const groups = $derived(groupByType(characters));
 	const names = $derived(characters.map((c) => c.name));
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
