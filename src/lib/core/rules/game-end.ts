@@ -691,24 +691,20 @@ export function suggestedWinner(ends: readonly GameEnd[]): Alignment | undefined
 }
 
 /**
- * The Demon killed itself with a Minion alive (the Imp:
- * https://wiki.bloodontheclocktower.com/Imp): the living Minions who may become the Demon, and
- * the player whose ability makes it theirs (the Scarlet Woman:
+ * The Demon died by its own kill with a player alive to take it on (the Imp's Minions,
+ * https://wiki.bloodontheclocktower.com/Imp; the Fang Gu's Outsiders, once,
+ * https://wiki.bloodontheclocktower.com/Fang_Gu): that Demon, the players who may become it,
+ * and the player whose ability makes it theirs (the Scarlet Woman:
  * https://wiki.bloodontheclocktower.com/Scarlet_Woman). Undefined once a Demon lives.
  */
 export function starPass(
 	game: Game,
 	characters: CharacterLookup
-): { minions: SeatId[]; preferred?: SeatId } | undefined {
+): { characterId: CharacterId; heirs: SeatId[]; preferred?: SeatId } | undefined {
 	const holds = demonDead(game, characters).flatMap((end) => end.holds);
-	const pass = holds.find(
-		(h) =>
-			h.rule === 'death-passes' &&
-			gameEndRules(h.characterId, characters)?.holds?.some(
-				(r) => r.kind === 'death-passes' && r.to === 'minion'
-			)
-	);
+	const pass = holds.find((h) => h.rule === 'death-passes');
 	if (!pass) return undefined;
 	const heir = holds.find((h) => h.rule === 'becomes-demon')?.seats[0];
-	return { minions: pass.seats, preferred: heir && pass.seats.includes(heir) ? heir : undefined };
+	const preferred = heir && pass.seats.includes(heir) ? heir : undefined;
+	return { characterId: pass.characterId, heirs: pass.seats, ...(preferred ? { preferred } : {}) };
 }

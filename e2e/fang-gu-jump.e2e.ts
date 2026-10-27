@@ -77,6 +77,11 @@ test('a Fang Gu jumping into an Outsider is no game end, and its Dead still asks
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 1:')).toHaveAttribute('aria-label', /dead/);
+	// It asks who becomes the Fang Gu (character-changes.e2e.ts); not yet here.
+	await page
+		.getByRole('alertdialog', { name: 'Choose the new Fang Gu' })
+		.getByRole('button', { name: 'Cancel', exact: true })
+		.tap();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
 	await expect(page.getByRole('alertdialog', { name: 'End game?' })).toHaveCount(0);

@@ -237,7 +237,7 @@ describe('Imp (https://wiki.bloodontheclocktower.com/Imp)', () => {
 
 	it('offers the star pass to the living Minions, the Scarlet Woman first', () => {
 		const { session, seats } = castGame(TB, dead(6, 'imp'));
-		expect(starPass(session.game, characters)).toEqual({ minions: [seats[5]] });
+		expect(starPass(session.game, characters)).toEqual({ characterId: 'imp', heirs: [seats[5]] });
 		// Executed, or with no Minion alive, there is no star pass.
 		expect(starPass(castGame(TB, execute(6)).session.game, characters)).toBeUndefined();
 		expect(
@@ -248,7 +248,8 @@ describe('Imp (https://wiki.bloodontheclocktower.com/Imp)', () => {
 		const cast = ['chef', 'empath', 'monk', 'mayor', 'poisoner', 'scarletwoman', 'imp'];
 		const sw = castGame(cast, dead(6, 'imp'));
 		expect(starPass(sw.session.game, characters)).toEqual({
-			minions: [sw.seats[4], sw.seats[5]],
+			characterId: 'imp',
+			heirs: [sw.seats[4], sw.seats[5]],
 			preferred: sw.seats[5]
 		});
 		// Once a Minion is the Imp, a Demon lives again.
@@ -269,6 +270,16 @@ describe('Fang Gu (https://wiki.bloodontheclocktower.com/Fang_Gu)', () => {
 		expect(e).toMatchObject([
 			{ rule: 'demon-dead', holds: [{ rule: 'death-passes', seats: [seats[3]] }] }
 		]);
+	});
+
+	it('offers its jump to the living Outsiders, until it has jumped once', () => {
+		const { session, seats } = castGame(cast, remind(5, 'fanggu', 'Once'), dead(5, 'fanggu'));
+		expect(starPass(session.game, characters)).toEqual({
+			characterId: 'fanggu',
+			heirs: [seats[3]]
+		});
+		const jumped = castGame(cast, remind(3, 'fanggu', 'Once'), dead(5, 'fanggu'));
+		expect(starPass(jumped.session.game, characters)).toBeUndefined();
 	});
 
 	it('after it has jumped once, its death ends it', () => {
