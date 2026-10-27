@@ -270,6 +270,14 @@ test('reports copy and download as Markdown, to hand off', async ({ page, contex
 	expect(copied).toContain('The bag forgets the Drunk.');
 	expect(copied).toContain('- Build: ');
 	expect(copied).toContain('- Device: ');
+	// Each report also downloads on its own (Trevor, 2026-10-27).
+	const [one] = await Promise.all([
+		page.waitForEvent('download'),
+		report.getByRole('button', { name: 'Download', exact: true }).tap()
+	]);
+	expect(one.suggestedFilename()).toMatch(/^report-\d+\.md$/);
+	const oneFile = await (await import('node:fs/promises')).readFile(await one.path(), 'utf8');
+	expect(oneFile).toBe(`${copied}\n`);
 	await report.getByRole('button', { name: 'Close' }).first().tap();
 
 	const [download] = await Promise.all([

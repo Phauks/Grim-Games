@@ -18,6 +18,7 @@
 	import { downloadFile, fileNameFor } from '#lib/ui/download.ts';
 	import {
 		reportMarkdown,
+		reportFileName,
 		reportsFileName,
 		reportsMarkdown,
 		type ExportedReport
@@ -144,6 +145,15 @@
 			copied: [t('errors.copied'), t('reports.copiedAllDetail', { count })],
 			failed: copyFailed
 		});
+	}
+
+	/** One report as its own file (Trevor, 2026-10-27), beside its Copy. */
+	async function downloadReport(report: Report) {
+		downloadFile(
+			reportFileName(report.id),
+			`${reportMarkdown(await exported(report), label)}\n`,
+			'text/markdown'
+		);
 	}
 
 	async function downloadShown() {
@@ -328,6 +338,12 @@
 			label={t('reports.copy')}
 			disabled={!current}
 			onclick={() => current && copyReport(current)}
+		/>
+		<IconButton
+			icon="download"
+			label={t('reports.downloadOne')}
+			disabled={!current}
+			onclick={() => current && downloadReport(current)}
 		/>
 		<DeleteButton
 			label={t('reports.delete')}
