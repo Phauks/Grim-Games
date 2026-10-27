@@ -3,6 +3,7 @@
  * Storyteller's whole grimoire, live, and sends nothing back. The link's key comes from the
  * URL's hash, which never reaches the server, and is sent only in the socket's hello.
  */
+import { normaliseGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 import { ROOM_PROTOCOL, type SharedGrimoire } from '#lib/core/sync/room.ts';
 import { RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 
@@ -16,9 +17,10 @@ export function viewerKeyFrom(hash: string): string | undefined {
  * The view-only link's key made from a Grim view password (plan D1: "grim view by password
  * or direct link"), so a phone with the room code and the password opens the same grimoire
  * as the link. The code is part of it, so one password makes a different key in each room.
+ * A made password matches however it was typed (`normaliseGrimViewPassword`).
  */
 export function viewerKeyFromPassword(code: string, password: string): Promise<string> {
-	return sha256Hex(`grim-games:grim-view:${code}:${password.trim()}`);
+	return sha256Hex(`grim-games:grim-view:${code}:${normaliseGrimViewPassword(password)}`);
 }
 
 export class RoomViewer {
