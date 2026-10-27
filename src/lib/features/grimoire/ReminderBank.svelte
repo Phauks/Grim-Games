@@ -858,6 +858,10 @@
 		position: absolute;
 		top: 0;
 		z-index: 3;
+		/* Every pill as tall as the ∞ one (Trevor, 2026-10-27), its words centred in it. */
+		display: flex;
+		align-items: center;
+		height: calc(0.65rem * 1.6);
 		margin-left: var(--space-2);
 		padding: 0 var(--space-2);
 		border: 1px solid var(--border);
