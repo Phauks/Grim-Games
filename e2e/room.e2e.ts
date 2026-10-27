@@ -2105,9 +2105,15 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	await notes.getByRole('button', { name: 'Close' }).tap();
 	// The seat's sheet lists them on one line.
 	await expect(sheet.getByTestId('seat-note')).toContainText('Claim, Quiet all day');
+	// Guessed as two characters, both of which head the seat's notes on the Notes tab.
+	await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await sheet.getByRole('button', { name: 'Spy', exact: true }).tap();
 	await phone.keyboard.press('Escape');
 	await expect(seats.nth(2).getByTestId('note-mark')).toBeVisible();
-	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your note');
+	await expect(seats.nth(2)).toHaveAttribute(
+		'aria-label',
+		'Seat 3: Seat 3, your guess: Spy, Empath, your note'
+	);
 	// The board's own note mark, which opens the notes straight away, as on the board (Trevor,
 	// 2026-10-25: the same icon and the same behaviour).
 	await seats.nth(2).getByTestId('note-mark').tap();
@@ -2120,6 +2126,10 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	await expect(phone.getByRole('heading', { name: 'Players' })).toBeVisible();
 	const row = phone.locator('[data-seat-note]').nth(2);
 	await expect(row.locator('[data-note]')).toHaveText([/Claim/, /Quiet all day/]);
+	// Every character the seat is guessed as, not only the main one (Trevor, 2026-10-27): the
+	// main one beside the name, then the others.
+	await expect(row.locator('.bar')).toContainText(/Spy.*Empath/);
+	await expect(row.getByTestId('other-guesses')).toHaveText('Empath');
 	await expect(phone.locator('[data-seat-note]').first().locator('[data-note]')).toHaveCount(0);
 	await row.locator('[data-note]').first().tap();
 	await editor.getByRole('textbox', { name: 'Text' }).fill('Claims Chef: 0');
