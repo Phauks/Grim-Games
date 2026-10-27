@@ -95,7 +95,7 @@
 	import { cornerRoom } from './corner-room.ts';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import { fitReminders } from './reminder-fan.ts';
-	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
+	import { isOrphan, placingAlignment, seatMisfits } from './board.ts';
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -557,11 +557,7 @@
 		// Loose mode marks no seats: nothing is given to one (Trevor, 2026-10-18).
 		const reminder = looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder);
 		if (!reminder) return new Set<SeatId>();
-		return new Set(
-			game.seating.filter(
-				(id) => seatMisses(game, reminder, id, characters, grimoire.atDawn).length > 0
-			)
-		);
+		return seatMisfits(game, reminder, characters, grimoire.atDawn);
 	});
 	/**
 	 * Marks for the reminder in hand (Trevor, 2026-10-18): the seats whose character it is

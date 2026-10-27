@@ -2097,6 +2097,33 @@ test('info tokens open from the toolbar and show player cards at once', async ({
 	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
 });
 
+test("a night step's seat list greys out seats its token doesn't fit, still choosable", async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Butler : the Butler chooses a player other than
+	// themself as their Master (Trevor, 2026-10-27: only valid picks, greyed out, not removed).
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Butler', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	const guide = await openStep(page, 'Butler');
+	await guide.getByRole('button', { name: 'Place' }).tap();
+	const put = page.getByRole('dialog', { name: 'Put Master on' });
+	const own = put.getByRole('button', { name: /Butler Seat 1/ });
+	await expect(own).toHaveAttribute('data-misfit');
+	await expect(own).toContainText('Not a usual place');
+	await expect(put.getByRole('button', { name: /Seat 2/ })).not.toHaveAttribute('data-misfit');
+	// Every seat is still listed and can be chosen: the Storyteller overrides.
+	await expect(put.getByRole('listitem')).toHaveCount(8);
+	await own.tap();
+	await expect(guide).toContainText('On Seat 1');
+});
+
 test('a night step is filled in with help, and the night can be walked through', async ({
 	page
 }) => {

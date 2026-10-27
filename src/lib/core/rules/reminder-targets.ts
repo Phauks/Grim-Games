@@ -6,9 +6,12 @@
  *
  * This only suggests and warns: a token on an unfitting seat is never refused (the
  * Storyteller can override anything). Checks use the true character and the alignment the
- * rules use (`trueCharacter`, `alignmentOf`), because misregistration is the Storyteller's
- * call, except where a rule says otherwise: info tokens, and a neighbour of a seat that may
- * register as the Demon (the Marionette beside a Recluse; Trevor, 2026-10-23).
+ * rules use (`trueCharacter`, `alignmentOf`). A character type or good/evil check also fits
+ * what a player may register as: the Recluse may let an ability that affects only Minions
+ * work on them, the Spy one that affects only good players (Trevor, 2026-10-27: the Preacher
+ * may choose a Recluse; https://wiki.bloodontheclocktower.com/Recluse,
+ * https://wiki.bloodontheclocktower.com/Spy). So does a neighbour of a seat that may register
+ * as the Demon (the Marionette beside a Recluse; Trevor, 2026-10-23).
  */
 import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
 import type { NeighbourRule, TargetRule } from '#lib/core/data/target-rules.ts';
@@ -164,12 +167,14 @@ export function reminderTargetMisses(
 	if (rule.seat === 'self' && owners.length > 0 && !isOwner) misses.push('not-self');
 	if (rule.seat === 'other' && isOwner) misses.push('self');
 
-	// What an info token marks is what the player registered as: the Recluse may register as
-	// an evil Minion or Demon, the Spy as a good Townsfolk or Outsider (Trevor, 2026-10-18;
+	// An ability that detects or affects a type or alignment also sees what the player may
+	// register as: the Recluse an evil Minion or Demon, the Spy a good Townsfolk or Outsider
+	// (Trevor, 2026-10-18 for info tokens, 2026-10-27 for every token;
 	// https://wiki.bloodontheclocktower.com/Recluse, https://wiki.bloodontheclocktower.com/Spy).
-	const registered = rule.info
-		? registrations(game, characters).find((r) => r.seatId === seatId)
-		: undefined;
+	const registered =
+		rule.types || rule.alignment === 'good' || rule.alignment === 'evil'
+			? registrations(game, characters).find((r) => r.seatId === seatId)
+			: undefined;
 	if (rule.types) {
 		const type = typeOf(game, seatId, characters);
 		const types = registered?.types ?? (type === undefined ? [] : [type]);

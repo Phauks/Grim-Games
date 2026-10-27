@@ -24,6 +24,11 @@
 		offer?: (seatId: SeatId) => boolean;
 		/** Marks at the end of each row, in a column of their own (today's nominations). */
 		rowMarks?: Snippet<[SeatId]>;
+		/**
+		 * Seats faded as not fitting, still choosable (a reminder's unfitting seats: the
+		 * Storyteller can override; Trevor, 2026-10-27).
+		 */
+		misfits?: ReadonlySet<SeatId>;
 	}
 
 	let {
@@ -37,7 +42,8 @@
 		onChoose,
 		onNone,
 		offer,
-		rowMarks
+		rowMarks,
+		misfits
 	}: Props = $props();
 
 	const seats = $derived(
@@ -58,7 +64,11 @@
 				<li>
 					<!-- Number, character, player (Trevor, 2026-10-20): the character once, as its
 					     in-line badge, and a line between rows. -->
-					<button type="button" onclick={() => onChoose(seat.seatId)}>
+					<button
+						type="button"
+						data-misfit={misfits?.has(seat.seatId) || undefined}
+						onclick={() => onChoose(seat.seatId)}
+					>
 						<span class="number">{number}</span>
 						<span class="role"
 							>{#if character}<CharacterBadge
@@ -69,7 +79,8 @@
 								/>{:else}None{/if}</span
 						>
 						<span class="name"><PlayerBadge name={seatName(game, seat.seatId)} /></span
-						>{#if rowMarks}<span class="marks">{@render rowMarks(seat.seatId)}</span>{/if}
+						>{#if misfits?.has(seat.seatId)}<span class="visually-hidden">Not a usual place</span
+							>{/if}{#if rowMarks}<span class="marks">{@render rowMarks(seat.seatId)}</span>{/if}
 					</button>
 				</li>
 			{/if}
@@ -111,6 +122,10 @@
 	}
 	button:hover {
 		background: var(--surface-selected);
+	}
+	/* As faded as an unfitting seat on the board while a reminder is dragged. */
+	button[data-misfit] > span {
+		opacity: 0.4;
 	}
 	li + li {
 		border-top: 1px solid var(--border); /* px-ok: a hairline between rows */
