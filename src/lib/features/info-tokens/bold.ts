@@ -7,9 +7,9 @@ export type InkColor = (typeof INK_COLORS)[number];
 
 /** The theme token each colour is drawn with. */
 export const INK_TOKENS: Record<InkColor, string> = {
-	red: 'var(--evil)',
-	blue: 'var(--good)',
-	purple: 'var(--traveller)',
+	red: 'var(--evil-text)',
+	blue: 'var(--good-text)',
+	purple: 'var(--traveller-text)',
 	gold: 'var(--heading)',
 	green: 'var(--leaf)'
 };

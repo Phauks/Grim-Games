@@ -261,11 +261,11 @@
 		white-space: nowrap;
 	}
 	.asleep {
-		color: var(--evil);
+		color: var(--evil-text);
 		font-size: 0.9rem;
 	}
 	.attack {
-		color: var(--evil);
+		color: var(--evil-text);
 		font-size: 0.9rem;
 	}
 	.empty-seat {
