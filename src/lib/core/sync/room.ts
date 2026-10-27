@@ -33,10 +33,10 @@ import {
 	type PictureReportView,
 	type RoomPictures
 } from './room-pictures.ts';
+import { MAX_MEMBERS } from './room-presence.ts';
 
 export { isSharedGrimoire, MAX_GRIMOIRE_BYTES, type SharedGrimoire } from './shared-grimoire.ts';
-
-export const MAX_MEMBERS = 40;
+export { join, markHere, MAX_MEMBERS } from './room-presence.ts';
 export const MAX_PLAYER_NAME_LENGTH = 40;
 /** A script's own characters (homebrew) carry their text and images, so it can be large. */
 export const MAX_SCRIPT_BYTES = 256 * 1024;
@@ -56,6 +56,11 @@ export interface RoomMember {
 	frame?: FrameId;
 	/** Their own picture in the room (room-pictures.ts), by its hash; initials when absent. */
 	picture?: string;
+	/**
+	 * The game on the table when this phone was last connected. A phone that sleeps or goes to
+	 * the background stays in that game's name lists (`HostView.away`) until it comes back.
+	 */
+	game?: string;
 }
 
 /** A name (and seat) waiting for the Storyteller, from before players joined without approval. */
@@ -262,6 +267,11 @@ export interface HostView {
 	 * so lists and counts use this to leave out phones from earlier games (2026-10-25).
 	 */
 	present?: string[];
+	/**
+	 * Members whose phone is not connected now but was during this game: a screen turned off or
+	 * the app in the background (bug report #3, 2026-10-27). Name lists keep them.
+	 */
+	away?: string[];
 	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
 	pictureReports?: PictureReportView[]; // Pictures other phones reported, for a verdict.
 }
@@ -437,8 +447,12 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 		view.feedbackGameId = room.ended.gameId;
 	}
 	if (room.scriptVote) view.scriptVote = scriptVoteCount(room, present);
-	if (present)
+	if (present) {
 		view.present = room.members.flatMap((m) => (present.has(m.memberId) ? [m.memberId] : []));
+		view.away = room.members.flatMap((m) =>
+			!present.has(m.memberId) && m.game === room.gameId ? [m.memberId] : []
+		);
+	}
 	if (room.roles) view.rolesSeen = seatsSeen(room);
 	const reports = pictureReports(room);
 	if (reports.length) view.pictureReports = reports;
@@ -547,25 +561,6 @@ export function townView(room: RoomState): TownView {
 	return view;
 }
 
-/**
- * Adds a member on first hello; `null` when the room is full. A full room first lets go of
- * phones from earlier games: members with no seat whose phone is not connected
- * (`present`), so a room in use for many games never fills with phones that left.
- */
-export function join(
-	room: RoomState,
-	memberId: string,
-	present?: ReadonlySet<string>
-): RoomState | null {
-	if (room.members.some((m) => m.memberId === memberId)) return room;
-	let members = room.members;
-	if (members.length >= MAX_MEMBERS && present) {
-		members = members.filter((m) => m.seatId !== undefined || present.has(m.memberId));
-	}
-	if (members.length >= MAX_MEMBERS) return null;
-	return { ...room, members: [...members, { memberId }] };
-}
-
 export function cleanName(raw: unknown): string | null {
 	if (typeof raw !== 'string') return null;
 	const name = raw.replace(/\s+/g, ' ').trim().slice(0, MAX_PLAYER_NAME_LENGTH);
@@ -617,7 +612,7 @@ function setMember(room: RoomState, memberId: string, change: Partial<RoomMember
 			if (m.memberId !== memberId) {
 				// One phone per seat: taking a seat moves anyone else out of it.
 				return change.seatId && m.seatId === change.seatId
-					? { memberId: m.memberId, ...nameOf(m), ...lookOf(m) }
+					? { memberId: m.memberId, ...nameOf(m), ...lookOf(m), ...gameOf(m) }
 					: m;
 			}
 			const updated: RoomMember = { ...m, ...change };
@@ -631,6 +626,10 @@ function nameOf(m: RoomMember): Pick<RoomMember, 'name'> {
 	return m.name === undefined ? {} : { name: m.name };
 }
 
+function gameOf(m: RoomMember): Pick<RoomMember, 'game'> {
+	return m.game === undefined ? {} : { game: m.game };
+}
+
 export function unseat(room: RoomState, memberId: string): RoomState {
 	return setMember(room, memberId, { seatId: undefined });
 }
@@ -638,9 +637,18 @@ export function unseat(room: RoomState, memberId: string): RoomState {
 /**
  * New public state from the Storyteller. Seats that no longer exist lose their phone; a
  * different game clears every seat, every seat request and any open vote, but names stay.
+ * The phones connected now (`present`) become part of a different game; before the room's
+ * first game, every phone that joined does.
  */
-export function publish(room: RoomState, gameId: string, state: PublicGameState): RoomState {
+export function publish(
+	room: RoomState,
+	gameId: string,
+	state: PublicGameState,
+	present?: ReadonlySet<string>
+): RoomState {
 	const newGame = room.gameId !== undefined && room.gameId !== gameId;
+	const joins = (m: RoomMember) =>
+		room.gameId !== gameId && (room.gameId === undefined || !!present?.has(m.memberId));
 	const seats = new Set(state.seats.map((s) => s.seatId));
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
@@ -651,11 +659,13 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 		...base,
 		gameId,
 		public: state,
-		members: room.members.map((m) =>
-			keep(m.seatId) || m.seatId === undefined
-				? m
-				: { memberId: m.memberId, ...nameOf(m), ...lookOf(m) }
-		)
+		members: room.members.map((m) => {
+			const kept: RoomMember =
+				keep(m.seatId) || m.seatId === undefined
+					? m
+					: { memberId: m.memberId, ...nameOf(m), ...lookOf(m), ...gameOf(m) };
+			return joins(m) ? { ...kept, game: gameId } : kept;
+		})
 	};
 }
 

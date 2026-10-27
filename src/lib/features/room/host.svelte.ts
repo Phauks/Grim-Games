@@ -38,11 +38,8 @@ import type {
 } from '#lib/core/sync/script-vote.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
-import {
-	reminderCopyIds,
-	reminderSpots,
-	seatLayouts
-} from '#lib/features/grimoire/device-notes.ts';
+import { seatLayouts } from '#lib/features/grimoire/device-notes.ts';
+import { storedNotes, type BoardNotes } from './board-notes.ts';
 import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { gameFeedback } from './game-feedback.svelte.ts';
@@ -70,17 +67,6 @@ interface StoredRoom {
 	rolesShown?: string;
 }
 
-/** The board's own notes a viewer needs to draw the grimoire as this device does. */
-export type BoardNotes = Pick<SharedGrimoire, 'layout' | 'reminderSpots' | 'copies'>;
-
-function storedNotes(gameId: GameId): BoardNotes {
-	return {
-		layout: seatLayouts.read(gameId),
-		reminderSpots: reminderSpots.read(gameId),
-		copies: [...reminderCopyIds.read(gameId)]
-	};
-}
-
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
 
@@ -92,6 +78,8 @@ export class RoomHost {
 	 * every member counts as here. The room keeps phones from earlier games (2026-10-25).
 	 */
 	present = $state.raw<readonly string[]>();
+	/** Members whose phone sleeps or is in the background, but was here during this game. */
+	away = $state.raw<readonly string[]>([]);
 	/** The spectators' open vote and its count (Specters), if one is open. */
 	vote = $state.raw<VoteTally>();
 	/** The room's vote on the next script and its count (plan R1), if one is open. */
@@ -656,11 +644,22 @@ export class RoomHost {
 		return this.members.filter((m) => m.seatId === undefined && this.isHere(m.memberId));
 	}
 
+	/**
+	 * Members with no seat who are at the table: connected now, or away during this game (a
+	 * screen turned off, bug report #3), never phones from earlier games. Name lists use it.
+	 */
+	get unseatedInGame(): RoomMember[] {
+		return this.members.filter(
+			(m) => m.seatId === undefined && (this.isHere(m.memberId) || this.away.includes(m.memberId))
+		);
+	}
+
 	#receive(message: ServerMessage): void {
 		if (message.type === 'host-view') {
 			this.#applySeats(this.members, message.members);
 			this.members = message.members;
 			this.present = message.present;
+			this.away = message.away ?? [];
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
 			this.rolesSeen = message.rolesSeen ?? [];
@@ -765,6 +764,7 @@ export class RoomHost {
 		this.code = undefined;
 		this.members = [];
 		this.present = undefined;
+		this.away = [];
 		this.vote = undefined;
 		this.scriptVote = undefined;
 		this.viewerKey = undefined;
