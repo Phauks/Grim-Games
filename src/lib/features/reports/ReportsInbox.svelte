@@ -165,12 +165,9 @@
 	async function load() {
 		try {
 			const list = await listReports();
-			const first = access === 'checking' || access === 'none';
 			reports = list?.reports;
 			access = list === undefined ? 'none' : list.admin ? 'account' : 'reader';
-			// Admins start on the reports still to triage (as before), readers on all of them.
-			if (first && allowed)
-				columnFilters = { status: { kind: 'pick', values: [t('reports.status.new')] } };
+			// Everyone starts on every report, with no filter on (Trevor, 2026-10-27).
 		} catch {
 			if (access === 'checking') access = 'none';
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
