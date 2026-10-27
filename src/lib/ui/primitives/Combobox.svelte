@@ -1,4 +1,5 @@
 <script lang="ts" generics="T extends string">
+	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import { Combobox, createListCollection } from '@ark-ui/svelte/combobox';
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -61,11 +62,11 @@
 	let open = $state(false);
 
 	/** The typed text, unless it is just the chosen option's name (then every option shows). */
-	const query = $derived(text === (current?.label ?? '') ? '' : text.trim().toLowerCase());
+	const query = $derived(text === (current?.label ?? '') ? '' : foldForSearch(text.trim()));
 	const matching = $derived(
 		query
 			? options.filter((o) =>
-					[o.label, o.description ?? ''].some((s) => s.toLowerCase().includes(query))
+					[o.label, o.description ?? ''].some((s) => foldForSearch(s).includes(query))
 				)
 			: options
 	);
