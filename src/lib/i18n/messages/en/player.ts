@@ -83,7 +83,6 @@ export const player = {
 	'player.keep': 'Keep',
 	'player.delete': 'Delete',
 
-	'player.density': 'Script sheet layout',
 	'player.sheetBackground': 'Sheet background',
 	'player.sheetBackground.theme': 'Theme',
 	'player.sheetBackground.white': 'Off-white',
@@ -103,8 +102,6 @@ export const player = {
 	'player.pictureError': 'That picture could not be read or kept.',
 	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
 	'player.frameStoryteller': "Storyteller's choice",
-	'player.densityDetail':
-		"How tightly the Script sheet is laid out for you, on screen and in print. Applies to the player view and the Storyteller's copy of the script.",
 	'player.density.normal': 'Normal',
 	'player.density.compact': 'Compact',
 	'player.density.super': 'Super-compact',

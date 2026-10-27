@@ -98,9 +98,7 @@ test('the player view is a reading page, with no Storyteller controls', async ({
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
 
-test('the settings cog at the top sets the text size, Pinch to zoom and the sheet layout', async ({
-	page
-}) => {
+test('the settings cog at the top sets the text size and Pinch to zoom', async ({ page }) => {
 	// Plan E2 (Trevor, 2026-10-26): "easier access to accessibility, zoom, font size for
 	// players. Move name into an edit button in the top", then "a settings cog in player script
 	// view where they select various text sizes settings and their name".
@@ -122,9 +120,6 @@ test('the settings cog at the top sets the text size, Pinch to zoom and the shee
 	await expect(zoom).not.toBeChecked();
 	await sheet.getByText('Pinch to zoom', { exact: true }).tap();
 	await expect(zoom).toBeChecked();
-	await sheet.getByRole('combobox', { name: 'Script sheet layout' }).tap();
-	await page.getByRole('option', { name: 'Compact', exact: true }).tap();
-	await expect(page.locator('[data-density="compact"]')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 
@@ -696,24 +691,28 @@ test('the title line’s sheet background, Print, Share and settings cog are one
 	expect(title.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
 });
 
-test('the Script sheet can be made compact from Settings', async ({ page }) => {
+test('the Script sheet is always Normal on screen, with no layout setting', async ({ page }) => {
+	// Trevor, 2026-10-27: "Compact and super compact modes suck. Remove for now". A phone that
+	// picked one before goes back to Normal; printing still fits a page its own way.
+	await page.evaluate(() =>
+		localStorage.setItem('grim-games:player-settings:v1', JSON.stringify({ density: 'super' }))
+	);
+	await page.reload();
 	await expect(page.locator('[data-density="normal"]')).toBeVisible();
+	await expect(page.locator('[data-density="super"]')).toHaveCount(0);
+	await page.getByRole('button', { name: 'Your settings' }).tap();
+	const you = page.getByRole('dialog', { name: 'Your settings' });
+	await expect(you.getByRole('slider', { name: 'Text size' })).toBeVisible();
+	await expect(you.getByRole('combobox', { name: 'Script sheet layout' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await openSettings(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Player', exact: true })
 		.tap();
-	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
-	await page.getByRole('option', { name: 'Super-compact', exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).tap();
-	await expect(page.locator('[data-density="super"]')).toBeVisible();
-	await page.reload();
-	await expect(page.locator('[data-density="super"]')).toBeVisible();
-	const overflow = await page.evaluate(
-		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
-	);
-	expect(overflow).toBeLessThanOrEqual(0);
+	await expect(settings.getByRole('combobox', { name: 'Sheet background' })).toBeVisible();
+	await expect(settings.getByRole('combobox', { name: 'Script sheet layout' })).toHaveCount(0);
 });
 
 test('the sheet background colours the whole player screen, its dialogs included', async ({
