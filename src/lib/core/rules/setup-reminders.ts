@@ -58,6 +58,8 @@ export interface SetupReminder extends Reminder {
 	candidates: SeatId[];
 	timing: SetupTiming;
 	wiki: string;
+	/** Listed before every other setup reminder, as too important to miss (the Drunk's). */
+	first?: true;
 }
 
 export interface SetupReminderOptions {
@@ -247,7 +249,8 @@ function suggest(
 
 /**
  * The reminder tokens to place for the characters in play, in seating order of the
- * characters, then Fabled and Loric. Characters are in play by their token or their true
+ * characters, then Fabled and Loric. Tokens marked `first` (the Drunk's "Is The Drunk") come
+ * before all others, as too important to miss (Trevor, 2026-10-27). Characters are in play by their token or their true
  * character; a homebrew character is covered by its own `setupPrep` rules.
  */
 export function setupReminders(
@@ -273,7 +276,10 @@ export function setupReminders(
 		const selfSeats = seats.filter((f) => f.truly === id || f.seat.characterId === id);
 		out.push(...suggest(game, lookup, entry, seats, selfSeats, timings));
 	}
-	return out;
+	const first = (r: SetupReminder) =>
+		entryOf(r.characterId, lookup)?.reminders.some((s) => s.label === r.label && s.first) === true;
+	const marked = out.map((r) => (first(r) ? { ...r, first: true as const } : r));
+	return [...marked.filter((r) => r.first), ...marked.filter((r) => !r.first)];
 }
 
 /**

@@ -144,7 +144,8 @@
 		makesToken?: boolean;
 	}
 
-	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list.
+	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list; a setup
+	// token too important to miss (the Drunk's) first (Trevor, 2026-10-27).
 	const scriptOrder = $derived(scriptCharacterIds(game.script));
 	const at = (id: CharacterId) => {
 		const i = scriptOrder.indexOf(id);
@@ -153,6 +154,7 @@
 	const setupItems = $derived(
 		pendingSetup(game, characters, grimoire.trayDismissed).sort(
 			(a, b) =>
+				Number(b.suggestion.first === true) - Number(a.suggestion.first === true) ||
 				at(a.suggestion.characterId) - at(b.suggestion.characterId) ||
 				byLabel(a.suggestion.label, b.suggestion.label)
 		)

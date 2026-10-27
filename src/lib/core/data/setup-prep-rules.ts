@@ -18,6 +18,7 @@ import {
 	describe,
 	isObject,
 	readEnum,
+	readBoolean,
 	readNumber,
 	readString,
 	readStringArray,
@@ -82,6 +83,8 @@ export interface SetupReminderSpec {
 	/** 'setup' (default) before the first night, 'first-day' at the start of the first day. */
 	timing?: SetupTiming;
 	when?: SetupCondition;
+	/** Listed before every other setup reminder, as too important to miss (the Drunk's). */
+	first?: true;
 }
 
 export interface SetupNote {
@@ -148,7 +151,7 @@ function readReminder(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['label', 'text', 'target', 'reason', 'timing', 'when'], path, issues);
+	checkKeys(raw, ['label', 'text', 'target', 'reason', 'timing', 'when', 'first'], path, issues);
 	const label = readString(raw, 'label', path, issues, true);
 	if (label !== undefined && !ownReminder(label, reminders)) {
 		issues.add(`${path}.label`, 'not one of this character’s reminders');
@@ -161,10 +164,20 @@ function readReminder(
 			: readTarget(raw.target, `${path}.target`, issues);
 	const timing = readEnum(raw, 'timing', SETUP_TIMINGS, path, issues, false);
 	const when = raw.when === undefined ? undefined : readCondition(raw.when, `${path}.when`, issues);
+	const first = readBoolean(raw, 'first', path, issues);
+	if (first === false) issues.add(`${path}.first`, 'expected true, or leave it out');
 	if (label === undefined || text === undefined || reason === undefined || !target) {
 		return undefined;
 	}
-	return { label, text, target, reason, ...(timing ? { timing } : {}), ...(when ? { when } : {}) };
+	return {
+		label,
+		text,
+		target,
+		reason,
+		...(timing ? { timing } : {}),
+		...(when ? { when } : {}),
+		...(first ? { first: true as const } : {})
+	};
 }
 
 function readNote(
