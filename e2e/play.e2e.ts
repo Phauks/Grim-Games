@@ -937,13 +937,14 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await sheet.getByRole('button', { name: 'Save' }).tap();
 	await expect(sheet).toBeHidden();
 	await expect(page.getByTestId('join-status')).toHaveText('');
+	// The cog at the top is named for it (plan E2), and the empty room box leaves the row
+	// (Trevor, 2026-10-26: "remove the empty space next to the game state tracker").
 	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
-	// The cog at the top is named for it (plan E2).
-	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	await expect(row).toBeHidden();
 
-	// The row stays over every tab.
+	// The cog stays at the top of every tab.
 	await openTab(page, 'Notes');
-	await expect(row).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
 
 	// Share script hands on the room's link and code (plan J20).
 	await page.getByRole('button', { name: 'Share script' }).tap();
