@@ -379,7 +379,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Night',
 		'Bag draw',
 		'Day',
-		'Grim cover',
+		'PIN and locks',
 		'Share',
 		'QR codes'
 	]);

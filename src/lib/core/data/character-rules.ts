@@ -20,6 +20,7 @@ import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
+import { readImpairs, type Impairs } from './impairs-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
 	readReminderPlaceholders,
@@ -98,8 +99,11 @@ export interface CharacterRules {
 	 * the living ones in the reminder bank.
 	 */
 	actsWhenDead?: boolean;
-	/** The ability is set off by its player's death, by `by` (the Ravenkeeper, the Sage). */
-	onDeath?: { by: KilledBy };
+	/**
+	 * The ability is set off by its player's death, by `by` (the Ravenkeeper, the Sage); with
+	 * `night`, only a death at night, never an execution (the Ravenkeeper's "if you die at night").
+	 */
+	onDeath?: { by: KilledBy; night?: true };
 	/**
 	 * The ability stops a death: its own player's (`self`, the Soldier), the player marked
 	 * with its `token` (the Monk's "Safe") or any good player's (`good`, the Pacifist), against
@@ -220,35 +224,6 @@ export interface RegistersAs {
 	tokens?: Readonly<Record<ReminderLabel, Registers & { carrierAlignment?: Alignment }>>;
 }
 
-/** Why an ability does not work. `no-ability`: an effect such as the Preacher's. */
-export const IMPAIRMENT_REASONS = ['drunk', 'poisoned', 'no-ability'] as const;
-export type ImpairmentReason = (typeof IMPAIRMENT_REASONS)[number];
-
-/**
- * Who a reminder token impairs: `carrier`, the player it sits on (only a `type` character,
- * and with `whileWorks` only while this character's own ability works: the Preacher's "No
- * Ability"), or `others`, every other player except Travellers while the token is on the
- * board (the Minstrel's "Everyone Is Drunk").
- */
-export const IMPAIRS_ON = ['carrier', 'others'] as const;
-export interface TokenImpairment {
-	reason: ImpairmentReason;
-	on: (typeof IMPAIRS_ON)[number];
-	type?: CharacterType;
-	whileWorks?: boolean;
-}
-
-/**
- * How the ability impairs players. `self`: its own player always is (the Drunk), or once at
- * most `aliveAtMost` players live (the Witch). `tokens`: what each of its reminders does, by
- * label. A reminder with no entry here impairs its carrier when its label says "Poisoned" or
- * "Drunk".
- */
-export interface Impairs {
-	self?: { reason: ImpairmentReason; aliveAtMost?: number };
-	tokens?: Readonly<Record<ReminderLabel, TokenImpairment>>;
-}
-
 /**
  * What a `learns` character is shown, each worked out in `rules/night-info.ts`:
  * - `pair-of-type`: two players, one of them a `type` character, shown which (Washerwoman);
@@ -328,6 +303,14 @@ export type Protects = (
 	| { who: 'marked'; token: ReminderLabel; from: (typeof PROTECTS_FROM)[number] }
 ) & { night?: true; storytellerDecides?: true };
 
+export {
+	IMPAIRMENT_REASONS,
+	IMPAIRS_ON,
+	type ImpairmentReason,
+	type Impairs,
+	type TokenImpairment
+} from './impairs-rules.ts';
+
 /** Every key a rules block may have; one more per migrated table. */
 export const RULE_KEYS = [
 	'reminderPrompts',
@@ -397,9 +380,10 @@ export function parseCharacterRules(
 		if (!isObject(raw.onDeath)) {
 			issues.add(`${path}.onDeath`, `expected object, got ${describe(raw.onDeath)}`);
 		} else {
-			checkKeys(raw.onDeath, ['by'], `${path}.onDeath`, issues);
+			checkKeys(raw.onDeath, ['by', 'night'], `${path}.onDeath`, issues);
 			const by = readEnum(raw.onDeath, 'by', KILLED_BY, `${path}.onDeath`, issues, true);
-			if (by) rules.onDeath = { by };
+			const night = readBoolean(raw.onDeath, 'night', `${path}.onDeath`, issues);
+			if (by) rules.onDeath = night ? { by, night } : { by };
 		}
 	}
 	if (raw.redirectsKill !== undefined) {
@@ -579,64 +563,6 @@ export function parseCharacterRules(
 	const turns = readTurnsPlayersInto(raw.turnsPlayersInto, path, issues);
 	if (turns) rules.turnsPlayersInto = turns;
 	return issues.list.length > before ? undefined : rules;
-}
-
-function readImpairs(
-	raw: unknown,
-	path: string,
-	issues: Issues,
-	reminders: readonly ReminderLabel[] | undefined
-): Impairs | undefined {
-	if (!isObject(raw)) {
-		issues.add(path, `expected object, got ${describe(raw)}`);
-		return undefined;
-	}
-	checkKeys(raw, ['self', 'tokens'], path, issues);
-	const out: Impairs = {};
-	if (raw.self !== undefined) {
-		const at = `${path}.self`;
-		if (!isObject(raw.self)) {
-			issues.add(at, `expected object, got ${describe(raw.self)}`);
-		} else {
-			checkKeys(raw.self, ['reason', 'aliveAtMost'], at, issues);
-			const reason = readEnum(raw.self, 'reason', IMPAIRMENT_REASONS, at, issues, true);
-			const aliveAtMost = readNumber(raw.self, 'aliveAtMost', at, issues);
-			if (reason) out.self = { reason, ...(aliveAtMost !== undefined ? { aliveAtMost } : {}) };
-		}
-	}
-	if (raw.tokens !== undefined) {
-		const at = `${path}.tokens`;
-		if (!isObject(raw.tokens)) {
-			issues.add(at, `expected object, got ${describe(raw.tokens)}`);
-		} else {
-			const tokens: Record<ReminderLabel, TokenImpairment> = {};
-			for (const [label, value] of Object.entries(raw.tokens)) {
-				const here = `${at}.${label}`;
-				if (!ownReminder(label, reminders)) {
-					issues.add(here, 'not one of this character’s reminders');
-					continue;
-				}
-				if (!isObject(value)) {
-					issues.add(here, `expected object, got ${describe(value)}`);
-					continue;
-				}
-				checkKeys(value, ['reason', 'on', 'type', 'whileWorks'], here, issues);
-				const reason = readEnum(value, 'reason', IMPAIRMENT_REASONS, here, issues, true);
-				const on = readEnum(value, 'on', IMPAIRS_ON, here, issues, true);
-				const type = readEnum(value, 'type', CHARACTER_TYPES, here, issues, false);
-				const whileWorks = readBoolean(value, 'whileWorks', here, issues);
-				if (!reason || !on) continue;
-				tokens[label] = {
-					reason,
-					on,
-					...(type ? { type } : {}),
-					...(whileWorks !== undefined ? { whileWorks } : {})
-				};
-			}
-			out.tokens = tokens;
-		}
-	}
-	return out;
 }
 
 function readPrompts(

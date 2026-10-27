@@ -13,7 +13,6 @@
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import HideContentsButton from '#lib/ui/primitives/HideContentsButton.svelte';
 	import SharedBoard from '#lib/features/room/SharedBoard.svelte';
 	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
@@ -81,8 +80,8 @@
 	import { deleteSeatNote, notesLine, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
-	import TownCounts from './TownCounts.svelte';
-	import MatchShapeButton, { matchesShape } from './MatchShapeButton.svelte';
+	import { matchesShape } from './MatchShapeButton.svelte';
+	import PlayerGrimTools from './PlayerGrimTools.svelte';
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
@@ -359,38 +358,21 @@
 	/* eslint-enable grim/names-as-badges */
 </script>
 
-<!-- The eye always, so nothing moves when the Final grimoire switch comes. A Public Town
-     display has none: all it shows is public (Trevor, 2026-10-26). Players have no grim cover
-     (Trevor, 2026-10-26: "Players don't need grim cover button"). -->
-{#if !display}<div class="tools">
-		<HideContentsButton
-			hidden={hiding}
-			onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
-			testid="hide-guesses"
-		/>
-		<MatchShapeButton disabled={!aspect} />
-		<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
-	     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
-		{#if !town && final}
-			<span class="final-switch"
-				><Toggle
-					label={t('room.finalGrimoire')}
-					checked={showFinal}
-					onChange={(on) => (showFinal = on)}
-				/></span
-			>
-		{/if}
-	</div>{/if}
 {#if final && showFinal}
+	<!-- The finished grimoire brings its own toolbar; the switch puts the town back. -->
+	<div class="tools">
+		<Toggle
+			label={t('room.finalGrimoire')}
+			checked={showFinal}
+			onChange={(on) => (showFinal = on)}
+		/>
+	</div>
 	<div class="final" data-testid="final-grimoire">
 		<SharedBoard shared={final.grimoire} {over} room={code} />
 	</div>
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
-	<!-- Not on a display: its corner shows the count when the Storyteller has it on (Trevor,
-	     2026-10-26: "that information will be in the bottom left"). -->
-	{#if !display}<TownCounts {seats} />{/if}
 	{#snippet townBoard()}
 		<div
 			class="town"
@@ -507,6 +489,15 @@
 					remindersOpen = true;
 				}}
 			/>
+			<!-- The Grim tab's controls on the town itself, in its bottom right corner, where the
+			     ring of seats leaves room (Trevor, 2026-10-27: "move any controls onto the grim so
+			     we remove wasted space"). A Public Town display shows only public things. -->
+			{#if !display}<PlayerGrimTools
+					shaped={!!aspect}
+					final={!town && !!final}
+					{showFinal}
+					onFinal={(on) => (showFinal = on)}
+				/>{/if}
 			<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
 			     2026-10-24); nothing to open or share here. -->
 			<BoardCorner
@@ -714,15 +705,11 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	/* Two rows of three on a phone, one row where there is room. */
+	/* Over the finished grimoire: its switch alone, at the end. */
 	.tools {
 		display: flex;
-		align-items: center;
-		gap: var(--space-1);
+		justify-content: flex-end;
 		margin-bottom: var(--space-2);
-	}
-	.final-switch {
-		margin-inline-start: auto;
 	}
 	/* The Storyteller's board, with room under it for History's Previous and Next. */
 	.final {

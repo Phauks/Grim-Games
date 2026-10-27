@@ -1536,7 +1536,7 @@
 		? () => roomHost().callTown() || toast(t('room.callTownFailed'))
 		: undefined}
 	onGameInfo={() => (modeMenuOpen = true)}
-	onCharacterSelection={startedAt === undefined && !watching
+	onCharacterSelection={startedAt === undefined && !setUp && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 		: undefined}
 	onAddSeat={() =>

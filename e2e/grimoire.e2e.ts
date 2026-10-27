@@ -4271,7 +4271,9 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 			.tap();
 		await closeSheet(page);
 	}
-	// The first night ends; the Empath is executed on Day 1 and the Ravenkeeper dies tonight.
+	// The first night ends; the Empath is executed on Day 1 and the Demon kills the
+	// Ravenkeeper tonight. An execution would not wake them: the Ravenkeeper wakes only on
+	// dying at night (https://wiki.bloodontheclocktower.com/Ravenkeeper).
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
@@ -4282,7 +4284,7 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 			await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
 			await page
 				.getByRole('dialog', { name: `Status of Seat ${seat}` })
-				.getByRole('button', { name: 'Executed' })
+				.getByRole('button', { name: seat === 2 ? 'Executed' : 'The Demon' })
 				.tap();
 			// During the day, Executed asks as the day's Execution does (Trevor, 2026-10-23),
 			// and its Confirm ends the day.
@@ -4292,7 +4294,7 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 				await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 				continue;
 			}
-			await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+			await expect(sheet.getByRole('button', { name: 'Status: Dead: The Demon' })).toBeVisible();
 		}
 		await closeSheet(page);
 	}

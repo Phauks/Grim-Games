@@ -231,3 +231,79 @@ test('with the PIN setting on, the cover sets the PIN first and asks for it to c
 	await expect(cover).toBeVisible();
 	await expect(set).toBeHidden();
 });
+
+// Trevor (2026-10-27): "I can't figure out how to toggle lock for grim cover", and he chose a
+// lock on the cover itself plus one PIN and locks group in Settings > Storyteller.
+test('the cover has its own lock, and Settings sets, changes and removes the PIN', async ({
+	page
+}) => {
+	await startGame(page);
+	await page.getByTestId('cover-button').tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	const lock = cover.getByTestId('cover-lock');
+	await expect(lock).toHaveAttribute('aria-pressed', 'false');
+
+	// On: the game has no PIN yet, so it sets one first.
+	await lock.tap();
+	const set = page.getByRole('dialog', { name: 'Set the Storyteller PIN' });
+	await set.getByLabel('PIN', { exact: true }).fill('2468');
+	await set.getByLabel('PIN again').fill('2468');
+	await set.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+
+	// Off takes the PIN, so a player can't switch it off.
+	await lock.tap();
+	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
+	await pin.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+	await lock.tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'false');
+	// Back on is one tap: the game keeps its PIN.
+	await lock.tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+	await cover.getByRole('button', { name: 'Close' }).first().tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(cover).toBeHidden();
+
+	// Settings > Storyteller > PIN and locks: the same switch, and the game's PIN.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const back = settings.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await expect(settings.getByRole('heading', { name: 'PIN and locks' })).toBeVisible();
+	await expect(
+		settings.getByRole('checkbox', { name: 'PIN to take the cover off', includeHidden: true })
+	).toBeChecked();
+	await expect(settings.getByText('Set for this game.')).toBeVisible();
+
+	// Change: the old PIN, then a new one.
+	await settings.getByRole('button', { name: 'Change PIN' }).tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await set.getByLabel('PIN', { exact: true }).fill('1357');
+	await set.getByLabel('PIN again').fill('1357');
+	await set.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(set).toBeHidden();
+
+	// Remove takes the new PIN.
+	await settings.getByRole('button', { name: 'Remove PIN' }).tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(pin.getByTestId('pin-message')).toHaveText('Wrong PIN.');
+	await pin.getByLabel('PIN', { exact: true }).fill('1357');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(settings.getByText('None for this game.')).toBeVisible();
+	await expect(settings.getByRole('button', { name: 'Set PIN' })).toBeVisible();
+	await expect(settings.getByRole('button', { name: 'Remove PIN' })).toBeDisabled();
+});

@@ -17,10 +17,13 @@ import {
 } from '#lib/core/model/fixtures.test-support.ts';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
+import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
+import { isSeatable } from '#lib/core/data/index.ts';
 import {
 	abilityState,
 	executionSavers,
 	firstDeathSaver,
+	impairmentOfLabel,
 	killRedirect,
 	protection,
 	registrations,
@@ -433,5 +436,72 @@ describe('custom characters', () => {
 		expect(abilityState(hushed, seats[1], all).impairments).toMatchObject([
 			{ reason: 'poisoned', source: { characterId: 'bard', seatId: seats[0] } }
 		]);
+	});
+});
+
+/**
+ * One case per official reminder whose label says "Poisoned" or "Drunk", built from the
+ * character's rules alone: on another player it impairs them while its character lives, and,
+ * once that character dies, only if its rules say it lasts (an `impairs.tokens` entry without
+ * `whileWorks`, such as the Sweetheart's "from now on"). Basis:
+ * https://wiki.bloodontheclocktower.com/Abilities (a dead or impaired character's persistent
+ * effects end; its example is the dead Poisoner's Slayer).
+ */
+describe('impairing tokens end with their character unless they last', () => {
+	const tokens = [...OFFICIAL_RULES.keys()].flatMap((id) => {
+		const character = characters.get(id);
+		if (!character || !isSeatable(character.type) || character.type === 'traveller') return [];
+		return [...new Set(character.reminders)]
+			.filter((label) => impairmentOfLabel(label))
+			.map((label) => ({ id, label, rule: rulesOf(id)?.impairs?.tokens?.[label] }))
+			.filter(({ rule }) => rule === undefined || rule.on === 'carrier');
+	});
+	const dead =
+		(i: number) =>
+		(s: string[]): Command => ({ type: 'SetDead', seatId: s[i], dead: true });
+
+	it('covers the Poisoner, Widow, Courtier and Sweetheart', () => {
+		const ids = tokens.map((t) => t.id);
+		expect(ids).toEqual(expect.arrayContaining(['poisoner', 'widow', 'courtier', 'sweetheart']));
+	});
+
+	for (const { id, label, rule } of tokens) {
+		const lasts = rule !== undefined && !rule.whileWorks;
+		it(`${id} "${label}": impairs while ${id} lives`, () => {
+			const { game: g, seats } = game([id, 'empath', 'imp'], add(1, id, label));
+			const typed = rule?.type === undefined || rule.type === 'townsfolk';
+			expect(abilityState(g, seats[1], characters).works).toBe(!typed);
+		});
+		it(`${id} "${label}": ${lasts ? 'still impairs' : 'ends'} once ${id} is dead`, () => {
+			const { game: g, seats } = game([id, 'empath', 'imp'], add(1, id, label), dead(0));
+			const typed = rule?.type === undefined || rule.type === 'townsfolk';
+			expect(abilityState(g, seats[1], characters).works).toBe(!(typed && lasts));
+		});
+	}
+});
+
+describe('Barista and Xaan', () => {
+	// https://wiki.bloodontheclocktower.com/Barista: the chosen player is sober and healthy.
+	it("clears drunkenness and poisoning under the Barista's Sober & Healthy", () => {
+		const { game: g, seats } = game(
+			['empath', 'poisoner', 'imp', 'barista'],
+			add(0, 'poisoner', 'Poisoned'),
+			add(0, 'barista', 'Sober & Healthy')
+		);
+		expect(abilityState(g, seats[0], characters).works).toBe(true);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Xaan: on night X all Townsfolk are poisoned until
+	// dusk, while the Xaan lives.
+	it("poisons every Townsfolk while the Xaan's X is out, and only while it lives", () => {
+		const { game: g, seats } = game(['empath', 'butler', 'xaan', 'imp'], add(2, 'xaan', 'X'));
+		expect(abilityState(g, seats[0], characters).impairments[0]?.reason).toBe('poisoned');
+		expect(abilityState(g, seats[1], characters).works).toBe(true);
+		const { game: after } = game(['empath', 'butler', 'xaan', 'imp'], add(2, 'xaan', 'X'), (s) => ({
+			type: 'SetDead',
+			seatId: s[2],
+			dead: true
+		}));
+		expect(abilityState(after, seats[0], characters).works).toBe(true);
 	});
 });
