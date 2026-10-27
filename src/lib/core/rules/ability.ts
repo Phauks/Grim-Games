@@ -32,6 +32,7 @@ import {
 	typeOf
 } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
+import { keepsAbilityWhenDead } from './dead-characters.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -57,7 +58,10 @@ export interface AbilityState {
 	characterId?: CharacterId;
 	/** True when the ability works: not drunk, poisoned or without ability, and alive (or it works even if dead). */
 	works: boolean;
-	/** Dead players have no ability, unless it says "even if dead". */
+	/**
+	 * Dead players have no ability, unless it says "even if dead" or another character's token
+	 * keeps it (`keepsAbility`, the Vigormortis's Has Ability).
+	 */
 	dead: boolean;
 	/** Every reason it does not work, `no-ability` first, then poisoned, then drunk. */
 	impairments: Impairment[];
@@ -260,7 +264,11 @@ function abilityWorks(
 	if (!seat) return false;
 	const next = new Set(visiting).add(seatId);
 	if (impairmentsOf(game, seatId, characters, next).length > 0) return false;
-	return !seat.dead || worksWhenDead(trueCharacter(game, seatId, characters), characters);
+	return (
+		!seat.dead ||
+		worksWhenDead(trueCharacter(game, seatId, characters), characters) ||
+		keepsAbilityWhenDead(game, seatId, characters)
+	);
 }
 
 /** Whether a seat's ability works, and if not, every reason with its source. */
@@ -272,7 +280,10 @@ export function abilityState(
 	const seat = getSeat(game, seatId);
 	const characterId = trueCharacter(game, seatId, characters);
 	const impairments = seat ? impairmentsOf(game, seatId, characters, new Set([seatId])) : [];
-	const dead = (seat?.dead ?? false) && !worksWhenDead(characterId, characters);
+	const dead =
+		(seat?.dead ?? false) &&
+		!worksWhenDead(characterId, characters) &&
+		!keepsAbilityWhenDead(game, seatId, characters);
 	return {
 		seatId,
 		...(characterId !== undefined ? { characterId } : {}),

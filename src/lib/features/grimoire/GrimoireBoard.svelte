@@ -7,7 +7,7 @@
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { phaseText } from './phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { boardNightSteps, stepWakes, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -45,7 +45,6 @@
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
-		onDeathTrigger,
 		stepNightNumbers,
 		todaysNominations,
 		mayNominate,
@@ -55,11 +54,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
-	import {
-		nominationPrompts,
-		seatHasAbility,
-		type NominationPrompt
-	} from '#lib/core/modes/index.ts';
+	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
@@ -310,10 +305,6 @@
 	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
 	 * an ability set off by dying on the night of the death (the Ravenkeeper's).
 	 */
-	/**
-	 * Whether a step wakes anyone tonight: a step for no player (Dusk, Dawn), or one with a
-	 * living player, or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
-	 */
 	/** Since dawn: players whose character changed (woken tonight) and who died (Godfather). */
 	const today = $derived({
 		changes: changedCharacters(grimoire.open.session.log, game),
@@ -331,18 +322,8 @@
 	 * the dead keep theirs, living Townsfolk have none).
 	 */
 	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
-	function wakes(step: NightStep): boolean {
-		const holders = stepHolders(game, step, characters);
-		const id = step.character?.id;
-		return (
-			holders.length === 0 ||
-			holders.some(
-				(s) =>
-					seatHasAbility(abilitiesRule, game, s, characters) ||
-					(id !== undefined && !!onDeathTrigger(id, characters) && diedTonight.has(s))
-			)
-		);
-	}
+	const wakes = (step: NightStep): boolean =>
+		stepWakes(game, step, characters, { abilitiesRule, diedTonight });
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || preferences.current.tokenAppearance.nightLeaves !== 'numbers') return undefined;

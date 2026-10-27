@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+	isReportStatus,
 	parseReportDraft,
 	parseReportIdPath,
 	parseReportScriptPath,
-	REPORT_LIMITS
+	REPORT_LIMITS,
+	REPORT_STATUSES
 } from './reports-protocol.ts';
 
 describe('parseReportDraft', () => {
@@ -87,5 +89,13 @@ describe('a report saved to send while offline', () => {
 		expect(parseReportDraft({ ...base, sendId: 'short' })).toHaveProperty('error');
 		expect(parseReportDraft({ ...base, sendId: 'has spaces in it' })).toHaveProperty('error');
 		expect(parseReportDraft({ ...base, sendId: 7 })).toHaveProperty('error');
+	});
+});
+
+describe('report statuses', () => {
+	it('has In progress between To do (accepted) and Done (Trevor, 2026-10-27)', () => {
+		expect(isReportStatus('in-progress')).toBe(true);
+		expect(REPORT_STATUSES.indexOf('in-progress')).toBe(REPORT_STATUSES.indexOf('accepted') + 1);
+		expect(REPORT_STATUSES.indexOf('done')).toBe(REPORT_STATUSES.indexOf('in-progress') + 1);
 	});
 });
