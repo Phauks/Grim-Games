@@ -50,9 +50,21 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
 	await page.goto(board);
+	// A Cancel/Confirm sheet first (Trevor, 2026-10-27): Cancel calls nobody.
+	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await menu.getByRole('button', { name: 'Back to town' }).tap();
 	await expect(menu).toBeHidden();
+	await confirm.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(confirm).toBeHidden();
+	await page.waitForTimeout(500);
+	expect(await phone.evaluate(() => (window as unknown as { alerts: string[] }).alerts)).toEqual(
+		[]
+	);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await menu.getByRole('button', { name: 'Back to town' }).tap();
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(confirm).toBeHidden();
 
 	await expect(phone.getByText('Back to town', { exact: true })).toBeVisible();
 	await expect
@@ -64,6 +76,9 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 	await page.getByTestId('cover-button').tap();
 	const cover = page.getByRole('dialog', { name: 'Screen covered' });
 	await cover.getByRole('button', { name: 'Back to town' }).tap();
+	await expect(confirm).toBeVisible();
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(confirm).toBeHidden();
 	await expect(cover).toBeVisible();
 	await phoneContext.close();
 });
