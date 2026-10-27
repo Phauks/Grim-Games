@@ -5,6 +5,7 @@
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { SeatId, TileId } from '#lib/core/model/index.ts';
 	import { bagSlots, dealPairs, nextDrawSeat } from '#lib/core/rules/index.ts';
+	import { seatsToName } from '#lib/core/sync/room-seating.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -219,6 +220,12 @@
 	function deal() {
 		if (!game) return;
 		for (let i = 0; i < dealPairs(game, Math.random).seatsShort; i++) send({ type: 'AddSeat' });
+		// Phones in the room that sit nowhere yet take the unnamed seats, so each gets its own.
+		const named = port.game;
+		if (!named) return;
+		const seats = named.seating.map((id) => named.seats[id]);
+		for (const { seatId, playerName } of seatsToName(roomHost().connectedUnseated, seats))
+			send({ type: 'RenameSeat', seatId, playerName });
 		const current = port.game;
 		if (!current) return;
 		for (const { seatId, tileId } of dealPairs(current, Math.random).pairs) {
