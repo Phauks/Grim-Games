@@ -1527,7 +1527,10 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(viewer.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	// A picture of the Storyteller's own reaches it through the room too.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
 	await settings.getByLabel('Background image file').setInputFiles({
 		name: 'table.png',
 		mimeType: 'image/png',

@@ -1256,7 +1256,7 @@ test('the join code shows under the script name, a Board setting, read only', as
 	await page.getByRole('button', { name: 'Share', exact: true }).tap();
 	await expect(share.getByRole('checkbox', { name: 'Join code on the board' })).toHaveCount(0);
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	await settings.getByText('Join code on the board', { exact: true }).tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(corner).toHaveText(codeLine);
