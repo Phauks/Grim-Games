@@ -14,7 +14,8 @@
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { reportDialog } from './report-dialog.svelte.ts';
 	import { reportScript, type ReportScript } from './report-script.svelte.ts';
-	import { sendReport } from './reports-api.ts';
+	import { reportOutbox } from './outbox.svelte.ts';
+	import ReportOutboxList from './ReportOutboxList.svelte';
 	import { REPORT_KINDS, REPORT_LIMITS, type ReportKind } from './reports-protocol.ts';
 
 	// The one Report form (Trevor, 2026-10-17: reports go to our Worker, not GitHub). Nothing
@@ -27,6 +28,8 @@
 	let includeDetails = $state(true);
 	let sending = $state(false);
 	let sentId = $state<number>();
+	/** Saved with no connection: the report's send id, until the outbox sends it. */
+	let waitingId = $state<string>();
 	let page = $state('');
 	/** The script on screen when the form opened (Trevor, 2026-10-22), sent unless turned off. */
 	let script = $state.raw<ReportScript>();
@@ -41,12 +44,17 @@
 		includeDetails = true;
 		sending = false;
 		sentId = undefined;
+		waitingId = undefined;
 		page = scrubUrls(location.pathname);
 		script = untrack(reportScript);
 		includeScript = true;
 	});
 
 	const details = $derived(reportDialog.start.details);
+	/** Sent now, or sent later while the form still shows it waiting. */
+	const shownId = $derived(
+		sentId ?? reportOutbox.sent.find((s) => s.sendId === waitingId && s.id !== undefined)?.id
+	);
 	const build = describeBuild(buildInfo);
 	const ready = $derived(title.trim() !== '' && body.trim() !== '' && !sending);
 	const kinds = $derived(
@@ -64,7 +72,7 @@
 		if (!ready) return;
 		sending = true;
 		try {
-			sentId = await sendReport({
+			const result = await reportOutbox.send({
 				kind,
 				title,
 				body,
@@ -75,8 +83,9 @@
 				build,
 				device: navigator.userAgent
 			});
-		} catch {
-			toast(t('reports.sendFailed'), t('reports.sendFailedDetail'));
+			if (result.status === 'sent') sentId = result.id;
+			else if (result.status === 'waiting') waitingId = result.sendId;
+			else toast(t('reports.sendFailed'), t('reports.sendFailedDetail'));
 		} finally {
 			sending = false;
 		}
@@ -84,8 +93,10 @@
 </script>
 
 <Dialog bind:open={reportDialog.open} title={t('reports.title')}>
-	{#if sentId !== undefined}
-		<p class="sent" data-testid="report-sent">{t('reports.sent', { id: sentId })}</p>
+	{#if shownId !== undefined}
+		<p class="sent" data-testid="report-sent">{t('reports.sent', { id: shownId })}</p>
+	{:else if waitingId !== undefined}
+		<p class="sent" data-testid="report-waiting">{t('reports.waiting')}</p>
 	{:else}
 		<form class="form" onsubmit={send} data-testid="report-form">
 			<Select label={t('reports.kind')} value={kind} options={kinds} onChange={(v) => (kind = v)} />
@@ -143,10 +154,11 @@
 					<pre class="details" class:excluded={!includeDetails}>{details}</pre>
 				{/if}
 			</Collapsible>
+			<ReportOutboxList />
 		</form>
 	{/if}
 	{#snippet actions()}
-		{#if sentId !== undefined}
+		{#if shownId !== undefined || waitingId !== undefined}
 			<Button onclick={() => (reportDialog.open = false)}>{t('common.close')}</Button>
 		{:else}
 			<ModalActions

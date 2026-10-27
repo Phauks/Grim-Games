@@ -157,6 +157,13 @@ describe('tokens on the character’s own seat', () => {
 		expect(brief(['drunk:empath', 'chef', 'imp'])).toEqual([]);
 	});
 
+	// Trevor, 2026-10-27: "Is The Drunk" is very important, so it comes first.
+	it('lists the Drunk’s token before every other, wherever the Drunk sits', () => {
+		const list = brief(['washerwoman', 'chef', 'drunk', 'imp']);
+		expect(list[0]).toBe('drunk: Is The Drunk → 2');
+		expect(list.slice(1).some((r) => r.startsWith('washerwoman:'))).toBe(true);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Marionette: the Marionette thinks they are good.
 	it('marks the Marionette', () => {
 		expect(brief(['chef', 'marionette', 'imp'])).toEqual(['marionette: Is The Marionette → 1']);

@@ -17,6 +17,8 @@
 		grimoire: Grimoire;
 		/** A spectator sees every control, disabled. */
 		watching: boolean;
+		/** More opens, even on a spectator's board that lets it look through History. */
+		menu: boolean;
 		seatArr: SeatArranging;
 		/** A new seat waits for its place on the board. */
 		placing: boolean;
@@ -31,6 +33,7 @@
 	let {
 		grimoire,
 		watching,
+		menu,
 		seatArr,
 		placing,
 		onCancelPlacing,
@@ -107,7 +110,7 @@
 			onpointerdown={prepareRoom}
 			onclick={onShare}><span class="tool-label">Share</span></Button
 		>
-		<Button variant="quiet" icon="more" aria-label="More" disabled={watching} onclick={onMore}
+		<Button variant="quiet" icon="more" aria-label="More" disabled={!menu} onclick={onMore}
 			><span class="tool-label">More</span></Button
 		>
 		<!-- Last, after ⋯, as its symbol alone (Trevor, 2026-10-24); the symbol says on or off,

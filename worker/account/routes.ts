@@ -510,7 +510,7 @@ export async function handleAccount(
 		return json((await user.sync(sync, Date.now())) as unknown as SyncResponse);
 	}
 
-	const docs = /^\/api\/account\/docs\/([a-z]+)(?:\/([^/]+))?$/.exec(path);
+	const docs = /^\/api\/account\/docs\/([a-z-]+)(?:\/([^/]+))?$/.exec(path);
 	if (docs) {
 		const [, kind, id] = docs;
 		if (!isDocKind(kind)) return fail(404, 'Not found');

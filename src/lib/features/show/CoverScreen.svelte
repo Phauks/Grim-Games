@@ -5,6 +5,8 @@
 		logo?: string;
 		name?: string;
 		author?: string;
+		/** Who runs the game (Trevor, 2026-10-27: "Include storyteller name on grim cover"). */
+		storyteller?: string;
 		/** The night or day in play, such as "Day 2". */
 		phase?: string;
 	}
@@ -18,7 +20,7 @@
 	/**
 	 * What the grim cover shows (Trevor, 2026-10-26: "It should show the timer, along with
 	 * other non secret information such as the script logo"): the script's logo, name and
-	 * author, the night or day, and the day timer. Never anything from the grimoire.
+	 * author, the Storyteller, the night or day, and the day timer. Never anything from the grimoire.
 	 */
 	interface Props extends CoverDetails {
 		/** The day timer, as the screen that opened the cover shows it. */
@@ -30,13 +32,16 @@
 		actions?: Snippet;
 	}
 
-	let { logo, name, author, phase, timer, actions }: Props = $props();
+	let { logo, name, author, storyteller, phase, timer, actions }: Props = $props();
 </script>
 
 <div class="cover" data-testid="cover-details">
 	{#if logo}<ScriptLogo src={logo} {name} class="cover-logo" />{/if}
 	{#if name}<h2 class="name">{name}</h2>{/if}
 	{#if author}<p class="author">{t('show.byAuthor', { author })}</p>{/if}
+	{#if storyteller}<p class="author" data-testid="cover-storyteller">
+			{t('settings.storytellerLine', { name: storyteller })}
+		</p>{/if}
 	{#if phase}<p class="phase" data-testid="cover-phase">{phase}</p>{/if}
 	{#if timer}<div class="timer">{@render timer()}</div>{/if}
 	{#if actions}<div class="actions" data-testid="cover-actions">{@render actions()}</div>{/if}

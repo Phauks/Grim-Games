@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
@@ -117,9 +118,8 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(phone.getByTestId('join-status')).toHaveText('');
 	const sheet = await seatSheet(phone);
 	await expect(sheet.getByRole('radio')).toHaveCount(0);
-	await sheet.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await sheet.getByRole('button', { name: 'Save' }).tap();
-	// Saving closes the sheet.
+	await setPlayerName(phone, 'Alex');
+	await phone.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(phone.getByTestId('join-status')).toHaveText('');
 	await expect(phone.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
@@ -148,9 +148,9 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 		/^Seat 3: Alex/
 	);
 	// A seated player's new name goes on their seat, with no approval either.
-	const rename = await seatSheet(phone);
-	await rename.getByRole('textbox', { name: 'Your name' }).fill('Alex K');
-	await rename.getByRole('button', { name: 'Save' }).tap();
+	await seatSheet(phone);
+	await setPlayerName(phone, 'Alex K');
+	await phone.keyboard.press('Escape');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
 	await expect(phone.getByRole('button', { name: 'Your settings: Alex K' })).toBeVisible();
 	await page.goto(`${board}/room`);
@@ -175,8 +175,12 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
 	await expect(phone.getByRole('button', { name: 'Your settings: Alex K' })).toBeVisible();
 	const again = await seatSheet(phone);
-	await expect(again.getByRole('textbox', { name: 'Your name' })).toHaveValue('Alex K');
-	await expect(again.getByRole('button', { name: 'Save' })).toBeDisabled();
+	await expect(again.getByTestId('player-name')).toHaveText('Alex K');
+	await again.getByRole('button', { name: 'Edit your name' }).tap();
+	const modal = phone.getByRole('dialog', { name: 'Your name' });
+	await expect(modal.getByRole('textbox', { name: 'Your name' })).toHaveValue('Alex K');
+	await expect(modal.getByRole('button', { name: 'Save' })).toBeDisabled();
+	await modal.getByRole('button', { name: 'Cancel' }).tap();
 	await phone.keyboard.press('Escape');
 
 	// Seating, and the new name, named the seat on the board, as ordinary changes.
@@ -2071,6 +2075,11 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 		/Quiet all day/,
 		/Voted for Ana/
 	]);
+	// Closed, the header counts the notes written on players, not the seats (Trevor, 2026-10-27).
+	const players = phone.getByRole('button', { name: 'Players' });
+	await players.tap();
+	await expect(players.getByTestId('section-count')).toHaveText('3');
+	await players.tap();
 	await phoneContext.close();
 });
 
@@ -2158,10 +2167,10 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	const you = await seatSheet(phone);
-	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex Kim');
 	// Initials are always on, with no switch (Trevor, 2026-10-25).
 	await expect(you.getByText('Initials on your seat', { exact: true })).toHaveCount(0);
-	await you.getByRole('button', { name: 'Save' }).tap();
+	await setPlayerName(phone, 'Alex Kim');
+	await phone.keyboard.press('Escape');
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
 	await nameSeat(page, 3, 'Alex Kim');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
@@ -2243,7 +2252,6 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	const alex = await alexContext.newPage();
 	await alex.goto(`/join/${code}`);
 	const you = await seatSheet(alex);
-	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex Kim');
 	const picture = you.getByTestId('avatar-picture');
 	await expect(picture.getByRole('button', { name: 'Remove picture' })).toBeDisabled();
 	// "+ Image" (Trevor, 2026-10-27), the add icon and one word.
@@ -2295,7 +2303,8 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await expect(shown).toHaveAttribute('style', /width: 200%/);
 	await crop.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(crop).toBeHidden();
-	await you.getByRole('button', { name: 'Save' }).tap();
+	await setPlayerName(alex, 'Alex Kim');
+	await alex.keyboard.press('Escape');
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
 	await nameSeat(page, 3, 'Alex Kim');
 

@@ -39,6 +39,11 @@
 		symbolColour?: SymbolColour;
 		/** Its icon symbol drawn filled (Trevor, 2026-10-23: per token). */
 		symbolFill?: boolean;
+		/**
+		 * A generic copy of this character's reminder (Trevor, 2026-10-27): its art, drawn while
+		 * the token has no symbol of its own.
+		 */
+		art?: Character;
 		disabled?: boolean;
 		onTap: () => void;
 		/** Pointer position in client px while dragging; `end` true when released. */
@@ -62,6 +67,7 @@
 		symbol = '',
 		symbolColour,
 		symbolFill = false,
+		art,
 		disabled = false,
 		onTap,
 		onDrag,
@@ -72,6 +78,7 @@
 	const appearance = $derived(preferences.current.tokenAppearance);
 	// The owner's icon, always in the owner's alignment (Trevor, 2026-10-23).
 	const src = $derived(character ? reminderIconUrl(character, alignment) : undefined);
+	const artSrc = $derived(art && !symbol ? reminderIconUrl(art, undefined) : undefined);
 	// Wrapped words as wide as their longest line (Trevor, 2026-10-23), measured again when
 	// anything that lays them out changes.
 	const fitWords = $derived(
@@ -205,7 +212,7 @@
 	data-type={character?.type}
 	data-testid="board-reminder"
 	data-generic={infinite || undefined}
-	data-has-symbol={(infinite && !!symbol) || undefined}
+	data-has-symbol={(infinite && (!!symbol || !!artSrc)) || undefined}
 	data-pan={panX ? 'x' : undefined}
 	style:--d="{size}px"
 	aria-label={more
@@ -233,7 +240,13 @@
 					/></span
 				>{:else if symbol}<span class="symbol emoji" data-symbol={symbol} aria-hidden="true"
 					>{symbol}</span
-				>{/if}{:else if src}<img
+				>{:else if artSrc}<img
+					src={artSrc}
+					alt=""
+					draggable="false"
+					referrerpolicy="no-referrer"
+					{@attach iconFallback(art && fallbackIconUrl(art))}
+				/>{/if}{:else if src}<img
 				{src}
 				alt=""
 				draggable="false"
