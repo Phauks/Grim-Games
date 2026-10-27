@@ -32,9 +32,18 @@
 		/** What the grim cover shows, as from the board (Trevor, 2026-10-26). */
 		cover?: CoverDetails;
 		coverTimer?: Snippet;
+		coverActions?: Snippet;
 	}
 
-	let { open = $bindable(), game, onEndDay, onSavant, cover, coverTimer }: Props = $props();
+	let {
+		open = $bindable(),
+		game,
+		onEndDay,
+		onSavant,
+		cover,
+		coverTimer,
+		coverActions
+	}: Props = $props();
 
 	const day = $derived(new LiveDay(game));
 	// Which day it is (Trevor): Day 1 starts when the first night ends.
@@ -53,6 +62,7 @@
 			gameId={game.game.gameId}
 			details={cover}
 			timer={coverTimer}
+			actions={coverActions}
 		/>{/snippet}
 	<div class="body">
 		<DayPanel game={day} {assistance} {onSavant} />
