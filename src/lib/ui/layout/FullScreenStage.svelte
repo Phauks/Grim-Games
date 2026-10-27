@@ -42,22 +42,29 @@
 	.stage {
 		position: relative;
 	}
-	/* Over the app, under the lowest dialog or sheet (their layers start at 2). */
+	/* Over the app, under the lowest dialog or sheet (their layers start at 2). Clear of the
+	   camera and the screen's rounded corners (Trevor's phone, 2026-10-27: "too high up and
+	   overlap with camera area", the bottom left "too close to corner of phone"). */
 	.stage[data-filled] {
+		--inset-top: max(env(safe-area-inset-top), var(--space-4));
+		--inset-right: max(env(safe-area-inset-right), var(--space-4));
+		--inset-bottom: max(env(safe-area-inset-bottom), var(--space-4));
+		--inset-left: max(env(safe-area-inset-left), var(--space-4));
 		position: fixed;
 		inset: 0;
 		z-index: 1;
+		box-sizing: border-box;
+		padding: var(--inset-top) var(--inset-right) var(--inset-bottom) var(--inset-left);
 		background: var(--surface);
 	}
 	.stage[data-filled] > :global(:not(.corner)) {
 		height: 100%;
-		border-radius: 0;
 	}
 	/* The board's corner lines are top left, so these go top right. */
 	.corner {
 		position: absolute;
-		top: var(--space-2);
-		right: var(--space-2);
+		top: calc(var(--inset-top, 0rem) + var(--space-2));
+		right: calc(var(--inset-right, 0rem) + var(--space-2));
 		z-index: 1;
 		display: flex;
 		align-items: center;

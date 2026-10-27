@@ -1884,12 +1884,19 @@ test("a player's Grim fills the screen from its own corner, and a seat's sheet o
 	expect(corner.y).toBeLessThan(box.y + box.height * 0.15);
 	await fullScreen.tap();
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	// The screen, less a margin clear of the camera and the rounded corners (Trevor's phone,
+	// 2026-10-27), with Full screen inside the town's own corner.
 	const filled = (await town.boundingBox())!;
 	const screen = phone.viewportSize()!;
-	expect(Math.round(filled.x)).toBe(0);
-	expect(Math.round(filled.y)).toBe(0);
-	expect(Math.round(filled.width)).toBe(screen.width);
-	expect(Math.round(filled.height)).toBe(screen.height);
+	const margin = filled.x;
+	expect(margin).toBeGreaterThanOrEqual(12);
+	expect(margin).toBeLessThan(screen.width * 0.1);
+	expect(Math.round(filled.y)).toBe(Math.round(margin));
+	expect(Math.round(filled.width)).toBe(Math.round(screen.width - 2 * margin));
+	expect(Math.round(filled.height)).toBe(Math.round(screen.height - 2 * margin));
+	const inside = (await fullScreen.boundingBox())!;
+	expect(inside.y).toBeGreaterThan(filled.y);
+	expect(inside.x + inside.width).toBeLessThan(filled.x + filled.width);
 	// A seat's sheet still opens over it.
 	await phone.getByTestId('grim-seat').nth(2).tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });

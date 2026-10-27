@@ -106,12 +106,15 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	// The request settles after the tap, so wait for it.
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	// The whole screen less one margin, clear of the camera and the rounded corners (Trevor's
+	// phone, 2026-10-27): nothing else above it takes room.
 	const filled = (await town.boundingBox())!;
 	const screen = tablet.viewportSize()!;
-	expect(Math.round(filled.width)).toBe(screen.width);
-	expect(Math.round(filled.height)).toBe(screen.height);
-	// The grim starts at the top of the screen: nothing above it takes room.
-	expect(Math.round(filled.y)).toBe(0);
+	const margin = filled.x;
+	expect(margin).toBeGreaterThanOrEqual(12);
+	expect(Math.round(filled.y)).toBe(Math.round(margin));
+	expect(Math.round(filled.width)).toBe(Math.round(screen.width - 2 * margin));
+	expect(Math.round(filled.height)).toBe(Math.round(screen.height - 2 * margin));
 	await fullScreen.tap();
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
