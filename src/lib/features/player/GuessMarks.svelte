@@ -17,12 +17,17 @@
 	interface Props {
 		/** The cycle's entries after the front one, in order. */
 		others: readonly GuessMark[];
+		/**
+		 * The rim it sits on: the top right, or the top left on a seat near the grim's right edge,
+		 * so it never runs off the screen (Trevor, 2026-10-27).
+		 */
+		side?: 'left' | 'right';
 	}
 
-	let { others }: Props = $props();
+	let { others, side = 'right' }: Props = $props();
 </script>
 
-<RimPill side="right" testid="guess-marks" title={t('player.grim.nextGuess')}
+<RimPill {side} testid="guess-marks" title={t('player.grim.nextGuess')}
 	>{#each others as other, i (i)}{#if 'character' in other}<img
 				class="slot"
 				src={iconUrl(other.character)}

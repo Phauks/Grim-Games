@@ -4191,7 +4191,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
 	expect((await names('Game')).join(' ')).toMatch(
-		/^History Demon bluffs Notes Soundboard( Game info)?( Character selection)? End game$/
+		/^History Demon bluffs Notes( Game info)?( Character selection)? End game$/
 	);
 	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Arrange seats']);
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);

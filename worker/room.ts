@@ -13,6 +13,7 @@ import {
 	isScript,
 	isSharedGrimoire,
 	join,
+	markHere,
 	judgePicture,
 	reportPicture,
 	MAX_GRIMOIRE_BYTES,
@@ -350,7 +351,7 @@ export class Room extends DurableObject<RoomEnv> {
 			}
 			ws.serializeAttachment({ role: 'player', memberId } satisfies Attachment);
 			// Saved even when nothing changed, so the Storyteller sees this phone is here now.
-			await this.save(joined);
+			await this.save(markHere(joined, memberId));
 			const script = await this.ctx.storage.get<ScriptView>('script');
 			if (script) send(ws, script);
 			// A phone joining after the Storyteller shared the finished grimoire gets it too.
@@ -393,7 +394,7 @@ export class Room extends DurableObject<RoomEnv> {
 		switch (message.type) {
 			case 'publish':
 				if (typeof message.gameId !== 'string' || !Array.isArray(message.state?.seats)) return;
-				room = publish(room, message.gameId, message.state);
+				room = publish(room, message.gameId, message.state, this.present());
 				await this.dropReveal(room);
 				break;
 			case 'reveal': {

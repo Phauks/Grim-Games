@@ -47,8 +47,13 @@ async function nameSeat(page: Page, number: number, name: string) {
 	await expect(sheet).toBeHidden();
 }
 
-async function startGame(page: Page, storyteller?: string) {
+async function startGame(page: Page, storyteller?: string, players = 8) {
 	await page.goto('/new');
+	const count = page.getByTestId('setup-table').locator('thead th[data-current]');
+	for (let n = 8; n < players; n++) {
+		await page.getByRole('button', { name: 'More players' }).tap();
+		await expect(count).toHaveText(String(n + 1));
+	}
 	await page
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
@@ -1642,11 +1647,16 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Game time ticks, so it is read as the board shows it, not to the second.
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
-	// The phone works out the players and the split by type itself, over the town (Trevor,
-	// 2026-10-26: so players don't have to), whatever the board's corner shows.
-	await expect(phone.getByTestId('grim-counts')).toHaveText(
-		'Players: 8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)'
-	);
+	// No count of its own over the town (Trevor, 2026-10-27: "remove character count"), and
+	// the Grim tab's controls sit on the town's bottom right corner, so no strip goes on them.
+	await expect(phone.getByTestId('grim-counts')).toHaveCount(0);
+	const town = (await phone.getByTestId('player-grim').boundingBox())!;
+	for (const control of ['hide-guesses', 'match-shape']) {
+		const box = (await phone.getByTestId(control).boundingBox())!;
+		expect(box.y, control).toBeGreaterThan(town.y + town.height * 0.8);
+		expect(box.y + box.height, control).toBeLessThanOrEqual(town.y + town.height);
+		expect(box.x, control).toBeGreaterThan(town.x + town.width * 0.5);
+	}
 	// Each corner line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
 	const info = await openGameInfo(page);
 	await info.getByRole('button', { name: 'Author on the board' }).tap();
@@ -2049,6 +2059,46 @@ test("a player puts generic tokens with numbers or notes on their own Grim's sea
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(placed).toHaveAccessibleName('Generic reminder: 2');
+	await phoneContext.close();
+});
+
+test("a seat's other guesses stay on the screen, on whichever side of the Grim it sits", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-27): "Guesses run off side of screen". A pill of other guesses sits on
+	// the rim toward the middle of the grim, so a seat at the screen's edge keeps it in view.
+	// Thirteen seats, as in Trevor's game, puts seats against both edges of a phone.
+	// Three guesses on each of thirteen seats takes a while.
+	test.slow();
+	const board = await startGame(page, undefined, 13);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seats = phone.getByTestId('grim-seat');
+	const count = await seats.count();
+	for (let i = 0; i < count; i++) {
+		await seats.nth(i).tap();
+		const sheet = phone.getByRole('dialog', { name: `Seat ${i + 1} · Seat ${i + 1}` });
+		await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
+		await sheet.getByRole('button', { name: 'Spy', exact: true }).tap();
+		await sheet.getByRole('button', { name: 'Imp', exact: true }).tap();
+		await phone.keyboard.press('Escape');
+		await expect(sheet).toBeHidden();
+	}
+	const width = phone.viewportSize()!.width;
+	for (let i = 0; i < count; i++) {
+		const pill = seats.nth(i).getByTestId('guess-marks');
+		await expect(pill).toBeVisible();
+		const box = (await pill.boundingBox())!;
+		expect(box.x, `Seat ${i + 1}'s pill`).toBeGreaterThanOrEqual(0);
+		expect(box.x + box.width, `Seat ${i + 1}'s pill`).toBeLessThanOrEqual(width);
+	}
 	await phoneContext.close();
 });
 

@@ -23,6 +23,10 @@
 			"note": "The nearest Townsfolk either way round from that dead Minion; it may be dead, and the Storyteller picks if both sides tie."
 		}
 	},
+	"keepsAbility": {
+		"token": "Has Ability",
+		"type": "minion"
+	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
 	},

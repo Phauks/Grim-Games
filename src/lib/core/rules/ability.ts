@@ -32,6 +32,7 @@ import {
 	typeOf
 } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
+import { keepsAbilityWhenDead } from './dead-characters.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -57,7 +58,10 @@ export interface AbilityState {
 	characterId?: CharacterId;
 	/** True when the ability works: not drunk, poisoned or without ability, and alive (or it works even if dead). */
 	works: boolean;
-	/** Dead players have no ability, unless it says "even if dead". */
+	/**
+	 * Dead players have no ability, unless it says "even if dead" or another character's token
+	 * keeps it (`keepsAbility`, the Vigormortis's Has Ability).
+	 */
 	dead: boolean;
 	/** Every reason it does not work, `no-ability` first, then poisoned, then drunk. */
 	impairments: Impairment[];
@@ -100,6 +104,27 @@ function seatOfCharacter(
 function worksWhenDead(characterId: CharacterId | undefined, characters: CharacterLookup) {
 	const ability = characterId ? characters.get(characterId)?.ability : undefined;
 	return ability !== undefined && /\beven if dead\b/i.test(ability);
+}
+
+/**
+ * Whether the character whose token sits on `carrier` still has a working ability: some other
+ * player of it works, or none is in play (a token left by a gained ability, which we can't
+ * trace).
+ */
+function sourceWorks(
+	game: Game,
+	carrier: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	visiting: Set<SeatId>
+): boolean {
+	const seats = game.seating.filter(
+		(s) => s !== carrier && trueCharacter(game, s, characters) === characterId
+	);
+	return (
+		seats.length === 0 ||
+		seats.some((s) => !visiting.has(s) && abilityWorks(game, s, characters, visiting))
+	);
 }
 
 function impairmentsOf(
@@ -146,6 +171,16 @@ function impairmentsOf(
 		}
 		const reason = impairmentOfLabel(r.label);
 		if (!reason) continue;
+		// Another character's "Poisoned" or "Drunk" lasts only while that character's ability
+		// works: once its player dies, is drunk or poisoned, the effect ends at once
+		// (https://wiki.bloodontheclocktower.com/Abilities, the dead Poisoner's Slayer). Tokens
+		// that last regardless say so with an `impairs.tokens` entry (the Sweetheart's). With no
+		// player of that character in play, the token is kept: it may come from a gained ability.
+		if (
+			r.characterId !== characterId &&
+			!sourceWorks(game, seatId, r.characterId, characters, visiting)
+		)
+			continue;
 		const sourceSeat =
 			r.characterId === characterId
 				? seatId
@@ -181,15 +216,23 @@ function impairmentsOf(
 	}
 
 	// A token that impairs every other player but Travellers while it is on the board (the
-	// Minstrel's "Everyone Is Drunk": https://wiki.bloodontheclocktower.com/Minstrel).
+	// Minstrel's "Everyone Is Drunk": https://wiki.bloodontheclocktower.com/Minstrel), or only
+	// `type` players while its character's ability works (the Xaan's "X", every Townsfolk:
+	// https://wiki.bloodontheclocktower.com/Xaan).
 	const traveller = isTraveller(game, seatId, characters);
 	others: for (const other of traveller ? [] : game.seating) {
 		if (other === seatId) continue;
 		for (const token of game.seats[other].reminders) {
 			const rule = tokenImpairment(token, characters);
 			if (rule?.on !== 'others') continue;
+			if (rule.type && typeOf(game, seatId, characters) !== rule.type) continue;
 			const source = seatOfCharacter(game, token.characterId, characters) ?? other;
 			if (source === seatId) continue;
+			if (
+				rule.whileWorks &&
+				(visiting.has(source) || !abilityWorks(game, source, characters, visiting))
+			)
+				continue;
 			out.push({
 				reason: rule.reason,
 				source: { characterId: token.characterId, seatId: source, reminderId: token.reminderId },
@@ -199,7 +242,16 @@ function impairmentsOf(
 		}
 	}
 
-	return out.sort((a, b) => ORDER[a.reason] - ORDER[b.reason]);
+	// A token that makes its carrier sober and healthy while its character's ability works
+	// (the Barista's "Sober & Healthy": https://wiki.bloodontheclocktower.com/Barista). An
+	// ability that is removed outright (`no-ability`) stays removed.
+	const sober = seat.reminders.some(
+		(r) =>
+			rulesOf(r.characterId, characters)?.impairs?.clears?.includes(r.label) &&
+			sourceWorks(game, seatId, r.characterId, characters, visiting)
+	);
+	const kept = sober ? out.filter((i) => i.reason === 'no-ability') : out;
+	return kept.sort((a, b) => ORDER[a.reason] - ORDER[b.reason]);
 }
 
 function abilityWorks(
@@ -212,7 +264,11 @@ function abilityWorks(
 	if (!seat) return false;
 	const next = new Set(visiting).add(seatId);
 	if (impairmentsOf(game, seatId, characters, next).length > 0) return false;
-	return !seat.dead || worksWhenDead(trueCharacter(game, seatId, characters), characters);
+	return (
+		!seat.dead ||
+		worksWhenDead(trueCharacter(game, seatId, characters), characters) ||
+		keepsAbilityWhenDead(game, seatId, characters)
+	);
 }
 
 /** Whether a seat's ability works, and if not, every reason with its source. */
@@ -224,7 +280,10 @@ export function abilityState(
 	const seat = getSeat(game, seatId);
 	const characterId = trueCharacter(game, seatId, characters);
 	const impairments = seat ? impairmentsOf(game, seatId, characters, new Set([seatId])) : [];
-	const dead = (seat?.dead ?? false) && !worksWhenDead(characterId, characters);
+	const dead =
+		(seat?.dead ?? false) &&
+		!worksWhenDead(characterId, characters) &&
+		!keepsAbilityWhenDead(game, seatId, characters);
 	return {
 		seatId,
 		...(characterId !== undefined ? { characterId } : {}),

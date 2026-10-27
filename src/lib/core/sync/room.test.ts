@@ -12,6 +12,7 @@ import {
 	isScript,
 	isSharedGrimoire,
 	join,
+	markHere,
 	MAX_MEMBERS,
 	MIN_ROOM_PROTOCOL,
 	newRoom,
@@ -196,6 +197,41 @@ describe('the live room', () => {
 		// From a room with nobody known to be here, the list is empty, not absent.
 		expect(hostView(room, new Set()).present).toEqual([]);
 		expect(hostView(room).present).toBeUndefined();
+	});
+
+	it('keeps a phone that sleeps during this game as away, not gone (bug report #3)', () => {
+		// A screen turning off or the app going to the background closes its connection; the
+		// player is still at the table, so name lists keep them until a new game.
+		let room = publish(newRoom('hash'), 'g1', table('a'));
+		room = markHere(setName(join(room, 'ana')!, 'ana', { name: 'Ana' }), 'ana');
+		room = join(room, 'old')!;
+		expect(hostView(room, new Set()).away).toEqual(['ana']);
+		expect(hostView(room, new Set(['ana'])).away).toEqual([]);
+		// A new game takes the phones connected then; one asleep from the last game is gone.
+		room = markHere(join(room, 'ben')!, 'ben');
+		const next = publish(room, 'g2', table('a'), new Set(['ben']));
+		expect(hostView(next, new Set()).away).toEqual(['ben']);
+		// Changes to the same game take nobody new in.
+		expect(hostView(publish(next, 'g2', table('a'), new Set(['ana'])), new Set()).away).toEqual([
+			'ben'
+		]);
+		// Coming back marks the phone as part of the game again.
+		expect(hostView(markHere(next, 'ana'), new Set()).away).toEqual(['ana', 'ben']);
+		expect(markHere(next, 'ben')).toBe(next);
+	});
+
+	it('counts every phone that joined before the first game as part of it', () => {
+		let room = join(join(newRoom('hash'), 'ana')!, 'ben')!;
+		expect(hostView(room, new Set(['ben'])).away).toEqual(['ana']);
+		room = publish(room, 'g1', table('a'), new Set(['ben']));
+		expect(hostView(room, new Set()).away).toEqual(['ana', 'ben']);
+	});
+
+	it('keeps away phones of this game when a full room makes way', () => {
+		let room = publish(newRoom('hash'), 'g1', table('a'));
+		for (let i = 0; i < MAX_MEMBERS; i++) room = join(room, `m${i}`)!;
+		room = markHere(room, 'm1');
+		expect(join(room, 'new', new Set())!.members.map((m) => m.memberId)).toEqual(['m1', 'new']);
 	});
 
 	it('ignores malformed messages', () => {

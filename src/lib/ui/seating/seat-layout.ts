@@ -205,6 +205,42 @@ export function keepInside(
 	return points.map((p) => ({ x: clamp(p.x, board.width), y: clamp(p.y, board.height) }));
 }
 
+/**
+ * Brings the ring's top down just far enough that no seat on it sits under `corner`, a box
+ * in the board's top right (the day timer and the buttons beside it), so every seat stays
+ * tappable. The ring's bottom stays put, so neighbours keep their order and spacing; seats
+ * placed by hand (`onRing` false) stay where they were put. `radius` is a token's half-width
+ * plus the margin to keep, in pixels.
+ */
+export function clearOfCorner(
+	points: readonly SeatPoint[],
+	onRing: readonly boolean[],
+	/**
+	 * Every seat's place on the ring, as if none were placed by hand, so moving a seat off
+	 * the ring never moves the rest.
+	 */
+	ring: readonly SeatPoint[],
+	board: BoardSize,
+	corner: { w: number; h: number },
+	radius: number
+): SeatPoint[] {
+	const { width, height } = board;
+	if (width <= 0 || height <= 0 || corner.w <= 0 || corner.h <= 0) return [...points];
+	const left = width - corner.w;
+	let top = 0;
+	ring.forEach((p) => {
+		const x = (p.x / 100) * width;
+		const y = (p.y / 100) * height;
+		if (x + radius <= left || y - radius >= corner.h) return;
+		// With the ring squashed from `top` down, this seat's y is top + y(1 - top/height).
+		top = Math.max(top, (corner.h + radius - y) / (1 - y / height));
+	});
+	// Never more than a quarter of the board: past that the corner is better overlapping.
+	const t = (Math.min(top, height / 4) / height) * 100;
+	if (t <= 0) return [...points];
+	return points.map((p, i) => (onRing[i] ? { x: p.x, y: t + p.y * (1 - t / 100) } : p));
+}
+
 /** A token size in pixels that keeps neighbours on the ring from overlapping. */
 export function seatTokenSize(
 	seatIds: readonly string[],

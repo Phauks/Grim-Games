@@ -1,4 +1,12 @@
 {
+	"impairs": {
+		"tokens": {
+			"Drunk": {
+				"reason": "drunk",
+				"on": "carrier"
+			}
+		}
+	},
 	"actsWhenDead": true,
 	"reminderTargets": {
 		"Drunk": {

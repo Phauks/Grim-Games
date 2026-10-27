@@ -275,6 +275,24 @@ describe('Fang Gu (https://wiki.bloodontheclocktower.com/Fang_Gu)', () => {
 		const e = ends(cast, [remind(3, 'fanggu', 'Once'), dead(5, 'fanggu')]).ends;
 		expect(e).toMatchObject([{ rule: 'demon-dead', holds: [] }]);
 	});
+
+	it('jumping now: its "Once" on itself as it dies is this jump, so the game goes on', () => {
+		// Trevor's report (2026-10-27): Once, then Dead, on the Fang Gu asked to end the game.
+		const { ends: e, seats } = ends(cast, [remind(5, 'fanggu', 'Once'), dead(5, 'fanggu')]);
+		expect(e).toMatchObject([
+			{ rule: 'demon-dead', holds: [{ rule: 'death-passes', seats: [seats[3]] }] }
+		]);
+		expect(promptable(e)).toEqual([]);
+	});
+
+	it('the Fang Gu it jumped into dies by its own kill: no second jump', () => {
+		// The old Fang Gu, dead, kept its "Once"; seat 6 became the Fang Gu; a Klutz lives.
+		const e = ends(
+			['chef', 'empath', 'monk', 'recluse', 'poisoner', 'fanggu', 'fanggu', 'klutz'],
+			[remind(5, 'fanggu', 'Once'), dead(5, 'fanggu'), dead(6, 'fanggu')]
+		);
+		expect(e.ends).toMatchObject([{ rule: 'demon-dead', holds: [] }]);
+	});
 });
 
 describe('Mastermind (https://wiki.bloodontheclocktower.com/Mastermind)', () => {
