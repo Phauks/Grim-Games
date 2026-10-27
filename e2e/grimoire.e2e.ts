@@ -1404,12 +1404,12 @@ test('the board can go full screen from its ⋯ menu, and back', async ({ page }
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(item()).toHaveAttribute('aria-pressed', 'false');
 	await item().tap();
-	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
+	// The menu stays open (Trevor, 2026-10-27: "dont close ... menu when toggling fullscreen").
 	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(item()).toHaveAttribute('aria-pressed', 'true');
 	await item().tap();
 	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	await expect(item()).toHaveAttribute('aria-pressed', 'false');
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
