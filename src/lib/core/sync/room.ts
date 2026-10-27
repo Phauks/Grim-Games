@@ -33,6 +33,7 @@ import {
 	type PictureReportView,
 	type RoomPictures
 } from './room-pictures.ts';
+import { numberedNames, withNumberedNames } from './room-names.ts';
 import { MAX_MEMBERS } from './room-presence.ts';
 
 export { isSharedGrimoire, MAX_GRIMOIRE_BYTES, type SharedGrimoire } from './shared-grimoire.ts';
@@ -251,6 +252,7 @@ export {
 /** What the Storyteller's device sees. */
 export interface HostView {
 	type: 'host-view';
+	/** A name another phone at this game already has comes numbered (room-names.ts). */
 	members: RoomMember[];
 	/** Always empty now; kept for Storytellers' apps built while players asked. */
 	requests: RoomRequest[];
@@ -310,6 +312,8 @@ export interface PlayerView {
 	 * is setting up the next game, since that one has nothing to rate yet (Trevor, 2026-10-26).
 	 */
 	endedGameId?: string;
+	/** The name the Storyteller sees for this phone while another player has its name. */
+	shownAs?: string;
 	/** When the Storyteller's app was built: a phone built earlier looks for the update. */
 	storytellerBuiltAt?: string;
 	/** The Storyteller is choosing the next script. */
@@ -436,7 +440,8 @@ export function newRoom(hostKeyHash: string): RoomState {
  * now; counts leave out the others, unless they have already voted.
  */
 export function hostView(room: RoomState, present?: ReadonlySet<string>): HostView {
-	const view: HostView = { type: 'host-view', members: room.members, requests: room.requests };
+	const members = withNumberedNames(room, present);
+	const view: HostView = { type: 'host-view', members, requests: room.requests };
 	const here = (m: RoomMember, voted: boolean) => !present || present.has(m.memberId) || voted;
 	if (room.vote) {
 		const votes = room.vote.votes;
@@ -501,6 +506,8 @@ export function playerView(
 	};
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;
+	const shownAs = numberedNames(room, present)[memberId];
+	if (shownAs) view.shownAs = shownAs;
 	if (room.storytellerBuiltAt) view.storytellerBuiltAt = room.storytellerBuiltAt;
 	if (room.ended && room.ended.gameId === room.gameId) {
 		const { gameId: _game, ...ended } = room.ended;
