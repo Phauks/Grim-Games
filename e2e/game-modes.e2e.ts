@@ -2372,7 +2372,7 @@ test('the Script sheet has the players’ settings cog, opening their own sheet'
 	const settings = page.getByRole('dialog', { name: 'Your settings' });
 	await expect(settings.getByRole('slider', { name: 'Text size' })).toBeVisible();
 	// No room phone here, so no name to set.
-	await expect(settings.getByRole('textbox', { name: 'Your name' })).toHaveCount(0);
+	await expect(settings.getByRole('button', { name: 'Edit your name' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await expect(sheet).toBeVisible();
