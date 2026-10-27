@@ -74,3 +74,18 @@ describe('parseReportIdPath', () => {
 		expect(parseReportIdPath('/api/reports')).toBeUndefined();
 	});
 });
+
+describe('a report saved to send while offline', () => {
+	const base = { kind: 'bug', title: 'x', body: 'y' };
+
+	it('keeps its send id, so a resend is stored once', () => {
+		const sendId = '2f1c0b7e-8d4a-4c55-9a8e-3b2d1f0e9c11';
+		expect(parseReportDraft({ ...base, sendId })).toEqual({ ...base, sendId });
+	});
+
+	it('refuses a send id that is not short letters, digits and dashes', () => {
+		expect(parseReportDraft({ ...base, sendId: 'short' })).toHaveProperty('error');
+		expect(parseReportDraft({ ...base, sendId: 'has spaces in it' })).toHaveProperty('error');
+		expect(parseReportDraft({ ...base, sendId: 7 })).toHaveProperty('error');
+	});
+});
