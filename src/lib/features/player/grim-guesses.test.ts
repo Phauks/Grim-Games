@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	AVATAR_GUESS,
 	GENERIC_GUESSES,
 	clearGuesses,
 	cycleGuess,
@@ -7,6 +8,7 @@ import {
 	guessesOf,
 	mainGuess,
 	parseGuesses,
+	seatCycle,
 	selfSeat,
 	toggleGuess,
 	travellerGuess,
@@ -68,6 +70,48 @@ describe('several guesses on one seat (Trevor, 2026-10-25)', () => {
 		expect(guessesOf(guesses, 's1')).toEqual(['chef', 'spy', 'imp']);
 		expect(mainGuess(guesses, 's1', 'empath')).toBe(guesses);
 		expect(cycleGuess({}, 's1')).toEqual({});
+	});
+});
+
+describe("the seat's avatar in its cycle (Trevor, 2026-10-26)", () => {
+	it('joins the cycle last once a seat with an avatar has a guess', () => {
+		expect(seatCycle({}, 's1', true)).toEqual([]);
+		let guesses = toggleGuess({}, 's1', 'chef', true);
+		expect(seatCycle(guesses, 's1', true)).toEqual(['chef', AVATAR_GUESS]);
+		guesses = toggleGuess(guesses, 's1', 'spy', true);
+		expect(seatCycle(guesses, 's1', true)).toEqual(['spy', 'chef', AVATAR_GUESS]);
+		// Not one of the guesses, so the sheet, notes and the seat's name leave it out.
+		expect(guessesOf(guesses, 's1')).toEqual(['spy', 'chef']);
+	});
+
+	it('comes to the front by cycling, or by picking it, and a new guess goes in front of it', () => {
+		let guesses = toggleGuess(toggleGuess({}, 's1', 'chef', true), 's1', 'spy', true);
+		guesses = cycleGuess(cycleGuess(guesses, 's1', true), 's1', true);
+		expect(seatCycle(guesses, 's1', true)).toEqual([AVATAR_GUESS, 'spy', 'chef']);
+		guesses = mainGuess(guesses, 's1', 'chef', true);
+		expect(seatCycle(guesses, 's1', true)).toEqual(['chef', AVATAR_GUESS, 'spy']);
+		guesses = mainGuess(guesses, 's1', AVATAR_GUESS, true);
+		guesses = toggleGuess(guesses, 's1', 'imp', true);
+		expect(seatCycle(guesses, 's1', true)).toEqual(['imp', AVATAR_GUESS, 'chef', 'spy']);
+	});
+
+	it('does not count as one of the three guesses, and goes with the last guess', () => {
+		let guesses: Guesses = {};
+		for (const id of ['chef', 'spy', 'imp', 'empath'])
+			guesses = toggleGuess(guesses, 's1', id, true);
+		expect(seatCycle(guesses, 's1', true)).toEqual(['empath', 'imp', 'spy', AVATAR_GUESS]);
+		guesses = { s1: ['chef', AVATAR_GUESS] };
+		expect(toggleGuess(guesses, 's1', 'chef', true)).toEqual({});
+		expect(parseGuesses({ s1: [AVATAR_GUESS] })).toEqual({});
+	});
+
+	it('is left out where the seat has no avatar, and added to guesses saved before', () => {
+		expect(seatCycle({ s1: [AVATAR_GUESS, 'chef'] }, 's1', false)).toEqual(['chef']);
+		expect(seatCycle({ s1: ['chef'] }, 's1', true)).toEqual(['chef', AVATAR_GUESS]);
+		expect(seatCycle(cycleGuess({ s1: ['chef'] }, 's1', true), 's1', true)).toEqual([
+			AVATAR_GUESS,
+			'chef'
+		]);
 	});
 });
 

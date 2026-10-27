@@ -159,9 +159,6 @@ export const settings = {
 	'settings.groupCover': 'Grim cover',
 	'settings.coverPin': 'PIN to take the cover off',
 	'settings.coverPinHelp': 'The game’s Storyteller PIN, the same as the locked draw’s.',
-	'settings.hideWatchLink': 'Hide the view-only link',
-	'settings.hideWatchLinkHelp':
-		'Covers the QR code and link on Share’s View grimoire tab, e.g. while streaming. Copy and Share still work.',
 	'settings.requireName': 'Require a name before drawing',
 	'settings.holdToReveal': 'Hold to see character',
 	'settings.slotMachine': 'Slot machine reveal',
