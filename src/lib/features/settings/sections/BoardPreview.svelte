@@ -20,7 +20,6 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
-	import { seatFrame } from '#lib/core/frames/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { GAME_MODES, SPECIAL_RULES, STANDARD } from '#lib/core/modes/index.ts';
 	import { standardPlayersLine } from '#lib/features/modes/players-line.ts';
@@ -203,7 +202,6 @@
 					dead={seat.dead}
 					vote={seat.dead ? 'used' : undefined}
 					usedVote={boardLooks.current.usedGhostVote}
-					frame={seatFrame(undefined, boardLooks.current.defaultFrame)}
 				>
 					{#snippet face()}{#if token}<CharacterToken character={token} {size} />{/if}{/snippet}
 				</SeatDisc>

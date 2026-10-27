@@ -1,41 +1,65 @@
 <script lang="ts">
-	import { frameById, unlockedFrames, type FrameId } from '#lib/core/frames/index.ts';
+	import {
+		DEFAULT_LAUREL_COLOUR,
+		FACE_RADIUS,
+		frameById,
+		laurelFrame,
+		unlockedFrames,
+		type FrameId
+	} from '#lib/core/frames/index.ts';
+	import {
+		LAUREL_COLOUR_NAMES,
+		LAUREL_COLOURS,
+		type LaurelColour
+	} from '#lib/core/achievements/index.ts';
 	import FrameDrawing from '#lib/ui/seating/FrameDrawing.svelte';
 	import SettingSelect from './SettingSelect.svelte';
 
 	/**
-	 * A frame picked from a drop-down, each choice drawn beside its name (L4): the Storyteller's
-	 * Board default and the player's own frame. Offers only unlocked frames (all of them, until
-	 * achievements, A1).
+	 * A player's laurel (L4, A1): its form picked from a drop-down, each drawn beside its name,
+	 * and its colour beneath. Every fixed frame is a form too (Trevor, 2026-10-27: frames and
+	 * laurels combined). The colour row is always there, disabled while the form has fixed
+	 * colours, so picking a form never moves the rows below. Offers only unlocked forms (all of
+	 * them while the app is in beta).
 	 */
 	interface Props {
 		label: string;
+		colourLabel: string;
 		description?: string;
 		value: FrameId;
 		defaultValue: FrameId;
 		onChange: (value: FrameId) => void;
-		/** A choice before the frames, such as the player's "Storyteller's default". */
-		lead?: { value: FrameId; label: string };
 		testid?: string;
 	}
 
-	let { label, description, value, defaultValue, onChange, lead, testid }: Props = $props();
+	let { label, colourLabel, description, value, defaultValue, onChange, testid }: Props = $props();
 
-	const options = $derived([
-		...(lead ? [lead] : []),
-		...unlockedFrames().map((frame) => ({ value: frame.id, label: frame.name }))
-	]);
+	const current = $derived(frameById(value));
+	const colour = $derived(current?.laurel?.colour ?? DEFAULT_LAUREL_COLOUR);
+	const options = $derived(
+		unlockedFrames(undefined, colour).map((frame) => ({ value: frame.id, label: frame.name }))
+	);
+	const colours = Object.keys(LAUREL_COLOURS) as LaurelColour[];
+	const colourOptions = colours.map((value) => ({ value, label: LAUREL_COLOUR_NAMES[value] }));
 </script>
 
-{#snippet swatch(option: { value: FrameId; label: string })}
-	{@const frame = frameById(option.value)}
+{#snippet drawn(frameId: FrameId | undefined, text: string)}
+	{@const frame = frameById(frameId)}
 	<span class="option">
 		<span class="swatch">
-			<span class="face"></span>
+			<span class="face" style:inset="{50 - (frame?.faceRadius ?? FACE_RADIUS)}%"></span>
 			{#if frame}<span class="drawn"><FrameDrawing {frame} /></span>{/if}
 		</span>
-		{option.label}
+		{text}
 	</span>
+{/snippet}
+
+{#snippet form(option: { value: FrameId; label: string })}
+	{@render drawn(option.value, option.label)}
+{/snippet}
+
+{#snippet tint(option: { value: LaurelColour; label: string })}
+	{@render drawn(laurelFrame(current?.laurel?.form ?? 'laurel', option.value).id, option.label)}
 {/snippet}
 
 <div class="frame-setting" data-setting data-testid={testid}>
@@ -46,8 +70,20 @@
 		{options}
 		{defaultValue}
 		{onChange}
-		item={swatch}
-		selected={swatch}
+		item={form}
+		selected={form}
+	/>
+</div>
+<div class="frame-setting" data-setting>
+	<SettingSelect
+		label={colourLabel}
+		value={colour}
+		options={colourOptions}
+		defaultValue={DEFAULT_LAUREL_COLOUR}
+		disabled={!current?.laurel}
+		onChange={(next) => current?.laurel && onChange(laurelFrame(current.laurel.form, next).id)}
+		item={tint}
+		selected={tint}
 	/>
 </div>
 
@@ -63,10 +99,9 @@
 		width: 1.75em;
 		height: 1.75em;
 	}
-	/* A plain face, the size it is inside a frame. */
+	/* A plain face, the size it is inside this frame. */
 	.face {
 		position: absolute;
-		inset: 8%;
 		border-radius: 50%;
 		background: var(--token-face);
 	}

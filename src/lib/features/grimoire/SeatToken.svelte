@@ -267,7 +267,7 @@
 				: 'unused'
 			: undefined}
 		usedVote={boardLooks.current.usedGhostVote}
-		frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
+		frame={seatFrame(seat.frame)}
 		avatar={seat.avatar}
 		{picture}
 	/>

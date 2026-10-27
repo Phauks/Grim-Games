@@ -63,7 +63,7 @@
 	data-dead={dead || undefined}
 	data-framed={framed || undefined}
 	style:--size="{size}px"
-	style:--face-scale={FACE_RADIUS / 50}
+	style:--face-scale={(frame?.faceRadius ?? FACE_RADIUS) / 50}
 >
 	<span class="disc">
 		<!-- Marked as a token face, so a seat button's focus ring is round (base.css). -->

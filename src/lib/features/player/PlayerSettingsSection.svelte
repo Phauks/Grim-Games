@@ -10,9 +10,7 @@
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import AvatarPictureRow from './AvatarPictureRow.svelte';
-
-	/** The frame choice that leaves it to the Storyteller's board. */
-	const STORYTELLER = 'storyteller';
+	import { DEFAULT_FRAME } from '#lib/core/frames/index.ts';
 </script>
 
 <!-- This phone's name in its room, while a player screen in a room opened Settings (Trevor,
@@ -22,13 +20,14 @@
 <!-- The player's own picture on their seat (2026-10-27). -->
 <AvatarPictureRow name={joinedRoom.player?.view?.me.name} />
 
-<!-- The frame round this player's seat token, sent with their initials (L4). -->
+<!-- The laurel round this player's seat token, sent with their initials (L4, A1). -->
 <SettingFrame
 	label={t('player.frame')}
-	value={playerSettings.current.frame ?? STORYTELLER}
-	defaultValue={STORYTELLER}
-	lead={{ value: STORYTELLER, label: t('player.frameStoryteller') }}
-	onChange={(frame) => playerSettings.update({ frame: frame === STORYTELLER ? undefined : frame })}
+	colourLabel={t('player.laurelColour')}
+	value={playerSettings.current.frame ?? DEFAULT_FRAME}
+	defaultValue={DEFAULT_FRAME}
+	onChange={(frame) =>
+		playerSettings.update({ frame: frame === DEFAULT_FRAME ? undefined : frame })}
 	testid="player-frame-setting"
 />
 

@@ -2336,10 +2336,10 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await phone.evaluate(() => {
 		const key = 'grim-games:player-settings:v1';
 		const settings = JSON.parse(localStorage.getItem(key) ?? '{}');
-		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'clock' }));
+		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'laurel-olive-demon' }));
 	});
 	await phone.reload();
-	await expect(seat.locator('svg[data-frame="clock"]')).toBeAttached();
+	await expect(seat.locator('svg[data-frame="laurel-olive-demon"]')).toBeAttached();
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 
 	// Every phone at the table sees it. A guess goes on the token, and the avatar joins the

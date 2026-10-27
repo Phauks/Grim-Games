@@ -4,8 +4,11 @@
  * never Clocktower art (research/frames.md). Mockups: https://claude.ai/artifact/JeH7Y1JY7x24vV2Cw9XNYW
  *
  * Leaves big enough to read need a wider band than other frames, so the face shrinks to
- * `LAUREL_FACE_RADIUS`, still inside the token's own footprint. Each leaf is a base shape, a
- * lighter half and a midrib, which gives depth without gradients.
+ * `LAUREL_FACE_RADIUS`, still inside the token's own footprint. Each leaf has a dark outline,
+ * a base, a lighter half and a midrib: the outline keeps leaves apart at a phone's seat size,
+ * where gradients and lighting filters blur into one band (comparison, Trevor 2026-10-27:
+ * https://claude.ai/artifact/8ZdRr76tRR7HW6A594jYCJ). Each layer of a branch is one path, so
+ * a laurel is ten shapes however many leaves it has, which keeps a full town light to draw.
  *
  * Only the branch forms are drawn so far; the ring forms (flames, chain, star halo), the
  * medallion, crest, accent and motion come with the achievements feature.
@@ -18,23 +21,85 @@ export const LAUREL_FACE_RADIUS = 36;
 export const LAUREL_FORMS = ['laurel', 'olive', 'myrtle', 'ivy', 'feather', 'briar'] as const;
 export type LaurelForm = (typeof LAUREL_FORMS)[number];
 
-/** A colour's base, its lighter half and its dark stem and midrib. */
-type Material = readonly [base: string, light: string, dark: string];
+export const LAUREL_FORM_NAMES: Record<LaurelForm, string> = {
+	laurel: 'Laurel',
+	olive: 'Olive',
+	myrtle: 'Myrtle',
+	ivy: 'Ivy',
+	feather: 'Feathers',
+	briar: 'Briar'
+};
+
+/** A colour's base, its lighter half, its dark midrib, and the outline round each leaf. */
+type Material = readonly [base: string, light: string, dark: string, ink: string];
 
 // Laurels are pictures, so their colours are their own, like the frames' and the backgrounds'.
 export const LAUREL_COLOURS = {
-	bronze: ['oklch(0.62 0.1 55)', 'oklch(0.74 0.09 60)', 'oklch(0.42 0.08 50)'],
-	silver: ['oklch(0.78 0.01 250)', 'oklch(0.9 0.01 250)', 'oklch(0.55 0.015 250)'],
-	gold: ['oklch(0.78 0.13 85)', 'oklch(0.89 0.1 90)', 'oklch(0.56 0.11 75)'],
-	green: ['oklch(0.6 0.12 145)', 'oklch(0.74 0.12 140)', 'oklch(0.4 0.08 150)'],
-	townsfolk: ['oklch(0.6 0.13 245)', 'oklch(0.74 0.11 240)', 'oklch(0.42 0.1 250)'],
-	outsider: ['oklch(0.7 0.1 210)', 'oklch(0.82 0.08 205)', 'oklch(0.5 0.08 215)'],
-	minion: ['oklch(0.62 0.17 35)', 'oklch(0.74 0.14 45)', 'oklch(0.44 0.13 30)'],
-	demon: ['oklch(0.52 0.19 25)', 'oklch(0.64 0.18 28)', 'oklch(0.36 0.13 22)'],
-	traveller: ['oklch(0.6 0.13 310)', 'oklch(0.74 0.11 315)', 'oklch(0.42 0.1 305)'],
-	fabled: ['oklch(0.82 0.14 95)', 'oklch(0.9 0.1 98)', 'oklch(0.6 0.12 90)']
+	bronze: [
+		'oklch(0.62 0.1 55)',
+		'oklch(0.74 0.09 60)',
+		'oklch(0.42 0.08 50)',
+		'oklch(0.28 0.05 50)'
+	],
+	silver: [
+		'oklch(0.78 0.01 250)',
+		'oklch(0.9 0.01 250)',
+		'oklch(0.55 0.015 250)',
+		'oklch(0.3 0.01 250)'
+	],
+	gold: ['oklch(0.78 0.13 85)', 'oklch(0.89 0.1 90)', 'oklch(0.56 0.11 75)', 'oklch(0.3 0.06 70)'],
+	green: [
+		'oklch(0.6 0.12 145)',
+		'oklch(0.74 0.12 140)',
+		'oklch(0.4 0.08 150)',
+		'oklch(0.25 0.05 150)'
+	],
+	townsfolk: [
+		'oklch(0.6 0.13 245)',
+		'oklch(0.74 0.11 240)',
+		'oklch(0.42 0.1 250)',
+		'oklch(0.25 0.06 250)'
+	],
+	outsider: [
+		'oklch(0.7 0.1 210)',
+		'oklch(0.82 0.08 205)',
+		'oklch(0.5 0.08 215)',
+		'oklch(0.28 0.05 215)'
+	],
+	minion: [
+		'oklch(0.62 0.17 35)',
+		'oklch(0.74 0.14 45)',
+		'oklch(0.44 0.13 30)',
+		'oklch(0.27 0.08 30)'
+	],
+	demon: [
+		'oklch(0.52 0.19 25)',
+		'oklch(0.64 0.18 28)',
+		'oklch(0.36 0.13 22)',
+		'oklch(0.22 0.07 22)'
+	],
+	traveller: [
+		'oklch(0.6 0.13 310)',
+		'oklch(0.74 0.11 315)',
+		'oklch(0.42 0.1 305)',
+		'oklch(0.25 0.06 305)'
+	],
+	fabled: ['oklch(0.82 0.14 95)', 'oklch(0.9 0.1 98)', 'oklch(0.6 0.12 90)', 'oklch(0.32 0.07 90)']
 } as const satisfies Record<string, Material>;
 export type LaurelColour = keyof typeof LAUREL_COLOURS;
+
+export const LAUREL_COLOUR_NAMES: Record<LaurelColour, string> = {
+	bronze: 'Bronze',
+	silver: 'Silver',
+	gold: 'Gold',
+	green: 'Green',
+	townsfolk: 'Townsfolk blue',
+	outsider: 'Outsider blue',
+	minion: 'Minion red',
+	demon: 'Demon red',
+	traveller: 'Traveller purple',
+	fabled: 'Fabled gold'
+};
 
 export interface LaurelSpec {
 	form: LaurelForm;
@@ -103,7 +168,7 @@ function leaf(form: LaurelForm, x: number, y: number, degrees: number, length: n
 
 /** The laurel's shapes: two branches up the sides, from near the bottom towards the top. */
 export function drawLaurel(spec: LaurelSpec): FrameShape[] {
-	const [base, light, dark] = LAUREL_COLOURS[spec.colour];
+	const [base, light, dark, ink] = LAUREL_COLOURS[spec.colour];
 	const { length } = LEAF[spec.form];
 	const leaves = spec.leaves ?? 8;
 	const from = 166;
@@ -112,8 +177,9 @@ export function drawLaurel(spec: LaurelSpec): FrameShape[] {
 	for (const side of [1, -1]) {
 		const stem: string[] = [];
 		for (let d = from; d >= to - 2; d -= 4) stem.push(at(STEM_RADIUS, side * d).join(' '));
-		const stemWidth = spec.form === 'briar' ? 2.4 : 1.3;
-		shapes.push({ shape: 'path', d: `M${stem.join('L')}`, stroke: dark, width: stemWidth });
+		let full = '';
+		let half = '';
+		let rib = '';
 		for (let i = 0; i < leaves; i++) {
 			const t = leaves === 1 ? 0 : i / (leaves - 1);
 			const degrees = from - 4 - t * (from - 4 - to);
@@ -125,13 +191,18 @@ export function drawLaurel(spec: LaurelSpec): FrameShape[] {
 				const [x, y] = at(STEM_RADIUS, side * (degrees - (outer ? 0 : 4.5)));
 				const direction = outer ? along + side * 34 : along - side * 22;
 				const shape = leaf(spec.form, x, y, direction, outer ? size : size * 0.72);
-				shapes.push({ shape: 'path', d: shape.full, fill: base });
-				shapes.push({ shape: 'path', d: shape.half, fill: light, opacity: 0.85 });
-				if (shape.rib) {
-					shapes.push({ shape: 'path', d: shape.rib, stroke: dark, width: 0.5, opacity: 0.8 });
-				}
+				full += shape.full;
+				half += shape.half;
+				rib += shape.rib ?? '';
 			}
 		}
+		const stemWidth = spec.form === 'briar' ? 2.4 : 1.3;
+		// The outline first: the stem and every leaf drawn wider in the dark ink, then the leaves.
+		shapes.push({ shape: 'path', d: `M${stem.join('L')}`, stroke: ink, width: stemWidth + 1 });
+		shapes.push({ shape: 'path', d: full, fill: ink, stroke: ink, width: 1.3 });
+		shapes.push({ shape: 'path', d: full, fill: base });
+		shapes.push({ shape: 'path', d: half, fill: light, opacity: 0.85 });
+		if (rib) shapes.push({ shape: 'path', d: rib, stroke: dark, width: 0.5, opacity: 0.8 });
 	}
 	return shapes;
 }

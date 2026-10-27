@@ -16,6 +16,7 @@ describe('board looks', () => {
 				nameOffset: 1,
 				reminders: 'free',
 				usedGhostVote: 'struck',
+				// Frames are each player's own laurel now, with no board default (Trevor, 2026-10-27).
 				defaultFrame: 'laurel',
 				// Holding a token only moves it now (Trevor, 2026-10-26).
 				holdLights: 'seat',
@@ -37,8 +38,7 @@ describe('board looks', () => {
 			nameSize: 1.6,
 			nameOffset: 0.3,
 			reminders: 'free',
-			usedGhostVote: 'struck',
-			defaultFrame: 'laurel'
+			usedGhostVote: 'struck'
 		});
 		expect(
 			parseBoardLooks({
