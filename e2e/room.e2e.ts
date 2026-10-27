@@ -1646,14 +1646,32 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await expect(info).toBeHidden();
 	await expect(corner).not.toContainText('by The Pandemonium Institute');
 	await expect(corner.getByTestId('board-players')).toContainText('Players: 8');
-	// The Script tab's Players breakdown has the table's column picked, and in a game no
-	// other count can be picked: the seats set it (Trevor, 2026-10-27).
+	// In a game the Script tab's Players section shows only the table's numbers, each in a
+	// box, and no other count can be picked: the seats set it (Trevor, 2026-10-27).
 	await phone.getByRole('tab', { name: 'Script' }).tap();
-	const breakdown = phone.getByTestId('setup-table');
-	await expect(breakdown.locator('thead th[data-current]')).toHaveText('8');
-	await expect(breakdown.getByRole('button')).toHaveCount(0);
-	await breakdown.locator('tbody tr').first().locator('td').first().tap();
-	await expect(breakdown.locator('thead th[data-current]')).toHaveText('8');
+	await expect(phone.getByTestId('setup-table')).toHaveCount(0);
+	const counts = phone.getByTestId('game-counts');
+	for (const [type, n] of Object.entries({
+		players: '8',
+		townsfolk: '5',
+		outsider: '1',
+		minion: '1',
+		demon: '1',
+		traveller: '0'
+	}))
+		await expect(counts.getByTestId(`count-${type}`)).toHaveText(n);
+	// A Fabled the Storyteller adds reaches the phones with its setup change (Trevor,
+	// 2026-10-27; https://wiki.bloodontheclocktower.com/Sentinel).
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Sentinel', exact: true })
+		.tap();
+	await expect(counts.getByTestId('count-outsider')).toHaveText('0–2');
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.

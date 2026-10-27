@@ -41,6 +41,8 @@
 		showJinxes?: boolean;
 		/** The game mode and special rules, in their own section under Jinxes; none, none shown. */
 		rules?: readonly PublicRule[];
+		/** The Fabled and Loric in play, in a game: their setup change shows in the Players counts. */
+		ruleCharacters?: readonly Character[];
 		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
 		showBreakdown?: boolean;
 		/** Printing picks whatever fits one page; on screen it is always Normal. */
@@ -56,6 +58,7 @@
 		travellers,
 		showJinxes = true,
 		rules = [],
+		ruleCharacters = [],
 		showBreakdown = true,
 		density: fixed
 	}: Props = $props();
@@ -217,6 +220,8 @@
 		{#snippet breakdown()}<PlayerCounts
 				{players}
 				maxPlayers={scriptMaxPlayers(characters)}
+				travellers={(travellers ?? []).flatMap((p) => byId.get(p.characterId) ?? [])}
+				{ruleCharacters}
 			/>{/snippet}
 		{@render section(t('player.breakdown'), 'play:breakdown', breakdown)}
 	{/if}

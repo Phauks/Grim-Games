@@ -57,6 +57,7 @@
 	inPlay={charactersInPlay(game)}
 	travellers={travellersInPlay(town.seats)}
 	rules={gameSheetRules(game.gameId)}
+	ruleCharacters={game.ruleCharacters}
 	{notes}
 >
 	{#snippet grim()}<PlayerGrim
