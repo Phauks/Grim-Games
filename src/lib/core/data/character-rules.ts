@@ -222,12 +222,25 @@ export interface Registers {
  * player, even if dead (the Spy as good and a Townsfolk or Outsider, the Recluse as evil and a
  * Minion or Demon); `tokens`, the player carrying one of its reminders, by label, only while
  * their alignment is `carrierAlignment` when given (the Lycanthrope's "Faux Paw" on a good
- * player, as evil).
+ * player, as evil; `TokenRegisters`). A Fabled's tokens work while it is in play.
  */
 export interface RegistersAs {
 	self?: Registers;
-	tokens?: Readonly<Record<ReminderLabel, Registers & { carrierAlignment?: Alignment }>>;
+	tokens?: Readonly<Record<ReminderLabel, TokenRegisters>>;
 }
+
+/**
+ * A `registersAs.tokens` entry. `asAnything`: the carrier may register as either alignment and
+ * any seated character type, its true ones first; `whileToken`: only while another of this
+ * character's reminders is still in play (the Revolutionary's pair, each "Aligned", may
+ * register falsely until "Register Falsely?" comes off,
+ * https://wiki.bloodontheclocktower.com/Revolutionary).
+ */
+export type TokenRegisters = Registers & {
+	carrierAlignment?: Alignment;
+	asAnything?: true;
+	whileToken?: ReminderLabel;
+};
 
 /**
  * What a `learns` character is shown, each worked out in `rules/night-info.ts`:
