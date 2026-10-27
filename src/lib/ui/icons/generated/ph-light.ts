@@ -56,6 +56,7 @@ import ph_copy_light from '~icons/ph/copy-light';
 import ph_copy_simple_light from '~icons/ph/copy-simple-light';
 import ph_corners_in_light from '~icons/ph/corners-in-light';
 import ph_corners_out_light from '~icons/ph/corners-out-light';
+import ph_crop_light from '~icons/ph/crop-light';
 import ph_cross_light from '~icons/ph/cross-light';
 import ph_crown_light from '~icons/ph/crown-light';
 import ph_database_light from '~icons/ph/database-light';
@@ -157,6 +158,7 @@ import ph_rectangle_light from '~icons/ph/rectangle-light';
 import ph_scales_light from '~icons/ph/scales-light';
 import ph_scan_light from '~icons/ph/scan-light';
 import ph_scroll_light from '~icons/ph/scroll-light';
+import ph_selection_light from '~icons/ph/selection-light';
 import ph_shapes_light from '~icons/ph/shapes-light';
 import ph_share_network_light from '~icons/ph/share-network-light';
 import ph_shield_light from '~icons/ph/shield-light';
@@ -271,6 +273,7 @@ const icons: IconMap = {
 	'ph:copy-simple-light': ph_copy_simple_light,
 	'ph:corners-in-light': ph_corners_in_light,
 	'ph:corners-out-light': ph_corners_out_light,
+	'ph:crop-light': ph_crop_light,
 	'ph:cross-light': ph_cross_light,
 	'ph:crown-light': ph_crown_light,
 	'ph:database-light': ph_database_light,
@@ -372,6 +375,7 @@ const icons: IconMap = {
 	'ph:scales-light': ph_scales_light,
 	'ph:scan-light': ph_scan_light,
 	'ph:scroll-light': ph_scroll_light,
+	'ph:selection-light': ph_selection_light,
 	'ph:shapes-light': ph_shapes_light,
 	'ph:share-network-light': ph_share_network_light,
 	'ph:shield-light': ph_shield_light,

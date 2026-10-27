@@ -38,6 +38,14 @@ export interface PlayerSettings {
 	 */
 	hideGuesses: boolean;
 	/**
+	 * Grim tab: the town is drawn in the Storyteller's board's shape, with empty space at the
+	 * edges, in place of filling this screen (Trevor, 2026-10-27). Seats keep the board's
+	 * places round the ring either way.
+	 */
+	matchShape: boolean;
+	/** The same on Public Town, where it is on unless switched off (Trevor, 2026-10-27). */
+	townMatchShape: boolean;
+	/**
 	 * The script and night order sheets' background, wherever they show (Trevor, 2026-10-24:
 	 * neutral colours in place of 2026-10-23's light switch, whose on reads as parchment).
 	 */
@@ -103,6 +111,8 @@ const DEFAULTS: PlayerSettings = {
 	print: PRINT_DEFAULTS,
 	avatar: 'initials',
 	hideGuesses: false,
+	matchShape: false,
+	townMatchShape: true,
 	sheetBackground: 'theme'
 };
 
@@ -117,6 +127,8 @@ function read(): PlayerSettings {
 			// Initials are always on (Trevor, 2026-10-25): an older build's "none" reads as them.
 			avatar: parseAvatarId(raw.avatar) ?? DEFAULTS.avatar,
 			hideGuesses: raw.hideGuesses === true,
+			matchShape: raw.matchShape === true,
+			townMatchShape: raw.townMatchShape !== false,
 			sheetBackground:
 				SHEET_BACKGROUNDS.find((b) => b === raw.sheetBackground) ??
 				(raw.lightSheet === true ? 'parchment' : DEFAULTS.sheetBackground)

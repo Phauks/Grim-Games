@@ -91,6 +91,11 @@ export const player = {
 	'player.sheetBackground.charcoal': 'Charcoal',
 	'player.frame': 'Your frame',
 	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
+	'player.matchShape': "Grim tab in the Storyteller's board shape",
+	'player.matchShapeDetail':
+		"Draws the town the shape of the Storyteller's board, with empty space at the edges. Off, it fills your screen. Seats keep the Storyteller's places round the table either way.",
+	'player.townMatchShape': "Public Town in the Storyteller's board shape",
+	'player.grim.matchShape': "Storyteller's board shape",
 	'player.frameStoryteller': "Storyteller's choice",
 	'player.densityDetail':
 		"How tightly the Script sheet is laid out for you, on screen and in print. Applies to the player view and the Storyteller's copy of the script.",

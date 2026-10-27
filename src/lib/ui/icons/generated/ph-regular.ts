@@ -30,6 +30,7 @@ import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_coffee from '~icons/ph/coffee';
 import ph_copy from '~icons/ph/copy';
+import ph_crop from '~icons/ph/crop';
 import ph_database from '~icons/ph/database';
 import ph_device_mobile from '~icons/ph/device-mobile';
 import ph_dots_three from '~icons/ph/dots-three';
@@ -140,6 +141,7 @@ const icons: IconMap = {
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:coffee': ph_coffee,
 	'ph:copy': ph_copy,
+	'ph:crop': ph_crop,
 	'ph:database': ph_database,
 	'ph:device-mobile': ph_device_mobile,
 	'ph:dots-three': ph_dots_three,

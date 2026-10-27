@@ -30,6 +30,19 @@
 	onChange={(hideGuesses) => playerSettings.update({ hideGuesses })}
 />
 
+<!-- Also on the Grim tab and Public Town, beside the eye (Trevor, 2026-10-27). -->
+<SettingToggle
+	label={t('player.matchShape')}
+	description={t('player.matchShapeDetail')}
+	checked={playerSettings.current.matchShape}
+	onChange={(matchShape) => playerSettings.update({ matchShape })}
+/>
+<SettingToggle
+	label={t('player.townMatchShape')}
+	checked={playerSettings.current.townMatchShape}
+	onChange={(townMatchShape) => playerSettings.update({ townMatchShape })}
+/>
+
 <!-- Also in the player screen's own settings (plan E2). -->
 <DensityRow />
 

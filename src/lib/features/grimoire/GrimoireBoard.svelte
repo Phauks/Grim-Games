@@ -72,6 +72,7 @@
 		followSeating,
 		isDefaultLayout,
 		isRotation,
+		boardAspect,
 		keepInside,
 		seatPoints,
 		seatTokenSize,
@@ -254,12 +255,17 @@
 	);
 	// The Token size preview in Settings draws at this board's size.
 	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
+	// Every shared grim keeps each seat at this board's place round the ring (Trevor, 2026-10-27).
+	const aspect = $derived(boardAspect({ width, height }));
+	$effect(() => {
+		if (!watching) roomHost().showAspect(game.gameId, aspect);
+	});
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
 	const points = $derived(
 		keepInside(
-			seatPoints(game.seating, layout, { width, height }),
+			seatPoints(game.seating, layout, { width, height }, watching ? grimoire.aspect : undefined),
 			{ width, height },
 			size / 2 + unit
 		)
@@ -1632,7 +1638,7 @@
 			{@const town = publicProjection(
 				game,
 				publicTravellerTest(game.gameId, characters),
-				layout,
+				{ ...layout, aspect },
 				cornerInfo,
 				characters
 			)}

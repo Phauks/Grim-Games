@@ -53,7 +53,10 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import {
 		DEFAULT_SEAT_LAYOUT,
+		centredIn,
+		fitAspect,
 		keepInside,
+		parseAspect,
 		parseSeatLayout,
 		seatPoints,
 		seatTokenSize
@@ -88,6 +91,7 @@
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import TownCounts from './TownCounts.svelte';
+	import MatchShapeButton, { matchesShape } from './MatchShapeButton.svelte';
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 
 	/**
@@ -199,13 +203,23 @@
 	let width = $state(0);
 	let height = $state(0);
 	const board = $derived({ width, height });
+	// Seats keep the Storyteller's places round the ring on any screen; switched on, the town
+	// is also drawn in the board's shape, centred, with empty space at the edges (2026-10-27).
+	const aspect = $derived(parseAspect(table?.layout?.aspect));
+	const drawnOn = $derived(aspect && matchesShape(display) ? fitAspect(board, aspect) : board);
 	const ids = $derived(seats.map((s) => s.seatId as string));
 	const size = $derived(
-		seatTokenSize(ids, layout, board, preferences.current.tokenAppearance.tokenScale)
+		seatTokenSize(ids, layout, drawnOn, preferences.current.tokenAppearance.tokenScale)
 	);
 	// As on the board: each seat keeps one --u (16px) clear of the edge.
 	const unit = 16;
-	const points = $derived(keepInside(seatPoints(ids, layout, board), board, size / 2 + unit));
+	const points = $derived(
+		centredIn(
+			keepInside(seatPoints(ids, layout, drawnOn, aspect), drawnOn, size / 2 + unit),
+			drawnOn,
+			board
+		)
+	);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
 	let rootFont = $state(16);
@@ -374,6 +388,7 @@
 		testid="hide-guesses"
 	/>
 	<CoverButton />
+	<MatchShapeButton {display} disabled={!aspect} />
 	<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
 	     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
 	{#if !town && final}
