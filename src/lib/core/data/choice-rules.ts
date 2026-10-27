@@ -17,21 +17,21 @@ import {
 } from './validate.ts';
 
 /** The evil info steps a note can go on. */
-export const EVIL_INFO_STEPS = ['minioninfo', 'demoninfo'] as const;
-export type EvilInfoStep = (typeof EVIL_INFO_STEPS)[number];
+const EVIL_INFO_STEPS = ['minioninfo', 'demoninfo'] as const;
+type EvilInfoStep = (typeof EVIL_INFO_STEPS)[number];
 
 /**
  * How it changes the Minion and Demon info steps: a note to remember at each step while it is
  * in play (the Snitch's extra bluffs at Demon info), and `hidesDemon` when a Minion may not
  * learn the Demon because of it (the Poppy Grower, Magician, Marionette, Lil' Monsta).
  */
-export interface EvilInfo {
+interface EvilInfo {
 	notes?: Partial<Record<EvilInfoStep, string>>;
 	hidesDemon?: true;
 }
 
 /** What its night information is like: a number (the Chef), only once per game (the Artist). */
-export interface InfoKind {
+interface InfoKind {
 	number?: true;
 	oncePerGame?: true;
 }
