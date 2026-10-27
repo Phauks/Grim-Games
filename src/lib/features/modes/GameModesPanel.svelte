@@ -751,7 +751,7 @@
 	}
 	.warn {
 		margin: 0;
-		color: var(--evil);
+		color: var(--evil-text);
 		visibility: hidden;
 	}
 	.warn.shown {

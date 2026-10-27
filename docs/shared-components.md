@@ -142,7 +142,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Setup reminders and preparation notes (`setup-reminders.ts`): `setupPrep`, moved
 - Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest): `setupModifier`, moved
 - Death causes (`death-causes.ts`: who can cause a death and whom): `deathCause`, moved
-- Reminder movement (`reminder-movement.ts`: tokens that stay put, and characters that relocate them): `reminderMovement`, moved
+- Reminder movement (`reminder-movement.ts`: tokens that stay put, characters that relocate them, and `followsNeighbours` tokens that move to the new neighbours when players change seats): `reminderMovement`, moved
 - Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means): `reminderPlaceholders`, moved
 - Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text): `nightText`, moved
 - Info token characters (`info-token-characters.ts`: the character a night step's card always shows): `infoTokenCharacters`, new

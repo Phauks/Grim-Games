@@ -14,6 +14,7 @@ export const modes = {
 	'modes.info.storyteller': 'Storyteller',
 	'modes.info.players': 'Players',
 	'modes.info.edit': 'Edit game info',
+	'modes.info.editStoryteller': 'Rename the Storyteller',
 	'modes.newGame.ask': 'Start a new game?',
 	'modes.newGame.askText':
 		'This game moves to History when the new one starts. The room and players stay.',
@@ -22,9 +23,6 @@ export const modes = {
 	'modes.info.onBoard': '{line} on the board',
 	'modes.info.rules': 'Special rules',
 	'modes.info.download': 'Download script',
-	'modes.info.shareSource': 'Share the script’s source',
-	'modes.info.sourceQr': 'QR code for the script’s source',
-	'modes.info.noSource': 'This script has no source page to share',
 	'modes.storytellerName': 'Storyteller',
 	'modes.script': 'Script',
 	'modes.preview': 'Script preview',

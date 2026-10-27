@@ -189,7 +189,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		color: var(--evil);
+		color: var(--evil-text);
 		font-family: var(--font-heading);
 		font-weight: 700;
 	}

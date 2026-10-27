@@ -260,7 +260,7 @@
 	.error {
 		min-height: 2lh;
 		margin: 0;
-		color: var(--evil);
+		color: var(--evil-text);
 		font-family: var(--font-account);
 		overflow-wrap: anywhere;
 	}
