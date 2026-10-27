@@ -1768,7 +1768,7 @@ test("a seat's character can be searched by name or ability", async ({ page }) =
 	await expect(sheet).toContainText(/Poisoner\s*Minion · Evil · Seat 1/);
 });
 
-test('players rotate one seat, or are dragged to a new place in the order', async ({ page }) => {
+test('players rotate one seat, or swap places when one is dropped on another', async ({ page }) => {
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
 	await nameSeat(sheet, 'Ana');
@@ -1784,7 +1784,7 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await toolbar.getByRole('button', { name: 'Rotate players anticlockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
 
-	// Arranging: dropping a seat onto another seat changes the seating order.
+	// Arranging: dropping a seat onto another seat swaps the two players (the Matron).
 	const centre = async (n: number) => {
 		const box = (await page
 			.getByRole('button', { name: new RegExp(`^Seat ${n}:`) })
@@ -1799,11 +1799,14 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await page.mouse.move(to.x, to.y, { steps: 4 });
 	await page.mouse.up();
 	await expect(seatLabelled(page, 'Seat 4: Ana')).toBeAttached();
+	// Only the two swap: seat 4's player takes seat 1, and seats 2 and 3 stay put.
+	await expect(seatLabelled(page, 'Seat 1: Seat 4')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 2: Seat 2')).toBeAttached();
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
-	await expect(history).toContainText('Ana moved to seat 4');
+	await expect(history).toContainText('Swapped Ana and Seat 4');
 	await expect(history).toContainText('Rotated the seats clockwise');
 	await page.keyboard.press('Escape');
 	await openSeat(page, 4);

@@ -84,13 +84,13 @@ describe('SeatArranging', () => {
 		expect(arrange.drag).toBeUndefined();
 	});
 
-	it('moves a seat in the seating order when dropped on another', () => {
+	it('swaps two players when one is dropped on the other (https://wiki.bloodontheclocktower.com/Matron)', () => {
 		const { arrange, runs } = setup();
 		arrange.dragStart(pointer(40, 100), seating[0], points[0]);
 		arrange.dragMove(pointer(158, 100));
 		expect(arrange.reorderTarget).toBe('c');
 		arrange.dragEnd(pointer(158, 100));
-		expect(runs).toEqual([{ type: 'MoveSeat', seatId: 'a', position: 2 }]);
+		expect(runs).toEqual([{ type: 'SwapSeats', seatA: 'a', seatB: 'c' }]);
 	});
 
 	it('ignores a press that does not move past the slop', () => {

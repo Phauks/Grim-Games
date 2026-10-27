@@ -386,6 +386,14 @@ export function describeEntry(
 	const [first] = entry.events;
 	if (!first) return [text('No change')];
 	// Moving players names the unnamed seats first (their seat numbers), so look past them.
+	const swap = entry.events.find((e) => e.type === 'SeatsSwapped');
+	if (swap?.type === 'SeatsSwapped')
+		return [
+			text('Swapped '),
+			seatPart(before, swap.seatA),
+			text(' and '),
+			seatPart(before, swap.seatB)
+		];
 	const reorder = entry.events.find((e) => e.type === 'SeatingReordered');
 	if (reorder?.type === 'SeatingReordered' && before) {
 		const was = before.seating;
