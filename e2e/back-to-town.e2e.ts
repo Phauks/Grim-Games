@@ -45,7 +45,7 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 		};
 	});
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toBeVisible();
+	await expect(phone.getByTestId('join-status')).toHaveText('');
 	// Any tap lets the page make sounds later (browsers' rule).
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
@@ -58,5 +58,12 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 	await expect
 		.poll(() => phone.evaluate(() => (window as unknown as { alerts: string[] }).alerts))
 		.toEqual(['vibrate', 'sound']);
+
+	// From the grim cover too, which stays up (Trevor, 2026-10-27). The room takes one call
+	// at a time, so the call above is the one the phone hears.
+	await page.getByTestId('cover-button').tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	await cover.getByRole('button', { name: 'Back to town' }).tap();
+	await expect(cover).toBeVisible();
 	await phoneContext.close();
 });

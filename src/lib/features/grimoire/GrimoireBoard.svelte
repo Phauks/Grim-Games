@@ -60,12 +60,15 @@
 		type NominationPrompt
 	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
+	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
+	import SoundboardSheet from '#lib/features/sound/SoundboardSheet.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
@@ -99,30 +102,20 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import { fromScript, scriptLogo, scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
-	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
-	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
-	import PlayerNotes from '#lib/features/player/PlayerNotes.svelte';
 	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
 	import { currentScript } from '#lib/features/scripts/current-script.svelte.ts';
-	import { scriptKey } from '#lib/features/player/notebook.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
-	import {
-		dealtSeats,
-		playersLine,
-		standardPlayersLine
-	} from '#lib/features/modes/players-line.ts';
+	import { playersLine, standardPlayersLine } from '#lib/features/modes/players-line.ts';
 	import { savedChoiceFor } from '#lib/features/modes/script-choices.svelte.ts';
-	import {
-		publicTravellerTest,
-		travellersInPlay
-	} from '#lib/features/player/travellers-in-play.ts';
-	import { publicProjection, type PublicLook } from '#lib/core/sync/public-projection.ts';
+	import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 	import { drawnLook } from './shared-look.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import BoardPlayerView from './BoardPlayerView.svelte';
+	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NotesSheet from './NotesSheet.svelte';
@@ -392,7 +385,7 @@
 			keepClear({
 				centre: { w: centreW, h: centreH },
 				edge: boardLooks.current.rulesAt !== 'middle' ? { w: edgeW, h: edgeH } : undefined,
-				timer: showTimer ? { w: timerW, h: timerH } : undefined,
+				timer: { w: timerW, h: timerH },
 				title: { w: titleW, h: titleH },
 				board: boardSize
 			}),
@@ -487,6 +480,7 @@
 
 	// ── Notes (Trevor, 2026-10-19): the game's and every player's in ⋯ Notes ──
 	let notesOpen = $state(false);
+	let soundboardOpen = $state(false);
 	let notesSheet = $state<ReturnType<typeof NotesSheet>>();
 	/**
 	 * A seat's pen mark opens just that player's notes, not the whole sheet (Trevor,
@@ -891,6 +885,8 @@
 	let phonesOpen = $state(false);
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
+	/** The players' view, from the grim cover. */
+	let coverViewOpen = $state(false);
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
@@ -984,6 +980,13 @@
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
+	/** What the grim cover shows: nothing from the grimoire (Trevor, 2026-10-26). */
+	const coverDetails = $derived<CoverDetails>({
+		logo: boardLogo || undefined,
+		name: showTitle ? game.script.meta?.name : undefined,
+		author: showTitle ? game.script.meta?.author : undefined,
+		phase
+	});
 	/**
 	 * The corner name is hidden (switched off, or no room beside the seats): Game info is
 	 * then on the ⋯ menu instead, so a mode's actions stay in reach. Otherwise only the corner
@@ -1372,6 +1375,8 @@
 				seatAt={remDrag.seatAt}
 				spotAllowed={remDrag.spotAllowed}
 				ruleAt={remDrag.ruleAt}
+				dropping={remDrag.drag !== undefined}
+				dropOver={!!remDrag.drag?.overNew}
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
@@ -1427,17 +1432,27 @@
 				{/if}
 			{/snippet}
 		</BoardCorner>
-		{#if showTimer}
-			<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. -->
-			<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
+		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The grim
+		     cover beside it, never in a menu (Trevor, 2026-10-26), the Storyteller's only. -->
+		<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
+			{#if !watching}
+				<CoverButton
+					gameId={game.gameId}
+					details={coverDetails}
+					timer={coverTimer}
+					actions={coverActions}
+					outlined
+				/>
+			{/if}
+			{#if showTimer}
 				<DayTimer
 					alive={livingByTeam(game).alive}
 					variant="compact"
 					readOnly={watching}
 					shown={watchedTimer}
 				/>
-			</div>
-		{/if}
+			{/if}
+		</div>
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if boardLooks.current.rulesAt === 'middle'}
@@ -1453,6 +1468,17 @@
 
 <!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
 <BoardAmbience scene={watching || ended || phaseNow.kind === 'setup' ? null : phaseNow.kind} />
+{#if !watching}
+	<!-- Sounds for the Storyteller's actions (plan U7). -->
+	<BoardActionSounds
+		now={{
+			phase: phaseNow.kind,
+			executions: game.today.entries.filter((entry) => entry.kind === 'execution').length,
+			ended: !!ended
+		}}
+	/>
+	<SoundboardSheet bind:open={soundboardOpen} />
+{/if}
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <BoardMenu
@@ -1462,6 +1488,7 @@
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
+	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	onCallTown={!watching && !ended && roomHost().code
 		? () => roomHost().callTown() || toast(t('room.callTownFailed'))
 		: undefined}
@@ -1629,40 +1656,18 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			{@const town = publicProjection(
-				game,
-				publicTravellerTest(game.gameId, characters),
-				layout,
-				cornerInfo,
-				characters
-			)}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
-			<PlayerScriptTabs
+			<BoardPlayerView
+				{game}
 				script={loadedScript}
-				players={dealtSeats(town.seats).dealt}
-				inPlay={charactersInPlay(game)}
-				travellers={travellersInPlay(town.seats)}
-				rules={gameSheetRules(game.gameId)}
-			>
-				{#snippet grim()}<PlayerGrim
-						script={loadedScript!}
-						town={{
-							seats: town.seats,
-							layout: town.layout,
-							storytellerName: town.storytellerName,
-							corner: town.corner,
-							look,
-							picture: watching ? undefined : ownPicture,
-							pictureRoom: watching ? grimoire.room : undefined,
-							guessKey: `storyteller:${game.gameId}`
-						}}
-					/>{/snippet}
-				{#snippet notes()}<PlayerNotes
-						notesKey={scriptKey(loadedScript!)}
-						town={{ seats: town.seats, guessKey: `storyteller:${game.gameId}` }}
-					/>{/snippet}
-			</PlayerScriptTabs>
+				{characters}
+				{layout}
+				corner={cornerInfo}
+				{look}
+				picture={watching ? undefined : ownPicture}
+				pictureRoom={watching ? grimoire.room : undefined}
+			/>
 		{/if}
 	</div>
 </Dialog>
@@ -1672,9 +1677,50 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
+<!-- On the grim cover, what shows nothing secret (Trevor, 2026-10-27: "calling back to town,
+     seeing player view (script, night order, public grim, not notes)"). The dialog is drawn in
+     the cover, over it. -->
+{#snippet coverActions()}
+	{#if !ended && roomHost().code}
+		<Button icon="sound" onclick={() => roomHost().callTown() || toast(t('room.callTownFailed'))}>
+			{t('room.callTown')}
+		</Button>
+	{/if}
+	{#if loadedScript}
+		<Button icon="script" onclick={() => (coverViewOpen = true)}>{t('show.playerView')}</Button>
+		<Dialog
+			bind:open={coverViewOpen}
+			title={game.script.meta?.name || 'Script'}
+			size="max"
+			lead={boardLogo ? scriptLogoLead : undefined}
+		>
+			<div class="script-scroll" data-testid="cover-player-view">
+				<BoardPlayerView
+					{game}
+					script={loadedScript}
+					{characters}
+					{layout}
+					corner={cornerInfo}
+					{look}
+					picture={watching ? undefined : ownPicture}
+					pictureRoom={watching ? grimoire.room : undefined}
+					own={false}
+				/>
+			</div>
+		</Dialog>
+	{/if}
+{/snippet}
+
+{#snippet coverTimer()}
+	{#if showTimer}<DayTimer alive={livingByTeam(game).alive} variant="compact" />{/if}
+{/snippet}
+
 <DaySheet
 	bind:open={dayOpen}
 	game={grimoire.open}
+	cover={coverDetails}
+	{coverTimer}
+	{coverActions}
 	onEndDay={() => (endDayOpen = true)}
 	onSavant={(seatId) => {
 		savantSeat = seatId;
@@ -1942,6 +1988,13 @@
 		top: var(--space-1);
 		right: var(--space-1);
 		z-index: 2;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+	/* The cover's button has the timer's solid fill, so it reads on any background. */
+	.board-timer :global(.icon-button[data-outlined]) {
+		background: var(--surface);
 	}
 	/* Small, in the board's top left corner, clear of the seats' ring. */
 	.rules-edge {

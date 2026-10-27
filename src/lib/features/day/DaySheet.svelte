@@ -7,6 +7,8 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
+	import type { Snippet } from 'svelte';
 	import DayPanel from './DayPanel.svelte';
 	import { LiveDay } from './live-day.svelte.ts';
 
@@ -27,9 +29,21 @@
 		onEndDay?: () => void;
 		/** Opens the Savant information sheet for a seat (L5). */
 		onSavant?: (seatId: SeatId) => void;
+		/** What the grim cover shows, as from the board (Trevor, 2026-10-26). */
+		cover?: CoverDetails;
+		coverTimer?: Snippet;
+		coverActions?: Snippet;
 	}
 
-	let { open = $bindable(), game, onEndDay, onSavant }: Props = $props();
+	let {
+		open = $bindable(),
+		game,
+		onEndDay,
+		onSavant,
+		cover,
+		coverTimer,
+		coverActions
+	}: Props = $props();
 
 	const day = $derived(new LiveDay(game));
 	// Which day it is (Trevor): Day 1 starts when the first night ends.
@@ -43,8 +57,13 @@
 	size="max"
 	scroll={false}
 >
-	<!-- The grim cover, from the day as from the board's ⋯ (Trevor, 2026-10-26). -->
-	{#snippet headActions()}<CoverButton />{/snippet}
+	<!-- The grim cover, from the day as from the board (Trevor, 2026-10-26). -->
+	{#snippet headActions()}<CoverButton
+			gameId={game.game.gameId}
+			details={cover}
+			timer={coverTimer}
+			actions={coverActions}
+		/>{/snippet}
 	<div class="body">
 		<DayPanel game={day} {assistance} {onSavant} />
 	</div>

@@ -20,6 +20,8 @@ import { lookForNewerBuild } from './newer-build.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 import { travellersInPlay, type TravellerInPlay } from '#lib/features/player/travellers-in-play.ts';
 import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
+import { avatarPicture } from '#lib/features/player/avatar-picture.svelte.ts';
+import { putRoomImage } from './room-images.ts';
 import { dealtSeats } from '#lib/features/modes/players-line.ts';
 import { hearCallTown, unlockOnFirstTap } from '#lib/features/sound/sound.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
@@ -37,6 +39,11 @@ function deviceKey(): string {
 
 /** The last name this phone asked for, to fill the field next time. */
 const NAME_KEY = 'grim-games-room-name';
+
+/** The name this phone last gave a room, for its initials where no room says it. */
+export function savedPlayerName(): string {
+	return readStored<string>(NAME_KEY) ?? '';
+}
 
 /** The room this phone last joined, so /play's Room tab opens it again (Trevor, 2026-10-19). */
 const LAST_ROOM_KEY = 'grim-games-room-last';
@@ -106,6 +113,18 @@ function setTable(code: string, table: RoomTable): void {
 	writeStored(TABLE_KEY, empty ? undefined : { code, ...table });
 }
 
+/**
+ * Stops following the last room on /play, but keeps it in Your games to join again: the phone
+ * opened another script from a link or an offline code (Trevor, 2026-10-27: a scanned Fall of
+ * Rome turned into the last room's Bad Moon Rising once that room reconnected).
+ */
+export function leaveLastRoom(): void {
+	const code = lastRoom();
+	if (!code) return;
+	writeStoredText(LAST_ROOM_KEY, undefined);
+	setTable(code, {});
+}
+
 /** Forgets the last room when it is `code` (it closed, or refused this phone). */
 export function forgetRoom(code: string): void {
 	forgetRecentRoom(code);
@@ -120,8 +139,14 @@ export class RoomPlayer {
 	script = $state.raw<Script>();
 	/** The finished grimoire, once the Storyteller shares it after the game (plan R5). */
 	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
+	/** Pictures this phone reported, by hash, so its menu says so (no success popup). */
+	reported = $state.raw<readonly string[]>([]);
 	readonly code: string;
 	readonly #socket: RoomSocket;
+	readonly #key = deviceKey();
+	/** The look last sent, and the picture uploaded for which game, so neither repeats. */
+	#lastLook: string | undefined;
+	#uploaded: { game: string; image: Blob; hash: Promise<string> } | undefined;
 
 	constructor(code: string) {
 		this.code = code;
@@ -130,7 +155,7 @@ export class RoomPlayer {
 		rememberRoom(code);
 		this.#socket = new RoomSocket(
 			code,
-			{ type: 'hello', role: 'player', key: deviceKey(), protocol: ROOM_PROTOCOL },
+			{ type: 'hello', role: 'player', key: this.#key, protocol: ROOM_PROTOCOL },
 			(m) => {
 				if (m.type === 'player-view') {
 					this.view = m;
@@ -157,23 +182,60 @@ export class RoomPlayer {
 					toast(t('room.callTownHeard'));
 				}
 			},
-			() => this.sendLook()
+			() => {
+				this.#lastLook = undefined;
+				void this.sendLook();
+			}
 		);
 	}
 
 	/**
-	 * Tells the room this phone's avatar and frame (plan R6) when they differ from what it
-	 * has: on every connect, and when the player picks again.
+	 * Tells the room this phone's avatar, frame and picture (plan R6) when they differ from
+	 * what it has: on every connect, and when the player picks again. The picture is uploaded
+	 * once a game, since the room deletes one the Storyteller took away; a look the room turned
+	 * down is not sent again until something in it changes.
 	 */
-	sendLook(): void {
+	async sendLook(): Promise<void> {
 		const { avatar, frame } = playerSettings.current;
+		const picture = await this.#picture();
 		const me = this.view?.me;
-		if (me && me.avatar === avatar && me.frame === frame) return;
-		this.#socket.send({
+		if (me && me.avatar === avatar && me.frame === frame && me.picture === picture) return;
+		const look = `${this.view?.gameId}|${avatar}|${frame}|${picture}`;
+		if (look === this.#lastLook) return;
+		const sent = this.#socket.send({
 			type: 'look',
 			...(avatar ? { avatar } : {}),
-			...(frame ? { frame } : {})
+			...(frame ? { frame } : {}),
+			...(picture ? { picture } : {})
 		});
+		if (sent) this.#lastLook = look;
+	}
+
+	/** This phone's picture's name in the room, uploading it first; undefined without one. */
+	async #picture(): Promise<string | undefined> {
+		const blob = avatarPicture.blob();
+		if (!blob || !this.view) return undefined;
+		const game = this.view.gameId ?? '';
+		try {
+			const image = await blob;
+			const known = this.#uploaded;
+			if (known?.game === game && known.image === image) return await known.hash;
+			const hash = putRoomImage(this.code, this.#key, image);
+			this.#uploaded = { game, image, hash };
+			return await hash;
+		} catch {
+			// Offline or turned down: the initials stand in, and the next connect tries again.
+			this.#uploaded = undefined;
+			return undefined;
+		}
+	}
+
+	/** Reports the picture on another player's seat to the Storyteller (2026-10-27). */
+	reportPicture(seatId: SeatId): boolean {
+		const hash = this.view?.pictures?.[seatId];
+		if (!hash || !this.#socket.send({ type: 'report-picture', seatId })) return false;
+		this.reported = [...this.reported, hash];
+		return true;
 	}
 
 	get status() {
@@ -185,7 +247,7 @@ export class RoomPlayer {
 	}
 
 	get savedName(): string {
-		return readStored<string>(NAME_KEY) ?? '';
+		return savedPlayerName();
 	}
 
 	/** Sets this phone's name in the room; the Storyteller seats it (no approval, 2026-10-26). */

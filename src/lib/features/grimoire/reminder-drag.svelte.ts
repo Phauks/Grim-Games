@@ -1,7 +1,7 @@
 /**
  * Dragging a reminder on the board (GrimoireBoard): from a seat, a Fabled or Loric, or loose
- * on the board, onto another seat, a Fabled or Loric, the setup tray, or (loose mode) any
- * free spot. A move goes through ReminderMoveConfirm, so it is one History entry.
+ * on the board, onto another seat, a Fabled or Loric, the setup tray, the bank's "+ New token"
+ * (a new ∞ token like it), or (loose mode) any free spot. A move goes through ReminderMoveConfirm, so it is one History entry.
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
 import {
@@ -18,7 +18,14 @@ import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 import type { BoardSize } from './board-geometry.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import type ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
-import { onBoard } from './reminders.ts';
+import { copiedLook, onBoard } from './reminders.ts';
+
+/**
+ * Whether a client point is over the bank's "+ New token" (Trevor, 2026-10-27): a reminder
+ * dropped there becomes a new ∞ token with its text and symbol, and stays where it was.
+ */
+export const overNewToken = (x: number, y: number): boolean =>
+	document.elementsFromPoint(x, y).some((el) => el.closest('[data-new-token]') !== null);
 
 /** What dragging reads from the board, fresh on each call. */
 export interface ReminderDragContext {
@@ -44,6 +51,8 @@ export interface ReminderDrag {
 	/** Where the token is, in % of the board. */
 	at: SeatPoint;
 	target?: SeatId;
+	/** Over the bank's "+ New token", which glows (Trevor, 2026-10-27). */
+	overNew?: boolean;
 }
 
 export class ReminderDragging {
@@ -144,10 +153,23 @@ export class ReminderDragging {
 		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
 		const target = this.seatAt(at);
 		if (!end) {
-			this.drag = { reminderId, from, at, target: free ? undefined : target };
+			const overNew = overNewToken(x, y);
+			this.drag = {
+				reminderId,
+				from,
+				at,
+				target: free || overNew ? undefined : target,
+				overNew: overNew || undefined
+			};
 			return;
 		}
 		this.drag = undefined;
+		// Dropped on "+ New token" (it sits in the tray): a new ∞ token like it.
+		if (overNewToken(x, y)) {
+			const reminder = onBoard(game).find((r) => r.reminderId === reminderId);
+			if (reminder) grimoire.run({ type: 'AddGenericToken', look: copiedLook(reminder) });
+			return;
+		}
 		// Dropped back on the setup reminders tray: it waits there again (History has it).
 		const tray = element.querySelector('[data-tray]')?.getBoundingClientRect();
 		if (tray && x >= tray.left && x <= tray.right && y >= tray.top && y <= tray.bottom) {

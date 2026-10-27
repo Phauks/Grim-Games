@@ -94,9 +94,12 @@ describe('parsePreferences', () => {
 			ambienceLevel: 0.3,
 			nightAmbience: 'night-loons',
 			dayAmbience: 'weather-rain-wood',
+			actionSoundsOn: true,
+			actionSounds: { dusk: 'none', dawn: 'hand-bell', execution: 'gallows', gameEnd: 'heartbeat' },
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
 			timerForPlayers: 'timer',
+			coverPin: true,
 			qrCentre: 'picture',
 			qrPictureWhole: true,
 			qrPictureZoom: 1.5,
@@ -154,6 +157,8 @@ describe('parsePreferences', () => {
 		expect(prefs.ambienceLevel).toBe(0.6);
 		expect(prefs.nightAmbience).toBe('night-meadow');
 		expect(prefs.dayAmbience).toBe('day-forest');
+		expect(prefs.actionSoundsOn).toBe(false);
+		expect(prefs.actionSounds.execution).toBe('gallows');
 		const chosen = parsePreferences({
 			ambienceOn: true,
 			ambienceLevel: 9,

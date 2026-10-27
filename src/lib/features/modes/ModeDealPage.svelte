@@ -368,9 +368,8 @@
 
 	/**
 	 * A drafted character that turns players into another type (Grimbits' draft: the Kazali's
-	 * Minions, the Lord of Typhon's neighbours): the Storyteller picks which players become which,
-	 * last. A game has one Demon, so
-	 * one such character at most.
+	 * Minions, the Lord of Typhon's neighbours, who pick their own): the players turn last. A game
+	 * has one Demon, so one such character at most.
 	 */
 	const conversion = $derived(
 		progress?.kind === 'draft' ? conversions(progress.state)[0] : undefined
@@ -719,6 +718,7 @@
 		seatLabel={seatName}
 		{kept}
 		characters={convertOptions}
+		offers={progress?.kind === 'draft' ? progress.state.config.offers : [1]}
 		onDone={(turned) => void finish(turned)}
 	/>
 {/if}

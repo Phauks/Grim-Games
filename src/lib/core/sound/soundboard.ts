@@ -1,0 +1,156 @@
+/**
+ * The Storyteller's soundboard (plan U6) and the sounds tied to their actions (plan U7),
+ * Trevor 2026-10-26: "bells should be useful to storyteller and initiate bell sounds upon
+ * pressing", and "connect certain sounds to their actions (such as an execution sound)". These
+ * are the sounds he kept from a listening page of real recordings, each public domain or CC0
+ * and credited in About. The files live in `static/sounds/board/` and are fetched when first
+ * played.
+ */
+
+export interface BoardSound {
+	/** Also its file name in `BOARD_SOUND_PATH`, with `.mp3`. */
+	id: string;
+	/** What it is, as its button and the drop-downs show it. */
+	name: string;
+	/** Where it was recorded, when the source says. */
+	place?: string;
+	/** Who recorded it, when the source names them. */
+	recordist?: string;
+	source: 'Internet Archive' | 'SSE Library';
+	page: string;
+	licence: 'Public domain' | 'CC0';
+}
+
+export const BOARD_SOUND_PATH = '/sounds/board';
+
+const ARCHIVE = 'https://archive.org/details/';
+
+/** A Radio Aporee recording on the Internet Archive, marked public domain by its recordist. */
+function aporee(
+	id: string,
+	name: string,
+	place: string,
+	item: string,
+	recordist: string
+): BoardSound {
+	return {
+		id,
+		name,
+		place,
+		recordist,
+		source: 'Internet Archive',
+		page: ARCHIVE + item,
+		licence: 'Public domain'
+	};
+}
+
+/** A sound effect from USC's film collection, released as CC0 in the SSE Library. */
+function sse(id: string, name: string, collection: string): BoardSound {
+	return {
+		id,
+		name,
+		source: 'SSE Library',
+		page: `${ARCHIVE}SSE_Library_${collection}`,
+		licence: 'CC0'
+	};
+}
+
+export const BOARD_SOUNDS: readonly BoardSound[] = [
+	aporee(
+		'village-bell',
+		'Village church bell',
+		'Bastendorf, Luxembourg',
+		'aporee_14369_16722',
+		'Frank Schulte'
+	),
+	aporee(
+		'morning-bell',
+		'Morning church bell',
+		'Stalos, Crete',
+		'aporee_44696_50799',
+		'alas23/sala'
+	),
+	aporee(
+		'remembrance-bells',
+		'Cathedral bells',
+		'Worcester Cathedral, England',
+		'aporee_52873_60406',
+		'David J. Pitt'
+	),
+	aporee('temple-bell', 'Temple bell', 'Guryongsa, Korea', 'aporee_54764_62624', 'abyssence'),
+	aporee(
+		'shipyard-gong',
+		'Shipyard gong',
+		'Dunkirk, France',
+		'aporee_63069_72550',
+		'Jean-François Cavro'
+	),
+	sse('hand-bell', 'Hand bell', 'BELLS'),
+	sse('ships-bells', "Ship's bells", 'BELLS'),
+	sse('train-bell', 'Train bell', 'BELLS'),
+	sse('gallows', 'Gallows trap', 'WOOD'),
+	sse('horrified-crowd', 'Horrified crowd', 'CROWDS'),
+	sse('heartbeat', 'Heartbeat', 'HUMAN'),
+	sse('fast-heartbeat', 'Fast heartbeat', 'HUMAN')
+];
+
+/** A sound's URL. */
+export function boardSoundUrl(sound: BoardSound): string {
+	return `${BOARD_SOUND_PATH}/${sound.id}.mp3`;
+}
+
+export function boardSound(id: string): BoardSound | undefined {
+	return BOARD_SOUNDS.find((sound) => sound.id === id);
+}
+
+/** The Storyteller's actions a sound can follow. */
+export const SOUND_ACTIONS = ['dusk', 'dawn', 'execution', 'gameEnd'] as const;
+export type SoundAction = (typeof SOUND_ACTIONS)[number];
+
+/** A sound's id, or none for an action that plays nothing. */
+export type ActionSound = string | 'none';
+
+/** What a new device plays for each action, once action sounds are turned on. */
+export const DEFAULT_ACTION_SOUNDS: Readonly<Record<SoundAction, ActionSound>> = {
+	dusk: 'temple-bell',
+	dawn: 'morning-bell',
+	execution: 'gallows',
+	gameEnd: 'remembrance-bells'
+};
+
+/** Each action's sound as any build stored it; an unknown sound becomes the default. */
+export function parseActionSounds(raw: unknown): Record<SoundAction, ActionSound> {
+	const stored = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+	const sounds = { ...DEFAULT_ACTION_SOUNDS };
+	for (const action of SOUND_ACTIONS) {
+		const value = stored[action];
+		if (value === 'none' || (typeof value === 'string' && boardSound(value))) {
+			sounds[action] = value;
+		}
+	}
+	return sounds;
+}
+
+/** What the board knows of the game, for telling which action was just taken. */
+export interface ActionState {
+	/** Setup, a night or a day. */
+	phase: 'setup' | 'night' | 'day';
+	/** How many executions today's log holds. */
+	executions: number;
+	ended: boolean;
+}
+
+/**
+ * The action that moved the board from one state to the next, if one did: the game ending,
+ * an execution, a night beginning (Dusk) or a day beginning (Dawn). Undoing one is not an
+ * action, so fewer executions or a game reopened play nothing.
+ */
+export function actionTaken(before: ActionState, after: ActionState): SoundAction | undefined {
+	if (after.ended) return before.ended ? undefined : 'gameEnd';
+	if (before.ended) return undefined;
+	if (after.executions > before.executions && after.phase === before.phase) return 'execution';
+	if (after.phase === before.phase) return undefined;
+	if (after.phase === 'night') return 'dusk';
+	if (after.phase === 'day' && before.phase === 'night') return 'dawn';
+	return undefined;
+}

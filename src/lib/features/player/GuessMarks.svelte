@@ -32,7 +32,8 @@
 				class="slot"
 				data-testid="guess-mark"
 				role="img"
-				aria-label={other.label}><AvatarFace avatar={other.avatar} name={other.name} /></span
+				aria-label={other.label}
+				><AvatarFace avatar={other.avatar} name={other.name} picture={other.picture} /></span
 			>{:else}<span
 				class="slot generic"
 				data-team={other.generic.team}

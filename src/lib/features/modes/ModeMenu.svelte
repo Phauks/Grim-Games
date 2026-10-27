@@ -168,13 +168,14 @@
 					}
 				]
 			: []),
-		// The day or night and the length, each a line with its own eye (Trevor, 2026-10-26).
+		// The game phase and the length, each a line with its own eye (Trevor, 2026-10-26).
 		{ key: 'phase', label: t('modes.info.phase'), value: phase },
 		{
 			key: 'game-time',
 			label: t('history.gameLength'),
-			// "Setup" until the first night, as on the corner (Trevor, 2026-10-24).
-			value: gameLength ?? (phase === t('day.setup') ? phase : undefined)
+			// 0:00 until the first night, as on the corner: Game phase says Setup (Trevor,
+			// 2026-10-26: "game time should no longer say setup").
+			value: gameLength ?? (phase === t('day.setup') ? gameClock.formatGameLength(0) : undefined)
 		},
 		{
 			key: 'watchers',
@@ -514,9 +515,14 @@
 		border: 0;
 		background: none;
 		color: var(--on-surface-muted);
+		/* The row's own text size, so its line (1lh) is the row's and the eye sits level with
+		   its label (Trevor, 2026-10-26: "slightly higher than the thing they identify with"). */
+		font: inherit;
 		cursor: pointer;
 	}
-	/* Within the text's line, so the row keeps its height. */
+	/* Within the text's line, so the row keeps its height; the icon's own box with it, so the
+	   eye is centred in the line rather than spilling above it. */
+	.eye :global(.icon),
 	.eye :global(svg) {
 		width: 1.1em;
 		height: 1.1em;
