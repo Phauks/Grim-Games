@@ -2234,6 +2234,8 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex Kim');
 	const picture = you.getByTestId('avatar-picture');
 	await expect(picture.getByRole('button', { name: 'Remove picture' })).toBeDisabled();
+	// "+ Image" (Trevor, 2026-10-27), the add icon and one word.
+	await expect(picture.getByRole('button', { name: 'Image', exact: true })).toBeVisible();
 	await picture.getByLabel('Picture for your seat').setInputFiles({
 		name: 'me.png',
 		mimeType: 'image/png',
