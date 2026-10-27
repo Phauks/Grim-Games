@@ -146,25 +146,38 @@ async function openStep(page: Page, title: string) {
 }
 
 /**
- * Counts animation frames, from now until `stop` is called, in which neither the open night
- * step `title` nor a player view is up: the board showing for a moment between them.
+ * Watches animation frames, from now until the returned function is called, for any in which
+ * neither the open night step `title` nor a player view is up: the board showing for a moment
+ * between them. Returns what each such frame held (every dialog's title, state, opacity and
+ * animation, the player view's state and the focused element), so a failure says why.
  */
 async function watchStep(page: Page, title: string) {
 	await page.evaluate((title) => {
-		const w = window as unknown as { stepGaps: number; stepWatch: boolean };
-		w.stepGaps = 0;
+		const w = window as unknown as { stepGaps: string[]; stepWatch: boolean };
+		w.stepGaps = [];
 		w.stepWatch = true;
+		const start = performance.now();
 		const frame = () => {
 			if (!w.stepWatch) return;
-			const step = [
-				...document.querySelectorAll('[data-scope="dialog"][data-part="content"]')
-			].some(
+			const dialogs = [...document.querySelectorAll('[data-scope="dialog"][data-part="content"]')];
+			const step = dialogs.some(
 				(e) =>
 					e.getAttribute('data-state') === 'open' &&
 					getComputedStyle(e).opacity === '1' &&
 					e.querySelector('[data-part="title"]')?.textContent?.trim() === title
 			);
-			if (!step && !document.querySelector('[data-testid="show-to-player"][open]')) w.stepGaps++;
+			const shown = document.querySelector<HTMLDialogElement>('[data-testid="show-to-player"]');
+			if (!step && !shown?.open) {
+				const states = dialogs.map((e) => {
+					const style = getComputedStyle(e);
+					const name = e.querySelector('[data-part="title"]')?.textContent?.trim();
+					return `${name}: ${e.getAttribute('data-state')}, opacity ${style.opacity}, ${style.animationName}`;
+				});
+				const focus = document.activeElement;
+				w.stepGaps.push(
+					`${Math.round(performance.now() - start)} ms: [${states.join('; ')}], player view ${shown ? (shown.open ? 'open' : 'closed') : 'gone'}, focus ${focus?.tagName.toLowerCase()} ${focus?.getAttribute('aria-label') ?? ''}`
+				);
+			}
 			requestAnimationFrame(frame);
 		};
 		requestAnimationFrame(frame);
@@ -173,7 +186,7 @@ async function watchStep(page: Page, title: string) {
 		// Long enough for any closing or opening animation to have run.
 		await page.waitForTimeout(600);
 		return page.evaluate(() => {
-			const w = window as unknown as { stepGaps: number; stepWatch: boolean };
+			const w = window as unknown as { stepGaps: string[]; stepWatch: boolean };
 			w.stepWatch = false;
 			return w.stepGaps;
 		});
@@ -1071,7 +1084,7 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(step).toBeVisible();
 	await expect(page.getByRole('dialog', { name: 'Info tokens' })).toHaveCount(0);
-	expect(await gaps()).toBe(0);
+	expect(await gaps()).toEqual([]);
 });
 
 test("the Demon's step says when the Exorcist's choice stops it waking", async ({ page }) => {
@@ -3916,7 +3929,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	const gaps = await watchStep(page, 'Minion info');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(minionInfo).toBeVisible();
-	expect(await gaps()).toBe(0);
+	expect(await gaps()).toEqual([]);
 
 	// Demon info with no bluffs yet: its Minions, and a way to choose the bluffs.
 	await minionInfo.getByRole('button', { name: 'Next step' }).tap();
