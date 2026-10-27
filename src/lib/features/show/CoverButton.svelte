@@ -12,7 +12,8 @@
 	 * The grim cover, for the Storyteller only (Trevor, 2026-10-26): an opaque screen over
 	 * the grimoire, on the board beside the day timer and in the day's header, never in a
 	 * menu. It shows what isn't secret (the script's logo and name, the night or day, the
-	 * timer) and only its ✕ takes it away; with Settings > Storyteller > "PIN to take the
+	 * timer), Back to town and the players' view (Trevor, 2026-10-27), and only its ✕ takes it
+	 * away; with Settings > Storyteller > "PIN to take the
 	 * cover off", that asks for the game's Storyteller PIN (draw-lock.svelte.ts), set the
 	 * first time the screen is covered.
 	 */
@@ -21,10 +22,12 @@
 		details?: CoverDetails;
 		/** The day timer on the cover. */
 		timer?: Snippet;
+		/** Controls on the cover that show nothing secret (CoverScreen). */
+		actions?: Snippet;
 		outlined?: boolean;
 	}
 
-	let { gameId, details, timer, outlined = false }: Props = $props();
+	let { gameId, details, timer, actions, outlined = false }: Props = $props();
 
 	let open = $state(false);
 	let setPinOpen = $state(false);
@@ -49,7 +52,7 @@
 	blank
 	requestClose={pinNeeded && drawLock.hasPin(gameId) ? () => (pinOpen = true) : undefined}
 >
-	<CoverScreen {...details} {timer} />
+	<CoverScreen {...details} {timer} {actions} />
 	<PinDialog bind:open={pinOpen} {gameId} purpose="cover" onDone={() => (open = false)} />
 </ShowToPlayer>
 <PinDialog
