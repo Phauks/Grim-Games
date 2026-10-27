@@ -465,6 +465,20 @@ test('Sound has one volume for every sound, saved on the device', async ({ page 
 	);
 });
 
+// Plan U11 (Trevor, 2026-10-27: "options for output (eg device speakers, external speakers")):
+// Chrome and Edge on a computer can choose; a phone's own output switcher decides there.
+test('Sound has a speaker choice, disabled where the browser cannot choose', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Sound');
+	const speaker = dialog.getByRole('combobox', { name: 'Speaker', exact: true });
+	await expect(speaker).toContainText('Device default');
+	const can = await page.evaluate(
+		() => 'setSinkId' in AudioContext.prototype && !/Android/i.test(navigator.userAgent)
+	);
+	if (can) await expect(speaker).toBeEnabled();
+	else await expect(speaker).toBeDisabled();
+});
+
 test('every theme, text and icon size setting has a reset icon beside its name', async ({
 	page
 }) => {

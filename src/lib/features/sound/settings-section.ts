@@ -24,7 +24,10 @@ registerSettingsSection({
 			actionSounds: DEFAULT_PREFERENCES.actionSounds,
 			soundboardLevel: DEFAULT_PREFERENCES.soundboardLevel,
 			soundboardOverlap: DEFAULT_PREFERENCES.soundboardOverlap,
-			soundMixes: DEFAULT_PREFERENCES.soundMixes
+			soundMixes: DEFAULT_PREFERENCES.soundMixes,
+			soundOutput: DEFAULT_PREFERENCES.soundOutput,
+			speaker: DEFAULT_PREFERENCES.speaker,
+			soundPads: DEFAULT_PREFERENCES.soundPads
 		}),
 	profile: true,
 	order: 36

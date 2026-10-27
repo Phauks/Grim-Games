@@ -27,6 +27,7 @@ import {
 	type RoomMember,
 	type ServerMessage,
 	type SharedGrimoire,
+	type TownSoundCommand,
 	type VoteTally
 } from '#lib/core/sync/room.ts';
 import type {
@@ -507,6 +508,14 @@ export class RoomHost {
 		if (sent && day?.kind === 'day')
 			this.#town = { gameId: this.#phase!.gameId, number: day.number };
 		return sent;
+	}
+
+	/**
+	 * Plays, stops, pauses or resumes soundboard sounds on the Public Town tablet (plan U10).
+	 * False when the room can't be reached.
+	 */
+	townSound(command: TownSoundCommand): boolean {
+		return this.#socket?.send({ type: 'town-sound', ...command }) ?? false;
 	}
 
 	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */

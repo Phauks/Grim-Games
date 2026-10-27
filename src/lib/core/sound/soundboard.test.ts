@@ -8,9 +8,14 @@ import {
 	boardSound,
 	boardSoundUrl,
 	parseActionSounds,
+	padId,
+	padName,
+	padSounds,
+	parsePads,
 	parseSoundMixes,
 	soundMix,
-	type ActionState
+	type ActionState,
+	type SoundPad
 } from './soundboard.ts';
 
 describe('the soundboard sounds', () => {
@@ -105,5 +110,41 @@ describe('parseSoundMixes', () => {
 
 	it('gives a sound never changed the default mix', () => {
 		expect(soundMix({}, 'gallows')).toEqual({ volume: 1, loop: false });
+	});
+});
+
+describe('parsePads', () => {
+	it('gives a device that never chose every sound, in order', () => {
+		expect(parsePads(undefined).map(padId)).toEqual(BOARD_SOUNDS.map((sound) => sound.id));
+	});
+
+	it('keeps the sounds and mixes placed, in their order', () => {
+		const pads = [
+			{ mix: 'mix-1', name: 'Stormy night', sounds: ['heartbeat', 'village-bell'] },
+			{ sound: 'gallows' }
+		];
+		expect(parsePads(pads)).toEqual(pads);
+		expect(padName(pads[0] as SoundPad)).toBe('Stormy night');
+		expect(padName({ sound: 'gallows' })).toBe('Gallows trap');
+		expect(padSounds({ sound: 'gallows' })).toEqual(['gallows']);
+	});
+
+	it('drops unknown sounds, repeats, empty mixes and junk', () => {
+		expect(
+			parsePads([
+				{ sound: 'gone' },
+				{ sound: 'gallows' },
+				{ sound: 'gallows' },
+				{ mix: 'mix-1', name: '  ', sounds: ['gallows'] },
+				{ mix: 'mix-2', name: 'Nothing', sounds: ['gone'] },
+				{ mix: 'mix-3', name: 'Twice', sounds: ['heartbeat', 'heartbeat', 4] },
+				'bell',
+				null
+			])
+		).toEqual([{ sound: 'gallows' }, { mix: 'mix-3', name: 'Twice', sounds: ['heartbeat'] }]);
+	});
+
+	it('keeps an empty soundboard empty', () => {
+		expect(parsePads([])).toEqual([]);
 	});
 });

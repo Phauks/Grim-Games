@@ -3,6 +3,7 @@
 		BOARD_SOUNDS,
 		DEFAULT_SOUND_MIX,
 		SOUND_MIX_VOLUME,
+		SOUND_OUTPUTS,
 		soundMix,
 		type BoardSoundMix
 	} from '#lib/core/sound/soundboard.ts';
@@ -13,7 +14,11 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import { soundboard } from './soundboard.svelte.ts';
+	import SoundPadsDialog from './SoundPadsDialog.svelte';
+	import SpeakerSetting from './SpeakerSetting.svelte';
 
 	/**
 	 * The soundboard's mixer (Trevor 2026-10-27: "more mixing controls"), in Settings > Sound
@@ -22,6 +27,8 @@
 	 * device's volume leads, for the sheet, where Settings' own Volume row isn't.
 	 */
 	let { master = false }: { master?: boolean } = $props();
+
+	let padsOpen = $state(false);
 
 	const mix = $derived(soundMix(preferences.current.soundMixes, soundboard.mixing));
 
@@ -46,7 +53,30 @@
 		defaultValue={DEFAULT_PREFERENCES.soundVolume}
 		onChange={(soundVolume) => preferences.update({ soundVolume })}
 	/>
+	<SpeakerSetting />
 {/if}
+{#if !master}
+	<!-- Which sounds and mixes the soundboard shows; on the sheet, its own Edit and "+ New". -->
+	<SettingRow label={t('settings.soundPadsRow')}>
+		{#snippet control(labelId)}
+			<Button icon="edit" aria-describedby={labelId} onclick={() => (padsOpen = true)}
+				>{t('settings.soundPads')}</Button
+			>
+		{/snippet}
+	</SettingRow>
+	<SoundPadsDialog bind:open={padsOpen} />
+{/if}
+<!-- Where it plays while the board has a room (plan U10); the Public Town plays its own copy. -->
+<SettingSelect
+	label={t('settings.soundOutput')}
+	value={preferences.current.soundOutput}
+	options={SOUND_OUTPUTS.map((output) => ({
+		value: output,
+		label: t(`settings.soundOutput.${output}`)
+	}))}
+	defaultValue={DEFAULT_PREFERENCES.soundOutput}
+	onChange={(soundOutput) => preferences.update({ soundOutput })}
+/>
 <SettingSlider
 	label={t('settings.soundboardLevel')}
 	value={preferences.current.soundboardLevel}

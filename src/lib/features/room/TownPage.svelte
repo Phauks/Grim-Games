@@ -26,6 +26,7 @@
 	import { sheetTheme } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import { forgetRoom } from './player.svelte.ts';
 	import { rememberRoom } from './recent-rooms.ts';
+	import { listenForTownSounds } from '#lib/features/sound/town-sounds.ts';
 	import { RoomTown } from './town.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
 	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
@@ -55,6 +56,8 @@
 	onMount(() => {
 		if (room) {
 			town = new RoomTown(room, admin);
+			// The Storyteller's soundboard, when Play on includes Town Square (plan U10).
+			if (!admin) town.onSound = listenForTownSounds();
 			// Your games on Join game opens it here again (Trevor, 2026-10-26).
 			if (!admin) rememberRoom(room, undefined, true);
 		}
