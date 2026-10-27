@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { onMount } from 'svelte';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 	import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
@@ -155,7 +156,9 @@
 				{@const rule = character(id)}
 				{#if rule}<CharacterToken character={rule} size={rulesSize} />{/if}
 			{/each}
-			<span class="preview-stack-count" aria-hidden="true">{RULES.length}</span>
+			<span class="preview-stack-count" aria-hidden="true"
+				><CountBadge count={RULES.length} warn /></span
+			>
 		</span>
 	{:else}
 		<ul class="preview-rules" data-testid="preview-rules">
@@ -330,13 +333,8 @@
 		position: absolute;
 		right: 0;
 		bottom: 0;
-		min-width: 1.4em;
-		padding: 0 0.3em;
-		border-radius: var(--radius-full);
-		background: var(--accent);
-		color: var(--on-accent);
-		font: 700 0.75rem / 1.4 var(--font-control);
-		text-align: center;
+		display: flex;
+		font-size: 0.75rem;
 	}
 	.preview-title {
 		position: absolute;

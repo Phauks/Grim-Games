@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { recentDeaths, recentRevivals } from '#lib/core/engine/index.ts';
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
@@ -121,7 +122,7 @@
 			disabled={prevented.length === 0}
 			aria-label={t('day.preventedButton', { count: prevented.length })}
 			title={t('day.preventedButton', { count: prevented.length })}
-			onclick={() => (preventedOpen = true)}>{prevented.length}</Button
+			onclick={() => (preventedOpen = true)}><CountBadge count={prevented.length} /></Button
 		>
 	{/snippet}
 	{#if customInPlay}

@@ -41,8 +41,9 @@ test('the update prompt lists the commits since the running build', async ({ pag
 	await page.goto('/');
 
 	const prompt = page.getByTestId('update-banner');
-	const toggle = prompt.getByRole('button', { name: 'What changed (2)' });
+	const toggle = prompt.getByRole('button', { name: 'What changed' });
 	await expect(toggle).toBeEnabled();
+	await expect(toggle.getByTestId('section-count')).toHaveText('2');
 	await expect(toggle).toHaveAttribute('aria-expanded', 'false');
 	await expect(prompt.getByText('First new change')).toBeHidden();
 

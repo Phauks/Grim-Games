@@ -105,6 +105,9 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-2) var(--space-4);
+		/* The line between the byline and the first section (Trevor, 2026-10-27). */
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--border);
 	}
 	.background-choice {
 		margin-left: auto;

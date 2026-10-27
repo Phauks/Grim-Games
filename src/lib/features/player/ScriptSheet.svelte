@@ -9,6 +9,7 @@
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Snippet } from 'svelte';
@@ -158,7 +159,7 @@
 	{/if}
 {/snippet}
 
-<div class="sheet" data-density={density}>
+{#snippet sections()}
 	{#each groups as group (group.type)}
 		{#snippet list()}
 			<ul>
@@ -219,6 +220,11 @@
 			/>{/snippet}
 		{@render section(t('player.breakdown'), 'play:breakdown', breakdown)}
 	{/if}
+{/snippet}
+
+<!-- On screen the sections stack with the app's one line between them (SectionStack). -->
+<div class="sheet" data-density={density}>
+	{#if flat}{@render sections()}{:else}<SectionStack>{@render sections()}</SectionStack>{/if}
 </div>
 
 {#if jinxFor}
@@ -238,9 +244,9 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-4);
 	}
-	/* A line across the whole sheet where one character type gives way to the next (Trevor,
-	   2026-10-23: "a line that covers the screen to show the delineation"), on screen and in
-	   print. */
+	/* In print, a line across the whole sheet where one character type gives way to the next
+	   (Trevor, 2026-10-23: "a line that covers the screen to show the delineation"); on screen
+	   SectionStack draws it. */
 	.sheet > :global(section + section) {
 		padding-top: var(--space-3);
 		border-top: var(--card-border);

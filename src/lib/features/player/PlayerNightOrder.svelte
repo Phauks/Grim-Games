@@ -7,6 +7,7 @@
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
+	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import type { PlayerNight } from './player-script.ts';
 
@@ -27,8 +28,9 @@
 	}
 </script>
 
-<!-- Who wakes, in order, with TPI's night text (Trevor, 2026-10-15). -->
-<div class="nights">
+<!-- Who wakes, in order, with TPI's night text (Trevor, 2026-10-15). On screen the nights stack
+     as the Script tab's sections do, one line between them (Trevor, 2026-10-27). -->
+{#snippet nightList()}
 	{#each nights as n (n.night)}
 		{@const title = n.night === 'first' ? t('player.firstNight') : t('player.otherNights')}
 		{#snippet list()}
@@ -81,7 +83,10 @@
 			{/if}
 		</section>
 	{/each}
-</div>
+{/snippet}
+{#if flat}<div class="nights">{@render nightList()}</div>{:else}<SectionStack
+		>{@render nightList()}</SectionStack
+	>{/if}
 
 {#if shown}
 	<CharacterDialog bind:open={dialogOpen} character={shown} icon={iconUrl(shown)} />

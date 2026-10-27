@@ -893,7 +893,7 @@ test('New game opens a room for the vote before any game or script', async ({
 	await playRules.tap();
 	await expect(page).toHaveURL(/\/new$/);
 	await expect(ruleBallot).toHaveCount(0);
-	await expect(page.getByRole('button', { name: 'Special rules (2)' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Special rules 2' })).toBeVisible();
 
 	await phoneContext.close();
 });

@@ -46,7 +46,7 @@ test('a game with a special rule restates it, then Character selection; Back kee
 	await setupBar(page).getByRole('button', { name: 'New game' }).tap();
 	await expect(page).toHaveURL(/\/new#back$/);
 	await expect(page.getByRole('main').getByRole('button', { name: /^Special rules/ })).toHaveText(
-		'Special rules (1)'
+		'Special rules 1'
 	);
 });
 

@@ -61,8 +61,12 @@
 		 * still says what is inside (Trevor, 2026-10-19).
 		 */
 		count?: number;
+		/** Shows the count while open too, e.g. a list whose length changes as it is filtered. */
+		countOpen?: boolean;
 		/** Starts closed until opened (e.g. About's Advanced part); remembered like any other. */
 		defaultOpen?: boolean;
+		/** Kept in place but can't open yet, e.g. while what it holds is still loading. */
+		disabled?: boolean;
 		children: Snippet;
 	}
 
@@ -77,7 +81,9 @@
 		aside,
 		asideByTitle = false,
 		count,
+		countOpen = false,
 		defaultOpen = true,
+		disabled = false,
 		children
 	}: Props = $props();
 
@@ -96,11 +102,11 @@
 		if (empty && !wasEmpty) openWhileEmpty = false;
 		wasEmpty = empty;
 	});
-	const shown = $derived(forceOpen || (empty ? openWhileEmpty : open));
+	const shown = $derived(!disabled && (forceOpen || (empty ? openWhileEmpty : open)));
 	const id = $props.id();
 
 	function toggle() {
-		if (forceOpen) return;
+		if (forceOpen || disabled) return;
 		if (empty) {
 			openWhileEmpty = !openWhileEmpty;
 			return;
@@ -112,7 +118,9 @@
 
 <!--
 	A section whose whole header row opens and closes it, with a caret like a menu. Closed
-	sections keep their header, so only the content below moves.
+	sections keep their header, so only the content below moves. Every caret in the app is this
+	one (`grim/caret-section`), so they share one indent, spacing and count badge, and a line
+	above it whenever something sits above it (wrapped ones: SectionStack) (Trevor, 2026-10-27).
 -->
 <section class="collapsible" data-open={shown ? '' : undefined}>
 	<div class="head" data-tone={tone} data-aside-by-title={asideByTitle ? '' : undefined}>
@@ -122,12 +130,13 @@
 				class="toggle"
 				aria-expanded={shown}
 				aria-disabled={forceOpen ? 'true' : undefined}
+				{disabled}
 				aria-controls="{id}-body"
 				onclick={toggle}
 			>
-				<span class="caret" aria-hidden="true"><Icon name="expand" /></span>
+				<span class="caret" aria-hidden="true" data-caret><Icon name="expand" /></span>
 				<span class="label">{title}</span>
-				{#if count !== undefined && !shown}<span
+				{#if count !== undefined && (countOpen || !shown)}<span
 						class="count"
 						aria-hidden="true"
 						data-testid="section-count"><CountBadge {count} /></span
@@ -142,6 +151,11 @@
 </section>
 
 <style>
+	/* A line between it and anything above it in the same box (Trevor, 2026-10-27); a stack of
+	   wrapped sections gets the same line from SectionStack. */
+	.collapsible:not(:first-child) {
+		border-top: 1px solid var(--border);
+	}
 	.head {
 		display: flex;
 		align-items: center;
@@ -188,9 +202,17 @@
 	.toggle[aria-disabled='true'] {
 		cursor: default;
 	}
+	.toggle:disabled {
+		cursor: default;
+		opacity: 0.5;
+	}
+	/* Room under open content before the next section's line. */
+	.body {
+		padding-bottom: var(--space-3);
+	}
 	/* Mouse only: a tap leaves :hover stuck on touch screens, underlining the last title. */
 	@media (hover: hover) {
-		.toggle:not([aria-disabled='true']):hover .label {
+		.toggle:not([aria-disabled='true'], :disabled):hover .label {
 			text-decoration: underline;
 		}
 	}
@@ -208,7 +230,9 @@
 		overflow-wrap: anywhere;
 	}
 	.aside {
+		display: flex;
 		flex: none;
+		align-items: center;
 	}
 	.count {
 		flex: none;

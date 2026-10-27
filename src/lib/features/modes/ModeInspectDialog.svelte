@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import {
 		MODE_PARTS,
 		RULE_PARTS,
@@ -108,17 +109,19 @@
 			</ul>
 		</section>
 
-		<!-- Starts closed: the file is for writing modes, rarely needed when inspecting (Trevor,
-			2026-10-18); shown as a file, with Copy and Download in its header. -->
-		<FileView
-			title={t(isRule ? 'modes.ruleFile' : 'modes.file')}
-			text={file}
-			fileName={fileNameFor(mode.name, mode.id)}
-			copyLabel={t(isRule ? 'modes.copyRuleFile' : 'modes.copyFile')}
-			downloadLabel={t(isRule ? 'modes.downloadRuleFile' : 'modes.downloadFile')}
-			collapsible
-			testid="mode-file-view"
-		/>
+		<!-- Starts closed every time: the file is for writing modes, rarely needed when inspecting
+			(Trevor, 2026-10-18); shown as a file named as it downloads, with Copy and Download in
+			its header. -->
+		<Collapsible title={t(isRule ? 'modes.ruleFile' : 'modes.file')} level={3} startClosed>
+			<FileView
+				title={fileNameFor(mode.name, mode.id)}
+				text={file}
+				fileName={fileNameFor(mode.name, mode.id)}
+				copyLabel={t(isRule ? 'modes.copyRuleFile' : 'modes.copyFile')}
+				downloadLabel={t(isRule ? 'modes.downloadRuleFile' : 'modes.downloadFile')}
+				testid="mode-file-view"
+			/>
+		</Collapsible>
 	</div>
 </Dialog>
 
