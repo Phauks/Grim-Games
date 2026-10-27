@@ -13,7 +13,10 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import { soundboard } from './soundboard.svelte.ts';
+	import SoundPadsDialog from './SoundPadsDialog.svelte';
 
 	/**
 	 * The soundboard's mixer (Trevor 2026-10-27: "more mixing controls"), in Settings > Sound
@@ -22,6 +25,8 @@
 	 * device's volume leads, for the sheet, where Settings' own Volume row isn't.
 	 */
 	let { master = false }: { master?: boolean } = $props();
+
+	let padsOpen = $state(false);
 
 	const mix = $derived(soundMix(preferences.current.soundMixes, soundboard.mixing));
 
@@ -46,6 +51,17 @@
 		defaultValue={DEFAULT_PREFERENCES.soundVolume}
 		onChange={(soundVolume) => preferences.update({ soundVolume })}
 	/>
+{/if}
+{#if !master}
+	<!-- Which sounds and mixes the soundboard shows; on the sheet, its own Edit and "+ New". -->
+	<SettingRow label={t('settings.soundPadsRow')}>
+		{#snippet control(labelId)}
+			<Button icon="edit" aria-describedby={labelId} onclick={() => (padsOpen = true)}
+				>{t('settings.soundPads')}</Button
+			>
+		{/snippet}
+	</SettingRow>
+	<SoundPadsDialog bind:open={padsOpen} />
 {/if}
 <SettingSlider
 	label={t('settings.soundboardLevel')}

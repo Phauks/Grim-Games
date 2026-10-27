@@ -28,9 +28,12 @@ import { DEFAULT_AMBIENCE, parseAmbience } from '#lib/core/sound/ambience.ts';
 import {
 	DEFAULT_ACTION_SOUNDS,
 	parseActionSounds,
+	parsePads,
 	parseSoundMixes,
+	DEFAULT_PADS,
 	type ActionSound,
 	type BoardSoundMix,
+	type SoundPad,
 	type SoundAction
 } from '#lib/core/sound/soundboard.ts';
 
@@ -118,6 +121,8 @@ export interface Preferences {
 	soundboardOverlap: boolean;
 	/** Each soundboard sound's own volume and loop, by sound id; only those changed. */
 	soundMixes: Record<string, BoardSoundMix>;
+	/** The sounds and mixes placed on the soundboard, in order (Trevor, 2026-10-27). */
+	soundPads: SoundPad[];
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
@@ -258,6 +263,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	soundboardLevel: 1,
 	soundboardOverlap: false,
 	soundMixes: {},
+	soundPads: DEFAULT_PADS.map((pad) => ({ ...pad })),
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	timerForPlayers: 'sun',
@@ -357,6 +363,7 @@ export function parsePreferences(raw: unknown): Preferences {
 		),
 		soundboardOverlap: input.soundboardOverlap === true,
 		soundMixes: parseSoundMixes(input.soundMixes),
+		soundPads: parsePads(input.soundPads),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
 			: DEFAULT_PREFERENCES.timerMode,

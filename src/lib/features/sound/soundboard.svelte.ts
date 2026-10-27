@@ -1,5 +1,12 @@
 import type { Gain, Player } from 'tone';
-import { BOARD_SOUNDS, boardSound, boardSoundUrl, soundMix } from '#lib/core/sound/soundboard.ts';
+import {
+	BOARD_SOUNDS,
+	boardSound,
+	boardSoundUrl,
+	padSounds,
+	soundMix,
+	type SoundPad
+} from '#lib/core/sound/soundboard.ts';
 import { keepOffline } from '#lib/features/offline/keep-offline.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { ambience } from './ambience.ts';
@@ -88,26 +95,52 @@ class Soundboard {
 	}
 
 	async play(id: string): Promise<void> {
-		const sound = boardSound(id);
+		return this.playAll([id]);
+	}
+
+	/** Plays a pad: its sound, or every sound in its mix at once. */
+	togglePad(pad: SoundPad): void {
+		const ids = padSounds(pad);
+		if (ids.length === 1) return this.toggle(ids[0]);
+		if (this.isPadPlaying(pad)) {
+			if (this.paused) this.resume();
+			else for (const id of ids) this.stop(id);
+		} else void this.playAll(ids);
+	}
+
+	/** Every sound in the pad is playing, or held by Pause. */
+	isPadPlaying(pad: SoundPad): boolean {
+		return padSounds(pad).every((id) => this.isPlaying(id));
+	}
+
+	/** Plays sounds together, cutting off the others unless sounds may overlap. */
+	async playAll(ids: string[]): Promise<void> {
 		const ctx = audio();
 		this.#endPause();
-		if (preferences.current.soundboardOverlap) this.stop(id);
+		if (preferences.current.soundboardOverlap) for (const id of ids) this.stop(id);
 		else this.stop();
-		if (!sound || !ctx || busLevel() <= 0) return;
+		const sounds = ids.filter((id) => boardSound(id));
+		if (!sounds.length || !ctx || busLevel() <= 0) return;
 		unlockSound();
 		if (!this.#keptOffline) {
 			// Every sound, so a game later on with no signal can still play them all.
 			this.#keptOffline = true;
 			keepOffline(BOARD_SOUNDS.map(boardSoundUrl));
 		}
-		this.#pending.add(id);
+		for (const id of sounds) this.#pending.add(id);
 		this.#mark();
-		const [Tone, data] = await Promise.all([tone(ctx), recording(ctx, boardSoundUrl(sound))]);
-		if (!this.#pending.delete(id) || !Tone || !data) {
-			this.#mark();
-			return;
-		}
-		this.#start(Tone, ctx, id, data, 0);
+		await Promise.all(
+			sounds.map(async (id) => {
+				const sound = boardSound(id);
+				if (!sound) return;
+				const [Tone, data] = await Promise.all([tone(ctx), recording(ctx, boardSoundUrl(sound))]);
+				if (!this.#pending.delete(id) || !Tone || !data) {
+					this.#mark();
+					return;
+				}
+				this.#start(Tone, ctx, id, data, 0);
+			})
+		);
 	}
 
 	#start(Tone: Tone, ctx: AudioContext, id: string, data: AudioBuffer, at: number): void {
