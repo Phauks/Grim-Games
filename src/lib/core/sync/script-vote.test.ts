@@ -253,6 +253,23 @@ describe('a vote on the next script', () => {
 		).not.toHaveProperty('subject');
 	});
 
+	// Trevor, 2026-10-26: "Voting should allow selecting game modes vs scripts, along with
+	// special rules".
+	it('can be on the special rules, which phones are told', () => {
+		const rules = [
+			{ id: 'plus-one', name: '+1' },
+			{ id: 'warrens', name: 'Warrens' }
+		];
+		const r = openScriptVote(room(), 'v1', 'multiple', rules, undefined, 0, 'rules');
+		expect(playerView(r, 'alex').scriptVote?.subject).toBe('rules');
+		expect(hostView(r).scriptVote?.subject).toBe('rules');
+		// Anything else is a script vote, as from apps before.
+		expect(
+			playerView(openScriptVote(room(), 'v1', 'single', rules, undefined, 0, 'other'), 'alex')
+				.scriptVote
+		).not.toHaveProperty('subject');
+	});
+
 	it('runs in the room: phones see it with their own ballot, the Storyteller the count', () => {
 		let r = openScriptVote(room(), 'v1', 'multiple', options);
 		r = castScriptBallot(r, 'alex', 'v1', ['tb', 'bmr']);

@@ -114,13 +114,6 @@
 />
 
 <SettingHeading title={t('settings.groupShare')} />
-<!-- Also on Share, beside the view-only link, where it is used. -->
-<SettingToggle
-	label={t('settings.hideWatchLink')}
-	description={t('settings.hideWatchLinkHelp')}
-	checked={preferences.current.hideWatchLink}
-	onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
-/>
 <!-- Every QR code setting beside a live QR (CLAUDE.md: a setting beside a preview changes it). -->
 <SettingGroup title={t('share.qrPreview')} testid="qr-preview">
 	{#snippet preview()}

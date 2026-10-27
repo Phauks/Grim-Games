@@ -51,7 +51,7 @@ test("the board's Script sheet has the players' tabs, and its Share matches /pla
 	await expect(room).toBeHidden();
 	await (await openScript(page)).getByRole('button', { name: 'Share script' }).tap();
 	await expect(share.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
-	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
+	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	// The offline code is still the script's, made when it is asked for (it threw "Nothing to
 	// share" in a room, Trevor's report 2026-10-26).

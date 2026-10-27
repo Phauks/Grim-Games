@@ -2,19 +2,20 @@
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import RimPill from '#lib/ui/seating/RimPill.svelte';
 	import type { GuessMark } from './grim-guesses.ts';
 
 	/**
 	 * A seat's other guesses on the players' grim (Trevor, 2026-10-25: "a guess on the token,
 	 * an arrow to cycle, and above it to the top right, you see the different icons for the
-	 * characters"): one small icon each in a pill over the token's top-right rim, then the
+	 * characters"): one small icon each, or the player's avatar once it is in the cycle, in a pill over the token's top-right rim, then the
 	 * arrow. The same RimPill as the board's nominations on the top-left rim; the note keeps the
 	 * lower right and the skull the lower left. The whole pill is one tap target: tapping it
 	 * makes the next guess the main one (PlayerGrim). Placed inside SeatDisc's `marks`.
 	 */
 	interface Props {
-		/** The guesses after the main one, in order. */
+		/** The cycle's entries after the front one, in order. */
 		others: readonly GuessMark[];
 	}
 
@@ -27,7 +28,12 @@
 				src={iconUrl(other.character)}
 				alt={other.character.name}
 				data-testid="guess-mark"
-			/>{:else}<span
+			/>{:else if 'avatar' in other}<span
+				class="slot"
+				data-testid="guess-mark"
+				role="img"
+				aria-label={other.label}><AvatarFace avatar={other.avatar} name={other.name} /></span
+			>{:else}<span
 				class="slot generic"
 				data-team={other.generic.team}
 				data-testid="guess-mark"

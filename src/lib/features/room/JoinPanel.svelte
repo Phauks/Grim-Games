@@ -67,6 +67,14 @@
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
 	let typed = $state('');
+	// The room's link and QR open Join game with its code filled in (Trevor, 2026-10-26), so
+	// the person picks Join as player, Grim view or Public Town.
+	// Once, as the panel opens: what is typed after is the person's own.
+	untrack(() => {
+		if (code !== undefined || !entry || typeof location === 'undefined') return;
+		const fromLink = normaliseRoomCode(location.hash.slice(1));
+		if (fromLink) typed = fromLink;
+	});
 
 	$effect(() => {
 		if (!valid) return;
@@ -239,8 +247,8 @@
 	}
 
 	/*
-	 * Scan a code (plan J2, 2026-10-22): the Share screen's QR code read in the app, as the
-	 * players link or the Grim view link it holds, or a room code on its own.
+	 * Scan a code (plan J2, 2026-10-22): the Share screen's QR code read in the app, or an
+	 * older players or Grim view link, or a room code on its own.
 	 */
 	let scanning = $state(false);
 	let scanProblem = $state('');
