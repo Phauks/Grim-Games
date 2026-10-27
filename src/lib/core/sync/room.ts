@@ -33,10 +33,16 @@ import {
 	type PictureReportView,
 	type RoomPictures
 } from './room-pictures.ts';
+import { withoutMessages, type PlayerMessage } from './room-messages.ts';
 import { numberedNames, withNumberedNames } from './room-names.ts';
 import { MAX_MEMBERS } from './room-presence.ts';
 
-export { isSharedGrimoire, MAX_GRIMOIRE_BYTES, type SharedGrimoire } from './shared-grimoire.ts';
+export {
+	isSharedGrimoire,
+	MAX_GRIMOIRE_BYTES,
+	setViewers,
+	type SharedGrimoire
+} from './shared-grimoire.ts';
 export { join, markHere, MAX_MEMBERS } from './room-presence.ts';
 export const MAX_PLAYER_NAME_LENGTH = 40;
 /** A script's own characters (homebrew) carry their text and images, so it can be large. */
@@ -109,6 +115,10 @@ export interface RoomState {
 	storytellerBuiltAt?: string;
 	/** Reports of players' pictures and the Storyteller's verdicts, this game (room-pictures.ts). */
 	pictures?: RoomPictures;
+	/** Players' messages to the Storyteller, this game (room-messages.ts). */
+	messages?: PlayerMessage[];
+	/** The Storyteller's app shows messages, so phones may send them. */
+	inbox?: true;
 }
 
 /**
@@ -157,6 +167,8 @@ export type ClientMessage =
 			protocol?: number;
 			/** When this app's build was made (ISO); the Storyteller's is passed on to phones. */
 			builtAt?: string;
+			/** From the Storyteller: its app shows players' messages (room-messages.ts). */
+			inbox?: boolean;
 	  }
 	// From a player.
 	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
@@ -166,6 +178,7 @@ export type ClientMessage =
 	| { type: 'look'; avatar?: string; frame?: string; picture?: string }
 	/** Reports the picture on another player's seat to the Storyteller (2026-10-27). */
 	| { type: 'report-picture'; seatId: SeatId }
+	| { type: 'message'; text: string } // A message to the Storyteller (2026-10-27).
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
 	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
@@ -232,6 +245,7 @@ export type ClientMessage =
 	| ({ type: 'town-sound' } & TownSoundCommand)
 	/** Lets a reported picture stand, or takes that player's picture away for this game. */
 	| { type: 'judge-picture'; hash: string; allow: boolean }
+	| { type: 'read-messages'; ids: string[] } // The Storyteller opened these messages.
 	| { type: 'close' };
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
@@ -241,6 +255,7 @@ export * from './room-version.ts';
 export * from './room-sound.ts';
 export { setLook } from './room-look.ts';
 export { judgePicture, reportPicture } from './room-pictures.ts';
+export { readMessages, sendMessage, setInbox, type PlayerMessage } from './room-messages.ts';
 export {
 	castScriptBallot,
 	closeScriptVote,
@@ -276,6 +291,7 @@ export interface HostView {
 	away?: string[];
 	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
 	pictureReports?: PictureReportView[]; // Pictures other phones reported, for a verdict.
+	messages?: PlayerMessage[]; // Players' messages this game, oldest first.
 }
 
 export interface VoteTally {
@@ -337,6 +353,7 @@ export interface PlayerView {
 	};
 	role?: SeatRole; // This player's own character, while players may see theirs.
 	pictures?: Partial<Record<SeatId, string>>; // Each seat's player's picture (room-pictures.ts).
+	inbox?: true; // The Storyteller's app takes messages, so this phone may send one.
 }
 
 /**
@@ -396,14 +413,6 @@ export type ServerMessage =
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 
-/** Back to town calls closer together than this are dropped, so phones don't keep ringing. */
-export const CALL_TOWN_GAP_MS = 5000;
-
-/** Whether a Back to town call at `now` goes out, given when the last one did. */
-export function canCallTown(last: number | undefined, now: number): boolean {
-	return last === undefined || now - last >= CALL_TOWN_GAP_MS;
-}
-
 /**
  * `too-old`: the app must update before it can use the room; the room itself is fine.
  * `not-viewer`: the view-only link is off, or was replaced by a newer one, or the password
@@ -461,6 +470,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (room.roles) view.rolesSeen = seatsSeen(room);
 	const reports = pictureReports(room);
 	if (reports.length) view.pictureReports = reports;
+	if (room.messages?.length) view.messages = room.messages;
 	return view;
 }
 
@@ -544,6 +554,7 @@ export function playerView(
 	}
 	const pictures = seatPictures(room.members);
 	if (Object.keys(pictures).length) view.pictures = pictures;
+	if (room.inbox) view.inbox = true;
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
 		view.vote = { voteId: room.vote.voteId, options: room.vote.options };
@@ -660,7 +671,9 @@ export function publish(
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
 	const base = newGame
-		? withoutPictureVerdicts(closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)))
+		? withoutMessages(
+				withoutPictureVerdicts(closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)))
+			)
 		: room;
 	return {
 		...base,
@@ -767,23 +780,6 @@ export function setChoosing(room: RoomState, on: unknown): RoomState {
 	const { choosing: _off, ...rest } = room;
 	void _off;
 	return rest;
-}
-
-/**
- * Turns the view-only link on (a SHA-256 hex hash) or off (`null`); anything else is ignored.
- * `password` says the key was made from a Grim view password.
- */
-export function setViewers(room: RoomState, keyHash: unknown, password?: unknown): RoomState {
-	const { viewerKeyHash: _off, viewerPassword: _password, ...rest } = room;
-	void _off;
-	void _password;
-	if (keyHash === null) return rest;
-	if (typeof keyHash !== 'string' || !/^[0-9a-f]{64}$/.test(keyHash)) return room;
-	return {
-		...rest,
-		viewerKeyHash: keyHash,
-		...(password === true ? { viewerPassword: true } : {})
-	};
 }
 
 /** Parses a socket message; anything malformed is `null` and ignored. */

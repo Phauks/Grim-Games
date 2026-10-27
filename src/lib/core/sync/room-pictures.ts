@@ -40,6 +40,8 @@ export interface PictureReportView {
 	hash: string;
 	memberId: string;
 	count: number;
+	/** When it was first reported, to sit among players' messages; older rooms leave it out. */
+	at?: number;
 }
 
 const NONE: RoomPictures = { reports: [], allowed: [], revoked: [] };
@@ -122,7 +124,7 @@ export function pictureReports(room: RoomState): PictureReportView[] {
 			room.members.some((m) => m.memberId === r.memberId && m.picture === r.hash)
 		)
 		.sort((a, b) => a.at - b.at)
-		.map((r) => ({ hash: r.hash, memberId: r.memberId, count: r.reporters.length }));
+		.map((r) => ({ hash: r.hash, memberId: r.memberId, count: r.reporters.length, at: r.at }));
 }
 
 /** A new game: every report and verdict belonged to the last one. */

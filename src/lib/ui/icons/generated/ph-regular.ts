@@ -24,6 +24,7 @@ import ph_caret_down from '~icons/ph/caret-down';
 import ph_caret_left from '~icons/ph/caret-left';
 import ph_caret_right from '~icons/ph/caret-right';
 import ph_caret_up from '~icons/ph/caret-up';
+import ph_chat_text from '~icons/ph/chat-text';
 import ph_check from '~icons/ph/check';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
 import ph_circle_notch from '~icons/ph/circle-notch';
@@ -136,6 +137,7 @@ const icons: IconMap = {
 	'ph:caret-left': ph_caret_left,
 	'ph:caret-right': ph_caret_right,
 	'ph:caret-up': ph_caret_up,
+	'ph:chat-text': ph_chat_text,
 	'ph:check': ph_check,
 	'ph:circle-dashed': ph_circle_dashed,
 	'ph:circle-notch': ph_circle_notch,

@@ -33,6 +33,7 @@ import ph_dice_five from '~icons/ph/dice-five';
 import ph_door_open from '~icons/ph/door-open';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_drop from '~icons/ph/drop';
+import ph_envelope_simple from '~icons/ph/envelope-simple';
 import ph_eye_closed from '~icons/ph/eye-closed';
 import ph_feather from '~icons/ph/feather';
 import ph_file_arrow_down from '~icons/ph/file-arrow-down';
@@ -141,6 +142,7 @@ const icons: IconMap = {
 	'ph:door-open': ph_door_open,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
 	'ph:drop': ph_drop,
+	'ph:envelope-simple': ph_envelope_simple,
 	'ph:eye-closed': ph_eye_closed,
 	'ph:feather': ph_feather,
 	'ph:file-arrow-down': ph_file_arrow_down,

@@ -66,3 +66,11 @@ export function parseTownSound(raw: unknown): TownSoundCommand | null {
 			return null;
 	}
 }
+
+/** Back to town calls closer together than this are dropped, so phones don't keep ringing. */
+export const CALL_TOWN_GAP_MS = 5000;
+
+/** Whether a Back to town call at `now` goes out, given when the last one did. */
+export function canCallTown(last: number | undefined, now: number): boolean {
+	return last === undefined || now - last >= CALL_TOWN_GAP_MS;
+}

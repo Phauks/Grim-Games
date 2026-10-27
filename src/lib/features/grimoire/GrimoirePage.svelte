@@ -12,7 +12,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { Grimoire } from './grimoire.svelte.ts';
 	import GrimoireBoard from './GrimoireBoard.svelte';
-	import PictureReportDialog from '#lib/features/room/PictureReportDialog.svelte';
+	import InboxDialog from '#lib/features/room/InboxDialog.svelte';
 
 	interface Props {
 		gameId: GameId;
@@ -61,8 +61,8 @@
 		{:else}
 			<ErrorBoundary area="grimoire">
 				<GrimoireBoard grimoire={board} />
-				<!-- Players' pictures other phones reported, for the Storyteller's verdict. -->
-				<PictureReportDialog />
+				<!-- Players' messages and reported pictures, from the toolbar or ⋯ (Trevor, 2026-10-27). -->
+				<InboxDialog game={board.game} />
 			</ErrorBoundary>
 		{/if}
 	{/snippet}

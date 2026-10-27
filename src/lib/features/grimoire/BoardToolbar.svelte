@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { prepareRoom } from '#lib/features/room/host.svelte.ts';
+	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
+	import { inboxDialog } from '#lib/features/room/inbox-dialog.svelte.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -46,6 +49,9 @@
 		onMore,
 		lead
 	}: Props = $props();
+	const host = roomHost();
+	/** Players' messages and reported pictures still to see (Trevor, 2026-10-27). */
+	const unread = $derived(host.code ? host.inbox.unread : 0);
 </script>
 
 <!-- Left out of the board's picture (screenshot.ts): it is the app's, not the game's. -->
@@ -114,8 +120,30 @@
 			onpointerdown={prepareRoom}
 			onclick={onShare}><span class="tool-label">Share</span></Button
 		>
-		<Button variant="quiet" icon="more" aria-label="More" disabled={!menu} onclick={onMore}
-			><span class="tool-label">More</span></Button
+		<!-- Players' messages and reported pictures (Trevor, 2026-10-27), while the room is open;
+		     always in place, so opening the room moves nothing. Phones find it in More. -->
+		<span class="messages">
+			<Button
+				variant="quiet"
+				icon="messages"
+				aria-label={unread ? t('room.inbox.unread', { count: unread }) : t('room.inbox.title')}
+				disabled={watching || !host.code}
+				data-testid="toolbar-messages"
+				onclick={() => inboxDialog.show()}
+				><span class="tool-label">{t('room.inbox.title')}</span>{#if unread}<span class="count"
+						><CountBadge count={unread} warn /></span
+					>{/if}</Button
+			>
+		</span>
+		<Button
+			variant="quiet"
+			icon="more"
+			aria-label={unread ? `More, ${t('room.inbox.unread', { count: unread })}` : 'More'}
+			disabled={!menu}
+			onclick={onMore}
+			><span class="tool-label">More</span>{#if unread}<span class="count more-count"
+					><CountBadge count={unread} warn /></span
+				>{/if}</Button
 		>
 	{/if}
 </div>
@@ -171,11 +199,35 @@
 			display: none;
 		}
 	}
+	.messages {
+		display: contents;
+	}
 	@media (max-width: 479.98px) {
 		/* On a phone the arranging controls need the whole bar. */
 		.arranging-title {
 			display: none;
 		}
+		/* Eight buttons don't fit a phone: Messages is in More, which carries its count. */
+		.messages {
+			display: none;
+		}
+	}
+	@media (min-width: 480px) {
+		.more-count {
+			display: none;
+		}
+	}
+	/* A count on a button's corner, so the button keeps its size. */
+	.toolbar :global(.button:has(> .count)) {
+		position: relative;
+		overflow: visible;
+	}
+	.count {
+		position: absolute;
+		top: calc(-1 * var(--space-1));
+		right: calc(-1 * var(--space-1));
+		font-size: 0.75rem;
+		pointer-events: none;
 	}
 	/* Solid, so the board's background never shows through; the day timer on the board has
 	   the same fill and edge (Trevor, 2026-10-23). A hover still shows its wash. */

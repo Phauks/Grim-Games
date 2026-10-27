@@ -42,6 +42,7 @@ import ph_caret_right_light from '~icons/ph/caret-right-light';
 import ph_caret_up_light from '~icons/ph/caret-up-light';
 import ph_cat_light from '~icons/ph/cat-light';
 import ph_chat_centered_text_light from '~icons/ph/chat-centered-text-light';
+import ph_chat_text_light from '~icons/ph/chat-text-light';
 import ph_check_light from '~icons/ph/check-light';
 import ph_check_square_light from '~icons/ph/check-square-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
@@ -69,6 +70,7 @@ import ph_dots_three_light from '~icons/ph/dots-three-light';
 import ph_dots_three_vertical_light from '~icons/ph/dots-three-vertical-light';
 import ph_download_simple_light from '~icons/ph/download-simple-light';
 import ph_drop_light from '~icons/ph/drop-light';
+import ph_envelope_simple_light from '~icons/ph/envelope-simple-light';
 import ph_eraser_light from '~icons/ph/eraser-light';
 import ph_eye_light from '~icons/ph/eye-light';
 import ph_eye_closed_light from '~icons/ph/eye-closed-light';
@@ -260,6 +262,7 @@ const icons: IconMap = {
 	'ph:caret-up-light': ph_caret_up_light,
 	'ph:cat-light': ph_cat_light,
 	'ph:chat-centered-text-light': ph_chat_centered_text_light,
+	'ph:chat-text-light': ph_chat_text_light,
 	'ph:check-light': ph_check_light,
 	'ph:check-square-light': ph_check_square_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
@@ -287,6 +290,7 @@ const icons: IconMap = {
 	'ph:dots-three-vertical-light': ph_dots_three_vertical_light,
 	'ph:download-simple-light': ph_download_simple_light,
 	'ph:drop-light': ph_drop_light,
+	'ph:envelope-simple-light': ph_envelope_simple_light,
 	'ph:eraser-light': ph_eraser_light,
 	'ph:eye-light': ph_eye_light,
 	'ph:eye-closed-light': ph_eye_closed_light,
