@@ -304,8 +304,9 @@
 	}
 	.corner-title {
 		position: absolute;
-		left: var(--space-1);
-		bottom: var(--space-1);
+		/* Clear of the camera and corners when its part fills the screen (FullScreenStage). */
+		left: var(--edge-left, var(--space-1));
+		bottom: var(--edge-bottom, var(--space-1));
 		z-index: 1;
 		display: grid;
 		/* Until the board is measured; then as wide as the corner's room (corner-room.ts). */

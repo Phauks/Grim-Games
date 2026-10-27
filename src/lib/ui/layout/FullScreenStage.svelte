@@ -43,29 +43,30 @@
 		position: relative;
 	}
 	/* Over the app, the status bar's strip included (Trevor's Pixel, 2026-10-27: "Unable to
-	   close", the strip hid the corner), under the lowest dialog or sheet. Clear of the
-	   camera and the screen's rounded corners (Trevor's phone, 2026-10-27: "too high up and
-	   overlap with camera area", the bottom left "too close to corner of phone"). */
+	   close", the strip hid the corner), under the lowest dialog or sheet. The board runs to
+	   the screen's edges, under the camera too; only its text and controls step in, by what
+	   the phone reports for its camera and home bar, with a gutter for the rounded corners
+	   (Trevor, 2026-10-27: a margin all round "was a bit much ... moving out text and
+	   controls"). Corner text reads the same --edge-* values (BoardCorner). */
 	.stage[data-filled] {
-		--inset-top: max(var(--app-top), var(--space-4));
-		--inset-right: max(env(safe-area-inset-right), var(--space-4));
-		--inset-bottom: max(env(safe-area-inset-bottom), var(--space-4));
-		--inset-left: max(env(safe-area-inset-left), var(--space-4));
+		--edge-top: var(--app-top);
+		--edge-right: max(env(safe-area-inset-right), var(--space-4));
+		--edge-bottom: max(env(safe-area-inset-bottom), var(--space-4));
+		--edge-left: max(env(safe-area-inset-left), var(--space-4));
 		position: fixed;
 		inset: 0;
 		z-index: calc(var(--z-raised) + 1);
-		box-sizing: border-box;
-		padding: var(--inset-top) var(--inset-right) var(--inset-bottom) var(--inset-left);
 		background: var(--surface);
 	}
 	.stage[data-filled] > :global(:not(.corner)) {
 		height: 100%;
+		border-radius: 0;
 	}
 	/* The board's corner lines are top left, so these go top right. */
 	.corner {
 		position: absolute;
-		top: calc(var(--inset-top, 0rem) + var(--space-2));
-		right: calc(var(--inset-right, 0rem) + var(--space-2));
+		top: calc(var(--edge-top, 0rem) + var(--space-2));
+		right: var(--edge-right, var(--space-2));
 		z-index: 1;
 		display: flex;
 		align-items: center;
