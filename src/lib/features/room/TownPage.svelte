@@ -18,6 +18,7 @@
 	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import FullScreenButton from '#lib/ui/primitives/FullScreenButton.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
@@ -177,7 +178,12 @@
 				     line is gone, so the game's status sits beside it. -->
 				{#if stage}<div class="full-screen">
 						{#if inFullScreen && phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
-						<span class="full-screen-button"><FullScreenButton target={stage} /></span>
+						<!-- Its place kept for settings to come (Trevor, 2026-10-26: "pre-emptively place
+						     a setting cog next to full screen"); there are none yet. -->
+						<span class="town-button"
+							><IconButton icon="settings" label={t('room.town.settings')} disabled /></span
+						>
+						<span class="town-button"><FullScreenButton target={stage} /></span>
 					</div>{/if}
 				<PlayerGrim
 					{script}
@@ -234,7 +240,7 @@
 		align-items: center;
 		gap: var(--space-2);
 	}
-	.full-screen-button {
+	.town-button {
 		border-radius: 50%;
 		background: var(--board-bar-background);
 	}
