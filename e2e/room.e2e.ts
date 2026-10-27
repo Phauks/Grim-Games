@@ -1910,20 +1910,18 @@ test("a player's Grim fills the screen from its own corner, and a seat's sheet o
 		() => !document.elementFromPoint(innerWidth / 2, 8)?.closest('[data-filled]')
 	);
 	expect(stripCovered).toBe(false);
-	// The screen, less a margin clear of the camera and the rounded corners (Trevor's phone,
-	// 2026-10-27), with Full screen inside the town's own corner.
+	// The whole screen, under the camera too; only the text and controls step in, clear of the
+	// camera and the rounded corners (Trevor, 2026-10-27: "moving out text and controls").
 	const filled = (await town.boundingBox())!;
 	const screen = phone.viewportSize()!;
-	const margin = filled.x;
-	expect(margin).toBeGreaterThanOrEqual(12);
-	expect(margin).toBeLessThan(screen.width * 0.1);
-	// Below the camera's strip at the top; one margin on the other sides.
-	expect(Math.round(filled.y)).toBe(48);
-	expect(Math.round(filled.width)).toBe(Math.round(screen.width - 2 * margin));
-	expect(Math.round(filled.height)).toBe(Math.round(screen.height - 48 - margin));
-	const inside = (await fullScreen.boundingBox())!;
-	expect(inside.y).toBeGreaterThan(filled.y);
-	expect(inside.x + inside.width).toBeLessThan(filled.x + filled.width);
+	expect(Math.round(filled.x)).toBe(0);
+	expect(Math.round(filled.y)).toBe(0);
+	expect(Math.round(filled.width)).toBe(screen.width);
+	expect(Math.round(filled.height)).toBe(screen.height);
+	expect(screen.width - (exit.x + exit.width)).toBeGreaterThanOrEqual(12);
+	const title = (await phone.getByTestId('script-title').boundingBox())!;
+	expect(title.x).toBeGreaterThanOrEqual(12);
+	expect(screen.height - (title.y + title.height)).toBeGreaterThanOrEqual(12);
 	// A seat's sheet still opens over it.
 	await phone.getByTestId('grim-seat').nth(2).tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
