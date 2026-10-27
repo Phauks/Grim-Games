@@ -1520,7 +1520,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Board', exact: true })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
@@ -1533,7 +1533,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Board', exact: true })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	await settings.getByLabel('Background image file').setInputFiles({
 		name: 'table.png',

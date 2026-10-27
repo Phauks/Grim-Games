@@ -83,9 +83,16 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Sound', exact: true })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
+	// ⋯ > Settings opens all of Settings at Board; phones go back to the list first.
+	const back = settings.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Sound' })
+		.tap();
 	const dusk = settings.getByRole('combobox', { name: 'Dusk' });
 	await expect(dusk).toContainText('Temple bell');
 	await expect(dusk).toBeDisabled();

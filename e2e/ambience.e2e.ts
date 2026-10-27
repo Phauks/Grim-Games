@@ -18,13 +18,20 @@ test('day and night sound plays recordings on the board once the night begins', 
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 
-	// From the board's ⋯, beside the board's other settings.
+	// From the board's ⋯ > Settings, which opens all of Settings (Trevor, 2026-10-27).
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Sound', exact: true })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
+	// Phones show one section at a time: back to the list first.
+	const back = settings.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Sound' })
+		.tap();
 	await expect(settings.getByRole('heading', { name: 'Day and night sound' })).toBeVisible();
 	const on = settings.getByRole('checkbox', { name: 'Play on the board' });
 	await expect(on).not.toBeChecked();
