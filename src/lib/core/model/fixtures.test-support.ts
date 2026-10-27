@@ -106,6 +106,25 @@ export function run(
 	return { ...current, warnings };
 }
 
+/** The codes of a decision's warnings. */
+export function codes(decision: { warnings: { code: string }[] }): string[] {
+	return decision.warnings.map((w) => w.code);
+}
+
+/** The code a refused command gives; throws if it was accepted. */
+export function refused(session: GameSession, ctx: EngineContext, command: Command): string {
+	const result = dispatch(session, command, ctx);
+	if (result.ok) throw new Error(`${command.type} was accepted`);
+	return result.error.code;
+}
+
+/** The warning codes an accepted command gives; throws if it was refused. */
+export function warned(session: GameSession, ctx: EngineContext, command: Command): string[] {
+	const result = dispatch(session, command, ctx);
+	if (!result.ok) throw new Error(`${command.type} refused: ${result.error.message}`);
+	return codes(result);
+}
+
 /** A new game with named seats, in seating order. */
 export function newGame(
 	names: string[] | number,
