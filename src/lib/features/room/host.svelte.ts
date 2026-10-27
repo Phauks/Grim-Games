@@ -8,17 +8,15 @@
  * with the phone's name (an ordinary command, in History). After that, a seated player's name,
  * avatar and frame (plan R6) go on their seat as they change them, also as ordinary commands.
  */
-import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import { buildInfo } from '#lib/build-info.ts';
 import { toSavedGame } from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
 import type { GamePhase, PlayersPhase } from '#lib/core/rules/game-phase.ts';
-import {
-	publicProjection,
-	type PublicCorner,
-	type PublicLook,
-	type PublicGameState
+import type {
+	PublicCorner,
+	PublicLook,
+	PublicGameState
 } from '#lib/core/sync/public-projection.ts';
 import { seatChanges } from '#lib/core/sync/room-seating.ts';
 import {
@@ -48,7 +46,7 @@ import { uploadRoomImage } from './room-images.ts';
 import { roomImagePath } from '#lib/core/sync/room-images.ts';
 import type { PictureReportView } from '#lib/core/sync/room-pictures.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
-import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
+import { tableState } from './table-state.svelte.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
 import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 
@@ -312,7 +310,7 @@ export class RoomHost {
 					saved: saved as unknown as Record<string, unknown>,
 					...(notes?.() ?? storedNotes(game.game.gameId)),
 					timer: liveDayTimer.shared,
-					...this.#lookOf(game.game.gameId),
+					...this.lookOf(game.game.gameId),
 					...this.#aspectOf(game.game.gameId)
 				});
 			});
@@ -320,17 +318,12 @@ export class RoomHost {
 				// Where the board draws the seats, so phones draw the town the same way (plan J13).
 				const layout = notes ? parseSeatLayout(notes().layout) : seatLayouts.read(game.game.gameId);
 				const corner = this.#corner?.gameId === game.game.gameId ? this.#corner.corner : undefined;
-				const now = this.#playersPhase(game.game.gameId);
-				const state = publicProjection(
+				const state = tableState(
+					this,
 					game.game,
-					publicTravellerTest(game.game.gameId, game.characters),
-					{ ...layout, ...this.#aspectOf(game.game.gameId) },
-					corner,
 					game.characters,
-					gameSheetRules(game.game.gameId),
-					now?.kind === 'day' ? liveDayTimer.forPlayers : undefined,
-					now,
-					this.#lookOf(game.game.gameId).look
+					{ ...layout, ...this.#aspectOf(game.game.gameId) },
+					corner
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
@@ -401,7 +394,8 @@ export class RoomHost {
 			.catch(() => undefined);
 	}
 
-	#lookOf(gameId: string): { look?: PublicLook } {
+	/** The board's look, while it is this game's (showLook). */
+	lookOf(gameId: string): { look?: PublicLook } {
 		if (this.#look?.gameId !== gameId) return {};
 		const { look } = this.#look;
 		const uploaded = this.#uploaded;
@@ -462,7 +456,7 @@ export class RoomHost {
 	}
 
 	/** The board's phase, with a day called Back to town shown as Town (plan J29). */
-	#playersPhase(gameId: string): PlayersPhase | undefined {
+	playersPhase(gameId: string): PlayersPhase | undefined {
 		const phase = this.#phase?.gameId === gameId ? this.#phase.phase : undefined;
 		if (phase?.kind !== 'day') return phase;
 		const town = this.#town?.gameId === gameId && this.#town.number === phase.number;
@@ -524,7 +518,7 @@ export class RoomHost {
 			grimoire: {
 				saved: saved as unknown as Record<string, unknown>,
 				...(notes ?? storedNotes(gameId)),
-				...this.#lookOf(gameId),
+				...this.lookOf(gameId),
 				...this.#aspectOf(gameId)
 			}
 		} as const;
