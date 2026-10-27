@@ -1,4 +1,7 @@
 {
+	"impairs": {
+		"clears": ["Sober & Healthy"]
+	},
 	"reminderTargets": {
 		"Sober & Healthy": {
 			"seat": "any",

@@ -71,3 +71,8 @@ export function reportsMarkdown(
 export function reportsFileName(exportedAt: number): string {
 	return `reports-${new Date(exportedAt).toISOString().slice(0, 10)}.md`;
 }
+
+/** `report-12.md`. */
+export function reportFileName(id: number): string {
+	return `report-${id}.md`;
+}

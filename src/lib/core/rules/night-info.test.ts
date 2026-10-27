@@ -274,7 +274,7 @@ describe('Undertaker', () => {
 	it('marks the answer unreliable when the Undertaker is poisoned', () => {
 		const { game: g, seats } = game(
 			tb,
-			(s) => ({ type: 'Execute', seatId: s[4] }),
+			(s) => ({ type: 'Execute', seatId: s[2] }),
 			(s) => ({
 				type: 'AddReminder',
 				seatId: s[0],
@@ -282,9 +282,25 @@ describe('Undertaker', () => {
 			})
 		);
 		expect(answerOf(g, seats[0], 'undertaker', characters)).toMatchObject({
-			value: 'poisoner',
+			value: 'slayer',
 			unreliable: 'poisoned'
 		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Abilities: a dead Poisoner's poison ends at once.
+	it('is reliable again once the Poisoner who poisoned them is executed', () => {
+		const { game: g, seats } = game(
+			tb,
+			(s) => ({
+				type: 'AddReminder',
+				seatId: s[0],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			}),
+			(s) => ({ type: 'Execute', seatId: s[4] })
+		);
+		const answer = answerOf(g, seats[0], 'undertaker', characters);
+		expect(answer).toMatchObject({ value: 'poisoner' });
+		expect(answer).not.toHaveProperty('unreliable');
 	});
 
 	// https://wiki.bloodontheclocktower.com/Exile: exile is not an execution.

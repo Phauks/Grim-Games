@@ -1644,11 +1644,16 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Game time ticks, so it is read as the board shows it, not to the second.
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
-	// The phone works out the players and the split by type itself, over the town (Trevor,
-	// 2026-10-26: so players don't have to), whatever the board's corner shows.
-	await expect(phone.getByTestId('grim-counts')).toHaveText(
-		'Players: 8 (5 Townsfolk, 1 Outsider, 1 Minion, 1 Demon)'
-	);
+	// No count of its own over the town (Trevor, 2026-10-27: "remove character count"), and
+	// the Grim tab's controls sit on the town's bottom right corner, so no strip goes on them.
+	await expect(phone.getByTestId('grim-counts')).toHaveCount(0);
+	const town = (await phone.getByTestId('player-grim').boundingBox())!;
+	for (const control of ['hide-guesses', 'match-shape']) {
+		const box = (await phone.getByTestId(control).boundingBox())!;
+		expect(box.y, control).toBeGreaterThan(town.y + town.height * 0.8);
+		expect(box.y + box.height, control).toBeLessThanOrEqual(town.y + town.height);
+		expect(box.x, control).toBeGreaterThan(town.x + town.width * 0.5);
+	}
 	// Each corner line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
 	const info = await openGameInfo(page);
 	await info.getByRole('button', { name: 'Author on the board' }).tap();

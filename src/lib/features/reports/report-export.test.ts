@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { MessageKey } from '#lib/i18n/catalog.ts';
-import { reportMarkdown, reportsFileName, reportsMarkdown } from './report-export.ts';
+import {
+	reportFileName,
+	reportMarkdown,
+	reportsFileName,
+	reportsMarkdown
+} from './report-export.ts';
 import type { Report } from './reports-protocol.ts';
 
 const label = (key: MessageKey) => key;
@@ -49,5 +54,6 @@ describe('reports as Markdown (Trevor, 2026-10-27)', () => {
 		expect(text.startsWith('# reports.inbox (2), 2026-10-27T00:00:00.000Z')).toBe(true);
 		expect(text.match(/\n---\n/g)).toHaveLength(2);
 		expect(reportsFileName(at)).toBe('reports-2026-10-27.md');
+		expect(reportFileName(12)).toBe('report-12.md');
 	});
 });

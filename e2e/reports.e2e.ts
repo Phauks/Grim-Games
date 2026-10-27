@@ -58,22 +58,19 @@ test('a report sent from the menu reaches the inbox, where it can be triaged and
 	]);
 	await page.getByRole('option', { name: 'In progress' }).tap();
 	await report.getByRole('button', { name: 'Close' }).first().tap();
-	// Admins start filtered to New, so a report being worked on leaves the list.
-	await expect(row).toBeHidden();
+	// The list starts with no filter on (Trevor, 2026-10-27), so it stays, now In progress.
 	await expect(report).toBeHidden();
-	await table.getByRole('button', { name: 'Filter Status (set)' }).tap();
+	await expect(row).toContainText('In progress');
+	await expect(table.getByRole('button', { name: 'Filter Status (set)' })).toHaveCount(0);
+	await table.getByRole('button', { name: 'Filter Status' }).tap();
 	const status = page.getByRole('dialog', { name: 'Filter Status' });
-	// New may have no rows left: unticked, it leaves the list, so it is tapped, not unchecked.
-	await status.getByLabel('New').click();
 	await status.getByLabel('In progress').check();
 	await status.getByRole('button', { name: 'Close' }).tap();
 	await expect(row).toBeVisible();
 
-	// Still an admin after a reload; delete confirms first.
+	// Still an admin after a reload, with no filter on again; delete confirms first.
 	await page.reload();
-	await table.getByRole('button', { name: 'Filter Status (set)' }).tap();
-	await status.getByLabel('New').click();
-	await status.getByRole('button', { name: 'Close' }).tap();
+	await expect(table.getByRole('button', { name: 'Filter Status (set)' })).toHaveCount(0);
 	await row.getByRole('button', { name: title }).tap();
 	await page.getByRole('button', { name: 'Delete report' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
@@ -270,6 +267,14 @@ test('reports copy and download as Markdown, to hand off', async ({ page, contex
 	expect(copied).toContain('The bag forgets the Drunk.');
 	expect(copied).toContain('- Build: ');
 	expect(copied).toContain('- Device: ');
+	// Each report also downloads on its own (Trevor, 2026-10-27).
+	const [one] = await Promise.all([
+		page.waitForEvent('download'),
+		report.getByRole('button', { name: 'Download', exact: true }).tap()
+	]);
+	expect(one.suggestedFilename()).toMatch(/^report-\d+\.md$/);
+	const oneFile = await (await import('node:fs/promises')).readFile(await one.path(), 'utf8');
+	expect(oneFile).toBe(`${copied}\n`);
 	await report.getByRole('button', { name: 'Close' }).first().tap();
 
 	const [download] = await Promise.all([
