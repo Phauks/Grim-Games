@@ -1359,7 +1359,7 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	// On, it comes with a password of its own for this game.
 	await watch.getByText('Grim view', { exact: true }).tap();
 	await expect(password).toBeEnabled();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	const made = await password.inputValue();
 	const eye = watch.getByRole('button', { name: 'Show password' });
 	await eye.tap();
@@ -1404,7 +1404,7 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	const next = await startGame(page);
 	await page.goto(`${next}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	expect(await password.inputValue()).not.toBe('lantern');
 	expect(await password.inputValue()).not.toBe(made);
 	await phoneContext.close();
@@ -1433,7 +1433,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(toggle).not.toBeChecked();
 	await expect(password).toHaveValue('');
 	await flip();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	const made = await password.inputValue();
 
 	const viewerContext = await browser.newContext({ ...testInfo.project.use });
@@ -1514,7 +1514,10 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	// The board's background is the Storyteller's, not the viewer's own (Trevor, 2026-10-26).
 	await expect(viewer.getByTestId('board-background')).toHaveCount(0);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
@@ -1524,7 +1527,10 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(viewer.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	// A picture of the Storyteller's own reaches it through the room too.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	await settings.getByLabel('Background image file').setInputFiles({
 		name: 'table.png',
 		mimeType: 'image/png',
@@ -1575,14 +1581,14 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toHaveCount(0);
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	expect(await password.inputValue()).not.toBe(made);
 	await expect(page.getByTestId('status-watching')).toHaveText('0 watching');
 	await flip();
 	await expect(password).toHaveValue('');
 	await expect(password).toBeDisabled();
 	await flip();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	await viewerContext.close();
 });
 

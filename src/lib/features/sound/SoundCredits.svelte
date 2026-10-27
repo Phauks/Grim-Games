@@ -1,16 +1,25 @@
 <script lang="ts">
 	import { AMBIENCE_MIXES } from '#lib/core/sound/ambience.ts';
+	import { BOARD_SOUNDS } from '#lib/core/sound/soundboard.ts';
+
+	/** Each recording with what the credit names: day and night sound, then the soundboard. */
+	const credits = [
+		...AMBIENCE_MIXES.map((mix) => ({ ...mix, licence: 'Public domain' })),
+		...BOARD_SOUNDS
+	];
 </script>
 
-<!-- Where each day and night recording comes from (plan U3). Each is public domain; the NPS
+<!-- Where each recording comes from (plans U3 and U6). Each is public domain or CC0; the NPS
      asks for credit, and the rest are credited the same way, with the recordist when named. -->
 <ul class="credits">
-	{#each AMBIENCE_MIXES as mix (mix.id)}
+	{#each credits as credit (credit.id)}
 		<li>
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a href={mix.page} target="_blank" rel="noopener">{mix.name}, {mix.place}</a>
+			<a href={credit.page} target="_blank" rel="noopener"
+				>{credit.place ? `${credit.name}, ${credit.place}` : credit.name}</a
+			>
 			<span class="source"
-				>{mix.recordist ? `${mix.recordist} · ` : ''}{mix.source} · Public domain</span
+				>{credit.recordist ? `${credit.recordist} · ` : ''}{credit.source} · {credit.licence}</span
 			>
 		</li>
 	{/each}

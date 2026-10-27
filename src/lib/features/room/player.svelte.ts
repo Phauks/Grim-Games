@@ -106,6 +106,18 @@ function setTable(code: string, table: RoomTable): void {
 	writeStored(TABLE_KEY, empty ? undefined : { code, ...table });
 }
 
+/**
+ * Stops following the last room on /play, but keeps it in Your games to join again: the phone
+ * opened another script from a link or an offline code (Trevor, 2026-10-27: a scanned Fall of
+ * Rome turned into the last room's Bad Moon Rising once that room reconnected).
+ */
+export function leaveLastRoom(): void {
+	const code = lastRoom();
+	if (!code) return;
+	writeStoredText(LAST_ROOM_KEY, undefined);
+	setTable(code, {});
+}
+
 /** Forgets the last room when it is `code` (it closed, or refused this phone). */
 export function forgetRoom(code: string): void {
 	forgetRecentRoom(code);

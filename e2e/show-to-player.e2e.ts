@@ -127,7 +127,7 @@ const choice = (page: import('@playwright/test').Page, name: string) =>
 		name: new RegExp(`^${name}(, .*)?$`)
 	});
 
-test('the Storyteller sets the 3 Demon bluffs at once and shows them as a list', async ({
+test('the Storyteller sets the 3 Demon bluffs at once and shows them as tokens', async ({
 	page
 }) => {
 	await page.goto('/spikes/bluffs');
@@ -163,9 +163,18 @@ test('the Storyteller sets the 3 Demon bluffs at once and shows them as a list',
 	// The open one: the Lunatic sample on the same page has its own (closed) player view.
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('These characters are not in play');
-	// A list with abilities, not tokens.
-	await expect(shown.getByRole('listitem')).toHaveCount(3);
-	await expect(shown).toContainText('Each night*, choose a player');
+	// Tokens with their names, not lines of text (Trevor, 2026-10-27), all on the screen.
+	const items = shown.getByTestId('shown-characters').getByRole('listitem');
+	await expect(items).toHaveCount(3);
+	await expect(items).toContainText(['Investigator', 'Monk', 'Saint']);
+	const viewport = page.viewportSize()!;
+	for (const token of await shown.getByTestId('shown-characters').locator('.token').all()) {
+		const box = (await token.boundingBox())!;
+		expect(box.x).toBeGreaterThanOrEqual(0);
+		expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+		expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+	}
+	expect(await shown.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Demon bluffs' })).toBeVisible();
 });

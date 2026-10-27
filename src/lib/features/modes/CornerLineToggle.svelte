@@ -7,7 +7,7 @@
 
 	/**
 	 * One line of the board's corner as a setting: the same choice as its eye in Game info
-	 * (Trevor, 2026-10-24), in Settings > Board and beside the join code in the room.
+	 * (Trevor, 2026-10-24), in Settings > Board.
 	 */
 	interface Props {
 		line: CornerLine;

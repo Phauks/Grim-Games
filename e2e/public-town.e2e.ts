@@ -219,7 +219,10 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 	// the shared grim should be the same. Although font settings may be different."
 	const board = await startGame(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
@@ -256,7 +259,10 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 
 	// A change on the board reaches it.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Night sky' })

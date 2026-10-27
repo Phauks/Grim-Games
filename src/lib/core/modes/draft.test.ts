@@ -23,6 +23,7 @@ import {
 	draftTotal,
 	startDraft,
 	takeOffer,
+	turnOffer,
 	type DraftConfig
 } from './draft.ts';
 import { SUSHI_BUFFET } from './library/sushi-buffet.ts';
@@ -634,6 +635,19 @@ describe('a drafted character whose neighbours turn into another type', () => {
 		const picks = ['chef', 'empath', 'monk', 'saint', 'butler', 'washerwoman', 'lordoftyphon'];
 		const done = { ...s, picks, slots: none };
 		expect(conversions(done)[0].seats).toEqual([0, 5]);
+	});
+
+	// Trevor, 2026-10-27: the neighbours pick their Minion through the offers.
+	it('offers each neighbour Minions, leaving out those refused until all are', () => {
+		const minions = ['poisoner', 'spy', 'baron', 'scarletwoman'];
+		const first = turnOffer(minions, [], 3, seeded(9));
+		expect(first).toHaveLength(3);
+		expect(new Set(first).size).toBe(3);
+		expect(first.every((id) => minions.includes(id))).toBe(true);
+		expect(turnOffer(minions, first, 3, seeded(9))).toEqual(
+			minions.filter((id) => !first.includes(id))
+		);
+		expect(turnOffer(minions, minions, 2, seeded(9))).toHaveLength(2);
 	});
 });
 

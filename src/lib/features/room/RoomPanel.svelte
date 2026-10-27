@@ -14,7 +14,6 @@
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import { gameLine } from '#lib/features/player/byline.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
-	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
 	import { roomJoinLink } from './join-link.ts';
@@ -223,9 +222,6 @@
 					>{t('room.shareGrim.button')}</Button
 				>
 			</div>
-			<!-- The same switch as Settings > Board and its eye in Game info, here too where the
-			     code is shared (Trevor, 2026-10-23). -->
-			<CornerLineToggle line="join-code" />
 			<h2 id="players-label">{t('room.playersInRoom')}</h2>
 			{#if seated.length === 0}
 				<p class="none">{t('common.none')}</p>

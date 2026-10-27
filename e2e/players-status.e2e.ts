@@ -79,6 +79,22 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	expect(Math.abs(sun.y - night.y)).toBeLessThanOrEqual(1);
 	expect(Math.abs(sun.height - night.height)).toBeLessThanOrEqual(1);
 
+	// A tap opens the day's counts, the Storyteller's own numbers (Trevor, 2026-10-27).
+	await status.tap();
+	const counts = phone.getByRole('dialog', { name: 'Day 1' });
+	await expect(counts.getByTestId('players-alive')).toHaveText(
+		(await day.getByTestId('alive-count').textContent())!
+	);
+	await expect(counts.getByTestId('players-votes-needed')).toHaveText(
+		(await day.getByTestId('votes-needed').textContent())!
+	);
+	await expect(counts.getByTestId('players-ghost-votes')).toHaveText(
+		(await day.getByTestId('ghost-votes').textContent())!
+	);
+	await expect(counts).toContainText('8 of 8 players alive');
+	await counts.getByRole('button', { name: 'Close' }).tap();
+	await expect(counts).toBeHidden();
+
 	// The Storyteller starts it, and the sun sets off across the sky. 4:00 for 8 players, so 1% is 2.4s.
 	await day.getByRole('button', { name: 'Start timer' }).tap();
 	await expect(shown.getByRole('img')).toHaveAttribute(

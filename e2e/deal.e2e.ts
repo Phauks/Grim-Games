@@ -91,6 +91,50 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await phoneContext.close();
 });
 
+// Playtest (Trevor, 2026-10-26: "I joined a game as Phone ... I did not get notified, and my
+// name was not placed in the grim"): Deal gives a phone that sits nowhere the first unnamed
+// seat, so it gets its character without the Storyteller typing its name.
+test('a phone that joins is named on a seat and gets its character from Deal', async ({
+	page,
+	browser
+}, testInfo) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
+	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])
+		await choice(page, name).tap();
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.goto(`${board}/draw`);
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByTestId('you-button').tap();
+	const you = phone.getByRole('dialog', { name: 'Your settings' });
+	await you.getByRole('textbox', { name: 'Your name' }).fill('Phone');
+	await you.getByRole('button', { name: 'Save' }).tap();
+	await expect(phone.getByRole('button', { name: 'Your settings: Phone' })).toBeVisible();
+
+	// No seat named by hand: Deal puts the phone's name on seat 1, and the phone sits there.
+	await page.getByRole('button', { name: 'Deal' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Deal at random?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
+	await expect(phone.getByTestId('your-character')).toBeVisible();
+	await page.goto(board);
+	await expect(page.getByRole('button', { name: /^Seat 1: Phone/ })).toBeVisible();
+	await phoneContext.close();
+});
+
 // Plan H2 (Trevor, 2026-10-26: "no draw, just good or evil"): the town knows a Traveller's
 // character (https://wiki.bloodontheclocktower.com/Travellers), so their phone shows only the
 // alignment the Storyteller chose.

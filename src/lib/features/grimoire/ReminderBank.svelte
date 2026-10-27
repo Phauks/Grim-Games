@@ -20,6 +20,7 @@
 		bankOwners,
 		bankReminders,
 		byLabel,
+		copiedLook,
 		isGeneric,
 		type StepReminders
 	} from './reminders.ts';
@@ -30,6 +31,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { pendingSetup, traySeats, type TrayItem } from './setup-tray.ts';
+	import { overNewToken } from './reminder-drag.svelte.ts';
 
 	/**
 	 * The reminder bank (Trevor, 2026-10-16), always docked under the board. During setup it
@@ -68,6 +70,12 @@
 		 */
 		/** A spectator's board (Trevor, 2026-10-19): every token shown, none taken. */
 		disabled?: boolean;
+		/**
+		 * A reminder on the board is being dragged, and whether it is over "+ New token", which
+		 * glows to say it takes it (Trevor, 2026-10-27).
+		 */
+		dropping?: boolean;
+		dropOver?: boolean;
 		run?: {
 			/** Its accessible name, and the shorter words shown. */
 			label: string;
@@ -91,7 +99,9 @@
 		onRule,
 		onHints,
 		run,
-		disabled = false
+		disabled = false,
+		dropping = false,
+		dropOver = false
 	}: Props = $props();
 
 	const game = $derived(grimoire.game);
@@ -414,16 +424,21 @@
 	});
 
 	// ── Drag a token from the bank onto a seat ──
-	let drag = $state<{ item: Item; at: SeatPoint } | undefined>();
+	let drag = $state<{ item: Item; at: SeatPoint; overNew: boolean } | undefined>();
+	/** "+ New token" glows while a reminder is dragged, brighter under it (Trevor, 2026-10-27). */
+	const newGlow = $derived(
+		drag?.overNew || dropOver ? 'over' : drag || dropping ? 'ready' : undefined
+	);
 	function dragItem(item: Item, x: number, y: number, end: boolean) {
 		if (!board) return;
 		const rect = board.getBoundingClientRect();
 		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
-		const target = seatAt(at);
+		const overNew = overNewToken(x, y);
+		const target = overNew ? undefined : seatAt(at);
 		if (!end) {
-			drag = { item, at };
+			drag = { item, at, overNew };
 			onHints(
-				loose
+				loose || overNew
 					? { seats: [] }
 					: {
 							seats: seatsFor(item),
@@ -435,6 +450,14 @@
 		}
 		drag = undefined;
 		onHints({ seats: [] });
+		// On "+ New token": a new ∞ token like it; the reminder stays in the bank.
+		if (overNew) {
+			grimoire.run({
+				type: 'AddGenericToken',
+				look: copiedLook({ characterId: item.characterId, label: item.label, ...item.token })
+			});
+			return;
+		}
 		const tokenId = item.token?.tokenId;
 		const reminder = {
 			characterId: item.characterId,
@@ -554,6 +577,8 @@
 					<button
 						type="button"
 						class="new-token"
+						data-new-token
+						data-glow={newGlow}
 						style:--size="{size}px"
 						aria-label="New token"
 						{disabled}
@@ -959,6 +984,30 @@
 	}
 	.new-token:disabled {
 		opacity: 0.5;
+	}
+	/* While a reminder is dragged it takes one, as a new ∞ token like it (Trevor, 2026-10-27):
+	   it glows, breathing, and brighter with the token over it. In the text colour, as the
+	   player's own seat glows, since red or blue would read as an alignment. */
+	.new-token[data-glow] {
+		border-style: solid;
+		border-color: var(--on-surface);
+		box-shadow: 0 0 calc(0.8 * var(--u)) calc(0.3 * var(--u)) var(--on-surface);
+		animation: new-token-glow 1.6s ease-in-out infinite;
+	}
+	.new-token[data-glow='over'] {
+		scale: 1.15;
+		box-shadow: 0 0 calc(1.25 * var(--u)) calc(0.5 * var(--u)) var(--on-surface);
+		animation: none;
+	}
+	@keyframes new-token-glow {
+		50% {
+			box-shadow: 0 0 calc(0.4 * var(--u)) calc(0.1 * var(--u)) var(--on-surface);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.new-token[data-glow] {
+			animation: none;
+		}
 	}
 	.none {
 		color: var(--on-surface-muted);
