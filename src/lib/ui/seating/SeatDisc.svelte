@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { FACE_RADIUS, type Frame } from '#lib/core/frames/index.ts';
 	import DeadBadge from './DeadBadge.svelte';
 	import FrameDrawing from './FrameDrawing.svelte';
@@ -56,6 +56,21 @@
 	}: Props = $props();
 
 	const framed = $derived(frame !== undefined && frame.drawing.length > 0);
+
+	/**
+	 * A laurel that arrives while the seat is showing, as when its player joins or picks a new
+	 * one, grows in up both branches from the foot (Trevor, 2026-10-27: the unlock draw-in
+	 * "should also appear when a player joins a grim"). One already there when the board opens
+	 * just shows.
+	 */
+	let shown = untrack(() => frame?.id);
+	let growing = $state(false);
+	$effect(() => {
+		const id = frame?.id;
+		if (id === shown) return;
+		shown = id;
+		growing = untrack(() => framed);
+	});
 </script>
 
 <span
@@ -74,7 +89,11 @@
 					{picture}
 				/>{:else}<span class="empty">{number}</span>{/if}</span
 		>
-		{#if frame && framed}<span class="frame-layer"><FrameDrawing {frame} /></span>{/if}
+		{#if frame && framed}<span
+				class="frame-layer"
+				data-growing={growing || undefined}
+				onanimationend={() => (growing = false)}><FrameDrawing {frame} /></span
+			>{/if}
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
 		<!-- One name badge for every seat, named or empty (Trevor, 2026-10-19). -->
 		<PlayerNameMark {name} />
@@ -123,6 +142,31 @@
 		inset: 0;
 		pointer-events: none;
 	}
+	/* Grows from the foot up both sides: a mask opening as two arcs, and a small pop. */
+	@property --grow-sweep {
+		syntax: '<angle>';
+		inherits: false;
+		initial-value: 180deg;
+	}
+	.frame-layer[data-growing] {
+		mask-image: conic-gradient(
+			from 180deg,
+			currentColor 0deg var(--grow-sweep),
+			transparent var(--grow-sweep) calc(360deg - var(--grow-sweep)),
+			currentColor calc(360deg - var(--grow-sweep))
+		);
+		animation: laurel-grow 1.1s cubic-bezier(0.3, 0.7, 0.4, 1.15);
+	}
+	@keyframes laurel-grow {
+		from {
+			--grow-sweep: 0deg;
+			scale: 0.86;
+		}
+		to {
+			--grow-sweep: 180deg;
+			scale: 1;
+		}
+	}
 	/* Dead (Trevor, 2026-10-16): the token dimmed, colour kept, plus a skull badge. */
 	.seat-disc[data-dead] .frame-layer,
 	.seat-disc[data-dead] .face {
@@ -138,6 +182,10 @@
 	@media (prefers-reduced-motion: reduce) {
 		.face {
 			transition: none;
+		}
+		.frame-layer[data-growing] {
+			mask-image: none;
+			animation: none;
 		}
 	}
 </style>
