@@ -933,7 +933,7 @@
 	.source-error {
 		margin: 0;
 		min-height: 1.4em;
-		color: var(--evil);
+		color: var(--evil-text);
 		font-size: 0.85rem;
 	}
 	.credits {

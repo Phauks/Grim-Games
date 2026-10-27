@@ -79,6 +79,6 @@
 		font-size: 0.9rem;
 	}
 	.problems [data-warn] {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 </style>

@@ -353,10 +353,10 @@
 		color: var(--heading);
 	}
 	section[data-tone='good'] h2 {
-		color: var(--good);
+		color: var(--good-text);
 	}
 	section[data-tone='evil'] h2 {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	section[data-tone='traveller'] h2 {
 		color: var(--traveller-text);
