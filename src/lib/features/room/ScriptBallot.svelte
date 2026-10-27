@@ -89,19 +89,43 @@
 	}
 
 	const mode = $derived(vote?.subject === 'mode');
-	const lead = $derived(
-		vote?.kind === 'single'
-			? t(mode ? 'room.scriptVote.modeBallotSingle' : 'room.scriptVote.ballotSingle')
-			: vote?.kind === 'multiple'
-				? t(mode ? 'room.scriptVote.modeBallotMultiple' : 'room.scriptVote.ballotMultiple')
-				: t(mode ? 'room.scriptVote.modeBallotRanked' : 'room.scriptVote.ballotRanked')
-	);
+	const rules = $derived(vote?.subject === 'rules');
+	/** Only a script has details to read; a game mode or special rule has none. */
+	const script = $derived(!mode && !rules);
+	/** The ballot's line, by what the vote is on and how players vote. */
+	const LEADS = {
+		script: {
+			single: 'room.scriptVote.ballotSingle',
+			multiple: 'room.scriptVote.ballotMultiple',
+			ranked: 'room.scriptVote.ballotRanked'
+		},
+		mode: {
+			single: 'room.scriptVote.modeBallotSingle',
+			multiple: 'room.scriptVote.modeBallotMultiple',
+			ranked: 'room.scriptVote.modeBallotRanked'
+		},
+		rules: {
+			single: 'room.scriptVote.rulesBallotSingle',
+			multiple: 'room.scriptVote.rulesBallotMultiple',
+			ranked: 'room.scriptVote.rulesBallotRanked'
+		}
+	} as const;
+	const lead = $derived(t(LEADS[vote?.subject ?? 'script'][vote?.kind ?? 'ranked']));
 </script>
 
-<!-- The same ballot for a vote on the game mode (Trevor, 2026-10-23). The page's own content
+<!-- The same ballot for a vote on the game mode (Trevor, 2026-10-23) or the special rules
+     (Trevor, 2026-10-26). The page's own content
      while a vote is open, not a popup (Trevor, 2026-10-26). -->
 <section class="ballot" aria-labelledby="ballot-title" data-testid="ballot-screen">
-	<h2 id="ballot-title">{t(mode ? 'room.scriptVote.modeTitle' : 'room.scriptVote.title')}</h2>
+	<h2 id="ballot-title">
+		{t(
+			mode
+				? 'room.scriptVote.modeTitle'
+				: rules
+					? 'room.scriptVote.rulesTitle'
+					: 'room.scriptVote.title'
+		)}
+	</h2>
 	<p class="lead">{lead}</p>
 	<VoteTimeLeft endsAt={vote?.endsAt} finalCall={!!vote?.finalCall} onEnded={(e) => (ended = e)} />
 	<ul class="vote" data-testid="script-ballot">
@@ -133,7 +157,7 @@
 						onclick={() => move(option.id, 1)}
 					/>
 				{/if}
-				{#if !mode}
+				{#if script}
 					<IconButton
 						icon="info"
 						label={t('room.scriptVote.details', { name: option.name })}
