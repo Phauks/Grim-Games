@@ -144,6 +144,8 @@ export class RoomHost {
 	/** The board's own picture while its look has one, and its name in the room once uploaded. */
 	#picture = $state.raw<Blob>();
 	#uploaded = $state.raw<{ picture: Blob; code: string; hash: string }>();
+	/** The open board's shape, its width ÷ height, for every shared grim (showAspect). */
+	#aspect = $state.raw<{ gameId: string; aspect: number }>();
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -321,7 +323,8 @@ export class RoomHost {
 					saved: saved as unknown as Record<string, unknown>,
 					...(notes?.() ?? storedNotes(game.game.gameId)),
 					timer: liveDayTimer.shared,
-					...this.#lookOf(game.game.gameId)
+					...this.#lookOf(game.game.gameId),
+					...this.#aspectOf(game.game.gameId)
 				});
 			});
 			$effect(() => {
@@ -332,7 +335,7 @@ export class RoomHost {
 				const state = publicProjection(
 					game.game,
 					publicTravellerTest(game.game.gameId, game.characters),
-					layout,
+					{ ...layout, ...this.#aspectOf(game.game.gameId) },
 					corner,
 					game.characters,
 					gameSheetRules(game.game.gameId),
@@ -418,6 +421,20 @@ export class RoomHost {
 			uploaded?.picture === this.#picture &&
 			uploaded?.code === this.code;
 		return { look: named ? { ...look, image: uploaded!.hash } : look };
+	}
+
+	/**
+	 * The board's shape as it shows now (width ÷ height, boardAspect), so every shared grim
+	 * keeps each seat at the board's place round the ring (Trevor, 2026-10-27).
+	 */
+	showAspect(gameId: string, aspect: number | undefined): void {
+		if (aspect === undefined) return;
+		if (this.#aspect?.gameId !== gameId || this.#aspect.aspect !== aspect)
+			this.#aspect = { gameId, aspect };
+	}
+
+	#aspectOf(gameId: string): { aspect?: number } {
+		return this.#aspect?.gameId === gameId ? { aspect: this.#aspect.aspect } : {};
 	}
 
 	/** Lets the players of game `gameId` see their own characters, or hides them again. */
@@ -510,7 +527,8 @@ export class RoomHost {
 			grimoire: {
 				saved: saved as unknown as Record<string, unknown>,
 				...(notes ?? storedNotes(gameId)),
-				...this.#lookOf(gameId)
+				...this.#lookOf(gameId),
+				...this.#aspectOf(gameId)
 			}
 		} as const;
 		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;

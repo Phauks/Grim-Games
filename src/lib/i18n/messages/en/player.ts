@@ -95,7 +95,8 @@ export const player = {
 	'player.picture': 'Your picture',
 	'player.pictureDetail':
 		'On your seat in place of your initials, in rooms you join. The Storyteller can take it away for a game.',
-	'player.pictureChoose': 'Choose a picture',
+	'player.pictureChoose': 'Image',
+	'player.pictureEdit': 'Move or zoom your picture',
 	'player.pictureChange': 'Change picture',
 	'player.pictureRemove': 'Remove picture',
 	'player.pictureFile': 'Picture for your seat',
@@ -106,6 +107,11 @@ export const player = {
 	'player.pictureZoom': 'Zoom',
 	'player.pictureError': 'That picture could not be read or kept.',
 	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
+	'player.matchShape': "Grim tab in the Storyteller's board shape",
+	'player.matchShapeDetail':
+		"Draws the town the shape of the Storyteller's board, with empty space at the edges. Off, it fills your screen. Seats keep the Storyteller's places round the table either way.",
+	'player.townMatchShape': "Public Town in the Storyteller's board shape",
+	'player.grim.matchShape': "Storyteller's board shape",
 	'player.frameStoryteller': "Storyteller's choice",
 	'player.density.normal': 'Normal',
 	'player.density.compact': 'Compact',

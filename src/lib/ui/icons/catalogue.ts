@@ -63,6 +63,9 @@ export const ICON_SLOTS = {
 	sound: { label: 'Sound', choices: ['ph:speaker-high', 'ph:bell'] },
 	/** The Storyteller's soundboard (plan U6): bells at a tap. */
 	soundboard: { label: 'Soundboard', choices: ['ph:bell-simple-ringing', 'ph:bell'] },
+	/** Holds the soundboard and day and night sound where they are (Trevor, 2026-10-27). */
+	soundPause: { label: 'Pause sound', choices: ['ph:pause', 'ph:pause-circle'] },
+	soundResume: { label: 'Resume sound', choices: ['ph:play', 'ph:play-circle'] },
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
@@ -156,6 +159,8 @@ export const ICON_SLOTS = {
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
 	/** Covers the whole screen, so a glance at it shows nothing (Trevor, 2026-10-26). */
 	cover: { label: 'Cover the screen', choices: ['ph:rectangle', 'ph:monitor'] },
+	/** A shared grim drawn in the Storyteller's board's shape (Trevor, 2026-10-27). */
+	boardShape: { label: "Storyteller's board shape", choices: ['ph:crop', 'ph:selection'] },
 	/** Someone is watching the view-only grimoire (Trevor, 2026-10-20). */
 	watchers: { label: 'Watching', choices: ['ph:eye', 'ph:binoculars'] },
 	/** Players' feedback on a finished game (Trevor, 2026-10-25). */

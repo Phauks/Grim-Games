@@ -52,10 +52,9 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import {
 		DEFAULT_SEAT_LAYOUT,
-		keepInside,
+		parseAspect,
 		parseSeatLayout,
-		seatPoints,
-		seatTokenSize
+		sharedSeats
 	} from '#lib/ui/seating/seat-layout.ts';
 	import {
 		AVATAR_GUESS,
@@ -87,6 +86,7 @@
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import TownCounts from './TownCounts.svelte';
+	import MatchShapeButton, { matchesShape } from './MatchShapeButton.svelte';
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
 
@@ -207,13 +207,12 @@
 	let width = $state(0);
 	let height = $state(0);
 	const board = $derived({ width, height });
-	const ids = $derived(seats.map((s) => s.seatId as string));
-	const size = $derived(
-		seatTokenSize(ids, layout, board, preferences.current.tokenAppearance.tokenScale)
-	);
-	// As on the board: each seat keeps one --u (16px) clear of the edge.
+	// The Storyteller's places round the ring, in the board's shape if switched on (2026-10-27).
+	const aspect = $derived(parseAspect(table?.layout?.aspect));
 	const unit = 16;
-	const points = $derived(keepInside(seatPoints(ids, layout, board), board, size / 2 + unit));
+	const { size, points } = $derived(
+		sharedSeats(seats, layout, board, aspect, matchesShape(display), preferences.current)
+	);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
 	let rootFont = $state(16);
@@ -385,6 +384,7 @@
 			onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
 			testid="hide-guesses"
 		/>
+		<MatchShapeButton disabled={!aspect} />
 		<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
 	     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
 		{#if !town && final}
@@ -536,10 +536,19 @@
 {/if}
 
 {#snippet pictureMenu()}<SeatPictureMenu room={player!} seat={chosen!} />{/snippet}
+<!-- The player's avatar, left of the seat's name and guesses (Trevor, 2026-10-27). -->
+{#snippet seatAvatar()}<span class="sheet-avatar" data-testid="sheet-avatar"
+		><AvatarFace
+			avatar={chosen!.avatar!}
+			name={nameOf(chosen!)}
+			picture={pictureOf(chosen!)}
+		/></span
+	>{/snippet}
 <BottomSheet
 	bind:open
 	title={chosen ? `${t('common.seat', { number: chosen.seatNumber })} · ${nameOf(chosen)}` : ''}
 	actions={player && chosen ? pictureMenu : undefined}
+	lead={chosen?.avatar ? seatAvatar : undefined}
 >
 	<!-- This seat's cycle, front first, at the top (Trevor, 2026-10-25): its guesses and, once
 	     it has one, the player's avatar (2026-10-26); a tap brings one to the front. Then the
@@ -696,11 +705,15 @@
 	.row-none {
 		color: var(--on-surface-muted);
 	}
-	/* The seat's avatar in its cycle, the size of a badge's icon. */
-	.avatar-chip {
+	/* The seat's avatar in its cycle, the size of a badge's icon; larger in the header. */
+	.avatar-chip,
+	.sheet-avatar {
 		display: block;
-		width: 2em;
-		height: 2em;
+		width: var(--avatar, 2em);
+		height: var(--avatar, 2em);
+	}
+	.sheet-avatar {
+		--avatar: calc(2.5 * var(--u));
 	}
 	.seat-note-text {
 		overflow: hidden;

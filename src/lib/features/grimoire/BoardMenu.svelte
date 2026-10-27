@@ -14,6 +14,11 @@
 	 */
 	interface Props {
 		open: boolean;
+		/**
+		 * A spectator's board (an admin's, Trevor 2026-10-27): History, Game info and the app's
+		 * items work; every other item shows, disabled, as the board's own controls do.
+		 */
+		watching?: boolean;
 		/** Game info is here only while the board's corner is hidden. */
 		gameInfo: boolean;
 		/** An ended game offers Export and Reopen in place of End game. */
@@ -47,6 +52,7 @@
 
 	let {
 		open = $bindable(),
+		watching = false,
 		gameInfo,
 		ended,
 		onHistory,
@@ -82,17 +88,31 @@
 		<section class="group" aria-labelledby="board-menu-game">
 			<h3 id="board-menu-game" class="group-title">Game</h3>
 			<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
-			<Button variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}>Demon bluffs</Button>
-			<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>
+			<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
+				>Demon bluffs</Button
+			>
+			<Button disabled={watching} variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}
+				>Notes</Button
+			>
 			{#if onSoundboard}
 				<!-- Bells and other sounds at a tap (plan U6, Trevor 2026-10-26). -->
-				<Button variant="quiet" icon="soundboard" onclick={() => fromMenu(onSoundboard)}>
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="soundboard"
+					onclick={() => fromMenu(onSoundboard)}
+				>
 					{t('settings.soundboard')}
 				</Button>
 			{/if}
 			{#if onCallTown}
 				<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
-				<Button variant="quiet" icon="sound" onclick={() => fromMenu(onCallTown)}>
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="sound"
+					onclick={() => fromMenu(onCallTown)}
+				>
 					{t('room.callTown')}
 				</Button>
 			{/if}
@@ -100,32 +120,52 @@
 				<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
 			{/if}
 			{#if onCharacterSelection}
-				<Button variant="quiet" icon="bag" onclick={() => fromMenu(onCharacterSelection)}>
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="bag"
+					onclick={() => fromMenu(onCharacterSelection)}
+				>
 					{t('setup.characterSelection')}
 				</Button>
 			{/if}
 			<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
 			{#if ended}
-				<Button variant="quiet" icon="download" onclick={() => fromMenu(onExport)}>
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="download"
+					onclick={() => fromMenu(onExport)}
+				>
 					Export game
 				</Button>
 				{#if onFeedback}
-					<Button variant="quiet" icon="feedback" onclick={() => fromMenu(onFeedback)}>
+					<Button
+						disabled={watching}
+						variant="quiet"
+						icon="feedback"
+						onclick={() => fromMenu(onFeedback)}
+					>
 						{t('room.feedback.view')}
 					</Button>
 				{/if}
-				<Button variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}>Reopen game</Button>
+				<Button disabled={watching} variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
+					>Reopen game</Button
+				>
 			{/if}
 			<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
 			{#if !ended}
-				<Button variant="danger" icon="close" onclick={() => fromMenu(onEnd)}>End game</Button>
+				<Button disabled={watching} variant="danger" icon="close" onclick={() => fromMenu(onEnd)}
+					>End game</Button
+				>
 			{:else if onNewGame}
-				<Button variant="quiet" icon="add" onclick={() => fromMenu(onNewGame)}>
+				<Button disabled={watching} variant="quiet" icon="add" onclick={() => fromMenu(onNewGame)}>
 					{t('setup.newGame')}
 				</Button>
 			{/if}
 			{#if ended && onCloseRoom}
 				<Button
+					disabled={watching}
 					variant="danger"
 					icon="close"
 					onclick={() => fromMenu(() => (closeRoomOpen = true))}
@@ -137,11 +177,23 @@
 		<div class="column">
 			<section class="group" aria-labelledby="board-menu-seats">
 				<h3 id="board-menu-seats" class="group-title">Seats</h3>
-				<Button variant="quiet" icon="add" onclick={() => fromMenu(onAddSeat)}>Add seat</Button>
-				<Button variant="quiet" icon="fabled" onclick={() => fromMenu(onAddRule)}>
+				<Button disabled={watching} variant="quiet" icon="add" onclick={() => fromMenu(onAddSeat)}
+					>Add seat</Button
+				>
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="fabled"
+					onclick={() => fromMenu(onAddRule)}
+				>
 					Add Fabled or Loric
 				</Button>
-				<Button variant="quiet" icon="arrange" onclick={() => fromMenu(onArrange)}>
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="arrange"
+					onclick={() => fromMenu(onArrange)}
+				>
 					Arrange seats
 				</Button>
 			</section>
@@ -150,6 +202,7 @@
 				<!-- All of Settings, not only the board's sections (Trevor, 2026-10-27: "why not just
 				     open to all settings, and stop limiting to what they can access?"), at Board. -->
 				<Button
+					disabled={watching}
 					variant="quiet"
 					icon="settings"
 					onclick={() => fromMenu(() => settingsDialog.show('board'))}

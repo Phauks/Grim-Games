@@ -52,8 +52,16 @@ test('a reminder dropped on "+ New token" becomes a new ∞ token with its words
 	await expect(plus).toHaveAttribute('data-glow', 'over');
 	await page.mouse.up();
 	await expect(plus).not.toHaveAttribute('data-glow');
-	await expect(bank.getByRole('button', { name: 'Generic reminder: Poisoned' })).toHaveCount(1);
+	const copy = bank.getByRole('button', { name: 'Generic reminder: Poisoned' });
+	await expect(copy).toHaveCount(1);
 	await expect(poisoned).toBeVisible();
+	// It shows the Poisoner's art, and while carried marks the seats as Poisoned does: the
+	// Poisoner's seat as its source (Trevor, 2026-10-27).
+	await expect(copy.locator('img')).toHaveAttribute('src', /.+/);
+	const seat1 = page.locator('[data-testid="seat"][aria-label^="Seat 1:"]');
+	await lift(page, copy, page.getByRole('button', { name: /^Seat 5:/ }));
+	await expect(seat1).toHaveAttribute('data-role', /source|both/);
+	await page.mouse.up();
 
 	// An ∞ token with its own text and symbol: a second one just like it.
 	await plus.tap();
