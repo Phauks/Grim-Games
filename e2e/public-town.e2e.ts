@@ -271,6 +271,10 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
+	await settings
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Green felt' })
 		.tap();
@@ -308,6 +312,10 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
 		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
 		.tap();
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
