@@ -36,7 +36,8 @@
 		<ul>
 			<li>
 				Your games, ended games, player notes, scratch-pad drawings and grimoire backgrounds,
-				including pictures you add (IndexedDB).
+				including pictures you add (IndexedDB). A background picture also goes to a live room you
+				share, below.
 			</li>
 			<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 			<li>
@@ -146,6 +147,12 @@
 			view-only grimoire link or one of the site's admins watches (below).
 		</p>
 		<p>
+			The room also holds the board's background, so every phone and table display shows the same
+			one. When that background is a picture the Storyteller added, their device uploads a copy of
+			it to the room. The room keeps at most eight pictures, which anyone with the room code and the
+			picture's long name can load, and deletes them with the room.
+		</p>
+		<p>
 			The view-only link lets spectators watch the whole grimoire live: the game and its history,
 			and where the Storyteller's device draws the seats and reminders. While it is on, the room
 			holds a copy of all of it. Turning the link off deletes that copy and stops the link, and so
@@ -208,8 +215,8 @@
 			<li>
 				Your settings profiles: each profile's name and its theme, text, icon, board, token and
 				Storyteller settings, including the first time you sign in on a device. A background picture
-				you add stays on the device you added it on. You can stop a device syncing them in Settings,
-				Data.
+				you add is not synced; it leaves the device only for a live room you share, as above. You
+				can stop a device syncing them in Settings, Data.
 			</li>
 		</ul>
 		<p>

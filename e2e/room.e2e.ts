@@ -710,7 +710,9 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 
 	await phone.getByRole('tab', { name: 'Notes' }).tap();
 	// The player's own notes, not a seat's (each seat has its own "+ New note" too).
-	const myNotes = phone.getByRole('region', { name: 'My notes' });
+	const myNotes = phone
+		.locator('section.collapsible')
+		.filter({ has: phone.getByRole('heading', { name: 'My notes' }) });
 	await myNotes.getByRole('button', { name: 'New note' }).tap();
 	const editor = phone.getByRole('dialog', { name: 'Note', exact: true });
 	await editor.getByRole('textbox', { name: 'Title' }).fill('Game one');
@@ -749,8 +751,8 @@ test('New game opens a room for the vote before any game or script', async ({
 	page,
 	browser
 }, testInfo) => {
-	// Two votes, each ended with its 15-second final call (Trevor, 2026-10-26).
-	test.setTimeout(120_000);
+	// Three votes, each ended with its 15-second final call (Trevor, 2026-10-26).
+	test.setTimeout(150_000);
 	// Trevor, 2026-10-23: "allow storytellers to create rooms without having selected a
 	// script", so the table can gather and vote first.
 	await page.goto('/new');
@@ -845,6 +847,55 @@ test('New game opens a room for the vote before any game or script', async ({
 	await results.filter({ hasText: 'Sushi Buffet' }).getByRole('button', { name: 'Play' }).tap();
 	await expect(modeBallot).toHaveCount(0);
 	await expect(page.getByRole('combobox', { name: 'Game mode' })).toHaveText(/Sushi Buffet/);
+
+	// A vote on the special rules (Trevor, 2026-10-26: "Voting should allow selecting game
+	// modes vs scripts, along with special rules"). Rules stack, so the Storyteller keeps the
+	// rules the count favours, or any others, and plays them together.
+	await page.getByRole('combobox', { name: 'Game mode' }).tap();
+	await page.getByRole('option', { name: 'Standard', exact: true }).tap();
+	await page.getByRole('link', { name: 'Room vote' }).tap();
+	await sheet.getByRole('combobox', { name: 'Vote on' }).tap();
+	await page.getByRole('option', { name: 'Special rules' }).tap();
+	await expect(sheet.getByRole('heading', { name: 'Vote on special rules' })).toBeVisible();
+	const addRule = sheet.getByRole('button', { name: 'Add to vote' });
+	await addRule.tap();
+	await sheet.getByRole('combobox', { name: 'Add a special rule' }).tap();
+	await page.getByRole('option', { name: 'The Warrens', exact: true }).tap();
+	await addRule.tap();
+	await expect(sheet.getByTestId('script-vote-slots').getByRole('listitem')).toHaveText([
+		/^Rule 1\s*\+1\s*$/,
+		/^Rule 2\s*The Warrens\s*$/,
+		/^Rule 3\s*None\s*$/
+	]);
+	await sheet.getByRole('combobox', { name: 'How players vote' }).tap();
+	await page.getByRole('option', { name: 'Multiple choice' }).tap();
+	await sheet.getByRole('button', { name: 'Open vote' }).tap();
+	const ruleBallot = phone.getByTestId('ballot-screen');
+	await expect(ruleBallot.getByRole('heading', { name: 'Vote on special rules' })).toBeVisible();
+	await expect(
+		ruleBallot.getByText('Pick every special rule you would play with next.')
+	).toBeVisible();
+	await expect(ruleBallot.getByRole('button', { name: /^Details of/ })).toHaveCount(0);
+	await ruleBallot.locator('[aria-pressed]').filter({ hasText: '+1' }).tap();
+	await ruleBallot.getByRole('button', { name: 'Vote', exact: true }).tap();
+	const ruleResults = sheet.getByTestId('script-vote-results').getByRole('listitem');
+	await expect(ruleResults.filter({ hasText: '+1' })).toContainText('Votes: 1');
+	await sheet.getByRole('button', { name: 'End vote' }).tap();
+	const playRules = sheet.getByRole('button', { name: 'Play with these rules' });
+	await expect(playRules).toBeVisible({ timeout: 20_000 });
+	// The winner is kept to start with; the Storyteller adds The Warrens too.
+	await expect(sheet.getByRole('checkbox', { name: 'Play with +1' })).toBeChecked();
+	const warrens = sheet.getByRole('checkbox', { name: 'Play with The Warrens' });
+	await expect(warrens).not.toBeChecked();
+	await ruleResults
+		.filter({ hasText: 'The Warrens' })
+		.locator('[data-scope="switch"][data-part="control"]')
+		.tap();
+	await expect(warrens).toBeChecked();
+	await playRules.tap();
+	await expect(page).toHaveURL(/\/new$/);
+	await expect(ruleBallot).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Special rules (2)' })).toBeVisible();
 
 	await phoneContext.close();
 });
@@ -1475,6 +1526,22 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 		.tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(viewer.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+	// A picture of the Storyteller's own reaches it through the room too.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await settings.getByLabel('Background image file').setInputFiles({
+		name: 'table.png',
+		mimeType: 'image/png',
+		buffer: Buffer.from(
+			'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGNoUFAAIgYIBQAWjgMBwmTFJwAAAABJRU5ErkJggg==',
+			'base64'
+		)
+	});
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(viewer.getByTestId('board-background')).toHaveAttribute(
+		'style',
+		/\/api\/room\/\d{6}\/image\/[0-9a-f]{64}/
+	);
 
 	// A seat opens its character to read, never the seat sheet.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();

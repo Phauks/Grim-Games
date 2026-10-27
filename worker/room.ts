@@ -47,6 +47,14 @@ import {
 	type ServerMessage
 } from '../src/lib/core/sync/room.ts';
 import { liveGame, type LiveGame } from '../src/lib/core/sync/live-games.ts';
+import {
+	addRoomImage,
+	isRoomImageType,
+	MAX_ROOM_IMAGE_BYTES,
+	parseRoomImagePath,
+	splitUpload,
+	type StoredImage
+} from '../src/lib/core/sync/room-images.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
 
 export interface RoomEnv {
@@ -83,9 +91,16 @@ type Attachment =
 	| { role: 'town' }
 	| { role: 'admin' };
 
-async function sha256(text: string): Promise<string> {
-	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+async function sha256(data: string | Uint8Array): Promise<string> {
+	const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+	const digest = await crypto.subtle.digest('SHA-256', bytes);
 	return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** A room's picture as stored: its bytes and type (core/sync/room-images.ts). */
+interface ImageView {
+	type: string;
+	bytes: ArrayBuffer;
 }
 
 /**
@@ -147,6 +162,8 @@ export class Room extends DurableObject<RoomEnv> {
 
 	async fetch(request: Request): Promise<Response> {
 		const room = await this.load();
+		const image = parseRoomImagePath(new URL(request.url).pathname);
+		if (image) return this.image(request, room, image.hash);
 		if (request.headers.get('Upgrade') !== 'websocket') {
 			const script = room && (await this.ctx.storage.get<ScriptView>('script'));
 			return Response.json(roomPreview(room, script?.script));
@@ -160,6 +177,44 @@ export class Room extends DurableObject<RoomEnv> {
 		this.ctx.acceptWebSocket(server);
 		if (admin) server.serializeAttachment({ role: 'admin' } satisfies Attachment);
 		return new Response(null, { status: 101, webSocket: client });
+	}
+
+	/**
+	 * A picture for the table: the Storyteller's device uploads it (PUT, its room key ahead of
+	 * the bytes) and every device loads it (GET). Its name is the hash of its bytes, so a
+	 * stored picture never changes and can be cached for as long as the room lasts.
+	 */
+	private async image(request: Request, room: RoomState | undefined, hash: string) {
+		if (!room) return new Response('No such room', { status: 404 });
+		const key = `image:${hash}`;
+		if (request.method === 'GET') {
+			const view = await this.ctx.storage.get<ImageView>(key);
+			if (!view) return new Response('No such picture', { status: 404 });
+			return new Response(view.bytes, {
+				headers: {
+					'Content-Type': view.type,
+					'Cache-Control': 'private, max-age=86400, immutable',
+					'X-Content-Type-Options': 'nosniff'
+				}
+			});
+		}
+		if (request.method !== 'PUT') return new Response('Method not allowed', { status: 405 });
+		const type = request.headers.get('Content-Type');
+		if (!isRoomImageType(type)) return new Response('Not a picture', { status: 415 });
+		const body = new Uint8Array(await request.arrayBuffer());
+		if (body.length > MAX_ROOM_IMAGE_BYTES + 130) return new Response('Too large', { status: 413 });
+		const upload = splitUpload(body);
+		if (!upload) return new Response('Bad request', { status: 400 });
+		if ((await sha256(upload.key)) !== room.hostKeyHash)
+			return new Response('Not the Storyteller', { status: 403 });
+		if ((await sha256(upload.image)) !== hash) return new Response('Wrong hash', { status: 400 });
+		const stored = (await this.ctx.storage.get<StoredImage[]>('images')) ?? [];
+		const { kept, dropped } = addRoomImage(stored, hash, Date.now());
+		const bytes = upload.image.slice().buffer;
+		await this.ctx.storage.put({ [key]: { type, bytes } satisfies ImageView, images: kept });
+		if (dropped.length) await this.ctx.storage.delete(dropped.map((h) => `image:${h}`));
+		await this.touch();
+		return new Response(null, { status: 204 });
 	}
 
 	async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer): Promise<void> {
@@ -542,7 +597,8 @@ const clientAddress = (request: Request) => request.headers.get('CF-Connecting-I
 /**
  * `POST /api/rooms` opens a room (body: the host key's hash) and returns its code;
  * `GET /api/room/<code>` says whether it is open and what game it holds (`RoomPreview`), or
- * upgrades to the room's WebSocket.
+ * upgrades to the room's WebSocket; `/api/room/<code>/image/<hash>` uploads (PUT) or loads
+ * (GET) one of its pictures.
  * Returns undefined for other paths.
  */
 export async function handleRoom(
@@ -567,6 +623,17 @@ export async function handleRoom(
 			}
 		}
 		return new Response('No free room code', { status: 503 });
+	}
+	const image = parseRoomImagePath(url.pathname);
+	if (image) {
+		const code = normaliseRoomCode(image.code);
+		if (!code) return new Response('Invalid room code', { status: 400 });
+		// Uploads count as opening rooms; loading needs the picture's hash, which can't be guessed.
+		if (request.method === 'PUT') {
+			const limit = await env.ROOM_CREATES.limit({ key: clientAddress(request) });
+			if (!limit.success) return new Response('Too many pictures', { status: 429 });
+		}
+		return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(request);
 	}
 	const match = url.pathname.match(/^\/api\/room\/([^/]+)$/);
 	if (!match) return undefined;
