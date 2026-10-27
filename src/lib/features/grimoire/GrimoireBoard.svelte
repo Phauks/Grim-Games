@@ -115,6 +115,7 @@
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import BoardPlayerView from './BoardPlayerView.svelte';
+	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
@@ -902,6 +903,20 @@
 	let scriptOpen = $state(false);
 	/** The players' view, from the grim cover. */
 	let coverViewOpen = $state(false);
+	/** Opens it with the table notebook blank (Trevor, 2026-10-27: "Blank each time"). */
+	async function openCoverView() {
+		await forgetTableNotebook(game.gameId);
+		coverViewOpen = true;
+	}
+	// Closed, the table's notes go too, so nothing waits on the device for the next player.
+	let coverViewWasOpen = false;
+	$effect(() => {
+		if (coverViewOpen) coverViewWasOpen = true;
+		else if (coverViewWasOpen) {
+			coverViewWasOpen = false;
+			void forgetTableNotebook(untrack(() => game.gameId));
+		}
+	});
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
@@ -1659,22 +1674,8 @@
 	titleBelow
 	lead={boardLogo ? scriptLogoLead : undefined}
 >
-	{#snippet headActions()}
-		<PlayerScriptActions
-			script={loadedScript}
-			version={scriptVersion(undefined, loadedScript?.meta)}
-			share={scriptShare}
-			room={watching ? undefined : roomHost().code}
-		/>
-	{/snippet}
-	{#snippet subtitle()}
-		<ScriptByline
-			author={loadedScript?.meta.author}
-			version={scriptVersion(undefined, loadedScript?.meta)}
-			storyteller={game.storytellerName}
-			inline
-		/>
-	{/snippet}
+	{#snippet headActions()}{@render scriptActions()}{/snippet}
+	{#snippet subtitle()}{@render scriptSubtitle()}{/snippet}
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
@@ -1709,13 +1710,19 @@
 		</Button>
 	{/if}
 	{#if loadedScript}
-		<Button icon="script" onclick={() => (coverViewOpen = true)}>{t('show.playerView')}</Button>
+		<Button icon="script" onclick={openCoverView}>{t('show.playerView')}</Button>
+		<!-- The players' screen as it is on /play, its title-line buttons and notes too (Trevor,
+		     2026-10-27: "same setting, share, and other buttons ... As if they were within the
+		     app. We shouldn't even block notes"); the notes are the table's, blank each time. -->
 		<Dialog
 			bind:open={coverViewOpen}
 			title={game.script.meta?.name || 'Script'}
 			size="max"
+			titleBelow
 			lead={boardLogo ? scriptLogoLead : undefined}
 		>
+			{#snippet headActions()}{@render scriptActions()}{/snippet}
+			{#snippet subtitle()}{@render scriptSubtitle()}{/snippet}
 			<div class="script-scroll" data-testid="cover-player-view">
 				<BoardPlayerView
 					{game}
@@ -1726,11 +1733,30 @@
 					{look}
 					picture={watching ? undefined : ownPicture}
 					pictureRoom={watching ? grimoire.room : undefined}
-					own={false}
+					notebook={tableNotebook(game.gameId)}
 				/>
 			</div>
 		</Dialog>
 	{/if}
+{/snippet}
+
+<!-- The Script dialog's title line, as /play's (PlayerScriptActions, ScriptByline): the
+     board's Script and the grim cover's Player view both show it. -->
+{#snippet scriptActions()}
+	<PlayerScriptActions
+		script={loadedScript}
+		version={scriptVersion(undefined, loadedScript?.meta)}
+		share={scriptShare}
+		room={watching ? undefined : roomHost().code}
+	/>
+{/snippet}
+{#snippet scriptSubtitle()}
+	<ScriptByline
+		author={loadedScript?.meta.author}
+		version={scriptVersion(undefined, loadedScript?.meta)}
+		storyteller={game.storytellerName}
+		inline
+	/>
 {/snippet}
 
 {#snippet coverTimer()}
