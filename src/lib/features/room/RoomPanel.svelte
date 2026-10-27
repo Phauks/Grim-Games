@@ -7,16 +7,17 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import SharePanel from '#lib/ui/share/SharePanel.svelte';
+	import ScriptSharePanel from '#lib/features/scripts/SharePanel.svelte';
+	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
+	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
+	import CopyButton from '#lib/ui/share/CopyButton.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import { gameLine } from '#lib/features/player/byline.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
-	import { roomJoinLink } from './join-link.ts';
 	import RolesPanel from './RolesPanel.svelte';
 
 	interface Props {
@@ -51,7 +52,6 @@
 		const i = seats.findIndex((s) => s.seatId === seatId);
 		return i < 0 ? t('room.noSeat') : t('common.seat', { number: i + 1 });
 	};
-	const link = $derived(host.code ? roomJoinLink(host.code) : '');
 	const connected = $derived(host.status === 'open');
 	// Seated players stay listed while their phone sleeps; others only while they are here, as
 	// the room keeps phones from earlier games (2026-10-25).
@@ -83,7 +83,12 @@
 	);
 	const scriptName = $derived(loadedScript?.name ?? game.game.script.meta?.name ?? '');
 	const logo = $derived(loadedScript && scriptLogo(loadedScript));
-	let logoFailed = $state(false);
+	/** The script's own link, for the offline code, as on the players' Share. */
+	const target = $derived.by(() => {
+		if (!loadedScript) return () => Promise.reject(new Error('No script yet'));
+		const from = gameShareable(loadedScript);
+		return () => shareTargetFor(from, location.origin);
+	});
 
 	// The panel exists to show the code, so it opens a room straight away (if hovering or
 	// pressing the button that opened it hasn't already).
@@ -126,9 +131,6 @@
 	their name (Trevor, 2026-10-26: "we don't approve anymore"), and sit in the seat
 	the board names with it ("I wanna drop the seat picking").
 -->
-{#snippet scriptCenter()}
-	<ScriptQrCenter {logo} name={scriptName} bind:failed={logoFailed} />
-{/snippet}
 
 <!-- One screen, no tabs (Trevor, 2026-10-22: "combine tabs, we show on the qr code that this
      is the spoiler version"): the players' code first, then the view-only grimoire below it in
@@ -162,6 +164,13 @@
 				testid="grim-view-password"
 				plain
 			/>
+			<!-- Copy beside it, as the join code and link have (Trevor, 2026-10-27). -->
+			<CopyButton
+				label={t('room.watch.copy')}
+				text={host.viewerPassword}
+				failed={t('room.watch.copyFailed')}
+				disabled={!host.viewerKey}
+			/>
 			<!-- A new one in one step, not off and on (Trevor, 2026-10-20). -->
 			<IconButton
 				icon="refresh"
@@ -178,21 +187,25 @@
 	<!-- Laid out the same before the room opens, so the code and QR arrive without a reflow. -->
 	<div class="layout">
 		<section class="join">
-			<SharePanel
-				url={link || undefined}
-				title={t('room.title')}
-				qrLabel={t('room.qrLabel')}
-				pending={host.problem ? t('room.openFailed') : t('room.openingRoom')}
-				code={{ label: t('room.joinCode'), value: host.code && formatRoomCode(host.code) }}
-				text={message || undefined}
-				qrCenter={logo || scriptName ? scriptCenter : undefined}
-				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
-				refresh={{
-					label: t('room.refresh'),
-					disabled: host.opening,
-					// No Open or Close room (Trevor, 2026-10-20): a room is just there while the
-					// game is, and a new code replaces it, deleting the old room.
-					onclick: () => (host.code ? askRefresh('room') : void host.open())
+			<!-- The players' Share screen, header and offline code too (Trevor, 2026-10-27:
+			     "Storyteller should have everything player screen has"). -->
+			<ScriptSharePanel
+				title={scriptName}
+				author={game.game.script.meta?.author}
+				version={scriptVersion(undefined, game.game.script.meta)}
+				{logo}
+				{target}
+				room={host.code}
+				hosting={{
+					pending: host.problem ? t('room.openFailed') : t('room.openingRoom'),
+					text: message || undefined,
+					refresh: {
+						label: t('room.refresh'),
+						disabled: host.opening,
+						// No Open or Close room (Trevor, 2026-10-20): a room is just there while the
+						// game is, and a new code replaces it, deleting the old room.
+						onclick: () => (host.code ? askRefresh('room') : void host.open())
+					}
 				}}
 			/>
 		</section>
