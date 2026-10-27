@@ -17,9 +17,14 @@
 		problem?: string;
 		/** Shown over the picture while a code is being read, e.g. an animated code's frames. */
 		progress?: string;
+		/**
+		 * Which pieces of an animated code are in, one square each (Trevor, 2026-10-27: "show what
+		 * information has been transferred"), under `progress`.
+		 */
+		pieces?: boolean[];
 	}
 
-	let { onRead, problem, progress }: Props = $props();
+	let { onRead, problem, progress, pieces }: Props = $props();
 
 	let video = $state<HTMLVideoElement>();
 	let phase = $state<'starting' | 'running' | 'denied' | 'none' | 'failed'>('starting');
@@ -86,7 +91,14 @@
 	{:else if problem}
 		<p class="over bottom" role="alert">{problem}</p>
 	{:else if progress}
-		<p class="over bottom" role="status">{progress}</p>
+		<div class="over bottom progress" role="status">
+			<p>{progress}</p>
+			{#if pieces?.length}
+				<ol class="pieces" aria-hidden="true">
+					{#each pieces as have, i (i)}<li class:have></li>{/each}
+				</ol>
+			{/if}
+		</div>
 	{/if}
 </div>
 
@@ -118,5 +130,33 @@
 		background: var(--evil);
 		color: var(--on-evil);
 		padding: var(--space-2);
+	}
+	.progress {
+		display: grid;
+		gap: var(--space-1);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+	}
+	.progress p {
+		margin: 0;
+	}
+	.pieces {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: calc(0.5 * var(--u));
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.pieces li {
+		width: calc(2 * var(--u));
+		aspect-ratio: 1;
+		border: calc(0.25 * var(--u)) solid var(--on-surface-muted);
+		border-radius: calc(0.5 * var(--u));
+	}
+	.pieces li.have {
+		background: var(--good);
+		border-color: var(--good);
 	}
 </style>
