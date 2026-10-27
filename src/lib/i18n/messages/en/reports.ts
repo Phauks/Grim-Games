@@ -32,9 +32,10 @@ export const reports = {
 	'reports.checking': 'Checking access…',
 	'reports.status': 'Status',
 	'reports.status.new': 'New',
-	'reports.status.accepted': 'Accepted',
+	'reports.status.accepted': 'To do',
+	'reports.status.in-progress': 'In progress',
 	'reports.status.done': 'Done',
-	'reports.status.declined': 'Declined',
+	'reports.status.declined': "Won't fix",
 	'reports.delete': 'Delete report',
 	'reports.deleteTitle': 'Delete report #{id}?',
 	'reports.deleteDetail': 'It is removed for good.',
@@ -44,5 +45,13 @@ export const reports = {
 	'reports.noUsername': 'No username',
 	'reports.signedOut': 'Signed out',
 	'reports.hidden': 'Hidden',
-	'reports.loadFailed': 'Could not load reports'
+	'reports.loadFailed': 'Could not load reports',
+	'reports.copy': 'Copy',
+	'reports.copyShown': 'Copy shown reports',
+	'reports.download': 'Download shown reports',
+	'reports.copiedDetail': 'The report is on your clipboard as Markdown.',
+	'reports.copiedAllDetail': {
+		one: '{count} report is on your clipboard as Markdown.',
+		other: '{count} reports are on your clipboard as Markdown.'
+	}
 } as const;

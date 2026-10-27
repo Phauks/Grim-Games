@@ -306,6 +306,8 @@
 	 * A seat's avatar joins its guesses' cycle (Trevor, 2026-10-26), except on a Traveller's
 	 * seat, whose character the town knows.
 	 */
+	/** A seat further right than this (in %) has its guesses' pill on the left rim. */
+	const PILL_FLIP_X = 65;
 	const withAvatar = (seat: PublicSeat) => !!seat.avatar && !seat.traveller;
 	/**
 	 * The seat's cycle, front first, as the token, its pill and the sheet show it: its guesses
@@ -471,7 +473,10 @@
 					{#snippet marks()}
 						<!-- The board's own mark (SeatNoteMark): tapping it opens the note, as on the board. -->
 						{#if notes[seat.seatId]}<SeatNoteMark />{/if}
-						{#if others.length}<GuessMarks {others} />{/if}
+						{#if others.length}<GuessMarks
+								{others}
+								side={(point?.x ?? 0) > PILL_FLIP_X ? 'left' : 'right'}
+							/>{/if}
 					{/snippet}
 					{#snippet face()}
 						{#if shown && 'key' in shown}<GenericGuessToken

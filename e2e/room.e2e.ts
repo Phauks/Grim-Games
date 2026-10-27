@@ -52,8 +52,13 @@ async function nameSeat(page: Page, number: number, name: string) {
 	await expect(sheet).toBeHidden();
 }
 
-async function startGame(page: Page, storyteller?: string) {
+async function startGame(page: Page, storyteller?: string, players = 8) {
 	await page.goto('/new');
+	const count = page.getByTestId('setup-table').locator('thead th[data-current]');
+	for (let n = 8; n < players; n++) {
+		await page.getByRole('button', { name: 'More players' }).tap();
+		await expect(count).toHaveText(String(n + 1));
+	}
 	await page
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
@@ -1888,14 +1893,37 @@ test("a player's Grim fills the screen from its own corner, and a seat's sheet o
 	const corner = (await fullScreen.boundingBox())!;
 	expect(corner.x + corner.width).toBeGreaterThan(box.x + box.width * 0.85);
 	expect(corner.y).toBeLessThan(box.y + box.height * 0.15);
+	// A phone with a camera in the screen's top edge (Trevor's Pixel, 2026-10-27: "Unable to
+	// close"): the app's status bar strip has height, and must not cover the corner.
+	await phone.addStyleTag({ content: ':root { --app-top: 3rem; }' });
 	await fullScreen.tap();
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	const exit = (await fullScreen.boundingBox())!;
+	expect(exit.y).toBeGreaterThanOrEqual(48);
+	const onTop = await phone.evaluate(
+		([x, y]) => !!document.elementFromPoint(x, y)?.closest('[aria-pressed="true"]'),
+		[exit.x + exit.width / 2, exit.y + exit.height / 2]
+	);
+	expect(onTop).toBe(true);
+	// Nor does the strip draw over the top of the part that fills the screen.
+	const stripCovered = await phone.evaluate(
+		() => !document.elementFromPoint(innerWidth / 2, 8)?.closest('[data-filled]')
+	);
+	expect(stripCovered).toBe(false);
+	// The screen, less a margin clear of the camera and the rounded corners (Trevor's phone,
+	// 2026-10-27), with Full screen inside the town's own corner.
 	const filled = (await town.boundingBox())!;
 	const screen = phone.viewportSize()!;
-	expect(Math.round(filled.x)).toBe(0);
-	expect(Math.round(filled.y)).toBe(0);
-	expect(Math.round(filled.width)).toBe(screen.width);
-	expect(Math.round(filled.height)).toBe(screen.height);
+	const margin = filled.x;
+	expect(margin).toBeGreaterThanOrEqual(12);
+	expect(margin).toBeLessThan(screen.width * 0.1);
+	// Below the camera's strip at the top; one margin on the other sides.
+	expect(Math.round(filled.y)).toBe(48);
+	expect(Math.round(filled.width)).toBe(Math.round(screen.width - 2 * margin));
+	expect(Math.round(filled.height)).toBe(Math.round(screen.height - 48 - margin));
+	const inside = (await fullScreen.boundingBox())!;
+	expect(inside.y).toBeGreaterThan(filled.y);
+	expect(inside.x + inside.width).toBeLessThan(filled.x + filled.width);
 	// A seat's sheet still opens over it.
 	await phone.getByTestId('grim-seat').nth(2).tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
@@ -2026,6 +2054,46 @@ test("a player puts generic tokens with numbers or notes on their own Grim's sea
 	await phoneContext.close();
 });
 
+test("a seat's other guesses stay on the screen, on whichever side of the Grim it sits", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-27): "Guesses run off side of screen". A pill of other guesses sits on
+	// the rim toward the middle of the grim, so a seat at the screen's edge keeps it in view.
+	// Thirteen seats, as in Trevor's game, puts seats against both edges of a phone.
+	// Three guesses on each of thirteen seats takes a while.
+	test.slow();
+	const board = await startGame(page, undefined, 13);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const seats = phone.getByTestId('grim-seat');
+	const count = await seats.count();
+	for (let i = 0; i < count; i++) {
+		await seats.nth(i).tap();
+		const sheet = phone.getByRole('dialog', { name: `Seat ${i + 1} · Seat ${i + 1}` });
+		await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
+		await sheet.getByRole('button', { name: 'Spy', exact: true }).tap();
+		await sheet.getByRole('button', { name: 'Imp', exact: true }).tap();
+		await phone.keyboard.press('Escape');
+		await expect(sheet).toBeHidden();
+	}
+	const width = phone.viewportSize()!.width;
+	for (let i = 0; i < count; i++) {
+		const pill = seats.nth(i).getByTestId('guess-marks');
+		await expect(pill).toBeVisible();
+		const box = (await pill.boundingBox())!;
+		expect(box.x, `Seat ${i + 1}'s pill`).toBeGreaterThanOrEqual(0);
+		expect(box.x + box.width, `Seat ${i + 1}'s pill`).toBeLessThanOrEqual(width);
+	}
+	await phoneContext.close();
+});
+
 test("a Banshee the Demon killed shows two votes and no ghost vote on the players' Grim", async ({
 	page,
 	browser
@@ -2111,9 +2179,15 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	await notes.getByRole('button', { name: 'Close' }).tap();
 	// The seat's sheet lists them on one line.
 	await expect(sheet.getByTestId('seat-note')).toContainText('Claim, Quiet all day');
+	// Guessed as two characters, both listed after the name on the Notes tab.
+	await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await sheet.getByRole('button', { name: 'Spy', exact: true }).tap();
 	await phone.keyboard.press('Escape');
 	await expect(seats.nth(2).getByTestId('note-mark')).toBeVisible();
-	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your note');
+	await expect(seats.nth(2)).toHaveAttribute(
+		'aria-label',
+		'Seat 3: Seat 3, your guess: Spy, Empath, your note'
+	);
 	// The board's own note mark, which opens the notes straight away, as on the board (Trevor,
 	// 2026-10-25: the same icon and the same behaviour).
 	await seats.nth(2).getByTestId('note-mark').tap();
@@ -2126,6 +2200,10 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	await expect(phone.getByRole('heading', { name: 'Players' })).toBeVisible();
 	const row = phone.locator('[data-seat-note]').nth(2);
 	await expect(row.locator('[data-note]')).toHaveText([/Claim/, /Quiet all day/]);
+	// The player's name leads, as the one thing about a seat that never changes, then every
+	// character the seat is guessed as, all alike (Trevor, 2026-10-27).
+	await expect(row.getByTestId('player-badge')).toHaveText('Seat 3');
+	await expect(row.getByTestId('note-guesses').locator('.badge')).toHaveText(['Spy', 'Empath']);
 	await expect(phone.locator('[data-seat-note]').first().locator('[data-note]')).toHaveCount(0);
 	await row.locator('[data-note]').first().tap();
 	await editor.getByRole('textbox', { name: 'Text' }).fill('Claims Chef: 0');

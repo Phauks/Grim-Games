@@ -21,7 +21,12 @@ export const REPORTS_API = '/api/reports';
 export const REPORT_KINDS = ['bug', 'enhancement', 'rules', 'data', 'question'] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];
 
-export const REPORT_STATUSES = ['new', 'accepted', 'done', 'declined'] as const;
+/**
+ * The usual work flow (Trevor, 2026-10-27: "look at what programmers usually use"): New
+ * (not looked at yet), To do (`accepted`), In progress, Done, and Won't fix (`declined`).
+ * The stored ids stay as they were, so reports and older apps keep reading them.
+ */
+export const REPORT_STATUSES = ['new', 'accepted', 'in-progress', 'done', 'declined'] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 export const REPORT_LIMITS = {
