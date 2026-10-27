@@ -50,7 +50,7 @@ jobs:
       - run: npm run build
 
   e2e:
-    name: Touch e2e (phone + tablet, shard ${{ matrix.shard }}/3)
+    name: Touch e2e (phone + tablet, shard ${{ matrix.shard }}/6)
     runs-on: ubuntu-latest
     # Playwright's own image has Chromium and its system libraries installed, so no job spends
     # time on `playwright install --with-deps` (which took 10 minutes on about one run in ten).
@@ -58,14 +58,14 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
-    # Each shard runs a third of the tests (fullyParallel spreads single tests, not files). On
-    # 2026-10-23 a shard's tests took 12 to 20 minutes; the limit is a backstop for a hung run.
-    # The check names are required on beta, so a fourth shard needs the ruleset updated too.
+    # Each shard runs a sixth of the tests (fullyParallel spreads single tests, not files). With
+    # three shards, a shard took 25 to 32 minutes on 2026-10-27 and runners never queued, so six
+    # halve the wait. Branch rules require "E2E done", not the shards, so the count can change.
     timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@v6
       # The container runs as root over a checkout owned by the runner user, so git refuses
@@ -81,13 +81,31 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/3
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/6
       - name: List flaky tests
+        id: flaky
         if: always()
         run: node scripts/flaky-summary.ts --run
-      - if: failure()
+      # A flaky test passes on its retry, so the job is green; the report still holds the failed
+      # attempt's trace, which is the only way to see why it flaked.
+      - if: failure() || fromJSON(steps.flaky.outputs.flaky || '0') > 0
         uses: actions/upload-artifact@v6
         with:
           name: playwright-report-${{ matrix.shard }}
           path: playwright-report
           retention-days: 7
+
+  # The one e2e check the branch rules require, so adding or removing shards needs no ruleset
+  # change. It fails unless every shard passed (a skipped or cancelled shard fails it too).
+  e2e-done:
+    name: E2E done
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - if: needs.e2e.result != 'success'
+        run: |
+          echo "E2E shards finished with: ${{ needs.e2e.result }}"
+          exit 1
+      - run: echo "Every e2e shard passed."
