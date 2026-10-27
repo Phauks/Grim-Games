@@ -11,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -582,19 +583,22 @@
 				/>
 			</div>
 		{:else}
-			<PageSection title={t('library.navigation')} collapsible storageKey="library-navigation">
-				<LibrarySidebar
-					bind:current={currentFolder}
-					bind:kind={chosenKind}
-					kinds={!onlyKind}
-					bind:place
-					bind:tags={tagFilter}
-					count={(f) => folderSize(items, labels, f)}
-					onnewfolder={newFolder}
-					onmove={move}
-					onrename={renameFolder}
-				/>
-			</PageSection>
+			<!-- On a phone the sidebar folds away under the toolbar, a line between them. -->
+			<SectionStack edge>
+				<PageSection title={t('library.navigation')} collapsible storageKey="library-navigation">
+					<LibrarySidebar
+						bind:current={currentFolder}
+						bind:kind={chosenKind}
+						kinds={!onlyKind}
+						bind:place
+						bind:tags={tagFilter}
+						count={(f) => folderSize(items, labels, f)}
+						onnewfolder={newFolder}
+						onmove={move}
+						onrename={renameFolder}
+					/>
+				</PageSection>
+			</SectionStack>
 		{/if}
 
 		<!-- One toolbar over the list (Trevor, 2026-10-18: the parts should feel connected). -->

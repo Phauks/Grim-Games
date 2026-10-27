@@ -13,6 +13,7 @@
 	const counts = $derived(tablePlayersLine(seats));
 </script>
 
+<!-- eslint-disable-next-line grim/count-badge -- a sentence: "8 (5 Townsfolk, 1 Outsider, …)", as Game info's Players line -->
 <p class="counts" data-testid="grim-counts">{t('modes.info.players')}: {counts}</p>
 
 <style>

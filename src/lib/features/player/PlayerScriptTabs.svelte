@@ -102,7 +102,9 @@
 				{:else if value === 'grim' && grim}
 					{@render grim()}
 				{:else if value === 'notes' && notes}
-					{@render notes()}
+					<!-- The Script and Night tabs' inset, so every tab's sections line up (Trevor,
+					     2026-10-27: "All these seem to use different indents"). -->
+					<div class="inset">{@render notes()}</div>
 				{/if}
 			</ErrorBoundary>
 		</div>
@@ -114,7 +116,8 @@
 		padding-top: var(--space-3);
 	}
 	/* Padded either way, as ScriptCopy is, so the light background moves nothing. */
-	.sheet {
+	.sheet,
+	.inset {
 		padding: var(--space-3);
 		border-radius: var(--radius-md);
 	}

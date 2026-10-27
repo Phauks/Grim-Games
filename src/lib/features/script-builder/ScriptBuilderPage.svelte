@@ -674,7 +674,7 @@
 									<span class="label">{TYPE_PLURALS[type]}</span>
 									<!-- The count and its usual number as one, e.g. "9/13". -->
 									<span class="nums"
-										><span class="n" data-testid="count-{type}">{n}</span
+										><span class="n"><CountBadge count={n} testid="count-{type}" /></span
 										>{#if target !== undefined}<span class="of" data-testid="expected-{type}"
 												>/{target}</span
 											>{/if}</span
@@ -877,7 +877,7 @@
 	}
 	/* Small enough that the four seated types fit one line on a phone. */
 	.types {
-		font-size: 0.8rem;
+		font-size: 0.75rem;
 	}
 	/* Search, then Show only selected right beside it, as in setup. */
 	.find {
@@ -897,20 +897,25 @@
 	}
 	.type {
 		display: flex;
-		align-items: baseline;
-		gap: var(--space-1);
-		padding: 0 calc(0.75 * var(--space-2));
+		align-items: center;
+		gap: 0.25em;
+		padding: 0 0.45em;
 		border-radius: var(--radius-full);
 		background: var(--surface-raised);
 	}
 	.types .label {
 		color: var(--on-surface-muted);
 	}
-	.types .nums {
-		font-variant-numeric: tabular-nums;
-	}
+	/* The badge as tall as the pill's line, so the counts keep to their rows. */
 	.types .n {
-		font-weight: 700;
+		display: inline-flex;
+		margin-inline-end: 0.1em;
+		font-size: 0.7em;
+	}
+	.types .nums {
+		display: inline-flex;
+		align-items: center;
+		font-variant-numeric: tabular-nums;
 	}
 	.types .of {
 		color: var(--on-surface-muted);

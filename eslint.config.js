@@ -282,6 +282,21 @@ export default defineConfig(
 		rules: { 'grim/dropdown-choice': 'error' }
 	},
 	{
+		// Anything with a caret is the shared Collapsible, with a line between it and its
+		// neighbours and one indent everywhere (Trevor, 2026-10-27).
+		files: ['src/**/*.svelte'],
+		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: { 'grim/caret-section': 'error' }
+	},
+	{
+		// A worked-out number sits in a filled CountBadge, not loose (Trevor, 2026-10-27).
+		files: ['src/**/*.svelte'],
+		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: { 'grim/count-badge': 'error' }
+	},
+	{
 		// Core builds no screen text, but its fields must keep the name marks for the UI.
 		files: ['src/lib/core/**/*.ts'],
 		ignores: ['src/lib/core/**/*.test.ts'],

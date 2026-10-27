@@ -46,17 +46,27 @@ async function undelineated(page: Page, screen: string): Promise<string[]> {
 			const s = getComputedStyle(el);
 			return b.width > 1 && b.height > 1 && s.visibility !== 'hidden' && s.display !== 'none';
 		};
-		/** Lines of text a block shows: distinct tops of its text runs. */
+		/**
+		 * Lines of text a block shows. Runs whose boxes overlap top to bottom share a line, so a
+		 * count badge beside its label (smaller text, centred) is not a line of its own.
+		 */
 		const lines = (el: Element) => {
-			const tops = new Set<number>();
+			const rows: { top: number; bottom: number }[] = [];
 			const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
 			for (let n = walker.nextNode(); n; n = walker.nextNode()) {
 				if (!n.textContent?.trim()) continue;
 				const range = document.createRange();
 				range.selectNodeContents(n);
-				for (const r of range.getClientRects()) if (r.height > 0) tops.add(Math.round(r.top));
+				for (const r of range.getClientRects()) {
+					if (r.height <= 0) continue;
+					const row = rows.find((w) => r.top < w.bottom - 1 && r.bottom > w.top + 1);
+					if (row) {
+						row.top = Math.min(row.top, r.top);
+						row.bottom = Math.max(row.bottom, r.bottom);
+					} else rows.push({ top: r.top, bottom: r.bottom });
+				}
 			}
-			return tops.size;
+			return rows.length;
 		};
 		const edgedSelf = (el: Element) => {
 			const s = getComputedStyle(el);

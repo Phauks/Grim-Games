@@ -65,7 +65,6 @@ export const shell = {
 	'shell.updateLater': 'Later',
 	'shell.updateRefresh': 'Update',
 	'shell.whatChanged': 'What changed',
-	'shell.whatChangedCount': 'What changed ({count})',
 	'shell.olderChanges': 'Older changes not listed.',
 	'shell.changelogTitle': `Changelog · ${APP_NAME}`,
 	'shell.unreleased': 'Unreleased',

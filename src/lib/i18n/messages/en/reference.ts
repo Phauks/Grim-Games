@@ -61,7 +61,6 @@ export const reference = {
 	'reference.noDayText': 'Left out of the pre-day list: {reason}.',
 	'reference.wiki': 'Wiki',
 	'reference.report': 'Report a problem',
-	'reference.jinxCount': { one: '{count} jinx', other: '{count} jinxes' },
 	'reference.infoToken': 'Info token',
 	'reference.dead': 'Dead',
 	'reference.deathMarker': 'The death marker',

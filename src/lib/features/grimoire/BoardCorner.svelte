@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { Snippet } from 'svelte';
 	import type { ScriptMeta } from '#lib/core/data/index.ts';
 	import type { Game } from '#lib/core/model/index.ts';
@@ -228,7 +229,9 @@
 						role="status"
 						aria-label={t('room.watching', { count: watcherCount })}
 						data-testid="board-watchers"
-						><Icon name="watchers" /><span aria-hidden="true">{watcherCount}</span></span
+						><Icon name="watchers" /><span aria-hidden="true"
+							><CountBadge count={watcherCount} /></span
+						></span
 					>{/if}</span
 			>{/if}
 		<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->

@@ -39,7 +39,7 @@ async function chooseRules(page: Page, ...names: string[]) {
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
 	await expect(modesPanel(page).getByRole('button', { name: /^Special rules/ })).toHaveText(
-		`Special rules (${names.length})`
+		`Special rules ${names.length}`
 	);
 }
 
@@ -171,7 +171,7 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await page.goto('/new');
 	await chooseMode(page, 'Whale Buffet');
 	const restricted = modesPanel(page).getByRole('button', { name: /^Restricted characters/ });
-	await expect(restricted).toContainText('(3)');
+	await expect(restricted.locator('.count-badge')).toHaveText('3');
 	await restricted.tap();
 	const dialog = page.getByRole('dialog', { name: 'Restricted characters' });
 	await dialog.getByRole('searchbox').fill('Pit-Hag');
@@ -179,7 +179,7 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await dialog.getByRole('searchbox').fill('Imp');
 	await dialog.getByRole('button', { name: /^Imp\b/ }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(restricted).toContainText('(3)');
+	await expect(restricted.locator('.count-badge')).toHaveText('3');
 
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	// Whale Buffet opens on choosing; the setup list shows the game's characters all the same.
@@ -1171,7 +1171,9 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await expect(inspect).toHaveCount(0);
 	const modes = panel.getByRole('combobox', { name: 'Game mode' });
 	await expect(modes).toContainText('Tiny Buffet');
-	await expect(panel.getByRole('button', { name: /^Restricted characters/ })).toContainText('(1)');
+	await expect(
+		panel.getByRole('button', { name: /^Restricted characters/ }).locator('.count-badge')
+	).toHaveText('1');
 
 	// It stays on this device.
 	await page.reload();
@@ -2150,9 +2152,7 @@ test('Start game restates the special rules first, and Back returns to New game'
 	await recap.getByRole('button', { name: 'Back' }).tap();
 	await expect(recap).toBeHidden();
 	await expect(page).toHaveURL(/\/new$/);
-	await expect(panel.getByRole('button', { name: /^Special rules/ })).toHaveText(
-		'Special rules (2)'
-	);
+	await expect(panel.getByRole('button', { name: /^Special rules/ })).toHaveText('Special rules 2');
 	await panel.getByRole('button', { name: 'Start game' }).tap();
 	await expect(announce).toBeChecked();
 	await recap.getByRole('button', { name: 'Start game' }).tap();
@@ -2377,9 +2377,9 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 		'background-color',
 		'rgb(218, 218, 218)'
 	);
-	// Each character type starts under a line across the sheet.
+	// Each character type starts under a line across the sheet (SectionStack draws it).
 	await sheet.getByRole('tab', { name: 'Script' }).tap();
-	const sections = sheet.getByTestId('script-copy').locator('.sheet > section');
+	const sections = sheet.getByTestId('script-copy').locator('.section-stack > section');
 	await expect(sections.nth(1)).not.toHaveCSS('border-top-width', '0px');
 	await expect(sections.first()).toHaveCSS('border-top-width', '0px');
 });

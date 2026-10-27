@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
+	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import UpdateChanges from './UpdateChanges.svelte';
 	import { updateCheck } from './update-check.svelte.ts';
 
@@ -16,15 +17,6 @@
 	let activated = $state(false);
 	// What the waiting build changed (update-check.svelte.ts), shared with About.
 	const changes = $derived(updateCheck.changes);
-	let changesOpen = $state(false);
-	const listId = $props.id();
-	const toggleLabel = $derived(
-		!changes
-			? t('shell.whatChanged')
-			: changes.complete
-				? t('shell.whatChangedCount', { count: changes.commits.length })
-				: t('shell.whatChanged')
-	);
 
 	$effect(() => {
 		if (waiting || activated) void updateCheck.loadChanges();
@@ -99,31 +91,32 @@
 
 {#if (waiting || activated) && !dismissed}
 	<div class="update" role="status" data-testid="update-banner">
-		<div class="main">
-			<p class="text">
-				<strong>{t('shell.updateReady')}</strong>
-				<span>{t('shell.updateSaved')}</span>
-			</p>
-			<div class="actions">
-				<Button variant="quiet" onclick={() => (dismissed = true)}>{t('shell.updateLater')}</Button>
-				<Button variant="accent" onclick={refresh}>{t('shell.updateRefresh')}</Button>
+		<SectionStack>
+			<div class="main">
+				<p class="text">
+					<strong>{t('shell.updateReady')}</strong>
+					<span>{t('shell.updateSaved')}</span>
+				</p>
+				<div class="actions">
+					<Button variant="quiet" onclick={() => (dismissed = true)}
+						>{t('shell.updateLater')}</Button
+					>
+					<Button variant="accent" onclick={refresh}>{t('shell.updateRefresh')}</Button>
+				</div>
 			</div>
-		</div>
-		<!-- The row is always there, disabled until the notes arrive, so the card never grows by itself. -->
-		<button
-			type="button"
-			class="toggle"
-			aria-expanded={changesOpen}
-			aria-controls={listId}
-			disabled={!changes}
-			onclick={() => (changesOpen = !changesOpen)}
-		>
-			<span class="caret" class:open={changesOpen} aria-hidden="true"><Icon name="expand" /></span>
-			{toggleLabel}
-		</button>
-		<div id={listId} class="changes" hidden={!changesOpen || !changes}>
-			{#if changes}<UpdateChanges {changes} />{/if}
-		</div>
+			<!-- The row is always there, disabled until the notes arrive, so the card never grows by itself. -->
+			<Collapsible
+				title={t('shell.whatChanged')}
+				level={3}
+				startClosed
+				disabled={!changes}
+				count={changes?.complete ? changes.commits.length : undefined}
+			>
+				<div class="changes">
+					{#if changes}<UpdateChanges {changes} />{/if}
+				</div>
+			</Collapsible>
+		</SectionStack>
 	</div>
 {/if}
 
@@ -147,6 +140,7 @@
 	}
 	.main {
 		display: flex;
+		padding-bottom: var(--space-1);
 		align-items: center;
 		gap: var(--space-3);
 	}
@@ -166,41 +160,10 @@
 		flex: none;
 		gap: var(--space-2);
 	}
-	.toggle {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		font-size: 0.85rem;
-		text-align: start;
-		cursor: pointer;
-	}
-	.toggle:disabled {
-		color: var(--on-surface-muted);
-		cursor: default;
-	}
-	.caret {
-		display: grid;
-		transform: rotate(-90deg);
-		transition: transform 0.15s ease;
-	}
-	.caret.open {
-		transform: none;
-	}
 	.changes {
 		max-height: min(40dvh, calc(16 * var(--u)));
 		overflow-y: auto;
 		font-size: 0.8rem;
 		line-height: 1.35;
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.caret {
-			transition: none;
-		}
 	}
 </style>
