@@ -99,18 +99,27 @@ describe('offline codes', () => {
 	});
 
 	it('animates a long script, and the frames rebuild its link', async () => {
-		// Homebrew: characters with their own long text don't compress to one code.
+		// Homebrew: characters with their own long text don't compress to one code. The text comes
+		// from a fixed seed, so every run makes the same frames (random text changed the frame
+		// count, and with it which frames the pattern below misses).
+		let seed = 1;
+		const word = () => {
+			seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+			return seed.toString(36);
+		};
 		const long = [
 			{ id: '_meta', name: 'Long' },
 			...Array.from({ length: 40 }, (_, i) => ({
 				id: `own${i}`,
 				name: `Own ${i}`,
 				team: 'townsfolk',
-				ability: `${i} ${crypto.randomUUID()} ${crypto.randomUUID()}`
+				ability: `${i} ${Array.from({ length: 12 }, word).join(' ')}`
 			}))
 		];
 		const code = await offlineCode(origin, { json: long });
 		expect(code.frames!.length).toBeGreaterThan(1);
+		// An odd loop, so missing every second frame over two loops still shows each one once.
+		expect(code.frames!.length % 2).toBe(1);
 		// Each frame opens Join game, so a phone's own camera app opens the app (2026-10-27).
 		expect(code.frames!.every((f) => f.startsWith(`${origin}/join#q=GB2:`))).toBe(true);
 		// Every second frame missed, from the middle of the loop: the spares fill the gaps.
