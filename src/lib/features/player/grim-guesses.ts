@@ -88,6 +88,15 @@ export function guessesOf(guesses: Guesses, seatId: string): readonly CharacterI
 }
 
 /**
+ * The characters a seat is guessed as, main one first: its guesses without the avatar or a
+ * type or team alone, so the Notes tab names every one (Trevor, 2026-10-27: "it only notes
+ * the first one").
+ */
+export function characterGuesses(guesses: Guesses, seatId: string): readonly CharacterId[] {
+	return guessesOf(guesses, seatId).filter((id) => !genericGuess(id));
+}
+
+/**
  * A seat's cycle, front first: its guesses, and its avatar once it has a guess and the seat
  * has an avatar (`avatar`). A seat guessed before the avatar joined the cycle has it last.
  */

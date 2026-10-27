@@ -25,7 +25,8 @@
 			seatId: string;
 			name: string;
 			notes: readonly TitledNote[];
-			characterId?: CharacterId;
+			/** The seat's characters as this player sees them, main one first. */
+			characterIds: readonly CharacterId[];
 		}[];
 		/** Opens a seat's note, or a new one without `noteId`. */
 		onOpenSeatNote?: (seatId: string, noteId?: string) => void;
@@ -100,7 +101,8 @@
 				{#each seats as seat (seat.seatId)}
 					<li data-seat-note={seat.seatId}>
 						<SeatNoteEntry
-							characterId={seat.characterId}
+							characterId={seat.characterIds[0]}
+							also={seat.characterIds.slice(1)}
 							label={seat.name}
 							notes={seat.notes}
 							onOpen={(noteId) => onOpenSeatNote?.(seat.seatId, noteId)}
