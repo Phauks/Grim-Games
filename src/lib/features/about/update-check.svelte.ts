@@ -18,6 +18,9 @@ import {
 /** When this device last finished a check, so About can say "Checked 18:58". */
 const CHECKED_KEY = 'grim-games:update-checked';
 
+/** How long Refresh waits for the new build to take over before loading the page anyway. */
+const TAKE_OVER_MS = 5000;
+
 export type UpdateCheck =
 	'idle' | 'checking' | 'downloading' | 'current' | 'ready' | 'failed' | 'unsupported';
 
@@ -136,14 +139,24 @@ class UpdateChecker {
 	 * Moves this page onto the waiting build: the update card's Refresh and About's (Trevor,
 	 * 2026-10-19: "once update has been loaded from about, also add a refresh button there").
 	 */
-	async refresh(): Promise<void> {
+	async refresh(href?: string): Promise<void> {
+		// `href` loads that page instead of this one (an update taken on the way there).
+		const load = () => (href ? location.assign(href) : location.reload());
 		const container = 'serviceWorker' in navigator ? navigator.serviceWorker : undefined;
 		const registration = await container?.getRegistration?.().catch(() => undefined);
 		const waiting = registration?.waiting;
 		// Nothing waiting: Refresh in another tab already activated it, so only this page is behind.
-		if (!container || !waiting) return location.reload();
+		if (!container || !waiting) return load();
 		this.refreshing = true;
-		container.addEventListener('controllerchange', () => location.reload(), { once: true });
+		let loading = false;
+		const loadOnce = () => {
+			if (!loading) load();
+			loading = true;
+		};
+		container.addEventListener('controllerchange', loadOnce, { once: true });
+		// A build that never takes over (it failed, or was replaced meanwhile) still lets the page
+		// load, on whichever build is active.
+		setTimeout(loadOnce, TAKE_OVER_MS);
 		waiting.postMessage({ type: 'SKIP_WAITING' });
 	}
 }

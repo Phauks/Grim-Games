@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { theMenu } from './shell.ts';
+import { openSettingsDialog, theMenu } from './shell.ts';
 
 // Trevor (2026-10-16): the update prompt opens a list of what changed since the running build.
 
@@ -168,11 +168,11 @@ test('Check for updates in About says Up to date in place', async ({ page }) => 
 
 test('Check for updates brings back the update card after Later', async ({ page }) => {
 	await fakeServiceWorker(page, true);
-	await page.goto('/');
+	await page.goto('/about');
 	const banner = page.getByTestId('update-banner');
 	await banner.getByRole('button', { name: 'Later' }).tap();
 	await expect(banner).toHaveCount(0);
-	const dialog = await openAbout(page);
+	const dialog = page.getByRole('main');
 	await dialog.getByRole('button', { name: 'Check for updates' }).tap();
 	await expect(dialog.getByTestId('update-check-result')).toHaveText(/ · Update ready$/);
 	await expect(banner).toBeVisible();
@@ -397,9 +397,9 @@ test('About offers Update once a build is ready, and it moves onto the new build
 
 test('About offers Update when the update card already found a build', async ({ page }) => {
 	await fakeServiceWorker(page, true);
-	await page.goto('/');
+	await page.goto('/about');
 	await expect(page.getByTestId('update-banner')).toBeVisible();
-	const dialog = await openAbout(page);
+	const dialog = page.getByRole('main');
 	await expect(dialog.getByTestId('update-refresh')).toHaveText('Update');
 });
 
@@ -412,12 +412,117 @@ test('About shows what a ready build changed, in a dialog', async ({ page, reque
 		route.fulfill({ json: { commit: newer[0].sha, commits: [...newer, ...running.commits] } })
 	);
 	await fakeServiceWorker(page, true);
-	await page.goto('/');
-	const settings = await openAbout(page);
+	await page.goto('/about');
+	const settings = page.getByRole('main');
 	const whatChanged = settings.getByRole('button', { name: 'What changed', exact: true });
 	await expect(whatChanged).toBeEnabled();
 	expect((await whatChanged.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	await whatChanged.tap();
 	const dialog = page.getByRole('dialog', { name: 'What changed' });
 	await expect(dialog.getByRole('listitem')).toHaveText([/^ccccccc\s+A change worth seeing$/]);
+});
+
+// Trevor (2026-10-27): phones ran builds hours old, so a downloaded build takes over by itself
+// where that interrupts nothing; the update card stays for a game on screen.
+/** A build waiting to take over, which does when told to, as the real worker does. */
+async function fakeTakeOver(page: Page) {
+	await page.addInitScript(() => {
+		const seen: unknown[] = [];
+		const listeners: Array<() => void> = [];
+		const active = { state: 'activated', postMessage() {}, addEventListener() {} };
+		const waiting = {
+			state: 'installed',
+			postMessage: (message: unknown) => {
+				seen.push(message);
+				sessionStorage.setItem('taken-over', '1');
+				registration.waiting = null;
+				listeners.splice(0).forEach((listener) => listener());
+			},
+			addEventListener() {}
+		};
+		const registration = {
+			// Once taken over, the page runs the new build: nothing waits any more.
+			waiting: sessionStorage.getItem('taken-over') ? null : (waiting as unknown),
+			installing: null,
+			active,
+			addEventListener() {},
+			update: () => Promise.resolve()
+		};
+		Object.defineProperty(navigator, 'serviceWorker', {
+			value: {
+				controller: active,
+				ready: Promise.resolve(registration),
+				register: () => Promise.resolve(registration),
+				getRegistration: () => Promise.resolve(registration),
+				addEventListener: (type: string, listener: () => void) => {
+					if (type === 'controllerchange') listeners.push(listener);
+				},
+				removeEventListener() {}
+			}
+		});
+		(window as unknown as { seen: unknown[] }).seen = seen;
+	});
+}
+
+type Seen = { seen: unknown[]; samePage?: boolean };
+
+test('outside a game, a waiting build takes over on the way to the next page', async ({ page }) => {
+	await fakeTakeOver(page);
+	await page.goto('/');
+	await expect(page.getByTestId('update-banner')).toBeVisible();
+	await page.evaluate(() => ((window as unknown as Seen).samePage = true));
+
+	const loaded = page.waitForEvent('load');
+	await (await theMenu(page)).getByRole('link', { name: 'About', exact: true }).tap();
+	await loaded;
+	await expect(page).toHaveURL(/\/about$/);
+	await expect(page.getByRole('heading', { name: 'About', level: 1 })).toBeVisible();
+	// A new page, on the new build: nothing waits and no card shows.
+	expect(await page.evaluate(() => (window as unknown as Seen).samePage)).toBeUndefined();
+	await expect(page.getByTestId('update-banner')).toHaveCount(0);
+});
+
+test('a waiting build takes over after the app spends a while in the background', async ({
+	page
+}) => {
+	await page.clock.install();
+	await fakeTakeOver(page);
+	await page.goto('/');
+	await expect(page.getByTestId('update-banner')).toBeVisible();
+
+	const hide = (state: 'hidden' | 'visible') =>
+		page.evaluate((state) => {
+			Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+			document.dispatchEvent(new Event('visibilitychange'));
+		}, state);
+	// A short trip away changes nothing.
+	await hide('hidden');
+	await page.clock.runFor(5_000);
+	await hide('visible');
+	expect(await page.evaluate(() => (window as unknown as Seen).seen)).toEqual([]);
+
+	await hide('hidden');
+	const loaded = page.waitForEvent('load');
+	await page.clock.runFor(31_000);
+	await loaded;
+	await expect(page.getByTestId('update-banner')).toHaveCount(0);
+});
+
+test('a Settings file gone from the running build reloads the page instead of failing', async ({
+	page
+}) => {
+	// The 2026-10-27 cog that did nothing: this build's Settings files are gone from the server.
+	let gone = true;
+	await page.route('**/_app/immutable/assets/SettingsModal.*.css', (route) =>
+		gone ? route.abort() : route.continue()
+	);
+	let loads = 0;
+	// The reload loads the newest build, whose files are all there.
+	page.on('load', () => {
+		if (++loads > 1) gone = false;
+	});
+	await page.goto('/');
+	await expect.poll(() => loads).toBe(2);
+	const dialog = await openSettingsDialog(page);
+	await expect(dialog).toBeVisible();
 });

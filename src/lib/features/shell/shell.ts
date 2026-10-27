@@ -45,6 +45,15 @@ export type LeaveGuard = (leave: () => void) => void;
 interface Registered {
 	guard: LeaveGuard;
 	within: (url: URL) => boolean;
+	survivesReload: boolean;
+}
+
+export interface LeaveGuardOptions {
+	/**
+	 * The screen comes back as it was after a reload (a game's board reopens from its save), so
+	 * a new build may take over while the app is in the background (auto-update.svelte.ts).
+	 */
+	survivesReload?: boolean;
 }
 
 const guards: Registered[] = [];
@@ -60,9 +69,10 @@ let passes = 0;
  */
 export function setLeaveGuard(
 	guard: LeaveGuard,
-	within: (url: URL) => boolean = () => false
+	within: (url: URL) => boolean = () => false,
+	{ survivesReload = false }: LeaveGuardOptions = {}
 ): () => void {
-	const entry = { guard, within };
+	const entry = { guard, within, survivesReload };
 	guards.push(entry);
 	markGuarded(true);
 	return () => {
@@ -73,6 +83,16 @@ export function setLeaveGuard(
 		confirmed = false;
 		markGuarded(false);
 	};
+}
+
+/** Whether a leave guard is set: a game in progress or a bag draw is on screen. */
+export function isGuarded(): boolean {
+	return guards.length > 0;
+}
+
+/** Whether a guard is set whose screen would lose something if the page reloaded. */
+export function guardBlocksReload(): boolean {
+	return guards.some((entry) => !entry.survivesReload);
 }
 
 /** Pull-to-refresh is off while a guard is set (base.css), so a pull can't skip its question. */
