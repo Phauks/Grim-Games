@@ -33,9 +33,11 @@
 		onProblem?: (problem: string | undefined) => void;
 		/** The room says the game is over: its History can be stepped through here. */
 		over?: EndedGame;
+		/** The room it came through, which holds the board's background picture. */
+		room?: string;
 	}
 
-	let { shared, onReady, onProblem, over }: Props = $props();
+	let { shared, onReady, onProblem, over, room }: Props = $props();
 
 	let board = $state.raw<Grimoire>();
 	/** The Storyteller's day timer, as sent with the grimoire. */
@@ -64,6 +66,7 @@
 			drawn.reminderSpots = parseReminderSpots(next.reminderSpots);
 			drawn.copies = parseReminderCopyIds(next.copies);
 			drawn.look = parsePublicLook(next.look);
+			drawn.room = room;
 			timer.set(dayTimers.parseSharedTimer(next.timer));
 			board = drawn;
 			onProblem?.(undefined);

@@ -67,6 +67,14 @@
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
 	let typed = $state('');
+	// The room's link and QR open Join game with its code filled in (Trevor, 2026-10-26), so
+	// the person picks Join as player, Grim view or Public Town.
+	// Once, as the panel opens: what is typed after is the person's own.
+	untrack(() => {
+		if (code !== undefined || !entry || typeof location === 'undefined') return;
+		const fromLink = normaliseRoomCode(location.hash.slice(1));
+		if (fromLink) typed = fromLink;
+	});
 
 	$effect(() => {
 		if (!valid) return;
@@ -138,10 +146,10 @@
 				: view.ended.winner === 'evil'
 					? t('room.gameOverEvil')
 					: t('room.gameOver');
-		// Named: nothing to say, the cog at the top carries the name (Trevor, 2026-10-26: "remove
-		// you are in the room as ...").
-		if (view.me.name || mine) return '';
-		return t('room.choose');
+		// In the room: nothing to say, named or not; the cog at the top carries the name (Trevor,
+		// 2026-10-26: "remove you are in the room as ...", then of "set your name": "I just want
+		// that whole thing gone").
+		return '';
 	});
 
 	// Specters: a spectators' vote opens over the page, once for each new vote.
@@ -239,8 +247,8 @@
 	}
 
 	/*
-	 * Scan a code (plan J2, 2026-10-22): the Share screen's QR code read in the app, as the
-	 * players link or the Grim view link it holds, or a room code on its own.
+	 * Scan a code (plan J2, 2026-10-22): the Share screen's QR code read in the app, or an
+	 * older players or Grim view link, or a room code on its own.
 	 */
 	let scanning = $state(false);
 	let scanProblem = $state('');
@@ -407,7 +415,10 @@
 	<div class="you-line">
 		<!-- Where this phone sits; the name is set from You on the title line (plan E2, Trevor
 		     2026-10-26: "move name into an edit button in the top"). -->
-		<p class="you" data-testid="you-row" data-seat={mySeat}>
+		<!-- With nothing to say (the phone has its name) the box takes no room, so the game's
+		     status starts the row (Trevor, 2026-10-26: "remove the empty space next to the game
+		     state tracker"). -->
+		<p class="you" class:quiet={!summary} data-testid="you-row" data-seat={mySeat}>
 			<span class="summary" role="status" data-testid="join-status">{summary}</span>
 		</p>
 		<!-- Only while the Storyteller lets players see their character (Trevor, 2026-10-26). -->
@@ -549,6 +560,14 @@
 		background: var(--surface-raised);
 	}
 	/* Two lines reserved, so a longer status never moves the tabs. */
+	.you.quiet {
+		display: none;
+	}
+	/* The game's status takes the rest of the row (Trevor, 2026-10-27: "the game status bar
+	   should then take up the entire horizontal of that line area"). */
+	.you-line > :global([data-testid='players-status']) {
+		flex: 1;
+	}
 	.summary {
 		flex: 1;
 		min-width: 0;

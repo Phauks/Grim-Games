@@ -79,11 +79,6 @@ export interface Preferences {
 	 * content, Trevor 2026-10-15).
 	 */
 	ownWording: boolean;
-	/**
-	 * Share's view-only grimoire part hides its QR code and link, e.g. while streaming (Trevor,
-	 * 2026-10-21); Copy and Share still work.
-	 */
-	hideWatchLink: boolean;
 	/** How loud every app sound plays on this device, 0 (silent) to 1 (plan U1). */
 	soundVolume: number;
 	/** The sound when the day timer runs out (Trevor, 2026-10-17). */
@@ -231,7 +226,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	slotMachine: false,
 	tileOrderRandom: false,
 	ownWording: false,
-	hideWatchLink: false,
 	soundVolume: 1,
 	timerSound: 'bell',
 	timerMode: 'down',
@@ -307,10 +301,6 @@ export function parsePreferences(raw: unknown): Preferences {
 				: DEFAULT_PREFERENCES.tileOrderRandom,
 		ownWording:
 			typeof input.ownWording === 'boolean' ? input.ownWording : DEFAULT_PREFERENCES.ownWording,
-		hideWatchLink:
-			typeof input.hideWatchLink === 'boolean'
-				? input.hideWatchLink
-				: DEFAULT_PREFERENCES.hideWatchLink,
 		qrCentre: (QR_CENTRES as readonly unknown[]).includes(input.qrCentre)
 			? (input.qrCentre as QrCentre)
 			: DEFAULT_PREFERENCES.qrCentre,

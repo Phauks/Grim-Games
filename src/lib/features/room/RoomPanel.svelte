@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { resolve } from '$app/paths';
 	import { seatsInOrder, type SeatId } from '#lib/core/model/index.ts';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
@@ -14,10 +14,10 @@
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import { gameLine } from '#lib/features/player/byline.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
+	import { roomJoinLink } from './join-link.ts';
 	import RolesPanel from './RolesPanel.svelte';
 
 	interface Props {
@@ -30,16 +30,16 @@
 	$effect(() => host.attach(game));
 
 	/**
-	 * Grim view (plan D1: "grim view by password or direct link"): a password the Storyteller
-	 * sets, so a phone with the room code and it watches too. Enter sets it; it is shown, as
-	 * the Storyteller reads it out.
+	 * Grim view by password alone (Trevor, 2026-10-26: "access password locked by storyteller
+	 * ... default to a new password per game (that can be customizable)"): a phone with the
+	 * room code and it watches. Enter sets it; the eye shows it, as the Storyteller reads it out.
 	 */
 	let password = $derived(host.viewerPassword ?? '');
 	function setPassword() {
 		if (password.trim() !== (host.viewerPassword ?? '')) void host.setViewerPassword(password);
 	}
 
-	/** New code or New link asks first; which one stays set while the dialog closes. */
+	/** New code or New password asks first; which one stays set while the dialog closes. */
 	let refreshOpen = $state(false);
 	let refreshKind = $state<'room' | 'watch'>('room');
 	function askRefresh(kind: 'room' | 'watch') {
@@ -52,16 +52,8 @@
 		const i = seats.findIndex((s) => s.seatId === seatId);
 		return i < 0 ? t('room.noSeat') : t('common.seat', { number: i + 1 });
 	};
-	const link = $derived(
-		host.code ? `${location.origin}${resolve('/join/[code]', { code: host.code })}` : ''
-	);
+	const link = $derived(host.code ? roomJoinLink(host.code) : '');
 	const connected = $derived(host.status === 'open');
-	// The key goes in the hash, which never reaches the server (CLAUDE.md).
-	const watchLink = $derived(
-		host.code && host.viewerKey
-			? `${location.origin}${resolve('/watch/[code]', { code: host.code })}#${host.viewerKey}`
-			: ''
-	);
 	// Seated players stay listed while their phone sleeps; others only while they are here, as
 	// the room keeps phones from earlier games (2026-10-25).
 	const seated = $derived(
@@ -148,43 +140,19 @@
 </div>
 
 {#snippet watching()}
-	<!-- The same two columns as the players' part on a wide screen (Trevor, 2026-10-21): the
-	     QR and link, then the switches. Status above counts who is watching. -->
-	<div class="layout watch-part" data-testid="watch-link">
-		<section class="join">
-			<SharePanel
-				url={watchLink || undefined}
-				title={t('room.watch.title')}
-				qrLabel={t('room.watch.qrLabel')}
-				pending={t('room.watch.off')}
-				text={!watchLink
-					? undefined
-					: gameText
-						? t('room.watch.shareGameText', { game: gameText })
-						: t('room.watch.shareText')}
-				qrCenter={logo || scriptName ? scriptCenter : undefined}
-				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
-				qrCaption={t('room.watch.qrCaption')}
-				hidden={preferences.current.hideWatchLink}
-				refresh={{
-					label: t('room.watch.refresh'),
-					disabled: !watchLink,
-					// A new link in one step, not off and on (Trevor, 2026-10-20).
-					onclick: () => askRefresh('watch')
-				}}
-			/>
-		</section>
-		<!-- Specters: spectators watch the whole grimoire (Trevor, 2026-10-18). Off until
-		     turned on; the link's QR and buttons stay in place while it is off. -->
-		<section class="watch" aria-labelledby="watch-label">
-			<h2 id="watch-label">{t('room.watch.heading')}</h2>
-			<SettingToggle
-				label={t('room.watch.toggle')}
-				description={t('room.watch.hint')}
-				checked={!!host.viewerKey}
-				disabled={!host.code}
-				onChange={(on) => void host.setViewers(on)}
-			/>
+	<!-- Grim view (Specters, Trevor 2026-10-18), under its own rule: no QR or link of its own
+	     (Trevor, 2026-10-26: "a second QR code for spoilers is unnecessary"), only a password
+	     with the room code. Status above counts who is watching. -->
+	<section class="watch watch-part" aria-labelledby="watch-label" data-testid="watch-link">
+		<h2 id="watch-label">{t('room.watch.heading')}</h2>
+		<SettingToggle
+			label={t('room.watch.toggle')}
+			description={t('room.watch.hint')}
+			checked={!!host.viewerKey}
+			disabled={!host.code}
+			onChange={(on) => void host.setViewers(on)}
+		/>
+		<div class="password">
 			<TextField
 				label={t('room.watch.password')}
 				bind:value={password}
@@ -195,16 +163,16 @@
 				testid="grim-view-password"
 				plain
 			/>
-			<!-- Streaming: the QR and link can stay off screen (Trevor, 2026-10-21). -->
-			<SettingToggle
-				label={t('settings.hideWatchLink')}
-				description={t('settings.hideWatchLinkHelp')}
-				checked={preferences.current.hideWatchLink}
-				onChange={(hideWatchLink) => preferences.update({ hideWatchLink })}
+			<!-- A new one in one step, not off and on (Trevor, 2026-10-20). -->
+			<IconButton
+				icon="refresh"
+				label={t('room.watch.refresh')}
+				disabled={!host.viewerKey}
+				onclick={() => askRefresh('watch')}
 			/>
-			<p class="status" role="status">{host.grimoireTooLarge ? t('room.watch.tooLarge') : ''}</p>
-		</section>
-	</div>
+		</div>
+		<p class="status" role="status">{host.grimoireTooLarge ? t('room.watch.tooLarge') : ''}</p>
+	</section>
 {/snippet}
 
 {#snippet players()}
@@ -299,7 +267,7 @@
 		display: grid;
 		gap: var(--space-5);
 	}
-	/* The view-only part sits under a rule, so the spoiler QR reads as its own thing. */
+	/* Grim view sits under a rule, as its own thing: it shows the whole grimoire. */
 	.watch-part {
 		padding-top: var(--space-5);
 		border-top: 1px solid var(--border);
@@ -343,6 +311,16 @@
 	.watch {
 		display: grid;
 		gap: var(--space-2);
+		max-width: 32rem;
+	}
+	.password {
+		display: flex;
+		align-items: flex-end;
+		gap: var(--space-2);
+	}
+	.password > :global(:first-child) {
+		flex: 1;
+		min-width: 0;
 	}
 	/* Phones stack; a computer or tablet shows the code beside the lists. */
 	.layout {

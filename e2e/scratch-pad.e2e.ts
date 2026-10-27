@@ -141,6 +141,27 @@ test('pads open only when chosen; a finger draws, with undo, redo and a confirme
 	await expect(padRows(page)).toHaveCount(0);
 });
 
+test('My notes and Scratch pads close from their headers and stay closed', async ({ page }) => {
+	await notesTab(page);
+	const pads = page.getByRole('button', { name: 'Scratch pads' });
+	const notes = page.getByRole('button', { name: 'My notes' });
+	await expect(pads).toHaveAttribute('aria-expanded', 'true');
+	await pads.tap();
+	await expect(pads).toHaveAttribute('aria-expanded', 'false');
+	await expect(page.getByRole('button', { name: 'New pad' })).toBeHidden();
+	await notes.tap();
+	await expect(page.getByRole('button', { name: 'New note' })).toBeHidden();
+
+	// Remembered on this device, as the Script tab's sections are.
+	await page.reload();
+	await expect(page.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	await notesTab(page);
+	await expect(pads).toHaveAttribute('aria-expanded', 'false');
+	await expect(notes).toHaveAttribute('aria-expanded', 'false');
+	await pads.tap();
+	await expect(page.getByRole('button', { name: 'New pad' })).toBeVisible();
+});
+
 test('several pads, each with its own title and paper', async ({ page }) => {
 	const viewport = page.viewportSize()!;
 	const first = await newPad(page);

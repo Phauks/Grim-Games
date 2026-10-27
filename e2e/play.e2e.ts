@@ -927,9 +927,10 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// takes a name (plan E2).
 	await page.goto(`/join/${code}`);
 	const row = page.getByTestId('you-row');
-	await expect(page.getByTestId('join-status')).toHaveText(
-		'Set your name with the settings cog at the top.'
-	);
+	await expect(page.getByTestId('join-status')).toHaveText('');
+	// No "set your name" box at the top, not even before a name (Trevor, 2026-10-27: "I just
+	// want that whole thing gone").
+	await expect(row).toBeHidden();
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await page.getByTestId('you-button').tap();
 	const sheet = page.getByRole('dialog', { name: 'Your settings' });
@@ -937,13 +938,14 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await sheet.getByRole('button', { name: 'Save' }).tap();
 	await expect(sheet).toBeHidden();
 	await expect(page.getByTestId('join-status')).toHaveText('');
+	// The cog at the top is named for it (plan E2), and the empty room box leaves the row
+	// (Trevor, 2026-10-26: "remove the empty space next to the game state tracker").
 	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
-	// The cog at the top is named for it (plan E2).
-	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	await expect(row).toBeHidden();
 
-	// The row stays over every tab.
+	// The cog stays at the top of every tab.
 	await openTab(page, 'Notes');
-	await expect(row).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
 
 	// Share script hands on the room's link and code (plan J20).
 	await page.getByRole('button', { name: 'Share script' }).tap();
@@ -953,7 +955,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 		'data-logo',
 		'/data/logos/tb.webp'
 	);
-	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
+	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
 	await share.getByRole('button', { name: 'Close' }).tap();
 
 	// /play itself shows the same room, while the phone is in it.

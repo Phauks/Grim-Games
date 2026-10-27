@@ -42,7 +42,20 @@ describe('scanned codes (plan J2)', () => {
 		expect(scannedRoom(' 482 913 ')).toEqual({ kind: 'join', code: '482913' });
 	});
 
-	it("reads the Share screen's players link from any copy of the app", () => {
+	it("reads the Share screen's link to Join game, the code in its hash", () => {
+		expect(scannedRoom(`https://grimbinder.com/join#${'482913'}`)).toEqual({
+			kind: 'join',
+			code: '482913'
+		});
+		expect(scannedRoom(`https://beta.example.dev/app/join/#${'482913'}`)).toEqual({
+			kind: 'join',
+			code: '482913'
+		});
+		expect(scannedRoom('https://grimbinder.com/join#48291')).toBeNull();
+		expect(scannedRoom('https://grimbinder.com/join')).toBeNull();
+	});
+
+	it("reads the Share screen's older players link from any copy of the app", () => {
 		expect(scannedRoom('https://grimbinder.com/join/482913')).toEqual({
 			kind: 'join',
 			code: '482913'

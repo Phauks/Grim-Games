@@ -892,6 +892,7 @@
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
 	/** The look this board shares, or, watching, the look its Storyteller shared (Trevor, 2026-10-26). */
 	let ownLook = $state<PublicLook>();
+	let ownPicture = $state.raw<Blob>();
 	const look = $derived(watching ? grimoire.look : ownLook);
 	const logoOpacity = $derived(
 		watching
@@ -900,9 +901,10 @@
 				? boardLooks.current.logoOpacity
 				: undefined
 	);
-	function shareLook(shown: PublicLook) {
+	function shareLook(shown: PublicLook, picture?: Blob) {
 		ownLook = shown;
-		roomHost().showLook(game.gameId, shown);
+		ownPicture = picture;
+		roomHost().showLook(game.gameId, shown, picture);
 	}
 	/** Share links to the saved script when it is the game's, as /play's does (parity). */
 	const scriptShare = $derived.by(() => {
@@ -1108,7 +1110,7 @@
 	<GameBackdrop
 		{game}
 		logo={boardLogo || undefined}
-		watched={watching ? { look: grimoire.look } : undefined}
+		watched={watching ? { look: grimoire.look, room: grimoire.room } : undefined}
 		onlook={shareLook}
 	/>
 	<BoardToolbar
@@ -1646,6 +1648,8 @@
 				{layout}
 				corner={cornerInfo}
 				{look}
+				picture={watching ? undefined : ownPicture}
+				pictureRoom={watching ? grimoire.room : undefined}
 			/>
 		{/if}
 	</div>
@@ -1681,6 +1685,8 @@
 					{layout}
 					corner={cornerInfo}
 					{look}
+					picture={watching ? undefined : ownPicture}
+					pictureRoom={watching ? grimoire.room : undefined}
 					own={false}
 				/>
 			</div>

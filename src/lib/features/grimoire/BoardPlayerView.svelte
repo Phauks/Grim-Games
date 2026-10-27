@@ -32,11 +32,24 @@
 		layout: PublicSeatLayout;
 		corner: PublicCorner;
 		look?: PublicLook;
+		/** The board's own background picture, or the room it comes from (PlayerGrim). */
+		picture?: Blob;
+		pictureRoom?: string;
 		/** The Storyteller's own notes and guesses; false on the grim cover. */
 		own?: boolean;
 	}
 
-	let { game, script, characters, layout, corner, look, own = true }: Props = $props();
+	let {
+		game,
+		script,
+		characters,
+		layout,
+		corner,
+		look,
+		picture,
+		pictureRoom,
+		own = true
+	}: Props = $props();
 
 	const town = $derived(
 		publicProjection(game, publicTravellerTest(game.gameId, characters), layout, corner, characters)
@@ -61,6 +74,8 @@
 				storytellerName: town.storytellerName,
 				corner: town.corner,
 				look,
+				picture,
+				pictureRoom,
 				guessKey
 			}}
 		/>{/snippet}
