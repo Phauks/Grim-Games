@@ -31,6 +31,8 @@ export const settings = {
 	'settings.actionSound.gameEnd': 'Game end',
 	'settings.actionSoundNone': 'None',
 	'settings.soundboard': 'Soundboard',
+	'settings.soundPause': 'Pause',
+	'settings.soundResume': 'Resume',
 	'settings.language': 'Language',
 	'settings.theme': 'Theme',
 	'settings.sectionTheme': 'Theme',
