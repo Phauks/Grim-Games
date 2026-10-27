@@ -28,8 +28,16 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	await expect(pads.getByRole('button')).toHaveCount(12);
 	// Nothing is fetched until a sound is played.
 	expect(fetched).toEqual([]);
+	// Pause waits, disabled, until something plays.
+	const pause = sheet.getByRole('button', { name: 'Pause', exact: true });
+	await expect(pause).toBeDisabled();
 	await pads.getByRole('button', { name: 'Hand bell' }).tap();
 	await expect.poll(() => fetched).toContain('/sounds/board/hand-bell.mp3');
+	// Pause holds it (Trevor, 2026-10-27), and Resume carries on.
+	await pause.tap();
+	const resume = sheet.getByRole('button', { name: 'Resume', exact: true });
+	await resume.tap();
+	await expect(pause).toBeVisible();
 	// Day and night sound is beside it, to change mid-game.
 	await expect(sheet.getByRole('combobox', { name: 'Night sound' })).toBeVisible();
 	await page.keyboard.press('Escape');

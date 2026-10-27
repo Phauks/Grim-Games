@@ -11,6 +11,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { gameEnds, type GameEnd, type GameEndOptions } from './game-end.ts';
+import { isExecution } from './death-causes.ts';
 
 /** `demon-dead` is the Demon's execution (saved under its first name, so old games still read). */
 export type EndReason = 'demon-dead' | 'two-alive' | `character:${CharacterId}` | 'other';
@@ -55,7 +56,9 @@ function reasonOf(game: Game, characters: CharacterLookup, end: GameEnd): EndRea
 		const causes = end.seats.map((id) => game.seats[id]?.deathCause);
 		const killer = causes.find((c) => c !== undefined && killsDemon(c, characters));
 		if (killer) return characterReason(killer);
-		return causes.every((c) => c === undefined || c === 'execution') ? 'demon-dead' : 'other';
+		return causes.every((c) => c === undefined || isExecution(c, characters))
+			? 'demon-dead'
+			: 'other';
 	}
 	if (end.rule === 'two-alive') return end.rule;
 	return end.characterId ? characterReason(end.characterId) : 'other';

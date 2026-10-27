@@ -152,6 +152,11 @@ describe('Saint (https://wiki.bloodontheclocktower.com/Saint)', () => {
 		]);
 	});
 
+	// An execution by an ability is one too (https://wiki.bloodontheclocktower.com/Judge).
+	it("executed by a character's ability loses", () => {
+		expect(ends(TB, [dead(4, 'judge')]).ends).toMatchObject([{ rule: 'executed-loses' }]);
+	});
+
 	it('killed another way: the game goes on', () => {
 		expect(ends(TB, [dead(4, 'gunslinger')]).ends).toEqual([]);
 	});
