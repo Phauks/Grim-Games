@@ -2047,6 +2047,20 @@
 		align-items: center;
 		gap: var(--space-1);
 	}
+	/* On a phone the timer sits above the soundboard and cover, so the row never reaches the
+	   top seat of a full table. */
+	@media (max-width: 39.99rem) {
+		.board-timer {
+			display: grid;
+			grid-template-columns: auto auto;
+			justify-items: end;
+			gap: var(--space-1);
+		}
+		.board-timer :global([data-testid='day-timer']) {
+			grid-column: 1 / -1;
+			grid-row: 1;
+		}
+	}
 	/* The cover's button has the timer's solid fill, so it reads on any background. */
 	.board-timer :global(.icon-button[data-outlined]) {
 		background: var(--surface);
