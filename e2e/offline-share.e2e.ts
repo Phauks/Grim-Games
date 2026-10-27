@@ -188,7 +188,7 @@ test('an offline code names the live room, and the phone joins it once it has in
 	await sharer.goto(`/join/${code}`);
 	await expect(sharer.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 	await sharer.getByRole('button', { name: 'Share script' }).tap();
-	const share = sharer.getByRole('dialog', { name: 'Share Trouble Brewing' });
+	const share = sharer.getByRole('dialog', { name: 'Share', exact: true });
 	await share.getByText('Offline code', { exact: true }).tap();
 	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`&o=1&r=${code}$`));
 	const url = await share.getByTestId('share-url').inputValue();
