@@ -18,11 +18,19 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 
+	// On the board beside the day timer and the grim cover, not in the ⋯ menu (Trevor,
+	// 2026-10-27).
+	const button = page.getByRole('button', { name: 'Soundboard', exact: true });
+	const cover = (await page.getByTestId('cover-button').boundingBox())!;
+	const placed = (await button.boundingBox())!;
+	expect(Math.abs(placed.y - cover.y)).toBeLessThan(2);
+	expect(placed.x + placed.width).toBeLessThanOrEqual(cover.x + 1);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Soundboard' })
-		.tap();
+	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	await expect(menu.getByRole('button', { name: 'Soundboard' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(menu).toBeHidden();
+	await button.tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 	// Every sound, then the dashed "+ New" pad.
@@ -136,11 +144,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Soundboard' })
-		.tap();
+	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 
@@ -179,11 +183,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Soundboard' })
-		.tap();
+	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
 	await expect(pads.getByRole('button', { name: 'Doom' })).toBeVisible();
 	await expect(pads.getByRole('button', { name: 'Hand bell' })).toHaveCount(0);
 });

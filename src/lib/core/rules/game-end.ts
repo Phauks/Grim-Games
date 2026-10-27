@@ -249,6 +249,28 @@ function endedDays(game: Game, options: GameEndOptions): number[] {
 	return out;
 }
 
+/**
+ * Whether a Demon's once-only pass happened before this death. The Storyteller marks the
+ * Fang Gu's jump with its "Once" on the Fang Gu as it dies (rules `reminderTargets`), so
+ * its token on the dying player is this jump, not an earlier one. It was spent before when
+ * the token is on anyone else, or another player has already been this Demon (the one it
+ * jumped from). https://wiki.bloodontheclocktower.com/Fang_Gu
+ */
+function spentBefore(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	token: string,
+	characters: CharacterLookup
+): boolean {
+	const marked = carrying(game, characterId, token);
+	if (marked.length === 0) return false;
+	if (marked.some((id) => id !== seatId)) return true;
+	return game.seating.some(
+		(id) => id !== seatId && trueCharacter(game, id, characters) === characterId
+	);
+}
+
 function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 	const demons = demonSeats(game, characters);
 	if (demons.length === 0 || demons.some((id) => aliveForEnd(game, id, characters))) return [];
@@ -292,7 +314,8 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 		if (!demons.includes(seatId)) continue;
 		const cause = game.seats[seatId].deathCause;
 		if (cause !== 'demon' && cause !== characterId) continue;
-		if (rule.spentToken && carrying(game, characterId, rule.spentToken).length > 0) continue;
+		if (rule.spentToken && spentBefore(game, seatId, characterId, rule.spentToken, characters))
+			continue;
 		const heirs = game.seating.filter(
 			(id) => aliveForEnd(game, id, characters) && typeOf(game, id, characters) === rule.to
 		);
