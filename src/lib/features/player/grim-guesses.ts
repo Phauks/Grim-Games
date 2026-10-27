@@ -4,6 +4,7 @@
  * per game (`gameKey`), so a new game starts with no guesses.
  */
 import type { Alignment, Character, CharacterId, CharacterType } from '#lib/core/data/index.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 /**
@@ -26,8 +27,18 @@ export interface GenericGuess {
 	team: Alignment;
 }
 
-/** A guess after the main one, as its seat's pill draws it (GuessMarks). */
-export type GuessMark = { character: Character } | { generic: GenericGuess; label: string };
+/**
+ * The seat's own avatar as one entry of its guesses' cycle (Trevor, 2026-10-26: "when a guess
+ * has been added, add the avatar to the cycle of guesses"), so the player can cycle back to it.
+ * It holds a colon, as a generic guess's key does, so it never clashes with a character id.
+ */
+export const AVATAR_GUESS = 'seat:avatar' as CharacterId;
+
+/** An entry after the front one, as its seat's pill draws it (GuessMarks). */
+export type GuessMark =
+	| { character: Character }
+	| { generic: GenericGuess; label: string }
+	| { avatar: AvatarId; name: string; label: string };
 
 export const GENERIC_GUESSES: readonly GenericGuess[] = [
 	{ key: 'type:townsfolk', type: 'townsfolk', team: 'good' },
@@ -59,15 +70,32 @@ export function parseGuesses(raw: unknown): Guesses {
 		const list = (Array.isArray(value) ? value : [value]).filter(
 			(id): id is CharacterId => typeof id === 'string' && id !== ''
 		);
-		const unique = [...new Set(list)].slice(0, MAX_SEAT_GUESSES);
-		if (unique.length) entries.push([seatId, unique]);
+		const unique = capped([...new Set(list)]);
+		if (unique.some((id) => id !== AVATAR_GUESS)) entries.push([seatId, unique]);
 	}
 	return Object.fromEntries(entries.slice(-MAX_GUESSES));
 }
 
-/** A seat's guesses, main first. */
+/** The list with at most `MAX_SEAT_GUESSES` guesses, the last ones dropped; the avatar stays. */
+function capped(list: readonly CharacterId[]): CharacterId[] {
+	let kept = 0;
+	return list.filter((id) => id === AVATAR_GUESS || kept++ < MAX_SEAT_GUESSES);
+}
+
+/** A seat's guesses, in their cycle's order, without the avatar. */
 export function guessesOf(guesses: Guesses, seatId: string): readonly CharacterId[] {
-	return guesses[seatId] ?? [];
+	return (guesses[seatId] ?? []).filter((id) => id !== AVATAR_GUESS);
+}
+
+/**
+ * A seat's cycle, front first: its guesses, and its avatar once it has a guess and the seat
+ * has an avatar (`avatar`). A seat guessed before the avatar joined the cycle has it last.
+ */
+export function seatCycle(guesses: Guesses, seatId: string, avatar: boolean): CharacterId[] {
+	const list = guesses[seatId] ?? [];
+	if (!list.some((id) => id !== AVATAR_GUESS)) return [];
+	if (!avatar) return list.filter((id) => id !== AVATAR_GUESS);
+	return list.includes(AVATAR_GUESS) ? [...list] : [...list, AVATAR_GUESS];
 }
 
 /** The guesses with `seatId` holding `list`, or none when it is empty. */
@@ -78,28 +106,46 @@ function withList(guesses: Guesses, seatId: string, list: readonly CharacterId[]
 }
 
 /**
- * Tapping a character in the guess sheet: a new guess becomes the main one (the oldest drops
- * once the seat holds `MAX_SEAT_GUESSES`); one already there is taken off.
+ * Tapping a character in the guess sheet: a new guess goes to the front (the oldest drops
+ * once the seat holds `MAX_SEAT_GUESSES`), and the seat's avatar joins the cycle when it has
+ * one (`avatar`); one already there is taken off.
  */
-export function toggleGuess(guesses: Guesses, seatId: string, id: CharacterId): Guesses {
-	const list = guessesOf(guesses, seatId);
+export function toggleGuess(
+	guesses: Guesses,
+	seatId: string,
+	id: CharacterId,
+	avatar = false
+): Guesses {
+	const list = seatCycle(guesses, seatId, avatar);
+	if (list.includes(id))
+		return withList(
+			guesses,
+			seatId,
+			list.filter((g) => g !== id)
+		);
+	const added = capped([id, ...list]);
 	return withList(
 		guesses,
 		seatId,
-		list.includes(id) ? list.filter((g) => g !== id) : [id, ...list].slice(0, MAX_SEAT_GUESSES)
+		avatar && !added.includes(AVATAR_GUESS) ? [...added, AVATAR_GUESS] : added
 	);
 }
 
-/** Makes one of a seat's guesses the main one. */
-export function mainGuess(guesses: Guesses, seatId: string, id: CharacterId): Guesses {
-	const list = guessesOf(guesses, seatId);
+/** Brings one of a seat's cycle, a guess or its avatar, to the front. */
+export function mainGuess(
+	guesses: Guesses,
+	seatId: string,
+	id: CharacterId,
+	avatar = false
+): Guesses {
+	const list = seatCycle(guesses, seatId, avatar);
 	if (!list.includes(id)) return guesses;
 	return withList(guesses, seatId, [id, ...list.filter((g) => g !== id)]);
 }
 
-/** The arrow on the token: the next guess becomes the main one, the main one goes last. */
-export function cycleGuess(guesses: Guesses, seatId: string): Guesses {
-	const [first, ...rest] = guessesOf(guesses, seatId);
+/** The pill on the token: the next entry of the cycle comes to the front, the front goes last. */
+export function cycleGuess(guesses: Guesses, seatId: string, avatar = false): Guesses {
+	const [first, ...rest] = seatCycle(guesses, seatId, avatar);
 	return first === undefined ? guesses : withList(guesses, seatId, [...rest, first]);
 }
 

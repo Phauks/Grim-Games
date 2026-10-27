@@ -27,10 +27,14 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('you-row')).toBeVisible();
+	await expect(phone.getByTestId('join-status')).toHaveText('');
 	const status = phone.getByTestId('players-status');
 	const shown = phone.getByTestId('players-timer');
 	await expect(status).toHaveText('Setup');
+	// Alone on its row, across the whole of it (Trevor, 2026-10-27: "the game status bar should
+	// then take up the entire horizontal of that line area").
+	const across = (await phone.getByRole('tablist').boundingBox())!.width;
+	expect((await status.boundingBox())!.width).toBeGreaterThan(across * 0.95);
 
 	// One character, so the bank offers Start game; the first night shows no timer.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
@@ -50,7 +54,8 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(strip).toBeVisible();
 	await expect(status).toHaveText('Night 1');
-	const nightWidth = (await status.boundingBox())!.width;
+	const night = (await status.boundingBox())!;
+	const nightWidth = night.width;
 	await expect(shown).toHaveCount(0);
 
 	// The day: a sun by default, rising on the left while the day's time is all to come.
@@ -67,13 +72,28 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 		'aria-label',
 		'Day timer: 100% of the day left'
 	);
-	// It shares the "You" row's height, so nothing below it moves.
-	const row = (await phone.getByTestId('you-row').boundingBox())!;
+	// The same box as at night, so neither the row nor anything below it moves as the phase
+	// changes.
 	const sun = (await status.boundingBox())!;
-	// The same width as at night, so the row doesn't shift as the phase changes.
 	expect(Math.abs(sun.width - nightWidth)).toBeLessThanOrEqual(1);
-	expect(sun.y).toBeGreaterThanOrEqual(row.y - 1);
-	expect(sun.y + sun.height).toBeLessThanOrEqual(row.y + row.height + 1);
+	expect(Math.abs(sun.y - night.y)).toBeLessThanOrEqual(1);
+	expect(Math.abs(sun.height - night.height)).toBeLessThanOrEqual(1);
+
+	// A tap opens the day's counts, the Storyteller's own numbers (Trevor, 2026-10-27).
+	await status.tap();
+	const counts = phone.getByRole('dialog', { name: 'Day 1' });
+	await expect(counts.getByTestId('players-alive')).toHaveText(
+		(await day.getByTestId('alive-count').textContent())!
+	);
+	await expect(counts.getByTestId('players-votes-needed')).toHaveText(
+		(await day.getByTestId('votes-needed').textContent())!
+	);
+	await expect(counts.getByTestId('players-ghost-votes')).toHaveText(
+		(await day.getByTestId('ghost-votes').textContent())!
+	);
+	await expect(counts).toContainText('8 of 8 players alive');
+	await counts.getByRole('button', { name: 'Close' }).tap();
+	await expect(counts).toBeHidden();
 
 	// The Storyteller starts it, and the sun sets off across the sky. 4:00 for 8 players, so 1% is 2.4s.
 	await day.getByRole('button', { name: 'Start timer' }).tap();

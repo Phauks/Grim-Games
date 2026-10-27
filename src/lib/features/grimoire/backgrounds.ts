@@ -1,6 +1,7 @@
 /**
  * Custom grimoire backgrounds (Trevor, 2026-10-16). The Storyteller picks an image from the
- * device; it is shrunk and kept in IndexedDB on this device only, never uploaded. A choice
+ * device; it is shrunk and kept in IndexedDB on this device, and uploaded only to a live room
+ * the game is shared in, for the table's grims (features/room/room-images.ts). A choice
  * belongs to one game or is the default for every game; a game's own choice wins.
  *
  * A script may name a background image (`_meta.background`, a link). It is only offered, and
@@ -122,10 +123,10 @@ export async function clearBackground(scope: BackgroundScope) {
 	await run('readwrite', (store) => store.delete(keyOf(scope)));
 }
 
-/** Shrinks a picked image to at most `MAX_SIDE` on its longest side, as a JPEG. */
-export async function shrinkImage(file: Blob): Promise<Blob> {
+/** Shrinks a picked image to at most `side` (`MAX_SIDE`) on its longest side, as a JPEG. */
+export async function shrinkImage(file: Blob, side = MAX_SIDE, quality = 0.85): Promise<Blob> {
 	const bitmap = await createImageBitmap(file);
-	const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+	const scale = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
 	const width = Math.max(1, Math.round(bitmap.width * scale));
 	const height = Math.max(1, Math.round(bitmap.height * scale));
 	const canvas = document.createElement('canvas');
@@ -137,7 +138,7 @@ export async function shrinkImage(file: Blob): Promise<Blob> {
 		canvas.toBlob(
 			(blob) => (blob ? resolve(blob) : reject(new Error('Image could not be read'))),
 			'image/jpeg',
-			0.85
+			quality
 		)
 	);
 }

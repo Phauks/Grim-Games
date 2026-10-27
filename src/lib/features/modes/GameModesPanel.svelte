@@ -85,13 +85,16 @@
 		standardPlayers: number;
 		/** The mode chosen; New game sets it when the room votes on the mode (Trevor, 2026-10-23). */
 		modeId?: string;
+		/** The special rules chosen, in order; New game sets them when the room votes on them. */
+		ruleIds?: string[];
 	}
 
 	let {
 		standard,
 		standardScript,
 		standardPlayers,
-		modeId = $bindable(STANDARD.id)
+		modeId = $bindable(STANDARD.id),
+		ruleIds = $bindable([])
 	}: Props = $props();
 	/** Start game with special rules on restates them first (RulesRecap). */
 	let recap = $state<(() => void) | undefined>();
@@ -136,8 +139,6 @@
 	let adding = $state(false);
 	let deleting = $state(false);
 	const mode = $derived<GameMode>(findMode(modeId) ?? STANDARD);
-	/** The special rules chosen, in order (Trevor, 2026-10-18: rules stack on a mode). */
-	let ruleIds = $state<string[]>([]);
 	let choosingRules = $state(false);
 	/** Rules whose own switch is on (rule-switches.ts), such as +1 naming its character. */
 	let switchChoices = $state<SwitchChoices>({});

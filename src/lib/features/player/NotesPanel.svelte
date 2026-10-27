@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import ScratchThumb from '#lib/ui/scratch/ScratchThumb.svelte';
 	import { padShape } from '#lib/ui/scratch/pad-shape.svelte.ts';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
@@ -41,22 +42,18 @@
 	}: Props = $props();
 </script>
 
+<!-- Each section closes from its header and stays as left on this device, as the Script tab's
+     do (Trevor, 2026-10-26). -->
 <div class="notes">
-	<section aria-labelledby="my-notes">
-		<!-- New ones start from a dashed card in the list itself, not a button in the header
-		     (Trevor, 2026-10-24). -->
-		<div class="head">
-			<h2 id="my-notes">{t('player.myNotes')}</h2>
-		</div>
+	<!-- New ones start from a dashed card in the list itself, not a button in the header
+	     (Trevor, 2026-10-24). -->
+	<Collapsible title={t('player.myNotes')} storageKey="play:notes:mine" count={notes.length}>
 		<NoteCards {notes} onOpen={onOpenNote} {onAdd} />
-	</section>
+	</Collapsible>
 
 	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16). Several pads, kept like
 	     notes; one opens full screen only when tapped, never by itself (Trevor, 2026-10-17). -->
-	<section aria-labelledby="scratch-pads">
-		<div class="head">
-			<h2 id="scratch-pads">{t('scratch.pads')}</h2>
-		</div>
+	<Collapsible title={t('scratch.pads')} storageKey="play:notes:pads" count={pads?.length}>
 		<ul class="pads" style:--pad-shape={padShape.ratio}>
 			{#each pads ?? [] as pad (pad.key)}
 				<li>
@@ -85,15 +82,12 @@
 				>
 			</li>
 		</ul>
-	</section>
+	</Collapsible>
 
 	<!-- Notes on each player, written here or from the Grim tab, as the Storyteller's Notes
 	     list them per player (Trevor, 2026-10-24). Only while this phone is in a game. -->
 	{#if seats}
-		<section aria-labelledby="seat-notes">
-			<div class="head">
-				<h2 id="seat-notes">{t('player.seatNotes')}</h2>
-			</div>
+		<Collapsible title={t('player.seatNotes')} storageKey="play:notes:players" count={seats.length}>
 			<ul class="seat-notes">
 				{#each seats as seat (seat.seatId)}
 					<li data-seat-note={seat.seatId}>
@@ -107,7 +101,7 @@
 					</li>
 				{/each}
 			</ul>
-		</section>
+		</Collapsible>
 	{/if}
 </div>
 
@@ -115,23 +109,6 @@
 	.notes {
 		display: grid;
 		gap: var(--space-4);
-	}
-	section {
-		display: grid;
-		gap: var(--space-2);
-	}
-	.head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-		border-bottom: 1px solid var(--border);
-		padding-bottom: var(--space-1);
-	}
-	h2 {
-		margin: 0;
-		font-size: 1.1rem;
-		color: var(--heading);
 	}
 	ul {
 		display: grid;

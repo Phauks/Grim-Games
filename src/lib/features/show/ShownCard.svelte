@@ -20,6 +20,7 @@
 	let areaWidth = $state(0);
 	let areaHeight = $state(0);
 	let captionHeight = $state(0);
+	let nameHeight = $state(0);
 
 	const single = $derived(characters.length === 1 ? characters[0].character : undefined);
 	/**
@@ -32,6 +33,39 @@
 			Math.floor(Math.min(areaWidth * 0.75, areaHeight * 0.55, areaHeight - captionHeight - 16))
 		)
 	);
+
+	/**
+	 * Several characters (the Demon's bluffs) are tokens too, not lines of text (Trevor,
+	 * 2026-10-27): as large as fits, trying each number of columns, each with its name below.
+	 */
+	let tokenList = $state<HTMLUListElement>();
+	let gap = $state(0);
+	/** Each name's own width: a column is as wide as the widest name, if wider than its token. */
+	let nameWidths = $state<number[]>([]);
+	$effect(() => {
+		void areaWidth;
+		if (tokenList) gap = parseFloat(getComputedStyle(tokenList).columnGap) || 0;
+	});
+	const many = $derived.by(() => {
+		const n = characters.length;
+		const widestName = Math.max(0, ...nameWidths.slice(0, n));
+		let best = { size: 0, columns: 1 };
+		for (let columns = 1; columns <= n; columns++) {
+			const rows = Math.ceil(n / columns);
+			const across = (areaWidth - gap * (columns - 1)) / columns;
+			// More columns only while the names still fit side by side.
+			if (columns > 1 && widestName > across) break;
+			const down = (areaHeight - rows * (nameHeight + gap)) / rows;
+			const size = Math.floor(Math.min(across, down, areaWidth * 0.75, areaHeight * 0.55));
+			if (size > best.size) best = { size, columns };
+		}
+		const size = Math.max(48, best.size);
+		return {
+			size,
+			columns: best.columns,
+			width: Math.min(areaWidth, Math.max(size, widestName))
+		};
+	});
 </script>
 
 <!-- One card as the player sees it: the card's text, then one big token or a list. -->
@@ -69,20 +103,33 @@
 			</div>
 		</div>
 	{:else if characters.length > 1}
-		<!-- Several characters (bluffs): a list with each ability, not tokens (Trevor). -->
-		<ul class="list">
-			{#each characters as shown (shown.character.id)}
-				<li>
-					<CharacterBadge
-						characterId={shown.character.id}
-						character={shown.character}
-						alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
-						interactive={false}
-					/>
-					<p>{shown.character.ability}</p>
-				</li>
-			{/each}
-		</ul>
+		<!-- Several characters (bluffs): tokens with their names (Trevor, 2026-10-27). -->
+		<div class="area" bind:clientWidth={areaWidth} bind:clientHeight={areaHeight}>
+			<ul
+				class="tokens"
+				bind:this={tokenList}
+				style:max-width="{many.columns * many.width + (many.columns - 1) * gap}px"
+				data-testid="shown-characters"
+			>
+				{#each characters as shown, i (shown.character.id)}
+					<li style:width="{many.width}px">
+						<CharacterToken
+							character={shown.character}
+							alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
+							size={many.size}
+						/>
+						<span class="name" bind:clientHeight={nameHeight} bind:clientWidth={nameWidths[i]}
+							><CharacterBadge
+								characterId={shown.character.id}
+								character={shown.character}
+								alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
+								interactive={false}
+							/></span
+						>
+					</li>
+				{/each}
+			</ul>
+		</div>
 	{/if}
 </div>
 
@@ -167,27 +214,24 @@
 		justify-items: center;
 		gap: var(--space-3);
 	}
-	.list {
-		display: grid;
+	.tokens {
+		/* Flex, not grid: a short last row sits in the middle. */
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		width: 100%;
 		gap: var(--space-4);
-		width: min(100%, 40rem);
 		margin: 0;
 		padding: 0;
-		overflow-y: auto;
 		list-style: none;
-		text-align: start;
-		font-size: 1.4rem;
 	}
-	.list li {
+	.tokens li {
+		flex: 0 0 auto;
 		display: grid;
-		justify-items: start;
+		justify-items: center;
+		align-content: start;
 		gap: var(--space-2);
-	}
-	.list p {
-		margin: 0;
-		font-family: var(--font-ability);
-		font-size: 1.2rem;
-		line-height: 1.35;
+		min-width: 0;
 	}
 	/* The shared badge, larger: it names the character the player is being shown. */
 	.name {
@@ -200,6 +244,11 @@
 		font-family: var(--font-ability);
 		font-size: clamp(1.25rem, 4.5vw, 1.8rem);
 		line-height: 1.35;
+	}
+	/* Several names share the width, so each is a size smaller than a single one. */
+	.tokens .name {
+		max-width: none;
+		font-size: clamp(1rem, 3.5vw, 1.4rem);
 	}
 	.content[data-compact] .name {
 		font-size: 1.1rem;
