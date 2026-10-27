@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { editionScript, toScript } from '#lib/core/data/index.ts';
-import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
+import { createGame, dispatch, type Command, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup, type Game } from '#lib/core/model/index.ts';
 import type { NightStep } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { COUNCIL_OF_THE_DEAD } from '#lib/core/modes/rules/council-of-the-dead.ts';
-import { boardNightSteps, givesNumber, ruleNightSteps, stepHolders } from './night-steps.ts';
+import {
+	boardNightSteps,
+	givesNumber,
+	ruleNightSteps,
+	stepHolders,
+	stepWakes
+} from './night-steps.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -13,14 +19,22 @@ const characters = characterLookup(data, script);
 let n = 0;
 const ctx: EngineContext = { characters, newId: () => `id${++n}`, now: () => 0, random: () => 0 };
 
-function game(assign: string[]): Game {
+function game(assign: string[], ...more: ((seats: string[]) => Command)[]): Game {
 	let session = createGame({ type: 'CreateGame', script, playerCount: 7 }, ctx);
 	if (!session.ok) throw new Error();
-	assign.forEach((characterId, i) => {
+	const seats = session.session.game.seating;
+	const commands = [
+		...assign.map((characterId, i): Command => ({
+			type: 'AssignCharacter',
+			seatId: seats[i],
+			characterId
+		})),
+		...more.map((f) => f(seats))
+	];
+	for (const command of commands) {
 		if (!session.ok) throw new Error();
-		const seatId = session.session.game.seating[i];
-		session = dispatch(session.session, { type: 'AssignCharacter', seatId, characterId }, ctx);
-	});
+		session = dispatch(session.session, command, ctx);
+	}
 	if (!session.ok) throw new Error();
 	return session.session.game;
 }
@@ -94,5 +108,37 @@ describe('ruleNightSteps', () => {
 		expect(ruleNightSteps([COUNCIL_OF_THE_DEAD], 4)).toMatchObject([
 			{ kind: 'custom', title: 'Council of the Dead', afterDawn: false }
 		]);
+	});
+});
+
+describe('stepWakes', () => {
+	const kill =
+		(i: number) =>
+		(seats: string[]): Command => ({ type: 'SetDead', seatId: seats[i], dead: true });
+	const hasAbility =
+		(i: number) =>
+		(seats: string[]): Command => ({
+			type: 'AddReminder',
+			seatId: seats[i],
+			reminder: { characterId: 'vigormortis', label: 'Has Ability' }
+		});
+	const step = (g: Game, id: string) =>
+		boardNightSteps(g, characters, 'other', data).find((s) => s.id === id)!;
+	const none = { diedTonight: new Set<string>() };
+
+	// https://wiki.bloodontheclocktower.com/Vigormortis : a Minion the Vigormortis kills keeps
+	// their ability, so a dead Poisoner still wakes to poison.
+	it('wakes a dead Minion marked Has Ability by the Vigormortis', () => {
+		const dead = game(['poisoner', 'vigormortis', 'empath'], kill(0));
+		expect(stepWakes(dead, step(dead, 'poisoner'), characters, none)).toBe(false);
+		const kept = game(['poisoner', 'vigormortis', 'empath'], kill(0), hasAbility(0));
+		expect(stepWakes(kept, step(kept, 'poisoner'), characters, none)).toBe(true);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Vigormortis : only Minions keep their ability; any
+	// other dead player is dead as usual.
+	it('leaves a dead non-Minion asleep even with the token', () => {
+		const g = game(['poisoner', 'vigormortis', 'monk'], kill(2), hasAbility(2));
+		expect(stepWakes(g, step(g, 'monk'), characters, none)).toBe(false);
 	});
 });

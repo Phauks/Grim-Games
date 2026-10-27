@@ -1,7 +1,9 @@
 import type { CharacterRules } from '../data/character-rules.ts';
 import type { CharacterId } from '../data/index.ts';
 import { rulesOf } from '../data/rules/index.ts';
-import type { Game } from '../model/index.ts';
+import type { CharacterLookup } from '../model/characters.ts';
+import type { Game, SeatId } from '../model/index.ts';
+import { typeOf } from '../model/selectors.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
@@ -15,15 +17,36 @@ export function actsWhenDead(characterId: CharacterId, characters?: RulesLookup)
 }
 
 /**
+ * Whether a dead player keeps their ability because another character's reminder on them says
+ * so (`keepsAbility`: the Vigormortis's Has Ability on a Minion it killed,
+ * https://wiki.bloodontheclocktower.com/Vigormortis). They stay in the night order, and their
+ * ability still works. Living players never need it.
+ */
+export function keepsAbilityWhenDead(
+	game: Game,
+	seatId: SeatId,
+	characters?: CharacterLookup
+): boolean {
+	const seat = game.seats[seatId];
+	if (!seat?.dead) return false;
+	return seat.reminders.some((r) => {
+		const keeps = rulesOf(r.characterId, characters)?.keepsAbility;
+		if (keeps?.token !== r.label) return false;
+		return !keeps.type || (!!characters && typeOf(game, seatId, characters) === keeps.type);
+	});
+}
+
+/**
  * Characters in play whose every player is dead and whose ability ends with them: their
  * reminders still off the board go in the bank's dead players section (Trevor, 2026-10-19).
  */
-export function deadCharacters(game: Game, characters?: RulesLookup): Set<CharacterId> {
+export function deadCharacters(game: Game, characters?: CharacterLookup): Set<CharacterId> {
 	const alive = new Set<CharacterId>();
 	const dead = new Set<CharacterId>();
-	for (const seat of Object.values(game.seats)) {
+	for (const [seatId, seat] of Object.entries(game.seats)) {
 		if (!seat.characterId) continue;
-		(seat.dead ? dead : alive).add(seat.characterId);
+		const ended = seat.dead && !keepsAbilityWhenDead(game, seatId, characters);
+		(ended ? dead : alive).add(seat.characterId);
 	}
 	for (const id of [...dead]) if (alive.has(id) || actsWhenDead(id, characters)) dead.delete(id);
 	return dead;
@@ -33,16 +56,18 @@ export function deadCharacters(game: Game, characters?: RulesLookup): Set<Charac
  * Whether a reminder belongs to a character whose ability has ended with its player's death,
  * so putting it on the board asks first (Trevor, 2026-10-20; warn, never lock). The seat that
  * owns this copy decides when the reminder knows it; otherwise every player of the character
- * must be dead. Characters that act once dead (`actsWhenDead`, the Sweetheart's Drunk) and
+ * must be dead, and a dead player who keeps their ability (`keepsAbility`) counts as alive.
+ * Characters that act once dead (`actsWhenDead`, the Sweetheart's Drunk) and
  * reminders of characters on no seat (Fabled, a Drunk's "Is The Drunk") never ask.
  */
 export function reminderOwnerDead(
 	game: Game,
 	reminder: { characterId: CharacterId; ownerSeatId?: string },
-	characters?: RulesLookup
+	characters?: CharacterLookup
 ): boolean {
 	if (actsWhenDead(reminder.characterId, characters)) return false;
-	const owner = reminder.ownerSeatId ? game.seats[reminder.ownerSeatId] : undefined;
-	if (owner) return !!owner.dead;
+	const ownerId = reminder.ownerSeatId;
+	if (ownerId && game.seats[ownerId])
+		return !!game.seats[ownerId].dead && !keepsAbilityWhenDead(game, ownerId, characters);
 	return deadCharacters(game, characters).has(reminder.characterId);
 }

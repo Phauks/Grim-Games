@@ -17,6 +17,8 @@ import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readDayMark, type DayMarkRule } from './day-mark-rules.ts';
 import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
 import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
+import { readRegistersAs } from './registers-as-rules.ts';
+import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
@@ -28,7 +30,6 @@ import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
 import { readReminderTargets, type TargetRule } from './target-rules.ts';
 import { readTurnsPlayersInto, type TurnsPlayersInto } from './turns-players-rules.ts';
 import {
-	ALIGNMENTS,
 	CHARACTER_TYPES,
 	type Alignment,
 	SEATED_TYPES,
@@ -45,7 +46,6 @@ import {
 	readEnum,
 	readNumber,
 	readString,
-	readStringArray,
 	type Issues
 } from './validate.ts';
 
@@ -174,6 +174,8 @@ export interface CharacterRules {
 	dayMark?: DayMarkRule;
 	/** Its token on a player stops them waking tonight (`stops-waking-rules.ts`). */
 	stopsWaking?: StopsWaking;
+	/** Its token on a dead player keeps that player's ability (`keeps-ability-rules.ts`). */
+	keepsAbility?: KeepsAbility;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 	/**
@@ -356,6 +358,7 @@ export const RULE_KEYS = [
 	'nightText',
 	'dayMark',
 	'stopsWaking',
+	'keepsAbility',
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'orHiddenAs',
@@ -557,6 +560,11 @@ export function parseCharacterRules(
 		const stops = readStopsWaking(raw.stopsWaking, at, issues, reminders);
 		if (stops) rules.stopsWaking = stops;
 	}
+	if (raw.keepsAbility !== undefined) {
+		const at = `${path}.keepsAbility`;
+		const keeps = readKeepsAbility(raw.keepsAbility, at, issues, reminders);
+		if (keeps) rules.keepsAbility = keeps;
+	}
 	if (raw.infoTokenCharacters !== undefined) {
 		const at = `${path}.infoTokenCharacters`;
 		const filled = readInfoTokenCharacters(raw.infoTokenCharacters, at, issues);
@@ -571,79 +579,6 @@ export function parseCharacterRules(
 	const turns = readTurnsPlayersInto(raw.turnsPlayersInto, path, issues);
 	if (turns) rules.turnsPlayersInto = turns;
 	return issues.list.length > before ? undefined : rules;
-}
-
-function readEnumList<T extends string>(
-	raw: Record<string, unknown>,
-	key: string,
-	values: readonly T[],
-	path: string,
-	issues: Issues
-): T[] | undefined {
-	const list = readStringArray(raw, key, path, issues);
-	if (!list) return undefined;
-	const bad = list.filter((v) => !(values as readonly string[]).includes(v));
-	for (const v of bad) issues.add(`${path}.${key}`, `unknown value ${JSON.stringify(v)}`);
-	return bad.length > 0 ? undefined : (list as T[]);
-}
-
-function readRegisters(
-	raw: unknown,
-	path: string,
-	issues: Issues,
-	extra: readonly string[] = []
-): (Registers & { carrierAlignment?: Alignment }) | undefined {
-	if (!isObject(raw)) {
-		issues.add(path, `expected object, got ${describe(raw)}`);
-		return undefined;
-	}
-	checkKeys(raw, ['alignments', 'types', ...extra], path, issues);
-	const out: Registers & { carrierAlignment?: Alignment } = {};
-	const alignments = readEnumList(raw, 'alignments', ALIGNMENTS, path, issues);
-	if (alignments) out.alignments = alignments;
-	const types = readEnumList(raw, 'types', CHARACTER_TYPES, path, issues);
-	if (types) out.types = types;
-	if (extra.includes('carrierAlignment')) {
-		const carrier = readEnum(raw, 'carrierAlignment', ALIGNMENTS, path, issues, false);
-		if (carrier) out.carrierAlignment = carrier;
-	}
-	return out;
-}
-
-function readRegistersAs(
-	raw: unknown,
-	path: string,
-	issues: Issues,
-	reminders: readonly ReminderLabel[] | undefined
-): RegistersAs | undefined {
-	if (!isObject(raw)) {
-		issues.add(path, `expected object, got ${describe(raw)}`);
-		return undefined;
-	}
-	checkKeys(raw, ['self', 'tokens'], path, issues);
-	const out: RegistersAs = {};
-	if (raw.self !== undefined) {
-		const self = readRegisters(raw.self, `${path}.self`, issues);
-		if (self) out.self = self;
-	}
-	if (raw.tokens !== undefined) {
-		const at = `${path}.tokens`;
-		if (!isObject(raw.tokens)) {
-			issues.add(at, `expected object, got ${describe(raw.tokens)}`);
-		} else {
-			const tokens: Record<ReminderLabel, Registers & { carrierAlignment?: Alignment }> = {};
-			for (const [label, value] of Object.entries(raw.tokens)) {
-				if (!ownReminder(label, reminders)) {
-					issues.add(`${at}.${label}`, 'not one of this character’s reminders');
-					continue;
-				}
-				const rule = readRegisters(value, `${at}.${label}`, issues, ['carrierAlignment']);
-				if (rule) tokens[label] = rule;
-			}
-			out.tokens = tokens;
-		}
-	}
-	return out;
 }
 
 function readImpairs(
