@@ -7,7 +7,7 @@ import { pickScript, toBoard } from './new-game.ts';
 
 test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound', async ({
 	page
-}) => {
+}, testInfo) => {
 	const fetched: string[] = [];
 	page.on('request', (request) => {
 		const path = new URL(request.url()).pathname;
@@ -33,8 +33,16 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	await page.keyboard.press('Escape');
 	await expect(menu).toBeHidden();
 	await button.tap();
-	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
+	// Two columns (Trevor, 2026-10-27: "noise controls on one side and the noises on the
+	// other"): the pads beside the controls on a tablet, above them on a phone.
+	const padsBox = (await sheet.getByTestId('dialog-aside').boundingBox())!;
+	const controlsBox = (await sheet.getByTestId('dialog-pane').boundingBox())!;
+	if (testInfo.project.name === 'tablet') {
+		expect(padsBox.x + padsBox.width).toBeLessThanOrEqual(controlsBox.x);
+	} else expect(padsBox.y + padsBox.height).toBeLessThanOrEqual(controlsBox.y);
+	await expect(sheet.getByRole('slider', { name: 'Volume', exact: true })).toBeVisible();
 	// Every sound, then the dashed "+ New" pad.
 	await expect(pads.getByRole('button')).toHaveCount(13);
 	// Nothing is fetched until a sound is played.
@@ -112,13 +120,14 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 
 	// One character, so the bank offers Start game.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
-	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const seatSheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await seatSheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Imp', exact: true })
 		.tap();
 	await page.keyboard.press('Escape');
-	await expect(sheet).toBeHidden();
+	await expect(seatSheet).toBeHidden();
 	await page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -145,7 +154,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
-	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 
 	await pads.getByRole('button', { name: 'Add to the soundboard' }).tap();

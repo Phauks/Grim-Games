@@ -2,8 +2,8 @@
 	import { padId, padName, padSounds } from '#lib/core/sound/soundboard.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { hold } from '#lib/ui/hold.ts';
@@ -20,6 +20,8 @@
 	 * 2026-10-27); it stays in place, disabled, while nothing plays. The mixer is below the
 	 * pads; holding a pad picks it there. The pads are the sounds and mixes the Storyteller
 	 * placed (Trevor, 2026-10-27: "hot spots"); "+ New" and Edit open SoundPadsDialog.
+	 * A two-pane modal (Trevor, 2026-10-27: "noise controls on one side and the noises on the
+	 * other"): the pads on the left, or held on top on a phone, and the controls beside them.
 	 */
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 
@@ -48,8 +50,8 @@
 	);
 </script>
 
-<BottomSheet bind:open title={t('settings.soundboard')}>
-	{#snippet actions()}
+<Dialog bind:open title={t('settings.soundboard')}>
+	{#snippet headActions()}
 		<IconButton icon="edit" label={t('settings.soundPads')} onclick={() => (padsOpen = true)} />
 		<IconButton
 			icon={soundboard.paused ? 'soundResume' : 'soundPause'}
@@ -58,31 +60,45 @@
 			onclick={() => (soundboard.paused ? soundboard.resume() : soundboard.pause())}
 		/>
 	{/snippet}
-	<div class="pads" role="group" aria-label={t('settings.soundboard')}>
-		{#each preferences.current.soundPads as pad (padId(pad))}
+	{#snippet aside()}
+		<div class="pads" role="group" aria-label={t('settings.soundboard')}>
+			{#each preferences.current.soundPads as pad (padId(pad))}
+				<Chip
+					pressed={soundboard.isPadPlaying(pad)}
+					onclick={() => soundboard.togglePad(pad)}
+					{@attach hold(() => (soundboard.mixing = padSounds(pad)[0]))}
+				>
+					{padName(pad)}
+				</Chip>
+			{/each}
 			<Chip
-				pressed={soundboard.isPadPlaying(pad)}
-				onclick={() => soundboard.togglePad(pad)}
-				{@attach hold(() => (soundboard.mixing = padSounds(pad)[0]))}
+				class="new"
+				aria-label={t('settings.soundPadNewLabel')}
+				onclick={() => (padsOpen = true)}
 			>
-				{padName(pad)}
+				<Icon name="add" />{t('settings.soundPadNew')}
 			</Chip>
-		{/each}
-		<Chip class="new" aria-label={t('settings.soundPadNewLabel')} onclick={() => (padsOpen = true)}>
-			<Icon name="add" />{t('settings.soundPadNew')}
-		</Chip>
-	</div>
+		</div>
+	{/snippet}
 	<SoundboardSettings master />
 	<AmbienceSettings />
-</BottomSheet>
+</Dialog>
 <SoundPadsDialog bind:open={padsOpen} />
 
 <style>
 	.pads {
 		display: flex;
 		flex-wrap: wrap;
+		align-content: flex-start;
 		gap: var(--space-2);
-		padding-block: var(--space-2) var(--space-4);
+	}
+	/* Held on top on a phone: many pads scroll in their own part, so the controls stay in view. */
+	@container dialog-panes (max-width: 36rem) {
+		.pads {
+			max-height: 35dvh;
+			overflow-y: auto;
+			overscroll-behavior: contain;
+		}
 	}
 	/* The "+ New" pad: a dashed outline, like every new-item card. */
 	.pads :global(.new) {
