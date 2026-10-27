@@ -6,6 +6,8 @@
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
+	import AvatarCropDialog from './AvatarCropDialog.svelte';
+	import type { AvatarCrop } from '#lib/core/avatars/crop.ts';
 
 	/**
 	 * The player's own picture for their seat (Trevor, 2026-10-27: "allow setting users
@@ -22,11 +24,19 @@
 	let input = $state<HTMLInputElement>();
 	let error = $state('');
 
-	async function picked(event: Event) {
+	/** The picture just picked, on the crop screen (Trevor, 2026-10-27) until it is saved. */
+	let picking = $state<Blob>();
+	let cropping = $state(false);
+	function picked(event: Event) {
 		const file = (event.currentTarget as HTMLInputElement).files?.[0];
 		if (input) input.value = '';
 		if (!file) return;
-		error = (await avatarPicture.choose(file)) ? '' : t('player.pictureError');
+		error = '';
+		picking = file;
+		cropping = true;
+	}
+	async function save(file: Blob, crop: AvatarCrop) {
+		error = (await avatarPicture.choose(file, crop)) ? '' : t('player.pictureError');
 	}
 </script>
 
@@ -61,6 +71,8 @@
 		<p class="error" role="status">{error}</p>
 	{/snippet}
 </SettingRow>
+
+<AvatarCropDialog bind:open={cropping} file={picking} onSave={save} />
 
 <style>
 	.control {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Popover } from '@ark-ui/svelte/popover';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import { usePortalTarget } from './portal-target.ts';
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 
@@ -28,6 +29,8 @@
 		headActions,
 		children
 	}: Props = $props();
+	/** Inside a full-screen view (the grim cover), into it; else the body (portal-target.ts). */
+	const portalTarget = usePortalTarget();
 
 	/**
 	 * An overlay under this one closed (a step dialog with a glossary word open in it). Zag
@@ -64,7 +67,7 @@
 		}
 	}}
 >
-	<Portal>
+	<Portal container={portalTarget()}>
 		<Popover.Positioner>
 			<Popover.Content aria-label={title}>
 				<div class="head">

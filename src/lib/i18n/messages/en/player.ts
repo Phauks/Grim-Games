@@ -100,6 +100,11 @@ export const player = {
 	'player.pictureChange': 'Change picture',
 	'player.pictureRemove': 'Remove picture',
 	'player.pictureFile': 'Picture for your seat',
+	'player.pictureCrop': 'Your picture',
+	'player.pictureCropDetail':
+		'Drag the picture and zoom until the circle shows what your seat should.',
+	'player.pictureCropArea': 'The part of the picture inside the circle',
+	'player.pictureZoom': 'Zoom',
 	'player.pictureError': 'That picture could not be read or kept.',
 	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
 	'player.matchShape': "Grim tab in the Storyteller's board shape",

@@ -14,7 +14,7 @@
 	interface Props {
 		/** What the link is: a script, later a room. */
 		what: 'script';
-		/** Shown in the share sheet and the dialog title, e.g. the script's name. */
+		/** Shown in the share sheet and under the dialog's title, e.g. the script's name. */
 		title: string;
 		/** The script's author and version, shown under the dialog's title when known. */
 		author?: string;
@@ -71,7 +71,8 @@
 	/>
 </div>
 
-<Dialog bind:open title={t('scripts.share.title', { title })}>
+<!-- Just "Share", with the script's logo and name under it (Trevor, 2026-10-27). -->
+<Dialog bind:open title={t('share.share')}>
 	{#if target || room}
 		<SharePanel {title} {author} {version} {logo} target={madeTarget} {room} />
 	{/if}
