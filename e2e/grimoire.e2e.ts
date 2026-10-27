@@ -21,7 +21,10 @@ const seatLabelled = (page: Page, start: string) =>
 /** Runs an action from the toolbar's More menu. */
 async function menu(page: Page, action: string) {
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: action }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: action, exact: true })
+		.tap();
 }
 
 /**
@@ -1869,7 +1872,7 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board' })
+		.getByRole('button', { name: 'Board', exact: true })
 		.tap();
 	await settings.getByText('Stack duplicate reminders', { exact: true }).tap();
 	await expect(
