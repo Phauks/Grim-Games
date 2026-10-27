@@ -7,6 +7,7 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextSizeRows from '#lib/features/settings/sections/TextSizeRows.svelte';
 	import DensityRow from '#lib/features/player/DensityRow.svelte';
+	import PlayerSizeRows from '#lib/features/player/PlayerSizeRows.svelte';
 	import AvatarPictureRow from '#lib/features/player/AvatarPictureRow.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
@@ -87,7 +88,7 @@
 		{/if}
 		<div class="rows">
 			{#if player}<AvatarPictureRow name={name.trim() || me} />{/if}
-			<TextSizeRows /><DensityRow />
+			<TextSizeRows /><DensityRow /><PlayerSizeRows />
 		</div>
 		{#if player}
 			<ModalActions

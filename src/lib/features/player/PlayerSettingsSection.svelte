@@ -5,6 +5,7 @@
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
 	import DensityRow from './DensityRow.svelte';
+	import PlayerSizeRows from './PlayerSizeRows.svelte';
 	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -36,6 +37,12 @@
 
 <!-- Also in the player screen's own settings (plan E2). -->
 <DensityRow />
+
+<!-- Text and token sizes, also in Settings > Tokens and the player screen's cog (Trevor,
+     2026-10-27). -->
+<SettingCollapsible title={t('player.sizes')} storageKey="settings-player-sizes">
+	<PlayerSizeRows />
+</SettingCollapsible>
 
 <!-- Also at the top of every script sheet (Trevor, 2026-10-23; colours 2026-10-24). -->
 <SettingSelect
