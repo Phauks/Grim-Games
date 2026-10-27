@@ -34,6 +34,19 @@
 	onChange={(hideGuesses) => playerSettings.update({ hideGuesses })}
 />
 
+<!-- Also beside the Grim tab's eye and in Public Town's settings cog (Trevor, 2026-10-27). -->
+<SettingToggle
+	label={t('player.matchShape')}
+	description={t('player.matchShapeDetail')}
+	checked={playerSettings.current.matchShape}
+	onChange={(matchShape) => playerSettings.update({ matchShape })}
+/>
+<SettingToggle
+	label={t('player.townMatchShape')}
+	checked={playerSettings.current.townMatchShape}
+	onChange={(townMatchShape) => playerSettings.update({ townMatchShape })}
+/>
+
 <!-- Text and token sizes, also in Settings > Tokens and the player screen's cog (Trevor,
      2026-10-27). -->
 <SettingCollapsible title={t('player.sizes')} storageKey="settings-player-sizes">

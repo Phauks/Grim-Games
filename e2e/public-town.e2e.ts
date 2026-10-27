@@ -95,10 +95,10 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await expect(stage.getByTestId('hide-guesses')).toHaveCount(0);
 	await expect(stage.getByTestId('grim-counts')).toHaveCount(0);
 	expect((await stage.boundingBox())!.y).toBeCloseTo(box.y, 0);
-	// A settings cog beside it, kept in place and off until there are settings (Trevor,
-	// 2026-10-26: "pre-emptively place a setting cog next to full screen").
+	// A settings cog beside it (Trevor, 2026-10-26: "pre-emptively place a setting cog next to
+	// full screen"), holding the board's shape (2026-10-27, grim-shape.e2e.ts).
 	const cog = stage.getByRole('button', { name: 'Public Town settings' });
-	await expect(cog).toBeDisabled();
+	await expect(cog).toBeEnabled();
 	const gear = (await cog.boundingBox())!;
 	expect(gear.x + gear.width).toBeLessThanOrEqual(corner.x + 1);
 	expect(Math.abs(gear.y - corner.y)).toBeLessThan(2);

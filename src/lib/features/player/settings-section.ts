@@ -19,6 +19,8 @@ registerSettingsSection({
 			frame: undefined,
 			avatar: 'initials',
 			hideGuesses: false,
+			matchShape: false,
+			townMatchShape: true,
 			sheetBackground: 'theme'
 		});
 		// Its text and token sizes too, which Settings > Tokens shows as well (PlayerSizeRows).

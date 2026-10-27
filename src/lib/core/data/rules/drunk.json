@@ -19,7 +19,8 @@
 				"target": {
 					"self": true
 				},
-				"reason": "The Drunk is shown a Townsfolk; this marks who really is the Drunk"
+				"reason": "The Drunk is shown a Townsfolk; this marks who really is the Drunk",
+				"first": true
 			}
 		]
 	},

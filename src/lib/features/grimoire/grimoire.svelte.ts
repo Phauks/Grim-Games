@@ -38,6 +38,8 @@ export class Grimoire {
 	look = $state.raw<PublicLook>();
 	/** And the room it came through, which holds that background's picture. */
 	room = $state.raw<string>();
+	/** Someone else's board: its shape (width ÷ height), whose places round the ring it keeps. */
+	aspect = $state.raw<number>();
 
 	constructor(readonly open: OpenGame) {
 		forgetUpsideDownMarks();

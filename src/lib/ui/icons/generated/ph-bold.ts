@@ -57,6 +57,7 @@ import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_corners_in_bold from '~icons/ph/corners-in-bold';
 import ph_corners_out_bold from '~icons/ph/corners-out-bold';
+import ph_crop_bold from '~icons/ph/crop-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
 import ph_crown_bold from '~icons/ph/crown-bold';
 import ph_database_bold from '~icons/ph/database-bold';
@@ -158,6 +159,7 @@ import ph_rectangle_bold from '~icons/ph/rectangle-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
 import ph_scan_bold from '~icons/ph/scan-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
+import ph_selection_bold from '~icons/ph/selection-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
 import ph_share_network_bold from '~icons/ph/share-network-bold';
 import ph_shield_bold from '~icons/ph/shield-bold';
@@ -273,6 +275,7 @@ const icons: IconMap = {
 	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:corners-in-bold': ph_corners_in_bold,
 	'ph:corners-out-bold': ph_corners_out_bold,
+	'ph:crop-bold': ph_crop_bold,
 	'ph:cross-bold': ph_cross_bold,
 	'ph:crown-bold': ph_crown_bold,
 	'ph:database-bold': ph_database_bold,
@@ -374,6 +377,7 @@ const icons: IconMap = {
 	'ph:scales-bold': ph_scales_bold,
 	'ph:scan-bold': ph_scan_bold,
 	'ph:scroll-bold': ph_scroll_bold,
+	'ph:selection-bold': ph_selection_bold,
 	'ph:shapes-bold': ph_shapes_bold,
 	'ph:share-network-bold': ph_share_network_bold,
 	'ph:shield-bold': ph_shield_bold,
