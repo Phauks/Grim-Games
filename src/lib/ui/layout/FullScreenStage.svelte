@@ -42,17 +42,18 @@
 	.stage {
 		position: relative;
 	}
-	/* Over the app, under the lowest dialog or sheet (their layers start at 2). Clear of the
+	/* Over the app, the status bar's strip included (Trevor's Pixel, 2026-10-27: "Unable to
+	   close", the strip hid the corner), under the lowest dialog or sheet. Clear of the
 	   camera and the screen's rounded corners (Trevor's phone, 2026-10-27: "too high up and
 	   overlap with camera area", the bottom left "too close to corner of phone"). */
 	.stage[data-filled] {
-		--inset-top: max(env(safe-area-inset-top), var(--space-4));
+		--inset-top: max(var(--app-top), var(--space-4));
 		--inset-right: max(env(safe-area-inset-right), var(--space-4));
 		--inset-bottom: max(env(safe-area-inset-bottom), var(--space-4));
 		--inset-left: max(env(safe-area-inset-left), var(--space-4));
 		position: fixed;
 		inset: 0;
-		z-index: 1;
+		z-index: calc(var(--z-raised) + 1);
 		box-sizing: border-box;
 		padding: var(--inset-top) var(--inset-right) var(--inset-bottom) var(--inset-left);
 		background: var(--surface);
