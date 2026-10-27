@@ -14,8 +14,11 @@
 	interface Props {
 		/** The seat's character, or the player's guess of it; the label alone without one. */
 		characterId?: CharacterId;
-		/** A player's other guesses of the seat, after the main one (Trevor, 2026-10-27). */
-		also?: readonly CharacterId[];
+		/**
+		 * A player's guesses of the seat, all alike after their name badge, which leads as the
+		 * one thing about a seat that never changes (Trevor, 2026-10-27). Not with `characterId`.
+		 */
+		guesses?: readonly CharacterId[];
 		alignment?: Alignment;
 		/** "Seat 3: Ana", or the seat alone while unnamed. */
 		label: string;
@@ -29,7 +32,7 @@
 
 	let {
 		characterId,
-		also = [],
+		guesses = [],
 		alignment,
 		label,
 		playerName = label,
@@ -40,8 +43,8 @@
 </script>
 
 <CharacterEntry {characterId} {alignment} {playerName} {label}>
-	{#snippet end()}{#if also.length}<span class="also" data-testid="other-guesses"
-				>{#each also as id (id)}<CharacterBadge characterId={id} />{/each}</span
+	{#snippet end()}{#if guesses.length}<span class="guesses" data-testid="note-guesses"
+				>{#each guesses as id (id)}<CharacterBadge characterId={id} />{/each}</span
 			>{/if}{/snippet}
 	<div role="group" aria-label={`Notes for ${label}`}>
 		<NoteCards {notes} {onOpen} {onAdd} />
@@ -49,8 +52,8 @@
 </CharacterEntry>
 
 <style>
-	/* The other guesses after the main one, wrapping under it when the line is too narrow. */
-	.also {
+	/* The guesses after the name, wrapping under it when the line is too narrow. */
+	.guesses {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2);
