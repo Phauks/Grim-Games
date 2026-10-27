@@ -21,7 +21,10 @@ const seatLabelled = (page: Page, start: string) =>
 /** Runs an action from the toolbar's More menu. */
 async function menu(page: Page, action: string) {
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: action }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: action, exact: true })
+		.tap();
 }
 
 /**
@@ -1224,7 +1227,7 @@ test('the join code shows under the script name, a Board setting, read only', as
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	// The day or night and Game time join the code's line where a phone's corner has no line
 	// to spare for them.
-	const codeLine = new RegExp(`^Join code ${shown}( · Setup)?( · Game time Setup)?$`);
+	const codeLine = new RegExp(`^Join code ${shown}( · Setup)?( · Game time 0:00)?$`);
 	await expect(corner).toHaveText(codeLine);
 	// Only read: Share is the toolbar's button, not the corner (Trevor, 2026-10-24).
 	await expect(page.getByRole('button', { name: /Join code/ })).toHaveCount(0);
@@ -1870,7 +1873,7 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board' })
+		.getByRole('button', { name: 'Board', exact: true })
 		.tap();
 	await settings.getByText('Stack duplicate reminders', { exact: true }).tap();
 	await expect(
@@ -4152,7 +4155,7 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes Cover the screen( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens Sound \| (Navigation )?Report an issue \| End game$/
+		/^History Demon bluffs Notes Cover the screen Soundboard( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens Sound \| (Navigation )?Report an issue \| End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu

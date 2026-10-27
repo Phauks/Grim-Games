@@ -9,8 +9,8 @@
  */
 import type { Alignment, Script } from '#lib/core/data/index.ts';
 import type { GameFeedback } from '#lib/core/feedback/index.ts';
-import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
-import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
+import type { AvatarId } from '#lib/core/avatars/index.ts';
+import type { FrameId } from '#lib/core/frames/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import type { SharedGrimoire } from './shared-grimoire.ts';
@@ -24,6 +24,14 @@ import {
 } from './script-vote.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
 import { memberRole, seatsSeen, type RoomRoles, type SeatRole } from './room-roles.ts';
+import { lookOf } from './room-look.ts';
+import {
+	pictureReports,
+	seatPictures,
+	withoutPictureVerdicts,
+	type PictureReportView,
+	type RoomPictures
+} from './room-pictures.ts';
 
 export { isSharedGrimoire, MAX_GRIMOIRE_BYTES, type SharedGrimoire } from './shared-grimoire.ts';
 
@@ -45,6 +53,8 @@ export interface RoomMember {
 	 */
 	avatar?: AvatarId;
 	frame?: FrameId;
+	/** Their own picture in the room (room-pictures.ts), by its hash; initials when absent. */
+	picture?: string;
 }
 
 /** A name (and seat) waiting for the Storyteller, from before players joined without approval. */
@@ -90,6 +100,8 @@ export interface RoomState {
 	roles?: RoomRoles;
 	/** When the Storyteller's app was built (room-version.ts). */
 	storytellerBuiltAt?: string;
+	/** Reports of players' pictures and the Storyteller's verdicts, this game (room-pictures.ts). */
+	pictures?: RoomPictures;
 }
 
 /**
@@ -143,8 +155,10 @@ export type ClientMessage =
 	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
 	| { type: 'request'; name: string; seatId?: SeatId }
 	| { type: 'leave-seat' }
-	/** The player's avatar and frame (plan R6); a missing one clears it. */
-	| { type: 'look'; avatar?: string; frame?: string }
+	/** The player's avatar, frame and uploaded picture (plan R6); a missing one clears it. */
+	| { type: 'look'; avatar?: string; frame?: string; picture?: string }
+	/** Reports the picture on another player's seat to the Storyteller (2026-10-27). */
+	| { type: 'report-picture'; seatId: SeatId }
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
 	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
@@ -207,12 +221,16 @@ export type ClientMessage =
 	| { type: 'roles'; gameId: string; show: boolean; roles?: Record<SeatId, SeatRole> }
 	/** Calls every player back to town: their phones sound and vibrate (plan U2). */
 	| { type: 'call-town' }
+	/** Lets a reported picture stand, or takes that player's picture away for this game. */
+	| { type: 'judge-picture'; hash: string; allow: boolean }
 	| { type: 'close' };
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
 export { roleSeen, setRoles, type RoomRoles } from './room-roles.ts';
 export * from './room-version.ts';
+export { setLook } from './room-look.ts';
+export { judgePicture, reportPicture } from './room-pictures.ts';
 export {
 	castScriptBallot,
 	closeScriptVote,
@@ -241,6 +259,7 @@ export interface HostView {
 	 */
 	present?: string[];
 	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
+	pictureReports?: PictureReportView[]; // Pictures other phones reported, for a verdict.
 }
 
 export interface VoteTally {
@@ -299,6 +318,7 @@ export interface PlayerView {
 		>;
 	};
 	role?: SeatRole; // This player's own character, while players may see theirs.
+	pictures?: Partial<Record<SeatId, string>>; // Each seat's player's picture (room-pictures.ts).
 }
 
 /**
@@ -310,6 +330,7 @@ export interface TownView {
 	type: 'town-view';
 	public?: PublicGameState;
 	gameId?: string;
+	pictures?: Partial<Record<SeatId, string>>;
 }
 
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
@@ -411,6 +432,8 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (present)
 		view.present = room.members.flatMap((m) => (present.has(m.memberId) ? [m.memberId] : []));
 	if (room.roles) view.rolesSeen = seatsSeen(room);
+	const reports = pictureReports(room);
+	if (reports.length) view.pictureReports = reports;
 	return view;
 }
 
@@ -490,6 +513,8 @@ export function playerView(
 			};
 		}
 	}
+	const pictures = seatPictures(room.members);
+	if (Object.keys(pictures).length) view.pictures = pictures;
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
 		view.vote = { voteId: room.vote.voteId, options: room.vote.options };
@@ -504,6 +529,8 @@ export function townView(room: RoomState): TownView {
 	const view: TownView = { type: 'town-view' };
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;
+	const pictures = seatPictures(room.members);
+	if (Object.keys(pictures).length) view.pictures = pictures;
 	return view;
 }
 
@@ -591,31 +618,6 @@ function nameOf(m: RoomMember): Pick<RoomMember, 'name'> {
 	return m.name === undefined ? {} : { name: m.name };
 }
 
-function lookOf(m: RoomMember): Pick<RoomMember, 'avatar' | 'frame'> {
-	return {
-		...(m.avatar === undefined ? {} : { avatar: m.avatar }),
-		...(m.frame === undefined ? {} : { frame: m.frame })
-	};
-}
-
-/** A player's avatar and frame; unknown ones are dropped, as if none were picked. */
-export function setLook(
-	room: RoomState,
-	memberId: string,
-	raw: { avatar?: unknown; frame?: unknown }
-): RoomState {
-	const member = room.members.find((m) => m.memberId === memberId);
-	if (!member) return room;
-	const avatar = parseAvatarId(raw.avatar);
-	const frame = parseFrameId(raw.frame);
-	if (avatar === member.avatar && frame === member.frame) return room;
-	const { avatar: _a, frame: _f, ...rest } = member;
-	void _a;
-	void _f;
-	const updated: RoomMember = { ...rest, ...lookOf({ memberId, avatar, frame }) };
-	return { ...room, members: room.members.map((m) => (m.memberId === memberId ? updated : m)) };
-}
-
 export function unseat(room: RoomState, memberId: string): RoomState {
 	return setMember(room, memberId, { seatId: undefined });
 }
@@ -629,7 +631,9 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 	const seats = new Set(state.seats.map((s) => s.seatId));
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
-	const base = newGame ? closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)) : room;
+	const base = newGame
+		? withoutPictureVerdicts(closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)))
+		: room;
 	return {
 		...base,
 		gameId,
