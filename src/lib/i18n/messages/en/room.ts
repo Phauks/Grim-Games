@@ -178,19 +178,14 @@ export const room = {
 	// The view-only grimoire link (Specters)
 	'room.watch.title': 'Watch the grimoire',
 	'room.watch.heading': 'View grimoire',
-	'room.watch.toggle': 'View-only grimoire link',
+	'room.watch.toggle': 'Grim view',
 	'room.watch.hint':
-		'Spectators with this link see the whole grimoire live, after promising not to spoil the game. Each new link stops the last one.',
+		'Spectators with the room code and this password see the whole grimoire live, after promising not to spoil the game. Each game gets a new password.',
 	'room.watch.password': 'Grim view password',
-	'room.watch.qrLabel': 'QR code to watch the grimoire',
-	'room.watch.qrCaption': 'Spoilers',
-	'room.watch.off': 'Off',
-	'room.watch.refresh': 'New link',
-	'room.watch.refreshTitle': 'Make a new link?',
+	'room.watch.refresh': 'New password',
+	'room.watch.refreshTitle': 'Make a new password?',
 	'room.watch.refreshText':
-		'The current link stops working, and anyone watching with it is disconnected.',
-	'room.watch.shareText': 'Watch the grimoire. Never show it to a player.',
-	'room.watch.shareGameText': 'Watch the grimoire: {game}. Never show it to a player.',
+		'The current password stops working, and anyone watching with it is disconnected.',
 	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',
 	'room.watch.pledgeTitle': 'Before you watch',
 	'room.watch.pledgeLead':
@@ -199,7 +194,7 @@ export const room = {
 	'room.watch.pledgeShare': 'You won’t tell or show any player what you see.',
 	'room.watch.pledgeIntegrity': 'You won’t do anything that spoils the game for its players.',
 	'room.watch.waiting': 'Waiting for the Storyteller’s grimoire…',
-	'room.watch.turnedOff': 'The Storyteller has turned this link off.',
+	'room.watch.turnedOff': 'The Storyteller has turned Grim view off, or made a new password.',
 	'room.watch.wrongPassword': 'Wrong password, or the Storyteller has turned Grim view off.',
 	'room.watch.tooManyTries': 'Too many wrong tries. Wait a few minutes, then try again.',
 	'room.watch.badLink': 'This link is incomplete. Ask the Storyteller for it again.',

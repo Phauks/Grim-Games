@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
+	import { roomJoinLink } from '#lib/features/room/join-link.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
@@ -36,9 +36,7 @@
 	}
 
 	let { title, author, version, logo, target, room }: Props = $props();
-	const roomLink = $derived(
-		room ? `${location.origin}${resolve('/join/[code]', { code: room })}` : undefined
-	);
+	const roomLink = $derived(room ? roomJoinLink(room) : undefined);
 	let logoFailed = $state(false);
 	let made = $state.raw<ShareTarget | undefined>();
 	let failed = $state(false);

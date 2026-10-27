@@ -16,6 +16,18 @@ async function typeCode(phone: Page, code: string) {
 	await field.pressSequentially(code);
 }
 
+/** Opens Grim view from Join game with the room code and a password, past the promise. */
+async function watchWithPassword(phone: Page, code: string, password: string) {
+	await phone.goto('/join');
+	await typeCode(phone, code);
+	await expect(phone.getByTestId('room-preview')).toContainText('Trouble Brewing');
+	await phone.getByRole('button', { name: 'More ways to join' }).tap();
+	await phone.getByRole('menuitem', { name: 'Grim view' }).tap();
+	const ask = phone.getByRole('dialog', { name: 'Grim view' });
+	await ask.getByLabel('Grim view password', { exact: true }).fill(password);
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+}
+
 /**
  * Opens the phone's You sheet from the title line (plan E2, Trevor 2026-10-26: "move name into
  * an edit button in the top").
@@ -118,7 +130,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await phone.getByRole('button', { name: 'Share script' }).tap();
 	const passOn = phone.getByRole('dialog', { name: 'Share Trouble Brewing' });
 	await expect(passOn.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
-	await expect(passOn.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
+	await expect(passOn.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
 	await phone.keyboard.press('Escape');
 	await expect(passOn).toBeHidden();
 
@@ -1006,13 +1018,13 @@ test('Share and Copy link carry the room code as well as the link', async ({ pag
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\D/g, '');
 	expect(code).toMatch(/^\d{6}$/);
 	const spaced = `${code.slice(0, 3)} ${code.slice(3)}`;
-	const link = new RegExp(`/join/${code}$`);
+	// The room's one link (Trevor, 2026-10-26): Join game, its code in the hash.
+	const link = new RegExp(`/join#${code}$`);
 	// The game's script logo sits in the middle of the join QR (Trevor, 2026-10-19).
 	const qr = page.getByRole('img', { name: 'QR code to join the room' });
 	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
 	await expect(qr.getByTestId('qr-name')).toHaveCount(0);
 
-	// The join link's buttons come first; the view-only grimoire link's follow.
 	await page.getByRole('button', { name: 'Share', exact: true }).first().tap();
 	const shared = await page.evaluate(() => (window as unknown as { shared: ShareData }).shared);
 	expect(shared.text).toContain(spaced);
@@ -1026,6 +1038,14 @@ test('Share and Copy link carry the room code as well as the link', async ({ pag
 	const copied = await page.evaluate(() => navigator.clipboard.readText());
 	expect(copied).toContain(spaced);
 	expect(copied.split('\n').at(-1)).toMatch(link);
+
+	// It opens Join game with the code filled in, so whoever opens it picks how to join.
+	const opened = await context.newPage();
+	await opened.goto(shared.url!);
+	await expect(opened.getByTestId('room-preview')).toContainText('Trouble Brewing');
+	await expect(opened.getByRole('button', { name: 'Join as player' })).toBeEnabled();
+	await expect(opened.getByTestId('join-status')).toHaveCount(0);
+	await opened.close();
 });
 
 test('a phone can type a code, and wrong codes say so', async ({ page }) => {
@@ -1250,11 +1270,13 @@ test('a grimoire from a newer Storyteller app asks to update', async ({ page }) 
 	);
 });
 
-test('the room code and a Grim view password open the grimoire, as the link does', async ({
+test('the room code and a Grim view password open the grimoire, a new password each game', async ({
 	page,
 	browser
 }, testInfo) => {
-	// Trevor, 2026-10-22 (plan D1): "grim view by password or direct link. drop spectate".
+	// Trevor, 2026-10-22 (plan D1): "grim view by password or direct link. drop spectate"; and
+	// 2026-10-26: "access password locked by storyteller instead, and default to a new password
+	// per game (that can be customizable)".
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -1266,12 +1288,11 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	await expect(password).toHaveAttribute('type', 'password');
 	// In the plain account font, not the capitals-only control font, so case reads exactly.
 	await expect(password).not.toHaveCSS('font-family', /Cinzel/);
-	// In its place, but off while the link is.
+	// In its place, but off while Grim view is.
 	await expect(password).toBeDisabled();
-	await watch.getByText('View-only grimoire link', { exact: true }).tap();
-	const url = watch.getByTestId('share-url');
-	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
-	const randomLink = await url.inputValue();
+	// No QR or link of its own (Trevor, 2026-10-26).
+	await expect(watch.getByRole('img')).toHaveCount(0);
+	await expect(watch.getByTestId('share-url')).toHaveCount(0);
 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
@@ -1281,31 +1302,30 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	const more = phone.getByRole('button', { name: 'More ways to join' });
 	await typeCode(phone, code);
 	await expect(phone.getByTestId('room-preview')).toContainText('Trouble Brewing');
-	// No password set: only joining as a player.
+	// Grim view off: only joining as a player.
 	await expect(phone.getByRole('button', { name: 'Join as player' })).toBeEnabled();
 	await expect(grimView).toHaveCount(0);
 	await more.tap();
 	await expect(grimView).toBeDisabled();
 	await phone.keyboard.press('Escape');
 
-	await password.fill('lantern');
+	// On, it comes with a password of its own for this game.
+	await watch.getByText('Grim view', { exact: true }).tap();
+	await expect(password).toBeEnabled();
+	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	const made = await password.inputValue();
 	const eye = watch.getByRole('button', { name: 'Show password' });
 	await eye.tap();
 	await expect(password).toHaveAttribute('type', 'text');
 	await expect(eye).toHaveAttribute('aria-pressed', 'true');
 	await eye.tap();
 	await expect(password).toHaveAttribute('type', 'password');
-	await password.press('Enter');
-	// A password makes a new link; the old one stops.
-	await expect(url).not.toHaveValue(randomLink);
-	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
-	const passwordLink = new URL(await url.inputValue());
 
+	// A wrong password says so.
 	await phone.reload();
 	await typeCode(phone, code);
 	await more.tap();
 	await expect(grimView).toBeEnabled();
-	// A wrong password says so.
 	await grimView.tap();
 	const ask = phone.getByRole('dialog', { name: 'Grim view' });
 	const typed = ask.getByLabel('Grim view password', { exact: true });
@@ -1314,62 +1334,64 @@ test('the room code and a Grim view password open the grimoire, as the link does
 	await expect(ask.getByRole('button', { name: 'Show password' })).toBeVisible();
 	await typed.fill('candle');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
-	await phone
-		.getByRole('alertdialog', { name: 'Before you watch' })
-		.getByRole('button', { name: 'Confirm' })
-		.tap();
+	const pledge = phone.getByRole('alertdialog', { name: 'Before you watch' });
+	await pledge.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(
 		phone.getByText('Wrong password, or the Storyteller has turned Grim view off.')
 	).toBeVisible();
 
-	// The right one opens the same grimoire the link does.
-	await phone.goto('/join');
-	await typeCode(phone, code);
-	await more.tap();
-	await grimView.tap();
-	await ask.getByLabel('Grim view password', { exact: true }).fill('lantern');
-	await ask.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(phone).toHaveURL(passwordLink.href);
-	await phone
-		.getByRole('alertdialog', { name: 'Before you watch' })
-		.getByRole('button', { name: 'Confirm' })
-		.tap();
+	// The one it made opens the grimoire.
+	await watchWithPassword(phone, code, made);
+	await pledge.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(phone.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
+
+	// The Storyteller can type their own instead; the old one stops.
+	await password.fill('lantern');
+	await password.press('Enter');
+	await expect(phone.getByRole('button', { name: /^Seat 1:/ })).toHaveCount(0);
+	await watchWithPassword(phone, code, 'lantern');
+	await pledge.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(phone.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
+
+	// The next game gets a new one.
+	const next = await startGame(page);
+	await page.goto(`${next}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	expect(await password.inputValue()).not.toBe('lantern');
+	expect(await password.inputValue()).not.toBe(made);
 	await phoneContext.close();
 });
 
-test('a spectator watches the whole grimoire through the view-only link, after promising', async ({
+test('a spectator watches the whole grimoire with Grim view, after promising', async ({
 	page,
 	browser
 }, testInfo) => {
-	// Specters (Trevor, 2026-10-18): spectators see the Storyteller's grimoire live, through a
-	// link the Storyteller turns on and off, after promising not to spoil the game.
+	// Specters (Trevor, 2026-10-18): spectators see the Storyteller's grimoire live, with the
+	// room code and a password the Storyteller turns on and off, after promising not to spoil
+	// the game.
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	// On the same screen as the players' code, with no tabs (Trevor, 2026-10-22).
 	await expect(page.getByRole('tab')).toHaveCount(0);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 	const watch = page.getByTestId('watch-link');
-	const toggle = watch.getByRole('checkbox', { name: 'View-only grimoire link' });
+	const toggle = watch.getByRole('checkbox', { name: 'Grim view' });
 	// The switch is tapped by its label, as the whole row is one tap target.
-	const flip = () => watch.getByText('View-only grimoire link', { exact: true }).tap();
-	const url = watch.getByTestId('share-url');
+	const flip = () => watch.getByText('Grim view', { exact: true }).tap();
+	const password = watch.getByLabel('Grim view password', { exact: true });
 	// Off until turned on, with its place kept.
 	await expect(toggle).not.toBeChecked();
-	await expect(url).toHaveValue('');
+	await expect(password).toHaveValue('');
 	await flip();
-	// The key is in the hash, which never reaches the server.
-	await expect(url).toHaveValue(/\/watch\/\d{6}#[0-9a-f]{64}$/);
-	const link = await url.inputValue();
-	// Its QR carries the script's logo, like the join QR, and says it shows spoilers so no
-	// player scans it by mistake (Trevor, 2026-10-19).
-	const qr = watch.getByRole('img', { name: 'QR code to watch the grimoire' });
-	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
-	await expect(qr.getByTestId('qr-caption')).toHaveText('Spoilers');
+	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	const made = await password.inputValue();
 
 	const viewerContext = await browser.newContext({ ...testInfo.project.use });
 	const viewer = await viewerContext.newPage();
-	await viewer.goto(link);
+	await watchWithPassword(viewer, code, made);
 	const pledge = viewer.getByRole('alertdialog', { name: 'Before you watch' });
 	await expect(pledge.getByTestId('watch-pledge').getByRole('listitem')).toHaveCount(3);
 	await pledge.getByRole('button', { name: 'Confirm' }).tap();
@@ -1476,46 +1498,28 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await pledge.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(viewer.getByRole('button', { name: /^Seat 1: Alex/ })).toBeVisible();
 
-	// Turning it off takes the grimoire away at once; turning it on again makes a new link.
+	// Turning it off takes the grimoire away at once; turning it on again makes a new password.
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	// The players' tab says one is watching, by a dot that shows it is connected.
 	await expect(page.getByTestId('connection-dot')).toBeVisible();
 	await expect(page.getByTestId('status-players')).toHaveText('0 players');
 	await expect(page.getByTestId('status-watching')).toHaveText('1 watching');
-	// New link replaces the link in one step, letting the viewer go (Trevor, 2026-10-20).
-	await watch.getByRole('button', { name: 'New link' }).tap();
+	// New password replaces it in one step, letting the viewer go (Trevor, 2026-10-20).
+	await watch.getByRole('button', { name: 'New password' }).tap();
 	await page
-		.getByRole('alertdialog', { name: 'Make a new link?' })
+		.getByRole('alertdialog', { name: 'Make a new password?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');
-	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
-	expect(await url.inputValue()).not.toBe(link);
+	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toHaveCount(0);
+	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	expect(await password.inputValue()).not.toBe(made);
 	await expect(page.getByTestId('status-watching')).toHaveText('0 watching');
 	await flip();
-	await expect(url).toHaveValue('');
-	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');
-	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toHaveCount(0);
+	await expect(password).toHaveValue('');
+	await expect(password).toBeDisabled();
 	await flip();
-	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
-	expect(await url.inputValue()).not.toBe(link);
-
-	// Streaming (Trevor, 2026-10-21): the QR and link can be covered in place, and Copy
-	// still works.
-	await expect(qr).toBeVisible();
-	// Measured from the part's top, since tapping the switch may scroll the page.
-	const offset = async () => (await url.boundingBox())!.y - (await watch.boundingBox())!.y;
-	const before = await offset();
-	await watch.getByText('Hide the view-only link', { exact: true }).tap();
-	await expect(qr).toHaveCount(0);
-	await expect(watch.getByTestId('share-hidden')).toHaveText('Hidden');
-	await expect(url).toHaveValue('Hidden');
-	expect(await offset()).toBeCloseTo(before, 0);
-	await expect(watch.getByRole('button', { name: 'Copy link' })).toBeEnabled();
-	await watch.getByText('Hide the view-only link', { exact: true }).tap();
-	await expect(qr).toBeVisible();
-	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
+	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
 	await viewerContext.close();
 });
 
