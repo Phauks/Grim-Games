@@ -3,10 +3,10 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import type {
+		AnswerOption,
 		AnswerValue,
 		ChosenPlayers,
 		ChosenPlayersRow,
-		Impairment,
 		InfoPicker,
 		LearnedRole,
 		LearnedRoles,
@@ -16,7 +16,12 @@
 		ValidInfo,
 		Why
 	} from '#lib/core/rules/index.ts';
-	import { chosenPlayers, learnedRoles, validInformation } from '#lib/core/rules/index.ts';
+	import {
+		answerOptions,
+		chosenPlayers,
+		learnedRoles,
+		validInformation
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -52,9 +57,6 @@
 	const info = $derived(step.info);
 	const name = (seatId: SeatId) => seatName(game, seatId);
 
-	/** "poisoned", or the Preacher's reminder "No Ability" (TPI). */
-	const reason = (i: Impairment) => (i.reason === 'no-ability' ? 'No Ability' : i.reason);
-
 	function valueText(v: AnswerValue): string {
 		switch (v.kind) {
 			case 'yes-no':
@@ -70,25 +72,35 @@
 	}
 
 	/**
-	 * Why an answer may not be the truth: impaired, the Vortox, registration. Impairments and
-	 * allowed values are drawn after the text, so their characters show as badges.
+	 * Why an answer may not be the truth: the Vortox, registration. Allowed values are drawn
+	 * after the text, so their characters show as badges. Who made the player drunk or
+	 * poisoned is the step's Afflictions, not repeated here (Trevor, 2026-10-27).
 	 */
 	interface Flag {
 		text: string;
+		/** A rule that changes what may be given (the Vortox), drawn as a warning. */
+		warn?: boolean;
 		/** Players named after the text, each with their character. */
 		seats?: readonly SeatId[];
-		impairments?: readonly Impairment[];
 		allowed?: readonly AnswerValue[];
 	}
-	function flags(r: Reliability & { possible?: AnswerValue[] }): Flag[] {
+	function flags(r: Reliability & { possible?: AnswerValue[] }, listed = false): Flag[] {
 		const out: Flag[] = [];
-		if (r.unreliable) out.push({ text: 'Not reliable:', impairments: r.impairments });
-		if (r.mustBeFalse) out.push({ text: 'Vortox: must be false' });
+		// A listed answer's rows already say which values the Vortox allows.
+		if (r.mustBeFalse && !listed) out.push({ text: 'Vortox: must be false', warn: true });
 		if (r.misregister.length > 0)
 			out.push({ text: 'Might register falsely:', seats: r.misregister });
-		if (r.possible && r.possible.length > 1) out.push({ text: 'Allowed:', allowed: r.possible });
+		if (r.possible && r.possible.length > 1 && !listed)
+			out.push({ text: 'Allowed:', allowed: r.possible });
 		return out;
 	}
+
+	/**
+	 * Every answer that may be given while the player is drunk, poisoned or under the Vortox
+	 * (Trevor, 2026-10-27: "when poisoned, need to offer alternative information"), from
+	 * core's `answerOptions`; empty while only the truth may be given.
+	 */
+	const options = (a: NightAnswer): AnswerOption[] => answerOptions(game, a, characters);
 
 	/**
 	 * Every valid piece of information, never one pick (Trevor, 2026-10-18: "show all valid
@@ -277,45 +289,110 @@
 
 {#snippet flagBody(flag: Flag)}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n
 			? ', '
-			: ' '}{@render player(seatId)}{/each}{#each flag.impairments ?? [] as i, n (n)}{n
-			? '; '
-			: ' '}{reason(i)} · {#if i.source.seatId}{@render player(
-				i.source.seatId,
-				i.source.characterId
-			)}{:else}<CharacterBadge
-				characterId={i.source.characterId}
-				character={characters.get(i.source.characterId)}
-			/>{/if}{/each}{#each flag.allowed ?? [] as v, n (n)}{n ? ' / ' : ' '}{@render value(
-			v
-		)}{/each}{/snippet}
+			: ' '}{@render player(seatId)}{/each}{#each flag.allowed ?? [] as v, n (n)}{n
+			? ' / '
+			: ' '}{@render value(v)}{/each}{/snippet}
+
+{#snippet flagLines(list: Flag[])}{#each list as flag (flag.text)}
+		<span class="flag" class:warn={flag.warn}>
+			{#if flag.warn}<Icon name="warning" />{/if}{@render flagBody(flag)}
+		</span>
+	{/each}{/snippet}
 
 {#snippet answer(a: NightAnswer)}
-	<li data-unreliable={a.unreliable ? '' : undefined}>
-		<span class="main">
+	{@const listed = options(a)}
+	<li data-unreliable={a.unreliable && listed.length === 0 ? '' : undefined}>
+		{#if listed.length > 0}
 			{#if info && info.kind === 'answer' && info.answers.length > 1}<span class="whose"
 					>{@render player(a.seatId)}:</span
 				>{/if}
-			{#if a.kind === 'character'}
-				<CharacterBadge characterId={a.value} character={characters.get(a.value)} />
-			{:else}
-				<strong>{valueText(a)}</strong>
-			{/if}
-			{#if a.because.length > 0}<span class="because">({@render players(a.because)})</span>{/if}
-		</span>
-		{#each flags(a) as flag (flag.text)}
-			<span class="flag" class:warn={a.unreliable || a.mustBeFalse}>
-				{#if a.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
-			</span>
-		{/each}
-		{#if hasWhy(a.why)}{@render whyBlock(a.why)}{/if}
-		{#if a.kind === 'character' && onShow}
-			{@const id = a.value}
-			<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
-		{:else if a.kind === 'number' && onShowNumber}
-			{@const n = a.value}
-			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+			<ul class="valid" aria-label="Valid information" data-testid="answer-options">
+				{#each listed as o, i (i)}{@render answerRow(a, o, i)}{/each}
+			</ul>
+			{@render flagLines(flags(a, true))}
+			{#if hasWhy(a.why)}{@render whyBlock(a.why)}{/if}
+		{:else}
+			{@render answerOnly(a)}
 		{/if}
 	</li>
+{/snippet}
+
+<!-- One answer that may be given, with Show to player for a number or a character. -->
+{#snippet answerRow(a: NightAnswer, o: AnswerOption, i: number)}
+	{@const key = `${a.seatId}:other`}
+	{@const id = o.otherCharacters
+		? shownAs[key]
+		: o.value.kind === 'character'
+			? o.value.value
+			: undefined}
+	<li data-reason={o.reason}>
+		<span class="main option">
+			{#if o.otherCharacters}
+				<strong>Any other</strong>
+				<Select
+					label="Shown as"
+					hideLabel
+					placeholder="Shown as"
+					value={id}
+					options={o.otherCharacters.map((c) => ({
+						value: c,
+						// eslint-disable-next-line grim/names-as-badges -- the option's accessible name and typeahead text; it shows as the badge (the item snippet)
+						label: characters.get(c)?.name ?? c
+					}))}
+					onChange={(c) => (shownAs = { ...shownAs, [key]: c })}
+				>
+					{#snippet item(option)}<CharacterBadge
+							characterId={option.value}
+							character={characters.get(option.value)}
+							interactive={false}
+						/>{/snippet}
+					{#snippet selected(option)}<CharacterBadge
+							characterId={option.value}
+							character={characters.get(option.value)}
+							interactive={false}
+						/>{/snippet}
+				</Select>
+			{:else if o.value.kind === 'character'}
+				<CharacterBadge characterId={o.value.value} character={characters.get(o.value.value)} />
+			{:else}
+				<strong>{valueText(o.value)}</strong>
+			{/if}
+			{#if i === 0 && a.because.length > 0}<span class="because"
+					>({@render players(a.because)})</span
+				>{/if}
+		</span>
+		{@render reasonTag(o.reason)}
+		{#if o.value.kind === 'number' && onShowNumber}
+			{@const n = o.value.value}
+			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+		{:else if o.value.kind === 'character' && onShow}
+			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
+			>
+		{/if}
+	</li>
+{/snippet}
+
+{#snippet answerOnly(a: NightAnswer)}
+	<span class="main">
+		{#if info && info.kind === 'answer' && info.answers.length > 1}<span class="whose"
+				>{@render player(a.seatId)}:</span
+			>{/if}
+		{#if a.kind === 'character'}
+			<CharacterBadge characterId={a.value} character={characters.get(a.value)} />
+		{:else}
+			<strong>{valueText(a)}</strong>
+		{/if}
+		{#if a.because.length > 0}<span class="because">({@render players(a.because)})</span>{/if}
+	</span>
+	{@render flagLines(flags(a))}
+	{#if hasWhy(a.why)}{@render whyBlock(a.why)}{/if}
+	{#if a.kind === 'character' && onShow}
+		{@const id = a.value}
+		<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
+	{:else if a.kind === 'number' && onShowNumber}
+		{@const n = a.value}
+		<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+	{/if}
 {/snippet}
 
 {#if compact}
@@ -384,11 +461,7 @@
 								</li>
 							{/each}
 						</ul>
-						{#each flags(p) as flag (flag.text)}
-							<span class="flag" class:warn={p.unreliable || p.mustBeFalse}>
-								{#if p.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
-							</span>
-						{/each}
+						{@render flagLines(flags(p))}
 						{#if hasWhy(p.why)}{@render whyBlock(p.why)}{/if}
 					</li>
 				{/each}
@@ -416,11 +489,7 @@
 							{/if}
 						</ul>
 						<!-- Who may register otherwise is in the rows; only why any info is allowed here. -->
-						{#each flags(p).filter((f) => !f.seats) as flag (flag.text)}
-							<span class="flag" class:warn={p.unreliable || p.mustBeFalse}>
-								{#if p.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
-							</span>
-						{/each}
+						{@render flagLines(flags(p).filter((f) => !f.seats))}
 					</li>
 				{/each}
 				{#each playerPickers as { picker: p, players: choices } (p.seatId)}
@@ -451,11 +520,7 @@
 								</li>
 							{/if}
 						</ul>
-						{#each flags(p).filter((f) => !f.seats) as flag (flag.text)}
-							<span class="flag" class:warn={p.unreliable || p.mustBeFalse}>
-								{#if p.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
-							</span>
-						{/each}
+						{@render flagLines(flags(p).filter((f) => !f.seats))}
 					</li>
 				{/each}
 			{:else}
@@ -476,8 +541,12 @@
 	</section>
 {/if}
 
-{#snippet reasonTag(reason: LearnedRole['reason'], registered: readonly SeatId[] = [])}
-	{#if reason === 'registers'}<span class="tag">Registers: {@render players(registered)}</span
+{#snippet reasonTag(
+	reason: LearnedRole['reason'] | AnswerOption['reason'],
+	registered: readonly SeatId[] = []
+)}
+	{#if reason === 'registers'}<span class="tag"
+			>Registers{#if registered.length > 0}: {@render players(registered)}{/if}</span
 		>{:else if reason === 'unreliable'}<span class="tag warn"
 			><Icon name="warning" />Not reliable</span
 		>{:else if reason === 'vortox'}<span class="tag warn">Vortox</span
@@ -653,7 +722,7 @@
 		color: var(--evil);
 	}
 	/* An answer that may not be the truth is greyed, its warning in red. */
-	li[data-unreliable] .main {
+	li[data-unreliable] > .main {
 		opacity: 0.6;
 	}
 	/* Every valid row, each with why it is valid when not simply true. */
