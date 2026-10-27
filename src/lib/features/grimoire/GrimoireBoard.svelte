@@ -1372,6 +1372,8 @@
 				seatAt={remDrag.seatAt}
 				spotAllowed={remDrag.spotAllowed}
 				ruleAt={remDrag.ruleAt}
+				dropping={remDrag.drag !== undefined}
+				dropOver={!!remDrag.drag?.overNew}
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}

@@ -15,6 +15,7 @@ import {
 	trueCharacter,
 	type CharacterLookup,
 	type Game,
+	type GenericLook,
 	type Reminder,
 	type ReminderId,
 	type ReminderInstance,
@@ -202,6 +203,17 @@ const NO_BANK: ReadonlyMap<string, number> = new Map();
 /** The generic ∞ reminder (core's GENERIC_REMINDER_ID): any number, belonging to no one. */
 export const isGeneric = (reminder: Pick<Reminder, 'characterId'>): boolean =>
 	reminder.characterId === GENERIC_REMINDER_ID;
+
+/**
+ * The look of a new ∞ token made from a reminder dragged onto "+ New token" (Trevor,
+ * 2026-10-27): a generic reminder's or ∞ token's own text, symbol, colour and fill; any other
+ * reminder's words.
+ */
+export function copiedLook(reminder: Reminder & GenericLook): GenericLook {
+	if (!isGeneric(reminder)) return { note: reminder.label };
+	const { note, symbol, symbolColour, symbolFill } = reminder;
+	return { note, symbol, symbolColour, symbolFill };
+}
 
 /** A reminder token's words in a sentence or heading: a generic one with no text shows ∞. */
 export const tokenLabel = (reminder: ReminderInstance | Reminder): ReminderLabel =>

@@ -60,7 +60,10 @@ function setup(free = false) {
 	element.getBoundingClientRect = () => new DOMRect(0, 0, 500, 500);
 	const points = g.seating.map((_, i) => ({ x: 10 + i * 20, y: 50 }));
 	const dragging = new ReminderDragging(() => ({
-		grimoire: { setReminderSpot: () => {} } as unknown as Grimoire,
+		grimoire: {
+			setReminderSpot: () => {},
+			run: (command: unknown) => calls.push(['run', command])
+		} as unknown as Grimoire,
 		game: g,
 		characters,
 		points,
@@ -118,5 +121,22 @@ describe('ReminderDragging', () => {
 		dragging.move(reminder.reminderId, g.seating[1], 250, 250, false);
 		dragging.cancel();
 		expect(dragging.drag).toBeUndefined();
+	});
+
+	it('makes a new ∞ token like a reminder dropped on "+ New token", leaving it on its seat', () => {
+		const { dragging, calls, reminder, g } = setup();
+		const plus = document.createElement('button');
+		plus.dataset.newToken = '';
+		plus.style.cssText = 'position: fixed; left: 0; top: 0; width: 40px; height: 40px; z-index: 9';
+		document.body.append(plus);
+		try {
+			dragging.move(reminder.reminderId, g.seating[1], 20, 20, false);
+			expect(dragging.drag?.overNew).toBe(true);
+			expect(dragging.drag?.target).toBeUndefined();
+			dragging.move(reminder.reminderId, g.seating[1], 20, 20, true);
+			expect(calls).toEqual([['run', { type: 'AddGenericToken', look: { note: 'Poisoned' } }]]);
+		} finally {
+			plus.remove();
+		}
 	});
 });
