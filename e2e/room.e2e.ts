@@ -1888,14 +1888,37 @@ test("a player's Grim fills the screen from its own corner, and a seat's sheet o
 	const corner = (await fullScreen.boundingBox())!;
 	expect(corner.x + corner.width).toBeGreaterThan(box.x + box.width * 0.85);
 	expect(corner.y).toBeLessThan(box.y + box.height * 0.15);
+	// A phone with a camera in the screen's top edge (Trevor's Pixel, 2026-10-27: "Unable to
+	// close"): the app's status bar strip has height, and must not cover the corner.
+	await phone.addStyleTag({ content: ':root { --app-top: 3rem; }' });
 	await fullScreen.tap();
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	const exit = (await fullScreen.boundingBox())!;
+	expect(exit.y).toBeGreaterThanOrEqual(48);
+	const onTop = await phone.evaluate(
+		([x, y]) => !!document.elementFromPoint(x, y)?.closest('[aria-pressed="true"]'),
+		[exit.x + exit.width / 2, exit.y + exit.height / 2]
+	);
+	expect(onTop).toBe(true);
+	// Nor does the strip draw over the top of the part that fills the screen.
+	const stripCovered = await phone.evaluate(
+		() => !document.elementFromPoint(innerWidth / 2, 8)?.closest('[data-filled]')
+	);
+	expect(stripCovered).toBe(false);
+	// The screen, less a margin clear of the camera and the rounded corners (Trevor's phone,
+	// 2026-10-27), with Full screen inside the town's own corner.
 	const filled = (await town.boundingBox())!;
 	const screen = phone.viewportSize()!;
-	expect(Math.round(filled.x)).toBe(0);
-	expect(Math.round(filled.y)).toBe(0);
-	expect(Math.round(filled.width)).toBe(screen.width);
-	expect(Math.round(filled.height)).toBe(screen.height);
+	const margin = filled.x;
+	expect(margin).toBeGreaterThanOrEqual(12);
+	expect(margin).toBeLessThan(screen.width * 0.1);
+	// Below the camera's strip at the top; one margin on the other sides.
+	expect(Math.round(filled.y)).toBe(48);
+	expect(Math.round(filled.width)).toBe(Math.round(screen.width - 2 * margin));
+	expect(Math.round(filled.height)).toBe(Math.round(screen.height - 48 - margin));
+	const inside = (await fullScreen.boundingBox())!;
+	expect(inside.y).toBeGreaterThan(filled.y);
+	expect(inside.x + inside.width).toBeLessThan(filled.x + filled.width);
 	// A seat's sheet still opens over it.
 	await phone.getByTestId('grim-seat').nth(2).tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
