@@ -18,8 +18,10 @@ import {
 } from '#lib/core/model/index.ts';
 import {
 	keepsAbilityWhenDead,
+	livesWhileDead,
 	MARKER_TEXT,
 	nightOrder,
+	onDeathApplies,
 	onDeathTrigger,
 	TRAVELLER_ALIGNMENT_STEP,
 	withCharacterChangeSteps,
@@ -160,7 +162,9 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
  * no player (Dusk, Dawn), or one with a player who has their ability (alive, or as a special
  * rule says), a dead player another character's token keeps it for (`keepsAbility`: the
  * Vigormortis's Has Ability on a Minion it killed, https://wiki.bloodontheclocktower.com/Vigormortis),
- * or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
+ * a dead player who still lives by their own ability (`livesWhileDead`: the Zombuul after its
+ * first death), or one dead since the day began whose ability that death sets off (`onDeath`:
+ * the Ravenkeeper killed at night, not executed; the Sage killed by the Demon).
  */
 export function stepWakes(
 	game: Game,
@@ -176,9 +180,21 @@ export function stepWakes(
 			(s) =>
 				seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
 				keepsAbilityWhenDead(game, s, characters) ||
-				(id !== undefined && !!onDeathTrigger(id, characters) && tonight.diedTonight.has(s))
+				livesWhileDead(game, s, characters) ||
+				(id !== undefined && tonight.diedTonight.has(s) && setOffByDeath(game, s, id, characters))
 		)
 	);
+}
+
+/** Whether `seatId`'s death, by its recorded cause, sets off `characterId`'s ability. */
+function setOffByDeath(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): boolean {
+	const trigger = onDeathTrigger(characterId, characters);
+	return !!trigger && onDeathApplies(trigger, game.seats[seatId]?.deathCause, characters);
 }
 
 /** A seat's PlayerBadge text; the one helper lives with the other seat names. */

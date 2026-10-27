@@ -28,7 +28,8 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
-import type { Game, SeatId } from '#lib/core/model/types.ts';
+import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
+import { isExecution } from './death-causes.ts';
 import {
 	abilityState,
 	firstDeathSaver,
@@ -85,14 +86,36 @@ export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = Object.
 export function onDeathTrigger(
 	characterId: CharacterId,
 	characters?: CharacterLookup
-): { by: KillBy | 'any' } | undefined {
+): { by: KillBy | 'any'; night?: true } | undefined {
 	return rulesOf(characterId, characters)?.onDeath;
 }
 
+/**
+ * Whether a death of this `cause` sets off the trigger: `by` the Demon only for a Demon's kill
+ * (the Sage, https://wiki.bloodontheclocktower.com/Sage; the Banshee,
+ * https://wiki.bloodontheclocktower.com/Banshee), and with `night` never an execution or exile
+ * (the Ravenkeeper, https://wiki.bloodontheclocktower.com/Ravenkeeper: "getting killed during
+ * the day reveals nothing"; the Farmer). A death whose cause was not recorded counts, so the
+ * Storyteller is still shown the step (warn, never lock).
+ */
+export function onDeathApplies(
+	trigger: { by: KillBy | 'any'; night?: true },
+	cause: DeathCause | undefined,
+	characters: CharacterLookup
+): boolean {
+	if (cause === undefined) return true;
+	const executed = cause === 'exile' || isExecution(cause, characters);
+	if (trigger.night && executed) return false;
+	if (trigger.by === 'any') return true;
+	const byDemon = cause === 'demon' || characters.get(cause)?.type === 'demon';
+	return trigger.by === 'demon' ? byDemon : !byDemon && !executed;
+}
+
 /** The official characters whose ability is set off by their player's death. */
-export const ON_DEATH: Readonly<Record<CharacterId, { by: KillBy | 'any' }>> = Object.fromEntries(
-	[...OFFICIAL_RULES].flatMap(([id, rules]) => (rules.onDeath ? [[id, rules.onDeath]] : []))
-);
+export const ON_DEATH: Readonly<Record<CharacterId, { by: KillBy | 'any'; night?: true }>> =
+	Object.fromEntries(
+		[...OFFICIAL_RULES].flatMap(([id, rules]) => (rules.onDeath ? [[id, rules.onDeath]] : []))
+	);
 
 export type NightAlertKind =
 	'impaired' | 'blocked' | 'protected' | 'may-bounce' | 'survives-first-death' | 'on-death';

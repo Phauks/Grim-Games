@@ -99,8 +99,11 @@ export interface CharacterRules {
 	 * the living ones in the reminder bank.
 	 */
 	actsWhenDead?: boolean;
-	/** The ability is set off by its player's death, by `by` (the Ravenkeeper, the Sage). */
-	onDeath?: { by: KilledBy };
+	/**
+	 * The ability is set off by its player's death, by `by` (the Ravenkeeper, the Sage); with
+	 * `night`, only a death at night, never an execution (the Ravenkeeper's "if you die at night").
+	 */
+	onDeath?: { by: KilledBy; night?: true };
 	/**
 	 * The ability stops a death: its own player's (`self`, the Soldier), the player marked
 	 * with its `token` (the Monk's "Safe") or any good player's (`good`, the Pacifist), against
@@ -377,9 +380,10 @@ export function parseCharacterRules(
 		if (!isObject(raw.onDeath)) {
 			issues.add(`${path}.onDeath`, `expected object, got ${describe(raw.onDeath)}`);
 		} else {
-			checkKeys(raw.onDeath, ['by'], `${path}.onDeath`, issues);
+			checkKeys(raw.onDeath, ['by', 'night'], `${path}.onDeath`, issues);
 			const by = readEnum(raw.onDeath, 'by', KILLED_BY, `${path}.onDeath`, issues, true);
-			if (by) rules.onDeath = { by };
+			const night = readBoolean(raw.onDeath, 'night', `${path}.onDeath`, issues);
+			if (by) rules.onDeath = night ? { by, night } : { by };
 		}
 	}
 	if (raw.redirectsKill !== undefined) {
