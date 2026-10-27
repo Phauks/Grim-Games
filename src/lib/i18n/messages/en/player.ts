@@ -40,6 +40,7 @@ export const player = {
 	'player.grim.remindersTitle': 'Reminders for {name}',
 	'player.grim.onThisSeat': 'On this seat',
 	'player.grim.genericTokens': 'Generic',
+	'player.grim.avatar': 'Avatar',
 	'player.grim.addGeneric': 'Add a generic token',
 	'player.grim.editGeneric': '{label}: change',
 	'player.grim.deleteGeneric': 'Delete token',
@@ -89,10 +90,7 @@ export const player = {
 	'player.sheetBackground.slate': 'Slate',
 	'player.sheetBackground.charcoal': 'Charcoal',
 	'player.frame': 'Your frame',
-	'player.guessesOnTokens': 'Guesses over avatars',
 	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
-	'player.guessesOnTokensDetail':
-		"Your guess of a seat's character shows on its token in place of the player's avatar.",
 	'player.frameStoryteller': "Storyteller's choice",
 	'player.densityDetail':
 		"How tightly the Script sheet is laid out for you, on screen and in print. Applies to the player view and the Storyteller's copy of the script.",

@@ -23,14 +23,6 @@
 	testid="player-frame-setting"
 />
 
-<!-- Also in the Grim tab's guess sheet. -->
-<SettingToggle
-	label={t('player.guessesOnTokens')}
-	description={t('player.guessesOnTokensDetail')}
-	checked={playerSettings.current.guessesOnTokens}
-	onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
-/>
-
 <!-- Also the eye on the Grim tab, as a note's own (Trevor, 2026-10-26). -->
 <SettingToggle
 	label={t('player.hideGuesses')}

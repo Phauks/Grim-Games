@@ -36,6 +36,8 @@ export class Grimoire {
 	layout = $state.raw<SeatLayout>(DEFAULT_SEAT_LAYOUT);
 	/** Someone else's board: the background its Storyteller shared (Grim view). */
 	look = $state.raw<PublicLook>();
+	/** And the room it came through, which holds that background's picture. */
+	room = $state.raw<string>();
 
 	constructor(readonly open: OpenGame) {
 		forgetUpsideDownMarks();
