@@ -27,6 +27,8 @@ export interface PlayerMessage {
 	phase?: PlayersPhase;
 	/** The Storyteller has opened it. */
 	read?: true;
+	/** The player asks the Storyteller for a word in private (Trevor, 2026-10-27: "add a checkmark to request a storyteller consult"). */
+	consult?: true;
 }
 
 /** A message's text, trimmed and cut to length; `null` when there is nothing to send. */
@@ -41,25 +43,27 @@ export function cleanMessage(raw: unknown): string | null {
 
 /**
  * A member's message to the Storyteller. Ignored when the member isn't in the room, the
- * Storyteller's app can't show it (`inbox`), the text is empty, or the phone has sent too many
- * or too fast. `id` is made by the room.
+ * Storyteller's app can't show it (`inbox`), it has no text and asks for no consult, or the
+ * phone has sent too many or too fast. `id` is made by the room.
  */
 export function sendMessage(
 	room: RoomState,
 	memberId: string,
 	raw: unknown,
 	at: number,
-	id: string
+	id: string,
+	consult?: unknown
 ): RoomState {
 	if (!room.inbox || !room.members.some((m) => m.memberId === memberId)) return room;
-	const text = cleanMessage(raw);
-	if (!text) return room;
+	const text = cleanMessage(raw) ?? '';
+	if (!text && consult !== true) return room;
 	const all = room.messages ?? [];
 	const mine = all.filter((m) => m.memberId === memberId);
 	if (mine.length >= MAX_MESSAGES_PER_MEMBER) return room;
 	const last = mine.at(-1);
 	if (last && at - last.at < MESSAGE_GAP_MS) return room;
 	const message: PlayerMessage = { id, memberId, text, at };
+	if (consult === true) message.consult = true;
 	const phase = parsePlayersPhase(room.public?.now);
 	if (phase) message.phase = phase;
 	return { ...room, messages: [...all, message] };

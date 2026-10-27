@@ -77,6 +77,18 @@ describe('player messages', () => {
 		expect(sendMessage(r, 'alex', 'More', 10 ** 9, 'z')).toBe(r);
 	});
 
+	it('may ask for a Storyteller consult, with or without words', () => {
+		// Trevor, 2026-10-27: "add a checkmark to request a storyteller consult".
+		const r = sendMessage(room(), 'alex', '', 1000, 'm1', true);
+		expect(hostView(r).messages?.[0]).toMatchObject({ text: '', consult: true });
+		const said = sendMessage(room(), 'alex', 'After the vote', 1000, 'm1', true);
+		expect(said.messages?.[0]).toMatchObject({ text: 'After the vote', consult: true });
+		expect(
+			sendMessage(room(), 'alex', 'Hi', 1000, 'm1', 'yes').messages?.[0].consult
+		).toBeUndefined();
+		expect(sendMessage(room(), 'alex', '', 1000, 'm1', 'yes').messages).toBeUndefined();
+	});
+
 	it('are cut to length and cleaned of control characters', () => {
 		expect(cleanMessage('a'.repeat(MAX_MESSAGE_LENGTH + 20))).toHaveLength(MAX_MESSAGE_LENGTH);
 		expect(cleanMessage('a\u0007b\n\n\n\nc')).toBe('ab\n\nc');

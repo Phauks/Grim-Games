@@ -381,7 +381,14 @@ export class Room extends DurableObject<RoomEnv> {
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'message') {
-				const next = sendMessage(room, id, message.text, Date.now(), crypto.randomUUID());
+				const next = sendMessage(
+					room,
+					id,
+					message.text,
+					Date.now(),
+					crypto.randomUUID(),
+					message.consult
+				);
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'vote') {

@@ -43,14 +43,21 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await button.tap();
 	let sheet = phone.getByRole('dialog', { name: 'Message the Storyteller' });
 	// Asked to play fair first (Trevor, 2026-10-27), as everywhere a phone could be misused.
-	await expect(sheet.getByTestId('fair-play')).toContainText('Fair play:');
+	await expect(sheet.getByTestId('fair-play')).toContainText(
+		/only send what the Storyteller needs to know/i
+	);
 	await expect(sheet.getByRole('button', { name: 'Send' })).toBeDisabled();
 	await sheet.getByRole('textbox', { name: 'Message' }).fill('Can I swap seats with Sam?');
+	// A consult can be asked for with the words (Trevor, 2026-10-27).
+	await sheet.getByText('Request a Storyteller consult', { exact: true }).tap();
 	await sheet.getByRole('button', { name: 'Send' }).tap();
 	await expect(sheet).toBeHidden();
 	await button.tap();
 	sheet = phone.getByRole('dialog', { name: 'Message the Storyteller' });
 	await expect(sheet.getByRole('textbox', { name: 'Message' })).toHaveValue('');
+	await expect(
+		sheet.getByRole('checkbox', { name: 'Request a Storyteller consult', includeHidden: true })
+	).not.toBeChecked();
 	await expect(sheet).not.toContainText('swap');
 	await phone.keyboard.press('Escape');
 
@@ -69,6 +76,7 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await expect(item).toHaveCount(1);
 	await expect(item).toContainText('Alex');
 	await expect(item).toContainText('Can I swap seats with Sam?');
+	await expect(item.getByTestId('inbox-consult')).toHaveText('Consult requested');
 	await expect(item).toContainText('New');
 	await page.keyboard.press('Escape');
 	await expect(inbox).toBeHidden();

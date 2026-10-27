@@ -6,6 +6,7 @@
 	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -93,7 +94,10 @@
 							{#if when(item)}<span class="when">{when(item)}</span>{/if}
 						</div>
 						{#if item.kind === 'message'}
-							<p class="text">{item.text}</p>
+							{#if item.consult}<p class="consult" data-testid="inbox-consult">
+									<Icon name="messages" />{t('room.inbox.consult')}
+								</p>{/if}
+							{#if item.text}<p class="text">{item.text}</p>{/if}
 						{:else}
 							<p class="text">{t('room.inbox.reported', { count: item.count })}</p>
 							<div class="judge">
@@ -172,6 +176,15 @@
 		margin: 0;
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
+	}
+	/* A request to talk in private stands out from the words of the message. */
+	.consult {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		margin: 0;
+		font-weight: 600;
+		color: var(--accent);
 	}
 	.judge {
 		display: flex;

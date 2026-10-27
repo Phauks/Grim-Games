@@ -252,5 +252,7 @@ export const room = {
 	'room.message.title': 'Message the Storyteller',
 	'room.message.field': 'Message',
 	'room.message.send': 'Send',
+	'room.message.consult': 'Request a Storyteller consult',
+	'room.inbox.consult': 'Consult requested',
 	'room.message.failed': 'Couldn’t send. Check the connection and try again.'
 } as const;

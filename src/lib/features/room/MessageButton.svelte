@@ -7,6 +7,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 
@@ -38,15 +39,19 @@
 	let open = $state(false);
 	let text = $state('');
 	let failed = $state(false);
+	/** Asks the Storyteller for a word in private (Trevor, 2026-10-27: "add a checkmark to request a storyteller consult"); it can go with no text. */
+	let consult = $state(false);
+	const ready = $derived(!!text.trim() || consult);
 	const canSend = $derived(!!player?.view?.inbox);
 
 	function send() {
-		if (!text.trim()) return;
-		if (!player?.sendMessage(text)) {
+		if (!ready) return;
+		if (!player?.sendMessage(text, consult)) {
 			failed = true;
 			return;
 		}
 		text = '';
+		consult = false;
 		failed = false;
 		open = false;
 	}
@@ -80,12 +85,19 @@
 				testid="message-field"
 				oninput={() => (failed = false)}
 			/>
+			<div class="consult">
+				<Toggle
+					label={t('room.message.consult')}
+					checked={consult}
+					onChange={(on) => (consult = on)}
+				/>
+			</div>
 			{#if failed}<p class="failed" role="alert">{t('room.message.failed')}</p>{/if}
 		</form>
 		{#snippet actions()}
 			<ModalActions
 				onConfirm={send}
-				disabled={!text.trim() || !canSend}
+				disabled={!ready || !canSend}
 				confirmLabel={t('room.message.send')}
 				confirmIcon="messages"
 			>
@@ -102,6 +114,9 @@
 		display: grid;
 		justify-items: center;
 		margin-bottom: var(--space-3);
+	}
+	.consult {
+		margin-top: var(--space-3);
 	}
 	.failed {
 		margin: var(--space-2) 0 0;

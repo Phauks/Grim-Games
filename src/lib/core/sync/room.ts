@@ -178,7 +178,7 @@ export type ClientMessage =
 	| { type: 'look'; avatar?: string; frame?: string; picture?: string }
 	/** Reports the picture on another player's seat to the Storyteller (2026-10-27). */
 	| { type: 'report-picture'; seatId: SeatId }
-	| { type: 'message'; text: string } // A message to the Storyteller (2026-10-27).
+	| { type: 'message'; text: string; consult?: boolean } // To the Storyteller (2026-10-27).
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
 	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
