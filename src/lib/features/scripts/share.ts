@@ -124,6 +124,14 @@ export function sharedRefFromHash(hash: string): SharedRef | undefined {
 	return payload ? { kind: 'inline', payload } : undefined;
 }
 
+/**
+ * The live room an offline code names (`r=`, Trevor 2026-10-27: "connecting to a game if they
+ * gain a connection"), from a hash or a scanned link; undefined when it names none.
+ */
+export function offlineRoomFrom(text: string): string | undefined {
+	return /[#&]r=(\d{6})(?=&|$)/.exec(text)?.[1];
+}
+
 /** Whether a location hash is an offline code's (`&o=1`). */
 export function isOfflineHash(hash: string): boolean {
 	return new URLSearchParams(hash.replace(/^#/, '')).get('o') === '1';
@@ -205,4 +213,18 @@ export async function offlineCode(
 	// the rest (Trevor, 2026-10-27: "tell people to open the grimbinder app").
 	const frames = fountainFrames(bytes)?.map((frame) => `${origin}/join#q=${frame}`);
 	return frames ? { url, frames } : { url, tooLarge: true };
+}
+
+/**
+ * An offline code that also names the Storyteller's live room, when there is one: the phone
+ * keeps the code and offers to join once it has internet. The room code goes in the hash,
+ * before the frame (`/join#r=482913&q=GB2:...`), so the frame itself is unchanged.
+ */
+export function withOfflineRoom(code: OfflineCode, room: string | undefined): OfflineCode {
+	if (!room) return code;
+	return {
+		...code,
+		url: `${code.url}&r=${room}`,
+		frames: code.frames?.map((frame) => frame.replace('#q=', `#r=${room}&q=`))
+	};
 }

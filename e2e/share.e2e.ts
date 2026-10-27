@@ -57,7 +57,8 @@ test("the board's Script sheet has the players' tabs, and its Share matches /pla
 	// share" in a room, Trevor's report 2026-10-26).
 	await share.getByText('Offline code', { exact: true }).tap();
 	await expect(share.getByRole('img', { name: 'Offline code for Trouble Brewing' })).toBeVisible();
-	await expect(share.getByTestId('share-url')).toHaveValue(/\/play#e=tb&o=1$/);
+	// It names the room, so a phone that scans it offline can join once online (N4).
+	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/play#e=tb&o=1&r=${code}$`));
 	await expect(share.getByText('The link could not be made.')).toHaveCount(0);
 });
 

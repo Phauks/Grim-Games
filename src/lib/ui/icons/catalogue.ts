@@ -159,6 +159,8 @@ export const ICON_SLOTS = {
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
 	/** Covers the whole screen, so a glance at it shows nothing (Trevor, 2026-10-26). */
 	cover: { label: 'Cover the screen', choices: ['ph:rectangle', 'ph:monitor'] },
+	/** A shared grim drawn in the Storyteller's board's shape (Trevor, 2026-10-27). */
+	boardShape: { label: "Storyteller's board shape", choices: ['ph:crop', 'ph:selection'] },
 	/** Someone is watching the view-only grimoire (Trevor, 2026-10-20). */
 	watchers: { label: 'Watching', choices: ['ph:eye', 'ph:binoculars'] },
 	/** Players' feedback on a finished game (Trevor, 2026-10-25). */

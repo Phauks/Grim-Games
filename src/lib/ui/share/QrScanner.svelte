@@ -60,9 +60,10 @@
 			phase = 'running';
 			const tick = async () => {
 				if (stopped || !video) return;
-				const text = await read(video).catch(() => undefined);
+				const texts = await read(video).catch(() => []);
 				if (stopped) return;
-				if (text && onRead(text)) return stop();
+				// Every code in view: another code beside an animated one is not lost (2026-10-27).
+				if (texts.some((text) => onRead(text))) return stop();
 				timer = setTimeout(tick, EVERY_MS);
 			};
 			void tick();

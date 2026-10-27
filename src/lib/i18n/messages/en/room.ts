@@ -146,6 +146,7 @@ export const room = {
 	'room.scriptVote.addRule': 'Add a special rule',
 	'room.scriptVote.join': 'Join to vote',
 	'room.yourName': 'Your name',
+	'room.editName': 'Edit your name',
 	'room.vote.title': 'Spectators’ vote',
 	// After the game (plan R4); accolades approved by Trevor, 2026-10-22.
 	'room.feedback.open': 'Rate game',
@@ -212,6 +213,8 @@ export const room = {
 	'room.town.title': 'Public Town',
 	'room.town.waiting': 'Waiting for the Storyteller’s game…',
 	'room.town.settings': 'Public Town settings',
+	'room.town.boardShape': "Use the Storyteller's board shape",
+	'room.town.fillScreen': 'Fill the screen',
 	// Live games: admins watch any open room, unseen (plan J31, Trevor 2026-10-26)
 	'room.liveGames.title': 'Live games',
 	'room.liveGames.code': 'Code',

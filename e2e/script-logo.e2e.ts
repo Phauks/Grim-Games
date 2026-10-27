@@ -47,7 +47,7 @@ test('the board shows the script logo faintly, with its switch and opacity', asy
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: /^Board/ })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	const opacity = dialog.getByRole('slider', { name: 'Script logo opacity' });

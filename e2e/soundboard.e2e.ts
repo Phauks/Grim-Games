@@ -38,6 +38,42 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	const resume = sheet.getByRole('button', { name: 'Resume', exact: true });
 	await resume.tap();
 	await expect(pause).toBeVisible();
+
+	// The mixer (Trevor, 2026-10-27: "more mixing controls"): holding a pad picks it, and with
+	// overlap on two sounds play at once.
+	const errors: string[] = [];
+	page.on('pageerror', (error) => errors.push(error.message));
+	await sheet.getByText('Let sounds overlap', { exact: true }).tap();
+	const heartbeat = pads.getByRole('button', { name: 'Heartbeat', exact: true });
+	const box = await heartbeat.boundingBox();
+	if (!box) throw new Error('Heartbeat pad has no box');
+	await heartbeat.dispatchEvent('pointerdown', {
+		button: 0,
+		clientX: box.x + box.width / 2,
+		clientY: box.y + box.height / 2
+	});
+	await expect(sheet.getByRole('combobox', { name: 'Sound', exact: true })).toContainText(
+		'Heartbeat'
+	);
+	await heartbeat.dispatchEvent('pointerup');
+	await sheet.getByText('Loop until stopped', { exact: true }).tap();
+	await heartbeat.tap();
+	await pads.getByRole('button', { name: 'Gallows trap' }).tap();
+	await expect(heartbeat).toHaveAttribute('aria-pressed', 'true');
+	await expect(pads.getByRole('button', { name: 'Gallows trap' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	// Heartbeat loops, so it is still playing after the gallows trap ends.
+	await expect(pads.getByRole('button', { name: 'Gallows trap' })).toHaveAttribute(
+		'aria-pressed',
+		'false',
+		{ timeout: 10_000 }
+	);
+	await expect(heartbeat).toHaveAttribute('aria-pressed', 'true');
+	await heartbeat.tap();
+	await expect(heartbeat).toHaveAttribute('aria-pressed', 'false');
+	expect(errors).toEqual([]);
 	// Day and night sound is beside it, to change mid-game.
 	await expect(sheet.getByRole('combobox', { name: 'Night sound' })).toBeVisible();
 	await page.keyboard.press('Escape');
@@ -47,9 +83,16 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Sound', exact: true })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
+	// ⋯ > Settings opens all of Settings at Board; phones go back to the list first.
+	const back = settings.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Sound' })
+		.tap();
 	const dusk = settings.getByRole('combobox', { name: 'Dusk' });
 	await expect(dusk).toContainText('Temple bell');
 	await expect(dusk).toBeDisabled();

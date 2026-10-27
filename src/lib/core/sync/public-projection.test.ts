@@ -101,6 +101,12 @@ describe('publicProjection', () => {
 		});
 	});
 
+	it("carries the board's shape, even round the plain oval (Trevor, 2026-10-27)", () => {
+		const { game } = busyGame();
+		const layout = { shape: 'oval', gaps: {}, placed: {}, aspect: 2.06 };
+		expect(publicProjection(game, undefined, layout).layout).toEqual(layout);
+	});
+
 	it("carries the board corner's lines, and nothing else (Trevor, 2026-10-24)", () => {
 		const { game } = busyGame();
 		expect(publicProjection(game)).not.toHaveProperty('corner');

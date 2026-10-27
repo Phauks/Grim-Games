@@ -124,7 +124,7 @@
 		</div>
 		{@render heldList(ruleShownCharacter.id)}
 	{/if}
-	<RulesAtSetting />
+	<RulesAtSetting disabled={watching} />
 	{#snippet headActions()}
 		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
 		<DeleteButton
@@ -163,7 +163,7 @@
 			<li class="none">None</li>
 		{/each}
 	</ul>
-	<RulesAtSetting />
+	<RulesAtSetting disabled={watching} />
 </Dialog>
 
 <ConfirmDialog

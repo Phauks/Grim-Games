@@ -75,7 +75,7 @@ test('profiles are made in Settings, chosen on New game and switched on the boar
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Board', exact: true })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const sheet = page.getByRole('dialog', { name: 'Settings' });
 	await pickProfile(sheet, page, 'Streaming');

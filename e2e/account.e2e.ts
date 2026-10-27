@@ -142,6 +142,14 @@ async function profileScriptNames(page: Page): Promise<string[]> {
 	});
 }
 
+/** How many documents of `kind` the signed-in profile holds. */
+async function profileDocCount(page: Page, kind: string): Promise<number> {
+	return page.evaluate(async (kind) => {
+		const { docs } = await (await fetch(`/api/account/docs/${kind}`)).json();
+		return (docs as { deleted: boolean }[]).filter((doc) => !doc.deleted).length;
+	}, kind);
+}
+
 // Scripts are managed in the Library (Trevor, 2026-10-18); the profile keeps them in sync.
 test('scripts added on the device are saved to the profile', async ({ page }) => {
 	await page.goto('/library');
@@ -490,6 +498,9 @@ test('a downloaded data file imports into another account, adding only what is m
 	const part = () => Math.floor(Math.random() * 254) + 1;
 	await second.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
 	await signInWithCode(second, uniqueEmail('import'));
+	// The new account gets the device's settings profile shortly after sign-in; an import
+	// planned before then counts that profile as new too (CI flake, 2026-10-26 and 27).
+	await expect.poll(() => profileDocCount(second, 'settings-profile')).toBe(1);
 	const importOnce = async () => {
 		await second.locator('input[type="file"][aria-label="Import data"]').setInputFiles(file);
 		return second.getByRole('alertdialog', { name: 'Import data' });
