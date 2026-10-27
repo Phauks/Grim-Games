@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CornerLine } from '#lib/ui/corner-lines.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
