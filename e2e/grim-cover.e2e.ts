@@ -114,6 +114,26 @@ test('the Storyteller covers the screen from the board, beside the timer, and fr
 	await coverAndUncover(page);
 	await expect(page.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
 
+	// The players' view, over the cover: script, night order and the town, but no notes, and
+	// the town's seats only drawn (Trevor, 2026-10-27). Without a room there is nobody to call.
+	await page.getByTestId('cover-button').tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	await expect(cover.getByRole('button', { name: 'Back to town' })).toHaveCount(0);
+	await cover.getByRole('button', { name: 'Player view' }).tap();
+	const view = page.getByTestId('cover-player-view');
+	await expect(view.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim']);
+	await view.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(view.getByTestId('grim-seat')).toHaveCount(8);
+	await expect(view.getByRole('button', { name: /^Seat / })).toHaveCount(0);
+	await page
+		.getByRole('dialog', { name: 'Trouble Brewing' })
+		.getByRole('button', { name: 'Close' })
+		.tap();
+	await expect(view).toBeHidden();
+	await expect(cover).toBeVisible();
+	await cover.getByRole('button', { name: 'Close' }).tap();
+	await expect(cover).toBeHidden();
+
 	// From the day, which stays open under it.
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	const day = page.getByRole('dialog', { name: /^Day( \d+)?$/ });

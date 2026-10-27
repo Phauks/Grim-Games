@@ -6041,6 +6041,10 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await expect(seatLabelled(page, 'Seat 2: no name, Chef, dead')).toBeAttached();
+	// The Virgin is the cause of death (Trevor, 2026-10-27).
+	const chef = await openSeat(page, 2);
+	await expect(chef.getByRole('button', { name: 'Status: Dead: Virgin' })).toBeVisible();
+	await closeSheet(page);
 	// The Virgin's ability is used: her "No Ability" reminder is placed.
 	await expect(seatLabelled(page, 'Seat 1: no name, Virgin, 1 reminder')).toBeAttached();
 	// Dead, but nominated today: the marks stay, the finger lit.
