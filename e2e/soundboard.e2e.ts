@@ -144,11 +144,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Soundboard' })
-		.tap();
+	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 
@@ -187,11 +183,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Soundboard' })
-		.tap();
+	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
 	await expect(pads.getByRole('button', { name: 'Doom' })).toBeVisible();
 	await expect(pads.getByRole('button', { name: 'Hand bell' })).toHaveCount(0);
 });
