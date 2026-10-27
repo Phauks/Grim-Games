@@ -985,6 +985,7 @@
 		logo: boardLogo || undefined,
 		name: showTitle ? game.script.meta?.name : undefined,
 		author: showTitle ? game.script.meta?.author : undefined,
+		storyteller: game.storytellerName?.trim() || undefined,
 		phase
 	});
 	/**
