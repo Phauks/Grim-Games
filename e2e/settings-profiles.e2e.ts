@@ -73,7 +73,10 @@ test('profiles are made in Settings, chosen on New game and switched on the boar
 
 	// Switched from the board's Board sheet: that game now uses Streaming.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
 	const sheet = page.getByRole('dialog', { name: 'Settings' });
 	await pickProfile(sheet, page, 'Streaming');
 	await expect.poll(() => ghostVote(page)).toBe('struck');

@@ -9,8 +9,9 @@
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 
 	/**
-	 * The board's ⋯ menu: the game's less frequent actions, the seats, the board's settings,
-	 * the app's items, then End game (New game once it has ended). Each item closes the menu before it acts.
+	 * The board's ⋯ menu in named groups: the game's less frequent actions ending with End
+	 * game (New game once it has ended), the seats, and the app's items with all of Settings.
+	 * Each item closes the menu before it acts.
 	 */
 	interface Props {
 		open: boolean;
@@ -73,105 +74,101 @@
 	let covering = $state(false);
 </script>
 
-<Dialog bind:open title="Grimoire">
+<!-- Named groups, in two columns on a tablet or computer (Trevor, 2026-10-27: "the delineation
+     is nice"): the game on the left, with End game or New game at its foot ("end game/new game
+     should be under game"); seats and the app's items on the right. -->
+<Dialog bind:open title="Grimoire" size="wide">
 	<div class="menu">
-		<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
-		<Button variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}>Demon bluffs</Button>
-		<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>
-		<Button variant="quiet" icon="cover" onclick={() => fromMenu(() => (covering = true))}>
-			{t('show.cover')}
-		</Button>
-		{#if onCallTown}
-			<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
-			<Button variant="quiet" icon="sound" onclick={() => fromMenu(onCallTown)}>
-				{t('room.callTown')}
+		<section class="group" aria-labelledby="board-menu-game">
+			<h3 id="board-menu-game" class="group-title">Game</h3>
+			<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
+			<Button variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}>Demon bluffs</Button>
+			<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>
+			<Button variant="quiet" icon="cover" onclick={() => fromMenu(() => (covering = true))}>
+				{t('show.cover')}
 			</Button>
-		{/if}
-		{#if gameInfo}
-			<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
-		{/if}
-		{#if onCharacterSelection}
-			<Button variant="quiet" icon="bag" onclick={() => fromMenu(onCharacterSelection)}>
-				{t('setup.characterSelection')}
-			</Button>
-		{/if}
-		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
-		     apart at the bottom (Trevor, 2026-10-18). -->
-		<hr class="menu-rule" />
-		<Button variant="quiet" icon="add" onclick={() => fromMenu(onAddSeat)}>Add seat</Button>
-		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(onAddRule)}>
-			Add Fabled or Loric
-		</Button>
-		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(onArrange)}>
-			Arrange seats
-		</Button>
-		<hr class="menu-rule" />
-		<!-- Board and token settings over the board (Trevor, 2026-10-17); two sections since
-		     2026-10-18. -->
-		<Button
-			variant="quiet"
-			icon="boardSettings"
-			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
-		>
-			Board
-		</Button>
-		<Button
-			variant="quiet"
-			icon="tokenSettings"
-			onclick={() => fromMenu(() => settingsDialog.showOnly('tokens'))}
-		>
-			Tokens
-		</Button>
-		<!-- Day and night sound and the rest, beside the game they play over (plan U3). -->
-		<Button
-			variant="quiet"
-			icon="sound"
-			onclick={() => fromMenu(() => settingsDialog.showOnly('sound'))}
-		>
-			{t('settings.sectionSound')}
-		</Button>
-		<!-- The board's settings apart from the app's items (Trevor, 2026-10-23). -->
-		<hr class="menu-rule" />
-		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
-		<span class="menu-nav">
-			<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
-				Navigation
-			</Button>
-		</span>
-		<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
-		<Button
-			variant="quiet"
-			icon="report"
-			onclick={() => fromMenu(() => void reportWithDiagnostics())}
-		>
-			{t('shell.reportIssue')}
-		</Button>
-		<hr class="menu-rule" />
-		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
-		{#if ended}
-			<Button variant="quiet" icon="download" onclick={() => fromMenu(onExport)}>
-				Export game
-			</Button>
-			{#if onFeedback}
-				<Button variant="quiet" icon="feedback" onclick={() => fromMenu(onFeedback)}>
-					{t('room.feedback.view')}
+			{#if onCallTown}
+				<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
+				<Button variant="quiet" icon="sound" onclick={() => fromMenu(onCallTown)}>
+					{t('room.callTown')}
 				</Button>
 			{/if}
-			<Button variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}>Reopen game</Button>
-		{/if}
-		<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
-		{#if !ended}
-			<Button variant="danger" icon="close" onclick={() => fromMenu(onEnd)}>End game</Button>
-		{:else if onNewGame}
-			<Button variant="quiet" icon="add" onclick={() => fromMenu(onNewGame)}>
-				{t('setup.newGame')}
-			</Button>
-		{/if}
-		{#if ended && onCloseRoom}
-			<Button variant="danger" icon="close" onclick={() => fromMenu(() => (closeRoomOpen = true))}>
-				{t('room.closeRoom')}
-			</Button>
-		{/if}
+			{#if gameInfo}
+				<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
+			{/if}
+			{#if onCharacterSelection}
+				<Button variant="quiet" icon="bag" onclick={() => fromMenu(onCharacterSelection)}>
+					{t('setup.characterSelection')}
+				</Button>
+			{/if}
+			<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
+			{#if ended}
+				<Button variant="quiet" icon="download" onclick={() => fromMenu(onExport)}>
+					Export game
+				</Button>
+				{#if onFeedback}
+					<Button variant="quiet" icon="feedback" onclick={() => fromMenu(onFeedback)}>
+						{t('room.feedback.view')}
+					</Button>
+				{/if}
+				<Button variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}>Reopen game</Button>
+			{/if}
+			<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
+			{#if !ended}
+				<Button variant="danger" icon="close" onclick={() => fromMenu(onEnd)}>End game</Button>
+			{:else if onNewGame}
+				<Button variant="quiet" icon="add" onclick={() => fromMenu(onNewGame)}>
+					{t('setup.newGame')}
+				</Button>
+			{/if}
+			{#if ended && onCloseRoom}
+				<Button
+					variant="danger"
+					icon="close"
+					onclick={() => fromMenu(() => (closeRoomOpen = true))}
+				>
+					{t('room.closeRoom')}
+				</Button>
+			{/if}
+		</section>
+		<div class="column">
+			<section class="group" aria-labelledby="board-menu-seats">
+				<h3 id="board-menu-seats" class="group-title">Seats</h3>
+				<Button variant="quiet" icon="add" onclick={() => fromMenu(onAddSeat)}>Add seat</Button>
+				<Button variant="quiet" icon="fabled" onclick={() => fromMenu(onAddRule)}>
+					Add Fabled or Loric
+				</Button>
+				<Button variant="quiet" icon="arrange" onclick={() => fromMenu(onArrange)}>
+					Arrange seats
+				</Button>
+			</section>
+			<section class="group" aria-labelledby="board-menu-app">
+				<h3 id="board-menu-app" class="group-title">App</h3>
+				<!-- All of Settings, not only the board's sections (Trevor, 2026-10-27: "why not just
+				     open to all settings, and stop limiting to what they can access?"), at Board. -->
+				<Button
+					variant="quiet"
+					icon="settings"
+					onclick={() => fromMenu(() => settingsDialog.show('board'))}
+				>
+					{t('settings.title')}
+				</Button>
+				<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
+				<span class="menu-nav">
+					<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
+						Navigation
+					</Button>
+				</span>
+				<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
+				<Button
+					variant="quiet"
+					icon="report"
+					onclick={() => fromMenu(() => void reportWithDiagnostics())}
+				>
+					{t('shell.reportIssue')}
+				</Button>
+			</section>
+		</div>
 	</div>
 </Dialog>
 <ShowToPlayer bind:open={covering} blank />
@@ -191,16 +188,37 @@
 	}
 	.menu {
 		display: grid;
-		gap: var(--space-2);
+		gap: var(--space-4);
 		margin-top: var(--space-3);
 	}
-	.menu-rule {
-		width: 100%;
+	.group {
+		display: grid;
+		align-content: start;
+		gap: var(--space-2);
+	}
+	/* As a heading over a run of settings (SettingHeading). */
+	.group-title {
 		margin: 0;
-		border: 0;
-		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
-		   2026-10-19). */
-		border-top: 0.125rem solid var(--button-edge);
+		font-family: var(--font-control);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-muted);
+	}
+	/* On a phone, one column in the same order. */
+	.column {
+		display: contents;
+	}
+	@media (min-width: 40rem) {
+		.menu {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			column-gap: var(--space-5);
+		}
+		.column {
+			display: grid;
+			align-content: start;
+			gap: var(--space-4);
+		}
 	}
 	.menu-nav {
 		display: none;

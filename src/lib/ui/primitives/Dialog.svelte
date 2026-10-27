@@ -14,9 +14,11 @@
 		/**
 		 * `full` fills a phone screen and becomes a large panel on wider screens; `max` fills
 		 * a phone screen and nearly all of a wider one (the day sheet, Trevor 2026-10-16);
-		 * `side` is a full-height panel sliding in from the left edge (the navigation drawer).
+		 * `side` is a full-height panel sliding in from the left edge (the navigation drawer);
+		 * `wide` is a plain dialog with room for two columns on a tablet or computer (the
+		 * board's ⋯ menu, Trevor 2026-10-27).
 		 */
-		size?: 'normal' | 'full' | 'max' | 'side';
+		size?: 'normal' | 'wide' | 'full' | 'max' | 'side';
 		children: Snippet;
 		actions?: Snippet;
 		/** Shown before the title, e.g. a character badge for the seat a menu acts on. */
@@ -207,6 +209,11 @@
 		width: min(100%, calc(48 * var(--u)));
 		overflow: hidden;
 		container: dialog-panes / inline-size;
+	}
+	@media (min-width: 40rem) {
+		:global([data-scope='dialog'][data-part='content'][data-size='wide']) {
+			width: min(100%, calc(46 * var(--u)));
+		}
 	}
 	:global([data-scope='dialog'][data-part='content'][data-size='full']) {
 		display: flex;

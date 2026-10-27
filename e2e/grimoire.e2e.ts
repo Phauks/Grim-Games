@@ -24,6 +24,22 @@ async function menu(page: Page, action: string) {
 	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: action }).tap();
 }
 
+/** ⋯ > Settings, which opens all of Settings at Board, then the section asked for. */
+async function boardSettings(page: Page, section: string) {
+	await menu(page, 'Settings');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	if (section !== 'Board') {
+		// Phones show one section at a time: back to the list first.
+		const back = settings.getByRole('button', { name: 'All settings' });
+		if (await back.isVisible()) await back.tap();
+		await settings
+			.getByRole('navigation', { name: 'Settings sections' })
+			.getByRole('button', { name: section })
+			.tap();
+	}
+	await expect(settings.getByRole('heading', { name: section, level: 2 })).toBeVisible();
+}
+
 /**
  * Opens Game info: from the corner script name, or from ⋯ while the corner name is hidden
  * (a phone before setup), the only time ⋯ has it.
@@ -513,7 +529,7 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		.getByRole('button', { name: 'Spirit of Ivory' });
 	await expect(fabled).toBeVisible();
 	// Or small along the edge (Trevor, 2026-10-17), set beside the background.
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	const looks = page.getByRole('dialog', { name: 'Settings' });
 	// A drop-down (Trevor, 2026-10-17).
 	await looks.getByRole('combobox', { name: 'Location', exact: true }).tap();
@@ -1229,7 +1245,7 @@ test('the join code shows under the script name, a Board setting, read only', as
 	// Only read: Share is the toolbar's button, not the corner (Trevor, 2026-10-24).
 	await expect(page.getByRole('button', { name: /Join code/ })).toHaveCount(0);
 
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings.getByText('Join code on the board', { exact: true }).tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
@@ -1254,7 +1270,7 @@ test("the board's corner names the Storyteller under the author, when named", as
 	await nameStoryteller(page, 'Sam');
 	await expect(page.getByTestId('board-storyteller')).toHaveText('Storyteller: Sam');
 	// The Board preview shows it too.
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	await expect(
 		page.getByRole('dialog', { name: 'Settings' }).getByTestId('preview-storyteller')
 	).toHaveText('Storyteller: Sam');
@@ -1317,7 +1333,7 @@ test("the Board preview's bank has the board bank's outline and colour", async (
 		return [style.borderTopWidth, style.borderTopColor, style.borderRadius, style.backgroundColor];
 	};
 	const board = await page.locator('[data-tray]').evaluate(look);
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await expect(dialog.getByRole('heading', { name: 'Board preview' })).toBeVisible();
 	expect(await dialog.getByTestId('preview-bank').evaluate(look)).toEqual(board);
@@ -1433,7 +1449,7 @@ test('the cause of death offers only characters that could have killed the playe
 	await expect(skull).toHaveAttribute('data-used-look', 'hollow');
 	await expect(imp).toHaveAttribute('aria-label', /dead, ghost vote used/);
 	await expect(page.getByRole('dialog')).toHaveCount(0);
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings.getByText('Strike through used ghost votes', { exact: true }).tap();
 	await expect(skull).toHaveAttribute('data-used-look', 'struck');
@@ -1748,7 +1764,7 @@ test("every button in the More menu has an edge, and End game is red with the bu
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const grimoireMenu = page.getByRole('dialog', { name: 'Grimoire' });
 	const end = grimoireMenu.getByRole('button', { name: 'End game' });
-	const other = grimoireMenu.getByRole('button', { name: 'Board', exact: true });
+	const other = grimoireMenu.getByRole('button', { name: 'Settings', exact: true });
 	await expect(end).toBeVisible();
 	const look = (button: Locator) =>
 		button.evaluate((el) => {
@@ -1894,7 +1910,7 @@ test('the board background can be an image from the device, kept after a reload'
 
 	// Background is set in Board, the one way in (Trevor, 2026-10-18).
 	await expect(page.getByRole('button', { name: 'Background', exact: true })).toHaveCount(0);
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await expect(dialog.getByTestId('background-now')).toHaveText('None (plain board)');
 	await expect(dialog.getByRole('button', { name: 'No script background' })).toBeDisabled();
@@ -1935,7 +1951,7 @@ test('the board background can be an image from the device, kept after a reload'
 
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('style', /blob:/);
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	await expect(dialog.getByTestId('background-now')).toHaveText('Your image, for this game');
 	await expect(dialog).not.toContainText('never uploaded');
 	// None is the first in the list (Trevor, 2026-10-18).
@@ -1949,7 +1965,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	// Built-in backgrounds, drawn in CSS (Trevor, 2026-10-16), kept after a reload.
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	await dialog
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Green felt' })
@@ -1976,7 +1992,7 @@ test('the board background can be an image from the device, kept after a reload'
 	// set in Tokens, with the character token (Trevor, 2026-10-20).
 	await expect(dialog.getByRole('slider', { name: 'Player name size' })).toHaveCount(0);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await menu(page, 'Tokens');
+	await boardSettings(page, 'Tokens');
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
 	await expect(nameSize).toHaveAttribute('aria-valuetext', '140%');
@@ -1996,28 +2012,22 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	await expect(page.getByTestId('vignette')).toHaveCount(0);
 
-	// The board and token settings open over the board from its menu (Trevor, 2026-10-17).
-	await menu(page, 'Board');
+	// ⋯ > Settings opens all of Settings over the board, at Board (Trevor, 2026-10-27: "just
+	// open to all settings, and stop limiting to what they can access").
+	await menu(page, 'Settings');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toBeVisible();
-	// Only that section, with no way back into the full Settings list (Trevor, 2026-10-17).
-	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toHaveCount(0);
-	await expect(settings.getByRole('button', { name: 'All settings' })).toHaveCount(0);
-	await page.keyboard.press('Escape');
-	await expect(settings).toBeHidden();
-	// Tokens has its own menu item, beside Board (Trevor, 2026-10-18).
-	await menu(page, 'Tokens');
-	await expect(settings.getByRole('heading', { name: 'Tokens', level: 2 })).toBeVisible();
+	// Every section is in reach: phones go back to the list first.
+	const back = settings.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await expect(settings.getByRole('heading', { name: 'Storyteller', level: 2 })).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await expect(page.getByTestId('board-background')).toBeVisible();
-	// The app's own Settings still lists every section.
-	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page
-		.getByRole('dialog', { name: APP_NAME })
-		.getByRole('button', { name: 'Settings' })
-		.tap();
-	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeAttached();
 });
 
 test('info tokens open from the toolbar and show player cards at once', async ({ page }) => {
@@ -3455,7 +3465,7 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	// Turning it on says what it changes first (Trevor, 2026-10-17). The switch sits apart, in
 	// Board's closed Advanced part, marked with a warning before it is touched (Trevor,
 	// 2026-10-23).
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	const mode = dialog.getByRole('combobox', { name: 'Reminders', exact: true });
 	await expect(mode).toBeHidden();
@@ -4136,32 +4146,40 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 	await expect(details).toBeVisible();
 });
 
-test('the board menu sets the seats, the settings and End game apart with lines', async ({
-	page
-}) => {
+test('the board menu names its groups, in two columns beside a phone', async ({ page }) => {
 	await startGame(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	// Trevor (2026-10-18, 2026-10-19): game actions, the seats, the settings, then End game.
-	// Storyteller names who runs the game (Trevor, 2026-10-19). A line between Tokens and
-	// Report an issue (Trevor, 2026-10-23). New game takes End game's place once the game ends (Trevor, 2026-10-26).
-	await expect(menu.getByRole('separator')).toHaveCount(4);
-	const items = menu.locator('.menu > :is(button, hr), .menu > .menu-nav > button');
-	const names = await items.evaluateAll((els) =>
-		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
+	// Trevor (2026-10-27): named groups ("the delineation is nice"), End game or New game under
+	// Game, and all of Settings from one item.
+	const group = (name: string) => menu.getByRole('region', { name, exact: true });
+	const names = (name: string) =>
+		group(name)
+			.getByRole('button')
+			.evaluateAll((els) =>
+				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
+			);
+	expect((await names('Game')).join(' ')).toMatch(
+		/^History Demon bluffs Notes Cover the screen( Game info)?( Character selection)? End game$/
 	);
-	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes Cover the screen( Game info)?( Character selection)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens Sound \| (Navigation )?Report an issue \| End game$/
-	);
-	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
-	const line = await menu
-		.getByRole('separator')
-		.first()
-		.evaluate((hr) => getComputedStyle(hr).borderTopColor);
-	const border = await menu
-		.getByRole('button', { name: 'History' })
-		.evaluate((b) => getComputedStyle(b).boxShadow);
-	expect(border).toContain(line);
+	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Arrange seats']);
+	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
+	// Beside a phone, the game on the left and the rest on the right.
+	const game = (await group('Game').boundingBox())!;
+	const seats = (await group('Seats').boundingBox())!;
+	if ((page.viewportSize()?.width ?? 0) >= 640) {
+		expect(seats.x).toBeGreaterThan(game.x + game.width - 1);
+		expect(Math.abs(seats.y - game.y)).toBeLessThan(2);
+	} else {
+		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
+	}
+	// Settings opens all of it, at Board.
+	await menu.getByRole('button', { name: 'Settings', exact: true }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	// Report an issue opens the one Report form over the board (Trevor, 2026-10-20).
 	await menu.getByRole('button', { name: 'Report an issue' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
@@ -4562,7 +4580,7 @@ async function openBoardAdvanced(dialog: Locator) {
 }
 
 async function reminderMode(page: Page, mode: 'Held by seat' | 'Stay where dropped') {
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await openBoardAdvanced(dialog);
 	await dialog.getByRole('combobox', { name: 'Reminders', exact: true }).tap();
@@ -6209,7 +6227,7 @@ test('reminders keep a line back to their seat, and all of them stay on the boar
 	});
 	expect(under).toBe(true);
 
-	await menu(page, 'Board');
+	await boardSettings(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await expect(dialog.getByText('Stack crowded reminders')).toHaveCount(0);
 });

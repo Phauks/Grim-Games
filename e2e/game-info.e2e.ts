@@ -91,12 +91,12 @@ test('an eye on each Game info line chooses what the board corner shows, as Sett
 	await expect(page.getByTestId('board-phase')).toHaveCount(0);
 	await expect(page.getByTestId('board-game-clock')).toContainText('Setup');
 
-	// The same choices in Settings > Board (⋯ > Board), and after a reload.
+	// The same choices in Settings > Board (⋯ > Settings opens there), and after a reload.
 	await page.reload();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Board', exact: true })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	const authorSetting = settings.getByRole('checkbox', { name: 'Author on the board' });
