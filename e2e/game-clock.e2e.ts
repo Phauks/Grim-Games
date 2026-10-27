@@ -11,9 +11,9 @@ test('the board shows how long the game has run since the first night began', as
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	const clock = page.getByTestId('board-game-clock');
-	// In place before the first night, so nothing moves when it starts: Game time says Setup
-	// (Trevor, 2026-10-24), and so does the day or night's own line (Trevor, 2026-10-26).
-	await expect(clock).toHaveText(/^\s*Game time:?\s*Setup\s*$/);
+	// In place before the first night, so nothing moves when it starts: Game time says 0:00,
+	// and Game phase's own line says Setup (Trevor, 2026-10-26).
+	await expect(clock).toHaveText(/^\s*Game time:?\s*0:00\s*$/);
 	const phase = page.getByTestId('board-phase');
 	await expect(phase).toHaveText('Setup');
 	const corner = page.getByTestId('script-title');
