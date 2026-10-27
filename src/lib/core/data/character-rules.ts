@@ -17,6 +17,7 @@ import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readDayMark, type DayMarkRule } from './day-mark-rules.ts';
 import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
 import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
+import { CHOICE_RULE_KEYS, readChoiceRules, type ChoiceRules } from './choice-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
 import { readBecomes, readMakesDemon, type Becomes, type MakesDemon } from './becomes-rules.ts';
@@ -91,7 +92,7 @@ export interface DeathCheckRule {
 	token?: ReminderLabel;
 }
 
-export interface CharacterRules {
+export interface CharacterRules extends ChoiceRules {
 	/** Reminders whose placing is the moment to change the seat's state, by label. */
 	reminderPrompts?: Readonly<Record<ReminderLabel, ReminderPrompt>>;
 	/**
@@ -375,7 +376,8 @@ export const RULE_KEYS = [
 	'makesExtraEvil',
 	'orHiddenAs',
 	'gainsAbilityOf',
-	'turnsPlayersInto'
+	'turnsPlayersInto',
+	...CHOICE_RULE_KEYS
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -603,6 +605,7 @@ export function parseCharacterRules(
 	if (gains !== undefined) rules.gainsAbilityOf = gains;
 	const turns = readTurnsPlayersInto(raw.turnsPlayersInto, path, issues);
 	if (turns) rules.turnsPlayersInto = turns;
+	Object.assign(rules, readChoiceRules(raw, path, issues, reminders));
 	return issues.list.length > before ? undefined : rules;
 }
 

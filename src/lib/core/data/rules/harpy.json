@@ -92,5 +92,6 @@
 		"selected-you": {
 			"characters": ["self"]
 		}
-	}
+	},
+	"marksChoice": ["Mad"]
 }

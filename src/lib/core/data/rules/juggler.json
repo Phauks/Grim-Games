@@ -38,5 +38,8 @@
 	"reminderMovement": {
 		"fixed": ["Correct"],
 		"why": "The guesses are made once, on the first day."
+	},
+	"infoKind": {
+		"number": true
 	}
 }

@@ -71,5 +71,6 @@
 			"characters": ["self"],
 			"upTo": 2
 		}
-	}
+	},
+	"marksChoice": ["Mad"]
 }
