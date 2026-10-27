@@ -1785,7 +1785,7 @@ test("a Traveller's seat on the players' Grim takes only Good or Evil", async ({
 	await phoneContext.close();
 });
 
-test("a player marks their own seat on the players' Grim, and it glows", async ({
+test("a player marks their own seat on the players' Grim, and it has a ring", async ({
 	page,
 	browser
 }, testInfo) => {
@@ -1811,6 +1811,11 @@ test("a player marks their own seat on the players' Grim, and it glows", async (
 	await expect(seat).toHaveAttribute('data-mine');
 	await expect(seat).toHaveAttribute('aria-label', 'Seat 3: Seat 3, you');
 	await phone.keyboard.press('Escape');
+	// A steady ring, with no pulse (Trevor, 2026-10-27).
+	const disc = seat.locator('.disc');
+	await expect(disc).toHaveCSS('outline-style', 'solid');
+	await expect(disc).toHaveCSS('animation-name', 'none');
+	await expect(disc).toHaveCSS('box-shadow', 'none');
 	// Kept on this phone for the game.
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
