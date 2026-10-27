@@ -11,9 +11,17 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
-	import type { ColumnFilter } from '#lib/ui/table/column-filter.ts';
+	import { applyFilters, type ColumnFilter } from '#lib/ui/table/column-filter.ts';
+	import type { MessageKey } from '#lib/i18n/catalog.ts';
+	import { copyText } from '#lib/ui/clipboard.ts';
 	import JsonDialog from '#lib/ui/builder/JsonDialog.svelte';
-	import { fileNameFor } from '#lib/ui/download.ts';
+	import { downloadFile, fileNameFor } from '#lib/ui/download.ts';
+	import {
+		reportMarkdown,
+		reportsFileName,
+		reportsMarkdown,
+		type ExportedReport
+	} from './report-export.ts';
 	import { deleteReport, fetchReportScript, listReports, setReportStatus } from './reports-api.ts';
 	import { REPORT_STATUSES, type Report, type ReportStatus } from './reports-protocol.ts';
 
@@ -97,6 +105,51 @@
 		}
 	]);
 
+	/** The rows the table shows after its filters: what Copy and Download take. */
+	const shown = $derived(
+		applyFilters(reports ?? [], columnFilters, (r, id) =>
+			columns.find((c) => c.id === id)?.value?.(r)
+		)
+	);
+
+	const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
+
+	/** A report with what an export needs: who sent it and, when it has one, its script. */
+	async function exported(report: Report): Promise<ExportedReport> {
+		const script =
+			report.hasScript && !(!allowed && !report.mine)
+				? await fetchReportScript(report.id).catch(() => undefined)
+				: undefined;
+		return { report, reporter: reporter(report), ...(script ? { script } : {}) };
+	}
+
+	const copyFailed = [t('errors.copyFailed'), t('errors.copyFailedDetail')] as const;
+
+	// Each report as Markdown to hand off (Trevor, 2026-10-27), with what it was sent with.
+	async function copyReport(report: Report) {
+		await copyText(reportMarkdown(await exported(report), label), {
+			copied: [t('errors.copied'), t('reports.copiedDetail')],
+			failed: copyFailed
+		});
+	}
+
+	async function exportShown(): Promise<string> {
+		const all = await Promise.all(shown.map(exported));
+		return reportsMarkdown(all, label, Date.now());
+	}
+
+	async function copyShown() {
+		const count = shown.length;
+		await copyText(await exportShown(), {
+			copied: [t('errors.copied'), t('reports.copiedAllDetail', { count })],
+			failed: copyFailed
+		});
+	}
+
+	async function downloadShown() {
+		downloadFile(reportsFileName(Date.now()), await exportShown(), 'text/markdown');
+	}
+
 	onMount(() => void load());
 
 	async function load() {
@@ -151,6 +204,18 @@
      to yourself (Trevor, 2026-10-22). -->
 <Page title={t('reports.inbox')}>
 	{#snippet actions()}
+		<IconButton
+			icon="copy"
+			label={t('reports.copyShown')}
+			disabled={!reading || shown.length === 0}
+			onclick={copyShown}
+		/>
+		<IconButton
+			icon="download"
+			label={t('reports.download')}
+			disabled={!reading || shown.length === 0}
+			onclick={downloadShown}
+		/>
 		<IconButton
 			icon="refresh"
 			label={t('errors.diag.refresh')}
@@ -258,6 +323,12 @@
 		</div>
 	{/if}
 	{#snippet headActions()}
+		<IconButton
+			icon="copy"
+			label={t('reports.copy')}
+			disabled={!current}
+			onclick={() => current && copyReport(current)}
+		/>
 		<DeleteButton
 			label={t('reports.delete')}
 			disabled={!allowed}

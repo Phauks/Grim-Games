@@ -44,5 +44,13 @@ export const reports = {
 	'reports.noUsername': 'No username',
 	'reports.signedOut': 'Signed out',
 	'reports.hidden': 'Hidden',
-	'reports.loadFailed': 'Could not load reports'
+	'reports.loadFailed': 'Could not load reports',
+	'reports.copy': 'Copy',
+	'reports.copyShown': 'Copy shown reports',
+	'reports.download': 'Download shown reports',
+	'reports.copiedDetail': 'The report is on your clipboard as Markdown.',
+	'reports.copiedAllDetail': {
+		one: '{count} report is on your clipboard as Markdown.',
+		other: '{count} reports are on your clipboard as Markdown.'
+	}
 } as const;
