@@ -154,6 +154,7 @@
 {#if showBoard}<SharedBoard
 		shared={town?.grimoire}
 		room={room ?? undefined}
+		history
 		onReady={(r) => (boardReady = r)}
 		onProblem={(p) => (boardProblem = p)}
 	/>{/if}

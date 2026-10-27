@@ -35,9 +35,11 @@
 		over?: EndedGame;
 		/** The room it came through, which holds the board's background picture. */
 		room?: string;
+		/** History can be looked through while the game goes on (an admin's Live games). */
+		history?: boolean;
 	}
 
-	let { shared, onReady, onProblem, over, room }: Props = $props();
+	let { shared, onReady, onProblem, over, room, history = false }: Props = $props();
 
 	let board = $state.raw<Grimoire>();
 	/** The Storyteller's day timer, as sent with the grimoire. */
@@ -87,6 +89,7 @@
 			watching
 			watchedTimer={timer.known ? timer : undefined}
 			{over}
+			watchedHistory={history}
 		/>
 	</ErrorBoundary>
 {/if}

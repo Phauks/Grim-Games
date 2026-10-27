@@ -167,9 +167,15 @@
 		 * 2026-10-24): its History steps through on this device only.
 		 */
 		over?: EndedGame;
+		/**
+		 * A spectator who may still look through History (an admin's Live games, Trevor
+		 * 2026-10-27: "Admin should have access to history"): ⋯ opens, with only History and
+		 * the app's items live.
+		 */
+		watchedHistory?: boolean;
 	}
 
-	let { grimoire, watching = false, watchedTimer, over }: Props = $props();
+	let { grimoire, watching = false, watchedTimer, over, watchedHistory = false }: Props = $props();
 	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
@@ -1129,6 +1135,7 @@
 	<BoardToolbar
 		{grimoire}
 		{watching}
+		menu={!watching || watchedHistory}
 		{seatArr}
 		placing={!!placing}
 		onCancelPlacing={() => (placing = undefined)}
@@ -1496,6 +1503,7 @@
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <BoardMenu
 	bind:open={menuOpen}
+	{watching}
 	gameInfo={cornerHidden}
 	ended={!!ended}
 	onHistory={() => (historyOpen = true)}
