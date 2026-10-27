@@ -4,6 +4,7 @@ import {
 	encodeSharedScript,
 	isOfflineHash,
 	offlineCode,
+	offlineHash,
 	OFFLINE_SINGLE_MAX,
 	shareLink,
 	sharedRefFromHash,
@@ -110,9 +111,32 @@ describe('offline codes', () => {
 		];
 		const code = await offlineCode(origin, { json: long });
 		expect(code.frames!.length).toBeGreaterThan(1);
+		// Each frame opens Join game, so a phone's own camera app opens the app (2026-10-27).
+		expect(code.frames!.every((f) => f.startsWith(`${origin}/join#q=GB2:`))).toBe(true);
+		// Every second frame missed, from the middle of the loop: the spares fill the gaps.
 		const collector = new QrFrameCollector();
-		const done = code.frames!.map((f) => collector.add(f)).at(-1);
-		expect(done).toEqual({ kind: 'done', text: code.url });
+		const loop = [...code.frames!.slice(3), ...code.frames!.slice(0, 3)];
+		const reads = [...loop, ...loop].filter((_, i) => i % 2 === 0).map((f) => collector.add(f));
+		const done = reads.find((r) => r?.kind === 'bytes');
+		expect(done?.kind).toBe('bytes');
+		const hash = offlineHash((done as { bytes: Uint8Array }).bytes);
+		expect(`${origin}/play${hash}`).toBe(code.url);
+		expect(isOfflineHash(hash)).toBe(true);
+	});
+
+	it('leaves flavour text out of an offline code, and nothing else', async () => {
+		const json = [
+			{ id: '_meta', name: 'Flavoured' },
+			{ id: 'own', name: 'Own', team: 'townsfolk', ability: 'Learn.', flavor: 'Once upon a time.' },
+			'chef'
+		];
+		const code = await offlineCode(origin, { json });
+		const ref = sharedRefFromHash(new URL(code.url).hash) as { payload: string };
+		expect(await decodeSharedScript(ref.payload)).toEqual([
+			json[0],
+			{ id: 'own', name: 'Own', team: 'townsfolk', ability: 'Learn.' },
+			'chef'
+		]);
 	});
 
 	it('is not offline without the mark', () => {

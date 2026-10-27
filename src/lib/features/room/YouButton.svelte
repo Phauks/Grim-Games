@@ -6,7 +6,6 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextSizeRows from '#lib/features/settings/sections/TextSizeRows.svelte';
-	import DensityRow from '#lib/features/player/DensityRow.svelte';
 	import AvatarPictureRow from '#lib/features/player/AvatarPictureRow.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
@@ -17,9 +16,8 @@
 	 * then "a settings cog in player script view where they select various text sizes settings
 	 * and their name"): a cog among the title's icon buttons, the same button as Print and Share
 	 * beside it (Trevor, 2026-10-26: "Settings cog should be like other buttons for players"),
-	 * opening one sheet with this phone's name in its room, then Text size, Pinch to zoom and
-	 * the Script sheet's density, which change the page at once, as in Settings > Text and
-	 * Settings > Player. The board's Script shows it too, without the name (parity).
+	 * opening one sheet with this phone's name in its room, then Text size and Pinch to zoom,
+	 * which change the page at once, as in Settings > Text. The board's Script shows it too, without the name (parity).
 	 */
 	interface Props {
 		/** The room this phone is in; without one there is no name to set. */
@@ -87,7 +85,7 @@
 		{/if}
 		<div class="rows">
 			{#if player}<AvatarPictureRow name={name.trim() || me} />{/if}
-			<TextSizeRows /><DensityRow />
+			<TextSizeRows />
 		</div>
 		{#if player}
 			<ModalActions
