@@ -45,7 +45,6 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByTestId('you-button').tap();
-	const you = phone.getByRole('dialog', { name: 'Your settings' });
 	await setPlayerName(phone, 'Alex');
 	await phone.keyboard.press('Escape');
 	await nameSeat(page, board, 2, 'Alex');
@@ -118,7 +117,6 @@ test('a phone that joins is named on a seat and gets its character from Deal', a
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByTestId('you-button').tap();
-	const you = phone.getByRole('dialog', { name: 'Your settings' });
 	await setPlayerName(phone, 'Phone');
 	await phone.keyboard.press('Escape');
 	await expect(phone.getByRole('button', { name: 'Your settings: Phone' })).toBeVisible();
@@ -157,7 +155,6 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByTestId('you-button').tap();
-	const you = phone.getByRole('dialog', { name: 'Your settings' });
 	await setPlayerName(phone, 'Sam');
 	await phone.keyboard.press('Escape');
 	await nameSeat(page, board, 1, 'Sam');

@@ -148,7 +148,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 		/^Seat 3: Alex/
 	);
 	// A seated player's new name goes on their seat, with no approval either.
-	const rename = await seatSheet(phone);
+	await seatSheet(phone);
 	await setPlayerName(phone, 'Alex K');
 	await phone.keyboard.press('Escape');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');

@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import { setPlayerName } from './player-name.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
