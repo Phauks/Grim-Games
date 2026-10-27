@@ -32,11 +32,6 @@ export interface PlayerSettings {
 	 */
 	avatar: AvatarId;
 	/**
-	 * Grim tab: this player's guess of a seat's character shows on its token in place of the
-	 * player's avatar (plan R6, Trevor 2026-10-22: "avatar is default", one on/off toggle).
-	 */
-	guessesOnTokens: boolean;
-	/**
 	 * Grim tab: the player's own guesses and seat notes are hidden, as a note's contents can
 	 * be (Trevor, 2026-10-26: "Hide grim guesses, eyeball feature like we use in notes"), so a
 	 * glance at the phone shows only what the whole town knows.
@@ -107,7 +102,6 @@ const DEFAULTS: PlayerSettings = {
 	density: 'normal',
 	print: PRINT_DEFAULTS,
 	avatar: 'initials',
-	guessesOnTokens: false,
 	hideGuesses: false,
 	sheetBackground: 'theme'
 };
@@ -122,7 +116,6 @@ function read(): PlayerSettings {
 			frame: parseFrameId(raw.frame),
 			// Initials are always on (Trevor, 2026-10-25): an older build's "none" reads as them.
 			avatar: parseAvatarId(raw.avatar) ?? DEFAULTS.avatar,
-			guessesOnTokens: raw.guessesOnTokens === true,
 			hideGuesses: raw.hideGuesses === true,
 			sheetBackground:
 				SHEET_BACKGROUNDS.find((b) => b === raw.sheetBackground) ??
