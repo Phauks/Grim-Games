@@ -47,6 +47,8 @@ import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { gameFeedback } from './game-feedback.svelte.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 import { uploadRoomImage } from './room-images.ts';
+import { roomImagePath } from '#lib/core/sync/room-images.ts';
+import type { PictureReportView } from '#lib/core/sync/room-pictures.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
 import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
@@ -118,6 +120,8 @@ export class RoomHost {
 	rolesShown = $state<string>();
 	/** Seats whose player has held their character to see it (Trevor, 2026-10-26). */
 	rolesSeen = $state.raw<readonly SeatId[]>([]);
+	/** Players' pictures other phones reported, waiting for a verdict (2026-10-27). */
+	pictureReports = $state.raw<readonly PictureReportView[]>([]);
 	#roles: { gameId: string; show: boolean; roles: Record<SeatId, SeatRole> } | undefined;
 	/**
 	 * An admin is watching from Live games (plan J31): the whole grimoire goes to the room as
@@ -608,6 +612,18 @@ export class RoomHost {
 		return this.present?.includes(memberId) ?? true;
 	}
 
+	/** Where to load the picture of the player seated at `seatId`, if they have one. */
+	pictureOf(seatId: SeatId): string | undefined {
+		const hash = this.members.find((m) => m.seatId === seatId)?.picture;
+		return hash && this.code ? roomImagePath(this.code, hash) : undefined;
+	}
+
+	/** Lets a reported picture stand, or takes the player's picture away for this game. */
+	judgePicture(hash: string, allow: boolean): void {
+		this.#socket?.send({ type: 'judge-picture', hash, allow });
+		this.pictureReports = this.pictureReports.filter((r) => r.hash !== hash);
+	}
+
 	/** Members with no seat whose phone is connected now: spectators, or players yet to sit. */
 	get connectedUnseated(): RoomMember[] {
 		return this.members.filter((m) => m.seatId === undefined && this.isHere(m.memberId));
@@ -621,6 +637,7 @@ export class RoomHost {
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
 			this.rolesSeen = message.rolesSeen ?? [];
+			this.pictureReports = message.pictureReports ?? [];
 			// Saved with the ended game, as the room forgets it once a game runs again.
 			if (message.feedback && message.feedbackGameId) {
 				gameFeedback.save(message.feedbackGameId, message.feedback);

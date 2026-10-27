@@ -7,6 +7,7 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextSizeRows from '#lib/features/settings/sections/TextSizeRows.svelte';
 	import DensityRow from '#lib/features/player/DensityRow.svelte';
+	import AvatarPictureRow from '#lib/features/player/AvatarPictureRow.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 
@@ -84,7 +85,10 @@
 				/>
 			</ClearableField>
 		{/if}
-		<div class="rows"><TextSizeRows /><DensityRow /></div>
+		<div class="rows">
+			{#if player}<AvatarPictureRow name={name.trim() || me} />{/if}
+			<TextSizeRows /><DensityRow />
+		</div>
 		{#if player}
 			<ModalActions
 				onCancel={() => (open = false)}
