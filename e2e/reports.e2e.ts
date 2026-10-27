@@ -235,3 +235,41 @@ test('the Library script popup has Report an issue, and the player view reports 
 	await form.getByRole('button', { name: 'Sent with it' }).tap();
 	await expect(form.getByTestId('report-script')).toHaveText('Storm Front');
 });
+
+test('reports copy and download as Markdown, to hand off', async ({ page, context }) => {
+	// Trevor, 2026-10-27: export reports to hand them off; "Just copy" and download.
+	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+	const title = `Export ${Date.now()}`;
+	await signIn(page, `export-${Date.now()}@example.com`);
+	await page.goto('/');
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await form.getByRole('textbox', { name: 'Title' }).fill(title);
+	await form.getByRole('textbox', { name: 'Description' }).fill('The bag forgets the Drunk.');
+	await form.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(form.getByTestId('report-sent')).toBeVisible();
+
+	await page.goto('/reports');
+	const row = page.getByTestId('reports').locator('tr', { hasText: title });
+	await row.getByRole('button', { name: title }).tap();
+	const report = page.getByRole('dialog', { name: new RegExp(title) });
+	await report.getByRole('button', { name: 'Copy', exact: true }).tap();
+	await expect
+		.poll(() => page.evaluate(() => navigator.clipboard.readText()))
+		.toMatch(new RegExp(`^## #\\d+ ${title}\\n`));
+	const copied = await page.evaluate(() => navigator.clipboard.readText());
+	// Its own report, so what it was sent with is there.
+	expect(copied).toContain('The bag forgets the Drunk.');
+	expect(copied).toContain('- Build: ');
+	expect(copied).toContain('- Device: ');
+	await report.getByRole('button', { name: 'Close' }).first().tap();
+
+	const [download] = await Promise.all([
+		page.waitForEvent('download'),
+		page.getByRole('button', { name: 'Download shown reports' }).tap()
+	]);
+	expect(download.suggestedFilename()).toMatch(/^reports-\d{4}-\d{2}-\d{2}\.md$/);
+	const file = await (await import('node:fs/promises')).readFile(await download.path(), 'utf8');
+	expect(file).toMatch(/^# Reports \(\d+\), /);
+	expect(file).toContain(`${title}\n`);
+});
