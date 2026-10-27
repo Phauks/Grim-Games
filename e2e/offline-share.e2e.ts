@@ -43,7 +43,7 @@ test('a Storyteller with no internet shares an offline code, and a phone with no
 	await context.setOffline(true);
 
 	await page.getByRole('button', { name: 'Share script' }).tap();
-	const share = page.getByRole('dialog', { name: 'Share Pocket Brew' });
+	const share = page.getByRole('dialog', { name: 'Share', exact: true });
 	// No short link can be made offline, so the offline code is on by itself.
 	await expect(
 		share.getByRole('checkbox', { name: /^Offline code/, includeHidden: true })
@@ -72,7 +72,7 @@ test('a long script goes across as an animated code', async ({ page, browser }, 
 	await expect(page.getByRole('heading', { name: 'Long Homebrew', level: 1 })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Share script' }).tap();
-	const share = page.getByRole('dialog', { name: 'Share Long Homebrew' });
+	const share = page.getByRole('dialog', { name: 'Share', exact: true });
 	await share.getByText('Offline code', { exact: true }).tap();
 	const qr = share.getByRole('img', { name: 'Offline code for Long Homebrew' });
 	await expect(qr).toBeVisible();
