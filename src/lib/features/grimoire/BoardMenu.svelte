@@ -11,7 +11,7 @@
 	/**
 	 * The board's ⋯ menu in named groups: the game's less frequent actions ending with End
 	 * game (New game once it has ended), the seats, and the app's items with all of Settings.
-	 * Each item closes the menu before it acts.
+	 * Each item closes the menu before it acts, but Full screen, which leaves it open.
 	 */
 	interface Props {
 		open: boolean;
@@ -198,13 +198,14 @@
 					{t('settings.title')}
 				</Button>
 				<!-- Here, not on the toolbar, so the grim cover can sit beside ☰ (Trevor, 2026-10-27).
-				     The symbol says on or off; where the browser can't, it isn't listed. -->
+				     The symbol says on or off; where the browser can't, it isn't listed. It leaves the
+				     menu open (Trevor, 2026-10-27: "dont close ... menu when toggling fullscreen"). -->
 				{#if appFullScreen.available}
 					<Button
 						variant="quiet"
 						icon={appFullScreen.on ? 'exitFullScreen' : 'fullScreen'}
 						aria-pressed={appFullScreen.on}
-						onclick={() => fromMenu(() => appFullScreen.toggle())}
+						onclick={() => appFullScreen.toggle()}
 					>
 						Full screen
 					</Button>
