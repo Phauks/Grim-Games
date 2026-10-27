@@ -32,7 +32,7 @@ export const resets = {
 	theme: () => preferences.update(pick('themeId', 'colors')),
 	text: () =>
 		preferences.update({
-			...pick('textScale', 'textAlign', 'allowZoom'),
+			...pick('textScale', 'textAlign'),
 			fonts: fontsWithout(TEXT_FONT_ROLES),
 			assistance: assistanceWith(['explainTerms'])
 		}),
@@ -40,7 +40,7 @@ export const resets = {
 	board: () => {
 		preferences.update({
 			assistance: assistanceWith(STORYTELLER_GROUPS.board),
-			...pick('cornerLines')
+			...pick('cornerLines', 'allowZoom')
 		});
 		// The player name badge is set in Tokens (Trevor, 2026-10-20), so it keeps its looks.
 		const { nameSize, nameOffset } = boardLooks.current;
