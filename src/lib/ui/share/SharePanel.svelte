@@ -10,6 +10,7 @@
 	import { qrPicture } from './qr-picture.svelte.ts';
 	import QrCentreSetting from './QrCentreSetting.svelte';
 	import QrPicture from './QrPicture.svelte';
+	import CopyButton from './CopyButton.svelte';
 
 	/**
 	 * The one share screen (Trevor, 2026-10-18): an optional code in large type, the QR code,
@@ -115,42 +116,16 @@
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 	const canShareFile = $derived(!!file && canShare && !!navigator.canShare?.({ files: [file] }));
 
-	/** A copy icon shows a check for a moment instead of a success popup. */
-	const COPIED_MS = 1500;
-	let copied = $state<'link' | 'code' | undefined>();
-	let copiedTimer: ReturnType<typeof setTimeout> | undefined;
-	$effect(() => () => clearTimeout(copiedTimer));
-
-	function showCopied(what: 'link' | 'code') {
-		copied = what;
-		clearTimeout(copiedTimer);
-		copiedTimer = setTimeout(() => (copied = undefined), COPIED_MS);
-	}
-
-	async function copy() {
-		if (!url) return;
-		const done = await copyText(text ? `${text}\n${url}` : url, {
-			failed: [t('share.copyFailed'), t('share.copyFailedHint')]
-		});
-		if (done) showCopied('link');
-	}
-
-	/** The code alone, without the spaces that group it for reading (Trevor, 2026-10-19). */
-	async function copyCode() {
-		if (!code?.value) return;
-		const done = await copyText(code.value.replace(/\s/g, ''), {
-			failed: [t('share.copyCodeFailed'), t('share.copyFailedHint')]
-		});
-		if (done) showCopied('code');
-	}
-
 	async function share() {
 		if (!url) return;
 		try {
 			await navigator.share(text ? { title, text, url } : { title, url });
 		} catch (e) {
 			// Closing the share sheet is not a failure.
-			if (!(e instanceof DOMException && e.name === 'AbortError')) await copy();
+			if (!(e instanceof DOMException && e.name === 'AbortError'))
+				await copyText(text ? `${text}\n${url}` : url, {
+					failed: [t('share.copyFailed'), t('share.copyFailedHint')]
+				});
 		}
 	}
 
@@ -173,11 +148,11 @@
 				<p class="code" aria-labelledby={codeId} data-testid="share-code">
 					{code.value ?? '··· ···'}
 				</p>
-				<IconButton
-					icon={copied === 'code' ? 'check' : 'copy'}
+				<!-- The code alone, without the spaces that group it for reading (Trevor, 2026-10-19). -->
+				<CopyButton
 					label={t('share.copyCode')}
-					onclick={copyCode}
-					disabled={!code.value}
+					text={code.value?.replace(/\s/g, '')}
+					failed={t('share.copyCodeFailed')}
 				/>
 			</div>
 		</div>
@@ -220,11 +195,10 @@
 				placeholder={t('common.none')}
 				data-testid="share-url"
 			/>
-			<IconButton
-				icon={copied === 'link' ? 'check' : 'copy'}
+			<CopyButton
 				label={t('share.copy')}
-				onclick={copy}
-				disabled={!url}
+				text={url && (text ? `${text}\n${url}` : url)}
+				failed={t('share.copyFailed')}
 			/>
 			{#if refresh}
 				<IconButton

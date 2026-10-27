@@ -157,6 +157,14 @@ test('the Storyteller covers the screen from the board, beside the timer, and fr
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	const day = page.getByRole('dialog', { name: /^Day( \d+)?$/ });
 	await expect(day).toBeVisible();
+	// The Soundboard beside it in the header, over the day (Trevor, 2026-10-27: "Approve day
+	// view E").
+	await day.getByRole('button', { name: 'Soundboard' }).tap();
+	const soundboard = page.locator('[data-scope="drawer"][data-part="content"]');
+	await expect(soundboard.getByRole('group', { name: 'Soundboard' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(soundboard).toBeHidden();
+	await expect(day).toBeVisible();
 	await day.getByTestId('cover-button').tap();
 	await coverAndUncover(page);
 	await expect(day).toBeVisible();
