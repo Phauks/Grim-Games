@@ -710,7 +710,9 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 
 	await phone.getByRole('tab', { name: 'Notes' }).tap();
 	// The player's own notes, not a seat's (each seat has its own "+ New note" too).
-	const myNotes = phone.getByRole('region', { name: 'My notes' });
+	const myNotes = phone
+		.locator('section.collapsible')
+		.filter({ has: phone.getByRole('heading', { name: 'My notes' }) });
 	await myNotes.getByRole('button', { name: 'New note' }).tap();
 	const editor = phone.getByRole('dialog', { name: 'Note', exact: true });
 	await editor.getByRole('textbox', { name: 'Title' }).fill('Game one');
