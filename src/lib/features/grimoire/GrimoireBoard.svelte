@@ -117,6 +117,7 @@
 	import BoardPlayerView from './BoardPlayerView.svelte';
 	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
@@ -1469,9 +1470,16 @@
 			{/snippet}
 		</BoardCorner>
 		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The grim
-		     cover beside it, never in a menu (Trevor, 2026-10-26), the Storyteller's only. -->
+		     cover beside it, never in a menu (Trevor, 2026-10-26), and the soundboard (Trevor,
+		     2026-10-27), the Storyteller's only. -->
 		<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
 			{#if !watching}
+				<IconButton
+					icon="soundboard"
+					label={t('settings.soundboard')}
+					outlined
+					onclick={() => (soundboardOpen = true)}
+				/>
 				<CoverButton
 					gameId={game.gameId}
 					details={coverDetails}
@@ -1525,7 +1533,6 @@
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
-	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	onCallTown={!watching && !ended && roomHost().code
 		? () => roomHost().callTown() || toast(t('room.callTownFailed'))
 		: undefined}
