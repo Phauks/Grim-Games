@@ -7,11 +7,10 @@
  * other, so a deletion that was waiting on it finishes before the app opens it again.
  */
 import { DB_NAME as GAMES_DB } from '#lib/features/game/db-name.ts';
-import { RUNTIME_CACHE } from '#lib/features/offline/cache-rules.ts';
 import { SCRIPTS_DB_NAME } from '#lib/features/scripts/script-library.ts';
 
 /** Every key and database name the app writes starts with this. */
-export const APP_PREFIX = 'grim-games';
+const APP_PREFIX = 'grim-games';
 
 /** The player view's notebook database (src/lib/features/player/notebook-store.svelte.ts). */
 export const NOTES_DB = 'grim-games-player';
@@ -77,20 +76,6 @@ export function isWikiKey(key: string): boolean {
 
 export async function clearDatabases(names: readonly string[]): Promise<void> {
 	await Promise.all(names.map(deleteDatabase));
-}
-
-/**
- * Removes icons stored on first use and the wiki text copies. The app's own offline copy
- * (the precache) stays, so the app still opens offline; the current script's icons are
- * fetched again when the page reloads (current-script.svelte.ts calls keepIconsOffline).
- */
-export async function clearCache(): Promise<void> {
-	try {
-		await caches.delete(RUNTIME_CACHE);
-	} catch {
-		// No Cache Storage (private window): nothing stored there.
-	}
-	removeKeys(localStorage, isWikiKey);
 }
 
 /** Reloads so every store starts again from what is left. */

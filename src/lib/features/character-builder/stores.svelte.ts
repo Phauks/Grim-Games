@@ -8,8 +8,8 @@ import {
 	type SavedCharacter
 } from './saved-characters.ts';
 
-export const CHARACTER_DRAFT_KEY = 'grim-games:character-builder';
-export const SAVED_CHARACTERS_KEY = 'grim-games:characters';
+const CHARACTER_DRAFT_KEY = 'grim-games:character-builder';
+const SAVED_CHARACTERS_KEY = 'grim-games:characters';
 
 /**
  * A character being built. The Character builder page keeps its draft on this device on every

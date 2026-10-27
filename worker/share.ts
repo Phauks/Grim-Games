@@ -106,7 +106,7 @@ export async function allowed(env: ShareEnv, limiter: RateLimit, caller: string)
 
 /** Handles `/api/share` and `/api/share/<code>`. */
 /** The shared script stored under `code`: the shared data Worker's when bound, else this one's. */
-export function shareStub(env: ShareEnv, code: string): DurableObjectStub<SharedScript> {
+function shareStub(env: ShareEnv, code: string): DurableObjectStub<SharedScript> {
 	return env.DATA ? remote(env.DATA, 'share', code) : localShare(env, code);
 }
 

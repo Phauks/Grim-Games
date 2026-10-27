@@ -12,7 +12,9 @@ import { GUIDE_TOP } from './mode-guide.ts';
 /**
  * How to write a special rule file (Trevor, 2026-10-18: game modes and special rules are
  * delineated, and both can be added). Same header as a mode, plus `kind`; the parts that add
- * to a game are written as in a mode, and these are the rule's own.
+ * to a game are written as in a mode, and these are the rule's own. Not shown yet: New game's
+ * guide shows the game mode guide only.
+ * @public
  */
 export const RULE_GUIDE_INTRO = [
 	'A special rule is one JSON object with "kind": "special-rule". A game has one game mode and any number of special rules, so a rule only adds to a game: it can’t change the pool to something other than the script, how characters are dealt, towns, or what happens between games.',

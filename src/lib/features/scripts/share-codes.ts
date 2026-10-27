@@ -62,7 +62,7 @@ const SHARED_LINK_ERRORS = {
 	damaged: 'scripts.error.shareDamaged'
 } as const;
 
-export async function fetchSharedCode(code: string): Promise<FetchedScript> {
+async function fetchSharedCode(code: string): Promise<FetchedScript> {
 	let response: Response;
 	try {
 		response = await fetch(shareCodePath(code), { credentials: 'omit' });

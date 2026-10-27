@@ -7,7 +7,7 @@ import type { DocKind, ProfileDoc } from '../account-protocol.ts';
 import type { OutboxEntry } from './outbox.ts';
 
 /** Settings > Data clears it by this name. */
-export const SYNC_DB = 'grim-games-sync';
+const SYNC_DB = 'grim-games-sync';
 const DB_VERSION = 1;
 const OUTBOX = 'outbox';
 const DOCS = 'docs';

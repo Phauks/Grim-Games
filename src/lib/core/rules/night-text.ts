@@ -85,8 +85,7 @@ function sentenceCase(text: string): string {
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 const isDead = (label: string) => same(label, 'dead');
 
-export const placeholderKey = (id: CharacterId, night: NightName): PlaceholderKey =>
-	`${id}:${night}`;
+const placeholderKey = (id: CharacterId, night: NightName): PlaceholderKey => `${id}:${night}`;
 
 /**
  * A character's `reminderPlaceholders` rule: a homebrew character's own only (its text is its

@@ -21,7 +21,7 @@ export interface SavedCharacters {
 	characters: SavedCharacter[];
 }
 
-export function emptySavedCharacters(): SavedCharacters {
+function emptySavedCharacters(): SavedCharacters {
 	return { version: SAVED_CHARACTERS_VERSION, characters: [] };
 }
 

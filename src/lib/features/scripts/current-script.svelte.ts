@@ -3,13 +3,7 @@
  * list. Other features read `currentScript.current`; core's `toScript` turns it into the
  * engine's `Script` for CreateGame.
  */
-import { t } from '#lib/i18n/locale.svelte.ts';
-import {
-	loadScriptText,
-	scriptToJson,
-	type GameData,
-	type LoadedScript
-} from '#lib/core/data/index.ts';
+import { scriptToJson, type GameData, type LoadedScript } from '#lib/core/data/index.ts';
 import { timestampName } from '#lib/core/timestamp-name.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { saveScriptToProfile } from '#lib/features/account/profile-scripts.svelte.ts';
@@ -198,19 +192,4 @@ export async function forgetScript(scriptId: string): Promise<void> {
 	if (!lib) return;
 	await lib.delete(scriptId);
 	await refresh(await loadOfficialData(), lib);
-}
-
-/**
- * Loads a script fetched for a share link or a typed code (`fetchSharedCode`) and makes
- * it the current script. Throws an Error with a message to show.
- */
-export async function openScriptCode(
-	fetching: Promise<{ text: string; source: ScriptSource }>
-): Promise<LoadedScript> {
-	const [fetched, data] = await Promise.all([fetching, loadOfficialData()]);
-	await restoreScripts();
-	const { script } = loadScriptText(fetched.text, data);
-	if (!script) throw new Error(t('scripts.error.noKnownCharacters'));
-	await chooseScript(script, fetched.source);
-	return script;
 }

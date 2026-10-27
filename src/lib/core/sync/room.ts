@@ -29,7 +29,7 @@ import { MAX_MEMBERS } from './room-presence.ts';
 
 export { isSharedGrimoire, MAX_GRIMOIRE_BYTES, type SharedGrimoire } from './shared-grimoire.ts';
 export { join, markHere, MAX_MEMBERS } from './room-presence.ts';
-export const MAX_PLAYER_NAME_LENGTH = 40;
+const MAX_PLAYER_NAME_LENGTH = 40;
 /** A script's own characters (homebrew) carry their text and images, so it can be large. */
 export const MAX_SCRIPT_BYTES = 256 * 1024;
 
@@ -116,7 +116,7 @@ export interface GameOver {
 }
 
 /** The longest end reason a game-over message carries: `character:` and an id. */
-export const MAX_END_REASON = 80;
+const MAX_END_REASON = 80;
 
 /**
  * Specters (https://www.youtube.com/watch?v=-R34QbIgDh8): spectators share one ability and
@@ -133,9 +133,9 @@ export interface SpectatorVote {
 }
 
 /** At most this many options in a vote: one per seat. */
-export const MAX_VOTE_OPTIONS = MAX_MEMBERS;
+const MAX_VOTE_OPTIONS = MAX_MEMBERS;
 /** The longest ability text a vote carries. */
-export const MAX_VOTE_ABILITY = 500;
+const MAX_VOTE_ABILITY = 500;
 
 export { receiveFeedback, type FeedbackView, type MemberFeedback } from './room-feedback.ts';
 export * from './room-preview.ts';
@@ -317,7 +317,7 @@ export function townView(room: RoomState): TownView {
 	return view;
 }
 
-export function cleanName(raw: unknown): string | null {
+function cleanName(raw: unknown): string | null {
 	if (typeof raw !== 'string') return null;
 	const name = raw.replace(/\s+/g, ' ').trim().slice(0, MAX_PLAYER_NAME_LENGTH);
 	return name || null;

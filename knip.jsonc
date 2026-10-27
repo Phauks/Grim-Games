@@ -1,0 +1,18 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	// Run by `npm run lint:knip`: files, exports and dependencies nothing uses.
+	"entry": ["worker/data-service.ts", "scripts/*.ts", "scripts/lint/*.js", "e2e/**/*.ts"],
+	"project": ["src/**/*.{ts,svelte}", "worker/**/*.ts", "scripts/**/*.{ts,js}", "e2e/**/*.ts"],
+	"ignore": [
+		// Waits for the Demon info step to read it (core/modes/pool.ts, demonBluffs).
+		"src/lib/features/modes/bluffs.ts"
+	],
+	// Written by `npm run cf-typegen` when the Worker is checked.
+	"ignoreUnresolved": ["./worker-configuration.d.ts"],
+	// The Worker runtime's own modules (cloudflare:workers).
+	"ignoreDependencies": ["cloudflare"],
+	// An export the file itself uses (a list behind its type, say) is fine.
+	"ignoreExportsUsedInFile": true,
+	// Exported types document a module's shapes; only values are checked.
+	"rules": { "types": "off" }
+}

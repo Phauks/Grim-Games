@@ -6,7 +6,7 @@
 import { timestampName } from '#lib/core/timestamp-name.ts';
 import { cleanName } from './library-labels.ts';
 
-export const COLLECTIONS_VERSION = 1;
+const COLLECTIONS_VERSION = 1;
 
 export interface CharacterCollection {
 	id: string;

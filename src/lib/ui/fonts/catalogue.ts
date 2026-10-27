@@ -102,7 +102,7 @@ export const FONTS: Record<FontId, FontInfo> = {
 	}
 };
 
-export function isFontId(value: unknown): value is FontId {
+function isFontId(value: unknown): value is FontId {
 	return (FONT_IDS as readonly unknown[]).includes(value);
 }
 
