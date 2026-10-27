@@ -650,7 +650,7 @@ test('a player whose phone sleeps stays in the names list', async ({ page, brows
 	const join = async (name: string) => {
 		const phone = await (await browser.newContext({ ...testInfo.project.use })).newPage();
 		await phone.goto(`/join/${code}`);
-		await phone.getByTestId('you-button').tap();
+		await openPlayerSettings(phone);
 		await setPlayerName(phone, name);
 		await expect(players).toContainText(name);
 		return phone;
