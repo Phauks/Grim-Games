@@ -213,6 +213,28 @@ export default defineConfig(
 		}
 	},
 	{
+		// Requests go through #lib/ui/fetch.ts, which adds a timeout (code cleanup, 2026-10-27).
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
+		ignores: [
+			'src/lib/ui/fetch.ts',
+			// The service worker and the update check make their own requests, with their own caching.
+			'src/service-worker.ts',
+			'src/lib/features/about/update-check.svelte.ts',
+			'src/**/*.test.ts',
+			'src/lib/features/spikes/**',
+			'src/routes/spikes/**'
+		],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: "CallExpression[callee.name='fetch']",
+					message: 'Use fetchJson or fetchWithTimeout from #lib/ui/fetch.ts.'
+				}
+			]
+		}
+	},
+	{
 		// Every Share opens the one share screen (Trevor, 2026-10-23); only it calls
 		// navigator.share. SHARE_TODO only shrinks.
 		files: ['src/**/*.ts', 'src/**/*.svelte'],

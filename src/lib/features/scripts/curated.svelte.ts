@@ -4,7 +4,7 @@
  * on the device, so it is there offline and the next visit shows it straight away.
  */
 import { reportError } from '#lib/features/errors/report.svelte.ts';
-import { withTimeout } from './fetch-script.ts';
+import { fetchJson } from '#lib/ui/fetch.ts';
 import { CURATED_API, readCuratedList, type CuratedScript } from './curated-api.ts';
 
 const STORAGE_KEY = 'grim-games.curated-scripts';
@@ -50,17 +50,16 @@ export const curatedScripts = {
 		loading ??= (async () => {
 			status = 'loading';
 			let response: Response;
+			let body: unknown;
 			try {
-				response = await fetch(CURATED_API, { signal: withTimeout() });
+				({ response, body } = await fetchJson(CURATED_API));
 			} catch {
 				// Offline: expected, and the kept list still shows.
 				status = 'error';
 				return;
 			}
 			// The official site being down is expected too; an answer we can't read is a bug.
-			const found = response.ok
-				? readCuratedList(await response.json().catch(() => undefined))
-				: undefined;
+			const found = response.ok ? readCuratedList(body) : undefined;
 			if (!found) {
 				status = 'error';
 				if (response.ok)

@@ -4,6 +4,7 @@
  * offline and the next visit shows it straight away (like `curated.svelte.ts`).
  */
 import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { fetchJson } from '#lib/ui/fetch.ts';
 import {
 	CAROUSEL_COLLECTION,
 	COLLECTIONS_API,
@@ -52,17 +53,16 @@ export const collectionScripts = {
 		loading ??= (async () => {
 			status = 'loading';
 			let response: Response;
+			let body: unknown;
 			try {
-				response = await fetch(`${COLLECTIONS_API}/${CAROUSEL_COLLECTION.id}`, {
-					signal: AbortSignal.timeout(FIRST_COPY_TIMEOUT_MS)
-				});
+				({ response, body } = await fetchJson(`${COLLECTIONS_API}/${CAROUSEL_COLLECTION.id}`, {
+					timeoutMs: FIRST_COPY_TIMEOUT_MS
+				}));
 			} catch {
 				status = 'error';
 				return;
 			}
-			const found = response.ok
-				? readCollectionList(await response.json().catch(() => undefined))
-				: undefined;
+			const found = response.ok ? readCollectionList(body) : undefined;
 			// An empty list is a broken source, not an empty collection: keep the last one.
 			if (!found?.length) {
 				status = 'error';

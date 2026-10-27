@@ -5,7 +5,7 @@
  */
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
-import { withTimeout } from './fetch-script.ts';
+import { fetchJson } from '#lib/ui/fetch.ts';
 import { BLOODSTAR_API, readBloodstarList, type BloodstarScript } from './bloodstar-api.ts';
 
 const STORAGE_KEY = 'grim-games.bloodstar-scripts';
@@ -39,15 +39,14 @@ export const bloodstarScripts = {
 		loading ??= (async () => {
 			status = 'loading';
 			let response: Response;
+			let body: unknown;
 			try {
-				response = await fetch(BLOODSTAR_API, { signal: withTimeout() });
+				({ response, body } = await fetchJson(BLOODSTAR_API));
 			} catch {
 				status = 'error';
 				return;
 			}
-			const found = response.ok
-				? readBloodstarList(await response.json().catch(() => undefined))
-				: undefined;
+			const found = response.ok ? readBloodstarList(body) : undefined;
 			// An empty list is a broken source: keep the last one.
 			if (!found?.length) {
 				status = 'error';

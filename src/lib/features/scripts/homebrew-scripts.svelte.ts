@@ -4,7 +4,7 @@
  * shows it straight away (like `collection.svelte.ts`).
  */
 import { reportError } from '#lib/features/errors/report.svelte.ts';
-import { withTimeout } from './fetch-script.ts';
+import { fetchJson } from '#lib/ui/fetch.ts';
 import {
 	HOMEBREW_SCRIPTS_API,
 	readHomebrewList,
@@ -46,15 +46,14 @@ export const homebrewScripts = {
 		loading ??= (async () => {
 			status = 'loading';
 			let response: Response;
+			let body: unknown;
 			try {
-				response = await fetch(HOMEBREW_SCRIPTS_API, { signal: withTimeout() });
+				({ response, body } = await fetchJson(HOMEBREW_SCRIPTS_API));
 			} catch {
 				status = 'error';
 				return;
 			}
-			const found = response.ok
-				? readHomebrewList(await response.json().catch(() => undefined))
-				: undefined;
+			const found = response.ok ? readHomebrewList(body) : undefined;
 			// An empty list is a broken source: keep the last one.
 			if (!found?.length) {
 				status = 'error';

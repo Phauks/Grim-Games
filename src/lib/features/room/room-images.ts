@@ -4,6 +4,7 @@ import {
 	roomImagePath
 } from '#lib/core/sync/room-images.ts';
 import { shrinkImage } from '#lib/features/grimoire/backgrounds.ts';
+import { fetchWithTimeout, SLOW_FETCH_TIMEOUT_MS } from '#lib/ui/fetch.ts';
 
 /**
  * Uploads a picture to the open room for the whole table (core/sync/room-images.ts), from the
@@ -42,8 +43,9 @@ export async function putRoomImage(code: string, key: string, image: Blob): Prom
 	const digest = await crypto.subtle.digest('SHA-256', bytes);
 	const hash = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 	// The key goes ahead of the picture in the body, never in the address or a header.
-	const response = await fetch(roomImagePath(code, hash), {
+	const response = await fetchWithTimeout(roomImagePath(code, hash), {
 		method: 'PUT',
+		timeoutMs: SLOW_FETCH_TIMEOUT_MS,
 		headers: { 'Content-Type': image.type },
 		body: new Blob([`${key}\n`, bytes])
 	});

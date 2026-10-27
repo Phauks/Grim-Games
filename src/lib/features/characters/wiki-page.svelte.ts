@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from '#lib/ui/fetch.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { SvelteMap } from 'svelte/reactivity';
 import { wikiUrl, type Character } from '#lib/core/data/index.ts';
@@ -74,7 +75,7 @@ class WikiPages {
 	}
 
 	/** Shows the cached copy at once, then fetches a fresh one when it is missing or old. */
-	load(title: string, fetcher: typeof fetch = fetch): Promise<void> {
+	load(title: string, fetcher: typeof fetch = fetchWithTimeout): Promise<void> {
 		const running = this.#loading.get(title);
 		if (running) return running;
 		const cached = readCache()[title];
