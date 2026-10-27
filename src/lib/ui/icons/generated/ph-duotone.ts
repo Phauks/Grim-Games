@@ -151,10 +151,10 @@ import ph_poker_chip_duotone from '~icons/ph/poker-chip-duotone';
 import ph_printer_duotone from '~icons/ph/printer-duotone';
 import ph_prohibit_duotone from '~icons/ph/prohibit-duotone';
 import ph_prohibit_inset_duotone from '~icons/ph/prohibit-inset-duotone';
+import ph_projector_screen_duotone from '~icons/ph/projector-screen-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
-import ph_rectangle_duotone from '~icons/ph/rectangle-duotone';
 import ph_scales_duotone from '~icons/ph/scales-duotone';
 import ph_scan_duotone from '~icons/ph/scan-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
@@ -367,10 +367,10 @@ const icons: IconMap = {
 	'ph:printer-duotone': ph_printer_duotone,
 	'ph:prohibit-duotone': ph_prohibit_duotone,
 	'ph:prohibit-inset-duotone': ph_prohibit_inset_duotone,
+	'ph:projector-screen-duotone': ph_projector_screen_duotone,
 	'ph:push-pin-duotone': ph_push_pin_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
-	'ph:rectangle-duotone': ph_rectangle_duotone,
 	'ph:scales-duotone': ph_scales_duotone,
 	'ph:scan-duotone': ph_scan_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,

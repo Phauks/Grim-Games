@@ -151,10 +151,10 @@ import ph_poker_chip_light from '~icons/ph/poker-chip-light';
 import ph_printer_light from '~icons/ph/printer-light';
 import ph_prohibit_light from '~icons/ph/prohibit-light';
 import ph_prohibit_inset_light from '~icons/ph/prohibit-inset-light';
+import ph_projector_screen_light from '~icons/ph/projector-screen-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
 import ph_qr_code_light from '~icons/ph/qr-code-light';
 import ph_question_light from '~icons/ph/question-light';
-import ph_rectangle_light from '~icons/ph/rectangle-light';
 import ph_scales_light from '~icons/ph/scales-light';
 import ph_scan_light from '~icons/ph/scan-light';
 import ph_scroll_light from '~icons/ph/scroll-light';
@@ -367,10 +367,10 @@ const icons: IconMap = {
 	'ph:printer-light': ph_printer_light,
 	'ph:prohibit-light': ph_prohibit_light,
 	'ph:prohibit-inset-light': ph_prohibit_inset_light,
+	'ph:projector-screen-light': ph_projector_screen_light,
 	'ph:push-pin-light': ph_push_pin_light,
 	'ph:qr-code-light': ph_qr_code_light,
 	'ph:question-light': ph_question_light,
-	'ph:rectangle-light': ph_rectangle_light,
 	'ph:scales-light': ph_scales_light,
 	'ph:scan-light': ph_scan_light,
 	'ph:scroll-light': ph_scroll_light,

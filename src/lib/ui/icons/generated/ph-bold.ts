@@ -151,10 +151,10 @@ import ph_poker_chip_bold from '~icons/ph/poker-chip-bold';
 import ph_printer_bold from '~icons/ph/printer-bold';
 import ph_prohibit_bold from '~icons/ph/prohibit-bold';
 import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
+import ph_projector_screen_bold from '~icons/ph/projector-screen-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
-import ph_rectangle_bold from '~icons/ph/rectangle-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
 import ph_scan_bold from '~icons/ph/scan-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
@@ -367,10 +367,10 @@ const icons: IconMap = {
 	'ph:printer-bold': ph_printer_bold,
 	'ph:prohibit-bold': ph_prohibit_bold,
 	'ph:prohibit-inset-bold': ph_prohibit_inset_bold,
+	'ph:projector-screen-bold': ph_projector_screen_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
-	'ph:rectangle-bold': ph_rectangle_bold,
 	'ph:scales-bold': ph_scales_bold,
 	'ph:scan-bold': ph_scan_bold,
 	'ph:scroll-bold': ph_scroll_bold,
