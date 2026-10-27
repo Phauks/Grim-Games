@@ -335,6 +335,9 @@ export class Room extends DurableObject<RoomEnv> {
 				const script = await this.ctx.storage.get<ScriptView>('script');
 				if (script) send(ws, script);
 				send(ws, townView(room));
+				// The finished grimoire, as phones get it: the town is the players' grim.
+				const reveal = await this.ctx.storage.get<RevealView>('reveal');
+				if (reveal && canReveal(room, reveal.gameId)) send(ws, reveal);
 				return;
 			}
 			const memberId = hash.slice(0, 24);
@@ -403,7 +406,7 @@ export class Room extends DurableObject<RoomEnv> {
 				const text = JSON.stringify(view);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'player') socket.send(text);
+					if (to?.role === 'player' || to?.role === 'town') socket.send(text);
 				}
 				return;
 			}

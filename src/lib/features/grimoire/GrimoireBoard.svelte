@@ -68,6 +68,7 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
@@ -101,30 +102,18 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import { fromScript, scriptLogo, scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
-	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
-	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
-	import PlayerNotes from '#lib/features/player/PlayerNotes.svelte';
 	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
 	import { currentScript } from '#lib/features/scripts/current-script.svelte.ts';
-	import { scriptKey } from '#lib/features/player/notebook.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
-	import {
-		dealtSeats,
-		playersLine,
-		standardPlayersLine
-	} from '#lib/features/modes/players-line.ts';
+	import { playersLine, standardPlayersLine } from '#lib/features/modes/players-line.ts';
 	import { savedChoiceFor } from '#lib/features/modes/script-choices.svelte.ts';
-	import {
-		publicTravellerTest,
-		travellersInPlay
-	} from '#lib/features/player/travellers-in-play.ts';
-	import { publicProjection, type PublicLook } from '#lib/core/sync/public-projection.ts';
+	import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 	import { drawnLook } from './shared-look.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import BoardPlayerView from './BoardPlayerView.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
@@ -896,6 +885,8 @@
 	let phonesOpen = $state(false);
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
+	/** The players' view, from the grim cover. */
+	let coverViewOpen = $state(false);
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
@@ -1445,7 +1436,13 @@
 		     cover beside it, never in a menu (Trevor, 2026-10-26), the Storyteller's only. -->
 		<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
 			{#if !watching}
-				<CoverButton gameId={game.gameId} details={coverDetails} timer={coverTimer} outlined />
+				<CoverButton
+					gameId={game.gameId}
+					details={coverDetails}
+					timer={coverTimer}
+					actions={coverActions}
+					outlined
+				/>
 			{/if}
 			{#if showTimer}
 				<DayTimer
@@ -1659,40 +1656,18 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			{@const town = publicProjection(
-				game,
-				publicTravellerTest(game.gameId, characters),
-				layout,
-				cornerInfo,
-				characters
-			)}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
-			<PlayerScriptTabs
+			<BoardPlayerView
+				{game}
 				script={loadedScript}
-				players={dealtSeats(town.seats).dealt}
-				inPlay={charactersInPlay(game)}
-				travellers={travellersInPlay(town.seats)}
-				rules={gameSheetRules(game.gameId)}
-			>
-				{#snippet grim()}<PlayerGrim
-						script={loadedScript!}
-						town={{
-							seats: town.seats,
-							layout: town.layout,
-							storytellerName: town.storytellerName,
-							corner: town.corner,
-							look,
-							picture: watching ? undefined : ownPicture,
-							pictureRoom: watching ? grimoire.room : undefined,
-							guessKey: `storyteller:${game.gameId}`
-						}}
-					/>{/snippet}
-				{#snippet notes()}<PlayerNotes
-						notesKey={scriptKey(loadedScript!)}
-						town={{ seats: town.seats, guessKey: `storyteller:${game.gameId}` }}
-					/>{/snippet}
-			</PlayerScriptTabs>
+				{characters}
+				{layout}
+				corner={cornerInfo}
+				{look}
+				picture={watching ? undefined : ownPicture}
+				pictureRoom={watching ? grimoire.room : undefined}
+			/>
 		{/if}
 	</div>
 </Dialog>
@@ -1701,6 +1676,40 @@
 <Dialog bind:open={phonesOpen} title={t('room.title')} size="full" shownToPlayers>
 	<RoomPanel game={grimoire.open} />
 </Dialog>
+
+<!-- On the grim cover, what shows nothing secret (Trevor, 2026-10-27: "calling back to town,
+     seeing player view (script, night order, public grim, not notes)"). The dialog is drawn in
+     the cover, over it. -->
+{#snippet coverActions()}
+	{#if !ended && roomHost().code}
+		<Button icon="sound" onclick={() => roomHost().callTown() || toast(t('room.callTownFailed'))}>
+			{t('room.callTown')}
+		</Button>
+	{/if}
+	{#if loadedScript}
+		<Button icon="script" onclick={() => (coverViewOpen = true)}>{t('show.playerView')}</Button>
+		<Dialog
+			bind:open={coverViewOpen}
+			title={game.script.meta?.name || 'Script'}
+			size="max"
+			lead={boardLogo ? scriptLogoLead : undefined}
+		>
+			<div class="script-scroll" data-testid="cover-player-view">
+				<BoardPlayerView
+					{game}
+					script={loadedScript}
+					{characters}
+					{layout}
+					corner={cornerInfo}
+					{look}
+					picture={watching ? undefined : ownPicture}
+					pictureRoom={watching ? grimoire.room : undefined}
+					own={false}
+				/>
+			</div>
+		</Dialog>
+	{/if}
+{/snippet}
 
 {#snippet coverTimer()}
 	{#if showTimer}<DayTimer alive={livingByTeam(game).alive} variant="compact" />{/if}
@@ -1711,6 +1720,7 @@
 	game={grimoire.open}
 	cover={coverDetails}
 	{coverTimer}
+	{coverActions}
 	onEndDay={() => (endDayOpen = true)}
 	onSavant={(seatId) => {
 		savantSeat = seatId;

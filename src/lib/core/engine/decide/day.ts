@@ -155,7 +155,7 @@ export const DAY_DECIDERS: Deciders<
 		}
 		return [
 			{ type: 'DayEntryAdded', entry },
-			{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: 'execution' }
+			{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: command.cause ?? 'execution' }
 		];
 	},
 
