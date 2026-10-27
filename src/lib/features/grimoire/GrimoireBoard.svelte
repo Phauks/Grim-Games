@@ -75,6 +75,7 @@
 		followSeating,
 		isDefaultLayout,
 		isRotation,
+		boardAspect,
 		keepInside,
 		seatPoints,
 		seatTokenSize,
@@ -113,6 +114,7 @@
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import BoardPlayerView from './BoardPlayerView.svelte';
+	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
@@ -165,9 +167,15 @@
 		 * 2026-10-24): its History steps through on this device only.
 		 */
 		over?: EndedGame;
+		/**
+		 * A spectator who may still look through History (an admin's Live games, Trevor
+		 * 2026-10-27: "Admin should have access to history"): ⋯ opens, with only History and
+		 * the app's items live.
+		 */
+		watchedHistory?: boolean;
 	}
 
-	let { grimoire, watching = false, watchedTimer, over }: Props = $props();
+	let { grimoire, watching = false, watchedTimer, over, watchedHistory = false }: Props = $props();
 	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
@@ -183,6 +191,9 @@
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
 	const setUp = $derived(setupComplete(game));
 	const characters = $derived(grimoire.open.characters);
+	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
+	const artOf = (reminder: ReminderInstance) =>
+		reminder.like ? characters.get(reminder.like.characterId) : undefined;
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
 
 	let board = $state<HTMLElement>();
@@ -246,12 +257,17 @@
 	);
 	// The Token size preview in Settings draws at this board's size.
 	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
+	// Every shared grim keeps each seat at this board's place round the ring (Trevor, 2026-10-27).
+	const aspect = $derived(boardAspect({ width, height }));
+	$effect(() => {
+		if (!watching) roomHost().showAspect(game.gameId, aspect);
+	});
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
 	const points = $derived(
 		keepInside(
-			seatPoints(game.seating, layout, { width, height }),
+			seatPoints(game.seating, layout, { width, height }, watching ? grimoire.aspect : undefined),
 			{ width, height },
 			size / 2 + unit
 		)
@@ -886,6 +902,20 @@
 	let scriptOpen = $state(false);
 	/** The players' view, from the grim cover. */
 	let coverViewOpen = $state(false);
+	/** Opens it with the table notebook blank (Trevor, 2026-10-27: "Blank each time"). */
+	async function openCoverView() {
+		await forgetTableNotebook(game.gameId);
+		coverViewOpen = true;
+	}
+	// Closed, the table's notes go too, so nothing waits on the device for the next player.
+	let coverViewWasOpen = false;
+	$effect(() => {
+		if (coverViewOpen) coverViewWasOpen = true;
+		else if (coverViewWasOpen) {
+			coverViewWasOpen = false;
+			void forgetTableNotebook(untrack(() => game.gameId));
+		}
+	});
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
@@ -981,6 +1011,7 @@
 		logo: boardLogo || undefined,
 		name: showTitle ? game.script.meta?.name : undefined,
 		author: showTitle ? game.script.meta?.author : undefined,
+		storyteller: game.storytellerName?.trim() || undefined,
 		phase
 	});
 	/**
@@ -1047,6 +1078,7 @@
 					symbol={last.symbol}
 					symbolColour={last.symbolColour}
 					symbolFill={last.symbolFill}
+					art={artOf(last)}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1115,6 +1147,7 @@
 	<BoardToolbar
 		{grimoire}
 		{watching}
+		menu={!watching || watchedHistory}
 		{seatArr}
 		placing={!!placing}
 		onCancelPlacing={() => (placing = undefined)}
@@ -1259,6 +1292,7 @@
 							symbol={reminder.symbol}
 							symbolColour={reminder.symbolColour}
 							symbolFill={reminder.symbolFill}
+							art={artOf(reminder)}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
@@ -1296,6 +1330,7 @@
 					symbol={reminder.symbol}
 					symbolColour={reminder.symbolColour}
 					symbolFill={reminder.symbolFill}
+					art={artOf(reminder)}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
@@ -1320,6 +1355,7 @@
 					symbol={heldDrag.symbol}
 					symbolColour={heldDrag.symbolColour}
 					symbolFill={heldDrag.symbolFill}
+					art={artOf(heldDrag)}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled
@@ -1479,6 +1515,7 @@
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <BoardMenu
 	bind:open={menuOpen}
+	{watching}
 	gameInfo={cornerHidden}
 	ended={!!ended}
 	onHistory={() => (historyOpen = true)}
@@ -1633,22 +1670,8 @@
 	titleBelow
 	lead={boardLogo ? scriptLogoLead : undefined}
 >
-	{#snippet headActions()}
-		<PlayerScriptActions
-			script={loadedScript}
-			version={scriptVersion(undefined, loadedScript?.meta)}
-			share={scriptShare}
-			room={watching ? undefined : roomHost().code}
-		/>
-	{/snippet}
-	{#snippet subtitle()}
-		<ScriptByline
-			author={loadedScript?.meta.author}
-			version={scriptVersion(undefined, loadedScript?.meta)}
-			storyteller={game.storytellerName}
-			inline
-		/>
-	{/snippet}
+	{#snippet headActions()}{@render scriptActions()}{/snippet}
+	{#snippet subtitle()}{@render scriptSubtitle()}{/snippet}
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
@@ -1658,7 +1681,7 @@
 				{game}
 				script={loadedScript}
 				{characters}
-				{layout}
+				layout={{ ...layout, aspect }}
 				corner={cornerInfo}
 				{look}
 				picture={watching ? undefined : ownPicture}
@@ -1683,13 +1706,19 @@
 		</Button>
 	{/if}
 	{#if loadedScript}
-		<Button icon="script" onclick={() => (coverViewOpen = true)}>{t('show.playerView')}</Button>
+		<Button icon="script" onclick={openCoverView}>{t('show.playerView')}</Button>
+		<!-- The players' screen as it is on /play, its title-line buttons and notes too (Trevor,
+		     2026-10-27: "same setting, share, and other buttons ... As if they were within the
+		     app. We shouldn't even block notes"); the notes are the table's, blank each time. -->
 		<Dialog
 			bind:open={coverViewOpen}
 			title={game.script.meta?.name || 'Script'}
 			size="max"
+			titleBelow
 			lead={boardLogo ? scriptLogoLead : undefined}
 		>
+			{#snippet headActions()}{@render scriptActions()}{/snippet}
+			{#snippet subtitle()}{@render scriptSubtitle()}{/snippet}
 			<div class="script-scroll" data-testid="cover-player-view">
 				<BoardPlayerView
 					{game}
@@ -1700,11 +1729,30 @@
 					{look}
 					picture={watching ? undefined : ownPicture}
 					pictureRoom={watching ? grimoire.room : undefined}
-					own={false}
+					notebook={tableNotebook(game.gameId)}
 				/>
 			</div>
 		</Dialog>
 	{/if}
+{/snippet}
+
+<!-- The Script dialog's title line, as /play's (PlayerScriptActions, ScriptByline): the
+     board's Script and the grim cover's Player view both show it. -->
+{#snippet scriptActions()}
+	<PlayerScriptActions
+		script={loadedScript}
+		version={scriptVersion(undefined, loadedScript?.meta)}
+		share={scriptShare}
+		room={watching ? undefined : roomHost().code}
+	/>
+{/snippet}
+{#snippet scriptSubtitle()}
+	<ScriptByline
+		author={loadedScript?.meta.author}
+		version={scriptVersion(undefined, loadedScript?.meta)}
+		storyteller={game.storytellerName}
+		inline
+	/>
 {/snippet}
 
 {#snippet coverTimer()}

@@ -66,6 +66,16 @@ async function write(book: PlayerNotebook): Promise<void> {
 	});
 }
 
+/** Deletes one notebook from this device: the grim cover's, which starts blank each time. */
+export async function deleteNotebook(key: string): Promise<void> {
+	const tx = (await open()).transaction(NOTEBOOKS, 'readwrite');
+	tx.objectStore(NOTEBOOKS).delete(key);
+	await new Promise<void>((resolve, reject) => {
+		tx.oncomplete = () => resolve();
+		tx.onerror = () => reject(tx.error);
+	});
+}
+
 /** A reactive notebook for one script, saved shortly after every change. */
 export class NotebookState {
 	book = $state<PlayerNotebook>() as PlayerNotebook;

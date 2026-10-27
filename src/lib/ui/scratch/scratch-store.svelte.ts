@@ -92,6 +92,11 @@ async function list(base: string): Promise<{ key: string; value: unknown }[]> {
 		);
 }
 
+/** Deletes every pad under `base` from this device (a notebook thrown away whole). */
+export async function removePads(base: string): Promise<void> {
+	for (const { key } of await list(base)) await remove(key);
+}
+
 /** One reactive pad, saved shortly after every change. Undo history lasts for the visit. */
 export class ScratchPadState {
 	history = $state.raw<ScratchHistory>({ strokes: [], undone: [] });

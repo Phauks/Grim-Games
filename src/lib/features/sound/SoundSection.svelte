@@ -6,6 +6,7 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import ActionSoundSettings from './ActionSoundSettings.svelte';
+	import SoundboardSettings from './SoundboardSettings.svelte';
 	import AmbienceSettings from './AmbienceSettings.svelte';
 	import { playSound } from './sound.ts';
 	import VibrateToggle from './VibrateToggle.svelte';
@@ -68,4 +69,5 @@
 
 <AmbienceSettings />
 
+<SoundboardSettings />
 <ActionSoundSettings />

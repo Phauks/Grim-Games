@@ -101,7 +101,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J32',
 			'J34',
 			'L18b',
-			...range('W', 1, 11),
+			...range('W', 1, 12),
 			...range('E', 1, 3)
 		]
 	},
@@ -164,8 +164,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
 	{
 		title:
-			'Sound: every sound in one place, Back to town, day and night ambience, a soundboard, sounds for your actions, your own sounds',
-		parts: ['U1', 'U2', 'U3', 'U4', 'U6', 'U7']
+			'Sound: every sound in one place, Back to town, day and night ambience, a soundboard with a mixer and hot spots, sounds for your actions, playing on Town Square or another speaker, your own sounds',
+		parts: ['U1', 'U2', 'U3', 'U4', 'U6', 'U7', 'U8', 'U9', 'U10', 'U11']
 	},
 	{
 		title:
@@ -189,7 +189,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Buttons that stand out, with End game in red', parts: ['S11'] },
 	{
 		title: 'Offline games: share the script with no internet, by QR code or animated QR code',
-		parts: ['N1', 'N2', 'N3']
+		parts: ['N1', 'N2', 'N3', 'N4']
 	},
 	{
 		title: 'Accounts and sync: saved games and scripts on every device',

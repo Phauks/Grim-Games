@@ -10,6 +10,8 @@
 	import ScriptLogo from './ScriptLogo.svelte';
 	import ScriptQrCenter from './ScriptQrCenter.svelte';
 	import type { ShareTarget } from './share-codes.ts';
+	import { withOfflineRoom } from './share.ts';
+	import { keepScreenAwake } from '#lib/features/day/timer-wake-lock.ts';
 
 	/**
 	 * Sharing a script's link on the one share screen (`ui/share/SharePanel`). No code to
@@ -92,12 +94,21 @@
 		if (on && !made && !failed) make();
 	}
 
-	const offlineCode = $derived(offline ? made?.offline : undefined);
+	/** The offline code names the live room, so phones can join it once they have internet. */
+	const offlineCode = $derived(
+		offline && made?.offline ? withOfflineRoom(made.offline, room) : undefined
+	);
+	// An animated code takes a while to read: the screen stays on while it shows (2026-10-27).
+	$effect(() => {
+		if (!offlineCode?.frames) return;
+		keepScreenAwake(true, 'offline-code');
+		return () => keepScreenAwake(false, 'offline-code');
+	});
 	// `made` is read first, every time: in a room the room's link used to stand in for it, and
 	// the offline code then never showed once its link arrived (2026-10-26).
 	const url = $derived.by(() => {
 		const link = made;
-		return offline ? link?.offline?.url : inRoom ? roomLink : link?.url;
+		return offline ? offlineCode?.url : inRoom ? roomLink : link?.url;
 	});
 </script>
 

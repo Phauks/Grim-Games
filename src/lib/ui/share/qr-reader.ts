@@ -3,7 +3,8 @@
  * BarcodeDetector where it reads QR codes (Chrome on Android); otherwise jsQR (Apache-2.0),
  * loaded only then, which covers Safari on iPhone and iPad and desktop browsers.
  */
-export type QrReader = (video: HTMLVideoElement) => Promise<string | undefined>;
+/** Every code read in a frame: BarcodeDetector finds them all, jsQR one. */
+export type QrReader = (video: HTMLVideoElement) => Promise<string[]>;
 
 interface Detected {
 	rawValue: string;
@@ -25,7 +26,8 @@ async function nativeReader(): Promise<QrReader | undefined> {
 	try {
 		if (!(await Native.getSupportedFormats()).includes('qr_code')) return undefined;
 		const detector = new Native({ formats: ['qr_code'] });
-		return async (video) => (await detector.detect(video))[0]?.rawValue || undefined;
+		return async (video) =>
+			(await detector.detect(video)).map((code) => code.rawValue).filter(Boolean);
 	} catch {
 		return undefined;
 	}
@@ -38,12 +40,13 @@ export async function makeQrReader(): Promise<QrReader> {
 	const canvas = document.createElement('canvas');
 	const context = canvas.getContext('2d', { willReadFrequently: true });
 	return async (video) => {
-		if (!context || !video.videoWidth) return undefined;
+		if (!context || !video.videoWidth) return [];
 		const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
 		canvas.width = Math.round(video.videoWidth * scale);
 		canvas.height = Math.round(video.videoHeight * scale);
 		context.drawImage(video, 0, 0, canvas.width, canvas.height);
 		const frame = context.getImageData(0, 0, canvas.width, canvas.height);
-		return jsQR(frame.data, frame.width, frame.height, { inversionAttempts: 'dontInvert' })?.data;
+		const code = jsQR(frame.data, frame.width, frame.height, { inversionAttempts: 'dontInvert' });
+		return code?.data ? [code.data] : [];
 	};
 }
