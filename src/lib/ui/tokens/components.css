@@ -78,9 +78,11 @@
 	--print-muted: dimgray;
 	--print-rule: silver;
 
-	/* The chosen player count's column in the setup sheet table. */
+	/* The chosen player count's column in the setup sheet table: the page colour on a heading
+	   fill, a pair every theme and paper keeps at 4.5:1 (TEXT_PAIRS). --on-sheet was dark ink on
+	   the parchment paper's dark heading (Trevor, 2026-10-26). */
 	--count-current: var(--heading);
-	--on-count-current: var(--on-sheet);
+	--on-count-current: var(--surface);
 
 	--toast-background: var(--sheet);
 	--toast-color: var(--on-sheet);
