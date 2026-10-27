@@ -23,9 +23,14 @@
 	interface Props extends CoverDetails {
 		/** The day timer, as the screen that opened the cover shows it. */
 		timer?: Snippet;
+		/**
+		 * The Storyteller's controls that show nothing secret (Trevor, 2026-10-27: "calling back
+		 * to town, seeing player view"), under the timer.
+		 */
+		actions?: Snippet;
 	}
 
-	let { logo, name, author, phase, timer }: Props = $props();
+	let { logo, name, author, phase, timer, actions }: Props = $props();
 </script>
 
 <div class="cover" data-testid="cover-details">
@@ -34,6 +39,7 @@
 	{#if author}<p class="author">{t('show.byAuthor', { author })}</p>{/if}
 	{#if phase}<p class="phase" data-testid="cover-phase">{phase}</p>{/if}
 	{#if timer}<div class="timer">{@render timer()}</div>{/if}
+	{#if actions}<div class="actions" data-testid="cover-actions">{@render actions()}</div>{/if}
 </div>
 
 <style>
@@ -73,6 +79,13 @@
 	.phase {
 		font-size: 1.2rem;
 		font-weight: 600;
+	}
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--space-2);
+		margin-top: var(--space-4);
 	}
 	/* Big enough to read across the table. */
 	.timer {

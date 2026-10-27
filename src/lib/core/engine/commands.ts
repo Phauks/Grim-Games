@@ -208,8 +208,10 @@ export type Command =
 	 * executed and alive, unless `dies` says the Storyteller ruled otherwise. `savedBy` is the
 	 * character the Storyteller says saved them (the Execution sheet's Saved by, such as the
 	 * Pacifist's "might not die"), applied even when the grimoire disagrees, with a warning.
+	 * `cause` is the character whose ability executed them (the Virgin's), recorded as the cause
+	 * of death instead of a plain execution.
 	 */
-	| { type: 'Execute'; seatId: SeatId; dies?: boolean; savedBy?: CharacterId }
+	| { type: 'Execute'; seatId: SeatId; dies?: boolean; savedBy?: CharacterId; cause?: CharacterId }
 	/** Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. */
 	| { type: 'Exile'; seatId: SeatId }
 	/**

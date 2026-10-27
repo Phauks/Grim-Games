@@ -1250,17 +1250,17 @@ test('the join code shows under the script name, a Board setting, read only', as
 
 	await boardSettings(page, 'Board');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings.getByText('Join code on the board', { exact: true }).tap();
+	await settings.getByText('Join code', { exact: true }).tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(corner).toHaveCount(0);
 
 	// Game info's eye controls it, not Share (Trevor, 2026-10-27: "remove setting from share
 	// menu, this is controlled from game info screen").
 	await page.getByRole('button', { name: 'Share', exact: true }).tap();
-	await expect(share.getByRole('checkbox', { name: 'Join code on the board' })).toHaveCount(0);
+	await expect(share.getByRole('checkbox', { name: 'Join code', exact: true })).toHaveCount(0);
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	await boardSettings(page, 'Board');
-	await settings.getByText('Join code on the board', { exact: true }).tap();
+	await settings.getByText('Join code', { exact: true }).tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(corner).toHaveText(codeLine);
 });
@@ -1988,7 +1988,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	await expect(page.getByTestId('vignette')).toHaveCount(0);
 	// Always shown, with no switch (Trevor, 2026-10-23).
-	await expect(dialog.getByText('Script name on the board', { exact: true })).toHaveCount(0);
+	await expect(dialog.getByText('Script name', { exact: true })).toHaveCount(0);
 	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
 	// One place only (Trevor, 2026-10-18): no choice of where.
 	await expect(dialog.getByRole('combobox', { name: 'Script name', exact: true })).toHaveCount(0);
@@ -6059,6 +6059,10 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await expect(seatLabelled(page, 'Seat 2: no name, Chef, dead')).toBeAttached();
+	// The Virgin is the cause of death (Trevor, 2026-10-27).
+	const chef = await openSeat(page, 2);
+	await expect(chef.getByRole('button', { name: 'Status: Dead: Virgin' })).toBeVisible();
+	await closeSheet(page);
 	// The Virgin's ability is used: her "No Ability" reminder is placed.
 	await expect(seatLabelled(page, 'Seat 1: no name, Virgin, 1 reminder')).toBeAttached();
 	// Dead, but nominated today: the marks stay, the finger lit.

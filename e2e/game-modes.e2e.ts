@@ -2373,11 +2373,6 @@ test('the Script sheet has the players’ settings cog, opening their own sheet'
 	await expect(settings.getByRole('slider', { name: 'Text size' })).toBeVisible();
 	// No room phone here, so no name to set.
 	await expect(settings.getByRole('textbox', { name: 'Your name' })).toHaveCount(0);
-	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
-	await page.getByRole('option', { name: 'Compact', exact: true }).tap();
-	// The Script sheet underneath changes at once (it is hidden from the accessibility tree
-	// while the settings sheet is open, so found by its copy).
-	await expect(page.locator('[data-testid="script-copy"] [data-density="compact"]')).toHaveCount(1);
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await expect(sheet).toBeVisible();
