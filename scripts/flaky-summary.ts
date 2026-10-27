@@ -4,7 +4,8 @@
  * Playwright's JSON report (playwright.config.ts writes it in CI). Tests are never skipped
  * for being flaky: the list is there to get them fixed.
  *
- * `node scripts/flaky-summary.ts --run [report.json]`; writes to $GITHUB_STEP_SUMMARY when set.
+ * `node scripts/flaky-summary.ts --run [report.json]`; writes to $GITHUB_STEP_SUMMARY when set, and
+ * sets the step output `flaky` to the count, so CI keeps the report of a run that only flaked.
  */
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 
@@ -66,5 +67,7 @@ if (process.argv.includes('--run')) {
 		const markdown = summaryMarkdown(flaky);
 		if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);
 		else console.log(markdown);
+		if (process.env.GITHUB_OUTPUT)
+			appendFileSync(process.env.GITHUB_OUTPUT, `flaky=${flaky.length}\n`);
 	}
 }
