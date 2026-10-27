@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { setPlayerName } from './player-name.ts';
+import { openPlayerSettings, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
@@ -30,15 +30,10 @@ async function watchWithPassword(phone: Page, code: string, password: string) {
 }
 
 /**
- * Opens the phone's You sheet from the title line (plan E2, Trevor 2026-10-26: "move name into
- * an edit button in the top").
+ * Opens Settings > Player from the title line's cog, where the phone's name is (plan E2;
+ * Trevor 2026-10-27: one Settings everywhere).
  */
-async function seatSheet(phone: Page) {
-	await phone.getByTestId('you-button').tap();
-	const sheet = phone.getByRole('dialog', { name: 'Your settings' });
-	await expect(sheet).toBeVisible();
-	return sheet;
-}
+const seatSheet = openPlayerSettings;
 
 /** Names a seat on the board, which seats the phone with that name (no seat picking). */
 async function nameSeat(page: Page, number: number, name: string) {
@@ -117,12 +112,12 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	// name shows up").
 	await expect(phone.getByTestId('join-status')).toHaveText('');
 	const sheet = await seatSheet(phone);
-	await expect(sheet.getByRole('radio')).toHaveCount(0);
+	await expect(sheet.getByRole('radio', { name: /^Seat / })).toHaveCount(0);
 	await setPlayerName(phone, 'Alex');
 	await phone.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(phone.getByTestId('join-status')).toHaveText('');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 	// Joining moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
 	// script"); the Room tab keeps the seat's state.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
@@ -141,7 +136,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await nameSeat(page, 3, 'Alex');
 
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(phone.getByTestId('grim-seat').nth(2)).toHaveAttribute(
 		'aria-label',
@@ -152,7 +147,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await setPlayerName(phone, 'Alex K');
 	await phone.keyboard.press('Escape');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex K' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex K' })).toBeVisible();
 	await page.goto(`${board}/room`);
 	await expect(alex).toHaveText(/^Alex K\s*Seat 3$/);
 
@@ -173,7 +168,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	// A phone with a seat opens on the script.
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex K' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex K' })).toBeVisible();
 	const again = await seatSheet(phone);
 	await expect(again.getByTestId('player-name')).toHaveText('Alex K');
 	await again.getByRole('button', { name: 'Edit your name' }).tap();
@@ -2252,7 +2247,7 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
 	await nameSeat(page, 3, 'Alex Kim');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
-	await expect(phone.getByRole('button', { name: 'Your settings: Alex Kim' })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Settings: Alex Kim' })).toBeVisible();
 
 	// On the board: the seat has no character yet, so the initials are its face.
 	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex Kim"]');
