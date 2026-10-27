@@ -210,7 +210,7 @@
 	}
 	.tag[data-online='true'] {
 		border-color: var(--good);
-		color: var(--good);
+		color: var(--good-text);
 	}
 	.empty {
 		margin: 0;

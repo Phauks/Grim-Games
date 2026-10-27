@@ -204,7 +204,7 @@
 		font-size: 1.2rem;
 	}
 	.reset-section :global(.icon-button) {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 
 	/* Narrow screens: a two-step drill-in instead of side by side. */

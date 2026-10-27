@@ -204,6 +204,6 @@
 		font-size: 0.9em;
 	}
 	li[data-status='unconfirmed'] .status {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 </style>
