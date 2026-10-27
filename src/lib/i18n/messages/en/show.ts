@@ -16,6 +16,8 @@ export const show = {
 	'show.failed': "Couldn't show this.",
 	'show.cover': 'Cover the screen',
 	'show.covered': 'Screen covered',
+	'show.byAuthor': 'by {author}',
+	'show.playerView': 'Player view',
 	'show.evil.title': 'Cards to show',
 	'show.evil.show': 'Show',
 	'show.evil.showNamed': 'Show {card}',

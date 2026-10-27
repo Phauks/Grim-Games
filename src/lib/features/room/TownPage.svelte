@@ -27,6 +27,7 @@
 	import { rememberRoom } from './recent-rooms.ts';
 	import { RoomTown } from './town.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
+	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 
 	/**
 	 * Public Town (Trevor, 2026-10-26): a tablet in the middle of the table showing the
@@ -129,6 +130,18 @@
 		document.addEventListener('fullscreenchange', sync);
 		return () => document.removeEventListener('fullscreenchange', sync);
 	});
+	/**
+	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), in place of the
+	 * town, as on every phone's Grim tab; it goes when the game runs again or a new one begins.
+	 */
+	const final = $derived(showTown ? town?.revealed : undefined);
+	let arrivedAt = $state(0);
+	$effect(() => {
+		if (final) arrivedAt = Date.now();
+	});
+	const over = $derived<EndedGame | undefined>(
+		final ? ({ endedAt: arrivedAt, ...town?.view?.ended } as EndedGame) : undefined
+	);
 	/** An admin's grimoire, once drawn. */
 	let boardReady = $state(false);
 	let boardProblem = $state<string>();
@@ -142,8 +155,9 @@
 		onProblem={(p) => (boardProblem = p)}
 	/>{/if}
 {#if !(showBoard && boardReady)}
-	<!-- The player screen's title line: the script's logo and name, its byline, Print and Share. -->
-	<Page title={script?.name ?? t('room.town.title')} iconActions>
+	<!-- The player screen's title line: the script's logo and name, its byline, Print and Share,
+	     with the title under the app's buttons as on /play, so a phone has room for the name. -->
+	<Page title={script?.name ?? t('room.town.title')} iconActions titleBelow>
 		{#snippet lead()}
 			{#if logo && !logoFailed}<ScriptLogo
 					src={logo}
@@ -152,8 +166,6 @@
 				/>{/if}
 		{/snippet}
 		{#snippet actions()}
-			<!-- A tap target high, as the buttons beside it, so the title line keeps its height. -->
-			{#if phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
 			{#if script}<PlayerScriptActions
 					{script}
 					{version}
@@ -170,13 +182,19 @@
 			/>&nbsp;
 		{/snippet}
 
+		<!-- Where the game is up to, with the day's timer, in its own row over the town as on
+		     /play's Grim tab; the row is kept while there is none yet, so nothing moves. -->
+		<div class="status-line">
+			{#if phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
+		</div>
 		<div class="stage" bind:this={stage} data-testid="public-town">
 			{#if showTown && script && table && room}
 				<!-- In the town's own top right corner, in and out of full screen (Trevor, 2026-10-26:
 				     "supposed to be in the town square, and makes it so the townsquare takes up the
 				     whole screen"); the board's corner lines are top left. In full screen the title
-				     line is gone, so the game's status sits beside it. -->
-				{#if stage}<div class="full-screen">
+				     line is gone, so the game's status sits beside it. The finished grimoire brings
+				     its own toolbar, full screen included, as on the Grim tab. -->
+				{#if stage && !final}<div class="full-screen">
 						{#if inFullScreen && phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
 						<!-- Its place kept for settings to come (Trevor, 2026-10-26: "pre-emptively place
 						     a setting cog next to full screen"); there are none yet. -->
@@ -185,19 +203,21 @@
 						>
 						<span class="town-button"><FullScreenButton target={stage} /></span>
 					</div>{/if}
-				<PlayerGrim
-					{script}
-					display
-					town={{
-						seats: table.seats,
-						layout: table.layout,
-						storytellerName: table.storytellerName,
-						corner: table.corner,
-						look: table.look,
-						roomCode: room,
-						pictures: town?.view?.pictures
-					}}
-				/>
+				{#if final}<div class="final" data-testid="final-grimoire">
+						<SharedBoard shared={final.grimoire} {over} {room} />
+					</div>{:else}<PlayerGrim
+						{script}
+						display
+						town={{
+							seats: table.seats,
+							layout: table.layout,
+							storytellerName: table.storytellerName,
+							corner: table.corner,
+							look: table.look,
+							roomCode: room,
+							pictures: town?.view?.pictures
+						}}
+					/>{/if}
 			{:else}
 				<div class="message" data-testid="town-status">
 					<p role={message ? 'alert' : 'status'}>
@@ -226,6 +246,25 @@
 	}
 	.stage:fullscreen {
 		background: var(--surface);
+	}
+	.status-line {
+		display: flex;
+		min-height: var(--tap-target);
+		margin-bottom: var(--space-2);
+	}
+	.status-line > :global([data-testid='players-status']) {
+		flex: 1;
+	}
+	/* The finished board, the town's height, with room under it for History's Previous and
+	   Next, as on the Grim tab. */
+	.final {
+		position: relative;
+		height: 75dvh;
+		margin-bottom: calc(2 * var(--tray-h, var(--tap-target)));
+	}
+	.stage:fullscreen .final {
+		height: 100dvh;
+		margin-bottom: 0;
 	}
 	.stage:fullscreen :global([data-testid='player-grim']) {
 		height: 100dvh;

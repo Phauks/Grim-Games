@@ -128,7 +128,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	// In a room, Share script hands on the room, as the board's does (Trevor, 2026-10-23).
 	await phone.getByRole('button', { name: 'Share script' }).tap();
-	const passOn = phone.getByRole('dialog', { name: 'Share Trouble Brewing' });
+	const passOn = phone.getByRole('dialog', { name: 'Share', exact: true });
 	await expect(passOn.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
 	await expect(passOn.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
 	await phone.keyboard.press('Escape');
@@ -1785,7 +1785,7 @@ test("a Traveller's seat on the players' Grim takes only Good or Evil", async ({
 	await phoneContext.close();
 });
 
-test("a player marks their own seat on the players' Grim, and it glows", async ({
+test("a player marks their own seat on the players' Grim, and it has a ring", async ({
 	page,
 	browser
 }, testInfo) => {
@@ -1811,6 +1811,11 @@ test("a player marks their own seat on the players' Grim, and it glows", async (
 	await expect(seat).toHaveAttribute('data-mine');
 	await expect(seat).toHaveAttribute('aria-label', 'Seat 3: Seat 3, you');
 	await phone.keyboard.press('Escape');
+	// A steady ring, with no pulse (Trevor, 2026-10-27).
+	const disc = seat.locator('.disc');
+	await expect(disc).toHaveCSS('outline-style', 'solid');
+	await expect(disc).toHaveCSS('animation-name', 'none');
+	await expect(disc).toHaveCSS('box-shadow', 'none');
 	// Kept on this phone for the game.
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
@@ -2208,9 +2213,9 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await phoneContext.close();
 });
 
-/** A small square PNG, as a player's picture from their phone. */
+/** A small wide PNG, red on the left and blue on the right, as a picture from a phone. */
 const PICTURE = Buffer.from(
-	'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGP4z8CAFWEXHbQSACj/P8Fu7N9hAAAAAElFTkSuQmCC',
+	'iVBORw0KGgoAAAANSUhEUgAAABAAAAAICAIAAAB/FOjAAAAAF0lEQVR4nGP4z8CAFeEQ/o9LeFQDRRoApTd/gRs1jBkAAAAASUVORK5CYII=',
 	'base64'
 );
 
@@ -2239,8 +2244,40 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 		mimeType: 'image/png',
 		buffer: PICTURE
 	});
+	// The crop screen (Trevor, 2026-10-27: "identify the exact contours of the picture"): the
+	// middle first; a drag to the right shows its left, and Save keeps that part.
+	const crop = alex.getByRole('dialog', { name: 'Your picture' });
+	const area = crop.getByTestId('avatar-crop');
+	const shown = area.locator('img');
+	await expect(shown).toHaveAttribute('style', /left: -50%/);
+	const box = (await area.boundingBox())!;
+	const y = box.y + box.height / 2;
+	await area.dispatchEvent('pointerdown', { pointerId: 1, clientX: box.x + 10, clientY: y });
+	await area.dispatchEvent('pointermove', {
+		pointerId: 1,
+		clientX: box.x + box.width,
+		clientY: y
+	});
+	await area.dispatchEvent('pointerup', { pointerId: 1, clientX: box.x + box.width, clientY: y });
+	await expect(shown).toHaveAttribute('style', /left: 0%/);
+	await crop.getByRole('button', { name: 'Save' }).tap();
+	await expect(crop).toBeHidden();
 	await expect(picture.getByTestId('avatar-face')).toHaveAttribute('data-picture', 'true');
 	await expect(picture.getByRole('button', { name: 'Remove picture' })).toBeEnabled();
+	// Only the left half, red, was kept.
+	const kept = await picture
+		.getByTestId('avatar-face')
+		.locator('img')
+		.evaluate((img) => {
+			const canvas = document.createElement('canvas');
+			canvas.width = canvas.height = 1;
+			const context = canvas.getContext('2d')!;
+			const image = img as HTMLImageElement;
+			context.drawImage(image, image.naturalWidth - 1, 0, 1, 1, 0, 0, 1, 1);
+			return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)];
+		});
+	expect(kept[0]).toBeGreaterThan(200);
+	expect(kept[2]).toBeLessThan(60);
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
 	await nameSeat(page, 3, 'Alex Kim');
@@ -2363,7 +2400,7 @@ test("Share on a player's Grim tab blurs the guesses behind it", async ({
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(phone.getByTestId('grim-seat')).toHaveCount(8);
 	await phone.getByRole('button', { name: 'Share script' }).tap();
-	await expect(phone.getByRole('dialog', { name: /^Share / })).toBeVisible();
+	await expect(phone.getByRole('dialog', { name: 'Share', exact: true })).toBeVisible();
 	const filter = await phone
 		.locator("[data-scope='dialog'][data-part='backdrop']")
 		.last()

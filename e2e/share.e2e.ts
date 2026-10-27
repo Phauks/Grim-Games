@@ -35,7 +35,7 @@ test("the board's Script sheet has the players' tabs, and its Share matches /pla
 
 	// Out of a room, Share is the script's link, as on /play.
 	await sheet.getByRole('button', { name: 'Share script' }).tap();
-	const share = page.getByRole('dialog', { name: 'Share Trouble Brewing' });
+	const share = page.getByRole('dialog', { name: 'Share', exact: true });
 	await expect(share.getByTestId('share-url')).toHaveValue(/\/play#e=tb$/);
 	await expect(share.getByTestId('share-code')).toHaveCount(0);
 	await page.keyboard.press('Escape');

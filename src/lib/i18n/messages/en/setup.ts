@@ -246,5 +246,13 @@ export const setup = {
 	'setup.lock.clear': 'Clear PIN',
 	'setup.lock.boardTitle': 'The grimoire is locked',
 	'setup.lock.boardBody': 'The draw is locked. Only the Storyteller can open the grimoire.',
-	'setup.lock.backToDraw': 'Back to the draw'
+	'setup.lock.backToDraw': 'Back to the draw',
+	'setup.lock.coverSetTitle': 'Set the Storyteller PIN',
+	'setup.lock.coverSetBody':
+		'Taking the cover off needs this PIN. It stays the PIN for this game, the locked draw’s too.',
+	'setup.lock.uncovering': {
+		one: 'Uncovering in {count} second.',
+		other: 'Uncovering in {count} seconds.'
+	},
+	'setup.lock.keepCovered': 'Keep covered'
 } as const;

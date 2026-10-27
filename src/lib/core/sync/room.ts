@@ -330,6 +330,8 @@ export interface TownView {
 	type: 'town-view';
 	public?: PublicGameState;
 	gameId?: string;
+	/** The current game is over, as phones are told, so the finished grimoire can show. */
+	ended?: Omit<GameOver, 'gameId'>;
 	pictures?: Partial<Record<SeatId, string>>;
 }
 
@@ -529,6 +531,11 @@ export function townView(room: RoomState): TownView {
 	const view: TownView = { type: 'town-view' };
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;
+	if (room.ended && room.ended.gameId === room.gameId) {
+		const { gameId: _game, ...ended } = room.ended;
+		void _game;
+		view.ended = ended;
+	}
 	const pictures = seatPictures(room.members);
 	if (Object.keys(pictures).length) view.pictures = pictures;
 	return view;
