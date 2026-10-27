@@ -1831,6 +1831,50 @@ test("a player marks their own seat on the players' Grim, and it glows", async (
 	await phoneContext.close();
 });
 
+test("a player's Grim fills the screen from its own corner, and a seat's sheet opens over it", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-27): "Allow players to also set their grim view to full screen, same thing
+	// as town square ... with full screen in top right of town grim view".
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const town = phone.getByTestId('player-grim');
+	const fullScreen = phone.getByRole('button', { name: 'Full screen', exact: true });
+	// In the town's top right corner, as on Public Town.
+	const box = (await town.boundingBox())!;
+	const corner = (await fullScreen.boundingBox())!;
+	expect(corner.x + corner.width).toBeGreaterThan(box.x + box.width * 0.85);
+	expect(corner.y).toBeLessThan(box.y + box.height * 0.15);
+	await fullScreen.tap();
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	const filled = (await town.boundingBox())!;
+	const screen = phone.viewportSize()!;
+	expect(Math.round(filled.x)).toBe(0);
+	expect(Math.round(filled.y)).toBe(0);
+	expect(Math.round(filled.width)).toBe(screen.width);
+	expect(Math.round(filled.height)).toBe(screen.height);
+	// A seat's sheet still opens over it.
+	await phone.getByTestId('grim-seat').nth(2).tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
+	await expect(sheet.getByRole('checkbox', { name: 'This is me' })).toBeVisible();
+	await phone.keyboard.press('Escape');
+	await expect(sheet).toHaveCount(0);
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	await fullScreen.tap();
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
+	await expect.poll(() => phone.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	expect(Math.round((await town.boundingBox())!.height)).toBeLessThan(screen.height);
+	await phoneContext.close();
+});
+
 test('a player puts reminder tokens on seats in their own Grim', async ({
 	page,
 	browser
