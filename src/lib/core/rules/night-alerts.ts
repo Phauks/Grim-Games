@@ -6,6 +6,9 @@
  * - `impaired`: a waking player is drunk, poisoned or has no ability (from `abilityState`);
  * - `blocked`: another ability's token stops them waking tonight (`stopsWaking`: the
  *   Exorcist's Chosen on the Demon, https://wiki.bloodontheclocktower.com/Exorcist);
+ * - `no-kill`: another ability's token stops them killing tonight, so no kill alerts follow
+ *   (`stopsKilling`: the Princess's Doesn't Kill on the Demon,
+ *   https://wiki.bloodontheclocktower.com/Princess);
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
@@ -118,7 +121,13 @@ export const ON_DEATH: Readonly<Record<CharacterId, { by: KillBy | 'any'; night?
 	);
 
 export type NightAlertKind =
-	'impaired' | 'blocked' | 'protected' | 'may-bounce' | 'survives-first-death' | 'on-death';
+	| 'impaired'
+	| 'blocked'
+	| 'no-kill'
+	| 'protected'
+	| 'may-bounce'
+	| 'survives-first-death'
+	| 'on-death';
 
 export interface NightAlert {
 	kind: NightAlertKind;
@@ -164,11 +173,15 @@ export function nightStepAlerts(
 			impairments: state.impairments
 		});
 	}
+	let noKill = false;
 	for (const seatId of actors) {
 		for (const r of game.seats[seatId].reminders) {
-			const stops = rulesOf(r.characterId, characters)?.stopsWaking;
+			const rules = rulesOf(r.characterId, characters);
+			const waking = rules?.stopsWaking?.token === r.label;
+			const stops = waking ? rules?.stopsWaking : rules?.stopsKilling;
 			if (stops?.token !== r.label) continue;
 			if (stops.type && typeOf(game, seatId, characters) !== stops.type) continue;
+			if (!waking) noKill = true;
 			const source = game.seating.find(
 				(s) => s !== seatId && trueCharacter(game, s, characters) === r.characterId
 			);
@@ -176,7 +189,7 @@ export function nightStepAlerts(
 			out.push(
 				sourceAlert(
 					game,
-					'blocked',
+					waking ? 'blocked' : 'no-kill',
 					seatId,
 					{
 						characterId: r.characterId,
@@ -191,7 +204,7 @@ export function nightStepAlerts(
 	}
 
 	const killer = nightKiller(characterId, characters);
-	if (!killer) return out;
+	if (!killer || noKill) return out;
 	const subjects = (killer.targets === 'self' ? actors : game.seating).filter(
 		(s) => getSeat(game, s)?.dead === false
 	);

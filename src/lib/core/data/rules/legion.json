@@ -69,5 +69,10 @@
 			}
 		]
 	},
-	"makesExtraEvil": true
+	"makesExtraEvil": true,
+	"registersAs": {
+		"self": {
+			"types": ["minion"]
+		}
+	}
 }
