@@ -97,6 +97,7 @@ export const player = {
 	'player.pictureDetail':
 		'On your seat in place of your initials, in rooms you join. The Storyteller can take it away for a game.',
 	'player.pictureChoose': 'Image',
+	'player.pictureEdit': 'Move or zoom your picture',
 	'player.pictureChange': 'Change picture',
 	'player.pictureRemove': 'Remove picture',
 	'player.pictureFile': 'Picture for your seat',

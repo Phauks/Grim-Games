@@ -40,8 +40,8 @@
 				share, below.
 			</li>
 			<li>
-				Your own picture for your seat, if you choose one (browser storage). A copy goes to each
-				live room you join, below.
+				Your own picture for your seat, if you choose one, and the whole picture it was cut from so
+				you can move it later (browser storage). A copy goes to each live room you join, below.
 			</li>
 			<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 			<li>
