@@ -66,7 +66,7 @@
 		class="layout"
 		data-view={settingsDialog.only ? 'only' : settingsDialog.section ? 'section' : 'list'}
 	>
-		{#if !settingsDialog.only}<nav aria-label={t('settings.sections')}>
+		{#if !settingsDialog.only}<div class="side">
 				<div class="search">
 					<SearchField
 						bind:value={query}
@@ -75,48 +75,50 @@
 						testid="settings-search"
 					/>
 				</div>
-				{#if searching}
-					<ul aria-label={t('settings.searchResults')} data-testid="settings-results">
-						{#each results as entry (`${entry.section}:${entry.index}`)}
-							<li>
-								<button onclick={() => void pick(entry)}>
-									{#each sections.filter((s) => s.id === entry.section) as where (where.id)}<Icon
-											name={where.icon}
-										/>{/each}
-									<span class="label"
-										>{entry.label}<span class="where">{entry.sectionLabel}</span></span
+				<nav aria-label={t('settings.sections')}>
+					{#if searching}
+						<ul aria-label={t('settings.searchResults')} data-testid="settings-results">
+							{#each results as entry (`${entry.section}:${entry.index}`)}
+								<li>
+									<button onclick={() => void pick(entry)}>
+										{#each sections.filter((s) => s.id === entry.section) as where (where.id)}<Icon
+												name={where.icon}
+											/>{/each}
+										<span class="label"
+											>{entry.label}<span class="where">{entry.sectionLabel}</span></span
+										>
+										<span class="chevron"><Icon name="forward" /></span>
+									</button>
+								</li>
+							{:else}
+								<li class="none">{found ? t('common.none') : ''}</li>
+							{/each}
+						</ul>
+					{:else}<ul>
+							{#each sections as section (section.id)}
+								<li>
+									<button
+										aria-current={section.id === active?.id ? 'page' : undefined}
+										onclick={() => (settingsDialog.section = section.id)}
 									>
-									<span class="chevron"><Icon name="forward" /></span>
-								</button>
-							</li>
-						{:else}
-							<li class="none">{found ? t('common.none') : ''}</li>
-						{/each}
-					</ul>
-				{:else}<ul>
-						{#each sections as section (section.id)}
-							<li>
-								<button
-									aria-current={section.id === active?.id ? 'page' : undefined}
-									onclick={() => (settingsDialog.section = section.id)}
-								>
-									<Icon name={section.icon} />
-									<span class="label">{sectionLabel(section.label, say)}</span>
-									<span class="chevron"><Icon name="forward" /></span>
-								</button>
-							</li>
-						{/each}
-					</ul>{/if}
-				<!-- At the very bottom (Trevor, 2026-10-20), only where the browser can install it. -->
-				{#if installApp.way}<div class="install">
-						<Button
-							icon="installApp"
-							onclick={() =>
-								installApp.way === 'prompt' ? void installApp.install() : (installSteps = true)}
-							>{t('settings.installApp')}</Button
-						>
-					</div>{/if}
-			</nav>{/if}
+										<Icon name={section.icon} />
+										<span class="label">{sectionLabel(section.label, say)}</span>
+										<span class="chevron"><Icon name="forward" /></span>
+									</button>
+								</li>
+							{/each}
+						</ul>{/if}
+					<!-- At the very bottom (Trevor, 2026-10-20), only where the browser can install it. -->
+					{#if installApp.way}<div class="install">
+							<Button
+								icon="installApp"
+								onclick={() =>
+									installApp.way === 'prompt' ? void installApp.install() : (installSteps = true)}
+								>{t('settings.installApp')}</Button
+							>
+						</div>{/if}
+				</nav>
+			</div>{/if}
 		{#if active}
 			<section class="content" bind:this={content} aria-labelledby="settings-section-title">
 				<!-- One sticky row: back icon, then the section's name (Trevor, 2026-10-17). -->
@@ -177,7 +179,8 @@
 		gap: var(--space-4);
 		margin-top: var(--space-3);
 	}
-	nav {
+	/* The search over the section list, scrolling as one column. */
+	.side {
 		overflow-y: auto;
 		border-right: 1px solid var(--border);
 		padding-right: var(--space-3);
@@ -307,7 +310,7 @@
 		.layout {
 			grid-template-columns: 1fr;
 		}
-		nav {
+		.side {
 			border-right: 0;
 			padding-right: 0;
 		}
@@ -320,7 +323,7 @@
 			color: var(--on-surface-muted);
 		}
 		.layout[data-view='list'] .content,
-		.layout[data-view='section'] nav {
+		.layout[data-view='section'] .side {
 			display: none;
 		}
 		.heading > :global(.back) {
