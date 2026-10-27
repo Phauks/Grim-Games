@@ -58,6 +58,7 @@
 		seatTokenSize
 	} from '#lib/ui/seating/seat-layout.ts';
 	import {
+		AVATAR_GUESS,
 		GENERIC_GUESSES,
 		clearGuesses,
 		cycleGuess,
@@ -65,6 +66,7 @@
 		guessesOf,
 		mainGuess,
 		readGuesses,
+		seatCycle,
 		toggleGuess,
 		travellerGuess,
 		travellerTeam,
@@ -78,6 +80,7 @@
 	} from './grim-guesses.ts';
 	import GenericGuessToken from './GenericGuessToken.svelte';
 	import GuessMarks from './GuessMarks.svelte';
+	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import SeatNotesDialog from '#lib/ui/notes/SeatNotesDialog.svelte';
 	import { deleteSeatNote, notesLine, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
@@ -262,7 +265,8 @@
 		// the guess pill makes the next guess the main one.
 		const target = event?.target instanceof Element ? event.target : null;
 		if (target?.closest('.mark.note')) noteOpen = true;
-		else if (target?.closest('[data-testid="guess-marks"]')) save(cycleGuess(guesses, seat.seatId));
+		else if (target?.closest('[data-testid="guess-marks"]'))
+			save(cycleGuess(guesses, seat.seatId, withAvatar(seat)));
 		else open = true;
 	}
 	/** A generic guess's word: its character type, or Good or Evil. */
@@ -287,26 +291,39 @@
 		save(
 			chosen.traveller
 				? travellerGuess(guesses, chosen.seatId, characterId)
-				: toggleGuess(guesses, chosen.seatId, characterId)
+				: toggleGuess(guesses, chosen.seatId, characterId, withAvatar(chosen))
 		);
 	}
 	/** Only Good or Evil for a Traveller's seat, whose character the town knows (Trevor, 2026-10-26). */
 	const guessChoices = $derived(
 		chosen?.traveller ? GENERIC_GUESSES.filter((g) => !g.type) : GENERIC_GUESSES
 	);
-	/** The seat's guesses, main first, as the token, its pill and the sheet show them. */
-	const listed = (seatId: string) =>
-		(seats.find((s) => s.seatId === seatId)?.traveller
-			? guessesOf(guesses, seatId).filter(
-					(id) => genericGuess(id)?.type === undefined && !!genericGuess(id)
-				)
-			: guessesOf(guesses, seatId)
+	/**
+	 * A seat's avatar joins its guesses' cycle (Trevor, 2026-10-26), except on a Traveller's
+	 * seat, whose character the town knows.
+	 */
+	const withAvatar = (seat: PublicSeat) => !!seat.avatar && !seat.traveller;
+	/**
+	 * The seat's cycle, front first, as the token, its pill and the sheet show it: its guesses
+	 * and, once it has one, its avatar.
+	 */
+	const listed = (seatId: string) => {
+		const seat = seats.find((s) => s.seatId === seatId);
+		return (
+			seat?.traveller
+				? guessesOf(guesses, seatId).filter(
+						(id) => genericGuess(id)?.type === undefined && !!genericGuess(id)
+					)
+				: seatCycle(guesses, seatId, !!seat && withAvatar(seat))
 		).map((id) => {
 			const generic = genericGuess(id);
+			if (id === AVATAR_GUESS && seat?.avatar)
+				return { id, avatar: seat.avatar, name: nameOf(seat), label: t('player.grim.avatar') };
 			return generic
 				? { id, generic, label: genericLabel(generic) }
 				: { id, character: characterOf(id) };
 		});
+	};
 
 	/* eslint-disable grim/names-as-badges -- the seat button's accessible name (aria-label) only */
 	function label(seat: PublicSeat): string {
@@ -392,21 +409,22 @@
 			{@const known = characterOf(seat.traveller)}
 			<!-- A Traveller's seat takes only an alignment, shown in its icon's colour. -->
 			{@const team = known && !hiding ? travellerTeam(guesses, seat.seatId)?.team : undefined}
-			{@const main = known || hiding ? undefined : guessesOf(guesses, seat.seatId)[0]}
-			{@const generic = genericGuess(main)}
-			{@const guessed = generic ?? characterOf(main)}
-			{@const others = (known || hiding ? [] : listed(seat.seatId))
+			{@const cycle = known || hiding ? [] : listed(seat.seatId)}
+			<!-- The front of the cycle: a guess, or the player's avatar (plan R6) cycled to. -->
+			{@const main = cycle[0]?.id}
+			{@const guessed = genericGuess(main) ?? characterOf(main)}
+			{@const others = cycle
 				.slice(1)
 				.flatMap((g): GuessMark[] =>
-					g.generic
-						? [{ generic: g.generic, label: g.label }]
-						: g.character
-							? [{ character: g.character }]
-							: []
+					g.avatar
+						? [{ avatar: g.avatar, name: g.name, label: g.label }]
+						: g.generic
+							? [{ generic: g.generic, label: g.label }]
+							: g.character
+								? [{ character: g.character }]
+								: []
 				)}
-			<!-- The player's avatar unless their own guess is set to show over it (plan R6). -->
-			{@const shown =
-				known ?? (seat.avatar && !playerSettings.current.guessesOnTokens ? undefined : guessed)}
+			{@const shown = known ?? guessed}
 			<!-- A display's seats are only drawn: nothing on the table's tablet can be tapped. -->
 			<svelte:element
 				this={display ? 'div' : 'button'}
@@ -431,12 +449,12 @@
 					avatar={seat.avatar}
 					usedVote={boardLooks.current.usedGhostVote}
 					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
-					marks={notes[seat.seatId] || (others.length && shown === guessed) ? marks : undefined}
+					marks={notes[seat.seatId] || others.length ? marks : undefined}
 				/>
 				{#snippet marks()}
 					<!-- The board's own mark (SeatNoteMark): tapping it opens the note, as on the board. -->
 					{#if notes[seat.seatId]}<SeatNoteMark />{/if}
-					{#if others.length && shown === guessed}<GuessMarks {others} />{/if}
+					{#if others.length}<GuessMarks {others} />{/if}
 				{/snippet}
 				{#snippet face()}
 					{#if shown && 'key' in shown}<GenericGuessToken
@@ -487,8 +505,9 @@
 	bind:open
 	title={chosen ? `${t('common.seat', { number: chosen.seatNumber })} · ${nameOf(chosen)}` : ''}
 >
-	<!-- This seat's guesses, main first, at the top (Trevor, 2026-10-25); a tap makes one the
-	     main guess. Then the note, a row of its own, so the two never read as one. -->
+	<!-- This seat's cycle, front first, at the top (Trevor, 2026-10-25): its guesses and, once
+	     it has one, the player's avatar (2026-10-26); a tap brings one to the front. Then the
+	     note, a row of its own, so the two never read as one. -->
 	<div class="row" data-testid="seat-guesses">
 		<span class="row-label">{t('player.grim.guesses')}</span>
 		<ul class="chips" aria-label={t('player.grim.guesses')}>
@@ -498,8 +517,12 @@
 						type="button"
 						class="chip"
 						aria-pressed={i === 0}
-						onclick={() => chosen && save(mainGuess(guesses, chosen.seatId, g.id))}
-						>{#if g.generic}<AlignmentPill
+						aria-label={g.avatar ? g.label : undefined}
+						onclick={() =>
+							chosen && save(mainGuess(guesses, chosen.seatId, g.id, withAvatar(chosen)))}
+						>{#if g.avatar}<span class="avatar-chip"
+								><AvatarFace avatar={g.avatar} name={g.name} /></span
+							>{:else if g.generic}<AlignmentPill
 								alignment={g.generic.team}
 								text={g.label}
 							/>{:else}<CharacterBadge
@@ -543,12 +566,6 @@
 		label={t('player.grim.thisIsMe')}
 		checked={!!chosen && chosen.seatId === mine}
 		onChange={(on) => chosen && markSelf(chosen.seatId, on)}
-	/>
-	<!-- Also in Settings > Player: one switch for every seat. -->
-	<SettingToggle
-		label={t('player.guessesOnTokens')}
-		checked={playerSettings.current.guessesOnTokens}
-		onChange={(guessesOnTokens) => playerSettings.update({ guessesOnTokens })}
 	/>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
 	     characters; a Traveller's seat has only Good and Evil, and no characters. -->
@@ -642,6 +659,12 @@
 	}
 	.row-none {
 		color: var(--on-surface-muted);
+	}
+	/* The seat's avatar in its cycle, the size of a badge's icon. */
+	.avatar-chip {
+		display: block;
+		width: 2em;
+		height: 2em;
 	}
 	.seat-note-text {
 		overflow: hidden;
