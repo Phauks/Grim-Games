@@ -1045,3 +1045,35 @@ test('a game that ends at an Execution ends on that day', async ({ page }) => {
 	await page.reload();
 	await expect(page.getByTestId('board-phase')).toHaveText('Day 1');
 });
+
+test('a death marked by day on the Vizier is offered with a caution', async ({ page }) => {
+	test.setTimeout(90_000);
+	// https://wiki.bloodontheclocktower.com/Vizier: the Vizier cannot die during the day.
+	await startGame(page);
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 3' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Vizier', exact: true }).tap();
+	await closeSeat(page);
+	// Night 1 has no caution: the Vizier can die at night.
+	let status = await openStatus(page, 3);
+	await expect(status.getByRole('button', { name: 'Why The Demon is marked' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await closeSeat(page);
+	await openDay(page);
+	await daySheet(page).getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await closeDay(page);
+	status = await openStatus(page, 3);
+	await expect(status.getByRole('button', { name: 'Why Executed is marked' })).toHaveCount(0);
+	await status.getByRole('button', { name: 'Why The Demon is marked' }).tap();
+	const why = page.getByRole('dialog', { name: 'The Demon' });
+	await expect(why).toContainText(/Seat 3 can't die during the day\s*\(\s*Vizier\s*\)/);
+});
