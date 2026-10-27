@@ -59,7 +59,7 @@
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
-	import SoundboardSheet from '#lib/features/sound/SoundboardSheet.svelte';
+	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -1524,7 +1524,7 @@
 			ended: !!ended
 		}}
 	/>
-	<SoundboardSheet bind:open={soundboardOpen} />
+	<SoundboardDialog bind:open={soundboardOpen} />
 {/if}
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->

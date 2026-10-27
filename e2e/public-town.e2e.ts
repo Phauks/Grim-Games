@@ -435,7 +435,7 @@ test('the soundboard plays on the Public Town tablet when Play on says so', asyn
 	await tablet.getByTestId('public-town').tap();
 
 	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
-	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 	// This device only, the default: the tablet stays quiet.
 	await pads.getByRole('button', { name: 'Hand bell' }).tap();
