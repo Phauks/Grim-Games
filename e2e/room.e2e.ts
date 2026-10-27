@@ -2208,9 +2208,9 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await phoneContext.close();
 });
 
-/** A small square PNG, as a player's picture from their phone. */
+/** A small wide PNG, red on the left and blue on the right, as a picture from a phone. */
 const PICTURE = Buffer.from(
-	'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGP4z8CAFWEXHbQSACj/P8Fu7N9hAAAAAElFTkSuQmCC',
+	'iVBORw0KGgoAAAANSUhEUgAAABAAAAAICAIAAAB/FOjAAAAAF0lEQVR4nGP4z8CAFeEQ/o9LeFQDRRoApTd/gRs1jBkAAAAASUVORK5CYII=',
 	'base64'
 );
 
@@ -2239,8 +2239,40 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 		mimeType: 'image/png',
 		buffer: PICTURE
 	});
+	// The crop screen (Trevor, 2026-10-27: "identify the exact contours of the picture"): the
+	// middle first; a drag to the right shows its left, and Save keeps that part.
+	const crop = alex.getByRole('dialog', { name: 'Your picture' });
+	const area = crop.getByTestId('avatar-crop');
+	const shown = area.locator('img');
+	await expect(shown).toHaveAttribute('style', /left: -50%/);
+	const box = (await area.boundingBox())!;
+	const y = box.y + box.height / 2;
+	await area.dispatchEvent('pointerdown', { pointerId: 1, clientX: box.x + 10, clientY: y });
+	await area.dispatchEvent('pointermove', {
+		pointerId: 1,
+		clientX: box.x + box.width,
+		clientY: y
+	});
+	await area.dispatchEvent('pointerup', { pointerId: 1, clientX: box.x + box.width, clientY: y });
+	await expect(shown).toHaveAttribute('style', /left: 0%/);
+	await crop.getByRole('button', { name: 'Save' }).tap();
+	await expect(crop).toBeHidden();
 	await expect(picture.getByTestId('avatar-face')).toHaveAttribute('data-picture', 'true');
 	await expect(picture.getByRole('button', { name: 'Remove picture' })).toBeEnabled();
+	// Only the left half, red, was kept.
+	const kept = await picture
+		.getByTestId('avatar-face')
+		.locator('img')
+		.evaluate((img) => {
+			const canvas = document.createElement('canvas');
+			canvas.width = canvas.height = 1;
+			const context = canvas.getContext('2d')!;
+			const image = img as HTMLImageElement;
+			context.drawImage(image, image.naturalWidth - 1, 0, 1, 1, 0, 0, 1, 1);
+			return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)];
+		});
+	expect(kept[0]).toBeGreaterThan(200);
+	expect(kept[2]).toBeLessThan(60);
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
 	await nameSeat(page, 3, 'Alex Kim');
