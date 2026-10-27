@@ -19,7 +19,8 @@ import {
 	boardAspect,
 	parseAspect,
 	fitAspect,
-	centredIn
+	centredIn,
+	sharedSeats
 } from './seat-layout.ts';
 
 const seats = ['a', 'b', 'c', 'd'];
@@ -293,5 +294,20 @@ describe('the Storyteller board shape (Trevor, 2026-10-27)', () => {
 		// The 195px box sits 222.5px down the 640px phone.
 		expect(top.y).toBeCloseTo((222.5 / 640) * 100);
 		expect(middle).toEqual({ x: 50, y: 50 });
+	});
+
+	it("draws a shared grim in the board's shape only when switched on", () => {
+		const shared = eight.map((seatId) => ({ seatId }));
+		const prefs = { tokenAppearance: { tokenScale: 1 } };
+		const filled = sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, 2, false, prefs);
+		const shaped = sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, 2, true, prefs);
+		const top = (ps: { y: number }[]) => Math.min(...ps.map((p) => p.y));
+		expect(top(filled.points)).toBeLessThan(20);
+		// The 390 by 195 box starts 34.8% down the phone.
+		expect(top(shaped.points)).toBeGreaterThan(34.8);
+		expect(shaped.size).toBeLessThanOrEqual(filled.size);
+		expect(sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, true, prefs)).toEqual(
+			sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, false, prefs)
+		);
 	});
 });
