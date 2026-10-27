@@ -19,6 +19,7 @@ import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-to
 import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
+import { readBecomes, type Becomes } from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
 import {
@@ -176,6 +177,8 @@ export interface CharacterRules {
 	stopsWaking?: StopsWaking;
 	/** Its token on a dead player keeps that player's ability (`keeps-ability-rules.ts`). */
 	keepsAbility?: KeepsAbility;
+	/** Its token says a player changed character or alignment (`becomes-rules.ts`). */
+	becomes?: Becomes;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 	/**
@@ -359,6 +362,7 @@ export const RULE_KEYS = [
 	'dayMark',
 	'stopsWaking',
 	'keepsAbility',
+	'becomes',
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'orHiddenAs',
@@ -564,6 +568,10 @@ export function parseCharacterRules(
 		const at = `${path}.keepsAbility`;
 		const keeps = readKeepsAbility(raw.keepsAbility, at, issues, reminders);
 		if (keeps) rules.keepsAbility = keeps;
+	}
+	if (raw.becomes !== undefined) {
+		const becomes = readBecomes(raw.becomes, `${path}.becomes`, issues, reminders);
+		if (becomes) rules.becomes = becomes;
 	}
 	if (raw.infoTokenCharacters !== undefined) {
 		const at = `${path}.infoTokenCharacters`;

@@ -10,8 +10,11 @@
 	/**
 	 * The Imp killed itself with a Minion alive (Trevor, 2026-10-19): ask which Minion becomes
 	 * the Imp (https://wiki.bloodontheclocktower.com/Imp), the Scarlet Woman chosen first when
-	 * her ability makes it hers. A suggestion: Cancel leaves everyone as they are, and asks
-	 * again only if the living Minions change. Rules: `starPass` in core.
+	 * her ability makes it hers. The same for any Demon whose death by its own kill passes it on,
+	 * as the Fang Gu's does to an Outsider, who turns evil
+	 * (https://wiki.bloodontheclocktower.com/Fang_Gu). A suggestion: Cancel leaves everyone as
+	 * they are, and asks again only if the players who may take it on change. Rules: `starPass`
+	 * in core.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -24,17 +27,21 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const pass = $derived(active ? starPass(game, characters) : undefined);
-	const imp = $derived(characters.get('imp'));
+	const demon = $derived(pass && characters.get(pass.characterId));
+	// eslint-disable-next-line grim/names-as-badges -- a dialog title is plain text ("Choose the new Imp", Trevor 2026-10-19); the badge is in the body
+	const title = $derived(`Choose the new ${demon?.name ?? 'Demon'}`);
+	// eslint-disable-next-line grim/names-as-badges -- a field label is plain text ("New Imp"); the badge is in the body
+	const choiceLabel = $derived(`New ${demon?.name ?? 'Demon'}`);
 
 	let open = $state(false);
 	let choice = $state<SeatId>('');
 	let asked = $state<string>();
 	$effect(() => {
 		if (!pass || open) return;
-		const key = pass.minions.join(',');
+		const key = `${pass.characterId}:${pass.heirs.join(',')}`;
 		if (asked === key) return;
 		asked = key;
-		choice = pass.preferred ?? pass.minions[0];
+		choice = pass.preferred ?? pass.heirs[0];
 		open = true;
 	});
 
@@ -42,21 +49,26 @@
 		game.seats[id]?.playerName ?? `Seat ${game.seating.indexOf(id) + 1}`;
 
 	function confirm() {
-		if (choice && pass?.minions.includes(choice))
-			grimoire.run({ type: 'AssignCharacter', seatId: choice, characterId: 'imp' });
+		if (choice && pass?.heirs.includes(choice))
+			grimoire.run({
+				type: 'AssignCharacter',
+				seatId: choice,
+				characterId: pass.characterId,
+				alignment: 'evil'
+			});
 	}
 </script>
 
-<ConfirmDialog bind:open title="Choose the new Imp" onConfirm={confirm}>
-	{#if imp}<p class="ability">
-			<CharacterBadge characterId="imp" character={imp} />
-			<GlossaryText text={imp.ability} names={[imp.name]} />
+<ConfirmDialog bind:open {title} onConfirm={confirm}>
+	{#if demon}<p class="ability">
+			<CharacterBadge characterId={demon.id} character={demon} />
+			<GlossaryText text={demon.ability} names={[demon.name]} />
 		</p>{/if}
 	{#if pass}
 		<ChoiceGroup
-			label="New Imp"
+			label={choiceLabel}
 			value={choice}
-			options={pass.minions.map((id) => ({ value: id, label: playerName(id) }))}
+			options={pass.heirs.map((id) => ({ value: id, label: playerName(id) }))}
 			onChange={(id) => (choice = id)}
 		>
 			{#snippet item(option)}
