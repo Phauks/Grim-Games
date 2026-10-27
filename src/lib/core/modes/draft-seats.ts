@@ -15,7 +15,9 @@
  * counts gave that type less those drafted (https://wiki.bloodontheclocktower.com/Kazali). The
  * Lord of Typhon's are its two neighbours, so the evil players sit in a line with it in the
  * middle (https://wiki.bloodontheclocktower.com/Lord_of_Typhon): when it is drafted, that many
- * open seats of the type become Townsfolk seats, so no one else drafts them. Lil' Monsta's is the
+ * open seats of the type become Townsfolk seats, so no one else drafts them, and once everyone has
+ * drafted each neighbour picks their Minion from offers, as in the draft (`turnOffer`; Trevor,
+ * 2026-10-27: "the selected ppl can select their minion through the mulligan"). Lil' Monsta's is the
  * player who drafts it, as it is never dealt (https://wiki.bloodontheclocktower.com/Lil%27_Monsta):
  * its setup change applies and that player drafts again, offered only that type
  * (`draftedTurned` lists such characters, which a draft offers too).
@@ -158,6 +160,24 @@ export function turnOptions(
 		...(state.reserved && state.config.reserve ? [state.config.reserve.id] : [])
 	];
 	return candidates.filter((c) => c.type === conversion.type && !used.includes(c.id));
+}
+
+/**
+ * A turned player's offer (the Lord of Typhon's neighbours): up to `size` of `options` at random,
+ * leaving out those `refused`, unless every one has been refused.
+ */
+export function turnOffer(
+	options: readonly CharacterId[],
+	refused: readonly CharacterId[],
+	size: number,
+	random: () => number
+): CharacterId[] {
+	const fresh = options.filter((id) => !refused.includes(id));
+	const left = fresh.length > 0 ? fresh : [...options];
+	const offer: CharacterId[] = [];
+	while (offer.length < size && left.length > 0)
+		offer.push(left.splice(Math.floor(random() * left.length), 1)[0]);
+	return offer;
 }
 
 /** The seats either side of `seat` (by pick index) once every seat has drafted. */
