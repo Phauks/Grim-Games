@@ -280,8 +280,11 @@ export interface Learns {
  * `minion-nominated` (Town Crier), `demon-voted` (Flowergirl), `executed-character`
  * (Undertaker), `outsider-died` (Godfather), `correct-guesses` (Juggler), `evil-dead`
  * (Oracle), `abnormal-abilities` (Mathematician), `statement-true` (Gossip, from the
- * statement logged by day, L58). `token` is the character's reminder that
- * marks the answer on the board ("Died Today", "Abnormal").
+ * statement logged by day, L58), `outsiders-in-play` (the Outsider characters in play).
+ * `token` is the character's reminder that marks the answer on the board ("Died Today",
+ * "Abnormal"). `firstNight` is the question asked on the first night instead, for a
+ * character that learns something else then (the Godfather starts knowing which Outsiders
+ * are in play, https://wiki.bloodontheclocktower.com/Godfather).
  */
 export const ANSWER_QUESTIONS = [
 	'minion-nominated',
@@ -291,11 +294,13 @@ export const ANSWER_QUESTIONS = [
 	'correct-guesses',
 	'evil-dead',
 	'abnormal-abilities',
-	'statement-true'
+	'statement-true',
+	'outsiders-in-play'
 ] as const;
 export interface Answers {
 	question: (typeof ANSWER_QUESTIONS)[number];
 	token?: ReminderLabel;
+	firstNight?: (typeof ANSWER_QUESTIONS)[number];
 }
 
 export const KILLS_BY = ['demon', 'other'] as const;
@@ -446,10 +451,17 @@ export function parseCharacterRules(
 		if (!isObject(raw.answers)) {
 			issues.add(at, `expected object, got ${describe(raw.answers)}`);
 		} else {
-			checkKeys(raw.answers, ['question', 'token'], at, issues);
+			checkKeys(raw.answers, ['question', 'token', 'firstNight'], at, issues);
 			const question = readEnum(raw.answers, 'question', ANSWER_QUESTIONS, at, issues, true);
 			const token = readToken(raw.answers, 'token', at, issues, reminders);
-			if (question) rules.answers = { question, ...(token ? { token } : {}) };
+			const firstNight = readEnum(raw.answers, 'firstNight', ANSWER_QUESTIONS, at, issues, false);
+			if (question) {
+				rules.answers = {
+					question,
+					...(token ? { token } : {}),
+					...(firstNight ? { firstNight } : {})
+				};
+			}
 		}
 	}
 	if (raw.reminderTargets !== undefined) {

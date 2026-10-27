@@ -20,6 +20,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -39,11 +40,13 @@
 		compact?: boolean;
 		/** Show a character to the player. */
 		onShow?: (characterId: CharacterId) => void;
+		/** Show several characters to the player at once (the Godfather's Outsiders). */
+		onShowCharacters?: (characterIds: readonly CharacterId[]) => void;
 		/** Show the "Your number is" info token with a suggested number (a number step). */
 		onShowNumber?: (n: number) => void;
 	}
 
-	let { grimoire, step, compact = false, onShow, onShowNumber }: Props = $props();
+	let { grimoire, step, compact = false, onShow, onShowCharacters, onShowNumber }: Props = $props();
 	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
@@ -62,6 +65,9 @@
 			case 'character':
 				// Drawn as a badge (the value snippet); only its id here.
 				return v.value;
+			case 'characters':
+				// Drawn as badges (the characters snippet); only the ids here.
+				return v.value.join(', ');
 			case 'number':
 				return String(v.value);
 			case 'none':
@@ -225,6 +231,8 @@
 	const line = $derived.by(
 		(): {
 			characterId?: CharacterId;
+			/** A set of characters (the Godfather's Outsiders), drawn as badges. */
+			set?: Extract<AnswerValue, { kind: 'characters' }>;
 			text: string;
 			seats?: readonly SeatId[];
 			valid?: typeof validLists;
@@ -235,6 +243,7 @@
 			if (info.kind === 'answer') {
 				const a = info.answers[0];
 				const note = a.unreliable ? ' (not reliable)' : '';
+				if (a.kind === 'characters') return { set: a, text: note };
 				return a.kind === 'character'
 					? { characterId: a.value, text: note }
 					: { text: `${valueText(a)}${note}` };
@@ -270,10 +279,23 @@
 			? ', '
 			: ''}{@render player(seatId)}{/each}{/snippet}
 
+<!-- A set of characters as badges, then any more of a type the Storyteller picks; "None" when empty. -->
+{#snippet characterSet(
+	v: Extract<AnswerValue, { kind: 'characters' }>,
+	interactive = true
+)}{#each v.value as id, n (id)}{n ? ', ' : ''}<CharacterBadge
+			characterId={id}
+			character={characters.get(id)}
+			{interactive}
+		/>{/each}{#if v.more}{v.value.length > 0 ? ', ' : ''}+<CountBadge count={v.more.count} />
+		{TYPE[v.more.type]}{:else if v.value.length === 0}None{/if}{/snippet}
+
 {#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
 			characterId={v.value}
 			character={characters.get(v.value)}
-		/>{:else}{valueText(v)}{/if}{/snippet}
+		/>{:else if v.kind === 'characters'}{@render characterSet(v)}{:else}{valueText(
+			v
+		)}{/if}{/snippet}
 
 {#snippet flagBody(flag: Flag)}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n
 			? ', '
@@ -297,6 +319,8 @@
 				>{/if}
 			{#if a.kind === 'character'}
 				<CharacterBadge characterId={a.value} character={characters.get(a.value)} />
+			{:else if a.kind === 'characters'}
+				{@render characterSet(a)}
 			{:else}
 				<strong>{valueText(a)}</strong>
 			{/if}
@@ -311,6 +335,11 @@
 		{#if a.kind === 'character' && onShow}
 			{@const id = a.value}
 			<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
+		{:else if a.kind === 'characters' && onShowCharacters}
+			{@const ids = a.value}
+			<Button variant="quiet" disabled={ids.length === 0} onclick={() => onShowCharacters(ids)}
+				>Show to player</Button
+			>
 		{:else if a.kind === 'number' && onShowNumber}
 			{@const n = a.value}
 			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
@@ -324,7 +353,10 @@
 					characterId={line.characterId}
 					character={characters.get(line.characterId)}
 					interactive={false}
-				/>{/if}{line.text}{#each line.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
+				/>{/if}{#if line.set}{@render characterSet(
+					line.set,
+					false
+				)}{/if}{line.text}{#each line.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
 					name={name(seatId)}
 				/>{/each}{#each line.valid ?? [] as v, n (n)}{n ? ', ' : ''}{#if v.seatId}<PlayerBadge
 						name={name(v.seatId)}

@@ -74,6 +74,16 @@ export type AnswerValue =
 	| { kind: 'yes-no'; value: boolean }
 	| { kind: 'character'; value: CharacterId }
 	| { kind: 'number'; value: number }
+	/**
+	 * Characters, possibly none (the Godfather's Outsiders in play). `more`: `count` players
+	 * register as `type` without being one (a Spy as an Outsider), so that many more
+	 * characters of the type, the Storyteller's pick, are shown too.
+	 */
+	| {
+			kind: 'characters';
+			value: CharacterId[];
+			more?: { count: number; type: CharacterType };
+	  }
 	/** Nothing to give yet: `reason` in our words ("Nobody died by execution today"). */
 	| { kind: 'none'; reason: string };
 

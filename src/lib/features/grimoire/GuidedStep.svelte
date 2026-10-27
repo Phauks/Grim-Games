@@ -286,6 +286,17 @@
 					shownId = id;
 					showOpen = true;
 				}}
+				onShowCharacters={(ids) => {
+					// Every token on one card, as the Godfather is shown its Outsiders.
+					shownId = undefined;
+					shownCard = {
+						characters: ids.flatMap((id) => {
+							const character = characters.get(id);
+							return character ? [{ character }] : [];
+						})
+					};
+					showOpen = true;
+				}}
 			/>
 			{#if step.character}
 				<!-- Over the open step, as with a suggestion's Show to player. -->

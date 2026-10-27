@@ -15,10 +15,12 @@ import type {
 	SeatId
 } from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from '../ability.ts';
+import type { Night } from '../night-order.ts';
 import { distinctGuesses } from '../day-claims.ts';
 import { causesOf } from '../night-deaths.ts';
 import {
 	type AbnormalUse,
+	type AnswerValue,
 	type NightAnswer,
 	type Reliability,
 	answer,
@@ -207,6 +209,55 @@ function outsiderDied(
 		outsiders,
 		{ relevant: outsiders, facts: outsiders.map((s) => fact(game, s, characters)) }
 	);
+}
+
+/**
+ * Godfather, first night: "You start knowing which Outsiders are in play"
+ * (https://wiki.bloodontheclocktower.com/Godfather): the Storyteller shows the character
+ * tokens of every Outsider in play. Worked out from each player's true character:
+ * - a Drunk is an Outsider though their token is a Townsfolk, so the Drunk is shown
+ *   (https://wiki.bloodontheclocktower.com/Drunk), and an Outsider whose player is drunk or
+ *   poisoned is still in play;
+ * - dead players' characters are still in play
+ *   (https://wiki.bloodontheclocktower.com/Glossary, "In play");
+ * - with none in play the answer is no characters: knowing which are in play includes
+ *   knowing there are none (our reading of the ability; the wiki page doesn't say);
+ * - registration changes what detecting abilities learn (Glossary, "Register"): a Recluse
+ *   registering as a Minion or Demon may be left out
+ *   (https://wiki.bloodontheclocktower.com/Recluse), and a Spy registering as an Outsider
+ *   adds one Outsider of the Storyteller's choice (`more`,
+ *   https://wiki.bloodontheclocktower.com/Spy). Each is an allowed answer, the true one first.
+ * A drunk or poisoned Godfather may be shown anything (`unreliable`, Glossary, "Drunk").
+ */
+function outsidersInPlay(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): NightAnswer {
+	const valueIn = (world: RegistrationWorld): AnswerValue => {
+		const ids: CharacterId[] = [];
+		let more = 0;
+		for (const s of game.seating) {
+			if (world.type(s) !== 'outsider') continue;
+			const id = trueCharacter(game, s, characters);
+			if (typeOf(game, s, characters) !== 'outsider' || !id) more++;
+			else if (!ids.includes(id)) ids.push(id);
+		}
+		return {
+			kind: 'characters',
+			value: ids,
+			...(more > 0 ? { more: { count: more, type: 'outsider' as const } } : {})
+		};
+	};
+	const w = byWorld(game, seatId, characters, valueIn);
+	const holders = game.seating.filter((s) => typeOf(game, s, characters) === 'outsider');
+	return answer(game, seatId, characterId, characters, valueIn(w.worlds[0]), holders, {
+		possible: w.possible,
+		relevant: w.relevant,
+		facts: holders.map((s) => fact(game, s, characters)),
+		alternatives: w.alternatives
+	});
 }
 
 /** The dead player carrying a character's reminder, as `{ seatId }`. */
@@ -421,22 +472,28 @@ const QUESTIONS: Readonly<Record<Answers['question'], AnswerFn>> = {
 	'correct-guesses': correctGuesses,
 	'evil-dead': evilDead,
 	'abnormal-abilities': abnormalAbilities,
-	'statement-true': statementTrue
+	'statement-true': statementTrue,
+	'outsiders-in-play': (game, seatId, characterId, characters) =>
+		outsidersInPlay(game, seatId, characterId, characters)
 };
 
 /**
  * The night answer for a waking player whose character `answers` a question (its rules
- * block: our `data/rules/<id>.json`, or a custom character's `rules`), or undefined.
+ * block: our `data/rules/<id>.json`, or a custom character's `rules`), or undefined. On the
+ * first night, the rule's `firstNight` question when it has one.
  */
 export function nightAnswer(
 	game: Game,
 	seatId: SeatId,
 	characterId: CharacterId,
 	characters: CharacterLookup,
-	today?: NightToday
+	today?: NightToday,
+	night?: Night
 ): NightAnswer | undefined {
 	const rule = rulesOf(characterId, characters)?.answers;
-	return rule && QUESTIONS[rule.question](game, seatId, characterId, characters, rule, today);
+	if (!rule) return undefined;
+	const question = (night === 'first' && rule.firstNight) || rule.question;
+	return QUESTIONS[question](game, seatId, characterId, characters, rule, today);
 }
 
 /**
