@@ -111,8 +111,8 @@
 			id !== seatId && game.seats[id].playerName ? [game.seats[id].playerName!] : []
 		)
 	);
-	// Only the room's phones connected now without a seat, never names from earlier games.
-	const inRoom = $derived(roomHost().connectedUnseated.flatMap((m) => (m.name ? [m.name] : [])));
+	// The room's phones without a seat in this game, asleep too, never names from earlier games.
+	const inRoom = $derived(roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : [])));
 	const suggestions = $derived(suggestNames(inRoom, typed, taken));
 
 	// The name is edited in place in the sheet's header: the input takes the name's spot.
