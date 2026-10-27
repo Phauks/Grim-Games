@@ -18,8 +18,8 @@
 	 * - The Djinn's Bargain (https://beardytas.com/garden-of-djinn/the-djinns-bargain/): asked
 	 *   only of the Storyteller, once the player has said so; Confirm marks the nominator dead.
 	 * - A character's own ability (`characterNominationPrompts`), such as the Virgin
-	 *   (https://wiki.bloodontheclocktower.com/Virgin): Confirm executes the nominator and marks
-	 *   the ability used ("No Ability").
+	 *   (https://wiki.bloodontheclocktower.com/Virgin): Confirm executes the nominator, with the
+	 *   character as the cause of death, and marks the ability used ("No Ability").
 	 * Cancel, or closing, changes nothing (warn, never lock).
 	 */
 	interface Props {
@@ -55,7 +55,7 @@
 		if (!ask) return;
 		const { nominator, nominee } = ask;
 		if (ask.kind === 'execute-nominator') {
-			grimoire.run({ type: 'Execute', seatId: nominator });
+			grimoire.run({ type: 'Execute', seatId: nominator, cause: ask.characterId });
 			grimoire.run({ type: 'UseAbility', seatId: nominee, characterId: ask.characterId });
 		} else if (ask.kind === 'evil-swap') {
 			const a = game.seats[nominator];

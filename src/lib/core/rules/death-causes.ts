@@ -99,6 +99,18 @@ export function deathCauses(
 	return out;
 }
 
+/**
+ * Whether a death was an execution: a plain one, or by a character whose ability executes (the
+ * Virgin's nominator, https://wiki.bloodontheclocktower.com/Virgin), which counts as an execution
+ * for everything that asks (the Saint, https://wiki.bloodontheclocktower.com/Saint).
+ */
+export function isExecution(cause: DeathCause | undefined, characters?: CharacterLookup): boolean {
+	if (cause === 'execution') return true;
+	if (cause === undefined || (GENERAL_DEATH_CAUSES as readonly string[]).includes(cause))
+		return false;
+	return deathCauseEntry(cause, characters)?.kind === 'execution';
+}
+
 /** `deathCauses` for a game: its script, the characters on seats and the Fabled and Loric. */
 export function gameDeathCauses(game: Game, characters: CharacterLookup): DeathCauseOption[] {
 	return deathCauses(scriptCharacterIds(game.script), characters, [
