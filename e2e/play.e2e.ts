@@ -569,7 +569,7 @@ test('the header shares the script from an icon and has no Code button', async (
 		expect(icon!.y + icon!.height).toBeLessThanOrEqual(title!.y + 1);
 	}
 	await page.getByRole('button', { name: 'Share script' }).tap();
-	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
+	const qr = page.getByRole('dialog', { name: 'Share', exact: true });
 	await expect(qr.getByTestId('share-url')).toHaveValue(/\/play#c=\d{6}$/);
 	await expect(qr.getByTestId('share-digits')).toHaveCount(0);
 	await expect(qr.getByTestId('script-byline')).toHaveCount(0);
@@ -584,7 +584,10 @@ test('the share screen names the script, its author and its version', async ({ p
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	// Trevor, 2026-10-18: name, author and version (when there is one) on the share screen.
-	const dialog = page.getByRole('dialog', { name: 'Share Signed Night' });
+	// Titled just "Share", with the script's name under it as /play's header has it (Trevor,
+	// 2026-10-27).
+	const dialog = page.getByRole('dialog', { name: 'Share', exact: true });
+	await expect(dialog.getByRole('heading', { name: 'Signed Night', level: 3 })).toBeVisible();
 	await expect(dialog.getByTestId('script-byline')).toHaveText('by Trevor · v1.2');
 });
 
@@ -949,12 +952,13 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 
 	// Share script hands on the room's link and code (plan J20).
 	await page.getByRole('button', { name: 'Share script' }).tap();
-	const share = page.getByRole('dialog', { name: 'Share Trouble Brewing' });
+	const share = page.getByRole('dialog', { name: 'Share', exact: true });
 	await expect(share.getByTestId('share-code')).toHaveText(shown);
-	await expect(share.getByTestId('script-logo')).toHaveAttribute(
-		'data-logo',
-		'/data/logos/tb.webp'
-	);
+	// The logo in the QR code's middle, and beside the name under the title (Trevor, 2026-10-27).
+	await expect(share.getByTestId('script-logo')).toHaveCount(2);
+	for (const logo of await share.getByTestId('script-logo').all())
+		await expect(logo).toHaveAttribute('data-logo', '/data/logos/tb.webp');
+	await expect(share.getByTestId('share-script')).toContainText('Trouble Brewing');
 	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
 	await share.getByRole('button', { name: 'Close' }).tap();
 

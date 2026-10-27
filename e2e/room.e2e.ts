@@ -128,7 +128,7 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	// In a room, Share script hands on the room, as the board's does (Trevor, 2026-10-23).
 	await phone.getByRole('button', { name: 'Share script' }).tap();
-	const passOn = phone.getByRole('dialog', { name: 'Share Trouble Brewing' });
+	const passOn = phone.getByRole('dialog', { name: 'Share', exact: true });
 	await expect(passOn.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
 	await expect(passOn.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
 	await phone.keyboard.press('Escape');
@@ -2400,7 +2400,7 @@ test("Share on a player's Grim tab blurs the guesses behind it", async ({
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(phone.getByTestId('grim-seat')).toHaveCount(8);
 	await phone.getByRole('button', { name: 'Share script' }).tap();
-	await expect(phone.getByRole('dialog', { name: /^Share / })).toBeVisible();
+	await expect(phone.getByRole('dialog', { name: 'Share', exact: true })).toBeVisible();
 	const filter = await phone
 		.locator("[data-scope='dialog'][data-part='backdrop']")
 		.last()
