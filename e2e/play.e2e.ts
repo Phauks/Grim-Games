@@ -927,9 +927,10 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// takes a name (plan E2).
 	await page.goto(`/join/${code}`);
 	const row = page.getByTestId('you-row');
-	await expect(page.getByTestId('join-status')).toHaveText(
-		'Set your name with the settings cog at the top.'
-	);
+	await expect(page.getByTestId('join-status')).toHaveText('');
+	// No "set your name" box at the top, not even before a name (Trevor, 2026-10-27: "I just
+	// want that whole thing gone").
+	await expect(row).toBeHidden();
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await page.getByTestId('you-button').tap();
 	const sheet = page.getByRole('dialog', { name: 'Your settings' });

@@ -19,6 +19,7 @@ import {
 	type ScriptVote,
 	type ScriptVoteKind,
 	type ScriptVoteOption,
+	type StoredVoteSubject,
 	type ScriptVoteTally
 } from './script-vote.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
@@ -192,8 +193,8 @@ export type ClientMessage =
 			options: ScriptVoteOption[];
 			/** A time limit in minutes (one of SCRIPT_VOTE_MINUTES); older apps send none. */
 			minutes?: number;
-			/** A vote on the game mode; a script vote when absent. */
-			subject?: 'mode';
+			/** A vote on the game mode or the special rules; a script vote when absent. */
+			subject?: StoredVoteSubject;
 			/** Players see the count too (Trevor, 2026-10-26). */
 			showTally?: boolean;
 	  }
@@ -284,7 +285,7 @@ export interface PlayerView {
 	scriptVote?: {
 		voteId: string;
 		kind: ScriptVoteKind;
-		subject?: 'mode';
+		subject?: StoredVoteSubject;
 		options: ScriptVoteOption[];
 		choices?: string[];
 		/** When the time limit runs out (epoch ms, the room's clock). */

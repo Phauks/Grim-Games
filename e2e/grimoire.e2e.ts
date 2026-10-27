@@ -1251,13 +1251,14 @@ test('the join code shows under the script name, a Board setting, read only', as
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(corner).toHaveCount(0);
 
-	// The same switch on Share, where the code is (Trevor, 2026-10-23).
+	// Game info's eye controls it, not Share (Trevor, 2026-10-27: "remove setting from share
+	// menu, this is controlled from game info screen").
 	await page.getByRole('button', { name: 'Share', exact: true }).tap();
-	const onShare = share.getByRole('checkbox', { name: 'Join code on the board' });
-	await expect(onShare).not.toBeChecked();
-	await share.getByText('Join code on the board', { exact: true }).tap();
-	await expect(onShare).toBeChecked();
+	await expect(share.getByRole('checkbox', { name: 'Join code on the board' })).toHaveCount(0);
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
+	await menu(page, 'Board');
+	await settings.getByText('Join code on the board', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(corner).toHaveText(codeLine);
 });
 

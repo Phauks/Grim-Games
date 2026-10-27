@@ -1,7 +1,15 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { dayTimers, PlayersPhase } from '#lib/core/rules/index.ts';
+	import {
+		townCounts,
+		type dayTimers,
+		type PlayersPhase,
+		type TownSeat
+	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import CountBadge from './CountBadge.svelte';
 	import { WatchedTimer } from './watched-timer.svelte.ts';
 
 	/**
@@ -14,15 +22,21 @@
 	 * board shows it, or a sun (Trevor, 2026-10-26): it rises on the left and crosses the sky
 	 * to set on the right as the day's time runs out, filling the sky beneath its path. At the
 	 * right the time is all but up; it waits there until the Storyteller ends the day, and less
-	 * time from the Storyteller only moves it faster. It only shows: nothing can be pressed.
+	 * time from the Storyteller only moves it faster.
+	 *
+	 * Given the seats, a tap opens the day's counts (Trevor, 2026-10-27): who is alive, the
+	 * votes to put a nominee on the block and the ghost votes left, worked out as the
+	 * Storyteller's are (`townCounts`), in a sheet so the line itself never grows.
 	 */
 	interface Props {
 		phase: PlayersPhase;
 		/** The day's timer, while the Storyteller shows it to players. */
 		timer?: dayTimers.PublicDayTimer;
+		/** The town's seats, for the counts a tap opens; without them the line only shows. */
+		seats?: readonly TownSeat[];
 	}
 
-	let { phase, timer }: Props = $props();
+	let { phase, timer, seats }: Props = $props();
 	const title = $derived(
 		phase.kind === 'setup'
 			? t('day.setup')
@@ -32,6 +46,16 @@
 					? t('day.town')
 					: t('day.titleNumber', { number: phase.number })
 	);
+
+	let countsOpen = $state(false);
+	const counts = $derived(seats && townCounts(seats));
+	const aliveLabel = $derived(
+		counts && t('day.aliveLabel', { count: counts.alive, total: counts.total })
+	);
+	const votesLabel = $derived(
+		counts && t('day.votesBadgeLabel', { count: counts.needed, alive: counts.alive })
+	);
+	const ghostLabel = $derived(counts && t('day.ghostVotesLabel', { count: counts.ghostVotes }));
 
 	const watched = new WatchedTimer();
 	// Each copy from the room replaces the last; untracked, as set reads what it writes.
@@ -53,7 +77,16 @@
 	const path = `M${CX - R} ${HORIZON} A${R} ${R} 0 0 1 ${CX + R} ${HORIZON}`;
 </script>
 
-<div class="players-status" data-testid="players-status" data-phase={phase.kind}>
+<svelte:element
+	this={counts ? 'button' : 'div'}
+	type={counts ? 'button' : undefined}
+	class="players-status"
+	data-testid="players-status"
+	data-phase={phase.kind}
+	aria-haspopup={counts ? 'dialog' : undefined}
+	onclick={counts ? () => (countsOpen = true) : undefined}
+	role={counts ? undefined : 'group'}
+>
 	<span class="words">
 		<span class="title">{title}</span>
 		<!-- Town says which day it is too. -->
@@ -90,7 +123,33 @@
 			{/if}
 		</span>
 	{/if}
-</div>
+</svelte:element>
+
+{#if counts}
+	<!-- Read only: the Storyteller's badges, each with its words beside it. -->
+	<Dialog bind:open={countsOpen} {title}>
+		<ul class="counts" data-testid="players-counts">
+			<li>
+				<CountBadge kind="alive" label={aliveLabel!} testid="players-alive"
+					><Icon name="alive" />{t('day.aliveBadge', {
+						count: counts.alive,
+						total: counts.total
+					})}</CountBadge
+				><span>{aliveLabel}</span>
+			</li>
+			<li>
+				<CountBadge kind="votes" label={votesLabel!} testid="players-votes-needed"
+					><Icon name="vote" />{counts.needed}</CountBadge
+				><span>{votesLabel}</span>
+			</li>
+			<li>
+				<CountBadge kind="ghost" label={ghostLabel!} testid="players-ghost-votes"
+					><Icon name="ghostVote" weight="fill" />{counts.ghostVotes}</CountBadge
+				><span>{ghostLabel}</span>
+			</li>
+		</ul>
+	</Dialog>
+{/if}
 
 <style>
 	/* Beside the "You" row, in its look: the same edge, fill and corners. Wide enough for the
@@ -109,6 +168,29 @@
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
 		color: var(--on-surface);
+		font: inherit;
+	}
+	button.players-status {
+		cursor: pointer;
+	}
+	/* Rows with lines between them, each badge in a column of its own width. */
+	.counts {
+		display: grid;
+		grid-template-columns: calc(var(--tap-target) * 2) 1fr;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.counts li {
+		display: grid;
+		grid-column: 1 / -1;
+		grid-template-columns: subgrid;
+		align-items: center;
+		gap: var(--space-3);
+		padding: var(--space-2) 0;
+	}
+	.counts li + li {
+		border-top: 1px solid var(--border);
 	}
 	.words {
 		display: flex;

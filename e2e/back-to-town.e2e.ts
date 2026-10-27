@@ -45,7 +45,7 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 		};
 	});
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toBeVisible();
+	await expect(phone.getByTestId('join-status')).toHaveText('');
 	// Any tap lets the page make sounds later (browsers' rule).
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
