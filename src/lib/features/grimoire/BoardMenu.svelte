@@ -186,12 +186,13 @@
 			<section class="group" aria-labelledby="board-menu-app">
 				<h3 id="board-menu-app" class="group-title">App</h3>
 				<!-- All of Settings, not only the board's sections (Trevor, 2026-10-27: "why not just
-				     open to all settings, and stop limiting to what they can access?"), at Board. -->
+				     open to all settings, and stop limiting to what they can access?"), at its root,
+				     as from the navigation (Trevor, 2026-10-27: "should just go to the root"). -->
 				<Button
 					disabled={watching}
 					variant="quiet"
 					icon="settings"
-					onclick={() => fromMenu(() => settingsDialog.show('board'))}
+					onclick={() => fromMenu(() => settingsDialog.show())}
 				>
 					{t('settings.title')}
 				</Button>

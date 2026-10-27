@@ -78,6 +78,11 @@ test('profiles are made in Settings, chosen on New game and switched on the boar
 		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const sheet = page.getByRole('dialog', { name: 'Settings' });
+	// It opens at its root (Trevor, 2026-10-27).
+	await sheet
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	await pickProfile(sheet, page, 'Streaming');
 	await expect.poll(() => ghostVote(page)).toBe('struck');
 	await sheet.getByRole('button', { name: 'Close' }).tap();

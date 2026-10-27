@@ -25,9 +25,6 @@ test('day and night sound plays recordings on the board once the night begins', 
 		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	// Phones show one section at a time: back to the list first.
-	const back = settings.getByRole('button', { name: 'All settings' });
-	if (await back.isVisible()) await back.tap();
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Sound' })

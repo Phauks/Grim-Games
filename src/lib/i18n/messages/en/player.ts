@@ -124,7 +124,6 @@ export const player = {
 	'player.travellerInPlay': 'In play: {names}',
 	'player.printHere': 'Print our sheet',
 	'player.printSettings': 'Print our sheet',
-	'player.sizes': 'Text and token sizes',
 	'player.printCopies': 'Character sheets',
 	'player.printFewerCopies': 'Fewer character sheets',
 	'player.printMoreCopies': 'More character sheets',
