@@ -2062,6 +2062,11 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 		/Quiet all day/,
 		/Voted for Ana/
 	]);
+	// Closed, the header counts the notes written on players, not the seats (Trevor, 2026-10-27).
+	const players = phone.getByRole('button', { name: 'Players' });
+	await players.tap();
+	await expect(players.getByTestId('section-count')).toHaveText('3');
+	await players.tap();
 	await phoneContext.close();
 });
 
