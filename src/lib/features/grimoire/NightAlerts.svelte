@@ -136,6 +136,6 @@
 		opacity: 0.75;
 	}
 	.not {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 </style>

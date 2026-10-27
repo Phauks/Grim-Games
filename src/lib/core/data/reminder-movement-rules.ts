@@ -15,6 +15,10 @@
  * - `relocates`: what this ability does that can legitimately carry a fixed token to another
  *   player, by changing or swapping who holds a character (a swapped Evil Twin takes "Twin"
  *   along). While it is in play, the warning names it.
+ * - `followsNeighbours`: labels that mark the character's neighbours as its `reminderTargets`
+ *   rule counts them (the Tea Lady's Cannot Die, the No Dashii's Poisoned). When players swap
+ *   or move seats (the Matron), the app carries each one from a player who is no longer a
+ *   neighbour to the new neighbour, because the ability follows the seating.
  *
  * `why` and `relocates` are our own summaries, never wiki prose.
  */
@@ -32,6 +36,7 @@ export interface ReminderMovementRules {
 	fixed?: readonly ReminderLabel[];
 	why?: string;
 	relocates?: string;
+	followsNeighbours?: readonly ReminderLabel[];
 }
 
 /** Reads a `reminderMovement` block; `reminders` are the character's own labels, when given. */
@@ -45,18 +50,28 @@ export function readReminderMovement(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['fixed', 'why', 'relocates'], path, issues);
+	checkKeys(raw, ['fixed', 'why', 'relocates', 'followsNeighbours'], path, issues);
 	const fixed = readStringArray(raw, 'fixed', path, issues);
-	fixed?.forEach((label, i) => {
-		if (reminders && !reminders.includes(label)) {
-			issues.add(`${path}.fixed[${i}]`, 'not one of this character’s reminders');
-		}
-	});
+	const follows = readStringArray(raw, 'followsNeighbours', path, issues);
+	for (const [key, labels] of [
+		['fixed', fixed],
+		['followsNeighbours', follows]
+	] as const) {
+		labels?.forEach((label, i) => {
+			if (reminders && !reminders.includes(label)) {
+				issues.add(`${path}.${key}[${i}]`, 'not one of this character’s reminders');
+			}
+			if (key === 'followsNeighbours' && fixed?.includes(label)) {
+				issues.add(`${path}.${key}[${i}]`, 'a fixed token cannot follow the neighbours');
+			}
+		});
+	}
 	const why = readString(raw, 'why', path, issues, fixed !== undefined);
 	const relocates = readString(raw, 'relocates', path, issues, false);
 	return {
 		...(fixed ? { fixed } : {}),
 		...(why !== undefined ? { why } : {}),
-		...(relocates !== undefined ? { relocates } : {})
+		...(relocates !== undefined ? { relocates } : {}),
+		...(follows ? { followsNeighbours: follows } : {})
 	};
 }

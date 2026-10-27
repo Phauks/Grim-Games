@@ -677,7 +677,7 @@
 	.error {
 		min-height: 3lh;
 		margin: 0;
-		color: var(--evil);
+		color: var(--evil-text);
 		overflow-wrap: anywhere;
 	}
 </style>
