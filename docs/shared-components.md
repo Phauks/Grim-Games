@@ -174,6 +174,11 @@ Some lints start with a list of files written before the lint (for example
 `LOCAL_STORAGE_TODO` in `eslint.config.js`). Move a file onto the shared piece and take it off
 the list. Never add a file to one.
 
+`TRAIT_TODO` in `src/lib/core/rules/trait-coverage.test.ts` lists official characters whose
+ability text names a mechanic (poison or drunk, can't die, registers, kills, dies) that no rule
+encodes, each with why. Give a new character the rule rather than an entry; take an entry off
+once its rule exists.
+
 `npm run lint:lines` (`scripts/check-lines.ts`) keeps every source file at 800 lines or fewer
 (tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its
 `LARGE_FILE_TODO` holds the files that were longer when it began; split one into modules with a
