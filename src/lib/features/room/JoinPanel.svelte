@@ -31,8 +31,7 @@
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
-	import PlayersDayStatus from '#lib/features/day/PlayersDayStatus.svelte';
-	import { dayTimers, parsePlayersPhase } from '#lib/core/rules/index.ts';
+	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
@@ -110,14 +109,6 @@
 	});
 
 	const view = $derived(player?.view);
-	/**
-	 * The Storyteller's day timer, as they chose to show it (Trevor, 2026-10-26); their board
-	 * sends it during the day only.
-	 */
-	const phase = $derived(view?.endedGameId ? undefined : parsePlayersPhase(view?.public?.now));
-	const dayTimer = $derived(
-		view?.endedGameId ? undefined : dayTimers.parsePublicTimer(view?.public?.timer)
-	);
 	const status = $derived(player?.status);
 	/** In a room (not the code form): the script, your seat and the table show. */
 	const inRoom = $derived(!!valid && status !== 'refused' && status !== 'closed');
@@ -446,27 +437,30 @@
 			onOpen={(c, town) => (town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c))}
 		/>{/if}
 {:else if inRoom}
-	<div class="you-line">
-		<!-- Where this phone sits; the name is set from You on the title line (plan E2, Trevor
-		     2026-10-26: "move name into an edit button in the top"). -->
-		<!-- With nothing to say (the phone has its name) the box takes no room, so the game's
-		     status starts the row (Trevor, 2026-10-26: "remove the empty space next to the game
-		     state tracker"). -->
-		<p class="you" class:quiet={!summary} data-testid="you-row" data-seat={mySeat}>
-			<span class="summary" role="status" data-testid="join-status">{summary}</span>
-		</p>
-		<!-- Only while the Storyteller lets players see their character (Trevor, 2026-10-26). -->
-		{#if player}<YourCharacter {player} />{/if}
-		<!-- Where the game is up to, with the day's timer (Trevor, 2026-10-26); it shares the
-		     row's height, so nothing below moves. -->
-		{#if phase}<PlayersDayStatus {phase} timer={dayTimer} {seats} wide />{/if}
-		<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
-		{#if view?.endedGameId}
-			<Button aria-haspopup="dialog" onclick={() => (rating = true)}
-				>{t('room.feedback.open')}</Button
-			>
-		{/if}
-	</div>
+	<!-- The row the Storyteller's player view shows too (PlayerStatusRow): anything drawn from
+	     the table's public state goes in it, never here. -->
+	<PlayerStatusRow table={view?.public} ended={!!view?.endedGameId}>
+		{#snippet before()}
+			<!-- Where this phone sits; the name is set from You on the title line (plan E2, Trevor
+			     2026-10-26: "move name into an edit button in the top"). -->
+			<!-- With nothing to say (the phone has its name) the box takes no room, so the game's
+			     status starts the row (Trevor, 2026-10-26: "remove the empty space next to the game
+			     state tracker"). -->
+			<p class="you" class:quiet={!summary} data-testid="you-row" data-seat={mySeat}>
+				<span class="summary" role="status" data-testid="join-status">{summary}</span>
+			</p>
+			<!-- Only while the Storyteller lets players see their character (Trevor, 2026-10-26). -->
+			{#if player}<YourCharacter {player} />{/if}
+		{/snippet}
+		{#snippet after()}
+			<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
+			{#if view?.endedGameId}
+				<Button aria-haspopup="dialog" onclick={() => (rating = true)}
+					>{t('room.feedback.open')}</Button
+				>
+			{/if}
+		{/snippet}
+	</PlayerStatusRow>
 	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 
@@ -572,13 +566,7 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	/* Where this phone sits, with the ballot or Rate beside it, in one row over the tabs. */
-	.you-line {
-		display: flex;
-		align-items: stretch;
-		gap: var(--space-2);
-		margin-bottom: var(--space-2);
-	}
+	/* Where this phone sits, in the row over the tabs (PlayerStatusRow). */
 	.you {
 		display: flex;
 		flex: 1;
@@ -596,11 +584,6 @@
 	/* Two lines reserved, so a longer status never moves the tabs. */
 	.you.quiet {
 		display: none;
-	}
-	/* The game's status takes the rest of the row (Trevor, 2026-10-27: "the game status bar
-	   should then take up the entire horizontal of that line area"). */
-	.you-line > :global([data-testid='players-status']) {
-		flex: 1;
 	}
 	.summary {
 		flex: 1;
