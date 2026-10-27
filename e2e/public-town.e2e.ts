@@ -102,6 +102,28 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	const gear = (await cog.boundingBox())!;
 	expect(gear.x + gear.width).toBeLessThanOrEqual(corner.x + 1);
 	expect(Math.abs(gear.y - corner.y)).toBeLessThan(2);
+	// And the player view's text and token sizes, the same rows and values (Trevor, 2026-10-27).
+	const sizes = tablet.getByRole('dialog', { name: 'Text and token sizes' });
+	const openSizes = async () => {
+		await cog.tap();
+		await tablet.getByRole('menuitem', { name: 'Text and token sizes' }).tap();
+		await expect(sizes).toBeVisible();
+	};
+	await openSizes();
+	await expect(sizes.getByRole('slider', { name: 'Text size', exact: true })).toBeVisible();
+	const tokenSize = sizes.getByRole('slider', { name: 'Character token size' });
+	await tokenSize.scrollIntoViewIfNeeded();
+	await tokenSize.fill('1.5');
+	await expect(tokenSize).toHaveAttribute('aria-valuetext', '150%');
+	await expect
+		.poll(() =>
+			tablet.evaluate(() =>
+				getComputedStyle(document.documentElement).getPropertyValue('--token-scale')
+			)
+		)
+		.toBe('1.5');
+	await tablet.keyboard.press('Escape');
+	await expect(sizes).toBeHidden();
 	await fullScreen.tap();
 	// The request settles after the tap, so wait for it.
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
@@ -115,6 +137,11 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	expect(Math.round(filled.y)).toBe(Math.round(margin));
 	expect(Math.round(filled.width)).toBe(Math.round(screen.width - 2 * margin));
 	expect(Math.round(filled.height)).toBe(Math.round(screen.height - 2 * margin));
+	// Filling the screen, the sizes still open over the town.
+	await openSizes();
+	await expect(sizes.getByRole('slider', { name: 'Text size', exact: true })).toBeInViewport();
+	await tablet.keyboard.press('Escape');
+	await expect(sizes).toBeHidden();
 	await fullScreen.tap();
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');

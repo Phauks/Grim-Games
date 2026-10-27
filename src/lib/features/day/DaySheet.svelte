@@ -7,6 +7,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import type { Snippet } from 'svelte';
 	import DayPanel from './DayPanel.svelte';
@@ -33,6 +34,11 @@
 		cover?: CoverDetails;
 		coverTimer?: Snippet;
 		coverActions?: Snippet;
+		/**
+		 * Opens the board's Soundboard, beside the cover in the header (Trevor, 2026-10-27:
+		 * "Approve day view E"). Without it there is no Soundboard button.
+		 */
+		onSoundboard?: () => void;
 	}
 
 	let {
@@ -42,7 +48,8 @@
 		onSavant,
 		cover,
 		coverTimer,
-		coverActions
+		coverActions,
+		onSoundboard
 	}: Props = $props();
 
 	const day = $derived(new LiveDay(game));
@@ -57,8 +64,13 @@
 	size="max"
 	scroll={false}
 >
-	<!-- The grim cover, from the day as from the board (Trevor, 2026-10-26). -->
-	{#snippet headActions()}<CoverButton
+	<!-- The Soundboard and the grim cover, from the day as from the board (Trevor, 2026-10-26;
+	     both beside ✕, 2026-10-27). -->
+	{#snippet headActions()}{#if onSoundboard}<IconButton
+				icon="soundboard"
+				label={t('settings.soundboard')}
+				onclick={onSoundboard}
+			/>{/if}<CoverButton
 			gameId={game.game.gameId}
 			details={cover}
 			timer={coverTimer}
