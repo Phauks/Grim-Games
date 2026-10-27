@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
 	castGame,
+	type CastGame,
 	newGame,
 	run,
 	testCharacters as characters,
@@ -335,7 +336,7 @@ describe('protection', () => {
 });
 
 describe('executionSavers', () => {
-	const ids = (g: ReturnType<typeof game>, i: number) =>
+	const ids = (g: CastGame, i: number) =>
 		executionSavers(g.game, g.seats[i], characters)
 			.filter((s) => s.source.characterId !== 'sailor' && s.source.characterId !== 'tealady')
 			.map((s) => [s.source.characterId, s.problem ?? 'ok']);

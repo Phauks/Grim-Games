@@ -13,7 +13,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	castGame,
+	type CastGame,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { placeholdersFor } from '#lib/core/rules/night-text.ts';
@@ -77,8 +81,8 @@ describe('Pukka', () => {
 			(i: number) =>
 			(s: string[]): Command => ({ type: 'SetDead', seatId: s[i], dead: true });
 		const marked = add(MARKED, 'pukka', 'Poisoned');
-		const alerts = (g: ReturnType<typeof game>) => nightStepAlerts(g.game, 'pukka', characters);
-		const poisonedByPukka = (g: ReturnType<typeof game>, seat = MARKED) =>
+		const alerts = (g: CastGame) => nightStepAlerts(g.game, 'pukka', characters);
+		const poisonedByPukka = (g: CastGame, seat = MARKED) =>
 			abilityState(g.game, g.seats[seat], characters).impairments.some(
 				(i) => i.reason === 'poisoned' && i.source.characterId === 'pukka'
 			);

@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import type { CharacterId, Script } from '#lib/core/data/types.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/characters.ts';
-import { castWith, gameData } from '#lib/core/model/fixtures.test-support.ts';
+import { castWith, gameData, type CastGame } from '#lib/core/model/fixtures.test-support.ts';
 import { validDeathCauses } from './death-causes.ts';
 
 const ids: CharacterId[] = [
@@ -52,9 +52,9 @@ const add =
 		reminder: { characterId, label }
 	});
 
-const causes = (g: ReturnType<typeof game>['game'], seat: string) =>
+const causes = (g: CastGame['game'], seat: string) =>
 	validDeathCauses(g, seat, characters).map((c) => c.cause);
-const entry = (g: ReturnType<typeof game>['game'], seat: string, cause: string) =>
+const entry = (g: CastGame['game'], seat: string, cause: string) =>
 	validDeathCauses(g, seat, characters).find((c) => c.cause === cause);
 
 describe('validDeathCauses', () => {

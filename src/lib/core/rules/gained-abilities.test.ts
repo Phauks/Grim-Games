@@ -5,7 +5,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	castGame,
+	type CastGame,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { gainedAbilities } from './gained-abilities.ts';
 import { withNightInfo } from './night-info.ts';
@@ -24,7 +28,7 @@ const kill =
 
 const cast = ['pixie', 'undertaker', 'imp', 'poisoner', 'chef', 'monk'];
 
-function otherNight(g: ReturnType<typeof game>['game']) {
+function otherNight(g: CastGame['game']) {
 	const data = committedGameData();
 	const inPlay = g.seating.map((s) => data.byId.get(g.seats[s].characterId!)!);
 	return withNightInfo(
