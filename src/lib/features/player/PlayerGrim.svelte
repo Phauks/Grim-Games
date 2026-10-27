@@ -536,10 +536,19 @@
 {/if}
 
 {#snippet pictureMenu()}<SeatPictureMenu room={player!} seat={chosen!} />{/snippet}
+<!-- The player's avatar, left of the seat's name and guesses (Trevor, 2026-10-27). -->
+{#snippet seatAvatar()}<span class="sheet-avatar" data-testid="sheet-avatar"
+		><AvatarFace
+			avatar={chosen!.avatar!}
+			name={nameOf(chosen!)}
+			picture={pictureOf(chosen!)}
+		/></span
+	>{/snippet}
 <BottomSheet
 	bind:open
 	title={chosen ? `${t('common.seat', { number: chosen.seatNumber })} · ${nameOf(chosen)}` : ''}
 	actions={player && chosen ? pictureMenu : undefined}
+	lead={chosen?.avatar ? seatAvatar : undefined}
 >
 	<!-- This seat's cycle, front first, at the top (Trevor, 2026-10-25): its guesses and, once
 	     it has one, the player's avatar (2026-10-26); a tap brings one to the front. Then the
@@ -696,11 +705,15 @@
 	.row-none {
 		color: var(--on-surface-muted);
 	}
-	/* The seat's avatar in its cycle, the size of a badge's icon. */
-	.avatar-chip {
+	/* The seat's avatar in its cycle, the size of a badge's icon; larger in the header. */
+	.avatar-chip,
+	.sheet-avatar {
 		display: block;
-		width: 2em;
-		height: 2em;
+		width: var(--avatar, 2em);
+		height: var(--avatar, 2em);
+	}
+	.sheet-avatar {
+		--avatar: calc(2.5 * var(--u));
 	}
 	.seat-note-text {
 		overflow: hidden;

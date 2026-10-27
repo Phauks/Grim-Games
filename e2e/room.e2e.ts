@@ -2188,6 +2188,11 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await expect(mine.getByTestId('avatar-face')).toHaveText('AK');
 	await mine.tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Alex Kim' });
+	// The player's avatar, left of the seat's name (Trevor, 2026-10-27).
+	await expect(sheet.getByTestId('sheet-avatar')).toHaveText('AK');
+	const avatarBox = (await sheet.getByTestId('sheet-avatar').boundingBox())!;
+	const titleBox = (await sheet.getByText('Seat 3 · Alex Kim', { exact: true }).boundingBox())!;
+	expect(avatarBox.x + avatarBox.width).toBeLessThanOrEqual(titleBox.x);
 	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });
 	await empath.scrollIntoViewIfNeeded();
 	await expect(empath).toBeInViewport();
