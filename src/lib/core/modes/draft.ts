@@ -74,6 +74,7 @@ export {
 	reservedHidden,
 	reservedSeats,
 	turnableSeats,
+	turnOffer,
 	turnOptions,
 	type Conversion,
 	type ReservedHidden

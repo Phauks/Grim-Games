@@ -14,6 +14,7 @@
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import { QrFrameCollector } from '#lib/core/codes/qr-frames.ts';
 	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
+	import { avatarPicture } from '#lib/features/player/avatar-picture.svelte.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import ScriptBallot from './ScriptBallot.svelte';
@@ -84,12 +85,13 @@
 		return () => releaseRoom(p);
 	});
 
-	// The player's avatar and frame go to the room as they pick them (plan R6).
+	// The player's avatar, frame and picture go to the room as they pick them (plan R6).
 	$effect(() => {
 		void playerSettings.current.avatar;
 		void playerSettings.current.frame;
+		void avatarPicture.url;
 		void player?.view;
-		player?.sendLook();
+		void player?.sendLook();
 	});
 
 	// The game's script becomes this phone's current script, for /play.
@@ -425,7 +427,7 @@
 		{#if player}<YourCharacter {player} />{/if}
 		<!-- Where the game is up to, with the day's timer (Trevor, 2026-10-26); it shares the
 		     row's height, so nothing below moves. -->
-		{#if phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
+		{#if phase}<PlayersDayStatus {phase} timer={dayTimer} {seats} />{/if}
 		<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
 		{#if view?.endedGameId}
 			<Button aria-haspopup="dialog" onclick={() => (rating = true)}

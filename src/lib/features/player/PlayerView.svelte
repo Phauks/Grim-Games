@@ -41,7 +41,7 @@
 	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
 	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
 	import PlayerRoom from './PlayerRoom.svelte';
-	import { gameKey, lastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
+	import { gameKey, lastRoom, leaveLastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -113,7 +113,18 @@
 	let checkOpen = $state(false);
 	/** The link being opened is an offline code's (`&o=1`), so the game shows as offline. */
 	let fromOffline = false;
+	/** Remounts the room row once the phone stops following its last room. */
+	let roomRow = $state(0);
 	async function useScript(loaded: LoadedScript, source: ScriptSource) {
+		// Another script than the last room's: that room's script would replace it again as soon
+		// as the room reconnects, so the phone leaves it (it stays in Your games).
+		const last = lastRoom();
+		const followed = last && roomScript(last);
+		if (last && !join && (!followed || scriptKey(followed) !== scriptKey(loaded))) {
+			leaveLastRoom();
+			joinedRoom = undefined;
+			roomRow++;
+		}
 		await chooseScript(loaded, source);
 		markOfflineScript(fromOffline ? scriptKey(loaded) : undefined);
 	}
@@ -239,12 +250,14 @@
 		<!-- One row for the room, over the tabs (plan J12, no Room tab): Join game's code form
 		     until the phone is in a room; on /play, the room it last joined while it is in it.
 		     Kept in place as the script arrives, so the room stays open. -->
-		<PlayerRoom
-			initialCode={join ? (join.code ?? null) : undefined}
-			onCode={join ? openRoom : undefined}
-			onVoting={(v) => (voting = v)}
-			onRoom={(room) => (joinedRoom = room)}
-		/>
+		{#key roomRow}
+			<PlayerRoom
+				initialCode={join ? (join.code ?? null) : undefined}
+				onCode={join ? openRoom : undefined}
+				onVoting={(v) => (voting = v)}
+				onRoom={(room) => (joinedRoom = room)}
+			/>
+		{/key}
 		{#if offline}<OfflineGame />{/if}
 	{/if}
 	{#if voting}

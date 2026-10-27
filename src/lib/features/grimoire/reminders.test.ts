@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { editionScript, loadScript, toScript } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/index.ts';
+import type { ReminderLabel } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	bankOwners,
 	bankReminders,
 	byLabel,
 	canAddCopy,
+	copiedLook,
 	extraReminders,
 	reminderCopies,
 	stepReminders,
@@ -362,5 +364,27 @@ describe('bankOwners', () => {
 		if (!result.ok) throw new Error(result.error.message);
 		g = result.session.game;
 		expect(g.seats[g.seating[2]].reminders[0]).not.toHaveProperty('ownerSeatId');
+	});
+});
+
+describe('copiedLook', () => {
+	it("copies a generic reminder's text and look, and a character reminder's words", () => {
+		const generic = {
+			characterId: GENERIC_REMINDER_ID,
+			label: '' as ReminderLabel,
+			note: 'Red herring',
+			symbol: 'ph:star',
+			symbolColour: 'gold' as const,
+			symbolFill: true as const
+		};
+		expect(copiedLook(generic)).toEqual({
+			note: 'Red herring',
+			symbol: 'ph:star',
+			symbolColour: 'gold',
+			symbolFill: true
+		});
+		expect(copiedLook({ characterId: 'poisoner', label: 'Poisoned' as ReminderLabel })).toEqual({
+			note: 'Poisoned'
+		});
 	});
 });

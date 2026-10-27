@@ -60,7 +60,9 @@
 		type NominationPrompt
 	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
+	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
+	import SoundboardSheet from '#lib/features/sound/SoundboardSheet.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -478,6 +480,7 @@
 
 	// ── Notes (Trevor, 2026-10-19): the game's and every player's in ⋯ Notes ──
 	let notesOpen = $state(false);
+	let soundboardOpen = $state(false);
 	let notesSheet = $state<ReturnType<typeof NotesSheet>>();
 	/**
 	 * A seat's pen mark opens just that player's notes, not the whole sheet (Trevor,
@@ -1372,6 +1375,8 @@
 				seatAt={remDrag.seatAt}
 				spotAllowed={remDrag.spotAllowed}
 				ruleAt={remDrag.ruleAt}
+				dropping={remDrag.drag !== undefined}
+				dropOver={!!remDrag.drag?.overNew}
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
@@ -1463,6 +1468,17 @@
 
 <!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
 <BoardAmbience scene={watching || ended || phaseNow.kind === 'setup' ? null : phaseNow.kind} />
+{#if !watching}
+	<!-- Sounds for the Storyteller's actions (plan U7). -->
+	<BoardActionSounds
+		now={{
+			phase: phaseNow.kind,
+			executions: game.today.entries.filter((entry) => entry.kind === 'execution').length,
+			ended: !!ended
+		}}
+	/>
+	<SoundboardSheet bind:open={soundboardOpen} />
+{/if}
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <BoardMenu
@@ -1472,6 +1488,7 @@
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
+	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	onCallTown={!watching && !ended && roomHost().code
 		? () => roomHost().callTown() || toast(t('room.callTownFailed'))
 		: undefined}

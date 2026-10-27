@@ -1359,7 +1359,7 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	// On, it comes with a password of its own for this game.
 	await watch.getByText('Grim view', { exact: true }).tap();
 	await expect(password).toBeEnabled();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	const made = await password.inputValue();
 	const eye = watch.getByRole('button', { name: 'Show password' });
 	await eye.tap();
@@ -1404,7 +1404,7 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	const next = await startGame(page);
 	await page.goto(`${next}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	expect(await password.inputValue()).not.toBe('lantern');
 	expect(await password.inputValue()).not.toBe(made);
 	await phoneContext.close();
@@ -1433,7 +1433,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(toggle).not.toBeChecked();
 	await expect(password).toHaveValue('');
 	await flip();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	const made = await password.inputValue();
 
 	const viewerContext = await browser.newContext({ ...testInfo.project.use });
@@ -1514,7 +1514,10 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	// The board's background is the Storyteller's, not the viewer's own (Trevor, 2026-10-26).
 	await expect(viewer.getByTestId('board-background')).toHaveCount(0);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
@@ -1524,7 +1527,10 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(viewer.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	// A picture of the Storyteller's own reaches it through the room too.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Board' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	await settings.getByLabel('Background image file').setInputFiles({
 		name: 'table.png',
 		mimeType: 'image/png',
@@ -1575,14 +1581,14 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toHaveCount(0);
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	expect(await password.inputValue()).not.toBe(made);
 	await expect(page.getByTestId('status-watching')).toHaveText('0 watching');
 	await flip();
 	await expect(password).toHaveValue('');
 	await expect(password).toBeDisabled();
 	await flip();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	await viewerContext.close();
 });
 
@@ -2200,6 +2206,89 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await pill.tap();
 	await expect(mine).toHaveAttribute('data-guess', 'true');
 	await phoneContext.close();
+});
+
+/** A small square PNG, as a player's picture from their phone. */
+const PICTURE = Buffer.from(
+	'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGP4z8CAFWEXHbQSACj/P8Fu7N9hAAAAAElFTkSuQmCC',
+	'base64'
+);
+
+test("a player's own picture goes on their seat, and a report lets the Storyteller remove it for the game", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-27: "allow setting users profile/icon in the player settings ... under ...,
+	// put report image ... the storyteller ... can either decide to let it stand, or to
+	// remove/revoke avatar for that game".
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	// Alex picks a picture in the player screen's own settings, beside their name.
+	const alexContext = await browser.newContext({ ...testInfo.project.use });
+	const alex = await alexContext.newPage();
+	await alex.goto(`/join/${code}`);
+	const you = await seatSheet(alex);
+	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex Kim');
+	const picture = you.getByTestId('avatar-picture');
+	await expect(picture.getByRole('button', { name: 'Remove picture' })).toBeDisabled();
+	await picture.getByLabel('Picture for your seat').setInputFiles({
+		name: 'me.png',
+		mimeType: 'image/png',
+		buffer: PICTURE
+	});
+	await expect(picture.getByTestId('avatar-face')).toHaveAttribute('data-picture', 'true');
+	await expect(picture.getByRole('button', { name: 'Remove picture' })).toBeEnabled();
+	await you.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
+	await nameSeat(page, 3, 'Alex Kim');
+
+	// The board and every phone show it in place of the initials.
+	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex Kim"]');
+	await expect(seat.getByTestId('avatar-face')).toHaveAttribute('data-picture', 'true');
+	await expect(seat.getByTestId('avatar-face').locator('img')).toBeVisible();
+
+	const samContext = await browser.newContext({ ...testInfo.project.use });
+	const sam = await samContext.newPage();
+	await sam.goto(`/join/${code}`);
+	await sam.getByRole('tab', { name: 'Grim' }).tap();
+	const alexSeat = sam.getByTestId('grim-seat').nth(2);
+	await expect(alexSeat.getByTestId('avatar-face')).toHaveAttribute('data-picture', 'true');
+
+	// A seat with no picture has nothing to report; Alex's has.
+	await sam.getByTestId('grim-seat').first().tap();
+	let sheet = sam.getByRole('dialog', { name: 'Seat 1 · Seat 1' });
+	await sheet.getByRole('button', { name: 'More for this seat' }).tap();
+	await expect(sam.getByRole('menuitem', { name: 'Report picture' })).toBeDisabled();
+	await sam.keyboard.press('Escape');
+	await sam.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await alexSeat.tap();
+	sheet = sam.getByRole('dialog', { name: 'Seat 3 · Alex Kim' });
+	await sheet.getByRole('button', { name: 'More for this seat' }).tap();
+	await sam.getByRole('menuitem', { name: 'Report picture' }).tap();
+	await sheet.getByRole('button', { name: 'More for this seat' }).tap();
+	await expect(sam.getByRole('menuitem', { name: 'Picture reported' })).toBeDisabled();
+	await sam.keyboard.press('Escape');
+
+	// The Storyteller sees the picture over the board, and removes it for this game.
+	const report = page.getByRole('dialog', { name: 'Reported picture' });
+	await expect(report).toContainText("Alex Kim's picture was reported by 1 player.");
+	await expect(report.getByRole('img', { name: "Alex Kim's picture" })).toBeVisible();
+	await report.getByRole('button', { name: 'Remove for this game' }).tap();
+	await expect(report).toBeHidden();
+	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
+	await expect(seat.getByTestId('avatar-face')).not.toHaveAttribute('data-picture');
+	await expect(alexSeat.getByTestId('avatar-face')).toHaveText('AK');
+
+	// Alex keeps the picture on their phone; the room keeps it off their seat this game.
+	await alex.reload();
+	await expect(alex.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
+	await alexContext.close();
+	await samContext.close();
 });
 
 test("Scan a code on Join game reads the Share screen's QR code into the code boxes", async ({
