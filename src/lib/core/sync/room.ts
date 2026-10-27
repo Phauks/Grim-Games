@@ -66,6 +66,8 @@ export interface RoomRequest {
 }
 
 export interface RoomState {
+	/** The stored shape's version (room-state.ts); missing on rooms from before it. */
+	schemaVersion?: number;
 	/** SHA-256 (hex) of the Storyteller's host key. */
 	hostKeyHash: string;
 	/** The game whose public state is shown; a new game clears everyone's seat. */
