@@ -49,6 +49,7 @@ export const reports = {
 	'reports.copy': 'Copy',
 	'reports.copyShown': 'Copy shown reports',
 	'reports.download': 'Download shown reports',
+	'reports.downloadOne': 'Download',
 	'reports.copiedDetail': 'The report is on your clipboard as Markdown.',
 	'reports.copiedAllDetail': {
 		one: '{count} report is on your clipboard as Markdown.',

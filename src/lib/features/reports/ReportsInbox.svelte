@@ -18,6 +18,7 @@
 	import { downloadFile, fileNameFor } from '#lib/ui/download.ts';
 	import {
 		reportMarkdown,
+		reportFileName,
 		reportsFileName,
 		reportsMarkdown,
 		type ExportedReport
@@ -146,6 +147,15 @@
 		});
 	}
 
+	/** One report as its own file (Trevor, 2026-10-27), beside its Copy. */
+	async function downloadReport(report: Report) {
+		downloadFile(
+			reportFileName(report.id),
+			`${reportMarkdown(await exported(report), label)}\n`,
+			'text/markdown'
+		);
+	}
+
 	async function downloadShown() {
 		downloadFile(reportsFileName(Date.now()), await exportShown(), 'text/markdown');
 	}
@@ -155,12 +165,9 @@
 	async function load() {
 		try {
 			const list = await listReports();
-			const first = access === 'checking' || access === 'none';
 			reports = list?.reports;
 			access = list === undefined ? 'none' : list.admin ? 'account' : 'reader';
-			// Admins start on the reports still to triage (as before), readers on all of them.
-			if (first && allowed)
-				columnFilters = { status: { kind: 'pick', values: [t('reports.status.new')] } };
+			// Everyone starts on every report, with no filter on (Trevor, 2026-10-27).
 		} catch {
 			if (access === 'checking') access = 'none';
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
@@ -328,6 +335,12 @@
 			label={t('reports.copy')}
 			disabled={!current}
 			onclick={() => current && copyReport(current)}
+		/>
+		<IconButton
+			icon="download"
+			label={t('reports.downloadOne')}
+			disabled={!current}
+			onclick={() => current && downloadReport(current)}
 		/>
 		<DeleteButton
 			label={t('reports.delete')}
