@@ -1312,7 +1312,7 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	// On, it comes with a password of its own for this game.
 	await watch.getByText('Grim view', { exact: true }).tap();
 	await expect(password).toBeEnabled();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	const made = await password.inputValue();
 	const eye = watch.getByRole('button', { name: 'Show password' });
 	await eye.tap();
@@ -1357,7 +1357,7 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	const next = await startGame(page);
 	await page.goto(`${next}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	expect(await password.inputValue()).not.toBe('lantern');
 	expect(await password.inputValue()).not.toBe(made);
 	await phoneContext.close();
@@ -1386,7 +1386,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(toggle).not.toBeChecked();
 	await expect(password).toHaveValue('');
 	await flip();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	const made = await password.inputValue();
 
 	const viewerContext = await browser.newContext({ ...testInfo.project.use });
@@ -1512,14 +1512,14 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toHaveCount(0);
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	expect(await password.inputValue()).not.toBe(made);
 	await expect(page.getByTestId('status-watching')).toHaveText('0 watching');
 	await flip();
 	await expect(password).toHaveValue('');
 	await expect(password).toBeDisabled();
 	await flip();
-	await expect(password).toHaveValue(/^[a-z2-9]{6}$/);
+	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	await viewerContext.close();
 });
 
