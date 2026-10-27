@@ -1,0 +1,6 @@
+# Lists that nearly every PR appends to. Two PRs adding lines at the same place used to
+# conflict, and a PR that conflicts with beta gets no CI (Oct 26 and 27). A union merge keeps
+# both sides' lines. Only for files of one entry per line: a duplicate key in a catalog fails
+# `npm run check`. GitHub's own merge ignores this; it applies when beta is merged in locally.
+docs/shared-components.md merge=union
+src/lib/i18n/messages/en/*.ts merge=union
