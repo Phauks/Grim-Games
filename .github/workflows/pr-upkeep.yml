@@ -41,6 +41,11 @@ jobs:
             const STUCK_MINUTES = 30;
             const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+            // Right after a push to beta, GitHub still reports each PR's mergeability against
+            // the old beta (#654 read as mergeable seconds after #653 made it conflict), so give
+            // it time to recompute.
+            if (context.eventName === 'push') await sleep(90000);
+
             const prs = await github.paginate(github.rest.pulls.list, {
               owner, repo, state: 'open', base: 'beta', per_page: 100
             });
