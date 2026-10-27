@@ -46,15 +46,28 @@ class Ambience {
 	#bus: GainNode | undefined;
 	#playing: Playing | undefined;
 	#kept = new Set<string>();
+	#paused = false;
+	#scene: AmbienceScene | null = null;
+
+	/**
+	 * Holds day and night sound silent until resumed, from the soundboard's Pause. A looped
+	 * recording has no place to keep, so it fades out and back in.
+	 */
+	setPaused(paused: boolean): void {
+		if (this.#paused === paused) return;
+		this.#paused = paused;
+		this.sync(this.#scene);
+	}
 
 	/**
 	 * Plays this scene's recording as the preferences choose, fading out the one before; null
 	 * stops it. Reads the preferences, so an effect that calls it follows their changes.
 	 */
 	sync(scene: AmbienceScene | null): void {
+		this.#scene = scene;
 		const on = preferences.current.ambienceOn && scene !== null;
 		const mix = on ? chosen(scene) : undefined;
-		const level = busLevel();
+		const level = this.#paused ? 0 : busLevel();
 		if (this.#playing && this.#playing.id !== mix?.id) this.#fadeOut(this.#playing);
 		if (!mix) return;
 		const ctx = audio();
