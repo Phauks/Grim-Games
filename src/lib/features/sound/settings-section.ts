@@ -21,7 +21,10 @@ registerSettingsSection({
 			nightAmbience: DEFAULT_PREFERENCES.nightAmbience,
 			dayAmbience: DEFAULT_PREFERENCES.dayAmbience,
 			actionSoundsOn: DEFAULT_PREFERENCES.actionSoundsOn,
-			actionSounds: DEFAULT_PREFERENCES.actionSounds
+			actionSounds: DEFAULT_PREFERENCES.actionSounds,
+			soundboardLevel: DEFAULT_PREFERENCES.soundboardLevel,
+			soundboardOverlap: DEFAULT_PREFERENCES.soundboardOverlap,
+			soundMixes: DEFAULT_PREFERENCES.soundMixes
 		}),
 	profile: true,
 	order: 36

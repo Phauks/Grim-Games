@@ -442,7 +442,7 @@ test('text size is a percentage slider that applies while it moves', async ({ pa
 test('Sound has one volume for every sound, saved on the device', async ({ page }) => {
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Sound');
-	const slider = dialog.getByRole('slider', { name: 'Volume' });
+	const slider = dialog.getByRole('slider', { name: 'Volume', exact: true });
 	await expect(slider).toHaveAttribute('aria-valuetext', '100%');
 	await expect(dialog.getByRole('checkbox', { name: 'Vibrate' })).toBeVisible();
 	// What this phone plays when the Storyteller calls Back to town (plan U2).
@@ -454,12 +454,12 @@ test('Sound has one volume for every sound, saved on the device', async ({ page 
 
 	await page.reload();
 	const again = await openSettings(page, 'Sound');
-	await expect(again.getByRole('slider', { name: 'Volume' })).toHaveAttribute(
+	await expect(again.getByRole('slider', { name: 'Volume', exact: true })).toHaveAttribute(
 		'aria-valuetext',
 		'40%'
 	);
 	await (await resetButton(again, 'Volume')).tap();
-	await expect(again.getByRole('slider', { name: 'Volume' })).toHaveAttribute(
+	await expect(again.getByRole('slider', { name: 'Volume', exact: true })).toHaveAttribute(
 		'aria-valuetext',
 		'100%'
 	);
