@@ -93,12 +93,12 @@ const PIECE = /^GB2:([0-9a-z]{1,7}):(\d{1,6}):(\d{1,6}):([\w-]+)$/;
 
 /**
  * A frame's text from a code the camera read: a frame is a link to this app's Join game with
- * the frame in its hash (`/join#q=...`), so a phone's camera app opens the app; older codes are
+ * the frame last in its hash (`/join#q=...`, or `#r=<room>&q=...`), so a phone's camera app opens the app; older codes are
  * the frame alone.
  */
 export function unwrapQrFrame(text: string): string {
-	const at = text.indexOf('#q=');
-	return at === -1 ? text : text.slice(at + 3);
+	const at = /[#&]q=/.exec(text);
+	return at ? text.slice(at.index + 3) : text;
 }
 
 /** What reading one more code did. */

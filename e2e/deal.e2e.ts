@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { setPlayerName } from './player-name.ts';
 import { pickScript, toBoard } from './new-game.ts';
 
 // Deal (Trevor, 2026-10-26: "auto select characters and send to players"): the bag goes to the
@@ -44,9 +45,8 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByTestId('you-button').tap();
-	const you = phone.getByRole('dialog', { name: 'Your settings' });
-	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await you.getByRole('button', { name: 'Save' }).tap();
+	await setPlayerName(phone, 'Alex');
+	await phone.keyboard.press('Escape');
 	await nameSeat(page, board, 2, 'Alex');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '2');
 	await expect(phone.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
@@ -117,9 +117,8 @@ test('a phone that joins is named on a seat and gets its character from Deal', a
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByTestId('you-button').tap();
-	const you = phone.getByRole('dialog', { name: 'Your settings' });
-	await you.getByRole('textbox', { name: 'Your name' }).fill('Phone');
-	await you.getByRole('button', { name: 'Save' }).tap();
+	await setPlayerName(phone, 'Phone');
+	await phone.keyboard.press('Escape');
 	await expect(phone.getByRole('button', { name: 'Your settings: Phone' })).toBeVisible();
 
 	// No seat named by hand: Deal puts the phone's name on seat 1, and the phone sits there.
@@ -156,9 +155,8 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByTestId('you-button').tap();
-	const you = phone.getByRole('dialog', { name: 'Your settings' });
-	await you.getByRole('textbox', { name: 'Your name' }).fill('Sam');
-	await you.getByRole('button', { name: 'Save' }).tap();
+	await setPlayerName(phone, 'Sam');
+	await phone.keyboard.press('Escape');
 	await nameSeat(page, board, 1, 'Sam');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
 	await expect(phone.getByRole('button', { name: 'Your settings: Sam' })).toBeVisible();

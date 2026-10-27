@@ -8,6 +8,7 @@ export const player = {
 	'player.loading': 'Loading…',
 	'player.offline.row': 'Offline game: only the script came across',
 	'player.offline.more': 'What an offline game has',
+	'player.offline.join': 'Join game',
 	'player.offline.title': 'Offline game',
 	'player.offline.hereTitle': 'On this phone',
 	'player.offline.here': 'The script, the night order, jinxes, your notes and your own grim.',

@@ -33,6 +33,12 @@ export function seatNotes(room: string): { notes: SeatNotes } {
 	return book;
 }
 
+/** Throws a room's seat notes away, on this device and on any page that has them open. */
+export function forgetSeatNotes(room: string): void {
+	seatNotes(room).notes = {};
+	writeSeatNotes(room, {});
+}
+
 export function saveSeatNote(room: string, seatId: string, note: WrittenNote): void {
 	const book = seatNotes(room);
 	book.notes = withSeatNote(book.notes, seatId, note);
