@@ -7,7 +7,7 @@
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { phaseText } from './phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { boardNightSteps, stepWakes, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -45,7 +45,6 @@
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
-		onDeathTrigger,
 		stepNightNumbers,
 		todaysNominations,
 		mayNominate,
@@ -55,11 +54,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
-	import {
-		nominationPrompts,
-		seatHasAbility,
-		type NominationPrompt
-	} from '#lib/core/modes/index.ts';
+	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
@@ -77,6 +72,7 @@
 		isDefaultLayout,
 		isRotation,
 		boardAspect,
+		clearOfCorner,
 		keepInside,
 		seatPoints,
 		seatTokenSize,
@@ -117,6 +113,7 @@
 	import BoardPlayerView from './BoardPlayerView.svelte';
 	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
@@ -266,11 +263,25 @@
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
-	const points = $derived(
+	/** The day timer's row, top right, measured: seats and reminders keep clear of it. */
+	let timerW = $state(0);
+	let timerH = $state(0);
+	// The ring comes down just far enough to keep every seat clear of the day timer and the
+	// buttons beside it (Trevor, 2026-10-27: Soundboard beside the timer), tappable on a phone.
+	const onBoard = (l: typeof layout) =>
 		keepInside(
-			seatPoints(game.seating, layout, { width, height }, watching ? grimoire.aspect : undefined),
+			seatPoints(game.seating, l, { width, height }, watching ? grimoire.aspect : undefined),
 			{ width, height },
 			size / 2 + unit
+		);
+	const points = $derived(
+		clearOfCorner(
+			onBoard(layout),
+			game.seating.map((id) => !layout.placed[id]),
+			onBoard({ ...layout, placed: {} }),
+			{ width, height },
+			{ w: timerW + 12, h: timerH + 12 },
+			size / 2
 		)
 	);
 
@@ -310,10 +321,6 @@
 	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
 	 * an ability set off by dying on the night of the death (the Ravenkeeper's).
 	 */
-	/**
-	 * Whether a step wakes anyone tonight: a step for no player (Dusk, Dawn), or one with a
-	 * living player, or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
-	 */
 	/** Since dawn: players whose character changed (woken tonight) and who died (Godfather). */
 	const today = $derived({
 		changes: changedCharacters(grimoire.open.session.log, game),
@@ -331,18 +338,8 @@
 	 * the dead keep theirs, living Townsfolk have none).
 	 */
 	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
-	function wakes(step: NightStep): boolean {
-		const holders = stepHolders(game, step, characters);
-		const id = step.character?.id;
-		return (
-			holders.length === 0 ||
-			holders.some(
-				(s) =>
-					seatHasAbility(abilitiesRule, game, s, characters) ||
-					(id !== undefined && !!onDeathTrigger(id, characters) && diedTonight.has(s))
-			)
-		);
-	}
+	const wakes = (step: NightStep): boolean =>
+		stepWakes(game, step, characters, { abilitiesRule, diedTonight });
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || preferences.current.tokenAppearance.nightLeaves !== 'numbers') return undefined;
@@ -378,10 +375,8 @@
 	let centreW = $state(0);
 	let edgeW = $state(0);
 	let edgeH = $state(0);
-	let timerW = $state(0);
 	let titleW = $state(0);
 	let titleH = $state(0);
-	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
 	const restFan = $derived.by(() => {
@@ -1466,9 +1461,16 @@
 			{/snippet}
 		</BoardCorner>
 		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The grim
-		     cover beside it, never in a menu (Trevor, 2026-10-26), the Storyteller's only. -->
+		     cover beside it, never in a menu (Trevor, 2026-10-26), and the soundboard (Trevor,
+		     2026-10-27), the Storyteller's only. -->
 		<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
 			{#if !watching}
+				<IconButton
+					icon="soundboard"
+					label={t('settings.soundboard')}
+					outlined
+					onclick={() => (soundboardOpen = true)}
+				/>
 				<CoverButton
 					gameId={game.gameId}
 					details={coverDetails}
@@ -1477,14 +1479,15 @@
 					outlined
 				/>
 			{/if}
-			{#if showTimer}
+			<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
+			<div class="timer-slot" class:gone={!showTimer} inert={!showTimer}>
 				<DayTimer
 					alive={livingByTeam(game).alive}
 					variant="compact"
-					readOnly={watching}
+					readOnly={watching || !showTimer}
 					shown={watchedTimer}
 				/>
-			{/if}
+			</div>
 		</div>
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
@@ -1522,7 +1525,6 @@
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
-	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	onCallTown={!watching && !ended && roomHost().code
 		? () => roomHost().callTown() || toast(t('room.callTownFailed'))
 		: undefined}
@@ -2037,6 +2039,12 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
+	}
+	.timer-slot {
+		display: flex;
+	}
+	.timer-slot.gone {
+		visibility: hidden;
 	}
 	/* The cover's button has the timer's solid fill, so it reads on any background. */
 	.board-timer :global(.icon-button[data-outlined]) {

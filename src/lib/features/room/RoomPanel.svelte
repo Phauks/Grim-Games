@@ -53,11 +53,13 @@
 		return i < 0 ? t('room.noSeat') : t('common.seat', { number: i + 1 });
 	};
 	const connected = $derived(host.status === 'open');
-	// Seated players stay listed while their phone sleeps; others only while they are here, as
-	// the room keeps phones from earlier games (2026-10-25).
+	// Seated players, and others from this game, stay listed while their phone sleeps; the room
+	// also keeps phones from earlier games, which are left out (2026-10-25).
 	const seated = $derived(
 		host.members.filter(
-			(m) => m.name !== undefined && (m.seatId !== undefined || host.isHere(m.memberId))
+			(m) =>
+				m.name !== undefined &&
+				(m.seatId !== undefined || host.unseatedInGame.some((u) => u.memberId === m.memberId))
 		)
 	);
 	const statusText = $derived(
