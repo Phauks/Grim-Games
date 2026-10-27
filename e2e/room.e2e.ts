@@ -1642,12 +1642,14 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await expect(info).toBeHidden();
 	await expect(corner).not.toContainText('by The Pandemonium Institute');
 	await expect(corner.getByTestId('board-players')).toContainText('Players: 8');
-	// The Script tab's Players breakdown has the table's column picked.
+	// The Script tab's Players breakdown has the table's column picked, and in a game no
+	// other count can be picked: the seats set it (Trevor, 2026-10-27).
 	await phone.getByRole('tab', { name: 'Script' }).tap();
-	await expect(phone.getByRole('button', { name: '8 players', exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	const breakdown = phone.getByTestId('setup-table');
+	await expect(breakdown.locator('thead th[data-current]')).toHaveText('8');
+	await expect(breakdown.getByRole('button')).toHaveCount(0);
+	await breakdown.locator('tbody tr').first().locator('td').first().tap();
+	await expect(breakdown.locator('thead th[data-current]')).toHaveText('8');
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
