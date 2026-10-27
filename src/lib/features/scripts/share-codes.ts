@@ -4,6 +4,7 @@
  * If a code can't be made (offline, or the Worker refuses), the long `#s=` link still
  * works. Design: 08-script-loading.md §5.5 and §5.7.
  */
+import { toHex } from '#lib/core/codes/hash.ts';
 import { scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
@@ -133,7 +134,7 @@ function writeStore(store: CodeStore): void {
 async function scriptKey(json: unknown[]): Promise<string> {
 	const bytes = new TextEncoder().encode(JSON.stringify(json));
 	const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
-	return Array.from(digest.slice(0, 12), (b) => b.toString(16).padStart(2, '0')).join('');
+	return toHex(digest.slice(0, 12));
 }
 
 /** A code for this script: the one it was opened with, one made earlier, or a new one. */

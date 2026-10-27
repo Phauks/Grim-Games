@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
+import { sha256Hex as sha256 } from '../src/lib/core/codes/hash.ts';
 import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import {
 	canCallTown,
@@ -94,12 +95,6 @@ type Attachment =
 	| { role: 'viewer' }
 	| { role: 'town' }
 	| { role: 'admin' };
-
-async function sha256(data: string | Uint8Array): Promise<string> {
-	const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
-	const digest = await crypto.subtle.digest('SHA-256', bytes);
-	return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
 
 /** A room's picture as stored: its bytes and type (core/sync/room-images.ts). */
 interface ImageView {

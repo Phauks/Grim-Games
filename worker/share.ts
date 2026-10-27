@@ -1,3 +1,4 @@
+import { noStore, text } from './http.ts';
 import { DurableObject } from 'cloudflare:workers';
 import { makeDigitCode } from '../src/lib/core/codes/digit-code.ts';
 import {
@@ -80,12 +81,6 @@ export function base64url(bytes: Uint8Array): string {
 export async function hashKey(key: string): Promise<string> {
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key));
 	return base64url(new Uint8Array(digest));
-}
-
-const noStore = { 'Cache-Control': 'no-store' };
-
-function text(message: string, status: number): Response {
-	return new Response(message, { status, headers: noStore });
 }
 
 /** The script JSON as compact text, or an error message. Only shape is checked here. */

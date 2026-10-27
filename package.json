@@ -16,7 +16,7 @@
 		"lint:colors": "node scripts/check-colors.ts --run",
 		"lint:px": "node scripts/check-px.ts --run",
 		"lint:lines": "node scripts/check-lines.ts --run",
-		"check:rules-coverage": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/check-rules-coverage.ts",
+		"check:rules-coverage": "node scripts/check-rules-coverage.ts",
 		"format": "prettier --write .",
 		"icons": "node scripts/generate-icons.ts --write",
 		"test:unit": "vitest",
@@ -25,11 +25,11 @@
 		"test:e2e": "playwright test",
 		"deploy": "npm run build && wrangler deploy",
 		"deploy:staging": "npm run build && wrangler deploy --env staging",
-		"sync:data": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/sync-data.ts",
-		"snapshot:night-order": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/snapshot-night-order.ts",
-		"scaffold:rules-tests": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/scaffold-rules-tests.ts",
-		"export:setup-prep": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/export-setup-prep.ts",
-		"export:reminder-placeholders": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/export-reminder-placeholders.ts"
+		"sync:data": "node scripts/sync-data.ts",
+		"snapshot:night-order": "node scripts/snapshot-night-order.ts",
+		"scaffold:rules-tests": "node scripts/scaffold-rules-tests.ts",
+		"export:setup-prep": "node scripts/export-setup-prep.ts",
+		"export:reminder-placeholders": "node scripts/export-reminder-placeholders.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
