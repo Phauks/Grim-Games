@@ -20,7 +20,45 @@ export interface BlockThreshold {
 
 export function blockThreshold(game: Game): BlockThreshold {
 	const alive = game.seating.filter((s) => !game.seats[s].dead).length;
-	return { alive, needed: Math.ceil(alive / 2) };
+	return { alive, needed: neededToBlock(alive) };
+}
+
+/** Votes needed to put the first nominee on the block: half the living, rounded up. */
+export function neededToBlock(alive: number): number {
+	return Math.ceil(alive / 2);
+}
+
+/**
+ * A seat as players' phones see it (`PublicSeat`): dead as the town sees it, with the ghost
+ * vote it has or has spent, or the votes it casts with no token.
+ */
+export interface TownSeat {
+	dead: boolean;
+	ghostVote?: 'unused' | 'used';
+	votes?: number;
+}
+
+/** The day's counts as players' phones show them: the Storyteller's, without the teams. */
+export interface TownCounts extends BlockThreshold {
+	/** Every seat, dead ones included, for "7/8". */
+	total: number;
+	ghostVotes: number;
+}
+
+/**
+ * The Storyteller's alive count, votes to put a nominee on the block and ghost votes left
+ * (`blockThreshold`, `ghostVotesLeft`), worked out the same way from what the town sees
+ * (Trevor, 2026-10-27: "should calculate the same way as the information the storyteller
+ * would already have access to"). The town's view is all a phone has, so a player who only
+ * seems dead counts as dead here.
+ */
+export function townCounts(seats: readonly TownSeat[]): TownCounts {
+	const alive = seats.filter((s) => !s.dead).length;
+	const ghostVotes = seats.reduce(
+		(sum, s) => sum + (s.dead ? (s.votes ?? (s.ghostVote === 'used' ? 0 : 1)) : 0),
+		0
+	);
+	return { alive, total: seats.length, needed: neededToBlock(alive), ghostVotes };
 }
 
 /** Living players by team, for the Storyteller (Trevor, 2026-10-17). */

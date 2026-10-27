@@ -5,9 +5,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, newGame, run } from '#lib/core/model/fixtures.test-support.ts';
+import { publicProjection } from '#lib/core/sync/public-projection.ts';
 import {
 	blockThreshold,
 	counts,
+	townCounts,
 	ghostVotesLeft,
 	votesWithoutToken,
 	livingByTeam,
@@ -81,6 +83,46 @@ describe('ghostVotesLeft', () => {
 		expect(
 			votesWithoutToken(executed.session.game, executed.seats[0], executed.ctx.characters)
 		).toBeUndefined();
+	});
+});
+
+describe('townCounts', () => {
+	// The Storyteller's counts, worked out the same way on players' phones from the town's view
+	// (Rules_Explanation for the block, Dead_Player and Banshee for ghost votes).
+	it("matches the Storyteller's alive count, votes to block and ghost votes", () => {
+		const { session, ctx, seats } = newGame(7);
+		const g = run(
+			session,
+			ctx,
+			{ type: 'SetDead', seatId: seats[0], dead: true },
+			{ type: 'SetDead', seatId: seats[1], dead: true },
+			{ type: 'SpendGhostVote', seatId: seats[1] }
+		).game;
+		const town = townCounts(
+			publicProjection(g, undefined, undefined, undefined, ctx.characters).seats
+		);
+		expect(town).toEqual({
+			...blockThreshold(g),
+			total: 7,
+			ghostVotes: ghostVotesLeft(g, ctx.characters)
+		});
+		expect(town).toEqual({ alive: 5, needed: 3, total: 7, ghostVotes: 1 });
+	});
+
+	it('counts a Banshee the Demon killed as two votes, as the Storyteller does', () => {
+		const { session, ctx } = castGame(['banshee', 'chef', 'imp'], (s) => ({
+			type: 'SetDead',
+			seatId: s[0],
+			dead: true,
+			cause: 'demon'
+		}));
+		const seen = publicProjection(session.game, undefined, undefined, undefined, ctx.characters);
+		expect(townCounts(seen.seats).ghostVotes).toBe(ghostVotesLeft(session.game, ctx.characters));
+		expect(townCounts(seen.seats).ghostVotes).toBe(2);
+	});
+
+	it('is zero of zero with nobody seated', () => {
+		expect(townCounts([])).toEqual({ alive: 0, total: 0, needed: 0, ghostVotes: 0 });
 	});
 });
 
