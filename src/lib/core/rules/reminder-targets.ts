@@ -109,6 +109,45 @@ function seatsWith(game: Game, characterId: CharacterId, label: string): SeatId[
 	);
 }
 
+/** The seats a neighbour rule counts from: the owner's, a token's holder's, or a type's. */
+function neighbourCentres(
+	game: Game,
+	characterId: CharacterId,
+	near: NeighbourRule,
+	characters: CharacterLookup
+): SeatId[] {
+	if (near.ofType)
+		return game.seating.filter(
+			(id) =>
+				typeOf(game, id, characters) === near.ofType ||
+				registrations(game, characters).some(
+					(r) => r.seatId === id && r.types.includes(near.ofType!)
+				)
+		);
+	return near.of === 'self'
+		? ownerSeats(game, characterId, characters)
+		: seatsWith(game, characterId, near.of);
+}
+
+/**
+ * The seats a token marking neighbours belongs on as the game stands: the nearest each way,
+ * as its rule counts them, from each seat the rule counts from (`centres`, when given, in
+ * place of every owner: the token's own copy of the character). Only where they sit counts:
+ * the rule's other conditions (the Tea Lady's "both good") are judged by `reminderTargetMisses`.
+ * Undefined for a token whose rule has no `neighbour`.
+ */
+export function neighbourSeats(
+	game: Game,
+	reminder: Reminder,
+	characters: CharacterLookup,
+	centres?: readonly SeatId[]
+): SeatId[] | undefined {
+	const near = targetRule(reminder, characters)?.neighbour;
+	if (!near) return undefined;
+	const from = centres ?? neighbourCentres(game, reminder.characterId, near, characters);
+	return [...new Set(from.flatMap((id) => neighbours(game, id, near, characters)))];
+}
+
 /** The nearest seat each way from `from` that the rule counts as a neighbour. */
 function neighbours(
 	game: Game,
@@ -224,17 +263,7 @@ export function reminderTargetMisses(
 	}
 	if (rule.neighbour) {
 		const near = rule.neighbour;
-		const from = near.ofType
-			? game.seating.filter(
-					(id) =>
-						typeOf(game, id, characters) === near.ofType ||
-						registrations(game, characters).some(
-							(r) => r.seatId === id && r.types.includes(near.ofType!)
-						)
-				)
-			: near.of === 'self'
-				? owners
-				: seatsWith(game, reminder.characterId, near.of);
+		const from = neighbourCentres(game, reminder.characterId, near, characters);
 		if (from.length > 0) {
 			const fits = from.some((id) => {
 				const seats = neighbours(game, id, near, characters);

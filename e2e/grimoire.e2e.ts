@@ -5264,9 +5264,10 @@ test('the Storyteller is named on the Characters screen and renamed from the cor
 	await expect(more).toBeHidden();
 	await openGameInfo(page);
 	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
-	// One pencil in Game info's header edits what can change (Trevor, 2026-10-19).
-	await expect(info.locator('tr[data-field="storyteller"] td:last-child button')).toHaveCount(0);
-	await info.getByTestId('game-info-edit').tap();
+	// A small pencil by the Storyteller's name, and no buttons in Game info's header
+	// (Trevor, 2026-10-27).
+	await expect(info.locator('.head-actions')).toHaveCount(0);
+	await info.locator('tr[data-field="storyteller"]').getByTestId('game-info-edit').tap();
 	await expect(info).toBeHidden();
 	const dialog = page.getByRole('dialog', { name: 'Edit game info' });
 	const name = dialog.getByRole('textbox', { name: 'Storyteller' });
