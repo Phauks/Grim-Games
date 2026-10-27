@@ -58,7 +58,8 @@ describe('every becomes rule offers its change, at its moment only', () => {
 		expect(BECOMES.map((b) => b.id).sort()).toEqual(['mezepheles', 'scarletwoman', 'snakecharmer']);
 	});
 
-	it.each(BECOMES)('$id: $token', ({ id, token, into, when = 'placed' }) => {
+	it.each(BECOMES)('$id: $token', ({ id, token, into, when: removed }) => {
+		const when = removed ?? ('placed' as const);
 		const { cast, steps = [], carrier, expected } = SCENARIOS[into](id);
 		const { session, seats } = castGame(cast, ...steps);
 		const reminder = { characterId: id, label: token };
