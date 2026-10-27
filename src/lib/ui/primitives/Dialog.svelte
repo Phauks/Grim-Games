@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Dialog } from '@ark-ui/svelte/dialog';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import { usePortalTarget } from './portal-target.ts';
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { layerStyle, openLayer } from './layers.ts';
@@ -84,6 +85,8 @@
 		beforeClose,
 		shownToPlayers = false
 	}: Props = $props();
+	/** Inside a full-screen view (the grim cover), into it; else the body (portal-target.ts). */
+	const portalTarget = usePortalTarget();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
 	// animation stays where it was.
@@ -119,7 +122,7 @@
 	onInteractOutside={guard}
 	onRequestDismiss={dismissedByParent}
 >
-	<Portal>
+	<Portal container={portalTarget()}>
 		<Dialog.Backdrop
 			style={layerStyle(layer, 'backdrop')}
 			data-players={shownToPlayers ? '' : undefined}

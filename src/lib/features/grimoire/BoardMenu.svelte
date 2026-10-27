@@ -6,7 +6,6 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 
 	/**
 	 * The board's ⋯ menu in named groups: the game's less frequent actions ending with End
@@ -73,8 +72,6 @@
 		open = false;
 		action();
 	}
-	/** The grim cover (Trevor, 2026-10-26), as the day sheet's own (CoverButton). */
-	let covering = $state(false);
 </script>
 
 <!-- Named groups, in two columns on a tablet or computer (Trevor, 2026-10-27: "the delineation
@@ -87,9 +84,6 @@
 			<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
 			<Button variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}>Demon bluffs</Button>
 			<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>
-			<Button variant="quiet" icon="cover" onclick={() => fromMenu(() => (covering = true))}>
-				{t('show.cover')}
-			</Button>
 			{#if onSoundboard}
 				<!-- Bells and other sounds at a tap (plan U6, Trevor 2026-10-26). -->
 				<Button variant="quiet" icon="soundboard" onclick={() => fromMenu(onSoundboard)}>
@@ -180,7 +174,6 @@
 		</div>
 	</div>
 </Dialog>
-<ShowToPlayer bind:open={covering} blank />
 
 <ConfirmDialog
 	bind:open={closeRoomOpen}

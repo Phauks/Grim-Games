@@ -390,7 +390,7 @@ test('a saved script is shared by QR code and link, with no code to type', async
 
 	// One screen: QR code and link.
 	await script.getByRole('button', { name: 'Share script' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Share Storm Front' });
+	const dialog = page.getByRole('dialog', { name: 'Share', exact: true });
 	const qr = dialog.getByRole('img', { name: 'QR code for Storm Front' });
 	await expect(qr).toBeVisible();
 	// No logo: the script's name sits in the middle of the QR code (Trevor, 2026-10-19).
@@ -448,7 +448,7 @@ test("a script's logo sits in the middle of its QR code, and its name if the log
 		});
 		await added(page, name).getByRole('button', { name: 'Share script' }).tap();
 		return page
-			.getByRole('dialog', { name: `Share ${name}` })
+			.getByRole('dialog', { name: 'Share', exact: true })
 			.getByRole('img', { name: `QR code for ${name}` });
 	};
 
@@ -1388,7 +1388,7 @@ test('a Search script shares before it is saved, and Save changes nothing but it
 	expect(await page.evaluate(() => (window as unknown as { seen: string[] }).seen)).toEqual([]);
 	await top.getByRole('button', { name: 'Share script' }).tap();
 	await expect(
-		page.getByRole('dialog', { name: 'Share Storm Front' }).getByTestId('share-url')
+		page.getByRole('dialog', { name: 'Share', exact: true }).getByTestId('share-url')
 	).toHaveValue(/#/);
 });
 
