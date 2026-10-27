@@ -1769,6 +1769,7 @@
 	cover={coverDetails}
 	{coverTimer}
 	{coverActions}
+	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	onEndDay={() => (endDayOpen = true)}
 	onSavant={(seatId) => {
 		savantSeat = seatId;
