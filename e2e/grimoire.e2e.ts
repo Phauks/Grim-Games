@@ -28,19 +28,14 @@ async function menu(page: Page, action: string) {
 		.tap();
 }
 
-/** ⋯ > Settings, which opens all of Settings at Board, then the section asked for. */
+/** ⋯ > Settings, which opens all of Settings at its root, then the section asked for. */
 async function boardSettings(page: Page, section: string) {
 	await menu(page, 'Settings');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	if (section !== 'Board') {
-		// Phones show one section at a time: back to the list first.
-		const back = settings.getByRole('button', { name: 'All settings' });
-		if (await back.isVisible()) await back.tap();
-		await settings
-			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: section })
-			.tap();
-	}
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: section, exact: true })
+		.tap();
 	await expect(settings.getByRole('heading', { name: section, level: 2 })).toBeVisible();
 }
 
@@ -1145,6 +1140,45 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 	);
 });
 
+test("the Demon's step says when the Princess stops its kill tonight", async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Princess : after her day-one execution, the Demon
+	// doesn't kill tonight, so the Soldier's protection isn't listed either.
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Imp'],
+		[2, 'Princess'],
+		[3, 'Soldier']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		if (name === 'Princess') await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await closeSheet(page);
+	}
+	await walkTo(page, 'Dusk');
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const reminders = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await reminders
+		.getByRole('group', { name: 'Princess' })
+		.getByRole('button', { name: "Doesn't Kill" })
+		.tap();
+	await reminders.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	await (await walkTo(page, 'Imp')).locator('button.step .count').tap();
+	const alerts = page.getByRole('dialog', { name: 'Imp' }).getByTestId('night-alerts');
+	await expect(alerts).toContainText(/Seat 1:\s*Princess\s*, doesn't\s+kill\s+tonight/);
+	await expect(alerts).not.toContainText(/Soldier/);
+});
+
 test('a filled-in info token with room left opens its picker with the filled ones picked', async ({
 	page
 }) => {
@@ -2033,14 +2067,13 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	await expect(page.getByTestId('vignette')).toHaveCount(0);
 
-	// ⋯ > Settings opens all of Settings over the board, at Board (Trevor, 2026-10-27: "just
-	// open to all settings, and stop limiting to what they can access").
+	// ⋯ > Settings opens all of Settings over the board, at its root as from the navigation
+	// (Trevor, 2026-10-27: "just open to all settings", "should just go to the root"): phones
+	// see the section list, wide screens the list beside the first section.
 	await menu(page, 'Settings');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toBeVisible();
-	// Every section is in reach: phones go back to the list first.
-	const back = settings.getByRole('button', { name: 'All settings' });
-	if (await back.isVisible()) await back.tap();
+	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
+	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toHaveCount(0);
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Storyteller' })
@@ -4213,10 +4246,10 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	} else {
 		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
 	}
-	// Settings opens all of it, at Board.
+	// Settings opens all of it, at its root.
 	await menu.getByRole('button', { name: 'Settings', exact: true }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toBeVisible();
+	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();

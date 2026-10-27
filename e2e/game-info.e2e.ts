@@ -108,6 +108,10 @@ test('an eye on each Game info line chooses what the board corner shows, as Sett
 		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	const authorSetting = settings.getByRole('checkbox', { name: 'Author', exact: true });
 	await expect(authorSetting).not.toBeChecked();
 	await settings.getByText('Author', { exact: true }).tap();

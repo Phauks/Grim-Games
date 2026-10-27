@@ -158,6 +158,15 @@ describe('Preacher', () => {
 });
 
 describe('registrations', () => {
+	// https://wiki.bloodontheclocktower.com/Legion: "you might register as a Minion too".
+	it('Legion may register as a Minion as well as a Demon', () => {
+		const { game: g, seats } = game(['chef', 'legion', 'legion']);
+		expect(registrations(g, characters)).toEqual([
+			expect.objectContaining({ seatId: seats[1], types: ['demon', 'minion'] }),
+			expect.objectContaining({ seatId: seats[2], types: ['demon', 'minion'] })
+		]);
+	});
+
 	it('the Recluse may register as evil and as a Minion or Demon', () => {
 		const { game: g, seats } = game(['chef', 'recluse', 'imp', 'spy']);
 		expect(registrations(g, characters)).toEqual([
@@ -217,10 +226,41 @@ describe('protection', () => {
 		expect(protection(g, seats[1], characters, 'demon')).toMatchObject({ characterId: 'monk' });
 		expect(protection(g, seats[1], characters, 'other')).toBeUndefined();
 		expect(protection(g, seats[2], characters, 'other')).toBeUndefined();
-		const tea = game(['tealady', 'chef', 'imp'], add(1, 'tealady', 'Cannot Die'));
-		expect(protection(tea.game, tea.seats[1], characters, 'other')).toMatchObject({
+		const tea = game(['chef', 'tealady', 'monk', 'imp'], add(0, 'tealady', 'Cannot Die'));
+		expect(protection(tea.game, tea.seats[0], characters, 'other')).toMatchObject({
 			characterId: 'tealady'
 		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Tea_Lady: only while both alive neighbours are good.
+	it('the Tea Lady protects only while both her alive neighbours are good', () => {
+		const evil = game(['chef', 'tealady', 'imp', 'monk'], add(0, 'tealady', 'Cannot Die'));
+		expect(protection(evil.game, evil.seats[0], characters, 'other')).toBeUndefined();
+		// The evil neighbour dies: the next alive player round is her neighbour now.
+		const past = game(
+			['chef', 'tealady', 'imp', 'monk', 'baron'],
+			add(0, 'tealady', 'Cannot Die'),
+			(s) => ({ type: 'SetDead', seatId: s[2], dead: true, cause: 'execution' })
+		);
+		expect(protection(past.game, past.seats[0], characters, 'demon')).toMatchObject({
+			characterId: 'tealady'
+		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Storm_Catcher: they can only die by execution.
+	it("the Storm Catcher's good character dies only by execution", () => {
+		const { game: g, seats } = game(
+			['chef', 'imp'],
+			() => ({ type: 'AddRuleCharacter', characterId: 'stormcatcher' }),
+			add(0, 'stormcatcher', 'Stormcaught')
+		);
+		expect(protection(g, seats[0], characters, 'demon')).toMatchObject({
+			characterId: 'stormcatcher'
+		});
+		expect(protection(g, seats[0], characters, 'other')).toMatchObject({
+			characterId: 'stormcatcher'
+		});
+		expect(protection(g, seats[0], characters, 'execution')).toBeUndefined();
 	});
 
 	it('a Storyteller override wins', () => {

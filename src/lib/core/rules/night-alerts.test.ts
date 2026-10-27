@@ -221,3 +221,32 @@ describe('custom characters', () => {
 		expect(short(nightStepAlerts(g, 'nightcrow', all), seats)).toEqual(['protected soldier→0']);
 	});
 });
+
+describe('Princess (https://wiki.bloodontheclocktower.com/Princess)', () => {
+	it('after her day-one execution, the Demon does not kill tonight: no kill alerts', () => {
+		const { game: g, seats } = game(
+			['imp', 'soldier', 'princess'],
+			add(0, 'princess', "Doesn't Kill")
+		);
+		expect(short(nightStepAlerts(g, 'imp', characters), seats)).toEqual(['no-kill princess→0']);
+	});
+});
+
+describe('Moonchild (https://wiki.bloodontheclocktower.com/Moonchild)', () => {
+	it('its kill is not the Demon’s: the Soldier is not protected, the Tea Lady’s player is', () => {
+		const { game: g, seats } = game(
+			['moonchild', 'soldier', 'chef', 'tealady', 'monk'],
+			add(2, 'tealady', 'Cannot Die'),
+			// The Moonchild died today; tonight its chosen good player dies.
+			(s) => ({ type: 'SetDead', seatId: s[0], dead: true, cause: 'execution' })
+		);
+		expect(nightKiller('moonchild')).toEqual({
+			by: 'other',
+			targets: 'any',
+			ignoresProtection: false
+		});
+		expect(short(nightStepAlerts(g, 'moonchild', characters), seats)).toEqual([
+			'protected tealady→2'
+		]);
+	});
+});

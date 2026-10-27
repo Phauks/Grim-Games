@@ -18,6 +18,7 @@
 import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
 import type {
 	ImpairmentReason,
+	PROTECTS_FROM,
 	Protects,
 	TokenImpairment
 } from '#lib/core/data/character-rules.ts';
@@ -26,6 +27,7 @@ import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
+	aliveNeighbours,
 	getSeat,
 	isTraveller,
 	trueCharacter,
@@ -450,8 +452,8 @@ export function registrationWorlds(
 /** One ability that protects a player from a kill, and the reminder that says so if any. */
 export interface Protector {
 	source: AbilitySource;
-	/** Against the Demon's kill only, any death, or an execution only. */
-	from: 'demon' | 'any' | 'execution';
+	/** Against the Demon's kill only, any death, an execution only, or all but an execution. */
+	from: (typeof PROTECTS_FROM)[number];
 }
 
 /** What a death is from: the Demon's kill, another ability's, or the day's execution. */
@@ -459,7 +461,11 @@ export type DeathBy = 'demon' | 'other' | 'execution';
 
 /** Whether a protection stops a death `by` this: not one lasting only the night, for an execution. */
 function stops(rule: Protects, by: DeathBy): boolean {
-	return (rule.from === 'any' || rule.from === by) && !(rule.night && by === 'execution');
+	const covers =
+		rule.from === 'any' ||
+		rule.from === by ||
+		(rule.from === 'not-execution' && by !== 'execution');
+	return covers && !(rule.night && by === 'execution');
 }
 
 /**
@@ -476,6 +482,10 @@ function protectionFor(
 	const seat = getSeat(game, seatId);
 	if (!seat) return undefined;
 	const from = seatOfCharacter(game, characterId, characters);
+	if (rule.whileNeighboursGood) {
+		const near = from === undefined ? [] : aliveNeighbours(game, from);
+		if (near.length === 0 || near.some((id) => alignmentOf(game, id) !== 'good')) return undefined;
+	}
 	switch (rule.who) {
 		case 'self':
 			return trueCharacter(game, seatId, characters) === characterId

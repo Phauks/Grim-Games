@@ -41,5 +41,9 @@
 	"reminderMovement": {
 		"fixed": ["Is The Demon"],
 		"why": "Marks that the Scarlet Woman became the Demon."
+	},
+	"becomes": {
+		"token": "Is The Demon",
+		"into": "demon"
 	}
 }

@@ -112,7 +112,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A player's avatar (their initials) on a token face: `ui/seating/AvatarFace.svelte`; ids and `initialsOf` in `core/avatars` (enforced by review)
 - A setting in Settings (or where it is used): a row, a switch, a colour, a heading over a run, a closing group: `ui/settings/` `SettingRow` (and `SettingToggle`, `SettingSelect`, `SettingSlider`, `SettingChoice`, `SettingColor`), `SettingHeading`, `SettingCollapsible`, `SettingGroup` (with a preview); each carries `data-setting`, and `ui/base.css` draws the line between any two (enforced by `e2e/settings-framework.e2e.ts`)
 - Text size and Pinch to zoom outside Settings (the player screen's settings cog): `features/settings/sections/TextSizeRows.svelte` (Settings > Text uses it too) (enforced by `e2e/play.e2e.ts`)
-- A token size or switch (character, reminder, names and reminders in text) as a setting row: `features/characters/TokenAppearanceRow.svelte` (keys in `token-appearance-rows.ts`), and the player name size: `features/grimoire/NameSizeSlider.svelte`; Settings > Tokens and the player's `features/player/PlayerSizeRows.svelte` (cog and Settings > Player) draw them, never their own slider (enforced by `e2e/play.e2e.ts`). Each group's live preview: `features/characters/TokenAppearancePreview.svelte` (`kind` token, reminder or inText) in a `SettingGroup`, the same in both
+- A token size or switch (character, reminder, names and reminders in text) as a setting row: `features/characters/TokenAppearanceRow.svelte` (keys in `token-appearance-rows.ts`), and the player name size: `features/grimoire/NameSizeSlider.svelte`; Settings > Tokens draws them, never their own slider. Players reach them there too: the player screen's and Public Town's cogs open the one Settings at its list of sections (Trevor, 2026-10-27: one Settings everywhere)
 - Reading a QR code with the camera: `ui/share/QrScanner.svelte` (`ui/share/qr-reader.ts`: BarcodeDetector, else jsQR) (enforced by review)
 - Text too long for one QR code (an animated code): `core/codes/qr-frames.ts` (`qrFrames`, `QrFrameCollector`); shown by `frames` on `ui/share/SharePanel`, read through `ui/share/QrScanner.svelte` (`progress`) (enforced by `e2e/offline-share.e2e.ts`)
 - A fake phone camera in an e2e test: `e2e/camera.ts` (`aimCamera`, one picture or frames in turn) (enforced by review)
@@ -145,6 +145,8 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means): `reminderPlaceholders`, moved
 - Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text): `nightText`, moved
 - Info token characters (`info-token-characters.ts`: the character a night step's card always shows): `infoTokenCharacters`, new
+- On-death triggers (`night-alerts.ts` `ON_DEATH`): `onDeath`, moved
+- Protection (`ability.ts`, `night-alerts.ts`; `not-execution` for the Storm Catcher, `whileNeighboursGood` for the Tea Lady): `protects`, moved
 - On-death triggers (`night-alerts.ts` `ON_DEATH`; `onDeathApplies` reads `by` and `night` against the death cause): `onDeath`, moved
 - Protection (`ability.ts`, `night-alerts.ts`): `protects`, moved
 - Impairments (`ability.ts`, read by `impairs-rules.ts`: the Drunk, Witch, Minstrel, Preacher, Xaan; Barista's `clears`; other tokens end with their character unless an entry says they last): `impairs`, moved
@@ -155,7 +157,9 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Nomination abilities (`rules/nominations.ts`): `onNominated`, `afterDeath`, moved
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
+- Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
+- Character and alignment changes (`becomes.ts`, was `BECOMES_DEMON`: the Scarlet Woman's Is The Demon, the Mezepheles's Turns Evil, the Snake Charmer's swap): `becomes`, moved. A Demon's death by its own kill passing it on (the Imp, the Fang Gu) is `gameEnd` `death-passes`, asked by `StarPassPrompt`.
 - Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56): `dayClaim`, `guessLimit`, moved
 - Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new): `dayMark`, moved
 - Night information and answers (`night-info.ts`): `learns`, `answers`, moved
@@ -170,6 +174,11 @@ character: a rule becomes a behaviour with parameters that any character can use
 Some lints start with a list of files written before the lint (for example
 `LOCAL_STORAGE_TODO` in `eslint.config.js`). Move a file onto the shared piece and take it off
 the list. Never add a file to one.
+
+`TRAIT_TODO` in `src/lib/core/rules/trait-coverage.test.ts` lists official characters whose
+ability text names a mechanic (poison or drunk, can't die, registers, kills, dies) that no rule
+encodes, each with why. Give a new character the rule rather than an entry; take an entry off
+once its rule exists.
 
 `npm run lint:lines` (`scripts/check-lines.ts`) keeps every source file at 800 lines or fewer
 (tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its

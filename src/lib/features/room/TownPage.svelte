@@ -28,7 +28,7 @@
 	import { listenForTownSounds } from '#lib/features/sound/town-sounds.ts';
 	import { RoomTown } from './town.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
-	import TownSizesDialog from './TownSizesDialog.svelte';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 
 	/**
@@ -119,7 +119,6 @@
 	const table = $derived(town?.view?.public);
 	/** The town in the Storyteller's board's shape (Trevor, 2026-10-27), on unless switched off. */
 	const townShape = $derived(playerSettings.current.townMatchShape);
-	let sizesOpen = $state(false);
 	const showTown = $derived(!message && !!script && !!table?.seats.length);
 	/**
 	 * The Storyteller's day timer, as phones show it (Trevor, 2026-10-26: "During day, public
@@ -162,14 +161,16 @@
 						disabled: !parseAspect(table.layout?.aspect),
 						onSelect: () => playerSettings.update({ townMatchShape: !townShape })
 					},
-					// The player view's text and token sizes (Trevor, 2026-10-27).
-					{ value: 'sizes', label: t('player.sizes'), onSelect: () => (sizesOpen = true) }
+					// The one Settings, at its list of sections, as everywhere (Trevor, 2026-10-27).
+					{
+						value: 'settings',
+						label: t('settings.title'),
+						onSelect: () => settingsDialog.show()
+					}
 				]}
 			/></span
 		>{/if}
 {/snippet}
-
-<TownSizesDialog bind:open={sizesOpen} />
 
 {#if showBoard}<SharedBoard
 		shared={town?.grimoire}

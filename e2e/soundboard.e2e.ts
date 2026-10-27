@@ -97,9 +97,7 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	// ⋯ > Settings opens all of Settings at Board; phones go back to the list first.
-	const back = settings.getByRole('button', { name: 'All settings' });
-	if (await back.isVisible()) await back.tap();
+	// ⋯ > Settings opens all of Settings at its root.
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Sound' })
