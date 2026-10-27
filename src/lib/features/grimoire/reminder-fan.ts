@@ -169,6 +169,8 @@ function layout(
 		if (out.length < input.count) fits = false;
 		// Still short: over the edge of its own token, before anything else's.
 		add(candidates({ ...input, size: input.size * 0.3 }), clear);
+		// Then anywhere round its own token, up to half over it, before leaning towards another.
+		add(around({ ...input, size: 0 }), clear);
 		// Still short: covering nothing is worth more than being nearest (Trevor, 2026-10-16:
 		// never over another player's reminders). The clear spot nearest its own seat, counting
 		// any lean towards another seat twice, so whose it is stays as plain as the room allows.
