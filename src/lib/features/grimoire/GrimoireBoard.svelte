@@ -1158,7 +1158,21 @@
 		onScript={() => (scriptOpen = true)}
 		onShare={() => (phonesOpen = true)}
 		onMore={() => (menuOpen = true)}
-	/>
+	>
+		<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26), in the same place on
+		     the board and the day (2026-10-27: "so it doesn't move"); the Storyteller's only. -->
+		{#snippet lead()}
+			{#if !watching}
+				<CoverButton
+					gameId={game.gameId}
+					details={coverDetails}
+					timer={coverTimer}
+					actions={coverActions}
+					outlined
+				/>
+			{/if}
+		{/snippet}
+	</BoardToolbar>
 
 	<div
 		class="board"
@@ -1466,9 +1480,9 @@
 				{/if}
 			{/snippet}
 		</BoardCorner>
-		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The grim
-		     cover beside it, never in a menu (Trevor, 2026-10-26), and the soundboard (Trevor,
-		     2026-10-27), the Storyteller's only. -->
+		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The
+		     soundboard beside it (Trevor, 2026-10-27: "Sound can be next to timer for now"), the
+		     Storyteller's only. -->
 		<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
 			{#if !watching}
 				<IconButton
@@ -1476,13 +1490,6 @@
 					label={t('settings.soundboard')}
 					outlined
 					onclick={() => (soundboardOpen = true)}
-				/>
-				<CoverButton
-					gameId={game.gameId}
-					details={coverDetails}
-					timer={coverTimer}
-					actions={coverActions}
-					outlined
 				/>
 			{/if}
 			{#if showTimer}
@@ -2059,7 +2066,7 @@
 			grid-row: 1;
 		}
 	}
-	/* The cover's button has the timer's solid fill, so it reads on any background. */
+	/* The soundboard's button has the timer's solid fill, so it reads on any background. */
 	.board-timer :global(.icon-button[data-outlined]) {
 		background: var(--surface);
 	}

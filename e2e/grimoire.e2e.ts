@@ -1357,22 +1357,25 @@ test("the Board preview's bank has the board bank's outline and colour", async (
 	expect(await dialog.getByTestId('preview-bank').evaluate(look)).toEqual(board);
 });
 
-// Trevor (2026-10-23): a full screen button on the board, for those who don't know how.
-test('the board can go full screen from its toolbar, and back', async ({ page }) => {
+// Trevor (2026-10-23): full screen on the board, for those who don't know how; in ⋯ since
+// 2026-10-27 ("We can move full screen into ... Menu"), so the grim cover sits beside ☰.
+test('the board can go full screen from its ⋯ menu, and back', async ({ page }) => {
 	await startGame(page);
-	const button = page.getByRole('button', { name: 'Full screen', exact: true });
-	await expect(button).toHaveAttribute('aria-pressed', 'false');
-	// Its symbol alone, last on the toolbar after ⋯ (Trevor, 2026-10-24).
-	await expect(button).toHaveText('');
-	await expect(
-		page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button').last()
-	).toHaveAccessibleName('Full screen');
-	await button.tap();
-	await expect(button).toHaveAttribute('aria-pressed', 'true');
-	expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-	await button.tap();
-	await expect(button).toHaveAttribute('aria-pressed', 'false');
-	expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(toolbar.getByRole('button', { name: 'Full screen' })).toHaveCount(0);
+	const item = () =>
+		page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Full screen', exact: true });
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(item()).toHaveAttribute('aria-pressed', 'false');
+	await item().tap();
+	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
+	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(item()).toHaveAttribute('aria-pressed', 'true');
+	await item().tap();
+	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
@@ -4200,7 +4203,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 		/^History Demon bluffs Notes( Game info)?( Character selection)? End game$/
 	);
 	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Arrange seats']);
-	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
+	expect(await names('App')).toEqual(['Settings', 'Full screen', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
 	const seats = (await group('Seats').boundingBox())!;

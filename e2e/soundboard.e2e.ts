@@ -18,13 +18,15 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 
-	// On the board beside the day timer and the grim cover, not in the ⋯ menu (Trevor,
-	// 2026-10-27).
+	// On the board beside the day timer, not in the ⋯ menu (Trevor, 2026-10-27: "Sound can be
+	// next to timer for now").
 	const button = page.getByRole('button', { name: 'Soundboard', exact: true });
-	const cover = (await page.getByTestId('cover-button').boundingBox())!;
+	const timer = (await page.getByTestId('day-timer').boundingBox())!;
 	const placed = (await button.boundingBox())!;
-	expect(Math.abs(placed.y - cover.y)).toBeLessThan(2);
-	expect(placed.x + placed.width).toBeLessThanOrEqual(cover.x + 1);
+	// Touching it, beside or under it: the gap between the two is at most a small space.
+	const gapX = Math.max(timer.x - (placed.x + placed.width), placed.x - (timer.x + timer.width));
+	const gapY = Math.max(timer.y - (placed.y + placed.height), placed.y - (timer.y + timer.height));
+	expect(Math.max(gapX, gapY)).toBeLessThan(16);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	await expect(menu.getByRole('button', { name: 'Soundboard' })).toHaveCount(0);

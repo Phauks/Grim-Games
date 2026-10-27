@@ -3,6 +3,7 @@
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
+	import { appFullScreen } from '#lib/ui/full-screen.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -195,6 +196,18 @@
 				>
 					{t('settings.title')}
 				</Button>
+				<!-- Here, not on the toolbar, so the grim cover can sit beside ☰ (Trevor, 2026-10-27).
+				     The symbol says on or off; where the browser can't, it isn't listed. -->
+				{#if appFullScreen.available}
+					<Button
+						variant="quiet"
+						icon={appFullScreen.on ? 'exitFullScreen' : 'fullScreen'}
+						aria-pressed={appFullScreen.on}
+						onclick={() => fromMenu(() => appFullScreen.toggle())}
+					>
+						Full screen
+					</Button>
+				{/if}
 				<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 				<span class="menu-nav">
 					<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
