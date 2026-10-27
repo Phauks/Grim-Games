@@ -7,6 +7,8 @@ export const room = {
 	// Back to town (plan U2, Trevor's words): the Storyteller's call, and what a phone shows.
 	'room.callTown': 'Back to town',
 	'room.callTownHeard': 'Back to town',
+	'room.callTownConfirm': 'Back to town?',
+	'room.callTownWhat': 'Every player’s phone sounds, and the day timer stops.',
 	'room.callTownFailed': 'Couldn’t reach the players’ phones.',
 	'room.back': 'Grimoire',
 	'room.openingRoom': 'Opening a room…',

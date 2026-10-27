@@ -63,6 +63,10 @@
 	);
 	const ghostLabel = $derived(counts && t('day.ghostVotesLabel', { count: counts.ghostVotes }));
 
+	/** By day the timer; in Town only the sun, set (the clock means nothing once called). */
+	const showTimer = $derived(
+		!!timer && (phase.kind === 'day' || (phase.kind === 'town' && timer.look === 'sun'))
+	);
 	const watched = new WatchedTimer();
 	// Each copy from the room replaces the last; untracked, as set reads what it writes.
 	$effect(() => {
@@ -75,8 +79,13 @@
 	const CX = 24;
 	const HORIZON = 24;
 	const R = 17;
+	/**
+	 * The share of the day's time left. Called Back to town, the sun has set at the end of its
+	 * path (Trevor, 2026-10-27), wherever the timer stopped.
+	 */
+	const left = $derived(phase.kind === 'town' ? 0 : watched.left);
 	/** Where the sun is along its path: the share of the day's time used. */
-	const angle = $derived(Math.PI * watched.left);
+	const angle = $derived(Math.PI * left);
 	const sunX = $derived(CX + R * Math.cos(angle));
 	const sunY = $derived(HORIZON - R * Math.sin(angle));
 	const sky = `M${CX - R} ${HORIZON} A${R} ${R} 0 0 1 ${CX + R} ${HORIZON} Z`;
@@ -95,7 +104,7 @@
 	const SKY_R = CHORD ** 2 / (8 * RISE) + RISE / 2;
 	/** Half the angle the arc spans, seen from the circle's centre. */
 	const SPAN = Math.asin(CHORD / 2 / SKY_R);
-	const along = $derived(-SPAN + 2 * SPAN * (1 - watched.left));
+	const along = $derived(-SPAN + 2 * SPAN * (1 - left));
 	const wideX = $derived(SKY_W / 2 + SKY_R * Math.sin(along));
 	const wideY = $derived(GROUND - RISE + SKY_R - SKY_R * Math.cos(along));
 	const wideArc = `M${(SKY_W - CHORD) / 2} ${GROUND} A${SKY_R} ${SKY_R} 0 0 1 ${(SKY_W + CHORD) / 2} ${GROUND}`;
@@ -122,9 +131,9 @@
 	{#if wide}
 		<!-- Kept in every phase, so the row never changes height. -->
 		<span class="sky-slot">
-			{#if timer && phase.kind === 'day'}{@render shownTimer()}{/if}
+			{#if showTimer}{@render shownTimer()}{/if}
 		</span>
-	{:else if timer && phase.kind === 'day'}{@render shownTimer()}{/if}
+	{:else if showTimer}{@render shownTimer()}{/if}
 </svelte:element>
 
 {#snippet shownTimer()}
@@ -133,14 +142,14 @@
 			class="players-timer"
 			data-testid="players-timer"
 			data-look={timer.look}
-			data-done={watched.done ? '' : undefined}
+			data-done={watched.done || phase.kind === 'town' ? '' : undefined}
 		>
 			{#if timer.look === 'sun' && wide}
 				<svg
 					class="wide-sun"
 					viewBox="0 0 {SKY_W} {SKY_H}"
 					role="img"
-					aria-label={t('day.sunLabel', { percent: Math.round(watched.left * 100) })}
+					aria-label={t('day.sunLabel', { percent: Math.round(left * 100) })}
 				>
 					<clipPath id="{id}-wide"><rect x="0" y="0" width={wideX} height={GROUND} /></clipPath>
 					<path class="sky" d="{wideArc} Z" clip-path="url(#{id}-wide)" />
@@ -156,7 +165,7 @@
 				<svg
 					viewBox="0 0 48 28"
 					role="img"
-					aria-label={t('day.sunLabel', { percent: Math.round(watched.left * 100) })}
+					aria-label={t('day.sunLabel', { percent: Math.round(left * 100) })}
 				>
 					<!-- The sky beneath the sun's path so far, filled from the left up to the sun. -->
 					<clipPath id="{id}-passed"><rect x="0" y="0" width={sunX} height={HORIZON} /></clipPath>
