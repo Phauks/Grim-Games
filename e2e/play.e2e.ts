@@ -955,7 +955,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 		'data-logo',
 		'/data/logos/tb.webp'
 	);
-	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
+	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
 	await share.getByRole('button', { name: 'Close' }).tap();
 
 	// /play itself shows the same room, while the phone is in it.

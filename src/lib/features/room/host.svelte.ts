@@ -49,16 +49,19 @@ import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
 import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
+import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 
 const STORAGE_KEY = 'grim-games-room-host';
 
 interface StoredRoom {
 	code: string;
 	key: string;
-	/** The key in the view-only grimoire link, while it is on. */
+	/** The key Grim view's password makes, while Grim view is on. */
 	viewerKey?: string;
-	/** The Grim view password that key was made from, if the Storyteller set one. */
+	/** The Grim view password that key was made from. */
 	viewerPassword?: string;
+	/** The game that password was made for: the next game gets a new one (2026-10-26). */
+	viewerGame?: string;
 	/** The game whose players may see their own characters now (Trevor, 2026-10-26). */
 	rolesShown?: string;
 }
@@ -94,12 +97,14 @@ export class RoomHost {
 	/** True while a room is being opened. */
 	opening = $state(false);
 	/**
-	 * The key in the view-only grimoire link while the Storyteller has it on (Specters,
-	 * Trevor 2026-10-18). Viewers see everything, so it is off until turned on, and turning
-	 * it on again makes a new link.
+	 * The key Grim view's password makes, while the Storyteller has it on (Specters, Trevor
+	 * 2026-10-18). Viewers see everything, so it is off until turned on.
 	 */
 	viewerKey = $state<string>();
-	/** The Grim view password, while the link is on with one (plan D1). */
+	/**
+	 * Grim view's password, while it is on (Trevor, 2026-10-26: "access password locked by
+	 * storyteller ... default to a new password per game (that can be customizable)").
+	 */
 	viewerPassword = $state<string>();
 	/** True when the grimoire is too large to send to viewers. */
 	grimoireTooLarge = $state(false);
@@ -147,6 +152,9 @@ export class RoomHost {
 			this.viewerPassword = stored.viewerKey ? stored.viewerPassword : undefined;
 			if (stored.viewerKey) void this.#useViewerKey(stored.viewerKey);
 			this.#connect(stored);
+			// Grim view from before passwords were all there was: the link is gone, so a password.
+			if (stored.viewerKey && !stored.viewerPassword)
+				void this.setViewerPassword(newGrimViewPassword());
 		}
 	}
 
@@ -196,19 +204,20 @@ export class RoomHost {
 		}
 	}
 
-	/** Turns the view-only grimoire link on, with a new key, or off for every viewer. */
+	/** Turns Grim view on, with a new password, or off for every viewer. */
 	async setViewers(on: boolean): Promise<void> {
 		if (on === !!this.viewerKey) return;
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
 		if (!stored) return;
 		if (on) {
-			const key = randomKey();
-			writeStored(STORAGE_KEY, { ...stored, viewerKey: key });
-			await this.#useViewerKey(key);
+			// Set first, so the password below has a Grim view to change.
+			this.viewerKey = randomKey();
+			await this.setViewerPassword(newGrimViewPassword());
 		} else {
-			const { viewerKey: _off, viewerPassword: _password, ...rest } = stored;
+			const { viewerKey: _off, viewerPassword: _password, viewerGame: _game, ...rest } = stored;
 			void _off;
 			void _password;
+			void _game;
 			writeStored(STORAGE_KEY, rest);
 			this.viewerKey = undefined;
 			this.viewerPassword = undefined;
@@ -218,32 +227,40 @@ export class RoomHost {
 	}
 
 	/**
-	 * A new view-only link in one step (Trevor, 2026-10-20): the old one stops working and
-	 * anyone watching with it is let go.
+	 * A new password in one step (Trevor, 2026-10-20): the old one stops working and anyone
+	 * watching with it is let go.
 	 */
 	async refreshViewers(): Promise<void> {
-		await this.setViewerPassword('');
+		await this.setViewerPassword(newGrimViewPassword());
 	}
 
 	/**
-	 * Makes the link's key from a Grim view password (plan D1), so the room code and the
-	 * password open the grimoire too; '' goes back to a random key. Either way the old link
-	 * stops working and anyone watching with it is let go.
+	 * Grim view's password (plan D1): the room code and it open the grimoire. One the
+	 * Storyteller types lasts for this game; '' makes a new one. Either way the old one stops
+	 * working and anyone watching with it is let go.
 	 */
 	async setViewerPassword(password: string): Promise<void> {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
 		if (!stored || !this.viewerKey) return;
-		const clean = password.trim();
-		const key = clean ? await viewerKeyFromPassword(stored.code, clean) : randomKey();
-		const { viewerPassword: _old, ...rest } = stored;
-		void _old;
+		const clean = password.trim() || newGrimViewPassword();
+		const key = await viewerKeyFromPassword(stored.code, clean);
+		const game = this.#game?.game.gameId ?? stored.viewerGame;
 		writeStored(STORAGE_KEY, {
-			...rest,
+			...stored,
 			viewerKey: key,
-			...(clean ? { viewerPassword: clean } : {})
+			viewerPassword: clean,
+			...(game ? { viewerGame: game } : {})
 		});
-		this.viewerPassword = clean || undefined;
+		this.viewerPassword = clean;
 		await this.#useViewerKey(key);
+	}
+
+	/** Each game gets a new Grim view password (Trevor, 2026-10-26), once it opens here. */
+	#newGameViewers(gameId: string): void {
+		const stored = readStored<StoredRoom>(STORAGE_KEY);
+		if (!stored?.viewerKey || stored.viewerGame === gameId) return;
+		if (stored.viewerGame) void this.refreshViewers();
+		else writeStored(STORAGE_KEY, { ...stored, viewerGame: gameId });
 	}
 
 	async #useViewerKey(key: string): Promise<void> {
@@ -257,7 +274,7 @@ export class RoomHost {
 
 	/**
 	 * A new code (Trevor, 2026-10-20): the old room is deleted, its phones and viewers let go,
-	 * and a new one opened. A view-only link that was on is on again, with a new key.
+	 * and a new one opened. Grim view that was on is on again, with the same password.
 	 */
 	async refreshRoom(): Promise<void> {
 		const watching = !!this.viewerKey;
@@ -286,8 +303,9 @@ export class RoomHost {
 		if (this.#game === game) return;
 		this.#stopWatching?.();
 		this.#game = game;
+		this.#newGameViewers(game.game.gameId);
 		this.#stopWatching = $effect.root(() => {
-			// The whole grimoire, for the view-only link while it is on.
+			// The whole grimoire, for Grim view while it is on.
 			$effect(() => {
 				if (!this.viewerKey && !this.#grimoireWanted) return;
 				const saved = toSavedGame(game.session, Date.now());

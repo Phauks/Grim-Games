@@ -31,8 +31,9 @@ export type ScannedRoom =
 
 /**
  * Reads what a phone's camera found (plan J2): a room code on its own, or a link from the
- * Storyteller's Share screen (/join/<code>, or /watch/<code>#<key> for Grim view), from any
- * copy of the app, so a production phone can scan a beta table's code. Anything else is null.
+ * Storyteller's Share screen (/join#<code>, or an older /join/<code> or /watch/<code>#<key>),
+ * from any copy of the app, so a production phone can scan a beta table's code. Anything else
+ * is null.
  */
 export function scannedRoom(text: string): ScannedRoom | null {
 	const bare = normaliseRoomCode(text.trim());
@@ -44,6 +45,11 @@ export function scannedRoom(text: string): ScannedRoom | null {
 		return null;
 	}
 	if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+	// The one QR (Trevor, 2026-10-26): Join game, with the code in the hash.
+	if (/\/join\/?$/.test(url.pathname)) {
+		const code = normaliseRoomCode(decodeURIComponent(url.hash.slice(1)));
+		return code ? { kind: 'join', code } : null;
+	}
 	const match = /\/(join|watch)\/([^/]+)\/?$/.exec(url.pathname);
 	const code = match && normaliseRoomCode(decodeURIComponent(match[2]));
 	if (!match || !code) return null;
