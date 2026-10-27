@@ -13,6 +13,7 @@
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames, gameStarts, nightUnderway, type EndedGame } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import CallTownConfirm from '#lib/features/room/CallTownConfirm.svelte';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -58,7 +59,7 @@
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
-	import SoundboardSheet from '#lib/features/sound/SoundboardSheet.svelte';
+	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -894,6 +895,9 @@
 	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
 	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
+	/** Back to town's Cancel/Confirm, from ⋯ or from the grim cover. */
+	let callTownOpen = $state(false);
+	let coverCallTownOpen = $state(false);
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
 	/** The players' view, from the grim cover. */
@@ -1520,7 +1524,7 @@
 			ended: !!ended
 		}}
 	/>
-	<SoundboardSheet bind:open={soundboardOpen} />
+	<SoundboardDialog bind:open={soundboardOpen} />
 {/if}
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
@@ -1532,9 +1536,7 @@
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
-	onCallTown={!watching && !ended && roomHost().code
-		? () => roomHost().callTown() || toast(t('room.callTownFailed'))
-		: undefined}
+	onCallTown={!watching && !ended && roomHost().code ? () => (callTownOpen = true) : undefined}
 	onGameInfo={() => (modeMenuOpen = true)}
 	onCharacterSelection={startedAt === undefined && !setUp && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
@@ -1701,6 +1703,8 @@
 	</div>
 </Dialog>
 
+<CallTownConfirm bind:open={callTownOpen} />
+
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
 <Dialog bind:open={phonesOpen} title={t('room.title')} size="full" shownToPlayers>
 	<RoomPanel game={grimoire.open} />
@@ -1711,9 +1715,16 @@
      the cover, over it. -->
 {#snippet coverActions()}
 	{#if !ended && roomHost().code}
-		<Button icon="sound" onclick={() => roomHost().callTown() || toast(t('room.callTownFailed'))}>
+		<!-- Lit once the day's time is up; it never calls by itself (Trevor, 2026-10-27). -->
+		<Button
+			icon="sound"
+			variant={liveDayTimer.done ? 'accent' : 'solid'}
+			data-testid="cover-call-town"
+			onclick={() => (coverCallTownOpen = true)}
+		>
 			{t('room.callTown')}
 		</Button>
+		<CallTownConfirm bind:open={coverCallTownOpen} />
 	{/if}
 	{#if loadedScript}
 		<Button icon="script" onclick={openCoverView}>{t('show.playerView')}</Button>

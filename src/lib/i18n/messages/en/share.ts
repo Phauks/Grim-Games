@@ -41,5 +41,6 @@ export const share = {
 		'The camera is blocked for this app. Allow it in your browser or phone settings, then try again.',
 	'share.scan.noCamera': 'No camera could be opened on this device.',
 	'share.scan.failed': 'Codes could not be read on this device.',
+	'share.scan.closer': 'Move closer to the code',
 	'share.scan.frames': 'Reading the code: {read} of {total} pieces'
 } as const;

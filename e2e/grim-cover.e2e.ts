@@ -179,7 +179,7 @@ test('the Storyteller covers the screen from the board, beside ☰, and from the
 	).toBeLessThan(8);
 	// The Soundboard in the header, over the day (Trevor, 2026-10-27: "Approve day view E").
 	await day.getByRole('button', { name: 'Soundboard' }).tap();
-	const soundboard = page.locator('[data-scope="drawer"][data-part="content"]');
+	const soundboard = page.getByRole('dialog', { name: 'Soundboard' });
 	await expect(soundboard.getByRole('group', { name: 'Soundboard' })).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(soundboard).toBeHidden();

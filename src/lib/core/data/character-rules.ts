@@ -19,7 +19,7 @@ import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-to
 import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
-import { readBecomes, type Becomes } from './becomes-rules.ts';
+import { readBecomes, readMakesDemon, type Becomes, type MakesDemon } from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readImpairs, type Impairs } from './impairs-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
@@ -185,6 +185,8 @@ export interface CharacterRules {
 	keepsAbility?: KeepsAbility;
 	/** Its token says a player changed character or alignment (`becomes-rules.ts`). */
 	becomes?: Becomes;
+	/** On a night its token marks, it makes a chosen player a Demon (`becomes-rules.ts`). */
+	makesDemon?: MakesDemon;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 	/**
@@ -222,12 +224,25 @@ export interface Registers {
  * player, even if dead (the Spy as good and a Townsfolk or Outsider, the Recluse as evil and a
  * Minion or Demon); `tokens`, the player carrying one of its reminders, by label, only while
  * their alignment is `carrierAlignment` when given (the Lycanthrope's "Faux Paw" on a good
- * player, as evil).
+ * player, as evil; `TokenRegisters`). A Fabled's tokens work while it is in play.
  */
 export interface RegistersAs {
 	self?: Registers;
-	tokens?: Readonly<Record<ReminderLabel, Registers & { carrierAlignment?: Alignment }>>;
+	tokens?: Readonly<Record<ReminderLabel, TokenRegisters>>;
 }
+
+/**
+ * A `registersAs.tokens` entry. `asAnything`: the carrier may register as either alignment and
+ * any seated character type, its true ones first; `whileToken`: only while another of this
+ * character's reminders is still in play (the Revolutionary's pair, each "Aligned", may
+ * register falsely until "Register Falsely?" comes off,
+ * https://wiki.bloodontheclocktower.com/Revolutionary).
+ */
+export type TokenRegisters = Registers & {
+	carrierAlignment?: Alignment;
+	asAnything?: true;
+	whileToken?: ReminderLabel;
+};
 
 /**
  * What a `learns` character is shown, each worked out in `rules/night-info.ts`:
@@ -294,11 +309,13 @@ export interface Kills {
 export const PROTECTS_WHO = ['self', 'marked', 'good'] as const;
 /**
  * What a protection stops: the Demon's kill, any death, only an execution (the Devil's
- * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate), or any death but an
+ * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate), any death but an
  * execution (the Storm Catcher's good character "can only die by execution",
- * https://wiki.bloodontheclocktower.com/Storm_Catcher).
+ * https://wiki.bloodontheclocktower.com/Storm_Catcher), or any death by day, an execution
+ * included (the Vizier "cannot die during the day",
+ * https://wiki.bloodontheclocktower.com/Vizier).
  */
-export const PROTECTS_FROM = ['demon', 'any', 'execution', 'not-execution'] as const;
+export const PROTECTS_FROM = ['demon', 'any', 'execution', 'not-execution', 'day'] as const;
 /**
  * `night`: it lasts only the night it is given ("can't die tonight"), so never stops an
  * execution. `storytellerDecides`: the player only "might not die" (the Pacifist, the
@@ -353,6 +370,7 @@ export const RULE_KEYS = [
 	'stopsKilling',
 	'keepsAbility',
 	'becomes',
+	'makesDemon',
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'orHiddenAs',
@@ -567,6 +585,10 @@ export function parseCharacterRules(
 	if (raw.becomes !== undefined) {
 		const becomes = readBecomes(raw.becomes, `${path}.becomes`, issues, reminders);
 		if (becomes) rules.becomes = becomes;
+	}
+	if (raw.makesDemon !== undefined) {
+		const makes = readMakesDemon(raw.makesDemon, `${path}.makesDemon`, issues, reminders);
+		if (makes) rules.makesDemon = makes;
 	}
 	if (raw.infoTokenCharacters !== undefined) {
 		const at = `${path}.infoTokenCharacters`;

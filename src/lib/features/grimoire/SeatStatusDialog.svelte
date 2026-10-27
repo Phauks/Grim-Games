@@ -40,7 +40,13 @@
 
 	let reviveOpen = $state(false);
 	// Only the causes that fit this player (core, which no longer offers "Something else").
-	const causes = $derived(seatId && sheetOpen ? validDeathCauses(game, seatId, characters) : []);
+	// By day (Night 1 is over and no night is under way), so "can't die by day" is flagged.
+	const day = $derived(
+		game.pastDays.length > 0 && !grimoire.nightRunning && !grimoire.nightUnderway
+	);
+	const causes = $derived(
+		seatId && sheetOpen ? validDeathCauses(game, seatId, characters, { day }) : []
+	);
 	let flagged = $state<ValidDeathCause | undefined>();
 	let flagOpen = $state(false);
 

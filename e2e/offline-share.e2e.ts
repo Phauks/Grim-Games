@@ -212,3 +212,16 @@ test('an offline code names the live room, and the phone joins it once it has in
 	await expect(phone.getByTestId('offline-game')).toHaveCount(0);
 	await context.close();
 });
+
+test('a scanner that reads no code for a while asks to move closer', async ({
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-27: "when I scanned and was too far away, it didn't read anything".
+	const blank = qrSrc('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"></svg>');
+	const { context, phone } = await scanOffline(browser, testInfo, blank);
+	const scanner = phone.getByTestId('qr-scanner');
+	await expect(scanner.getByRole('status')).toHaveText('Move closer to the code', {
+		timeout: 10_000
+	});
+	await context.close();
+});

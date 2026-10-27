@@ -44,3 +44,29 @@ export function readBecomes(
 	if (token === undefined || into === undefined) return undefined;
 	return { token, into, ...(when === 'removed' ? { when } : {}) };
 }
+
+/**
+ * The `makesDemon` part: on a night when this character's player carries its own `token`, it
+ * chooses a player, who becomes an evil Demon of its choice (the Summoner's Night 3,
+ * https://wiki.bloodontheclocktower.com/Summoner). Its night step offers the choice.
+ */
+export interface MakesDemon {
+	token: ReminderLabel;
+}
+
+/** Reads a `makesDemon` block; `token` must be one of the character's `reminders`. */
+export function readMakesDemon(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): MakesDemon | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['token'], path, issues);
+	if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
+	const token = readToken(raw, 'token', path, issues, reminders);
+	return token === undefined ? undefined : { token };
+}

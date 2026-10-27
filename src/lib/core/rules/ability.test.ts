@@ -206,6 +206,41 @@ describe('registrations', () => {
 		]);
 		expect(registrationWorlds(g, characters)[0].alignment(seats[1])).toBe('evil');
 	});
+
+	// https://wiki.bloodontheclocktower.com/Revolutionary: once per game, one of the two
+	// neighbours registers falsely.
+	it("the Revolutionary's pair may register as anything until Register Falsely? comes off", () => {
+		const { game: g, seats } = game(
+			['chef', 'empath', 'imp', 'poisoner'],
+			() => ({ type: 'AddRuleCharacter', characterId: 'revolutionary' }),
+			add(0, 'revolutionary', 'Aligned'),
+			add(1, 'revolutionary', 'Aligned'),
+			add(0, 'revolutionary', 'Register Falsely?')
+		);
+		expect(registrations(g, characters)).toEqual([
+			expect.objectContaining({
+				seatId: seats[0],
+				alignments: ['good', 'evil'],
+				types: ['townsfolk', 'outsider', 'minion', 'demon'],
+				source: expect.objectContaining({ characterId: 'revolutionary' })
+			}),
+			expect.objectContaining({ seatId: seats[1], alignments: ['good', 'evil'] })
+		]);
+		expect(registrationWorlds(g, characters)[0].misregistered).toEqual([]);
+		// Used: the token comes off, and both register truly.
+		const token = g.seats[seats[0]].reminders.find((r) => r.label === 'Register Falsely?');
+		const used = {
+			...g,
+			seats: {
+				...g.seats,
+				[seats[0]]: {
+					...g.seats[seats[0]],
+					reminders: g.seats[seats[0]].reminders.filter((r) => r !== token)
+				}
+			}
+		};
+		expect(registrations(used, characters)).toEqual([]);
+	});
 });
 
 describe('protection', () => {
@@ -358,6 +393,21 @@ describe('executionSavers', () => {
 		});
 		// Not the Vizier's protection at night.
 		expect(protection(g.game, g.seats[2], characters, 'demon')).toBeUndefined();
+		expect(protection(g.game, g.seats[2], characters, 'other')).toBeUndefined();
+		// Any other death by day, a Slayer's shot or a Witch's curse.
+		expect(protection(g.game, g.seats[2], characters, 'day')).toMatchObject({
+			characterId: 'vizier'
+		});
+		expect(protection(g.game, g.seats[3], characters, 'day')).toBeUndefined();
+	});
+
+	it('a protection that lasts only the night stops no death by day', () => {
+		// https://wiki.bloodontheclocktower.com/Innkeeper: "can't die tonight".
+		const g = game(['innkeeper', 'chef', 'imp'], add(1, 'innkeeper', 'Safe'));
+		expect(protection(g.game, g.seats[1], characters, 'other')).toMatchObject({
+			characterId: 'innkeeper'
+		});
+		expect(protection(g.game, g.seats[1], characters, 'day')).toBeUndefined();
 	});
 
 	it('never offers a protection that lasts only the night', () => {

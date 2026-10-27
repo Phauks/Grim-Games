@@ -131,15 +131,14 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	// The request settles after the tap, so wait for it.
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
-	// The whole screen less one margin, clear of the camera and the rounded corners (Trevor's
-	// phone, 2026-10-27): nothing else above it takes room.
+	// The whole screen, under the camera too: only the text and controls step in (Trevor,
+	// 2026-10-27: "moving out text and controls").
 	const filled = (await town.boundingBox())!;
 	const screen = tablet.viewportSize()!;
-	const margin = filled.x;
-	expect(margin).toBeGreaterThanOrEqual(12);
-	expect(Math.round(filled.y)).toBe(Math.round(margin));
-	expect(Math.round(filled.width)).toBe(Math.round(screen.width - 2 * margin));
-	expect(Math.round(filled.height)).toBe(Math.round(screen.height - 2 * margin));
+	expect(Math.round(filled.x)).toBe(0);
+	expect(Math.round(filled.y)).toBe(0);
+	expect(Math.round(filled.width)).toBe(screen.width);
+	expect(Math.round(filled.height)).toBe(screen.height);
 	// Filling the screen, Settings still opens over the town.
 	await openSettings();
 	await expect(sections).toBeInViewport();
@@ -436,7 +435,7 @@ test('the soundboard plays on the Public Town tablet when Play on says so', asyn
 	await tablet.getByTestId('public-town').tap();
 
 	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
-	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 	// This device only, the default: the tablet stays quiet.
 	await pads.getByRole('button', { name: 'Hand bell' }).tap();

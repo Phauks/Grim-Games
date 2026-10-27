@@ -32,7 +32,8 @@ export function tableState(
 		corner,
 		characters,
 		gameSheetRules(game.gameId),
-		now?.kind === 'day' ? liveDayTimer.forPlayers : undefined,
+		// By day, and in Town, where a sun shows set (Trevor, 2026-10-27).
+		now?.kind === 'day' || now?.kind === 'town' ? liveDayTimer.forPlayers : undefined,
 		now,
 		host.lookOf(game.gameId).look
 	);
