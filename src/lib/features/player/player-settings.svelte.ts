@@ -14,11 +14,6 @@ export interface PlayerSettings {
 	 * its own switch keep their notes hidden (notebook v6). No longer shown in Settings.
 	 */
 	hideNoteContents: boolean;
-	/**
-	 * How tightly the Script sheet is laid out, on screen and when printed (Trevor approved,
-	 * 2026-10-16): long scripts fit a phone or one page.
-	 */
-	density: SheetDensity;
 	/** How our own printed sheet is laid out (Trevor, 2026-10-19: a print settings screen). */
 	print: PrintSettings;
 	/**
@@ -102,12 +97,16 @@ function readPrint(raw: unknown): PrintSettings {
 	};
 }
 
+/**
+ * How tightly a printed sheet is laid out, so a long script fits one page. On screen the
+ * sheet is always Normal: Compact and Super-compact left the screen (Trevor, 2026-10-27:
+ * "Compact and super compact modes suck. Remove for now").
+ */
 export const SHEET_DENSITIES = ['normal', 'compact', 'super'] as const;
 export type SheetDensity = (typeof SHEET_DENSITIES)[number];
 
 const DEFAULTS: PlayerSettings = {
 	hideNoteContents: false,
-	density: 'normal',
 	print: PRINT_DEFAULTS,
 	avatar: 'initials',
 	hideGuesses: false,
@@ -121,7 +120,6 @@ function read(): PlayerSettings {
 		const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Record<string, unknown>;
 		return {
 			hideNoteContents: raw.hideNoteContents === true,
-			density: SHEET_DENSITIES.find((d) => d === raw.density) ?? DEFAULTS.density,
 			print: readPrint(raw.print),
 			frame: parseFrameId(raw.frame),
 			// Initials are always on (Trevor, 2026-10-25): an older build's "none" reads as them.

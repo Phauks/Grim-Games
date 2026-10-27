@@ -189,7 +189,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Buttons that stand out, with End game in red', parts: ['S11'] },
 	{
 		title: 'Offline games: share the script with no internet, by QR code or animated QR code',
-		parts: ['N1', 'N2']
+		parts: ['N1', 'N2', 'N3']
 	},
 	{
 		title: 'Accounts and sync: saved games and scripts on every device',

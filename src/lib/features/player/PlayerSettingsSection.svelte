@@ -4,7 +4,6 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
-	import DensityRow from './DensityRow.svelte';
 	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -34,7 +33,7 @@
 	onChange={(hideGuesses) => playerSettings.update({ hideGuesses })}
 />
 
-<!-- Also on the Grim tab and Public Town, beside the eye (Trevor, 2026-10-27). -->
+<!-- Also beside the Grim tab's eye and in Public Town's settings cog (Trevor, 2026-10-27). -->
 <SettingToggle
 	label={t('player.matchShape')}
 	description={t('player.matchShapeDetail')}
@@ -46,9 +45,6 @@
 	checked={playerSettings.current.townMatchShape}
 	onChange={(townMatchShape) => playerSettings.update({ townMatchShape })}
 />
-
-<!-- Also in the player screen's own settings (plan E2). -->
-<DensityRow />
 
 <!-- Also at the top of every script sheet (Trevor, 2026-10-23; colours 2026-10-24). -->
 <SettingSelect

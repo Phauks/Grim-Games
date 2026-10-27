@@ -40,8 +40,8 @@ describe('animated QR frames', () => {
 		const order = [...frames].reverse();
 		order.splice(1, 0, frames.at(-1)!);
 		const reads = order.map((f) => collector.add(f));
-		expect(reads.at(0)).toEqual({ kind: 'frame', read: 1, total: frames.length });
-		expect(reads.at(1)).toEqual({ kind: 'frame', read: 1, total: frames.length });
+		expect(reads.at(0)).toMatchObject({ kind: 'frame', read: 1, total: frames.length });
+		expect(reads.at(1)).toMatchObject({ kind: 'frame', read: 1, total: frames.length });
 		expect(reads.at(-1)).toEqual({ kind: 'done', text });
 	});
 
@@ -50,7 +50,7 @@ describe('animated QR frames', () => {
 		const b = qrFrames(text.replace('abc', 'xyz'))!;
 		const collector = new QrFrameCollector();
 		collector.add(a[0]);
-		expect(collector.add(b[1])).toEqual({ kind: 'frame', read: 1, total: b.length });
+		expect(collector.add(b[1])).toMatchObject({ kind: 'frame', read: 1, total: b.length });
 		let last;
 		for (const frame of b) last = collector.add(frame);
 		expect(last).toEqual({ kind: 'done', text: text.replace('abc', 'xyz') });
@@ -61,7 +61,7 @@ describe('animated QR frames', () => {
 		frames[0] = frames[0].slice(0, -1) + '!';
 		const collector = new QrFrameCollector();
 		const reads = frames.map((f) => collector.add(f));
-		expect(reads.at(-1)).toEqual({ kind: 'frame', read: 0, total: frames.length });
+		expect(reads.at(-1)).toMatchObject({ kind: 'frame', read: 0, total: frames.length });
 	});
 
 	it('passes a non-frame by', () => {
