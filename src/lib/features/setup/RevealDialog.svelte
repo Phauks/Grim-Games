@@ -87,11 +87,11 @@
 	);
 
 	let name = $state('');
-	// Names to pick instead of typing (Trevor, 2026-10-19): only the room's phones connected
-	// now without a seat, never names from earlier games (Trevor, 2026-10-26).
+	// Names to pick instead of typing (Trevor, 2026-10-19): only the room's phones, connected or
+	// asleep, without a seat in this game, never names from earlier games (Trevor, 2026-10-26).
 	const names = $derived(
 		suggestNames(
-			roomHost().connectedUnseated.flatMap((m) => (m.name ? [m.name] : [])),
+			roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : [])),
 			'',
 			taken,
 			Infinity
