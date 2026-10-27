@@ -43,7 +43,7 @@ test('a Storyteller with no internet shares an offline code, and a phone with no
 	await context.setOffline(true);
 
 	await page.getByRole('button', { name: 'Share script' }).tap();
-	const share = page.getByRole('dialog', { name: 'Share Pocket Brew' });
+	const share = page.getByRole('dialog', { name: 'Share', exact: true });
 	// No short link can be made offline, so the offline code is on by itself.
 	await expect(
 		share.getByRole('checkbox', { name: /^Offline code/, includeHidden: true })
@@ -72,7 +72,7 @@ test('a long script goes across as an animated code', async ({ page, browser }, 
 	await expect(page.getByRole('heading', { name: 'Long Homebrew', level: 1 })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Share script' }).tap();
-	const share = page.getByRole('dialog', { name: 'Share Long Homebrew' });
+	const share = page.getByRole('dialog', { name: 'Share', exact: true });
 	await share.getByText('Offline code', { exact: true }).tap();
 	const qr = share.getByRole('img', { name: 'Offline code for Long Homebrew' });
 	await expect(qr).toBeVisible();
@@ -135,5 +135,31 @@ test('a scanned script stays, though the phone was last in a room playing anothe
 	// The room is still in Your games, to join again.
 	await phone.goto('/join');
 	await expect(phone.getByTestId('recent-rooms').getByRole('button')).toHaveCount(1);
+	await context.close();
+});
+
+test("an animated code's frame opened by the camera app opens the scanner in the app", async ({
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-27: "tell people to open the grimbinder app". Each frame is a link to Join
+	// game, which opens the scanner with that frame in and shows each piece as it arrives.
+	const code = await offlineCode('https://grimbinder.com', { json: long });
+	const frames = code.frames!;
+	const context = await browser.newContext({ ...testInfo.project.use });
+	const phone = await context.newPage();
+	await aimCamera(
+		phone,
+		frames.map((frame) => qrSrc(renderSVG(frame, { border: 2 })))
+	);
+	await phone.goto(`/join${new URL(frames[1]).hash}`);
+	const scanner = phone.getByRole('dialog', { name: 'Scan a code' });
+	await expect(scanner.getByRole('status')).toContainText(
+		/Reading the code: [1-9]\d* of \d+ pieces/
+	);
+	await expect(scanner.getByRole('status').locator('li.have').first()).toBeVisible();
+	await expect(phone.getByRole('heading', { name: 'Long Homebrew', level: 1 })).toBeVisible({
+		timeout: 30_000
+	});
+	await expect(phone.getByTestId('offline-game')).toBeVisible();
 	await context.close();
 });

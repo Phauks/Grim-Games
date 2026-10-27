@@ -98,9 +98,7 @@ test('the player view is a reading page, with no Storyteller controls', async ({
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
 
-test('the settings cog at the top sets the text size, Pinch to zoom and the sheet layout', async ({
-	page
-}) => {
+test('the settings cog at the top sets the text size and Pinch to zoom', async ({ page }) => {
 	// Plan E2 (Trevor, 2026-10-26): "easier access to accessibility, zoom, font size for
 	// players. Move name into an edit button in the top", then "a settings cog in player script
 	// view where they select various text sizes settings and their name".
@@ -122,9 +120,6 @@ test('the settings cog at the top sets the text size, Pinch to zoom and the shee
 	await expect(zoom).not.toBeChecked();
 	await sheet.getByText('Pinch to zoom', { exact: true }).tap();
 	await expect(zoom).toBeChecked();
-	await sheet.getByRole('combobox', { name: 'Script sheet layout' }).tap();
-	await page.getByRole('option', { name: 'Compact', exact: true }).tap();
-	await expect(page.locator('[data-density="compact"]')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 
@@ -569,7 +564,7 @@ test('the header shares the script from an icon and has no Code button', async (
 		expect(icon!.y + icon!.height).toBeLessThanOrEqual(title!.y + 1);
 	}
 	await page.getByRole('button', { name: 'Share script' }).tap();
-	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
+	const qr = page.getByRole('dialog', { name: 'Share', exact: true });
 	await expect(qr.getByTestId('share-url')).toHaveValue(/\/play#c=\d{6}$/);
 	await expect(qr.getByTestId('share-digits')).toHaveCount(0);
 	await expect(qr.getByTestId('script-byline')).toHaveCount(0);
@@ -584,7 +579,10 @@ test('the share screen names the script, its author and its version', async ({ p
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	// Trevor, 2026-10-18: name, author and version (when there is one) on the share screen.
-	const dialog = page.getByRole('dialog', { name: 'Share Signed Night' });
+	// Titled just "Share", with the script's name under it as /play's header has it (Trevor,
+	// 2026-10-27).
+	const dialog = page.getByRole('dialog', { name: 'Share', exact: true });
+	await expect(dialog.getByRole('heading', { name: 'Signed Night', level: 3 })).toBeVisible();
 	await expect(dialog.getByTestId('script-byline')).toHaveText('by Trevor · v1.2');
 });
 
@@ -696,24 +694,28 @@ test('the title line’s sheet background, Print, Share and settings cog are one
 	expect(title.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
 });
 
-test('the Script sheet can be made compact from Settings', async ({ page }) => {
+test('the Script sheet is always Normal on screen, with no layout setting', async ({ page }) => {
+	// Trevor, 2026-10-27: "Compact and super compact modes suck. Remove for now". A phone that
+	// picked one before goes back to Normal; printing still fits a page its own way.
+	await page.evaluate(() =>
+		localStorage.setItem('grim-games:player-settings:v1', JSON.stringify({ density: 'super' }))
+	);
+	await page.reload();
 	await expect(page.locator('[data-density="normal"]')).toBeVisible();
+	await expect(page.locator('[data-density="super"]')).toHaveCount(0);
+	await page.getByRole('button', { name: 'Your settings' }).tap();
+	const you = page.getByRole('dialog', { name: 'Your settings' });
+	await expect(you.getByRole('slider', { name: 'Text size' })).toBeVisible();
+	await expect(you.getByRole('combobox', { name: 'Script sheet layout' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await openSettings(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Player', exact: true })
 		.tap();
-	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
-	await page.getByRole('option', { name: 'Super-compact', exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).tap();
-	await expect(page.locator('[data-density="super"]')).toBeVisible();
-	await page.reload();
-	await expect(page.locator('[data-density="super"]')).toBeVisible();
-	const overflow = await page.evaluate(
-		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
-	);
-	expect(overflow).toBeLessThanOrEqual(0);
+	await expect(settings.getByRole('combobox', { name: 'Sheet background' })).toBeVisible();
+	await expect(settings.getByRole('combobox', { name: 'Script sheet layout' })).toHaveCount(0);
 });
 
 test('the sheet background colours the whole player screen, its dialogs included', async ({
@@ -949,12 +951,13 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 
 	// Share script hands on the room's link and code (plan J20).
 	await page.getByRole('button', { name: 'Share script' }).tap();
-	const share = page.getByRole('dialog', { name: 'Share Trouble Brewing' });
+	const share = page.getByRole('dialog', { name: 'Share', exact: true });
 	await expect(share.getByTestId('share-code')).toHaveText(shown);
-	await expect(share.getByTestId('script-logo')).toHaveAttribute(
-		'data-logo',
-		'/data/logos/tb.webp'
-	);
+	// The logo in the QR code's middle, and beside the name under the title (Trevor, 2026-10-27).
+	await expect(share.getByTestId('script-logo')).toHaveCount(2);
+	for (const logo of await share.getByTestId('script-logo').all())
+		await expect(logo).toHaveAttribute('data-logo', '/data/logos/tb.webp');
+	await expect(share.getByTestId('share-script')).toContainText('Trouble Brewing');
 	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
 	await share.getByRole('button', { name: 'Close' }).tap();
 

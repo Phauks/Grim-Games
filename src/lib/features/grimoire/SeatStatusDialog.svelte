@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
-	import { validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
+	import { isExecution, validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -64,6 +64,8 @@
 		else if (cause === 'execution') {
 			if (!onExecute?.(seatId)) grimoire.run({ type: 'Execute', seatId });
 		} else if (cause === 'exile') grimoire.run({ type: 'Exile', seatId });
+		// A character's execution (the Virgin's nominator) is one too, with it as the cause.
+		else if (isExecution(cause, characters)) grimoire.run({ type: 'Execute', seatId, cause });
 		else grimoire.run({ type: 'SetDead', seatId, dead: true, cause });
 	}
 </script>

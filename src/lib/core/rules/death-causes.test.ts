@@ -14,6 +14,7 @@ import {
 	deathCauseEntry,
 	deathCauses,
 	gameDeathCauses,
+	isExecution,
 	reminderDeathCause,
 	type DeathKind
 } from './death-causes.ts';
@@ -302,5 +303,18 @@ describe('the cause a reminder gives a death', () => {
 		expect(reminderDeathCause(game, characters, 'pithag')).toBeUndefined();
 		expect(reminderDeathCause(game, characters, 'chef')).toBeUndefined();
 		expect(reminderDeathCause(game, characters, 'generic')).toBeUndefined();
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Virgin: the nominator is executed, so the Virgin's cause
+// counts as an execution (the Saint, https://wiki.bloodontheclocktower.com/Saint).
+describe('isExecution', () => {
+	it('is an execution, plain or by an ability that executes', () => {
+		expect(isExecution('execution')).toBe(true);
+		expect(isExecution('virgin')).toBe(true);
+		expect(isExecution('demon')).toBe(false);
+		expect(isExecution('exile')).toBe(false);
+		expect(isExecution('slayer')).toBe(false);
+		expect(isExecution(undefined)).toBe(false);
 	});
 });

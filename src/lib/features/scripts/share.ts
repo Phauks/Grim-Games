@@ -11,25 +11,14 @@
  * `&o=1` after `#e=` or `#s=` marks an offline code (Trevor, 2026-10-26): the phone got the
  * script with no internet, so it knows the rest of the game is not coming to it.
  */
-import { qrFrames } from '#lib/core/codes/qr-frames.ts';
+import { fromBase64Url, toBase64Url } from '#lib/core/codes/base64url.ts';
+import { fountainFrames } from '#lib/core/codes/qr-frames.ts';
 import type { BotcScriptsRef } from './botcscripts-api.ts';
 import { normaliseShareCode } from './share-codes-api.ts';
 
 const PREFIX = '1.';
 /** Decoded scripts larger than this are refused; a 201-character script is far smaller. */
 const MAX_BYTES = 1_000_000;
-
-function toBase64Url(bytes: Uint8Array): string {
-	let binary = '';
-	for (const byte of bytes) binary += String.fromCharCode(byte);
-	return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function fromBase64Url(text: string): Uint8Array {
-	const base64 = text.replace(/-/g, '+').replace(/_/g, '/');
-	const binary = atob(base64 + '='.repeat((4 - (base64.length % 4)) % 4));
-	return Uint8Array.from(binary, (c) => c.charCodeAt(0));
-}
 
 /**
  * Why a share link can't be read. The message stays English (this module also runs in
@@ -76,10 +65,15 @@ async function pipe(bytes: Uint8Array, stream: CompressionStream | Decompression
 	return out;
 }
 
+/** A script's JSON, deflated: what `#s=` carries, in base64. */
+async function deflateScript(json: unknown): Promise<Uint8Array> {
+	const bytes = new TextEncoder().encode(JSON.stringify(json));
+	return pipe(bytes, new CompressionStream('deflate-raw'));
+}
+
 /** The hash payload (without `#s=`) for a script's JSON. */
 export async function encodeSharedScript(json: unknown): Promise<string> {
-	const bytes = new TextEncoder().encode(JSON.stringify(json));
-	return PREFIX + toBase64Url(await pipe(bytes, new CompressionStream('deflate-raw')));
+	return PREFIX + toBase64Url(await deflateScript(json));
 }
 
 /** Reads a payload made by `encodeSharedScript`. Throws on anything else. */
@@ -179,15 +173,36 @@ export interface OfflineCode {
 	tooLarge?: true;
 }
 
+/**
+ * The script as it goes into an offline code: characters' flavour text left out, since no one
+ * needs it to play and it is a sixth of a homebrew script (Trevor, 2026-10-27: "make this
+ * faster"; Fall of Rome's flavour is 3.7 KB of 22 KB).
+ */
+export function offlineScriptJson(json: unknown): unknown {
+	if (!Array.isArray(json)) return json;
+	return json.map((entry) => {
+		if (typeof entry !== 'object' || entry === null || !('flavor' in entry)) return entry;
+		const rest: Record<string, unknown> = { ...entry };
+		delete rest.flavor;
+		return rest;
+	});
+}
+
+/** The /play hash (with `#`) for an offline code's deflated script. */
+export function offlineHash(bytes: Uint8Array): string {
+	return `${sharedRefHash({ kind: 'inline', payload: PREFIX + toBase64Url(bytes) })}&o=1`;
+}
+
 export async function offlineCode(
 	origin: string,
 	from: { edition?: string; json: unknown }
 ): Promise<OfflineCode> {
-	const ref: SharedRef = from.edition
-		? { kind: 'edition', edition: from.edition }
-		: { kind: 'inline', payload: await encodeSharedScript(from.json) };
-	const url = `${origin}/play${sharedRefHash(ref)}&o=1`;
+	if (from.edition) return { url: `${origin}/play#e=${from.edition}&o=1` };
+	const bytes = await deflateScript(offlineScriptJson(from.json));
+	const url = `${origin}/play${offlineHash(bytes)}`;
 	if (new TextEncoder().encode(url).length <= OFFLINE_SINGLE_MAX) return { url };
-	const frames = qrFrames(url);
+	// Each frame is a link to Join game, so a phone's own camera app opens this app, which reads
+	// the rest (Trevor, 2026-10-27: "tell people to open the grimbinder app").
+	const frames = fountainFrames(bytes)?.map((frame) => `${origin}/join#q=${frame}`);
 	return frames ? { url, frames } : { url, tooLarge: true };
 }
