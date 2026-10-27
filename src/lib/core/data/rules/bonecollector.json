@@ -1,4 +1,7 @@
 {
+	"keepsAbility": {
+		"token": "Has Ability"
+	},
 	"reminderTargets": {
 		"Has Ability": {
 			"seat": "any",

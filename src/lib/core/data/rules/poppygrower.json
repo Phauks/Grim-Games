@@ -1,5 +1,8 @@
 {
 	"actsWhenDead": true,
+	"onDeath": {
+		"by": "any"
+	},
 	"reminderTargets": {
 		"Evil Wakes": {
 			"seat": "self",
