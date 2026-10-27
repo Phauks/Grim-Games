@@ -12,6 +12,7 @@
 	import StepFocusSetting from './StepFocusSetting.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName, stepHolders, stepName } from './night-steps.ts';
+	import { setTermsPlain } from '#lib/features/glossary/term-handler.ts';
 
 	/**
 	 * Walking through the night (Trevor, 2026-10-16): the current step under the board, with
@@ -39,6 +40,8 @@
 		attack?: { seat: string; by: string };
 	}
 
+	// The step is one button that opens it; its words are explained in the step it opens.
+	setTermsPlain();
 	let {
 		grimoire,
 		steps,

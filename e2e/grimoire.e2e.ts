@@ -3467,6 +3467,52 @@ test('Back closes an open sheet first, then asks before leaving the game', async
 	await expect(page).toHaveURL(/\/setup$/);
 });
 
+test("Back puts the board's entry back only once the open dialog has gone", async ({ page }) => {
+	// Android's back swipe previews the entry under as the page looked when the next entry went
+	// on: put back with the Glossary still open, the next swipe showed a second Glossary
+	// (Trevor, 2026-10-27).
+	await page.addInitScript(() => {
+		const push = history.pushState.bind(history);
+		(window as unknown as { pushedOver: boolean[] }).pushedOver = [];
+		history.pushState = (...args: Parameters<History['pushState']>) => {
+			(window as unknown as { pushedOver: boolean[] }).pushedOver.push(
+				!!document.querySelector('[data-scope="dialog"][data-part="content"]')
+			);
+			push(...args);
+		};
+	});
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await walkTo(page, 'Dusk');
+	const board = page.url();
+	const pushedOver = () =>
+		page.evaluate(() => (window as unknown as { pushedOver: boolean[] }).pushedOver);
+	// The board's entry is on before the test goes on.
+	await expect.poll(async () => (await pushedOver()).length).toBeGreaterThan(0);
+	await page.evaluate(() => ((window as unknown as { pushedOver: boolean[] }).pushedOver = []));
+
+	await page.getByTestId('night-strip').getByRole('button', { name: 'About Dusk' }).tap();
+	const glossary = page.getByRole('dialog', { name: 'Glossary' });
+	await expect(glossary).toBeVisible();
+	await page.goBack();
+	await expect(glossary).toBeHidden();
+	await expect.poll(pushedOver).toEqual([false]);
+	expect(page.url()).toBe(board);
+	await page.goBack();
+	await expect(page.getByRole('alertdialog', { name: 'Leave the game?' })).toBeVisible();
+});
+
 test('once every token is placed, the board does not prompt for the Demon bluffs', async ({
 	page
 }) => {
@@ -5015,8 +5061,9 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 });
 
 // Closing a step opened from the walk-through must not crash the dialog (Grimoire board,
-// 2026-10-18). On a phone the tap also opens a glossary word in the strip's text, and closing
-// the step closed that popover from inside zag, which crashed Svelte (null batch).
+// 2026-10-18). The tap once opened a glossary word in the strip's text as well, and closing
+// the step closed that popover from inside zag, which crashed Svelte (null batch). The strip's
+// words are plain now: one tap opens the step only (Trevor, 2026-10-27).
 test('a step opened from the walk-through closes cleanly', async ({ page }) => {
 	const errors: string[] = [];
 	page.on('pageerror', (error) => errors.push(error.message));
@@ -5034,9 +5081,14 @@ test('a step opened from the walk-through closes cleanly', async ({ page }) => {
 		await closeSheet(page);
 	}
 	const strip = await walkTo(page, 'Washerwoman');
-	await strip.locator('button.step').tap();
+	await expect(strip.locator('.night-text')).not.toBeEmpty();
+	await expect(strip.locator('.glossary-term')).toHaveCount(0);
+	await strip.locator('.night-text').tap();
 	const step = page.getByRole('dialog', { name: 'Washerwoman' });
 	await expect(step).toBeVisible();
+	// Its words are explained in the step itself.
+	await expect(step.locator('.glossary-term').first()).toBeVisible();
+	await expect(page.locator('[data-scope="popover"][data-part="content"]')).toHaveCount(0);
 	await step.getByRole('button', { name: 'Close' }).tap();
 	await expect(step).toBeHidden();
 	await expect(page.getByText("Couldn't show this part")).toHaveCount(0);
