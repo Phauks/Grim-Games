@@ -121,8 +121,8 @@
 					seatId: s.seatId,
 					name: nameOf(s),
 					notes: notesOnSeats[s.seatId] ?? [],
-					// The Traveller the town knows, or every character this player guesses, the
-					// main one (on the token) first, beside the name (Trevor, 2026-10-25/27).
+					// The Traveller the town knows, or every character this player guesses, all
+					// alike after the player's name (Trevor, 2026-10-27).
 					characterIds: s.traveller ? [s.traveller] : characterGuesses(guesses, s.seatId)
 				}))
 			: undefined}
