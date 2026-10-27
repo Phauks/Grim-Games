@@ -898,8 +898,8 @@
 	.type {
 		display: flex;
 		align-items: center;
-		gap: 0.3em;
-		padding: 0 0.5em;
+		gap: 0.25em;
+		padding: 0 0.45em;
 		border-radius: var(--radius-full);
 		background: var(--surface-raised);
 	}
@@ -909,8 +909,8 @@
 	/* The badge as tall as the pill's line, so the counts keep to their rows. */
 	.types .n {
 		display: inline-flex;
-		margin-inline-end: 0.15em;
-		font-size: 0.75em;
+		margin-inline-end: 0.1em;
+		font-size: 0.7em;
 	}
 	.types .nums {
 		display: inline-flex;
