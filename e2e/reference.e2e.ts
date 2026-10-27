@@ -372,10 +372,10 @@ test('jinxes start folded; Wiki and Report sit under the name', async ({ page })
 	await page.goto('/reference');
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Alchemist');
 	const row = rowOf(page, 'alchemist');
-	const toggle = row.getByTestId('jinx-toggle');
+	const toggle = row.locator('[data-field="jinxes"]').getByRole('button', { name: 'Jinxes' });
 	await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-	await expect(toggle).toHaveText(/^\d+ jinxes$/);
-	await expect(row.locator('.jinx')).toHaveCount(0);
+	await expect(toggle.getByTestId('section-count')).toHaveText(/^\d+$/);
+	await expect(row.locator('.jinx').first()).toBeHidden();
 	await toggle.tap();
 	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
 	await expect(row.locator('.jinx').first()).toBeVisible();

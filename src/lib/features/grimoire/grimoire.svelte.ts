@@ -1,6 +1,6 @@
 import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 import { dawnGames, type Command } from '#lib/core/engine/index.ts';
-import { demonToBecome, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
+import { becomesOffer, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
@@ -14,7 +14,7 @@ import {
 	type SeatLayout,
 	type SeatPoint
 } from '#lib/ui/seating/seat-layout.ts';
-import type { Reminder, ReminderId } from '#lib/core/model/index.ts';
+import type { Game, Reminder, ReminderId } from '#lib/core/model/index.ts';
 import {
 	bankCopies,
 	forgetPastNames,
@@ -38,6 +38,8 @@ export class Grimoire {
 	look = $state.raw<PublicLook>();
 	/** And the room it came through, which holds that background's picture. */
 	room = $state.raw<string>();
+	/** Someone else's board: its shape (width ÷ height), whose places round the ring it keeps. */
+	aspect = $state.raw<number>();
 
 	constructor(readonly open: OpenGame) {
 		forgetUpsideDownMarks();
@@ -232,6 +234,7 @@ export class Grimoire {
 	/** Runs a command; returns whether it was accepted. */
 	run(command: Command): boolean {
 		const misfit = this.misfit(command);
+		const before = this.open.game;
 		const result = this.open.run(command);
 		if (!result.ok) {
 			toast('Not done', result.error.message);
@@ -241,9 +244,10 @@ export class Grimoire {
 			const text = warningText(warning);
 			if (text) toast('Note', text);
 		}
-		if (misfit) toast('Note', misfit);
+		const becomes = this.askBecomes(command, before);
+		// The Snake Charmer's Poisoned goes on the Demon it chose, who is about to swap.
+		if (misfit && becomes !== 'swap') toast('Note', misfit);
 		this.askAlignment(command);
-		this.askDemon(command);
 		this.askFirstDeath(command);
 		return true;
 	}
@@ -297,16 +301,37 @@ export class Grimoire {
 			};
 	}
 
-	private askDemon(command: Command): void {
+	/**
+	 * Two seats to swap characters and alignments (the Snake Charmer's Poisoned put on the
+	 * Demon it chose): the board offers the swap.
+	 */
+	swapAsk = $state.raw<{ seatId: SeatId; withSeatId: SeatId } | undefined>();
+
+	/**
+	 * A reminder that says its player changed character or alignment, just placed or taken off
+	 * (`becomesOffer`): the board offers that change. Returns which change it offered.
+	 */
+	private askBecomes(command: Command, before: Game): 'demon' | 'evil' | 'swap' | undefined {
+		const characters = this.open.characters;
+		const game = this.open.game;
 		const placed = this.placed(command);
-		if (!placed) return;
-		const characterId = demonToBecome(
-			this.open.game,
-			placed.seatId,
-			placed.reminder,
-			this.open.characters
-		);
-		if (characterId) this.demonAsk = { seatId: placed.seatId, characterId };
+		let offer = placed && becomesOffer(game, placed.seatId, placed.reminder, characters);
+		if (!offer && command.type === 'RemoveReminder') {
+			const seatId = before.seating.find((id) =>
+				before.seats[id].reminders.some((r) => r.reminderId === command.reminderId)
+			);
+			const reminder = seatId
+				? before.seats[seatId].reminders.find((r) => r.reminderId === command.reminderId)
+				: undefined;
+			if (seatId && reminder) offer = becomesOffer(game, seatId, reminder, characters, 'removed');
+		}
+		if (!offer) return undefined;
+		if (offer.into === 'swap')
+			this.swapAsk = { seatId: offer.seatId, withSeatId: offer.withSeatId };
+		else if (offer.into === 'evil')
+			this.alignmentAsk = { seatId: offer.seatId, characterId: offer.characterId };
+		else this.demonAsk = { seatId: offer.seatId, characterId: offer.characterId };
+		return offer.into;
 	}
 
 	/**

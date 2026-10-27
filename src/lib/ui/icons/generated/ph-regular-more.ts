@@ -76,6 +76,7 @@ import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
 import ph_scales from '~icons/ph/scales';
 import ph_scan from '~icons/ph/scan';
+import ph_selection from '~icons/ph/selection';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
 import ph_sliders from '~icons/ph/sliders';
@@ -183,6 +184,7 @@ const icons: IconMap = {
 	'ph:question': ph_question,
 	'ph:scales': ph_scales,
 	'ph:scan': ph_scan,
+	'ph:selection': ph_selection,
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,
 	'ph:sliders': ph_sliders,

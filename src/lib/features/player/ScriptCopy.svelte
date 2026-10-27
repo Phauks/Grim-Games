@@ -31,6 +31,8 @@
 		travellers?: readonly TravellerInPlay[];
 		/** The game mode and special rules, listed under Jinxes. */
 		rules?: readonly PublicRule[];
+		/** The Fabled and Loric in play, in a game: their setup change shows in the Players counts. */
+		ruleCharacters?: readonly string[];
 		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
 		showBreakdown?: boolean;
 		/** False where the host's header has the light background switch (PlayerScriptActions). */
@@ -47,6 +49,7 @@
 		inPlay,
 		travellers,
 		rules,
+		ruleCharacters: ruleIds = [],
 		showBreakdown = true,
 		backgroundChoice = true,
 		title = false
@@ -67,6 +70,12 @@
 		return [...listed, ...extra];
 	});
 	const jinxes = $derived(data ? playerJinxes(script, data) : []);
+	// A custom Fabled or Loric is found on the script.
+	const ruleCharacters = $derived(
+		data
+			? ruleIds.flatMap((id) => characters.find((c) => c.id === id) ?? data.byId.get(id) ?? [])
+			: []
+	);
 </script>
 
 <!-- The background choice sits at the top of every copy, unless its host's header has it,
@@ -84,7 +93,16 @@
 				>{/if}
 		</div>{/if}
 	{#if data}
-		<ScriptSheet {characters} {jinxes} {players} {inPlay} {travellers} {rules} {showBreakdown} />
+		<ScriptSheet
+			{characters}
+			{jinxes}
+			{players}
+			{inPlay}
+			{travellers}
+			{rules}
+			{ruleCharacters}
+			{showBreakdown}
+		/>
 	{:else}
 		<p class="muted">{t('player.loading')}</p>
 	{/if}
@@ -105,6 +123,9 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-2) var(--space-4);
+		/* The line between the byline and the first section (Trevor, 2026-10-27). */
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--border);
 	}
 	.background-choice {
 		margin-left: auto;

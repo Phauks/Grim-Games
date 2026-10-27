@@ -47,9 +47,14 @@ test('the board shows the script logo faintly, with its switch and opacity', asy
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: /^Board/ })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	// It opens at its root (Trevor, 2026-10-27).
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	const opacity = dialog.getByRole('slider', { name: 'Script logo opacity' });
 	await opacity.fill('0.6');
 	await expect(opacity).toHaveAttribute('aria-valuetext', '60%');

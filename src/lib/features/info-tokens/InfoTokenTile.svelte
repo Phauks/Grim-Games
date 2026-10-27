@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
@@ -86,7 +87,7 @@
 				{#each badges as badge (badge.icon)}
 					<span class="ask" role="img" aria-label={badge.label} title={badge.label}
 						><Icon name={badge.icon} />{#if badge.count}<span class="count" aria-hidden="true"
-								>{badge.count}</span
+								><CountBadge count={badge.count} /></span
 							>{/if}</span
 					>
 				{/each}
@@ -193,8 +194,8 @@
 		gap: 0.1em;
 	}
 	.count {
-		font-family: var(--font-body);
-		font-weight: 600;
+		display: flex;
+		font-size: 0.8em;
 	}
 	.card.owned {
 		flex-direction: column;

@@ -7,6 +7,8 @@ export const room = {
 	// Back to town (plan U2, Trevor's words): the Storyteller's call, and what a phone shows.
 	'room.callTown': 'Back to town',
 	'room.callTownHeard': 'Back to town',
+	'room.callTownConfirm': 'Back to town?',
+	'room.callTownWhat': 'Every player’s phone sounds, and the day timer stops.',
 	'room.callTownFailed': 'Couldn’t reach the players’ phones.',
 	'room.back': 'Grimoire',
 	'room.openingRoom': 'Opening a room…',
@@ -59,8 +61,7 @@ export const room = {
 	'room.yourGames': 'Your games',
 	'room.recentLine': '{code} · Storyteller: {name}',
 	'room.recentClosed': '{code} · Closed',
-	'room.yourSettings': 'Your settings',
-	'room.yourSettingsNamed': 'Your settings: {name}',
+	'room.settingsNamed': 'Settings: {name}',
 	'room.joining': 'Joining the room…',
 	'room.playerOffline': 'Offline: reconnecting…',
 	'room.gameOver': 'Game over',
@@ -146,6 +147,9 @@ export const room = {
 	'room.scriptVote.addRule': 'Add a special rule',
 	'room.scriptVote.join': 'Join to vote',
 	'room.yourName': 'Your name',
+	'room.editName': 'Edit your name',
+	'room.nameShared': 'Another player is called {name}',
+	'room.nameSharedDetail': 'The Storyteller sees you as {name} until you change your name.',
 	'room.vote.title': 'Spectators’ vote',
 	// After the game (plan R4); accolades approved by Trevor, 2026-10-22.
 	'room.feedback.open': 'Rate game',
@@ -191,6 +195,8 @@ export const room = {
 	'room.watch.hint':
 		'Spectators with the room code and this password see the whole grimoire live, after promising not to spoil the game. Each game gets a new password.',
 	'room.watch.password': 'Grim view password',
+	'room.watch.copy': 'Copy password',
+	'room.watch.copyFailed': 'Could not copy the password',
 	'room.watch.refresh': 'New password',
 	'room.watch.refreshTitle': 'Make a new password?',
 	'room.watch.refreshText':
@@ -212,6 +218,8 @@ export const room = {
 	'room.town.title': 'Public Town',
 	'room.town.waiting': 'Waiting for the Storyteller’s game…',
 	'room.town.settings': 'Public Town settings',
+	'room.town.boardShape': "Use the Storyteller's board shape",
+	'room.town.fillScreen': 'Fill the screen',
 	// Live games: admins watch any open room, unseen (plan J31, Trevor 2026-10-26)
 	'room.liveGames.title': 'Live games',
 	'room.liveGames.code': 'Code',

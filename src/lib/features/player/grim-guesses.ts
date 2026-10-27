@@ -88,6 +88,15 @@ export function guessesOf(guesses: Guesses, seatId: string): readonly CharacterI
 }
 
 /**
+ * The characters a seat is guessed as, main one first: its guesses without the avatar or a
+ * type or team alone, so the Notes tab names every one (Trevor, 2026-10-27: "it only notes
+ * the first one").
+ */
+export function characterGuesses(guesses: Guesses, seatId: string): readonly CharacterId[] {
+	return guessesOf(guesses, seatId).filter((id) => !genericGuess(id));
+}
+
+/**
  * A seat's cycle, front first: its guesses, and its avatar once it has a guess and the seat
  * has an avatar (`avatar`). A seat guessed before the avatar joined the cycle has it last.
  */
@@ -180,6 +189,12 @@ export function writeGuesses(room: string, guesses: Guesses): void {
 }
 
 const selfKey = (room: string) => `grim-games:play:self:${room}`;
+
+/** Throws a game's guesses and own-seat mark away (the grim cover's, blank each time). */
+export function forgetGuesses(room: string): void {
+	writeStored(key(room), undefined);
+	writeStored(selfKey(room), undefined);
+}
 
 /**
  * The seat this player marked as their own on their Grim tab (Trevor, 2026-10-26: "allow

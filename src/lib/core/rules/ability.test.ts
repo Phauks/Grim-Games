@@ -17,10 +17,13 @@ import {
 } from '#lib/core/model/fixtures.test-support.ts';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
+import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
+import { isSeatable } from '#lib/core/data/index.ts';
 import {
 	abilityState,
 	executionSavers,
 	firstDeathSaver,
+	impairmentOfLabel,
 	killRedirect,
 	protection,
 	registrations,
@@ -155,6 +158,15 @@ describe('Preacher', () => {
 });
 
 describe('registrations', () => {
+	// https://wiki.bloodontheclocktower.com/Legion: "you might register as a Minion too".
+	it('Legion may register as a Minion as well as a Demon', () => {
+		const { game: g, seats } = game(['chef', 'legion', 'legion']);
+		expect(registrations(g, characters)).toEqual([
+			expect.objectContaining({ seatId: seats[1], types: ['demon', 'minion'] }),
+			expect.objectContaining({ seatId: seats[2], types: ['demon', 'minion'] })
+		]);
+	});
+
 	it('the Recluse may register as evil and as a Minion or Demon', () => {
 		const { game: g, seats } = game(['chef', 'recluse', 'imp', 'spy']);
 		expect(registrations(g, characters)).toEqual([
@@ -194,6 +206,41 @@ describe('registrations', () => {
 		]);
 		expect(registrationWorlds(g, characters)[0].alignment(seats[1])).toBe('evil');
 	});
+
+	// https://wiki.bloodontheclocktower.com/Revolutionary: once per game, one of the two
+	// neighbours registers falsely.
+	it("the Revolutionary's pair may register as anything until Register Falsely? comes off", () => {
+		const { game: g, seats } = game(
+			['chef', 'empath', 'imp', 'poisoner'],
+			() => ({ type: 'AddRuleCharacter', characterId: 'revolutionary' }),
+			add(0, 'revolutionary', 'Aligned'),
+			add(1, 'revolutionary', 'Aligned'),
+			add(0, 'revolutionary', 'Register Falsely?')
+		);
+		expect(registrations(g, characters)).toEqual([
+			expect.objectContaining({
+				seatId: seats[0],
+				alignments: ['good', 'evil'],
+				types: ['townsfolk', 'outsider', 'minion', 'demon'],
+				source: expect.objectContaining({ characterId: 'revolutionary' })
+			}),
+			expect.objectContaining({ seatId: seats[1], alignments: ['good', 'evil'] })
+		]);
+		expect(registrationWorlds(g, characters)[0].misregistered).toEqual([]);
+		// Used: the token comes off, and both register truly.
+		const token = g.seats[seats[0]].reminders.find((r) => r.label === 'Register Falsely?');
+		const used = {
+			...g,
+			seats: {
+				...g.seats,
+				[seats[0]]: {
+					...g.seats[seats[0]],
+					reminders: g.seats[seats[0]].reminders.filter((r) => r !== token)
+				}
+			}
+		};
+		expect(registrations(used, characters)).toEqual([]);
+	});
 });
 
 describe('protection', () => {
@@ -214,10 +261,41 @@ describe('protection', () => {
 		expect(protection(g, seats[1], characters, 'demon')).toMatchObject({ characterId: 'monk' });
 		expect(protection(g, seats[1], characters, 'other')).toBeUndefined();
 		expect(protection(g, seats[2], characters, 'other')).toBeUndefined();
-		const tea = game(['tealady', 'chef', 'imp'], add(1, 'tealady', 'Cannot Die'));
-		expect(protection(tea.game, tea.seats[1], characters, 'other')).toMatchObject({
+		const tea = game(['chef', 'tealady', 'monk', 'imp'], add(0, 'tealady', 'Cannot Die'));
+		expect(protection(tea.game, tea.seats[0], characters, 'other')).toMatchObject({
 			characterId: 'tealady'
 		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Tea_Lady: only while both alive neighbours are good.
+	it('the Tea Lady protects only while both her alive neighbours are good', () => {
+		const evil = game(['chef', 'tealady', 'imp', 'monk'], add(0, 'tealady', 'Cannot Die'));
+		expect(protection(evil.game, evil.seats[0], characters, 'other')).toBeUndefined();
+		// The evil neighbour dies: the next alive player round is her neighbour now.
+		const past = game(
+			['chef', 'tealady', 'imp', 'monk', 'baron'],
+			add(0, 'tealady', 'Cannot Die'),
+			(s) => ({ type: 'SetDead', seatId: s[2], dead: true, cause: 'execution' })
+		);
+		expect(protection(past.game, past.seats[0], characters, 'demon')).toMatchObject({
+			characterId: 'tealady'
+		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Storm_Catcher: they can only die by execution.
+	it("the Storm Catcher's good character dies only by execution", () => {
+		const { game: g, seats } = game(
+			['chef', 'imp'],
+			() => ({ type: 'AddRuleCharacter', characterId: 'stormcatcher' }),
+			add(0, 'stormcatcher', 'Stormcaught')
+		);
+		expect(protection(g, seats[0], characters, 'demon')).toMatchObject({
+			characterId: 'stormcatcher'
+		});
+		expect(protection(g, seats[0], characters, 'other')).toMatchObject({
+			characterId: 'stormcatcher'
+		});
+		expect(protection(g, seats[0], characters, 'execution')).toBeUndefined();
 	});
 
 	it('a Storyteller override wins', () => {
@@ -315,6 +393,21 @@ describe('executionSavers', () => {
 		});
 		// Not the Vizier's protection at night.
 		expect(protection(g.game, g.seats[2], characters, 'demon')).toBeUndefined();
+		expect(protection(g.game, g.seats[2], characters, 'other')).toBeUndefined();
+		// Any other death by day, a Slayer's shot or a Witch's curse.
+		expect(protection(g.game, g.seats[2], characters, 'day')).toMatchObject({
+			characterId: 'vizier'
+		});
+		expect(protection(g.game, g.seats[3], characters, 'day')).toBeUndefined();
+	});
+
+	it('a protection that lasts only the night stops no death by day', () => {
+		// https://wiki.bloodontheclocktower.com/Innkeeper: "can't die tonight".
+		const g = game(['innkeeper', 'chef', 'imp'], add(1, 'innkeeper', 'Safe'));
+		expect(protection(g.game, g.seats[1], characters, 'other')).toMatchObject({
+			characterId: 'innkeeper'
+		});
+		expect(protection(g.game, g.seats[1], characters, 'day')).toBeUndefined();
 	});
 
 	it('never offers a protection that lasts only the night', () => {
@@ -433,5 +526,72 @@ describe('custom characters', () => {
 		expect(abilityState(hushed, seats[1], all).impairments).toMatchObject([
 			{ reason: 'poisoned', source: { characterId: 'bard', seatId: seats[0] } }
 		]);
+	});
+});
+
+/**
+ * One case per official reminder whose label says "Poisoned" or "Drunk", built from the
+ * character's rules alone: on another player it impairs them while its character lives, and,
+ * once that character dies, only if its rules say it lasts (an `impairs.tokens` entry without
+ * `whileWorks`, such as the Sweetheart's "from now on"). Basis:
+ * https://wiki.bloodontheclocktower.com/Abilities (a dead or impaired character's persistent
+ * effects end; its example is the dead Poisoner's Slayer).
+ */
+describe('impairing tokens end with their character unless they last', () => {
+	const tokens = [...OFFICIAL_RULES.keys()].flatMap((id) => {
+		const character = characters.get(id);
+		if (!character || !isSeatable(character.type) || character.type === 'traveller') return [];
+		return [...new Set(character.reminders)]
+			.filter((label) => impairmentOfLabel(label))
+			.map((label) => ({ id, label, rule: rulesOf(id)?.impairs?.tokens?.[label] }))
+			.filter(({ rule }) => rule === undefined || rule.on === 'carrier');
+	});
+	const dead =
+		(i: number) =>
+		(s: string[]): Command => ({ type: 'SetDead', seatId: s[i], dead: true });
+
+	it('covers the Poisoner, Widow, Courtier and Sweetheart', () => {
+		const ids = tokens.map((t) => t.id);
+		expect(ids).toEqual(expect.arrayContaining(['poisoner', 'widow', 'courtier', 'sweetheart']));
+	});
+
+	for (const { id, label, rule } of tokens) {
+		const lasts = rule !== undefined && !rule.whileWorks;
+		it(`${id} "${label}": impairs while ${id} lives`, () => {
+			const { game: g, seats } = game([id, 'empath', 'imp'], add(1, id, label));
+			const typed = rule?.type === undefined || rule.type === 'townsfolk';
+			expect(abilityState(g, seats[1], characters).works).toBe(!typed);
+		});
+		it(`${id} "${label}": ${lasts ? 'still impairs' : 'ends'} once ${id} is dead`, () => {
+			const { game: g, seats } = game([id, 'empath', 'imp'], add(1, id, label), dead(0));
+			const typed = rule?.type === undefined || rule.type === 'townsfolk';
+			expect(abilityState(g, seats[1], characters).works).toBe(!(typed && lasts));
+		});
+	}
+});
+
+describe('Barista and Xaan', () => {
+	// https://wiki.bloodontheclocktower.com/Barista: the chosen player is sober and healthy.
+	it("clears drunkenness and poisoning under the Barista's Sober & Healthy", () => {
+		const { game: g, seats } = game(
+			['empath', 'poisoner', 'imp', 'barista'],
+			add(0, 'poisoner', 'Poisoned'),
+			add(0, 'barista', 'Sober & Healthy')
+		);
+		expect(abilityState(g, seats[0], characters).works).toBe(true);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Xaan: on night X all Townsfolk are poisoned until
+	// dusk, while the Xaan lives.
+	it("poisons every Townsfolk while the Xaan's X is out, and only while it lives", () => {
+		const { game: g, seats } = game(['empath', 'butler', 'xaan', 'imp'], add(2, 'xaan', 'X'));
+		expect(abilityState(g, seats[0], characters).impairments[0]?.reason).toBe('poisoned');
+		expect(abilityState(g, seats[1], characters).works).toBe(true);
+		const { game: after } = game(['empath', 'butler', 'xaan', 'imp'], add(2, 'xaan', 'X'), (s) => ({
+			type: 'SetDead',
+			seatId: s[2],
+			dead: true
+		}));
+		expect(abilityState(after, seats[0], characters).works).toBe(true);
 	});
 });

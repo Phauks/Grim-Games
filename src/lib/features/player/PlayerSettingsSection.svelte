@@ -4,7 +4,8 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
-	import DensityRow from './DensityRow.svelte';
+	import PlayerNameRow from '#lib/features/room/PlayerNameRow.svelte';
+	import { joinedRoom } from '#lib/features/room/joined-room.svelte.ts';
 	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -14,8 +15,12 @@
 	const STORYTELLER = 'storyteller';
 </script>
 
-<!-- The player's own picture on their seat (2026-10-27), also in the player screen's settings. -->
-<AvatarPictureRow />
+<!-- This phone's name in its room, while a player screen in a room opened Settings (Trevor,
+     2026-10-27: one Settings everywhere). -->
+{#if joinedRoom.player}<PlayerNameRow player={joinedRoom.player} />{/if}
+
+<!-- The player's own picture on their seat (2026-10-27). -->
+<AvatarPictureRow name={joinedRoom.player?.view?.me.name} />
 
 <!-- The frame round this player's seat token, sent with their initials (L4). -->
 <SettingFrame
@@ -34,8 +39,18 @@
 	onChange={(hideGuesses) => playerSettings.update({ hideGuesses })}
 />
 
-<!-- Also in the player screen's own settings (plan E2). -->
-<DensityRow />
+<!-- Also beside the Grim tab's eye and in Public Town's settings cog (Trevor, 2026-10-27). -->
+<SettingToggle
+	label={t('player.matchShape')}
+	description={t('player.matchShapeDetail')}
+	checked={playerSettings.current.matchShape}
+	onChange={(matchShape) => playerSettings.update({ matchShape })}
+/>
+<SettingToggle
+	label={t('player.townMatchShape')}
+	checked={playerSettings.current.townMatchShape}
+	onChange={(townMatchShape) => playerSettings.update({ townMatchShape })}
+/>
 
 <!-- Also at the top of every script sheet (Trevor, 2026-10-23; colours 2026-10-24). -->
 <SettingSelect

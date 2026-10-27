@@ -57,6 +57,7 @@ import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
 import ph_corners_in_duotone from '~icons/ph/corners-in-duotone';
 import ph_corners_out_duotone from '~icons/ph/corners-out-duotone';
+import ph_crop_duotone from '~icons/ph/crop-duotone';
 import ph_cross_duotone from '~icons/ph/cross-duotone';
 import ph_crown_duotone from '~icons/ph/crown-duotone';
 import ph_database_duotone from '~icons/ph/database-duotone';
@@ -151,13 +152,14 @@ import ph_poker_chip_duotone from '~icons/ph/poker-chip-duotone';
 import ph_printer_duotone from '~icons/ph/printer-duotone';
 import ph_prohibit_duotone from '~icons/ph/prohibit-duotone';
 import ph_prohibit_inset_duotone from '~icons/ph/prohibit-inset-duotone';
+import ph_projector_screen_duotone from '~icons/ph/projector-screen-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
-import ph_rectangle_duotone from '~icons/ph/rectangle-duotone';
 import ph_scales_duotone from '~icons/ph/scales-duotone';
 import ph_scan_duotone from '~icons/ph/scan-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
+import ph_selection_duotone from '~icons/ph/selection-duotone';
 import ph_shapes_duotone from '~icons/ph/shapes-duotone';
 import ph_share_network_duotone from '~icons/ph/share-network-duotone';
 import ph_shield_duotone from '~icons/ph/shield-duotone';
@@ -273,6 +275,7 @@ const icons: IconMap = {
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
 	'ph:corners-in-duotone': ph_corners_in_duotone,
 	'ph:corners-out-duotone': ph_corners_out_duotone,
+	'ph:crop-duotone': ph_crop_duotone,
 	'ph:cross-duotone': ph_cross_duotone,
 	'ph:crown-duotone': ph_crown_duotone,
 	'ph:database-duotone': ph_database_duotone,
@@ -367,13 +370,14 @@ const icons: IconMap = {
 	'ph:printer-duotone': ph_printer_duotone,
 	'ph:prohibit-duotone': ph_prohibit_duotone,
 	'ph:prohibit-inset-duotone': ph_prohibit_inset_duotone,
+	'ph:projector-screen-duotone': ph_projector_screen_duotone,
 	'ph:push-pin-duotone': ph_push_pin_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
-	'ph:rectangle-duotone': ph_rectangle_duotone,
 	'ph:scales-duotone': ph_scales_duotone,
 	'ph:scan-duotone': ph_scan_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,
+	'ph:selection-duotone': ph_selection_duotone,
 	'ph:shapes-duotone': ph_shapes_duotone,
 	'ph:share-network-duotone': ph_share_network_duotone,
 	'ph:shield-duotone': ph_shield_duotone,

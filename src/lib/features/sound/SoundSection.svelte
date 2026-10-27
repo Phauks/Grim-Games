@@ -6,6 +6,8 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import ActionSoundSettings from './ActionSoundSettings.svelte';
+	import SoundboardSettings from './SoundboardSettings.svelte';
+	import SpeakerSetting from './SpeakerSetting.svelte';
 	import AmbienceSettings from './AmbienceSettings.svelte';
 	import { playSound } from './sound.ts';
 	import VibrateToggle from './VibrateToggle.svelte';
@@ -36,6 +38,8 @@
 	defaultValue={1}
 	onChange={setVolume}
 />
+<!-- Which speaker every sound plays on (plan U11); Chrome and Edge on a computer only. -->
+<SpeakerSetting />
 <!-- One switch for every alert: the timer running out and a Back to town call. -->
 <VibrateToggle />
 
@@ -68,4 +72,5 @@
 
 <AmbienceSettings />
 
+<SoundboardSettings />
 <ActionSoundSettings />

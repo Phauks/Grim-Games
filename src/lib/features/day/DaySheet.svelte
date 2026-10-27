@@ -7,6 +7,8 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import type { Snippet } from 'svelte';
 	import DayPanel from './DayPanel.svelte';
@@ -33,6 +35,11 @@
 		cover?: CoverDetails;
 		coverTimer?: Snippet;
 		coverActions?: Snippet;
+		/**
+		 * Opens the board's Soundboard, beside the cover in the header (Trevor, 2026-10-27:
+		 * "Approve day view E"). Without it there is no Soundboard button.
+		 */
+		onSoundboard?: () => void;
 	}
 
 	let {
@@ -42,32 +49,41 @@
 		onSavant,
 		cover,
 		coverTimer,
-		coverActions
+		coverActions,
+		onSoundboard
 	}: Props = $props();
 
 	const day = $derived(new LiveDay(game));
 	// Which day it is (Trevor): Day 1 starts when the first night ends.
 	const number = $derived(dayNumber(game.game));
 	const assistance = $derived(preferences.current.assistance);
+	const title = $derived(number > 0 ? t('day.titleNumber', { number }) : t('day.title'));
 </script>
 
-<Dialog
-	bind:open
-	title={number > 0 ? t('day.titleNumber', { number }) : t('day.title')}
-	size="max"
-	scroll={false}
->
-	<!-- The grim cover, from the day as from the board (Trevor, 2026-10-26). -->
-	{#snippet headActions()}<CoverButton
-			gameId={game.game.gameId}
-			details={cover}
-			timer={coverTimer}
-			actions={coverActions}
-		/>{/snippet}
+<Dialog bind:open {title} size="max" scroll={false}>
+	<!-- ☰ and the grim cover first, where they are on the board, so the cover doesn't move
+	     (Trevor, 2026-10-27); the day's name is at the bottom instead (his pick, G3), and named
+	     here only for screen readers. -->
+	{#snippet lead()}<span class="lead"
+			><NavMenuButton /><CoverButton
+				gameId={game.game.gameId}
+				details={cover}
+				timer={coverTimer}
+				actions={coverActions}
+			/></span
+		>{/snippet}
+	{#snippet heading()}<span class="visually-hidden">{title}</span>{/snippet}
+	<!-- The Soundboard beside ✕, from the day as from the board (Trevor, 2026-10-27). -->
+	{#snippet headActions()}{#if onSoundboard}<IconButton
+				icon="soundboard"
+				label={t('settings.soundboard')}
+				onclick={onSoundboard}
+			/>{/if}{/snippet}
 	<div class="body">
 		<DayPanel game={day} {assistance} {onSavant} />
 	</div>
 	{#snippet actions()}
+		<span class="day-name" data-testid="day-name" aria-hidden="true">{title}</span>
 		{#if onEndDay}
 			<Button variant="accent" icon="night" disabled={game.viewOnly} onclick={() => onEndDay?.()}
 				>{t('day.execution')}</Button
@@ -77,6 +93,19 @@
 </Dialog>
 
 <style>
+	.lead {
+		display: flex;
+		align-items: center;
+	}
+	/* The day's name across from Execution, as the header's title looks. */
+	.day-name {
+		margin-right: auto;
+		align-self: center;
+		color: var(--heading);
+		font-family: var(--font-heading);
+		font-size: 1.25rem;
+		font-weight: var(--font-heading-weight);
+	}
 	.body {
 		/* The day's two columns (L45) follow the sheet's width, not the window's. */
 		container: day / inline-size;

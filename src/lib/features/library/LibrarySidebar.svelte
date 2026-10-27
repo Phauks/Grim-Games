@@ -3,11 +3,13 @@
 </script>
 
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import GroupHead from './GroupHead.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import TagList from './TagList.svelte';
 	import { TOP_FOLDER, dragToFolder, type DragSource } from './drag-to-folder.ts';
 	import type { KindFilter } from './library-items.ts';
@@ -50,28 +52,6 @@
 		kinds: showKinds = true
 	}: Props = $props();
 
-	/** Sidebar groups folded away, per device. */
-	type Group = 'folders' | 'kinds' | 'tags';
-	const GROUPS_KEY = 'grim-games:library-closed-groups';
-	const storedGroups = readStored<unknown>(GROUPS_KEY);
-	let closedGroups = $state<string[]>(
-		Array.isArray(storedGroups) ? storedGroups.filter((v) => typeof v === 'string') : []
-	);
-	const groupOpen = (group: Group) => ({
-		get open() {
-			return !closedGroups.includes(group);
-		},
-		set open(value: boolean) {
-			closedGroups = value
-				? closedGroups.filter((g) => g !== group)
-				: [...closedGroups.filter((g) => g !== group), group];
-			writeStored(GROUPS_KEY, closedGroups);
-		}
-	});
-	const folders = groupOpen('folders');
-	const kindsGroup = groupOpen('kinds');
-	const tagsGroup = groupOpen('tags');
-
 	/** Folders shown closed, their folders hidden (Trevor, 2026-10-18: collapsible), per device. */
 	const CLOSED_KEY = 'grim-games:library-closed-folders';
 	const stored = readStored<unknown>(CLOSED_KEY);
@@ -108,125 +88,115 @@
 	}
 </script>
 
+<!-- Folders, Kinds and Tags fold away like every other section, remembered on this device. -->
 <nav class="sidebar" aria-label={t('library.navigation')} data-testid="library-sidebar">
-	<section aria-labelledby="library-nav-folders">
-		<GroupHead id="library-nav-folders" title={t('library.folders')} bind:open={folders.open}>
-			{#snippet actions()}
+	<SectionStack edge>
+		<Collapsible title={t('library.folders')} storageKey="library-folders">
+			{#snippet aside()}
 				<IconButton icon="add" label={t('library.newFolder')} onclick={onnewfolder} />
 			{/snippet}
-		</GroupHead>
-		<ul hidden={!folders.open}>
-			<li>
-				<button
-					type="button"
-					class="entry"
-					data-drop-folder={TOP_FOLDER}
-					aria-current={place === 'files' && current === undefined ? 'location' : undefined}
-					onclick={() => openFolder(undefined)}
-				>
-					<!-- Home, with the folder path's icon (Trevor, 2026-10-19: "to match"). -->
-					<Icon name="home" />
-					<span class="name">{t('library.home')}</span>
-					<span class="count">{count(undefined)}</span>
-				</button>
-			</li>
-			{#each tree as { folder, depth } (folder.id)}
-				{@const open = !closed.includes(folder.id)}
-				<li class="folder" style:--depth={depth}>
-					{#if parents.has(folder.id)}
-						<button
-							type="button"
-							class="caret"
-							class:closed={!open}
-							aria-expanded={open}
-							aria-label={t('library.showFoldersIn', { name: folder.name })}
-							onclick={() => toggleOpen(folder.id)}
-						>
-							<Icon name="expand" />
-						</button>
-					{:else}
-						<span class="caret"></span>
-					{/if}
+			<ul class="tree">
+				<li>
 					<button
 						type="button"
 						class="entry"
-						data-drop-folder={folder.id}
-						aria-current={place === 'files' && current === folder.id ? 'location' : undefined}
-						onclick={() => openFolder(folder.id)}
-						onkeydown={(e) => {
-							if (e.key !== 'F2') return;
-							e.preventDefault();
-							onrename(folder.id);
-						}}
-						use:dragToFolder={{
-							source: { id: folder.id, folder: true, label: folder.name },
-							onmove
-						}}
+						data-drop-folder={TOP_FOLDER}
+						aria-current={place === 'files' && current === undefined ? 'location' : undefined}
+						onclick={() => openFolder(undefined)}
 					>
-						<Icon name="folder" />
-						<span class="name">{folder.name}</span>
-						<span class="count">{count(folder.id)}</span>
+						<!-- Home, with the folder path's icon (Trevor, 2026-10-19: "to match"). -->
+						<Icon name="home" />
+						<span class="name">{t('library.home')}</span>
+						<span class="count"><CountBadge count={count(undefined)} /></span>
 					</button>
 				</li>
-			{/each}
-		</ul>
-	</section>
-
-	{#if showKinds}
-		<section aria-labelledby="library-nav-kinds">
-			<GroupHead id="library-nav-kinds" title={t('library.kinds')} bind:open={kindsGroup.open} />
-			<ul hidden={!kindsGroup.open}>
-				{#each kinds as k (k.value)}
-					<li>
+				{#each tree as { folder, depth } (folder.id)}
+					{@const open = !closed.includes(folder.id)}
+					<li class="folder" style:--depth={depth}>
+						{#if parents.has(folder.id)}
+							<button
+								type="button"
+								class="caret"
+								class:closed={!open}
+								aria-expanded={open}
+								aria-label={t('library.showFoldersIn', { name: folder.name })}
+								data-caret
+								onclick={() => toggleOpen(folder.id)}
+							>
+								<!-- eslint-disable-next-line grim/caret-section -- a folder tree's own expander, not a section; every folder row is ruled off from the next (Trevor, 2026-10-27) -->
+								<Icon name="expand" />
+							</button>
+						{:else}
+							<span class="caret"></span>
+						{/if}
 						<button
 							type="button"
 							class="entry"
-							aria-pressed={place === 'files' && kind === k.value}
-							onclick={() => {
-								kind = k.value;
-								place = 'files';
+							data-drop-folder={folder.id}
+							aria-current={place === 'files' && current === folder.id ? 'location' : undefined}
+							onclick={() => openFolder(folder.id)}
+							onkeydown={(e) => {
+								if (e.key !== 'F2') return;
+								e.preventDefault();
+								onrename(folder.id);
+							}}
+							use:dragToFolder={{
+								source: { id: folder.id, folder: true, label: folder.name },
+								onmove
 							}}
 						>
-							<Icon name={k.icon} />
-							<span class="name">{k.label}</span>
+							<Icon name="folder" />
+							<span class="name">{folder.name}</span>
+							<span class="count"><CountBadge count={count(folder.id)} /></span>
 						</button>
 					</li>
 				{/each}
-				<li>
-					<!-- Each version of a living script (Trevor, 2026-10-18). -->
-					<button
-						type="button"
-						class="entry"
-						aria-pressed={place === 'campaigns'}
-						onclick={() => (place = 'campaigns')}
-					>
-						<Icon name="history" />
-						<span class="name">{t('library.campaigns')}</span>
-					</button>
-				</li>
 			</ul>
-		</section>
-	{/if}
+		</Collapsible>
 
-	<section aria-labelledby="library-nav-tags">
-		<TagList bind:filter={tags} headingId="library-nav-tags" bind:open={tagsGroup.open} />
-	</section>
+		{#if showKinds}
+			<Collapsible title={t('library.kinds')} storageKey="library-kinds">
+				<ul>
+					{#each kinds as k (k.value)}
+						<li>
+							<button
+								type="button"
+								class="entry"
+								aria-pressed={place === 'files' && kind === k.value}
+								onclick={() => {
+									kind = k.value;
+									place = 'files';
+								}}
+							>
+								<Icon name={k.icon} />
+								<span class="name">{k.label}</span>
+							</button>
+						</li>
+					{/each}
+					<li>
+						<!-- Each version of a living script (Trevor, 2026-10-18). -->
+						<button
+							type="button"
+							class="entry"
+							aria-pressed={place === 'campaigns'}
+							onclick={() => (place = 'campaigns')}
+						>
+							<Icon name="history" />
+							<span class="name">{t('library.campaigns')}</span>
+						</button>
+					</li>
+				</ul>
+			</Collapsible>
+		{/if}
+
+		<TagList bind:filter={tags} />
+	</SectionStack>
 </nav>
 
 <style>
-	/* A folded group: its list keeps its place in the markup, out of view. */
-	ul[hidden] {
-		display: none;
-	}
 	.sidebar {
 		display: grid;
 		align-content: start;
-		gap: var(--space-4);
-		min-width: 0;
-	}
-	section {
-		display: grid;
-		gap: var(--space-1);
 		min-width: 0;
 	}
 	ul {
@@ -252,6 +222,13 @@
 		font: inherit;
 		text-align: start;
 		cursor: pointer;
+	}
+	/* A line between folders, as between every caret's neighbours (Trevor, 2026-10-27). */
+	.tree {
+		gap: 0;
+	}
+	.tree > li + li {
+		border-top: 1px solid var(--border);
 	}
 	/* A folder: its caret, indented by depth, then the folder itself. */
 	.folder {
@@ -280,9 +257,8 @@
 		transform: rotate(-90deg);
 	}
 	.count {
+		display: flex;
 		font-size: 0.8rem;
-		font-weight: 400;
-		color: var(--on-surface-muted);
 	}
 	.entry:hover {
 		background: var(--surface-selected);

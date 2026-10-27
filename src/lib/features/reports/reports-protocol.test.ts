@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+	isReportStatus,
 	parseReportDraft,
 	parseReportIdPath,
 	parseReportScriptPath,
-	REPORT_LIMITS
+	REPORT_LIMITS,
+	REPORT_STATUSES
 } from './reports-protocol.ts';
 
 describe('parseReportDraft', () => {
@@ -72,5 +74,28 @@ describe('parseReportIdPath', () => {
 		expect(parseReportIdPath('/api/reports/42')).toBe(42);
 		expect(parseReportIdPath('/api/reports/x')).toBeUndefined();
 		expect(parseReportIdPath('/api/reports')).toBeUndefined();
+	});
+});
+
+describe('a report saved to send while offline', () => {
+	const base = { kind: 'bug', title: 'x', body: 'y' };
+
+	it('keeps its send id, so a resend is stored once', () => {
+		const sendId = '2f1c0b7e-8d4a-4c55-9a8e-3b2d1f0e9c11';
+		expect(parseReportDraft({ ...base, sendId })).toEqual({ ...base, sendId });
+	});
+
+	it('refuses a send id that is not short letters, digits and dashes', () => {
+		expect(parseReportDraft({ ...base, sendId: 'short' })).toHaveProperty('error');
+		expect(parseReportDraft({ ...base, sendId: 'has spaces in it' })).toHaveProperty('error');
+		expect(parseReportDraft({ ...base, sendId: 7 })).toHaveProperty('error');
+	});
+});
+
+describe('report statuses', () => {
+	it('has In progress between To do (accepted) and Done (Trevor, 2026-10-27)', () => {
+		expect(isReportStatus('in-progress')).toBe(true);
+		expect(REPORT_STATUSES.indexOf('in-progress')).toBe(REPORT_STATUSES.indexOf('accepted') + 1);
+		expect(REPORT_STATUSES.indexOf('done')).toBe(REPORT_STATUSES.indexOf('in-progress') + 1);
 	});
 });

@@ -100,17 +100,21 @@ test('an eye on each Game info line chooses what the board corner shows, as Sett
 	await expect(page.getByTestId('board-phase')).toHaveCount(0);
 	await expect(page.getByTestId('board-game-clock')).toContainText('0:00');
 
-	// The same choices in Settings > Board (⋯ > Board), and after a reload.
+	// The same choices in Settings > Board (⋯ > Settings opens there), and after a reload.
 	await page.reload();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Board', exact: true })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	const authorSetting = settings.getByRole('checkbox', { name: 'Author on the board' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
+	const authorSetting = settings.getByRole('checkbox', { name: 'Author', exact: true });
 	await expect(authorSetting).not.toBeChecked();
-	await settings.getByText('Author on the board', { exact: true }).tap();
+	await settings.getByText('Author', { exact: true }).tap();
 	await expect(authorSetting).toBeChecked();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(corner).toContainText('by The Pandemonium Institute');

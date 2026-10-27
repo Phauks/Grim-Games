@@ -8,6 +8,7 @@ export const player = {
 	'player.loading': 'Loading…',
 	'player.offline.row': 'Offline game: only the script came across',
 	'player.offline.more': 'What an offline game has',
+	'player.offline.join': 'Join game',
 	'player.offline.title': 'Offline game',
 	'player.offline.hereTitle': 'On this phone',
 	'player.offline.here': 'The script, the night order, jinxes, your notes and your own grim.',
@@ -83,7 +84,6 @@ export const player = {
 	'player.keep': 'Keep',
 	'player.delete': 'Delete',
 
-	'player.density': 'Script sheet layout',
 	'player.sheetBackground': 'Sheet background',
 	'player.sheetBackground.theme': 'Theme',
 	'player.sheetBackground.white': 'Off-white',
@@ -96,7 +96,8 @@ export const player = {
 	'player.picture': 'Your picture',
 	'player.pictureDetail':
 		'On your seat in place of your initials, in rooms you join. The Storyteller can take it away for a game.',
-	'player.pictureChoose': 'Choose a picture',
+	'player.pictureChoose': 'Image',
+	'player.pictureEdit': 'Move or zoom your picture',
 	'player.pictureChange': 'Change picture',
 	'player.pictureRemove': 'Remove picture',
 	'player.pictureFile': 'Picture for your seat',
@@ -107,9 +108,12 @@ export const player = {
 	'player.pictureZoom': 'Zoom',
 	'player.pictureError': 'That picture could not be read or kept.',
 	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
+	'player.matchShape': "Grim tab in the Storyteller's board shape",
+	'player.matchShapeDetail':
+		"Draws the town the shape of the Storyteller's board, with empty space at the edges. Off, it fills your screen. Seats keep the Storyteller's places round the table either way.",
+	'player.townMatchShape': "Public Town in the Storyteller's board shape",
+	'player.grim.matchShape': "Storyteller's board shape",
 	'player.frameStoryteller': "Storyteller's choice",
-	'player.densityDetail':
-		"How tightly the Script sheet is laid out for you, on screen and in print. Applies to the player view and the Storyteller's copy of the script.",
 	'player.density.normal': 'Normal',
 	'player.density.compact': 'Compact',
 	'player.density.super': 'Super-compact',

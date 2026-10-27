@@ -8,6 +8,11 @@
  * so it is asked for again when the app is shown while still wanted.
  */
 let sentinel: WakeLockSentinel | undefined;
+/**
+ * Who wants the screen on: the day timer, Public Town, an offline code on screen (Trevor,
+ * 2026-10-27). One letting go keeps it on for the others.
+ */
+const holders = new Set<string>();
 let wanted = false;
 let listening = false;
 
@@ -16,8 +21,12 @@ export function canKeepAwake(): boolean {
 	return typeof navigator !== 'undefined' && 'wakeLock' in navigator;
 }
 
+/** A request on its way, so a second holder doesn't ask for (and leak) a second lock. */
+let requesting = false;
+
 async function acquire(): Promise<void> {
-	if (!wanted || sentinel || document.visibilityState !== 'visible') return;
+	if (!wanted || sentinel || requesting || document.visibilityState !== 'visible') return;
+	requesting = true;
 	try {
 		const lock = await navigator.wakeLock.request('screen');
 		// Released or no longer wanted while the request was pending.
@@ -31,6 +40,8 @@ async function acquire(): Promise<void> {
 		});
 	} catch {
 		// Refused (low battery, power saving, not allowed): the timer still runs.
+	} finally {
+		requesting = false;
 	}
 }
 
@@ -38,11 +49,13 @@ function onVisibility(): void {
 	void acquire();
 }
 
-/** Holds the screen on (`true`) or lets it sleep again (`false`). */
-export function keepScreenAwake(on: boolean): void {
+/** Holds the screen on (`true`) for `holder`, or lets go (`false`); it sleeps once none hold it. */
+export function keepScreenAwake(on: boolean, holder = 'timer'): void {
 	if (!canKeepAwake()) return;
-	wanted = on;
-	if (on) {
+	if (on) holders.add(holder);
+	else holders.delete(holder);
+	wanted = holders.size > 0;
+	if (wanted) {
 		if (!listening) {
 			document.addEventListener('visibilitychange', onVisibility);
 			listening = true;

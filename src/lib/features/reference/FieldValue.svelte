@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		characterIcons,
@@ -51,7 +52,6 @@
 	let detailsOpen = $state(false);
 	let detailsUsed = $state(false);
 	// Jinxes start folded: they vary most in size (Trevor, 2026-10-16). Built only when opened.
-	let jinxesOpen = $state(false);
 
 	const character = $derived(entry.character);
 	/** The Report form as a rules report, its title started with this character's name. */
@@ -239,18 +239,9 @@
 		{@render nightValue('night-other', 'other', entry.otherNight)}
 	{:else if field === 'jinxes'}
 		{#if entry.jinxes.length}
-			<button
-				type="button"
-				class="fold"
-				aria-expanded={jinxesOpen}
-				data-testid="jinx-toggle"
-				onclick={() => (jinxesOpen = !jinxesOpen)}
-				><span class="caret" aria-hidden="true"><Icon name="expand" /></span>{t(
-					'reference.jinxCount',
-					{ count: entry.jinxes.length }
-				)}</button
-			>
-			{#if jinxesOpen}<ul class="list">
+			<!-- Starts folded each time (Trevor, 2026-10-16), the count beside it. -->
+			<Collapsible title={t('characters.jinxes')} level={4} startClosed count={entry.jinxes.length}
+				><ul class="list">
 					{#each entry.jinxes as jinx (jinx.with)}
 						<!-- The text-size badge as a bar across, the jinx indented under it (Trevor, 2026-10-16). -->
 						<li class="jinx">
@@ -259,7 +250,8 @@
 							>
 						</li>
 					{/each}
-				</ul>{/if}
+				</ul></Collapsible
+			>
 		{:else}<span data-testid="no-jinxes">{t('common.none')}</span>{/if}
 	{:else if field === 'prep'}
 		{#if prep.length}
@@ -456,29 +448,5 @@
 		background: none;
 		color: inherit;
 		cursor: pointer;
-	}
-	.fold {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		cursor: pointer;
-	}
-	.fold .caret {
-		display: grid;
-		transition: transform 0.15s ease;
-	}
-	.fold[aria-expanded='false'] .caret {
-		transform: rotate(-90deg);
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.fold .caret {
-			transition: none;
-		}
 	}
 </style>

@@ -31,6 +31,7 @@ import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_coffee from '~icons/ph/coffee';
 import ph_copy from '~icons/ph/copy';
+import ph_crop from '~icons/ph/crop';
 import ph_database from '~icons/ph/database';
 import ph_device_mobile from '~icons/ph/device-mobile';
 import ph_dots_three from '~icons/ph/dots-three';
@@ -79,8 +80,8 @@ import ph_plus from '~icons/ph/plus';
 import ph_poker_chip from '~icons/ph/poker-chip';
 import ph_printer from '~icons/ph/printer';
 import ph_prohibit from '~icons/ph/prohibit';
+import ph_projector_screen from '~icons/ph/projector-screen';
 import ph_push_pin from '~icons/ph/push-pin';
-import ph_rectangle from '~icons/ph/rectangle';
 import ph_scroll from '~icons/ph/scroll';
 import ph_shapes from '~icons/ph/shapes';
 import ph_share_network from '~icons/ph/share-network';
@@ -142,6 +143,7 @@ const icons: IconMap = {
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:coffee': ph_coffee,
 	'ph:copy': ph_copy,
+	'ph:crop': ph_crop,
 	'ph:database': ph_database,
 	'ph:device-mobile': ph_device_mobile,
 	'ph:dots-three': ph_dots_three,
@@ -190,8 +192,8 @@ const icons: IconMap = {
 	'ph:poker-chip': ph_poker_chip,
 	'ph:printer': ph_printer,
 	'ph:prohibit': ph_prohibit,
+	'ph:projector-screen': ph_projector_screen,
 	'ph:push-pin': ph_push_pin,
-	'ph:rectangle': ph_rectangle,
 	'ph:scroll': ph_scroll,
 	'ph:shapes': ph_shapes,
 	'ph:share-network': ph_share_network,

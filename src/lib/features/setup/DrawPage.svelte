@@ -224,7 +224,7 @@
 		const named = port.game;
 		if (!named) return;
 		const seats = named.seating.map((id) => named.seats[id]);
-		for (const { seatId, playerName } of seatsToName(roomHost().connectedUnseated, seats))
+		for (const { seatId, playerName } of seatsToName(roomHost().unseatedInGame, seats))
 			send({ type: 'RenameSeat', seatId, playerName });
 		const current = port.game;
 		if (!current) return;

@@ -21,7 +21,12 @@ export const REPORTS_API = '/api/reports';
 export const REPORT_KINDS = ['bug', 'enhancement', 'rules', 'data', 'question'] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];
 
-export const REPORT_STATUSES = ['new', 'accepted', 'done', 'declined'] as const;
+/**
+ * The usual work flow (Trevor, 2026-10-27: "look at what programmers usually use"): New
+ * (not looked at yet), To do (`accepted`), In progress, Done, and Won't fix (`declined`).
+ * The stored ids stay as they were, so reports and older apps keep reading them.
+ */
+export const REPORT_STATUSES = ['new', 'accepted', 'in-progress', 'done', 'declined'] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 export const REPORT_LIMITS = {
@@ -54,10 +59,15 @@ export interface ReportDraft {
 	 */
 	script?: string;
 	scriptName?: string;
+	/**
+	 * Made on the device when the report is saved to send (outbox.svelte.ts), so a report
+	 * sent again after a dropped connection is stored once (`isSendId`).
+	 */
+	sendId?: string;
 }
 
 /** A listed report: the script's JSON is fetched on its own (`reportScriptPath`). */
-export interface Report extends Omit<ReportDraft, 'script'> {
+export interface Report extends Omit<ReportDraft, 'script' | 'sendId'> {
 	id: number;
 	status: ReportStatus;
 	createdAt: number;
@@ -128,7 +138,16 @@ export function parseReportDraft(raw: unknown): ReportDraft | { error: string } 
 	} else {
 		delete draft.scriptName;
 	}
+	if (input.sendId !== undefined && input.sendId !== null) {
+		if (!isSendId(input.sendId)) return { error: 'Bad sendId' };
+		draft.sendId = input.sendId;
+	}
 	return draft;
+}
+
+/** A send id as the app makes them: a random UUID, or other short letters, digits and dashes. */
+export function isSendId(value: unknown): value is string {
+	return typeof value === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(value);
 }
 
 /** A script's JSON text within the limit: an array, as TPI's format is. */

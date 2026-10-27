@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	orderAround,
+	clearOfCorner,
 	keepInside,
 	DEFAULT_SEAT_LAYOUT,
 	isDefaultLayout,
@@ -15,7 +16,12 @@ import {
 	withShape,
 	followSeating,
 	isRotation,
-	spreadEvenly
+	spreadEvenly,
+	boardAspect,
+	parseAspect,
+	fitAspect,
+	centredIn,
+	sharedSeats
 } from './seat-layout.ts';
 
 const seats = ['a', 'b', 'c', 'd'];
@@ -168,6 +174,50 @@ describe('keepInside', () => {
 	});
 });
 
+describe('clearOfCorner', () => {
+	const board = { width: 400, height: 800 };
+	it('brings the ring down until the seat under the corner box is clear of it', () => {
+		// A seat at (75%, 5%) = (300px, 40px) under a 200 × 100 box in the top right.
+		const ring = [
+			{ x: 75, y: 5 },
+			{ x: 50, y: 95 }
+		];
+		const [under, bottom] = clearOfCorner(ring, [true, true], ring, board, { w: 200, h: 100 }, 30);
+		expect((under.y / 100) * board.height - 30).toBeCloseTo(100);
+		// The ring's bottom barely moves, and nothing moves sideways.
+		expect(bottom.y).toBeGreaterThan(95);
+		expect(bottom.y).toBeLessThan(96);
+		expect(under.x).toBe(75);
+	});
+	it('leaves the ring alone when no seat is under the box', () => {
+		const points = [{ x: 20, y: 5 }];
+		expect(clearOfCorner(points, [true], points, board, { w: 100, h: 100 }, 30)).toEqual(points);
+	});
+	it('leaves seats placed by hand where they were put, and the ring as it was', () => {
+		// The seat under the box was dragged away; the ring still makes room for its place.
+		const ring = [
+			{ x: 75, y: 5 },
+			{ x: 30, y: 50 }
+		];
+		const kept = clearOfCorner(ring, [true, true], ring, board, { w: 200, h: 100 }, 30)[1];
+		const [placed, other] = clearOfCorner(
+			[{ x: 10, y: 90 }, ring[1]],
+			[false, true],
+			ring,
+			board,
+			{ w: 200, h: 100 },
+			30
+		);
+		expect(placed).toEqual({ x: 10, y: 90 });
+		expect(other).toEqual(kept);
+	});
+	it('never takes more than a quarter of the board', () => {
+		const ring = [{ x: 75, y: 5 }];
+		const [p] = clearOfCorner(ring, [true], ring, board, { w: 200, h: 700 }, 30);
+		expect(p.y).toBeCloseTo(25 + 5 * 0.75);
+	});
+});
+
 describe('rotating with a custom layout', () => {
 	const seats = ['a', 'b', 'c', 'd'];
 	it('knows a rotation from a reorder', () => {
@@ -222,5 +272,87 @@ describe('orderAround', () => {
 		// a was dragged from the top to between c and d: b and c keep their places.
 		const moved = [{ x: 30, y: 170 }, ring[1], ring[2], ring[3]];
 		expect(orderAround(['a', 'b', 'c', 'd'], moved, centre, ring)).toEqual(['d', 'b', 'c', 'a']);
+	});
+});
+
+describe('the Storyteller board shape (Trevor, 2026-10-27)', () => {
+	const eight = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+	const phone = { width: 390, height: 640 };
+	const laptop = { width: 1280, height: 620 };
+	/** Each seat's clock position, in degrees from the top, clockwise, on its own board. */
+	const clock = (points: { x: number; y: number }[]) =>
+		points.map((p) => {
+			const deg = (Math.atan2(p.x - 50, 50 - p.y) * 180) / Math.PI;
+			return Math.round((deg + 360) % 360);
+		});
+
+	it('puts seats at different clock positions on a phone and a laptop by default', () => {
+		const onPhone = clock(seatPoints(eight, DEFAULT_SEAT_LAYOUT, phone));
+		const onLaptop = clock(seatPoints(eight, DEFAULT_SEAT_LAYOUT, laptop));
+		expect(onPhone).not.toEqual(onLaptop);
+	});
+
+	it("keeps the Storyteller's clock positions on any screen, while filling it", () => {
+		const shape = boardAspect(laptop)!;
+		const theirs = clock(seatPoints(eight, DEFAULT_SEAT_LAYOUT, laptop));
+		const onPhone = seatPoints(eight, DEFAULT_SEAT_LAYOUT, phone, shape);
+		expect(clock(onPhone)).toEqual(theirs);
+		// The ring still reaches 41% out on the phone's own board, top and side.
+		expect(onPhone[0]).toEqual({ x: 50, y: 9 });
+	});
+
+	it('spaces a circle at equal angles whatever the shape', () => {
+		const circle = withShape(DEFAULT_SEAT_LAYOUT, 'circle');
+		const own = seatPoints(eight, circle, phone);
+		const spaced = seatPoints(eight, circle, phone, boardAspect(laptop));
+		spaced.forEach((p, i) => {
+			expect(p.x).toBeCloseTo(own[i].x);
+			expect(p.y).toBeCloseTo(own[i].y);
+		});
+	});
+
+	it('rounds a board shape and reads only sensible ones back', () => {
+		expect(boardAspect({ width: 1280, height: 620 })).toBe(2.06);
+		expect(boardAspect({ width: 0, height: 620 })).toBeUndefined();
+		expect(parseAspect(0.61)).toBe(0.61);
+		expect(parseAspect('1.5')).toBeUndefined();
+		expect(parseAspect(Infinity)).toBeUndefined();
+		expect(parseAspect(50)).toBeUndefined();
+	});
+
+	it('fits the largest box of a shape on a board, with bands', () => {
+		expect(fitAspect(phone, 2)).toEqual({ width: 390, height: 195 });
+		expect(fitAspect(laptop, 1)).toEqual({ width: 620, height: 620 });
+		expect(fitAspect({ width: 0, height: 0 }, 2)).toEqual({ width: 0, height: 0 });
+	});
+
+	it('moves points in a centred box to the whole board', () => {
+		const box = fitAspect(phone, 2);
+		const [top, middle] = centredIn(
+			[
+				{ x: 50, y: 0 },
+				{ x: 50, y: 50 }
+			],
+			box,
+			phone
+		);
+		// The 195px box sits 222.5px down the 640px phone.
+		expect(top.y).toBeCloseTo((222.5 / 640) * 100);
+		expect(middle).toEqual({ x: 50, y: 50 });
+	});
+
+	it("draws a shared grim in the board's shape only when switched on", () => {
+		const shared = eight.map((seatId) => ({ seatId }));
+		const prefs = { tokenAppearance: { tokenScale: 1 } };
+		const filled = sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, 2, false, prefs);
+		const shaped = sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, 2, true, prefs);
+		const top = (ps: { y: number }[]) => Math.min(...ps.map((p) => p.y));
+		expect(top(filled.points)).toBeLessThan(20);
+		// The 390 by 195 box starts 34.8% down the phone.
+		expect(top(shaped.points)).toBeGreaterThan(34.8);
+		expect(shaped.size).toBeLessThanOrEqual(filled.size);
+		expect(sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, true, prefs)).toEqual(
+			sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, false, prefs)
+		);
 	});
 });

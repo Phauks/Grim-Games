@@ -72,5 +72,37 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 	await expect(adminSeat).toHaveAttribute('aria-label', label!);
 	// Nothing on the board says an admin is watching.
 	await expect(page.getByText(/watching/i)).toHaveCount(0);
+
+	// A Fabled stays where the board puts it (Trevor, 2026-10-27: "Admin view allows moving
+	// fable and lorics"): its Location and Grouping are the Storyteller's to set.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Spirit of Ivory', exact: true })
+		.tap();
+	const fabled = admin
+		.getByRole('list', { name: 'Fabled and Loric' })
+		.getByRole('button', { name: 'Spirit of Ivory' });
+	await fabled.tap();
+	const entry = admin.getByRole('dialog', { name: 'Spirit of Ivory' });
+	await expect(entry.getByRole('combobox', { name: 'Location', exact: true })).toBeDisabled();
+	await expect(entry.getByRole('combobox', { name: 'Grouping', exact: true })).toBeDisabled();
+	await admin.keyboard.press('Escape');
+
+	// History, read-only (Trevor, 2026-10-27: "Admin should have access to history"); the
+	// rest of ⋯ shows, disabled.
+	await admin.getByRole('button', { name: 'More', exact: true }).tap();
+	const adminMenu = admin.getByRole('dialog', { name: 'Grimoire' });
+	await expect(adminMenu.getByRole('button', { name: 'Add Fabled or Loric' })).toBeDisabled();
+	await expect(adminMenu.getByRole('button', { name: 'End game' })).toBeDisabled();
+	await adminMenu.getByRole('button', { name: 'History', exact: true }).tap();
+	const history = admin.getByRole('dialog', { name: 'History' });
+	await expect(history.getByRole('listitem').filter({ hasText: 'Spirit of Ivory' })).toBeVisible();
+	await expect(history.getByRole('button', { name: 'Restore' })).toHaveCount(0);
+	await expect(history.getByRole('button', { name: 'Show' }).first()).toBeVisible();
 	await adminContext.close();
 });

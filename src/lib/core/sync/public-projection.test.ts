@@ -73,6 +73,7 @@ describe('publicProjection', () => {
 	it('has names, seat order, deaths and ghost votes', () => {
 		const { game, seats } = busyGame();
 		expect(publicProjection(game)).toEqual({
+			ruleCharacters: ['djinn'],
 			seats: [
 				{ seatId: seats[1], seatNumber: 1, playerName: 'Ben', dead: false },
 				{ seatId: seats[0], seatNumber: 2, playerName: 'Ana', dead: false },
@@ -98,6 +99,12 @@ describe('publicProjection', () => {
 			gaps: { [seats[0]]: 1 },
 			placed: { [seats[1]]: { x: 20, y: 30 } }
 		});
+	});
+
+	it("carries the board's shape, even round the plain oval (Trevor, 2026-10-27)", () => {
+		const { game } = busyGame();
+		const layout = { shape: 'oval', gaps: {}, placed: {}, aspect: 2.06 };
+		expect(publicProjection(game, undefined, layout).layout).toEqual(layout);
 	});
 
 	it("carries the board corner's lines, and nothing else (Trevor, 2026-10-24)", () => {
@@ -169,7 +176,21 @@ describe('publicProjection', () => {
 		);
 	});
 
-	it('leaks no characters, alignments, reminders, overrides, bluffs, rule characters or bag', () => {
+	// https://wiki.bloodontheclocktower.com/Fabled and https://wiki.bloodontheclocktower.com/Loric:
+	// both are announced to the town (Trevor, 2026-10-27).
+	it('names the Fabled and Loric in play, and nothing when there are none', () => {
+		const { session, ctx } = castGame(['chef', 'imp', 'empath', 'saint', 'poisoner']);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AddRuleCharacter', characterId: 'sentinel' },
+			{ type: 'AddRuleCharacter', characterId: 'bootlegger' }
+		);
+		expect(publicProjection(s.game).ruleCharacters).toEqual(['sentinel', 'bootlegger']);
+		expect(publicProjection(session.game)).not.toHaveProperty('ruleCharacters');
+	});
+
+	it('leaks no characters, alignments, reminders, overrides, bluffs or bag', () => {
 		const { game } = busyGame();
 		const json = JSON.stringify(publicProjection(game));
 		const secrets = new Set<string>([
@@ -194,7 +215,6 @@ describe('publicProjection', () => {
 			for (const r of seat.reminders)
 				[r.reminderId, r.characterId, r.label].forEach((x) => secrets.add(x));
 		}
-		game.ruleCharacters.forEach((id) => secrets.add(id));
 		game.bluffs.flat().forEach((id) => secrets.add(id));
 		for (const tile of Object.values(game.bag!.tiles)) {
 			[tile.tileId, tile.shows, tile.grimoire].forEach((x) => secrets.add(x));
@@ -223,7 +243,9 @@ describe('publicProjection', () => {
 				'nominations',
 				'nominator',
 				'nominee',
-				'executions'
+				'executions',
+				// The Fabled and Loric are announced to the town (Trevor, 2026-10-27).
+				'ruleCharacters'
 			].sort()
 		);
 	});

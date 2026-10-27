@@ -28,7 +28,8 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - The build line (version, commit, other build): `features/about/BuildLine.svelte`, at the end of the menu above the CCC logo (enforced by `e2e/app.e2e.ts`)
 - Where a sticky piece stops at the top: the `--app-top` token (the status bar's inset) (enforced by review)
 - A section of a page: `ui/layout/PageSection.svelte` (enforced by review)
-- A section that opens and closes from its header: `ui/primitives/Collapsible.svelte`: `storageKey` remembers it; `count` shows how many items it holds while closed (Trevor, 2026-10-19) (enforced by review)
+- A section that opens and closes from its header, and anything else with a caret: `ui/primitives/Collapsible.svelte`: `storageKey` remembers it; `count` shows how many items it holds while closed (Trevor, 2026-10-19); `disabled` keeps it in place until it can open. It draws a line above itself when something sits above it in the same box (Trevor, 2026-10-27), so every caret has one indent, spacing, badge and line; a drop-down's caret (`aria-haspopup`) is a menu, not this (enforced by `grim/caret-section`, `e2e/caret-dividers.e2e.ts`)
+- Sections one under another, wrapped (a night, a sheet's type): `ui/layout/SectionStack.svelte` draws the line between each two; `edge` adds one above the first, under a heading or a field (the player's Script, Night and Notes tabs, the Library sidebar, Info tokens, the changelog) (enforced by `e2e/caret-dividers.e2e.ts`)
 - An element appearing or leaving (fade and short move): `rise` from `ui/motion.ts` (token speeds, none under reduced motion; transform and opacity only) (enforced by `no-restricted-imports`)
 - A labelled text field, one line or several: `ui/primitives/TextField.svelte` (enforced by `grim/text-field`)
 - A search box: `ui/primitives/SearchField.svelte` (enforced by `grim/text-field`)
@@ -41,15 +42,16 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - Choosing the script for a new game: `features/modes/ScriptPicker.svelte`: base three as chips, every other script by search, the Library in a dialog (enforced by review)
 - The rules behind a screen a mode or rule opens: `features/modes/RuleHeader.svelte` with `spawnedBy(gameId, has)` (`spawned-by.ts`): name, description, Inspect (enforced by review)
 - Cancel and Confirm in a modal: `ui/primitives/ModalActions.svelte` (enforced by `grim/modal-actions`)
-- A file's contents (a mode file, a script's JSON): `ui/primitives/FileView.svelte`: name, Copy and Download in its header, line numbers; `collapsible` to start closed (enforced by review)
+- A file's contents (a mode file, a script's JSON): `ui/primitives/FileView.svelte`: name, Copy and Download in its header, line numbers; to start it closed, put it in a Collapsible (enforced by review)
 - Report an issue from a script's own actions: `features/reports/ReportButton.svelte` (the form takes the script on screen: `offerScriptToReports`) (enforced by review)
+- Sending a report to the Worker: `reportOutbox.send` (`features/reports/outbox.svelte.ts`), which saves it on the device first and sends it once the connection is back; never `sendReport` directly (enforced by `e2e/report-offline.e2e.ts`)
 - A modal or full-screen panel: `ui/primitives/Dialog.svelte`; `full` and `max` scroll their content under the header (`scroll={false}` for content that pans itself); over the grimoire board its backdrop (and BottomSheet's) blurs the board (`ui/board-cover.ts`) (enforced by `e2e/dialog-scroll.e2e.ts`)
 - A preview beside the settings it shows, in a dialog: `Dialog`'s `aside`: on the left once the dialog is wide enough, on top on a phone (held there unless `pinAside` is false); each pane scrolls on its own (QR code settings, Character builder) (enforced by `e2e/room.e2e.ts`)
 - Choosing a saved script, character or collection: `features/library/LibraryBrowser.svelte` with `kind` and `onpick` (the Library's file manager; `PreviewToggle.svelte` is its Preview button) (enforced by review)
 - A confirmation: `ui/primitives/ConfirmDialog.svelte` (enforced by `grim/confirm-dialog`)
 - A text button: `ui/primitives/Button.svelte` (`solid`, `quiet`, `accent`, `danger` red fill, `field`); every variant has a 3:1 edge from the theme (`--button-edge`, `--accent-edge`, `--danger-edge`, tested in `themes.test.ts`); an `https` `href` opens in a new tab (enforced by review)
 - Delete, remove, clear (not Account settings¹): `ui/primitives/DeleteButton.svelte` (enforced by `grim/delete-button`)
-- The full screen toggle: `ui/primitives/FullScreenButton.svelte` (only where the browser can, never in the installed app); the board's toolbar and Public Town's title line (enforced by `e2e/grimoire.e2e.ts`, `e2e/public-town.e2e.ts`)
+- The full screen toggle: `ui/primitives/FullScreenButton.svelte` on the board's toolbar (only where the browser can, never in the installed app). A part of a page that fills the screen, with the toggle in its top right corner: `ui/layout/FullScreenStage.svelte` (`corner` snippet for buttons beside it); `PlayerGrim`'s `fullScreen` uses it for /play's Grim and Public Town (enforced by `e2e/grimoire.e2e.ts`, `e2e/public-town.e2e.ts`, `e2e/room.e2e.ts`)
 - A row of icon buttons (a page's title actions, a dialog header): `ui/primitives/IconButton.svelte` for every button in it; a drop-down there is `ui/primitives/Select.svelte` with `icon` (its closed control is that IconButton, as the sheet background's paint bucket); never restyle a trigger to look like one (enforced by `e2e/icon-row.ts` `expectMatchingIconRow` (`e2e/play.e2e.ts`, `e2e/game-modes.e2e.ts`))
 - A picture the whole table sees (the board's background; a player's own avatar picture, `features/player/avatar-picture.svelte.ts`, put there with the phone's key by `putRoomImage`): `features/room/room-images.ts` `uploadRoomImage` from the Storyteller's device, loaded at `core/sync/room-images.ts` `roomImagePath`; the room keeps it by hash and deletes it with the room, never a picture in a room message (enforced by `e2e/public-town.e2e.ts`)
 - How the shared grim looks (background, vignette, logo): `features/grimoire/shared-look.ts` `lookOf` / `drawnLook` with `PublicLook`; every shared grim draws the Storyteller's look, never its own device's (enforced by `e2e/public-town.e2e.ts`, `e2e/room.e2e.ts`)
@@ -67,7 +69,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - Hide contents (a note, a scratch pad, guesses on the Grim): `ui/primitives/HideContentsButton.svelte` (enforced by review)
 - The grim cover (the Storyteller's opaque screen): `features/show/CoverButton.svelte` (script, night or day, timer from `CoverScreen`; PIN through `PinDialog` with `purpose="cover"`); overlays opened inside it portal into it (`ui/primitives/portal-target.ts`) (enforced by `e2e/grim-cover.e2e.ts`)
 - Titled notes: cards ("+ New note"), editor, save-on-close editor (notebook, game and player notes): `ui/notes/NoteCards.svelte`, `ui/notes/NoteEditor.svelte`, `ui/notes/NoteDraftEditor.svelte` (enforced by shared)
-- A count beside a heading: `ui/primitives/CountBadge.svelte` (enforced by review)
+- A number the app works out (a count beside a heading or a name, "7 of 10", ×3 copies, a token's corner count): `ui/primitives/CountBadge.svelte`, always a filled circle (Trevor, 2026-10-27: "not loose in the air"); `warn` in the accent colour, `total` for "7 of 10", `times` for "×3"; numbers in a sentence, a table cell or under their label stay text, and no message puts a count in brackets (enforced by `grim/count-badge`, `scripts/count-messages.test.ts`)
 - Something is loading: `ui/primitives/Spinner.svelte` (`label` when nothing beside it says what loads) (enforced by review)
 - A builder's title-row tools (open, download, clear): `ui/builder/BuilderTools.svelte` (enforced by review)
 - A builder's Save and Save as new: `ui/builder/BuilderTools.svelte` with `save` (icon buttons in the header) (enforced by review)
@@ -93,18 +95,24 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A day or vote timer: `features/day/DayTimer.svelte` (enforced by review)
 - Playing a sound or vibrating: `features/sound/sound.ts` (`playSound`, `unlockSound`, `vibrate`, `canVibrate`): one audio context and the device volume; the Vibrate switch is `features/sound/VibrateToggle.svelte` (enforced by review)
 - Day and night sound (one recording per scene): `core/sound/ambience.ts` (the recordings, their credits and each scene's options) and `features/sound/ambience.ts` (`ambience.sync(scene)`, `previewAmbience`), sharing `sound.ts`'s audio context; recordings in `static/sounds/`, cached on first use (enforced by review)
-- Playing a recorded sound at a tap or for an action: `features/sound/soundboard.svelte.ts` (`soundboard.play`, `toggle`, `playing`) over `features/sound/recording.ts` (fetch and decode once, shared with day and night sound); the sounds and the action rule in `core/sound/soundboard.ts` (enforced by review)
+- Playing a recorded sound at a tap or for an action: `features/sound/soundboard.svelte.ts` (`soundboard.play`, `toggle`, `isPlaying`, `pause`, `resume`; on Tone.js, the only place that imports it) over `features/sound/recording.ts` (fetch and decode once, shared with day and night sound); the sounds and the action rule in `core/sound/soundboard.ts` (enforced by review)
+- The soundboard's mixer (level, overlap, each sound's volume and loop): `features/sound/SoundboardSettings.svelte`, in Settings > Sound and in the Soundboard dialog (`master` adds the device volume) (enforced by review)
+- Which sounds and mixes the soundboard shows (hot spots): `features/sound/SoundPadsDialog.svelte`, from the Soundboard's Edit and "+ New" pad and from Settings > Sound; pads are `SoundPad` in `core/sound/soundboard.ts` (`parsePads`, `padSounds`, `padName`) (enforced by review)
+- Soundboard sounds on the Public Town tablet (Play on): the room's `town-sound` message (`core/sync/room-sound.ts`, `parseTownSound`), sent by `soundboard.town` (connected by `features/sound/SoundboardDialog.svelte`) and played by `features/sound/town-sounds.ts` with `soundboard.fromStoryteller` (enforced by review)
+- The speaker every sound plays on: `features/sound/SpeakerSetting.svelte` over `features/sound/speaker.svelte.ts` (`canChooseSpeaker`, `useSpeaker`); `audio()` applies the saved one (enforced by review)
 - The time left on the room's script vote: `features/room/VoteTimeLeft.svelte` (Storyteller's vote sheet and each phone's ballot) (enforced by review)
 - A script's details: `features/scripts/ScriptView.svelte` (enforced by review)
 - A script's logo: `features/scripts/ScriptLogo.svelte` with `scriptLogo` (`core/data/script-logo.ts`) (enforced by review)
 - Reading and writing localStorage: `ui/stored.ts` (`readStored`, `writeStored`, `readParsed`, `readStoredText`, `writeStoredText`) (enforced by `no-restricted-globals` (localStorage))
 - Copying text, with its toast: `ui/clipboard.ts` (`copyText`) (enforced by review)
 - Every Share button (code, QR, link, Copy, refresh, Share, send a file): `ui/share/SharePanel.svelte`; a script's Share is `features/scripts/ShareControl.svelte`, which shows the room's link and join code when the device is in a room, and its link comes from `scriptShareable` (`features/scripts/share-codes.ts`) (enforced by `grim/share-panel` (`SHARE_TODO`), `e2e/share.e2e.ts`)
+- A copy icon that shows a check for a moment (the share screen's code and link, Grim view's password): `ui/share/CopyButton.svelte` over `copyText` (`ui/clipboard.ts`) (enforced by review)
 - A script's tabs (Characters, Night order, Grim, Notes, Room): `features/player/PlayerScriptTabs.svelte`, with `PlayerGrim` and `PlayerNotes`: /play and the board's Script sheet show the same screens, and a Public Town display (/town) shows `PlayerGrim` with `display` (enforced by review)
 - The script's title-line buttons (sheet background, Print, Share, the player's settings cog): `features/player/PlayerScriptActions.svelte`, with `features/room/YouButton.svelte` as an `IconButton`: /play's title line and the board's Script sheet header, so the Storyteller sees the players' exact buttons (Trevor, 2026-10-26) (enforced by `e2e/play.e2e.ts`, `e2e/game-modes.e2e.ts`)
 - A player's avatar (their initials) on a token face: `ui/seating/AvatarFace.svelte`; ids and `initialsOf` in `core/avatars` (enforced by review)
 - A setting in Settings (or where it is used): a row, a switch, a colour, a heading over a run, a closing group: `ui/settings/` `SettingRow` (and `SettingToggle`, `SettingSelect`, `SettingSlider`, `SettingChoice`, `SettingColor`), `SettingHeading`, `SettingCollapsible`, `SettingGroup` (with a preview); each carries `data-setting`, and `ui/base.css` draws the line between any two (enforced by `e2e/settings-framework.e2e.ts`)
 - Text size and Pinch to zoom outside Settings (the player screen's settings cog): `features/settings/sections/TextSizeRows.svelte` (Settings > Text uses it too) (enforced by `e2e/play.e2e.ts`)
+- A token size or switch (character, reminder, names and reminders in text) as a setting row: `features/characters/TokenAppearanceRow.svelte` (keys in `token-appearance-rows.ts`), and the player name size: `features/grimoire/NameSizeSlider.svelte`; Settings > Tokens draws them, never their own slider. Players reach them there too: the player screen's and Public Town's cogs open the one Settings at its list of sections (Trevor, 2026-10-27: one Settings everywhere)
 - Reading a QR code with the camera: `ui/share/QrScanner.svelte` (`ui/share/qr-reader.ts`: BarcodeDetector, else jsQR) (enforced by review)
 - Text too long for one QR code (an animated code): `core/codes/qr-frames.ts` (`qrFrames`, `QrFrameCollector`); shown by `frames` on `ui/share/SharePanel`, read through `ui/share/QrScanner.svelte` (`progress`) (enforced by `e2e/offline-share.e2e.ts`)
 - A fake phone camera in an e2e test: `e2e/camera.ts` (`aimCamera`, one picture or frames in turn) (enforced by review)
@@ -138,15 +146,20 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text): `nightText`, moved
 - Info token characters (`info-token-characters.ts`: the character a night step's card always shows): `infoTokenCharacters`, new
 - On-death triggers (`night-alerts.ts` `ON_DEATH`): `onDeath`, moved
+- Protection (`ability.ts`, `night-alerts.ts`; `not-execution` for the Storm Catcher, `whileNeighboursGood` for the Tea Lady, `day` for the Vizier, flagged by day in a seat's Status by `validDeathCauses`): `protects`, moved
+- On-death triggers (`night-alerts.ts` `ON_DEATH`; `onDeathApplies` reads `by` and `night` against the death cause): `onDeath`, moved
 - Protection (`ability.ts`, `night-alerts.ts`): `protects`, moved
-- Impairments (`ability.ts`: the Drunk, Witch, Minstrel and Preacher): `impairs`, moved
-- Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw): `registersAs`, moved
+- Impairments (`ability.ts`, read by `impairs-rules.ts`: the Drunk, Witch, Minstrel, Preacher, Xaan; Barista's `clears`; other tokens end with their character unless an entry says they last): `impairs`, moved
+- Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw; `asAnything` and `whileToken` for the Revolutionary's pair until Register Falsely? comes off): `registersAs`, moved
 - Night killers (`night-alerts.ts` `NIGHT_KILLERS`): `kills`, moved
 - Death checks (`night-deaths.ts`: the Gambler, Acrobat, Lycanthrope and Grandmother): `deathCheck`, moved
 - Kill redirect and first-death survival (`ability.ts`, `first-death.ts`): `redirectsKill`, `survivesFirstDeath`, moved
 - Nomination abilities (`rules/nominations.ts`): `onNominated`, `afterDeath`, moved
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
+- Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new
+- Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
+- Character and alignment changes (`becomes.ts`, was `BECOMES_DEMON`: the Scarlet Woman's Is The Demon, the Mezepheles's Turns Evil, the Snake Charmer's swap): `becomes`, moved. A Demon's death by its own kill passing it on (the Imp, the Fang Gu) is `gameEnd` `death-passes`, asked by `StarPassPrompt`. Making a chosen player a Demon on the night a token marks (the Summoner's Night 3) is `makesDemon`, asked by `MakeDemonStep` in its night step.
 - Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56): `dayClaim`, `guessLimit`, moved
 - Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new): `dayMark`, moved
 - Night information and answers (`night-info.ts`): `learns`, `answers`, moved
@@ -161,6 +174,11 @@ character: a rule becomes a behaviour with parameters that any character can use
 Some lints start with a list of files written before the lint (for example
 `LOCAL_STORAGE_TODO` in `eslint.config.js`). Move a file onto the shared piece and take it off
 the list. Never add a file to one.
+
+`TRAIT_TODO` in `src/lib/core/rules/trait-coverage.test.ts` lists official characters whose
+ability text names a mechanic (poison or drunk, can't die, registers, kills, dies) that no rule
+encodes, each with why. Give a new character the rule rather than an entry; take an entry off
+once its rule exists.
 
 `npm run lint:lines` (`scripts/check-lines.ts`) keeps every source file at 800 lines or fewer
 (tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its

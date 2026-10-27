@@ -48,5 +48,10 @@
 	"reminderMovement": {
 		"fixed": ["Stormcaught"],
 		"why": "The stormcaught character is chosen at setup."
+	},
+	"protects": {
+		"who": "marked",
+		"token": "Stormcaught",
+		"from": "not-execution"
 	}
 }

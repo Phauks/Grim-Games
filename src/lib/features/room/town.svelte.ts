@@ -9,7 +9,13 @@
  */
 import type { Script } from '#lib/core/data/index.ts';
 import { liveGamePath } from '#lib/core/sync/live-games.ts';
-import { ROOM_PROTOCOL, type SharedGrimoire, type TownView } from '#lib/core/sync/room.ts';
+import {
+	parseTownSound,
+	ROOM_PROTOCOL,
+	type SharedGrimoire,
+	type TownSoundCommand,
+	type TownView
+} from '#lib/core/sync/room.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 
 export class RoomTown {
@@ -21,6 +27,12 @@ export class RoomTown {
 	/** The finished grimoire the Storyteller shared at game end (plan R5), as phones get it. */
 	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
 	readonly #socket: RoomSocket;
+
+	/**
+	 * Called with each soundboard command the Storyteller sends the Public Town (plan U10);
+	 * never for an admin watching.
+	 */
+	onSound: ((command: TownSoundCommand) => void) | undefined;
 
 	constructor(code: string, admin = false) {
 		this.#socket = new RoomSocket(
@@ -36,6 +48,10 @@ export class RoomTown {
 					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
 				} else if (m.type === 'script') this.script = m.script;
 				else if (m.type === 'grimoire' && admin) this.grimoire = m.grimoire;
+				else if (m.type === 'town-sound' && !admin) {
+					const command = parseTownSound(m);
+					if (command) this.onSound?.(command);
+				}
 			},
 			// Each connection starts again from what the room holds then.
 			() => (this.grimoire = undefined),

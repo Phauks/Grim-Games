@@ -379,7 +379,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Night',
 		'Bag draw',
 		'Day',
-		'Grim cover',
+		'PIN and locks',
 		'Share',
 		'QR codes'
 	]);
@@ -442,7 +442,7 @@ test('text size is a percentage slider that applies while it moves', async ({ pa
 test('Sound has one volume for every sound, saved on the device', async ({ page }) => {
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Sound');
-	const slider = dialog.getByRole('slider', { name: 'Volume' });
+	const slider = dialog.getByRole('slider', { name: 'Volume', exact: true });
 	await expect(slider).toHaveAttribute('aria-valuetext', '100%');
 	await expect(dialog.getByRole('checkbox', { name: 'Vibrate' })).toBeVisible();
 	// What this phone plays when the Storyteller calls Back to town (plan U2).
@@ -454,15 +454,29 @@ test('Sound has one volume for every sound, saved on the device', async ({ page 
 
 	await page.reload();
 	const again = await openSettings(page, 'Sound');
-	await expect(again.getByRole('slider', { name: 'Volume' })).toHaveAttribute(
+	await expect(again.getByRole('slider', { name: 'Volume', exact: true })).toHaveAttribute(
 		'aria-valuetext',
 		'40%'
 	);
 	await (await resetButton(again, 'Volume')).tap();
-	await expect(again.getByRole('slider', { name: 'Volume' })).toHaveAttribute(
+	await expect(again.getByRole('slider', { name: 'Volume', exact: true })).toHaveAttribute(
 		'aria-valuetext',
 		'100%'
 	);
+});
+
+// Plan U11 (Trevor, 2026-10-27: "options for output (eg device speakers, external speakers")):
+// Chrome and Edge on a computer can choose; a phone's own output switcher decides there.
+test('Sound has a speaker choice, disabled where the browser cannot choose', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Sound');
+	const speaker = dialog.getByRole('combobox', { name: 'Speaker', exact: true });
+	await expect(speaker).toContainText('Device default');
+	const can = await page.evaluate(
+		() => 'setSinkId' in AudioContext.prototype && !/Android/i.test(navigator.userAgent)
+	);
+	if (can) await expect(speaker).toBeEnabled();
+	else await expect(speaker).toBeDisabled();
 });
 
 test('every theme, text and icon size setting has a reset icon beside its name', async ({
@@ -691,20 +705,19 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	await expect(logo).toHaveCount(0);
 	await expect(preview.getByTestId('preview-script-title')).toContainText('Example script');
 	// The join code under the name, switched on its own; it needs the name shown.
-	const joinCode = dialog.getByRole('checkbox', { name: 'Join code on the board' });
+	const joinCode = dialog.getByRole('checkbox', { name: 'Join code', exact: true });
 	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
 		(await joinCode.isChecked()) ? 1 : 0
 	);
-	await dialog.getByText('Join code on the board', { exact: true }).tap();
+	await dialog.getByText('Join code', { exact: true }).tap();
 	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
 		(await joinCode.isChecked()) ? 1 : 0
 	);
-	if (!(await joinCode.isChecked()))
-		await dialog.getByText('Join code on the board', { exact: true }).tap();
+	if (!(await joinCode.isChecked())) await dialog.getByText('Join code', { exact: true }).tap();
 	await expect(preview.getByTestId('preview-room-code')).toHaveText('Join code 482 913');
 	// The script's name is always on the board (Trevor, 2026-10-23), so the join code never waits
 	// on it.
-	await expect(dialog.getByText('Script name on the board', { exact: true })).toHaveCount(0);
+	await expect(dialog.getByText('Script name', { exact: true })).toHaveCount(0);
 	await expect(preview.getByTestId('preview-script-title')).toBeVisible();
 	await expect(joinCode).toBeEnabled();
 

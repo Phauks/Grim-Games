@@ -18,7 +18,7 @@ import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 import type { BoardSize } from './board-geometry.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import type ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
-import { copiedLook, onBoard } from './reminders.ts';
+import { copiedLook, handReminder, onBoard } from './reminders.ts';
 
 /**
  * Whether a client point is over the bank's "+ New token" (Trevor, 2026-10-27): a reminder
@@ -71,8 +71,10 @@ export class ReminderDragging {
 		if (!this.drag) return undefined;
 		const id = this.drag.reminderId;
 		const { game, characters } = this.#context();
-		const reminder = onBoard(game).find((r) => r.reminderId === id);
-		if (!reminder) return undefined;
+		const placed = onBoard(game).find((r) => r.reminderId === id);
+		if (!placed) return undefined;
+		// A generic copy of a character's reminder marks as that reminder (Trevor, 2026-10-27).
+		const reminder = handReminder(placed);
 		const holders = game.seating.filter(
 			(s) =>
 				game.seats[s].characterId === reminder.characterId ||

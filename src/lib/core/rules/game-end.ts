@@ -34,6 +34,7 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, type AbilitySource } from './ability.ts';
+import { isExecution } from './death-causes.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -187,6 +188,16 @@ function impaired(
  * - while the player with its token lives: the Lleech dies only with its host
  *   (https://wiki.bloodontheclocktower.com/Lleech).
  */
+/**
+ * Marked dead, yet still alive by its own ability (`gameEnd.aliveWhileDead`): the Zombuul after
+ * its first death, which "lives but registers as dead" and still wakes to kill
+ * (https://wiki.bloodontheclocktower.com/Zombuul), or a Lleech whose host lives
+ * (https://wiki.bloodontheclocktower.com/Lleech). Such a player keeps their night step.
+ */
+export function livesWhileDead(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	return !!game.seats[seatId]?.dead && aliveForEnd(game, seatId, characters);
+}
+
 function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	if (isAliveForWin(game, seatId)) return true;
 	const seat = game.seats[seatId];
@@ -238,6 +249,28 @@ function endedDays(game: Game, options: GameEndOptions): number[] {
 	return out;
 }
 
+/**
+ * Whether a Demon's once-only pass happened before this death. The Storyteller marks the
+ * Fang Gu's jump with its "Once" on the Fang Gu as it dies (rules `reminderTargets`), so
+ * its token on the dying player is this jump, not an earlier one. It was spent before when
+ * the token is on anyone else, or another player has already been this Demon (the one it
+ * jumped from). https://wiki.bloodontheclocktower.com/Fang_Gu
+ */
+function spentBefore(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	token: string,
+	characters: CharacterLookup
+): boolean {
+	const marked = carrying(game, characterId, token);
+	if (marked.length === 0) return false;
+	if (marked.some((id) => id !== seatId)) return true;
+	return game.seating.some(
+		(id) => id !== seatId && trueCharacter(game, id, characters) === characterId
+	);
+}
+
 function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 	const demons = demonSeats(game, characters);
 	if (demons.length === 0 || demons.some((id) => aliveForEnd(game, id, characters))) return [];
@@ -281,7 +314,8 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 		if (!demons.includes(seatId)) continue;
 		const cause = game.seats[seatId].deathCause;
 		if (cause !== 'demon' && cause !== characterId) continue;
-		if (rule.spentToken && carrying(game, characterId, rule.spentToken).length > 0) continue;
+		if (rule.spentToken && spentBefore(game, seatId, characterId, rule.spentToken, characters))
+			continue;
 		const heirs = game.seating.filter(
 			(id) => aliveForEnd(game, id, characters) && typeOf(game, id, characters) === rule.to
 		);
@@ -323,7 +357,7 @@ function extraDay(
 	const logs = days(game);
 	const demonDay = logs.findIndex((log) => executedOn(log).some((id) => end.seats.includes(id)));
 	const byExecution =
-		demonDay !== -1 || end.seats.some((id) => game.seats[id].deathCause === 'execution');
+		demonDay !== -1 || end.seats.some((id) => isExecution(game.seats[id].deathCause, characters));
 	if (!byExecution) return undefined;
 	const extra = demonDay === -1 ? undefined : demonDay + 1;
 	const executed = extra === undefined ? [] : executedOn(logs[extra] ?? { entries: [] });
@@ -372,7 +406,8 @@ function twoAlive(game: Game, characters: CharacterLookup): GameEnd[] {
 function executedLoses(game: Game, characters: CharacterLookup): GameEnd[] {
 	return endsOf(game, characters, 'executed-loses')
 		.filter(
-			({ seatId }) => game.seats[seatId].dead && game.seats[seatId].deathCause === 'execution'
+			({ seatId }) =>
+				game.seats[seatId].dead && isExecution(game.seats[seatId].deathCause, characters)
 		)
 		.map(({ seatId, characterId }) => ({
 			key: `executed-loses:${seatId}`,
@@ -393,7 +428,7 @@ function markedExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
 		if (!aliveForEnd(game, seatId, characters)) continue;
 		for (const marked of carrying(game, characterId, rule.token!)) {
 			const seat = game.seats[marked];
-			if (!seat.dead || seat.deathCause !== 'execution') continue;
+			if (!seat.dead || !isExecution(seat.deathCause, characters)) continue;
 			out.push({
 				key: `marked-executed:${marked}`,
 				rule: 'marked-executed',
@@ -572,7 +607,7 @@ function inverter(game: Game, characters: CharacterLookup): AbilitySource | unde
 function demonExecuted(game: Game, characters: CharacterLookup, ruleName: string): GameEnd[] {
 	// Dead by execution, as for the Saint.
 	const seats = demonSeats(game, characters).filter(
-		(id) => game.seats[id].dead && game.seats[id].deathCause === 'execution'
+		(id) => game.seats[id].dead && isExecution(game.seats[id].deathCause, characters)
 	);
 	if (seats.length === 0) return [];
 	// The rule's page lets an ability such as the Mastermind's keep the game going.
@@ -656,24 +691,20 @@ export function suggestedWinner(ends: readonly GameEnd[]): Alignment | undefined
 }
 
 /**
- * The Demon killed itself with a Minion alive (the Imp:
- * https://wiki.bloodontheclocktower.com/Imp): the living Minions who may become the Demon, and
- * the player whose ability makes it theirs (the Scarlet Woman:
+ * The Demon died by its own kill with a player alive to take it on (the Imp's Minions,
+ * https://wiki.bloodontheclocktower.com/Imp; the Fang Gu's Outsiders, once,
+ * https://wiki.bloodontheclocktower.com/Fang_Gu): that Demon, the players who may become it,
+ * and the player whose ability makes it theirs (the Scarlet Woman:
  * https://wiki.bloodontheclocktower.com/Scarlet_Woman). Undefined once a Demon lives.
  */
 export function starPass(
 	game: Game,
 	characters: CharacterLookup
-): { minions: SeatId[]; preferred?: SeatId } | undefined {
+): { characterId: CharacterId; heirs: SeatId[]; preferred?: SeatId } | undefined {
 	const holds = demonDead(game, characters).flatMap((end) => end.holds);
-	const pass = holds.find(
-		(h) =>
-			h.rule === 'death-passes' &&
-			gameEndRules(h.characterId, characters)?.holds?.some(
-				(r) => r.kind === 'death-passes' && r.to === 'minion'
-			)
-	);
+	const pass = holds.find((h) => h.rule === 'death-passes');
 	if (!pass) return undefined;
 	const heir = holds.find((h) => h.rule === 'becomes-demon')?.seats[0];
-	return { minions: pass.seats, preferred: heir && pass.seats.includes(heir) ? heir : undefined };
+	const preferred = heir && pass.seats.includes(heir) ? heir : undefined;
+	return { characterId: pass.characterId, heirs: pass.seats, ...(preferred ? { preferred } : {}) };
 }

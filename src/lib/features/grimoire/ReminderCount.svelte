@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	/**
 	 * How many copies one stacked reminder stands for ("Stack duplicate reminders"), on its
 	 * top right: the reminder bank and the Board settings preview.
@@ -6,7 +7,7 @@
 	let { count }: { count: number } = $props();
 </script>
 
-<span class="count" aria-label={`${count} copies`}>×{count}</span>
+<span class="count" aria-label={`${count} copies`}><CountBadge {count} times warn /></span>
 
 <style>
 	.count {
@@ -14,13 +15,8 @@
 		top: 0;
 		right: 0;
 		z-index: 1;
-		min-width: 1.4em;
-		padding: 0 calc(0.1875 * var(--u));
-		border-radius: var(--radius-full);
-		background: var(--accent);
-		color: var(--on-accent);
-		font: 700 0.75rem / 1.4 var(--font-control);
-		text-align: center;
+		display: flex;
+		font-size: 0.75rem;
 		pointer-events: none;
 	}
 </style>

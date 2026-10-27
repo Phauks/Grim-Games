@@ -103,22 +103,89 @@ function ringRadii(shape: SeatShape, board: BoardSize): { rx: number; ry: number
 	return { rx: RING * 100, ry: RING * 100 };
 }
 
-/** Where each seat is drawn, in seating order. */
+/** A board's width ÷ height, rounded so a resize by a pixel or two changes nothing. */
+export function boardAspect(board: BoardSize): number | undefined {
+	if (!(board.width > 0 && board.height > 0)) return undefined;
+	return Math.round((board.width / board.height) * 100) / 100;
+}
+
+/** Reads a shared board shape (width ÷ height), or nothing when it isn't a sensible one. */
+export function parseAspect(value: unknown): number | undefined {
+	return isNumber(value) && value >= 0.2 && value <= 5 ? value : undefined;
+}
+
+/**
+ * Where each seat is drawn, in seating order. `spacedFor` is the shape (width ÷ height) of
+ * the board whose clock positions to keep: the Storyteller's, on a player's screen (Trevor,
+ * 2026-10-27), so seat 3 sits at the same place round the ring on every device while the
+ * ring still fills this one. Left out, seats are spaced for this board.
+ */
 export function seatPoints(
 	seatIds: readonly string[],
 	layout: SeatLayout,
-	board: BoardSize
+	board: BoardSize,
+	spacedFor?: number
 ): SeatPoint[] {
 	const starts = ringSlots(seatIds, layout);
 	const total = Math.max(starts[seatIds.length], 1);
 	const { rx, ry } = ringRadii(layout.shape, board);
-	const angleAt = ringAngles(rx, ry, board);
+	// In pixels on a notional board 1000 high, as ringAngles treats a ring within half a
+	// pixel of round as a circle.
+	const spacing = spacedFor ? { width: spacedFor * 1000, height: 1000 } : board;
+	const spaced = spacedFor ? ringRadii(layout.shape, spacing) : { rx, ry };
+	const angleAt = ringAngles(spaced.rx, spaced.ry, spacing);
 	// Place 0 at the top, clockwise.
 	return seatIds.map((id, i) => {
 		if (layout.placed[id]) return layout.placed[id];
 		const t = angleAt(starts[i] / total);
 		return { x: 50 + rx * Math.sin(t), y: 50 - ry * Math.cos(t) };
 	});
+}
+
+/** The largest box of `aspect` (width ÷ height) that fits on `board`, centred on it. */
+export function fitAspect(board: BoardSize, aspect: number): BoardSize {
+	if (!(board.width > 0 && board.height > 0 && aspect > 0)) return board;
+	const width = Math.min(board.width, board.height * aspect);
+	return { width, height: width / aspect };
+}
+
+/** Points in % of a box centred on `board`, in % of the board itself. */
+export function centredIn(
+	points: readonly SeatPoint[],
+	box: BoardSize,
+	board: BoardSize
+): SeatPoint[] {
+	if (!(board.width > 0 && board.height > 0)) return [...points];
+	const left = (board.width - box.width) / 2;
+	const top = (board.height - box.height) / 2;
+	return points.map((p) => ({
+		x: ((left + (p.x / 100) * box.width) / board.width) * 100,
+		y: ((top + (p.y / 100) * box.height) / board.height) * 100
+	}));
+}
+
+/**
+ * Where a shared grim (a player's Grim tab, Public Town) draws its seats, and their size
+ * (Trevor, 2026-10-27): at the places round the ring of the Storyteller's board, whose shape
+ * is `aspect`, filling this board, or with `fit` in a box of the board's own shape, centred.
+ * Tokens follow the Token size setting; each seat keeps `unit` px clear of the edge, as on
+ * the board.
+ */
+export function sharedSeats(
+	seats: readonly { seatId: string }[],
+	layout: SeatLayout,
+	board: BoardSize,
+	aspect: number | undefined,
+	fit: boolean,
+	preferences: { tokenAppearance: { tokenScale: number } },
+	unit = 16
+): { size: number; points: SeatPoint[] } {
+	const seatIds = seats.map((s) => s.seatId);
+	const scale = preferences.tokenAppearance.tokenScale;
+	const box = aspect && fit ? fitAspect(board, aspect) : board;
+	const size = seatTokenSize(seatIds, layout, box, scale);
+	const placed = keepInside(seatPoints(seatIds, layout, box, aspect), box, size / 2 + unit);
+	return { size, points: centredIn(placed, box, board) };
 }
 
 /**
@@ -136,6 +203,42 @@ export function keepInside(
 		return Math.min(100 - m, Math.max(m, v));
 	};
 	return points.map((p) => ({ x: clamp(p.x, board.width), y: clamp(p.y, board.height) }));
+}
+
+/**
+ * Brings the ring's top down just far enough that no seat on it sits under `corner`, a box
+ * in the board's top right (the day timer and the buttons beside it), so every seat stays
+ * tappable. The ring's bottom stays put, so neighbours keep their order and spacing; seats
+ * placed by hand (`onRing` false) stay where they were put. `radius` is a token's half-width
+ * plus the margin to keep, in pixels.
+ */
+export function clearOfCorner(
+	points: readonly SeatPoint[],
+	onRing: readonly boolean[],
+	/**
+	 * Every seat's place on the ring, as if none were placed by hand, so moving a seat off
+	 * the ring never moves the rest.
+	 */
+	ring: readonly SeatPoint[],
+	board: BoardSize,
+	corner: { w: number; h: number },
+	radius: number
+): SeatPoint[] {
+	const { width, height } = board;
+	if (width <= 0 || height <= 0 || corner.w <= 0 || corner.h <= 0) return [...points];
+	const left = width - corner.w;
+	let top = 0;
+	ring.forEach((p) => {
+		const x = (p.x / 100) * width;
+		const y = (p.y / 100) * height;
+		if (x + radius <= left || y - radius >= corner.h) return;
+		// With the ring squashed from `top` down, this seat's y is top + y(1 - top/height).
+		top = Math.max(top, (corner.h + radius - y) / (1 - y / height));
+	});
+	// Never more than a quarter of the board: past that the corner is better overlapping.
+	const t = (Math.min(top, height / 4) / height) * 100;
+	if (t <= 0) return [...points];
+	return points.map((p, i) => (onRing[i] ? { x: p.x, y: t + p.y * (1 - t / 100) } : p));
 }
 
 /** A token size in pixels that keeps neighbours on the ring from overlapping. */

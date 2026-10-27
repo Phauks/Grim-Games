@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { DayMark, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
@@ -6,12 +7,13 @@
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { phaseText } from './phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { boardNightSteps, stepWakes, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames, gameStarts, nightUnderway, type EndedGame } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import CallTownConfirm from '#lib/features/room/CallTownConfirm.svelte';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -44,7 +46,6 @@
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
-		onDeathTrigger,
 		stepNightNumbers,
 		todaysNominations,
 		mayNominate,
@@ -54,15 +55,11 @@
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
-	import {
-		nominationPrompts,
-		seatHasAbility,
-		type NominationPrompt
-	} from '#lib/core/modes/index.ts';
+	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
-	import SoundboardSheet from '#lib/features/sound/SoundboardSheet.svelte';
+	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -75,6 +72,8 @@
 		followSeating,
 		isDefaultLayout,
 		isRotation,
+		boardAspect,
+		clearOfCorner,
 		keepInside,
 		seatPoints,
 		seatTokenSize,
@@ -100,11 +99,10 @@
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { fromScript, scriptLogo, scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
+	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
-	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
-	import { currentScript } from '#lib/features/scripts/current-script.svelte.ts';
+	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { playersLine, standardPlayersLine } from '#lib/features/modes/players-line.ts';
@@ -114,7 +112,9 @@
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import BoardPlayerView from './BoardPlayerView.svelte';
+	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
@@ -166,9 +166,15 @@
 		 * 2026-10-24): its History steps through on this device only.
 		 */
 		over?: EndedGame;
+		/**
+		 * A spectator who may still look through History (an admin's Live games, Trevor
+		 * 2026-10-27: "Admin should have access to history"): ⋯ opens, with only History and
+		 * the app's items live.
+		 */
+		watchedHistory?: boolean;
 	}
 
-	let { grimoire, watching = false, watchedTimer, over }: Props = $props();
+	let { grimoire, watching = false, watchedTimer, over, watchedHistory = false }: Props = $props();
 	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
@@ -184,6 +190,9 @@
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
 	const setUp = $derived(setupComplete(game));
 	const characters = $derived(grimoire.open.characters);
+	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
+	const artOf = (reminder: ReminderInstance) =>
+		reminder.like ? characters.get(reminder.like.characterId) : undefined;
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
 
 	let board = $state<HTMLElement>();
@@ -247,14 +256,33 @@
 	);
 	// The Token size preview in Settings draws at this board's size.
 	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
+	// Every shared grim keeps each seat at this board's place round the ring (Trevor, 2026-10-27).
+	const aspect = $derived(boardAspect({ width, height }));
+	$effect(() => {
+		if (!watching) roomHost().showAspect(game.gameId, aspect);
+	});
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
-	const points = $derived(
+	/** The day timer's row, top right, measured: seats and reminders keep clear of it. */
+	let timerW = $state(0);
+	let timerH = $state(0);
+	// The ring comes down just far enough to keep every seat clear of the day timer and the
+	// buttons beside it (Trevor, 2026-10-27: Soundboard beside the timer), tappable on a phone.
+	const onBoard = (l: typeof layout) =>
 		keepInside(
-			seatPoints(game.seating, layout, { width, height }),
+			seatPoints(game.seating, l, { width, height }, watching ? grimoire.aspect : undefined),
 			{ width, height },
 			size / 2 + unit
+		);
+	const points = $derived(
+		clearOfCorner(
+			onBoard(layout),
+			game.seating.map((id) => !layout.placed[id]),
+			onBoard({ ...layout, placed: {} }),
+			{ width, height },
+			{ w: timerW + 12, h: timerH + 12 },
+			size / 2
 		)
 	);
 
@@ -294,10 +322,6 @@
 	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
 	 * an ability set off by dying on the night of the death (the Ravenkeeper's).
 	 */
-	/**
-	 * Whether a step wakes anyone tonight: a step for no player (Dusk, Dawn), or one with a
-	 * living player, or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
-	 */
 	/** Since dawn: players whose character changed (woken tonight) and who died (Godfather). */
 	const today = $derived({
 		changes: changedCharacters(grimoire.open.session.log, game),
@@ -315,18 +339,8 @@
 	 * the dead keep theirs, living Townsfolk have none).
 	 */
 	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
-	function wakes(step: NightStep): boolean {
-		const holders = stepHolders(game, step, characters);
-		const id = step.character?.id;
-		return (
-			holders.length === 0 ||
-			holders.some(
-				(s) =>
-					seatHasAbility(abilitiesRule, game, s, characters) ||
-					(id !== undefined && !!onDeathTrigger(id, characters) && diedTonight.has(s))
-			)
-		);
-	}
+	const wakes = (step: NightStep): boolean =>
+		stepWakes(game, step, characters, { abilitiesRule, diedTonight });
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || preferences.current.tokenAppearance.nightLeaves !== 'numbers') return undefined;
@@ -362,10 +376,8 @@
 	let centreW = $state(0);
 	let edgeW = $state(0);
 	let edgeH = $state(0);
-	let timerW = $state(0);
 	let titleW = $state(0);
 	let titleH = $state(0);
-	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
 	const restFan = $derived.by(() => {
@@ -883,10 +895,27 @@
 	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
 	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
+	/** Back to town's Cancel/Confirm, from ⋯ or from the grim cover. */
+	let callTownOpen = $state(false);
+	let coverCallTownOpen = $state(false);
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
 	/** The players' view, from the grim cover. */
 	let coverViewOpen = $state(false);
+	/** Opens it with the table notebook blank (Trevor, 2026-10-27: "Blank each time"). */
+	async function openCoverView() {
+		await forgetTableNotebook(game.gameId);
+		coverViewOpen = true;
+	}
+	// Closed, the table's notes go too, so nothing waits on the device for the next player.
+	let coverViewWasOpen = false;
+	$effect(() => {
+		if (coverViewOpen) coverViewWasOpen = true;
+		else if (coverViewWasOpen) {
+			coverViewWasOpen = false;
+			void forgetTableNotebook(untrack(() => game.gameId));
+		}
+	});
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
@@ -912,10 +941,7 @@
 	/** Share links to the saved script when it is the game's, as /play's does (parity). */
 	const scriptShare = $derived.by(() => {
 		if (!scriptOpen || !loadedScript) return undefined;
-		const json = (s: LoadedScript) => JSON.stringify(scriptToJson(s));
-		const current = currentScript.current;
-		const same = current && json(current) === json(loadedScript);
-		return scriptShareable(loadedScript, same ? currentScript.saved : undefined);
+		return gameShareable(loadedScript);
 	});
 	let menuOpen = $state(false);
 	/** ⋯'s New game, which asks to end this game first (Trevor, 2026-10-26). */
@@ -985,6 +1011,7 @@
 		logo: boardLogo || undefined,
 		name: showTitle ? game.script.meta?.name : undefined,
 		author: showTitle ? game.script.meta?.author : undefined,
+		storyteller: game.storytellerName?.trim() || undefined,
 		phase
 	});
 	/**
@@ -1025,7 +1052,7 @@
 				{#if character}<CharacterToken {character} size={stack} />{/if}
 			{/each}
 			{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
-					>{game.ruleCharacters.length}</span
+					><CountBadge count={game.ruleCharacters.length} warn /></span
 				>{/if}
 		</button>
 		{@render heldCluster(
@@ -1051,6 +1078,7 @@
 					symbol={last.symbol}
 					symbolColour={last.symbolColour}
 					symbolFill={last.symbolFill}
+					art={artOf(last)}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1119,6 +1147,7 @@
 	<BoardToolbar
 		{grimoire}
 		{watching}
+		menu={!watching || watchedHistory}
 		{seatArr}
 		placing={!!placing}
 		onCancelPlacing={() => (placing = undefined)}
@@ -1127,7 +1156,21 @@
 		onScript={() => (scriptOpen = true)}
 		onShare={() => (phonesOpen = true)}
 		onMore={() => (menuOpen = true)}
-	/>
+	>
+		<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26), in the same place on
+		     the board and the day (2026-10-27: "so it doesn't move"); the Storyteller's only. -->
+		{#snippet lead()}
+			{#if !watching}
+				<CoverButton
+					gameId={game.gameId}
+					details={coverDetails}
+					timer={coverTimer}
+					actions={coverActions}
+					outlined
+				/>
+			{/if}
+		{/snippet}
+	</BoardToolbar>
 
 	<div
 		class="board"
@@ -1263,6 +1306,7 @@
 							symbol={reminder.symbol}
 							symbolColour={reminder.symbolColour}
 							symbolFill={reminder.symbolFill}
+							art={artOf(reminder)}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
@@ -1300,6 +1344,7 @@
 					symbol={reminder.symbol}
 					symbolColour={reminder.symbolColour}
 					symbolFill={reminder.symbolFill}
+					art={artOf(reminder)}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
@@ -1324,6 +1369,7 @@
 					symbol={heldDrag.symbol}
 					symbolColour={heldDrag.symbolColour}
 					symbolFill={heldDrag.symbolFill}
+					art={artOf(heldDrag)}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled
@@ -1432,26 +1478,27 @@
 				{/if}
 			{/snippet}
 		</BoardCorner>
-		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The grim
-		     cover beside it, never in a menu (Trevor, 2026-10-26), the Storyteller's only. -->
+		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The
+		     soundboard beside it (Trevor, 2026-10-27: "Sound can be next to timer for now"), the
+		     Storyteller's only. -->
 		<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
 			{#if !watching}
-				<CoverButton
-					gameId={game.gameId}
-					details={coverDetails}
-					timer={coverTimer}
-					actions={coverActions}
+				<IconButton
+					icon="soundboard"
+					label={t('settings.soundboard')}
 					outlined
+					onclick={() => (soundboardOpen = true)}
 				/>
 			{/if}
-			{#if showTimer}
+			<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
+			<div class="timer-slot" class:gone={!showTimer} inert={!showTimer}>
 				<DayTimer
 					alive={livingByTeam(game).alive}
 					variant="compact"
-					readOnly={watching}
+					readOnly={watching || !showTimer}
 					shown={watchedTimer}
 				/>
-			{/if}
+			</div>
 		</div>
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
@@ -1477,23 +1524,21 @@
 			ended: !!ended
 		}}
 	/>
-	<SoundboardSheet bind:open={soundboardOpen} />
+	<SoundboardDialog bind:open={soundboardOpen} />
 {/if}
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <BoardMenu
 	bind:open={menuOpen}
+	{watching}
 	gameInfo={cornerHidden}
 	ended={!!ended}
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
 	onNotes={() => (notesOpen = true)}
-	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
-	onCallTown={!watching && !ended && roomHost().code
-		? () => roomHost().callTown() || toast(t('room.callTownFailed'))
-		: undefined}
+	onCallTown={!watching && !ended && roomHost().code ? () => (callTownOpen = true) : undefined}
 	onGameInfo={() => (modeMenuOpen = true)}
-	onCharacterSelection={startedAt === undefined && !watching
+	onCharacterSelection={startedAt === undefined && !setUp && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 		: undefined}
 	onAddSeat={() =>
@@ -1637,22 +1682,8 @@
 	titleBelow
 	lead={boardLogo ? scriptLogoLead : undefined}
 >
-	{#snippet headActions()}
-		<PlayerScriptActions
-			script={loadedScript}
-			version={scriptVersion(undefined, loadedScript?.meta)}
-			share={scriptShare}
-			room={watching ? undefined : roomHost().code}
-		/>
-	{/snippet}
-	{#snippet subtitle()}
-		<ScriptByline
-			author={loadedScript?.meta.author}
-			version={scriptVersion(undefined, loadedScript?.meta)}
-			storyteller={game.storytellerName}
-			inline
-		/>
-	{/snippet}
+	{#snippet headActions()}{@render scriptActions()}{/snippet}
+	{#snippet subtitle()}{@render scriptSubtitle()}{/snippet}
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
@@ -1662,7 +1693,7 @@
 				{game}
 				script={loadedScript}
 				{characters}
-				{layout}
+				layout={{ ...layout, aspect }}
 				corner={cornerInfo}
 				{look}
 				picture={watching ? undefined : ownPicture}
@@ -1671,6 +1702,8 @@
 		{/if}
 	</div>
 </Dialog>
+
+<CallTownConfirm bind:open={callTownOpen} />
 
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
 <Dialog bind:open={phonesOpen} title={t('room.title')} size="full" shownToPlayers>
@@ -1682,18 +1715,31 @@
      the cover, over it. -->
 {#snippet coverActions()}
 	{#if !ended && roomHost().code}
-		<Button icon="sound" onclick={() => roomHost().callTown() || toast(t('room.callTownFailed'))}>
+		<!-- Lit once the day's time is up; it never calls by itself (Trevor, 2026-10-27). -->
+		<Button
+			icon="sound"
+			variant={liveDayTimer.done ? 'accent' : 'solid'}
+			data-testid="cover-call-town"
+			onclick={() => (coverCallTownOpen = true)}
+		>
 			{t('room.callTown')}
 		</Button>
+		<CallTownConfirm bind:open={coverCallTownOpen} />
 	{/if}
 	{#if loadedScript}
-		<Button icon="script" onclick={() => (coverViewOpen = true)}>{t('show.playerView')}</Button>
+		<Button icon="script" onclick={openCoverView}>{t('show.playerView')}</Button>
+		<!-- The players' screen as it is on /play, its title-line buttons and notes too (Trevor,
+		     2026-10-27: "same setting, share, and other buttons ... As if they were within the
+		     app. We shouldn't even block notes"); the notes are the table's, blank each time. -->
 		<Dialog
 			bind:open={coverViewOpen}
 			title={game.script.meta?.name || 'Script'}
 			size="max"
+			titleBelow
 			lead={boardLogo ? scriptLogoLead : undefined}
 		>
+			{#snippet headActions()}{@render scriptActions()}{/snippet}
+			{#snippet subtitle()}{@render scriptSubtitle()}{/snippet}
 			<div class="script-scroll" data-testid="cover-player-view">
 				<BoardPlayerView
 					{game}
@@ -1704,11 +1750,30 @@
 					{look}
 					picture={watching ? undefined : ownPicture}
 					pictureRoom={watching ? grimoire.room : undefined}
-					own={false}
+					notebook={tableNotebook(game.gameId)}
 				/>
 			</div>
 		</Dialog>
 	{/if}
+{/snippet}
+
+<!-- The Script dialog's title line, as /play's (PlayerScriptActions, ScriptByline): the
+     board's Script and the grim cover's Player view both show it. -->
+{#snippet scriptActions()}
+	<PlayerScriptActions
+		script={loadedScript}
+		version={scriptVersion(undefined, loadedScript?.meta)}
+		share={scriptShare}
+		room={watching ? undefined : roomHost().code}
+	/>
+{/snippet}
+{#snippet scriptSubtitle()}
+	<ScriptByline
+		author={loadedScript?.meta.author}
+		version={scriptVersion(undefined, loadedScript?.meta)}
+		storyteller={game.storytellerName}
+		inline
+	/>
 {/snippet}
 
 {#snippet coverTimer()}
@@ -1721,6 +1786,7 @@
 	cover={coverDetails}
 	{coverTimer}
 	{coverActions}
+	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	onEndDay={() => (endDayOpen = true)}
 	onSavant={(seatId) => {
 		savantSeat = seatId;
@@ -1992,7 +2058,13 @@
 		align-items: center;
 		gap: var(--space-1);
 	}
-	/* The cover's button has the timer's solid fill, so it reads on any background. */
+	.timer-slot {
+		display: flex;
+	}
+	.timer-slot.gone {
+		visibility: hidden;
+	}
+	/* The soundboard's button has the timer's solid fill, so it reads on any background. */
 	.board-timer :global(.icon-button[data-outlined]) {
 		background: var(--surface);
 	}
@@ -2055,12 +2127,7 @@
 		position: absolute;
 		right: 0;
 		bottom: 0;
-		min-width: 1.4em;
-		padding: 0 0.3em;
-		border-radius: var(--radius-full);
-		background: var(--accent);
-		color: var(--on-accent);
-		font: 700 0.75rem / 1.4 var(--font-control);
-		text-align: center;
+		display: flex;
+		font-size: 0.75rem;
 	}
 </style>

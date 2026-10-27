@@ -74,5 +74,8 @@
 				"either": true
 			}
 		]
+	},
+	"makesDemon": {
+		"token": "Night 3"
 	}
 }

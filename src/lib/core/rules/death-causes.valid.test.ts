@@ -237,3 +237,23 @@ describe('gained abilities', () => {
 		expect(entry(drunk.game, drunk.seats[2], 'philosopher')?.gained).toBe('slayer');
 	});
 });
+
+// https://wiki.bloodontheclocktower.com/Vizier: they cannot die during the day.
+describe('a player who cannot die by day', () => {
+	it('has every cause but the execution flagged by day, and none at night', () => {
+		const g = game(['vizier', 'slayer', 'imp']);
+		const byDay = validDeathCauses(g.game, g.seats[0], characters, { day: true });
+		const flagged = (cause: string) =>
+			byDay.find((c) => c.cause === cause)?.flags.map((f) => f.code) ?? [];
+		expect(flagged('execution')).toEqual([]);
+		expect(flagged('demon')).toEqual(['protected-by-day']);
+		expect(byDay.find((c) => c.cause === 'demon')?.flags[0]).toMatchObject({
+			source: { characterId: 'vizier', seatId: g.seats[0] }
+		});
+		const atNight = validDeathCauses(g.game, g.seats[0], characters);
+		expect(atNight.every((c) => c.flags.length === 0)).toBe(true);
+		// Another player is not covered.
+		const other = validDeathCauses(g.game, g.seats[1], characters, { day: true });
+		expect(other.every((c) => c.flags.length === 0)).toBe(true);
+	});
+});

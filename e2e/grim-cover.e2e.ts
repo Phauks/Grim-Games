@@ -24,6 +24,7 @@ async function coverAndUncover(page: Page) {
 	await expect(cover).toBeVisible();
 	// Only what isn't secret: the script, the night or day, and the timer.
 	await expect(cover.getByRole('heading', { name: 'Trouble Brewing' })).toBeVisible();
+	await expect(cover.getByTestId('cover-storyteller')).toHaveText('Storyteller: Trev');
 	await expect(cover.getByTestId('cover-phase')).toHaveText('Setup');
 	await expect(cover.getByTestId('day-timer')).toBeVisible();
 	await expect(cover.getByRole('button', { name: /^Seat / })).toHaveCount(0);
@@ -97,10 +98,16 @@ test('a player hides their guesses and notes on the Grim tab, and has no cover',
 	await phoneContext.close();
 });
 
-test('the Storyteller covers the screen from the board, beside the timer, and from the day', async ({
+test('the Storyteller covers the screen from the board, beside ☰, and from the day', async ({
 	page
 }) => {
-	await startGame(page);
+	const board = await startGame(page);
+	// Who runs the game shows too (Trevor, 2026-10-27: "Include storyteller name on grim cover").
+	await page.goto(`${board}/setup`);
+	const storyteller = page.getByRole('textbox', { name: 'Storyteller' });
+	await storyteller.fill('Trev');
+	await storyteller.press('Enter');
+	await toBoard(page);
 
 	// Never in the ⋯ menu.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -110,33 +117,72 @@ test('the Storyteller covers the screen from the board, beside the timer, and fr
 	await page.keyboard.press('Escape');
 	await expect(menu).toBeHidden();
 
+	// Beside ☰ on the toolbar, in the same place as on the day (Trevor, 2026-10-27: "so it
+	// doesn't move").
+	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const onBoard = (await toolbar.getByTestId('cover-button').boundingBox())!;
 	await page.getByTestId('cover-button').tap();
 	await coverAndUncover(page);
 	await expect(page.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
 
-	// The players' view, over the cover: script, night order and the town, but no notes, and
-	// the town's seats only drawn (Trevor, 2026-10-27). Without a room there is nobody to call.
+	// The players' view, over the cover, as on /play: its title-line buttons, every tab and the
+	// notes (Trevor, 2026-10-27: "As if they were within the app. We shouldn't even block
+	// notes"). Without a room there is nobody to call.
 	await page.getByTestId('cover-button').tap();
 	const cover = page.getByRole('dialog', { name: 'Screen covered' });
 	await expect(cover.getByRole('button', { name: 'Back to town' })).toHaveCount(0);
 	await cover.getByRole('button', { name: 'Player view' }).tap();
 	const view = page.getByTestId('cover-player-view');
-	await expect(view.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim']);
+	const viewDialog = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	await expect(viewDialog.getByRole('button', { name: 'Share script' })).toBeVisible();
+	await expect(view.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
 	await view.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(view.getByTestId('grim-seat')).toHaveCount(8);
-	await expect(view.getByRole('button', { name: /^Seat / })).toHaveCount(0);
-	await page
-		.getByRole('dialog', { name: 'Trouble Brewing' })
-		.getByRole('button', { name: 'Close' })
-		.tap();
+	// A player's note, kept apart from the Storyteller's and gone when the view closes.
+	await view.getByRole('tab', { name: 'Notes' }).tap();
+	await view.getByTestId('new-note').first().tap();
+	const note = page.getByRole('dialog', { name: 'Note' });
+	await note.getByRole('textbox', { name: 'Title' }).fill('Sam is lying');
+	await note.getByRole('button', { name: 'Close' }).tap();
+	await expect(view.locator('[data-note]', { hasText: 'Sam is lying' })).toHaveCount(1);
+	await viewDialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(view).toBeHidden();
+	await cover.getByRole('button', { name: 'Player view' }).tap();
+	await view.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(view.getByTestId('new-note').first()).toBeVisible();
+	await expect(view.locator('[data-note]', { hasText: 'Sam is lying' })).toHaveCount(0);
+	await viewDialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(view).toBeHidden();
 	await expect(cover).toBeVisible();
 	await cover.getByRole('button', { name: 'Close' }).tap();
 	await expect(cover).toBeHidden();
 
-	// From the day, which stays open under it.
+	// From the day, which stays open under it: ☰ then the cover, where they are on the board,
+	// and the day's name at the bottom across from Execution (Trevor, 2026-10-27, G3).
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	const day = page.getByRole('dialog', { name: /^Day( \d+)?$/ });
+	await expect(day).toBeVisible();
+	const inDay = (await day.getByTestId('cover-button').boundingBox())!;
+	// On a phone the day fills the screen, so the cover stays where it was; a tablet's day is a
+	// panel over the board.
+	if (page.viewportSize()!.width < 640) {
+		expect(Math.abs(inDay.y - onBoard.y)).toBeLessThan(12);
+		expect(Math.abs(inDay.x - onBoard.x)).toBeLessThan(12);
+	}
+	const dayNav = (await day.getByRole('button', { name: 'Menu', exact: true }).boundingBox())!;
+	expect(dayNav.x + dayNav.width).toBeLessThanOrEqual(inDay.x + 1);
+	const dayName = (await day.getByTestId('day-name').boundingBox())!;
+	const execution = (await day.getByRole('button', { name: 'Execution' }).boundingBox())!;
+	expect(dayName.x + dayName.width).toBeLessThan(execution.x);
+	expect(
+		Math.abs(dayName.y + dayName.height / 2 - (execution.y + execution.height / 2))
+	).toBeLessThan(8);
+	// The Soundboard in the header, over the day (Trevor, 2026-10-27: "Approve day view E").
+	await day.getByRole('button', { name: 'Soundboard' }).tap();
+	const soundboard = page.getByRole('dialog', { name: 'Soundboard' });
+	await expect(soundboard.getByRole('group', { name: 'Soundboard' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(soundboard).toBeHidden();
 	await expect(day).toBeVisible();
 	await day.getByTestId('cover-button').tap();
 	await coverAndUncover(page);
@@ -184,4 +230,80 @@ test('with the PIN setting on, the cover sets the PIN first and asks for it to c
 	await page.getByTestId('cover-button').tap();
 	await expect(cover).toBeVisible();
 	await expect(set).toBeHidden();
+});
+
+// Trevor (2026-10-27): "I can't figure out how to toggle lock for grim cover", and he chose a
+// lock on the cover itself plus one PIN and locks group in Settings > Storyteller.
+test('the cover has its own lock, and Settings sets, changes and removes the PIN', async ({
+	page
+}) => {
+	await startGame(page);
+	await page.getByTestId('cover-button').tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	const lock = cover.getByTestId('cover-lock');
+	await expect(lock).toHaveAttribute('aria-pressed', 'false');
+
+	// On: the game has no PIN yet, so it sets one first.
+	await lock.tap();
+	const set = page.getByRole('dialog', { name: 'Set the Storyteller PIN' });
+	await set.getByLabel('PIN', { exact: true }).fill('2468');
+	await set.getByLabel('PIN again').fill('2468');
+	await set.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+
+	// Off takes the PIN, so a player can't switch it off.
+	await lock.tap();
+	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
+	await pin.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+	await lock.tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'false');
+	// Back on is one tap: the game keeps its PIN.
+	await lock.tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+	await cover.getByRole('button', { name: 'Close' }).first().tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(cover).toBeHidden();
+
+	// Settings > Storyteller > PIN and locks: the same switch, and the game's PIN.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const back = settings.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await expect(settings.getByRole('heading', { name: 'PIN and locks' })).toBeVisible();
+	await expect(
+		settings.getByRole('checkbox', { name: 'PIN to take the cover off', includeHidden: true })
+	).toBeChecked();
+	await expect(settings.getByText('Set for this game.')).toBeVisible();
+
+	// Change: the old PIN, then a new one.
+	await settings.getByRole('button', { name: 'Change PIN' }).tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await set.getByLabel('PIN', { exact: true }).fill('1357');
+	await set.getByLabel('PIN again').fill('1357');
+	await set.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(set).toBeHidden();
+
+	// Remove takes the new PIN.
+	await settings.getByRole('button', { name: 'Remove PIN' }).tap();
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(pin.getByTestId('pin-message')).toHaveText('Wrong PIN.');
+	await pin.getByLabel('PIN', { exact: true }).fill('1357');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(settings.getByText('None for this game.')).toBeVisible();
+	await expect(settings.getByRole('button', { name: 'Set PIN' })).toBeVisible();
+	await expect(settings.getByRole('button', { name: 'Remove PIN' })).toBeDisabled();
 });

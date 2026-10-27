@@ -24,6 +24,7 @@ import {
 } from '#lib/core/model/types.ts';
 import {
 	abilityState,
+	protection,
 	registrations,
 	registrationWorlds,
 	type AbilitySource,
@@ -99,6 +100,18 @@ export function deathCauses(
 	return out;
 }
 
+/**
+ * Whether a death was an execution: a plain one, or by a character whose ability executes (the
+ * Virgin's nominator, https://wiki.bloodontheclocktower.com/Virgin), which counts as an execution
+ * for everything that asks (the Saint, https://wiki.bloodontheclocktower.com/Saint).
+ */
+export function isExecution(cause: DeathCause | undefined, characters?: CharacterLookup): boolean {
+	if (cause === 'execution') return true;
+	if (cause === undefined || (GENERAL_DEATH_CAUSES as readonly string[]).includes(cause))
+		return false;
+	return deathCauseEntry(cause, characters)?.kind === 'execution';
+}
+
 /** `deathCauses` for a game: its script, the characters on seats and the Fabled and Loric. */
 export function gameDeathCauses(game: Game, characters: CharacterLookup): DeathCauseOption[] {
 	return deathCauses(scriptCharacterIds(game.script), characters, [
@@ -135,7 +148,8 @@ export function reminderDeathCause(
 export type DeathCauseFlag =
 	| { code: 'registers'; source: AbilitySource; wiki: string }
 	| { code: 'impaired'; seatIds: SeatId[] }
-	| { code: 'unknown' };
+	| { code: 'unknown' }
+	| { code: 'protected-by-day'; source: AbilitySource };
 
 export interface ValidDeathCause {
 	cause: DeathCause;
@@ -198,11 +212,16 @@ const GAINED_FROM: Readonly<
  * registers. Demons are left out: "the Demon" covers them. A rule that holds only through
  * a false registration, a character whose players are all impaired now, and a player
  * whose alignment or character is unset give flagged entries instead.
+ *
+ * With `day` (the Storyteller marks the death while it is day), every cause but the
+ * execution is flagged for a player whose ability says they can't die by day (the Vizier,
+ * https://wiki.bloodontheclocktower.com/Vizier): warn, never lock.
  */
 export function validDeathCauses(
 	game: Game,
 	seatId: SeatId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	{ day = false }: { day?: boolean } = {}
 ): ValidDeathCause[] {
 	const [execution, demon, , exile] = GENERAL_DEATH_CAUSES;
 	const general = (cause: DeathCause): ValidDeathCause => ({ cause, kind: 'general', flags: [] });
@@ -259,6 +278,11 @@ export function validDeathCauses(
 			flags.push({ code: 'impaired', seatIds: acting });
 		}
 		out.push({ cause: characterId, kind, ...(gained ? { gained } : {}), flags });
+	}
+	const safe = day ? protection(game, seatId, characters, 'day') : undefined;
+	if (safe && safe !== 'override') {
+		for (const entry of out)
+			if (entry.cause !== removed) entry.flags.push({ code: 'protected-by-day', source: safe });
 	}
 	return out;
 }

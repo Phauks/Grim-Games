@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { historyItems } from './history.ts';
@@ -36,7 +37,7 @@
 		onclick={() => previous !== undefined && open.goTo(previous)}
 	/>
 	<p class="line" aria-live="polite">
-		<span class="count">{position} of {stops.length}</span>
+		<span class="count"><CountBadge count={position} total={stops.length} /></span>
 		{#if item}<HistoryLine parts={item.parts} characters={open.characters} />{/if}
 	</p>
 	<IconButton
@@ -79,7 +80,6 @@
 	}
 	.count {
 		margin-inline-end: var(--space-2);
-		color: var(--on-surface-muted);
 		font-size: 0.8rem;
 	}
 </style>

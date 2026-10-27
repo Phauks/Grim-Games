@@ -1,7 +1,8 @@
 {
 	"actsWhenDead": true,
 	"onDeath": {
-		"by": "any"
+		"by": "any",
+		"night": true
 	},
 	"dayReminders": {
 		"none": "triggers on night death"

@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { openPlayerSettings, setPlayerName } from './player-name.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
@@ -98,19 +99,21 @@ test('the player view is a reading page, with no Storyteller controls', async ({
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
 
-test('the settings cog at the top sets the text size, Pinch to zoom and the sheet layout', async ({
-	page
-}) => {
-	// Plan E2 (Trevor, 2026-10-26): "easier access to accessibility, zoom, font size for
-	// players. Move name into an edit button in the top", then "a settings cog in player script
-	// view where they select various text sizes settings and their name".
-	const cog = page.getByRole('button', { name: 'Your settings' });
+test('the settings cog opens the one Settings, at its list of sections', async ({ page }) => {
+	// Plan E2 (Trevor, 2026-10-26: "easier access to accessibility, zoom, font size for
+	// players"), then one Settings everywhere (Trevor, 2026-10-27: "Change your settings into
+	// settings"): the cog opens the app's Settings, where Text and Tokens hold every size.
+	const cog = page.getByTestId('you-button');
+	await expect(cog).toHaveAccessibleName('Settings');
 	await cog.tap();
-	const sheet = page.getByRole('dialog', { name: 'Your settings' });
-	await expect(sheet).toBeVisible();
-	// Not in a room: there is no name to set yet.
-	await expect(sheet.getByRole('textbox', { name: 'Your name' })).toHaveCount(0);
-	const size = sheet.getByRole('slider', { name: 'Text size' });
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const sections = settings.getByRole('navigation', { name: 'Settings sections' });
+	await expect(sections).toBeVisible();
+	// The root: phones show only the list; wide screens the list beside the first section.
+	if (await settings.getByRole('button', { name: 'All settings' }).isHidden())
+		await expect(sections.getByRole('button').first()).toHaveAttribute('aria-current', 'page');
+	await sections.getByRole('button', { name: 'Text', exact: true }).tap();
+	const size = settings.getByRole('slider', { name: 'Text size', exact: true });
 	await size.fill('1.25');
 	await expect(size).toHaveAttribute('aria-valuetext', '125%');
 	expect(
@@ -118,29 +121,15 @@ test('the settings cog at the top sets the text size, Pinch to zoom and the shee
 			getComputedStyle(document.documentElement).getPropertyValue('--text-scale')
 		)
 	).toBe('1.25');
-	const zoom = sheet.getByRole('checkbox', { name: 'Pinch to zoom', includeHidden: true });
-	await expect(zoom).not.toBeChecked();
-	await sheet.getByText('Pinch to zoom', { exact: true }).tap();
-	await expect(zoom).toBeChecked();
-	await sheet.getByRole('combobox', { name: 'Script sheet layout' }).tap();
-	await page.getByRole('option', { name: 'Compact', exact: true }).tap();
-	await expect(page.locator('[data-density="compact"]')).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(sheet).toBeHidden();
-
-	// The same settings as Settings > Text.
-	await openSettings(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
+	// Not in a room: Settings > Player has no name to set yet.
 	const back = settings.getByRole('button', { name: 'All settings' });
 	if (await back.isVisible()) await back.tap();
-	await settings.getByRole('button', { name: 'Text', exact: true }).tap();
-	await expect(settings.getByRole('slider', { name: 'Text size' })).toHaveAttribute(
-		'aria-valuetext',
-		'125%'
-	);
-	await expect(
-		settings.getByRole('checkbox', { name: 'Pinch to zoom', includeHidden: true })
-	).toBeChecked();
+	await sections.getByRole('button', { name: 'Player', exact: true }).tap();
+	await expect(settings.getByRole('button', { name: 'Edit your name' })).toHaveCount(0);
+	// The sizes live once, in Tokens, not again under Player.
+	await expect(settings.getByRole('slider', { name: 'Character token size' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
 });
 
 test("the script's name never breaks inside a word, beside its logo and buttons", async ({
@@ -206,7 +195,7 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 	const [m, h] = [(await menu.boundingBox())!, (await title.boundingBox())!];
 	// Level with the header's buttons, the title under them (Trevor, 2026-10-26: "move the
 	// script name down from the top of player view, still in header area, but lower").
-	const cog = (await page.getByRole('button', { name: 'Your settings' }).boundingBox())!;
+	const cog = (await page.getByTestId('you-button').boundingBox())!;
 	expect(Math.abs(m.y - cog.y)).toBeLessThan(m.height / 2);
 	expect(h.y).toBeGreaterThanOrEqual(m.y + m.height - 1);
 
@@ -690,33 +679,28 @@ test('the title line’s sheet background, Print, Share and settings cog are one
 		'Sheet background',
 		'Print script',
 		'Share script',
-		'Your settings'
+		'Settings'
 	]);
 	// The script's name sits under them, clear of the buttons and the hamburger (Trevor,
 	// 2026-10-26: "move the script name down from the top of player view").
-	const cog = (await row.getByRole('button', { name: 'Your settings' }).boundingBox())!;
+	const cog = (await row.getByTestId('you-button').boundingBox())!;
 	const title = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
 	expect(title.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
 });
 
-test('the Script sheet can be made compact from Settings', async ({ page }) => {
-	await expect(page.locator('[data-density="normal"]')).toBeVisible();
-	await openSettings(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Player', exact: true })
-		.tap();
-	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
-	await page.getByRole('option', { name: 'Super-compact', exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).tap();
-	await expect(page.locator('[data-density="super"]')).toBeVisible();
-	await page.reload();
-	await expect(page.locator('[data-density="super"]')).toBeVisible();
-	const overflow = await page.evaluate(
-		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+test('the Script sheet is always Normal on screen, with no layout setting', async ({ page }) => {
+	// Trevor, 2026-10-27: "Compact and super compact modes suck. Remove for now". A phone that
+	// picked one before goes back to Normal; printing still fits a page its own way.
+	await page.evaluate(() =>
+		localStorage.setItem('grim-games:player-settings:v1', JSON.stringify({ density: 'super' }))
 	);
-	expect(overflow).toBeLessThanOrEqual(0);
+	await page.reload();
+	await expect(page.locator('[data-density="normal"]')).toBeVisible();
+	await expect(page.locator('[data-density="super"]')).toHaveCount(0);
+	const settings = await openPlayerSettings(page);
+	await expect(settings.getByRole('combobox', { name: 'Script sheet layout' })).toHaveCount(0);
+	await expect(settings.getByRole('combobox', { name: 'Sheet background' })).toBeVisible();
+	await expect(settings.getByRole('combobox', { name: 'Script sheet layout' })).toHaveCount(0);
 });
 
 test('the sheet background colours the whole player screen, its dialogs included', async ({
@@ -935,20 +919,23 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// want that whole thing gone").
 	await expect(row).toBeHidden();
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
-	await page.getByTestId('you-button').tap();
-	const sheet = page.getByRole('dialog', { name: 'Your settings' });
-	await sheet.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await sheet.getByRole('button', { name: 'Save' }).tap();
+	const sheet = await openPlayerSettings(page);
+	// The name has its own modal with Save; Settings' other rows change at once (Trevor,
+	// 2026-10-27).
+	await expect(sheet.getByRole('button', { name: 'Save' })).toHaveCount(0);
+	await setPlayerName(page, 'Alex');
+	await expect(sheet.getByTestId('player-name')).toHaveText('Alex');
+	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(page.getByTestId('join-status')).toHaveText('');
 	// The cog at the top is named for it (plan E2), and the empty room box leaves the row
 	// (Trevor, 2026-10-26: "remove the empty space next to the game state tracker").
-	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 	await expect(row).toBeHidden();
 
 	// The cog stays at the top of every tab.
 	await openTab(page, 'Notes');
-	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 
 	// Share script hands on the room's link and code (plan J20).
 	await page.getByRole('button', { name: 'Share script' }).tap();
@@ -965,6 +952,6 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// /play itself shows the same room, while the phone is in it.
 	await page.goto('/play');
 	await expect(page.getByTestId('join-status')).toHaveText('');
-	await expect(page.getByRole('button', { name: 'Your settings: Alex' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 	await st.context().close();
 });

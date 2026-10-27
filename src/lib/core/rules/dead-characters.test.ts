@@ -1,14 +1,26 @@
 import { describe, expect, it } from 'vitest';
+import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/index.ts';
+import {
+	newGame,
+	run,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { actsWhenDead, deadCharacters, reminderOwnerDead } from './dead-characters.ts';
+import { abilityState } from './ability.ts';
+import {
+	actsWhenDead,
+	deadCharacters,
+	keepsAbilityWhenDead,
+	reminderOwnerDead
+} from './dead-characters.ts';
 
 const data = committedGameData();
 
 const game = (seats: [string, boolean][]) =>
 	({
 		seats: Object.fromEntries(
-			seats.map(([characterId, dead], i) => [`s${i}`, { characterId, dead }])
+			seats.map(([characterId, dead], i) => [`s${i}`, { characterId, dead, reminders: [] }])
 		)
 	}) as unknown as Game;
 
@@ -99,5 +111,52 @@ describe('reminderOwnerDead', () => {
 		expect(reminderOwnerDead(g, { characterId: 'imp' })).toBe(false);
 		expect(reminderOwnerDead(g, { characterId: 'imp', ownerSeatId: deadImp })).toBe(true);
 		expect(reminderOwnerDead(g, { characterId: 'imp', ownerSeatId: liveImp })).toBe(false);
+	});
+});
+
+describe('keepsAbilityWhenDead', () => {
+	// https://wiki.bloodontheclocktower.com/Vigormortis : a Minion the Vigormortis kills keeps
+	// their ability (its Has Ability token marks them); other players it kills are just dead.
+	const cast: [string, boolean, string[]][] = [
+		['poisoner', true, ['Dead', 'Has Ability']],
+		['poisoner', true, ['Dead']],
+		['monk', true, ['Has Ability']],
+		['widow', false, ['Has Ability']],
+		['vigormortis', false, []]
+	];
+	const { session, ctx, seats } = newGame(cast.length);
+	const g = run(
+		session,
+		ctx,
+		...cast.flatMap(([characterId, dead, labels], i): Command[] => [
+			{ type: 'AssignCharacter', seatId: seats[i], characterId },
+			...(dead ? [{ type: 'SetDead', seatId: seats[i], dead } as const] : []),
+			...labels.map((label): Command => ({
+				type: 'AddReminder',
+				seatId: seats[i],
+				reminder: { characterId: 'vigormortis', label }
+			}))
+		])
+	).game;
+	const [kept, killed, monk, alive] = seats;
+
+	it('is true only for a dead Minion with the Has Ability token', () => {
+		expect(keepsAbilityWhenDead(g, kept, characters)).toBe(true);
+		expect(keepsAbilityWhenDead(g, killed, characters)).toBe(false);
+		expect(keepsAbilityWhenDead(g, monk, characters)).toBe(false);
+		expect(keepsAbilityWhenDead(g, alive, characters)).toBe(false);
+	});
+
+	it('keeps the ability working, its reminders off the dead list and unasked', () => {
+		expect(abilityState(g, kept, characters)).toMatchObject({ works: true, dead: false });
+		expect(abilityState(g, killed, characters)).toMatchObject({ works: false, dead: true });
+		expect(deadCharacters(g, characters).has('poisoner')).toBe(false);
+		expect(reminderOwnerDead(g, { characterId: 'poisoner', ownerSeatId: kept }, characters)).toBe(
+			false
+		);
+		expect(reminderOwnerDead(g, { characterId: 'poisoner', ownerSeatId: killed }, characters)).toBe(
+			true
+		);
+		expect(deadCharacters(g, characters).has('monk')).toBe(true);
 	});
 });

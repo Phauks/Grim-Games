@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { copyText } from '#lib/ui/clipboard.ts';
 	import { downloadFile } from '#lib/ui/download.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { jsonLineTokens } from '#lib/ui/json-tokens.ts';
 	import IconButton from './IconButton.svelte';
 
@@ -9,9 +8,9 @@
 	 * A file's contents shown as a file (Trevor, 2026-10-18: "Mode File in header with line
 	 * numbers and the works, standard component for all showcases"): a header bar with its name
 	 * and Copy and Download side by side, then the text with line numbers. The numbers are
-	 * drawn, not text, so selecting the file copies only the file. `collapsible` makes the
-	 * name the toggle, starting closed unless `open`. A JSON file is coloured by kind of piece
-	 * (Trevor, 2026-10-19).
+	 * drawn, not text, so selecting the file copies only the file. To start it closed, put it
+	 * in a Collapsible, like every other section that folds away. A JSON file is coloured by
+	 * kind of piece (Trevor, 2026-10-19).
 	 */
 	interface Props {
 		title: string;
@@ -21,8 +20,6 @@
 		copyLabel: string;
 		downloadLabel: string;
 		type?: string;
-		collapsible?: boolean;
-		open?: boolean;
 		testid?: string;
 	}
 
@@ -33,33 +30,17 @@
 		copyLabel,
 		downloadLabel,
 		type = 'application/json',
-		collapsible = false,
-		open = $bindable(!collapsible),
 		testid
 	}: Props = $props();
 
 	const NL = '\n';
 	const lines = $derived(text.split(NL));
 	const json = $derived(type === 'application/json');
-	const bodyId = $props.id();
 </script>
 
 <figure class="file" data-testid={testid}>
 	<figcaption class="head">
-		{#if collapsible}
-			<button
-				type="button"
-				class="name toggle"
-				aria-expanded={open}
-				aria-controls={bodyId}
-				onclick={() => (open = !open)}
-			>
-				<span class="caret" class:open><Icon name="expand" /></span>
-				{title}
-			</button>
-		{:else}
-			<span class="name">{title}</span>
-		{/if}
+		<span class="name">{title}</span>
 		<span class="actions">
 			<!-- Clipboard blocked: the text is still shown to select by hand. -->
 			<IconButton icon="copy" label={copyLabel} onclick={() => void copyText(text)} />
@@ -70,7 +51,7 @@
 			/>
 		</span>
 	</figcaption>
-	<pre id={bodyId} class="body" hidden={!open}><code
+	<pre class="body"><code
 			>{#each lines as line, i (i)}<span class="line"
 					><!-- One grid cell beside the number, however many coloured pieces. --><span
 						>{#if json}{#each jsonLineTokens(line) as token, j (j)}{#if token.kind === 'plain'}{token.text}{:else}<span
@@ -101,36 +82,14 @@
 		border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 		background: var(--surface-raised);
 	}
-	/* The rule under the header only when the file shows; closed, the header is the whole box. */
-	.head:has(+ .body:not([hidden])) {
+	/* The rule under the header. */
+	.head:has(+ .body) {
 		border-bottom: 1px solid var(--border);
 	}
 	.name {
 		flex: 1;
 		min-width: 0;
 		font-weight: 600;
-	}
-	.toggle {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		font-weight: 600;
-		text-align: start;
-		cursor: pointer;
-	}
-	.caret {
-		display: inline-flex;
-		transform: rotate(-90deg);
-		transition: transform 0.15s;
-	}
-	.caret.open {
-		transform: none;
 	}
 	.actions {
 		display: flex;
@@ -144,9 +103,6 @@
 		font-size: 0.85rem;
 		line-height: 1.5;
 		tab-size: 2;
-	}
-	.body[hidden] {
-		display: none;
 	}
 	/* Each line wraps under itself, its number in a gutter beside it. */
 	.line {

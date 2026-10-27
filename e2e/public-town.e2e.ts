@@ -95,25 +95,55 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await expect(stage.getByTestId('hide-guesses')).toHaveCount(0);
 	await expect(stage.getByTestId('grim-counts')).toHaveCount(0);
 	expect((await stage.boundingBox())!.y).toBeCloseTo(box.y, 0);
-	// A settings cog beside it, kept in place and off until there are settings (Trevor,
-	// 2026-10-26: "pre-emptively place a setting cog next to full screen").
+	// A settings cog beside it (Trevor, 2026-10-26: "pre-emptively place a setting cog next to
+	// full screen"), holding the board's shape (2026-10-27, grim-shape.e2e.ts).
 	const cog = stage.getByRole('button', { name: 'Public Town settings' });
-	await expect(cog).toBeDisabled();
+	await expect(cog).toBeEnabled();
 	const gear = (await cog.boundingBox())!;
 	expect(gear.x + gear.width).toBeLessThanOrEqual(corner.x + 1);
 	expect(Math.abs(gear.y - corner.y)).toBeLessThan(2);
+	// And the one Settings, at its list of sections, as everywhere (Trevor, 2026-10-27: "Change
+	// your settings into settings", one Settings everywhere).
+	const settings = tablet.getByRole('dialog', { name: 'Settings' });
+	const openSettings = async () => {
+		await cog.tap();
+		await tablet.getByRole('menuitem', { name: 'Settings', exact: true }).tap();
+		await expect(settings).toBeVisible();
+	};
+	await openSettings();
+	const sections = settings.getByRole('navigation', { name: 'Settings sections' });
+	await expect(sections).toBeVisible();
+	await sections.getByRole('button', { name: 'Tokens', exact: true }).tap();
+	const tokenSize = settings.getByRole('slider', { name: 'Character token size' });
+	await tokenSize.scrollIntoViewIfNeeded();
+	await tokenSize.fill('1.5');
+	await expect(tokenSize).toHaveAttribute('aria-valuetext', '150%');
+	await expect
+		.poll(() =>
+			tablet.evaluate(() =>
+				getComputedStyle(document.documentElement).getPropertyValue('--token-scale')
+			)
+		)
+		.toBe('1.5');
+	await tablet.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
 	await fullScreen.tap();
 	// The request settles after the tap, so wait for it.
-	await expect
-		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
-		.toBe('public-town');
+	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	// The whole screen, under the camera too: only the text and controls step in (Trevor,
+	// 2026-10-27: "moving out text and controls").
 	const filled = (await town.boundingBox())!;
 	const screen = tablet.viewportSize()!;
+	expect(Math.round(filled.x)).toBe(0);
+	expect(Math.round(filled.y)).toBe(0);
 	expect(Math.round(filled.width)).toBe(screen.width);
 	expect(Math.round(filled.height)).toBe(screen.height);
-	// The grim starts at the top of the screen: nothing above it takes room.
-	expect(Math.round(filled.y)).toBe(0);
+	// Filling the screen, Settings still opens over the town.
+	await openSettings();
+	await expect(sections).toBeInViewport();
+	await tablet.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
 	await fullScreen.tap();
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
@@ -222,9 +252,7 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 	expect(Math.abs(after.y - before.y)).toBeLessThan(2);
 	// In full screen the title line is gone, so it moves to the town's own corner.
 	await tablet.getByRole('button', { name: 'Full screen', exact: true }).tap();
-	await expect
-		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
-		.toBe('public-town');
+	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
 	await expect(tablet.getByTestId('public-town').getByTestId('players-timer')).toBeVisible();
 	await tablet
 		.getByTestId('public-town')
@@ -244,9 +272,13 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Board', exact: true })
+		.getByRole('button', { name: 'Settings', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Green felt' })
@@ -284,6 +316,10 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Board', exact: true })
 		.tap();
 	await settings
@@ -371,5 +407,44 @@ test("Public Town shows the finished grimoire the Storyteller shares, as players
 		.tap();
 	await expect(final).toHaveCount(0);
 	await expect(tablet.getByTestId('player-grim').getByTestId('grim-seat')).toHaveCount(8);
+	await tabletContext.close();
+});
+
+// Play on (plan U10, Trevor 2026-10-27: "Soundboard should have options for output (eg device
+// speakers, external speakers, town square, multiple)").
+test('the soundboard plays on the Public Town tablet when Play on says so', async ({
+	page,
+	browser
+}, testInfo) => {
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+
+	const tabletContext = await browser.newContext({ ...testInfo.project.use });
+	const tablet = await tabletContext.newPage();
+	const heard: string[] = [];
+	tablet.on('request', (request) => {
+		const path = new URL(request.url()).pathname;
+		if (path.startsWith('/sounds/board/')) heard.push(path);
+	});
+	await tablet.goto(`/town/${code}`);
+	await expect(tablet.getByTestId('player-grim').getByTestId('grim-seat')).toHaveCount(8);
+	// The tablet has been tapped, as a table's would be, so it may play sound.
+	await tablet.getByTestId('public-town').tap();
+
+	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
+	const pads = sheet.getByRole('group', { name: 'Soundboard' });
+	// This device only, the default: the tablet stays quiet.
+	await pads.getByRole('button', { name: 'Hand bell' }).tap();
+	await page.waitForTimeout(500);
+	expect(heard).toEqual([]);
+
+	await sheet.getByRole('combobox', { name: 'Play on' }).tap();
+	await page.getByRole('option', { name: 'Town Square', exact: true }).tap();
+	await pads.getByRole('button', { name: 'Gallows trap' }).tap();
+	await expect.poll(() => heard).toContain('/sounds/board/gallows.mp3');
 	await tabletContext.close();
 });

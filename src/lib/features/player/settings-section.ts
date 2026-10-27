@@ -9,14 +9,16 @@ registerSettingsSection({
 	label: 'Player',
 	icon: 'notes',
 	component: PlayerSettingsSection,
-	reset: () =>
+	reset: () => {
 		playerSettings.update({
-			density: 'normal',
 			print: PRINT_DEFAULTS,
 			frame: undefined,
 			avatar: 'initials',
 			hideGuesses: false,
+			matchShape: false,
+			townMatchShape: true,
 			sheetBackground: 'theme'
-		}),
+		});
+	},
 	order: 37
 });

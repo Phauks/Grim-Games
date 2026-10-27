@@ -30,6 +30,12 @@
 	let phase = $state<'starting' | 'running' | 'denied' | 'none' | 'failed'>('starting');
 	/** How often a frame is read: often enough to feel instant, rarely enough for a phone. */
 	const EVERY_MS = 150;
+	/**
+	 * No code read for this long: the code is likely too far away to read (Trevor, 2026-10-27:
+	 * "too far away, it didn't read anything, but once I got close it was super fast").
+	 */
+	const FAR_MS = 3000;
+	let far = $state(false);
 
 	onMount(() => {
 		let stream: MediaStream | undefined;
@@ -58,11 +64,15 @@
 			const read = await makeQrReader().catch(() => undefined);
 			if (!read) return void (phase = 'failed');
 			phase = 'running';
+			let seenAt = Date.now();
 			const tick = async () => {
 				if (stopped || !video) return;
-				const text = await read(video).catch(() => undefined);
+				const texts = await read(video).catch(() => []);
 				if (stopped) return;
-				if (text && onRead(text)) return stop();
+				if (texts.length) seenAt = Date.now();
+				far = Date.now() - seenAt > FAR_MS;
+				// Every code in view: another code beside an animated one is not lost (2026-10-27).
+				if (texts.some((text) => onRead(text))) return stop();
 				timer = setTimeout(tick, EVERY_MS);
 			};
 			void tick();
@@ -90,9 +100,9 @@
 		<p class="over" role="alert">{message}</p>
 	{:else if problem}
 		<p class="over bottom" role="alert">{problem}</p>
-	{:else if progress}
+	{:else if progress || far}
 		<div class="over bottom progress" role="status">
-			<p>{progress}</p>
+			<p>{far ? t('share.scan.closer') : progress}</p>
 			{#if pieces?.length}
 				<ol class="pieces" aria-hidden="true">
 					{#each pieces as have, i (i)}<li class:have></li>{/each}

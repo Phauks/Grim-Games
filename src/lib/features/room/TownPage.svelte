@@ -18,15 +18,17 @@
 	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import FullScreenButton from '#lib/ui/primitives/FullScreenButton.svelte';
+	import Menu from '#lib/ui/primitives/Menu.svelte';
+	import { parseAspect } from '#lib/ui/seating/seat-layout.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import { sheetTheme } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import { forgetRoom } from './player.svelte.ts';
 	import { rememberRoom } from './recent-rooms.ts';
+	import { listenForTownSounds } from '#lib/features/sound/town-sounds.ts';
 	import { RoomTown } from './town.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
 
 	/**
@@ -54,12 +56,14 @@
 	onMount(() => {
 		if (room) {
 			town = new RoomTown(room, admin);
+			// The Storyteller's soundboard, when Play on includes Town Square (plan U10).
+			if (!admin) town.onSound = listenForTownSounds();
 			// Your games on Join game opens it here again (Trevor, 2026-10-26).
 			if (!admin) rememberRoom(room, undefined, true);
 		}
-		if (!admin) keepScreenAwake(true);
+		if (!admin) keepScreenAwake(true, 'town');
 		return () => {
-			if (!admin) keepScreenAwake(false);
+			if (!admin) keepScreenAwake(false, 'town');
 			town?.stop();
 		};
 	});
@@ -113,6 +117,8 @@
 		if (room && !admin && (status === 'refused' || status === 'closed')) forgetRoom(room);
 	});
 	const table = $derived(town?.view?.public);
+	/** The town in the Storyteller's board's shape (Trevor, 2026-10-27), on unless switched off. */
+	const townShape = $derived(playerSettings.current.townMatchShape);
 	const showTown = $derived(!message && !!script && !!table?.seats.length);
 	/**
 	 * The Storyteller's day timer, as phones show it (Trevor, 2026-10-26: "During day, public
@@ -122,14 +128,6 @@
 	/** Where the game is up to, as players' phones show it (Trevor, 2026-10-26). */
 	const phase = $derived(showTown ? parsePlayersPhase(table?.now) : undefined);
 
-	// Full screen shows the town alone, not the app (Trevor, 2026-10-26).
-	let stage = $state<HTMLDivElement>();
-	let inFullScreen = $state(false);
-	$effect(() => {
-		const sync = () => (inFullScreen = !!stage && document.fullscreenElement === stage);
-		document.addEventListener('fullscreenchange', sync);
-		return () => document.removeEventListener('fullscreenchange', sync);
-	});
 	/**
 	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), in place of the
 	 * town, as on every phone's Grim tab; it goes when the game runs again or a new one begins.
@@ -148,9 +146,36 @@
 	const showBoard = $derived(admin && !message && !!town?.grimoire && !boardProblem);
 </script>
 
+{#snippet townCorner(filled: boolean)}
+	{#if filled && phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
+	<!-- The town's settings (Trevor, 2026-10-26: "pre-emptively place a setting cog next to
+	     full screen"), also in Settings > Player: the board's shape. -->
+	{#if table}<span class="corner-button"
+			><Menu
+				icon="settings"
+				label={t('room.town.settings')}
+				items={[
+					{
+						value: 'shape',
+						label: t(townShape ? 'room.town.fillScreen' : 'room.town.boardShape'),
+						disabled: !parseAspect(table.layout?.aspect),
+						onSelect: () => playerSettings.update({ townMatchShape: !townShape })
+					},
+					// The one Settings, at its list of sections, as everywhere (Trevor, 2026-10-27).
+					{
+						value: 'settings',
+						label: t('settings.title'),
+						onSelect: () => settingsDialog.show()
+					}
+				]}
+			/></span
+		>{/if}
+{/snippet}
+
 {#if showBoard}<SharedBoard
 		shared={town?.grimoire}
 		room={room ?? undefined}
+		history
 		onReady={(r) => (boardReady = r)}
 		onProblem={(p) => (boardProblem = p)}
 	/>{/if}
@@ -187,27 +212,20 @@
 		<div class="status-line">
 			{#if phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
 		</div>
-		<div class="stage" bind:this={stage} data-testid="public-town">
+		<div data-testid="public-town">
 			{#if showTown && script && table && room}
-				<!-- In the town's own top right corner, in and out of full screen (Trevor, 2026-10-26:
-				     "supposed to be in the town square, and makes it so the townsquare takes up the
-				     whole screen"); the board's corner lines are top left. In full screen the title
-				     line is gone, so the game's status sits beside it. The finished grimoire brings
-				     its own toolbar, full screen included, as on the Grim tab. -->
-				{#if stage && !final}<div class="full-screen">
-						{#if inFullScreen && phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
-						<!-- Its place kept for settings to come (Trevor, 2026-10-26: "pre-emptively place
-						     a setting cog next to full screen"); there are none yet. -->
-						<span class="town-button"
-							><IconButton icon="settings" label={t('room.town.settings')} disabled /></span
-						>
-						<span class="town-button"><FullScreenButton target={stage} /></span>
-					</div>{/if}
+				<!-- Full screen in the town's own top right corner (Trevor, 2026-10-26: "supposed to
+				     be in the town square, and makes it so the townsquare takes up the whole
+				     screen"). In full screen the title line is gone, so the game's status sits
+				     beside it. The finished grimoire brings its own toolbar, full screen included,
+				     as on the Grim tab. -->
 				{#if final}<div class="final" data-testid="final-grimoire">
 						<SharedBoard shared={final.grimoire} {over} {room} />
 					</div>{:else}<PlayerGrim
 						{script}
 						display
+						fullScreen
+						corner={townCorner}
 						town={{
 							seats: table.seats,
 							layout: table.layout,
@@ -239,14 +257,6 @@
 		width: 1.8em;
 		height: 1.8em;
 	}
-	/* The town's top right corner holds full screen. In full screen the town fills the screen,
-	   on the page's own background. */
-	.stage {
-		position: relative;
-	}
-	.stage:fullscreen {
-		background: var(--surface);
-	}
 	.status-line {
 		display: flex;
 		min-height: var(--tap-target);
@@ -261,27 +271,6 @@
 		position: relative;
 		height: 75dvh;
 		margin-bottom: calc(2 * var(--tray-h, var(--tap-target)));
-	}
-	.stage:fullscreen .final {
-		height: 100dvh;
-		margin-bottom: 0;
-	}
-	.stage:fullscreen :global([data-testid='player-grim']) {
-		height: 100dvh;
-		border-radius: 0;
-	}
-	.full-screen {
-		position: absolute;
-		top: var(--space-2);
-		right: var(--space-2);
-		z-index: 1;
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.town-button {
-		border-radius: 50%;
-		background: var(--board-bar-background);
 	}
 	.message {
 		display: grid;

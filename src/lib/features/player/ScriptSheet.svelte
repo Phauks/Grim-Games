@@ -9,13 +9,14 @@
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Snippet } from 'svelte';
 	import PlayerCounts from './PlayerCounts.svelte';
 	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
 	import { groupByType } from './player-script.ts';
-	import { playerSettings, type SheetDensity } from './player-settings.svelte.ts';
+	import type { SheetDensity } from './player-settings.svelte.ts';
 	import type { TravellerInPlay } from './travellers-in-play.ts';
 
 	interface Props {
@@ -40,9 +41,11 @@
 		showJinxes?: boolean;
 		/** The game mode and special rules, in their own section under Jinxes; none, none shown. */
 		rules?: readonly PublicRule[];
+		/** The Fabled and Loric in play, in a game: their setup change shows in the Players counts. */
+		ruleCharacters?: readonly Character[];
 		/** False leaves the Players breakdown out (New game's preview, beside its own table). */
 		showBreakdown?: boolean;
-		/** Overrides the reader's density setting (printing picks whatever fits one page). */
+		/** Printing picks whatever fits one page; on screen it is always Normal. */
 		density?: SheetDensity;
 	}
 
@@ -55,6 +58,7 @@
 		travellers,
 		showJinxes = true,
 		rules = [],
+		ruleCharacters = [],
 		showBreakdown = true,
 		density: fixed
 	}: Props = $props();
@@ -70,7 +74,7 @@
 	const noJinxInPlay = $derived(
 		!!playing && !jinxes.some((j) => j.characters.every((id) => playing.has(id)))
 	);
-	const density = $derived(fixed ?? playerSettings.current.density);
+	const density = $derived(fixed ?? 'normal');
 	const groups = $derived(groupByType(characters));
 	const names = $derived(characters.map((c) => c.name));
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
@@ -158,7 +162,7 @@
 	{/if}
 {/snippet}
 
-<div class="sheet" data-density={density}>
+{#snippet sections()}
 	{#each groups as group (group.type)}
 		{#snippet list()}
 			<ul>
@@ -216,9 +220,16 @@
 		{#snippet breakdown()}<PlayerCounts
 				{players}
 				maxPlayers={scriptMaxPlayers(characters)}
+				travellers={(travellers ?? []).flatMap((p) => byId.get(p.characterId) ?? [])}
+				{ruleCharacters}
 			/>{/snippet}
 		{@render section(t('player.breakdown'), 'play:breakdown', breakdown)}
 	{/if}
+{/snippet}
+
+<!-- On screen the sections stack with the app's one line between them (SectionStack). -->
+<div class="sheet" data-density={density}>
+	{#if flat}{@render sections()}{:else}<SectionStack>{@render sections()}</SectionStack>{/if}
 </div>
 
 {#if jinxFor}
@@ -238,9 +249,9 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-4);
 	}
-	/* A line across the whole sheet where one character type gives way to the next (Trevor,
-	   2026-10-23: "a line that covers the screen to show the delineation"), on screen and in
-	   print. */
+	/* In print, a line across the whole sheet where one character type gives way to the next
+	   (Trevor, 2026-10-23: "a line that covers the screen to show the delineation"); on screen
+	   SectionStack draws it. */
 	.sheet > :global(section + section) {
 		padding-top: var(--space-3);
 		border-top: var(--card-border);

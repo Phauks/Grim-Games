@@ -8,17 +8,15 @@
  * with the phone's name (an ordinary command, in History). After that, a seated player's name,
  * avatar and frame (plan R6) go on their seat as they change them, also as ordinary commands.
  */
-import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import { buildInfo } from '#lib/build-info.ts';
 import { toSavedGame } from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
 import type { GamePhase, PlayersPhase } from '#lib/core/rules/game-phase.ts';
-import {
-	publicProjection,
-	type PublicCorner,
-	type PublicLook,
-	type PublicGameState
+import type {
+	PublicCorner,
+	PublicLook,
+	PublicGameState
 } from '#lib/core/sync/public-projection.ts';
 import { seatChanges } from '#lib/core/sync/room-seating.ts';
 import {
@@ -27,6 +25,7 @@ import {
 	type RoomMember,
 	type ServerMessage,
 	type SharedGrimoire,
+	type TownSoundCommand,
 	type VoteTally
 } from '#lib/core/sync/room.ts';
 import type {
@@ -37,11 +36,8 @@ import type {
 } from '#lib/core/sync/script-vote.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
-import {
-	reminderCopyIds,
-	reminderSpots,
-	seatLayouts
-} from '#lib/features/grimoire/device-notes.ts';
+import { seatLayouts } from '#lib/features/grimoire/device-notes.ts';
+import { storedNotes, type BoardNotes } from './board-notes.ts';
 import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { gameFeedback } from './game-feedback.svelte.ts';
@@ -50,7 +46,7 @@ import { uploadRoomImage } from './room-images.ts';
 import { roomImagePath } from '#lib/core/sync/room-images.ts';
 import type { PictureReportView } from '#lib/core/sync/room-pictures.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
-import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
+import { tableState } from './table-state.svelte.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
 import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 
@@ -69,17 +65,6 @@ interface StoredRoom {
 	rolesShown?: string;
 }
 
-/** The board's own notes a viewer needs to draw the grimoire as this device does. */
-export type BoardNotes = Pick<SharedGrimoire, 'layout' | 'reminderSpots' | 'copies'>;
-
-function storedNotes(gameId: GameId): BoardNotes {
-	return {
-		layout: seatLayouts.read(gameId),
-		reminderSpots: reminderSpots.read(gameId),
-		copies: [...reminderCopyIds.read(gameId)]
-	};
-}
-
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
 
@@ -91,6 +76,8 @@ export class RoomHost {
 	 * every member counts as here. The room keeps phones from earlier games (2026-10-25).
 	 */
 	present = $state.raw<readonly string[]>();
+	/** Members whose phone sleeps or is in the background, but was here during this game. */
+	away = $state.raw<readonly string[]>([]);
 	/** The spectators' open vote and its count (Specters), if one is open. */
 	vote = $state.raw<VoteTally>();
 	/** The room's vote on the next script and its count (plan R1), if one is open. */
@@ -144,6 +131,8 @@ export class RoomHost {
 	/** The board's own picture while its look has one, and its name in the room once uploaded. */
 	#picture = $state.raw<Blob>();
 	#uploaded = $state.raw<{ picture: Blob; code: string; hash: string }>();
+	/** The open board's shape, its width ÷ height, for every shared grim (showAspect). */
+	#aspect = $state.raw<{ gameId: string; aspect: number }>();
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -321,24 +310,20 @@ export class RoomHost {
 					saved: saved as unknown as Record<string, unknown>,
 					...(notes?.() ?? storedNotes(game.game.gameId)),
 					timer: liveDayTimer.shared,
-					...this.#lookOf(game.game.gameId)
+					...this.lookOf(game.game.gameId),
+					...this.#aspectOf(game.game.gameId)
 				});
 			});
 			$effect(() => {
 				// Where the board draws the seats, so phones draw the town the same way (plan J13).
 				const layout = notes ? parseSeatLayout(notes().layout) : seatLayouts.read(game.game.gameId);
 				const corner = this.#corner?.gameId === game.game.gameId ? this.#corner.corner : undefined;
-				const now = this.#playersPhase(game.game.gameId);
-				const state = publicProjection(
+				const state = tableState(
+					this,
 					game.game,
-					publicTravellerTest(game.game.gameId, game.characters),
-					layout,
-					corner,
 					game.characters,
-					gameSheetRules(game.game.gameId),
-					now?.kind === 'day' ? liveDayTimer.forPlayers : undefined,
-					now,
-					this.#lookOf(game.game.gameId).look
+					{ ...layout, ...this.#aspectOf(game.game.gameId) },
+					corner
 				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
@@ -409,7 +394,8 @@ export class RoomHost {
 			.catch(() => undefined);
 	}
 
-	#lookOf(gameId: string): { look?: PublicLook } {
+	/** The board's look, while it is this game's (showLook). */
+	lookOf(gameId: string): { look?: PublicLook } {
 		if (this.#look?.gameId !== gameId) return {};
 		const { look } = this.#look;
 		const uploaded = this.#uploaded;
@@ -418,6 +404,20 @@ export class RoomHost {
 			uploaded?.picture === this.#picture &&
 			uploaded?.code === this.code;
 		return { look: named ? { ...look, image: uploaded!.hash } : look };
+	}
+
+	/**
+	 * The board's shape as it shows now (width ÷ height, boardAspect), so every shared grim
+	 * keeps each seat at the board's place round the ring (Trevor, 2026-10-27).
+	 */
+	showAspect(gameId: string, aspect: number | undefined): void {
+		if (aspect === undefined) return;
+		if (this.#aspect?.gameId !== gameId || this.#aspect.aspect !== aspect)
+			this.#aspect = { gameId, aspect };
+	}
+
+	#aspectOf(gameId: string): { aspect?: number } {
+		return this.#aspect?.gameId === gameId ? { aspect: this.#aspect.aspect } : {};
 	}
 
 	/** Lets the players of game `gameId` see their own characters, or hides them again. */
@@ -456,7 +456,7 @@ export class RoomHost {
 	}
 
 	/** The board's phase, with a day called Back to town shown as Town (plan J29). */
-	#playersPhase(gameId: string): PlayersPhase | undefined {
+	playersPhase(gameId: string): PlayersPhase | undefined {
 		const phase = this.#phase?.gameId === gameId ? this.#phase.phase : undefined;
 		if (phase?.kind !== 'day') return phase;
 		const town = this.#town?.gameId === gameId && this.#town.number === phase.number;
@@ -492,6 +492,14 @@ export class RoomHost {
 		return sent;
 	}
 
+	/**
+	 * Plays, stops, pauses or resumes soundboard sounds on the Public Town tablet (plan U10).
+	 * False when the room can't be reached.
+	 */
+	townSound(command: TownSoundCommand): boolean {
+		return this.#socket?.send({ type: 'town-sound', ...command }) ?? false;
+	}
+
 	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */
 	endedGame = $state<string>();
 	/** The game whose final grimoire the room's phones were sent (Share grim, R5). */
@@ -510,7 +518,8 @@ export class RoomHost {
 			grimoire: {
 				saved: saved as unknown as Record<string, unknown>,
 				...(notes ?? storedNotes(gameId)),
-				...this.#lookOf(gameId)
+				...this.lookOf(gameId),
+				...this.#aspectOf(gameId)
 			}
 		} as const;
 		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;
@@ -629,11 +638,22 @@ export class RoomHost {
 		return this.members.filter((m) => m.seatId === undefined && this.isHere(m.memberId));
 	}
 
+	/**
+	 * Members with no seat who are at the table: connected now, or away during this game (a
+	 * screen turned off, bug report #3), never phones from earlier games. Name lists use it.
+	 */
+	get unseatedInGame(): RoomMember[] {
+		return this.members.filter(
+			(m) => m.seatId === undefined && (this.isHere(m.memberId) || this.away.includes(m.memberId))
+		);
+	}
+
 	#receive(message: ServerMessage): void {
 		if (message.type === 'host-view') {
 			this.#applySeats(this.members, message.members);
 			this.members = message.members;
 			this.present = message.present;
+			this.away = message.away ?? [];
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
 			this.rolesSeen = message.rolesSeen ?? [];
@@ -738,6 +758,7 @@ export class RoomHost {
 		this.code = undefined;
 		this.members = [];
 		this.present = undefined;
+		this.away = [];
 		this.vote = undefined;
 		this.scriptVote = undefined;
 		this.viewerKey = undefined;

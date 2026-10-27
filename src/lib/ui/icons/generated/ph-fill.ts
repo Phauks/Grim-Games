@@ -57,6 +57,7 @@ import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
 import ph_corners_in_fill from '~icons/ph/corners-in-fill';
 import ph_corners_out_fill from '~icons/ph/corners-out-fill';
+import ph_crop_fill from '~icons/ph/crop-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
 import ph_crown_fill from '~icons/ph/crown-fill';
 import ph_database_fill from '~icons/ph/database-fill';
@@ -151,13 +152,14 @@ import ph_poker_chip_fill from '~icons/ph/poker-chip-fill';
 import ph_printer_fill from '~icons/ph/printer-fill';
 import ph_prohibit_fill from '~icons/ph/prohibit-fill';
 import ph_prohibit_inset_fill from '~icons/ph/prohibit-inset-fill';
+import ph_projector_screen_fill from '~icons/ph/projector-screen-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
-import ph_rectangle_fill from '~icons/ph/rectangle-fill';
 import ph_scales_fill from '~icons/ph/scales-fill';
 import ph_scan_fill from '~icons/ph/scan-fill';
 import ph_scroll_fill from '~icons/ph/scroll-fill';
+import ph_selection_fill from '~icons/ph/selection-fill';
 import ph_shapes_fill from '~icons/ph/shapes-fill';
 import ph_share_network_fill from '~icons/ph/share-network-fill';
 import ph_shield_fill from '~icons/ph/shield-fill';
@@ -273,6 +275,7 @@ const icons: IconMap = {
 	'ph:copy-simple-fill': ph_copy_simple_fill,
 	'ph:corners-in-fill': ph_corners_in_fill,
 	'ph:corners-out-fill': ph_corners_out_fill,
+	'ph:crop-fill': ph_crop_fill,
 	'ph:cross-fill': ph_cross_fill,
 	'ph:crown-fill': ph_crown_fill,
 	'ph:database-fill': ph_database_fill,
@@ -367,13 +370,14 @@ const icons: IconMap = {
 	'ph:printer-fill': ph_printer_fill,
 	'ph:prohibit-fill': ph_prohibit_fill,
 	'ph:prohibit-inset-fill': ph_prohibit_inset_fill,
+	'ph:projector-screen-fill': ph_projector_screen_fill,
 	'ph:push-pin-fill': ph_push_pin_fill,
 	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
-	'ph:rectangle-fill': ph_rectangle_fill,
 	'ph:scales-fill': ph_scales_fill,
 	'ph:scan-fill': ph_scan_fill,
 	'ph:scroll-fill': ph_scroll_fill,
+	'ph:selection-fill': ph_selection_fill,
 	'ph:shapes-fill': ph_shapes_fill,
 	'ph:share-network-fill': ph_share_network_fill,
 	'ph:shield-fill': ph_shield_fill,

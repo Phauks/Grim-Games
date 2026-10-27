@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { Snippet } from 'svelte';
 	import type { ScriptMeta } from '#lib/core/data/index.ts';
 	import type { Game } from '#lib/core/model/index.ts';
@@ -228,7 +229,9 @@
 						role="status"
 						aria-label={t('room.watching', { count: watcherCount })}
 						data-testid="board-watchers"
-						><Icon name="watchers" /><span aria-hidden="true">{watcherCount}</span></span
+						><Icon name="watchers" /><span aria-hidden="true"
+							><CountBadge count={watcherCount} /></span
+						></span
 					>{/if}</span
 			>{/if}
 		<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
@@ -301,8 +304,9 @@
 	}
 	.corner-title {
 		position: absolute;
-		left: var(--space-1);
-		bottom: var(--space-1);
+		/* Clear of the camera and corners when its part fills the screen (FullScreenStage). */
+		left: var(--edge-left, var(--space-1));
+		bottom: var(--edge-bottom, var(--space-1));
 		z-index: 1;
 		display: grid;
 		/* Until the board is measured; then as wide as the corner's room (corner-room.ts). */

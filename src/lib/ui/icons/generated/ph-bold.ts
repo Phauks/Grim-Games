@@ -57,6 +57,7 @@ import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_corners_in_bold from '~icons/ph/corners-in-bold';
 import ph_corners_out_bold from '~icons/ph/corners-out-bold';
+import ph_crop_bold from '~icons/ph/crop-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
 import ph_crown_bold from '~icons/ph/crown-bold';
 import ph_database_bold from '~icons/ph/database-bold';
@@ -151,13 +152,14 @@ import ph_poker_chip_bold from '~icons/ph/poker-chip-bold';
 import ph_printer_bold from '~icons/ph/printer-bold';
 import ph_prohibit_bold from '~icons/ph/prohibit-bold';
 import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
+import ph_projector_screen_bold from '~icons/ph/projector-screen-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
-import ph_rectangle_bold from '~icons/ph/rectangle-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
 import ph_scan_bold from '~icons/ph/scan-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
+import ph_selection_bold from '~icons/ph/selection-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
 import ph_share_network_bold from '~icons/ph/share-network-bold';
 import ph_shield_bold from '~icons/ph/shield-bold';
@@ -273,6 +275,7 @@ const icons: IconMap = {
 	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:corners-in-bold': ph_corners_in_bold,
 	'ph:corners-out-bold': ph_corners_out_bold,
+	'ph:crop-bold': ph_crop_bold,
 	'ph:cross-bold': ph_cross_bold,
 	'ph:crown-bold': ph_crown_bold,
 	'ph:database-bold': ph_database_bold,
@@ -367,13 +370,14 @@ const icons: IconMap = {
 	'ph:printer-bold': ph_printer_bold,
 	'ph:prohibit-bold': ph_prohibit_bold,
 	'ph:prohibit-inset-bold': ph_prohibit_inset_bold,
+	'ph:projector-screen-bold': ph_projector_screen_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
-	'ph:rectangle-bold': ph_rectangle_bold,
 	'ph:scales-bold': ph_scales_bold,
 	'ph:scan-bold': ph_scan_bold,
 	'ph:scroll-bold': ph_scroll_bold,
+	'ph:selection-bold': ph_selection_bold,
 	'ph:shapes-bold': ph_shapes_bold,
 	'ph:share-network-bold': ph_share_network_bold,
 	'ph:shield-bold': ph_shield_bold,

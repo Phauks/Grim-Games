@@ -152,6 +152,11 @@ describe('Saint (https://wiki.bloodontheclocktower.com/Saint)', () => {
 		]);
 	});
 
+	// An execution by an ability is one too (https://wiki.bloodontheclocktower.com/Judge).
+	it("executed by a character's ability loses", () => {
+		expect(ends(TB, [dead(4, 'judge')]).ends).toMatchObject([{ rule: 'executed-loses' }]);
+	});
+
 	it('killed another way: the game goes on', () => {
 		expect(ends(TB, [dead(4, 'gunslinger')]).ends).toEqual([]);
 	});
@@ -232,7 +237,7 @@ describe('Imp (https://wiki.bloodontheclocktower.com/Imp)', () => {
 
 	it('offers the star pass to the living Minions, the Scarlet Woman first', () => {
 		const { session, seats } = castGame(TB, dead(6, 'imp'));
-		expect(starPass(session.game, characters)).toEqual({ minions: [seats[5]] });
+		expect(starPass(session.game, characters)).toEqual({ characterId: 'imp', heirs: [seats[5]] });
 		// Executed, or with no Minion alive, there is no star pass.
 		expect(starPass(castGame(TB, execute(6)).session.game, characters)).toBeUndefined();
 		expect(
@@ -243,7 +248,8 @@ describe('Imp (https://wiki.bloodontheclocktower.com/Imp)', () => {
 		const cast = ['chef', 'empath', 'monk', 'mayor', 'poisoner', 'scarletwoman', 'imp'];
 		const sw = castGame(cast, dead(6, 'imp'));
 		expect(starPass(sw.session.game, characters)).toEqual({
-			minions: [sw.seats[4], sw.seats[5]],
+			characterId: 'imp',
+			heirs: [sw.seats[4], sw.seats[5]],
 			preferred: sw.seats[5]
 		});
 		// Once a Minion is the Imp, a Demon lives again.
@@ -266,9 +272,37 @@ describe('Fang Gu (https://wiki.bloodontheclocktower.com/Fang_Gu)', () => {
 		]);
 	});
 
+	it('offers its jump to the living Outsiders, until it has jumped once', () => {
+		const { session, seats } = castGame(cast, remind(5, 'fanggu', 'Once'), dead(5, 'fanggu'));
+		expect(starPass(session.game, characters)).toEqual({
+			characterId: 'fanggu',
+			heirs: [seats[3]]
+		});
+		const jumped = castGame(cast, remind(3, 'fanggu', 'Once'), dead(5, 'fanggu'));
+		expect(starPass(jumped.session.game, characters)).toBeUndefined();
+	});
+
 	it('after it has jumped once, its death ends it', () => {
 		const e = ends(cast, [remind(3, 'fanggu', 'Once'), dead(5, 'fanggu')]).ends;
 		expect(e).toMatchObject([{ rule: 'demon-dead', holds: [] }]);
+	});
+
+	it('jumping now: its "Once" on itself as it dies is this jump, so the game goes on', () => {
+		// Trevor's report (2026-10-27): Once, then Dead, on the Fang Gu asked to end the game.
+		const { ends: e, seats } = ends(cast, [remind(5, 'fanggu', 'Once'), dead(5, 'fanggu')]);
+		expect(e).toMatchObject([
+			{ rule: 'demon-dead', holds: [{ rule: 'death-passes', seats: [seats[3]] }] }
+		]);
+		expect(promptable(e)).toEqual([]);
+	});
+
+	it('the Fang Gu it jumped into dies by its own kill: no second jump', () => {
+		// The old Fang Gu, dead, kept its "Once"; seat 6 became the Fang Gu; a Klutz lives.
+		const e = ends(
+			['chef', 'empath', 'monk', 'recluse', 'poisoner', 'fanggu', 'fanggu', 'klutz'],
+			[remind(5, 'fanggu', 'Once'), dead(5, 'fanggu'), dead(6, 'fanggu')]
+		);
+		expect(e.ends).toMatchObject([{ rule: 'demon-dead', holds: [] }]);
 	});
 });
 

@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { openSettingsDialog } from './shell.ts';
+import { savesSettled, trackSaves } from './saves.ts';
 
 /**
  * Game modes on New game (Trevor, 2026-10-17): choose a mode, inspect every part of it, and
@@ -38,7 +39,7 @@ async function chooseRules(page: Page, ...names: string[]) {
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
 	await expect(modesPanel(page).getByRole('button', { name: /^Special rules/ })).toHaveText(
-		`Special rules (${names.length})`
+		`Special rules ${names.length}`
 	);
 }
 
@@ -170,7 +171,7 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await page.goto('/new');
 	await chooseMode(page, 'Whale Buffet');
 	const restricted = modesPanel(page).getByRole('button', { name: /^Restricted characters/ });
-	await expect(restricted).toContainText('(3)');
+	await expect(restricted.locator('.count-badge')).toHaveText('3');
 	await restricted.tap();
 	const dialog = page.getByRole('dialog', { name: 'Restricted characters' });
 	await dialog.getByRole('searchbox').fill('Pit-Hag');
@@ -178,7 +179,7 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await dialog.getByRole('searchbox').fill('Imp');
 	await dialog.getByRole('button', { name: /^Imp\b/ }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(restricted).toContainText('(3)');
+	await expect(restricted.locator('.count-badge')).toHaveText('3');
 
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	// Whale Buffet opens on choosing; the setup list shows the game's characters all the same.
@@ -259,6 +260,30 @@ async function keepFirst(page: Page): Promise<string> {
 	return id;
 }
 
+const BOARD = /\/grimoire\/[\w-]+(#setup-reminders)?$/;
+
+/**
+ * Ends a random draft on the board. A drafted character that turns other players (such as
+ * the Lord of Typhon, https://wiki.bloodontheclocktower.com/Lord_of_Typhon) asks first who
+ * and what; this picks the first of each, so a random draft can't leave the test on /deal.
+ */
+async function toBoardAfterDraft(page: Page) {
+	const character = page
+		.getByTestId('convert-character')
+		.locator('.list button[data-character-id]');
+	const seat = page.getByTestId('convert-seats').getByRole('listitem');
+	const onBoard = () => BOARD.test(page.url());
+	for (let n = 0; n < 6; n++) {
+		await expect
+			.poll(async () => onBoard() || (await character.first().or(seat.first()).isVisible()))
+			.toBe(true);
+		if (onBoard()) return;
+		if (await character.first().isVisible()) await character.first().tap();
+		else await seat.first().getByRole('button').first().tap();
+	}
+	await expect(page).toHaveURL(BOARD);
+}
+
 test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, then the board', async ({
 	page
 }) => {
@@ -295,7 +320,7 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	const hidden = page.getByRole('dialog', { name: 'Hidden character' });
 	await expect(hidden.getByTestId('draft-hidden')).toBeVisible();
 	await hidden.getByRole('button', { name: 'None', exact: true }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await toBoardAfterDraft(page);
 	await expect(page.getByText('Is The Drunk')).toHaveCount(0);
 	await noSidewaysScroll(page);
 });
@@ -315,7 +340,7 @@ test('Sushi Buffet ends with the Storyteller picking which drafted Townsfolk is 
 	// One row per seat that drafted a Townsfolk, then None.
 	await expect(seats.last()).toHaveText('None');
 	await seats.first().getByRole('button').first().tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await toBoardAfterDraft(page);
 	await expect(page.getByText('Is The Drunk').first()).toBeVisible();
 });
 
@@ -352,7 +377,7 @@ test('Sushi Buffet asks whether a drafted Atheist is really the Drunk', async ({
 	}
 	// The Drunk is placed already, so Finish asks no more.
 	await page.getByRole('button', { name: 'Finish' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await toBoardAfterDraft(page);
 	await expect(page.getByText('Is The Drunk').first()).toBeVisible();
 });
 
@@ -428,7 +453,7 @@ test('Sushi Buffet with Marionette on: a good neighbour of the Demon is really t
 	)
 		await drunk.getByRole('button', { name: 'None', exact: true }).tap();
 	if (!hasDemon) {
-		await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+		await toBoardAfterDraft(page);
 		return;
 	}
 	const reserved = page.getByTestId('reserved-seats').getByRole('listitem');
@@ -436,7 +461,7 @@ test('Sushi Buffet with Marionette on: a good neighbour of the Demon is really t
 	// The Demon's two neighbours, then None.
 	await expect(reserved).toHaveCount(3);
 	await reserved.first().getByRole('button').first().tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await toBoardAfterDraft(page);
 	await expect(page.getByText('Is The Marionette').first()).toBeVisible();
 });
 
@@ -859,7 +884,7 @@ test('Whale Buffet deals a type from the tile bag and each player chooses; the S
 		await keepFirst(page);
 	}
 	await page.getByRole('button', { name: 'Finish' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+	await toBoardAfterDraft(page);
 });
 
 /** Taps characters in a setup's list. */
@@ -1146,7 +1171,9 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await expect(inspect).toHaveCount(0);
 	const modes = panel.getByRole('combobox', { name: 'Game mode' });
 	await expect(modes).toContainText('Tiny Buffet');
-	await expect(panel.getByRole('button', { name: /^Restricted characters/ })).toContainText('(1)');
+	await expect(
+		panel.getByRole('button', { name: /^Restricted characters/ }).locator('.count-badge')
+	).toHaveText('1');
 
 	// It stays on this device.
 	await page.reload();
@@ -1989,6 +2016,7 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 
 test('Game info’s Special rules opens the screen once the game is set up', async ({ page }) => {
 	// Trevor (2026-10-23): "This special rules button seems to do nothing but flash the page".
+	await trackSaves(page);
 	await page.goto('/new');
 	await chooseRules(page, '+1');
 	const panel = modesPanel(page);
@@ -2026,6 +2054,7 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
 		await page.getByRole('button', { name: 'Confirm' }).tap();
 	}
+	await savesSettled(page);
 	await page.goto(board);
 	// +1 put the Goon in play, so its seat is not flagged as off the script (Trevor,
 	// 2026-10-23).
@@ -2123,9 +2152,7 @@ test('Start game restates the special rules first, and Back returns to New game'
 	await recap.getByRole('button', { name: 'Back' }).tap();
 	await expect(recap).toBeHidden();
 	await expect(page).toHaveURL(/\/new$/);
-	await expect(panel.getByRole('button', { name: /^Special rules/ })).toHaveText(
-		'Special rules (2)'
-	);
+	await expect(panel.getByRole('button', { name: /^Special rules/ })).toHaveText('Special rules 2');
 	await panel.getByRole('button', { name: 'Start game' }).tap();
 	await expect(announce).toBeChecked();
 	await recap.getByRole('button', { name: 'Start game' }).tap();
@@ -2333,10 +2360,10 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 		'Sheet background',
 		'Print script',
 		'Share script',
-		'Your settings'
+		'Settings'
 	]);
 	// The name under the buttons, as on /play (Trevor, 2026-10-26).
-	const cog = (await sheet.getByRole('button', { name: 'Your settings' }).boundingBox())!;
+	const cog = (await sheet.getByTestId('you-button').boundingBox())!;
 	const name = (await sheet.getByRole('heading', { name: 'Trouble Brewing' }).boundingBox())!;
 	expect(name.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
 	await trigger.tap();
@@ -2350,14 +2377,14 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 		'background-color',
 		'rgb(218, 218, 218)'
 	);
-	// Each character type starts under a line across the sheet.
+	// Each character type starts under a line across the sheet (SectionStack draws it).
 	await sheet.getByRole('tab', { name: 'Script' }).tap();
-	const sections = sheet.getByTestId('script-copy').locator('.sheet > section');
+	const sections = sheet.getByTestId('script-copy').locator('.section-stack > section');
 	await expect(sections.nth(1)).not.toHaveCSS('border-top-width', '0px');
 	await expect(sections.first()).toHaveCSS('border-top-width', '0px');
 });
 
-test('the Script sheet has the players’ settings cog, opening their own sheet', async ({
+test('the Script sheet has the players’ settings cog, opening the one Settings', async ({
 	page
 }) => {
 	// Trevor, 2026-10-26: "settings does not show up in storyteller view of player view. This
@@ -2368,16 +2395,15 @@ test('the Script sheet has the players’ settings cog, opening their own sheet'
 	await toBoard(page);
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
-	await sheet.getByRole('button', { name: 'Your settings' }).tap();
-	const settings = page.getByRole('dialog', { name: 'Your settings' });
-	await expect(settings.getByRole('slider', { name: 'Text size' })).toBeVisible();
+	// The one Settings, at its list of sections (Trevor, 2026-10-27).
+	await sheet.getByTestId('you-button').tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const sections = settings.getByRole('navigation', { name: 'Settings sections' });
+	await expect(sections).toBeVisible();
 	// No room phone here, so no name to set.
-	await expect(settings.getByRole('textbox', { name: 'Your name' })).toHaveCount(0);
-	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
-	await page.getByRole('option', { name: 'Compact', exact: true }).tap();
-	// The Script sheet underneath changes at once (it is hidden from the accessibility tree
-	// while the settings sheet is open, so found by its copy).
-	await expect(page.locator('[data-testid="script-copy"] [data-density="compact"]')).toHaveCount(1);
+	await sections.getByRole('button', { name: 'Player', exact: true }).tap();
+	await expect(settings.getByRole('heading', { name: 'Player', level: 2 })).toBeVisible();
+	await expect(settings.getByRole('button', { name: 'Edit your name' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await expect(sheet).toBeVisible();

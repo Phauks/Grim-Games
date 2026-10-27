@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import ScratchThumb from '#lib/ui/scratch/ScratchThumb.svelte';
 	import { padShape } from '#lib/ui/scratch/pad-shape.svelte.ts';
@@ -24,7 +25,8 @@
 			seatId: string;
 			name: string;
 			notes: readonly TitledNote[];
-			characterId?: CharacterId;
+			/** The seat's characters as this player sees them, shown after its name. */
+			characterIds: readonly CharacterId[];
 		}[];
 		/** Opens a seat's note, or a new one without `noteId`. */
 		onOpenSeatNote?: (seatId: string, noteId?: string) => void;
@@ -40,11 +42,14 @@
 		seats,
 		onOpenSeatNote
 	}: Props = $props();
+
+	/** The notes written on players, not the number of seats (Trevor, 2026-10-27). */
+	const seatNoteCount = $derived(seats?.reduce((sum, seat) => sum + seat.notes.length, 0));
 </script>
 
 <!-- Each section closes from its header and stays as left on this device, as the Script tab's
      do (Trevor, 2026-10-26). -->
-<div class="notes">
+<SectionStack>
 	<!-- New ones start from a dashed card in the list itself, not a button in the header
 	     (Trevor, 2026-10-24). -->
 	<Collapsible title={t('player.myNotes')} storageKey="play:notes:mine" count={notes.length}>
@@ -87,12 +92,16 @@
 	<!-- Notes on each player, written here or from the Grim tab, as the Storyteller's Notes
 	     list them per player (Trevor, 2026-10-24). Only while this phone is in a game. -->
 	{#if seats}
-		<Collapsible title={t('player.seatNotes')} storageKey="play:notes:players" count={seats.length}>
+		<Collapsible
+			title={t('player.seatNotes')}
+			storageKey="play:notes:players"
+			count={seatNoteCount}
+		>
 			<ul class="seat-notes">
 				{#each seats as seat (seat.seatId)}
 					<li data-seat-note={seat.seatId}>
 						<SeatNoteEntry
-							characterId={seat.characterId}
+							guesses={seat.characterIds}
 							label={seat.name}
 							notes={seat.notes}
 							onOpen={(noteId) => onOpenSeatNote?.(seat.seatId, noteId)}
@@ -103,13 +112,9 @@
 			</ul>
 		</Collapsible>
 	{/if}
-</div>
+</SectionStack>
 
 <style>
-	.notes {
-		display: grid;
-		gap: var(--space-4);
-	}
 	ul {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));

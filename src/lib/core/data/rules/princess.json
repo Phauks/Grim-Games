@@ -47,5 +47,9 @@
 				]
 			}
 		]
+	},
+	"stopsKilling": {
+		"token": "Doesn't Kill",
+		"type": "demon"
 	}
 }

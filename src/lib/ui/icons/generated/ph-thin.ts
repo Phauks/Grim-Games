@@ -57,6 +57,7 @@ import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
 import ph_corners_in_thin from '~icons/ph/corners-in-thin';
 import ph_corners_out_thin from '~icons/ph/corners-out-thin';
+import ph_crop_thin from '~icons/ph/crop-thin';
 import ph_cross_thin from '~icons/ph/cross-thin';
 import ph_crown_thin from '~icons/ph/crown-thin';
 import ph_database_thin from '~icons/ph/database-thin';
@@ -151,13 +152,14 @@ import ph_poker_chip_thin from '~icons/ph/poker-chip-thin';
 import ph_printer_thin from '~icons/ph/printer-thin';
 import ph_prohibit_thin from '~icons/ph/prohibit-thin';
 import ph_prohibit_inset_thin from '~icons/ph/prohibit-inset-thin';
+import ph_projector_screen_thin from '~icons/ph/projector-screen-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
-import ph_rectangle_thin from '~icons/ph/rectangle-thin';
 import ph_scales_thin from '~icons/ph/scales-thin';
 import ph_scan_thin from '~icons/ph/scan-thin';
 import ph_scroll_thin from '~icons/ph/scroll-thin';
+import ph_selection_thin from '~icons/ph/selection-thin';
 import ph_shapes_thin from '~icons/ph/shapes-thin';
 import ph_share_network_thin from '~icons/ph/share-network-thin';
 import ph_shield_thin from '~icons/ph/shield-thin';
@@ -273,6 +275,7 @@ const icons: IconMap = {
 	'ph:copy-simple-thin': ph_copy_simple_thin,
 	'ph:corners-in-thin': ph_corners_in_thin,
 	'ph:corners-out-thin': ph_corners_out_thin,
+	'ph:crop-thin': ph_crop_thin,
 	'ph:cross-thin': ph_cross_thin,
 	'ph:crown-thin': ph_crown_thin,
 	'ph:database-thin': ph_database_thin,
@@ -367,13 +370,14 @@ const icons: IconMap = {
 	'ph:printer-thin': ph_printer_thin,
 	'ph:prohibit-thin': ph_prohibit_thin,
 	'ph:prohibit-inset-thin': ph_prohibit_inset_thin,
+	'ph:projector-screen-thin': ph_projector_screen_thin,
 	'ph:push-pin-thin': ph_push_pin_thin,
 	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
-	'ph:rectangle-thin': ph_rectangle_thin,
 	'ph:scales-thin': ph_scales_thin,
 	'ph:scan-thin': ph_scan_thin,
 	'ph:scroll-thin': ph_scroll_thin,
+	'ph:selection-thin': ph_selection_thin,
 	'ph:shapes-thin': ph_shapes_thin,
 	'ph:share-network-thin': ph_share_network_thin,
 	'ph:shield-thin': ph_shield_thin,

@@ -78,6 +78,10 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	expect(Math.abs(sun.width - nightWidth)).toBeLessThanOrEqual(1);
 	expect(Math.abs(sun.y - night.y)).toBeLessThanOrEqual(1);
 	expect(Math.abs(sun.height - night.height)).toBeLessThanOrEqual(1);
+	// The sun's sky spans most of the row (Trevor, 2026-10-27: "a sun that takes up 80% of the
+	// width"), drawn as a slice of a circle.
+	const sky = (await shown.getByRole('img').boundingBox())!;
+	expect(sky.width).toBeGreaterThan(sun.width * 0.6);
 
 	// A tap opens the day's counts, the Storyteller's own numbers (Trevor, 2026-10-27).
 	await status.tap();
@@ -122,12 +126,26 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	await page.keyboard.press('Escape');
 	await expect(controls).toBeHidden();
 
-	// Back to town: the rest of the day is Town, still saying which day.
+	// Back to town, confirmed: the rest of the day is Town, still saying which day; the day
+	// timer stops and the players' sun has set (Trevor, 2026-10-27).
+	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
+	await controls.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Sun', exact: true }).tap();
+	await expect(shown).toHaveAttribute('data-look', 'sun');
+	await page.keyboard.press('Escape');
+	await expect(controls).toBeHidden();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	await menu.getByRole('button', { name: 'Back to town' }).tap();
 	await expect(menu).toBeHidden();
+	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Start timer' }).first()).toBeVisible();
 	await expect(status).toHaveAttribute('data-phase', 'town');
+	await expect(shown.getByRole('img')).toHaveAttribute(
+		'aria-label',
+		'Day timer: 0% of the day left'
+	);
 	await expect(status).toContainText('Town');
 	await expect(status).toContainText('Day 1');
 	await phoneContext.close();

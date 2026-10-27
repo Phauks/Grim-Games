@@ -71,6 +71,8 @@ export interface RoomTable {
 	 * Script tab's Players breakdown shows the table's column (Trevor, 2026-10-26).
 	 */
 	players?: number;
+	/** The Fabled and Loric in play, for their setup change in the Players counts (Trevor, 2026-10-27). */
+	ruleCharacters?: string[];
 }
 
 function storedTable(code: string | undefined): RoomTable {
@@ -81,7 +83,8 @@ function storedTable(code: string | undefined): RoomTable {
 		travellers: stored.travellers,
 		rules: stored.rules,
 		gameId: stored.gameId,
-		players: stored.players
+		players: stored.players,
+		ruleCharacters: stored.ruleCharacters
 	};
 }
 
@@ -104,12 +107,14 @@ function setTable(code: string, table: RoomTable): void {
 	roomTable.rules = table.rules;
 	roomTable.gameId = table.gameId;
 	roomTable.players = table.players;
+	roomTable.ruleCharacters = table.ruleCharacters;
 	const empty =
 		!table.storyteller &&
 		!table.travellers?.length &&
 		!table.rules?.length &&
 		!table.gameId &&
-		!table.players;
+		!table.players &&
+		!table.ruleCharacters?.length;
 	writeStored(TABLE_KEY, empty ? undefined : { code, ...table });
 }
 
@@ -158,6 +163,13 @@ export class RoomPlayer {
 			{ type: 'hello', role: 'player', key: this.#key, protocol: ROOM_PROTOCOL },
 			(m) => {
 				if (m.type === 'player-view') {
+					// Another player has this name: say so once, so the player can change it.
+					if (m.shownAs && m.shownAs !== this.view?.shownAs && m.me.name) {
+						toast(
+							t('room.nameShared', { name: m.me.name }),
+							t('room.nameSharedDetail', { name: m.shownAs })
+						);
+					}
 					this.view = m;
 					// The Storyteller's app is newer: offer its build (Trevor, 2026-10-26: nudge, never block).
 					if (isNewerBuild(m.storytellerBuiltAt, buildInfo.builtAt)) lookForNewerBuild();
@@ -167,12 +179,14 @@ export class RoomPlayer {
 					const travellers = travellersInPlay(m.public?.seats ?? []);
 					const rules = m.public?.rules;
 					const players = dealtSeats(m.public?.seats ?? []).dealt;
+					const ruleCharacters = m.public?.ruleCharacters;
 					setTable(code, {
 						...(storyteller ? { storyteller } : {}),
 						...(travellers.length ? { travellers } : {}),
 						...(rules?.length ? { rules } : {}),
 						...(m.gameId ? { gameId: m.gameId } : {}),
-						...(players ? { players } : {})
+						...(players ? { players } : {}),
+						...(ruleCharacters?.length ? { ruleCharacters } : {})
 					});
 				} else if (m.type === 'script') this.script = m.script;
 				else if (m.type === 'reveal') {

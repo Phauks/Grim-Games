@@ -23,7 +23,11 @@
 	import type { FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 	import { fetchSharedRef, scriptShareable } from '#lib/features/scripts/share-codes.ts';
-	import { isOfflineHash, sharedRefFromHash } from '#lib/features/scripts/share.ts';
+	import {
+		isOfflineHash,
+		offlineRoomFrom,
+		sharedRefFromHash
+	} from '#lib/features/scripts/share.ts';
 	import type { LoadedScript } from '#lib/core/data/index.ts';
 	import OfflineGame from './OfflineGame.svelte';
 	import { markOfflineScript, offlineScript } from './offline-script.svelte.ts';
@@ -113,6 +117,8 @@
 	let checkOpen = $state(false);
 	/** The link being opened is an offline code's (`&o=1`), so the game shows as offline. */
 	let fromOffline = false;
+	/** The live room that offline code named, if any. */
+	let offlineRoom: string | undefined;
 	/** Remounts the room row once the phone stops following its last room. */
 	let roomRow = $state(0);
 	async function useScript(loaded: LoadedScript, source: ScriptSource) {
@@ -126,7 +132,7 @@
 			roomRow++;
 		}
 		await chooseScript(loaded, source);
-		markOfflineScript(fromOffline ? scriptKey(loaded) : undefined);
+		markOfflineScript(fromOffline ? scriptKey(loaded) : undefined, offlineRoom);
 	}
 	/** Runs the Script check on fetched script text, or uses it straight away when clean. */
 	async function useFetched(fetched: FetchedScript) {
@@ -142,6 +148,7 @@
 		const ref = sharedRefFromHash(location.hash);
 		if (!ref) return;
 		fromOffline = isOfflineHash(location.hash);
+		offlineRoom = offlineRoomFrom(location.hash);
 		history.replaceState(history.state, '', location.pathname + location.search);
 		try {
 			await useFetched(await fetchSharedRef(ref));
@@ -258,7 +265,7 @@
 				onRoom={(room) => (joinedRoom = room)}
 			/>
 		{/key}
-		{#if offline}<OfflineGame />{/if}
+		{#if offline}<OfflineGame room={offlineScript.room} />{/if}
 	{/if}
 	{#if voting}
 		<!-- A room vote is open: its ballot, under the room row, is the screen (Trevor,
@@ -292,9 +299,10 @@
 			players={inRoom === lastRoom() ? roomTable.players : undefined}
 			travellers={roomTable.travellers}
 			rules={roomTable.rules}
+			ruleCharacters={roomTable.ruleCharacters}
 			bind:tab
 		>
-			{#snippet grim()}<PlayerGrim {script} />{/snippet}
+			{#snippet grim()}<PlayerGrim {script} fullScreen />{/snippet}
 			{#snippet notes()}<PlayerNotes notesKey={key} />{/snippet}
 		</PlayerScriptTabs>
 	{/if}
