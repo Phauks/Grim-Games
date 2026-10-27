@@ -77,6 +77,7 @@
 		isDefaultLayout,
 		isRotation,
 		boardAspect,
+		clearOfCorner,
 		keepInside,
 		seatPoints,
 		seatTokenSize,
@@ -267,11 +268,25 @@
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
-	const points = $derived(
+	/** The day timer's row, top right, measured: seats and reminders keep clear of it. */
+	let timerW = $state(0);
+	let timerH = $state(0);
+	// The ring comes down just far enough to keep every seat clear of the day timer and the
+	// buttons beside it (Trevor, 2026-10-27: Soundboard beside the timer), tappable on a phone.
+	const onBoard = (l: typeof layout) =>
 		keepInside(
-			seatPoints(game.seating, layout, { width, height }, watching ? grimoire.aspect : undefined),
+			seatPoints(game.seating, l, { width, height }, watching ? grimoire.aspect : undefined),
 			{ width, height },
 			size / 2 + unit
+		);
+	const points = $derived(
+		clearOfCorner(
+			onBoard(layout),
+			game.seating.map((id) => !layout.placed[id]),
+			onBoard({ ...layout, placed: {} }),
+			{ width, height },
+			{ w: timerW + 12, h: timerH + 12 },
+			size / 2
 		)
 	);
 
@@ -379,10 +394,8 @@
 	let centreW = $state(0);
 	let edgeW = $state(0);
 	let edgeH = $state(0);
-	let timerW = $state(0);
 	let titleW = $state(0);
 	let titleH = $state(0);
-	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
 	const restFan = $derived.by(() => {
@@ -1485,14 +1498,15 @@
 					outlined
 				/>
 			{/if}
-			{#if showTimer}
+			<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
+			<div class="timer-slot" class:gone={!showTimer} inert={!showTimer}>
 				<DayTimer
 					alive={livingByTeam(game).alive}
 					variant="compact"
-					readOnly={watching}
+					readOnly={watching || !showTimer}
 					shown={watchedTimer}
 				/>
-			{/if}
+			</div>
 		</div>
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
@@ -2045,19 +2059,11 @@
 		align-items: center;
 		gap: var(--space-1);
 	}
-	/* On a phone the timer sits above the soundboard and cover, so the row never reaches the
-	   top seat of a full table. */
-	@media (max-width: 39.99rem) {
-		.board-timer {
-			display: grid;
-			grid-template-columns: auto auto;
-			justify-items: end;
-			gap: var(--space-1);
-		}
-		.board-timer :global([data-testid='day-timer']) {
-			grid-column: 1 / -1;
-			grid-row: 1;
-		}
+	.timer-slot {
+		display: flex;
+	}
+	.timer-slot.gone {
+		visibility: hidden;
 	}
 	/* The cover's button has the timer's solid fill, so it reads on any background. */
 	.board-timer :global(.icon-button[data-outlined]) {
