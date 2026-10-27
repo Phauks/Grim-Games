@@ -3,12 +3,8 @@
 	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId, LoadedScript } from '#lib/core/data/index.ts';
-	import {
-		parsePublicLook,
-		type PublicCorner,
-		type PublicLook,
-		type PublicSeat
-	} from '#lib/core/sync/public-projection.ts';
+	import { parsePublicLook, type PublicSeat } from '#lib/core/sync/public-projection.ts';
+	import type { PlayerGrimTown } from './player-grim-town.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -47,7 +43,6 @@
 	import { cornerRoom } from '#lib/features/grimoire/corner-room.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
-	import type { PublicSeatLayout } from '#lib/core/sync/public-projection.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
@@ -103,27 +98,8 @@
 	 */
 	interface Props {
 		script: LoadedScript;
-		/**
-		 * The town as the table knows it, given by the Storyteller's board (Trevor, 2026-10-23:
-		 * the board's Script shows every screen a player has); a phone reads its room instead.
-		 */
-		town?: {
-			seats: readonly PublicSeat[];
-			layout?: PublicSeatLayout;
-			storytellerName?: string;
-			corner?: PublicCorner;
-			/** The board's background, as it shares it with every grim of the game. */
-			look?: PublicLook;
-			/** The board's own picture, on the Storyteller's device; else the room's (pictureRoom). */
-			picture?: Blob;
-			pictureRoom?: string;
-			/** Where the guesses and seat notes are kept; a display keeps none. */
-			guessKey?: string;
-			/** The room's code for the corner, where it isn't this device's own room. */
-			roomCode?: string;
-			/** Each seat's player's picture (2026-10-27); else, on the board, this device's room's. */
-			pictures?: Partial<Record<string, string>>;
-		};
+		/** The town from the Storyteller's board or Public Town; a phone reads its room. */
+		town?: PlayerGrimTown;
 		/**
 		 * A Public Town display (Trevor, 2026-10-26): the town as /play draws it, with nothing to
 		 * tap and nothing of this device's own on it (no guesses, notes or "you").
