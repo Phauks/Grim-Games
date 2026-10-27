@@ -691,20 +691,19 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	await expect(logo).toHaveCount(0);
 	await expect(preview.getByTestId('preview-script-title')).toContainText('Example script');
 	// The join code under the name, switched on its own; it needs the name shown.
-	const joinCode = dialog.getByRole('checkbox', { name: 'Join code on the board' });
+	const joinCode = dialog.getByRole('checkbox', { name: 'Join code', exact: true });
 	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
 		(await joinCode.isChecked()) ? 1 : 0
 	);
-	await dialog.getByText('Join code on the board', { exact: true }).tap();
+	await dialog.getByText('Join code', { exact: true }).tap();
 	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
 		(await joinCode.isChecked()) ? 1 : 0
 	);
-	if (!(await joinCode.isChecked()))
-		await dialog.getByText('Join code on the board', { exact: true }).tap();
+	if (!(await joinCode.isChecked())) await dialog.getByText('Join code', { exact: true }).tap();
 	await expect(preview.getByTestId('preview-room-code')).toHaveText('Join code 482 913');
 	// The script's name is always on the board (Trevor, 2026-10-23), so the join code never waits
 	// on it.
-	await expect(dialog.getByText('Script name on the board', { exact: true })).toHaveCount(0);
+	await expect(dialog.getByText('Script name', { exact: true })).toHaveCount(0);
 	await expect(preview.getByTestId('preview-script-title')).toBeVisible();
 	await expect(joinCode).toBeEnabled();
 

@@ -20,6 +20,8 @@ export interface SharedGrimoire {
 	timer?: unknown;
 	/** The board's background as that device shows it (`PublicLook`), drawn the same here. */
 	look?: unknown;
+	/** That board's shape, its width ÷ height, so seats keep its places round the ring. */
+	aspect?: unknown;
 }
 
 /** A whole game's history with a homebrew script: well above `MAX_SCRIPT_BYTES`. */

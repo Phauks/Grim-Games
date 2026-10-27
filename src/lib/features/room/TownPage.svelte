@@ -18,7 +18,8 @@
 	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Menu from '#lib/ui/primitives/Menu.svelte';
+	import { parseAspect } from '#lib/ui/seating/seat-layout.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import { sheetTheme } from '#lib/ui/themes/sheet-backgrounds.ts';
@@ -112,6 +113,8 @@
 		if (room && !admin && (status === 'refused' || status === 'closed')) forgetRoom(room);
 	});
 	const table = $derived(town?.view?.public);
+	/** The town in the Storyteller's board's shape (Trevor, 2026-10-27), on unless switched off. */
+	const townShape = $derived(playerSettings.current.townMatchShape);
 	const showTown = $derived(!message && !!script && !!table?.seats.length);
 	/**
 	 * The Storyteller's day timer, as phones show it (Trevor, 2026-10-26: "During day, public
@@ -141,16 +144,28 @@
 
 {#snippet townCorner(filled: boolean)}
 	{#if filled && phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
-	<!-- Its place kept for settings to come (Trevor, 2026-10-26: "pre-emptively place a
-	     setting cog next to full screen"); there are none yet. -->
-	<span class="corner-button"
-		><IconButton icon="settings" label={t('room.town.settings')} disabled /></span
-	>
+	<!-- The town's settings (Trevor, 2026-10-26: "pre-emptively place a setting cog next to
+	     full screen"), also in Settings > Player: the board's shape. -->
+	{#if table}<span class="corner-button"
+			><Menu
+				icon="settings"
+				label={t('room.town.settings')}
+				items={[
+					{
+						value: 'shape',
+						label: t(townShape ? 'room.town.fillScreen' : 'room.town.boardShape'),
+						disabled: !parseAspect(table.layout?.aspect),
+						onSelect: () => playerSettings.update({ townMatchShape: !townShape })
+					}
+				]}
+			/></span
+		>{/if}
 {/snippet}
 
 {#if showBoard}<SharedBoard
 		shared={town?.grimoire}
 		room={room ?? undefined}
+		history
 		onReady={(r) => (boardReady = r)}
 		onProblem={(p) => (boardProblem = p)}
 	/>{/if}

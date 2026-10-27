@@ -81,6 +81,11 @@ export interface PublicSeatLayout {
 	shape: string;
 	gaps: Readonly<Record<string, number>>;
 	placed: Readonly<Record<string, { x: number; y: number }>>;
+	/**
+	 * The Storyteller's board's shape, its width ÷ height (Trevor, 2026-10-27): phones keep
+	 * each seat at the board's place round the ring, or draw the town in that shape.
+	 */
+	aspect?: number;
 }
 
 /** The night or day in play, or Setup before the first night begins (gamePhase). */
@@ -214,15 +219,21 @@ function boardCorner(corner: PublicCorner): PublicCorner {
 	return view;
 }
 
-/** The layout's three parts only, or nothing when it is the plain oval ring. */
+/** The layout's parts only, or nothing when it is the plain oval ring on a board of no known shape. */
 function boardLayout(layout: PublicSeatLayout): PublicSeatLayout | undefined {
-	const { shape, gaps, placed } = layout;
-	if (shape === 'oval' && Object.keys(gaps).length === 0 && Object.keys(placed).length === 0)
+	const { shape, gaps, placed, aspect } = layout;
+	if (
+		shape === 'oval' &&
+		Object.keys(gaps).length === 0 &&
+		Object.keys(placed).length === 0 &&
+		aspect === undefined
+	)
 		return undefined;
 	return {
 		shape,
 		gaps: { ...gaps },
-		placed: Object.fromEntries(Object.entries(placed).map(([id, p]) => [id, { x: p.x, y: p.y }]))
+		placed: Object.fromEntries(Object.entries(placed).map(([id, p]) => [id, { x: p.x, y: p.y }])),
+		...(aspect !== undefined ? { aspect } : {})
 	};
 }
 

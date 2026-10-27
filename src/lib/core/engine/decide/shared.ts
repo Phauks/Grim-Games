@@ -192,6 +192,10 @@ export function genericLook(look: GenericLook | undefined): GenericLook {
 		out.symbolColour = look.symbolColour;
 	}
 	if (look?.symbolFill === true) out.symbolFill = true;
+	// Only a character's reminder: a copy of a generic one is its look alone.
+	const like = look?.like;
+	if (like && like.characterId !== GENERIC_REMINDER_ID)
+		out.like = { characterId: like.characterId, label: like.label };
 	return out;
 }
 
@@ -205,6 +209,7 @@ export function tokenLook(game: Game, tokenId: string | undefined): GenericLook 
 	if (token.symbol !== undefined) look.symbol = token.symbol;
 	if (token.symbolColour !== undefined) look.symbolColour = token.symbolColour;
 	if (token.symbolFill) look.symbolFill = true;
+	if (token.like !== undefined) look.like = { ...token.like };
 	return look;
 }
 

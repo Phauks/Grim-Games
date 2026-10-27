@@ -75,6 +75,7 @@
 		followSeating,
 		isDefaultLayout,
 		isRotation,
+		boardAspect,
 		keepInside,
 		seatPoints,
 		seatTokenSize,
@@ -166,9 +167,15 @@
 		 * 2026-10-24): its History steps through on this device only.
 		 */
 		over?: EndedGame;
+		/**
+		 * A spectator who may still look through History (an admin's Live games, Trevor
+		 * 2026-10-27: "Admin should have access to history"): ⋯ opens, with only History and
+		 * the app's items live.
+		 */
+		watchedHistory?: boolean;
 	}
 
-	let { grimoire, watching = false, watchedTimer, over }: Props = $props();
+	let { grimoire, watching = false, watchedTimer, over, watchedHistory = false }: Props = $props();
 	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
@@ -184,6 +191,9 @@
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
 	const setUp = $derived(setupComplete(game));
 	const characters = $derived(grimoire.open.characters);
+	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
+	const artOf = (reminder: ReminderInstance) =>
+		reminder.like ? characters.get(reminder.like.characterId) : undefined;
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
 
 	let board = $state<HTMLElement>();
@@ -247,12 +257,17 @@
 	);
 	// The Token size preview in Settings draws at this board's size.
 	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
+	// Every shared grim keeps each seat at this board's place round the ring (Trevor, 2026-10-27).
+	const aspect = $derived(boardAspect({ width, height }));
+	$effect(() => {
+		if (!watching) roomHost().showAspect(game.gameId, aspect);
+	});
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
 	const points = $derived(
 		keepInside(
-			seatPoints(game.seating, layout, { width, height }),
+			seatPoints(game.seating, layout, { width, height }, watching ? grimoire.aspect : undefined),
 			{ width, height },
 			size / 2 + unit
 		)
@@ -1051,6 +1066,7 @@
 					symbol={last.symbol}
 					symbolColour={last.symbolColour}
 					symbolFill={last.symbolFill}
+					art={artOf(last)}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1119,6 +1135,7 @@
 	<BoardToolbar
 		{grimoire}
 		{watching}
+		menu={!watching || watchedHistory}
 		{seatArr}
 		placing={!!placing}
 		onCancelPlacing={() => (placing = undefined)}
@@ -1263,6 +1280,7 @@
 							symbol={reminder.symbol}
 							symbolColour={reminder.symbolColour}
 							symbolFill={reminder.symbolFill}
+							art={artOf(reminder)}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
@@ -1300,6 +1318,7 @@
 					symbol={reminder.symbol}
 					symbolColour={reminder.symbolColour}
 					symbolFill={reminder.symbolFill}
+					art={artOf(reminder)}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
@@ -1324,6 +1343,7 @@
 					symbol={heldDrag.symbol}
 					symbolColour={heldDrag.symbolColour}
 					symbolFill={heldDrag.symbolFill}
+					art={artOf(heldDrag)}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled
@@ -1483,6 +1503,7 @@
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <BoardMenu
 	bind:open={menuOpen}
+	{watching}
 	gameInfo={cornerHidden}
 	ended={!!ended}
 	onHistory={() => (historyOpen = true)}
@@ -1662,7 +1683,7 @@
 				{game}
 				script={loadedScript}
 				{characters}
-				{layout}
+				layout={{ ...layout, aspect }}
 				corner={cornerInfo}
 				{look}
 				picture={watching ? undefined : ownPicture}
