@@ -11,7 +11,8 @@
 	 * The Storyteller's text and token sizes, for the player's own screens (Trevor, 2026-10-27:
 	 * "some ppl will want some text bigger than others, same with reminder token and character
 	 * sizes"): the same rows as Settings > Tokens and the same saved values, so a
-	 * change here shows there too. Settings > Player and the player screen's cog both show it.
+	 * change here shows there too. Settings > Player, the player screen's cog and the
+	 * Public Town's cog show it.
 	 */
 	const value = $derived(preferences.current.tokenAppearance);
 	const onChange = (tokenAppearance: TokenAppearance) => preferences.update({ tokenAppearance });
