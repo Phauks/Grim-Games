@@ -40,4 +40,25 @@ describe('drawLock: one PIN per game (Trevor, 2026-10-26)', () => {
 		);
 		expect(drawLock.isLocked(GAME)).toBe(true);
 	});
+
+	it('the grim cover sets and checks the PIN without locking the draw', async () => {
+		await drawLock.setPin(GAME, '1357');
+		expect(drawLock.hasPin(GAME)).toBe(true);
+		expect(drawLock.isLocked(GAME)).toBe(false);
+		expect(await drawLock.checkPin(GAME, '0000')).toBe('wrong');
+		expect(await drawLock.checkPin(GAME, '1357')).toBe('ok');
+		expect(drawLock.isLocked(GAME)).toBe(false);
+		// The draw locks with the same PIN.
+		await drawLock.lock(GAME);
+		expect(drawLock.isLocked(GAME)).toBe(true);
+		expect(await drawLock.checkPin(GAME, '1357')).toBe('ok');
+		expect(drawLock.isLocked(GAME)).toBe(true);
+	});
+
+	it('wrong cover PINs make entry wait, as the draw does', async () => {
+		await drawLock.setPin(GAME, '1357');
+		const now = Date.now();
+		for (let i = 0; i < 3; i++) expect(await drawLock.checkPin(GAME, '0000', now)).toBe('wrong');
+		expect(await drawLock.checkPin(GAME, '1357', now)).toBe('wait');
+	});
 });
