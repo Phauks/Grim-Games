@@ -8,6 +8,8 @@ import {
 	boardSound,
 	boardSoundUrl,
 	parseActionSounds,
+	parseSoundMixes,
+	soundMix,
 	type ActionState
 } from './soundboard.ts';
 
@@ -76,5 +78,32 @@ describe('actionTaken', () => {
 	it('plays nothing when nothing changed, or for going back to Setup', () => {
 		expect(actionTaken(at(), at())).toBeUndefined();
 		expect(actionTaken(at({ phase: 'night' }), at({ phase: 'setup' }))).toBeUndefined();
+	});
+});
+
+describe('parseSoundMixes', () => {
+	it("keeps a known sound's changed volume and loop", () => {
+		expect(parseSoundMixes({ 'hand-bell': { volume: 0.4, loop: true } })).toEqual({
+			'hand-bell': { volume: 0.4, loop: true }
+		});
+	});
+
+	it('clamps the volume and drops unknown sounds, defaults and junk', () => {
+		expect(
+			parseSoundMixes({
+				'hand-bell': { volume: 3 },
+				gone: { volume: 0.5 },
+				heartbeat: { volume: 1, loop: false },
+				gallows: 'loud'
+			})
+		).toEqual({});
+		expect(parseSoundMixes({ heartbeat: { volume: -1, loop: true } })).toEqual({
+			heartbeat: { volume: 0, loop: true }
+		});
+		expect(parseSoundMixes(null)).toEqual({});
+	});
+
+	it('gives a sound never changed the default mix', () => {
+		expect(soundMix({}, 'gallows')).toEqual({ volume: 1, loop: false });
 	});
 });

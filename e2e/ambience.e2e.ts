@@ -29,7 +29,7 @@ test('day and night sound plays recordings on the board once the night begins', 
 	const on = settings.getByRole('checkbox', { name: 'Play on the board' });
 	await expect(on).not.toBeChecked();
 	// Every row is in place while it is off, disabled.
-	await expect(settings.getByRole('slider', { name: 'Level' })).toBeDisabled();
+	await expect(settings.getByRole('slider', { name: 'Level', exact: true })).toBeDisabled();
 	const night = settings.getByRole('combobox', { name: 'Night sound' });
 	await expect(night).toContainText('Evening meadow');
 	await expect(night).toBeDisabled();
@@ -38,7 +38,7 @@ test('day and night sound plays recordings on the board once the night begins', 
 	await settings.getByText('Play on the board', { exact: true }).tap();
 	await expect(on).toBeChecked();
 	await expect(night).toBeEnabled();
-	await expect(settings.getByRole('slider', { name: 'Level' })).toBeEnabled();
+	await expect(settings.getByRole('slider', { name: 'Level', exact: true })).toBeEnabled();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(settings).toBeHidden();
 	// Nothing plays in Setup, so nothing is fetched yet.

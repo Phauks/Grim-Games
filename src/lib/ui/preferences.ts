@@ -28,7 +28,9 @@ import { DEFAULT_AMBIENCE, parseAmbience } from '#lib/core/sound/ambience.ts';
 import {
 	DEFAULT_ACTION_SOUNDS,
 	parseActionSounds,
+	parseSoundMixes,
 	type ActionSound,
+	type BoardSoundMix,
 	type SoundAction
 } from '#lib/core/sound/soundboard.ts';
 
@@ -110,6 +112,12 @@ export interface Preferences {
 	actionSoundsOn: boolean;
 	/** The sound each action plays, by soundboard sound id (plan U7). */
 	actionSounds: Record<SoundAction, ActionSound>;
+	/** How loud the soundboard plays, under the device's volume (Trevor, 2026-10-27). */
+	soundboardLevel: number;
+	/** Soundboard sounds play over each other instead of cutting each other off. */
+	soundboardOverlap: boolean;
+	/** Each soundboard sound's own volume and loop, by sound id; only those changed. */
+	soundMixes: Record<string, BoardSoundMix>;
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
@@ -247,6 +255,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	dayAmbience: DEFAULT_AMBIENCE.day,
 	actionSoundsOn: false,
 	actionSounds: { ...DEFAULT_ACTION_SOUNDS },
+	soundboardLevel: 1,
+	soundboardOverlap: false,
+	soundMixes: {},
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	timerForPlayers: 'sun',
@@ -339,6 +350,13 @@ export function parsePreferences(raw: unknown): Preferences {
 		dayAmbience: parseAmbience('day', input.dayAmbience),
 		actionSoundsOn: input.actionSoundsOn === true,
 		actionSounds: parseActionSounds(input.actionSounds),
+		soundboardLevel: parseScale(
+			input.soundboardLevel,
+			SOUND_VOLUME,
+			DEFAULT_PREFERENCES.soundboardLevel
+		),
+		soundboardOverlap: input.soundboardOverlap === true,
+		soundMixes: parseSoundMixes(input.soundMixes),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
 			: DEFAULT_PREFERENCES.timerMode,
