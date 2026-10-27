@@ -178,6 +178,12 @@ export interface PublicGameState {
 	/** Left out for a Standard game with no special rules. */
 	rules?: PublicRule[];
 	/**
+	 * The Fabled and Loric in play, which are announced to the town, so a phone can show their
+	 * setup change (the Sentinel's ±1 Outsider) in the Players counts (Trevor, 2026-10-27).
+	 * Left out when there are none.
+	 */
+	ruleCharacters?: CharacterId[];
+	/**
 	 * The day timer, as the Storyteller chose to show it on players' phones (Trevor,
 	 * 2026-10-26); left out when the Storyteller keeps it to themself.
 	 */
@@ -268,6 +274,7 @@ export function publicProjection(
 		...(drawn ? { layout: drawn } : {}),
 		...(corner ? { corner: boardCorner(corner) } : {}),
 		...(rules.length ? { rules: rules.map((r) => ({ ...r })) } : {}),
+		...(game.ruleCharacters.length ? { ruleCharacters: [...game.ruleCharacters] } : {}),
 		...(clock ? { timer: clock } : {}),
 		...(phase ? { now: phase } : {}),
 		...(look ? { look: parsePublicLook(look) } : {}),

@@ -11,9 +11,15 @@
 		travellers: number;
 		/** The Travellers allowed when a special rule puts some in the bag (Stowed Away). */
 		travellerLimits?: { min: number; max: number };
+		/**
+		 * In a game (the Script tab's Players section): only the numbers this table plays with,
+		 * everyone first, then each type's count from the sheet and any setup change the town
+		 * knows of (Trevor, 2026-10-27). Nothing chosen is shown.
+		 */
+		game?: boolean;
 	}
 
-	let { analysis, travellers, travellerLimits }: Props = $props();
+	let { analysis, travellers, travellerLimits, game = false }: Props = $props();
 	const travellersOk = $derived(
 		travellerLimits
 			? travellers >= travellerLimits.min && travellers <= travellerLimits.max
@@ -54,9 +60,17 @@
 	Chosen against expected for each type; every cell keeps its size whatever the numbers.
 	Each seated type's cell is a button that opens where its count comes from.
 -->
-<div class="counts" data-testid="setup-counts">
+<div class="counts" class:game data-testid={game ? 'game-counts' : 'setup-counts'}>
+	{#if game}
+		<div class="cell everyone" data-ok="">
+			<span class="label">{t('setup.players')}</span>
+			<span class="value"
+				><span class="chosen" data-testid="count-players">{analysis.players}</span></span
+			>
+		</div>
+	{/if}
 	{#each SEATED_TYPES as type (type)}
-		{@const ok = analysis.expected[type].includes(analysis.chosen[type])}
+		{@const ok = game || analysis.expected[type].includes(analysis.chosen[type])}
 		<button
 			type="button"
 			class="cell"
@@ -68,19 +82,26 @@
 			onclick={(event) => showInfo(type, event.currentTarget)}
 		>
 			<span class="label">{TYPE_PLURALS[type]}</span>
-			<span class="value"
-				><span class="chosen" data-testid="count-{type}">{analysis.chosen[type]}</span><span
-					class="of">/ {range(analysis.expected[type])}</span
-				></span
-			>
+			{#if game}
+				<span class="value"
+					><span class="chosen" data-testid="count-{type}">{range(analysis.expected[type])}</span
+					></span
+				>
+			{:else}
+				<span class="value"
+					><span class="chosen" data-testid="count-{type}">{analysis.chosen[type]}</span><span
+						class="of">/ {range(analysis.expected[type])}</span
+					></span
+				>
+			{/if}
 		</button>
 	{/each}
-	<div class="cell" data-type="traveller" data-ok={travellersOk ? '' : undefined}>
+	<div class="cell" data-type="traveller" data-ok={game || travellersOk ? '' : undefined}>
 		<span class="label">{TYPE_PLURALS.traveller}</span>
 		<span class="value"
-			><span class="chosen" data-testid="count-traveller">{travellers}</span><span class="of"
-				>/ {travellersExpected}</span
-			></span
+			><span class="chosen" data-testid="count-traveller">{travellers}</span>{#if !game}<span
+					class="of">/ {travellersExpected}</span
+				>{/if}</span
 		>
 	</div>
 </div>
@@ -104,9 +125,9 @@
 				>{range(analysis.expected[infoType])}</span
 			>
 		</p>
-		<p class="row">
-			<span>{t('setup.countInfo.chosen')}</span><span class="n">{analysis.chosen[infoType]}</span>
-		</p>
+		{#if !game}<p class="row">
+				<span>{t('setup.countInfo.chosen')}</span><span class="n">{analysis.chosen[infoType]}</span>
+			</p>{/if}
 	</div>
 </Popover>
 
@@ -149,6 +170,22 @@
 		margin-inline-start: 0.2em;
 		font-size: 0.8rem;
 		opacity: 0.8;
+	}
+	/* In a game every number is in a box (Trevor, 2026-10-27), on any sheet background. */
+	.counts.game {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+	}
+	.game .cell {
+		box-shadow: inset 0 0 0 1px var(--border);
+	}
+	.game .label {
+		font-size: 0.66rem;
+	}
+	/* Everyone at the table in gold, as the setup sheet's own column is. */
+	.game .everyone {
+		background: var(--count-current);
+		color: var(--on-count-current);
+		box-shadow: none;
 	}
 	/* A type's cell opens its count's popup; it looks as the Travellers' does. */
 	button.cell {

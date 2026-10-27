@@ -32,6 +32,8 @@
 		travellers?: readonly TravellerInPlay[];
 		/** The game mode and special rules, listed under Jinxes. */
 		rules?: readonly PublicRule[];
+		/** The Fabled and Loric in play, announced to the town. */
+		ruleCharacters?: readonly string[];
 		/** The town as the table knows it, from the live room (/play only). */
 		grim?: Snippet;
 		/** The player's own Notes tab (/play only). */
@@ -45,6 +47,7 @@
 		inPlay,
 		travellers,
 		rules,
+		ruleCharacters,
 		grim,
 		notes,
 		tab = $bindable('script')
@@ -83,6 +86,7 @@
 						{inPlay}
 						{travellers}
 						{rules}
+						{ruleCharacters}
 						byline={false}
 						backgroundChoice={false}
 					/>

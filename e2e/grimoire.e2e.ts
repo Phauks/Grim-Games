@@ -2788,6 +2788,25 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	await expect(
 		script.locator('[data-character="thief"]').getByTestId('traveller-in-play')
 	).toHaveText('In play: Seat 9');
+	// The Players section counts the Traveller apart, and the Sentinel the Storyteller
+	// announces makes the Outsiders 0 to 2 (Trevor, 2026-10-27;
+	// https://wiki.bloodontheclocktower.com/Sentinel).
+	const counts = script.getByTestId('game-counts');
+	await expect(counts.getByTestId('count-players')).toHaveText('9');
+	await expect(counts.getByTestId('count-traveller')).toHaveText('1');
+	await expect(counts.getByTestId('count-outsider')).toHaveText('1');
+	await page.keyboard.press('Escape');
+	await expect(script).toBeHidden();
+	await menu(page, 'Add Fabled or Loric');
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Sentinel', exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	await expect(counts.getByTestId('count-outsider')).toHaveText('0–2');
+	await expect(counts.getByTestId('count-townsfolk')).toHaveText('4–6');
+	await counts.getByTestId('count-info-outsider').tap();
+	await expect(page.getByTestId('count-info')).toContainText(/Sentinel\s*: ±1 Outsider/);
 	await expect(script.getByTestId('traveller-in-play')).toHaveCount(1);
 });
 
