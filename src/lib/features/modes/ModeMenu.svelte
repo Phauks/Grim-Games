@@ -22,10 +22,8 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { onLayerOpen } from '#lib/ui/primitives/layers.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
-	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
 	import { campaignOf } from './campaigns.ts';
 	import { findMode } from './custom-modes.svelte.ts';
@@ -251,13 +249,6 @@
 		}
 	}
 
-	/**
-	 * Where the script came from, on the one share screen (plan G3; Trevor, 2026-10-23: every
-	 * Share the same), with its QR code, Copy and Share.
-	 */
-	let sharingSource = $state(false);
-	const sourceTitle = $derived(game.script.meta?.name ?? t('modes.info.script'));
-
 	function go(path: Parameters<typeof goto>[0]) {
 		open = false;
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- every caller passes a resolved path
@@ -285,7 +276,7 @@
 					{#if onEdit}<td class="eye-cell"
 							>{#if line}{@const shown = preferences.current.cornerLines[line]}<button
 									type="button"
-									class="eye"
+									class="inline-icon eye"
 									aria-pressed={shown}
 									aria-label={t('modes.info.onBoard', { line: cornerLineLabel(line) })}
 									data-testid="corner-eye"
@@ -314,9 +305,28 @@
 								}}>{row.value || none}</button
 							>{:else if 'href' in row && row.href && row.value?.trim()}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site's page -->
 							<a href={row.href} target="_blank" rel="noopener noreferrer">{row.value}</a
-							>{:else}{row.value?.trim() || none}{/if}{#if 'extra' in row && row.extra}<span
-								class="extra"
-								data-testid="info-extra">{row.extra}</span
+							>{:else}{row.value?.trim() ||
+								none}{/if}{#if row.key === 'script'}<!-- The file beside the
+							script's name, whose link is its source (Trevor, 2026-10-27: no buttons atop
+							Game info). --><button
+								type="button"
+								class="inline-icon after"
+								aria-label={t('modes.info.download')}
+								data-testid="game-info-download"
+								onclick={() => void downloadScript()}><Icon name="download" /></button
+							>{:else if row.key === 'storyteller' && onEdit}<!-- A small pencil by the
+							name it renames (Trevor, 2026-10-27). --><button
+								type="button"
+								class="inline-icon after"
+								aria-label={t('modes.info.editStoryteller')}
+								aria-haspopup="dialog"
+								data-testid="game-info-edit"
+								onclick={() => {
+									open = false;
+									editing = true;
+								}}><Icon name="edit" /></button
+							>{/if}{#if 'extra' in row && row.extra}<span class="extra" data-testid="info-extra"
+								>{row.extra}</span
 							>{/if}
 					</td>
 				</tr>
@@ -390,43 +400,10 @@
 		{/if}
 	</div>
 {/snippet}
-{#snippet edit()}
-	<!-- Share and download sit with Edit in the header, so the script's name has its line to
-	     itself (Trevor, 2026-10-23: the name sat oddly beside an inline button). -->
-	<IconButton
-		icon="share"
-		label={t('modes.info.shareSource')}
-		title={scriptPage ? t('modes.info.shareSource') : t('modes.info.noSource')}
-		disabled={!scriptPage}
-		data-testid="share-source"
-		onclick={() => {
-			open = false;
-			sharingSource = true;
-		}}
-	/>
-	<IconButton
-		icon="download"
-		label={t('modes.info.download')}
-		data-testid="game-info-download"
-		onclick={() => void downloadScript()}
-	/>
-	<!-- New game is in the board's ⋯ menu (Trevor, 2026-10-26), not here. -->
-	{#if onEdit}<IconButton
-			icon="edit"
-			label={t('modes.info.edit')}
-			data-testid="game-info-edit"
-			onclick={() => {
-				open = false;
-				editing = true;
-			}}
-		/>{/if}
-{/snippet}
 {#if children}
-	<Popover bind:open title={t('modes.info.title')} {anchor} headActions={edit}
-		>{@render actions()}</Popover
-	>
+	<Popover bind:open title={t('modes.info.title')} {anchor}>{@render actions()}</Popover>
 {:else}
-	<Dialog bind:open title={t('modes.info.title')} headActions={edit}>{@render actions()}</Dialog>
+	<Dialog bind:open title={t('modes.info.title')}>{@render actions()}</Dialog>
 {/if}
 {#if onEdit}
 	<GameInfoEditDialog
@@ -435,23 +412,10 @@
 		onsave={onEdit}
 	/>
 {/if}
-<Dialog bind:open={sharingSource} title={t('scripts.share.title', { title: sourceTitle })}>
-	<div class="share-source">
-		<SharePanel
-			url={scriptPage}
-			title={sourceTitle}
-			qrLabel={t('modes.info.sourceQr')}
-			pending={t('modes.info.noSource')}
-		/>
-	</div>
-</Dialog>
 {#if inspected}<ModeInspectDialog bind:open={inspecting} mode={inspected} />{/if}
 {#if specters && mode}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
 
 <style>
-	.share-source {
-		margin-top: var(--space-3);
-	}
 	.extra {
 		display: block;
 	}
@@ -503,8 +467,9 @@
 	.eye-cell {
 		padding-right: var(--space-2);
 	}
-	/* Icon-sized in the row, so Game info keeps its height; the ::before is its tap target. */
-	.eye {
+	/* Icon-sized in the row, so Game info keeps its height; the ::before is its tap target.
+	   The eyes, the script's download and the Storyteller's pencil. */
+	.inline-icon {
 		position: relative;
 		display: inline-flex;
 		align-items: center;
@@ -514,7 +479,7 @@
 		vertical-align: top;
 		border: 0;
 		background: none;
-		color: var(--on-surface-muted);
+		color: inherit;
 		/* The row's own text size, so its line (1lh) is the row's and the eye sits level with
 		   its label (Trevor, 2026-10-26: "slightly higher than the thing they identify with"). */
 		font: inherit;
@@ -522,15 +487,21 @@
 	}
 	/* Within the text's line, so the row keeps its height; the icon's own box with it, so the
 	   eye is centred in the line rather than spilling above it. */
-	.eye :global(.icon),
-	.eye :global(svg) {
+	.inline-icon :global(.icon),
+	.inline-icon :global(svg) {
 		width: 1.1em;
 		height: 1.1em;
+	}
+	.eye {
+		color: var(--on-surface-muted);
+	}
+	.inline-icon.after {
+		margin-left: var(--space-2);
 	}
 	.eye[aria-pressed='true'] {
 		color: var(--heading);
 	}
-	.eye::before {
+	.inline-icon::before {
 		content: '';
 		position: absolute;
 		inset: 50% auto auto 50%;

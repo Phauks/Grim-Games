@@ -78,7 +78,7 @@
 		color: var(--on-surface-muted);
 	}
 	.error {
-		color: var(--evil);
+		color: var(--evil-text);
 		overflow-wrap: anywhere;
 	}
 </style>

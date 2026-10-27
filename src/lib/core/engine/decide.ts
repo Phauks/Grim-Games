@@ -110,6 +110,7 @@ export type WarningCode =
 	| 'too-many-guesses'
 	| 'empty-day'
 	| 'reminder-fixed'
+	| 'reminder-followed'
 	| 'no-cause';
 
 export interface Issue<C extends string> {
