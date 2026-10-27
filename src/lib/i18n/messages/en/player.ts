@@ -83,7 +83,6 @@ export const player = {
 	'player.keep': 'Keep',
 	'player.delete': 'Delete',
 
-	'player.density': 'Script sheet layout',
 	'player.sheetBackground': 'Sheet background',
 	'player.sheetBackground.theme': 'Theme',
 	'player.sheetBackground.white': 'Off-white',
@@ -96,7 +95,8 @@ export const player = {
 	'player.picture': 'Your picture',
 	'player.pictureDetail':
 		'On your seat in place of your initials, in rooms you join. The Storyteller can take it away for a game.',
-	'player.pictureChoose': 'Choose a picture',
+	'player.pictureChoose': 'Image',
+	'player.pictureEdit': 'Move or zoom your picture',
 	'player.pictureChange': 'Change picture',
 	'player.pictureRemove': 'Remove picture',
 	'player.pictureFile': 'Picture for your seat',
@@ -108,8 +108,6 @@ export const player = {
 	'player.pictureError': 'That picture could not be read or kept.',
 	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
 	'player.frameStoryteller': "Storyteller's choice",
-	'player.densityDetail':
-		"How tightly the Script sheet is laid out for you, on screen and in print. Applies to the player view and the Storyteller's copy of the script.",
 	'player.density.normal': 'Normal',
 	'player.density.compact': 'Compact',
 	'player.density.super': 'Super-compact',

@@ -34,6 +34,7 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, type AbilitySource } from './ability.ts';
+import { isExecution } from './death-causes.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -323,7 +324,7 @@ function extraDay(
 	const logs = days(game);
 	const demonDay = logs.findIndex((log) => executedOn(log).some((id) => end.seats.includes(id)));
 	const byExecution =
-		demonDay !== -1 || end.seats.some((id) => game.seats[id].deathCause === 'execution');
+		demonDay !== -1 || end.seats.some((id) => isExecution(game.seats[id].deathCause, characters));
 	if (!byExecution) return undefined;
 	const extra = demonDay === -1 ? undefined : demonDay + 1;
 	const executed = extra === undefined ? [] : executedOn(logs[extra] ?? { entries: [] });
@@ -372,7 +373,8 @@ function twoAlive(game: Game, characters: CharacterLookup): GameEnd[] {
 function executedLoses(game: Game, characters: CharacterLookup): GameEnd[] {
 	return endsOf(game, characters, 'executed-loses')
 		.filter(
-			({ seatId }) => game.seats[seatId].dead && game.seats[seatId].deathCause === 'execution'
+			({ seatId }) =>
+				game.seats[seatId].dead && isExecution(game.seats[seatId].deathCause, characters)
 		)
 		.map(({ seatId, characterId }) => ({
 			key: `executed-loses:${seatId}`,
@@ -393,7 +395,7 @@ function markedExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
 		if (!aliveForEnd(game, seatId, characters)) continue;
 		for (const marked of carrying(game, characterId, rule.token!)) {
 			const seat = game.seats[marked];
-			if (!seat.dead || seat.deathCause !== 'execution') continue;
+			if (!seat.dead || !isExecution(seat.deathCause, characters)) continue;
 			out.push({
 				key: `marked-executed:${marked}`,
 				rule: 'marked-executed',
@@ -572,7 +574,7 @@ function inverter(game: Game, characters: CharacterLookup): AbilitySource | unde
 function demonExecuted(game: Game, characters: CharacterLookup, ruleName: string): GameEnd[] {
 	// Dead by execution, as for the Saint.
 	const seats = demonSeats(game, characters).filter(
-		(id) => game.seats[id].dead && game.seats[id].deathCause === 'execution'
+		(id) => game.seats[id].dead && isExecution(game.seats[id].deathCause, characters)
 	);
 	if (seats.length === 0) return [];
 	// The rule's page lets an ability such as the Mastermind's keep the game going.
