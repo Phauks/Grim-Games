@@ -160,6 +160,14 @@ test('the settings cog sets each text and token size, the same values as Setting
 		expect(await rootVar(variable)).toBe('1.5');
 	}
 	await expect(sheet.getByRole('slider', { name: 'Player name size' })).toBeVisible();
+	// Each group beside the same live preview as Settings > Tokens (Trevor, 2026-10-27).
+	for (const preview of [
+		'player-in-text-preview',
+		'player-token-preview',
+		'player-reminder-preview'
+	])
+		await expect(sheet.getByTestId(preview)).toBeAttached();
+	await expect(sheet.getByTestId('player-token-preview').locator('.disc')).not.toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 
