@@ -137,3 +137,29 @@ test('a scanned script stays, though the phone was last in a room playing anothe
 	await expect(phone.getByTestId('recent-rooms').getByRole('button')).toHaveCount(1);
 	await context.close();
 });
+
+test("an animated code's frame opened by the camera app opens the scanner in the app", async ({
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-27: "tell people to open the grimbinder app". Each frame is a link to Join
+	// game, which opens the scanner with that frame in and shows each piece as it arrives.
+	const code = await offlineCode('https://grimbinder.com', { json: long });
+	const frames = code.frames!;
+	const context = await browser.newContext({ ...testInfo.project.use });
+	const phone = await context.newPage();
+	await aimCamera(
+		phone,
+		frames.map((frame) => qrSrc(renderSVG(frame, { border: 2 })))
+	);
+	await phone.goto(`/join${new URL(frames[1]).hash}`);
+	const scanner = phone.getByRole('dialog', { name: 'Scan a code' });
+	await expect(scanner.getByRole('status')).toContainText(
+		/Reading the code: [1-9]\d* of \d+ pieces/
+	);
+	await expect(scanner.getByRole('status').locator('li.have').first()).toBeVisible();
+	await expect(phone.getByRole('heading', { name: 'Long Homebrew', level: 1 })).toBeVisible({
+		timeout: 30_000
+	});
+	await expect(phone.getByTestId('offline-game')).toBeVisible();
+	await context.close();
+});

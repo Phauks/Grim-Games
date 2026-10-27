@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -13,7 +13,7 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import { QrFrameCollector } from '#lib/core/codes/qr-frames.ts';
-	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
+	import { offlineHash, sharedRefFromHash } from '#lib/features/scripts/share.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import ScriptBallot from './ScriptBallot.svelte';
@@ -254,11 +254,13 @@
 	let scanProblem = $state('');
 	/** An animated code's frames read so far (offline codes, Trevor 2026-10-26). */
 	let scanProgress = $state('');
+	let scanPieces = $state.raw<boolean[]>([]);
 	let frames = new QrFrameCollector();
 	$effect(() => {
 		if (scanning) return;
 		scanProblem = '';
 		scanProgress = '';
+		scanPieces = [];
 		frames = new QrFrameCollector();
 	});
 	function scanned(text: string): boolean {
@@ -266,7 +268,15 @@
 		if (frame?.kind === 'frame') {
 			scanProblem = '';
 			scanProgress = t('share.scan.frames', { read: frame.read, total: frame.total });
+			scanPieces = frame.have;
 			return false;
+		}
+		if (frame?.kind === 'bytes') {
+			scanning = false;
+			// The script travels in the hash, which never reaches the server; the path is resolved.
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			void goto(`${resolve('/play')}${offlineHash(frame.bytes)}`);
+			return true;
 		}
 		const read = frame?.kind === 'done' ? frame.text : text;
 		const room = scannedRoom(read);
@@ -285,6 +295,18 @@
 		else void goto(`${resolve('/watch/[code]', { code: room.code })}#${room.key}`);
 		return true;
 	}
+
+	/*
+	 * One frame of an animated code, opened by a phone's own camera app (`/join#q=...`, Trevor
+	 * 2026-10-27): the scanner opens here, with that frame already in, to read the rest.
+	 */
+	onMount(() => {
+		if (!entry || !location.hash.startsWith('#q=')) return;
+		const first = location.hash;
+		history.replaceState(history.state, '', location.pathname + location.search);
+		scanning = true;
+		void tick().then(() => scanned(first));
+	});
 
 	/**
 	 * A script's link (a Share screen's QR code, or an offline code, Trevor 2026-10-26) opens
@@ -389,7 +411,12 @@
 		</div>
 	</form>
 	<Dialog bind:open={scanning} title={t('share.scan')}>
-		{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} progress={scanProgress} />{/if}
+		{#if scanning}<QrScanner
+				onRead={scanned}
+				problem={scanProblem}
+				progress={scanProgress}
+				pieces={scanPieces}
+			/>{/if}
 	</Dialog>
 	<Dialog bind:open={grimViewOpen} title={t('room.grimView')}>
 		<form class="grim-view" onsubmit={grimView}>
