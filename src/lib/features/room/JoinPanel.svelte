@@ -13,7 +13,7 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import { QrFrameCollector } from '#lib/core/codes/qr-frames.ts';
-	import { offlineHash, sharedRefFromHash } from '#lib/features/scripts/share.ts';
+	import { offlineHash, offlineRoomFrom, sharedRefFromHash } from '#lib/features/scripts/share.ts';
 	import { avatarPicture } from '#lib/features/player/avatar-picture.svelte.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
@@ -257,16 +257,20 @@
 	/** An animated code's frames read so far (offline codes, Trevor 2026-10-26). */
 	let scanProgress = $state('');
 	let scanPieces = $state.raw<boolean[]>([]);
+	/** The live room an animated code's frames name, carried on to /play (2026-10-27). */
+	let scanRoom: string | undefined;
 	let frames = new QrFrameCollector();
 	$effect(() => {
 		if (scanning) return;
 		scanProblem = '';
 		scanProgress = '';
 		scanPieces = [];
+		scanRoom = undefined;
 		frames = new QrFrameCollector();
 	});
 	function scanned(text: string): boolean {
 		const frame = frames.add(text);
+		if (frame) scanRoom = offlineRoomFrom(text) ?? scanRoom;
 		if (frame?.kind === 'frame') {
 			scanProblem = '';
 			scanProgress = t('share.scan.frames', { read: frame.read, total: frame.total });
@@ -275,9 +279,10 @@
 		}
 		if (frame?.kind === 'bytes') {
 			scanning = false;
+			const room = scanRoom ? `&r=${scanRoom}` : '';
 			// The script travels in the hash, which never reaches the server; the path is resolved.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
-			void goto(`${resolve('/play')}${offlineHash(frame.bytes)}`);
+			void goto(`${resolve('/play')}${offlineHash(frame.bytes)}${room}`);
 			return true;
 		}
 		const read = frame?.kind === 'done' ? frame.text : text;
