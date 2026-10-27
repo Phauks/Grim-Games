@@ -1337,6 +1337,8 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	await expect(password).not.toHaveCSS('font-family', /Cinzel/);
 	// In its place, but off while Grim view is.
 	await expect(password).toBeDisabled();
+	const copy = watch.getByRole('button', { name: 'Copy password' });
+	await expect(copy).toBeDisabled();
 	// No QR or link of its own (Trevor, 2026-10-26).
 	await expect(watch.getByRole('img')).toHaveCount(0);
 	await expect(watch.getByTestId('share-url')).toHaveCount(0);
@@ -1361,6 +1363,10 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	await expect(password).toBeEnabled();
 	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	const made = await password.inputValue();
+	// Copy beside it copies the password itself (Trevor, 2026-10-27).
+	await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+	await copy.tap();
+	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(made);
 	const eye = watch.getByRole('button', { name: 'Show password' });
 	await eye.tap();
 	await expect(password).toHaveAttribute('type', 'text');

@@ -47,6 +47,17 @@ test("the board's Script sheet has the players' tabs, and its Share matches /pla
 	const room = page.getByRole('dialog', { name: 'Share' });
 	await expect(room.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await room.getByTestId('share-code').textContent())!.replace(/\D/g, '');
+	// The players' Share screen, header and all (Trevor, 2026-10-27): the script's logo and
+	// name under "Share", its byline, and the offline code.
+	await expect(room.getByRole('heading', { name: 'Trouble Brewing', level: 3 })).toBeVisible();
+	await expect(room.getByTestId('share-script').getByTestId('script-logo')).toHaveAttribute(
+		'data-logo',
+		'/data/logos/tb.webp'
+	);
+	await expect(room.getByTestId('script-byline')).toHaveText('by The Pandemonium Institute');
+	await room.getByText('Offline code', { exact: true }).tap();
+	await expect(room.getByRole('img', { name: 'Offline code for Trouble Brewing' })).toBeVisible();
+	await expect(room.getByTestId('share-url')).toHaveValue(/\/play#e=tb&o=1$/);
 	await page.keyboard.press('Escape');
 	await expect(room).toBeHidden();
 	await (await openScript(page)).getByRole('button', { name: 'Share script' }).tap();

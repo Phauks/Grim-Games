@@ -34,9 +34,24 @@
 		 * which bring the script with them (Trevor, 2026-10-23: "the QR code, the join code").
 		 */
 		room?: string;
+		/**
+		 * The Storyteller's Share (`room/RoomPanel`): the room's link and code even while the
+		 * room is still opening, so this is the one share screen on both sides (Trevor,
+		 * 2026-10-27: "Storyteller should have everything player screen has").
+		 */
+		hosting?: {
+			/** Shown in the QR's place until the room's code arrives. */
+			pending: string;
+			/** Sent before the link by Share and Copy, e.g. the game's line and the code. */
+			text?: string;
+			/** Replaces the room's code (`ui/share/SharePanel`'s `refresh`). */
+			refresh?: { label: string; onclick: () => void; disabled?: boolean };
+		};
 	}
 
-	let { title, author, version, logo, target, room }: Props = $props();
+	let { title, author, version, logo, target, room, hosting }: Props = $props();
+	/** The room's link and code are shared rather than the script's. */
+	const inRoom = $derived(!!room || !!hosting);
 	const roomLink = $derived(room ? roomJoinLink(room) : undefined);
 	let logoFailed = $state(false);
 	let made = $state.raw<ShareTarget | undefined>();
@@ -66,7 +81,7 @@
 	onMount(() => {
 		// In a room the room's link is shared, so no script link is made (or uploaded) until
 		// the offline code is asked for.
-		if (!room) make();
+		if (!inRoom) make();
 		return () => {
 			live = false;
 		};
@@ -82,7 +97,7 @@
 	// the offline code then never showed once its link arrived (2026-10-26).
 	const url = $derived.by(() => {
 		const link = made;
-		return offline ? link?.offline?.url : (roomLink ?? link?.url);
+		return offline ? link?.offline?.url : inRoom ? roomLink : link?.url;
 	});
 </script>
 
@@ -104,12 +119,22 @@
 		{title}
 		qrLabel={offline
 			? t('scripts.share.offlineQr', { title })
-			: room
+			: inRoom
 				? t('room.qrLabel')
 				: t('scripts.share.qr', { title })}
-		pending={failed ? t('scripts.share.failed') : t('scripts.share.making')}
-		code={room ? { label: t('room.joinCode'), value: formatRoomCode(room) } : undefined}
-		text={room && !offline ? t('room.shareText', { code: formatRoomCode(room) }) : undefined}
+		pending={offline || !hosting
+			? failed
+				? t('scripts.share.failed')
+				: t('scripts.share.making')
+			: hosting.pending}
+		code={inRoom ? { label: t('room.joinCode'), value: room && formatRoomCode(room) } : undefined}
+		text={room && !offline
+			? (hosting?.text ?? t('room.shareText', { code: formatRoomCode(room) }))
+			: undefined}
+		refresh={hosting?.refresh && {
+			...hosting.refresh,
+			disabled: offline || hosting.refresh.disabled
+		}}
 		qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 		qrCaption={offline ? t('scripts.share.offlineCaption') : undefined}
 		frames={offlineCode?.frames}

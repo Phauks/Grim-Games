@@ -99,15 +99,14 @@
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { fromScript, scriptLogo, scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
+	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
 	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
 	import PlayerNotes from '#lib/features/player/PlayerNotes.svelte';
-	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
-	import { currentScript } from '#lib/features/scripts/current-script.svelte.ts';
+	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
 	import { scriptKey } from '#lib/features/player/notebook.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
@@ -921,10 +920,7 @@
 	/** Share links to the saved script when it is the game's, as /play's does (parity). */
 	const scriptShare = $derived.by(() => {
 		if (!scriptOpen || !loadedScript) return undefined;
-		const json = (s: LoadedScript) => JSON.stringify(scriptToJson(s));
-		const current = currentScript.current;
-		const same = current && json(current) === json(loadedScript);
-		return scriptShareable(loadedScript, same ? currentScript.saved : undefined);
+		return gameShareable(loadedScript);
 	});
 	let menuOpen = $state(false);
 	/** ⋯'s New game, which asks to end this game first (Trevor, 2026-10-26). */
