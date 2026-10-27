@@ -5,6 +5,8 @@ import {
 	isOfflineHash,
 	offlineCode,
 	offlineHash,
+	offlineRoomFrom,
+	withOfflineRoom,
 	OFFLINE_SINGLE_MAX,
 	shareLink,
 	sharedRefFromHash,
@@ -137,6 +139,34 @@ describe('offline codes', () => {
 			{ id: 'own', name: 'Own', team: 'townsfolk', ability: 'Learn.' },
 			'chef'
 		]);
+	});
+
+	it('names the live room, before the frame, so phones can join once online', async () => {
+		// Trevor, 2026-10-27: "connecting to a game if they gain a connection".
+		const long = [
+			{ id: '_meta', name: 'Long' },
+			...Array.from({ length: 40 }, (_, i) => ({
+				id: `own${i}`,
+				name: `Own ${i}`,
+				team: 'townsfolk',
+				ability: `${i} ${crypto.randomUUID()} ${crypto.randomUUID()}`
+			}))
+		];
+		const code = withOfflineRoom(await offlineCode(origin, { json: long }), '482913');
+		expect(offlineRoomFrom(new URL(code.url).hash)).toBe('482913');
+		expect(isOfflineHash(new URL(code.url).hash)).toBe(true);
+		expect(code.frames!.every((f) => offlineRoomFrom(f) === '482913')).toBe(true);
+		// The frames still read as before.
+		const collector = new QrFrameCollector();
+		const done = [...code.frames!, ...code.frames!]
+			.map((f) => collector.add(f))
+			.find((r) => r?.kind === 'bytes');
+		expect(done?.kind).toBe('bytes');
+		// No room: the code is unchanged.
+		const plain = await offlineCode(origin, { json: script });
+		expect(withOfflineRoom(plain, undefined)).toEqual(plain);
+		expect(offlineRoomFrom(new URL(plain.url).hash)).toBeUndefined();
+		expect(offlineRoomFrom('#r=12345&o=1')).toBeUndefined();
 	});
 
 	it('is not offline without the mark', () => {

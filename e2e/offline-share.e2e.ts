@@ -90,7 +90,11 @@ test('a long script goes across as an animated code', async ({ page, browser }, 
 	);
 	await expect(
 		phone.getByRole('dialog', { name: 'Scan a code' }).getByRole('status')
-	).toContainText(/Reading the code: \d+ of \d+/, { timeout: 15_000 });
+	).toContainText(/Reading the code: \d+ of \d+ pieces/, { timeout: 15_000 });
+	// A square per piece, filled as each comes in (Trevor, 2026-10-27).
+	await expect(
+		phone.getByRole('dialog', { name: 'Scan a code' }).getByRole('status').locator('li')
+	).not.toHaveCount(0);
 	await expect(phone.getByRole('heading', { name: 'Long Homebrew', level: 1 })).toBeVisible({
 		timeout: 30_000
 	});
@@ -152,14 +156,59 @@ test("an animated code's frame opened by the camera app opens the scanner in the
 		frames.map((frame) => qrSrc(renderSVG(frame, { border: 2 })))
 	);
 	await phone.goto(`/join${new URL(frames[1]).hash}`);
-	const scanner = phone.getByRole('dialog', { name: 'Scan a code' });
-	await expect(scanner.getByRole('status')).toContainText(
-		/Reading the code: [1-9]\d* of \d+ pieces/
-	);
-	await expect(scanner.getByRole('status').locator('li.have').first()).toBeVisible();
+	// The scanner opens by itself, with that frame in, and reads the rest.
+	await expect(phone.getByRole('dialog', { name: 'Scan a code' })).toBeVisible();
 	await expect(phone.getByRole('heading', { name: 'Long Homebrew', level: 1 })).toBeVisible({
 		timeout: 30_000
 	});
 	await expect(phone.getByTestId('offline-game')).toBeVisible();
+	await context.close();
+});
+
+test('an offline code names the live room, and the phone joins it once it has internet', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-27: "being in offline mode should still allow for connecting to a game if
+	// they gain a connection".
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	await page.goto(`${new URL(page.url()).pathname}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	// A phone in the room hands on an offline code, which carries the room.
+	const sharerContext = await browser.newContext({ ...testInfo.project.use });
+	const sharer = await sharerContext.newPage();
+	await sharer.goto(`/join/${code}`);
+	await expect(sharer.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	await sharer.getByRole('button', { name: 'Share script' }).tap();
+	const share = sharer.getByRole('dialog', { name: 'Share Trouble Brewing' });
+	await share.getByText('Offline code', { exact: true }).tap();
+	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`&o=1&r=${code}$`));
+	const url = await share.getByTestId('share-url').inputValue();
+	await sharerContext.close();
+
+	const { context, phone } = await scanOffline(
+		browser,
+		testInfo,
+		qrSrc(renderSVG(url, { border: 2 }))
+	);
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible({
+		timeout: 15_000
+	});
+	const join = phone.getByTestId('offline-join');
+	await expect(join).toBeDisabled();
+	await context.setOffline(false);
+	await expect(join).toBeEnabled();
+	await join.tap();
+	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	await expect(phone.getByTestId('offline-game')).toHaveCount(0);
 	await context.close();
 });
