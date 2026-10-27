@@ -195,6 +195,9 @@
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
 	const setUp = $derived(setupComplete(game));
 	const characters = $derived(grimoire.open.characters);
+	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
+	const artOf = (reminder: ReminderInstance) =>
+		reminder.like ? characters.get(reminder.like.characterId) : undefined;
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
 
 	let board = $state<HTMLElement>();
@@ -1060,6 +1063,7 @@
 					symbol={last.symbol}
 					symbolColour={last.symbolColour}
 					symbolFill={last.symbolFill}
+					art={artOf(last)}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1272,6 +1276,7 @@
 							symbol={reminder.symbol}
 							symbolColour={reminder.symbolColour}
 							symbolFill={reminder.symbolFill}
+							art={artOf(reminder)}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
@@ -1309,6 +1314,7 @@
 					symbol={reminder.symbol}
 					symbolColour={reminder.symbolColour}
 					symbolFill={reminder.symbolFill}
+					art={artOf(reminder)}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
@@ -1333,6 +1339,7 @@
 					symbol={heldDrag.symbol}
 					symbolColour={heldDrag.symbolColour}
 					symbolFill={heldDrag.symbolFill}
+					art={artOf(heldDrag)}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled

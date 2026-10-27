@@ -134,7 +134,10 @@ describe('ReminderDragging', () => {
 			expect(dragging.drag?.overNew).toBe(true);
 			expect(dragging.drag?.target).toBeUndefined();
 			dragging.move(reminder.reminderId, g.seating[1], 20, 20, true);
-			expect(calls).toEqual([['run', { type: 'AddGenericToken', look: { note: 'Poisoned' } }]]);
+			const like = { characterId: 'poisoner', label: 'Poisoned' };
+			expect(calls).toEqual([
+				['run', { type: 'AddGenericToken', look: { note: 'Poisoned', like } }]
+			]);
 		} finally {
 			plus.remove();
 		}

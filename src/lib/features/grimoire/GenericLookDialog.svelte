@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ReminderLabel } from '#lib/core/data/index.ts';
+	import type { Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { GenericLook } from '#lib/core/model/index.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -23,6 +23,8 @@
 		deleteLabel: string;
 		/** A key for the fields: a new token starts them again. */
 		tokenKey?: string;
+		/** The character whose reminder it copies, whose art it shows (Trevor, 2026-10-27). */
+		art?: Character;
 	}
 
 	let {
@@ -31,7 +33,8 @@
 		onChange,
 		onDelete,
 		deleteLabel,
-		tokenKey
+		tokenKey,
+		art
 	}: Props = $props();
 
 	$effect(() => {
@@ -64,6 +67,7 @@
 					symbol={look.symbol}
 					symbolColour={look.symbolColour}
 					symbolFill={look.symbolFill}
+					{art}
 					{size}
 					disabled
 					onTap={() => {}}

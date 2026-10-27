@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-	import type { GenericToken, Reminder, SeatId } from '#lib/core/model/index.ts';
+	import type { GenericLook, GenericToken, Reminder, SeatId } from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import { deadCharacters, prepTextSegments } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -107,6 +107,9 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const names = $derived(characterNames([...characters.values()]));
+	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
+	const artOf = (look: GenericLook | undefined) =>
+		look?.like ? characters.get(look.like.characterId) : undefined;
 
 	/**
 	 * The bank's stretches, left to right (Trevor, 2026-10-19): Setup (what the Storyteller
@@ -443,7 +446,7 @@
 					: {
 							seats: seatsFor(item),
 							target,
-							reminder: { characterId: item.characterId, label: item.label }
+							reminder: item.token?.like ?? { characterId: item.characterId, label: item.label }
 						}
 			);
 			return;
@@ -596,6 +599,7 @@
 						symbol={item.token?.symbol}
 						symbolColour={item.token?.symbolColour}
 						symbolFill={item.token?.symbolFill}
+						art={artOf(item.token)}
 						{size}
 						{disabled}
 						onTap={() => tap(item)}
@@ -635,6 +639,7 @@
 			symbol={drag.item.token?.symbol}
 			symbolColour={drag.item.token?.symbolColour}
 			symbolFill={drag.item.token?.symbolFill}
+			art={artOf(drag.item.token)}
 			{size}
 			disabled
 			onTap={() => {}}
