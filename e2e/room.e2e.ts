@@ -749,8 +749,8 @@ test('New game opens a room for the vote before any game or script', async ({
 	page,
 	browser
 }, testInfo) => {
-	// Two votes, each ended with its 15-second final call (Trevor, 2026-10-26).
-	test.setTimeout(120_000);
+	// Three votes, each ended with its 15-second final call (Trevor, 2026-10-26).
+	test.setTimeout(150_000);
 	// Trevor, 2026-10-23: "allow storytellers to create rooms without having selected a
 	// script", so the table can gather and vote first.
 	await page.goto('/new');
@@ -845,6 +845,55 @@ test('New game opens a room for the vote before any game or script', async ({
 	await results.filter({ hasText: 'Sushi Buffet' }).getByRole('button', { name: 'Play' }).tap();
 	await expect(modeBallot).toHaveCount(0);
 	await expect(page.getByRole('combobox', { name: 'Game mode' })).toHaveText(/Sushi Buffet/);
+
+	// A vote on the special rules (Trevor, 2026-10-26: "Voting should allow selecting game
+	// modes vs scripts, along with special rules"). Rules stack, so the Storyteller keeps the
+	// rules the count favours, or any others, and plays them together.
+	await page.getByRole('combobox', { name: 'Game mode' }).tap();
+	await page.getByRole('option', { name: 'Standard', exact: true }).tap();
+	await page.getByRole('link', { name: 'Room vote' }).tap();
+	await sheet.getByRole('combobox', { name: 'Vote on' }).tap();
+	await page.getByRole('option', { name: 'Special rules' }).tap();
+	await expect(sheet.getByRole('heading', { name: 'Vote on special rules' })).toBeVisible();
+	const addRule = sheet.getByRole('button', { name: 'Add to vote' });
+	await addRule.tap();
+	await sheet.getByRole('combobox', { name: 'Add a special rule' }).tap();
+	await page.getByRole('option', { name: 'The Warrens', exact: true }).tap();
+	await addRule.tap();
+	await expect(sheet.getByTestId('script-vote-slots').getByRole('listitem')).toHaveText([
+		/^Rule 1\s*\+1\s*$/,
+		/^Rule 2\s*The Warrens\s*$/,
+		/^Rule 3\s*None\s*$/
+	]);
+	await sheet.getByRole('combobox', { name: 'How players vote' }).tap();
+	await page.getByRole('option', { name: 'Multiple choice' }).tap();
+	await sheet.getByRole('button', { name: 'Open vote' }).tap();
+	const ruleBallot = phone.getByTestId('ballot-screen');
+	await expect(ruleBallot.getByRole('heading', { name: 'Vote on special rules' })).toBeVisible();
+	await expect(
+		ruleBallot.getByText('Pick every special rule you would play with next.')
+	).toBeVisible();
+	await expect(ruleBallot.getByRole('button', { name: /^Details of/ })).toHaveCount(0);
+	await ruleBallot.locator('[aria-pressed]').filter({ hasText: '+1' }).tap();
+	await ruleBallot.getByRole('button', { name: 'Vote', exact: true }).tap();
+	const ruleResults = sheet.getByTestId('script-vote-results').getByRole('listitem');
+	await expect(ruleResults.filter({ hasText: '+1' })).toContainText('Votes: 1');
+	await sheet.getByRole('button', { name: 'End vote' }).tap();
+	const playRules = sheet.getByRole('button', { name: 'Play with these rules' });
+	await expect(playRules).toBeVisible({ timeout: 20_000 });
+	// The winner is kept to start with; the Storyteller adds The Warrens too.
+	await expect(sheet.getByRole('checkbox', { name: 'Play with +1' })).toBeChecked();
+	const warrens = sheet.getByRole('checkbox', { name: 'Play with The Warrens' });
+	await expect(warrens).not.toBeChecked();
+	await ruleResults
+		.filter({ hasText: 'The Warrens' })
+		.locator('[data-scope="switch"][data-part="control"]')
+		.tap();
+	await expect(warrens).toBeChecked();
+	await playRules.tap();
+	await expect(page).toHaveURL(/\/new$/);
+	await expect(ruleBallot).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Special rules (2)' })).toBeVisible();
 
 	await phoneContext.close();
 });

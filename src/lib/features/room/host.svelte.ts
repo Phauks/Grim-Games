@@ -545,7 +545,7 @@ export class RoomHost {
 				kind,
 				options,
 				...(minutes !== undefined ? { minutes } : {}),
-				...(subject === 'mode' ? { subject } : {}),
+				...(subject !== 'script' ? { subject } : {}),
 				...(showTally ? { showTally } : {})
 			}) ?? false
 		);

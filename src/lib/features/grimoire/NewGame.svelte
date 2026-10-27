@@ -49,6 +49,7 @@
 		// Played from the room vote's screen (Trevor, 2026-10-26), over what Back put back.
 		const voted = takeVotePick();
 		if (voted?.subject === 'mode') modeId = voted.id;
+		if (voted?.subject === 'rules') ruleIds = voted.ids;
 		if (carried) players = carried;
 		else if (voted?.subject === 'script') edition = voted.id;
 		else if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
@@ -66,6 +67,8 @@
 		};
 	});
 	let modeId = $state(STANDARD.id);
+	/** The special rules chosen; the room vote's own when it played them (Trevor, 2026-10-26). */
+	let ruleIds = $state<string[]>([]);
 	// ── New game ──
 	/** An official edition, `recent:<scriptId>` or `profile:<id>` (script-choices.svelte.ts). */
 	let edition = $state<ScriptChoice>('tb');
@@ -130,7 +133,7 @@
 	<!-- Above the modes so every kind of game starts with it; always shown (plan S18). -->
 	<ProfileSelect showLabel value={profile} onChange={(id) => (profile = id)} />
 	<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
-	<GameModesPanel standardScript={edition} standardPlayers={players} bind:modeId>
+	<GameModesPanel standardScript={edition} standardPlayers={players} bind:modeId bind:ruleIds>
 		{#snippet standard(rules, begin)}
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
 			<PageSection title="Script">
