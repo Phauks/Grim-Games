@@ -224,6 +224,15 @@ describe('Execute', () => {
 		expect(back.game.today.entries).toEqual([]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Virgin: the Townsfolk who nominates it is executed,
+	// so the Virgin is the cause (Trevor, 2026-10-27).
+	it('records the character whose ability executed the player as the cause', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, { type: 'Execute', seatId: seats[3], cause: 'virgin' });
+		expect(s.game.seats[seats[3]]).toMatchObject({ dead: true, deathCause: 'virgin' });
+		expect(s.game.today.entries[0]).toMatchObject({ kind: 'execution', died: true });
+	});
+
 	it('only logs executing a dead player, who does not die again', () => {
 		const { session, ctx, seats } = setup();
 		const s = run(session, ctx, { type: 'SetDead', seatId: seats[2], dead: true, cause: 'demon' });

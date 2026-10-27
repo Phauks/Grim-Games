@@ -108,9 +108,9 @@ test('an eye on each Game info line chooses what the board corner shows, as Sett
 		.getByRole('button', { name: 'Board', exact: true })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	const authorSetting = settings.getByRole('checkbox', { name: 'Author on the board' });
+	const authorSetting = settings.getByRole('checkbox', { name: 'Author', exact: true });
 	await expect(authorSetting).not.toBeChecked();
-	await settings.getByText('Author on the board', { exact: true }).tap();
+	await settings.getByText('Author', { exact: true }).tap();
 	await expect(authorSetting).toBeChecked();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(corner).toContainText('by The Pandemonium Institute');
