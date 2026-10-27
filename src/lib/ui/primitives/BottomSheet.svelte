@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Drawer } from '@ark-ui/svelte/drawer';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import { usePortalTarget } from './portal-target.ts';
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { layerStyle, openLayer } from './layers.ts';
@@ -58,6 +59,8 @@
 		focusFirstField = false,
 		wide = false
 	}: Props = $props();
+	/** Inside a full-screen view (the grim cover), into it; else the body (portal-target.ts). */
+	const portalTarget = usePortalTarget();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
 	// animation stays where it was.
@@ -83,7 +86,7 @@
 	unmountOnExit
 	initialFocusEl={focusFirstField ? undefined : () => false}
 >
-	<Portal>
+	<Portal container={portalTarget()}>
 		<Drawer.Backdrop style={layerStyle(layer, 'backdrop')} />
 		<Drawer.Positioner style={layerStyle(layer, 'content')}>
 			<Drawer.Content

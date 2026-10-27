@@ -20,11 +20,17 @@
 		gameId: string;
 		/** `set` locks the draw; `unlock` asks for the PIN. */
 		mode?: 'set' | 'unlock';
+		/**
+		 * `cover`: the grim cover's PIN (Trevor, 2026-10-26), the same PIN, set and checked
+		 * without locking the draw; Forgot PIN takes the cover off after its countdown.
+		 */
+		purpose?: 'draw' | 'cover';
 		/** Locked, or unlocked (the right PIN or a finished Forgot PIN). */
 		onDone?: () => void;
 	}
 
-	let { open = $bindable(), gameId, mode = 'unlock', onDone }: Props = $props();
+	let { open = $bindable(), gameId, mode = 'unlock', purpose = 'draw', onDone }: Props = $props();
+	const cover = $derived(purpose === 'cover');
 
 	const PIN_LENGTH = 4;
 	let pin = $state('');
@@ -91,11 +97,14 @@
 				const chosen = pin;
 				pin = '';
 				again = '';
-				await drawLock.lock(gameId, chosen);
+				if (cover) await drawLock.setPin(gameId, chosen);
+				else await drawLock.lock(gameId, chosen);
 				finish();
 				return;
 			}
-			const result = await drawLock.unlock(gameId, pin);
+			const result = cover
+				? await drawLock.checkPin(gameId, pin)
+				: await drawLock.unlock(gameId, pin);
 			if (result === 'ok') finish();
 			else {
 				wrong = result === 'wrong';
@@ -110,7 +119,9 @@
 	/** One line of feedback, always the same height so nothing moves. */
 	const message = $derived(
 		forgotAt !== undefined
-			? t('setup.lock.forgotCountdown', { count: forgotSeconds })
+			? t(cover ? 'setup.lock.uncovering' : 'setup.lock.forgotCountdown', {
+					count: forgotSeconds
+				})
 			: waitSeconds > 0
 				? t('setup.lock.wait', { count: waitSeconds })
 				: mismatch
@@ -123,8 +134,12 @@
 
 <Dialog
 	bind:open
-	title={mode === 'set' ? t('setup.lock.setTitle') : t('setup.lock.enterTitle')}
-	description={mode === 'set' ? t('setup.lock.setBody') : undefined}
+	title={mode === 'set'
+		? t(cover ? 'setup.lock.coverSetTitle' : 'setup.lock.setTitle')
+		: t('setup.lock.enterTitle')}
+	description={mode === 'set'
+		? t(cover ? 'setup.lock.coverSetBody' : 'setup.lock.setBody')
+		: undefined}
 >
 	<!-- Forgot PIN behind ⋯, so Cancel and Confirm keep one line on a phone (Trevor, 2026-10-25). -->
 	{#snippet headActions()}
@@ -194,7 +209,7 @@
 				onclick={() => {
 					forgotAt = undefined;
 					menuOpen = false;
-				}}>{t('setup.lock.keepLocked')}</Button
+				}}>{t(cover ? 'setup.lock.keepCovered' : 'setup.lock.keepLocked')}</Button
 			>
 		{/if}
 	</div>
