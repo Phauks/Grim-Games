@@ -188,7 +188,8 @@
 						storytellerName: table.storytellerName,
 						corner: table.corner,
 						look: table.look,
-						roomCode: room
+						roomCode: room,
+						pictures: town?.view?.pictures
 					}}
 				/>
 			{:else}

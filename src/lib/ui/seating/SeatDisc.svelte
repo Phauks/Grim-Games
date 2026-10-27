@@ -37,6 +37,8 @@
 		frame?: Frame;
 		/** The player's avatar (plan R6, their initials from `name`), shown in place of the number. */
 		avatar?: AvatarId;
+		/** The player's own picture (a link), in place of their initials (2026-10-27). */
+		picture?: string;
 	}
 
 	let {
@@ -49,7 +51,8 @@
 		vote,
 		usedVote = 'hollow',
 		frame,
-		avatar
+		avatar,
+		picture
 	}: Props = $props();
 
 	const framed = $derived(frame !== undefined && frame.drawing.length > 0);
@@ -65,9 +68,11 @@
 	<span class="disc">
 		<!-- Marked as a token face, so a seat button's focus ring is round (base.css). -->
 		<span class="face" data-token-face
-			>{#if face}{@render face()}{:else if avatar}<AvatarFace {avatar} {name} />{:else}<span
-					class="empty">{number}</span
-				>{/if}</span
+			>{#if face}{@render face()}{:else if avatar}<AvatarFace
+					{avatar}
+					{name}
+					{picture}
+				/>{:else}<span class="empty">{number}</span>{/if}</span
 		>
 		{#if frame && framed}<span class="frame-layer"><FrameDrawing {frame} /></span>{/if}
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
