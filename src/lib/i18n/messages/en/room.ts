@@ -222,5 +222,14 @@ export const room = {
 	'room.liveGames.phones': 'Phones',
 	'room.liveGames.active': 'Last active',
 	'room.liveGames.loadFailed': 'Could not load live games',
-	'room.liveGames.adminsOnly': 'Only admin accounts see live games.'
+	'room.liveGames.adminsOnly': 'Only admin accounts see live games.',
+	'room.pictureReport.title': 'Reported picture',
+	'room.pictureReport.body': {
+		one: "{name}'s picture was reported by {count} player.",
+		other: "{name}'s picture was reported by {count} players."
+	},
+	'room.pictureReport.allow': 'Let it stand',
+	'room.pictureReport.remove': 'Remove for this game',
+	'room.pictureReport.picture': "{name}'s picture",
+	'room.pictureReport.someone': 'A player'
 } as const;

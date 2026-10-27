@@ -11,6 +11,7 @@
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 
 	interface Props {
 		seat: Seat;
@@ -89,6 +90,8 @@
 	);
 
 	const name = $derived(seat.playerName ?? `Seat ${number}`);
+	/** The seated player's own picture in the room (2026-10-27), in place of their initials. */
+	const picture = $derived(seat.avatar ? roomHost().pictureOf(seat.seatId) : undefined);
 	// The seat's accessible name, plain text; the board shows the name as its pill.
 	const label = $derived(
 		[
@@ -204,7 +207,8 @@
 	{#if character && seat.avatar}<span
 			class="mark avatar"
 			data-testid="avatar-mark"
-			data-shifted={nominations ? '' : undefined}><AvatarFace avatar={seat.avatar} {name} /></span
+			data-shifted={nominations ? '' : undefined}
+			><AvatarFace avatar={seat.avatar} {name} {picture} /></span
 		>{/if}
 	<!-- Today's nominations: two marks side by side in one pill over the top-left rim, each
 	     greyed until it happens (Trevor, 2026-10-23), clear of the first-night number on the
@@ -265,6 +269,7 @@
 		usedVote={boardLooks.current.usedGhostVote}
 		frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
 		avatar={seat.avatar}
+		{picture}
 	/>
 </button>
 
