@@ -19,7 +19,9 @@ registerSettingsSection({
 			ambienceOn: DEFAULT_PREFERENCES.ambienceOn,
 			ambienceLevel: DEFAULT_PREFERENCES.ambienceLevel,
 			nightAmbience: DEFAULT_PREFERENCES.nightAmbience,
-			dayAmbience: DEFAULT_PREFERENCES.dayAmbience
+			dayAmbience: DEFAULT_PREFERENCES.dayAmbience,
+			actionSoundsOn: DEFAULT_PREFERENCES.actionSoundsOn,
+			actionSounds: DEFAULT_PREFERENCES.actionSounds
 		}),
 	profile: true,
 	order: 36

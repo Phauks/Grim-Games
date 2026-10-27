@@ -25,6 +25,12 @@ import {
 	DAY_SECONDS_PER_ALIVE_MIN
 } from '#lib/core/rules/day-timer.ts';
 import { DEFAULT_AMBIENCE, parseAmbience } from '#lib/core/sound/ambience.ts';
+import {
+	DEFAULT_ACTION_SOUNDS,
+	parseActionSounds,
+	type ActionSound,
+	type SoundAction
+} from '#lib/core/sound/soundboard.ts';
 
 /**
  * Per-device look-and-feel preferences (04-architecture.md §9). Separate from game state
@@ -100,6 +106,10 @@ export interface Preferences {
 	nightAmbience: string;
 	/** The recording that plays in the day, by id (plan U3). */
 	dayAmbience: string;
+	/** The board plays a sound when the Storyteller takes an action (plan U7). */
+	actionSoundsOn: boolean;
+	/** The sound each action plays, by soundboard sound id (plan U7). */
+	actionSounds: Record<SoundAction, ActionSound>;
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
@@ -230,6 +240,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	ambienceLevel: 0.6,
 	nightAmbience: DEFAULT_AMBIENCE.night,
 	dayAmbience: DEFAULT_AMBIENCE.day,
+	actionSoundsOn: false,
+	actionSounds: { ...DEFAULT_ACTION_SOUNDS },
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	timerForPlayers: 'sun',
@@ -319,6 +331,8 @@ export function parsePreferences(raw: unknown): Preferences {
 		),
 		nightAmbience: parseAmbience('night', input.nightAmbience),
 		dayAmbience: parseAmbience('day', input.dayAmbience),
+		actionSoundsOn: input.actionSoundsOn === true,
+		actionSounds: parseActionSounds(input.actionSounds),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
 			: DEFAULT_PREFERENCES.timerMode,

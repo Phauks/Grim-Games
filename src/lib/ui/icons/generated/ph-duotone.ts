@@ -23,6 +23,7 @@ import ph_bag_simple_duotone from '~icons/ph/bag-simple-duotone';
 import ph_beer_bottle_duotone from '~icons/ph/beer-bottle-duotone';
 import ph_beer_stein_duotone from '~icons/ph/beer-stein-duotone';
 import ph_bell_duotone from '~icons/ph/bell-duotone';
+import ph_bell_simple_ringing_duotone from '~icons/ph/bell-simple-ringing-duotone';
 import ph_binoculars_duotone from '~icons/ph/binoculars-duotone';
 import ph_bird_duotone from '~icons/ph/bird-duotone';
 import ph_book_bookmark_duotone from '~icons/ph/book-bookmark-duotone';
@@ -238,6 +239,7 @@ const icons: IconMap = {
 	'ph:beer-bottle-duotone': ph_beer_bottle_duotone,
 	'ph:beer-stein-duotone': ph_beer_stein_duotone,
 	'ph:bell-duotone': ph_bell_duotone,
+	'ph:bell-simple-ringing-duotone': ph_bell_simple_ringing_duotone,
 	'ph:binoculars-duotone': ph_binoculars_duotone,
 	'ph:bird-duotone': ph_bird_duotone,
 	'ph:book-bookmark-duotone': ph_book_bookmark_duotone,
