@@ -68,10 +68,22 @@ export interface ReminderInstance extends Reminder {
 	 * token (Trevor, 2026-10-23). An emoji is unaffected.
 	 */
 	symbolFill?: true;
+	/**
+	 * The character reminder a generic one was copied from (Trevor, 2026-10-27: dragged onto
+	 * "+ New token"): it shows that character's art while it has no symbol, and is placed with
+	 * the seats that reminder fits suggested.
+	 */
+	like?: Reminder;
 }
 
-/** What a generic reminder looks like: its text, its symbol and how the symbol is drawn. */
-export type GenericLook = Pick<ReminderInstance, 'note' | 'symbol' | 'symbolColour' | 'symbolFill'>;
+/**
+ * What a generic reminder looks like: its text, its symbol and how the symbol is drawn, and
+ * the character reminder it copies, if any.
+ */
+export type GenericLook = Pick<
+	ReminderInstance,
+	'note' | 'symbol' | 'symbolColour' | 'symbolFill' | 'like'
+>;
 
 /**
  * A reusable ∞ token in the reminder bank (plan B9, Trevor 2026-10-23: "Tokens only"): made

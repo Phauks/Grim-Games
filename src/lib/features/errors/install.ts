@@ -1,5 +1,6 @@
 import { mount } from 'svelte';
 import ReportDialog from '#lib/features/reports/ReportDialog.svelte';
+import { reportOutbox } from '#lib/features/reports/outbox.svelte.ts';
 import ErrorNotice from './ErrorNotice.svelte';
 import { installGlobalErrorHandlers } from './report.svelte.ts';
 
@@ -16,4 +17,6 @@ export function installErrorReporting(): void {
 	installGlobalErrorHandlers();
 	mount(ErrorNotice, { target: document.body });
 	mount(ReportDialog, { target: document.body });
+	// Reports saved while offline go as soon as the app opens online, or the connection returns.
+	reportOutbox.start();
 }

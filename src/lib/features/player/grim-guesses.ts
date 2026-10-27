@@ -181,6 +181,12 @@ export function writeGuesses(room: string, guesses: Guesses): void {
 
 const selfKey = (room: string) => `grim-games:play:self:${room}`;
 
+/** Throws a game's guesses and own-seat mark away (the grim cover's, blank each time). */
+export function forgetGuesses(room: string): void {
+	writeStored(key(room), undefined);
+	writeStored(selfKey(room), undefined);
+}
+
 /**
  * The seat this player marked as their own on their Grim tab (Trevor, 2026-10-26: "allow
  * marking a person as self in own grim"), kept per game like the guesses. `''` when they

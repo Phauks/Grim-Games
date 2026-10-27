@@ -98,9 +98,24 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 			this.sql.exec('ALTER TABLE reports ADD COLUMN script TEXT');
 			this.sql.exec('ALTER TABLE reports ADD COLUMN script_name TEXT');
 		}
+		// The app's own id for each report (outbox.svelte.ts): a report resent after a dropped
+		// connection is stored once. Older reports and older apps have none.
+		if (!columns.some((c) => c.name === 'send_id')) {
+			this.sql.exec('ALTER TABLE reports ADD COLUMN send_id TEXT');
+		}
+		this.sql.exec(
+			'CREATE UNIQUE INDEX IF NOT EXISTS reports_send_id ON reports (send_id) WHERE send_id IS NOT NULL'
+		);
 	}
 
 	async add(draft: ReportDraft, now: number, userId?: string): Promise<number | undefined> {
+		// Sent before, and the answer was lost on the way back: the same report, not a new one.
+		if (draft.sendId) {
+			const sent = this.sql
+				.exec<{ id: number }>('SELECT id FROM reports WHERE send_id = ?', draft.sendId)
+				.toArray()[0];
+			if (sent) return sent.id;
+		}
 		const count = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM reports').one().n;
 		if (count >= MAX_STORED) {
 			this.sql.exec(
@@ -114,8 +129,8 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 		return this.sql
 			.exec<{ id: number }>(
 				`INSERT INTO reports (kind, title, body, details, contact, page, build, device, created_at,
-				 user_id, script, script_name)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+				 user_id, script, script_name, send_id)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
 				draft.kind,
 				draft.title,
 				draft.body,
@@ -127,7 +142,8 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 				now,
 				userId ?? null,
 				draft.script ?? null,
-				draft.script ? (draft.scriptName ?? null) : null
+				draft.script ? (draft.scriptName ?? null) : null,
+				draft.sendId ?? null
 			)
 			.one().id;
 	}

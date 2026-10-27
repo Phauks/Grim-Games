@@ -27,6 +27,10 @@
 	 * Given the seats, a tap opens the day's counts (Trevor, 2026-10-27): who is alive, the
 	 * votes to put a nominee on the block and the ghost votes left, worked out as the
 	 * Storyteller's are (`townCounts`), in a sheet so the line itself never grows.
+	 *
+	 * `wide`, on the player screen's own row (Trevor, 2026-10-27: "a sun that takes up 80% of the
+	 * width", "flat arc ... more circular"): the sun crosses a shallow slice of a circle across
+	 * 80% of the row. That slot is kept in every phase, so the row is as tall at night as by day.
 	 */
 	interface Props {
 		phase: PlayersPhase;
@@ -34,9 +38,11 @@
 		timer?: dayTimers.PublicDayTimer;
 		/** The town's seats, for the counts a tap opens; without them the line only shows. */
 		seats?: readonly TownSeat[];
+		/** Alone on its own row: the big sun (above). */
+		wide?: boolean;
 	}
 
-	let { phase, timer, seats }: Props = $props();
+	let { phase, timer, seats, wide = false }: Props = $props();
 	const title = $derived(
 		phase.kind === 'setup'
 			? t('day.setup')
@@ -75,6 +81,24 @@
 	const sunY = $derived(HORIZON - R * Math.sin(angle));
 	const sky = `M${CX - R} ${HORIZON} A${R} ${R} 0 0 1 ${CX + R} ${HORIZON} Z`;
 	const path = `M${CX - R} ${HORIZON} A${R} ${R} 0 0 1 ${CX + R} ${HORIZON}`;
+
+	/**
+	 * The wide sun's sky: a slice of a circle over a flat horizon, in the drawing's units. The
+	 * arc's ends sit on the horizon and its top leaves room for the sun's glow.
+	 */
+	const SKY_W = 270;
+	const SKY_H = 60;
+	const GROUND = SKY_H - 4;
+	const CHORD = SKY_W - 16;
+	/** How high the arc rises over the horizon. */
+	const RISE = GROUND - 11;
+	const SKY_R = CHORD ** 2 / (8 * RISE) + RISE / 2;
+	/** Half the angle the arc spans, seen from the circle's centre. */
+	const SPAN = Math.asin(CHORD / 2 / SKY_R);
+	const along = $derived(-SPAN + 2 * SPAN * (1 - watched.left));
+	const wideX = $derived(SKY_W / 2 + SKY_R * Math.sin(along));
+	const wideY = $derived(GROUND - RISE + SKY_R - SKY_R * Math.cos(along));
+	const wideArc = `M${(SKY_W - CHORD) / 2} ${GROUND} A${SKY_R} ${SKY_R} 0 0 1 ${(SKY_W + CHORD) / 2} ${GROUND}`;
 </script>
 
 <svelte:element
@@ -83,6 +107,7 @@
 	class="players-status"
 	data-testid="players-status"
 	data-phase={phase.kind}
+	data-wide={wide ? '' : undefined}
 	aria-haspopup={counts ? 'dialog' : undefined}
 	onclick={counts ? () => (countsOpen = true) : undefined}
 	role={counts ? undefined : 'group'}
@@ -94,14 +119,40 @@
 				>{t('day.titleNumber', { number: phase.number })}</span
 			>{/if}
 	</span>
-	{#if timer && phase.kind === 'day'}
+	{#if wide}
+		<!-- Kept in every phase, so the row never changes height. -->
+		<span class="sky-slot">
+			{#if timer && phase.kind === 'day'}{@render shownTimer()}{/if}
+		</span>
+	{:else if timer && phase.kind === 'day'}{@render shownTimer()}{/if}
+</svelte:element>
+
+{#snippet shownTimer()}
+	{#if timer}
 		<span
 			class="players-timer"
 			data-testid="players-timer"
 			data-look={timer.look}
 			data-done={watched.done ? '' : undefined}
 		>
-			{#if timer.look === 'sun'}
+			{#if timer.look === 'sun' && wide}
+				<svg
+					class="wide-sun"
+					viewBox="0 0 {SKY_W} {SKY_H}"
+					role="img"
+					aria-label={t('day.sunLabel', { percent: Math.round(watched.left * 100) })}
+				>
+					<clipPath id="{id}-wide"><rect x="0" y="0" width={wideX} height={GROUND} /></clipPath>
+					<path class="sky" d="{wideArc} Z" clip-path="url(#{id}-wide)" />
+					<path class="path" d={wideArc} />
+					<g class="sun">
+						<circle class="glow" cx={wideX} cy={wideY} r="10" />
+						<circle cx={wideX} cy={wideY} r="6.5" />
+					</g>
+					<rect class="ground" x="0" y={GROUND} width={SKY_W} height={SKY_H - GROUND} />
+					<line class="horizon" x1="4" y1={GROUND} x2={SKY_W - 4} y2={GROUND} />
+				</svg>
+			{:else if timer.look === 'sun'}
 				<svg
 					viewBox="0 0 48 28"
 					role="img"
@@ -123,7 +174,7 @@
 			{/if}
 		</span>
 	{/if}
-</svelte:element>
+{/snippet}
 
 {#if counts}
 	<!-- Read only: the Storyteller's badges, each with its words beside it. -->
@@ -169,6 +220,43 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font: inherit;
+	}
+	/* The day on the left, the sky across 80% of the row (Trevor, 2026-10-27). */
+	.players-status[data-wide] {
+		justify-content: space-between;
+		padding-block: var(--space-1);
+	}
+	.players-status[data-wide] .words {
+		flex: 1;
+		min-width: 0;
+	}
+	.sky-slot {
+		display: flex;
+		flex: 0 1 80%;
+		align-items: center;
+		justify-content: center;
+		min-width: 0;
+		aspect-ratio: 270 / 60;
+		max-height: 7rem;
+	}
+	.sky-slot .players-timer {
+		width: 100%;
+		height: 100%;
+		justify-content: center;
+	}
+	svg.wide-sun {
+		width: 100%;
+		height: 100%;
+	}
+	.wide-sun .path {
+		stroke-width: 1.2;
+		stroke-dasharray: 3 3;
+	}
+	.wide-sun .horizon {
+		stroke-width: 2.5;
+	}
+	.sky-slot .clock {
+		font-size: 1.75rem;
 	}
 	button.players-status {
 		cursor: pointer;

@@ -10,6 +10,7 @@ import {
 	byLabel,
 	canAddCopy,
 	copiedLook,
+	handReminder,
 	extraReminders,
 	reminderCopies,
 	stepReminders,
@@ -383,8 +384,12 @@ describe('copiedLook', () => {
 			symbolColour: 'gold',
 			symbolFill: true
 		});
-		expect(copiedLook({ characterId: 'poisoner', label: 'Poisoned' as ReminderLabel })).toEqual({
-			note: 'Poisoned'
-		});
+		const poisoned = { characterId: 'poisoner', label: 'Poisoned' as ReminderLabel };
+		expect(copiedLook(poisoned)).toEqual({ note: 'Poisoned', like: poisoned });
+		// A copy of a copy keeps the character reminder it stands for.
+		const copy = { characterId: GENERIC_REMINDER_ID, label: '' as ReminderLabel, like: poisoned };
+		expect(copiedLook(copy)).toMatchObject({ like: poisoned });
+		expect(handReminder(copy)).toEqual(poisoned);
+		expect(handReminder(poisoned)).toBe(poisoned);
 	});
 });
