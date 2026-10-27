@@ -62,6 +62,7 @@
 
 {#if showBoard}<SharedBoard
 		shared={viewer?.grimoire}
+		room={room ?? undefined}
 		onReady={(r) => (ready = r)}
 		onProblem={(p) => (problem = p)}
 	/>{/if}

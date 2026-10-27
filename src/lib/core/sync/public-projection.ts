@@ -23,6 +23,7 @@ import {
 import { parsePublicTimer, type PublicDayTimer } from '#lib/core/rules/day-timer.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
+import { isImageHash } from './room-images.ts';
 
 export interface PublicSeat {
 	seatId: SeatId;
@@ -116,11 +117,10 @@ export interface PublicCorner {
  * Font sizes stay each device's own, for accessibility.
  */
 export interface PublicLook {
-	/**
-	 * `script` for the script's own image, or a built-in background by id. Left out for none,
-	 * and for a picture of the Storyteller's own, which stays on their device.
-	 */
+	/** `script` for the script's own image, `image` for a picture, or a built-in background's id. */
 	background?: string;
+	/** The picture the room holds (core/sync/room-images.ts), by its hash, with `image`. */
+	image?: string;
 	/** How dark the vignette is, 0 to 1, while it is on. */
 	vignette?: number;
 	/** How visible the script's logo is, 0 to 1, while it is shown. */
@@ -139,7 +139,7 @@ const share = (value: unknown) =>
  */
 export function parsePublicLook(raw: unknown): PublicLook | undefined {
 	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
-	const { background, vignette, logo } = raw as Record<string, unknown>;
+	const { background, image, vignette, logo } = raw as Record<string, unknown>;
 	const look: PublicLook = {};
 	if (
 		typeof background === 'string' &&
@@ -147,6 +147,7 @@ export function parsePublicLook(raw: unknown): PublicLook | undefined {
 		/^[a-z][a-z0-9-]*$/.test(background)
 	)
 		look.background = background;
+	if (isImageHash(image)) look.image = image;
 	const dark = share(vignette);
 	if (dark !== undefined) look.vignette = dark;
 	const faint = share(logo);

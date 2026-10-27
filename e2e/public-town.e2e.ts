@@ -268,5 +268,39 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 		.getByRole('button', { name: 'Night sky' })
 		.tap();
 	await expect(town.getByTestId('preview-background')).toHaveAttribute('data-preset', 'night');
+
+	// A picture of the Storyteller's own goes up to the room for the table (Trevor, 2026-10-26:
+	// "Images should be uploaded and shared for background"). A 2×2 PNG, as if from the library.
+	const png = Buffer.from(
+		'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGNoUFAAIgYIBQAWjgMBwmTFJwAAAABJRU5ErkJggg==',
+		'base64'
+	);
+	await settings
+		.getByLabel('Background image file')
+		.setInputFiles({ name: 'table.png', mimeType: 'image/png', buffer: png });
+	const picture = town.getByTestId('preview-background');
+	await expect(picture).toHaveAttribute(
+		'style',
+		new RegExp(`/api/room/${code}/image/[0-9a-f]{64}`)
+	);
+	const path = (await picture.getAttribute('style'))!.match(/\/api\/room\/[^")]+/)![0];
+	const loaded = await tablet.evaluate(async (url) => {
+		const response = await fetch(url);
+		return { status: response.status, type: response.headers.get('Content-Type') };
+	}, path);
+	expect(loaded).toEqual({ status: 200, type: 'image/jpeg' });
+	// Only the Storyteller's device can put one there.
+	const refused = await tablet.evaluate(
+		async (url) =>
+			(
+				await fetch(url, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'image/jpeg' },
+					body: `${'0'.repeat(64)}\nnot a picture`
+				})
+			).status,
+		path
+	);
+	expect(refused).toBe(403);
 	await tabletContext.close();
 });
