@@ -63,6 +63,9 @@ export const ICON_SLOTS = {
 	sound: { label: 'Sound', choices: ['ph:speaker-high', 'ph:bell'] },
 	/** The Storyteller's soundboard (plan U6): bells at a tap. */
 	soundboard: { label: 'Soundboard', choices: ['ph:bell-simple-ringing', 'ph:bell'] },
+	/** Holds the soundboard and day and night sound where they are (Trevor, 2026-10-27). */
+	soundPause: { label: 'Pause sound', choices: ['ph:pause', 'ph:pause-circle'] },
+	soundResume: { label: 'Resume sound', choices: ['ph:play', 'ph:play-circle'] },
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },

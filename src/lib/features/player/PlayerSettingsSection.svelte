@@ -4,7 +4,6 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
-	import DensityRow from './DensityRow.svelte';
 	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -33,9 +32,6 @@
 	checked={playerSettings.current.hideGuesses}
 	onChange={(hideGuesses) => playerSettings.update({ hideGuesses })}
 />
-
-<!-- Also in the player screen's own settings (plan E2). -->
-<DensityRow />
 
 <!-- Also at the top of every script sheet (Trevor, 2026-10-23; colours 2026-10-24). -->
 <SettingSelect

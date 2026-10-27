@@ -6,6 +6,8 @@
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
+	import AvatarCropDialog from './AvatarCropDialog.svelte';
+	import type { AvatarCrop } from '#lib/core/avatars/crop.ts';
 
 	/**
 	 * The player's own picture for their seat (Trevor, 2026-10-27: "allow setting users
@@ -22,23 +24,48 @@
 	let input = $state<HTMLInputElement>();
 	let error = $state('');
 
-	async function picked(event: Event) {
+	/** The picture just picked, on the crop screen (Trevor, 2026-10-27) until it is saved. */
+	let picking = $state<Blob>();
+	let start = $state<AvatarCrop>();
+	let cropping = $state(false);
+	/** A tap on the picture opens its crop screen again, on the whole picture (2026-10-27). */
+	async function edit() {
+		const editable = await avatarPicture.editable();
+		if (!editable) return;
+		error = '';
+		picking = editable.file;
+		start = editable.crop;
+		cropping = true;
+	}
+	function picked(event: Event) {
 		const file = (event.currentTarget as HTMLInputElement).files?.[0];
 		if (input) input.value = '';
 		if (!file) return;
-		error = (await avatarPicture.choose(file)) ? '' : t('player.pictureError');
+		error = '';
+		picking = file;
+		start = undefined;
+		cropping = true;
+	}
+	async function save(file: Blob, crop: AvatarCrop) {
+		error = (await avatarPicture.choose(file, crop)) ? '' : t('player.pictureError');
 	}
 </script>
 
 <SettingRow label={t('player.picture')} description={t('player.pictureDetail')}>
 	{#snippet control(labelId)}
 		<div class="control" role="group" aria-labelledby={labelId} data-testid="avatar-picture">
-			<span class="token"
+			<!-- Always a button, so nothing moves; usable once there is a picture to edit. -->
+			<button
+				type="button"
+				class="token"
+				aria-label={t('player.pictureEdit')}
+				disabled={!avatarPicture.url}
+				onclick={edit}
 				><AvatarFace
 					avatar="initials"
 					name={name || savedPlayerName()}
 					picture={avatarPicture.url}
-				/></span
+				/></button
 			>
 			<Button icon="add" onclick={() => input?.click()}
 				>{avatarPicture.url ? t('player.pictureChange') : t('player.pictureChoose')}</Button
@@ -62,6 +89,8 @@
 	{/snippet}
 </SettingRow>
 
+<AvatarCropDialog bind:open={cropping} file={picking} initial={start} onSave={save} />
+
 <style>
 	.control {
 		display: flex;
@@ -74,6 +103,14 @@
 		flex: none;
 		width: var(--tap-target);
 		height: var(--tap-target);
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: none;
+		cursor: pointer;
+	}
+	.token:disabled {
+		cursor: default;
 	}
 	.error {
 		min-height: 1.3em;

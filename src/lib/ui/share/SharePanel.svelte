@@ -87,8 +87,8 @@
 		plain = false
 	}: Props = $props();
 
-	/** Long enough for a phone to read a frame, short enough to loop in a few seconds. */
-	const FRAME_MS = 350;
+	/** Five frames a second: near the 6–7 Divan found fastest (https://divan.dev/posts/animatedqr/); a missed frame costs little with a fountain code. */
+	const FRAME_MS = 200;
 	let frame = $state(0);
 	$effect(() => {
 		if (!frames?.length) return;
