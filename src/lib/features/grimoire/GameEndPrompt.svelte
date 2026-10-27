@@ -82,14 +82,13 @@
 		const keys = new Set(ends.map(dismissKey));
 		if (dismissed.some((k) => !keys.has(k))) dismissed = dismissed.filter((k) => keys.has(k));
 	});
-	// Closed any way but Confirm: dismissed until something changes. Then a condition not
-	// dismissed opens the prompt.
-	let ending = false;
+	// Closed any way, Confirm too: dismissed until something changes, so a game ended here
+	// and reopened doesn't ask again straight away (Trevor's report, 2026-10-27). Then a
+	// condition not dismissed opens the prompt.
 	$effect(() => {
 		if (open) return;
 		if (shown.length > 0) {
-			if (!ending) dismissed = [...new Set([...dismissed, ...shown.map(dismissKey)])];
-			ending = false;
+			dismissed = [...new Set([...dismissed, ...shown.map(dismissKey)])];
 			shown = [];
 			return;
 		}
@@ -100,7 +99,6 @@
 	});
 
 	function confirm() {
-		ending = true;
 		onEnd(winner, winner ? reason : undefined);
 	}
 
