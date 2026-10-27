@@ -192,6 +192,8 @@ export const room = {
 	'room.watch.hint':
 		'Spectators with the room code and this password see the whole grimoire live, after promising not to spoil the game. Each game gets a new password.',
 	'room.watch.password': 'Grim view password',
+	'room.watch.copy': 'Copy password',
+	'room.watch.copyFailed': 'Could not copy the password',
 	'room.watch.refresh': 'New password',
 	'room.watch.refreshTitle': 'Make a new password?',
 	'room.watch.refreshText':
