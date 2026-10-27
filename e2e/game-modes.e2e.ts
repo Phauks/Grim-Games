@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { setPlayerName } from './player-name.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
@@ -2372,7 +2373,7 @@ test('the Script sheet has the players’ settings cog, opening their own sheet'
 	const settings = page.getByRole('dialog', { name: 'Your settings' });
 	await expect(settings.getByRole('slider', { name: 'Text size' })).toBeVisible();
 	// No room phone here, so no name to set.
-	await expect(settings.getByRole('textbox', { name: 'Your name' })).toHaveCount(0);
+	await expect(settings.getByRole('button', { name: 'Edit your name' })).toHaveCount(0);
 	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
 	await page.getByRole('option', { name: 'Compact', exact: true }).tap();
 	// The Script sheet underneath changes at once (it is hidden from the accessibility tree

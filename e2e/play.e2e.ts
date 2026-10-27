@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { setPlayerName } from './player-name.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
@@ -109,7 +110,7 @@ test('the settings cog at the top sets the text size, Pinch to zoom and the shee
 	const sheet = page.getByRole('dialog', { name: 'Your settings' });
 	await expect(sheet).toBeVisible();
 	// Not in a room: there is no name to set yet.
-	await expect(sheet.getByRole('textbox', { name: 'Your name' })).toHaveCount(0);
+	await expect(sheet.getByRole('button', { name: 'Edit your name' })).toHaveCount(0);
 	const size = sheet.getByRole('slider', { name: 'Text size' });
 	await size.fill('1.25');
 	await expect(size).toHaveAttribute('aria-valuetext', '125%');
@@ -934,8 +935,12 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
 	await page.getByTestId('you-button').tap();
 	const sheet = page.getByRole('dialog', { name: 'Your settings' });
-	await sheet.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await sheet.getByRole('button', { name: 'Save' }).tap();
+	// The name has its own modal with Save; the sheet's other rows change at once (Trevor,
+	// 2026-10-27).
+	await expect(sheet.getByRole('button', { name: 'Save' })).toHaveCount(0);
+	await setPlayerName(page, 'Alex');
+	await expect(sheet.getByTestId('player-name')).toHaveText('Alex');
+	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(page.getByTestId('join-status')).toHaveText('');
 	// The cog at the top is named for it (plan E2), and the empty room box leaves the row
