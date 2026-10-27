@@ -1027,6 +1027,37 @@ describe('bank ∞ tokens', () => {
 		expect(undo(removed).game.genericTokens).toHaveLength(1);
 	});
 
+	// Trevor (2026-10-27): a character's reminder dragged onto "+ New token" makes a token that
+	// remembers it, for its art and the seats it fits; a generic one is never remembered.
+	it('keeps the character reminder a token copies, and its copies keep it too', () => {
+		const { session, ctx, seats } = newGame(names);
+		const like = { characterId: 'poisoner', label: 'Poisoned' };
+		const made = run(
+			session,
+			ctx,
+			{
+				type: 'AddGenericToken',
+				look: { note: 'Poisoned', like: { ...like, ownerSeatId: seats[1] } }
+			},
+			{ type: 'AddGenericToken', look: { like: { characterId: GENERIC_REMINDER_ID, label: '' } } }
+		);
+		const [token, plain] = made.game.genericTokens!;
+		expect(token.like).toEqual(like);
+		expect(plain).not.toHaveProperty('like');
+		const generic = { characterId: GENERIC_REMINDER_ID, label: '' };
+		const placed = run(made, ctx, {
+			type: 'AddReminder',
+			seatId: seats[0],
+			reminder: generic,
+			tokenId: token.tokenId
+		});
+		expect(placed.game.seats[seats[0]].reminders[0]).toMatchObject({ note: 'Poisoned', like });
+		const same = { note: 'Poisoned', like };
+		expect(
+			warned(placed, ctx, { type: 'SetGenericToken', tokenId: token.tokenId, look: same })
+		).toContain('no-change');
+	});
+
 	it('refuses an unknown token, a long symbol and an unknown colour', () => {
 		const { session, ctx, seats } = newGame(names);
 		const generic = { characterId: GENERIC_REMINDER_ID, label: '' };

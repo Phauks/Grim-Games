@@ -29,6 +29,7 @@
 	bind:open
 	look={token}
 	tokenKey={token?.tokenId}
+	art={token?.like ? grimoire.open.characters.get(token.like.characterId) : undefined}
 	onChange={set}
 	onDelete={() => token && grimoire.run({ type: 'RemoveGenericToken', tokenId: token.tokenId })}
 	deleteLabel="Delete token"

@@ -223,7 +223,9 @@ export const REMINDERS_DECIDERS: Deciders<
 			look.note === token.note &&
 			look.symbol === token.symbol &&
 			look.symbolColour === token.symbolColour &&
-			look.symbolFill === token.symbolFill
+			look.symbolFill === token.symbolFill &&
+			look.like?.characterId === token.like?.characterId &&
+			look.like?.label === token.like?.label
 		) {
 			warn('no-change', 'the token is unchanged');
 			return [];
