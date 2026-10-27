@@ -22,6 +22,23 @@ const SHARE_TODO = [];
  */
 const PLAYER_BADGE_TODO = [];
 
+/**
+ * Files that still build "Seat 3" by hand instead of seatName or t('common.seat'); only ever
+ * shrinks. Most show the result as plain text, so moving them onto seatName means showing a
+ * PlayerBadge there too (grim/names-as-badges).
+ */
+const SEAT_NAME_TODO = [
+	'src/lib/features/grimoire/ReminderAsk.svelte',
+	'src/lib/features/grimoire/ReminderBank.svelte',
+	'src/lib/features/grimoire/ReminderOrigin.svelte',
+	'src/lib/features/grimoire/ReminderPicker.svelte',
+	'src/lib/features/grimoire/SeatStatusDialog.svelte',
+	'src/lib/features/grimoire/SeatToken.svelte',
+	'src/lib/features/grimoire/StepAfflictions.svelte',
+	'src/lib/features/grimoire/board.ts',
+	'src/lib/features/player/notebook.ts'
+];
+
 const LOCAL_STORAGE_TODO = [
 	'src/lib/features/grimoire/board-looks.svelte.ts',
 	'src/lib/features/grimoire/device-notes.ts',
@@ -203,6 +220,27 @@ export default defineConfig(
 					object: 'window',
 					property: 'localStorage',
 					message: 'Use readStored/writeStored from #lib/ui/stored.ts.'
+				}
+			]
+		}
+	},
+	{
+		// A seat is named by seatName (features/game/seat-label.ts) or t('common.seat'), never a
+		// hand-built "Seat ${n}" (Trevor, 2026-10-19: one name for every seat). Core writes the
+		// default player names itself, in English. SEAT_NAME_TODO only shrinks.
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
+		ignores: [
+			'src/lib/core/**',
+			'src/**/*.test.ts',
+			'src/lib/features/spikes/**',
+			...SEAT_NAME_TODO
+		],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: 'TemplateLiteral[quasis.0.value.raw=/^Seat $/]',
+					message: "Name a seat with seatName (features/game/seat-label.ts) or t('common.seat')."
 				}
 			]
 		}

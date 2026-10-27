@@ -301,7 +301,7 @@
 	const toPercent = (p: { x: number; y: number }): SeatPoint => boardToPercent(p, boardSize);
 	const nameBoxes = $derived.by(() =>
 		boardNameBoxes({
-			names: seats.map((seat, i) => seat.playerName ?? `Seat ${i + 1}`),
+			names: seats.map((seat, i) => seat.playerName ?? t('common.seat', { number: i + 1 })),
 			seats: shown,
 			size,
 			unit,
@@ -527,7 +527,8 @@
 		placing
 			? shown.map((p, i) => {
 					const next = shown[(i + 1) % shown.length];
-					const name = (k: number) => game.seats[game.seating[k]].playerName ?? `Seat ${k + 1}`;
+					const name = (k: number) =>
+						game.seats[game.seating[k]].playerName ?? t('common.seat', { number: k + 1 });
 					return {
 						position: i + 1,
 						at: { x: (p.x + next.x) / 2, y: (p.y + next.y) / 2 },
