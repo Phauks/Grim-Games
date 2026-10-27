@@ -145,7 +145,6 @@ export const room = {
 	'room.scriptVote.addMode': 'Add a game mode',
 	'room.scriptVote.addRule': 'Add a special rule',
 	'room.scriptVote.join': 'Join to vote',
-	'room.choose': 'Set your name with the settings cog at the top.',
 	'room.yourName': 'Your name',
 	'room.vote.title': 'Spectators’ vote',
 	// After the game (plan R4); accolades approved by Trevor, 2026-10-22.

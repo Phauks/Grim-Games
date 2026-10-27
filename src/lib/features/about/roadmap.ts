@@ -161,8 +161,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
 	{
-		title: 'Sound: every sound in one place, Back to town, day and night ambience, your own sounds',
-		parts: ['U1', 'U2', 'U3', 'U4']
+		title:
+			'Sound: every sound in one place, Back to town, day and night ambience, a soundboard, sounds for your actions, your own sounds',
+		parts: ['U1', 'U2', 'U3', 'U4', 'U6', 'U7']
 	},
 	{
 		title:
