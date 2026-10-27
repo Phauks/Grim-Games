@@ -146,7 +146,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text): `nightText`, moved
 - Info token characters (`info-token-characters.ts`: the character a night step's card always shows): `infoTokenCharacters`, new
 - On-death triggers (`night-alerts.ts` `ON_DEATH`): `onDeath`, moved
-- Protection (`ability.ts`, `night-alerts.ts`): `protects`, moved
+- Protection (`ability.ts`, `night-alerts.ts`; `not-execution` for the Storm Catcher, `whileNeighboursGood` for the Tea Lady): `protects`, moved
 - Impairments (`ability.ts`, read by `impairs-rules.ts`: the Drunk, Witch, Minstrel, Preacher, Xaan; Barista's `clears`; other tokens end with their character unless an entry says they last): `impairs`, moved
 - Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw): `registersAs`, moved
 - Night killers (`night-alerts.ts` `NIGHT_KILLERS`): `kills`, moved
@@ -155,6 +155,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Nomination abilities (`rules/nominations.ts`): `onNominated`, `afterDeath`, moved
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
+- Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
 - Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56): `dayClaim`, `guessLimit`, moved
 - Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new): `dayMark`, moved

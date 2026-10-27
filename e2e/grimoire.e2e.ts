@@ -1145,6 +1145,45 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 	);
 });
 
+test("the Demon's step says when the Princess stops its kill tonight", async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Princess : after her day-one execution, the Demon
+	// doesn't kill tonight, so the Soldier's protection isn't listed either.
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Imp'],
+		[2, 'Princess'],
+		[3, 'Soldier']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		if (name === 'Princess') await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await closeSheet(page);
+	}
+	await walkTo(page, 'Dusk');
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const reminders = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await reminders
+		.getByRole('group', { name: 'Princess' })
+		.getByRole('button', { name: "Doesn't Kill" })
+		.tap();
+	await reminders.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	await (await walkTo(page, 'Imp')).locator('button.step .count').tap();
+	const alerts = page.getByRole('dialog', { name: 'Imp' }).getByTestId('night-alerts');
+	await expect(alerts).toContainText(/Seat 1:\s*Princess\s*, doesn't\s+kill\s+tonight/);
+	await expect(alerts).not.toContainText(/Soldier/);
+});
+
 test('a filled-in info token with room left opens its picker with the filled ones picked', async ({
 	page
 }) => {

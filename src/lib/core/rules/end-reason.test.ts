@@ -73,6 +73,13 @@ describe('endCharacters', () => {
 		expect(endCharacters(session.game, characters)).toEqual(['mayor', 'saint', 'slayer', 'klutz']);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Politician: the Storyteller judges who was most
+	// responsible for their team losing, so it is offered and never checked.
+	it('offers the Politician in play as a reason', () => {
+		const { session } = castGame(['politician', 'chef', 'poisoner', 'imp']);
+		expect(endCharacters(session.game, characters)).toContain('politician');
+	});
+
 	it('adds a saved reason that is no longer in play', () => {
 		const { session } = castGame(TB);
 		expect(endCharacters(session.game, characters, 'character:fiddler')).toEqual([

@@ -2,7 +2,8 @@
 	"protects": {
 		"who": "marked",
 		"token": "Cannot Die",
-		"from": "any"
+		"from": "any",
+		"whileNeighboursGood": true
 	},
 	"reminderTargets": {
 		"Cannot Die": {

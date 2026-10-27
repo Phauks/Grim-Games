@@ -175,6 +175,8 @@ export interface CharacterRules {
 	dayMark?: DayMarkRule;
 	/** Its token on a player stops them waking tonight (`stops-waking-rules.ts`). */
 	stopsWaking?: StopsWaking;
+	/** Its token on a player stops them killing tonight (`stops-waking-rules.ts`'s shape). */
+	stopsKilling?: StopsWaking;
 	/** Its token on a dead player keeps that player's ability (`keeps-ability-rules.ts`). */
 	keepsAbility?: KeepsAbility;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
@@ -285,20 +287,24 @@ export interface Kills {
 
 export const PROTECTS_WHO = ['self', 'marked', 'good'] as const;
 /**
- * What a protection stops: the Demon's kill, any death, or only an execution (the Devil's
- * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate).
+ * What a protection stops: the Demon's kill, any death, only an execution (the Devil's
+ * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate), or any death but an
+ * execution (the Storm Catcher's good character "can only die by execution",
+ * https://wiki.bloodontheclocktower.com/Storm_Catcher).
  */
-export const PROTECTS_FROM = ['demon', 'any', 'execution'] as const;
+export const PROTECTS_FROM = ['demon', 'any', 'execution', 'not-execution'] as const;
 /**
  * `night`: it lasts only the night it is given ("can't die tonight"), so never stops an
  * execution. `storytellerDecides`: the player only "might not die" (the Pacifist, the
  * Psychopath's roshambo), so the grimoire never applies it; the Storyteller picks it in the
- * Execution sheet's Saved by.
+ * Execution sheet's Saved by. `whileNeighboursGood`: it holds only while both of the
+ * character's alive neighbours are good (the Tea Lady,
+ * https://wiki.bloodontheclocktower.com/Tea_Lady).
  */
 export type Protects = (
 	| { who: 'self' | 'good'; from: (typeof PROTECTS_FROM)[number] }
 	| { who: 'marked'; token: ReminderLabel; from: (typeof PROTECTS_FROM)[number] }
-) & { night?: true; storytellerDecides?: true };
+) & { night?: true; storytellerDecides?: true; whileNeighboursGood?: true };
 
 export {
 	IMPAIRMENT_REASONS,
@@ -338,6 +344,7 @@ export const RULE_KEYS = [
 	'nightText',
 	'dayMark',
 	'stopsWaking',
+	'stopsKilling',
 	'keepsAbility',
 	'infoTokenCharacters',
 	'makesExtraEvil',
@@ -540,6 +547,10 @@ export function parseCharacterRules(
 		const stops = readStopsWaking(raw.stopsWaking, at, issues, reminders);
 		if (stops) rules.stopsWaking = stops;
 	}
+	if (raw.stopsKilling !== undefined) {
+		const stops = readStopsWaking(raw.stopsKilling, `${path}.stopsKilling`, issues, reminders);
+		if (stops) rules.stopsKilling = stops;
+	}
 	if (raw.keepsAbility !== undefined) {
 		const at = `${path}.keepsAbility`;
 		const keeps = readKeepsAbility(raw.keepsAbility, at, issues, reminders);
@@ -593,13 +604,21 @@ function readProtects(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['who', 'token', 'from', 'night', 'storytellerDecides'], path, issues);
+	checkKeys(
+		raw,
+		['who', 'token', 'from', 'night', 'storytellerDecides', 'whileNeighboursGood'],
+		path,
+		issues
+	);
 	const who = readEnum(raw, 'who', PROTECTS_WHO, path, issues, true);
 	const from = readEnum(raw, 'from', PROTECTS_FROM, path, issues, true);
 	const flags = {
 		...(readBoolean(raw, 'night', path, issues) ? { night: true as const } : {}),
 		...(readBoolean(raw, 'storytellerDecides', path, issues)
 			? { storytellerDecides: true as const }
+			: {}),
+		...(readBoolean(raw, 'whileNeighboursGood', path, issues)
+			? { whileNeighboursGood: true as const }
 			: {})
 	};
 	if (!who || !from) return undefined;

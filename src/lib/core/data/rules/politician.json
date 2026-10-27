@@ -21,5 +21,8 @@
 	"deathCause": {
 		"none": "changes alignment"
 	},
-	"makesExtraEvil": true
+	"makesExtraEvil": true,
+	"gameEnd": {
+		"decidedByStoryteller": true
+	}
 }
