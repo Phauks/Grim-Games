@@ -30,6 +30,14 @@ async function send(code: string, key: string, original: Blob): Promise<string> 
 	if (image.size > MAX_ROOM_IMAGE_BYTES || !isRoomImageType(image.type))
 		image = await shrinkImage(image, 1280, 0.75);
 	if (image.size > MAX_ROOM_IMAGE_BYTES) throw new Error('Picture too large for the room');
+	return putRoomImage(code, key, image);
+}
+
+/**
+ * Puts one picture in the room as it is, with the Storyteller's room key or a player's own
+ * phone key (a player's avatar picture, core/sync/room-pictures.ts), and says its name there.
+ */
+export async function putRoomImage(code: string, key: string, image: Blob): Promise<string> {
 	const bytes = new Uint8Array(await image.arrayBuffer());
 	const digest = await crypto.subtle.digest('SHA-256', bytes);
 	const hash = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');

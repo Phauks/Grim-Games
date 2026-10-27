@@ -1227,7 +1227,7 @@ test('the join code shows under the script name, a Board setting, read only', as
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	// The day or night and Game time join the code's line where a phone's corner has no line
 	// to spare for them.
-	const codeLine = new RegExp(`^Join code ${shown}( · Setup)?( · Game time Setup)?$`);
+	const codeLine = new RegExp(`^Join code ${shown}( · Setup)?( · Game time 0:00)?$`);
 	await expect(corner).toHaveText(codeLine);
 	// Only read: Share is the toolbar's button, not the corner (Trevor, 2026-10-24).
 	await expect(page.getByRole('button', { name: /Join code/ })).toHaveCount(0);
