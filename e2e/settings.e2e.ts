@@ -369,6 +369,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Storyteller',
 		'Sound',
 		'Player',
+		'Print',
 		'Language',
 		'Data'
 	]);
@@ -754,4 +755,27 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	await choose('Grouping', 'Stacked');
 	await expect(preview.getByTestId('preview-rules-stack')).toBeVisible();
 	await preview.screenshot({ path: test.info().outputPath('board-preview.png') });
+});
+
+// Trevor, 2026-10-27: Print has its own settings section; Player keeps Sheet background.
+test('Print has its own section with the printed sheet settings and a reset', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Print');
+	const fields = dialog.getByTestId('print-settings');
+	await expect(fields.getByRole('combobox', { name: 'Columns' })).toBeVisible();
+	const jinxes = fields.getByRole('checkbox', { name: 'Jinxes', includeHidden: true });
+	await expect(jinxes).toBeChecked();
+	await fields.getByText('Jinxes', { exact: true }).tap();
+	await expect(jinxes).not.toBeChecked();
+	await page.reload();
+	const again = await openSettings(page, 'Player');
+	await expect(again.getByTestId('print-settings')).toHaveCount(0);
+	await expect(again.getByRole('combobox', { name: 'Sheet background' })).toBeVisible();
+	await page.reload();
+	const print = await openSettings(page, 'Print');
+	await expect(
+		print
+			.getByTestId('print-settings')
+			.getByRole('checkbox', { name: 'Jinxes', includeHidden: true })
+	).not.toBeChecked();
 });

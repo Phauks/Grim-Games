@@ -16,6 +16,7 @@ export const settings = {
 	'settings.data': 'Data',
 	'settings.sectionLanguage': 'Language',
 	'settings.sectionSound': 'Sound',
+	'settings.sectionPrint': 'Print',
 	'settings.soundVolume': 'Volume',
 	'settings.callSound': 'Back to town sound',
 	'settings.ambience': 'Day and night sound',
