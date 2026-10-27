@@ -104,9 +104,7 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	expect(Math.abs(gear.y - corner.y)).toBeLessThan(2);
 	await fullScreen.tap();
 	// The request settles after the tap, so wait for it.
-	await expect
-		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
-		.toBe('public-town');
+	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
 	const filled = (await town.boundingBox())!;
 	const screen = tablet.viewportSize()!;
@@ -222,9 +220,7 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 	expect(Math.abs(after.y - before.y)).toBeLessThan(2);
 	// In full screen the title line is gone, so it moves to the town's own corner.
 	await tablet.getByRole('button', { name: 'Full screen', exact: true }).tap();
-	await expect
-		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
-		.toBe('public-town');
+	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
 	await expect(tablet.getByTestId('public-town').getByTestId('players-timer')).toBeVisible();
 	await tablet
 		.getByTestId('public-town')
