@@ -6312,3 +6312,45 @@ test('reminders keep a line back to their seat, and all of them stay on the boar
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await expect(dialog.getByText('Stack crowded reminders')).toHaveCount(0);
 });
+
+// https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it points at a player and at
+// a Demon on the character sheet; that player becomes the evil Demon.
+test("the Summoner's Night 3 step makes the chosen player the Demon it points at", async ({
+	page
+}) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Summoner', exact: true }).tap();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const reminders = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await reminders
+		.getByRole('group', { name: 'Summoner' })
+		.getByRole('button', { name: 'Night 3' })
+		.tap();
+	await reminders.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	const step = await openStep(page, 'Summoner');
+	await expect(step.getByTestId('make-demon')).toContainText('None');
+	await step.getByTestId('make-demon').getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Becomes the Demon' })
+		.getByRole('button', { name: /Seat 2/ })
+		.tap();
+	// The Demon list can be handed to the Summoner: only Demons, nothing of the grimoire.
+	const demons = page.getByRole('dialog', { name: 'Choose a Demon' });
+	await expect(demons.getByRole('button', { name: 'Imp', exact: true })).toBeVisible();
+	await expect(demons).not.toContainText('Seat');
+	await expect(demons.getByRole('button', { name: 'Summoner', exact: true })).toHaveCount(0);
+	await demons.getByRole('button', { name: 'Imp', exact: true }).tap();
+	await expect(step.getByTestId('make-demon')).toContainText('Imp');
+	await expect(
+		step.getByTestId('make-demon').getByRole('button', { name: 'Show to player' })
+	).toBeVisible();
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	const seat = await openSeat(page, 2);
+	await expect(seat).toContainText(/Imp\s*Demon · Evil · Seat 2/);
+});

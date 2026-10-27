@@ -478,16 +478,21 @@ export interface Protector {
 	from: (typeof PROTECTS_FROM)[number];
 }
 
-/** What a death is from: the Demon's kill, another ability's, or the day's execution. */
-export type DeathBy = 'demon' | 'other' | 'execution';
+/**
+ * What a death is from: the Demon's kill, another ability's at night, the day's execution, or
+ * another ability's by day (`day`: a Slayer's shot, a Witch's curse, recorded while it is day).
+ */
+export type DeathBy = 'demon' | 'other' | 'execution' | 'day';
 
-/** Whether a protection stops a death `by` this: not one lasting only the night, for an execution. */
+/** Whether a protection stops a death `by` this: one lasting only the night stops none by day. */
 function stops(rule: Protects, by: DeathBy): boolean {
+	const byDay = by === 'execution' || by === 'day';
 	const covers =
 		rule.from === 'any' ||
 		rule.from === by ||
-		(rule.from === 'not-execution' && by !== 'execution');
-	return covers && !(rule.night && by === 'execution');
+		(rule.from === 'not-execution' && by !== 'execution') ||
+		(rule.from === 'day' && byDay);
+	return covers && !(rule.night && byDay);
 }
 
 /**

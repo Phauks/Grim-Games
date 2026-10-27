@@ -16,7 +16,7 @@ import {
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
-import { becomesOffer } from './becomes.ts';
+import { becomesOffer, demonMaker } from './becomes.ts';
 
 const isTheDemon = { characterId: 'scarletwoman', label: 'Is The Demon' };
 const turnsEvil = { characterId: 'mezepheles', label: 'Turns Evil' };
@@ -152,5 +152,49 @@ describe('becomesOffer: Snake Charmer (https://wiki.bloodontheclocktower.com/Sna
 		});
 		expect(game.seats[seats[0]]).toMatchObject({ characterId: 'imp', alignment: 'evil' });
 		expect(game.seats[seats[2]]).toMatchObject({ characterId: 'snakecharmer', alignment: 'good' });
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it chooses a player, who
+// becomes an evil Demon of its choice.
+describe('a character that makes a Demon (makesDemon)', () => {
+	const night3 =
+		(i: number) =>
+		(s: string[]): Command => ({
+			type: 'AddReminder',
+			seatId: s[i],
+			reminder: { characterId: 'summoner', label: 'Night 3' }
+		});
+
+	it('is the Summoner alone', () => {
+		const makers = [...OFFICIAL_RULES].filter(([, r]) => r.makesDemon).map(([id]) => id);
+		expect(makers).toEqual(['summoner']);
+	});
+
+	it('asks on the night its token is on its own living player', () => {
+		const { session, seats } = castGame(['summoner', 'chef', 'empath'], night3(0));
+		expect(demonMaker(session.game, 'summoner', characters)).toBe(seats[0]);
+	});
+
+	it('does not ask before its night, or once its player is dead', () => {
+		const early = castGame(['summoner', 'chef', 'empath'], (s) => ({
+			type: 'AddReminder',
+			seatId: s[0],
+			reminder: { characterId: 'summoner', label: 'Night 2' }
+		}));
+		expect(demonMaker(early.session.game, 'summoner', characters)).toBeUndefined();
+		const gone = castGame(['summoner', 'chef', 'empath'], night3(0), dead(0));
+		expect(demonMaker(gone.session.game, 'summoner', characters)).toBeUndefined();
+	});
+
+	it('the chosen player becomes the Demon, evil', () => {
+		const { session, seats, ctx } = castGame(['summoner', 'chef', 'empath'], night3(0));
+		const { game } = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[1],
+			characterId: 'nodashii',
+			alignment: 'evil'
+		});
+		expect(game.seats[seats[1]]).toMatchObject({ characterId: 'nodashii', alignment: 'evil' });
 	});
 });

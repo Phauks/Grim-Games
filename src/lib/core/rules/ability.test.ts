@@ -393,6 +393,21 @@ describe('executionSavers', () => {
 		});
 		// Not the Vizier's protection at night.
 		expect(protection(g.game, g.seats[2], characters, 'demon')).toBeUndefined();
+		expect(protection(g.game, g.seats[2], characters, 'other')).toBeUndefined();
+		// Any other death by day, a Slayer's shot or a Witch's curse.
+		expect(protection(g.game, g.seats[2], characters, 'day')).toMatchObject({
+			characterId: 'vizier'
+		});
+		expect(protection(g.game, g.seats[3], characters, 'day')).toBeUndefined();
+	});
+
+	it('a protection that lasts only the night stops no death by day', () => {
+		// https://wiki.bloodontheclocktower.com/Innkeeper: "can't die tonight".
+		const g = game(['innkeeper', 'chef', 'imp'], add(1, 'innkeeper', 'Safe'));
+		expect(protection(g.game, g.seats[1], characters, 'other')).toMatchObject({
+			characterId: 'innkeeper'
+		});
+		expect(protection(g.game, g.seats[1], characters, 'day')).toBeUndefined();
 	});
 
 	it('never offers a protection that lasts only the night', () => {

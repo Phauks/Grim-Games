@@ -203,6 +203,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['R9'],
 		later: true
 	},
+	{
+		title: 'Vote tracking: who voted on each nomination, and what depends on it',
+		parts: ['V1'],
+		later: true
+	},
 	{ title: 'Alternate art packs', parts: ['P2'], later: true },
 	{ title: 'A new app logo', parts: ['O1'], later: true }
 ];

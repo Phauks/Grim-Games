@@ -3,6 +3,7 @@
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
 	import StepAfflictions from './StepAfflictions.svelte';
+	import MakeDemonStep from './MakeDemonStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
@@ -286,6 +287,18 @@
 					showOpen = true;
 				}}
 			/>
+			{#if step.character}
+				<!-- Over the open step, as with a suggestion's Show to player. -->
+				<MakeDemonStep
+					{grimoire}
+					{step}
+					onShow={(id) => {
+						shownCard = undefined;
+						shownId = id;
+						showOpen = true;
+					}}
+				/>
+			{/if}
 			{#if numberStep}
 				<h3>Info token</h3>
 				<div class="number" data-testid="step-number">

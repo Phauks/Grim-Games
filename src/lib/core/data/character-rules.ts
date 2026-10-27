@@ -19,7 +19,7 @@ import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-to
 import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
-import { readBecomes, type Becomes } from './becomes-rules.ts';
+import { readBecomes, readMakesDemon, type Becomes, type MakesDemon } from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readImpairs, type Impairs } from './impairs-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
@@ -185,6 +185,8 @@ export interface CharacterRules {
 	keepsAbility?: KeepsAbility;
 	/** Its token says a player changed character or alignment (`becomes-rules.ts`). */
 	becomes?: Becomes;
+	/** On a night its token marks, it makes a chosen player a Demon (`becomes-rules.ts`). */
+	makesDemon?: MakesDemon;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 	/**
@@ -307,11 +309,13 @@ export interface Kills {
 export const PROTECTS_WHO = ['self', 'marked', 'good'] as const;
 /**
  * What a protection stops: the Demon's kill, any death, only an execution (the Devil's
- * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate), or any death but an
+ * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate), any death but an
  * execution (the Storm Catcher's good character "can only die by execution",
- * https://wiki.bloodontheclocktower.com/Storm_Catcher).
+ * https://wiki.bloodontheclocktower.com/Storm_Catcher), or any death by day, an execution
+ * included (the Vizier "cannot die during the day",
+ * https://wiki.bloodontheclocktower.com/Vizier).
  */
-export const PROTECTS_FROM = ['demon', 'any', 'execution', 'not-execution'] as const;
+export const PROTECTS_FROM = ['demon', 'any', 'execution', 'not-execution', 'day'] as const;
 /**
  * `night`: it lasts only the night it is given ("can't die tonight"), so never stops an
  * execution. `storytellerDecides`: the player only "might not die" (the Pacifist, the
@@ -366,6 +370,7 @@ export const RULE_KEYS = [
 	'stopsKilling',
 	'keepsAbility',
 	'becomes',
+	'makesDemon',
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'orHiddenAs',
@@ -580,6 +585,10 @@ export function parseCharacterRules(
 	if (raw.becomes !== undefined) {
 		const becomes = readBecomes(raw.becomes, `${path}.becomes`, issues, reminders);
 		if (becomes) rules.becomes = becomes;
+	}
+	if (raw.makesDemon !== undefined) {
+		const makes = readMakesDemon(raw.makesDemon, `${path}.makesDemon`, issues, reminders);
+		if (makes) rules.makesDemon = makes;
 	}
 	if (raw.infoTokenCharacters !== undefined) {
 		const at = `${path}.infoTokenCharacters`;

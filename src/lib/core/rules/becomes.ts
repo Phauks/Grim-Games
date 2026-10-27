@@ -57,3 +57,22 @@ export function becomesOffer(
 	const characterId = taken === undefined ? undefined : trueCharacter(game, taken, characters);
 	return characterId === undefined ? undefined : { into: 'demon', seatId, characterId };
 }
+
+/**
+ * The player whose `characterId` makes a Demon tonight: its `makesDemon` token is on its own
+ * living player (the Summoner's Night 3). The step then asks which player and which Demon.
+ */
+export function demonMaker(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId | undefined {
+	const rule = rulesOf(characterId, characters)?.makesDemon;
+	if (!rule) return undefined;
+	return game.seating.find(
+		(id) =>
+			!game.seats[id].dead &&
+			trueCharacter(game, id, characters) === characterId &&
+			game.seats[id].reminders.some((r) => r.characterId === characterId && r.label === rule.token)
+	);
+}
