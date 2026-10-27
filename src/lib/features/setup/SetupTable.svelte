@@ -119,11 +119,11 @@
 	}
 	tbody tr[data-type='townsfolk'] th,
 	tbody tr[data-type='outsider'] th {
-		color: var(--good);
+		color: var(--good-text);
 	}
 	tbody tr[data-type='minion'] th,
 	tbody tr[data-type='demon'] th {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	button {
 		width: 100%;

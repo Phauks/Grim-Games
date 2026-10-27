@@ -197,7 +197,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		later: true
 	},
 	{ title: 'Co-Storytelling: two Storytellers on one game', parts: ['Y2'], later: true },
-	{ title: 'Achievements and History stats', parts: ['A1'], later: true },
+	{ title: 'Achievements and laurels, and History stats', parts: ['A1a', 'A1'], later: true },
 	{
 		title: 'Game replay: step through a saved game with a filterable history beside the grim',
 		parts: ['R9'],
