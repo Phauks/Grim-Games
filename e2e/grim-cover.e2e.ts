@@ -24,6 +24,7 @@ async function coverAndUncover(page: Page) {
 	await expect(cover).toBeVisible();
 	// Only what isn't secret: the script, the night or day, and the timer.
 	await expect(cover.getByRole('heading', { name: 'Trouble Brewing' })).toBeVisible();
+	await expect(cover.getByTestId('cover-storyteller')).toHaveText('Storyteller: Trev');
 	await expect(cover.getByTestId('cover-phase')).toHaveText('Setup');
 	await expect(cover.getByTestId('day-timer')).toBeVisible();
 	await expect(cover.getByRole('button', { name: /^Seat / })).toHaveCount(0);
@@ -100,7 +101,13 @@ test('a player hides their guesses and notes on the Grim tab, and has no cover',
 test('the Storyteller covers the screen from the board, beside the timer, and from the day', async ({
 	page
 }) => {
-	await startGame(page);
+	const board = await startGame(page);
+	// Who runs the game shows too (Trevor, 2026-10-27: "Include storyteller name on grim cover").
+	await page.goto(`${board}/setup`);
+	const storyteller = page.getByRole('textbox', { name: 'Storyteller' });
+	await storyteller.fill('Trev');
+	await storyteller.press('Enter');
+	await toBoard(page);
 
 	// Never in the ⋯ menu.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
