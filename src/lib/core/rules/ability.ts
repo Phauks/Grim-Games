@@ -15,7 +15,14 @@
  *
  * Everything here is a suggestion: the Storyteller can override any of it.
  */
-import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
+import {
+	ALIGNMENTS,
+	SEATED_TYPES,
+	type Alignment,
+	type CharacterId,
+	type CharacterType,
+	type ReminderLabel
+} from '#lib/core/data/types.ts';
 import type {
 	ImpairmentReason,
 	PROTECTS_FROM,
@@ -318,7 +325,10 @@ export interface Registration {
  * - the Spy might register as good and as a Townsfolk or Outsider, even if dead
  *   (https://wiki.bloodontheclocktower.com/Spy);
  * - the Lycanthrope's Faux Paw player is good but registers as evil
- *   (https://wiki.bloodontheclocktower.com/Lycanthrope).
+ *   (https://wiki.bloodontheclocktower.com/Lycanthrope);
+ * - the Revolutionary's two "Aligned" players might register as anything while "Register
+ *   Falsely?" is still in play: once it has been used, it comes off
+ *   (https://wiki.bloodontheclocktower.com/Revolutionary).
  * A drunk or poisoned Recluse or Spy registers truly: they have no ability.
  */
 export function registrations(game: Game, characters: CharacterLookup): Registration[] {
@@ -346,27 +356,39 @@ export function registrations(game: Game, characters: CharacterLookup): Registra
 		for (const token of game.seats[seatId].reminders) {
 			const rule = rulesOf(token.characterId, characters)?.registersAs?.tokens?.[token.label];
 			if (!rule || (rule.carrierAlignment && rule.carrierAlignment !== alignment)) continue;
+			if (rule.whileToken && !inPlayToken(game, token.characterId, rule.whileToken)) continue;
 			const source = game.seating.find(
 				(s) =>
 					trueCharacter(game, s, characters) === token.characterId &&
 					abilityState(game, s, characters).works
 			);
-			if (!source) continue;
+			// A Fabled has no seat: its tokens work while it is in play.
+			if (!source && !game.ruleCharacters.includes(token.characterId)) continue;
+			const fixed = rule.asAnything
+				? { alignments: [alignment, ...ALIGNMENTS], types: [type, ...SEATED_TYPES] }
+				: { alignments: rule.alignments ?? [alignment], types: rule.types ?? [type] };
 			out.push({
 				seatId,
-				alignments: (rule.alignments ?? [alignment]).filter(
-					(a, i, all): a is Alignment => all.indexOf(a) === i
-				),
-				types: (rule.types ?? [type]).filter(
-					(t, i, all): t is CharacterType => all.indexOf(t) === i
-				),
-				source: { characterId: token.characterId, seatId: source, reminderId: token.reminderId },
+				alignments: fixed.alignments.filter((a, i, all): a is Alignment => all.indexOf(a) === i),
+				types: fixed.types.filter((t, i, all): t is CharacterType => all.indexOf(t) === i),
+				source: {
+					characterId: token.characterId,
+					...(source ? { seatId: source } : {}),
+					reminderId: token.reminderId
+				},
 				wiki: wikiOf(token.characterId, characters)
 			});
 			break;
 		}
 	}
 	return out;
+}
+
+/** Whether `characterId`'s reminder `label` is on any seat. */
+function inPlayToken(game: Game, characterId: CharacterId, label: string): boolean {
+	return game.seating.some((s) =>
+		game.seats[s].reminders.some((r) => r.characterId === characterId && r.label === label)
+	);
 }
 
 /** How every player registers in one possible world. */

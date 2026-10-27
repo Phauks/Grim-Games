@@ -206,6 +206,41 @@ describe('registrations', () => {
 		]);
 		expect(registrationWorlds(g, characters)[0].alignment(seats[1])).toBe('evil');
 	});
+
+	// https://wiki.bloodontheclocktower.com/Revolutionary: once per game, one of the two
+	// neighbours registers falsely.
+	it("the Revolutionary's pair may register as anything until Register Falsely? comes off", () => {
+		const { game: g, seats } = game(
+			['chef', 'empath', 'imp', 'poisoner'],
+			() => ({ type: 'AddRuleCharacter', characterId: 'revolutionary' }),
+			add(0, 'revolutionary', 'Aligned'),
+			add(1, 'revolutionary', 'Aligned'),
+			add(0, 'revolutionary', 'Register Falsely?')
+		);
+		expect(registrations(g, characters)).toEqual([
+			expect.objectContaining({
+				seatId: seats[0],
+				alignments: ['good', 'evil'],
+				types: ['townsfolk', 'outsider', 'minion', 'demon'],
+				source: expect.objectContaining({ characterId: 'revolutionary' })
+			}),
+			expect.objectContaining({ seatId: seats[1], alignments: ['good', 'evil'] })
+		]);
+		expect(registrationWorlds(g, characters)[0].misregistered).toEqual([]);
+		// Used: the token comes off, and both register truly.
+		const token = g.seats[seats[0]].reminders.find((r) => r.label === 'Register Falsely?');
+		const used = {
+			...g,
+			seats: {
+				...g.seats,
+				[seats[0]]: {
+					...g.seats[seats[0]],
+					reminders: g.seats[seats[0]].reminders.filter((r) => r !== token)
+				}
+			}
+		};
+		expect(registrations(used, characters)).toEqual([]);
+	});
 });
 
 describe('protection', () => {

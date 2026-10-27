@@ -150,7 +150,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - On-death triggers (`night-alerts.ts` `ON_DEATH`; `onDeathApplies` reads `by` and `night` against the death cause): `onDeath`, moved
 - Protection (`ability.ts`, `night-alerts.ts`): `protects`, moved
 - Impairments (`ability.ts`, read by `impairs-rules.ts`: the Drunk, Witch, Minstrel, Preacher, Xaan; Barista's `clears`; other tokens end with their character unless an entry says they last): `impairs`, moved
-- Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw): `registersAs`, moved
+- Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw; `asAnything` and `whileToken` for the Revolutionary's pair until Register Falsely? comes off): `registersAs`, moved
 - Night killers (`night-alerts.ts` `NIGHT_KILLERS`): `kills`, moved
 - Death checks (`night-deaths.ts`: the Gambler, Acrobat, Lycanthrope and Grandmother): `deathCheck`, moved
 - Kill redirect and first-death survival (`ability.ts`, `first-death.ts`): `redirectsKill`, `survivesFirstDeath`, moved

@@ -59,7 +59,6 @@ const TRAIT_TODO: Record<string, Record<string, string>> = {
 	},
 	registersAs: {
 		fortuneteller: `the Red Herring registers as a Demon only to its own answer, in learns (${W}Fortune_Teller)`,
-		revolutionary: `one false registration of the Storyteller's choice (${W}Revolutionary)`,
 		zombuul: `registers as dead through gameEnd.aliveWhileDead (${W}Zombuul)`
 	}
 };
