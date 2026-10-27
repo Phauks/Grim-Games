@@ -425,7 +425,7 @@
 		{#if player}<YourCharacter {player} />{/if}
 		<!-- Where the game is up to, with the day's timer (Trevor, 2026-10-26); it shares the
 		     row's height, so nothing below moves. -->
-		{#if phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
+		{#if phase}<PlayersDayStatus {phase} timer={dayTimer} {seats} />{/if}
 		<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
 		{#if view?.endedGameId}
 			<Button aria-haspopup="dialog" onclick={() => (rating = true)}
