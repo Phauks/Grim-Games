@@ -39,3 +39,31 @@ export function seatChanges(
 		return [seatId ? { memberId: m.memberId, seatId } : { memberId: m.memberId }];
 	});
 }
+
+export interface SeatName {
+	memberId: string;
+	seatId: SeatId;
+	playerName: string;
+}
+
+/**
+ * Names for the unnamed seats, so Deal reaches the phones in the room that sit nowhere yet
+ * (Trevor, 2026-10-26: "I did not get notified, and my name was not placed in the grim"): each
+ * named phone whose name is on no seat takes the first unnamed seat, in join order.
+ */
+export function seatsToName(
+	members: readonly RoomMember[],
+	seats: readonly { seatId: SeatId; playerName?: string }[]
+): SeatName[] {
+	const taken = new Set(seats.flatMap((s) => (s.playerName ? [key(s.playerName)] : [])));
+	const free = seats.filter((s) => !s.playerName);
+	const out: SeatName[] = [];
+	for (const m of members) {
+		if (!m.name || taken.has(key(m.name))) continue;
+		const seat = free.shift();
+		if (!seat) break;
+		taken.add(key(m.name));
+		out.push({ memberId: m.memberId, seatId: seat.seatId, playerName: m.name });
+	}
+	return out;
+}
