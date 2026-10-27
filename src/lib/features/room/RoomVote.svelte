@@ -5,6 +5,7 @@
 	import { STANDARD } from '#lib/core/modes/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { allModes } from '#lib/features/modes/custom-modes.svelte.ts';
+	import { allRules } from '#lib/features/modes/custom-rules.svelte.ts';
 	import { scriptChoices, searchableScripts } from '#lib/features/modes/script-choices.svelte.ts';
 	import { restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
 	import { roomHost } from './host.svelte.ts';
@@ -41,6 +42,9 @@
 		}))
 	);
 
+	/** New game's special rules, built-in first (Trevor, 2026-10-26). */
+	const rules = $derived(allRules().map((r) => ({ value: r.id, label: r.name })));
+
 	function play(pick: VotePick) {
 		pickFromVote(pick);
 		void goto(resolve('/new'));
@@ -52,5 +56,7 @@
 	{modes}
 	onPick={(id) => play({ subject: 'script', id })}
 	onPickMode={(id) => play({ subject: 'mode', id })}
+	{rules}
+	onPickRules={(ids) => play({ subject: 'rules', ids })}
 	onBack={() => void goto(resolve('/new'))}
 />

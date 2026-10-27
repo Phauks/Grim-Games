@@ -1,6 +1,6 @@
 /**
  * The roadmap, kept in the repository so it ticks itself off. Each item is a feature, made of
- * the backlog plan's IDs (D1, R1-R9, B1-B6, S1-S22, P1-P2, L1-L65, G1-G16, J1-J23, W1-W9, Q1-Q2, U1-U7, ...):
+ * the backlog plan's IDs (such as D1, L2 or W10; the plan lists them all):
  * a part is finished once a merged change names its ID in brackets in its title, such as
  * "Savant info generator (L2)", and an item is done once all its parts and listed PRs are.
  * Only the features are shown. Add a new plan ID to the feature it belongs to, or a new
@@ -61,7 +61,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['L12', 'L13', 'L21', 'L9', 'L28', 'L45', 'L56', 'L57', 'L58', 'L61']
 	},
 	{
-		title: 'Live rooms: one join code, a script and mode vote, the next game in the same room',
+		title:
+			'Live rooms: one join code, a script, mode and special rules vote, the next game in the same room',
 		parts: [
 			'D1',
 			'R1',
@@ -80,7 +81,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J27',
 			'J29',
 			'J30',
-			'J31'
+			'J31',
+			'J33'
 		]
 	},
 	{
@@ -97,7 +99,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J28',
 			'J32',
 			'L18b',
-			...range('W', 1, 10),
+			...range('W', 1, 9),
 			...range('E', 1, 3)
 		]
 	},
@@ -159,9 +161,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
 	{
-		title:
-			'Sound: every sound in one place, Back to town, day and night ambience, a soundboard, sounds for your actions, your own sounds',
-		parts: ['U1', 'U2', 'U3', 'U4', 'U6', 'U7']
+		title: 'Sound: every sound in one place, Back to town, day and night ambience, your own sounds',
+		parts: ['U1', 'U2', 'U3', 'U4']
 	},
 	{
 		title:

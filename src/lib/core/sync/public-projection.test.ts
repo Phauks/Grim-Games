@@ -343,6 +343,11 @@ describe('the shared look', () => {
 		expect(parsePublicLook({ vignette: 'dark', logo: Number.NaN })).toEqual({});
 		expect(parsePublicLook({ vignette: 3, logo: -1 })).toEqual({ vignette: 1, logo: 0 });
 		expect(parsePublicLook({ background: 'script' })).toEqual({ background: 'script' });
+		expect(parsePublicLook({ background: 'image', image: 'a'.repeat(64) })).toEqual({
+			background: 'image',
+			image: 'a'.repeat(64)
+		});
+		expect(parsePublicLook({ image: 'blob:secret' })).toEqual({});
 	});
 });
 

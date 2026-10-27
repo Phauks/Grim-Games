@@ -14,9 +14,15 @@ describe('the look a board shares', () => {
 		).toEqual({ background: 'script' });
 	});
 
-	it("keeps the Storyteller's own picture on their device", () => {
+	it("shares the Storyteller's own picture, which the room names once it is uploaded", () => {
 		const image = new Blob(['x']);
-		expect(lookOf({ kind: 'image', image }, DEFAULT_BOARD_LOOKS).background).toBeUndefined();
+		expect(lookOf({ kind: 'image', image }, DEFAULT_BOARD_LOOKS).background).toBe('image');
+		expect(drawnLook({ background: 'image', image: 'a'.repeat(64) })).toEqual({
+			script: false,
+			image: 'a'.repeat(64)
+		});
+		// Not uploaded yet: no background.
+		expect(drawnLook({ background: 'image' })).toEqual({ script: false });
 	});
 
 	it('draws what was shared, the same on every device', () => {
