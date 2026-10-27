@@ -145,7 +145,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means): `reminderPlaceholders`, moved
 - Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text): `nightText`, moved
 - Info token characters (`info-token-characters.ts`: the character a night step's card always shows): `infoTokenCharacters`, new
-- On-death triggers (`night-alerts.ts` `ON_DEATH`): `onDeath`, moved
+- On-death triggers (`night-alerts.ts` `ON_DEATH`; `onDeathApplies` reads `by` and `night` against the death cause): `onDeath`, moved
 - Protection (`ability.ts`, `night-alerts.ts`): `protects`, moved
 - Impairments (`ability.ts`, read by `impairs-rules.ts`: the Drunk, Witch, Minstrel, Preacher, Xaan; Barista's `clears`; other tokens end with their character unless an entry says they last): `impairs`, moved
 - Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw): `registersAs`, moved

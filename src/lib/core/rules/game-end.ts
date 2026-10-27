@@ -188,6 +188,16 @@ function impaired(
  * - while the player with its token lives: the Lleech dies only with its host
  *   (https://wiki.bloodontheclocktower.com/Lleech).
  */
+/**
+ * Marked dead, yet still alive by its own ability (`gameEnd.aliveWhileDead`): the Zombuul after
+ * its first death, which "lives but registers as dead" and still wakes to kill
+ * (https://wiki.bloodontheclocktower.com/Zombuul), or a Lleech whose host lives
+ * (https://wiki.bloodontheclocktower.com/Lleech). Such a player keeps their night step.
+ */
+export function livesWhileDead(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	return !!game.seats[seatId]?.dead && aliveForEnd(game, seatId, characters);
+}
+
 function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	if (isAliveForWin(game, seatId)) return true;
 	const seat = game.seats[seatId];
