@@ -7,14 +7,28 @@ import {
 	type ReportStatus
 } from './reports-protocol.ts';
 
-/** Sends a report; the id it was stored under, or an Error. */
+/** The Worker answered a report with an error status (no connection throws a TypeError). */
+export class ReportRefused extends Error {
+	constructor(
+		readonly status: number,
+		message: string
+	) {
+		super(message);
+	}
+}
+
+/**
+ * Sends a report; the id it was stored under. Throws ReportRefused when the Worker refuses
+ * it, or fetch's own error when there is no connection. The app sends through the outbox
+ * (outbox.svelte.ts), which keeps a report on the device until it is sent.
+ */
 export async function sendReport(draft: ReportDraft): Promise<number> {
 	const response = await fetch(REPORTS_API, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(draft)
 	});
-	if (!response.ok) throw new Error(await response.text());
+	if (!response.ok) throw new ReportRefused(response.status, await response.text());
 	return ((await response.json()) as CreatedReport).id;
 }
 
