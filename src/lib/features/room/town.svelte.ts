@@ -18,6 +18,8 @@ export class RoomTown {
 	script = $state.raw<Script>();
 	/** An admin's only: the whole grimoire, while the room has it. */
 	grimoire = $state.raw<SharedGrimoire>();
+	/** The finished grimoire the Storyteller shared at game end (plan R5), as phones get it. */
+	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
 	readonly #socket: RoomSocket;
 
 	constructor(code: string, admin = false) {
@@ -26,8 +28,13 @@ export class RoomTown {
 			// The room ignores a display's key; a hello still carries one.
 			{ type: 'hello', role: 'town', key: randomKey(), protocol: ROOM_PROTOCOL },
 			(m) => {
-				if (m.type === 'town-view') this.view = m;
-				else if (m.type === 'script') this.script = m.script;
+				if (m.type === 'town-view') {
+					this.view = m;
+					// The game runs again, or a new one began: the finished grimoire goes.
+					if (!m.ended) this.revealed = undefined;
+				} else if (m.type === 'reveal') {
+					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
+				} else if (m.type === 'script') this.script = m.script;
 				else if (m.type === 'grimoire' && admin) this.grimoire = m.grimoire;
 			},
 			// Each connection starts again from what the room holds then.
