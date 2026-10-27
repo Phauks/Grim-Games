@@ -97,6 +97,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - The soundboard's mixer (level, overlap, each sound's volume and loop): `features/sound/SoundboardSettings.svelte`, in Settings > Sound and on the Soundboard sheet (`master` adds the device volume) (enforced by review)
 - Which sounds and mixes the soundboard shows (hot spots): `features/sound/SoundPadsDialog.svelte`, from the sheet's Edit and "+ New" pad and from Settings > Sound; pads are `SoundPad` in `core/sound/soundboard.ts` (`parsePads`, `padSounds`, `padName`) (enforced by review)
 - Soundboard sounds on the Public Town tablet (Play on): the room's `town-sound` message (`core/sync/room-sound.ts`, `parseTownSound`), sent by `soundboard.town` (connected by the Soundboard sheet) and played by `features/sound/town-sounds.ts` with `soundboard.fromStoryteller` (enforced by review)
+- The speaker every sound plays on: `features/sound/SpeakerSetting.svelte` over `features/sound/speaker.svelte.ts` (`canChooseSpeaker`, `useSpeaker`); `audio()` applies the saved one (enforced by review)
 - The time left on the room's script vote: `features/room/VoteTimeLeft.svelte` (Storyteller's vote sheet and each phone's ballot) (enforced by review)
 - A script's details: `features/scripts/ScriptView.svelte` (enforced by review)
 - A script's logo: `features/scripts/ScriptLogo.svelte` with `scriptLogo` (`core/data/script-logo.ts`) (enforced by review)

@@ -100,6 +100,7 @@ describe('parsePreferences', () => {
 			soundboardOverlap: true,
 			soundMixes: { heartbeat: { volume: 0.4, loop: true } },
 			soundOutput: 'both',
+			speaker: 'abc123',
 			soundPads: [{ sound: 'gallows' }, { mix: 'mix-1', name: 'Doom', sounds: ['heartbeat'] }],
 			timerKeepAwake: false,
 			timerPerPlayer: 45,

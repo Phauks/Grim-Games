@@ -18,6 +18,7 @@
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import { soundboard } from './soundboard.svelte.ts';
 	import SoundPadsDialog from './SoundPadsDialog.svelte';
+	import SpeakerSetting from './SpeakerSetting.svelte';
 
 	/**
 	 * The soundboard's mixer (Trevor 2026-10-27: "more mixing controls"), in Settings > Sound
@@ -52,6 +53,7 @@
 		defaultValue={DEFAULT_PREFERENCES.soundVolume}
 		onChange={(soundVolume) => preferences.update({ soundVolume })}
 	/>
+	<SpeakerSetting />
 {/if}
 {#if !master}
 	<!-- Which sounds and mixes the soundboard shows; on the sheet, its own Edit and "+ New". -->

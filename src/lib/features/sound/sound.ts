@@ -23,6 +23,12 @@ export function audio(): AudioContext | undefined {
 	} catch {
 		return undefined;
 	}
+	// The speaker chosen in Settings (plan U11, speaker.svelte.ts); a gone one stays default.
+	const speaker = preferences.current.speaker;
+	if (speaker && 'setSinkId' in context) {
+		const sink = context as AudioContext & { setSinkId(id: string): Promise<void> };
+		void sink.setSinkId(speaker).catch(() => {});
+	}
 	return context;
 }
 

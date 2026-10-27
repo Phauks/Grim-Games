@@ -128,6 +128,8 @@ export interface Preferences {
 	 * Public Town tablet, or both. Without a room it plays here.
 	 */
 	soundOutput: SoundOutput;
+	/** The speaker every sound plays on, by device id; empty for the device's default (U11). */
+	speaker: string;
 	/** The sounds and mixes placed on the soundboard, in order (Trevor, 2026-10-27). */
 	soundPads: SoundPad[];
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
@@ -271,6 +273,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	soundboardOverlap: false,
 	soundMixes: {},
 	soundOutput: 'device',
+	speaker: '',
 	soundPads: DEFAULT_PADS.map((pad) => ({ ...pad })),
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
@@ -374,6 +377,7 @@ export function parsePreferences(raw: unknown): Preferences {
 		soundOutput: (SOUND_OUTPUTS as readonly unknown[]).includes(input.soundOutput)
 			? (input.soundOutput as SoundOutput)
 			: DEFAULT_PREFERENCES.soundOutput,
+		speaker: typeof input.speaker === 'string' && input.speaker.length <= 256 ? input.speaker : '',
 		soundPads: parsePads(input.soundPads),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)

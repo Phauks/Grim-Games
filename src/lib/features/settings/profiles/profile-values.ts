@@ -18,7 +18,8 @@ import { parsePreferences, type Preferences } from '#lib/ui/preferences.ts';
 /** Preferences that stay with the device whichever profile is in use. */
 export const DEVICE_PREFERENCES = [
 	'allowZoom',
-	'soundVolume'
+	'soundVolume',
+	'speaker'
 ] as const satisfies readonly (keyof Preferences)[];
 type DevicePreference = (typeof DEVICE_PREFERENCES)[number];
 
