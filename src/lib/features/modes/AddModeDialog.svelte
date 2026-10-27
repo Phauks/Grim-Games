@@ -140,7 +140,7 @@
 		min-height: 4lh;
 		max-height: 30vh;
 		overflow-y: auto;
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	ul {
 		margin: var(--space-2) 0 0;

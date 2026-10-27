@@ -246,7 +246,7 @@
 		opacity: 1;
 	}
 	.bluff-toggle[aria-pressed='true'] {
-		color: var(--evil);
+		color: var(--evil-text);
 		opacity: 1;
 	}
 	.toggle:disabled {

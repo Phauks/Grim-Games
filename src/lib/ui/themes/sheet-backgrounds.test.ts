@@ -17,6 +17,8 @@ describe('sheet backgrounds', () => {
 					'--heading',
 					'--good',
 					'--evil',
+					'--good-text',
+					'--evil-text',
 					'--traveller-text',
 					'--loric-text'
 				] as const) {

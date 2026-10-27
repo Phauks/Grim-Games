@@ -292,7 +292,7 @@
 		border-color: var(--evil);
 	}
 	.timer[data-done] .clock {
-		color: var(--evil);
+		color: var(--evil-text);
 		animation: time-up 1s steps(2, jump-none) infinite;
 	}
 	@keyframes time-up {

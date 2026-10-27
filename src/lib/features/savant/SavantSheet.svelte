@@ -495,9 +495,9 @@
 		font-weight: 600;
 	}
 	[data-truth='true'] {
-		color: var(--good);
+		color: var(--good-text);
 	}
 	[data-truth='false'] {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 </style>
