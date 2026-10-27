@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import type { CharacterId, Script } from '#lib/core/data/types.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/characters.ts';
-import { gameData, newGame, run } from '#lib/core/model/fixtures.test-support.ts';
+import { castWith, gameData } from '#lib/core/model/fixtures.test-support.ts';
 import { validDeathCauses } from './death-causes.ts';
 
 const ids: CharacterId[] = [
@@ -42,22 +42,7 @@ const ids: CharacterId[] = [
 ];
 const script: Script = { entries: ids.map((id) => ({ kind: 'official', id })) };
 const characters = characterLookup(gameData, script);
-const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay'];
-
-function game(cast: string[], ...extra: ((seats: string[]) => Command)[]) {
-	const { session, ctx, seats } = newGame(names.slice(0, cast.length), { script });
-	const s = run(
-		{ ...session },
-		{ ...ctx, characters },
-		...cast.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...extra.map((f) => f(seats))
-	);
-	return { game: s.game, seats };
-}
+const scriptGame = castWith({ script, characters });
 
 const add =
 	(i: number, characterId: string, label: string) =>
@@ -74,18 +59,18 @@ const entry = (g: ReturnType<typeof game>['game'], seat: string, cause: string) 
 
 describe('validDeathCauses', () => {
 	it('offers executed and the Demon first, and never something else', () => {
-		const { game: g, seats } = game(['chef', 'imp']);
+		const { game: g, seats } = scriptGame(['chef', 'imp']);
 		expect(causes(g, seats[0])).toEqual(['execution', 'demon']);
 	});
 
 	it('does not offer the Slayer for a good player, but does for the Demon', () => {
-		const { game: g, seats } = game(['chef', 'slayer', 'imp']);
+		const { game: g, seats } = scriptGame(['chef', 'slayer', 'imp']);
 		expect(causes(g, seats[0])).not.toContain('slayer');
 		expect(entry(g, seats[2], 'slayer')).toEqual({ cause: 'slayer', kind: 'kills', flags: [] });
 	});
 
 	it('offers the Slayer for a Recluse, flagged as registering as the Demon', () => {
-		const { game: g, seats } = game(['recluse', 'slayer', 'imp']);
+		const { game: g, seats } = scriptGame(['recluse', 'slayer', 'imp']);
 		expect(entry(g, seats[0], 'slayer')?.flags).toEqual([
 			{
 				code: 'registers',
@@ -96,7 +81,7 @@ describe('validDeathCauses', () => {
 	});
 
 	it('does not offer the Slayer for a poisoned Recluse, who registers truly', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = scriptGame(
 			['recluse', 'slayer', 'imp', 'poisoner'],
 			add(0, 'poisoner', 'Poisoned')
 		);
@@ -104,7 +89,7 @@ describe('validDeathCauses', () => {
 	});
 
 	it('offers the Slayer for the player babysitting Lil’ Monsta', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = scriptGame(
 			['chef', 'slayer', 'lilmonsta', 'poisoner'],
 			add(3, 'lilmonsta', 'Is The Demon')
 		);
@@ -113,12 +98,12 @@ describe('validDeathCauses', () => {
 	});
 
 	it('does not offer a character nobody has', () => {
-		const { game: g, seats } = game(['chef', 'imp']);
+		const { game: g, seats } = scriptGame(['chef', 'imp']);
 		expect(causes(g, seats[1])).not.toContain('slayer');
 	});
 
 	it('flags the Slayer when every Slayer is poisoned now', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = scriptGame(
 			['chef', 'slayer', 'imp', 'poisoner'],
 			add(1, 'poisoner', 'Poisoned')
 		);
@@ -128,13 +113,13 @@ describe('validDeathCauses', () => {
 	});
 
 	it('offers the Golem only for a player who is not the Demon', () => {
-		const { game: g, seats } = game(['chef', 'golem', 'imp']);
+		const { game: g, seats } = scriptGame(['chef', 'golem', 'imp']);
 		expect(causes(g, seats[0])).toContain('golem');
 		expect(causes(g, seats[2])).not.toContain('golem');
 	});
 
 	it('offers the Lycanthrope for good players, not evil or Faux Paw ones', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = scriptGame(
 			['chef', 'lycanthrope', 'imp', 'tinker'],
 			add(3, 'lycanthrope', 'Faux Paw')
 		);
@@ -144,25 +129,25 @@ describe('validDeathCauses', () => {
 	});
 
 	it('offers the Lycanthrope for a Spy, flagged as registering as good', () => {
-		const { game: g, seats } = game(['spy', 'lycanthrope', 'imp']);
+		const { game: g, seats } = scriptGame(['spy', 'lycanthrope', 'imp']);
 		expect(entry(g, seats[0], 'lycanthrope')?.flags.map((f) => f.code)).toEqual(['registers']);
 	});
 
 	it('offers the Virgin only for a Townsfolk nominator', () => {
-		const { game: g, seats } = game(['chef', 'virgin', 'imp', 'tinker']);
+		const { game: g, seats } = scriptGame(['chef', 'virgin', 'imp', 'tinker']);
 		expect(causes(g, seats[0])).toContain('virgin');
 		expect(causes(g, seats[3])).not.toContain('virgin');
 		expect(causes(g, seats[2])).not.toContain('virgin');
 	});
 
 	it('offers the Tinker only on the Tinker', () => {
-		const { game: g, seats } = game(['chef', 'tinker', 'imp']);
+		const { game: g, seats } = scriptGame(['chef', 'tinker', 'imp']);
 		expect(causes(g, seats[1])).toContain('tinker');
 		expect(causes(g, seats[0])).not.toContain('tinker');
 	});
 
 	it('offers the Gangster only for its alive neighbours, skipping the dead', () => {
-		const { game: g, seats } = game(['chef', 'gangster', 'imp', 'tinker', 'golem'], (s) => ({
+		const { game: g, seats } = scriptGame(['chef', 'gangster', 'imp', 'tinker', 'golem'], (s) => ({
 			type: 'SetDead',
 			seatId: s[2],
 			dead: true
@@ -173,7 +158,7 @@ describe('validDeathCauses', () => {
 	});
 
 	it('offers exiled instead of executed for a Traveller', () => {
-		const { game: g, seats } = game(['chef', 'imp', 'beggar'], (s) => ({
+		const { game: g, seats } = scriptGame(['chef', 'imp', 'beggar'], (s) => ({
 			type: 'SetAlignment',
 			seatId: s[2],
 			alignment: 'good'
@@ -183,7 +168,7 @@ describe('validDeathCauses', () => {
 	});
 
 	it('flags a rule that needs an alignment when a Traveller has none yet', () => {
-		const { game: g, seats } = game(['chef', 'lycanthrope', 'imp', 'beggar']);
+		const { game: g, seats } = scriptGame(['chef', 'lycanthrope', 'imp', 'beggar']);
 		expect(g.seats[seats[3]]).not.toHaveProperty('alignment');
 		expect(entry(g, seats[3], 'lycanthrope')?.flags).toEqual([{ code: 'unknown' }]);
 	});
@@ -193,11 +178,11 @@ describe('validDeathCauses', () => {
 describe('gained abilities', () => {
 	// https://wiki.bloodontheclocktower.com/Cannibal: the ability of the executee marked Lunch.
 	it('offers the Cannibal only with a killing ability from its Lunch', () => {
-		const none = game(['cannibal', 'chef', 'imp']);
+		const none = scriptGame(['cannibal', 'chef', 'imp']);
 		expect(causes(none.game, none.seats[2])).not.toContain('cannibal');
-		const chef = game(['cannibal', 'chef', 'imp'], add(1, 'cannibal', 'Lunch'));
+		const chef = scriptGame(['cannibal', 'chef', 'imp'], add(1, 'cannibal', 'Lunch'));
 		expect(causes(chef.game, chef.seats[2])).not.toContain('cannibal');
-		const slayer = game(['cannibal', 'slayer', 'imp', 'chef'], add(1, 'cannibal', 'Lunch'));
+		const slayer = scriptGame(['cannibal', 'slayer', 'imp', 'chef'], add(1, 'cannibal', 'Lunch'));
 		expect(entry(slayer.game, slayer.seats[2], 'cannibal')).toEqual({
 			cause: 'cannibal',
 			kind: 'gained-ability',
@@ -210,7 +195,7 @@ describe('gained abilities', () => {
 
 	// https://wiki.bloodontheclocktower.com/Cannibal: an evil executee poisons the Cannibal.
 	it('flags a poisoned Cannibal', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = scriptGame(
 			['cannibal', 'slayer', 'imp'],
 			add(1, 'cannibal', 'Lunch'),
 			add(0, 'cannibal', 'Poisoned')
@@ -222,18 +207,18 @@ describe('gained abilities', () => {
 
 	// https://wiki.bloodontheclocktower.com/Pixie: only once it has the ability.
 	it('offers the Pixie once it has a killing Townsfolk’s ability', () => {
-		const mad = game(['pixie', 'slayer', 'imp'], add(1, 'pixie', 'Mad'));
+		const mad = scriptGame(['pixie', 'slayer', 'imp'], add(1, 'pixie', 'Mad'));
 		expect(causes(mad.game, mad.seats[2])).not.toContain('pixie');
-		const has = game(['pixie', 'slayer', 'imp'], add(1, 'pixie', 'Has Ability'));
+		const has = scriptGame(['pixie', 'slayer', 'imp'], add(1, 'pixie', 'Has Ability'));
 		expect(entry(has.game, has.seats[2], 'pixie')?.gained).toBe('slayer');
 	});
 
 	// https://wiki.bloodontheclocktower.com/Philosopher: the chosen character's ability,
 	// marked by its Drunk reminder or by swapping the Philosopher's token.
 	it('offers the Philosopher with the ability it chose', () => {
-		const idle = game(['philosopher', 'slayer', 'imp']);
+		const idle = scriptGame(['philosopher', 'slayer', 'imp']);
 		expect(causes(idle.game, idle.seats[2])).not.toContain('philosopher');
-		const drunk = game(['philosopher', 'slayer', 'imp'], add(1, 'philosopher', 'Drunk'));
+		const drunk = scriptGame(['philosopher', 'slayer', 'imp'], add(1, 'philosopher', 'Drunk'));
 		expect(entry(drunk.game, drunk.seats[2], 'philosopher')?.gained).toBe('slayer');
 	});
 });
@@ -241,7 +226,7 @@ describe('gained abilities', () => {
 // https://wiki.bloodontheclocktower.com/Vizier: they cannot die during the day.
 describe('a player who cannot die by day', () => {
 	it('has every cause but the execution flagged by day, and none at night', () => {
-		const g = game(['vizier', 'slayer', 'imp']);
+		const g = scriptGame(['vizier', 'slayer', 'imp']);
 		const byDay = validDeathCauses(g.game, g.seats[0], characters, { day: true });
 		const flagged = (cause: string) =>
 			byDay.find((c) => c.cause === cause)?.flags.map((f) => f.code) ?? [];
