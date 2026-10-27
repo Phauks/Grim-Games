@@ -109,7 +109,7 @@ test('the settings cog at the top sets the text size and Pinch to zoom', async (
 	await expect(sheet).toBeVisible();
 	// Not in a room: there is no name to set yet.
 	await expect(sheet.getByRole('button', { name: 'Edit your name' })).toHaveCount(0);
-	const size = sheet.getByRole('slider', { name: 'Text size' });
+	const size = sheet.getByRole('slider', { name: 'Text size', exact: true });
 	await size.fill('1.25');
 	await expect(size).toHaveAttribute('aria-valuetext', '125%');
 	expect(
@@ -137,6 +137,48 @@ test('the settings cog at the top sets the text size and Pinch to zoom', async (
 	await expect(
 		settings.getByRole('checkbox', { name: 'Pinch to zoom', includeHidden: true })
 	).toBeChecked();
+});
+
+test('the settings cog sets each text and token size, the same values as Settings > Tokens', async ({
+	page
+}) => {
+	// Trevor, 2026-10-27: "some ppl will want some text bigger than others, same with
+	// reminder token and character sizes", as the Storyteller has.
+	await page.getByRole('button', { name: 'Your settings' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Your settings' });
+	const rootVar = (name: string) =>
+		page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n), name);
+	for (const [label, variable] of [
+		['Name text size', '--inline-name-text'],
+		['Character token size', '--token-scale'],
+		['Reminder token size', '--reminder-scale']
+	]) {
+		const slider = sheet.getByRole('slider', { name: label });
+		await slider.scrollIntoViewIfNeeded();
+		await slider.fill('1.5');
+		await expect(slider).toHaveAttribute('aria-valuetext', '150%');
+		expect(await rootVar(variable)).toBe('1.5');
+	}
+	await expect(sheet.getByRole('slider', { name: 'Player name size' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	// One value: Settings > Tokens and Settings > Player show the same change.
+	await openSettings(page);
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const back = settings.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await settings.getByRole('button', { name: 'Tokens', exact: true }).tap();
+	await expect(settings.getByRole('slider', { name: 'Name text size' })).toHaveAttribute(
+		'aria-valuetext',
+		'150%'
+	);
+	if (await back.isVisible()) await back.tap();
+	await settings.getByRole('button', { name: 'Player', exact: true }).tap();
+	await expect(settings.getByRole('slider', { name: 'Character token size' })).toHaveAttribute(
+		'aria-valuetext',
+		'150%'
+	);
 });
 
 test("the script's name never breaks inside a word, beside its logo and buttons", async ({
@@ -706,7 +748,7 @@ test('the Script sheet is always Normal on screen, with no layout setting', asyn
 	await expect(page.locator('[data-density="super"]')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Your settings' }).tap();
 	const you = page.getByRole('dialog', { name: 'Your settings' });
-	await expect(you.getByRole('slider', { name: 'Text size' })).toBeVisible();
+	await expect(you.getByRole('slider', { name: 'Text size', exact: true })).toBeVisible();
 	await expect(you.getByRole('combobox', { name: 'Script sheet layout' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await openSettings(page);

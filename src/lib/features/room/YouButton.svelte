@@ -4,6 +4,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import PlayerNameRow from './PlayerNameRow.svelte';
 	import TextSizeRows from '#lib/features/settings/sections/TextSizeRows.svelte';
+	import PlayerSizeRows from '#lib/features/player/PlayerSizeRows.svelte';
 	import AvatarPictureRow from '#lib/features/player/AvatarPictureRow.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
@@ -54,7 +55,7 @@
 <Dialog bind:open title={t('room.yourSettings')}>
 	<div class="rows">
 		{#if player}<PlayerNameRow {player} /><AvatarPictureRow name={me} />{/if}
-		<TextSizeRows />
+		<TextSizeRows /><PlayerSizeRows />
 	</div>
 </Dialog>
 

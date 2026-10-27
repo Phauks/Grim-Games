@@ -36,16 +36,16 @@ export const characters = {
 	'characters.previewReminder': 'Poisoned',
 	'characters.tokenSize': 'Character token size',
 	'characters.tokenSizeHelp':
-		'Character tokens on the grimoire board. Tokens elsewhere, Text size and Icon size stay the same.',
+		'Character tokens on the grimoire board and the player Grim tab. Tokens elsewhere, Text size and Icon size stay the same.',
 	'characters.reminderSize': 'Reminder token size',
-	'characters.reminderSizeHelp': 'Reminder tokens on the grimoire board.',
+	'characters.reminderSizeHelp': 'Reminder tokens on the grimoire board and the player Grim tab.',
 	'characters.tokenIconSize': 'Character icon size',
 	'characters.tokenIconSizeHelp': "The character's picture inside character tokens.",
 	'characters.reminderIconSize': 'Character icon size',
 	'characters.reminderIconSizeHelp': "The character's picture inside reminder tokens.",
 	'characters.boardNames': 'Show character names on tokens',
 	'characters.boardNamesHelp':
-		'Writes each character’s name on its token: on the grimoire board, in Show to player and in the seat sheet. Small icons in lists stay plain.',
+		'Writes each character’s name on its token: on the grimoire board, the player Grim tab, in Show to player and in the seat sheet. Small icons in lists stay plain.',
 	'characters.nightLeaves': 'Night leaves',
 	'characters.nightLeavesHelp':
 		'A leaf on the left for a character who acts on the first night, on the right for other nights. With numbers, a badge on each gives the night order: on the grimoire, among the characters in this game; on Reference, among every character.',
