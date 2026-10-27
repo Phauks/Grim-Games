@@ -163,6 +163,13 @@ export class RoomPlayer {
 			{ type: 'hello', role: 'player', key: this.#key, protocol: ROOM_PROTOCOL },
 			(m) => {
 				if (m.type === 'player-view') {
+					// Another player has this name: say so once, so the player can change it.
+					if (m.shownAs && m.shownAs !== this.view?.shownAs && m.me.name) {
+						toast(
+							t('room.nameShared', { name: m.me.name }),
+							t('room.nameSharedDetail', { name: m.shownAs })
+						);
+					}
 					this.view = m;
 					// The Storyteller's app is newer: offer its build (Trevor, 2026-10-26: nudge, never block).
 					if (isNewerBuild(m.storytellerBuiltAt, buildInfo.builtAt)) lookForNewerBuild();

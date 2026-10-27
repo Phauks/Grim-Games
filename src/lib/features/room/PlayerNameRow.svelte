@@ -22,8 +22,8 @@
 	let { player }: Props = $props();
 	let open = $state(false);
 
-	/** The name this phone shows in the room, once it has one. */
-	const me = $derived(player.view?.me.name);
+	/** The name this phone shows in the room, once it has one; numbered while another has it. */
+	const me = $derived(player.view?.shownAs ?? player.view?.me.name);
 	let name = $state('');
 	// Filled each time the modal opens; a view arriving later must not wipe a name being typed.
 	$effect(() => {
