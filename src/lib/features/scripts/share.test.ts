@@ -5,6 +5,8 @@ import {
 	isOfflineHash,
 	offlineCode,
 	offlineHash,
+	offlineRoomFrom,
+	withOfflineRoom,
 	OFFLINE_SINGLE_MAX,
 	shareLink,
 	sharedRefFromHash,
@@ -99,18 +101,27 @@ describe('offline codes', () => {
 	});
 
 	it('animates a long script, and the frames rebuild its link', async () => {
-		// Homebrew: characters with their own long text don't compress to one code.
+		// Homebrew: characters with their own long text don't compress to one code. The text comes
+		// from a fixed seed, so every run makes the same frames (random text changed the frame
+		// count, and with it which frames the pattern below misses).
+		let seed = 1;
+		const word = () => {
+			seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+			return seed.toString(36);
+		};
 		const long = [
 			{ id: '_meta', name: 'Long' },
 			...Array.from({ length: 40 }, (_, i) => ({
 				id: `own${i}`,
 				name: `Own ${i}`,
 				team: 'townsfolk',
-				ability: `${i} ${crypto.randomUUID()} ${crypto.randomUUID()}`
+				ability: `${i} ${Array.from({ length: 12 }, word).join(' ')}`
 			}))
 		];
 		const code = await offlineCode(origin, { json: long });
 		expect(code.frames!.length).toBeGreaterThan(1);
+		// An odd loop, so missing every second frame over two loops still shows each one once.
+		expect(code.frames!.length % 2).toBe(1);
 		// Each frame opens Join game, so a phone's own camera app opens the app (2026-10-27).
 		expect(code.frames!.every((f) => f.startsWith(`${origin}/join#q=GB2:`))).toBe(true);
 		// Every second frame missed, from the middle of the loop: the spares fill the gaps.
@@ -137,6 +148,34 @@ describe('offline codes', () => {
 			{ id: 'own', name: 'Own', team: 'townsfolk', ability: 'Learn.' },
 			'chef'
 		]);
+	});
+
+	it('names the live room, before the frame, so phones can join once online', async () => {
+		// Trevor, 2026-10-27: "connecting to a game if they gain a connection".
+		const long = [
+			{ id: '_meta', name: 'Long' },
+			...Array.from({ length: 40 }, (_, i) => ({
+				id: `own${i}`,
+				name: `Own ${i}`,
+				team: 'townsfolk',
+				ability: `${i} ${crypto.randomUUID()} ${crypto.randomUUID()}`
+			}))
+		];
+		const code = withOfflineRoom(await offlineCode(origin, { json: long }), '482913');
+		expect(offlineRoomFrom(new URL(code.url).hash)).toBe('482913');
+		expect(isOfflineHash(new URL(code.url).hash)).toBe(true);
+		expect(code.frames!.every((f) => offlineRoomFrom(f) === '482913')).toBe(true);
+		// The frames still read as before.
+		const collector = new QrFrameCollector();
+		const done = [...code.frames!, ...code.frames!]
+			.map((f) => collector.add(f))
+			.find((r) => r?.kind === 'bytes');
+		expect(done?.kind).toBe('bytes');
+		// No room: the code is unchanged.
+		const plain = await offlineCode(origin, { json: script });
+		expect(withOfflineRoom(plain, undefined)).toEqual(plain);
+		expect(offlineRoomFrom(new URL(plain.url).hash)).toBeUndefined();
+		expect(offlineRoomFrom('#r=12345&o=1')).toBeUndefined();
 	});
 
 	it('is not offline without the mark', () => {

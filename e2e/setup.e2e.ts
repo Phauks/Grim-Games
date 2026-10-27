@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { setPlayerName } from './player-name.ts';
 import { pickScript, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
@@ -614,9 +615,7 @@ test("the player picks their name from the room's phones", async ({ page, browse
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByTestId('you-button').tap();
-	const you = phone.getByRole('dialog', { name: 'Your settings' });
-	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex');
-	await you.getByRole('button', { name: 'Save' }).tap();
+	await setPlayerName(phone, 'Alex');
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex');
 
 	await page.goto(setup);

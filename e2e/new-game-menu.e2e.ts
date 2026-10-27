@@ -21,10 +21,13 @@ test("New game takes End game's place in the board ⋯ menu once the game ends",
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
 
-	// Ended: New game is where End game was, and opens straight away.
+	// Ended: New game is where End game was, at the foot of the Game group (Trevor,
+	// 2026-10-27), and opens straight away.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(menu.getByRole('button', { name: 'End game' })).toHaveCount(0);
-	await expect(menu.getByRole('button').last()).toHaveText('New game');
+	await expect(
+		menu.getByRole('region', { name: 'Game', exact: true }).getByRole('button').last()
+	).toHaveText('New game');
 	await menu.getByRole('button', { name: 'New game' }).tap();
 	await expect(page.getByRole('alertdialog', { name: 'Start a new game?' })).toHaveCount(0);
 	await expect(

@@ -57,9 +57,9 @@
 			// Your games on Join game opens it here again (Trevor, 2026-10-26).
 			if (!admin) rememberRoom(room, undefined, true);
 		}
-		if (!admin) keepScreenAwake(true);
+		if (!admin) keepScreenAwake(true, 'town');
 		return () => {
-			if (!admin) keepScreenAwake(false);
+			if (!admin) keepScreenAwake(false, 'town');
 			town?.stop();
 		};
 	});

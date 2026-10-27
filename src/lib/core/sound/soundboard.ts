@@ -154,3 +154,43 @@ export function actionTaken(before: ActionState, after: ActionState): SoundActio
 	if (after.phase === 'day' && before.phase === 'night') return 'dawn';
 	return undefined;
 }
+
+/**
+ * How one sound plays from the soundboard (Trevor 2026-10-27: "more mixing controls"): its
+ * own volume, under the soundboard's, and whether it loops until stopped.
+ */
+export interface BoardSoundMix {
+	volume: number;
+	loop: boolean;
+}
+
+export const DEFAULT_SOUND_MIX: Readonly<BoardSoundMix> = { volume: 1, loop: false };
+
+/** A sound's volume range: silent to full. */
+export const SOUND_MIX_VOLUME = { min: 0, max: 1, step: 0.05 } as const;
+
+/** Each sound's mix as any build stored it; unknown sounds and the defaults are left out. */
+export function parseSoundMixes(raw: unknown): Record<string, BoardSoundMix> {
+	const stored = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+	const mixes: Record<string, BoardSoundMix> = {};
+	for (const [id, value] of Object.entries(stored)) {
+		if (!boardSound(id) || !value || typeof value !== 'object') continue;
+		const { volume, loop } = value as Record<string, unknown>;
+		const mix = {
+			volume:
+				typeof volume === 'number' && Number.isFinite(volume)
+					? Math.min(SOUND_MIX_VOLUME.max, Math.max(SOUND_MIX_VOLUME.min, volume))
+					: DEFAULT_SOUND_MIX.volume,
+			loop: loop === true
+		};
+		if (mix.volume !== DEFAULT_SOUND_MIX.volume || mix.loop !== DEFAULT_SOUND_MIX.loop) {
+			mixes[id] = mix;
+		}
+	}
+	return mixes;
+}
+
+/** A sound's mix, or the default for one never changed. */
+export function soundMix(mixes: Record<string, BoardSoundMix>, id: string): BoardSoundMix {
+	return mixes[id] ?? DEFAULT_SOUND_MIX;
+}

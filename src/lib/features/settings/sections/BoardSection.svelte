@@ -25,7 +25,7 @@
 
 	/**
 	 * How the grimoire board looks and behaves (Trevor, 2026-10-18: tokens have their own
-	 * section), also opened on its own from the board's menu with `settingsDialog.showOnly('board')`.
+	 * section); the board's ⋯ > Settings opens all of Settings here (`settingsDialog.show('board')`).
 	 */
 	const assistance = $derived(preferences.current.assistance);
 </script>
