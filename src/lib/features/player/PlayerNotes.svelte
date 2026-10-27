@@ -12,7 +12,7 @@
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import NoteDraftEditor from '#lib/ui/notes/NoteDraftEditor.svelte';
 	import { deleteSeatNote, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
-	import { genericGuess, readGuesses } from './grim-guesses.ts';
+	import { characterGuesses, readGuesses } from './grim-guesses.ts';
 
 	/**
 	 * The Notes tab of the players' script: notes and scratch pads, one notebook per script, kept
@@ -52,11 +52,6 @@
 	const nameOf = (seat: PublicSeat) =>
 		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
 	const guesses = $derived(kept ? readGuesses(kept) : {});
-	const characterGuess = (seatId: string) => {
-		// The main guess, the one on the token (Trevor, 2026-10-25: beside the name here).
-		const guess = guesses[seatId]?.[0];
-		return guess && !genericGuess(guess) ? guess : undefined;
-	};
 	/** The seat whose note the seat-note editor has open. */
 	let seatId = $state<string>();
 	let seatEditor = $state<ReturnType<typeof NoteDraftEditor>>();
@@ -126,8 +121,9 @@
 					seatId: s.seatId,
 					name: nameOf(s),
 					notes: notesOnSeats[s.seatId] ?? [],
-					// The Traveller the town knows, or this player's own guess of a character.
-					characterId: s.traveller ?? characterGuess(s.seatId)
+					// The Traveller the town knows, or every character this player guesses, the
+					// main one (on the token) first, beside the name (Trevor, 2026-10-25/27).
+					characterIds: s.traveller ? [s.traveller] : characterGuesses(guesses, s.seatId)
 				}))
 			: undefined}
 		onOpenSeatNote={openSeatNote}

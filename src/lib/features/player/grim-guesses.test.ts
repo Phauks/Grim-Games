@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	AVATAR_GUESS,
 	GENERIC_GUESSES,
+	characterGuesses,
 	clearGuesses,
 	cycleGuess,
 	genericGuess,
@@ -161,5 +162,16 @@ describe('marking your own seat (Trevor, 2026-10-26)', () => {
 		expect(selfSeat('s5', 's2')).toBe('s5');
 		expect(selfSeat('', 's2')).toBeUndefined();
 		expect(selfSeat(undefined, undefined)).toBeUndefined();
+	});
+});
+
+describe('the characters a seat is guessed as, for the Notes tab (Trevor, 2026-10-27)', () => {
+	it('names every character guessed, main one first, without a type, team or avatar', () => {
+		let guesses = toggleGuess({}, 's1', 'empath');
+		guesses = toggleGuess(guesses, 's1', 'type:minion');
+		guesses = toggleGuess(guesses, 's1', 'spy');
+		guesses = { s1: [AVATAR_GUESS, ...guesses.s1] };
+		expect(characterGuesses(guesses, 's1')).toEqual(['spy', 'empath']);
+		expect(characterGuesses(guesses, 's2')).toEqual([]);
 	});
 });
