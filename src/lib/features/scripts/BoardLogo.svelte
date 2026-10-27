@@ -91,7 +91,9 @@
 {/if}
 
 <style>
-	:global(.board-logo) {
+	/* Outranks ScriptLogo's own `position: relative`, whichever stylesheet comes first. */
+	.board-name,
+	:global(span.script-logo.board-logo) {
 		position: absolute;
 		left: 50%;
 		top: 50%;
