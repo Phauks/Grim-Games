@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openPlayerSettings, setPlayerName } from './player-name.ts';
+import { openProfile, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
@@ -33,7 +33,7 @@ async function watchWithPassword(phone: Page, code: string, password: string) {
  * Opens Settings > Player from the title line's cog, where the phone's name is (plan E2;
  * Trevor 2026-10-27: one Settings everywhere).
  */
-const seatSheet = openPlayerSettings;
+const seatSheet = openProfile;
 
 /** Names a seat on the board, which seats the phone with that name (no seat picking). */
 async function nameSeat(page: Page, number: number, name: string) {

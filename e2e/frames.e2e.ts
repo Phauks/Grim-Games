@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openSettingsDialog } from './shell.ts';
 
-// Laurels round seat tokens (L4, A1): each player's own pick in Settings > Player. The fixed
+// Laurels round seat tokens (L4, A1): each player's own pick in their Profile. The fixed
 // frames are laurel forms, and the Storyteller's Board default is gone (Trevor, 2026-10-27).
 
 async function openSettings(page: Page, section: string) {
@@ -12,6 +12,15 @@ async function openSettings(page: Page, section: string) {
 		.getByRole('button', { name: section })
 		.tap();
 	await expect(dialog.getByRole('heading', { name: section, level: 2 })).toBeVisible();
+	return dialog;
+}
+
+/** Opens the Profile from the button beside Settings' X (Trevor, 2026-10-27). */
+async function openProfile(page: Page) {
+	await openSettingsDialog(page);
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog.getByRole('button', { name: 'Profile', exact: true }).tap();
+	await expect(dialog.getByRole('heading', { name: 'Profile', level: 2 })).toBeVisible();
 	return dialog;
 }
 
@@ -31,7 +40,7 @@ test("the Board has no frame of its own: laurels are each player's", async ({ pa
 
 test('a player picks a laurel form and its colour, and keeps both', async ({ page }) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Player');
+	const dialog = await openProfile(page);
 	const form = dialog.getByRole('combobox', { name: 'Your laurel' });
 	const colour = dialog.getByRole('combobox', { name: 'Laurel colour' });
 	await expect(form).toContainText('None');
@@ -41,17 +50,16 @@ test('a player picks a laurel form and its colour, and keeps both', async ({ pag
 	await expect(form.locator('svg[data-frame="vines"]')).toBeAttached();
 	await expect(colour).toBeDisabled();
 
-	const next = dialog.getByText('Hide guesses and notes on the Grim tab');
-	const below = await next.boundingBox();
+	const below = await colour.boundingBox();
 	await pick(page, 'Your laurel', 'Olive');
 	await expect(form.locator('svg[data-frame="laurel-olive-gold"]')).toBeAttached();
 	await expect(colour).toBeEnabled();
-	expect(await next.boundingBox()).toEqual(below);
+	expect(await colour.boundingBox()).toEqual(below);
 	await pick(page, 'Laurel colour', 'Demon red');
 	await expect(form.locator('svg[data-frame="laurel-olive-demon"]')).toBeAttached();
 
 	await page.reload();
-	const again = await openSettings(page, 'Player');
+	const again = await openProfile(page);
 	await expect(
 		again
 			.getByRole('combobox', { name: 'Your laurel' })

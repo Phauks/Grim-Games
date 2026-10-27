@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openPlayerSettings, setPlayerName } from './player-name.ts';
+import { openProfile, setPlayerName } from './player-name.ts';
 import { pickScript, toBoard } from './new-game.ts';
 
 // Deal (Trevor, 2026-10-26: "auto select characters and send to players"): the bag goes to the
@@ -44,7 +44,7 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await openPlayerSettings(phone);
+	await openProfile(phone);
 	await setPlayerName(phone, 'Alex');
 	await phone.keyboard.press('Escape');
 	await nameSeat(page, board, 2, 'Alex');
@@ -116,7 +116,7 @@ test('a phone that joins is named on a seat and gets its character from Deal', a
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await openPlayerSettings(phone);
+	await openProfile(phone);
 	await setPlayerName(phone, 'Phone');
 	await phone.keyboard.press('Escape');
 	await expect(phone.getByRole('button', { name: 'Settings: Phone' })).toBeVisible();
@@ -154,7 +154,7 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await openPlayerSettings(phone);
+	await openProfile(phone);
 	await setPlayerName(phone, 'Sam');
 	await phone.keyboard.press('Escape');
 	await nameSeat(page, board, 1, 'Sam');

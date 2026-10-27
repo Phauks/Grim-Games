@@ -4,32 +4,12 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
-	import PlayerNameRow from '#lib/features/room/PlayerNameRow.svelte';
-	import { joinedRoom } from '#lib/features/room/joined-room.svelte.ts';
 	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
-	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import AvatarPictureRow from './AvatarPictureRow.svelte';
-	import { DEFAULT_FRAME } from '#lib/core/frames/index.ts';
 </script>
 
-<!-- This phone's name in its room, while a player screen in a room opened Settings (Trevor,
-     2026-10-27: one Settings everywhere). -->
-{#if joinedRoom.player}<PlayerNameRow player={joinedRoom.player} />{/if}
-
-<!-- The player's own picture on their seat (2026-10-27). -->
-<AvatarPictureRow name={joinedRoom.player?.view?.me.name} />
-
-<!-- The laurel round this player's seat token, sent with their initials (L4, A1). -->
-<SettingFrame
-	label={t('player.frame')}
-	colourLabel={t('player.laurelColour')}
-	value={playerSettings.current.frame ?? DEFAULT_FRAME}
-	defaultValue={DEFAULT_FRAME}
-	onChange={(frame) =>
-		playerSettings.update({ frame: frame === DEFAULT_FRAME ? undefined : frame })}
-	testid="player-frame-setting"
-/>
+<!-- Name, picture and laurel are in the Profile, from the button beside Settings' X (Trevor,
+     2026-10-27). -->
 
 <!-- Also the eye on the Grim tab, as a note's own (Trevor, 2026-10-26). -->
 <SettingToggle

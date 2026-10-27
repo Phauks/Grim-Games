@@ -92,6 +92,7 @@ export const player = {
 	'player.sheetBackground.grey': 'Grey',
 	'player.sheetBackground.slate': 'Slate',
 	'player.sheetBackground.charcoal': 'Charcoal',
+	'player.profile': 'Profile',
 	'player.frame': 'Your laurel',
 	'player.laurelColour': 'Laurel colour',
 	'player.picture': 'Your picture',
