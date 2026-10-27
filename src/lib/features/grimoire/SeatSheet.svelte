@@ -906,7 +906,7 @@
 		margin: 0;
 	}
 	.off {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	.problem {
 		display: block;
