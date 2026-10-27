@@ -39,7 +39,7 @@
 	} from './player-reminders.ts';
 	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
 	import { cornerRoom } from '#lib/features/grimoire/corner-room.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -396,11 +396,11 @@
 				preset={look.preset}
 				vignette={look.vignette}
 			/>
-			{#if look.logo !== undefined && logo && !logoFailed}
-				<ScriptLogo
+			{#if look.logo !== undefined}
+				<BoardLogo
 					src={logo}
-					class="town-logo"
-					--logo-opacity={look.logo}
+					name={script.meta?.hideTitle ? undefined : script.meta?.name}
+					opacity={look.logo}
 					onfail={() => (logoFailed = true)}
 				/>
 			{/if}
@@ -739,17 +739,6 @@
 	}
 	.display .seat {
 		cursor: default;
-	}
-	/* Faint behind the seats, as on the board. */
-	.town :global(.town-logo) {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 42%;
-		height: 42%;
-		translate: -50% -50%;
-		opacity: var(--logo-opacity);
-		pointer-events: none;
 	}
 	.seat {
 		position: absolute;

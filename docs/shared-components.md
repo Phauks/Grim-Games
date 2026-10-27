@@ -103,6 +103,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - The time left on the room's script vote: `features/room/VoteTimeLeft.svelte` (Storyteller's vote sheet and each phone's ballot) (enforced by review)
 - A script's details: `features/scripts/ScriptView.svelte` (enforced by review)
 - A script's logo: `features/scripts/ScriptLogo.svelte` with `scriptLogo` (`core/data/script-logo.ts`) (enforced by review)
+- A script's logo faint in the middle of a board, or its name when it has no logo: `features/scripts/BoardLogo.svelte`, on the Storyteller's board, every player's grim and the Board settings preview (enforced by review)
 - Reading and writing localStorage: `ui/stored.ts` (`readStored`, `writeStored`, `readParsed`, `readStoredText`, `writeStoredText`) (enforced by `no-restricted-globals` (localStorage))
 - Copying text, with its toast: `ui/clipboard.ts` (`copyText`) (enforced by review)
 - Every Share button (code, QR, link, Copy, refresh, Share, send a file): `ui/share/SharePanel.svelte`; a script's Share is `features/scripts/ShareControl.svelte`, which shows the room's link and join code when the device is in a room, and its link comes from `scriptShareable` (`features/scripts/share-codes.ts`) (enforced by `grim/share-panel` (`SHARE_TODO`), `e2e/share.e2e.ts`)
