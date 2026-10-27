@@ -73,15 +73,31 @@ export const QR_PIECE_BYTES = 600;
 /** Pieces shown per block before the loop starts again: enough spares for missed frames. */
 const PIECES_PER_BLOCK = 3;
 
+const isPrime = (n: number) => {
+	for (let d = 2; d * d <= n; d++) if (n % d === 0) return false;
+	return n > 1;
+};
+
+/**
+ * Frames in a loop: a prime number of them. A camera that keeps catching every second or
+ * third frame would otherwise see the same frames each loop, and never the rest (measured:
+ * every third frame of a 3K loop seldom decodes).
+ */
+function loopLength(k: number): number {
+	let count = k * PIECES_PER_BLOCK;
+	while (!isPrime(count)) count++;
+	return count;
+}
+
 /**
  * Frames of a fountain code for `bytes` (GB2, Trevor 2026-10-27): `GB2:<id>:<length>:<piece>:<data>`,
- * pieces 1..K first, then spares; null when it needs more than `MAX_QR_FRAMES` blocks.
+ * pieces 1..K first, then spares, a prime number in all; null when it needs more than `MAX_QR_FRAMES` blocks.
  */
 export function fountainFrames(bytes: Uint8Array, size = QR_PIECE_BYTES): string[] | null {
 	const k = blockCount(bytes.length, size);
 	if (k > MAX_QR_FRAMES) return null;
 	const id = bytesId(bytes);
-	const count = k === 1 ? 1 : k * PIECES_PER_BLOCK;
+	const count = k === 1 ? 1 : loopLength(k);
 	return Array.from(
 		{ length: count },
 		(_, i) =>
