@@ -138,10 +138,10 @@
 				: view.ended.winner === 'evil'
 					? t('room.gameOverEvil')
 					: t('room.gameOver');
-		// Named: nothing to say, the cog at the top carries the name (Trevor, 2026-10-26: "remove
-		// you are in the room as ...").
-		if (view.me.name || mine) return '';
-		return t('room.choose');
+		// In the room: nothing to say, named or not; the cog at the top carries the name (Trevor,
+		// 2026-10-26: "remove you are in the room as ...", then of "set your name": "I just want
+		// that whole thing gone").
+		return '';
 	});
 
 	// Specters: a spectators' vote opens over the page, once for each new vote.
@@ -554,6 +554,11 @@
 	/* Two lines reserved, so a longer status never moves the tabs. */
 	.you.quiet {
 		display: none;
+	}
+	/* The game's status takes the rest of the row (Trevor, 2026-10-27: "the game status bar
+	   should then take up the entire horizontal of that line area"). */
+	.you-line > :global([data-testid='players-status']) {
+		flex: 1;
 	}
 	.summary {
 		flex: 1;
