@@ -279,7 +279,8 @@ describe('a Public Town display', () => {
 		expect(townView(room)).toEqual({
 			type: 'town-view',
 			public: room.public,
-			gameId: 'g1'
+			gameId: 'g1',
+			ended: { winner: 'good' }
 		});
 	});
 

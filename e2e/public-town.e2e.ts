@@ -68,6 +68,9 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await expect(tablet.getByRole('button', { name: 'Print script' })).toBeVisible();
 	await expect(tablet.getByRole('button', { name: 'Share script' })).toBeVisible();
 	await expect(tablet.getByRole('button', { name: 'Menu' }).first()).toBeVisible();
+	// The name has the width of the screen, as on /play, not a column beside the buttons.
+	const heading = (await tablet.getByRole('heading', { level: 1 }).boundingBox())!;
+	expect(heading.width).toBeGreaterThan(tablet.viewportSize()!.width * 0.4);
 	// The title line's buttons all look alike (Trevor, 2026-10-26).
 	await expectMatchingIconRow(tablet.getByRole('banner').or(tablet.locator('header')).first(), [
 		'Sheet background',
@@ -195,6 +198,11 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 	await expect(shown).toHaveCount(0);
 	// The status line says where the game is up to (Trevor, 2026-10-26).
 	await expect(tablet.getByTestId('players-status').first()).toHaveText('Night 1');
+	// In its own row over the town, the town's width, as on /play's Grim tab.
+	const statusBox = (await tablet.getByTestId('players-status').first().boundingBox())!;
+	const townBox = (await tablet.getByTestId('player-grim').boundingBox())!;
+	expect(statusBox.y + statusBox.height).toBeLessThanOrEqual(townBox.y);
+	expect(Math.abs(statusBox.width - townBox.width)).toBeLessThan(2);
 
 	// The day: the sun, in the title line, which keeps its place.
 	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
@@ -313,5 +321,51 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 		path
 	);
 	expect(refused).toBe(403);
+	await tabletContext.close();
+});
+
+test("Public Town shows the finished grimoire the Storyteller shares, as players' phones do", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-27): the players' grim and Public Town's are the same, except that Public
+	// Town can't be edited or have guesses.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	const tabletContext = await browser.newContext({ ...testInfo.project.use });
+	const tablet = await tabletContext.newPage();
+	await tablet.goto(`/town/${code}`);
+	await expect(tablet.getByTestId('player-grim').getByTestId('grim-seat')).toHaveCount(8);
+
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game' })
+		.tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	await end.getByText('Share the final grimoire with players', { exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+
+	// The whole board in place of the town, every seat, as on a phone's Grim tab.
+	const final = tablet.getByTestId('final-grimoire');
+	await expect(final.getByTestId('seat')).toHaveCount(8);
+	await expect(tablet.getByTestId('player-grim')).toHaveCount(0);
+	// A tablet opening it later gets it too.
+	await tablet.reload();
+	await expect(final.getByTestId('seat')).toHaveCount(8);
+
+	// Reopening the game makes the grimoire private again, and the town comes back.
+	await page.getByTestId('game-over').tap();
+	await page
+		.getByRole('alertdialog', { name: 'Reopen game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(final).toHaveCount(0);
+	await expect(tablet.getByTestId('player-grim').getByTestId('grim-seat')).toHaveCount(8);
 	await tabletContext.close();
 });

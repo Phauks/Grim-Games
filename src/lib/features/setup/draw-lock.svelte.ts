@@ -12,7 +12,9 @@
  * game takes the same PIN. Forgot PIN removes it, so the next lock sets a new one.
  *
  * Used by the Draw page, the board route (asks for the PIN while the game's draw is locked)
- * and the app shell (hides the sidebar and header while `lockedGame` is set).
+ * and the app shell (hides the sidebar and header while `lockedGame` is set). The grim cover
+ * takes the same PIN when the Storyteller asks for one (Trevor, 2026-10-26), without locking
+ * the draw: `setPin` and `checkPin`.
  */
 import { waitAfter } from '#lib/core/rules/draw-lock.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
@@ -117,6 +119,43 @@ class DrawLock {
 		writeStored(drawLockKey(gameId), lock);
 		writeStored(LOCKED_GAME_KEY, gameId);
 		this.#version++;
+	}
+
+	/** Sets the game's PIN without locking the draw (the grim cover's first PIN). */
+	async setPin(gameId: string, pin: string): Promise<void> {
+		const kept = readLock(gameId);
+		const salt = toHex(crypto.getRandomValues(new Uint8Array(16)));
+		const hash = await hashPin(salt, pin);
+		writeStored(drawLockKey(gameId), {
+			v: 1,
+			salt,
+			hash,
+			fails: 0,
+			waitUntil: 0,
+			locked: kept?.locked ?? false
+		} satisfies StoredLock);
+		this.#version++;
+	}
+
+	/**
+	 * Checks the game's PIN without changing the draw's lock (the grim cover). A wrong one
+	 * counts towards the same wait as the draw's; a game without a PIN passes.
+	 */
+	async checkPin(gameId: string, pin: string, now = Date.now()): Promise<UnlockResult> {
+		const lock = readLock(gameId);
+		if (!lock) return 'ok';
+		if (now < lock.waitUntil) return 'wait';
+		if ((await hashPin(lock.salt, pin)) === lock.hash) {
+			if (lock.fails > 0) {
+				writeStored(drawLockKey(gameId), { ...lock, fails: 0, waitUntil: 0 });
+				this.#version++;
+			}
+			return 'ok';
+		}
+		const fails = lock.fails + 1;
+		writeStored(drawLockKey(gameId), { ...lock, fails, waitUntil: now + waitAfter(fails) });
+		this.#version++;
+		return 'wrong';
 	}
 
 	/** Checks a PIN; a wrong one counts towards the wait (core/rules/draw-lock.ts). */
