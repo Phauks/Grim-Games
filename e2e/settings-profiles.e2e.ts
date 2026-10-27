@@ -58,7 +58,7 @@ test('profiles are made in Settings, chosen on New game and switched on the boar
 	if (await back.isVisible()) await back.tap();
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board' })
+		.getByRole('button', { name: 'Board', exact: true })
 		.tap();
 	await expect(settings.getByRole('combobox', { name: 'Settings profile' })).toHaveText(
 		/Streaming/

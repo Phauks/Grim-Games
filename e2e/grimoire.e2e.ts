@@ -21,7 +21,10 @@ const seatLabelled = (page: Page, start: string) =>
 /** Runs an action from the toolbar's More menu. */
 async function menu(page: Page, action: string) {
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: action }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: action, exact: true })
+		.tap();
 }
 
 /** ⋯ > Settings, which opens all of Settings at Board, then the section asked for. */
@@ -1886,7 +1889,7 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board' })
+		.getByRole('button', { name: 'Board', exact: true })
 		.tap();
 	await settings.getByText('Stack duplicate reminders', { exact: true }).tap();
 	await expect(
@@ -4161,7 +4164,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
 	expect((await names('Game')).join(' ')).toMatch(
-		/^History Demon bluffs Notes Cover the screen( Game info)?( Character selection)? End game$/
+		/^History Demon bluffs Notes Cover the screen Soundboard( Game info)?( Character selection)? End game$/
 	);
 	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Arrange seats']);
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
