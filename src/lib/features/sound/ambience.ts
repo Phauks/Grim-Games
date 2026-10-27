@@ -6,6 +6,7 @@ import {
 } from '#lib/core/sound/ambience.ts';
 import { keepOffline } from '#lib/features/offline/keep-offline.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
+import { recording } from './recording.ts';
 import { audio, unlockOnFirstTap } from './sound.ts';
 
 /**
@@ -24,23 +25,9 @@ interface Playing {
 	source?: AudioBufferSourceNode;
 }
 
-const buffers = new Map<string, Promise<AudioBuffer | undefined>>();
-
 /** A recording, decoded once per page; undefined when it can't be fetched or decoded. */
 function buffer(ctx: AudioContext, mix: AmbienceMix): Promise<AudioBuffer | undefined> {
-	const url = ambienceUrl(mix);
-	let decoded = buffers.get(url);
-	if (!decoded) {
-		decoded = fetch(url)
-			.then((response) => (response.ok ? response.arrayBuffer() : Promise.reject()))
-			.then((data) => ctx.decodeAudioData(data))
-			.catch(() => {
-				buffers.delete(url);
-				return undefined;
-			});
-		buffers.set(url, decoded);
-	}
-	return decoded;
+	return recording(ctx, ambienceUrl(mix));
 }
 
 /** The level day and night sound plays at, under the device's volume. */

@@ -11,18 +11,12 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 
 	/**
-	 * The town in the Storyteller's board's shape, or filling this screen (Trevor, 2026-10-27),
-	 * on the Grim tab and Public Town; also in Settings > Player. Each has its own switch, as
-	 * Public Town is on unless switched off. Disabled until the board's shape arrives.
+	 * The Grim tab's town in the Storyteller's board's shape, or filling this screen (Trevor,
+	 * 2026-10-27); also in Settings > Player. Public Town has its own, in its settings cog.
+	 * Disabled until the board's shape arrives.
 	 */
-	interface Props {
-		/** Public Town's switch, not the Grim tab's. */
-		display: boolean;
-		disabled: boolean;
-	}
-
-	let { display, disabled }: Props = $props();
-	const on = $derived(matchesShape(display));
+	let { disabled }: { disabled: boolean } = $props();
+	const on = $derived(playerSettings.current.matchShape);
 </script>
 
 <IconButton
@@ -31,5 +25,5 @@
 	aria-pressed={on}
 	{disabled}
 	data-testid="match-shape"
-	onclick={() => playerSettings.update(display ? { townMatchShape: !on } : { matchShape: !on })}
+	onclick={() => playerSettings.update({ matchShape: !on })}
 />

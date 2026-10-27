@@ -61,6 +61,8 @@ export const ICON_SLOTS = {
 	timer: { label: 'Timer', choices: ['ph:timer', 'ph:hourglass'] },
 	loading: { label: 'Loading', choices: ['ph:circle-notch', 'ph:spinner'] },
 	sound: { label: 'Sound', choices: ['ph:speaker-high', 'ph:bell'] },
+	/** The Storyteller's soundboard (plan U6): bells at a tap. */
+	soundboard: { label: 'Soundboard', choices: ['ph:bell-simple-ringing', 'ph:bell'] },
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },

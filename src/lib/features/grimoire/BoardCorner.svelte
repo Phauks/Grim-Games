@@ -131,8 +131,10 @@
 		return () => clearInterval(tick);
 	});
 	const gameLengthText = $derived(
+		// 0:00 before the first night, in place so nothing moves when it starts: Game phase
+		// says Setup (Trevor, 2026-10-26: "game time should no longer say setup").
 		!begun
-			? t('day.setup')
+			? gameClock.formatGameLength(0)
 			: clockStart === undefined
 				? t('common.none')
 				: gameClock.formatGameLength(

@@ -39,6 +39,10 @@
 				including pictures you add (IndexedDB). A background picture also goes to a live room you
 				share, below.
 			</li>
+			<li>
+				Your own picture for your seat, if you choose one (browser storage). A copy goes to each
+				live room you join, below.
+			</li>
 			<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 			<li>
 				While you are signed in, a copy of your account's scripts, Library folders, tags and names,
@@ -151,6 +155,14 @@
 			one. When that background is a picture the Storyteller added, their device uploads a copy of
 			it to the room. The room keeps at most eight pictures, which anyone with the room code and the
 			picture's long name can load, and deletes them with the room.
+		</p>
+		<p>
+			A player who chooses their own picture for their seat uploads a copy, shrunk to 256 pixels, to
+			each room they join, one per phone; choosing another replaces it. Anyone with the room code
+			and its long name can load it, and the room deletes it with the room. Other players can report
+			it to the Storyteller: the room keeps who reported which picture until the next game, and
+			never tells the Storyteller or anyone else who it was. If the Storyteller removes it, the room
+			deletes the copy at once.
 		</p>
 		<p>
 			The view-only link lets spectators watch the whole grimoire live: the game and its history,

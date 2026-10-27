@@ -8,10 +8,14 @@
 	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import AvatarPictureRow from './AvatarPictureRow.svelte';
 
 	/** The frame choice that leaves it to the Storyteller's board. */
 	const STORYTELLER = 'storyteller';
 </script>
+
+<!-- The player's own picture on their seat (2026-10-27), also in the player screen's settings. -->
+<AvatarPictureRow />
 
 <!-- The frame round this player's seat token, sent with their initials (L4). -->
 <SettingFrame

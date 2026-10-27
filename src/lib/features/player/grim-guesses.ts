@@ -38,7 +38,7 @@ export const AVATAR_GUESS = 'seat:avatar' as CharacterId;
 export type GuessMark =
 	| { character: Character }
 	| { generic: GenericGuess; label: string }
-	| { avatar: AvatarId; name: string; label: string };
+	| { avatar: AvatarId; name: string; label: string; picture?: string };
 
 export const GENERIC_GUESSES: readonly GenericGuess[] = [
 	{ key: 'type:townsfolk', type: 'townsfolk', team: 'good' },

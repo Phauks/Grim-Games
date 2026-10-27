@@ -91,6 +91,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'R6',
 			'R7',
 			'R8',
+			'R10',
 			'J10',
 			'J11',
 			'J12',

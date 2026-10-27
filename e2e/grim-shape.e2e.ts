@@ -76,9 +76,11 @@ test("Public Town keeps the Storyteller's seat places and board shape", async ({
 	expect(townBox.width / townBox.height).toBeLessThan(aspect);
 
 	// On by default here: the town is the board's shape, centred, with space above and below.
-	const button = tablet.getByTestId('match-shape');
-	await expect(button).toHaveAttribute('aria-pressed', 'true');
-	await expect(button).toBeEnabled();
+	// The settings cog beside full screen switches it.
+	const cog = tablet.getByRole('button', { name: 'Public Town settings' });
+	await cog.tap();
+	await expect(tablet.getByRole('menuitem', { name: 'Fill the screen' })).toBeEnabled();
+	await tablet.keyboard.press('Escape');
 	const shaped = fitted(townBox, aspect);
 	await expect.poll(async () => (await seats.first().boundingBox())!.y).toBeGreaterThan(shaped.y);
 	expectSameClock(await clock(seats, shaped), theirs);
@@ -89,8 +91,13 @@ test("Public Town keeps the Storyteller's seat places and board shape", async ({
 	}
 
 	// Off, the town fills the screen and the seats still sit at the board's places.
-	await button.tap();
-	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	await cog.tap();
+	await tablet.getByRole('menuitem', { name: 'Fill the screen' }).tap();
+	await cog.tap();
+	await expect(
+		tablet.getByRole('menuitem', { name: "Use the Storyteller's board shape" })
+	).toBeVisible();
+	await tablet.keyboard.press('Escape');
 	await expect.poll(async () => (await seats.first().boundingBox())!.y).toBeLessThan(shaped.y - 4);
 	expectSameClock(await clock(seats, townBox), theirs);
 

@@ -165,6 +165,30 @@ export function centredIn(
 }
 
 /**
+ * Where a shared grim (a player's Grim tab, Public Town) draws its seats, and their size
+ * (Trevor, 2026-10-27): at the places round the ring of the Storyteller's board, whose shape
+ * is `aspect`, filling this board, or with `fit` in a box of the board's own shape, centred.
+ * Tokens follow the Token size setting; each seat keeps `unit` px clear of the edge, as on
+ * the board.
+ */
+export function sharedSeats(
+	seats: readonly { seatId: string }[],
+	layout: SeatLayout,
+	board: BoardSize,
+	aspect: number | undefined,
+	fit: boolean,
+	preferences: { tokenAppearance: { tokenScale: number } },
+	unit = 16
+): { size: number; points: SeatPoint[] } {
+	const seatIds = seats.map((s) => s.seatId);
+	const scale = preferences.tokenAppearance.tokenScale;
+	const box = aspect && fit ? fitAspect(board, aspect) : board;
+	const size = seatTokenSize(seatIds, layout, box, scale);
+	const placed = keepInside(seatPoints(seatIds, layout, box, aspect), box, size / 2 + unit);
+	return { size, points: centredIn(placed, box, board) };
+}
+
+/**
  * Points pulled in so that something `margin` px from its centre to its edge stays on the
  * board: on a narrow phone the ring would otherwise put tokens past the screen edge.
  */

@@ -19,6 +19,8 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import FullScreenButton from '#lib/ui/primitives/FullScreenButton.svelte';
+	import Menu from '#lib/ui/primitives/Menu.svelte';
+	import { parseAspect } from '#lib/ui/seating/seat-layout.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import { sheetTheme } from '#lib/ui/themes/sheet-backgrounds.ts';
@@ -111,6 +113,8 @@
 		if (room && !admin && (status === 'refused' || status === 'closed')) forgetRoom(room);
 	});
 	const table = $derived(town?.view?.public);
+	/** The town in the Storyteller's board's shape (Trevor, 2026-10-27), on unless switched off. */
+	const townShape = $derived(playerSettings.current.townMatchShape);
 	const showTown = $derived(!message && !!script && !!table?.seats.length);
 	/**
 	 * The Storyteller's day timer, as phones show it (Trevor, 2026-10-26: "During day, public
@@ -177,7 +181,23 @@
 				     line is gone, so the game's status sits beside it. -->
 				{#if stage}<div class="full-screen">
 						{#if inFullScreen && phase}<PlayersDayStatus {phase} timer={dayTimer} />{/if}
-						<span class="full-screen-button"><FullScreenButton target={stage} /></span>
+						<!-- The town's settings (Trevor, 2026-10-26: "pre-emptively place a setting cog
+						     next to full screen"), also in Settings > Player: the board's shape. -->
+						<span class="town-button"
+							><Menu
+								icon="settings"
+								label={t('room.town.settings')}
+								items={[
+									{
+										value: 'shape',
+										label: t(townShape ? 'room.town.fillScreen' : 'room.town.boardShape'),
+										disabled: !parseAspect(table.layout?.aspect),
+										onSelect: () => playerSettings.update({ townMatchShape: !townShape })
+									}
+								]}
+							/></span
+						>
+						<span class="town-button"><FullScreenButton target={stage} /></span>
 					</div>{/if}
 				<PlayerGrim
 					{script}
@@ -188,7 +208,8 @@
 						storytellerName: table.storytellerName,
 						corner: table.corner,
 						look: table.look,
-						roomCode: room
+						roomCode: room,
+						pictures: town?.view?.pictures
 					}}
 				/>
 			{:else}
@@ -233,7 +254,7 @@
 		align-items: center;
 		gap: var(--space-2);
 	}
-	.full-screen-button {
+	.town-button {
 		border-radius: 50%;
 		background: var(--board-bar-background);
 	}

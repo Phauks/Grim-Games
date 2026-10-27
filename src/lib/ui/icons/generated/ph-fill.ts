@@ -23,6 +23,7 @@ import ph_bag_simple_fill from '~icons/ph/bag-simple-fill';
 import ph_beer_bottle_fill from '~icons/ph/beer-bottle-fill';
 import ph_beer_stein_fill from '~icons/ph/beer-stein-fill';
 import ph_bell_fill from '~icons/ph/bell-fill';
+import ph_bell_simple_ringing_fill from '~icons/ph/bell-simple-ringing-fill';
 import ph_binoculars_fill from '~icons/ph/binoculars-fill';
 import ph_bird_fill from '~icons/ph/bird-fill';
 import ph_book_bookmark_fill from '~icons/ph/book-bookmark-fill';
@@ -240,6 +241,7 @@ const icons: IconMap = {
 	'ph:beer-bottle-fill': ph_beer_bottle_fill,
 	'ph:beer-stein-fill': ph_beer_stein_fill,
 	'ph:bell-fill': ph_bell_fill,
+	'ph:bell-simple-ringing-fill': ph_bell_simple_ringing_fill,
 	'ph:binoculars-fill': ph_binoculars_fill,
 	'ph:bird-fill': ph_bird_fill,
 	'ph:book-bookmark-fill': ph_book_bookmark_fill,

@@ -53,13 +53,9 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import {
 		DEFAULT_SEAT_LAYOUT,
-		centredIn,
-		fitAspect,
-		keepInside,
 		parseAspect,
 		parseSeatLayout,
-		seatPoints,
-		seatTokenSize
+		sharedSeats
 	} from '#lib/ui/seating/seat-layout.ts';
 	import {
 		AVATAR_GUESS,
@@ -93,6 +89,7 @@
 	import TownCounts from './TownCounts.svelte';
 	import MatchShapeButton, { matchesShape } from './MatchShapeButton.svelte';
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
+	import SeatPictureMenu from './SeatPictureMenu.svelte';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -122,6 +119,8 @@
 			guessKey?: string;
 			/** The room's code for the corner, where it isn't this device's own room. */
 			roomCode?: string;
+			/** Each seat's player's picture (2026-10-27); else, on the board, this device's room's. */
+			pictures?: Partial<Record<string, string>>;
 		};
 		/**
 		 * A Public Town display (Trevor, 2026-10-26): the town as /play draws it, with nothing to
@@ -197,28 +196,23 @@
 
 	const nameOf = (seat: PublicSeat) =>
 		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
+	function pictureOf(seat: PublicSeat): string | undefined {
+		const hash = (town ? town.pictures : player?.view?.pictures)?.[seat.seatId];
+		const room = town ? town.roomCode : code;
+		if (hash && room) return roomImagePath(room, hash);
+		return town && !town.roomCode && !display ? roomHost().pictureOf(seat.seatId) : undefined;
+	}
 
 	// The board's own layout, read like a saved one, so a bad one never stops the drawing.
 	const layout = $derived(table?.layout ? parseSeatLayout(table.layout) : DEFAULT_SEAT_LAYOUT);
 	let width = $state(0);
 	let height = $state(0);
 	const board = $derived({ width, height });
-	// Seats keep the Storyteller's places round the ring on any screen; switched on, the town
-	// is also drawn in the board's shape, centred, with empty space at the edges (2026-10-27).
+	// The Storyteller's places round the ring, in the board's shape if switched on (2026-10-27).
 	const aspect = $derived(parseAspect(table?.layout?.aspect));
-	const drawnOn = $derived(aspect && matchesShape(display) ? fitAspect(board, aspect) : board);
-	const ids = $derived(seats.map((s) => s.seatId as string));
-	const size = $derived(
-		seatTokenSize(ids, layout, drawnOn, preferences.current.tokenAppearance.tokenScale)
-	);
-	// As on the board: each seat keeps one --u (16px) clear of the edge.
 	const unit = 16;
-	const points = $derived(
-		centredIn(
-			keepInside(seatPoints(ids, layout, drawnOn, aspect), drawnOn, size / 2 + unit),
-			drawnOn,
-			board
-		)
+	const { size, points } = $derived(
+		sharedSeats(seats, layout, board, aspect, matchesShape(display), preferences.current)
 	);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
@@ -346,8 +340,10 @@
 				: seatCycle(guesses, seatId, !!seat && withAvatar(seat))
 		).map((id) => {
 			const generic = genericGuess(id);
-			if (id === AVATAR_GUESS && seat?.avatar)
-				return { id, avatar: seat.avatar, name: nameOf(seat), label: t('player.grim.avatar') };
+			if (id === AVATAR_GUESS && seat?.avatar) {
+				const [name, label, picture] = [nameOf(seat), t('player.grim.avatar'), pictureOf(seat)];
+				return { id, avatar: seat.avatar, name, label, picture };
+			}
 			return generic
 				? { id, generic, label: genericLabel(generic) }
 				: { id, character: characterOf(id) };
@@ -380,27 +376,28 @@
 	/* eslint-enable grim/names-as-badges */
 </script>
 
-<!-- The eye and the cover always, so nothing moves when the Final grimoire switch comes. -->
-<div class="tools">
-	<HideContentsButton
-		hidden={hiding}
-		onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
-		testid="hide-guesses"
-	/>
-	<CoverButton />
-	<MatchShapeButton {display} disabled={!aspect} />
-	<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
+<!-- The eye and the cover always, so nothing moves when the Final grimoire switch comes. A
+     Public Town display has neither: all it shows is public (Trevor, 2026-10-26). -->
+{#if !display}<div class="tools">
+		<HideContentsButton
+			hidden={hiding}
+			onchange={(hideGuesses) => playerSettings.update({ hideGuesses })}
+			testid="hide-guesses"
+		/>
+		<CoverButton />
+		<MatchShapeButton disabled={!aspect} />
+		<!-- Share grim (plan R5): only once the Storyteller shares the final grimoire, since it does
 	     nothing before (Trevor, 2026-10-25); the board's own copy of this tab has no such switch. -->
-	{#if !town && final}
-		<span class="final-switch"
-			><Toggle
-				label={t('room.finalGrimoire')}
-				checked={showFinal}
-				onChange={(on) => (showFinal = on)}
-			/></span
-		>
-	{/if}
-</div>
+		{#if !town && final}
+			<span class="final-switch"
+				><Toggle
+					label={t('room.finalGrimoire')}
+					checked={showFinal}
+					onChange={(on) => (showFinal = on)}
+				/></span
+			>
+		{/if}
+	</div>{/if}
 {#if final && showFinal}
 	<div class="final" data-testid="final-grimoire">
 		<SharedBoard shared={final.grimoire} {over} room={code} />
@@ -408,7 +405,9 @@
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
-	<TownCounts {seats} />
+	<!-- Not on a display: its corner shows the count when the Storyteller has it on (Trevor,
+	     2026-10-26: "that information will be in the bottom left"). -->
+	{#if !display}<TownCounts {seats} />{/if}
 	<div
 		class="town"
 		class:display
@@ -452,7 +451,7 @@
 				.slice(1)
 				.flatMap((g): GuessMark[] =>
 					g.avatar
-						? [{ avatar: g.avatar, name: g.name, label: g.label }]
+						? [{ avatar: g.avatar, name: g.name, label: g.label, picture: g.picture }]
 						: g.generic
 							? [{ generic: g.generic, label: g.label }]
 							: g.character
@@ -482,6 +481,7 @@
 					face={shown ? face : undefined}
 					vote={seat.ghostVote}
 					avatar={seat.avatar}
+					picture={pictureOf(seat)}
 					usedVote={boardLooks.current.usedGhostVote}
 					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
 					marks={notes[seat.seatId] || others.length ? marks : undefined}
@@ -536,9 +536,11 @@
 	</div>
 {/if}
 
+{#snippet pictureMenu()}<SeatPictureMenu room={player!} seat={chosen!} />{/snippet}
 <BottomSheet
 	bind:open
 	title={chosen ? `${t('common.seat', { number: chosen.seatNumber })} · ${nameOf(chosen)}` : ''}
+	actions={player && chosen ? pictureMenu : undefined}
 >
 	<!-- This seat's cycle, front first, at the top (Trevor, 2026-10-25): its guesses and, once
 	     it has one, the player's avatar (2026-10-26); a tap brings one to the front. Then the
@@ -556,7 +558,7 @@
 						onclick={() =>
 							chosen && save(mainGuess(guesses, chosen.seatId, g.id, withAvatar(chosen)))}
 						>{#if g.avatar}<span class="avatar-chip"
-								><AvatarFace avatar={g.avatar} name={g.name} /></span
+								><AvatarFace avatar={g.avatar} name={g.name} picture={g.picture} /></span
 							>{:else if g.generic}<AlignmentPill
 								alignment={g.generic.team}
 								text={g.label}
