@@ -1214,7 +1214,8 @@ test("the Dreamer's card shows the chosen player's character and one of the othe
 	page
 }) => {
 	// https://wiki.bloodontheclocktower.com/Dreamer : one good and one evil character, one of
-	// which is the chosen player's (Trevor, 2026-10-24: filled in, then shown in random order).
+	// which is the chosen player's (Trevor, 2026-10-24: filled in; 2026-10-27: the good one on
+	// top, whichever is true).
 	await startGame(page, 'Sects & Violets');
 	for (const [seat, name] of [
 		[1, 'Dreamer'],
@@ -1246,7 +1247,8 @@ test("the Dreamer's card shows the chosen player's character and one of the othe
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(
 		page.getByRole('dialog', {
-			name: /^This player is: (Clockmaker: No Dashii|No Dashii: Clockmaker)$/
+			name: 'This player is: Clockmaker: No Dashii',
+			exact: true
 		})
 	).toBeVisible();
 });

@@ -8,7 +8,8 @@ import {
 	defaultAlignment,
 	type Alignment,
 	type Character,
-	type CharacterId
+	type CharacterId,
+	type CharacterType
 } from '#lib/core/data/index.ts';
 import {
 	infoTokensNamedIn,
@@ -30,6 +31,8 @@ export interface FilledInfoToken {
 	othersOpposite?: true;
 	/** Shown to the player in random order. */
 	shuffle?: true;
+	/** Shown to the player with good characters above evil ones (the Dreamer's). */
+	goodFirst?: true;
 }
 
 /**
@@ -81,7 +84,8 @@ export function filledInfoToken(
 		upTo: Math.max(rule.upTo ?? count, rule.characters.length),
 		...(chosenAt >= 0 ? { chosenAt } : {}),
 		...(rule.others === 'opposite-alignment' ? { othersOpposite: true as const } : {}),
-		...(rule.shuffle ? { shuffle: true as const } : {})
+		...(rule.shuffle ? { shuffle: true as const } : {}),
+		...(rule.order === 'good-first' ? { goodFirst: true as const } : {})
 	};
 }
 
@@ -99,6 +103,7 @@ export function withChosen(filled: FilledInfoToken, chosen: Character): FilledIn
 		characterIds: ids,
 		upTo: filled.upTo,
 		...(filled.shuffle ? { shuffle: true as const } : {}),
+		...(filled.goodFirst ? { goodFirst: true as const } : {}),
 		...(filled.othersOpposite && alignment
 			? { othersAlignment: alignment === 'good' ? ('evil' as const) : ('good' as const) }
 			: {})
@@ -113,4 +118,26 @@ export function shuffled<T>(ids: readonly T[], random: () => number = Math.rando
 		[out[i], out[j]] = [out[j], out[i]];
 	}
 	return out;
+}
+
+/**
+ * The characters `ids` in the order the player sees them on `filled`'s card: random for a
+ * card that shuffles; good above evil for one that puts good first (Trevor, 2026-10-27: the
+ * Dreamer's good character on top, whichever is true), keeping the order within each; else
+ * as picked. `typeOf` gives a character's type (a Traveller's has no alignment and keeps
+ * its place among the good).
+ */
+export function shownOrder(
+	filled: FilledInfoToken | undefined,
+	ids: readonly CharacterId[],
+	typeOf: (id: CharacterId) => CharacterType | undefined,
+	random: () => number = Math.random
+): CharacterId[] {
+	if (filled?.shuffle) return shuffled(ids, random);
+	if (!filled?.goodFirst) return [...ids];
+	const evil = (id: CharacterId) => {
+		const type = typeOf(id);
+		return type !== undefined && defaultAlignment(type) === 'evil';
+	};
+	return [...ids.filter((id) => !evil(id)), ...ids.filter(evil)];
 }

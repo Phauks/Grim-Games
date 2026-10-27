@@ -3,7 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
-	import { shuffled, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+	import { shownOrder, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 	import type { ShowableBluffSet } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -157,9 +157,9 @@
 		use(token.text, [], detail);
 	}
 
-	/** The characters in the order shown: random for a card that shuffles (the Dreamer's). */
+	/** The characters in the order shown: good above evil on the Dreamer's card. */
 	const order = (filled: FilledInfoToken | undefined, ids = filled?.characterIds ?? []) =>
-		filled?.shuffle ? shuffled(ids) : [...ids];
+		shownOrder(filled, ids, (id) => byId.get(id)?.type);
 
 	/**
 	 * Opens the sheet straight at one card, as tapped in the list: a night step's own cards

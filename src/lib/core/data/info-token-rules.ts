@@ -13,6 +13,8 @@
  * - `others`: what the rest are picked from: `opposite-alignment`, characters of the other
  *   alignment to the chosen one (the Dreamer sees one good and one evil);
  * - `shuffle`: shown to the player in random order, so the true one isn't always first;
+ * - `order`: shown to the player in a fixed order instead: `good-first`, good characters
+ *   above evil ones, whichever is true (Trevor, 2026-10-27: the Dreamer's);
  * - `offer`: offered on the step though its night text doesn't name the card.
  *
  * The Storyteller can still change them: a card with room left opens with these picked.
@@ -26,11 +28,14 @@ export type FilledCharacter = 'self' | 'chosen' | CharacterId;
 
 export const INFO_TOKEN_OTHERS = ['opposite-alignment'] as const;
 
+export const INFO_TOKEN_ORDERS = ['good-first'] as const;
+
 export interface InfoTokenCharacters {
 	characters: readonly FilledCharacter[];
 	upTo?: number;
 	others?: (typeof INFO_TOKEN_OTHERS)[number];
 	shuffle?: true;
+	order?: (typeof INFO_TOKEN_ORDERS)[number];
 	offer?: true;
 }
 
@@ -59,7 +64,7 @@ export function readInfoTokenCharacters(
 			issues.add(at, `expected object, got ${describe(entry)}`);
 			continue;
 		}
-		checkKeys(entry, ['characters', 'upTo', 'others', 'shuffle', 'offer'], at, issues);
+		checkKeys(entry, ['characters', 'upTo', 'others', 'shuffle', 'order', 'offer'], at, issues);
 		const characters = entry.characters;
 		if (
 			!Array.isArray(characters) ||
@@ -72,6 +77,7 @@ export function readInfoTokenCharacters(
 		const upTo = readNumber(entry, 'upTo', at, issues);
 		const most = upTo ?? count;
 		const others = readEnum(entry, 'others', INFO_TOKEN_OTHERS, at, issues, false);
+		const order = readEnum(entry, 'order', INFO_TOKEN_ORDERS, at, issues, false);
 		const flags: { shuffle?: true; offer?: true } = {};
 		for (const flag of ['shuffle', 'offer'] as const) {
 			if (entry[flag] === undefined) continue;
@@ -87,11 +93,14 @@ export function readInfoTokenCharacters(
 			issues.add(`${at}.characters`, 'one "chosen" at most');
 		} else if (others && chosen === 0) {
 			issues.add(`${at}.others`, 'needs a "chosen" character to differ from');
+		} else if (order && flags.shuffle) {
+			issues.add(`${at}.order`, 'a card shuffles or has an order, not both');
 		} else
 			out[id] = {
 				characters,
 				...(upTo !== undefined ? { upTo } : {}),
 				...(others ? { others } : {}),
+				...(order ? { order } : {}),
 				...flags
 			};
 	}
