@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
+import { savesSettled, trackSaves } from './saves.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -4375,6 +4376,7 @@ test('a reminder in hand marks its source seat, the seats it fits, or both', asy
 test('the bank button starts the game, ends each night and day, and resumes a stopped night', async ({
 	page
 }) => {
+	await trackSaves(page);
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
@@ -4399,6 +4401,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
 		await page.getByRole('button', { name: 'Confirm' }).tap();
 	}
+	await savesSettled(page);
 	await page.goto(board);
 	await expect(page.getByTestId('seat')).toHaveCount(7);
 	// The Fortune Teller's Red Herring isn't placed, so Start game asks first (Trevor, 2026-10-20).
