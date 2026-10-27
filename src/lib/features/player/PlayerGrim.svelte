@@ -598,7 +598,7 @@
 		></button
 	>
 	<!-- Which seat is this player's own, for when the room did not seat them (Trevor,
-	     2026-10-26); it glows on the grim. -->
+	     2026-10-26); it has a ring on the grim. -->
 	<SettingToggle
 		label={t('player.grim.thisIsMe')}
 		checked={!!chosen && chosen.seatId === mine}
@@ -771,25 +771,13 @@
 		transform: translate(-50%, -50%);
 		cursor: pointer;
 	}
-	/* Your own seat glows (Trevor, 2026-10-26: "special glow or effect on self in grim"),
-	   breathing slowly unless motion is reduced. In the text colour, not the accent, since red
-	   or blue would read as an alignment (the accent is red in some themes). */
+	/* Your own seat has a ring (Trevor, 2026-10-26: "special glow or effect on self in grim"),
+	   steady, with no pulse (2026-10-27: "having ring is good enough"). In the text colour, not
+	   the accent, since red or blue would read as an alignment (the accent is red in some themes). */
 	.seat[data-mine] :global(.disc) {
 		outline: calc(0.2 * var(--u)) solid var(--on-surface);
 		outline-offset: calc(0.2 * var(--u));
 		border-radius: 50%;
-		box-shadow: 0 0 calc(1.25 * var(--u)) calc(0.5 * var(--u)) var(--on-surface);
-		animation: self-glow 2.4s ease-in-out infinite;
-	}
-	@keyframes self-glow {
-		50% {
-			box-shadow: 0 0 calc(0.6 * var(--u)) calc(0.2 * var(--u)) var(--on-surface);
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.seat[data-mine] :global(.disc) {
-			animation: none;
-		}
 	}
 	/* A guess is the player's own, so it never looks like something the town was told. */
 	.seat[data-guess] :global(.face) {
