@@ -2206,6 +2206,11 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await expect(mine.getByTestId('avatar-face')).toHaveText('AK');
 	await mine.tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Alex Kim' });
+	// The player's avatar, left of the seat's name (Trevor, 2026-10-27).
+	await expect(sheet.getByTestId('sheet-avatar')).toHaveText('AK');
+	const avatarBox = (await sheet.getByTestId('sheet-avatar').boundingBox())!;
+	const titleBox = (await sheet.getByText('Seat 3 · Alex Kim', { exact: true }).boundingBox())!;
+	expect(avatarBox.x + avatarBox.width).toBeLessThanOrEqual(titleBox.x);
 	const empath = sheet.getByRole('button', { name: 'Empath', exact: true });
 	await empath.scrollIntoViewIfNeeded();
 	await expect(empath).toBeInViewport();
@@ -2259,6 +2264,8 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await you.getByRole('textbox', { name: 'Your name' }).fill('Alex Kim');
 	const picture = you.getByTestId('avatar-picture');
 	await expect(picture.getByRole('button', { name: 'Remove picture' })).toBeDisabled();
+	// "+ Image" (Trevor, 2026-10-27), the add icon and one word.
+	await expect(picture.getByRole('button', { name: 'Image', exact: true })).toBeVisible();
 	await picture.getByLabel('Picture for your seat').setInputFiles({
 		name: 'me.png',
 		mimeType: 'image/png',
@@ -2298,6 +2305,14 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 		});
 	expect(kept[0]).toBeGreaterThan(200);
 	expect(kept[2]).toBeLessThan(60);
+	// A tap on the picture opens the crop screen again on the whole picture, where it was left
+	// (Trevor, 2026-10-27: "clicking on picture in player settings to preview and edit crop").
+	await picture.getByRole('button', { name: 'Move or zoom your picture' }).tap();
+	await expect(crop).toBeVisible();
+	await expect(shown).toHaveAttribute('style', /left: 0%/);
+	await expect(shown).toHaveAttribute('style', /width: 200%/);
+	await crop.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(crop).toBeHidden();
 	await you.getByRole('button', { name: 'Save' }).tap();
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
 	await nameSeat(page, 3, 'Alex Kim');

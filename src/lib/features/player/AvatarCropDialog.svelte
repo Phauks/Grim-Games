@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {
 		centredCrop,
+		clampCrop,
 		cropView,
 		MAX_AVATAR_ZOOM,
 		panCrop,
@@ -23,10 +24,12 @@
 		open?: boolean;
 		/** The picture just picked from the device. */
 		file?: Blob;
+		/** Where the crop starts: the one chosen before, when editing; else the middle. */
+		initial?: AvatarCrop;
 		onSave: (file: Blob, crop: AvatarCrop) => void;
 	}
 
-	let { open = $bindable(false), file, onSave }: Props = $props();
+	let { open = $bindable(false), file, initial, onSave }: Props = $props();
 
 	let url = $state<string>();
 	let size = $state<PictureSize>();
@@ -43,7 +46,7 @@
 	function loaded(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
 		size = { width: img.naturalWidth, height: img.naturalHeight };
-		crop = centredCrop(size);
+		crop = initial ? clampCrop(initial, size) : centredCrop(size);
 	}
 	const view = $derived(size ? cropView(crop, size) : undefined);
 
