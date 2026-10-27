@@ -120,6 +120,11 @@ export interface Preferences {
 	 */
 	timerForPlayers: TimerForPlayers;
 	/**
+	 * Taking the grim cover off asks for the game's Storyteller PIN (Trevor, 2026-10-26),
+	 * the same PIN as the locked draw's.
+	 */
+	coverPin: boolean;
+	/**
 	 * What goes in the middle of a share QR code (Trevor, 2026-10-20, plan R1): the script's
 	 * logo (or its name), the Storyteller's own picture, or nothing.
 	 */
@@ -245,6 +250,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	timerForPlayers: 'sun',
+	coverPin: false,
 	qrCentre: 'script',
 	qrPictureWhole: false,
 	qrPictureZoom: 1,
@@ -345,6 +351,7 @@ export function parsePreferences(raw: unknown): Preferences {
 				? input.timerKeepAwake
 				: DEFAULT_PREFERENCES.timerKeepAwake,
 		timerForPlayers: oneOf(TIMER_FOR_PLAYERS, input.timerForPlayers, 'sun'),
+		coverPin: input.coverPin === true,
 		timerPerPlayer:
 			Number.isInteger(input.timerPerPlayer) &&
 			(input.timerPerPlayer as number) >= DAY_SECONDS_PER_ALIVE_MIN &&

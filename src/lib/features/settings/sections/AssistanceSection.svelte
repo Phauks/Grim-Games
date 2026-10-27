@@ -113,6 +113,15 @@
 	onChange={(timerForPlayers) => preferences.update({ timerForPlayers })}
 />
 
+<SettingHeading title={t('settings.groupCover')} />
+<!-- Taking the grim cover off asks for the game's PIN (Trevor, 2026-10-26). -->
+<SettingToggle
+	label={t('settings.coverPin')}
+	description={t('settings.coverPinHelp')}
+	checked={preferences.current.coverPin}
+	onChange={(coverPin) => preferences.update({ coverPin })}
+/>
+
 <SettingHeading title={t('settings.groupShare')} />
 <!-- Every QR code setting beside a live QR (CLAUDE.md: a setting beside a preview changes it). -->
 <SettingGroup title={t('share.qrPreview')} testid="qr-preview">

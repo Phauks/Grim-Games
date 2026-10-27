@@ -65,7 +65,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A contents list beside its text (phone: list, then detail): `ui/layout/ContentsLayout.svelte` (an item's `count` is drawn as a CountBadge; lines between entries and beside the text) (enforced by review)
 - The back arrow of a list-and-detail view on a phone: `ui/primitives/BackButton.svelte` (`hideLabel` for the arrow only) (enforced by review)
 - Hide contents (a note, a scratch pad, guesses on the Grim): `ui/primitives/HideContentsButton.svelte` (enforced by review)
-- The grim cover (a blank opaque screen): `features/show/CoverButton.svelte`, or `ShowToPlayer` with `blank` from a menu (enforced by `e2e/grim-cover.e2e.ts`)
+- The grim cover (the Storyteller's opaque screen): `features/show/CoverButton.svelte` (script, night or day, timer from `CoverScreen`; PIN through `PinDialog` with `purpose="cover"`); overlays opened inside it portal into it (`ui/primitives/portal-target.ts`) (enforced by `e2e/grim-cover.e2e.ts`)
 - Titled notes: cards ("+ New note"), editor, save-on-close editor (notebook, game and player notes): `ui/notes/NoteCards.svelte`, `ui/notes/NoteEditor.svelte`, `ui/notes/NoteDraftEditor.svelte` (enforced by shared)
 - A count beside a heading: `ui/primitives/CountBadge.svelte` (enforced by review)
 - Something is loading: `ui/primitives/Spinner.svelte` (`label` when nothing beside it says what loads) (enforced by review)
