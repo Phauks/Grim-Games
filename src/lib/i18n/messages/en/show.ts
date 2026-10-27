@@ -22,5 +22,10 @@ export const show = {
 	'show.evil.show': 'Show',
 	'show.evil.showNamed': 'Show {card}',
 	'show.evil.chooseBluffs': 'Choose bluffs',
-	'show.evil.inPlay': 'In play: replace'
+	'show.evil.inPlay': 'In play: replace',
+	'show.fairPlay.label': 'Fair play:',
+	'show.fairPlay.secret':
+		"this is for your eyes only. Don't screenshot, photograph or share it in a way that could spoil the game.",
+	'show.fairPlay.message':
+		'only send what the Storyteller needs to know. Never use this to get around the rules or pass on secret information.'
 } as const;
