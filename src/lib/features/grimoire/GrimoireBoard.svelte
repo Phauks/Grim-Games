@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { DayMark, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
@@ -1057,7 +1058,7 @@
 				{#if character}<CharacterToken {character} size={stack} />{/if}
 			{/each}
 			{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
-					>{game.ruleCharacters.length}</span
+					><CountBadge count={game.ruleCharacters.length} warn /></span
 				>{/if}
 		</button>
 		{@render heldCluster(
@@ -2124,12 +2125,7 @@
 		position: absolute;
 		right: 0;
 		bottom: 0;
-		min-width: 1.4em;
-		padding: 0 0.3em;
-		border-radius: var(--radius-full);
-		background: var(--accent);
-		color: var(--on-accent);
-		font: 700 0.75rem / 1.4 var(--font-control);
-		text-align: center;
+		display: flex;
+		font-size: 0.75rem;
 	}
 </style>

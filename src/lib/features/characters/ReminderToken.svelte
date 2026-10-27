@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character, CharacterType, ReminderLabel } from '#lib/core/data/index.ts';
 	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
@@ -65,7 +66,8 @@
 			referrerpolicy="no-referrer"
 			{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
 		/>{/if}<span class="words"
-		>{label ?? t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span
+		>{label ?? t('characters.reminder')}{#if count > 1}<span class="count"
+				><CountBadge {count} times /></span
 			>{/if}{#if done}<span class="tick" aria-label={t('characters.reminderPlaced')}>✓</span
 			>{/if}</span
 	></span
@@ -187,7 +189,10 @@
 		opacity: 0.7;
 	}
 	.count {
-		font-variant-numeric: tabular-nums;
+		display: inline-flex;
+		margin-left: 0.25em;
+		font-size: 0.85em;
+		vertical-align: middle;
 	}
 	.tick {
 		margin-left: 0.15em;

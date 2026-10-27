@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { copyText } from '#lib/ui/clipboard.ts';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
@@ -95,9 +96,8 @@
 		<Icon name="warning" />
 		<p class="text">
 			<strong>
-				{errorLog.unseen.length > 1
-					? t('errors.somethingWentWrongCount', { count: errorLog.unseen.length })
-					: t('errors.somethingWentWrong')}
+				{t('errors.somethingWentWrong')}
+				{#if errorLog.unseen.length > 1}<CountBadge count={errorLog.unseen.length} />{/if}
 			</strong>
 			<span>{latest.message}</span>
 		</p>

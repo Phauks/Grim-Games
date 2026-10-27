@@ -1,13 +1,10 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId, LoadedScript } from '#lib/core/data/index.ts';
-	import {
-		parsePublicLook,
-		type PublicCorner,
-		type PublicLook,
-		type PublicSeat
-	} from '#lib/core/sync/public-projection.ts';
+	import { parsePublicLook, type PublicSeat } from '#lib/core/sync/public-projection.ts';
+	import type { PlayerGrimTown } from './player-grim-town.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -45,7 +42,6 @@
 	import { cornerRoom } from '#lib/features/grimoire/corner-room.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
-	import type { PublicSeatLayout } from '#lib/core/sync/public-projection.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
@@ -89,6 +85,7 @@
 	import MatchShapeButton, { matchesShape } from './MatchShapeButton.svelte';
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
+	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -100,35 +97,20 @@
 	 */
 	interface Props {
 		script: LoadedScript;
-		/**
-		 * The town as the table knows it, given by the Storyteller's board (Trevor, 2026-10-23:
-		 * the board's Script shows every screen a player has); a phone reads its room instead.
-		 */
-		town?: {
-			seats: readonly PublicSeat[];
-			layout?: PublicSeatLayout;
-			storytellerName?: string;
-			corner?: PublicCorner;
-			/** The board's background, as it shares it with every grim of the game. */
-			look?: PublicLook;
-			/** The board's own picture, on the Storyteller's device; else the room's (pictureRoom). */
-			picture?: Blob;
-			pictureRoom?: string;
-			/** Where the guesses and seat notes are kept; a display keeps none. */
-			guessKey?: string;
-			/** The room's code for the corner, where it isn't this device's own room. */
-			roomCode?: string;
-			/** Each seat's player's picture (2026-10-27); else, on the board, this device's room's. */
-			pictures?: Partial<Record<string, string>>;
-		};
+		/** The town from the Storyteller's board or Public Town; a phone reads its room. */
+		town?: PlayerGrimTown;
 		/**
 		 * A Public Town display (Trevor, 2026-10-26): the town as /play draws it, with nothing to
 		 * tap and nothing of this device's own on it (no guesses, notes or "you").
 		 */
 		display?: boolean;
+		/** Full screen in the town's top right corner: /play's Grim and Public Town. */
+		fullScreen?: boolean;
+		/** More of that corner, before Full screen; told whether the town fills the screen. */
+		corner?: Snippet<[boolean]>;
 	}
 
-	let { script, town, display = false }: Props = $props();
+	let { script, town, display = false, fullScreen = false, corner }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
 	const code = town ? (town.roomCode ?? town.guessKey) : lastRoom();
@@ -407,132 +389,138 @@
 	<!-- Not on a display: its corner shows the count when the Storyteller has it on (Trevor,
 	     2026-10-26: "that information will be in the bottom left"). -->
 	{#if !display}<TownCounts {seats} />{/if}
-	<div
-		class="town"
-		class:display
-		bind:clientWidth={width}
-		bind:clientHeight={height}
-		style:--name-scale={boardLooks.current.nameSize}
-		style:--name-offset={boardLooks.current.nameOffset}
-		style={boardColours}
-		data-board-colours={boardColours ? '' : undefined}
-		data-testid="player-grim"
-	>
-		<BoardBackdrop
-			contained
-			url={pictureUrl ??
-				(look.image && pictureRoom
-					? roomImagePath(pictureRoom, look.image)
-					: look.script
-						? scriptImage
-						: undefined)}
-			preset={look.preset}
-			vignette={look.vignette}
-		/>
-		{#if look.logo !== undefined && logo && !logoFailed}
-			<ScriptLogo
-				src={logo}
-				class="town-logo"
-				--logo-opacity={look.logo}
-				onfail={() => (logoFailed = true)}
+	{#snippet townBoard()}
+		<div
+			class="town"
+			class:display
+			bind:clientWidth={width}
+			bind:clientHeight={height}
+			style:--name-scale={boardLooks.current.nameSize}
+			style:--name-offset={boardLooks.current.nameOffset}
+			style={boardColours}
+			data-board-colours={boardColours ? '' : undefined}
+			data-testid="player-grim"
+		>
+			<BoardBackdrop
+				contained
+				url={pictureUrl ??
+					(look.image && pictureRoom
+						? roomImagePath(pictureRoom, look.image)
+						: look.script
+							? scriptImage
+							: undefined)}
+				preset={look.preset}
+				vignette={look.vignette}
 			/>
-		{/if}
-		{#each seats as seat, i (seat.seatId)}
-			{@const point = points[i]}
-			{@const known = characterOf(seat.traveller)}
-			<!-- A Traveller's seat takes only an alignment, shown in its icon's colour. -->
-			{@const team = known && !hiding ? travellerTeam(guesses, seat.seatId)?.team : undefined}
-			{@const cycle = known || hiding ? [] : listed(seat.seatId)}
-			<!-- The front of the cycle: a guess, or the player's avatar (plan R6) cycled to. -->
-			{@const main = cycle[0]?.id}
-			{@const guessed = genericGuess(main) ?? characterOf(main)}
-			{@const others = cycle
-				.slice(1)
-				.flatMap((g): GuessMark[] =>
-					g.avatar
-						? [{ avatar: g.avatar, name: g.name, label: g.label, picture: g.picture }]
-						: g.generic
-							? [{ generic: g.generic, label: g.label }]
-							: g.character
-								? [{ character: g.character }]
-								: []
-				)}
-			{@const shown = known ?? guessed}
-			<!-- A display's seats are only drawn: nothing on the table's tablet can be tapped. -->
-			<svelte:element
-				this={display ? 'div' : 'button'}
-				type={display ? undefined : 'button'}
-				role={display ? 'img' : undefined}
-				class="seat"
-				data-mine={seat.seatId === mine || undefined}
-				data-guess={(!known && !!guessed && shown === guessed) || undefined}
-				style:left="{point?.x ?? 50}%"
-				style:top="{point?.y ?? 50}%"
-				aria-label={label(seat)}
-				data-testid="grim-seat"
-				onclick={display ? undefined : (event: MouseEvent) => choose(seat, event)}
-			>
-				<SeatDisc
-					{size}
-					dead={seat.dead}
-					name={nameOf(seat)}
-					number={seat.seatNumber}
-					face={shown ? face : undefined}
-					vote={seat.ghostVote}
-					avatar={seat.avatar}
-					picture={pictureOf(seat)}
-					usedVote={boardLooks.current.usedGhostVote}
-					frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
-					marks={notes[seat.seatId] || others.length ? marks : undefined}
+			{#if look.logo !== undefined && logo && !logoFailed}
+				<ScriptLogo
+					src={logo}
+					class="town-logo"
+					--logo-opacity={look.logo}
+					onfail={() => (logoFailed = true)}
 				/>
-				{#snippet marks()}
-					<!-- The board's own mark (SeatNoteMark): tapping it opens the note, as on the board. -->
-					{#if notes[seat.seatId]}<SeatNoteMark />{/if}
-					{#if others.length}<GuessMarks {others} />{/if}
-				{/snippet}
-				{#snippet face()}
-					{#if shown && 'key' in shown}<GenericGuessToken
-							guess={shown}
-							label={genericLabel(shown)}
-							{size}
-						/>{:else if shown}<CharacterToken
-							character={shown}
-							alignment={shown === known ? team : undefined}
-							{size}
-						/>{/if}
-				{/snippet}
-			</svelte:element>
-		{/each}
-		<!-- The player's own reminders, in front of each seat as on the board; a tap opens the
-		     seat's reminders. -->
-		<PlayerSeatReminders
-			{seats}
-			{points}
-			{board}
-			{size}
-			reminders={visible}
-			{names}
-			{notes}
-			{characterOf}
-			onOpen={(seat) => {
-				chosen = seat;
-				remindersOpen = true;
-			}}
-		/>
-		<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
-		     2026-10-24); nothing to open or share here. -->
-		<BoardCorner
-			meta={script.meta}
-			storytellerName={table?.storytellerName}
-			corner={table?.corner}
-			roomCode={town ? (town.roomCode ?? roomHost().code) : code}
-			logo={logo && !logoFailed ? logo : undefined}
-			watching
-			fitRoom={fitCorner}
-			{width}
-			{rootFont}
-		/>
-	</div>
+			{/if}
+			{#each seats as seat, i (seat.seatId)}
+				{@const point = points[i]}
+				{@const known = characterOf(seat.traveller)}
+				<!-- A Traveller's seat takes only an alignment, shown in its icon's colour. -->
+				{@const team = known && !hiding ? travellerTeam(guesses, seat.seatId)?.team : undefined}
+				{@const cycle = known || hiding ? [] : listed(seat.seatId)}
+				<!-- The front of the cycle: a guess, or the player's avatar (plan R6) cycled to. -->
+				{@const main = cycle[0]?.id}
+				{@const guessed = genericGuess(main) ?? characterOf(main)}
+				{@const others = cycle
+					.slice(1)
+					.flatMap((g): GuessMark[] =>
+						g.avatar
+							? [{ avatar: g.avatar, name: g.name, label: g.label, picture: g.picture }]
+							: g.generic
+								? [{ generic: g.generic, label: g.label }]
+								: g.character
+									? [{ character: g.character }]
+									: []
+					)}
+				{@const shown = known ?? guessed}
+				<!-- A display's seats are only drawn: nothing on the table's tablet can be tapped. -->
+				<svelte:element
+					this={display ? 'div' : 'button'}
+					type={display ? undefined : 'button'}
+					role={display ? 'img' : undefined}
+					class="seat"
+					data-mine={seat.seatId === mine || undefined}
+					data-guess={(!known && !!guessed && shown === guessed) || undefined}
+					style:left="{point?.x ?? 50}%"
+					style:top="{point?.y ?? 50}%"
+					aria-label={label(seat)}
+					data-testid="grim-seat"
+					onclick={display ? undefined : (event: MouseEvent) => choose(seat, event)}
+				>
+					<SeatDisc
+						{size}
+						dead={seat.dead}
+						name={nameOf(seat)}
+						number={seat.seatNumber}
+						face={shown ? face : undefined}
+						vote={seat.ghostVote}
+						avatar={seat.avatar}
+						picture={pictureOf(seat)}
+						usedVote={boardLooks.current.usedGhostVote}
+						frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
+						marks={notes[seat.seatId] || others.length ? marks : undefined}
+					/>
+					{#snippet marks()}
+						<!-- The board's own mark (SeatNoteMark): tapping it opens the note, as on the board. -->
+						{#if notes[seat.seatId]}<SeatNoteMark />{/if}
+						{#if others.length}<GuessMarks {others} />{/if}
+					{/snippet}
+					{#snippet face()}
+						{#if shown && 'key' in shown}<GenericGuessToken
+								guess={shown}
+								label={genericLabel(shown)}
+								{size}
+							/>{:else if shown}<CharacterToken
+								character={shown}
+								alignment={shown === known ? team : undefined}
+								{size}
+							/>{/if}
+					{/snippet}
+				</svelte:element>
+			{/each}
+			<!-- The player's own reminders, in front of each seat as on the board; a tap opens the
+			     seat's reminders. -->
+			<PlayerSeatReminders
+				{seats}
+				{points}
+				{board}
+				{size}
+				reminders={visible}
+				{names}
+				{notes}
+				{characterOf}
+				onOpen={(seat) => {
+					chosen = seat;
+					remindersOpen = true;
+				}}
+			/>
+			<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
+			     2026-10-24); nothing to open or share here. -->
+			<BoardCorner
+				meta={script.meta}
+				storytellerName={table?.storytellerName}
+				corner={table?.corner}
+				roomCode={town ? (town.roomCode ?? roomHost().code) : code}
+				logo={logo && !logoFailed ? logo : undefined}
+				watching
+				fitRoom={fitCorner}
+				{width}
+				{rootFont}
+			/>
+		</div>
+	{/snippet}
+	<!-- Full screen in the town's top right corner (Trevor, 2026-10-27: players too, "same thing
+	     as town square"); the board's Script draws it in a dialog, where it has none. -->
+	{#if fullScreen}<FullScreenStage {corner}>{@render townBoard()}</FullScreenStage
+		>{:else}{@render townBoard()}{/if}
 {/if}
 
 {#snippet pictureMenu()}<SeatPictureMenu room={player!} seat={chosen!} />{/snippet}

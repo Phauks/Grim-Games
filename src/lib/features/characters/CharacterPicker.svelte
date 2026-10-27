@@ -203,12 +203,9 @@
 		{/if}
 		{#each groups as group (group.type)}
 			<Collapsible
-				title={counts
-					? t('picker.typeCount', {
-							type: TYPE_PLURALS[group.type],
-							count: group.characters.length
-						})
-					: TYPE_PLURALS[group.type]}
+				title={TYPE_PLURALS[group.type]}
+				count={counts ? group.characters.length : undefined}
+				countOpen
 				level={3}
 				tone={typeTone(group.type)}
 				storageKey="{collapsibleKey}:{group.type}"

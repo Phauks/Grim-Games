@@ -33,7 +33,8 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	await button.tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
-	await expect(pads.getByRole('button')).toHaveCount(12);
+	// Every sound, then the dashed "+ New" pad.
+	await expect(pads.getByRole('button')).toHaveCount(13);
 	// Nothing is fetched until a sound is played.
 	expect(fetched).toEqual([]);
 	// Pause waits, disabled, until something plays.
@@ -129,4 +130,68 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 
 	// The first night begins: Dusk's sound plays.
 	await expect.poll(() => fetched).toContain('/sounds/board/temple-bell.mp3');
+});
+
+// Hot spots (Trevor, 2026-10-27: "perhaps a storyteller only wants access to some. We could
+// have some hot spots where storytellers could place sounds and mixes").
+test('the soundboard shows only the sounds and mixes placed on it', async ({ page }) => {
+	const fetched: string[] = [];
+	page.on('request', (request) => {
+		const path = new URL(request.url()).pathname;
+		if (path.startsWith('/sounds/board/')) fetched.push(path);
+	});
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Soundboard' })
+		.tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	const pads = sheet.getByRole('group', { name: 'Soundboard' });
+
+	await pads.getByRole('button', { name: 'Add to the soundboard' }).tap();
+	const editor = page.getByRole('dialog', { name: 'Edit soundboard' });
+	await editor.getByRole('button', { name: 'Remove Hand bell' }).tap();
+	await expect(
+		editor.getByRole('list', { name: 'Add a sound' }).getByText('Hand bell')
+	).toBeVisible();
+	await editor.getByRole('button', { name: 'Move Gallows trap up' }).tap();
+	await editor.getByRole('textbox', { name: 'Name' }).fill('Doom');
+	const sounds = editor.getByRole('group', { name: 'Sounds in the mix' });
+	await sounds.getByRole('button', { name: 'Heartbeat', exact: true }).tap();
+	await sounds.getByRole('button', { name: 'Horrified crowd' }).tap();
+	await editor.getByRole('button', { name: 'Add mix' }).tap();
+	await editor.getByRole('button', { name: 'Close' }).tap();
+	await expect(editor).toBeHidden();
+
+	// Hand bell is gone, and the mix is last, before "+ New".
+	await expect(pads.getByRole('button', { name: 'Hand bell' })).toHaveCount(0);
+	await expect(pads.getByRole('button').nth(-2)).toHaveText('Doom');
+	// A mix plays its sounds together.
+	const doom = pads.getByRole('button', { name: 'Doom' });
+	await doom.tap();
+	await expect
+		.poll(() => fetched)
+		.toEqual(
+			expect.arrayContaining(['/sounds/board/heartbeat.mp3', '/sounds/board/horrified-crowd.mp3'])
+		);
+	await expect(doom).toHaveAttribute('aria-pressed', 'true');
+	await doom.tap();
+	await expect(doom).toHaveAttribute('aria-pressed', 'false');
+
+	// Kept on the device, for the next game too.
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Soundboard' })
+		.tap();
+	await expect(pads.getByRole('button', { name: 'Doom' })).toBeVisible();
+	await expect(pads.getByRole('button', { name: 'Hand bell' })).toHaveCount(0);
 });

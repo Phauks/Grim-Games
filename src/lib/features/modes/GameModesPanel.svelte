@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { NEW_GAME_MAX_PLAYERS } from '#lib/features/setup/selection.svelte.ts';
 	import { onMount, type Snippet } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -431,7 +432,8 @@
 			<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18), directly under
 		the mode they stack on (2026-10-19). -->
 			<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
-				{t('modes.specialRulesButton', { count: rules.length })}
+				{t('modes.specialRules')}
+				<CountBadge count={rules.length} />
 			</Button>
 		</PageSection>
 		<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
@@ -515,7 +517,8 @@
 					{/if}
 					<div class="setting">
 						<Button variant="field" icon="restricted" onclick={openRestricted}>
-							{t('modes.restrictedButton', { count: restrictedCount })}
+							{t('modes.restrictedButton')}
+							<CountBadge count={restrictedCount} />
 						</Button>
 						<p class="description">{t('modes.restrictedHint')}</p>
 					</div>

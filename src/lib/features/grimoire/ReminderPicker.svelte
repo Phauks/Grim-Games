@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import ReminderGroupRow from '#lib/features/characters/ReminderGroupRow.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -203,7 +204,7 @@
 						>
 							<ReminderToken {label} character={group.character} done={copy.done} />
 							{#if copy.count !== undefined}<span class="count-badge" aria-hidden="true"
-									>×{copy.count}</span
+									><CountBadge count={copy.count} times warn /></span
 								>{/if}
 							<!-- Who has it; the line is kept when empty, so nothing moves. -->
 							<span class="holder" aria-hidden="true" data-testid="reminder-holder"
@@ -294,13 +295,8 @@
 		position: absolute;
 		top: 0;
 		right: 0;
-		min-width: 1.4em;
-		padding: 0 calc(0.1875 * var(--u));
-		border-radius: var(--radius-full);
-		background: var(--accent);
-		color: var(--on-accent);
-		font: 700 0.75rem / 1.4 var(--font-control);
-		text-align: center;
+		display: flex;
+		font-size: 0.75rem;
 	}
 	/* On this seat: selected, with a ring that hugs the token; a tap takes it off. */
 	.chip[aria-pressed='true'] > :global(.reminder) {

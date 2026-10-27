@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -398,123 +399,128 @@
 {/snippet}
 
 <div class="sections">
-	{#if !only}
-		<Collapsible
-			title={t('info-tokens.standard')}
-			storageKey="info-tokens-standard"
-			{level}
-			count={standard.length}
-		>
-			<ul class="cards">
-				{#each standard as token (token.id)}
-					<InfoTokenTile
-						text={token.text}
-						asks={token.asks}
-						onchoose={() => ask(token)}
-						onadd={onadd && (() => ask(token, true))}
-					/>
-				{:else}
-					<li class="none">{t('common.none')}</li>
-				{/each}
-			</ul>
-		</Collapsible>
-		<!-- Trevor's own additions, apart from the base game's (2026-10-18). -->
-		<Collapsible
-			title={t('info-tokens.extras')}
-			storageKey="info-tokens-enhanced"
-			{level}
-			count={extras.length}
-		>
-			<ul class="cards">
-				{#each extras as token (token.id)}
-					<InfoTokenTile
-						text={token.text}
-						asks={token.asks}
-						onchoose={() => ask(token)}
-						onadd={onadd && (() => ask(token, true))}
-					/>
-				{/each}
-			</ul>
-		</Collapsible>
-	{/if}
-
-	<!-- Not one of the saved cards, so in a space of its own (Trevor, 2026-10-18). -->
-	{#if !only && !quickInHeader}
-		<Collapsible title={t('info-tokens.quick')} storageKey="info-tokens-quick" {level}>
-			<ul class="cards">
-				<InfoTokenTile
-					text={t('info-tokens.quick')}
-					quick
-					asks={{ value: { kind: 'text' } }}
-					onchoose={() => openQuick()}
-					onadd={onadd && (() => openQuick(true))}
-				/>
-			</ul>
-		</Collapsible>
-	{/if}
-
-	<Collapsible
-		title={t('info-tokens.custom')}
-		storageKey="info-tokens-custom"
-		{level}
-		count={custom.length}
-	>
-		<ul class="cards">
-			{#each custom as token (token.id)}
-				{@render customTile(token)}
-			{/each}
-			<!-- A new card starts from an empty tile, always last (Trevor, 2026-10-16). -->
-			<li class="new">
-				<button
-					type="button"
-					class="new-card"
-					aria-label={t('info-tokens.newLabel')}
-					onclick={() => edit()}
-				>
-					<Icon name="add" />
-					<span>{t('info-tokens.new')}</span>
-				</button>
-			</li>
-		</ul>
-	</Collapsible>
-
-	{#if characterCards && !only}
-		<Collapsible
-			title={t('info-tokens.characterCards')}
-			storageKey="info-tokens-characters"
-			{level}
-			asideByTitle
-		>
-			{#snippet aside()}
-				<span class="about" bind:this={aboutAnchor}>
-					<IconButton
-						icon="info"
-						label={t('info-tokens.characterCardsAbout')}
-						onclick={() => (aboutOpen = !aboutOpen)}
-					/>
-				</span>
-			{/snippet}
-			<ul class="cards">
-				{#each characterSpecific as item (item.key)}
-					{#if item.row}
-						{@const row = item.row}
+	<SectionStack edge>
+		{#if !only}
+			<Collapsible
+				title={t('info-tokens.standard')}
+				storageKey="info-tokens-standard"
+				{level}
+				count={standard.length}
+			>
+				<ul class="cards">
+					{#each standard as token (token.id)}
 						<InfoTokenTile
-							text={item.words}
-							asks={{ value: { kind: 'text' } }}
-							aria-label={t('info-tokens.cardFor', { card: item.words, name: row.character.name })}
-							owners={[row.character]}
-							onchoose={() => fill(row)}
-							onadd={onadd && (() => fill(row, true))}
+							text={token.text}
+							asks={token.asks}
+							onchoose={() => ask(token)}
+							onadd={onadd && (() => ask(token, true))}
 						/>
-					{:else if item.token}
-						{@render customTile(item.token)}
-					{/if}
-				{:else}
-					<li class="none">{t('common.none')}</li>
+					{:else}
+						<li class="none">{t('common.none')}</li>
+					{/each}
+				</ul>
+			</Collapsible>
+			<!-- Trevor's own additions, apart from the base game's (2026-10-18). -->
+			<Collapsible
+				title={t('info-tokens.extras')}
+				storageKey="info-tokens-enhanced"
+				{level}
+				count={extras.length}
+			>
+				<ul class="cards">
+					{#each extras as token (token.id)}
+						<InfoTokenTile
+							text={token.text}
+							asks={token.asks}
+							onchoose={() => ask(token)}
+							onadd={onadd && (() => ask(token, true))}
+						/>
+					{/each}
+				</ul>
+			</Collapsible>
+		{/if}
+
+		<!-- Not one of the saved cards, so in a space of its own (Trevor, 2026-10-18). -->
+		{#if !only && !quickInHeader}
+			<Collapsible title={t('info-tokens.quick')} storageKey="info-tokens-quick" {level}>
+				<ul class="cards">
+					<InfoTokenTile
+						text={t('info-tokens.quick')}
+						quick
+						asks={{ value: { kind: 'text' } }}
+						onchoose={() => openQuick()}
+						onadd={onadd && (() => openQuick(true))}
+					/>
+				</ul>
+			</Collapsible>
+		{/if}
+
+		<Collapsible
+			title={t('info-tokens.custom')}
+			storageKey="info-tokens-custom"
+			{level}
+			count={custom.length}
+		>
+			<ul class="cards">
+				{#each custom as token (token.id)}
+					{@render customTile(token)}
 				{/each}
+				<!-- A new card starts from an empty tile, always last (Trevor, 2026-10-16). -->
+				<li class="new">
+					<button
+						type="button"
+						class="new-card"
+						aria-label={t('info-tokens.newLabel')}
+						onclick={() => edit()}
+					>
+						<Icon name="add" />
+						<span>{t('info-tokens.new')}</span>
+					</button>
+				</li>
 			</ul>
 		</Collapsible>
-	{/if}
+
+		{#if characterCards && !only}
+			<Collapsible
+				title={t('info-tokens.characterCards')}
+				storageKey="info-tokens-characters"
+				{level}
+				asideByTitle
+			>
+				{#snippet aside()}
+					<span class="about" bind:this={aboutAnchor}>
+						<IconButton
+							icon="info"
+							label={t('info-tokens.characterCardsAbout')}
+							onclick={() => (aboutOpen = !aboutOpen)}
+						/>
+					</span>
+				{/snippet}
+				<ul class="cards">
+					{#each characterSpecific as item (item.key)}
+						{#if item.row}
+							{@const row = item.row}
+							<InfoTokenTile
+								text={item.words}
+								asks={{ value: { kind: 'text' } }}
+								aria-label={t('info-tokens.cardFor', {
+									card: item.words,
+									name: row.character.name
+								})}
+								owners={[row.character]}
+								onchoose={() => fill(row)}
+								onadd={onadd && (() => fill(row, true))}
+							/>
+						{:else if item.token}
+							{@render customTile(item.token)}
+						{/if}
+					{:else}
+						<li class="none">{t('common.none')}</li>
+					{/each}
+				</ul>
+			</Collapsible>
+		{/if}
+	</SectionStack>
 </div>
 
 <Popover bind:open={aboutOpen} title={t('info-tokens.characterCards')} anchor={aboutAnchor}>

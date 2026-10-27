@@ -1,7 +1,6 @@
 /** Error reporting: the corner card, the problems dialog, part and page failures. */
 export const errors = {
 	'errors.somethingWentWrong': 'Something went wrong',
-	'errors.somethingWentWrongCount': 'Something went wrong ({count})',
 	'errors.details': 'Details',
 	'errors.dismiss': 'Dismiss',
 	'errors.dialogTitle': 'Problems on this device',

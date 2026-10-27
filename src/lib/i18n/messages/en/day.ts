@@ -118,7 +118,7 @@ export const day = {
 	'day.count.living': 'Living players',
 	'day.count.half': 'Half, rounded up',
 	'day.prevented': 'What didn’t happen',
-	'day.preventedButton': 'What didn’t happen ({count})',
+	'day.preventedButton': 'What didn’t happen: {count}',
 	'day.preventedChose': 'chose',
 	'day.preventedOverride': 'You set this player can’t die.',
 	'day.preventedNoReason': 'Nothing on the grimoire explains this.',

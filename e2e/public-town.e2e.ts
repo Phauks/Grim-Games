@@ -104,9 +104,7 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	expect(Math.abs(gear.y - corner.y)).toBeLessThan(2);
 	await fullScreen.tap();
 	// The request settles after the tap, so wait for it.
-	await expect
-		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
-		.toBe('public-town');
+	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
 	const filled = (await town.boundingBox())!;
 	const screen = tablet.viewportSize()!;
@@ -222,9 +220,7 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 	expect(Math.abs(after.y - before.y)).toBeLessThan(2);
 	// In full screen the title line is gone, so it moves to the town's own corner.
 	await tablet.getByRole('button', { name: 'Full screen', exact: true }).tap();
-	await expect
-		.poll(() => tablet.evaluate(() => document.fullscreenElement?.getAttribute('data-testid')))
-		.toBe('public-town');
+	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
 	await expect(tablet.getByTestId('public-town').getByTestId('players-timer')).toBeVisible();
 	await tablet
 		.getByTestId('public-town')
@@ -371,5 +367,48 @@ test("Public Town shows the finished grimoire the Storyteller shares, as players
 		.tap();
 	await expect(final).toHaveCount(0);
 	await expect(tablet.getByTestId('player-grim').getByTestId('grim-seat')).toHaveCount(8);
+	await tabletContext.close();
+});
+
+// Play on (plan U10, Trevor 2026-10-27: "Soundboard should have options for output (eg device
+// speakers, external speakers, town square, multiple)").
+test('the soundboard plays on the Public Town tablet when Play on says so', async ({
+	page,
+	browser
+}, testInfo) => {
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+
+	const tabletContext = await browser.newContext({ ...testInfo.project.use });
+	const tablet = await tabletContext.newPage();
+	const heard: string[] = [];
+	tablet.on('request', (request) => {
+		const path = new URL(request.url()).pathname;
+		if (path.startsWith('/sounds/board/')) heard.push(path);
+	});
+	await tablet.goto(`/town/${code}`);
+	await expect(tablet.getByTestId('player-grim').getByTestId('grim-seat')).toHaveCount(8);
+	// The tablet has been tapped, as a table's would be, so it may play sound.
+	await tablet.getByTestId('public-town').tap();
+
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Soundboard' })
+		.tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	const pads = sheet.getByRole('group', { name: 'Soundboard' });
+	// This device only, the default: the tablet stays quiet.
+	await pads.getByRole('button', { name: 'Hand bell' }).tap();
+	await page.waitForTimeout(500);
+	expect(heard).toEqual([]);
+
+	await sheet.getByRole('combobox', { name: 'Play on' }).tap();
+	await page.getByRole('option', { name: 'Town Square', exact: true }).tap();
+	await pads.getByRole('button', { name: 'Gallows trap' }).tap();
+	await expect.poll(() => heard).toContain('/sounds/board/gallows.mp3');
 	await tabletContext.close();
 });

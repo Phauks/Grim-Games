@@ -299,9 +299,10 @@
 			players={inRoom === lastRoom() ? roomTable.players : undefined}
 			travellers={roomTable.travellers}
 			rules={roomTable.rules}
+			ruleCharacters={roomTable.ruleCharacters}
 			bind:tab
 		>
-			{#snippet grim()}<PlayerGrim {script} />{/snippet}
+			{#snippet grim()}<PlayerGrim {script} fullScreen />{/snippet}
 			{#snippet notes()}<PlayerNotes notesKey={key} />{/snippet}
 		</PlayerScriptTabs>
 	{/if}

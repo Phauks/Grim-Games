@@ -32,6 +32,8 @@
 		travellers?: readonly TravellerInPlay[];
 		/** The game mode and special rules, listed under Jinxes. */
 		rules?: readonly PublicRule[];
+		/** The Fabled and Loric in play, announced to the town. */
+		ruleCharacters?: readonly string[];
 		/** The town as the table knows it, from the live room (/play only). */
 		grim?: Snippet;
 		/** The player's own Notes tab (/play only). */
@@ -45,6 +47,7 @@
 		inPlay,
 		travellers,
 		rules,
+		ruleCharacters,
 		grim,
 		notes,
 		tab = $bindable('script')
@@ -83,6 +86,7 @@
 						{inPlay}
 						{travellers}
 						{rules}
+						{ruleCharacters}
 						byline={false}
 						backgroundChoice={false}
 					/>
@@ -102,7 +106,9 @@
 				{:else if value === 'grim' && grim}
 					{@render grim()}
 				{:else if value === 'notes' && notes}
-					{@render notes()}
+					<!-- The Script and Night tabs' inset, so every tab's sections line up (Trevor,
+					     2026-10-27: "All these seem to use different indents"). -->
+					<div class="inset">{@render notes()}</div>
 				{/if}
 			</ErrorBoundary>
 		</div>
@@ -114,7 +120,8 @@
 		padding-top: var(--space-3);
 	}
 	/* Padded either way, as ScriptCopy is, so the light background moves nothing. */
-	.sheet {
+	.sheet,
+	.inset {
 		padding: var(--space-3);
 		border-radius: var(--radius-md);
 	}

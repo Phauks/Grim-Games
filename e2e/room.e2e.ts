@@ -897,7 +897,7 @@ test('New game opens a room for the vote before any game or script', async ({
 	await playRules.tap();
 	await expect(page).toHaveURL(/\/new$/);
 	await expect(ruleBallot).toHaveCount(0);
-	await expect(page.getByRole('button', { name: 'Special rules (2)' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Special rules 2' })).toBeVisible();
 
 	await phoneContext.close();
 });
@@ -1646,14 +1646,32 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await expect(info).toBeHidden();
 	await expect(corner).not.toContainText('by The Pandemonium Institute');
 	await expect(corner.getByTestId('board-players')).toContainText('Players: 8');
-	// The Script tab's Players breakdown has the table's column picked, and in a game no
-	// other count can be picked: the seats set it (Trevor, 2026-10-27).
+	// In a game the Script tab's Players section shows only the table's numbers, each in a
+	// box, and no other count can be picked: the seats set it (Trevor, 2026-10-27).
 	await phone.getByRole('tab', { name: 'Script' }).tap();
-	const breakdown = phone.getByTestId('setup-table');
-	await expect(breakdown.locator('thead th[data-current]')).toHaveText('8');
-	await expect(breakdown.getByRole('button')).toHaveCount(0);
-	await breakdown.locator('tbody tr').first().locator('td').first().tap();
-	await expect(breakdown.locator('thead th[data-current]')).toHaveText('8');
+	await expect(phone.getByTestId('setup-table')).toHaveCount(0);
+	const counts = phone.getByTestId('game-counts');
+	for (const [type, n] of Object.entries({
+		players: '8',
+		townsfolk: '5',
+		outsider: '1',
+		minion: '1',
+		demon: '1',
+		traveller: '0'
+	}))
+		await expect(counts.getByTestId(`count-${type}`)).toHaveText(n);
+	// A Fabled the Storyteller adds reaches the phones with its setup change (Trevor,
+	// 2026-10-27; https://wiki.bloodontheclocktower.com/Sentinel).
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Sentinel', exact: true })
+		.tap();
+	await expect(counts.getByTestId('count-outsider')).toHaveText('0–2');
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
@@ -1839,6 +1857,50 @@ test("a player marks their own seat on the players' Grim, and it has a ring", as
 		.getByText('This is me', { exact: true })
 		.tap();
 	await expect(phone.locator('[data-testid="grim-seat"][data-mine]')).toHaveCount(0);
+	await phoneContext.close();
+});
+
+test("a player's Grim fills the screen from its own corner, and a seat's sheet opens over it", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-27): "Allow players to also set their grim view to full screen, same thing
+	// as town square ... with full screen in top right of town grim view".
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const town = phone.getByTestId('player-grim');
+	const fullScreen = phone.getByRole('button', { name: 'Full screen', exact: true });
+	// In the town's top right corner, as on Public Town.
+	const box = (await town.boundingBox())!;
+	const corner = (await fullScreen.boundingBox())!;
+	expect(corner.x + corner.width).toBeGreaterThan(box.x + box.width * 0.85);
+	expect(corner.y).toBeLessThan(box.y + box.height * 0.15);
+	await fullScreen.tap();
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	const filled = (await town.boundingBox())!;
+	const screen = phone.viewportSize()!;
+	expect(Math.round(filled.x)).toBe(0);
+	expect(Math.round(filled.y)).toBe(0);
+	expect(Math.round(filled.width)).toBe(screen.width);
+	expect(Math.round(filled.height)).toBe(screen.height);
+	// A seat's sheet still opens over it.
+	await phone.getByTestId('grim-seat').nth(2).tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
+	await expect(sheet.getByRole('checkbox', { name: 'This is me' })).toBeVisible();
+	await phone.keyboard.press('Escape');
+	await expect(sheet).toHaveCount(0);
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	await fullScreen.tap();
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
+	await expect.poll(() => phone.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	expect(Math.round((await town.boundingBox())!.height)).toBeLessThan(screen.height);
 	await phoneContext.close();
 });
 

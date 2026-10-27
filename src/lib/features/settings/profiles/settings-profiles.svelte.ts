@@ -296,8 +296,8 @@ class SettingsProfiles {
 		this.#switching = true;
 		try {
 			const { values } = profile;
-			const { allowZoom, soundVolume } = preferences.current;
-			preferences.update({ ...values.preferences, allowZoom, soundVolume });
+			const { allowZoom, soundVolume, speaker } = preferences.current;
+			preferences.update({ ...values.preferences, allowZoom, soundVolume, speaker });
 			boardLooks.update(values.boardLooks);
 			stepFocus.update(values.stepFocus);
 			// A picture is only on the device that added it; elsewhere the board is plain.

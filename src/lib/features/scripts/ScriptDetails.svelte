@@ -8,6 +8,7 @@
 </script>
 
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { Snippet } from 'svelte';
 	import type { GameData } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -95,7 +96,7 @@
 				<section>
 					<h3>
 						{group.type ? TYPE_PLURALS[group.type] : t('scripts.botc.unknownType')}
-						<span class="count">{group.characters.length}</span>
+						<span class="count"><CountBadge count={group.characters.length} /></span>
 					</h3>
 					<p class="badges">
 						{#each group.characters as c (c.id)}
@@ -206,8 +207,8 @@
 		font-size: 1rem;
 	}
 	.count {
-		color: var(--on-surface-muted);
-		font-weight: 400;
+		display: inline-flex;
+		font-size: 0.8em;
 	}
 	.badges {
 		margin: 0;

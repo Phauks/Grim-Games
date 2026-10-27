@@ -10,9 +10,7 @@
 		MIN_CONTRAST,
 		NIGHT_LEAVES,
 		REMINDER_HIGHLIGHT_LOOKS,
-		REMINDER_LABEL_WIDTH,
 		TOKEN_COLOURS,
-		ICON_SCALE,
 		TOKEN_SCALE,
 		tokenColour,
 		tokenContrast,
@@ -21,6 +19,8 @@
 	} from '#lib/ui/token/token-appearance.ts';
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
 	import CharacterBadge from './CharacterBadge.svelte';
+	import TokenAppearanceRow from './TokenAppearanceRow.svelte';
+	import NameSizeSlider from '#lib/features/grimoire/NameSizeSlider.svelte';
 	import ReminderToken from './ReminderToken.svelte';
 	import type { Snippet } from 'svelte';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
@@ -33,8 +33,7 @@
 	import {
 		boardLooks,
 		DEFAULT_BOARD_LOOKS,
-		NAME_OFFSET,
-		NAME_SIZE
+		NAME_OFFSET
 	} from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 
@@ -119,28 +118,9 @@
 				>{/if}
 		</div>
 	{/snippet}
-	<SettingSlider
-		label={t('characters.tokenSize')}
-		description={t('characters.tokenSizeHelp')}
-		value={value.tokenScale}
-		{...TOKEN_SCALE}
-		defaultValue={1}
-		onChange={(tokenScale) => onChange({ ...value, tokenScale })}
-	/>
-	<SettingSlider
-		label={t('characters.tokenIconSize')}
-		description={t('characters.tokenIconSizeHelp')}
-		value={value.tokenIconScale}
-		{...ICON_SCALE}
-		defaultValue={1}
-		onChange={(tokenIconScale) => onChange({ ...value, tokenIconScale })}
-	/>
-	<SettingToggle
-		label={t('characters.boardNames')}
-		description={t('characters.boardNamesHelp')}
-		checked={value.boardNames}
-		onChange={(boardNames) => onChange({ ...value, boardNames })}
-	/>
+	<TokenAppearanceRow key="tokenScale" {value} {onChange} />
+	<TokenAppearanceRow key="tokenIconScale" {value} {onChange} />
+	<TokenAppearanceRow key="boardNames" {value} {onChange} />
 	<!-- The side leaves and their night order numbers, one setting (Trevor, 2026-10-22). -->
 	<SettingRow label={t('characters.nightLeaves')} description={t('characters.nightLeavesHelp')}>
 		{#snippet control(labelId)}<Select
@@ -156,14 +136,11 @@
 	</SettingRow>
 	<!-- Always shown, so switching the badges on or off never moves the settings below;
 	     disabled while they are off. -->
-	<SettingSlider
-		label={t('characters.nightBadgeSize')}
-		description={t('characters.nightBadgeSizeHelp')}
-		value={value.nightBadgeScale}
-		{...TOKEN_SCALE}
-		defaultValue={1}
+	<TokenAppearanceRow
+		key="nightBadgeScale"
+		{value}
+		{onChange}
 		disabled={value.nightLeaves !== 'numbers'}
-		onChange={(nightBadgeScale) => onChange({ ...value, nightBadgeScale })}
 	/>
 	<SettingToggle
 		label={t('characters.reminderLeaves')}
@@ -188,14 +165,7 @@
 	<!-- The player name badge under each seat's token (Trevor, 2026-10-20: "player name badges
 	     should have settings in tokens under character tokens"), shown on the preview's token. -->
 	{@render playerFont?.()}
-	<SettingSlider
-		label={t('settings.nameSize')}
-		value={boardLooks.current.nameSize}
-		{...NAME_SIZE}
-		defaultValue={DEFAULT_BOARD_LOOKS.nameSize}
-		format={(size) => intl.number(size, { style: 'percent' })}
-		onChange={(nameSize) => boardLooks.update({ nameSize })}
-	/>
+	<NameSizeSlider />
 	<!-- Clear of the character's name on the token (Trevor, 2026-10-18). -->
 	<SettingSlider
 		label={t('settings.nameOffset')}
@@ -245,36 +215,10 @@
 		</div>
 	{/snippet}
 	{@render reminderFont?.()}
-	<SettingSlider
-		label={t('characters.reminderSize')}
-		description={t('characters.reminderSizeHelp')}
-		value={value.reminderScale}
-		{...TOKEN_SCALE}
-		defaultValue={1}
-		onChange={(reminderScale) => onChange({ ...value, reminderScale })}
-	/>
-	<SettingSlider
-		label={t('characters.reminderIconSize')}
-		description={t('characters.reminderIconSizeHelp')}
-		value={value.reminderIconScale}
-		{...ICON_SCALE}
-		defaultValue={1}
-		onChange={(reminderIconScale) => onChange({ ...value, reminderIconScale })}
-	/>
-	<SettingSlider
-		label={t('characters.reminderLabelWidth')}
-		description={t('characters.reminderLabelWidthHelp')}
-		value={value.reminderLabelWidth}
-		{...REMINDER_LABEL_WIDTH}
-		defaultValue={1.5}
-		onChange={(reminderLabelWidth) => onChange({ ...value, reminderLabelWidth })}
-	/>
-	<SettingToggle
-		label={t('characters.reminderLabelWrap')}
-		description={t('characters.reminderLabelWrapHelp')}
-		checked={value.reminderLabelWrap}
-		onChange={(reminderLabelWrap) => onChange({ ...value, reminderLabelWrap })}
-	/>
+	<TokenAppearanceRow key="reminderScale" {value} {onChange} />
+	<TokenAppearanceRow key="reminderIconScale" {value} {onChange} />
+	<TokenAppearanceRow key="reminderLabelWidth" {value} {onChange} />
+	<TokenAppearanceRow key="reminderLabelWrap" {value} {onChange} />
 	<!-- Reminder glow and owner's icon (Trevor, 2026-10-20). The drop-downs stay in place,
 	     disabled while their switch is off, so nothing below moves. -->
 	<SettingToggle
@@ -328,54 +272,12 @@
 	     names on tokens are a switch (Trevor, 2026-10-22: every setting shows in its preview). -->
 	{@render characterFont?.()}
 	<!-- Text, icon and badge sizes for each, none shared (Trevor, 2026-10-18). -->
-	<SettingSlider
-		label={t('characters.inlineNameTextSize')}
-		description={t('characters.inlineNameTextSizeHelp')}
-		value={value.inlineNameTextScale}
-		{...TOKEN_SCALE}
-		defaultValue={1}
-		onChange={(inlineNameTextScale) => onChange({ ...value, inlineNameTextScale })}
-	/>
-	<SettingSlider
-		label={t('characters.inlineNameIconSize')}
-		description={t('characters.inlineNameIconSizeHelp')}
-		value={value.inlineNameIconScale}
-		{...TOKEN_SCALE}
-		defaultValue={1}
-		onChange={(inlineNameIconScale) => onChange({ ...value, inlineNameIconScale })}
-	/>
-	<SettingSlider
-		label={t('characters.inlineNameBadgeSize')}
-		description={t('characters.inlineNameBadgeSizeHelp')}
-		value={value.inlineNameBadgeScale}
-		{...TOKEN_SCALE}
-		defaultValue={1}
-		onChange={(inlineNameBadgeScale) => onChange({ ...value, inlineNameBadgeScale })}
-	/>
-	<SettingSlider
-		label={t('characters.inlineReminderSize')}
-		description={t('characters.inlineReminderSizeHelp')}
-		value={value.inlineReminderScale}
-		{...TOKEN_SCALE}
-		defaultValue={1}
-		onChange={(inlineReminderScale) => onChange({ ...value, inlineReminderScale })}
-	/>
-	<SettingSlider
-		label={t('characters.inlineReminderIconSize')}
-		description={t('characters.inlineReminderIconSizeHelp')}
-		value={value.inlineReminderIconScale}
-		{...TOKEN_SCALE}
-		defaultValue={1}
-		onChange={(inlineReminderIconScale) => onChange({ ...value, inlineReminderIconScale })}
-	/>
-	<SettingSlider
-		label={t('characters.inlineReminderBadgeSize')}
-		description={t('characters.inlineReminderBadgeSizeHelp')}
-		value={value.inlineReminderBadgeScale}
-		{...TOKEN_SCALE}
-		defaultValue={1}
-		onChange={(inlineReminderBadgeScale) => onChange({ ...value, inlineReminderBadgeScale })}
-	/>
+	<TokenAppearanceRow key="inlineNameTextScale" {value} {onChange} />
+	<TokenAppearanceRow key="inlineNameIconScale" {value} {onChange} />
+	<TokenAppearanceRow key="inlineNameBadgeScale" {value} {onChange} />
+	<TokenAppearanceRow key="inlineReminderScale" {value} {onChange} />
+	<TokenAppearanceRow key="inlineReminderIconScale" {value} {onChange} />
+	<TokenAppearanceRow key="inlineReminderBadgeScale" {value} {onChange} />
 </SettingGroup>
 
 {#snippet colourRow(key: TokenColour)}

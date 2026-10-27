@@ -157,8 +157,10 @@ export const ICON_SLOTS = {
 	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
 	exitFullScreen: { label: 'Exit full screen', choices: ['ph:arrows-in', 'ph:corners-in'] },
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
-	/** Covers the whole screen, so a glance at it shows nothing (Trevor, 2026-10-26). */
-	cover: { label: 'Cover the screen', choices: ['ph:rectangle', 'ph:monitor'] },
+	/** Covers the whole screen, so a glance at it shows nothing (Trevor, 2026-10-26); a screen
+	 * pulled down over the board (Trevor, 2026-10-27: "I do like projector screen. Feels like a
+	 * cover"). */
+	cover: { label: 'Cover the screen', choices: ['ph:projector-screen', 'ph:monitor'] },
 	/** A shared grim drawn in the Storyteller's board's shape (Trevor, 2026-10-27). */
 	boardShape: { label: "Storyteller's board shape", choices: ['ph:crop', 'ph:selection'] },
 	/** Someone is watching the view-only grimoire (Trevor, 2026-10-20). */

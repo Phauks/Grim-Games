@@ -6,7 +6,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import GroupHead from './GroupHead.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import NewLabel from './NewLabel.svelte';
 	import {
 		byName,
@@ -26,13 +26,9 @@
 	interface Props {
 		/** The tags the list is filtered by: items carrying every one. */
 		filter?: string[];
-		/** The id of the Tags heading, which names the sidebar's section. */
-		headingId: string;
-		/** Folded away from its heading. */
-		open?: boolean;
 	}
 
-	let { filter = $bindable([]), headingId, open = $bindable(true) }: Props = $props();
+	let { filter = $bindable([]) }: Props = $props();
 
 	const kind: LabelKind = 'tags';
 	const tags = $derived(byName(libraryLabels.state.tags));
@@ -66,27 +62,27 @@
 	}
 </script>
 
-<GroupHead id={headingId} title={t('library.tags')} bind:open>
-	{#snippet actions()}
+<Collapsible title={t('library.tags')} storageKey="library-tags">
+	{#snippet aside()}
 		<IconButton icon="add" label={t('library.newTag')} onclick={() => (adding = true)} />
 		<IconButton icon="more" label={t('library.manageTags')} onclick={() => (managing = true)} />
 	{/snippet}
-</GroupHead>
-<!-- Wrapped chips, one tap each to filter; renaming and deleting wait in Manage tags. -->
-<ul class="tags" aria-label={t('library.tags')} hidden={!open}>
-	{#each tags as label (label.id)}
-		<li>
-			<button
-				type="button"
-				class="tag"
-				aria-pressed={filter.includes(label.id)}
-				onclick={() => toggle(label.id)}>{label.name}</button
-			>
-		</li>
-	{:else}
-		<li class="none">{t('common.none')}</li>
-	{/each}
-</ul>
+	<!-- Wrapped chips, one tap each to filter; renaming and deleting wait in Manage tags. -->
+	<ul class="tags" aria-label={t('library.tags')}>
+		{#each tags as label (label.id)}
+			<li>
+				<button
+					type="button"
+					class="tag"
+					aria-pressed={filter.includes(label.id)}
+					onclick={() => toggle(label.id)}>{label.name}</button
+				>
+			</li>
+		{:else}
+			<li class="none">{t('common.none')}</li>
+		{/each}
+	</ul>
+</Collapsible>
 
 <Dialog bind:open={adding} title={t('library.newTag')}>
 	<NewLabel {kind} label={t('library.newTag')} onadd={() => (adding = false)} />
@@ -155,9 +151,6 @@
 
 <style>
 	/* A folded group: its list keeps its place in the markup, out of view. */
-	ul[hidden] {
-		display: none;
-	}
 	ul {
 		margin: 0;
 		padding: 0;

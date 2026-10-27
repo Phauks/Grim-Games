@@ -80,8 +80,8 @@ import ph_plus from '~icons/ph/plus';
 import ph_poker_chip from '~icons/ph/poker-chip';
 import ph_printer from '~icons/ph/printer';
 import ph_prohibit from '~icons/ph/prohibit';
+import ph_projector_screen from '~icons/ph/projector-screen';
 import ph_push_pin from '~icons/ph/push-pin';
-import ph_rectangle from '~icons/ph/rectangle';
 import ph_scroll from '~icons/ph/scroll';
 import ph_shapes from '~icons/ph/shapes';
 import ph_share_network from '~icons/ph/share-network';
@@ -192,8 +192,8 @@ const icons: IconMap = {
 	'ph:poker-chip': ph_poker_chip,
 	'ph:printer': ph_printer,
 	'ph:prohibit': ph_prohibit,
+	'ph:projector-screen': ph_projector_screen,
 	'ph:push-pin': ph_push_pin,
-	'ph:rectangle': ph_rectangle,
 	'ph:scroll': ph_scroll,
 	'ph:shapes': ph_shapes,
 	'ph:share-network': ph_share_network,

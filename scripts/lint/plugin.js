@@ -1,7 +1,9 @@
 /** Grim-Games' own lint rules, as an ESLint plugin (`grim/...`). */
+import { caretSection } from './caret-section.js';
 import { clearableField } from './clearable-field.js';
 import { closeButton } from './close-button.js';
 import { confirmDialog } from './confirm-dialog.js';
+import { countBadge } from './count-badge.js';
 import { deleteButton } from './delete-button.js';
 import { dropdownChoice } from './dropdown-choice.js';
 import { iconMeaning } from './icon-meaning.js';
@@ -21,6 +23,8 @@ export default {
 		'dropdown-choice': dropdownChoice,
 		'text-field': textField,
 		'icon-meaning': iconMeaning,
-		'share-panel': sharePanel
+		'share-panel': sharePanel,
+		'caret-section': caretSection,
+		'count-badge': countBadge
 	}
 };
