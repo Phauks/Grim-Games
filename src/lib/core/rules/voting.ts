@@ -36,6 +36,8 @@ export interface TownSeat {
 	dead: boolean;
 	ghostVote?: 'unused' | 'used';
 	votes?: number;
+	/** The Traveller in this seat, when the town knows it. */
+	traveller?: string;
 }
 
 /** The day's counts as players' phones show them: the Storyteller's, without the teams. */
@@ -43,6 +45,8 @@ export interface TownCounts extends BlockThreshold {
 	/** Every seat, dead ones included, for "7/8". */
 	total: number;
 	ghostVotes: number;
+	/** Players who must support an exile, while the town knows a living Traveller is in play. */
+	exile?: number;
 }
 
 /**
@@ -58,7 +62,24 @@ export function townCounts(seats: readonly TownSeat[]): TownCounts {
 		(sum, s) => sum + (s.dead ? (s.votes ?? (s.ghostVote === 'used' ? 0 : 1)) : 0),
 		0
 	);
-	return { alive, total: seats.length, needed: neededToBlock(alive), ghostVotes };
+	const counts: TownCounts = {
+		alive,
+		total: seats.length,
+		needed: neededToBlock(alive),
+		ghostVotes
+	};
+	if (seats.some((s) => s.traveller && !s.dead)) counts.exile = neededToExile(seats.length);
+	return counts;
+}
+
+/**
+ * Players who must support exiling a Traveller: at least half of every player, alive or dead,
+ * Travellers included, rounded up. Anyone may support an exile, dead players without a vote
+ * token too, and it is not a vote, so ghost votes are not spent (wiki Glossary, "Exile" and
+ * "Player"; the Voudon page's example, where 5 of 12 supporting is not enough).
+ */
+export function neededToExile(players: number): number {
+	return Math.ceil(players / 2);
 }
 
 /** Living players by team, for the Storyteller (Trevor, 2026-10-17). */

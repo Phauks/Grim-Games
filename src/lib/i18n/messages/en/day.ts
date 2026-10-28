@@ -101,6 +101,10 @@ export const day = {
 	'day.aliveLabel': '{count} of {total} players alive',
 	'day.goodLabel': '{count} good alive',
 	'day.evilLabel': '{count} evil alive',
+	'day.exileLabel': {
+		one: '{count} player must support an exile ({total} players, alive or dead)',
+		other: '{count} players must support an exile ({total} players, alive or dead)'
+	},
 	'day.ghostVotesLabel': { one: '{count} ghost vote left', other: '{count} ghost votes left' },
 	'day.count.player': 'Player',
 	'day.count.character': 'Character',

@@ -182,6 +182,9 @@ test('tapping a type count shows the setup sheet count and every change to it', 
 	await expect(info).toContainText('Setup sheet, 8 players5');
 	await expect(info).toContainText(/Baron\s*: \+2 Outsiders/);
 	await expect(info).toContainText('Expected3');
+	// Tapping the open count again closes it (Trevor, 2026-10-28).
+	await page.getByTestId('count-info-townsfolk').tap();
+	await expect(info).toBeHidden();
 });
 
 test('selection counts against the setup sheet and explains the Drunk', async ({ page }) => {
