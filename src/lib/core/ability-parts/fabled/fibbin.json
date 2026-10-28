@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "fib",
+			"when": {
+				"at": "always"
+			},
+			"limit": "once-per-game",
+			"storytellerMay": true,
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "falsify-info",
+					"who": "a-good-player"
+				}
+			]
+		}
+	]
+}

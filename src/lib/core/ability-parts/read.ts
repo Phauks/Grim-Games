@@ -18,6 +18,7 @@ const CLAUSE_KEYS = [
 	'optional',
 	'storytellerMay',
 	'evenIfDead',
+	'actor',
 	'effects',
 	'marks',
 	'spent'
@@ -36,17 +37,17 @@ const EFFECT_FIELDS: Record<string, readonly string[]> = {
 	boost: ['who', 'how', 'until'],
 	'keep-ability': ['who', 'until'],
 	'gain-ability': ['who', 'of'],
-	'falsify-info': ['of'],
+	'falsify-info': ['of', 'who'],
 	'skip-waking': ['who'],
 	arm: ['who', 'on', 'until', 'effects'],
 	later: ['at', 'if', 'effects'],
-	madness: ['who', 'as', 'until'],
+	madness: ['who', 'as', 'until', 'penalty'],
 	swap: ['who', 'with', 'what'],
 	'game-rule': ['rule'],
 	'hold-game': ['while', 'extraDay'],
 	'register-dead': ['who'],
 	immune: ['who', 'to'],
-	register: ['who', 'as', 'toSelfOnly'],
+	register: ['who', 'as', 'toSelfOnly', 'whileToken'],
 	believe: ['who', 'isA', 'choicesAsDemon'],
 	become: ['who', 'into', 'evil'],
 	execute: ['who', 'instead'],
@@ -95,6 +96,8 @@ export function readAbilityParts(
 		else if (c.when.at === 'event' && !oneOf(c.when.event, EVENTS))
 			issues.add(`${at}.when.event`, 'unknown');
 		if (c.limit !== undefined && !oneOf(c.limit, LIMITS)) issues.add(`${at}.limit`, 'unknown');
+		if (c.actor !== undefined && !oneOf(c.actor, SUBJECTS))
+			issues.add(`${at}.actor`, 'unknown subject');
 		for (const key of ['marks', 'spent'] as const) {
 			const label = c[key];
 			if (label !== undefined && reminders && !reminders.includes(label))

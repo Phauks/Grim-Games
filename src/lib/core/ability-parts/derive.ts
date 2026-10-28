@@ -89,7 +89,9 @@ function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 	if (when.at === 'night')
 		return { first: when.nights !== 'each*', other: when.nights !== 'first' };
 	// Told something before the game starts (the Evil Twin, the Lunatic's Demon): night 1.
-	const first = when.at === 'setup' && effects.some((e) => e.do === 'learn');
+	// Something everyone knows from the start (the Revolutionary's pair) is told at setup, not woken for.
+	const first =
+		when.at === 'setup' && effects.some((e) => e.do === 'learn' && e.to !== 'each-player');
 	// Woken as the Demon they think they are (the Lunatic).
 	if (effects.some((e) => e.do === 'believe' && e.isA === 'demon')) return { first, other: true };
 	// Something happens tonight because of a day's event (Gossip, Moonchild, Juggler).
@@ -209,6 +211,10 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 		// Carousel Townsfolk (batch 2): a token marking its own player's state after their death
 		// stays on their seat (the Banshee's Has Ability, the Poppy Grower's Evil Wakes).
 		if (clause.marks && when.at === 'death' && onSelf) acc.fixed.add(clause.marks);
+		// Rule characters: a token that marks no player (Whoopsie, Goal handed out by the
+		// Storyteller) only says where the character is up to, so it never moves.
+		const marksNoOne = effects.every((e) => e.do !== 'learn' && !('who' in e) && !('with' in e));
+		if (clause.marks && !clause.choose && marksNoOne) acc.fixed.add(clause.marks);
 		const choice = clause.choose;
 		const neverSelf =
 			choice?.notSelf ||
@@ -236,7 +242,11 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 			...(acc.holds.length ? { holds: acc.holds } : {})
 		};
 	if (acc.fixed.size) rules.fixedReminders = [...acc.fixed].sort();
-	const opening = parts.clauses.filter((c) => c.when.at !== 'setup').map(clauseOpening)[0];
+	// A rule character's text states a rule, not its player's timing, so it has no Sort Order phrase.
+	const ruleCharacter = type === 'fabled' || type === 'loric';
+	const opening = ruleCharacter
+		? undefined
+		: parts.clauses.filter((c) => c.when.at !== 'setup').map(clauseOpening)[0];
 	return { rules, wakes, ...(opening ? { opening } : {}) };
 }
 
@@ -286,7 +296,9 @@ function applyEffect(
 					token: marks,
 					from: effect.from,
 					...night,
-					...neighbours
+					...neighbours,
+					// Rule characters: "might not die" (the Ventriloquist's Mad nominee).
+					...(clause.storytellerMay ? { storytellerDecides: true as const } : {})
 				};
 			return;
 		}
@@ -372,19 +384,34 @@ function applyEffect(
 			};
 			return;
 		}
-		case 'register':
+		case 'register': {
 			if (effect.who === 'self') rules.registersAs = { self: { ...effect.as } };
 			// Carousel Townsfolk: a good player the Storyteller marks registers falsely to every
 			// ability (the Lycanthrope's Faux Paw); only to its own, it is that ability's token.
-			else if (effect.who === 'a-good-player' && !effect.toSelfOnly && marks)
+			else if (effect.who === 'a-good-player' && !effect.toSelfOnly && marks) {
+				const { anything: _, ...as } = effect.as;
+				rules.registersAs = {
+					...rules.registersAs,
+					tokens: { ...rules.registersAs?.tokens, [marks]: { ...as, carrierAlignment: 'good' } }
+				};
+			}
+			// Rule characters: a token's carrier registers falsely (the Revolutionary's Aligned).
+			else if (marks && effect.who === 'marked') {
+				const { anything, ...as } = effect.as;
 				rules.registersAs = {
 					...rules.registersAs,
 					tokens: {
 						...rules.registersAs?.tokens,
-						[marks]: { ...effect.as, carrierAlignment: 'good' }
+						[marks]: {
+							...as,
+							...(anything ? { asAnything: true as const } : {}),
+							...(effect.whileToken ? { whileToken: effect.whileToken } : {})
+						}
 					}
 				};
+			}
 			return;
+		}
 		case 'register-dead':
 			if (clause.spent) rules.gameEnd = { aliveWhileDead: { untilToken: clause.spent } };
 			return;
@@ -400,9 +427,11 @@ function applyEffect(
 		case 'madness':
 			cause(
 				rules,
-				effect.who === 'self'
-					? { kind: 'execution', victim: { who: 'self' } }
-					: { kind: 'execution' }
+				effect.penalty === 'death'
+					? { kind: 'kills' }
+					: effect.who === 'self'
+						? { kind: 'execution', victim: { who: 'self' } }
+						: { kind: 'execution' }
 			);
 			return;
 		case 'game-rule':
@@ -440,7 +469,11 @@ function applyEffect(
 		}
 		case 'end-game': {
 			// Carousel Townsfolk (batch 2): a guess only the Storyteller can judge (the Alsaahir).
-			if (has(conds, (c) => 'choice' in c && c.choice === 'guess-right'))
+			if (
+				has(conds, (c) => 'choice' in c && c.choice === 'guess-right') ||
+				// Rule characters: all players choose the winner (the Fiddler).
+				effect.winner === 'chosen-publicly'
+			)
 				rules.gameEnd = { ...rules.gameEnd, decidedByStoryteller: true };
 			const count = alive(clause.if);
 			const noExecution = has(clause.if, (c) => 'noExecutionToday' in c);

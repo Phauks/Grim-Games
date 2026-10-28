@@ -1,0 +1,33 @@
+{
+	"clauses": [
+		{
+			"id": "goal",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Goal",
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Give one or more players a goal (or later)."
+				}
+			]
+		},
+		{
+			"id": "reward",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"to": "marked",
+					"info": {
+						"kind": "true-info"
+					}
+				}
+			]
+		}
+	],
+	"hatches": ["the goals are the Storyteller's to set"]
+}

@@ -1,0 +1,34 @@
+{
+	"clauses": [
+		{
+			"id": "setup",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "Homebrew rules",
+						"ops": [],
+						"notes": ["Explain the homebrew characters and rules before the game."],
+						"readsBrackets": true
+					}
+				}
+			]
+		},
+		{
+			"id": "homebrew",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Run the script's homebrew characters and rules."
+				}
+			]
+		}
+	],
+	"hatches": ["homebrew rules are whatever the script says"]
+}
