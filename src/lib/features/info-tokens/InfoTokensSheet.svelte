@@ -85,7 +85,7 @@
 		});
 	// Cards of characters in play (Trevor, 2026-10-16).
 	const characterCards = $derived(
-		characterCardsFor(inPlay ?? characters.map((c) => c.id)).flatMap((card) => {
+		characterCardsFor(inPlay ?? characters.map((c) => c.id), byId).flatMap((card) => {
 			const character = byId.get(card.characterId);
 			return character ? [{ card, character }] : [];
 		})

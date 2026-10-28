@@ -18,7 +18,8 @@
  * - `unreliable` says the waking player's ability does not work (`abilityState`: drunk,
  *   poisoned, or no ability), with every source in `impairments`, so the Storyteller may
  *   give any answer; the true answer is still worked out and shown;
- * - `mustBeFalse` says a Vortox is in play, so a Townsfolk's information must be false
+ * - `mustBeFalse` says a working `falseInfo` character is in play (the Vortox), so a
+ *   Townsfolk's information must be false, with that character in `falseBy`
  *   (https://wiki.bloodontheclocktower.com/Vortox);
  * - `misregister` lists players who might register as something else (Spy, Recluse, the
  *   Faux Paw player) and whose registration could change this information (Trevor,
@@ -43,6 +44,7 @@ export {
 	type AnswerValue,
 	type AbnormalUse,
 	type NightAnswer,
+	falseInfoSource,
 	reliability
 } from './night-info/reliability.ts';
 export {

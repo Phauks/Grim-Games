@@ -85,9 +85,9 @@
 	     Settings > Storyteller > Day. -->
 	<Select
 		label={t('day.setupForPlayers')}
-		value={preferences.current.setupForPlayers}
+		value={gameSettings.current.setupForPlayers}
 		options={SETUP_LOOKS.map((value) => ({ value, label: t(`day.setupForPlayers.${value}`) }))}
-		onChange={(setupForPlayers) => preferences.update({ setupForPlayers })}
+		onChange={(setupForPlayers) => gameSettings.set(gameSettings.gameId, { setupForPlayers })}
 	/>
 {/snippet}
 

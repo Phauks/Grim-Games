@@ -60,7 +60,16 @@ export interface ChoiceRules {
 	believesType?: SeatedType;
 	infoKind?: InfoKind;
 	evilInfo?: EvilInfo;
+	/**
+	 * Its info card, filled in before it is shown: a secret word (the Mezepheles,
+	 * https://wiki.bloodontheclocktower.com/Mezepheles) or phrase (the Yaggababble,
+	 * https://wiki.bloodontheclocktower.com/Yaggababble). `features/info-tokens/character-cards.ts`.
+	 */
+	infoCard?: InfoCard;
 }
+
+export const INFO_CARDS = ['secret-word', 'secret-phrase'] as const;
+export type InfoCard = (typeof INFO_CARDS)[number];
 
 export const CHOICE_RULE_KEYS = [
 	'marksChoice',
@@ -70,7 +79,8 @@ export const CHOICE_RULE_KEYS = [
 	'believesOtherCharacter',
 	'believesType',
 	'infoKind',
-	'evilInfo'
+	'evilInfo',
+	'infoCard'
 ] as const satisfies readonly (keyof ChoiceRules)[];
 
 /** Reads this file's keys from a rules block; labels must be the character's own reminders. */
@@ -107,6 +117,10 @@ export function readChoiceRules(
 		const evilInfo = readEvilInfo(raw.evilInfo, `${path}.evilInfo`, issues);
 		if (evilInfo) out.evilInfo = evilInfo;
 	}
+	const card = readString(raw, 'infoCard', path, issues, false);
+	if (card !== undefined && !(INFO_CARDS as readonly string[]).includes(card)) {
+		issues.add(`${path}.infoCard`, `expected one of ${INFO_CARDS.join(', ')}`);
+	} else if (card !== undefined) out.infoCard = card as InfoCard;
 	return out;
 }
 

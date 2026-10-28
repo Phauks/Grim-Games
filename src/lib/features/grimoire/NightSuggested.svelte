@@ -89,6 +89,8 @@
 		text: string;
 		/** A rule that changes what may be given (the Vortox), drawn as a warning. */
 		warn?: boolean;
+		/** The character it is about, shown before the text (the Vortox). */
+		character?: CharacterId;
 		/** Players named after the text, each with their character. */
 		seats?: readonly SeatId[];
 		allowed?: readonly AnswerValue[];
@@ -96,7 +98,7 @@
 	function flags(r: Reliability & { possible?: AnswerValue[] }, listed = false): Flag[] {
 		const out: Flag[] = [];
 		// A listed answer's rows already say which values the Vortox allows.
-		if (r.mustBeFalse && !listed) out.push({ text: 'Vortox: must be false', warn: true });
+		if (r.falseBy && !listed) out.push({ text: 'must be false', warn: true, character: r.falseBy });
 		if (r.misregister.length > 0)
 			out.push({ text: 'Might register falsely:', seats: r.misregister });
 		if (r.possible && r.possible.length > 1 && !listed)
@@ -315,11 +317,15 @@
 			v
 		)}{/if}{/snippet}
 
-{#snippet flagBody(flag: Flag)}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n
-			? ', '
-			: ' '}{@render player(seatId)}{/each}{#each flag.allowed ?? [] as v, n (n)}{n
-			? ' / '
-			: ' '}{@render value(v)}{/each}{/snippet}
+{#snippet flagBody(flag: Flag)}{#if flag.character}<CharacterBadge
+			characterId={flag.character}
+			character={characters.get(flag.character)}
+		/>
+	{/if}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ' '}{@render player(
+			seatId
+		)}{/each}{#each flag.allowed ?? [] as v, n (n)}{n ? ' / ' : ' '}{@render value(
+			v
+		)}{/each}{/snippet}
 
 {#snippet flagLines(list: Flag[])}{#each list as flag (flag.text)}
 		<span class="flag" class:warn={flag.warn}>

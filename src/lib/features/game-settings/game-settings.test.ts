@@ -20,7 +20,12 @@ describe('settings for one game', () => {
 	});
 
 	it('read a stored game as stored', () => {
-		const stored = { ...defaults, trackNominations: true, timerPerPlayer: 45 };
+		const stored = {
+			...defaults,
+			trackNominations: true,
+			setupForPlayers: 'town' as const,
+			timerPerPlayer: 45
+		};
 		expect(parseGameSettings(stored, defaults)).toEqual(stored);
 	});
 
@@ -33,6 +38,7 @@ describe('settings for one game', () => {
 			{
 				trackNominations: true,
 				timerForPlayers: 'clock',
+				setupForPlayers: 'noon',
 				timerPerPlayer: 9999,
 				slotMachine: 'yes'
 			},
