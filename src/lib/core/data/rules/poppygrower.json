@@ -22,5 +22,12 @@
 	"reminderMovement": {
 		"fixed": ["Evil Wakes"],
 		"why": "Marks this character’s own state, so it stays on its seat."
+	},
+	"evilInfo": {
+		"notes": {
+			"minioninfo": "while it lives, Minions and Demon do not learn each other.",
+			"demoninfo": "while it lives, Minions and Demon do not learn each other."
+		},
+		"hidesDemon": true
 	}
 }
