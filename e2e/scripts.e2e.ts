@@ -1285,6 +1285,9 @@ test('Add script is one dialog: the link and the JSON take turns, and the layout
 	const json = dialog.getByLabel('Script JSON');
 	const confirm = dialog.getByRole('button', { name: 'Confirm' });
 	await expect(confirm).toBeDisabled();
+	// Measured once the app's font has loaded: Confirm measured in the fallback font is
+	// narrower (CI, run 40601200983: 123.9 wide before, 140.3 after).
+	await page.evaluate(() => document.fonts.ready);
 	const before = await confirm.boundingBox();
 	// Filling one disables the other, so it is always clear which one Confirm adds.
 	await link.fill('https://scripts.example/a.json');

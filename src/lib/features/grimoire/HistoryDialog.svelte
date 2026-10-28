@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -41,7 +42,7 @@
 	function seatLabel(seatId: SeatId): PlayerName {
 		const game = grimoire.game;
 		const number = game.seating.indexOf(seatId) + 1;
-		if (number > 0) return game.seats[seatId]?.playerName ?? `Seat ${number}`;
+		if (number > 0) return game.seats[seatId]?.playerName ?? t('common.seat', { number });
 		for (const item of items)
 			for (const part of item.parts)
 				if (part.kind === 'seat' && part.seatId === seatId) return part.name;

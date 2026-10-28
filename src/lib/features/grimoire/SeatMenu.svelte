@@ -60,7 +60,7 @@
 	}
 </script>
 
-<Dialog bind:open {title} description={`Seat ${number}`}>
+<Dialog bind:open {title} description={t('common.seat', { number })}>
 	{#snippet lead()}
 		{#if seat?.characterId}
 			<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />

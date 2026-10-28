@@ -200,11 +200,6 @@ export const room = {
 		'The current password stops working, and anyone watching with it is disconnected.',
 	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',
 	'room.watch.pledgeTitle': 'Before you watch',
-	'room.watch.pledgeLead':
-		'You will see everything the Storyteller sees: every character, reminder and note. You promise that:',
-	'room.watch.pledgeCheat': 'You won’t use it to cheat, or to help anyone playing.',
-	'room.watch.pledgeShare': 'You won’t tell or show any player what you see.',
-	'room.watch.pledgeIntegrity': 'You won’t do anything that spoils the game for its players.',
 	'room.watch.waiting': 'Waiting for the Storyteller’s grimoire…',
 	'room.watch.turnedOff': 'The Storyteller has turned Grim view off, or made a new password.',
 	'room.watch.wrongPassword': 'Wrong password, or the Storyteller has turned Grim view off.',

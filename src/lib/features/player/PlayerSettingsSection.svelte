@@ -3,8 +3,6 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
-	import PrintSettingsFields from './PrintSettingsFields.svelte';
-	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 </script>
 
@@ -42,8 +40,3 @@
 	defaultValue="theme"
 	onChange={(sheetBackground) => playerSettings.update({ sheetBackground })}
 />
-
-<!-- Also in Print's own screen (Trevor: every setting in Settings and where it is used). -->
-<SettingCollapsible title={t('player.printSettings')} storageKey="settings-player-print">
-	<PrintSettingsFields />
-</SettingCollapsible>

@@ -35,8 +35,10 @@
  * - `info`: the token marks what the character's information showed. While the character
  *   is drunk or poisoned (or is really the Drunk, Lunatic or Marionette) that information
  *   can be false, so any seat fits (Trevor, 2026-10-18: a drunk Librarian can see anyone).
- *   Its `types` and `alignment` also accept what a player may register as (the Recluse as
- *   an evil Minion or Demon, the Spy as a good Townsfolk or Outsider).
+ *
+ * Every rule's `types` and `good`/`evil` `alignment` also accept what a player may register
+ * as (the Recluse as an evil Minion or Demon, the Spy as a good Townsfolk or Outsider): the
+ * Preacher may choose a Recluse (Trevor, 2026-10-27).
  *
  * The checks only suggest and warn (`rules/reminder-targets.ts`); the Storyteller can put
  * any token anywhere.

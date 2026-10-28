@@ -4,5 +4,8 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"infoKind": {
+		"number": true
 	}
 }
