@@ -209,6 +209,11 @@ export interface CharacterRules extends ChoiceRules {
 	 */
 	falseInfo?: FalseInfo;
 	/**
+	 * Its ability is only the jinxes, which show on their own, so a game never starts with it in
+	 * play (the Djinn, https://wiki.bloodontheclocktower.com/Djinn; Trevor, 2026-10-17).
+	 */
+	jinxesOnly?: boolean;
+	/**
 	 * Its night ability can turn a player into a new Demon (the Pit-Hag,
 	 * https://wiki.bloodontheclocktower.com/Pit-Hag), so the Demon may change hands.
 	 */
@@ -335,6 +340,7 @@ const RULE_KEYS = [
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'falseInfo',
+	'jinxesOnly',
 	'createsDemon',
 	'orHiddenAs',
 	'gainsAbilityOf',
@@ -566,6 +572,8 @@ export function parseCharacterRules(
 		const falseInfo = readFalseInfo(raw.falseInfo, `${path}.falseInfo`, issues);
 		if (falseInfo) rules.falseInfo = falseInfo;
 	}
+	const jinxesOnly = readBoolean(raw, 'jinxesOnly', path, issues);
+	if (jinxesOnly !== undefined) rules.jinxesOnly = jinxesOnly;
 	const createsDemon = readBoolean(raw, 'createsDemon', path, issues);
 	if (createsDemon !== undefined) rules.createsDemon = createsDemon;
 	const hiddenAs = readString(raw, 'orHiddenAs', path, issues, false);

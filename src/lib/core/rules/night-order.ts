@@ -305,14 +305,13 @@ function actsTonight(character: Character, night: Night): boolean {
 export function nightOrder(input: NightOrderInput): NightOrder {
 	const { night } = input;
 	const omitted: OmittedStep[] = [];
-	const inPlayIds = new Set(input.inPlay.map((c) => c.id));
 	const unique = input.inPlay.filter((c, i, all) => all.findIndex((d) => d.id === c.id) === i);
 	const custom = input.customOrder?.length ? input.customOrder : undefined;
 	const customIds = new Set(custom);
 
 	const markers: NightMarker[] = ['dusk'];
 	if (night === 'first') {
-		if (hasEvilTeamInfo(input.players, inPlayIds)) markers.push('minioninfo', 'demoninfo');
+		if (hasEvilTeamInfo(input.players, input.inPlay)) markers.push('minioninfo', 'demoninfo');
 		else {
 			const reason = `Fewer than 7 players (${input.players}): no Minion or Demon info.`;
 			omitted.push({ id: 'minioninfo', reason }, { id: 'demoninfo', reason });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gamePhase, parsePlayersPhase } from './game-phase.ts';
+import { gamePhase, parsePlayersPhase, parseSetupLook } from './game-phase.ts';
 
 describe('game phase', () => {
 	it('is Setup until the first night begins, then Night 1', () => {
@@ -49,5 +49,15 @@ describe("players' phase", () => {
 			{ kind: 'day', number: 1.5 }
 		])
 			expect(parsePlayersPhase(value)).toBeUndefined();
+	});
+});
+
+describe('parseSetupLook', () => {
+	it("keeps the Storyteller's three choices for beside Setup and drops anything else", () => {
+		expect(parseSetupLook('candles')).toBe('candles');
+		expect(parseSetupLook('town')).toBe('town');
+		expect(parseSetupLook('dusk')).toBe('dusk');
+		expect(parseSetupLook('sun')).toBeUndefined();
+		expect(parseSetupLook(undefined)).toBeUndefined();
 	});
 });

@@ -4,12 +4,15 @@
 		townCounts,
 		type dayTimers,
 		type PlayersPhase,
+		type SetupLook,
 		type TownSeat
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import type { Candle } from '#lib/core/sync/seat-presence.ts';
 	import CountBadge from './CountBadge.svelte';
+	import SetupSky from './SetupSky.svelte';
 	import { WatchedTimer } from './watched-timer.svelte.ts';
 
 	/**
@@ -37,7 +40,9 @@
 	 * The sun's look (Trevor, 2026-10-28): it rides the arc from horizon to horizon and pulses
 	 * slowly, with no rays. The path it has crossed is a solid line, and the sky beneath it turns
 	 * from gold in the morning through amber to red as the time runs out. At night the slot shows
-	 * a night sky instead, a crescent moon and stars with no arc, so it is never empty.
+	 * a night sky instead, a crescent moon and stars with no arc, so it is never empty. In Setup
+	 * it shows what the Storyteller chose (`SetupSky`): the seats' candles, the town at dusk or
+	 * the dusk sky.
 	 */
 	interface Props {
 		phase: PlayersPhase;
@@ -47,9 +52,15 @@
 		seats?: readonly TownSeat[];
 		/** Alone on its own row: the big sun (above). */
 		wide?: boolean;
+		/** What shows beside Setup on the wide row, as the Storyteller chose. */
+		setupLook?: SetupLook;
+		/** The seats' candles, for the candles beside Setup. */
+		candles?: readonly Candle[];
+		/** Connected phones with no seat, a count beside the candles. */
+		unseated?: number;
 	}
 
-	let { phase, timer, seats, wide = false }: Props = $props();
+	let { phase, timer, seats, wide = false, setupLook, candles, unseated = 0 }: Props = $props();
 	const title = $derived(
 		phase.kind === 'setup'
 			? t('day.setup')
@@ -177,7 +188,11 @@
 	{#if wide}
 		<!-- Kept in every phase, so the row never changes height. -->
 		<span class="sky-slot">
-			{#if showTimer}{@render shownTimer()}{:else if phase.kind === 'night'}{@render nightSky()}{/if}
+			{#if showTimer}{@render shownTimer()}{:else if phase.kind === 'night'}{@render nightSky()}{:else if phase.kind === 'setup' && setupLook}<SetupSky
+					look={setupLook}
+					{candles}
+					{unseated}
+				/>{/if}
 		</span>
 	{:else if showTimer}{@render shownTimer()}{/if}
 </svelte:element>

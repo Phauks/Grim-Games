@@ -16,6 +16,7 @@ import type {
 	ScriptVoteTally
 } from './script-vote.ts';
 import type { SeatRole } from './room-roles.ts';
+import type { SeatPresence } from './seat-presence.ts';
 import type { PictureReportView } from './room-pictures.ts';
 import type { PlayerMessage } from './room-messages.ts';
 import type { GameOver, RoomMember, RoomRequest } from './room.ts';
@@ -186,6 +187,8 @@ export interface PlayerView {
 	me: RoomMember;
 	/** Seats someone in the room already sits in. */
 	takenSeats: SeatId[];
+	/** Which seats' phones are connected or away, and the phones with no seat (the candles). */
+	presence?: SeatPresence;
 	/** The open vote, shown to spectators only. */
 	vote?: { voteId: string; options: SeatId[]; ability?: string; choice?: SeatId };
 	/** The game on the table is over, with who won and how. */
