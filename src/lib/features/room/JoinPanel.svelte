@@ -523,14 +523,19 @@
 		align-content: start;
 		min-width: 0;
 	}
-	/* The code, the game it opens and Join, down the middle of the page. */
+	/* The code, the game it opens and Join, down the middle of the page, in one bordered box
+	   set off from the page (Trevor, 2026-10-28). */
 	.code-form {
 		justify-items: center;
 		gap: var(--space-4);
+		box-sizing: border-box;
 		width: 100%;
 		max-width: calc(28 * var(--u));
 		margin-inline: auto;
-		padding-block: var(--space-4);
+		padding: var(--space-4);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
 		text-align: center;
 	}
 	.code-form label {
@@ -550,9 +555,10 @@
 		border-radius: var(--radius-md);
 		text-align: start;
 	}
+	/* The box is raised already, so the game it opens sits back in the page's own surface. */
 	.game.found {
 		border-style: solid;
-		background: var(--surface-raised);
+		background: var(--surface);
 	}
 	.game :global(.game-logo) {
 		width: calc(4.5 * var(--u));
