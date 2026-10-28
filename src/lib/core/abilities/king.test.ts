@@ -48,8 +48,8 @@ describe('King', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/King#Examples)', () => {
 		it('Example 1: King learns an alive Snitch, then an alive Witch', () => {
 			// Once enough players are dead the King is shown alive characters, good or evil; a
-			// dead player's character is not one of them. When the dead first equal the living is
-			// the Storyteller's call: the step shows the options every night the King wakes.
+			// dead player's character is not one of them. Before then the King doesn't wake
+			// (`wakesWhen`, rules/wakes-when.test.ts).
 			const { game: g, seats } = castGame(
 				['king', 'snitch', 'witch', 'monk', 'imp'],
 				(s) => ({ type: 'SetDead', seatId: s[3], dead: true }),

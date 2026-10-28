@@ -17,6 +17,7 @@ import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readDayMark, type DayMarkRule } from './day-mark-rules.ts';
 import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
 import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
+import { readWakesWhen, type WakesWhen } from './wakes-when-rules.ts';
 import { CHOICE_RULE_KEYS, readChoiceRules, type ChoiceRules } from './choice-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
@@ -183,6 +184,8 @@ export interface CharacterRules extends ChoiceRules {
 	stopsWaking?: StopsWaking;
 	/** Its token on a player stops them killing tonight (`stops-waking-rules.ts`'s shape). */
 	stopsKilling?: StopsWaking;
+	/** A condition its player needs before waking for it (`wakes-when-rules.ts`). */
+	wakesWhen?: WakesWhen;
 	/** Its token on a dead player keeps that player's ability (`keeps-ability-rules.ts`). */
 	keepsAbility?: KeepsAbility;
 	/** Its token says a player changed character or alignment (`becomes-rules.ts`). */
@@ -389,6 +392,7 @@ const RULE_KEYS = [
 	'dayMark',
 	'stopsWaking',
 	'stopsKilling',
+	'wakesWhen',
 	'keepsAbility',
 	'becomes',
 	'makesDemon',
@@ -596,6 +600,10 @@ export function parseCharacterRules(
 	if (raw.dayMark !== undefined) {
 		const dayMark = readDayMark(raw.dayMark, `${path}.dayMark`, issues, reminders);
 		if (dayMark) rules.dayMark = dayMark;
+	}
+	if (raw.wakesWhen !== undefined) {
+		const wakes = readWakesWhen(raw.wakesWhen, `${path}.wakesWhen`, issues, reminders);
+		if (wakes) rules.wakesWhen = wakes;
 	}
 	if (raw.stopsWaking !== undefined) {
 		const at = `${path}.stopsWaking`;
