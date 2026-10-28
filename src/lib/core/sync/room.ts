@@ -27,6 +27,7 @@ import {
 import { withoutMessages, type PlayerMessage } from './room-messages.ts';
 import { numberedNames, withNumberedNames } from './room-names.ts';
 import { MAX_MEMBERS } from './room-presence.ts';
+import { seatPresence } from './seat-presence.ts';
 import type { RoomTransfer } from './room-transfer.ts';
 
 export {
@@ -264,7 +265,8 @@ export function playerView(
 	const view: PlayerView = {
 		type: 'player-view',
 		me,
-		takenSeats: room.members.flatMap((m) => (m.seatId ? [m.seatId] : []))
+		takenSeats: room.members.flatMap((m) => (m.seatId ? [m.seatId] : [])),
+		presence: seatPresence(room.members, (id) => !present || present.has(id))
 	};
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;

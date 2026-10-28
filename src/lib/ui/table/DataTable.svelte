@@ -62,7 +62,7 @@
 </script>
 
 <script lang="ts" generics="T, K extends string">
-	import { untrack, type Snippet } from 'svelte';
+	import type { Snippet } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { near } from '#lib/ui/near.ts';
@@ -77,6 +77,7 @@
 	import BuiltFilter from '#lib/ui/table/BuiltFilter.svelte';
 	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
 	import { MAX_WIDTH, columnTrack } from '#lib/ui/table/column-widths.ts';
+	import { RowPaging } from '#lib/ui/table/row-paging.svelte.ts';
 	import { ColumnResize, minWidthOf } from '#lib/ui/table/column-resize.svelte.ts';
 
 	interface Props {
@@ -251,12 +252,6 @@
 	const built = new SvelteSet<string>();
 	let body = $state<HTMLElement>();
 
-	/**
-	 * Rows on or near the screen are built before the browser paints, whenever the rows
-	 * change (first show, sort, filter): the observer in near.ts only reports after a paint,
-	 * which showed each visible row's name a frame before the rest of it. The observer still
-	 * builds rows as they come near while scrolling.
-	 */
 	// `fit="content"`: a wide table scrolls inside its own box, no taller than the screen, so
 	// its sideways scrollbar is always in reach (Trevor, 2026-10-16). Narrow tables (stacked
 	// rows on phones) are not boxed: they scroll with the page and never sideways.
@@ -266,45 +261,16 @@
 	/** Rows are "near" relative to the box they scroll in: the table's own, or the page. */
 	const root = $derived(boxed ? (scroller ?? null) : null);
 
-	/**
-	 * Paging: building thousands of rows at once took about 4 s on a phone (Bloodstar's 4,682
-	 * scripts). A new list starts at one page again; a list that only grew at its end (BotC
-	 * Scripts' next page) keeps what is drawn, so nothing jumps while scrolling.
-	 */
-	let limit = $state(Infinity);
-	let firstKey: string | undefined;
-	$effect.pre(() => {
-		const first = rows.length ? key(rows[0]) : undefined;
-		if (first !== firstKey || untrack(() => limit) === Infinity) {
-			limit = pageSize ?? Infinity;
-			// A new list starts at its top, or the old scroll position would draw page after page.
-			const box = untrack(() => scroller);
-			if (pageSize && fill && box) box.scrollTop = 0;
-		}
-		firstKey = first;
+	const paging = new RowPaging<T>({
+		rows: () => rows,
+		key: (row) => key(row),
+		pageSize: () => pageSize,
+		moreRows: () => moreRows,
+		scroller: () => scroller,
+		fill: () => fill,
+		root: () => root,
+		onend: () => onend?.()
 	});
-	const drawn = $derived(limit < rows.length ? rows.slice(0, limit) : rows);
-	/** Rows not drawn yet, here or still to come: the space kept for them below. */
-	const undrawn = $derived(rows.length - drawn.length + Math.max(0, moreRows));
-
-	/**
-	 * The space kept for undrawn rows came near. The list never ends early, so a scroll in
-	 * flight never stops at the end of a page (Trevor, 2026-10-18: Search only went on once he
-	 * let go). Enough pages are drawn to reach past the screen, however far it jumped.
-	 */
-	function reachEnd(space: Element) {
-		if (drawn.length >= rows.length) {
-			onend?.();
-			return;
-		}
-		const size = pageSize ?? Infinity;
-		const box = space.getBoundingClientRect();
-		const view = root ? root.getBoundingClientRect() : { top: 0, bottom: innerHeight };
-		const rowHeight = box.height / Math.max(1, undrawn);
-		const past = view.bottom + (view.bottom - view.top) - box.top;
-		const pages = Math.max(1, Math.ceil(past / rowHeight / size));
-		limit += pages * size;
-	}
 
 	/** Tracks the same 40rem limit as the container query below. */
 	function watchWidth(element: HTMLElement) {
@@ -513,7 +479,7 @@
 				</tr>
 			</thead>
 			<tbody bind:this={body}>
-				{#each drawn as row (key(row))}
+				{#each paging.drawn as row (key(row))}
 					{@const id = key(row)}
 					{@const ready = !lazy || built.has(id)}
 					<!--
@@ -561,14 +527,14 @@
 				{:else}
 					<tr class="empty"><td colspan={columns.length}>{empty}</td></tr>
 				{/each}
-				{#if undrawn > 0}
+				{#if paging.undrawn > 0}
 					<!-- Comes near the screen: more rows are drawn (a new watcher each time). -->
-					{#key drawn.length}
+					{#key paging.drawn.length}
 						<tr
 							class="more-rows"
 							aria-hidden="true"
-							style:--undrawn={undrawn}
-							{@attach (space) => near(() => reachEnd(space), '200% 0px', root)(space)}
+							style:--undrawn={paging.undrawn}
+							{@attach (space) => near(() => paging.reachEnd(space), '200% 0px', root)(space)}
 						></tr>
 					{/key}
 				{/if}

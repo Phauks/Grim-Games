@@ -70,5 +70,9 @@
 				"reason": "Says which of the two tokens applies."
 			}
 		}
+	},
+	"gainedFrom": {
+		"token": "Drunk",
+		"swapped": true
 	}
 }

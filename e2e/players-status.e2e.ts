@@ -30,7 +30,30 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	await expect(phone.getByTestId('join-status')).toHaveText('');
 	const status = phone.getByTestId('players-status');
 	const shown = phone.getByTestId('players-timer');
-	await expect(status).toHaveText('Setup');
+	// Setup, and the count of phones in the room with no seat: this one.
+	await expect(status).toHaveText(/^Setup\s*\+1$/);
+	// Beside Setup, a candle for each seat by default (Trevor, 2026-10-28), lit once a phone sits
+	// there; nobody sits yet, and this phone is in the room without a seat.
+	const setupSky = phone.getByTestId('players-setup-sky');
+	await expect(setupSky).toHaveAttribute('data-look', 'candles');
+	const seatCount = await page.getByRole('button', { name: /^Seat \d+:/ }).count();
+	await expect(setupSky.locator('.candle')).toHaveCount(seatCount);
+	await expect(setupSky.locator('.candle[data-state="lit"]')).toHaveCount(0);
+	await expect(setupSky).toHaveAttribute(
+		'aria-label',
+		`0 of ${seatCount} seats with a player here. 1 more in the room without a seat`
+	);
+	// The Storyteller can show the town at dusk instead, from the timer's own controls.
+	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
+	const timerSheet = page.getByTestId('timer-sheet');
+	await timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Town at dusk', exact: true }).tap();
+	await expect(setupSky).toHaveAttribute('data-look', 'town');
+	await timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Candles for the seats', exact: true }).tap();
+	await expect(setupSky).toHaveAttribute('data-look', 'candles');
+	await page.keyboard.press('Escape');
+	await expect(timerSheet).toBeHidden();
 	// Alone on its row, across the whole of it (Trevor, 2026-10-27: "the game status bar should
 	// then take up the entire horizontal of that line area").
 	const across = (await phone.getByRole('tablist').boundingBox())!.width;
@@ -60,6 +83,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	// The night fills the sun's space with its own sky, a moon and stars (Trevor, 2026-10-28:
 	// "at night, we should show some moons and stars, not just blank space").
 	await expect(phone.getByTestId('players-night-sky')).toBeVisible();
+	await expect(setupSky).toHaveCount(0);
 
 	// The day: a sun by default, rising on the left while the day's time is all to come.
 	await bank.getByRole('button', { name: 'End night', exact: true }).tap();

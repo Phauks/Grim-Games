@@ -8,6 +8,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import BagDrawRows from '#lib/features/game-settings/BagDrawRows.svelte';
+	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
 	import { TIMER_FOR_PLAYERS } from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -107,6 +108,13 @@
 	}))}
 	defaultValue="sun"
 	onChange={(timerForPlayers) => gameSettings.setDefault({ timerForPlayers })}
+/>
+<SettingSelect
+	label={t('day.setupForPlayers')}
+	value={preferences.current.setupForPlayers}
+	options={SETUP_LOOKS.map((value) => ({ value, label: t(`day.setupForPlayers.${value}`) }))}
+	defaultValue="candles"
+	onChange={(setupForPlayers) => preferences.update({ setupForPlayers })}
 />
 
 <!-- Every PIN and lock in one place (Trevor, 2026-10-27: "do we need better centralized PIN

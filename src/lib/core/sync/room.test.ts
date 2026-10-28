@@ -74,6 +74,13 @@ describe('the live room', () => {
 		room = seat(room, 'alex', 'b');
 		expect(playerView(room, 'alex').me).toEqual({ memberId: 'alex', name: 'Alex K', seatId: 'b' });
 		expect(playerView(room, 'alex').takenSeats).toEqual(['b']);
+		// Who is connected, for the candles beside Setup (Trevor, 2026-10-28).
+		expect(playerView(room, 'alex', new Set()).presence).toEqual({
+			here: [],
+			away: ['b'],
+			unseated: 0
+		});
+		expect(playerView(room, 'alex', new Set(['alex'])).presence?.here).toEqual(['b']);
 		// Renaming keeps the seat, and a seat an older app asks for is ignored.
 		room = setName(room, 'alex', { name: 'Alex', seatId: 'c' } as { name: string });
 		expect(room.members).toEqual([{ memberId: 'alex', name: 'Alex', seatId: 'b' }]);

@@ -17,8 +17,10 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { publicVotesWithoutToken } from '#lib/core/rules/voting.ts';
 import {
 	parsePlayersPhase,
+	parseSetupLook,
 	type GamePhase,
-	type PlayersPhase
+	type PlayersPhase,
+	type SetupLook
 } from '#lib/core/rules/game-phase.ts';
 import { parsePublicTimer, type PublicDayTimer } from '#lib/core/rules/day-timer.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
@@ -200,6 +202,8 @@ export interface PublicGameState {
 	now?: PlayersPhase;
 	/** Left out until the Storyteller's board is open. */
 	look?: PublicLook;
+	/** What phones show beside Setup, as the Storyteller chose; only during Setup. */
+	setupLook?: SetupLook;
 }
 
 /** The corner's lines only, field by field, like everything else here. */
@@ -264,6 +268,7 @@ function appearsDead(seat: Seat): boolean {
  * @param timer The day timer and how players see it, or nothing when they don't.
  * @param now Where the game is up to, for the players' status line.
  * @param look The board's background, vignette and logo, from the Storyteller's board.
+ * @param setupLook What phones show beside Setup, during Setup.
  */
 export function publicProjection(
 	game: Game,
@@ -274,12 +279,14 @@ export function publicProjection(
 	rules: readonly PublicRule[] = [],
 	timer?: PublicDayTimer,
 	now?: PlayersPhase,
-	look?: PublicLook
+	look?: PublicLook,
+	setupLook?: SetupLook
 ): PublicGameState {
 	const drawn = layout && boardLayout(layout);
 	// Field by field, so nothing else rides along with it.
 	const clock = parsePublicTimer(timer);
 	const phase = parsePlayersPhase(now);
+	const setup = parseSetupLook(setupLook);
 	return {
 		...(game.storytellerName ? { storytellerName: game.storytellerName } : {}),
 		...(drawn ? { layout: drawn } : {}),
@@ -289,6 +296,7 @@ export function publicProjection(
 		...(clock ? { timer: clock } : {}),
 		...(phase ? { now: phase } : {}),
 		...(look ? { look: parsePublicLook(look) } : {}),
+		...(setup ? { setupLook: setup } : {}),
 		seats: seatsInOrder(game).map((seat, i) => {
 			const view: PublicSeat = {
 				seatId: seat.seatId,

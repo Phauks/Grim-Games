@@ -40,5 +40,8 @@
 	},
 	"reminderMovement": {
 		"why": "Follows the most recent execution."
+	},
+	"gainedFrom": {
+		"token": "Lunch"
 	}
 }
