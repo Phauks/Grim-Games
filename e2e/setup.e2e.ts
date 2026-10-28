@@ -697,7 +697,7 @@ test('type groups and the setup sheet close from their header and stay closed', 
 test('a character picked by Random looks the same as one picked by hand', async ({ page }) => {
 	await selectionFor(page, 5);
 	await page.getByRole('button', { name: 'Random selection' }).tap();
-	const picked = page.locator('.row[data-chosen]');
+	const picked = page.locator('.ring-row[data-chosen]');
 	await expect(picked.first()).toBeVisible();
 	const random = picked.first();
 	const randomName = await random.locator('.main').getAttribute('data-character-id');
@@ -705,7 +705,7 @@ test('a character picked by Random looks the same as one picked by hand', async 
 	await page.getByRole('button', { name: 'Clear selection' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await page.locator(`[data-character-id="${randomName}"]`).tap();
-	const manual = page.locator('.row[data-chosen]').first();
+	const manual = page.locator('.ring-row[data-chosen]').first();
 	const ring = (l: typeof manual) =>
 		l.evaluate((el) => {
 			const after = getComputedStyle(el, '::after');
@@ -716,7 +716,7 @@ test('a character picked by Random looks the same as one picked by hand', async 
 	const byHand = await ring(manual);
 	await page.getByRole('button', { name: 'Random selection' }).tap();
 	await page.mouse.move(0, 0);
-	const byRandom = await ring(page.locator('.row[data-chosen]').first());
+	const byRandom = await ring(page.locator('.ring-row[data-chosen]').first());
 	expect(byHand).toEqual(byRandom);
 	expect(byHand.ring).not.toBe('none');
 });
@@ -950,7 +950,7 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	await expect(check).toContainText(/Magician\s*and\s*Spy/);
 	// Each jinxed character shows its partner's icon where a star used to be (Trevor, 2026-10-19).
 	const partners = (id: string) =>
-		page.locator(`.row:has([data-character-id="${id}"]) [data-testid="jinx-partners"]`);
+		page.locator(`.ring-row:has([data-character-id="${id}"]) [data-testid="jinx-partners"]`);
 	await expect(partners('magician').locator('[data-partner]')).toHaveAttribute(
 		'data-partner',
 		'spy'
@@ -1128,7 +1128,7 @@ test('each good character row sets or clears a Demon bluff, up to three', async 
 	// Trevor (2026-10-22): a bluff from the character's own row, beside its lock.
 	await selectionFor(page, 8);
 	const row = (id: string) =>
-		page.locator('.row', { has: page.locator(`.main[data-character-id="${id}"]`) });
+		page.locator('.ring-row', { has: page.locator(`.main[data-character-id="${id}"]`) });
 	const bluffButton = (id: string) => row(id).getByTestId('bluff-character');
 	const bluffs = page.getByTestId('setup-bluffs');
 	await expect(bluffButton('soldier')).toHaveAccessibleName('Demon bluff: Soldier');
@@ -1158,7 +1158,7 @@ test('Demon bluffs: listed by Show only selected, warned when chosen, new on eac
 	const row = (id: string) =>
 		page
 			.getByTestId('character-picker')
-			.locator('.row', { has: page.locator(`.main[data-character-id="${id}"]`) });
+			.locator('.ring-row', { has: page.locator(`.main[data-character-id="${id}"]`) });
 	const bluffs = page.getByTestId('setup-bluffs');
 	const check = page.getByTestId('setup-check');
 	await row('soldier').getByTestId('bluff-character').tap();
@@ -1197,9 +1197,8 @@ test('the keyboard focus ring on a character token is round, around the token', 
 	await info.tap();
 	await page.keyboard.press('Escape');
 	await expect(info).toBeFocused();
-	expect(await info.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('none');
-	const face = info.locator('[data-token-face]');
-	const ring = await face.evaluate((el) => {
+	// The token is the script's ring (Trevor, 2026-10-28): the button is the round ring itself.
+	const ring = await info.evaluate((el) => {
 		const style = getComputedStyle(el);
 		return { outline: style.outlineStyle, radius: style.borderRadius };
 	});
@@ -1538,7 +1537,7 @@ test('three wrong PINs make entry wait', async ({ page }) => {
 test('locked characters stay in play through Random and are remembered', async ({ page }) => {
 	await selectionFor(page, 9);
 	const choice = (id: string) => page.locator(`.main[data-character-id="${id}"]`);
-	const row = (id: string) => page.locator('.row', { has: choice(id) });
+	const row = (id: string) => page.locator('.ring-row', { has: choice(id) });
 	const lock = (id: string) => row(id).getByTestId('lock-character');
 	// Unselected: the lock is in place, unlocked (tapping it chooses the character too).
 	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
@@ -1629,7 +1628,7 @@ test('Verification folds the setup check away, and the Drunk is tagged not in ba
 	await expect(check.getByRole('button', { name: 'Jinxes' })).toBeVisible();
 
 	const row = (id: string) =>
-		page.locator('.row', { has: page.locator(`.main[data-character-id="${id}"]`) });
+		page.locator('.ring-row', { has: page.locator(`.main[data-character-id="${id}"]`) });
 	await page.locator('.main[data-character-id="drunk"]').tap();
 	await page.locator('.main[data-character-id="empath"]').tap();
 	await expect(row('drunk').getByTestId('not-in-bag')).toHaveText('Not in bag');
@@ -1713,12 +1712,12 @@ test('selecting a character moves nothing, and its lock picks it when not yet ch
 	// Trevor (2026-10-20): selecting moved the ability text down; the lock did nothing until chosen.
 	await selectionFor(page, 8);
 	const main = (id: string) => page.locator(`.main[data-character-id="${id}"]`);
-	const row = (id: string) => page.locator('.row', { has: main(id) });
+	const row = (id: string) => page.locator('.ring-row', { has: main(id) });
 	for (const id of ['washerwoman', 'drunk', 'imp']) {
 		// Measured within the row: the page above may grow as the selection changes.
 		const place = () =>
 			row(id).evaluate((r) => {
-				const a = r.querySelector('.ability')!.getBoundingClientRect();
+				const a = r.querySelector('.ring-ability')!.getBoundingClientRect();
 				const box = r.getBoundingClientRect();
 				return { top: a.top - box.top, height: a.height, width: a.width, row: box.height };
 			});

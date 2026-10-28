@@ -1065,7 +1065,7 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
 	// Required by the mode, so it can't be taken out; its lock is on and says why (Trevor,
 	// 2026-10-22).
-	const boomdandy = page.locator('.row', {
+	const boomdandy = page.locator('.ring-row', {
 		has: page.locator('.main[data-character-id="boomdandy"]')
 	});
 	await boomdandy.locator('.main').tap();
@@ -1279,10 +1279,10 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 	await expect(page.getByTestId('count-minion')).toHaveText('0');
-	await expect(page.locator('.row[data-dashed]')).toHaveCount(0);
+	await expect(page.locator('.ring-row[data-dashed]')).toHaveCount(0);
 	const first = page.locator(`.main[data-character-id="${hidden[0]}"]`);
 	await expect(first).toHaveAttribute('aria-pressed', 'true');
-	await expect(page.locator('.row', { has: first })).not.toContainText('Not on script');
+	await expect(page.locator('.ring-row', { has: first })).not.toContainText('Not on script');
 	// Taking one out keeps it listed, so it can go back in.
 	await first.tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
@@ -2013,7 +2013,7 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 		'aria-pressed',
 		'true'
 	);
-	await expect(page.locator('.row[data-dashed]')).toHaveCount(0);
+	await expect(page.locator('.ring-row[data-dashed]')).toHaveCount(0);
 });
 
 test('Game info’s Special rules opens the screen once the game is set up', async ({ page }) => {

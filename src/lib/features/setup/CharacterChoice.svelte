@@ -62,13 +62,14 @@
 </script>
 
 <!--
-	One selectable character, drawn by the shared CharacterRow. Tapping its icon opens its
+	One selectable character, drawn by the shared CharacterRow's ring look, as the script draws
+	it (Trevor, 2026-10-28). Tapping its icon opens its
 	character page; tapping the rest toggles it (or removes one copy when there are several);
 	the + button adds a copy. Every mark has a fixed slot, so selecting never moves anything.
 -->
 <CharacterRow
 	{character}
-	tokenSize={44}
+	look="ring"
 	info
 	pressed={selected}
 	dashed={offScript}
@@ -85,29 +86,29 @@
 	{#snippet afterName()}
 		{#if offScript}<span class="tag">{t('setup.offScript')}</span>{/if}
 	{/snippet}
+	<!-- Jinx partners and copies take room on the band only when there are any, so the name
+	     keeps what it can; they sit at the band's end, so the name never moves. -->
 	{#snippet marks()}
-		<span
-			class="jinx"
-			data-testid="jinx-partners"
-			title={jinxedWith.length
-				? t('setup.jinxedWith', { names: jinxedWith.map((p) => p.name).join(', ') })
-				: undefined}
-			>{#each jinxedWith as p (p.id)}{@const src = iconUrl(
-					p,
-					defaultAlignment(p.type)
-				)}{#if src}<img
-						{src}
-						alt=""
-						data-partner={p.id}
-						referrerpolicy="no-referrer"
-						{@attach iconFallback(fallbackIconUrl(p))}
-					/>{:else}<span class="dot" data-partner={p.id}></span>{/if}{/each}</span
-		>
-		<span class="copies">{copies > 1 ? `×${copies}` : ''}</span>
+		{#if jinxedWith.length}<span
+				class="jinx"
+				data-testid="jinx-partners"
+				title={t('setup.jinxedWith', { names: jinxedWith.map((p) => p.name).join(', ') })}
+				>{#each jinxedWith as p (p.id)}{@const src = iconUrl(
+						p,
+						defaultAlignment(p.type)
+					)}{#if src}<img
+							{src}
+							alt=""
+							data-partner={p.id}
+							referrerpolicy="no-referrer"
+							{@attach iconFallback(fallbackIconUrl(p))}
+						/>{:else}<span class="dot" data-partner={p.id}></span>{/if}{/each}</span
+			>{/if}
+		{#if copies > 1}<span class="copies">×{copies}</span>{/if}
 		<!--
 			A Demon bluff shows a red badge where the check goes (Trevor, 2026-10-18); one also
-			chosen for the bag adds a warning, not a lock. The tags overhang to the left of the
-			check's fixed slot rather than widening it, so the name never wraps on choosing.
+			chosen for the bag adds a warning, not a lock. The name keeps its line and place:
+			at most less of a long name shows.
 		-->
 		<span class="check"
 			>{#if bluff}<span class="bluff" data-testid="bluff-tag"
@@ -199,36 +200,34 @@
 		margin-inline-start: -0.8em;
 	}
 	.copies {
-		width: 2em;
-		text-align: center;
+		padding-inline: var(--space-1);
 	}
 	/*
-	 * The check's slot is one icon wide; a "Not in bag" or bluff tag hangs off its left over
-	 * the empty copies slot instead of widening it.
+	 * The check's slot is at least one icon wide; a "Not in bag" or bluff tag widens it to the
+	 * left, at the band's end, so only how much of a long name shows can change.
 	 */
 	.check {
-		position: relative;
-		display: grid;
-		place-items: center;
-		width: 1.25em;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-1);
+		min-width: 1.25em;
 	}
 	.check > :global(svg) {
 		width: 1.1em;
 		height: 1.1em;
-	}
-	.bluff,
-	.out {
-		position: absolute;
-		inset-inline-end: 0;
-	}
-	.out {
-		inset-inline-end: 1.4em;
 	}
 	.lock,
 	.toggle,
 	.toggle-slot,
 	.add {
 		display: grid;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		touch-action: manipulation;
 		place-items: center;
 		width: var(--tap-target);
 		cursor: pointer;
