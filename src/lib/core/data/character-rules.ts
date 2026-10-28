@@ -198,6 +198,11 @@ export interface CharacterRules extends ChoiceRules {
 	 */
 	makesExtraEvil?: boolean;
 	/**
+	 * Its night ability can turn a player into a new Demon (the Pit-Hag,
+	 * https://wiki.bloodontheclocktower.com/Pit-Hag), so the Demon may change hands.
+	 */
+	createsDemon?: boolean;
+	/**
 	 * A hidden character (one with no token of its own, such as the Drunk) the Storyteller may
 	 * make this character's player instead, who then thinks they are this character. Sushi
 	 * Buffet asks when it is drafted, as Grimbits' draft tool does for the Atheist
@@ -394,6 +399,7 @@ const RULE_KEYS = [
 	'makesDemon',
 	'infoTokenCharacters',
 	'makesExtraEvil',
+	'createsDemon',
 	'orHiddenAs',
 	'gainsAbilityOf',
 	'turnsPlayersInto',
@@ -626,6 +632,8 @@ export function parseCharacterRules(
 	}
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
+	const createsDemon = readBoolean(raw, 'createsDemon', path, issues);
+	if (createsDemon !== undefined) rules.createsDemon = createsDemon;
 	const hiddenAs = readString(raw, 'orHiddenAs', path, issues, false);
 	if (hiddenAs !== undefined) rules.orHiddenAs = hiddenAs;
 	const gains = readEnum(raw, 'gainsAbilityOf', SEATED_TYPES, path, issues, false);

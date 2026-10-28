@@ -216,18 +216,28 @@ export function wakes(f: Facts, id: CharacterId | undefined): boolean {
 export const castOf = (f: Facts, g: Game) =>
 	new Map(g.seating.map((s) => [s, trueCharacter(g, s, f.characters)] as const));
 
-/** Whether the Demon may pass to another player (the Imp, Fang Gu, Scarlet Woman, Pit-Hag). */
+/**
+ * Whether the Demon may pass to another player, from rules data: the Demon's own
+ * `death-passes` to a living player of its type (the Imp to a Minion, the Fang Gu to an
+ * Outsider), a living `becomes-demon` player while enough others live (the Scarlet Woman), or a
+ * living player whose ability `createsDemon` (the Pit-Hag).
+ */
 export function demonCanPass(f: Facts, w: RegistrationWorld): boolean | undefined {
 	const d = demonSeat(f, w);
 	if (d === undefined) return undefined;
-	const demon = trueCharacter(f.game, d, f.characters);
-	const living = (t: CharacterType) => alive(f).some((s) => s !== d && w.type(s) === t);
-	const livingAs = (id: CharacterId) =>
-		alive(f).some((s) => trueCharacter(f.game, s, f.characters) === id);
+	const rulesAt = (s: SeatId) => {
+		const id = trueCharacter(f.game, s, f.characters);
+		return id === undefined ? undefined : rulesOf(id, f.characters);
+	};
+	const holds = (s: SeatId) => rulesAt(s)?.gameEnd?.holds ?? [];
+	const others = alive(f).filter((s) => s !== d);
+	const living = (t: CharacterType) => others.some((s) => w.type(s) === t);
 	return (
-		(demon === 'imp' && living('minion')) ||
-		(demon === 'fanggu' && living('outsider')) ||
-		(livingAs('scarletwoman') && alive(f).length >= 5) ||
-		livingAs('pithag')
+		holds(d).some((h) => h.kind === 'death-passes' && h.to !== undefined && living(h.to)) ||
+		alive(f).some(
+			(s) =>
+				rulesAt(s)?.createsDemon === true ||
+				holds(s).some((h) => h.kind === 'becomes-demon' && others.length >= (h.aliveAtLeast ?? 0))
+		)
 	);
 }
