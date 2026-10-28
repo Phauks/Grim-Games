@@ -1,11 +1,14 @@
 <script lang="ts">
 	import {
-		DEFAULT_LAUREL_COLOUR,
 		FACE_RADIUS,
+		FRAME_FORMS,
+		FRAME_MOTION_NAMES,
+		FRAME_MOTIONS,
 		frameById,
-		laurelFrame,
+		restyleFrame,
 		unlockedFrames,
-		type FrameId
+		type FrameId,
+		type FrameMotion
 	} from '#lib/core/frames/index.ts';
 	import {
 		LAUREL_COLOUR_NAMES,
@@ -17,14 +20,15 @@
 
 	/**
 	 * A player's laurel (L4, A1): its form picked from a drop-down, each drawn beside its name,
-	 * and its colour beneath. Every fixed frame is a form too (Trevor, 2026-10-27: frames and
-	 * laurels combined). The colour row is always there, disabled while the form has fixed
-	 * colours, so picking a form never moves the rows below. Offers only unlocked forms (all of
-	 * them while the app is in beta).
+	 * then its colour and its motion. Every fixed frame is a form too (Trevor, 2026-10-27: frames
+	 * and laurels combined), and any form takes any colour (2026-10-28). The colour and motion
+	 * rows are always there, disabled for None, so picking a form never moves the rows below.
+	 * Offers only unlocked forms (all of them while the app is in beta).
 	 */
 	interface Props {
 		label: string;
 		colourLabel: string;
+		motionLabel: string;
 		description?: string;
 		value: FrameId;
 		defaultValue: FrameId;
@@ -32,15 +36,37 @@
 		testid?: string;
 	}
 
-	let { label, colourLabel, description, value, defaultValue, onChange, testid }: Props = $props();
+	let {
+		label,
+		colourLabel,
+		motionLabel,
+		description,
+		value,
+		defaultValue,
+		onChange,
+		testid
+	}: Props = $props();
 
-	const current = $derived(frameById(value));
-	const colour = $derived(current?.laurel?.colour ?? DEFAULT_LAUREL_COLOUR);
+	const current = $derived(frameById(value) ?? frameById(defaultValue));
+	const styled = $derived(current?.form !== undefined);
+	const colour = $derived(current?.colour);
+	// The colour the form was drawn in before it took any; None shows the laurels' gold.
+	const ownColour = $derived<LaurelColour>(
+		FRAME_FORMS.find((form) => form.id === current?.form)?.colour ?? 'gold'
+	);
+	const motion = $derived<FrameMotion>(current?.motion ?? 'none');
+	// Every form in the picked colour and motion, so a new form keeps both.
 	const options = $derived(
-		unlockedFrames(undefined, colour).map((frame) => ({ value: frame.id, label: frame.name }))
+		unlockedFrames(undefined, colour, motion).map((frame) => ({
+			value: frame.id,
+			label: frame.name
+		}))
 	);
 	const colours = Object.keys(LAUREL_COLOURS) as LaurelColour[];
 	const colourOptions = colours.map((value) => ({ value, label: LAUREL_COLOUR_NAMES[value] }));
+	const motionOptions = FRAME_MOTIONS.map((value) => ({ value, label: FRAME_MOTION_NAMES[value] }));
+	const restyled = (change: { colour?: LaurelColour; motion?: FrameMotion }) =>
+		current ? restyleFrame(current, change).id : value;
 </script>
 
 {#snippet drawn(frameId: FrameId | undefined, text: string)}
@@ -59,14 +85,18 @@
 {/snippet}
 
 {#snippet tint(option: { value: LaurelColour; label: string })}
-	{@render drawn(laurelFrame(current?.laurel?.form ?? 'laurel', option.value).id, option.label)}
+	{@render drawn(restyled({ colour: option.value }), option.label)}
+{/snippet}
+
+{#snippet moving(option: { value: FrameMotion; label: string })}
+	{@render drawn(restyled({ motion: option.value }), option.label)}
 {/snippet}
 
 <div class="frame-setting" data-setting data-testid={testid}>
 	<SettingSelect
 		{label}
 		{description}
-		{value}
+		value={current?.id ?? value}
 		{options}
 		{defaultValue}
 		{onChange}
@@ -77,13 +107,25 @@
 <div class="frame-setting" data-setting>
 	<SettingSelect
 		label={colourLabel}
-		value={colour}
+		value={colour ?? ownColour}
 		options={colourOptions}
-		defaultValue={DEFAULT_LAUREL_COLOUR}
-		disabled={!current?.laurel}
-		onChange={(next) => current?.laurel && onChange(laurelFrame(current.laurel.form, next).id)}
+		defaultValue={ownColour}
+		disabled={!styled}
+		onChange={(next) => onChange(restyled({ colour: next }))}
 		item={tint}
 		selected={tint}
+	/>
+</div>
+<div class="frame-setting" data-setting>
+	<SettingSelect
+		label={motionLabel}
+		value={motion}
+		options={motionOptions}
+		defaultValue="none"
+		disabled={!styled}
+		onChange={(next) => onChange(restyled({ motion: next }))}
+		item={moving}
+		selected={moving}
 	/>
 </div>
 

@@ -133,10 +133,10 @@ describe('the live room', () => {
 
 	it("keeps each phone's avatar and frame, without asking, through seat changes (plan R6)", () => {
 		let room = roomWith('alex', 'sam');
-		room = setLook(room, 'alex', { avatar: 'initials', frame: 'ring' });
-		expect(room.members[0]).toEqual({ memberId: 'alex', avatar: 'initials', frame: 'ring' });
-		expect(hostView(room).members[0]).toMatchObject({ avatar: 'initials', frame: 'ring' });
-		expect(setLook(room, 'alex', { avatar: 'initials', frame: 'ring' })).toBe(room);
+		room = setLook(room, 'alex', { avatar: 'initials', frame: 'ring-accent' });
+		expect(room.members[0]).toEqual({ memberId: 'alex', avatar: 'initials', frame: 'ring-accent' });
+		expect(hostView(room).members[0]).toMatchObject({ avatar: 'initials', frame: 'ring-accent' });
+		expect(setLook(room, 'alex', { avatar: 'initials', frame: 'ring-accent' })).toBe(room);
 		expect(setLook(room, 'nobody', { avatar: 'initials' })).toBe(room);
 		// Unknown pictures and frames are dropped, as if none were picked.
 		expect(setLook(room, 'alex', { avatar: 'skull', frame: 3 }).members[0]).toEqual({
@@ -149,14 +149,14 @@ describe('the live room', () => {
 			memberId: 'alex',
 			name: 'Alex',
 			avatar: 'initials',
-			frame: 'ring'
+			frame: 'ring-accent'
 		});
 		room = seat(room, 'alex', 'b');
 		expect(publish(room, 'g2', table('a', 'b')).members[0]).toEqual({
 			memberId: 'alex',
 			name: 'Alex',
 			avatar: 'initials',
-			frame: 'ring'
+			frame: 'ring-accent'
 		});
 		expect(parseClientMessage('{"type":"look","avatar":"initials"}')).toEqual({
 			type: 'look',

@@ -4,6 +4,7 @@
 	import { joinedRoom } from '#lib/features/room/joined-room.svelte.ts';
 	import { savedPlayerName } from '#lib/features/room/player.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
@@ -16,22 +17,47 @@
 	 * Opened from the button beside Settings' X, not from the section list.
 	 */
 	const name = $derived(joinedRoom.player?.view?.me.name ?? savedPlayerName());
+	const frame = $derived(seatFrame(playerSettings.current.frame));
+
+	// Tapping the seat shows it large, over the Profile (Trevor, 2026-10-28), so nothing moves.
+	let enlarged = $state(false);
+	let roomWidth = $state(0);
+	let screenHeight = $state(0);
+	const bigSize = $derived(Math.max(0, Math.min(roomWidth * 0.85, screenHeight * 0.6)));
 </script>
 
-<div class="preview" data-testid="profile-preview">
+<svelte:window bind:innerHeight={screenHeight} />
+
+{#snippet seat(size: number)}
 	<SeatDisc
-		size={112}
+		{size}
 		{name}
 		number={1}
 		avatar={playerSettings.current.avatar}
 		picture={avatarPicture.url}
-		frame={seatFrame(playerSettings.current.frame)}
+		{frame}
 	/>
+{/snippet}
+
+<div class="preview">
+	<button
+		type="button"
+		class="enlarge"
+		aria-label={t('player.bigPreview')}
+		data-testid="profile-preview"
+		onclick={() => (enlarged = true)}>{@render seat(112)}</button
+	>
 </div>
 
-<!-- This phone's name in its room, while a player screen in a room opened Settings (Trevor,
-     2026-10-27: one Settings everywhere). -->
-{#if joinedRoom.player}<PlayerNameRow player={joinedRoom.player} />{/if}
+<Dialog bind:open={enlarged} title={t('player.bigPreview')} size="wide">
+	<div class="big" bind:clientWidth={roomWidth} data-testid="profile-big-preview">
+		{#if bigSize}{@render seat(bigSize)}{/if}
+	</div>
+</Dialog>
+
+<!-- This phone's name: in its room while it is in one, else kept for the next (Trevor,
+     2026-10-28: the Profile is where the player name is set). -->
+<PlayerNameRow player={joinedRoom.player} />
 
 <!-- The player's own picture on their seat (2026-10-27). -->
 <AvatarPictureRow {name} />
@@ -39,7 +65,8 @@
 <!-- The laurel round this player's seat token, sent with their initials (L4, A1). -->
 <SettingFrame
 	label={t('player.frame')}
-	colourLabel={t('player.laurelColour')}
+	colourLabel={t('player.frameColour')}
+	motionLabel={t('player.frameMotion')}
 	value={playerSettings.current.frame ?? DEFAULT_FRAME}
 	defaultValue={DEFAULT_FRAME}
 	onChange={(frame) =>
@@ -49,6 +76,19 @@
 
 <style>
 	.preview {
+		display: grid;
+		justify-items: center;
+		padding-block: var(--space-3);
+	}
+	.enlarge {
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: none;
+		color: inherit;
+		cursor: zoom-in;
+	}
+	.big {
 		display: grid;
 		justify-items: center;
 		padding-block: var(--space-3);
