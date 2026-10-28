@@ -171,6 +171,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
 - Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new
+- Own wake conditions (`rules/wakes-when.ts`, read by `night-steps.ts` `stepWakes`: the King once the dead equal or outnumber the living, the Choirboy when the Demon killed the King, the Seamstress until her No Ability): `wakesWhen`, new
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
 - Abilities gained from another player (`gained-abilities.ts`, was the Pixie hard-code and `GAINED_FROM` in `death-causes.ts`: the Cannibal's Lunch, the Pixie's Mad and Has Ability, the Philosopher's swap or Drunk): `gainedFrom`, moved
 - Character and alignment changes (`becomes.ts`, was `BECOMES_DEMON`: the Scarlet Woman's Is The Demon, the Mezepheles's Turns Evil, the Snake Charmer's swap): `becomes`, moved. A Demon's death by its own kill passing it on (the Imp, the Fang Gu) is `gameEnd` `death-passes`, asked by `StarPassPrompt`. Making a chosen player a Demon on the night a token marks (the Summoner's Night 3) is `makesDemon`, asked by `MakeDemonStep` in its night step.

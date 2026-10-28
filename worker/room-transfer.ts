@@ -1,12 +1,16 @@
 /**
  * A room's transfer to another Storyteller's device (core/sync/room-transfer.ts): the device
- * taking over says hello as `claim` with its new host key, checks the code, then takes the room.
+ * taking over says hello as `claim` with its new host key, checks the code, then asks to take
+ * the room, and the Storyteller's device allows it or turns it down.
  * Kept apart from room.ts so each stays a readable size.
  */
 import { sha256Hex as sha256 } from '../src/lib/core/codes/hash.ts';
 import {
+	askTransfer,
 	checkTransfer,
 	completeTransfer,
+	dropAsk,
+	liveTransfer,
 	transferDetails,
 	TRANSFER_CODE_LENGTH,
 	type ClientMessage,
@@ -46,9 +50,8 @@ export async function closeTransferGame(
 
 /**
  * A message from a device taking over. `check-transfer` says whether the code is right (and
- * what comes with the room); `take-room` checks it again and swaps the host key: the old
- * Storyteller's device is told and let go, Grim view's viewers too, and this device gets the
- * game when it comes along, then reconnects as the host.
+ * what comes with the room); `take-room` checks it again and asks the Storyteller's device,
+ * which answers with `answer-transfer` (answerTransfer).
  */
 export async function claimMessage(
 	host: TransferRoom,
@@ -72,6 +75,36 @@ export async function claimMessage(
 		send(ws, { type: 'transfer', details: transferDetails(room) });
 		return;
 	}
+	await host.save(askTransfer(room, keyHash, message.name));
+}
+
+/** The asking device's socket, while it is still connected. */
+function askingSocket(host: TransferRoom, keyHash: string): WebSocket | undefined {
+	return host.sockets().find((socket) => {
+		const who = socket.deserializeAttachment() as Attachment | null;
+		return who?.role === 'claim' && who.keyHash === keyHash;
+	});
+}
+
+/**
+ * The Storyteller's answer. Allowed, and the transfer still live, the host key changes hands:
+ * the old Storyteller's device is told and let go, Grim view's viewers too, and the new one
+ * gets the game when it comes along, then reconnects as the host. Turned down, the asking
+ * device is told and the transfer stays open.
+ */
+export async function answerTransfer(
+	host: TransferRoom,
+	room: RoomState,
+	allow: unknown
+): Promise<void> {
+	const asking = room.transfer?.asking;
+	if (!asking) return;
+	const ws = askingSocket(host, asking.keyHash);
+	if (allow !== true || !ws || !liveTransfer(room, Date.now())) {
+		if (ws) send(ws, { type: 'transfer-denied' });
+		await host.save(dropAsk(room));
+		return;
+	}
 	const game = room.transfer?.bringGame
 		? await host.storage.get<GrimoireView>(TRANSFER_GAME)
 		: undefined;
@@ -86,7 +119,12 @@ export async function claimMessage(
 		}
 	}
 	await host.storage.delete([TRANSFER_GAME, 'grimoire']);
-	await host.save(completeTransfer(room, keyHash));
+	await host.save(completeTransfer(room, asking.keyHash));
 	send(ws, { type: 'transferred', ...(game ? { grimoire: game.grimoire } : {}) });
 	closeSocket(ws, 1000, 'Room transferred');
+}
+
+/** The asking device went before the Storyteller answered: the question goes too. */
+export async function claimGone(host: TransferRoom, room: RoomState, keyHash: string) {
+	if (room.transfer?.asking?.keyHash === keyHash) await host.save(dropAsk(room));
 }
