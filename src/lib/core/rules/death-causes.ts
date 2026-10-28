@@ -30,7 +30,7 @@ import {
 	type AbilitySource,
 	type RegistrationWorld
 } from './ability.ts';
-import { gainedAbilities } from './gained-abilities.ts';
+import { gainedBy } from './gained-abilities.ts';
 import {
 	type DeathCauseRule,
 	type DeathKind,
@@ -159,41 +159,21 @@ export interface ValidDeathCause {
 }
 
 /**
- * Characters whose deaths come only from the ability they gained, which the grimoire shows:
- * - Cannibal: the executee carrying its Lunch reminder
- *   (https://wiki.bloodontheclocktower.com/Cannibal: the ability of the player who last died
- *   by execution);
- * - Pixie: the Townsfolk whose ability it has once "Has Ability" is placed
- *   (https://wiki.bloodontheclocktower.com/Pixie, `gainedAbilities`);
- * - Philosopher: the token it was swapped for ("Is The Philosopher"), or the player its
- *   Drunk reminder is on (https://wiki.bloodontheclocktower.com/Philosopher).
- * Without that, they are not offered (Trevor, 2026-10-17: the Cannibal can't kill unless
- * the ability it gained can).
+ * The character whose ability `holder` has, for a character whose deaths come only from the
+ * ability it gained (its `gainedFrom` rule, `gainedBy`): the Cannibal's Lunch, the Pixie's Has
+ * Ability, the Philosopher's swapped token or Drunk. Without that, it is not offered (Trevor,
+ * 2026-10-17: the Cannibal can't kill unless the ability it gained can).
  */
-const GAINED_FROM: Readonly<
-	Record<
-		CharacterId,
-		(game: Game, holder: SeatId, characters: CharacterLookup) => CharacterId | undefined
-	>
-> = {
-	cannibal: (game, _holder, characters) => {
-		const lunch = game.seating.find((s) =>
-			game.seats[s].reminders.some((r) => r.characterId === 'cannibal' && r.label === 'Lunch')
-		);
-		return lunch === undefined ? undefined : trueCharacter(game, lunch, characters);
-	},
-	pixie: (game, holder) =>
-		gainedAbilities(game).find((g) => g.seatId === holder && g.status === 'has-ability')
-			?.characterId,
-	philosopher: (game, holder, characters) => {
-		const token = game.seats[holder].characterId;
-		if (token !== undefined && token !== 'philosopher') return token;
-		const drunk = game.seating.find((s) =>
-			game.seats[s].reminders.some((r) => r.characterId === 'philosopher' && r.label === 'Drunk')
-		);
-		return drunk === undefined ? undefined : trueCharacter(game, drunk, characters);
-	}
-};
+function gainedFrom(
+	game: Game,
+	holder: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const rule = rulesOf(characterId, characters)?.gainedFrom;
+	const gained = rule && gainedBy(game, holder, characterId, rule, characters);
+	return gained?.status === 'has-ability' ? gained.characterId : undefined;
+}
 
 /**
  * The causes of death that are valid for this player given the grimoire, in picker order:
@@ -235,24 +215,24 @@ export function validDeathCauses(
 		if (holders.length === 0 && !game.ruleCharacters.includes(characterId)) continue;
 
 		// A gained ability: the rules of the character it came from.
-		const from = Object.hasOwn(GAINED_FROM, characterId) ? GAINED_FROM[characterId] : undefined;
-		const gainedBy = new Map<SeatId, CharacterId>();
+		const from = rulesOf(characterId, characters)?.gainedFrom !== undefined;
+		const gainedFor = new Map<SeatId, CharacterId>();
 		for (const h of from ? holders : []) {
-			const id = from!(game, h, characters);
+			const id = gainedFrom(game, h, characterId, characters);
 			const entry = id === undefined ? undefined : deathCauseEntry(id, characters);
-			if (id !== undefined && entry && entry.kind !== 'gained-ability') gainedBy.set(h, id);
+			if (id !== undefined && entry && entry.kind !== 'gained-ability') gainedFor.set(h, id);
 		}
-		if (from && gainedBy.size === 0) continue;
+		if (from && gainedFor.size === 0) continue;
 		const ruleFor = (h: SeatId): VictimRule | undefined => {
-			const id = gainedBy.get(h) ?? characterId;
-			const k = gainedBy.has(h) ? deathCauseEntry(id, characters)!.kind : kind;
+			const id = gainedFor.get(h) ?? characterId;
+			const k = gainedFor.has(h) ? deathCauseEntry(id, characters)!.kind : kind;
 			return k === 'own-death' ? { who: 'self' } : deathCauseEntry(id, characters)?.victim;
 		};
 		const acting = holders.filter(
-			(h) => (!from || gainedBy.has(h)) && holderFits(game, ruleFor(h), h, seatId)
+			(h) => (!from || gainedFor.has(h)) && holderFits(game, ruleFor(h), h, seatId)
 		);
 		if (holders.length > 0 && acting.length === 0) continue;
-		const gained = acting.length > 0 ? gainedBy.get(acting[0]) : undefined;
+		const gained = acting.length > 0 ? gainedFor.get(acting[0]) : undefined;
 		const rule = acting.length > 0 ? ruleFor(acting[0]) : ruleFor(holders[0]);
 
 		const flags: DeathCauseFlag[] = [];

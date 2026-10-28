@@ -75,5 +75,10 @@
 				"reason": "Says when the Has Ability token goes on and that the Pixie then wakes as that character."
 			}
 		}
+	},
+	"gainedFrom": {
+		"token": "Has Ability",
+		"pending": "Mad",
+		"wakes": true
 	}
 }
