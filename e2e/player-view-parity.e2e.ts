@@ -24,6 +24,18 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	const statusBox = (await status.boundingBox())!;
 	const tabsBox = (await script.getByRole('tablist').boundingBox())!;
 	expect(statusBox.y + statusBox.height).toBeLessThanOrEqual(tabsBox.y + 1);
+	// On a wide, short window the whole town fits under the tabs, with no scrolling to reach
+	// its bottom seats (Trevor, 2026-10-27: cut off on a desktop window).
+	const device = page.viewportSize()!;
+	await page.setViewportSize({ width: 1600, height: 820 });
+	await script.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(async () => {
+		const town = (await script.getByTestId('player-grim').boundingBox())!;
+		const scroll = (await script.getByTestId('script-scroll').boundingBox())!;
+		expect(town.y + town.height).toBeLessThanOrEqual(scroll.y + scroll.height + 1);
+	}).toPass();
+	await script.getByRole('tab', { name: 'Script' }).tap();
+	await page.setViewportSize(device);
 	await page.keyboard.press('Escape');
 	await expect(script).toBeHidden();
 

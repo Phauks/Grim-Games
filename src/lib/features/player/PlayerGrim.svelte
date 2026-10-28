@@ -85,6 +85,7 @@
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
+	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -385,6 +386,7 @@
 			style={boardColours}
 			data-board-colours={boardColours ? '' : undefined}
 			data-testid="player-grim"
+			{@attach fitInDialog}
 		>
 			<BoardBackdrop
 				contained
@@ -743,7 +745,10 @@
 		overflow: hidden;
 		border-radius: var(--radius-md);
 		width: 100%;
-		height: 75dvh;
+		/* In a dialog (the Storyteller's player view), no taller than the room left under the
+		   tabs, so the whole ring shows on a wide, short window (fitInDialog); never so short
+		   that the seats crowd together. */
+		height: max(40dvh, min(75dvh, var(--fit-height, 75dvh)));
 	}
 	/* On a themed screen the town keeps the board's own surface, as on the Storyteller's. */
 	.town[data-board-colours] {

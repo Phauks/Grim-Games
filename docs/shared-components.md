@@ -21,6 +21,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 
 - A page reached from the sidebar: `ui/layout/Page.svelte` (title, actions, subtitle, toolbar, side; puts the hamburger before the title while no sidebar shows) (enforced by review)
 - A title whose words must not break in the middle: `fitWords` from `ui/fit-words.ts` (shrinks the text until its longest word fits; Page's title uses it) (enforced by `e2e/play.e2e.ts`)
+- A board drawn inside a dialog that must fit the room left under what sits above it: `fitInDialog` from `ui/fit-in-dialog.ts` (sets `--fit-height` in a wide box; the player grim uses it in the Storyteller's player view) (enforced by `e2e/player-view-parity.e2e.ts`)
 - The menu (You, App, build line, CCC logo): `features/shell/NavList.svelte`, in the sidebar (`AppNav`) and the drawer (`NavDrawer`) alike; there is no app header or footer (enforced by `e2e/navigation.e2e.ts`)
 - A bottom sheet (a centred panel on a computer): `ui/primitives/BottomSheet.svelte`; `wide` for two columns, laid out by the sheet's own width (enforced by review)
 - A short menu of actions behind ⋯: `ui/primitives/Menu.svelte` (icon trigger, one row per action, disabled rows kept in place; Join game's ⋯) (enforced by `e2e/public-town.e2e.ts`)
