@@ -14,10 +14,8 @@ test('the Glossary opened from character details shows above them, and closes ba
 	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
 	await page
 		.locator('li[data-character="slayer"]')
-		// The character's band opens its details (Trevor, 2026-10-23: day rows as cards).
-		.locator('.bar')
-		.getByRole('button', { name: /^Slayer/ })
-		.first()
+		// The character's ring opens its details, as on the script (Trevor, 2026-10-28).
+		.getByRole('button', { name: 'About the Slayer' })
 		.tap();
 	const details = page.getByRole('dialog', { name: 'Slayer' });
 	await details.getByRole('button', { name: 'once per game: explain rules term' }).first().tap();
