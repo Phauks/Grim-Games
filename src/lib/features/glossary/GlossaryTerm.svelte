@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { GlossaryTerm } from '#lib/core/rules/glossary.ts';
 	import { glossaryPopover } from './glossary-popover.svelte.ts';
-	import { getTermHandler } from './term-handler.ts';
+	import { getTermHandler, termsArePlain } from './term-handler.ts';
 
 	interface Props {
 		term: GlossaryTerm;
@@ -16,6 +16,7 @@
 	const handler = getTermHandler();
 	const show = () => (handler ? handler(term) : button && glossaryPopover.show(term, button));
 	const open = $derived(glossaryPopover.open && glossaryPopover.anchor === button);
+	const plain = termsArePlain();
 </script>
 
 <!--
@@ -25,22 +26,22 @@
 <!-- A span with the button role, not a <button>: a button is one unbreakable box, so a
      two-word term ("start knowing", "alive neighbors") jumped whole to the next line and left
      a gap. A span wraps like the words around it. -->
-<span
-	bind:this={button}
-	role="button"
-	tabindex="0"
-	class="glossary-term"
-	aria-label={t('glossary.explain', { term: text })}
-	aria-haspopup="dialog"
-	aria-expanded={open}
-	data-state={open ? 'open' : 'closed'}
-	onclick={show}
-	onkeydown={(event) => {
-		if (event.key !== 'Enter' && event.key !== ' ') return;
-		event.preventDefault();
-		show();
-	}}>{text}</span
->
+{#if plain}{text}{:else}<span
+		bind:this={button}
+		role="button"
+		tabindex="0"
+		class="glossary-term"
+		aria-label={t('glossary.explain', { term: text })}
+		aria-haspopup="dialog"
+		aria-expanded={open}
+		data-state={open ? 'open' : 'closed'}
+		onclick={show}
+		onkeydown={(event) => {
+			if (event.key !== 'Enter' && event.key !== ' ') return;
+			event.preventDefault();
+			show();
+		}}>{text}</span
+	>{/if}
 
 <style>
 	.glossary-term {
