@@ -90,5 +90,19 @@ export const reference = {
 	'reference.target.livingOnly': 'skipping the dead',
 	'reference.target.with': 'with {label}',
 	'reference.target.notWith': 'not with {label}',
-	'reference.target.label': 'Goes on: {target}'
+	'reference.target.label': 'Goes on: {target}',
+	'reference.data.open': 'All data',
+	'reference.data.title': '{character}: all data',
+	'reference.data.part.character': 'Character',
+	'reference.data.part.rules': 'Rules',
+	'reference.data.part.nightSheet': 'Night order',
+	'reference.data.part.nightNumbers': 'Night numbers (provisional)',
+	'reference.data.part.jinxes': 'Jinxes',
+	'reference.data.part.icons': 'Icons',
+	'reference.data.part.cards': 'Info cards',
+	'reference.data.yes': 'Yes',
+	'reference.data.no': 'No',
+	'reference.data.file': 'All data as one file',
+	'reference.data.copy': 'Copy all data',
+	'reference.data.download': 'Download all data'
 } as const;
