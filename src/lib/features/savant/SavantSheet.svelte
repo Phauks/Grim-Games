@@ -47,6 +47,8 @@
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
+	/** The character whose statements these are: the seat's, as its rules ask for them. */
+	const holder = $derived(seatId === undefined ? undefined : game.seats[seatId]?.characterId);
 	const pool = $derived(
 		seatId === undefined
 			? []
@@ -134,7 +136,7 @@
 	/** The Savant's note for today, where Use these saves the statements. */
 	const todayNote = $derived.by(() => {
 		const note = game.today.entries.findLast(
-			(e) => e.kind === 'note' && e.characterId === 'savant' && e.seatId === seatId
+			(e) => e.kind === 'note' && e.characterId === holder && e.seatId === seatId
 		);
 		return note?.kind === 'note' ? note : undefined;
 	});
@@ -146,7 +148,7 @@
 			: game.pastDays
 					.flatMap((log, day) =>
 						log.entries.flatMap((e) =>
-							e.kind === 'note' && e.characterId === 'savant' && e.seatId === seatId
+							e.kind === 'note' && e.characterId === holder && e.seatId === seatId
 								? [{ day, ...savedStatements(e.text, prefixes) }]
 								: []
 						)
@@ -220,7 +222,7 @@
 								: 'savant.noAbility',
 						{ character: slot('character') }
 					),
-					characterId: 'savant'
+					characterId: holder
 				}
 			: situation?.vortox !== undefined
 				? { text: t('savant.vortox', { character: slot('character') }), characterId: 'vortox' }
@@ -234,7 +236,7 @@
 	}
 
 	function save() {
-		if (seatId === undefined) return;
+		if (seatId === undefined || holder === undefined) return;
 		const given = [0, 1].flatMap((i) => {
 			const line = lines[i];
 			const words = own[i] ?? (line ? statementText(line, game, characters) : '');
@@ -252,7 +254,7 @@
 				})
 			: grimoire.run({
 					type: 'DayNote',
-					characterId: 'savant',
+					characterId: holder,
 					seatId,
 					text: noteText('', given)
 				});

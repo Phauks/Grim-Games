@@ -54,6 +54,7 @@
 		mayNominate,
 		votesWithoutToken,
 		characterNominationPrompts,
+		dayClaim,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
@@ -651,7 +652,9 @@
 	function offerSavant() {
 		if (!preferences.current.assistance.savantInfo || grimoire.open.viewOnly) return;
 		const seatId = game.seating.find(
-			(id) => game.seats[id].characterId === 'savant' && !game.seats[id].dead
+			(id) =>
+				dayClaim(game.seats[id].characterId ?? '', characters) === 'statements' &&
+				!game.seats[id].dead
 		);
 		if (seatId === undefined) return;
 		savantSeat = seatId;

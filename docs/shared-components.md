@@ -179,7 +179,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
 - Abilities gained from another player (`gained-abilities.ts`, was the Pixie hard-code and `GAINED_FROM` in `death-causes.ts`: the Cannibal's Lunch, the Pixie's Mad and Has Ability, the Philosopher's swap or Drunk): `gainedFrom`, moved
 - Character and alignment changes (`becomes.ts`, was `BECOMES_DEMON`: the Scarlet Woman's Is The Demon, the Mezepheles's Turns Evil, the Snake Charmer's swap): `becomes`, moved. A Demon's death by its own kill passing it on (the Imp, the Fang Gu) is `gameEnd` `death-passes`, asked by `StarPassPrompt`. Making a chosen player a Demon on the night a token marks (the Summoner's Night 3) is `makesDemon`, asked by `MakeDemonStep` in its night step.
-- Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56): `dayClaim`, `guessLimit`, moved
+- Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56): `dayClaim` (`statements` also opens the Savant sheet and its end-of-night offer), `guessLimit`, moved
 - Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new): `dayMark`, moved
 - Night information and answers (`night-info.ts`): `learns`, `answers`, moved
 - Game end (`game-end.ts`, `end-reason.ts`): `gameEnd`, moved

@@ -97,7 +97,7 @@ export function savantSituation(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): SavantSituation {
-	const r = reliability(game, seatId, 'savant', characters);
+	const r = reliability(game, seatId, game.seats[seatId]?.characterId ?? '', characters);
 	if (r.unreliable) return { impaired: r.unreliable, mode: 'one-each' };
 	if (r.mustBeFalse && r.vortox !== undefined) return { vortox: r.vortox, mode: 'both-false' };
 	return { mode: 'one-each' };

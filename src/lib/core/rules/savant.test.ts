@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
 	castGame,
+	castWith,
 	newGame,
 	run,
 	testCharacters as characters
@@ -23,6 +24,8 @@ import {
 	type SavantStatement
 } from './savant.ts';
 import { dawnGames } from '#lib/core/engine/index.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
@@ -286,5 +289,48 @@ describe('Savant statements from the game so far', () => {
 			(s) => s.truth === 'check'
 		);
 		expect(checks.map((s) => s.template)).toEqual(['declined']);
+	});
+});
+
+// A homebrew character whose rules ask for the Savant's two statements a day
+// (https://wiki.bloodontheclocktower.com/Savant) is treated as the Savant, by its rules block.
+describe('a custom character with statements', () => {
+	const issues = new Issues();
+	const sage = parseCharacter(
+		{
+			id: 'sageofdays',
+			name: 'Sage of Days',
+			team: 'townsfolk',
+			ability: 'Each day, you may visit the Storyteller to learn 2 things in private.',
+			rules: { dayClaim: 'statements' }
+		},
+		'[0]',
+		issues,
+		{ strict: false, scriptFields: true }
+	)!;
+	const all = new Map([...characters, [sage.id, sage]]);
+	const castCustom = castWith({ characters: all });
+
+	it('parses without issues', () => {
+		expect(issues.list).toEqual([]);
+	});
+
+	it('hears statements about every other character, but not about itself', () => {
+		const { game: g, seats } = castCustom([sage.id, 'chef', 'empath', 'butler', 'poisoner', 'imp']);
+		const keys = savantStatements(g, seats[0], all).map((s) => s.key);
+		expect(keys).toContain('character-impaired:chef');
+		expect(keys.some((k) => k.endsWith(`:${sage.id}`) && k.startsWith('character-'))).toBe(false);
+	});
+
+	it('is both false with a working Vortox, as a Townsfolk', () => {
+		const { game: g, seats } = castCustom([
+			sage.id,
+			'chef',
+			'empath',
+			'butler',
+			'poisoner',
+			'vortox'
+		]);
+		expect(savantSituation(g, seats[0], all).mode).toBe('both-false');
 	});
 });
