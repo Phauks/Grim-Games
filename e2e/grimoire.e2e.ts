@@ -2920,6 +2920,9 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	await expect(counts.getByTestId('count-townsfolk')).toHaveText('4–6');
 	await counts.getByTestId('count-info-outsider').tap();
 	await expect(page.getByTestId('count-info')).toContainText(/Sentinel\s*: ±1 Outsider/);
+	// Tapping the open count again closes it (Trevor, 2026-10-28).
+	await counts.getByTestId('count-info-outsider').tap();
+	await expect(page.getByTestId('count-info')).toBeHidden();
 	await expect(script.getByTestId('traveller-in-play')).toHaveCount(1);
 });
 
