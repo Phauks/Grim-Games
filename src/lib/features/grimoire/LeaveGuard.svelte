@@ -36,7 +36,9 @@
 			(url) =>
 				url.pathname.startsWith(`/grimoire/${gameId}`) ||
 				withinModeSession(gameId, url) ||
-				wasReplaced(gameId)
+				wasReplaced(gameId),
+			// Every command is saved as it happens, so the board reopens as it was.
+			{ survivesReload: true }
 		);
 		releaseGuard = release;
 		return release;

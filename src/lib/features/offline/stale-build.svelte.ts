@@ -45,8 +45,8 @@ export function mayLoadAfresh(now: number, last: number | undefined): boolean {
 	return last === undefined || !(now - last < RELOAD_GAP_MS);
 }
 
-/** Loads `href` as a new page (the service worker serves the build it holds). */
-export function loadAfresh(href: string): boolean {
+/** Whether this tab may load afresh now (`mayLoadAfresh`), noting the time when it may. */
+export function claimFreshLoad(): boolean {
 	const now = Date.now();
 	try {
 		const raw = sessionStorage.getItem(LAST_RELOAD_KEY);
@@ -55,6 +55,12 @@ export function loadAfresh(href: string): boolean {
 	} catch {
 		// Storage blocked: load anyway; the new page starts with the flag cleared.
 	}
+	return true;
+}
+
+/** Loads `href` as a new page (the service worker serves the build it holds). */
+export function loadAfresh(href: string): boolean {
+	if (!claimFreshLoad()) return false;
 	location.assign(href);
 	return true;
 }
