@@ -35,11 +35,17 @@ class CallTownPush {
 
 	constructor() {
 		if (!canPush()) return;
-		void navigator.serviceWorker
-			.getRegistration()
-			.then((registration) => registration?.pushManager.getSubscription())
-			.then((subscription) => this.#set(subscription ?? undefined))
-			.catch(() => {});
+		// Read once the app is running, and never in its way: a throw here would stop every
+		// screen that imports this from loading.
+		queueMicrotask(async () => {
+			try {
+				const registration = await navigator.serviceWorker.getRegistration();
+				const subscription = await registration?.pushManager?.getSubscription();
+				this.#set(subscription ?? undefined);
+			} catch {
+				// No service worker yet: alerts show as off.
+			}
+		});
 	}
 
 	get blocked(): PushBlocked | undefined {
