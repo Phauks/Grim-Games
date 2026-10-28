@@ -105,6 +105,7 @@ describe('parsePreferences', () => {
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
 			timerForPlayers: 'timer',
+			setupForPlayers: 'town',
 			coverPin: true,
 			qrCentre: 'picture',
 			qrPictureWhole: true,
