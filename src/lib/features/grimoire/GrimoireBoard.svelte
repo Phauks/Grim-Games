@@ -22,7 +22,6 @@
 	import GameBackdrop from './GameBackdrop.svelte';
 	import { settingsProfiles } from '#lib/features/settings/profiles/settings-profiles.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
@@ -102,9 +101,6 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
-	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
-	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { playersLine, standardPlayersLine } from '#lib/features/modes/players-line.ts';
 	import { savedChoiceFor } from '#lib/features/modes/script-choices.svelte.ts';
@@ -112,7 +108,7 @@
 	import { drawnLook } from './shared-look.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
-	import BoardPlayerView from './BoardPlayerView.svelte';
+	import BoardScriptDialog from './BoardScriptDialog.svelte';
 	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
@@ -820,11 +816,6 @@
 		ownPicture = picture;
 		roomHost().showLook(game.gameId, shown, picture);
 	}
-	/** Share links to the saved script when it is the game's, as /play's does (parity). */
-	const scriptShare = $derived.by(() => {
-		if (!scriptOpen || !loadedScript) return undefined;
-		return gameShareable(loadedScript);
-	});
 	let menuOpen = $state(false);
 	/** ⋯'s New game, which asks to end this game first (Trevor, 2026-10-26). */
 	let newGameSheet = $state<NewGameSheet>();
@@ -1526,36 +1517,20 @@
 	<GameFeedbackSheet bind:open={feedbackOpen} {game} />
 {/if}
 
-<!-- Exactly what players see on /play (Trevor, 2026-10-19): byline, Print, Share and tabs, the
-     settings cog, and the logo and name under the buttons (Trevor, 2026-10-26). -->
-{#snippet scriptLogoLead()}<ScriptLogo src={boardLogo} class="title-logo" />{/snippet}
-<Dialog
+<BoardScriptDialog
 	bind:open={scriptOpen}
-	title={game.script.meta?.name || 'Script'}
-	size="max"
-	titleBelow
-	lead={boardLogo ? scriptLogoLead : undefined}
->
-	{#snippet headActions()}{@render scriptActions()}{/snippet}
-	{#snippet subtitle()}{@render scriptSubtitle()}{/snippet}
-	<!-- A max-size dialog doesn't scroll itself: its content does. -->
-	<div class="script-scroll" data-testid="script-scroll">
-		{#if loadedScript}
-			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
-			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
-			<BoardPlayerView
-				{game}
-				script={loadedScript}
-				{characters}
-				layout={{ ...layout, aspect }}
-				corner={cornerInfo}
-				{look}
-				picture={watching ? undefined : ownPicture}
-				pictureRoom={watching ? grimoire.room : undefined}
-			/>
-		{/if}
-	</div>
-</Dialog>
+	{game}
+	script={loadedScript}
+	logo={boardLogo}
+	room={watching ? undefined : roomHost().code}
+	{characters}
+	layout={{ ...layout, aspect }}
+	corner={cornerInfo}
+	{look}
+	picture={watching ? undefined : ownPicture}
+	pictureRoom={watching ? grimoire.room : undefined}
+	testid="script-scroll"
+/>
 
 <CallTownConfirm bind:open={callTownOpen} />
 
@@ -1586,50 +1561,22 @@
 		<!-- The players' screen as it is on /play, its title-line buttons and notes too (Trevor,
 		     2026-10-27: "same setting, share, and other buttons ... As if they were within the
 		     app. We shouldn't even block notes"); the notes are the table's, blank each time. -->
-		<Dialog
+		<BoardScriptDialog
 			bind:open={coverViewOpen}
-			title={game.script.meta?.name || 'Script'}
-			size="max"
-			titleBelow
-			lead={boardLogo ? scriptLogoLead : undefined}
-		>
-			{#snippet headActions()}{@render scriptActions()}{/snippet}
-			{#snippet subtitle()}{@render scriptSubtitle()}{/snippet}
-			<div class="script-scroll" data-testid="cover-player-view">
-				<BoardPlayerView
-					{game}
-					script={loadedScript}
-					{characters}
-					{layout}
-					corner={cornerInfo}
-					{look}
-					picture={watching ? undefined : ownPicture}
-					pictureRoom={watching ? grimoire.room : undefined}
-					notebook={tableNotebook(game.gameId)}
-				/>
-			</div>
-		</Dialog>
+			{game}
+			script={loadedScript}
+			logo={boardLogo}
+			room={watching ? undefined : roomHost().code}
+			{characters}
+			{layout}
+			corner={cornerInfo}
+			{look}
+			picture={watching ? undefined : ownPicture}
+			pictureRoom={watching ? grimoire.room : undefined}
+			notebook={tableNotebook(game.gameId)}
+			testid="cover-player-view"
+		/>
 	{/if}
-{/snippet}
-
-<!-- The Script dialog's title line, as /play's (PlayerScriptActions, ScriptByline): the
-     board's Script and the grim cover's Player view both show it. -->
-{#snippet scriptActions()}
-	<PlayerScriptActions
-		script={loadedScript}
-		version={scriptVersion(undefined, loadedScript?.meta)}
-		share={scriptShare}
-		room={watching ? undefined : roomHost().code}
-		storyteller
-	/>
-{/snippet}
-{#snippet scriptSubtitle()}
-	<ScriptByline
-		author={loadedScript?.meta.author}
-		version={scriptVersion(undefined, loadedScript?.meta)}
-		storyteller={game.storytellerName}
-		inline
-	/>
 {/snippet}
 
 {#snippet coverTimer()}
@@ -1849,21 +1796,6 @@
 		justify-items: center;
 		gap: var(--space-2);
 		max-width: 50%;
-	}
-	/* Out into the dialog's padding, with that room given back inside, so the players' sheets
-	   can reach into it as they do into /play's gutter (PlayerScriptTabs) without being
-	   clipped by this scroll box. */
-	.script-scroll {
-		/* The status row sits the dialog's side padding under the byline (PlayerStatusRow). */
-		--player-status-gap: var(--space-4);
-		flex: 1;
-		min-height: 0;
-		/* The dialog's side margin, for the space under the tabs (PlayerScriptTabs). */
-		--player-side: var(--space-4);
-		margin-inline: calc(-1 * var(--space-3));
-		padding-inline: var(--space-3);
-		overflow-y: auto;
-		overscroll-behavior: contain;
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.game-over {
