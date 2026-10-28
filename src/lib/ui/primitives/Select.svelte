@@ -50,6 +50,13 @@
 		 * 2026-10-26). `label` is its name and tooltip; the list is as wide as its options.
 		 */
 		icon?: IconSlot;
+		/**
+		 * Nothing is chosen yet and something waits on a choice (the character a drunk
+		 * Investigator is shown, Trevor 2026-10-28): the closed control is ringed in the accent.
+		 */
+		attention?: boolean;
+		/** Whether the list is open; bind it to open the list from elsewhere. */
+		open?: boolean;
 	}
 
 	let {
@@ -68,10 +75,11 @@
 		selected,
 		disabled,
 		listFitsTrigger = true,
-		icon
+		icon,
+		attention = false,
+		open = $bindable(false)
 	}: Props = $props();
 
-	let open = $state(false);
 	// A dialog or sheet opening over the page closes the list, so it never stays on top of it.
 	$effect(() => {
 		if (open) return onLayerOpen(() => (open = false));
@@ -178,7 +186,7 @@
 				{/snippet}
 			</Select.Trigger>
 		{:else}
-			<Select.Trigger>
+			<Select.Trigger data-attention={attention || undefined}>
 				<span class="value">
 					{#if current && selected && !multiple}{@render selected(current)}{:else}{shown}{/if}
 				</span>
@@ -238,6 +246,14 @@
 	}
 	:global([data-scope='select'][data-part='trigger'][data-state='open']:not(.icon-button)) {
 		border-color: var(--choice-selected-border);
+	}
+	/* A choice something waits on: the accent edge, drawn inside so nothing moves. */
+	:global([data-scope='select'][data-part='trigger'][data-attention]:not(.icon-button)) {
+		border-color: var(--accent);
+		box-shadow:
+			inset 0 0 0 1px var(--accent),
+			0 0 0 2px var(--accent-wash);
+		color: var(--accent);
 	}
 	:global([data-scope='select'][data-part='trigger']:focus-visible) {
 		outline: 3px solid var(--focus);

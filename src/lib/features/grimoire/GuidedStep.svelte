@@ -319,7 +319,16 @@
 					showOpen = true;
 				}}
 			/>
-			<NightYesNo {grimoire} {step} />
+			<NightYesNo
+				{grimoire}
+				{step}
+				onShowAnswer={(yes) => {
+					// The Yes/No info token, only its answer, as the Info tokens sheet shows it.
+					shownId = undefined;
+					shownCard = { detail: yes ? 'Yes' : 'No' };
+					showOpen = true;
+				}}
+			/>
 			{#if step.character}
 				<!-- Over the open step, as with a suggestion's Show to player. -->
 				<MakeDemonStep

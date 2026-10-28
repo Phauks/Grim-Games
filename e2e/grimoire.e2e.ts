@@ -4210,18 +4210,22 @@ test('the Investigator step lists each Minion, and the Recluse as a Minion you p
 	await expect(rows.first()).toContainText('any other player');
 	const recluse = rows.nth(1);
 	await expect(recluse).toContainText('Registers');
-	// Nothing is shown until the Storyteller picks which Minion the Recluse is shown as.
+	// Nothing is shown until the Storyteller picks which Minion the Recluse is shown as: the
+	// list is ringed, and Show to player opens it (Trevor, 2026-10-28: with the player drunk it
+	// wasn't clear a character had to be picked first).
 	const show = recluse.getByRole('button', { name: 'Show to player' });
-	await expect(show).toBeDisabled();
-	// Tapping first scrolls the row into view, and a scroll closes an open list (Select).
 	const shownAs = recluse.getByRole('combobox', { name: 'Shown as' });
-	await shownAs.scrollIntoViewIfNeeded();
+	await expect(shownAs).toHaveAttribute('data-attention');
+	// Tapping first scrolls the row into view, and a scroll closes an open list (Select).
+	await show.scrollIntoViewIfNeeded();
 	const baron = page.getByRole('option', { name: 'Baron' });
 	await expect(async () => {
-		if (!(await baron.isVisible())) await shownAs.tap();
+		if (!(await baron.isVisible())) await show.tap();
 		await expect(baron).toBeVisible({ timeout: 1000 });
 	}).toPass();
+	await expect(page.locator('[data-testid="show-to-player"][open]')).toHaveCount(0);
 	await baron.tap();
+	await expect(shownAs).not.toHaveAttribute('data-attention');
 	await show.tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown).toContainText('Baron');
@@ -4284,19 +4288,29 @@ test("the Fortune Teller's step answers for the two players picked", async ({ pa
 	async function pick(label: string, seat: string) {
 		const select = section.getByRole('combobox', { name: label });
 		await select.scrollIntoViewIfNeeded();
-		const option = page.getByRole('option', { name: seat, exact: true });
+		const option = page.getByRole('option', { name: new RegExp(`${seat}$`) });
 		await expect(async () => {
 			if (!(await option.isVisible())) await select.tap();
 			await expect(option).toBeVisible({ timeout: 1000 });
 		}).toPass();
+		// The list is as wide as its seats, never cutting a name to "Se…" (Trevor, 2026-10-28).
+		const badge = option.getByTestId('player-badge');
+		await expect(badge).toHaveText(seat);
+		expect(await badge.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 		await option.tap();
 	}
+	await expect(section.getByRole('combobox', { name: 'First player chosen' })).toHaveAttribute(
+		'data-attention'
+	);
 	await pick('First player chosen', 'Seat 2');
 	await pick('Second player chosen', 'Seat 3');
 	await expect(answers).toHaveCount(1);
-	await expect(answers.first()).toHaveText('Yes');
+	await expect(answers.first().locator('strong')).toHaveText('Yes');
 	await pick('Second player chosen', 'Seat 4');
-	await expect(answers.first()).toHaveText('No');
+	await expect(answers.first().locator('strong')).toHaveText('No');
+	// The answer shows as the Yes/No info token (Trevor, 2026-10-28).
+	await answers.first().getByRole('button', { name: 'Show to player' }).tap();
+	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('No');
 });
 
 // Trevor (2026-10-27): on the first night the Godfather's step names every Outsider in
