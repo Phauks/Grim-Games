@@ -9,6 +9,7 @@
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
 	import AvatarPictureRow from './AvatarPictureRow.svelte';
+	import CharacterIconRow from './CharacterIconRow.svelte';
 	import FlavourTextRow from './FlavourTextRow.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 
@@ -37,6 +38,7 @@
 		avatar={playerSettings.current.avatar}
 		picture={avatarPicture.url}
 		{frame}
+		fullColour
 	/>
 {/snippet}
 
@@ -62,6 +64,9 @@
 
 <!-- A line about themselves, kept for later uses (Trevor, 2026-10-28). -->
 <FlavourTextRow />
+
+<!-- A character's icon as their avatar (Trevor, 2026-10-27), engraved on seats. -->
+<CharacterIconRow />
 
 <!-- The player's own picture on their seat (2026-10-27). -->
 <AvatarPictureRow {name} />

@@ -27,7 +27,7 @@ async function openProfile(page: Page) {
 /** Opens a drop-down and taps one choice, as a finger would. */
 async function pick(page: Page, label: string, option: string) {
 	await page.getByRole('combobox', { name: label }).tap();
-	await page.getByRole('option', { name: option }).tap();
+	await page.getByRole('option', { name: option, exact: true }).tap();
 	await expect(page.getByRole('listbox')).toBeHidden();
 }
 
@@ -44,7 +44,7 @@ test('a player picks a laurel form, its colour and its motion, and keeps them', 
 	await page.goto('/');
 	const dialog = await openProfile(page);
 	const form = dialog.getByRole('combobox', { name: 'Your laurel' });
-	const colour = dialog.getByRole('combobox', { name: 'Colour', exact: true });
+	const colour = dialog.getByRole('combobox', { name: 'Color', exact: true });
 	const motion = dialog.getByRole('combobox', { name: 'Motion' });
 	await expect(form).toContainText('None');
 	// The colour and motion rows are always there, so picking a form moves nothing; None
@@ -58,16 +58,16 @@ test('a player picks a laurel form, its colour and its motion, and keeps them', 
 	await expect(form.locator('svg[data-frame="ring-accent"]')).toBeAttached();
 	await expect(colour).toBeEnabled();
 	expect(await motion.boundingBox()).toEqual(below);
-	await pick(page, 'Colour', 'Minion red');
+	await pick(page, 'Color', 'Orange');
 	await expect(form.locator('svg[data-frame="ring-minion"]')).toBeAttached();
 
 	// A new form keeps the colour.
 	await pick(page, 'Your laurel', 'Olive');
 	await expect(form.locator('svg[data-frame="laurel-olive-minion"]')).toBeAttached();
-	await pick(page, 'Colour', 'Demon red');
-	await pick(page, 'Motion', 'Sway and shimmer');
+	await pick(page, 'Color', 'Red');
+	await pick(page, 'Motion', 'Clockwise shimmer');
 	const preview = dialog.getByTestId('profile-preview');
-	await expect(preview.locator('svg[data-frame="laurel-olive-demon~sway-shimmer"]')).toBeAttached();
+	await expect(preview.locator('svg[data-frame="laurel-olive-demon~shimmer-cw"]')).toBeAttached();
 	await expect(preview.locator('[data-shimmer]')).toBeAttached();
 
 	await page.reload();
@@ -75,12 +75,10 @@ test('a player picks a laurel form, its colour and its motion, and keeps them', 
 	await expect(
 		again
 			.getByRole('combobox', { name: 'Your laurel' })
-			.locator('svg[data-frame="laurel-olive-demon~sway-shimmer"]')
+			.locator('svg[data-frame="laurel-olive-demon~shimmer-cw"]')
 	).toBeAttached();
-	await expect(again.getByRole('combobox', { name: 'Colour', exact: true })).toContainText(
-		'Demon red'
-	);
-	await expect(again.getByRole('combobox', { name: 'Motion' })).toContainText('Sway and shimmer');
+	await expect(again.getByRole('combobox', { name: 'Color', exact: true })).toContainText('Red');
+	await expect(again.getByRole('combobox', { name: 'Motion' })).toContainText('Clockwise shimmer');
 });
 
 test('tapping the seat in the Profile shows it large, over the Profile', async ({ page }) => {
@@ -88,7 +86,7 @@ test('tapping the seat in the Profile shows it large, over the Profile', async (
 	const dialog = await openProfile(page);
 	const small = await dialog.getByTestId('profile-preview').boundingBox();
 	await dialog.getByTestId('profile-preview').tap();
-	const big = page.getByRole('dialog', { name: 'Your seat, larger' });
+	const big = page.getByRole('dialog', { name: 'Preview', exact: true });
 	await expect(big).toBeVisible();
 	const disc = big.getByTestId('profile-big-preview').locator('.seat-disc');
 	await expect(disc).toBeVisible();
@@ -130,4 +128,35 @@ test('the Profile keeps a flavour text, edited in its own modal (Trevor, 2026-10
 	await page.reload();
 	const again = await openProfile(page);
 	await expect(again.getByTestId('flavour-text')).toHaveText('Always the Drunk.');
+});
+
+test("a character's icon is the avatar, full colour in the Profile (Trevor, 2026-10-28)", async ({
+	page
+}) => {
+	await page.goto('/');
+	const dialog = await openProfile(page);
+	await expect(dialog.getByTestId('character-icon')).toHaveText('None');
+	await dialog.getByRole('button', { name: 'Change character icon' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Character icon' });
+	await picker.getByRole('searchbox').fill('Fortune Teller');
+	await picker
+		.getByRole('button', { name: /Fortune Teller/ })
+		.first()
+		.tap();
+	await expect(picker).toBeHidden();
+	await expect(dialog.getByTestId('character-icon')).toContainText('Fortune Teller');
+	// Full colour in the Profile; seats engrave it.
+	const face = dialog.getByTestId('profile-preview').getByTestId('avatar-face');
+	await expect(face).toHaveAttribute('data-avatar', 'character:fortuneteller');
+	await expect(face.locator('img')).not.toHaveAttribute('data-engraved');
+
+	await page.reload();
+	const again = await openProfile(page);
+	await expect(again.getByTestId('character-icon')).toContainText('Fortune Teller');
+	await again.getByRole('button', { name: 'Change character icon' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character icon' })
+		.getByRole('button', { name: 'None' })
+		.tap();
+	await expect(again.getByTestId('character-icon')).toHaveText('None');
 });

@@ -104,7 +104,7 @@
 		 * tap and nothing of this device's own on it (no guesses, notes or "you").
 		 */
 		display?: boolean;
-		/** Full screen in the town's top right corner: /play's Grim and Public Town. */
+		/** Full screen in the town's top right corner: the player screen's Grim (PlayerScreen) and Public Town. */
 		fullScreen?: boolean;
 		/** More of that corner, before Full screen; told whether the town fills the screen. */
 		corner?: Snippet<[boolean]>;
@@ -511,7 +511,7 @@
 		</div>
 	{/snippet}
 	<!-- Full screen in the town's top right corner (Trevor, 2026-10-27: players too, "same thing
-	     as town square"); the board's Script draws it in a dialog, where it has none. -->
+	     as town square"), the Storyteller's player view too (Trevor, 2026-10-28). -->
 	{#if fullScreen}<FullScreenStage
 			corner={stageCorner}
 			bind:cornerWidth={toolsW}
