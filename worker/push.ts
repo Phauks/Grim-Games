@@ -2,13 +2,20 @@ import { DurableObject } from 'cloudflare:workers';
 import { noStore } from './http.ts';
 import {
 	makePushKeys,
+	parsePushAddress,
 	publicPushKey,
 	pushAddressGone,
 	pushRequest,
 	type PushAddress,
 	type PushKeys
 } from '../src/lib/core/sync/web-push.ts';
-import { CALL_TOWN_PUSH_TTL_SECONDS, type PushMessage } from '../src/lib/core/sync/room-push.ts';
+import {
+	CALL_TOWN_PUSH_TTL_SECONDS,
+	pushTargets,
+	setPushAddress,
+	type PushAddresses,
+	type PushMessage
+} from '../src/lib/core/sync/room-push.ts';
 
 export interface PushEnv {
 	PUSH_KEYS: DurableObjectNamespace<PushKeyStore>;
@@ -80,4 +87,35 @@ export async function pushToPhones(
 		})
 	);
 	return gone.filter((id) => id !== undefined);
+}
+
+/**
+ * Sets the push address Back to town reaches member `id` at in a room's storage (plan U12), or
+ * forgets it when the phone sent none. An address that isn't a push service's is ignored.
+ */
+export async function setRoomPushAddress(
+	storage: DurableObjectStorage,
+	id: string,
+	sent: unknown
+): Promise<void> {
+	const address = sent === undefined ? undefined : parsePushAddress(sent);
+	if (sent !== undefined && !address) return;
+	const addresses = (await storage.get<PushAddresses>('push')) ?? {};
+	const next = setPushAddress(addresses, id, address);
+	if (next !== addresses) await storage.put('push', next);
+}
+
+/** Pushes a room's Back to town call to its phones not `showing` the app, and forgets gone ones. */
+export async function pushCallTown(
+	env: PushEnv,
+	storage: DurableObjectStorage,
+	showing: ReadonlySet<string>
+): Promise<void> {
+	const addresses = (await storage.get<PushAddresses>('push')) ?? {};
+	const code = await storage.get<string>('code');
+	const gone = await pushToPhones(env, pushTargets(addresses, showing), {
+		type: 'call-town',
+		...(code ? { code } : {})
+	});
+	for (const id of gone) await setRoomPushAddress(storage, id, undefined);
 }
