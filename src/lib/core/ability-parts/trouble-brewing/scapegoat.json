@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "instead",
+			"when": {
+				"at": "event",
+				"event": "ally-executed"
+			},
+			"storytellerMay": true,
+			"effects": [
+				{
+					"do": "execute",
+					"who": "self",
+					"instead": true
+				}
+			]
+		}
+	]
+}

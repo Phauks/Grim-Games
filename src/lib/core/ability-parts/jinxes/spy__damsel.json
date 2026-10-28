@@ -1,0 +1,24 @@
+{
+	"characters": ["spy", "damsel"],
+	"patches": [
+		{
+			"op": "add",
+			"character": "spy",
+			"clause": {
+				"id": "damsel-jinx",
+				"when": {
+					"at": "always"
+				},
+				"evenIfDead": true,
+				"effects": [
+					{
+						"do": "impair",
+						"who": "jinxed-partner",
+						"as": "poisoned",
+						"until": "always"
+					}
+				]
+			}
+		}
+	]
+}

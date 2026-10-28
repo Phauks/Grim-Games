@@ -1,0 +1,27 @@
+{
+	"clauses": [
+		{
+			"id": "become",
+			"when": {
+				"at": "event",
+				"event": "demon-dies"
+			},
+			"if": [
+				{
+					"alive": {
+						"atLeast": 5,
+						"travellers": false
+					}
+				}
+			],
+			"marks": "Is The Demon",
+			"effects": [
+				{
+					"do": "become",
+					"who": "self",
+					"into": "demon"
+				}
+			]
+		}
+	]
+}

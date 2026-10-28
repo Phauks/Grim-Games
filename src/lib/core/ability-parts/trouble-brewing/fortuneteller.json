@@ -1,0 +1,41 @@
+{
+	"clauses": [
+		{
+			"id": "red-herring",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Red Herring",
+			"effects": [
+				{
+					"do": "register",
+					"who": "a-good-player",
+					"as": {
+						"types": ["demon"]
+					},
+					"toSelfOnly": true
+				}
+			]
+		},
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 2,
+				"what": "player"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "demon-or-token",
+						"token": "Red Herring"
+					}
+				}
+			]
+		}
+	]
+}

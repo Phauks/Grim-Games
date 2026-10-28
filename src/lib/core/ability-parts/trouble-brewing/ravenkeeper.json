@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "death",
+				"by": "any",
+				"phase": "night"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "character-of",
+						"who": "chosen"
+					}
+				}
+			]
+		}
+	]
+}
