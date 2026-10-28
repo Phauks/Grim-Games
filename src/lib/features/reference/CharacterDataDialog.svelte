@@ -10,7 +10,7 @@
 	import { numericNightOrder, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import { characterCardsFor } from '#lib/features/info-tokens/character-cards.ts';
+	import { cardsOfCharacter } from '#lib/features/info-tokens/character-cards.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import FileView from '#lib/ui/primitives/FileView.svelte';
@@ -37,7 +37,7 @@
 	// The character's own info cards are a feature list, not core data, so they join here.
 	const cards = $derived({
 		file: 'src/lib/features/info-tokens/character-cards.ts',
-		data: characterCardsFor([character.id])
+		data: cardsOfCharacter(character)
 	});
 	const sources = $derived<{ part: Part; file: string; data: unknown }[]>([
 		...(found?.sources ?? []),

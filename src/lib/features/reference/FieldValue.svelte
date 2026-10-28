@@ -26,7 +26,7 @@
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
-	import { characterCardsFor } from '#lib/features/info-tokens/character-cards.ts';
+	import { cardsOfCharacter } from '#lib/features/info-tokens/character-cards.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -244,7 +244,7 @@
 		>
 	{:else if field === 'cards'}
 		<span class="spaced"
-			>{#each characterCardsFor([character.id]) as card (card.id)}<span>{t(card.titleKey)}</span
+			>{#each cardsOfCharacter(character) as card (card.id)}<span>{t(card.titleKey)}</span
 				>{:else}{t('common.none')}{/each}</span
 		>
 	{:else if field === 'firstNight'}

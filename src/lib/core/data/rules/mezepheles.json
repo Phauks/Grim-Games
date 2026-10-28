@@ -78,5 +78,6 @@
 		"token": "Turns Evil",
 		"into": "evil",
 		"when": "removed"
-	}
+	},
+	"infoCard": "secret-word"
 }
