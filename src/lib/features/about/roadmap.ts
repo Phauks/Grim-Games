@@ -54,11 +54,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title:
 			'Grimoire board with a guided night: night steps, reminders, frames, the character sheet',
-		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L67']
+		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L66', 'L67']
 	},
 	{
 		title: 'Day view: executions, announcements, Savant reminders, player claims',
-		parts: ['L12', 'L13', 'L21', 'L9', 'L28', 'L45', 'L56', 'L57', 'L58', 'L61']
+		parts: ['L12', 'L13', 'L21', 'L9', 'L28', 'L45', 'L56', 'L57', 'L58', 'L61', 'L68', 'L69']
 	},
 	{
 		title:
@@ -188,7 +188,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title: 'New game from Game info, keeping the room and players, and a board corner you choose',
 		parts: ['G11', 'G12', 'G13', 'R3']
 	},
-	{ title: "Rules as data: every character's rules in its own file, none in code", parts: ['K1'] },
+	{
+		title:
+			"Rules as data: every character's rules in its own file, none in code, and each character's data on view",
+		parts: ['K1', 'K2']
+	},
 	{ title: 'Buttons that stand out, with End game in red', parts: ['S11'] },
 	{
 		title: 'Offline games: share the script with no internet, by QR code or animated QR code',

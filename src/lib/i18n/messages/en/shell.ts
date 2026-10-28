@@ -31,7 +31,7 @@ export const shell = {
 	'shell.about': 'About',
 	'shell.support': 'Support',
 	'shell.supportIntro': `${APP_NAME} is free, with no ads. If it helps your games, you can support it on Ko-fi.`,
-	'shell.supportKofi': 'Support on Ko-fi',
+	'shell.supportKofi': 'Support me on Ko-fi',
 	'shell.reportIssue': 'Report an issue',
 	'shell.switchToBeta': 'Switch to beta',
 	'shell.switchToProduction': 'Switch to production',

@@ -396,3 +396,8 @@ export function rulesOf(
 ): CharacterRules | undefined {
 	return characters?.get(characterId)?.rules ?? OFFICIAL_RULES.get(characterId);
 }
+
+/** An official character's rules file exactly as written, for showing it; none for others. */
+export function rulesFileOf(characterId: CharacterId): unknown {
+	return Object.hasOwn(FILES, characterId) ? FILES[characterId] : undefined;
+}

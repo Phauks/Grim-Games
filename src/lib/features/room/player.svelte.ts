@@ -217,6 +217,9 @@ export class RoomPlayer {
 				} else if (m.type === 'call-town') {
 					hearCallTown();
 					toast(t('room.callTownHeard'));
+				} else if (m.type === 'message-delivered') {
+					// The only trace a sent message leaves on the phone (Trevor, 2026-10-28).
+					toast(t(m.delivered ? 'room.message.delivered' : 'room.message.notDelivered'));
 				}
 			},
 			() => {
