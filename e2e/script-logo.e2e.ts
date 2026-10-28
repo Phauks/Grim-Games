@@ -110,7 +110,7 @@ test("Search shows a script's own logo beside its name, and in its details", asy
 	await expect(page.getByRole('img', { name: 'Storm Front logo' })).toBeVisible();
 });
 
-test("Join or resume shows each game's script logo beside its name", async ({ page }) => {
+test("Continue game shows each game's script logo beside its name", async ({ page }) => {
 	// Trevor (2026-10-18): "resume game should include script logo".
 	await startGame(page);
 	await page.goto('/join');

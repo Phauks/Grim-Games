@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { isMissingBuildFile, mayLoadAfresh, RELOAD_GAP_MS } from './stale-build.svelte.ts';
+import {
+	isMissingBuildFile,
+	isMissingPageFile,
+	mayLoadAfresh,
+	RELOAD_GAP_MS
+} from './stale-build.svelte.ts';
 
 describe('isMissingBuildFile', () => {
 	it("recognises each browser's failed module load", () => {
@@ -18,6 +23,26 @@ describe('isMissingBuildFile', () => {
 		expect(isMissingBuildFile(new Error('svelte.dev/e/state_unsafe_mutation'))).toBe(false);
 		expect(isMissingBuildFile({ message: 'Importing a module script failed.' })).toBe(false);
 		expect(isMissingBuildFile(undefined)).toBe(false);
+	});
+});
+
+describe('isMissingPageFile', () => {
+	it("tells a page's own code from a file loaded later", () => {
+		expect(
+			isMissingPageFile(
+				new TypeError(
+					'Failed to fetch dynamically imported module: http://localhost/_app/immutable/nodes/31.BFv3Y62W.js'
+				)
+			)
+		).toBe(true);
+		expect(
+			isMissingPageFile(
+				new TypeError('Failed to fetch dynamically imported module: /_app/immutable/chunks/x.js')
+			)
+		).toBe(false);
+		// Safari names no file, so it can't be told apart: the page reloads, as before.
+		expect(isMissingPageFile(new TypeError('Importing a module script failed.'))).toBe(false);
+		expect(isMissingPageFile(new Error('/_app/immutable/nodes/1.js is fine'))).toBe(false);
 	});
 });
 
