@@ -2,7 +2,6 @@
 	import { MAX_MESSAGE_LENGTH } from '#lib/core/sync/room-messages.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
@@ -105,11 +104,7 @@
 				disabled={!ready || !canSend}
 				confirmLabel={t('room.message.send')}
 				confirmIcon="messages"
-			>
-				{#snippet start()}<span class="length"
-						><CountBadge count={text.length} total={MAX_MESSAGE_LENGTH} /></span
-					>{/snippet}
-			</ModalActions>
+			/>
 		{/snippet}
 	</Dialog>
 {/if}
@@ -126,10 +121,5 @@
 	.failed {
 		margin: var(--space-2) 0 0;
 		color: var(--evil);
-	}
-	.length {
-		align-self: center;
-		font-size: 0.9rem;
-		color: var(--on-surface-muted);
 	}
 </style>
