@@ -137,9 +137,17 @@
 		overflow: hidden;
 		visibility: hidden;
 	}
+	/* The tabs share the row equally, so four tabs are 25% each (Trevor, 2026-10-28: "Would
+	   look more balanced"). A label wider than its share keeps its width, and tabs that don't
+	   fit move into the ⋯ menu as before. */
+	:global([data-scope='tabs'][data-part='trigger']) {
+		flex: 1 1 0;
+		min-width: max-content;
+		justify-content: center;
+		text-align: center;
+	}
 	:global([data-scope='tabs'][data-part='trigger']),
 	.face {
-		flex: none;
 		min-height: var(--tap-target);
 		padding: 0 var(--space-3);
 		white-space: nowrap;
@@ -148,6 +156,9 @@
 		color: var(--on-surface-muted);
 		font-family: var(--font-control);
 		font-weight: var(--font-control-weight);
+	}
+	.face {
+		flex: none;
 	}
 	.more {
 		flex: none;
