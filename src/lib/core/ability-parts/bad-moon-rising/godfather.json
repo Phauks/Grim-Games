@@ -1,0 +1,64 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "outsiders-in-play"
+					}
+				}
+			]
+		},
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"if": [
+				{
+					"today": "outsider-died",
+					"token": "Died Today"
+				}
+			],
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "outsiders",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "−1 or +1 Outsider",
+						"ops": [
+							{
+								"kind": "delta",
+								"type": "outsider",
+								"values": [-1, 1]
+							}
+						]
+					}
+				}
+			]
+		}
+	]
+}

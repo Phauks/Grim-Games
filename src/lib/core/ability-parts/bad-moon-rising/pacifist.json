@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "spare",
+			"when": {
+				"at": "event",
+				"event": "ally-executed"
+			},
+			"storytellerMay": true,
+			"effects": [
+				{
+					"do": "protect",
+					"who": "executed",
+					"from": "execution"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "poison",
+			"when": {
+				"at": "always"
+			},
+			"marks": "Poisoned",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "townsfolk-neighbours",
+					"as": "poisoned",
+					"until": "always"
+				}
+			]
+		}
+	]
+}

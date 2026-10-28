@@ -1,0 +1,38 @@
+{
+	"clauses": [
+		{
+			"id": "drink",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true
+			},
+			"marks": "Drunk",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "self-or-chosen",
+					"as": "drunk",
+					"until": "dusk"
+				}
+			]
+		},
+		{
+			"id": "safe",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "protect",
+					"who": "self",
+					"from": "any"
+				}
+			]
+		}
+	]
+}

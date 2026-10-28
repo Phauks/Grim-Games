@@ -1,0 +1,21 @@
+{
+	"clauses": [
+		{
+			"id": "survive",
+			"when": {
+				"at": "death",
+				"would": true
+			},
+			"limit": "first-time",
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "protect",
+					"who": "self",
+					"from": "any",
+					"once": true
+				}
+			]
+		}
+	]
+}

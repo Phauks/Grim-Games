@@ -1,0 +1,33 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"marks": "Grandchild",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "good-player-and-character"
+					}
+				}
+			]
+		},
+		{
+			"id": "dies-too",
+			"when": {
+				"at": "event",
+				"event": "grandchild-killed-by-demon"
+			},
+			"effects": [
+				{
+					"do": "kill",
+					"who": "self"
+				}
+			]
+		}
+	]
+}

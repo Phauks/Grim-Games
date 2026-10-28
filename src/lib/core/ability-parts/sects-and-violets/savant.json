@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "visit",
+			"when": {
+				"at": "day"
+			},
+			"optional": true,
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "true-and-false-statements"
+					}
+				}
+			]
+		}
+	]
+}

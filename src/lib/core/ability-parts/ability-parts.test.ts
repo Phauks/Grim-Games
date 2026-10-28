@@ -1,5 +1,6 @@
 /**
- * SPIKE: Trouble Brewing in ability parts, checked against what the app does today.
+ * SPIKE: Trouble Brewing, Bad Moon Rising and Sects & Violets in ability parts, checked
+ * against what the app does today.
  *
  * Each character's parts are compiled (`derive.ts`) and compared with its hand-written rules
  * file (`data/rules/<id>.json`), TPI's night sheet and the Sort Order phrase its ability text
@@ -16,28 +17,97 @@ import { committedGameData, nightSheetPresence } from '#lib/core/testing/committ
 import { DERIVED_KEYS, deriveRules, type DerivedKey } from './derive.ts';
 import { applyJinx } from './jinx.ts';
 import { readAbilityParts } from './read.ts';
+import { BAD_MOON_RISING_PARTS } from './bad-moon-rising/index.ts';
+import { SECTS_AND_VIOLETS_PARTS } from './sects-and-violets/index.ts';
 import { TROUBLE_BREWING_JINXES, TROUBLE_BREWING_PARTS } from './trouble-brewing/index.ts';
 import type { AbilityParts } from './types.ts';
 
-/** Where the parts and today's rules disagree, by character and key, and why. Only shrinks. */
+/**
+ * Where the parts and today's rules disagree, by character and key, and why. Only shrinks.
+ * Each reason starts with its gap: the design doc's gap list counts them.
+ */
 const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 	poisoner: {
 		impairs:
-			'today the Poisoned token poisons by its label (impairmentOfLabel, rules/ability.ts); the parts say it, so a custom token name works too'
+			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too'
 	},
 	butler: {
 		marksChoice:
-			'parts list every night choice a reminder marks; today only some are (the Savant reads it)'
+			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
 	},
 	thief: {
 		marksChoice:
-			'parts list every night choice a reminder marks; today only some are (the Savant reads it)'
+			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
 	},
 	bureaucrat: {
 		marksChoice:
-			'parts list every night choice a reminder marks; today only some are (the Savant reads it)'
+			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
+	},
+	professor: {
+		marksChoice:
+			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
+	},
+	sailor: {
+		marksChoice:
+			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
+	},
+	harlot: {
+		marksChoice:
+			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
+	},
+	snakecharmer: {
+		marksChoice:
+			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it); today it is choosesUnmarked'
+	},
+	bonecollector: {
+		marksChoice:
+			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)',
+		targetSeats:
+			'seat judgement: a living Bone Collector picks a dead player, so never itself; today any'
+	},
+	courtier: {
+		impairs:
+			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too',
+		fixedReminders: 'countdown tokens: Drunk 3, 2, 1 replace each other; parts have no countdown'
+	},
+	philosopher: {
+		impairs:
+			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too',
+		targetSeats:
+			"seat judgement: a chosen character's player, who can't be the Philosopher; parts don't know a character choice lands on someone else"
+	},
+	flowergirl: {
+		fixedReminders: 'answer tokens: the yes and no tokens of an answer are not parts'
+	},
+	towncrier: {
+		fixedReminders: 'answer tokens: the yes and no tokens of an answer are not parts'
+	},
+	juggler: {
+		answers: "answer tokens: today's answer has no token, its Correct tokens are placed by day",
+		fixedReminders: 'answer tokens: Correct marks each right guess, placed by day'
+	},
+	zombuul: {
+		fixedReminders:
+			'movement judgement: the Dead token marking its first death never moves, but is not listed fixed today'
+	},
+	sweetheart: {
+		fixedReminders:
+			"movement judgement: a lasting drunkenness never moves; parts can't tell it from the No Dashii's, which moves with its neighbours"
+	},
+	klutz: {
+		gameEnd:
+			'automatable: parts say evil chosen means its team loses; today the Storyteller decides'
+	},
+	vigormortis: {
+		keepsAbility:
+			'per-effect condition: only killed Minions keep their ability; parts have no condition on one effect',
+		fixedReminders: 'movement judgement: Has Ability and its Poisoned stay put',
+		targetSeats: 'seat judgement: it never kills itself with a token it keeps'
 	}
 };
+
+/** Characters whose derived night wakes differ from TPI's night sheet, and why. Only shrinks. */
+const WAKE_DIFFERENCES: Record<string, string> = {};
 
 const data = committedGameData();
 
@@ -48,11 +118,16 @@ const canonical = (value: unknown): string =>
 			? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)))
 			: v
 	);
-const TB = [...TROUBLE_BREWING_PARTS.keys()];
+const EDITIONS: Record<string, ReadonlyMap<string, unknown>> = {
+	tb: TROUBLE_BREWING_PARTS,
+	bmr: BAD_MOON_RISING_PARTS,
+	snv: SECTS_AND_VIOLETS_PARTS
+};
+const ALL = new Map(Object.values(EDITIONS).flatMap((parts) => [...parts]));
 
 function readAll(): Map<string, AbilityParts> {
 	const out = new Map<string, AbilityParts>();
-	for (const [id, raw] of TROUBLE_BREWING_PARTS) {
+	for (const [id, raw] of ALL) {
 		const issues = new Issues();
 		const own = [
 			...(data.byId.get(id)?.reminders ?? []),
@@ -84,15 +159,16 @@ const today = (parts: Map<string, AbilityParts>, id: string, key: DerivedKey): u
 	return rules[key];
 };
 
-describe('Trouble Brewing as ability parts', () => {
+describe('the base three editions as ability parts', () => {
 	const parts = readAll();
 
-	it('covers every Trouble Brewing character and Traveller', () => {
-		const edition = [...data.byId.values()].filter((c) => c.edition === 'tb').map((c) => c.id);
-		expect(TB.sort()).toEqual(edition.sort());
-	});
+	for (const [edition, editionParts] of Object.entries(EDITIONS))
+		it(`covers every ${edition} character and Traveller`, () => {
+			const ids = [...data.byId.values()].filter((c) => c.edition === edition).map((c) => c.id);
+			expect([...editionParts.keys()].sort()).toEqual(ids.sort());
+		});
 
-	for (const id of TB) {
+	for (const id of ALL.keys()) {
 		describe(id, () => {
 			const character = data.byId.get(id)!;
 			const derived = deriveRules(parts.get(id)!, character.type);
@@ -112,10 +188,9 @@ describe('Trouble Brewing as ability parts', () => {
 
 			it('wakes on the nights TPI’s night sheet lists', () => {
 				const sheet = nightSheetPresence(id);
-				expect(derived.wakes).toEqual({
-					firstNight: sheet.firstNight,
-					otherNight: sheet.otherNight
-				});
+				const want = { firstNight: sheet.firstNight, otherNight: sheet.otherNight };
+				if (WAKE_DIFFERENCES[id]) expect(derived.wakes).not.toEqual(want);
+				else expect(derived.wakes).toEqual(want);
 			});
 
 			// Abilities that open with a state ("You are", "If", "You might") leave it to their text.

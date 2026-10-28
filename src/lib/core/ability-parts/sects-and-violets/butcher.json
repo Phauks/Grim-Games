@@ -1,0 +1,18 @@
+{
+	"clauses": [
+		{
+			"id": "again",
+			"when": {
+				"at": "day",
+				"after": "first-execution"
+			},
+			"optional": true,
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "nominate-again"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,17 @@
+{
+	"clauses": [
+		{
+			"id": "funny",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "If you were funny today, you cannot die by exile."
+				}
+			]
+		}
+	],
+	"hatches": ["'funny' is the Storyteller's judgement"]
+}

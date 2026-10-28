@@ -1,0 +1,36 @@
+{
+	"clauses": [
+		{
+			"id": "twin",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Twin",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "each-other"
+					}
+				},
+				{
+					"do": "hold-game",
+					"while": "both-alive"
+				}
+			]
+		},
+		{
+			"id": "win",
+			"when": {
+				"at": "event",
+				"event": "marked-executed"
+			},
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "evil"
+				}
+			]
+		}
+	]
+}

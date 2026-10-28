@@ -27,14 +27,28 @@ const WHEN_AT = ['setup', 'night', 'day', 'dusk', 'always', 'death', 'nominated'
 
 /** Each verb and the fields it may have. */
 const EFFECT_FIELDS: Record<string, readonly string[]> = {
-	learn: ['info'],
-	protect: ['who', 'from', 'until'],
+	learn: ['info', 'to'],
+	protect: ['who', 'from', 'until', 'once'],
 	kill: ['who', 'ignoresProtection'],
-	impair: ['who', 'as', 'until'],
+	resurrect: ['who'],
+	impair: ['who', 'as', 'until', 'whileWorks'],
+	'lose-ability': ['who'],
+	boost: ['who', 'how', 'until'],
+	'keep-ability': ['who', 'until'],
+	'gain-ability': ['who', 'of'],
+	'falsify-info': ['of'],
+	'skip-waking': ['who'],
+	arm: ['who', 'on', 'until', 'effects'],
+	later: ['at', 'if', 'effects'],
+	madness: ['who', 'as', 'until'],
+	swap: ['who', 'with', 'what'],
+	'game-rule': ['rule'],
+	'hold-game': ['while', 'extraDay'],
+	'register-dead': ['who'],
 	immune: ['who', 'to'],
 	register: ['who', 'as', 'toSelfOnly'],
-	believe: ['who', 'isA'],
-	become: ['who', 'into'],
+	believe: ['who', 'isA', 'choicesAsDemon'],
+	become: ['who', 'into', 'evil'],
 	execute: ['who', 'instead'],
 	'end-game': ['winner'],
 	'redirect-death': ['to'],
@@ -82,21 +96,28 @@ export function readAbilityParts(
 			if (label !== undefined && reminders && !reminders.includes(label))
 				issues.add(`${at}.${key}`, `"${label}" is not one of its reminders`);
 		}
-		if (!Array.isArray(c.effects) || c.effects.length === 0)
-			return issues.add(`${at}.effects`, 'expected a non-empty array');
-		c.effects.forEach((effect, j) => {
-			const e = `${at}.effects[${j}]`;
-			if (!isObject(effect) || !oneOf(effect.do, Object.keys(EFFECT_FIELDS)))
-				return issues.add(e, 'unknown verb');
-			checkKeys(effect, ['do', ...EFFECT_FIELDS[effect.do]], e, issues);
-			for (const key of ['who', 'to', 'with'] as const) {
-				const subject = (effect as Record<string, unknown>)[key];
-				if (key === 'to' && effect.do === 'immune') continue;
-				if (subject === undefined) continue;
-				if (!oneOf(subject, SUBJECTS)) issues.add(`${e}.${key}`, 'unknown subject');
-				else if (subject === 'chosen' && !c.choose) issues.add(`${e}.${key}`, 'nothing is chosen');
-			}
-		});
+		readEffects(c.effects, c, `${at}.effects`, issues);
 	});
 	return raw as unknown as AbilityParts;
+}
+
+/** Checks a list of effects; `arm` and `later` hold their own, checked the same way. */
+function readEffects(effects: unknown, c: Clause, path: string, issues: Issues): void {
+	if (!Array.isArray(effects) || effects.length === 0)
+		return issues.add(path, 'expected a non-empty array');
+	effects.forEach((effect: unknown, j: number) => {
+		const e = `${path}[${j}]`;
+		if (!isObject(effect) || typeof effect.do !== 'string' || !(effect.do in EFFECT_FIELDS))
+			return issues.add(e, 'unknown verb');
+		checkKeys(effect, ['do', 'marks', ...EFFECT_FIELDS[effect.do]], e, issues);
+		for (const key of ['who', 'to', 'with'] as const) {
+			const subject = (effect as Record<string, unknown>)[key];
+			if (key === 'to' && effect.do === 'immune') continue;
+			if (subject === undefined) continue;
+			if (!oneOf(subject, SUBJECTS)) issues.add(`${e}.${key}`, 'unknown subject');
+			else if (subject === 'chosen' && !c.choose) issues.add(`${e}.${key}`, 'nothing is chosen');
+		}
+		if (effect.do === 'arm' || effect.do === 'later')
+			readEffects(effect.effects, c, `${e}.effects`, issues);
+	});
 }
