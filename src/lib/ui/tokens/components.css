@@ -116,6 +116,9 @@
 	--sky-sun: var(--heading);
 	--sky-night: var(--good);
 	--sky-moon: var(--on-surface);
+	/* Beside Setup: this phone's own candle burns red, and the dusk glows violet. */
+	--sky-own-flame: color-mix(in srgb, var(--evil), var(--evil-text) 50%);
+	--sky-dusk: color-mix(in srgb, var(--sky-night), var(--evil) 45%);
 }
 
 /* The paper a scratch pad (or a paper swatch) shows; render.ts reads the inks. */

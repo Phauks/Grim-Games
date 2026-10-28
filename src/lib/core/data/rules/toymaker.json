@@ -23,6 +23,7 @@
 		"notes": {
 			"minioninfo": "evil gets this info at any player count.",
 			"demoninfo": "evil gets this info at any player count."
-		}
+		},
+		"anyPlayerCount": true
 	}
 }

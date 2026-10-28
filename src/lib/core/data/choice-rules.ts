@@ -24,10 +24,13 @@ type EvilInfoStep = (typeof EVIL_INFO_STEPS)[number];
  * How it changes the Minion and Demon info steps: a note to remember at each step while it is
  * in play (the Snitch's extra bluffs at Demon info), and `hidesDemon` when a Minion may not
  * learn the Demon because of it (the Poppy Grower, Magician, Marionette, Lil' Monsta).
+ * `anyPlayerCount` gives the steps below 7 players too (the Toymaker: evil players get normal
+ * starting info, https://wiki.bloodontheclocktower.com/Toymaker).
  */
 interface EvilInfo {
 	notes?: Partial<Record<EvilInfoStep, string>>;
 	hidesDemon?: true;
+	anyPlayerCount?: true;
 }
 
 /** What its night information is like: a number (the Chef), only once per game (the Artist). */
@@ -119,9 +122,10 @@ function readEvilInfo(raw: unknown, path: string, issues: Issues): EvilInfo | un
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['notes', 'hidesDemon'], path, issues);
+	checkKeys(raw, ['notes', 'hidesDemon', 'anyPlayerCount'], path, issues);
 	const out: EvilInfo = {};
 	if (readBoolean(raw, 'hidesDemon', path, issues)) out.hidesDemon = true;
+	if (readBoolean(raw, 'anyPlayerCount', path, issues)) out.anyPlayerCount = true;
 	if (raw.notes !== undefined) {
 		const at = `${path}.notes`;
 		if (!isObject(raw.notes)) issues.add(at, `expected object, got ${describe(raw.notes)}`);

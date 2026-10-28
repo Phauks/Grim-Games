@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { PublicGameState } from '#lib/core/sync/public-projection.ts';
-	import { dayTimers, parsePlayersPhase } from '#lib/core/rules/index.ts';
+	import type { SeatId } from '#lib/core/model/index.ts';
+	import { dayTimers, parsePlayersPhase, parseSetupLook } from '#lib/core/rules/index.ts';
+	import { seatCandles, type SeatPresence } from '#lib/core/sync/seat-presence.ts';
 	import PlayersDayStatus from '#lib/features/day/PlayersDayStatus.svelte';
 
 	/**
@@ -17,14 +19,22 @@
 		table?: PublicGameState;
 		/** The game is over: where it was up to no longer shows. */
 		ended?: boolean;
+		/** Who is connected, for the candles beside Setup; without it a named seat burns. */
+		presence?: SeatPresence;
+		/** This phone's own seat, whose candle burns red. */
+		mySeat?: SeatId;
 		before?: Snippet;
 		after?: Snippet;
 	}
 
-	let { table, ended = false, before, after }: Props = $props();
+	let { table, ended = false, presence, mySeat, before, after }: Props = $props();
 
 	const phase = $derived(ended ? undefined : parsePlayersPhase(table?.now));
 	const timer = $derived(ended ? undefined : dayTimers.parsePublicTimer(table?.timer));
+	const setupLook = $derived(parseSetupLook(table?.setupLook));
+	const candles = $derived(
+		setupLook === 'candles' ? seatCandles(table?.seats ?? [], presence, mySeat) : undefined
+	);
 </script>
 
 {#if before || after || phase}
@@ -32,7 +42,15 @@
 		{@render before?.()}
 		<!-- Where the game is up to, with the day's timer; it shares the row's height, so
 		     nothing below moves. -->
-		{#if phase}<PlayersDayStatus {phase} {timer} seats={table?.seats ?? []} wide />{/if}
+		{#if phase}<PlayersDayStatus
+				{phase}
+				{timer}
+				seats={table?.seats ?? []}
+				wide
+				{setupLook}
+				{candles}
+				unseated={presence?.unseated ?? 0}
+			/>{/if}
 		{@render after?.()}
 	</div>
 {/if}

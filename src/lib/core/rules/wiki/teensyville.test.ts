@@ -80,12 +80,22 @@ describe('no Minion or Demon info below 7 players', () => {
 	it('applies at 5 and 6, not at 7', () => {
 		expect(EVIL_INFO_MIN_PLAYERS).toBe(7);
 		expect(hasEvilTeamInfo(5, [])).toBe(false);
-		expect(hasEvilTeamInfo(6, ['imp'])).toBe(false);
+		expect(hasEvilTeamInfo(6, get('imp'))).toBe(false);
 		expect(hasEvilTeamInfo(7, [])).toBe(true);
 	});
 
 	it('is lifted by the Toymaker', () => {
-		expect(hasEvilTeamInfo(5, ['toymaker'])).toBe(true);
+		expect(hasEvilTeamInfo(5, get('toymaker'))).toBe(true);
+	});
+
+	it('is lifted by a custom character with the same rule', () => {
+		const toy = {
+			...data.byId.get('imp')!,
+			id: 'clockwork',
+			name: 'Clockwork',
+			rules: { evilInfo: { anyPlayerCount: true as const } }
+		};
+		expect(hasEvilTeamInfo(5, [toy])).toBe(true);
 	});
 
 	it('removes the steps from the first night', () => {

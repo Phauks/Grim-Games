@@ -88,7 +88,8 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	},
 	trackNominations: {
 		label: 'Track nominations',
-		description: "Under a seat's ghost vote, who the player nominated today and who nominated them."
+		description:
+			"Over the top left of a seat's token, whether the player nominated today and was nominated."
 	},
 	gameEndPrompts: {
 		label: 'Game end prompts',

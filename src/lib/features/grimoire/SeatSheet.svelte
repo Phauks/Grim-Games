@@ -1,14 +1,11 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import AlignmentPill from './AlignmentPill.svelte';
 	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import NominationChooser from './NominationChooser.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
-	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
@@ -27,24 +24,19 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import {
-		causeLabel,
-		isOrphan,
-		placingAlignment,
-		recommendedTravellers,
-		SEAT_TYPES,
-		tableCheck
-	} from './board.ts';
+	import { causeLabel, isOrphan, placingAlignment } from './board.ts';
 	import CauseName from './CauseName.svelte';
 	import SeatStatusDialog from './SeatStatusDialog.svelte';
 	import SeatMenu from './SeatMenu.svelte';
 	import SeatReminderMenu from './SeatReminderMenu.svelte';
-	import CharacterPicker from './CharacterPicker.svelte';
-	import { suggestNames } from './device-notes.ts';
-	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import SeatCharacterFlow from './SeatCharacterFlow.svelte';
+	import SeatBadge from './SeatBadge.svelte';
+	import TableCheck from './TableCheck.svelte';
+	import ChangeList from '#lib/ui/primitives/ChangeList.svelte';
+	import SeatNameField from './SeatNameField.svelte';
+	import SeatNameSuggestions from './SeatNameSuggestions.svelte';
+	import { SeatNameEdit } from './seat-name-edit.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ReminderPicker from './ReminderPicker.svelte';
 	import SeatChooser from './SeatChooser.svelte';
@@ -104,55 +96,12 @@
 		seat?.alignment === 'evil' ? 'Evil' : seat?.alignment === 'good' ? 'Good' : 'None'
 	);
 
-	// ── Name, with suggestions from the room's phones (Trevor, 2026-10-26) ──
-	// A different seat (or the same seat renamed elsewhere) resets the field.
-	let typed = $derived(seat?.playerName ?? '');
-	const taken = $derived(
-		game.seating.flatMap((id) =>
-			id !== seatId && game.seats[id].playerName ? [game.seats[id].playerName!] : []
-		)
-	);
-	// The room's phones without a seat in this game, asleep too, never names from earlier games.
-	const inRoom = $derived(roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : [])));
-	const suggestions = $derived(suggestNames(inRoom, typed, taken));
-
-	// The name is edited in place in the sheet's header: the input takes the name's spot.
-	let editingName = $state(false);
-	let nameInput = $state<HTMLInputElement>();
-	function editName() {
-		typed = seat?.playerName ?? '';
-		editingName = true;
-	}
-	$effect(() => {
-		if (editingName) nameInput?.focus();
+	// ── Name, edited in the header ──
+	const nameEdit = new SeatNameEdit({
+		grimoire: () => grimoire,
+		seatId: () => seatId,
+		open: () => open
 	});
-	$effect(() => {
-		if (!open) editingName = false;
-	});
-	function submitName(event: SubmitEvent) {
-		event.preventDefault();
-		finishName();
-	}
-	/** Saves the name and closes the keyboard (focus leaving the field closes it). */
-	function finishName(name = typed) {
-		if (!editingName) return;
-		commitName(name);
-		editingName = false;
-	}
-	function cancelName(event: KeyboardEvent) {
-		if (event.key !== 'Escape') return;
-		// Escape leaves the name as it was, and does not also close the sheet.
-		event.preventDefault();
-		event.stopPropagation();
-		typed = seat?.playerName ?? '';
-		editingName = false;
-	}
-
-	function commitName(name = typed) {
-		if (!seatId || (seat?.playerName ?? '') === name.trim()) return;
-		grimoire.rename(seatId, name);
-		typed = name.trim();
-	}
 
 	// ── What the rules say about this seat, in one line ──
 	const ability = $derived(seatId ? abilityState(game, seatId, characters) : undefined);
@@ -193,50 +142,8 @@
 	const stateWarn = $derived(abilityLine.length > 0 && abilityLine[0].text !== 'None');
 
 	// ── Character ──
-	let pickerOpen = $state(false);
+	let flow = $state<ReturnType<typeof SeatCharacterFlow>>();
 	let detailsOpen = $state(false);
-	let alignmentFor = $state<CharacterId | undefined>();
-	let alignmentOpen = $state(false);
-	/** A character change waiting for its confirmation (the seat already had one). */
-	let changeTo = $state<CharacterId | undefined>();
-	let changeOpen = $state(false);
-	let clearOpen = $state(false);
-
-	function pick(id: CharacterId) {
-		pickerOpen = false;
-		if (!seatId || id === seat?.characterId) return;
-		if (seat?.characterId) {
-			changeTo = id;
-			changeOpen = true;
-			return;
-		}
-		assign(id);
-	}
-
-	/**
-	 * The previous character's reminders, wherever they are, that a change of character
-	 * takes off the board (Trevor, 2026-10-16), unless another seat still has that character.
-	 */
-	const dropped = $derived.by(() => {
-		const old = seat?.characterId;
-		if (!old || !seatId) return [];
-		const still = game.seating.some((id) => id !== seatId && game.seats[id].characterId === old);
-		if (still) return [];
-		return game.seating.flatMap((id) =>
-			game.seats[id].reminders
-				.filter((r) => r.characterId === old)
-				.map((reminder) => ({ seatId: id, reminder }))
-		);
-	});
-	function confirmChange() {
-		changeOpen = false;
-		const to = changeTo;
-		changeTo = undefined;
-		if (!to) return;
-		for (const { reminder } of dropped)
-			grimoire.run({ type: 'RemoveReminder', reminderId: reminder.reminderId });
-		assign(to);
-	}
 
 	// ── Changes to who this seat is during the game (Trevor, 2026-10-16) ──
 	const changes = $derived(
@@ -246,64 +153,10 @@
 	);
 	let changesOpen = $state(false);
 
-	function assign(id: CharacterId) {
-		if (!seatId) return;
-		const chosen = characters.get(id);
-		// A Traveller needs its alignment chosen, unless the seat already has one.
-		if (chosen?.type === 'traveller' && seat?.alignment === undefined) {
-			alignmentFor = id;
-			alignmentOpen = true;
-			return;
-		}
-		grimoire.run({ type: 'AssignCharacter', seatId, characterId: id });
-	}
-
-	/** Finishes assigning a Traveller, or changes the seat's alignment from the … menu. */
-	function pickAlignment(alignment: Alignment | undefined) {
-		alignmentOpen = false;
-		if (seatId && alignmentFor)
-			grimoire.run({ type: 'AssignCharacter', seatId, characterId: alignmentFor, alignment });
-		else if (seatId && alignment && alignment !== seat?.alignment)
-			grimoire.run({ type: 'SetAlignment', seatId, alignment });
-		alignmentFor = undefined;
-	}
-
-	/** Assigns the Traveller with no alignment yet, then opens the draw for the seat. */
-	function drawAlignment() {
-		const id = seatId;
-		pickAlignment(undefined);
-		if (id) onDraw?.(id);
-	}
-
-	// ── The Apprentice ──
-	// The Apprentice's token is swapped for the Townsfolk (if good) or Minion (if evil) whose
-	// ability they gain, with "Is The Apprentice" on it
-	// (https://wiki.bloodontheclocktower.com/Apprentice; Trevor, 2026-10-16).
+	// The Apprentice gains an ability from ⋯ (SeatCharacterFlow).
 	const apprentice = $derived(
 		seatId !== undefined && trueCharacter(game, seatId, characters) === 'apprentice'
 	);
-	const gainTypes = $derived(
-		seat?.alignment === 'good'
-			? (['townsfolk'] as const)
-			: seat?.alignment === 'evil'
-				? (['minion'] as const)
-				: (['townsfolk', 'minion'] as const)
-	);
-	let gainOpen = $state(false);
-	function gain(id: CharacterId) {
-		gainOpen = false;
-		if (!seatId || !seat) return;
-		const marked = seat.reminders.some(
-			(r) => r.characterId === 'apprentice' && r.label === 'Is The Apprentice'
-		);
-		grimoire.run({ type: 'AssignCharacter', seatId, characterId: id, alignment: seat.alignment });
-		if (!marked)
-			grimoire.run({
-				type: 'AddReminder',
-				seatId,
-				reminder: { characterId: 'apprentice', label: 'Is The Apprentice' }
-			});
-	}
 
 	// ── Status: Alive, or dead with its cause, in one list (Trevor, 2026-10-16) ──
 	let causeOpen = $state(false);
@@ -374,7 +227,7 @@
 			type="button"
 			class="lead-token"
 			aria-label={character ? `About the ${character.name}` : 'Choose character'}
-			onclick={() => (character ? (detailsOpen = true) : (pickerOpen = true))}
+			onclick={() => (character ? (detailsOpen = true) : flow?.choose())}
 		>
 			{#if character}
 				<CharacterToken {character} alignment={seat?.alignment} size={60} />
@@ -384,38 +237,15 @@
 		</button>
 	{/snippet}
 	{#snippet heading()}
-		{#if editingName}
-			<!-- A form, so a phone keyboard's Done or Enter key submits it even when the key
-				 press arrives without key events (Android keyboards). -->
-			<form class="name-form" onsubmit={submitName}>
-				<ClearableField bind:value={typed}>
-					<input
-						bind:this={nameInput}
-						class="name-input"
-						type="text"
-						aria-label="Player name"
-						autocomplete="off"
-						enterkeyhint="done"
-						placeholder={t('common.seat', { number })}
-						bind:value={typed}
-						onkeydown={cancelName}
-						onblur={() => finishName()}
-					/>
-				</ClearableField>
-			</form>
-		{:else}
-			<span class="player-name" class:no-name={!seat?.playerName}
-				>{#if seat?.playerName}<PlayerBadge name={seat.playerName} />{:else}No name{/if}</span
-			>
-		{/if}
+		<SeatNameField edit={nameEdit} placeholder={t('common.seat', { number })} />
 	{/snippet}
 	{#snippet titleEnd()}
 		<span class="ink"
 			><IconButton
 				icon="edit"
 				label="Edit player name"
-				disabled={editingName}
-				onclick={editName}
+				disabled={nameEdit.editing}
+				onclick={() => nameEdit.edit()}
 			/></span
 		>
 	{/snippet}
@@ -447,20 +277,7 @@
 	/>
 	{#if seat && seatId}
 		<div class="sheet">
-			<!-- The room's phones' names, laid over the sheet so nothing moves. -->
-			{#if editingName && suggestions.length > 0}
-				<div class="suggestions" aria-label="Name suggestions" role="group">
-					{#each suggestions as name (name)}
-						<!-- Pressing a name keeps focus in the field, so it is not saved half-typed. -->
-						<button
-							type="button"
-							class="chip"
-							onpointerdown={(event) => event.preventDefault()}
-							onclick={() => finishName(name)}>{name}</button
-						>
-					{/each}
-				</div>
-			{/if}
+			<SeatNameSuggestions edit={nameEdit} />
 			<!-- The character's ability (TPI's text), always shown under the header. -->
 			<div class="ability">
 				{#if character}
@@ -632,31 +449,7 @@
 	onMove={(id, to) => moveConfirm?.request(id, to)}
 />
 
-<CharacterPicker
-	bind:open={gainOpen}
-	title={`Ability ${title} gains`}
-	{characters}
-	script={game.script}
-	types={gainTypes}
-	onPick={gain}
-/>
-
-<CharacterPicker
-	bind:open={pickerOpen}
-	title={`Character for ${title}`}
-	{characters}
-	script={game.script}
-	types={SEAT_TYPES}
-	recommended={recommendedTravellers(game.script, characters)}
-	current={seat?.characterId}
-	onPick={pick}
-	onNone={seat?.characterId
-		? () => {
-				pickerOpen = false;
-				clearOpen = true;
-			}
-		: undefined}
-/>
+<SeatCharacterFlow bind:this={flow} {grimoire} {seatId} {onDraw} />
 
 {#if character}<CharacterDialog
 		bind:open={detailsOpen}
@@ -664,145 +457,9 @@
 		seat={{ number, alignment: seat?.alignment }}
 	/>{/if}
 
-<!-- Every change of state says what it is now and what it becomes (Trevor, 2026-10-16). -->
-<ConfirmDialog bind:open={changeOpen} title="Change character?" onConfirm={confirmChange}>
-	{#if seat?.characterId && changeTo}
-		<dl class="change">
-			<dt>Player</dt>
-			<dd>
-				{#if seatId}<PlayerBadge name={seatName(game, seatId)} />{/if}
-			</dd>
-			<dt>Current role</dt>
-			<dd>
-				<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />
-			</dd>
-			<dt>New role</dt>
-			<dd>
-				<CharacterBadge characterId={changeTo} character={characters.get(changeTo)} />
-			</dd>
-		</dl>
-		<p class="note">
-			Reminders on this player will remain in place. Reminders from the previous character will be
-			removed.
-		</p>
-		<h3>Removed</h3>
-		{#if dropped.length === 0}
-			<p class="none">None</p>
-		{:else}
-			<ul class="dropped" data-testid="dropped-reminders">
-				{#each dropped as { seatId: on, reminder } (reminder.reminderId)}
-					<li>
-						<ReminderToken
-							label={tokenLabel(reminder)}
-							character={characters.get(reminder.characterId)}
-							alignment={placingAlignment(game, reminder, characters)}
-						/>
-						<span>on {@render seatBadge(on)}</span>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	{/if}
-</ConfirmDialog>
-
 <CharacterHistoryDialog bind:open={changesOpen} {grimoire} {seatId} />
 
-<!-- How the change affects the table: players (Travellers not counted) and the setup sheet. -->
-{#snippet table(kind: 'remove-seat' | 'remove-character', id: SeatId)}
-	{@const check = tableCheck(game, characters, { kind, seatId: id })}
-	<dl class="change" data-testid="table-check">
-		<dt>Players</dt>
-		<dd>
-			{check.players.before === check.players.after
-				? `${check.players.after}, unchanged`
-				: `${check.players.before} → ${check.players.after}`}
-		</dd>
-		<dt>Setup</dt>
-		<dd>
-			{#if check.problems.length === 0}
-				Still matches the setup sheet
-			{:else}
-				<span class="off"
-					>{check.wasOff ? 'Already did not match' : 'No longer matches'} the setup sheet:</span
-				>
-				{#each check.problems as problem (problem)}<span class="problem">{problem}</span>{/each}
-			{/if}
-		</dd>
-	</dl>
-{/snippet}
-
-<ConfirmDialog
-	bind:open={clearOpen}
-	title="Remove character?"
-	danger
-	onConfirm={() => seatId && grimoire.run({ type: 'ClearCharacter', seatId })}
->
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>{@render seatBadge(seatId)}</dd>
-		<dt>Becomes</dt>
-		<dd><strong>{title}</strong>, no character</dd>
-	</dl>
-	{#if clearOpen && seatId}{@render table('remove-character', seatId)}{/if}
-</ConfirmDialog>
-
-<Dialog
-	bind:open={alignmentOpen}
-	title="Alignment"
-	description={alignmentFor ? 'Travellers can be good or evil.' : undefined}
->
-	{#if alignmentFor}
-		<div class="choices">
-			<Button onclick={() => pickAlignment('good')}>Good</Button>
-			<Button onclick={() => pickAlignment('evil')}>Evil</Button>
-			<!-- The Traveller draws it from face-down tokens (Trevor, 2026-10-19). -->
-			{#if onDraw}<Button onclick={drawAlignment}>Draw</Button>{/if}
-			<!-- Often chosen later: the night order asks for it first (Trevor, 2026-10-16). -->
-			<Button variant="quiet" onclick={() => pickAlignment(undefined)}>Decide later</Button>
-		</div>
-	{:else}
-		{@const next = seat?.alignment === 'evil' ? 'good' : 'evil'}
-		<dl class="change">
-			<dt>Now</dt>
-			<dd>{@render seatBadge(seatId)} is <AlignmentPill alignment={seat?.alignment} /></dd>
-			<dt>Becomes</dt>
-			<dd>
-				{#if seat?.alignment === undefined}<AlignmentPill alignment="good" /> or <AlignmentPill
-						alignment="evil"
-					/>{:else}<AlignmentPill alignment={next} />{/if}
-			</dd>
-		</dl>
-		<div class="choices">
-			{#if seat?.alignment === undefined}
-				<Button onclick={() => pickAlignment('good')}>Good</Button>
-				<Button onclick={() => pickAlignment('evil')}>Evil</Button>
-			{:else}
-				<ModalActions
-					onCancel={() => (alignmentOpen = false)}
-					onConfirm={() => pickAlignment(next)}
-				/>
-			{/if}
-		</div>
-	{/if}
-</Dialog>
-
 <SeatStatusDialog bind:open={causeOpen} {grimoire} {seatId} sheetOpen={open} {onExecute} />
-
-{#snippet seatBadge(id: SeatId | undefined)}
-	{@const other = id ? game.seats[id] : undefined}
-	{#if other}
-		{#if other.characterId}
-			<CharacterBadge
-				characterId={other.characterId}
-				character={characters.get(other.characterId)}
-				alignment={other.alignment}
-				playerName={seatName(game, other.seatId)}
-			/>
-		{:else}
-			<PlayerBadge name={seatName(game, other.seatId)} />
-		{/if}
-	{/if}
-{/snippet}
 
 <!-- The seat's less frequent actions, in an overlay so the sheet stays short. -->
 <SeatMenu
@@ -815,14 +472,11 @@
 	{savant}
 	{claim}
 	hasChanges={changes.length > 0}
-	onChangeCharacter={() => (pickerOpen = true)}
-	onGain={() => (gainOpen = true)}
+	onChangeCharacter={() => flow?.choose()}
+	onGain={() => flow?.chooseGain()}
 	onSavant={() => (savantOpen = true)}
 	onClaim={() => (claimOpen = true)}
-	onAlignment={() => {
-		alignmentFor = undefined;
-		alignmentOpen = true;
-	}}
+	onAlignment={() => flow?.chooseAlignment()}
 	onNotes={() => {
 		if (seatId) onNotes?.(seatId);
 	}}
@@ -876,13 +530,15 @@
 		if (seatId) grimoire.removeSeat(seatId);
 	}}
 >
-	<dl class="change">
+	<ChangeList>
 		<dt>Now</dt>
-		<dd>{game.seating.length} seats, with {@render seatBadge(seatId)} in Seat {number}</dd>
+		<dd>
+			{game.seating.length} seats, with <SeatBadge {game} {characters} {seatId} /> in Seat {number}
+		</dd>
 		<dt>Becomes</dt>
 		<dd>{game.seating.length - 1} seats</dd>
-	</dl>
-	{#if removeOpen && seatId}{@render table('remove-seat', seatId)}{/if}
+	</ChangeList>
+	{#if removeOpen && seatId}<TableCheck {game} {characters} kind="remove-seat" {seatId} />{/if}
 	<p class="note">
 		The seat, its character and its reminders leave the grimoire. History can bring them back.
 	</p>
@@ -892,33 +548,9 @@
 	.ink {
 		display: contents;
 	}
-	.change {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-1) var(--space-3);
-		align-items: center;
-		margin: 0 0 var(--space-2);
-	}
-	.change dt {
-		color: var(--on-surface-muted);
-		font-size: 0.85rem;
-	}
-	.change dd {
-		margin: 0;
-	}
-	.off {
-		color: var(--evil-text);
-	}
-	.problem {
-		display: block;
-		font-size: 0.9rem;
-	}
 	.note {
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
-	}
-	.name-form {
-		display: contents;
 	}
 	.lead-token {
 		padding: 0;
@@ -941,12 +573,6 @@
 		font: 600 1.1rem / 1 var(--font-control);
 		color: var(--on-surface-muted);
 	}
-	.no-name {
-		color: var(--on-surface-muted);
-	}
-	.player-name {
-		font-size: 1.05rem;
-	}
 	.role {
 		font-family: var(--font-heading);
 		font-weight: var(--font-heading-weight);
@@ -956,28 +582,6 @@
 	}
 	.meta {
 		font-size: 0.8rem;
-	}
-	.dropped,
-	.dropped li {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-1);
-	}
-	/* The same box as the name it replaces. */
-	.name-input {
-		box-sizing: border-box;
-		width: 100%;
-		height: 1.6em;
-		margin: 0;
-		padding: 0 var(--space-1);
-		border: 0;
-		border-bottom: 2px solid var(--accent);
-		border-radius: 0;
-		background: var(--surface-raised);
-		color: inherit;
-		font: inherit;
-		letter-spacing: inherit;
 	}
 	.sheet {
 		position: relative;
@@ -990,29 +594,6 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.04em;
 		color: var(--on-surface-muted);
-	}
-	.suggestions {
-		position: absolute;
-		inset: 0 0 auto;
-		z-index: 2;
-		display: flex;
-		gap: var(--space-1);
-		padding: var(--space-1) 0;
-		overflow-x: auto;
-		scrollbar-width: none;
-		background: var(--surface);
-		box-shadow: 0 6px 8px -6px rgb(0 0 0 / 0.4); /* colour-ok: a shadow is darkness, not a theme colour */
-	}
-	.chip {
-		flex: none;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: transparent;
-		color: inherit;
-		font-family: var(--font-player);
-		cursor: pointer;
 	}
 	/* Lines between the ability, the controls and the reminders (Trevor, 2026-10-17). */
 	.ability {
@@ -1147,11 +728,5 @@
 		color: inherit;
 		font: inherit;
 		cursor: pointer;
-	}
-	.choices {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-		margin-top: var(--space-3);
 	}
 </style>

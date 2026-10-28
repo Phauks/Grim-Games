@@ -164,6 +164,26 @@ describe('publicProjection', () => {
 		).toEqual({ kind: 'town', number: 2 });
 	});
 
+	it('carries what phones show beside Setup, as the Storyteller chose (Trevor, 2026-10-28)', () => {
+		const { game } = busyGame();
+		expect(publicProjection(game)).not.toHaveProperty('setupLook');
+		const at = (look: unknown) =>
+			publicProjection(
+				game,
+				undefined,
+				undefined,
+				undefined,
+				undefined,
+				[],
+				undefined,
+				{ kind: 'setup' },
+				undefined,
+				look as 'town'
+			).setupLook;
+		expect(at('town')).toBe('town');
+		expect(at('fireworks')).toBeUndefined();
+	});
+
 	it('carries the game mode and special rules, and nothing for a Standard game', () => {
 		const { game } = busyGame();
 		expect(publicProjection(game)).not.toHaveProperty('rules');
