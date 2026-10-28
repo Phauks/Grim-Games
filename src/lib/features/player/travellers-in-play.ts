@@ -14,7 +14,7 @@ export interface TravellerInPlay {
  * Whether the town knows this game's Travellers: not when its mode deals them secretly from
  * the bag (Stowed Away; Trevor, 2026-10-19: "this may need to change").
  */
-export function travellersArePublic(gameId: GameId): boolean {
+function travellersArePublic(gameId: GameId): boolean {
 	return (gameModeOf(gameId)?.parts.travellers?.inBag ?? 0) === 0;
 }
 

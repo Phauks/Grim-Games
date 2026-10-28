@@ -35,11 +35,9 @@ import {
 export {
 	BLUFFS_PER_SET,
 	MAX_BLUFF_SET_NAME,
-	MAX_REMINDER_SYMBOL,
 	MIN_PLAYERS,
 	MAX_PLAYERS,
-	MAX_SEATS,
-	NO_ABILITY_LABEL
+	MAX_SEATS
 } from './decide/shared.ts';
 
 export type ErrorCode =

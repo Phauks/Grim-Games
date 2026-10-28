@@ -353,11 +353,7 @@ export function bankReminders(
  * The seats holding a character, in seating order: its token, or really being it (the
  * Drunk's seat for the Drunk).
  */
-export function holdersOf(
-	game: Game,
-	characterId: CharacterId,
-	characters: CharacterLookup
-): SeatId[] {
+function holdersOf(game: Game, characterId: CharacterId, characters: CharacterLookup): SeatId[] {
 	return game.seating.filter(
 		(s) =>
 			game.seats[s].characterId === characterId ||
