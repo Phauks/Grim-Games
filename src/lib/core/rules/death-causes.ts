@@ -238,7 +238,7 @@ export function validDeathCauses(
 		const flags: DeathCauseFlag[] = [];
 		if (rule?.who === 'registers') {
 			worlds ??= registrationWorlds(game, characters, regs);
-			const verdict = registersAs(game, seatId, rule.as, worlds);
+			const verdict = registersAs(game, seatId, rule.as, worlds, characters);
 			if (verdict === 'never') continue;
 			if (verdict === 'unknown') flags.push({ code: 'unknown' });
 			if (verdict === 'falsely') {
@@ -289,20 +289,38 @@ function holderFits(
 }
 
 /**
+ * Whether a seat carries a reminder that makes it the Demon: a `carrierIsDemon` token (Lil'
+ * Monsta's babysitter, https://wiki.bloodontheclocktower.com/Lil%27_Monsta) or a `becomes`
+ * Demon token (the Scarlet Woman's Is The Demon,
+ * https://wiki.bloodontheclocktower.com/Scarlet_Woman).
+ */
+export function carriesDemonToken(
+	game: Game,
+	seatId: SeatId,
+	characters?: CharacterLookup
+): boolean {
+	return (getSeat(game, seatId)?.reminders ?? []).some((r) => {
+		const rules = rulesOf(r.characterId, characters);
+		return (
+			rules?.carrierIsDemon === r.label ||
+			(rules?.becomes?.into === 'demon' && rules.becomes.token === r.label)
+		);
+	});
+}
+
+/**
  * Whether the player is (`truly`), could register as (`falsely`) or cannot be (`never`)
  * what the rule needs, or `unknown` when their alignment or character is not set. A player
- * babysitting Lil' Monsta ("Is The Demon") is the Demon
- * (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
+ * carrying a reminder that makes them the Demon is the Demon (`carriesDemonToken`).
  */
 function registersAs(
 	game: Game,
 	seatId: SeatId,
 	as: 'demon' | 'not-demon' | 'good' | 'townsfolk',
-	worlds: readonly RegistrationWorld[]
+	worlds: readonly RegistrationWorld[],
+	characters: CharacterLookup
 ): 'truly' | 'falsely' | 'never' | 'unknown' {
-	const babysitter = getSeat(game, seatId)?.reminders.some(
-		(r) => r.characterId === 'lilmonsta' && r.label === 'Is The Demon'
-	);
+	const babysitter = carriesDemonToken(game, seatId, characters);
 	const test = (world: RegistrationWorld): boolean | undefined => {
 		if (as === 'good') {
 			const alignment = world.alignment(seatId);

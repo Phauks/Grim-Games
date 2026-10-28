@@ -15,8 +15,8 @@
 		number: number;
 		seat: Seat | undefined;
 		character: Character | undefined;
-		/** The seat holds the Apprentice, who gains an ability. */
-		apprentice: boolean;
+		/** The seat's character gains an ability by a swap (the Apprentice, `swapsForAbility`). */
+		gainsAbility: boolean;
 		/** The Savant's information generator is offered for this seat. */
 		savant: boolean;
 		/** The player's claim in town, as on their day row. */
@@ -39,7 +39,7 @@
 		number,
 		seat,
 		character,
-		apprentice,
+		gainsAbility,
 		savant,
 		claim,
 		hasChanges,
@@ -70,7 +70,7 @@
 		<Button variant="quiet" icon="swap" onclick={() => fromMenu(onChangeCharacter)}>
 			{character ? 'Change character' : 'Choose character'}
 		</Button>
-		{#if apprentice}
+		{#if gainsAbility}
 			<Button variant="quiet" icon="swap" onclick={() => fromMenu(onGain)}>Gained ability…</Button>
 		{/if}
 		{#if savant}
