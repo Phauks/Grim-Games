@@ -11,7 +11,7 @@
  */
 
 /** 2: folders can sit inside other folders (`parent`). Version 1 data reads as top-level folders. */
-export const LIBRARY_LABELS_VERSION = 2;
+const LIBRARY_LABELS_VERSION = 2;
 /** Longest folder or tag name. */
 export const MAX_LABEL_NAME = 40;
 /** A renamed item's name: as long as a script's own name may reasonably be. */

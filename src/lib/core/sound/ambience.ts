@@ -28,7 +28,7 @@ export interface AmbienceMix {
 	page: string;
 }
 
-export const AMBIENCE_PATH = '/sounds/ambience';
+const AMBIENCE_PATH = '/sounds/ambience';
 
 const ROMO = 'https://www.nps.gov/romo/learn/photosmultimedia/sounds-ambient-soundscapes.htm';
 const YELL = 'https://www.nps.gov/yell/learn/photosmultimedia/sounds-soundscapes.htm';

@@ -109,7 +109,7 @@ export function ruleNightSteps(rules: readonly SpecialRule[], number: number): N
  * Traveller alignment included, falls between them. TPI's few "after Dawn" steps (said to
  * everyone once the night is over) stay after Dawn, as on TPI's night sheet.
  */
-export function duskToDawn<T extends NightStep>(steps: readonly T[]): T[] {
+function duskToDawn<T extends NightStep>(steps: readonly T[]): T[] {
 	const dusk = steps.filter((s) => s.id === 'dusk');
 	const dawn = steps.filter((s) => s.id === 'dawn');
 	const rest = steps.filter((s) => s.id !== 'dusk' && s.id !== 'dawn');

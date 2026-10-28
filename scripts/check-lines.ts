@@ -19,7 +19,6 @@ export const MAX_LINES = 800;
 
 /** Over the limit before the lint; only shrinks. Each is split by its owner's thread. */
 export const LARGE_FILE_TODO = [
-	'src/lib/core/modes/format-guide.ts',
 	'src/lib/features/grimoire/GrimoireBoard.svelte',
 	'src/lib/features/grimoire/ReminderBank.svelte',
 	'src/lib/features/grimoire/SeatSheet.svelte',

@@ -6,7 +6,7 @@
 import { readStored, readStoredText, writeStored } from '#lib/ui/stored.ts';
 import type { PickerSource } from './picker-rows.ts';
 
-export const PAGE_SOURCES = [
+const PAGE_SOURCES = [
 	'botc',
 	'curated',
 	'month',
@@ -24,7 +24,7 @@ export type PageSource = (typeof PAGE_SOURCES)[number];
  * the Month grow only as TPI adds one, so they count as collections.
  */
 export type SourceGroup = 'engines' | 'collections';
-export const SOURCE_GROUP: Record<PageSource, SourceGroup> = {
+const SOURCE_GROUP: Record<PageSource, SourceGroup> = {
 	botc: 'engines',
 	homebrew: 'engines',
 	bloodstar: 'engines',

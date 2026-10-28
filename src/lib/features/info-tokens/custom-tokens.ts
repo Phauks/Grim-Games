@@ -38,7 +38,7 @@ export const MAX_CUSTOM_TEXT = 200;
 export const MAX_CHOICES = 8;
 export const MAX_CHOICE_TEXT = 40;
 
-export function emptyStore(): StoredInfoTokens {
+function emptyStore(): StoredInfoTokens {
 	return { version: 3, custom: [] };
 }
 
