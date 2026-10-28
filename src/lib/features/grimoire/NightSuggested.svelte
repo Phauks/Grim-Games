@@ -664,10 +664,12 @@
 				</Select>
 			{/if}
 			<PlayerBadge name={name(row.target)} />
-			<span class="with">and</span>
-			{#if row.other}<PlayerBadge name={name(row.other)} />{:else}<span class="with"
-					>any other player</span
-				>{/if}
+			{#if p.seatCount > 1}
+				<span class="with">and</span>
+				{#if row.other}<PlayerBadge name={name(row.other)} />{:else}<span class="with"
+						>any other player</span
+					>{/if}
+			{/if}
 		</span>
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
 		{@render reasonTag(row.reason, row.registered)}

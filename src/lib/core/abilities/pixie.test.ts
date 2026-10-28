@@ -12,6 +12,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { infoPicker, isAllowed, isTruthful, learnedRoles } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Pixie', () => {
@@ -40,6 +42,27 @@ describe('Pixie', () => {
 
 		it('has no special app hooks', () => {
 			expect(character.special).toEqual([]);
+		});
+	});
+
+	describe('night info (https://wiki.bloodontheclocktower.com/Pixie#How_to_Run)', () => {
+		it('is shown an in-play Townsfolk, the one marked Mad', () => {
+			const { game: g, seats } = castGame(
+				['pixie', 'washerwoman', 'butler', 'imp', 'monk'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[1],
+					reminder: { characterId: 'pixie', label: 'Mad' }
+				})
+			);
+			const picker = infoPicker(g, seats[0], 'pixie', characters)!;
+			expect(isTruthful(picker, { seats: [seats[1]], characterId: 'washerwoman' })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[2]], characterId: 'butler' })).toBe(false);
+			expect(isAllowed(picker, { seats: [seats[3]], characterId: 'imp' })).toBe(false);
+			expect(learnedRoles(g, picker, characters)!.rows[0]).toMatchObject({
+				target: seats[1],
+				marked: true
+			});
 		});
 	});
 

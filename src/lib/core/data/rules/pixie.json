@@ -15,6 +15,13 @@
 			"ambiguous": "The wiki says to swap Mad for Has Ability but doesn't name whose token it sits by; the swap implies the dead Townsfolk."
 		}
 	},
+	"learns": {
+		"measure": "character-of",
+		"types": ["townsfolk"],
+		"reminders": {
+			"target": "Mad"
+		}
+	},
 	"setupPrep": {
 		"reminders": [
 			{
