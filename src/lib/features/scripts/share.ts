@@ -186,7 +186,7 @@ export interface OfflineCode {
  * needs it to play and it is a sixth of a homebrew script (Trevor, 2026-10-27: "make this
  * faster"; Fall of Rome's flavour is 3.7 KB of 22 KB).
  */
-export function offlineScriptJson(json: unknown): unknown {
+function offlineScriptJson(json: unknown): unknown {
 	if (!Array.isArray(json)) return json;
 	return json.map((entry) => {
 		if (typeof entry !== 'object' || entry === null || !('flavor' in entry)) return entry;

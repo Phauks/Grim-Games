@@ -15,7 +15,7 @@ import { checkKeys, describe, isObject, readEnum, type Issues } from './validate
  * - `drafter`: the player who drafts it, as the character itself is not dealt (Lil' Monsta's
  *   Minions, https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
  */
-export const TURNS_PLAYERS = ['chosen', 'neighbours', 'drafter'] as const;
+const TURNS_PLAYERS = ['chosen', 'neighbours', 'drafter'] as const;
 
 export interface TurnsPlayersInto {
 	type: SeatedType;

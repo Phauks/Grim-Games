@@ -43,7 +43,7 @@ export function scrubUrls(text: string): string {
 const PATH_CODES =
 	/(\/(?:join|api\/room|api\/share|recap|api\/recap|api\/account\/sessions|api\/account\/docs\/[\w-]+)\/)[^/\s?#)'"]+/g;
 
-export function maskPathCodes(text: string): string {
+function maskPathCodes(text: string): string {
 	return text.replace(PATH_CODES, '$1••••');
 }
 

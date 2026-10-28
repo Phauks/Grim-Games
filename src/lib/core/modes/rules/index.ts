@@ -36,7 +36,7 @@ export const SPECIAL_RULES: readonly SpecialRule[] = [
  * Game modes that became special rules (Trevor, 2026-10-18), by id: a game saved in one of
  * them reads as Standard with that rule.
  */
-export const MODES_NOW_RULES: readonly string[] = ['specters', 'infinite-possibilities'];
+const MODES_NOW_RULES: readonly string[] = ['specters', 'infinite-possibilities'];
 
 /** A saved game's mode and rules, with a mode that became a rule read as Standard plus it. */
 export function upgradeModeChoice(

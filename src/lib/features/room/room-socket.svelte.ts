@@ -3,6 +3,7 @@
  * (re)connect and retries with backoff when the phone sleeps or the Wi-Fi drops ("Code
  * updates disconnect all WebSockets", 07-accounts-and-multi-device.md §4).
  */
+import { toHex } from '#lib/core/codes/hash.ts';
 import type { ClientMessage, RefusedReason, ServerMessage } from '#lib/core/sync/room.ts';
 import { setDiagnostic } from '#lib/features/errors/diagnostics.ts';
 import { lookForNewerBuild } from './newer-build.ts';
@@ -118,12 +119,5 @@ export class RoomSocket {
 
 /** A random 32-byte key in hex: this device's secret for one room. */
 export function randomKey(): string {
-	return [...crypto.getRandomValues(new Uint8Array(32))]
-		.map((b) => b.toString(16).padStart(2, '0'))
-		.join('');
-}
-
-export async function sha256Hex(text: string): Promise<string> {
-	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-	return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+	return toHex(crypto.getRandomValues(new Uint8Array(32)));
 }
