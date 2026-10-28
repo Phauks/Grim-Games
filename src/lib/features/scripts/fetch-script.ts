@@ -21,7 +21,7 @@ import type { LinkTarget } from './script-links.ts';
 import { decodeScriptToolPayload, ScriptToolLinkError } from './script-tool-link.ts';
 
 /** Scripts are a few KB; a 201-character homebrew script is still far below this. */
-export const MAX_SCRIPT_BYTES = 1_000_000;
+const MAX_SCRIPT_BYTES = 1_000_000;
 
 export class ScriptFetchError extends Error {
 	constructor(
@@ -171,7 +171,7 @@ export function fetchLinkTarget(target: LinkTarget, typed: string): Promise<Fetc
 
 /** One page of BotC Scripts search results, through our Worker. */
 /** A remote source that hasn't answered by then is treated as unreachable. */
-export const REMOTE_TIMEOUT_MS = 10_000;
+const REMOTE_TIMEOUT_MS = 10_000;
 
 /** `signal`, and a timeout, so a site that never answers can't keep a search waiting. */
 export function withTimeout(signal?: AbortSignal): AbortSignal {

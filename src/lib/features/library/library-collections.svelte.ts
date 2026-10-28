@@ -18,7 +18,7 @@ import {
 	type Collections
 } from './library-collections.ts';
 
-export const COLLECTIONS_STORAGE_KEY = 'grim-games:library-collections';
+const COLLECTIONS_STORAGE_KEY = 'grim-games:library-collections';
 
 /**
  * Synced with a signed-in account, one document per collection (account sync, agreed with

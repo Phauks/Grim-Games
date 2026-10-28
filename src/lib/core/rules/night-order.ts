@@ -406,7 +406,7 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 }
 
 /** Applies the Storyteller's overrides for this night. Unknown ids are ignored. */
-export function applyNightOverrides(
+function applyNightOverrides(
 	steps: readonly NightStep[],
 	overrides: readonly NightStepOverride[],
 	night: Night,

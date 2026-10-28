@@ -45,7 +45,7 @@ import {
 	type SettingsProfile
 } from './profile-values.ts';
 
-export const PROFILES_STORAGE_KEY = 'grim-games:settings-profiles:v1';
+const PROFILES_STORAGE_KEY = 'grim-games:settings-profiles:v1';
 /** Which profile each game uses (device only, like a game's own background). */
 const GAMES_KEY = 'grim-games:game-profiles:v1';
 const KIND = 'settings-profile';
