@@ -29,6 +29,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import NightReasonTag from './NightReasonTag.svelte';
 	import NightWhy from './NightWhy.svelte';
 	import CharacterSet from './CharacterSet.svelte';
 	import { seatName } from './night-steps.ts';
@@ -381,7 +382,7 @@
 					>({@render players(a.because)})</span
 				>{/if}
 		</span>
-		{@render reasonTag(o.reason)}
+		<NightReasonTag {grimoire} reason={o.reason} />
 		{#if o.value.kind === 'number' && onShowNumber}
 			{@const n = o.value.value}
 			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
@@ -480,11 +481,7 @@
 											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
 										{@render players(v.seats)}
 									</span>
-									{#if v.reason === 'registers'}<span class="tag"
-											>Registers: {@render players(v.registered ?? [])}</span
-										>{:else if v.reason === 'unreliable'}<span class="tag warn"
-											><Icon name="warning" />Not reliable</span
-										>{:else if v.reason === 'vortox'}<span class="tag warn">Vortox</span>{/if}
+									<NightReasonTag {grimoire} reason={v.reason} registered={v.registered} />
 									{#if v.number !== undefined && onShowNumber}
 										{@const n = v.number}
 										<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
@@ -575,7 +572,7 @@
 	{#if roles.none}
 		<li data-reason={roles.none}>
 			<span class="main option"><strong>None</strong></span>
-			{@render reasonTag(roles.none)}
+			<NightReasonTag {grimoire} reason={roles.none} />
 			{#if onShowNumber}
 				<Button variant="quiet" onclick={() => onShowNumber(0)}>Show to player</Button>
 			{/if}
@@ -584,7 +581,7 @@
 	{#if roles.anyOther}
 		<li data-reason={roles.anyOther}>
 			<span class="main option"><strong>Any other</strong></span>
-			{@render reasonTag(roles.anyOther)}
+			<NightReasonTag {grimoire} reason={roles.anyOther} />
 		</li>
 	{/if}
 {/snippet}
@@ -598,7 +595,7 @@
 					{@render players(row.seats)}{/if}{/if}
 		</span>
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
-		{@render reasonTag(row.reason, row.registered)}
+		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
 	</li>
 {/snippet}
 
@@ -606,22 +603,9 @@
 	{#if choices.anyOther}
 		<li data-reason={choices.anyOther}>
 			<span class="main option"><strong>Any other</strong></span>
-			{@render reasonTag(choices.anyOther)}
+			<NightReasonTag {grimoire} reason={choices.anyOther} />
 		</li>
 	{/if}
-{/snippet}
-
-{#snippet reasonTag(
-	reason: LearnedRole['reason'] | AnswerOption['reason'],
-	registered: readonly SeatId[] = []
-)}
-	{#if reason === 'registers'}<span class="tag"
-			>Registers{#if registered.length > 0}: {@render players(registered)}{/if}</span
-		>{:else if reason === 'unreliable'}<span class="tag warn"
-			><Icon name="warning" />Not reliable</span
-		>{:else if reason === 'vortox'}<span class="tag warn">Vortox</span
-		>{:else if reason === 'invalid'}<span class="tag warn"><Icon name="warning" />Not valid</span
-		>{/if}
 {/snippet}
 
 <!--
@@ -664,13 +648,15 @@
 				</Select>
 			{/if}
 			<PlayerBadge name={name(row.target)} />
-			<span class="with">and</span>
-			{#if row.other}<PlayerBadge name={name(row.other)} />{:else}<span class="with"
-					>any other player</span
-				>{/if}
+			{#if p.seatCount > 1}
+				<span class="with">and</span>
+				{#if row.other}<PlayerBadge name={name(row.other)} />{:else}<span class="with"
+						>any other player</span
+					>{/if}
+			{/if}
 		</span>
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
-		{@render reasonTag(row.reason, row.registered)}
+		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
 		{#if onShow}
 			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
 			>
@@ -749,9 +735,6 @@
 		gap: var(--space-1);
 		font-size: 0.85rem;
 		--icon-size: 1em;
-	}
-	.tag.warn {
-		color: var(--evil-text);
 	}
 	/*
 	 * A row the character's reminders on the board mark: the one the Storyteller already

@@ -6,7 +6,13 @@ import type { Learns } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { type CharacterLookup, scriptCharacterIds } from '#lib/core/model/characters.ts';
-import { aliveNeighbours, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import {
+	aliveNeighbours,
+	getSeat,
+	registersAsDead,
+	trueCharacter,
+	typeOf
+} from '#lib/core/model/selectors.ts';
 import type { AbnormalCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 import { type Registration, type RegistrationWorld, registrationWorlds } from '../ability.ts';
 import { causesOf } from '../night-deaths.ts';
@@ -116,7 +122,11 @@ const MEASURE_PICKERS: Readonly<Record<Learns['measure'], Pick<PickerSpec, 'kind
 		'good-player': { kind: 'players', seatCount: 1 },
 		'one-evil-of-three': { kind: 'players', seatCount: 3 },
 		'same-alignment': { kind: 'yes-no', seatCount: 2 },
-		'demon-in-pair': { kind: 'players', seatCount: 2 }
+		'demon-in-pair': { kind: 'players', seatCount: 2 },
+		'character-of': { kind: 'pair-character', seatCount: 1 },
+		'not-demon-pair': { kind: 'players', seatCount: 2 },
+		'evil-player': { kind: 'players', seatCount: 1 },
+		'demon-player': { kind: 'players', seatCount: 1 }
 	};
 
 /**
@@ -237,7 +247,62 @@ function optionsIn(
 						.filter((s) => s !== demon)
 						.map((other): InfoOption => ({ seats: [demon, other], pivot: demon }))
 				);
+		case 'character-of':
+			// https://wiki.bloodontheclocktower.com/Ravenkeeper (any player's character),
+			// /King (an alive character), /Pixie (an in-play Townsfolk), /Grandmother (a good
+			// Townsfolk or Outsider). A player registering as another type (the Recluse as a
+			// Minion) may be shown as any character of that type.
+			return characterOfSeats(game, seatId, spec, world).map((s) => ({
+				seats: [s],
+				...shownAs(game, s, characters, world)
+			}));
+		case 'not-demon-pair':
+			// https://wiki.bloodontheclocktower.com/Knight: two players who are not the Demon.
+			return choose(
+				others.filter((s) => world.type(s) !== 'demon'),
+				2
+			).map((pair) => ({ seats: pair }));
+		case 'evil-player':
+			// https://wiki.bloodontheclocktower.com/Bounty_Hunter: one evil player.
+			return others.filter(evil).map((s) => ({ seats: [s], pivot: s }));
+		case 'demon-player':
+			// https://wiki.bloodontheclocktower.com/Choirboy: which player is the Demon.
+			return others.filter((s) => world.type(s) === 'demon').map((s) => ({ seats: [s], pivot: s }));
 	}
+}
+
+/** The players a `character-of` picker may show the character of. */
+function characterOfSeats(
+	game: Game,
+	seatId: SeatId,
+	spec: PickerSpec,
+	world: RegistrationWorld
+): SeatId[] {
+	return game.seating.filter((s) => {
+		const type = world.type(s);
+		return (
+			(spec.self || s !== seatId) &&
+			(!spec.alive || !registersAsDead(game, s)) &&
+			(!spec.types || (type !== undefined && spec.types.includes(type))) &&
+			(!spec.alignment || world.alignment(s) === spec.alignment)
+		);
+	});
+}
+
+/** The character a player is shown as: their own, or any of the type they register as. */
+function shownAs(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	world: RegistrationWorld
+): Pick<InfoOption, 'characterId' | 'characterIds'> {
+	const type = world.type(seatId);
+	if (typeOf(game, seatId, characters) === type) {
+		return { characterId: trueCharacter(game, seatId, characters)! };
+	}
+	return {
+		characterIds: scriptCharacterIds(game.script).filter((id) => characters.get(id)?.type === type)
+	};
 }
 
 /** Whether a seat carries the character's `token` reminder (the Fortune Teller's red herring). */
@@ -314,8 +379,13 @@ function pickerFacts(
 		case 'same-alignment':
 			return others.filter(evil).map(f);
 		case 'demon-in-pair':
+		case 'not-demon-pair':
+		case 'demon-player':
 			return others.filter((s) => world.type(s) === 'demon').map(f);
+		case 'evil-player':
+			return others.filter(evil).map(f);
 		case 'good-player':
+		case 'character-of':
 			return [];
 	}
 }
@@ -610,7 +680,12 @@ export function infoRecord(
 			const reminders = [];
 			if (target && picker.reminders.target) reminders.push(token(target, picker.reminders.target));
 			if (other && picker.reminders.other) reminders.push(token(other, picker.reminders.other));
-			return out(`Shown ${players.join(' and ')}: one is the ${name.character(id)}`, reminders);
+			return out(
+				players.length === 1
+					? `Shown ${players[0]} as the ${name.character(id)}`
+					: `Shown ${players.join(' and ')}: one is the ${name.character(id)}`,
+				reminders
+			);
 		}
 		case 'number':
 			return out(`Shown ${choice.number ?? 0}`, []);

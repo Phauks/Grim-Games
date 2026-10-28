@@ -12,6 +12,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Ravenkeeper', () => {
@@ -44,7 +46,39 @@ describe('Ravenkeeper', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Ravenkeeper#Examples)', () => {
-		it.todo('Example 1: Imp kills Ravenkeeper, who learns the Empath');
-		it.todo('Example 2: Mayor bounce kills Ravenkeeper; Recluse shows Scarlet Woman');
+		it('Example 1: Imp kills Ravenkeeper, who learns the Empath', () => {
+			// The dead Ravenkeeper chooses the Empath's player and is shown the Empath.
+			const { game: g, seats } = castGame(
+				['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner'],
+				(s) => ({
+					type: 'SetDead',
+					seatId: s[0],
+					dead: true
+				})
+			);
+			const picker = infoPicker(g, seats[0], 'ravenkeeper', characters)!;
+			expect(isTruthful(picker, { seats: [seats[1]], characterId: 'empath' })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[1]], characterId: 'monk' })).toBe(false);
+		});
+
+		it('Example 2: Mayor bounce kills Ravenkeeper; Recluse shows Scarlet Woman', () => {
+			// A dead Recluse chosen by the Ravenkeeper may register as a Minion and be shown as one.
+			const { game: g, seats } = castGame(
+				['ravenkeeper', 'recluse', 'imp', 'mayor', 'scarletwoman'],
+				(s) => ({ type: 'SetDead', seatId: s[0], dead: true }),
+				(s) => ({ type: 'SetDead', seatId: s[1], dead: true })
+			);
+			const picker = infoPicker(g, seats[0], 'ravenkeeper', characters)!;
+			const minion = { seats: [seats[1]], characterId: 'scarletwoman' };
+			expect(isAllowed(picker, minion)).toBe(true);
+			expect(isTruthful(picker, minion)).toBe(false);
+			expect(isTruthful(picker, { seats: [seats[1]], characterId: 'recluse' })).toBe(true);
+		});
+
+		it('may choose any player, themselves included (How to Run)', () => {
+			const { game: g, seats } = castGame(['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner']);
+			const picker = infoPicker(g, seats[0], 'ravenkeeper', characters)!;
+			expect(isTruthful(picker, { seats: [seats[0]], characterId: 'ravenkeeper' })).toBe(true);
+		});
 	});
 });

@@ -12,6 +12,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Bounty Hunter', () => {
@@ -44,8 +46,28 @@ describe('Bounty Hunter', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Bounty_Hunter#Examples)', () => {
-		it.todo('Example 1: Bounty Hunter finds an evil Harpy, then another');
+		it('Example 1: Bounty Hunter finds an evil Harpy, then another', () => {
+			// The Bounty Hunter is shown an evil player, such as the Harpy; never a good one.
+			const { game: g, seats } = castGame(['bountyhunter', 'harpy', 'imp', 'chef', 'monk']);
+			const picker = infoPicker(g, seats[0], 'bountyhunter', characters)!;
+			expect(isTruthful(picker, { seats: [seats[1]] })).toBe(true);
+			expect(isTruthful(picker, { seats: [seats[2]] })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[3]] })).toBe(false);
+		});
 		it.todo('Example 2: Poisoned Bounty Hunter gets a good player instead');
-		it.todo('Example 3: Drunk Bounty Hunter learns two good players');
+		it('Example 3: Drunk Bounty Hunter learns two good players', () => {
+			// A Drunk who thinks they are the Bounty Hunter may be shown a good player.
+			const { game: g, seats } = castGame(
+				['bountyhunter', 'harpy', 'imp', 'chef', 'monk'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'drunk', label: 'Is The Drunk' }
+				})
+			);
+			const picker = infoPicker(g, seats[0], 'bountyhunter', characters)!;
+			expect(picker.anyAllowed).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[3]] })).toBe(true);
+		});
 	});
 });

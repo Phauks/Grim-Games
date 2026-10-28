@@ -181,6 +181,18 @@ test("the Storyteller's player view has every button a phone in the room has", a
 	const boardButtons = await playerScreenButtons(script, script.getByTestId('dialog-head-actions'));
 	expect(boardButtons).toEqual(phoneButtons);
 
+	// The status row sits as far under the byline as the screen's side margin, on both
+	// (Trevor, 2026-10-28: "Increase space after author name to status bar").
+	for (const [screen, side] of [
+		[phone.locator('main'), phone.locator('main')],
+		[script, script]
+	] as const) {
+		const row = (await screen.getByTestId('player-status-row').boundingBox())!;
+		const byline = (await screen.getByTestId('script-byline').first().boundingBox())!;
+		const edge = (await side.boundingBox())!;
+		expect(Math.abs(row.y - (byline.y + byline.height) - (row.x - edge.x))).toBeLessThan(3);
+	}
+
 	// The Storyteller's copy of the message sheet sends nothing: no player of the room is behind it.
 	await script.getByTestId('message-button').tap();
 	const sheet = page.getByRole('dialog', { name: 'Message the Storyteller' });
