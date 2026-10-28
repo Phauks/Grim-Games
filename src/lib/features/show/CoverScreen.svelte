@@ -16,6 +16,7 @@
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptNameMark from '#lib/features/scripts/ScriptNameMark.svelte';
 
 	/**
 	 * What the grim cover shows (Trevor, 2026-10-26: "It should show the timer, along with
@@ -33,11 +34,26 @@
 	}
 
 	let { logo, name, author, storyteller, phase, timer, actions }: Props = $props();
+
+	let logoFailed = $state(false);
+	$effect(() => {
+		void logo;
+		logoFailed = false;
+	});
 </script>
 
 <div class="cover" data-testid="cover-details">
-	{#if logo}<ScriptLogo src={logo} {name} class="cover-logo" />{/if}
-	{#if name}<h2 class="name">{name}</h2>{/if}
+	<!-- Without a logo, or if its link fails, the name takes the logo's place, styled like one
+	     (Trevor, 2026-10-28), and is not written out again under it. -->
+	{#if logo && !logoFailed}<ScriptLogo
+			src={logo}
+			{name}
+			class="cover-logo"
+			onfail={() => (logoFailed = true)}
+		/>{#if name}<h2 class="name">{name}</h2>{/if}
+	{:else if name}<h2 class="cover-logo name" data-testid="cover-name">
+			<ScriptNameMark {name} />
+		</h2>{/if}
 	{#if author}<p class="author">{t('show.byAuthor', { author })}</p>{/if}
 	{#if storyteller}<p class="author" data-testid="cover-storyteller">
 			{t('settings.storytellerLine', { name: storyteller })}
