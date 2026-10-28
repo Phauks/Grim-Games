@@ -70,10 +70,7 @@
 
 	// The player screen's background, as on /play (Trevor, 2026-10-25).
 	$effect.pre(() => {
-		screenTheme.current = sheetTheme(playerSettings.current.sheetBackground, preferences.theme);
-		return () => {
-			screenTheme.current = undefined;
-		};
+		return screenTheme.show(sheetTheme(playerSettings.current.sheetBackground, preferences.theme));
 	});
 
 	// The room's script draws the title, the Travellers and the corner. It is loaded here only,
