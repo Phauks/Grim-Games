@@ -109,6 +109,7 @@
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import BoardScriptDialog from './BoardScriptDialog.svelte';
+	import BoardReminderChip from './BoardReminderChip.svelte';
 	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
@@ -1162,34 +1163,23 @@
 						boardLooks.current.reminders === 'free'
 							? grimoire.reminderSpots[reminder.reminderId]
 							: undefined}
-					{@const p = dragged ? remDrag.drag!.at : (spot ?? at[k])}
-					<div
-						class="chip-slot"
-						data-seat={i + 1}
-						class:on-held-seat={heldSeat === seat.seatId}
-						class:dragging={dragged}
-						class:extra={extras.has(reminder.reminderId)}
-						data-extra={extras.has(reminder.reminderId) ? '' : undefined}
-						class:now={nw.isStepReminder(reminder)}
-						style:left="{p.x}%"
-						style:top="{p.y}%"
-					>
-						<BoardReminder
-							label={reminderWords(reminder)}
-							infinite={isGeneric(reminder)}
-							symbol={reminder.symbol}
-							symbolColour={reminder.symbolColour}
-							symbolFill={reminder.symbolFill}
-							art={artOf(reminder)}
-							character={characters.get(reminder.characterId)}
-							alignment={placingAlignment(game, reminder, characters)}
-							size={chip}
-							disabled={seatArr.arranging || watching}
-							onTap={() => openReminder(seat.seatId, reminder.reminderId)}
-							onDrag={(x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
-							onCancel={() => remDrag.cancel()}
-						/>
-					</div>
+					<BoardReminderChip
+						{reminder}
+						at={dragged ? remDrag.drag!.at : (spot ?? at[k])}
+						character={characters.get(reminder.characterId)}
+						alignment={placingAlignment(game, reminder, characters)}
+						art={artOf(reminder)}
+						size={chip}
+						disabled={seatArr.arranging || watching}
+						seatNumber={i + 1}
+						onHeldSeat={heldSeat === seat.seatId}
+						dragging={dragged}
+						extra={extras.has(reminder.reminderId)}
+						now={nw.isStepReminder(reminder)}
+						onTap={() => openReminder(seat.seatId, reminder.reminderId)}
+						onDrag={(x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
+						onCancel={() => remDrag.cancel()}
+					/>
 				{/each}
 			{/if}
 		{/each}
@@ -1197,59 +1187,39 @@
 		<!-- Reminders that belong to no one, where they were put down (Trevor, 2026-10-17). -->
 		{#each looseReminders(game) as reminder, k (reminder.reminderId)}
 			{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
-			{@const p = dragged
-				? remDrag.drag!.at
-				: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
-			<div
-				class="chip-slot"
-				data-loose
-				class:dragging={dragged}
-				class:extra={extras.has(reminder.reminderId)}
-				data-extra={extras.has(reminder.reminderId) ? '' : undefined}
-				class:unassigned={!looseMode}
-				data-unassigned={looseMode ? undefined : ''}
-				class:now={nw.isStepReminder(reminder)}
-				style:left="{p.x}%"
-				style:top="{p.y}%"
-			>
-				<BoardReminder
-					label={reminderWords(reminder)}
-					infinite={isGeneric(reminder)}
-					symbol={reminder.symbol}
-					symbolColour={reminder.symbolColour}
-					symbolFill={reminder.symbolFill}
-					art={artOf(reminder)}
-					character={characters.get(reminder.characterId)}
-					alignment={placingAlignment(game, reminder, characters)}
-					size={chip}
-					disabled={seatArr.arranging || watching}
-					onTap={() => heldDialog?.show(reminder.reminderId)}
-					onDrag={(x, y, end) => remDrag.move(reminder.reminderId, undefined, x, y, end)}
-					onCancel={() => remDrag.cancel()}
-				/>
-			</div>
+			<BoardReminderChip
+				{reminder}
+				at={dragged
+					? remDrag.drag!.at
+					: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
+				character={characters.get(reminder.characterId)}
+				alignment={placingAlignment(game, reminder, characters)}
+				art={artOf(reminder)}
+				size={chip}
+				disabled={seatArr.arranging || watching}
+				loose
+				dragging={dragged}
+				extra={extras.has(reminder.reminderId)}
+				unassigned={!looseMode}
+				now={nw.isStepReminder(reminder)}
+				onTap={() => heldDialog?.show(reminder.reminderId)}
+				onDrag={(x, y, end) => remDrag.move(reminder.reminderId, undefined, x, y, end)}
+				onCancel={() => remDrag.cancel()}
+			/>
 		{/each}
 		<!-- A Fabled or Loric's reminder follows the finger while it is dragged. -->
 		{#if heldDrag}
-			<div
-				class="chip-slot dragging"
-				style:left="{remDrag.drag!.at.x}%"
-				style:top="{remDrag.drag!.at.y}%"
-				aria-hidden="true"
-			>
-				<BoardReminder
-					label={reminderWords(heldDrag)}
-					infinite={isGeneric(heldDrag)}
-					symbol={heldDrag.symbol}
-					symbolColour={heldDrag.symbolColour}
-					symbolFill={heldDrag.symbolFill}
-					art={artOf(heldDrag)}
-					character={characters.get(heldDrag.characterId)}
-					size={chip}
-					disabled
-					onTap={() => {}}
-				/>
-			</div>
+			<BoardReminderChip
+				reminder={heldDrag}
+				at={remDrag.drag!.at}
+				character={characters.get(heldDrag.characterId)}
+				art={artOf(heldDrag)}
+				size={chip}
+				disabled
+				dragging
+				ghost
+				onTap={() => {}}
+			/>
 		{/if}
 
 		{#each placeSpots as spot (spot.position)}
@@ -1717,7 +1687,7 @@
 		scale: 1.12;
 	}
 	.holding .slot:not(.dragging),
-	.holding .chip-slot:not(.on-held-seat),
+	.holding :global(.chip-slot:not(.on-held-seat)),
 	.holding .tethers {
 		opacity: 0.35;
 		transition: opacity 0.15s;
@@ -1751,35 +1721,6 @@
 		stroke: var(--on-surface);
 		stroke-opacity: 0.35;
 		stroke-width: 1.5;
-	}
-	.chip-slot {
-		position: absolute;
-		translate: -50% -50%;
-		z-index: 1;
-	}
-	/* Back in attached mode, a reminder left loose belongs to no seat (Trevor, 2026-10-18): a
-	   dashed ring until it is put on a seat or back in the bank. */
-	/* A copy beyond what the game gives (Trevor, 2026-10-18): dashed and faded, like the
-	   reminder list's tokens that don't fit a seat. */
-	.chip-slot.extra > :global(.reminder) {
-		outline: 0.15rem dashed var(--on-surface);
-		outline-offset: 0.15rem;
-		opacity: 0.75;
-	}
-	.chip-slot.unassigned > :global(.reminder) {
-		outline: 0.15rem dashed var(--on-surface);
-		outline-offset: 0.15rem;
-	}
-	/* The walked-through step's reminders already on the board: the bank's highlight, a ring,
-	   glow or both (Settings > Tokens). */
-	.chip-slot.now > :global(.reminder) {
-		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
-		outline-offset: 0.15rem;
-		filter: var(--reminder-lit-glow, none);
-	}
-	.chip-slot.dragging {
-		z-index: 3;
-		scale: 1.15;
 	}
 	.tap-probe {
 		position: absolute;
