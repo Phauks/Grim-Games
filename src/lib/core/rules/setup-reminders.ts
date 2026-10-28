@@ -322,10 +322,10 @@ function drawnTileReminders(game: Game, lookup: CharacterLookup): SetupReminder[
 /**
  * The Drunk's and Marionette's "Is The …" tokens: they had no tile, so the Storyteller
  * decides who is secretly the Drunk or Marionette once the tokens come back (Trevor,
- * 2026-10-16). A Drunk is a player holding a Townsfolk token
- * (https://wiki.bloodontheclocktower.com/Drunk); a Marionette a good player next to the
- * Demon (https://wiki.bloodontheclocktower.com/Marionette). One suggestion per copy not yet
- * on a seat.
+ * 2026-10-16). Who may carry one is the token's `reminderTargets` rule: a Drunk is a player
+ * shown a Townsfolk (https://wiki.bloodontheclocktower.com/Drunk); a Marionette a good player
+ * next to the Demon (https://wiki.bloodontheclocktower.com/Marionette). One suggestion per
+ * copy not yet on a seat.
  */
 function unseatedReminders(
 	game: Game,
@@ -356,27 +356,24 @@ function unseatedReminders(
 		const copy = (seen.get(key) ?? 0) + 1;
 		seen.set(key, copy);
 		if (copy <= placed(r)) continue;
-		const marionette = r.characterId === 'marionette';
+		const target = rulesOf(r.characterId, lookup)?.reminderTargets?.[r.label];
+		const byDemon = target?.neighbour?.ofType === 'demon';
+		const shown: readonly CharacterType[] =
+			target?.shown ?? (target?.alignment === 'good' ? ['townsfolk', 'outsider'] : ['townsfolk']);
 		const candidates = seats
-			.filter((f, i) =>
-				marionette
-					? (f.type === 'townsfolk' || f.type === 'outsider') && nextToDemon(i)
-					: f.type === 'townsfolk'
+			.filter(
+				(f, i) => f.type !== undefined && shown.includes(f.type) && (!byDemon || nextToDemon(i))
 			)
 			.filter((f) => !marked.has(f.seat.seatId))
 			.map((f) => f.seat.seatId);
 		const entry = entryOf(r.characterId, lookup);
-		const name = marionette
-			? 'Marionette'
-			: r.characterId === 'drunk'
-				? 'Drunk'
-				: r.label.replace(/^is the /i, '');
+		const name = lookup.get(r.characterId)?.name ?? r.label.replace(/^is the /i, '');
 		out.push({
 			characterId: r.characterId,
 			label: r.label,
 			text: `Put [${r.label}] on the player who is secretly the ${name}`,
-			reason: marionette
-				? 'The Marionette had no token in the bag: it is a good player next to the Demon'
+			reason: byDemon
+				? `The ${name} had no token in the bag: it is a good player next to the Demon`
 				: `The ${name} had no token in the bag: it is one of the players holding a Townsfolk`,
 			choice: `Who is the ${name}`,
 			candidates,

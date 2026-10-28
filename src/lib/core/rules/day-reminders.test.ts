@@ -284,6 +284,35 @@ describe('homebrew', () => {
 		expect(renderReminder(reminders[0].segments, name)).toBe('[heckler] may act today');
 	});
 
+	// The Drunk's and the Minstrel's rules blocks, given to custom characters.
+	it('reads impairments from a custom character’s rules block', () => {
+		const sot: Character = {
+			id: 'sot',
+			name: 'Sot',
+			type: 'outsider',
+			ability: 'You think you are a Townsfolk, but you are drunk.',
+			setup: false,
+			reminders: [],
+			remindersGlobal: ['Drunk'],
+			special: [],
+			rules: { impairs: { self: { reason: 'drunk' } } }
+		};
+		const bard: Character = {
+			...sot,
+			id: 'bard',
+			name: 'Bard',
+			type: 'townsfolk',
+			ability: 'When a Minion dies by execution, all other players are drunk until tomorrow.',
+			reminders: ['All Drunk'],
+			remindersGlobal: [],
+			rules: { impairs: { tokens: { 'All Drunk': { reason: 'drunk', on: 'others' } } } }
+		};
+		const slayer = seat('slayer', { reminders: [token('sot', 'Drunk')] });
+		expect(texts({ seats: [slayer] }, [sot])).toEqual(['[Slayer] is really the [Sot]']);
+		const own = seat('bard', { reminders: [token('bard', 'All Drunk')] });
+		expect(texts({ seats: [own] }, [bard]).some((t) => t.includes('drunk'))).toBe(false);
+	});
+
 	it('treats a homebrew copy of an official id as homebrew', () => {
 		const copy = {
 			...data.byId.get('chef')!,
