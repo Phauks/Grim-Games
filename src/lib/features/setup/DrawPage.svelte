@@ -8,6 +8,7 @@
 	import { seatsToName } from '#lib/core/sync/room-seating.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import type { SetupGamePort } from './game-port.ts';
@@ -55,7 +56,7 @@
 			slots.length,
 			face,
 			`${game?.gameId ?? ''}:${slots[0]?.tileId ?? ''}`,
-			preferences.current.tileOrderRandom
+			gameSettings.current.tileOrderRandom
 		)
 	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
@@ -322,8 +323,8 @@
 			seatLabel={label(tile.drawnBySeat)}
 			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
 			taken={takenNames(tile.drawnBySeat)}
-			holdToReveal={preferences.current.holdToReveal}
-			reel={preferences.current.slotMachine ? reel : []}
+			holdToReveal={gameSettings.current.holdToReveal}
+			reel={gameSettings.current.slotMachine ? reel : []}
 			confirmOnClose
 			onConfirm={confirm}
 		/>

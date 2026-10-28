@@ -6,6 +6,8 @@
 	import { canKeepAwake } from '#lib/features/day/timer-wake-lock.ts';
 	import TimerPerPlayerRow from '#lib/features/day/TimerPerPlayerRow.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
+	import BagDrawRows from '#lib/features/game-settings/BagDrawRows.svelte';
 	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
 	import { TIMER_FOR_PLAYERS } from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
@@ -47,8 +49,11 @@
 	<SettingToggle
 		label={ASSIST_LABELS[key].label}
 		description={ASSIST_LABELS[key].description}
-		checked={assistance[key]}
-		onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
+		checked={key === 'trackNominations' ? gameSettings.current.trackNominations : assistance[key]}
+		onChange={(checked) =>
+			key === 'trackNominations'
+				? gameSettings.setDefault({ trackNominations: checked })
+				: preferences.update({ assistance: { ...assistance, [key]: checked } })}
 	/>
 {/snippet}
 
@@ -64,31 +69,7 @@
 	defaultValue="numbers"
 	onChange={(tileFace) => preferences.update({ tileFace })}
 />
-<SettingToggle
-	label={t('settings.tileOrderRandom')}
-	description={t('settings.tileOrderRandomHelp')}
-	checked={preferences.current.tileOrderRandom}
-	disabled={preferences.current.tileFace === 'random' || preferences.current.tileFace === 'none'}
-	onChange={(tileOrderRandom) => preferences.update({ tileOrderRandom })}
-/>
-<SettingToggle
-	label={t('settings.requireName')}
-	description={t('settings.requireNameHelp')}
-	checked={preferences.current.requireName}
-	onChange={(requireName) => preferences.update({ requireName })}
-/>
-<SettingToggle
-	label={t('settings.holdToReveal')}
-	description={t('settings.holdToRevealHelp')}
-	checked={preferences.current.holdToReveal}
-	onChange={(holdToReveal) => preferences.update({ holdToReveal })}
-/>
-<SettingToggle
-	label={t('settings.slotMachine')}
-	description={t('settings.slotMachineHelp')}
-	checked={preferences.current.slotMachine}
-	onChange={(slotMachine) => preferences.update({ slotMachine })}
-/>
+<BagDrawRows values={gameSettings.current} onChange={(change) => gameSettings.setDefault(change)} />
 <SettingToggle
 	label={t('settings.ownWording')}
 	description={t('settings.ownWordingHelp')}
@@ -120,13 +101,13 @@
 <TimerPerPlayerRow />
 <SettingSelect
 	label={t('day.timerForPlayers')}
-	value={preferences.current.timerForPlayers}
+	value={gameSettings.current.timerForPlayers}
 	options={TIMER_FOR_PLAYERS.map((value) => ({
 		value,
 		label: t(`day.timerForPlayers.${value}`)
 	}))}
 	defaultValue="sun"
-	onChange={(timerForPlayers) => preferences.update({ timerForPlayers })}
+	onChange={(timerForPlayers) => gameSettings.setDefault({ timerForPlayers })}
 />
 <SettingSelect
 	label={t('day.setupForPlayers')}

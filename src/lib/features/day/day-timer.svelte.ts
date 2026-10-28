@@ -1,5 +1,6 @@
 import { dayTimers } from '#lib/core/rules/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
+import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 import { playSound, unlockSound, vibrate } from '#lib/features/sound/sound.ts';
 import { keepScreenAwake } from './timer-wake-lock.ts';
 
@@ -59,11 +60,10 @@ class LiveDayTimer {
 	}
 	/**
 	 * What players' phones get (Trevor, 2026-10-26): the shared timer and how to show it, by
-	 * the Storyteller's `timerForPlayers` setting, or nothing while it is Hidden.
+	 * the game's `timerForPlayers` setting; always shown (Trevor, 2026-10-28).
 	 */
-	get forPlayers(): dayTimers.PublicDayTimer | undefined {
-		const look = preferences.current.timerForPlayers;
-		return look === 'off' ? undefined : { ...this.shared, look };
+	get forPlayers(): dayTimers.PublicDayTimer {
+		return { ...this.shared, look: gameSettings.current.timerForPlayers };
 	}
 	/** Start is possible: not running, and counting up or with time left. */
 	get startable(): boolean {
@@ -72,7 +72,7 @@ class LiveDayTimer {
 
 	/** Matches the length to the living players, and the time each, while untouched. */
 	follow(alive: number): void {
-		const next = dayTimer(alive, preferences.current.timerPerPlayer);
+		const next = dayTimer(alive, gameSettings.current.timerPerPlayer);
 		if (this.fresh && !this.#adjusted && next.durationMs !== this.#timer.durationMs) {
 			this.#timer = next;
 		}
@@ -110,7 +110,7 @@ class LiveDayTimer {
 		this.#stop();
 		this.#adjusted = false;
 		this.#signalled = false;
-		this.#timer = dayTimer(alive, preferences.current.timerPerPlayer);
+		this.#timer = dayTimer(alive, gameSettings.current.timerPerPlayer);
 		this.now = Date.now();
 	}
 

@@ -6,6 +6,8 @@ export const setup = {
 	'setup.pageTitle.draw': `Draw · ${APP_NAME}`,
 	'setup.grimoire': 'Grimoire',
 	'setup.newGame': 'New game',
+	'setup.gameSettings': 'Game settings',
+	'setup.pageTitle.gameSettings': `Game settings · ${APP_NAME}`,
 	'setup.characterSelection': 'Character selection',
 	'setup.steps': 'Setup steps',
 	'setup.nav': 'Setup',
