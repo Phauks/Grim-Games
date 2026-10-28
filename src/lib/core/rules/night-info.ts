@@ -47,7 +47,9 @@ export {
 	type NightToday,
 	abnormalSinceDawn,
 	nightAnswer,
-	answerCauses
+	answerCauses,
+	type AnswerOption,
+	answerOptions
 } from './night-info/answers.ts';
 export {
 	type PickerKind,
