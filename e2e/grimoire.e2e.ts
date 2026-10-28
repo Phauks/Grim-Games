@@ -2875,7 +2875,7 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await sheet.getByRole('tab', { name: 'Night' }).tap();
 	await expect(sheet.locator('section[data-night="first"] li[data-step="empath"]')).toBeVisible();
 	await page.keyboard.press('Escape');
-	await expect(sheet).toBeHidden();
+	await expect(setupSheet).toBeHidden();
 	// Arrange seats moved into More to make room.
 	await page.getByRole('button', { name: 'More' }).tap();
 	await expect(
@@ -2914,14 +2914,15 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	await expect(counts.getByTestId('count-players')).toHaveText('9');
 	await expect(counts.getByTestId('count-traveller')).toHaveText('1');
 	await expect(counts.getByTestId('count-outsider')).toHaveText('1');
-	// Tapping everyone's count shows the whole setup sheet, this table's column marked
+	// Tapping everyone's count pops up the whole setup sheet, this table's column marked
 	// (Trevor, 2026-10-28; https://wiki.bloodontheclocktower.com/Setup).
 	await counts.getByTestId('count-info-players').tap();
-	const sheetDialog = page.getByRole('dialog', { name: 'Setup sheet' });
-	await expect(sheetDialog.getByTestId('setup-table')).toBeVisible();
-	await expect(sheetDialog.locator('th[data-current]')).toHaveText('8');
-	await sheetDialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(sheetDialog).toBeHidden();
+	const setupSheet = page.getByTestId('count-sheet');
+	await expect(setupSheet.getByTestId('setup-table')).toBeVisible();
+	await expect(setupSheet.locator('th[data-current]')).toHaveText('8');
+	// As the type counts' popups do, a second tap closes it.
+	await counts.getByTestId('count-info-players').tap();
+	await expect(setupSheet).toBeHidden();
 	await page.keyboard.press('Escape');
 	await expect(script).toBeHidden();
 	await menu(page, 'Add Fabled or Loric');
@@ -3070,7 +3071,7 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await expect(dialog).toBeVisible();
 	await expect(dialog.getByText('None', { exact: true })).toBeVisible();
 	await expect(seatCards).toHaveText([/Word/, /Claim/]);
-	await expect(sheet).toBeHidden();
+	await expect(setupSheet).toBeHidden();
 	await expect(page.getByRole('button', { name: 'Edit player name' })).toHaveCount(0);
 	// A note opens over the player's notes, and its trash deletes it after asking.
 	await seatCards.nth(1).tap();
@@ -5971,7 +5972,7 @@ test('holding a seat token, then dragging, moves the seat; a hold alone opens no
 	await page.waitForTimeout(700);
 	await page.mouse.up();
 	expect(await centre(1)).toEqual(start);
-	await expect(sheet).toBeHidden();
+	await expect(setupSheet).toBeHidden();
 
 	// A quick drag, before the hold, moves nothing either.
 	await page.mouse.move(start.x, start.y);
@@ -5995,7 +5996,7 @@ test('holding a seat token, then dragging, moves the seat; a hold alone opens no
 	expect(Math.abs(moved.x - to.x)).toBeLessThan(4);
 	expect(Math.abs(moved.y - to.y)).toBeLessThan(4);
 	expect(await centre(2)).toEqual(seat2);
-	await expect(sheet).toBeHidden();
+	await expect(setupSheet).toBeHidden();
 	await expect(page.locator('.board')).not.toHaveClass(/holding/);
 	// A tap still opens the seat.
 	await openSeat(page, 1);

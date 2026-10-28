@@ -3,7 +3,6 @@
 	import { SEATED_TYPES, type SeatedType, type SetupAnalysis } from '#lib/core/rules/index.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import SetupTable from './SetupTable.svelte';
 
@@ -24,8 +23,7 @@
 	}
 
 	let { analysis, travellers, travellerLimits, game = false, maxPlayers }: Props = $props();
-	// In a game, tapping everyone's count shows the whole setup sheet (Trevor, 2026-10-28).
-	let sheetOpen = $state(false);
+
 	const travellersOk = $derived(
 		travellerLimits
 			? travellers >= travellerLimits.min && travellers <= travellerLimits.max
@@ -45,12 +43,13 @@
 	/**
 	 * Tapping a type's count shows where it comes from (Trevor, 2026-10-20): the setup sheet's
 	 * count, each change to it, and what is expected and chosen. One popover for all four.
-	 * Tapping the open one's cell again closes it (Trevor, 2026-10-28).
+	 * Tapping the open one's cell again closes it (Trevor, 2026-10-28). In a game, everyone's
+	 * count opens the whole setup sheet in the same popover (Trevor, 2026-10-28).
 	 */
 	let infoOpen = $state(false);
-	let infoType = $state<SeatedType>('townsfolk');
+	let infoType = $state<SeatedType | 'players'>('townsfolk');
 	let infoAnchor = $state<HTMLElement>();
-	function showInfo(type: SeatedType, anchor: HTMLElement) {
+	function showInfo(type: SeatedType | 'players', anchor: HTMLElement) {
 		if (infoOpen && infoAnchor === anchor) {
 			infoOpen = false;
 			return;
@@ -80,7 +79,7 @@
 			aria-haspopup="dialog"
 			title={t('setup.sheet')}
 			data-testid="count-info-players"
-			onclick={() => (sheetOpen = true)}
+			onclick={(event) => showInfo('players', event.currentTarget)}
 		>
 			<span class="label">{t('setup.players')}</span>
 			<span class="value"
@@ -125,37 +124,42 @@
 	</div>
 </div>
 
-<Popover bind:open={infoOpen} title={TYPE_PLURALS[infoType]} anchor={infoAnchor}>
-	<div class="why" data-testid="count-info">
-		<p class="row">
-			<span>{t('setup.countInfo.sheet', { players: analysis.dealt })}</span><span class="n"
-				>{analysis.base[infoType]}</span
-			>
-		</p>
-		{#if analysis.reasons[infoType].length}
-			<ul class="reasons">
-				{#each analysis.reasons[infoType] as reason (reason)}<li>
-						<GlossaryText text={reason} />
-					</li>{/each}
-			</ul>
-		{/if}
-		<p class="row">
-			<span>{t('setup.countInfo.expected')}</span><span class="n"
-				>{range(analysis.expected[infoType])}</span
-			>
-		</p>
-		{#if !game}<p class="row">
-				<span>{t('setup.countInfo.chosen')}</span><span class="n">{analysis.chosen[infoType]}</span>
-			</p>{/if}
-	</div>
-</Popover>
-
-{#if game}
-	<Dialog bind:open={sheetOpen} title={t('setup.sheet')}>
+<Popover
+	bind:open={infoOpen}
+	title={infoType === 'players' ? t('setup.sheet') : TYPE_PLURALS[infoType]}
+	anchor={infoAnchor}
+>
+	{#if infoType === 'players'}
 		<!-- The dealt players' column: Travellers aren't on the sheet. -->
-		<SetupTable players={analysis.dealt} {maxPlayers} />
-	</Dialog>
-{/if}
+		<div class="sheet" data-testid="count-sheet">
+			<SetupTable players={analysis.dealt} {maxPlayers} />
+		</div>
+	{:else}
+		{@const type = infoType}
+		<div class="why" data-testid="count-info">
+			<p class="row">
+				<span>{t('setup.countInfo.sheet', { players: analysis.dealt })}</span><span class="n"
+					>{analysis.base[type]}</span
+				>
+			</p>
+			{#if analysis.reasons[type].length}
+				<ul class="reasons">
+					{#each analysis.reasons[type] as reason (reason)}<li>
+							<GlossaryText text={reason} />
+						</li>{/each}
+				</ul>
+			{/if}
+			<p class="row">
+				<span>{t('setup.countInfo.expected')}</span><span class="n"
+					>{range(analysis.expected[type])}</span
+				>
+			</p>
+			{#if !game}<p class="row">
+					<span>{t('setup.countInfo.chosen')}</span><span class="n">{analysis.chosen[type]}</span>
+				</p>{/if}
+		</div>
+	{/if}
+</Popover>
 
 <style>
 	.counts {
@@ -220,6 +224,14 @@
 		color: inherit;
 		font: inherit;
 		cursor: pointer;
+	}
+	/* The popover is narrower than the sheet's own section: a slimmer type column keeps "15+"
+	   on one line. */
+	.sheet :global(th[scope='row']) {
+		width: 5em;
+	}
+	.sheet :global(thead th) {
+		white-space: nowrap;
 	}
 	.why {
 		display: grid;
