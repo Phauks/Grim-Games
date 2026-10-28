@@ -4254,6 +4254,51 @@ test("the Grandmother's first night step lists each good player's character", as
 	await expect(rows.first()).not.toContainText('any other player');
 });
 
+// Trevor (2026-10-28): the yes or no characters' answers, once the two players chosen are
+// picked. Yes when either is the Demon (https://wiki.bloodontheclocktower.com/Fortune_Teller).
+test("the Fortune Teller's step answers for the two players picked", async ({ page }) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Fortune Teller'],
+		[2, 'Chef'],
+		[3, 'Imp'],
+		[4, 'Monk']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	// The step's text names the Fortune Teller as a badge that opens its sheet, under the
+	// middle of the step on a phone: tap the step's name instead.
+	const strip = await walkTo(page, 'Fortune Teller');
+	await strip.locator('.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Fortune Teller' });
+	const section = step.getByTestId('night-yes-no');
+	const answers = section.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
+	await expect(answers).toHaveCount(0);
+	// Tapping first scrolls the control into view, and a scroll closes an open list (Select).
+	async function pick(label: string, seat: string) {
+		const select = section.getByRole('combobox', { name: label });
+		await select.scrollIntoViewIfNeeded();
+		const option = page.getByRole('option', { name: seat, exact: true });
+		await expect(async () => {
+			if (!(await option.isVisible())) await select.tap();
+			await expect(option).toBeVisible({ timeout: 1000 });
+		}).toPass();
+		await option.tap();
+	}
+	await pick('First player chosen', 'Seat 2');
+	await pick('Second player chosen', 'Seat 3');
+	await expect(answers).toHaveCount(1);
+	await expect(answers.first()).toHaveText('Yes');
+	await pick('Second player chosen', 'Seat 4');
+	await expect(answers.first()).toHaveText('No');
+});
+
 // Trevor (2026-10-27): on the first night the Godfather's step names every Outsider in
 // play, ready to show on one card (https://wiki.bloodontheclocktower.com/Godfather).
 test("the Godfather's first night step shows every Outsider in play", async ({ page }) => {
