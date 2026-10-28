@@ -13,7 +13,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	const script = page.getByRole('dialog', { name: 'Trouble Brewing' });
@@ -157,7 +157,7 @@ test("the Storyteller's player view has every button a phone in the room has", a
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	const board = new URL(page.url()).pathname;
 	await page.goto(`${board}/room`);

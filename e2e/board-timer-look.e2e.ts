@@ -49,7 +49,7 @@ test('the board timer has the same solid fill and edge as the toolbar buttons', 
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const timer = page.locator('.board-timer').getByTestId('day-timer');

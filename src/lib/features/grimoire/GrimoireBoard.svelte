@@ -125,6 +125,7 @@
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
+	import SeatProfileDialog from './SeatProfileDialog.svelte';
 	import NominationChooser from './NominationChooser.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
@@ -485,6 +486,13 @@
 		sheetOpen = true;
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
+	// A player's avatar mark opens their profile (Trevor, 2026-10-28).
+	let profileOpen = $state(false);
+	let profileSeat = $state<SeatId | undefined>();
+	function openProfile(seatId: SeatId) {
+		profileSeat = seatId;
+		profileOpen = true;
+	}
 	/**
 	 * A spectator reads, never changes (Trevor, 2026-10-19): a seat opens its character's
 	 * details, as a Fabled or Loric does, not the seat sheet.
@@ -1260,13 +1268,15 @@
 					role={seatRole(seat.seatId)}
 					onTap={(part) =>
 						!seatArr.arranging &&
-						(watching
-							? readCharacter(seat.characterId)
-							: part === 'note'
-								? editNote(seat.seatId)
-								: part === 'nominate'
-									? askNomination(seat.seatId)
-									: openSeat(seat.seatId))}
+						(part === 'avatar'
+							? openProfile(seat.seatId)
+							: watching
+								? readCharacter(seat.characterId)
+								: part === 'note'
+									? editNote(seat.seatId)
+									: part === 'nominate'
+										? askNomination(seat.seatId)
+										: openSeat(seat.seatId))}
 					onHold={seatArr.arranging || watching
 						? undefined
 						: (on) => on && seatArr.held(seat.seatId)}
@@ -1664,6 +1674,8 @@
 	onNominated={nominated}
 	onExecute={executeFromSeat}
 />
+
+<SeatProfileDialog bind:open={profileOpen} {game} seatId={profileSeat} />
 
 <!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
 <NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />

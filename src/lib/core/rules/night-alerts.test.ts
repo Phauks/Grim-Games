@@ -3,7 +3,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	castGame,
+	castWith,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
@@ -230,5 +234,29 @@ describe('Moonchild (https://wiki.bloodontheclocktower.com/Moonchild)', () => {
 		expect(short(nightStepAlerts(g, 'moonchild', characters), seats)).toEqual([
 			'protected tealady→2'
 		]);
+	});
+
+	it('reminds a custom character dies with the player its token marks, as the Grandmother does', () => {
+		const issues = new Issues();
+		const aunt = parseCharacter(
+			{
+				id: 'greataunt',
+				name: 'Great Aunt',
+				team: 'townsfolk',
+				ability: 'You start knowing a good player. If the Demon kills them, you die too.',
+				reminders: ['Nephew'],
+				rules: { deathCheck: { kind: 'marked-killed-by-demon', token: 'Nephew' } }
+			},
+			'[0]',
+			issues,
+			{ strict: false, scriptFields: true }
+		);
+		expect(issues.list).toEqual([]);
+		const all = new Map([...characters, [aunt!.id, aunt!]]);
+		const { game: g, seats } = castWith({ characters: all })(
+			['imp', 'chef', 'empath'],
+			add(2, 'greataunt', 'Nephew')
+		);
+		expect(short(nightStepAlerts(g, 'imp', all), seats)).toEqual(['on-death greataunt→2']);
 	});
 });

@@ -7,8 +7,9 @@ import { pickScript, toBoard } from './new-game.ts';
 async function startGame(page: Page, players = 8, script = 'Trouble Brewing') {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script, { exact: true }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	for (let i = 8; i < players; i++) await page.getByRole('button', { name: 'More players' }).tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(players);
 	return new URL(page.url()).pathname;
@@ -526,7 +527,7 @@ test('the day view names a homebrew character by its script name', async ({ page
 
 	await page.goto('/new');
 	await pickScript(page, 'Homebrew Day');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');

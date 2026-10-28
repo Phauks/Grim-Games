@@ -21,6 +21,7 @@ import { readWakesWhen, type WakesWhen } from './wakes-when-rules.ts';
 import { CHOICE_RULE_KEYS, readChoiceRules, type ChoiceRules } from './choice-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
+import { readGainedFrom, type GainedFrom } from './gained-from-rules.ts';
 import { readBecomes, readMakesDemon, type Becomes, type MakesDemon } from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readImpairs, type Impairs } from './impairs-rules.ts';
@@ -188,6 +189,8 @@ export interface CharacterRules extends ChoiceRules {
 	wakesWhen?: WakesWhen;
 	/** Its token on a dead player keeps that player's ability (`keeps-ability-rules.ts`). */
 	keepsAbility?: KeepsAbility;
+	/** The ability it has is another player's, found by its token (`gained-from-rules.ts`). */
+	gainedFrom?: GainedFrom;
 	/** Its token says a player changed character or alignment (`becomes-rules.ts`). */
 	becomes?: Becomes;
 	/** On a night its token marks, it makes a chosen player a Demon (`becomes-rules.ts`). */
@@ -200,6 +203,11 @@ export interface CharacterRules extends ChoiceRules {
 	 * Sushi Buffet's Ivory draft drafts at most one such character (`modes/draft.ts`).
 	 */
 	makesExtraEvil?: boolean;
+	/**
+	 * Its night ability can turn a player into a new Demon (the Pit-Hag,
+	 * https://wiki.bloodontheclocktower.com/Pit-Hag), so the Demon may change hands.
+	 */
+	createsDemon?: boolean;
 	/**
 	 * A hidden character (one with no token of its own, such as the Drunk) the Storyteller may
 	 * make this character's player instead, who then thinks they are this character. Sushi
@@ -394,10 +402,12 @@ const RULE_KEYS = [
 	'stopsKilling',
 	'wakesWhen',
 	'keepsAbility',
+	'gainedFrom',
 	'becomes',
 	'makesDemon',
 	'infoTokenCharacters',
 	'makesExtraEvil',
+	'createsDemon',
 	'orHiddenAs',
 	'gainsAbilityOf',
 	'turnsPlayersInto',
@@ -619,6 +629,10 @@ export function parseCharacterRules(
 		const keeps = readKeepsAbility(raw.keepsAbility, at, issues, reminders);
 		if (keeps) rules.keepsAbility = keeps;
 	}
+	if (raw.gainedFrom !== undefined) {
+		const gained = readGainedFrom(raw.gainedFrom, `${path}.gainedFrom`, issues, reminders);
+		if (gained) rules.gainedFrom = gained;
+	}
 	if (raw.becomes !== undefined) {
 		const becomes = readBecomes(raw.becomes, `${path}.becomes`, issues, reminders);
 		if (becomes) rules.becomes = becomes;
@@ -634,6 +648,8 @@ export function parseCharacterRules(
 	}
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
+	const createsDemon = readBoolean(raw, 'createsDemon', path, issues);
+	if (createsDemon !== undefined) rules.createsDemon = createsDemon;
 	const hiddenAs = readString(raw, 'orHiddenAs', path, issues, false);
 	if (hiddenAs !== undefined) rules.orHiddenAs = hiddenAs;
 	const gains = readEnum(raw, 'gainsAbilityOf', SEATED_TYPES, path, issues, false);

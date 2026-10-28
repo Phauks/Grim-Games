@@ -29,7 +29,7 @@ test('the day timer keeps the screen on while it runs, by a switch', async ({ pa
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');

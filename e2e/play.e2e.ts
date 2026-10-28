@@ -385,6 +385,9 @@ test("the night order shows who wakes, with TPI's night text", async ({ page }) 
 	await expect(minionInfo.locator('.token[data-marker="minioninfo"]')).toBeVisible();
 	await expect(minionInfo.locator('.token[data-marker="minioninfo"] text')).toHaveText('M');
 	await expect(first.locator('.token[data-marker="demoninfo"] text')).toHaveText('D');
+	// Each says what happens there, as the Storyteller's night step does (Trevor, 2026-10-28).
+	await expect(minionInfo.locator('.text')).toContainText('Wake the Minions');
+	await expect(first.locator('li[data-step="demoninfo"] .text')).toContainText('Wake the Demon');
 	const poisoner = first.locator('li[data-step="poisoner"]');
 	// Every step's number sits level with the middle of its icon, however long the text, and
 	// a line runs between steps (Trevor, 2026-10-19).
@@ -936,7 +939,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await st.getByRole('button', { name: 'Start game' }).tap();
+	await st.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(st);
 	await st.goto(`${new URL(st.url()).pathname}/room`);
 	await expect(st.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
