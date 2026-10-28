@@ -778,8 +778,10 @@
 		outline-offset: calc(0.2 * var(--u));
 		border-radius: 50%;
 	}
-	/* A guess is the player's own, so it never looks like something the town was told. */
-	.seat[data-guess] :global(.face) {
+	/* A guess is the player's own, so it never looks like something the town was told. Only
+	   the seat's round face: a token's own SVG circle is a .face too, and an outline there
+	   drew dashed square edges round the token (2026-10-28). */
+	.seat[data-guess] :global(.disc > .face) {
 		opacity: 0.75;
 		outline: calc(0.15 * var(--u)) dashed var(--on-surface-muted);
 		outline-offset: calc(0.1 * var(--u));
