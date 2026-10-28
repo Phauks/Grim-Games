@@ -224,8 +224,11 @@
 					),
 					characterId: holder
 				}
-			: situation?.vortox !== undefined
-				? { text: t('savant.vortox', { character: slot('character') }), characterId: 'vortox' }
+			: situation?.falseBy !== undefined
+				? {
+						text: t('savant.vortox', { character: slot('character') }),
+						characterId: situation.falseBy
+					}
 				: undefined
 	);
 

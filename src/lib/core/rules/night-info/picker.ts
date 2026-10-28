@@ -506,11 +506,11 @@ export function abnormalCauses(picker: InfoPicker, choice: InfoChoice): Abnormal
 			}));
 	}
 	if (picker.impairments.length > 0) return causesOf(picker.impairments);
-	if (picker.mustBeFalse) {
+	if (picker.mustBeFalse && picker.falseBy) {
 		return [
 			{
 				reason: 'vortox',
-				characterId: 'vortox',
+				characterId: picker.falseBy,
 				...(picker.vortox ? { seatId: picker.vortox } : {})
 			}
 		];
