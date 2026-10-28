@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
-	import type { InfoPicker, NightStep } from '#lib/core/rules/index.ts';
+	import type { InfoChoice, InfoPicker, NightStep } from '#lib/core/rules/index.ts';
 	import { answerText, yesNoAnswers, yesNoSeats } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
@@ -22,11 +22,13 @@
 	interface Props {
 		grimoire: Grimoire;
 		step: NightStep;
-		/** Show the Yes/No info token with this answer (Trevor, 2026-10-28). */
-		onShowAnswer?: (yes: boolean) => void;
+		/** Show the answer in words, as the Yes/No info token does (Trevor, 2026-10-28). */
+		onShowAnswer?: (answer: string) => void;
+		/** An answer was shown to the player: record it (`record-shown.ts`). */
+		onRecord?: (picker: InfoPicker, choice: InfoChoice) => void;
 	}
 
-	let { grimoire, step, onShowAnswer }: Props = $props();
+	let { grimoire, step, onShowAnswer, onRecord }: Props = $props();
 	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
@@ -46,8 +48,9 @@
 		next[n] = seatId;
 		chosen = { ...chosen, [p.seatId]: next };
 	}
+	const chosenOf = (p: InfoPicker) => picked(p).filter((s): s is SeatId => s !== undefined);
 	const answers = (p: InfoPicker) => {
-		const seats = picked(p).filter((s): s is SeatId => s !== undefined);
+		const seats = chosenOf(p);
 		return new Set(seats).size === p.seatCount ? yesNoAnswers(game, p, seats) : [];
 	};
 </script>
@@ -102,8 +105,13 @@
 							<li data-reason={a.reason}>
 								<strong>{answerText(p.answer, a.yes)}</strong>
 								<NightReasonTag {grimoire} reason={a.reason} registered={a.registered} />
-								{#if onShowAnswer && !p.answer}
-									<Button variant="quiet" onclick={() => onShowAnswer(a.yes)}>Show to player</Button
+								{#if onShowAnswer}
+									<Button
+										variant="quiet"
+										onclick={() => {
+											onShowAnswer(answerText(p.answer, a.yes));
+											onRecord?.(p, { seats: chosenOf(p), yes: a.yes });
+										}}>Show to player</Button
 									>
 								{/if}
 							</li>
