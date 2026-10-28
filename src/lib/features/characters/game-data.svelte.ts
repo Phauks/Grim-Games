@@ -35,6 +35,7 @@ export const officialData = {
 	}
 };
 
+let numeric = $state<NumericNightOrder | undefined>(undefined);
 let numericLoading: Promise<NumericNightOrder> | undefined;
 
 /**
@@ -42,6 +43,15 @@ let numericLoading: Promise<NumericNightOrder> | undefined;
  * homebrew night numbers and shown on the Character reference page. Fetched on demand.
  */
 export function loadNumericNightOrder(): Promise<NumericNightOrder> {
-	numericLoading ??= fetchJson('/data/night-order-provisional.json').then(parseNumericNightOrder);
+	numericLoading ??= fetchJson('/data/night-order-provisional.json')
+		.then(parseNumericNightOrder)
+		.then((order) => (numeric = order));
 	return numericLoading;
 }
+
+/** The provisional numeric night order once `loadNumericNightOrder` has fetched it. */
+export const numericNightOrder = {
+	get current() {
+		return numeric;
+	}
+};

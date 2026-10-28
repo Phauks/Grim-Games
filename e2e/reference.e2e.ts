@@ -496,3 +496,39 @@ test('tapping a token opens that character', async ({ page }) => {
 	await rowOf(page, 'washerwoman').getByRole('button', { name: 'About the Washerwoman' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Washerwoman' })).toBeVisible();
 });
+
+test('All data shows everything the app reads about a character, by file', async ({ page }) => {
+	// Trevor (2026-10-28): "a button to show all information our app would use to use the
+	// character".
+	await page.goto('/reference');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Washerwoman');
+	const row = rowOf(page, 'washerwoman');
+	await row.locator('[data-field="name"]').getByRole('button', { name: 'All data' }).tap();
+	const dialog = page.getByRole('dialog').filter({ hasText: ': all data' });
+	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(/Washerwoman\s*: all data/);
+	const data = dialog.getByTestId('character-data');
+	await expect(data.locator('section[data-part]')).toHaveCount(7);
+	const rules = data.locator('section[data-part="rules"]');
+	await expect(rules).toContainText('src/lib/core/data/rules/washerwoman.json');
+	await expect(rules.locator('[data-key="setupPrep"] dt').first()).toHaveText('Setup prep');
+	await expect(data.locator('section[data-part="character"]')).toContainText(
+		'You start knowing that 1 of 2 players is a particular Townsfolk.'
+	);
+	await expect(data.locator('section[data-part="jinxes"] .value')).toHaveText('None');
+
+	// The raw JSON starts closed, with Copy and Download in its header.
+	await expect(dialog.getByTestId('character-data-file')).toBeHidden();
+	await dialog.getByRole('button', { name: 'All data as one file' }).tap();
+	const file = dialog.getByTestId('character-data-file');
+	await expect(file).toContainText('washerwoman-data.json');
+	await expect(file).toContainText('"reminderTargets"');
+	await expect(file.getByRole('button', { name: 'Copy all data' })).toBeVisible();
+	const download = page.waitForEvent('download');
+	await file.getByRole('button', { name: 'Download all data' }).tap();
+	expect((await download).suggestedFilename()).toBe('washerwoman-data.json');
+
+	const overflow = await page.evaluate(
+		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+	);
+	expect(overflow).toBeLessThanOrEqual(0);
+});

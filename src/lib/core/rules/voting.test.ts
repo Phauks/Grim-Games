@@ -10,6 +10,7 @@ import {
 	blockThreshold,
 	counts,
 	townCounts,
+	neededToExile,
 	ghostVotesLeft,
 	votesWithoutToken,
 	livingByTeam,
@@ -119,6 +120,29 @@ describe('townCounts', () => {
 		const seen = publicProjection(session.game, undefined, undefined, undefined, ctx.characters);
 		expect(townCounts(seen.seats).ghostVotes).toBe(ghostVotesLeft(session.game, ctx.characters));
 		expect(townCounts(seen.seats).ghostVotes).toBe(2);
+	});
+
+	// Glossary "Exile" and "Player": at least half of every player, alive or dead, Travellers
+	// included; the Voudon page's example has 5 of 12 supporting fail.
+	it('shows the players needed to exile while a living Traveller is in play', () => {
+		const cast = ['beggar', 'chef', 'empath', 'monk', 'imp', 'poisoner', 'saint'];
+		const isTraveller = (id: string) => id === 'beggar';
+		const { session, ctx, seats } = castGame(cast, (s) => ({
+			type: 'SetDead',
+			seatId: s[1],
+			dead: true
+		}));
+		const seen = publicProjection(session.game, isTraveller).seats;
+		expect(townCounts(seen)).toMatchObject({ alive: 6, needed: 3, total: 7, exile: 4 });
+		const gone = run(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true }).game;
+		expect(townCounts(publicProjection(gone, isTraveller).seats)).not.toHaveProperty('exile');
+		expect(townCounts(publicProjection(session.game, () => false).seats)).not.toHaveProperty(
+			'exile'
+		);
+	});
+
+	it('needs half of every player, rounded up, to exile', () => {
+		expect([5, 7, 12, 15].map(neededToExile)).toEqual([3, 4, 6, 8]);
 	});
 
 	it('is zero of zero with nobody seated', () => {
