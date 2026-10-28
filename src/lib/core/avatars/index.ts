@@ -6,16 +6,34 @@
  */
 export const AVATAR_IDS = ['initials'] as const;
 
-export type AvatarId = (typeof AVATAR_IDS)[number];
+/**
+ * An avatar: initials, or a character's icon (Trevor, 2026-10-27: one avatar, the account's
+ * character icon among its choices), as `character:<id>`. Seats show the icon engraved, in
+ * one tone, so it never reads as the player's character (2026-10-28).
+ */
+export type AvatarId = (typeof AVATAR_IDS)[number] | `character:${string}`;
 
 const KNOWN = new Set<string>(AVATAR_IDS);
+const CHARACTER = /^character:([a-z0-9_-]{1,40})$/;
+
+/** The avatar showing this character's icon. */
+export function characterAvatar(characterId: string): AvatarId {
+	return `character:${characterId}`;
+}
+
+/** The character whose icon an avatar shows, if it shows one. */
+export function avatarCharacter(avatar: AvatarId | undefined): string | undefined {
+	return avatar === undefined ? undefined : CHARACTER.exec(avatar)?.[1];
+}
 
 /**
  * The avatar a stored or sent value names, or undefined for anything else. That includes the
  * pictures an earlier beta build offered ("cat", "rocket"), which the seat then drops.
  */
 export function parseAvatarId(raw: unknown): AvatarId | undefined {
-	return typeof raw === 'string' && KNOWN.has(raw) ? (raw as AvatarId) : undefined;
+	if (typeof raw !== 'string') return undefined;
+	if (KNOWN.has(raw)) return raw as AvatarId;
+	return CHARACTER.test(raw) ? (raw as AvatarId) : undefined;
 }
 
 /**
