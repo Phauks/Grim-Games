@@ -170,11 +170,15 @@ test("without a logo, the board shows the script's name in its place", async ({ 
 	expect(await text.evaluate((el) => getComputedStyle(el).fontFamily)).toBe(headings);
 
 	// The players' grim shows it the same way.
+	// The grim cover too, in the logo's place, written once (Trevor, 2026-10-28: "in all
+	// locations it would show up").
 	await page.getByTestId('cover-button').tap();
-	await page
-		.getByRole('dialog', { name: 'Screen covered' })
-		.getByRole('button', { name: 'Player view' })
-		.tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	await expect(cover.getByTestId('cover-name')).toHaveText(name);
+	await expect(cover.getByRole('heading', { name })).toHaveCount(1);
+	await expect(cover.getByTestId('script-logo')).toHaveCount(0);
+	await page.screenshot({ path: test.info().outputPath('cover-name.png') });
+	await cover.getByRole('button', { name: 'Player view' }).tap();
 	const view = page.getByTestId('cover-player-view');
 	await view.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(view.getByTestId('board-name')).toHaveText(name);
