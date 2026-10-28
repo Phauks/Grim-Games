@@ -1,13 +1,13 @@
 <script lang="ts">
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
-	import type { DayMark, NightStep } from '#lib/core/rules/index.ts';
+	import type { NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { phaseText } from './phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, stepWakes, tonight } from './night-steps.ts';
+	import { boardNightSteps, stepWakes } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -19,8 +19,6 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import GameBackdrop from './GameBackdrop.svelte';
 	import { settingsProfiles } from '#lib/features/settings/profiles/settings-profiles.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
@@ -28,7 +26,7 @@
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
-	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
+	import { REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
@@ -67,7 +65,6 @@
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -101,7 +98,6 @@
 	import InboxNotice from '#lib/features/room/InboxNotice.svelte';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisfits } from './board.ts';
-	import { pendingSetup, type TrayItem } from './setup-tray.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
@@ -122,7 +118,6 @@
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
-	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
@@ -157,6 +152,8 @@
 	import FirstDeathAsk from './FirstDeathAsk.svelte';
 	import ReminderAsk from './ReminderAsk.svelte';
 	import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
+	import { PhaseFlow } from './phase-flow.svelte.ts';
+	import PhaseDialogs from './PhaseDialogs.svelte';
 	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
@@ -700,149 +697,20 @@
 		nominatingFrom = { seatId, side: made === undefined ? 'received' : 'made' };
 	}
 
-	let endNightOpen = $state(false);
-	let endDayOpen = $state(false);
-	/**
-	 * End day, from the bank or the day view (Trevor, 2026-10-18): the day's timer stops and
-	 * Dusk is ticked, which runs the rules checked at dusk (GameEndPrompt); the walk-through
-	 * starts on the board, where it is on.
-	 */
-	function endDay(): void {
-		dayOpen = false;
-		if (liveDayTimer.running) liveDayTimer.toggle();
-		grimoire.beginNight();
-		const night = tonight(game);
-		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
-			grimoire.toggleNightStep(night, { id: 'dusk' });
-		if (preferences.current.assistance.nightWalkthrough) nw.run(true);
-	}
-	/**
-	 * Execution ends the day (Trevor, 2026-10-22): the player chosen is executed first, unless
-	 * that execution is already logged, so the rules checked at dusk see it.
-	 */
-	/** A seat's status chose Executed: during the day, the day's Execution asks with them chosen. */
-	let executeChosen = $state<SeatId>();
-	$effect(() => {
-		if (!endDayOpen) executeChosen = undefined;
-	});
-	function executeFromSeat(seatId: SeatId): boolean {
-		if (bankRun.label !== t('day.execution') || bankRun.disabled) return false;
-		sheetOpen = false;
-		executeChosen = seatId;
-		endDayOpen = true;
-		return true;
-	}
-	function executeAndEndDay(
-		seatId: SeatId | undefined,
-		save: CharacterId | 'dies' | undefined,
-		marks: Partial<Record<DayMark, boolean>>,
-		keepGoing: boolean
-	): void {
-		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
-			grimoire.run({ type: 'SetDayMark', mark, value });
-		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
-		if (seatId && !logged)
-			grimoire.run({
-				type: 'Execute',
-				seatId,
-				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {})
-			});
-		// Keep the day going (Trevor, 2026-10-26): a player may still nominate after it.
-		if (!keepGoing) endDay();
-	}
-	/**
-	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
-	 * 2026-10-20), listing them; Confirm starts anyway (warn, never lock).
-	 */
-	let setupLeft = $state<TrayItem[]>([]);
-	let startAskOpen = $state(false);
-	function startGame() {
-		const left = pendingSetup(game, characters, grimoire.trayDismissed);
-		if (left.length > 0) {
-			setupLeft = left;
-			startAskOpen = true;
-			return;
-		}
-		beginGame();
-	}
-	function beginGame() {
-		gameStarts.start(game.gameId);
-		startedRead += 1;
-		if (preferences.current.assistance.nightWalkthrough) nw.run();
-		else endDay();
-	}
-	/** Setup's next step: Characters, or the bag draw once they are chosen. */
-	function openSetup() {
-		goto(
-			currentSetupStep(game) === 'draw'
-				? resolve('/grimoire/[gameId]/draw', { gameId: game.gameId })
-				: resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })
-		);
-	}
-	/**
-	 * The bank's button follows the game (Trevor, 2026-10-19): Set up while tokens are still
-	 * to be handed out (the game flow comes from this one button; the board has no other Set
-	 * up button), then Start game before the first night, End night during a night, End day
-	 * during a day; a walk-through stopped mid-night offers Run night to pick it up again.
-	 */
-	const bankRun = $derived.by(() => {
-		if (nw.nightOn)
-			return {
-				label: 'End night',
-				text: 'End night',
-				icon: 'day' as const,
-				disabled: grimoire.open.viewOnly,
-				onclick: () => {
-					endNightOpen = true;
-				},
-				hint: endHint
-			};
-		const walkthrough = preferences.current.assistance.nightWalkthrough;
-		if (grimoire.nightUnderway && walkthrough)
-			return {
-				label: 'Run Night Order',
-				text: 'Run night',
-				icon: 'night' as const,
-				disabled: !nw.canRun,
-				onclick: () => nw.run()
-			};
-		// Set up stands in for Start game only: once a night or day is under way, the bank
-		// ends it, characters or not.
-		if (game.pastDays.length === 0 && showSetup)
-			return {
-				label: 'Set up',
-				text: 'Set up',
-				icon: 'bag' as const,
-				disabled: seatArr.arranging || !!placing,
-				onclick: openSetup
-			};
-		if (game.pastDays.length === 0)
-			return {
-				label: 'Start game',
-				text: 'Start game',
-				icon: 'night' as const,
-				disabled: !nw.canRun,
-				onclick: startGame
-			};
-		// Execution in place of End day (Trevor, 2026-10-22): ending a day asks who was executed.
-		return {
-			label: t('day.execution'),
-			text: t('day.execution'),
-			icon: 'night' as const,
-			disabled: !!ended || grimoire.open.viewOnly || seatArr.arranging || !!placing,
-			onclick: () => {
-				endDayOpen = true;
-			}
-		};
-	});
-
-	function endNight() {
-		if (!grimoire.endNight()) return;
-		nw.walk = undefined;
-		// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
-		if (preferences.current.assistance.dayAfterNight) dayOpen = true;
-		offerSavant();
-	}
+	// ── From one phase to the next: the bank's button and what it asks (phase-flow.svelte.ts) ──
+	const flow = new PhaseFlow(() => ({
+		grimoire,
+		game,
+		characters,
+		nw,
+		showSetup,
+		ended: !!ended,
+		busy: seatArr.arranging || !!placing,
+		setDayOpen: (open) => (dayOpen = open),
+		closeSeat: () => (sheetOpen = false),
+		started: () => (startedRead += 1),
+		offerSavant
+	}));
 
 	// ── End game (Trevor, 2026-10-16): the game moves to History ──
 	// The Storyteller stays on the board, which says the game is over (Trevor, 2026-10-17).
@@ -1042,8 +910,6 @@
 		if (changes.storytellerName !== (game.storytellerName ?? ''))
 			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
 	}
-	/** Counts Next taps past the walk-through's last step; each lights up End night. */
-	let endHint = $state(0);
 
 	// ── Fabled and Loric: their dialogs (RuleCharacters) ──
 	let rules = $state<ReturnType<typeof RuleCharacters>>();
@@ -1412,7 +1278,7 @@
 				night={nw.walk.night}
 				index={nw.walk.index}
 				onIndex={(index) => nw.walk && (nw.walk = { ...nw.walk, index })}
-				onPastEnd={() => endHint++}
+				onPastEnd={() => flow.endHint++}
 				asleepBy={nw.asleepRule}
 				emptySeatBy={nw.emptySeatRule}
 				attack={nw.attack}
@@ -1443,7 +1309,7 @@
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
 				onHints={(h) => (trayHints = h)}
-				run={bankRun}
+				run={flow.run}
 				disabled={watching}
 			/>
 		{/if}
@@ -1628,40 +1494,7 @@
 
 <ReminderAsk {grimoire} />
 
-<ConfirmDialog bind:open={startAskOpen} title="Start the game?" onConfirm={beginGame}>
-	<p class="ask-note">Setup reminders not yet placed:</p>
-	<ul class="setup-left" data-testid="setup-left">
-		{#each setupLeft as { key, suggestion } (key)}
-			<li>
-				<ReminderToken
-					label={suggestion.label}
-					character={characters.get(suggestion.characterId)}
-				/>
-			</li>
-		{/each}
-	</ul>
-</ConfirmDialog>
-
-<ConfirmDialog bind:open={endNightOpen} title="End the night?" onConfirm={endNight}>
-	<SettingToggle
-		label={ASSIST_LABELS.dayAfterNight.label}
-		description={ASSIST_LABELS.dayAfterNight.description}
-		checked={preferences.current.assistance.dayAfterNight}
-		onChange={(dayAfterNight) =>
-			preferences.update({
-				assistance: { ...preferences.current.assistance, dayAfterNight }
-			})}
-	/>
-</ConfirmDialog>
-
-<!-- The same question as the day view's Execution. -->
-<ExecutionDialog
-	bind:open={endDayOpen}
-	{game}
-	characters={grimoire.open.characters}
-	chosen={executeChosen}
-	onConfirm={executeAndEndDay}
-/>
+<PhaseDialogs {flow} {game} {characters} />
 
 <LeaveGuard {game} {watching} />
 
@@ -1676,7 +1509,7 @@
 	}}
 	onNotes={(id) => notesSheet?.edit(id)}
 	onNominated={nominated}
-	onExecute={executeFromSeat}
+	onExecute={(seatId) => flow.executeFromSeat(seatId)}
 />
 
 <SeatProfileDialog bind:open={profileOpen} {game} seatId={profileSeat} />
@@ -1810,7 +1643,7 @@
 	{coverTimer}
 	{coverActions}
 	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
-	onEndDay={() => (endDayOpen = true)}
+	onEndDay={() => (flow.endDayOpen = true)}
 	onSavant={(seatId) => {
 		savantSeat = seatId;
 		savantOpen = true;
@@ -1862,17 +1695,6 @@
 
 <style>
 	/* Start game's question: the setup reminders still to place (Trevor, 2026-10-20). */
-	.ask-note {
-		margin: 0;
-	}
-	.setup-left {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
 	.grimoire {
 		/* Its own layer, so the backdrop sits behind the toolbar and board, not the page. */
 		position: relative;

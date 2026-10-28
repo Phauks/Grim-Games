@@ -132,15 +132,16 @@ test("day notes are gone; a player's day button sits in their ability row", asyn
 	await expect(button).toHaveCount(1);
 	const row = page.locator('li[data-character="slayer"]').filter({ has: button });
 	await expect(row).toHaveCount(1);
-	// The character's band across the row, the ability under it, then a strip joined below
-	// with the state and the button at its end (Trevor, 2026-10-23).
-	const band = row.locator('.bar .badge');
+	// Drawn as the script draws it (Trevor, 2026-10-28): the ring and band with the name, the
+	// ability under it, then a strip with the state and the button at its end (2026-10-23).
+	await expect(row.locator('.ring img')).toBeVisible();
+	const band = row.locator('.band');
 	await expect(band).toContainText('Slayer');
 	// The player's name badge inside the character's (Trevor, 2026-10-24).
 	await expect(band.getByTestId('player-badge')).toHaveText('Ben');
-	const bar = await place(row.locator('.bar'));
-	const ability = await place(row.locator('.ability'));
-	const footer = await place(row.locator('.footer'));
+	const bar = await place(band);
+	const ability = await place(row.locator('.ring-ability'));
+	const footer = await place(row.locator('.state-line'));
 	const used = await place(button);
 	expect(ability.y).toBeGreaterThanOrEqual(bar.y + bar.height - 1);
 	expect(footer.y).toBeGreaterThanOrEqual(ability.y + ability.height - 1);
@@ -152,7 +153,7 @@ test("day notes are gone; a player's day button sits in their ability row", asyn
 	expect(used.height).toBeGreaterThanOrEqual(footer.height - 2);
 	await expect(button).toHaveCSS('border-top-left-radius', '0px');
 	const size = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontSize);
-	expect(await size(row.getByTestId('day-state'))).toBe(await size(row.locator('.ability')));
+	expect(await size(row.getByTestId('day-state'))).toBe(await size(row.locator('.ring-ability')));
 	await row.screenshot({ path: `test-results/day-used-row-${test.info().project.name}.png` });
 });
 
