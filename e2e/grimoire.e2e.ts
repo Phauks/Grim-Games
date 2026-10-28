@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
+import { pickScript, nameStoryteller, toBoard, pastGameSettings } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
 import { savesSettled, trackSaves } from './saves.ts';
@@ -4408,7 +4408,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
 	expect((await names('Game')).join(' ')).toMatch(
-		/^History Demon bluffs Notes( Game info)?( Character selection)? End game$/
+		/^History Demon bluffs Notes( Game info)? Game settings( Character selection)? End game$/
 	);
 	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Arrange seats']);
 	expect(await names('App')).toEqual(['Settings', 'Full screen', 'Report an issue']);

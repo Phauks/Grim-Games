@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
-import { pickScript, toBoard } from './new-game.ts';
+import { pickScript, toBoard, pastGameSettings } from './new-game.ts';
 
 // Deal (Trevor, 2026-10-26: "auto select characters and send to players"): the bag goes to the
 // seats at random, every seat whether or not its player has a phone, and a seated phone holds
@@ -29,6 +29,7 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await pickScript(page, 'Trouble Brewing');
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])
@@ -106,6 +107,7 @@ test('a phone that joins is named on a seat and gets its character from Deal', a
 	await pickScript(page, 'Trouble Brewing');
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])

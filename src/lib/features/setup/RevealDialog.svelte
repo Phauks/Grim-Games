@@ -13,7 +13,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { untrack } from 'svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -109,7 +109,7 @@
 			name = playerName;
 			picking = false;
 			alignment = '';
-			revealed = !preferences.current.requireName || playerName.trim() !== '';
+			revealed = !gameSettings.current.requireName || playerName.trim() !== '';
 			held = false;
 			seen = false;
 		}

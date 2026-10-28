@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
+	import GameSettingsDialog from '#lib/features/game-settings/GameSettingsDialog.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
@@ -74,6 +76,8 @@
 		onEnd
 	}: Props = $props();
 	let closeRoomOpen = $state(false);
+	let gameSettingsOpen = $state(false);
+	const gameId = $derived(gameSettings.gameId);
 	const host = roomHost();
 
 	function fromMenu(action: () => void) {
@@ -123,6 +127,17 @@
 			{/if}
 			{#if gameInfo}
 				<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
+			{/if}
+			<!-- This game's own settings, as the start flow's Game settings step set them. -->
+			{#if gameId}
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="settings"
+					onclick={() => fromMenu(() => (gameSettingsOpen = true))}
+				>
+					{t('setup.gameSettings')}
+				</Button>
 			{/if}
 			{#if onCharacterSelection}
 				<Button
@@ -246,6 +261,8 @@
 		</div>
 	</div>
 </Dialog>
+
+{#if gameId}<GameSettingsDialog bind:open={gameSettingsOpen} {gameId} />{/if}
 
 <ConfirmDialog
 	bind:open={closeRoomOpen}

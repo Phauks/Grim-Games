@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { pickScript, toBoard } from './new-game.ts';
+import { pickScript, toBoard, pastGameSettings } from './new-game.ts';
 
 // Trevor's playtest (2026-10-26): Game info's New game moves into the board's ⋯ menu, where
 // it replaces End game once the game has ended. The sidebar keeps its own New game.
@@ -59,6 +59,7 @@ test('the board ⋯ menu offers Character selection only until the bag is dealt'
 	await pickScript(page, 'Trouble Brewing');
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });

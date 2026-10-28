@@ -121,12 +121,10 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	await expect(shown).toHaveAttribute('data-look', 'timer');
 	await expect(shown.getByRole('timer')).toHaveText(/^3:[0-5]\d$/);
 
-	// Hidden keeps it to the Storyteller.
+	// Always shown: the Storyteller picks only its style (Trevor, 2026-10-28), so no Hidden.
 	await controls.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
-	await page.getByRole('option', { name: 'Hidden', exact: true }).tap();
-	await expect(shown).toHaveCount(0);
-	// The status line still says which day it is.
-	await expect(status).toHaveText('Day 1');
+	await expect(page.getByRole('option')).toHaveText(['Sun', 'Timer']);
+	await page.keyboard.press('Escape');
 	await page.keyboard.press('Escape');
 	await expect(controls).toBeHidden();
 

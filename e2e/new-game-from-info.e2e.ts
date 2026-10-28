@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript, toBoard } from './new-game.ts';
+import { pickScript, toBoard, pastGameSettings } from './new-game.ts';
 
 // A new script means a new game, never a change mid-game (Trevor, 2026-10-24): New game in
 // the board's ⋯ menu opens "a tiny modal version of the new game screen", and the room, seat
@@ -91,6 +91,7 @@ test('New game in the board menu, once the game ends, starts the next game with 
 		.tap();
 	await expect(preview).toContainText('Grandmother');
 	await newGame.getByRole('button', { name: 'Start game' }).tap();
+	await pastGameSettings(page);
 
 	// Character selection of the next game, then its board: the same seats and names.
 	await toBoard(page);

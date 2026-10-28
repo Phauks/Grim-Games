@@ -88,7 +88,6 @@ export const day = {
 	'day.timerForPlayers': 'Day timer on players’ phones',
 	'day.timerForPlayers.sun': 'Sun',
 	'day.timerForPlayers.timer': 'Timer',
-	'day.timerForPlayers.off': 'Hidden',
 	'day.sunLabel': 'Day timer: {percent}% of the day left',
 	'day.timerSwitchToUp': 'Timer; switch to stopwatch',
 	'day.timerSwitchToDown': 'Stopwatch; switch to timer',

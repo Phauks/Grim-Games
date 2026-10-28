@@ -1,6 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import { pastGameSettings } from './new-game.ts';
 import { expectWayBack } from './shell.ts';
 
 // Every screen has a way back to where it came from (Trevor, 2026-10-26): the hamburger on the
@@ -34,7 +35,7 @@ const ANY_ID: Record<string, string> = {
 };
 
 /** A game's screens, opened on a real game (the start flow's own Back needs one). */
-const GAME = ['', '/deal', '/draw', '/extras', '/room', '/setup'];
+const GAME = ['', '/deal', '/draw', '/extras', '/game-settings', '/room', '/setup'];
 
 /** Pages that are not screens: each opens another and is gone. */
 const NOT_SCREENS: Record<string, string> = {
@@ -73,6 +74,7 @@ async function startGame(page: Page): Promise<string> {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	return new URL(page.url()).pathname.replace(/\/setup$/, '');
 }

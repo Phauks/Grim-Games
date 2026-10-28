@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
-import { pickScript, toBoard } from './new-game.ts';
+import { pickScript, toBoard, pastGameSettings } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
@@ -12,6 +12,7 @@ async function selectionFor(page: Page, players: number, script = 'Trouble Brewi
 	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	for (let n = 8; n < players; n++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
+	await pastGameSettings(page);
 	// A new game opens on character selection (G7).
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
@@ -54,8 +55,8 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 		expect(back!.x).toBeLessThan(next!.x);
 		return { back, next };
 	};
-	// Before any character is dealt, Back goes to New game; the board is one tap away.
-	await expect(bar.getByRole('button', { name: 'New game' })).toBeVisible();
+	// Before any character is dealt, Back goes to Game settings; the board is one tap away.
+	await expect(bar.getByRole('link', { name: 'Game settings' })).toBeVisible();
 	await expect(bar.getByTestId('setup-to-board')).toBeVisible();
 	await expect(bar.getByRole('button', { name: 'Build bag' })).toBeVisible();
 	const onCharacters = await barButtons();
@@ -260,6 +261,7 @@ test('Stowed Away: up to 2 Travellers count in the bag, the rest for fewer playe
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Start game' })
 		.tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);
@@ -810,6 +812,7 @@ test.describe('in a computer window', () => {
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
 		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
 		await page.getByRole('button', { name: 'Start game' }).click();
+		await pastGameSettings(page);
 		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 
 		// The setup sheet is beside the characters; Build bag is in the bar at the bottom right.

@@ -118,8 +118,8 @@
 				storyteller
 			);
 			saveDraft({ gameId: open.game.gameId });
-			// Every start goes on to Character selection, a plain game too (Trevor, 2026-10-23).
-			await goto(resolve('/grimoire/[gameId]/setup', { gameId: open.game.gameId }));
+			// Every start goes on to Game settings, a plain game too (Trevor, 2026-10-28).
+			await goto(startHref(STANDARD.id, [], open.game.gameId));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {

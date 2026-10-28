@@ -58,6 +58,7 @@
 	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
 	import { dayClaim } from '#lib/core/rules/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 
 	interface Props {
 		open: boolean;
@@ -542,7 +543,7 @@
 
 			<!-- Nomination tracking (Trevor, 2026-10-22: "if enabled, just add beneath dead vote the
 			     same area there to track it"). Both rows always show while the setting is on. -->
-			{#if preferences.current.assistance.trackNominations}
+			{#if gameSettings.current.trackNominations}
 				<div class="row">
 					<span class="label" id={`nominated-${seat.seatId}`}>Nominated</span>
 					<button
