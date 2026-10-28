@@ -44,12 +44,8 @@ describe('navigation', () => {
 		expect(NAV_SECTIONS.map((section) => section.id)).toEqual(['games', 'prepare']);
 		// Player view is reached from a join code, not the menu (Trevor, 2026-10-19).
 		expect(NAV_ITEMS.some((item) => item.id === 'play')).toBe(false);
-		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual([
-			'new',
-			'games',
-			'join',
-			'history'
-		]);
+		// Join game and Resume game are one page (Trevor, 2026-10-28).
+		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual(['new', 'join', 'history']);
 	});
 
 	it('puts Home first, outside the groups (Trevor, 2026-10-16)', () => {
