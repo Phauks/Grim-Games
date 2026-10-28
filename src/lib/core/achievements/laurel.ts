@@ -31,10 +31,17 @@ export const LAUREL_FORM_NAMES: Record<LaurelForm, string> = {
 };
 
 /** A colour's base, its lighter half, its dark midrib, and the outline round each leaf. */
-type Material = readonly [base: string, light: string, dark: string, ink: string];
+export type Material = readonly [base: string, light: string, dark: string, ink: string];
 
 // Laurels are pictures, so their colours are their own, like the frames' and the backgrounds'.
 export const LAUREL_COLOURS = {
+	// The theme's own accent, mixed lighter and darker, so a frame can follow the theme.
+	accent: [
+		'var(--accent)',
+		'color-mix(in oklch, var(--accent) 60%, white)',
+		'color-mix(in oklch, var(--accent) 65%, black)',
+		'color-mix(in oklch, var(--accent) 35%, black)'
+	],
 	bronze: [
 		'oklch(0.62 0.1 55)',
 		'oklch(0.74 0.09 60)',
@@ -89,6 +96,7 @@ export const LAUREL_COLOURS = {
 export type LaurelColour = keyof typeof LAUREL_COLOURS;
 
 export const LAUREL_COLOUR_NAMES: Record<LaurelColour, string> = {
+	accent: 'Theme accent',
 	bronze: 'Bronze',
 	silver: 'Silver',
 	gold: 'Gold',
