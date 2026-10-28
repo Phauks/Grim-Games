@@ -24,7 +24,7 @@ import {
 	type ScriptLabels
 } from './library-labels.ts';
 
-export const LIBRARY_STORAGE_KEY = 'grim-games:library';
+const LIBRARY_STORAGE_KEY = 'grim-games:library';
 
 /**
  * Synced with a signed-in account as one document (account sync, agreed with the Accounts

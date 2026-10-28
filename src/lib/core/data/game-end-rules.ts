@@ -40,7 +40,7 @@ import {
  * - `extra-day`: the Demon's execution would end the game, so play one more day; then whoever
  *   is executed loses for their team, and nobody executed means good wins (the Mastermind).
  */
-export const END_KINDS = [
+const END_KINDS = [
 	'executed-loses',
 	'marked-executed',
 	'day-without-execution',
@@ -72,7 +72,7 @@ export interface EndsGame {
  *   until its `spentToken` marks that it happened (the Imp to a Minion; the Fang Gu to an
  *   Outsider, once).
  */
-export const HOLD_KINDS = ['marked-alive', 'becomes-demon', 'death-passes'] as const;
+const HOLD_KINDS = ['marked-alive', 'becomes-demon', 'death-passes'] as const;
 export type HoldKind = (typeof HOLD_KINDS)[number];
 export interface HoldsGame {
 	kind: HoldKind;

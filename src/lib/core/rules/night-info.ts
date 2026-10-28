@@ -79,4 +79,4 @@ export {
 	type ChosenPlayers,
 	chosenPlayers
 } from './night-info/chosen-players.ts';
-export { type NightStepInfo, nightStepInfo, withNightInfo } from './night-info/steps.ts';
+export { type NightStepInfo, withNightInfo } from './night-info/steps.ts';

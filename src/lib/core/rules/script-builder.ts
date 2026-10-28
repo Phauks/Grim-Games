@@ -91,7 +91,7 @@ export type ScriptSize = 'full' | 'teensyville';
  * gives for a full script. Teensyville: 6, 2, 2, 2, from the BotC wiki's Teensyville page
  * (TPI's same post says 1 Demon; the wiki is our rules authority).
  */
-export const EXPECTED_SCRIPT_COUNTS: Readonly<Record<ScriptSize, Readonly<TypeCounts>>> = {
+const EXPECTED_SCRIPT_COUNTS: Readonly<Record<ScriptSize, Readonly<TypeCounts>>> = {
 	full: { townsfolk: 13, outsider: 4, minion: 4, demon: 4 },
 	teensyville: { townsfolk: 6, outsider: 2, minion: 2, demon: 2 }
 };
