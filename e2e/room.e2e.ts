@@ -1033,7 +1033,7 @@ test('a join screen shows nothing from the phone until the room sends its script
 	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
 	// A code no room has: only the join form, none of the phone's own script.
 	await phone.goto('/join/000000');
-	await expect(phone.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
+	await expect(phone.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
 	await expect(phone.getByRole('tab')).toHaveCount(0);
 	await expect(phone.getByText('Bad Moon Rising')).toHaveCount(0);
 
@@ -1165,9 +1165,9 @@ test('Join game in the menu takes a typed code, with spaces, and says when no ga
 }) => {
 	await page.goto('/');
 	await menuButton(page).tap();
-	await page.getByRole('link', { name: 'Join or resume' }).tap();
+	await page.getByRole('link', { name: 'Continue game' }).tap();
 	await expect(page).toHaveURL(/\/join$/);
-	await expect(page.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
 	// Nothing to print or share before a game is joined, so neither shows (Trevor, 2026-10-23).
 	for (const name of ['Print script', 'Share script'])
 		await expect(page.getByRole('button', { name })).toHaveCount(0);
