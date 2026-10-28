@@ -9,7 +9,6 @@ import { toBoard } from './new-game.ts';
 const ROUTES = [
 	'/',
 	'/new',
-	'/games',
 	'/reference',
 	'/scripts',
 	'/settings',

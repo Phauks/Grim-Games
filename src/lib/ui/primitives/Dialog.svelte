@@ -138,7 +138,9 @@
 							>{#if heading}{@render heading()}{:else}{title}{/if}</Dialog.Title
 						>
 					</div>
-					{#if headActions}<span class="head-actions">{@render headActions()}</span>{/if}
+					{#if headActions}<span class="head-actions" data-testid="dialog-head-actions"
+							>{@render headActions()}</span
+						>{/if}
 					{#if closeButton}
 						<!-- A plain button that sets `open`, not Ark's CloseTrigger: zag's own close runs a
 						     flushSync that can crash Svelte 5.57 (null batch) about one close in three. -->

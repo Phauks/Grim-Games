@@ -9,14 +9,22 @@ const source = (path: string) => readFileSync(`src/lib/features/${path}`, 'utf8'
 const joinPanel = source('room/JoinPanel.svelte');
 const playerView = source('player/PlayerView.svelte');
 const boardView = source('grimoire/BoardPlayerView.svelte');
+const screen = source('player/PlayerScreen.svelte');
 
 describe("Storyteller's player view parity", () => {
 	it('renders the same row over the tabs and the same tabs as /play', () => {
-		for (const piece of ['<PlayerStatusRow', '<PlayerScriptTabs', '<PlayerGrim', '<PlayerNotes']) {
-			expect(boardView).toContain(piece);
-		}
+		expect(boardView).toContain('<PlayerStatusRow');
 		expect(joinPanel).toContain('<PlayerStatusRow');
-		expect(playerView).toContain('<PlayerScriptTabs');
+	});
+
+	it('draws the tabs through PlayerScreen on both sides, never set up by either host', () => {
+		// Trevor, 2026-10-28: full screen on the Grim tab was /play's own option, so the
+		// Storyteller's view never had it. How a tab looks is PlayerScreen's choice alone.
+		for (const host of [playerView, boardView]) {
+			expect(host).toContain('<PlayerScreen');
+			expect(host).not.toMatch(/<Player(ScriptTabs|Grim|Notes)\b/);
+		}
+		expect(screen).toMatch(/<PlayerGrim\b[^>]*\bfullScreen\b/);
 	});
 
 	it('draws the table from the state the room sends, never a projection of its own', () => {

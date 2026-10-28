@@ -96,6 +96,20 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await opened.getByRole('button', { name: 'Mark as unread' }).tap();
 	await expect(opened).toBeHidden();
 	await expect(item).toContainText('New');
+	// Filters by player, read or unread, and a request for a consult (Trevor, 2026-10-28).
+	const filters = inbox.getByTestId('inbox-filters');
+	await filters.getByRole('combobox', { name: 'Read' }).tap();
+	await page.getByRole('option', { name: 'Read', exact: true }).tap();
+	await expect(item).toHaveCount(0);
+	await expect(inbox).toContainText('None');
+	await filters.getByRole('combobox', { name: 'Read' }).tap();
+	await page.getByRole('option', { name: 'Unread', exact: true }).tap();
+	await expect(item).toHaveCount(1);
+	await filters.getByRole('combobox', { name: 'Player' }).tap();
+	await page.getByRole('option', { name: 'Alex', exact: true }).tap();
+	await expect(item).toHaveCount(1);
+	await filters.getByText('Consult requested', { exact: true }).tap();
+	await expect(item).toHaveCount(1);
 	await item.tap();
 	await page.keyboard.press('Escape');
 	await page.keyboard.press('Escape');

@@ -95,18 +95,19 @@ export const LAUREL_COLOURS = {
 } as const satisfies Record<string, Material>;
 export type LaurelColour = keyof typeof LAUREL_COLOURS;
 
+// Plain colour names only (Trevor, 2026-10-28: "no additional words like Townsfolk blue").
 export const LAUREL_COLOUR_NAMES: Record<LaurelColour, string> = {
-	accent: 'Theme accent',
+	accent: 'Accent',
 	bronze: 'Bronze',
 	silver: 'Silver',
 	gold: 'Gold',
 	green: 'Green',
-	townsfolk: 'Townsfolk blue',
-	outsider: 'Outsider blue',
-	minion: 'Minion red',
-	demon: 'Demon red',
-	traveller: 'Traveller purple',
-	fabled: 'Fabled gold'
+	townsfolk: 'Blue',
+	outsider: 'Cyan',
+	minion: 'Orange',
+	demon: 'Red',
+	traveller: 'Purple',
+	fabled: 'Yellow'
 };
 
 export interface LaurelSpec {
