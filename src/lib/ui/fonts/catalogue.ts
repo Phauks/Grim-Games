@@ -102,7 +102,7 @@ export const FONTS: Record<FontId, FontInfo> = {
 	}
 };
 
-export function isFontId(value: unknown): value is FontId {
+function isFontId(value: unknown): value is FontId {
 	return (FONT_IDS as readonly unknown[]).includes(value);
 }
 
@@ -201,9 +201,6 @@ export const FONT_ROLE_INFO: Record<FontRole, FontRoleInfo> = {
 		length: 'running'
 	}
 };
-
-export const isFontRole = (value: unknown): value is FontRole =>
-	(FONT_ROLES as readonly unknown[]).includes(value);
 
 /** The CSS variable a role's font stack is written to. */
 export const fontVariable = (role: FontRole) => `--font-${role}` as const;

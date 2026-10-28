@@ -93,7 +93,7 @@ export function driveFileId(href: string): string | undefined {
 }
 
 /** At most this many scripts from one doc; a collection far bigger isn't this kind of doc. */
-export const MAX_COLLECTION_SCRIPTS = 60;
+const MAX_COLLECTION_SCRIPTS = 60;
 
 /** The doc opened at one heading (`h.…` ids, as Google Docs writes them). */
 export function collectionHeadingUrl(collection: ScriptCollectionInfo, heading?: string): string {

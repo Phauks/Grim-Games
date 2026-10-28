@@ -29,7 +29,7 @@ import {
 	type AnyDuplicates
 } from './bag-characters.ts';
 
-export { canDuplicate, isBagDisabled, isNotDealt, isReplacedAfterDraw, replacementReminder };
+export { canDuplicate, isReplacedAfterDraw, replacementReminder };
 export type { AnyDuplicates };
 
 /** Copies of each selected character (a missing id or 0 is not selected). */

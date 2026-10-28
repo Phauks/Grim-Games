@@ -456,7 +456,7 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	expect(box.height).toBeGreaterThanOrEqual(44);
 	const colours = await del.evaluate((el) => {
 		const probe = document.createElement('span');
-		probe.style.color = 'var(--evil)';
+		probe.style.color = 'var(--evil-text)';
 		el.append(probe);
 		const evil = getComputedStyle(probe).color;
 		probe.remove();

@@ -98,6 +98,6 @@
 		color: var(--on-surface-muted);
 	}
 	.state.done {
-		color: var(--good);
+		color: var(--good-text);
 	}
 </style>

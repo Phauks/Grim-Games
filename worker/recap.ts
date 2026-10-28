@@ -1,3 +1,4 @@
+import { noStore, text } from './http.ts';
 import { DurableObject } from 'cloudflare:workers';
 import {
 	MAX_RECAP_BYTES,
@@ -48,12 +49,6 @@ export class SharedRecap extends DurableObject<RecapEnv> {
 	async alarm(): Promise<void> {
 		await this.ctx.storage.deleteAll();
 	}
-}
-
-const noStore = { 'Cache-Control': 'no-store' };
-
-function text(message: string, status: number): Response {
-	return new Response(message, { status, headers: noStore });
 }
 
 /** The recap as compact JSON, or an error message. */
