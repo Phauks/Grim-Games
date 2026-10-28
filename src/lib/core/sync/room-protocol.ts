@@ -112,6 +112,7 @@ export type ClientMessage =
 	/** Lets a reported picture stand, or takes that player's picture away for this game. */
 	| { type: 'judge-picture'; hash: string; allow: boolean }
 	| { type: 'read-messages'; ids: string[] } // The Storyteller opened these messages.
+	| { type: 'unread-messages'; ids: string[] } // The Storyteller marked them unread again.
 	| { type: 'close' };
 
 /** What the Storyteller's device sees. */
@@ -260,6 +261,11 @@ export type ServerMessage =
 	 * games (plan J31), or stop. The app shows nothing for it; older apps ignore it.
 	 */
 	| { type: 'grimoire-wanted'; on: boolean }
+	/**
+	 * To the phone that sent a message to the Storyteller: whether the room took it (Trevor,
+	 * 2026-10-28). Says nothing of what was sent; older apps ignore it.
+	 */
+	| { type: 'message-delivered'; delivered: boolean }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 

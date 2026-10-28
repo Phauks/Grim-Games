@@ -30,6 +30,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import NightWhy from './NightWhy.svelte';
+	import CharacterSet from './CharacterSet.svelte';
 	import { seatName } from './night-steps.ts';
 
 	/**
@@ -46,11 +47,13 @@
 		compact?: boolean;
 		/** Show a character to the player. */
 		onShow?: (characterId: CharacterId) => void;
+		/** Show a set of characters to the player at once (the Godfather's Outsiders). */
+		onShowCharacters?: (set: Extract<AnswerValue, { kind: 'characters' }>) => void;
 		/** Show the "Your number is" info token with a suggested number (a number step). */
 		onShowNumber?: (n: number) => void;
 	}
 
-	let { grimoire, step, compact = false, onShow, onShowNumber }: Props = $props();
+	let { grimoire, step, compact = false, onShow, onShowCharacters, onShowNumber }: Props = $props();
 	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
@@ -66,6 +69,9 @@
 			case 'character':
 				// Drawn as a badge (the value snippet); only its id here.
 				return v.value;
+			case 'characters':
+				// Drawn as badges (the characters snippet); only the ids here.
+				return v.value.join(', ');
 			case 'number':
 				return String(v.value);
 			case 'none':
@@ -242,6 +248,8 @@
 	const line = $derived.by(
 		(): {
 			characterId?: CharacterId;
+			/** A set of characters (the Godfather's Outsiders), drawn as badges. */
+			set?: Extract<AnswerValue, { kind: 'characters' }>;
 			text: string;
 			seats?: readonly SeatId[];
 			valid?: typeof validLists;
@@ -252,6 +260,7 @@
 			if (info.kind === 'answer') {
 				const a = info.answers[0];
 				const note = a.unreliable ? ' (not reliable)' : '';
+				if (a.kind === 'characters') return { set: a, text: note };
 				return a.kind === 'character'
 					? { characterId: a.value, text: note }
 					: { text: `${valueText(a)}${note}` };
@@ -290,7 +299,9 @@
 {#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
 			characterId={v.value}
 			character={characters.get(v.value)}
-		/>{:else}{valueText(v)}{/if}{/snippet}
+		/>{:else if v.kind === 'characters'}<CharacterSet value={v} {characters} />{:else}{valueText(
+			v
+		)}{/if}{/snippet}
 
 {#snippet flagBody(flag: Flag)}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n
 			? ', '
@@ -357,8 +368,12 @@
 							interactive={false}
 						/>{/snippet}
 				</Select>
+			{:else if o.anyOther}
+				<strong>Any other</strong>
 			{:else if o.value.kind === 'character'}
 				<CharacterBadge characterId={o.value.value} character={characters.get(o.value.value)} />
+			{:else if o.value.kind === 'characters'}
+				<CharacterSet value={o.value} {characters} />
 			{:else}
 				<strong>{valueText(o.value)}</strong>
 			{/if}
@@ -373,6 +388,9 @@
 		{:else if o.value.kind === 'character' && onShow}
 			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
 			>
+		{:else if o.value.kind === 'characters' && !o.anyOther && onShowCharacters}
+			{@const v = o.value}
+			<Button variant="quiet" onclick={() => onShowCharacters(v)}>Show to player</Button>
 		{/if}
 	</li>
 {/snippet}
@@ -384,6 +402,8 @@
 			>{/if}
 		{#if a.kind === 'character'}
 			<CharacterBadge characterId={a.value} character={characters.get(a.value)} />
+		{:else if a.kind === 'characters'}
+			<CharacterSet value={a} {characters} />
 		{:else}
 			<strong>{valueText(a)}</strong>
 		{/if}
@@ -394,6 +414,8 @@
 	{#if a.kind === 'character' && onShow}
 		{@const id = a.value}
 		<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
+	{:else if a.kind === 'characters' && onShowCharacters}
+		<Button variant="quiet" onclick={() => onShowCharacters(a)}>Show to player</Button>
 	{:else if a.kind === 'number' && onShowNumber}
 		{@const n = a.value}
 		<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
@@ -405,6 +427,10 @@
 			>Valid Information: {#if line.characterId}<CharacterBadge
 					characterId={line.characterId}
 					character={characters.get(line.characterId)}
+					interactive={false}
+				/>{/if}{#if line.set}<CharacterSet
+					value={line.set}
+					{characters}
 					interactive={false}
 				/>{/if}{line.text}{#each line.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
 					name={name(seatId)}

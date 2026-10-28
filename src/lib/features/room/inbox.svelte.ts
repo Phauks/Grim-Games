@@ -46,11 +46,21 @@ export class RoomInbox {
 		return this.messages.filter((m) => !m.read).length + this.pictureReports.length;
 	}
 
-	/** The Storyteller opened Messages: every message in it now counts as read. */
-	readAll(): void {
-		const ids = this.messages.flatMap((m) => (m.read ? [] : [m.id]));
-		if (ids.length === 0 || !this.#send({ type: 'read-messages', ids })) return;
-		this.messages = this.messages.map((m) => (m.read ? m : { ...m, read: true }));
+	/**
+	 * The Storyteller opened this message, or marked it unread again (Trevor, 2026-10-28:
+	 * "only marked as read when entered").
+	 */
+	markRead(id: string, read = true): void {
+		const message = this.messages.find((m) => m.id === id);
+		if (!message || !!message.read === read) return;
+		if (!this.#send({ type: read ? 'read-messages' : 'unread-messages', ids: [id] })) return;
+		this.messages = this.messages.map((m) => {
+			if (m.id !== id) return m;
+			if (read) return { ...m, read: true };
+			const { read: _read, ...unread } = m;
+			void _read;
+			return unread;
+		});
 	}
 
 	/** Lets a reported picture stand, or takes the player's picture away for this game. */

@@ -31,12 +31,17 @@ export function impairmentValues(game: DayGame, impairments: readonly Impairment
 		.join('; ');
 }
 
-function valueText(game: DayGame, v: AnswerValue): string {
+export function valueText(game: DayGame, v: AnswerValue): string {
 	switch (v.kind) {
 		case 'yes-no':
 			return v.value ? 'Yes' : 'No';
 		case 'character':
 			return game.characterName(v.value);
+		case 'characters': {
+			const names = v.value.map((id) => game.characterName(id));
+			if (v.more) names.push(`+${v.more.count} ${v.more.type}`);
+			return names.length > 0 ? names.join(', ') : 'None';
+		}
 		case 'number':
 			return String(v.value);
 		case 'none':

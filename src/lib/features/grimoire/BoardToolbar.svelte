@@ -217,15 +217,16 @@
 			display: none;
 		}
 	}
-	/* A count on a button's corner, so the button keeps its size. */
+	/* A count on a button's corner, so the button keeps its size. It sits inside the button,
+	   since ⋯ is at the screen's edge and a count over its corner was cut off (Trevor,
+	   2026-10-28). */
 	.toolbar :global(.button:has(> .count)) {
 		position: relative;
-		overflow: visible;
 	}
 	.count {
 		position: absolute;
-		top: calc(-1 * var(--space-1));
-		right: calc(-1 * var(--space-1));
+		top: 0.15em;
+		right: 0.15em;
 		font-size: 0.75rem;
 		pointer-events: none;
 	}

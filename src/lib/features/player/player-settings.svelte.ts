@@ -22,6 +22,11 @@ export interface PlayerSettings {
 	 */
 	frame?: FrameId;
 	/**
+	 * A line of the player's own about themselves (Trevor, 2026-10-28: "I don't really know how
+	 * we're going to use it yet, but I wanted it there"). Kept and edited in the Profile only.
+	 */
+	flavour?: string;
+	/**
 	 * What this player puts on their seat token (plan R6), sent with their frame: always their
 	 * initials (Trevor, 2026-10-25: "always on", no setting).
 	 */
@@ -115,6 +120,14 @@ const DEFAULTS: PlayerSettings = {
 	sheetBackground: 'theme'
 };
 
+/** The longest flavour text kept. */
+export const MAX_FLAVOUR = 200;
+
+function parseFlavour(raw: unknown): string | undefined {
+	const text = typeof raw === 'string' ? raw.trim().slice(0, MAX_FLAVOUR) : '';
+	return text || undefined;
+}
+
 function read(): PlayerSettings {
 	try {
 		const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Record<string, unknown>;
@@ -122,6 +135,7 @@ function read(): PlayerSettings {
 			hideNoteContents: raw.hideNoteContents === true,
 			print: readPrint(raw.print),
 			frame: parseFrameId(raw.frame),
+			flavour: parseFlavour(raw.flavour),
 			// Initials are always on (Trevor, 2026-10-25): an older build's "none" reads as them.
 			avatar: parseAvatarId(raw.avatar) ?? DEFAULTS.avatar,
 			hideGuesses: raw.hideGuesses === true,
