@@ -95,6 +95,7 @@ import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
 import ph_globe_bold from '~icons/ph/globe-bold';
 import ph_hammer_bold from '~icons/ph/hammer-bold';
+import ph_hand_arrow_up_bold from '~icons/ph/hand-arrow-up-bold';
 import ph_hand_coins_bold from '~icons/ph/hand-coins-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
 import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
@@ -315,6 +316,7 @@ const icons: IconMap = {
 	'ph:ghost-bold': ph_ghost_bold,
 	'ph:globe-bold': ph_globe_bold,
 	'ph:hammer-bold': ph_hammer_bold,
+	'ph:hand-arrow-up-bold': ph_hand_arrow_up_bold,
 	'ph:hand-coins-bold': ph_hand_coins_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
 	'ph:hand-grabbing-bold': ph_hand_grabbing_bold,

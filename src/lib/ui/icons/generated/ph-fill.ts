@@ -95,6 +95,7 @@ import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
 import ph_globe_fill from '~icons/ph/globe-fill';
 import ph_hammer_fill from '~icons/ph/hammer-fill';
+import ph_hand_arrow_up_fill from '~icons/ph/hand-arrow-up-fill';
 import ph_hand_coins_fill from '~icons/ph/hand-coins-fill';
 import ph_hand_fist_fill from '~icons/ph/hand-fist-fill';
 import ph_hand_grabbing_fill from '~icons/ph/hand-grabbing-fill';
@@ -315,6 +316,7 @@ const icons: IconMap = {
 	'ph:ghost-fill': ph_ghost_fill,
 	'ph:globe-fill': ph_globe_fill,
 	'ph:hammer-fill': ph_hammer_fill,
+	'ph:hand-arrow-up-fill': ph_hand_arrow_up_fill,
 	'ph:hand-coins-fill': ph_hand_coins_fill,
 	'ph:hand-fist-fill': ph_hand_fist_fill,
 	'ph:hand-grabbing-fill': ph_hand_grabbing_fill,

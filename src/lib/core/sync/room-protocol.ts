@@ -19,6 +19,7 @@ import type { SeatRole } from './room-roles.ts';
 import type { PictureReportView } from './room-pictures.ts';
 import type { PlayerMessage } from './room-messages.ts';
 import type { GameOver, RoomMember, RoomRequest } from './room.ts';
+import type { TransferDetails, TransferStatus } from './room-transfer.ts';
 
 export type ClientMessage =
 	/**
@@ -27,8 +28,11 @@ export type ClientMessage =
 	 */
 	| {
 			type: 'hello';
-			/** `town`: a Public Town display (`TownView`); its key is ignored, as it sends nothing. */
-			role: 'host' | 'player' | 'viewer' | 'town';
+			/**
+			 * `town`: a Public Town display (`TownView`); its key is ignored, as it sends nothing.
+			 * `claim`: a device taking the room over (room-transfer.ts); its key is its new host key.
+			 */
+			role: 'host' | 'player' | 'viewer' | 'town' | 'claim';
 			key: string;
 			protocol?: number;
 			/** When this app's build was made (ISO); the Storyteller's is passed on to phones. */
@@ -112,6 +116,14 @@ export type ClientMessage =
 	/** Lets a reported picture stand, or takes that player's picture away for this game. */
 	| { type: 'judge-picture'; hash: string; allow: boolean }
 	| { type: 'read-messages'; ids: string[] } // The Storyteller opened these messages.
+	/** Opens a room transfer with this code's hash, or changes whether it brings the game. */
+	| { type: 'open-transfer'; codeHash: string; bringGame: boolean }
+	| { type: 'close-transfer' }
+	// From a device taking the room over (hello role `claim`).
+	/** Is this the transfer code? Answered with `transfer` or `transfer-refused`. */
+	| { type: 'check-transfer'; code: string }
+	/** Takes the room with this transfer code: answered with `transferred`. */
+	| { type: 'take-room'; code: string }
 	| { type: 'close' };
 
 /** What the Storyteller's device sees. */
@@ -142,6 +154,7 @@ export interface HostView {
 	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
 	pictureReports?: PictureReportView[]; // Pictures other phones reported, for a verdict.
 	messages?: PlayerMessage[]; // Players' messages this game, oldest first.
+	transfer?: TransferStatus; // The room transfer this device has open.
 }
 
 export interface VoteTally {
@@ -260,6 +273,14 @@ export type ServerMessage =
 	 * games (plan J31), or stop. The app shows nothing for it; older apps ignore it.
 	 */
 	| { type: 'grimoire-wanted'; on: boolean }
+	/** To a device taking over: the code is right, and this comes with the room. */
+	| { type: 'transfer'; details: TransferDetails }
+	/** To a device taking over: wrong code, or no transfer open (`triesLeft` 0). */
+	| { type: 'transfer-refused'; triesLeft: number }
+	/** To the device that took over: the room is its now, with the game when it came along. */
+	| { type: 'transferred'; grimoire?: SharedGrimoire }
+	/** To the Storyteller's old device: another device took the room over. */
+	| { type: 'handed-over' }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 

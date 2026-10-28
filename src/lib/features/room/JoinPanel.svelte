@@ -9,6 +9,7 @@
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
+	import TransferClaimDialog from './TransferClaimDialog.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
@@ -193,6 +194,8 @@
 					? t('room.lookupFailed')
 					: ''
 	);
+
+	let transferOpen = $state(false);
 
 	function openRoom(roomCode: string) {
 		if (onCode) onCode(roomCode);
@@ -403,6 +406,13 @@
 						onSelect: () => {
 							if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
 						}
+					},
+					// Another Storyteller's device hands this one the room (Trevor, 2026-10-28).
+					{
+						value: 'transfer',
+						label: t('room.transfer.title'),
+						disabled: lookup?.state !== 'found',
+						onSelect: () => (transferOpen = true)
 					}
 				]}
 			/>
@@ -416,6 +426,7 @@
 				pieces={scanPieces}
 			/>{/if}
 	</Dialog>
+	{#if lookup}<TransferClaimDialog bind:open={transferOpen} roomCode={lookup.code} />{/if}
 	<Dialog bind:open={grimViewOpen} title={t('room.grimView')}>
 		<form class="grim-view" onsubmit={grimView}>
 			<TextField

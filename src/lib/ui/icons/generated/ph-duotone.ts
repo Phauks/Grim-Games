@@ -95,6 +95,7 @@ import ph_gear_six_duotone from '~icons/ph/gear-six-duotone';
 import ph_ghost_duotone from '~icons/ph/ghost-duotone';
 import ph_globe_duotone from '~icons/ph/globe-duotone';
 import ph_hammer_duotone from '~icons/ph/hammer-duotone';
+import ph_hand_arrow_up_duotone from '~icons/ph/hand-arrow-up-duotone';
 import ph_hand_coins_duotone from '~icons/ph/hand-coins-duotone';
 import ph_hand_fist_duotone from '~icons/ph/hand-fist-duotone';
 import ph_hand_grabbing_duotone from '~icons/ph/hand-grabbing-duotone';
@@ -315,6 +316,7 @@ const icons: IconMap = {
 	'ph:ghost-duotone': ph_ghost_duotone,
 	'ph:globe-duotone': ph_globe_duotone,
 	'ph:hammer-duotone': ph_hammer_duotone,
+	'ph:hand-arrow-up-duotone': ph_hand_arrow_up_duotone,
 	'ph:hand-coins-duotone': ph_hand_coins_duotone,
 	'ph:hand-fist-duotone': ph_hand_fist_duotone,
 	'ph:hand-grabbing-duotone': ph_hand_grabbing_duotone,
