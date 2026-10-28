@@ -1454,6 +1454,15 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(pledge.getByTestId('watch-pledge').getByRole('listitem')).toHaveCount(3);
 	await pledge.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
+	// The fair-play line stays at the bottom while watching (Trevor, 2026-10-28).
+	// The fair-play line stays bottom right while watching, short; tapping it shows the whole
+	// warning (Trevor, 2026-10-28). The pledge's own notice may still be closing, so by name.
+	const fairPlay = viewer.getByRole('button', { name: 'This is for your eyes only.' });
+	await expect(fairPlay).toBeVisible();
+	await fairPlay.tap();
+	await expect(viewer.getByTestId('fair-play-full')).toContainText('Please do not screenshot');
+	await viewer.keyboard.press('Escape');
+	await expect(viewer.getByTestId('fair-play-full')).toBeHidden();
 	// Every control that changes the game is there but disabled (Trevor, 2026-10-19), so
 	// nothing invites a try; what only reads still opens. The board says it is view-only.
 	const toolbar = viewer.getByRole('toolbar', { name: 'Grimoire' });
