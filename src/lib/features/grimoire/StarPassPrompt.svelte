@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { starPass } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -45,8 +46,7 @@
 		open = true;
 	});
 
-	const playerName = (id: SeatId) =>
-		game.seats[id]?.playerName ?? `Seat ${game.seating.indexOf(id) + 1}`;
+	const playerName = (id: SeatId) => seatName(game, id);
 
 	function confirm() {
 		if (choice && pass?.heirs.includes(choice))

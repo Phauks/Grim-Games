@@ -3,6 +3,7 @@
  * as scripts, characters, or character collections"). Every item has a kind and a key; its
  * folder and tags live in the labels (library-labels.ts) under that key, whatever its kind.
  */
+import { foldForSearch } from '#lib/core/text/fold.ts';
 import { folderAndDescendants, labelsFor, type LibraryLabels } from './library-labels.ts';
 
 export const ITEM_KINDS = ['script', 'character', 'collection'] as const;
@@ -49,7 +50,7 @@ export function itemsShown<T extends LibraryItem>(
 	if (isBrowsing(filter)) {
 		return items.filter((item) => labelsFor(state, item.key).folder === filter.folder);
 	}
-	const term = filter.term.trim().toLocaleLowerCase();
+	const term = foldForSearch(filter.term.trim());
 	const inside = filter.folder ? folderAndDescendants(state, filter.folder) : undefined;
 	return items.filter((item) => {
 		if (filter.kind !== 'all' && item.kind !== filter.kind) return false;
