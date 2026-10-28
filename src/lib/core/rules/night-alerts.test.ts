@@ -3,11 +3,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
-import {
-	newGame,
-	run,
-	testCharacters as characters
-} from '#lib/core/model/fixtures.test-support.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
@@ -18,23 +14,6 @@ import {
 	nightStepAlerts,
 	type NightAlert
 } from './night-alerts.ts';
-
-const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
-
-function game(cast: string[], ...extra: ((seats: string[]) => Command)[]) {
-	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
-	const s = run(
-		session,
-		ctx,
-		...cast.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...extra.map((f) => f(seats))
-	);
-	return { game: s.game, seats };
-}
 
 const add =
 	(i: number, characterId: string, label: string) =>
@@ -71,7 +50,7 @@ describe('data', () => {
 
 describe('impaired waking player (https://wiki.bloodontheclocktower.com/Glossary)', () => {
 	it('reminds that a poisoned Monk has no ability tonight (https://wiki.bloodontheclocktower.com/Poisoner)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['monk', 'poisoner', 'imp', 'chef', 'empath'],
 			add(0, 'poisoner', 'Poisoned')
 		);
@@ -81,14 +60,14 @@ describe('impaired waking player (https://wiki.bloodontheclocktower.com/Glossary
 	});
 
 	it('says nothing for a healthy, non-killing step', () => {
-		const { game: g } = game(['monk', 'poisoner', 'imp', 'chef', 'empath']);
+		const { game: g } = castGame(['monk', 'poisoner', 'imp', 'chef', 'empath']);
 		expect(nightStepAlerts(g, 'chef', characters)).toEqual([]);
 	});
 });
 
 describe('Demon kill', () => {
 	it('names the Soldier (https://wiki.bloodontheclocktower.com/Soldier) and the Monk’s Safe player (https://wiki.bloodontheclocktower.com/Monk)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['imp', 'soldier', 'monk', 'chef', 'empath'],
 			add(3, 'monk', 'Safe')
 		);
@@ -99,7 +78,7 @@ describe('Demon kill', () => {
 	});
 
 	it('flags a Safe token whose Monk is poisoned as not working', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['imp', 'poisoner', 'monk', 'chef', 'empath'],
 			add(3, 'monk', 'Safe'),
 			add(2, 'poisoner', 'Poisoned')
@@ -108,12 +87,12 @@ describe('Demon kill', () => {
 	});
 
 	it('warns the Mayor’s death may bounce (https://wiki.bloodontheclocktower.com/Mayor)', () => {
-		const { game: g, seats } = game(['imp', 'mayor', 'chef', 'empath', 'monk']);
+		const { game: g, seats } = castGame(['imp', 'mayor', 'chef', 'empath', 'monk']);
 		expect(short(nightStepAlerts(g, 'imp', characters), seats)).toEqual(['may-bounce mayor→1']);
 	});
 
 	it('reminds of the Ravenkeeper and the Sage (https://wiki.bloodontheclocktower.com/Ravenkeeper, /Sage)', () => {
-		const { game: g, seats } = game(['imp', 'ravenkeeper', 'sage', 'chef', 'empath']);
+		const { game: g, seats } = castGame(['imp', 'ravenkeeper', 'sage', 'chef', 'empath']);
 		expect(short(nightStepAlerts(g, 'imp', characters), seats)).toEqual([
 			'on-death ravenkeeper→1',
 			'on-death sage→2'
@@ -121,7 +100,7 @@ describe('Demon kill', () => {
 	});
 
 	it('reminds the Grandmother dies with her grandchild (https://wiki.bloodontheclocktower.com/Grandmother)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['imp', 'grandmother', 'chef', 'empath', 'monk'],
 			add(2, 'grandmother', 'Grandchild')
 		);
@@ -129,7 +108,7 @@ describe('Demon kill', () => {
 	});
 
 	it('skips dead players', () => {
-		const { game: g } = game(['imp', 'soldier', 'chef', 'empath', 'monk'], (s) => ({
+		const { game: g } = castGame(['imp', 'soldier', 'chef', 'empath', 'monk'], (s) => ({
 			type: 'SetDead',
 			seatId: s[1],
 			dead: true,
@@ -141,7 +120,7 @@ describe('Demon kill', () => {
 
 describe('other kills', () => {
 	it('the Soldier and Monk protect only against the Demon (https://wiki.bloodontheclocktower.com/Godfather)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['godfather', 'soldier', 'tealady', 'chef', 'empath'],
 			add(3, 'tealady', 'Cannot Die')
 		);
@@ -151,7 +130,7 @@ describe('other kills', () => {
 	});
 
 	it('the Assassin ignores protection (https://wiki.bloodontheclocktower.com/Assassin)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['assassin', 'soldier', 'innkeeper', 'ravenkeeper', 'imp'],
 			add(1, 'innkeeper', 'Safe')
 		);
@@ -161,7 +140,7 @@ describe('other kills', () => {
 	});
 
 	it('the Gambler can only kill themself, so only their own protection counts (https://wiki.bloodontheclocktower.com/Gambler)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['gambler', 'mayor', 'innkeeper', 'imp', 'chef'],
 			add(0, 'innkeeper', 'Safe'),
 			add(4, 'innkeeper', 'Safe')
@@ -172,16 +151,19 @@ describe('other kills', () => {
 	});
 
 	it('the Fool survives once, until their No Ability token (https://wiki.bloodontheclocktower.com/Fool)', () => {
-		const { game: g, seats } = game(['gossip', 'fool', 'imp', 'chef', 'empath']);
+		const { game: g, seats } = castGame(['gossip', 'fool', 'imp', 'chef', 'empath']);
 		expect(short(nightStepAlerts(g, 'gossip', characters), seats)).toEqual([
 			'survives-first-death fool→1'
 		]);
-		const spent = game(['gossip', 'fool', 'imp', 'chef', 'empath'], add(1, 'fool', 'No Ability'));
+		const spent = castGame(
+			['gossip', 'fool', 'imp', 'chef', 'empath'],
+			add(1, 'fool', 'No Ability')
+		);
 		expect(nightStepAlerts(spent.game, 'gossip', characters)).toEqual([]);
 	});
 
 	it('the Storyteller’s cannot-die override protects from anything', () => {
-		const { game: g, seats } = game(['godfather', 'chef', 'imp', 'empath', 'monk'], (s) => ({
+		const { game: g, seats } = castGame(['godfather', 'chef', 'imp', 'empath', 'monk'], (s) => ({
 			type: 'SetOverride',
 			seatId: s[1],
 			override: { field: 'canDie', value: false }
@@ -217,14 +199,14 @@ describe('custom characters', () => {
 			ignoresProtection: false
 		});
 		expect(nightKiller('nightcrow')).toBeUndefined();
-		const { game: g, seats } = game(['soldier', 'chef']);
+		const { game: g, seats } = castGame(['soldier', 'chef']);
 		expect(short(nightStepAlerts(g, 'nightcrow', all), seats)).toEqual(['protected soldier→0']);
 	});
 });
 
 describe('Princess (https://wiki.bloodontheclocktower.com/Princess)', () => {
 	it('after her day-one execution, the Demon does not kill tonight: no kill alerts', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['imp', 'soldier', 'princess'],
 			add(0, 'princess', "Doesn't Kill")
 		);
@@ -234,7 +216,7 @@ describe('Princess (https://wiki.bloodontheclocktower.com/Princess)', () => {
 
 describe('Moonchild (https://wiki.bloodontheclocktower.com/Moonchild)', () => {
 	it('its kill is not the Demon’s: the Soldier is not protected, the Tea Lady’s player is', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['moonchild', 'soldier', 'chef', 'tealady', 'monk'],
 			add(2, 'tealady', 'Cannot Die'),
 			// The Moonchild died today; tonight its chosen good player dies.

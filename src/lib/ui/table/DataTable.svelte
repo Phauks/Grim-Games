@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { rootFontPx } from '#lib/ui/root-font.svelte.ts';
 	import type { FilterKind, FilterValue } from '#lib/ui/table/column-filter.ts';
 
 	export type SortDirection = 'ascending' | 'descending';
@@ -318,7 +319,7 @@
 	/** Tracks the same 40rem limit as the container query below. */
 	function watchWidth(element: HTMLElement) {
 		const check = () => {
-			const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+			const rem = rootFontPx();
 			narrowNow = element.getBoundingClientRect().width <= 40 * rem;
 		};
 		// Now, so the first rows are measured against the right box.

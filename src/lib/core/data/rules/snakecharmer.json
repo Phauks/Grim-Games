@@ -68,5 +68,6 @@
 	"becomes": {
 		"token": "Poisoned",
 		"into": "swap"
-	}
+	},
+	"choosesUnmarked": true
 }
