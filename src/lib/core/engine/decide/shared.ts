@@ -104,7 +104,7 @@ export function trulyInPlay(game: Game, ctx: EngineContext): Set<CharacterId> {
 	return ids;
 }
 
-export function inPlay(game: Game, ctx: EngineContext): Set<CharacterId> {
+function inPlay(game: Game, ctx: EngineContext): Set<CharacterId> {
 	const ids = new Set<CharacterId>(game.ruleCharacters);
 	for (const seatId of game.seating) {
 		const token = game.seats[seatId].characterId;
@@ -300,27 +300,27 @@ export function deathCause(ctx: EngineContext, cause: DeathCause): DeathCause {
 	return characterOf(ctx, cause).id;
 }
 
-export function badOverride(message: string): never {
+function badOverride(message: string): never {
 	return refuse('invalid-override', message);
 }
 
-export function nonEmpty(value: unknown, name: string): string {
+function nonEmpty(value: unknown, name: string): string {
 	if (typeof value !== 'string' || value.trim() === '') badOverride(`${name} must be text`);
 	return value;
 }
 
-export function textOf(value: unknown): string {
+function textOf(value: unknown): string {
 	if (typeof value !== 'string') badOverride('text must be a string');
 	return value;
 }
 
-export function nightOf(value: unknown): { night?: Night } {
+function nightOf(value: unknown): { night?: Night } {
 	if (value === undefined) return {};
 	if (value !== 'first' && value !== 'other') badOverride('night must be first or other');
 	return { night: value };
 }
 
-export function anchorOf(value: unknown): string | null {
+function anchorOf(value: unknown): string | null {
 	if (value === null) return null;
 	return nonEmpty(value, 'after');
 }
