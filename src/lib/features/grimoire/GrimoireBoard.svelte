@@ -117,6 +117,7 @@
 	import BoardPlayerView from './BoardPlayerView.svelte';
 	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
@@ -1509,6 +1510,9 @@
 			{/if}
 		</div>
 	</div>
+	<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28): its own row
+	     under the board, there from the start, so it covers and moves nothing. -->
+	{#if watching}<div class="fair-play"><FairPlayNotice kind="secret" /></div>{/if}
 </div>
 
 <!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
@@ -1858,6 +1862,11 @@
 		/* Fills the screen: a game hides the sidebar (route data). */
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
+	}
+	.fair-play {
+		display: grid;
+		justify-items: center;
+		padding: 0 var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom));
 	}
 	.strip-measure {
 		position: absolute;
