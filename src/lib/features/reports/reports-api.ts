@@ -1,3 +1,5 @@
+import { fetchWithTimeout, SLOW_FETCH_TIMEOUT_MS } from '#lib/ui/fetch.ts';
+
 import {
 	REPORTS_API,
 	reportScriptPath,
@@ -23,8 +25,10 @@ export class ReportRefused extends Error {
  * (outbox.svelte.ts), which keeps a report on the device until it is sent.
  */
 export async function sendReport(draft: ReportDraft): Promise<number> {
-	const response = await fetch(REPORTS_API, {
+	const response = await fetchWithTimeout(REPORTS_API, {
 		method: 'POST',
+		// A report can carry a screenshot.
+		timeoutMs: SLOW_FETCH_TIMEOUT_MS,
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(draft)
 	});
@@ -40,14 +44,14 @@ const json: HeadersInit = { 'Content-Type': 'application/json' };
 
 /** The reports this account may read, newest first; undefined when signed out. */
 export async function listReports(): Promise<ReportList | undefined> {
-	const response = await fetch(REPORTS_API);
+	const response = await fetchWithTimeout(REPORTS_API);
 	if (response.status === 404) return undefined;
 	if (!response.ok) throw new Error(await response.text());
 	return (await response.json()) as ReportList;
 }
 
 export async function setReportStatus(id: number, status: ReportStatus) {
-	const response = await fetch(`${REPORTS_API}/${id}`, {
+	const response = await fetchWithTimeout(`${REPORTS_API}/${id}`, {
 		method: 'PATCH',
 		headers: json,
 		body: JSON.stringify({ status })
@@ -56,7 +60,7 @@ export async function setReportStatus(id: number, status: ReportStatus) {
 }
 
 export async function deleteReport(id: number) {
-	const response = await fetch(`${REPORTS_API}/${id}`, {
+	const response = await fetchWithTimeout(`${REPORTS_API}/${id}`, {
 		method: 'DELETE',
 		headers: json
 	});
@@ -65,7 +69,7 @@ export async function deleteReport(id: number) {
 
 /** The script a report was sent with, as TPI's JSON; undefined when there is none to show. */
 export async function fetchReportScript(id: number): Promise<unknown[] | undefined> {
-	const response = await fetch(reportScriptPath(id));
+	const response = await fetchWithTimeout(reportScriptPath(id));
 	if (response.status === 404) return undefined;
 	if (!response.ok) throw new Error(await response.text());
 	return (await response.json()) as unknown[];

@@ -11,33 +11,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
-import {
-	newGame,
-	run,
-	testCharacters as characters
-} from '#lib/core/model/fixtures.test-support.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { infoPicker } from './picker.ts';
 import { learnedRoles } from './learned-roles.ts';
 
-const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay'];
-
-function game(cast: string[], ...extra: ((seats: string[]) => Command)[]) {
-	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
-	const s = run(
-		session,
-		ctx,
-		...cast.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...extra.map((f) => f(seats))
-	);
-	return { game: s.game, seats };
-}
-
 function rolesOf(cast: string[], character: string, ...extra: ((seats: string[]) => Command)[]) {
-	const { game: g, seats } = game(cast, ...extra);
+	const { game: g, seats } = castGame(cast, ...extra);
 	const picker = infoPicker(g, seats[cast.indexOf(character)], character, characters)!;
 	return { roles: learnedRoles(g, picker, characters)!, seats };
 }

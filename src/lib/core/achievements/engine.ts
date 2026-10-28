@@ -3,16 +3,43 @@
  * like History's stats, it is worked out again from the records each time, so a changed or
  * new achievement also counts games played before it existed.
  */
-import type { CharacterId } from '#lib/core/data/index.ts';
-import { playerCount } from '#lib/core/stats/index.ts';
+import type { CharacterId, CharacterType } from '#lib/core/data/index.ts';
+import { playerCount, type RecordCharacter } from '#lib/core/stats/index.ts';
 import type { Achievement, Criteria, Earned, GameFacts, LaurelOption, TakenPart } from './types.ts';
 
-/** The characters a seat had: at the first Dawn and at the end. */
-export function charactersOf(game: TakenPart): CharacterId[] {
+/**
+ * Everything the player's seat had during the game, each once: a character or alignment it
+ * was changed to counts as much as the one it started with (Trevor, 2026-10-27).
+ */
+function heldBy(game: TakenPart): RecordCharacter[] {
 	if (game.seatId === undefined) return [];
 	const seat = game.record.seats.find((s) => s.seatId === game.seatId);
-	const ids = [seat?.start?.characterId, seat?.end?.characterId];
-	return [...new Set(ids.filter((id) => id !== undefined))];
+	if (!seat) return [];
+	return [seat.start, ...(seat.held ?? []), seat.end].filter((c) => c !== undefined);
+}
+
+/** The characters the player's seat had during the game. */
+export function charactersOf(game: TakenPart): CharacterId[] {
+	return [...new Set(heldBy(game).map((c) => c.characterId))];
+}
+
+/** The character types the player's seat had during the game. */
+export function typesOf(game: TakenPart): CharacterType[] {
+	const types = charactersOf(game).map((id) => game.record.characters[id]?.type);
+	return [...new Set(types.filter((t) => t !== undefined))];
+}
+
+/** Whether the player's team at the end was the team that won. */
+export function wonGame(game: TakenPart): boolean {
+	const seat = game.record.seats.find((s) => s.seatId === game.seatId);
+	const team = seat?.end?.alignment;
+	return team !== undefined && team === game.record.winner;
+}
+
+/** Whether the player's seat changed character, or alignment, during the game. */
+function changed(game: TakenPart, what: 'character' | 'alignment'): boolean {
+	const values = heldBy(game).map((c) => (what === 'character' ? c.characterId : c.alignment));
+	return new Set(values.filter((v) => v !== undefined)).size > 1;
 }
 
 /** True when every fact given holds for the game. */
@@ -40,6 +67,10 @@ function counts(criteria: Criteria, game: TakenPart): boolean {
 	switch (criteria.kind) {
 		case 'playedAs':
 			return charactersOf(game).includes(criteria.character);
+		case 'playedType':
+			return typesOf(game).includes(criteria.type) && (!criteria.won || wonGame(game));
+		case 'changed':
+			return changed(game, criteria.what);
 		case 'inGame':
 			return asPlayer(game) && factsHold(criteria.where, game);
 		case 'gamesPlayed': {
