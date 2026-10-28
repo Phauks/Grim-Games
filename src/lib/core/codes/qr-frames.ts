@@ -11,7 +11,7 @@
 import { fromBase64Url, toBase64Url } from './base64url.ts';
 import { blockCount, encodePiece, FountainDecoder } from './fountain.ts';
 
-export const QR_FRAME_PREFIX = 'GB1';
+const QR_FRAME_PREFIX = 'GB1';
 /** Characters of the text per frame: a small code, quick to read off another phone's screen. */
 export const QR_FRAME_CHARS = 600;
 /** More frames than this take too long to read; the text is refused instead. */
@@ -69,7 +69,7 @@ export function parseQrFrame(text: string): QrFrame | null {
  * characters, the size Divan's tests read fastest off a screen
  * (https://divan.dev/posts/animatedqr/: 850-byte frames, low error correction).
  */
-export const QR_PIECE_BYTES = 600;
+const QR_PIECE_BYTES = 600;
 /** Pieces shown per block before the loop starts again: enough spares for missed frames. */
 const PIECES_PER_BLOCK = 3;
 
@@ -112,7 +112,7 @@ const PIECE = /^GB2:([0-9a-z]{1,7}):(\d{1,6}):(\d{1,6}):([\w-]+)$/;
  * the frame last in its hash (`/join#q=...`, or `#r=<room>&q=...`), so a phone's camera app opens the app; older codes are
  * the frame alone.
  */
-export function unwrapQrFrame(text: string): string {
+function unwrapQrFrame(text: string): string {
 	const at = /[#&]q=/.exec(text);
 	return at ? text.slice(at.index + 3) : text;
 }

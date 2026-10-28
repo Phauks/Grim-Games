@@ -103,8 +103,6 @@ export function savantSituation(
 	return { mode: 'one-each' };
 }
 
-export { SAVANT_TEMPLATES } from './savant-templates.ts';
-
 // ── Working them out ────────────────────────────────────────────────────────
 
 /**
@@ -296,10 +294,7 @@ export function pickStatement(
 }
 
 /** Whether each slot should be true, for a mode: one-each in a random order. */
-export function wantedTruths(
-	mode: SavantMode,
-	random: () => number = Math.random
-): [boolean, boolean] {
+function wantedTruths(mode: SavantMode, random: () => number = Math.random): [boolean, boolean] {
 	if (mode === 'both-true') return [true, true];
 	if (mode === 'both-false') return [false, false];
 	return random() < 0.5 ? [true, false] : [false, true];
