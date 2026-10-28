@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { openInbox } from './inbox.ts';
 import { toBoard } from './new-game.ts';
-import { openPlayerSettings, setPlayerName } from './player-name.ts';
+import { openProfile, setPlayerName } from './player-name.ts';
 
 // Players' messages to the Storyteller (Trevor, 2026-10-27): "Unilateral messaging to
 // storyteller. Combine into a communication menu where notifications from players about bad
@@ -33,7 +33,7 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await openPlayerSettings(phone);
+	await openProfile(phone);
 	await setPlayerName(phone, 'Alex');
 	await phone.keyboard.press('Escape');
 
