@@ -253,6 +253,6 @@
 		padding-inline-start: var(--space-4);
 	}
 	.warn {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 </style>

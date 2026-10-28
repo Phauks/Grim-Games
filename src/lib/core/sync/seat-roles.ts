@@ -27,7 +27,7 @@ export interface SeatRole {
 }
 
 /** The longest character id a role carries; ids are short, homebrew ones included. */
-export const MAX_ROLE_ID = 80;
+const MAX_ROLE_ID = 80;
 
 /** The role for every seat whose player may be shown one, by seat. */
 export function seatRoles(game: Game, characters: CharacterLookup): Record<SeatId, SeatRole> {

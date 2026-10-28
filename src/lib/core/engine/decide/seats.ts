@@ -1,4 +1,6 @@
-import type { GameNote } from '#lib/core/model/index.ts';
+import type { Game, GameNote, SeatId } from '#lib/core/model/index.ts';
+import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
+import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	MAX_SEATS,
@@ -44,6 +46,37 @@ function writtenNote(
 		before?.noteId ??
 		`n${notes.reduce((max, n) => Math.max(max, Number(n.noteId.slice(1)) || 0), 0) + 1}`;
 	return { noteId, title, text, hidden: command.hidden };
+}
+
+/**
+ * The events that put the players in `seating`: the new order, then each token that follows
+ * its character's neighbours (the Tea Lady's, the No Dashii's) moving to the new neighbour,
+ * with a note saying so.
+ */
+function reseated(
+	game: Game,
+	seating: SeatId[],
+	reorder: GameEvent,
+	ctx: EngineContext,
+	warn: Warn
+): GameEvent[] {
+	const name = (id: SeatId) => game.seats[id].playerName ?? `Seat ${game.seating.indexOf(id) + 1}`;
+	const follows = neighbourFollows(game, { ...game, seating }, ctx.characters);
+	for (const f of follows) {
+		const character = ctx.characters.get(f.reminder.characterId)?.name ?? f.reminder.characterId;
+		warn(
+			'reminder-followed',
+			`${character}’s ${f.reminder.label} moved from ${name(f.fromSeatId)} to ${name(f.toSeatId)}, the new neighbour.`
+		);
+	}
+	return [
+		reorder,
+		...follows.map((f): GameEvent => ({
+			type: 'ReminderMoved',
+			reminderId: f.reminderId,
+			toSeatId: f.toSeatId
+		}))
+	];
 }
 
 /** Seats, the script, the Storyteller name and game notes. */
@@ -167,11 +200,15 @@ export const SEATS_DECIDERS: Deciders<
 		return [{ type: 'GameNoteDeleted', noteId: command.noteId }];
 	},
 
-	SwapSeats(game, command) {
+	SwapSeats(game, command, ctx, warn) {
 		const a = seatOf(game, command.seatA);
 		const b = seatOf(game, command.seatB);
 		if (a.seatId === b.seatId) refuse('same-seat', 'choose two different seats');
-		return [{ type: 'SeatsSwapped', seatA: a.seatId, seatB: b.seatId }];
+		const seating = game.seating.map((id) =>
+			id === a.seatId ? b.seatId : id === b.seatId ? a.seatId : id
+		);
+		const swap: GameEvent = { type: 'SeatsSwapped', seatA: a.seatId, seatB: b.seatId };
+		return reseated(game, seating, swap, ctx, warn);
 	},
 
 	RotateSeats(game, command, ctx, warn) {
@@ -203,6 +240,9 @@ export const SEATS_DECIDERS: Deciders<
 		}
 		const seating = game.seating.filter((id) => id !== seat.seatId);
 		seating.splice(position, 0, seat.seatId);
-		return [...seatNumberNames(game), { type: 'SeatingReordered', seating }];
+		return [
+			...seatNumberNames(game),
+			...reseated(game, seating, { type: 'SeatingReordered', seating }, ctx, warn)
+		];
 	}
 };

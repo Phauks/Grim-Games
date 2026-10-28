@@ -94,7 +94,7 @@ const average = (values: number[]): number | undefined =>
 const won = (record: GameRecord, alignment: Alignment | undefined): boolean =>
 	record.winner !== undefined && alignment === record.winner;
 
-export const scriptKey = (script: GameRecord['script']): string =>
+const scriptKey = (script: GameRecord['script']): string =>
 	`${script.name ?? ''}\u0000${script.author ?? ''}`;
 
 const playerKey = (name: string): string => name.trim().toLocaleLowerCase();

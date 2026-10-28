@@ -28,6 +28,8 @@ export const LIGHT_SHEET: Readonly<Record<`--${string}`, string>> = {
 	'--button-edge': '#76674b',
 	'--good': PRINT_PALETTE.good,
 	'--evil': PRINT_PALETTE.evil,
+	'--good-text': PRINT_PALETTE.good,
+	'--evil-text': PRINT_PALETTE.evil,
 	'--traveller-text': '#5c2f6e',
 	'--loric-text': '#2e6b34'
 };

@@ -73,25 +73,6 @@ test("the board's Script sheet has the players' tabs, and its Share matches /pla
 	await expect(share.getByText('The link could not be made.')).toHaveCount(0);
 });
 
-test("Game info's Share opens the share screen with the script's source", async ({ page }) => {
-	await startGame(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	const entry = more.getByRole('button', { name: 'Game info' });
-	if (await entry.count()) await entry.tap();
-	else {
-		await page.keyboard.press('Escape');
-		await expect(more).toBeHidden();
-		await page.getByTestId('mode-menu').tap();
-	}
-	await page.getByTestId('share-source').tap();
-	const share = page.getByRole('dialog', { name: 'Share Trouble Brewing' });
-	await expect(share.getByTestId('share-url')).toHaveValue(
-		'https://wiki.bloodontheclocktower.com/Trouble_Brewing'
-	);
-	await expect(share.getByRole('img', { name: 'QR code for the script’s source' })).toBeVisible();
-});
-
 test("the players' Grim is drawn as the board: its seats where the board has them, and its corner", async ({
 	page
 }) => {

@@ -21,7 +21,7 @@ export interface NightTextOverride {
 	reason: string;
 }
 
-export const NIGHT_TEXT_KINDS = ['reviewed', 'full'] as const;
+const NIGHT_TEXT_KINDS = ['reviewed', 'full'] as const;
 export type NightTextKind = (typeof NIGHT_TEXT_KINDS)[number];
 
 export type NightTextRules = Readonly<

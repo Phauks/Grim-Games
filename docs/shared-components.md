@@ -142,7 +142,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Setup reminders and preparation notes (`setup-reminders.ts`): `setupPrep`, moved
 - Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest): `setupModifier`, moved
 - Death causes (`death-causes.ts`: who can cause a death and whom): `deathCause`, moved
-- Reminder movement (`reminder-movement.ts`: tokens that stay put, and characters that relocate them): `reminderMovement`, moved
+- Reminder movement (`reminder-movement.ts`: tokens that stay put, characters that relocate them, and `followsNeighbours` tokens that move to the new neighbours when players change seats): `reminderMovement`, moved
 - Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means): `reminderPlaceholders`, moved
 - Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text): `nightText`, moved
 - Info token characters (`info-token-characters.ts`: the character a night step's card always shows): `infoTokenCharacters`, new
@@ -187,6 +187,10 @@ once its rule exists.
 small surface and take it off the list (a stale entry is reported, not a failure, so
 parallel splits never break each other). The plan for each is in the project's
 `refactor/large-files.md`.
+
+`npm run lint:knip` (`knip.jsonc`) fails on a file, an exported value or a dependency nothing
+uses. Delete it, or drop the `export` when only its own file uses it; an export kept on
+purpose for later says why with `@public` in its doc comment.
 
 ## Still to share
 
