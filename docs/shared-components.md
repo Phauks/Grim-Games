@@ -104,6 +104,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - The time left on the room's script vote: `features/room/VoteTimeLeft.svelte` (Storyteller's vote sheet and each phone's ballot) (enforced by review)
 - A script's details: `features/scripts/ScriptView.svelte` (enforced by review)
 - A script's logo: `features/scripts/ScriptLogo.svelte` with `scriptLogo` (`core/data/script-logo.ts`) (enforced by review)
+- A script's logo faint in the middle of a board, or its name when it has no logo: `features/scripts/BoardLogo.svelte`, on the Storyteller's board, every player's grim and the Board settings preview (enforced by review)
 - Reading and writing localStorage: `ui/stored.ts` (`readStored`, `writeStored`, `readParsed`, `readStoredText`, `writeStoredText`) (enforced by `no-restricted-globals` (localStorage))
 - Copying text, with its toast: `ui/clipboard.ts` (`copyText`) (enforced by review)
 - Every request to a server: `ui/fetch.ts` (`fetchJson`, `fetchWithTimeout`), which gives up after a timeout (10 s, or `SLOW_FETCH_TIMEOUT_MS` for uploads and large files) (enforced by `no-restricted-syntax` (fetch))

@@ -24,6 +24,7 @@
 	import { settingsProfiles } from '#lib/features/settings/profiles/settings-profiles.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
@@ -1179,13 +1180,14 @@
 		style:--name-offset={boardLooks.current.nameOffset}
 		bind:this={board}
 	>
-		<!-- The script's logo, faint behind the seats (Trevor, 2026-10-18: his switch and opacity). -->
-		{#if logoOpacity !== undefined && boardLogo}
-			<ScriptLogo
-				src={boardLogo}
-				class="board-logo"
-				--logo-opacity={logoOpacity}
-				--logo-h={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
+		<!-- The script's logo, or its name, faint behind the seats (Trevor, 2026-10-18: his
+			switch and opacity; 2026-10-27: the name when there is no logo). -->
+		{#if logoOpacity !== undefined}
+			<BoardLogo
+				src={boardLogo || undefined}
+				name={showTitle ? game.script.meta?.name : undefined}
+				opacity={logoOpacity}
+				height={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
 		<!--
@@ -2019,20 +2021,6 @@
 	.game-over[data-team='evil'] {
 		background: var(--evil);
 		color: var(--on-evil);
-	}
-	/* Centred on the board's playable area (Trevor, 2026-10-18), inside the seat ring: at most
-	   42% of the board's width and height, the logo keeping its shape within; under the seats. */
-	.board :global(.board-logo) {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 42%;
-		/* The board's height without the walk-through strip (sizingHeight), so the logo keeps
-		   its size when the night starts (Trevor, 2026-10-23: "flexes for a second"). */
-		height: var(--logo-h, 42%);
-		translate: -50% -50%;
-		opacity: var(--logo-opacity);
-		pointer-events: none;
 	}
 	.rules {
 		display: flex;
