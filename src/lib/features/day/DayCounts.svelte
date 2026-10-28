@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {
 		blockThreshold,
+		exileThreshold,
 		ghostVotesLeft,
 		livingByTeam,
 		type DayCount
@@ -28,8 +29,15 @@
 	const goodLabel = $derived(t('day.goodLabel', { count: teams.good }));
 	const evilLabel = $derived(t('day.evilLabel', { count: teams.evil }));
 	const ghostLabel = $derived(t('day.ghostVotesLabel', { count: ghostVotes }));
+	/** Players to exile a Traveller, while a living one is in play (Trevor, 2026-10-28). */
+	const exile = $derived(exileThreshold(g, game.characters));
 	const votesLabel = $derived(
-		t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })
+		[
+			t('day.votesBadgeLabel', { count: block.needed, alive: block.alive }),
+			...(exile === undefined
+				? []
+				: [t('day.exileLabel', { count: exile, total: g.seating.length })])
+		].join('; ')
 	);
 	// ── How a count was worked out, from tapping it ──
 	let countOpen = $state(false);
@@ -87,7 +95,15 @@
 		kind="votes"
 		label={votesLabel}
 		testid="votes-needed"
-		onclick={() => openCount('votes', votesLabel)}><Icon name="vote" />{block.needed}</CountBadge
+		onclick={() => openCount('votes', votesLabel)}
+		>{#if exile === undefined}<Icon name="vote" />{block.needed}{:else}
+			<!-- With a living Traveller the same gold badge holds the exile count too, so the row
+			     keeps its five cells (Trevor, 2026-10-28, option A). -->
+			<span class="pair" data-testid="exile-needed"
+				><Icon name="vote" />{block.needed}<span class="split" aria-hidden="true">|</span><Icon
+					name="exile"
+				/>{exile}</span
+			>{/if}</CountBadge
 	>
 </div>
 
@@ -100,6 +116,16 @@
 />
 
 <style>
+	/* Two numbers in one cell: smaller icons, so it fits a phone's fifth of the row. */
+	.pair {
+		--icon-size: 1em;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.1em;
+	}
+	.split {
+		opacity: 0.55;
+	}
 	/*
 	 * One line however narrow (Trevor, 2026-10-17): five equal cells sharing the width, the
 	 * numbers shrinking only on the narrowest phones with the largest text.

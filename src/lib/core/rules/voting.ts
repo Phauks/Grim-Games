@@ -29,6 +29,20 @@ function neededToBlock(alive: number): number {
 }
 
 /**
+ * Players who must support an exile, for the Storyteller, while a living Traveller is in play
+ * (`neededToExile` over every seat), or undefined when nobody can be exiled.
+ */
+export function exileThreshold(game: Game, characters: CharacterLookup): number | undefined {
+	const traveller = game.seating.some((s) => {
+		const seat = game.seats[s];
+		return (
+			!seat.dead && !!seat.characterId && characters.get(seat.characterId)?.type === 'traveller'
+		);
+	});
+	return traveller ? neededToExile(game.seating.length) : undefined;
+}
+
+/**
  * A seat as players' phones see it (`PublicSeat`): dead as the town sees it, with the ghost
  * vote it has or has spent, or the votes it casts with no token.
  */

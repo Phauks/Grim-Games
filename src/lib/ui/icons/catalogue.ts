@@ -32,6 +32,8 @@ export const ICON_SLOTS = {
 		choices: ['ph:paint-bucket', 'ph:palette']
 	},
 	vote: { label: 'Vote', choices: ['ph:hand-palm', 'ph:hand-fist'] },
+	/** Players needed to exile a Traveller (Trevor, 2026-10-28). */
+	exile: { label: 'Exile', choices: ['ph:door', 'ph:sign-out'] },
 	nominator: { label: 'Has nominated', choices: ['ph:hand-pointing', 'ph:megaphone'] },
 	nominated: { label: 'Was nominated', choices: ['ph:gavel', 'ph:scales'] },
 	demon: { label: 'Demon', choices: ['ph:mask-sad', 'ph:smiley-angry', 'ph:fire'] },
