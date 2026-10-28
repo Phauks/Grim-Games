@@ -246,5 +246,8 @@ export const room = {
 	'room.message.send': 'Send',
 	'room.message.consult': 'Request a Storyteller consult',
 	'room.inbox.consult': 'Consult requested',
+	'room.inbox.message': 'Message',
+	'room.inbox.picture': 'Reported picture',
+	'room.inbox.markUnread': 'Mark as unread',
 	'room.message.failed': 'Couldn’t send. Check the connection and try again.'
 } as const;

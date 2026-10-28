@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { openInbox } from './inbox.ts';
 import { toBoard } from './new-game.ts';
-import { openPlayerSettings, setPlayerName } from './player-name.ts';
+import { openProfile, setPlayerName } from './player-name.ts';
 
 // Players' messages to the Storyteller (Trevor, 2026-10-27): "Unilateral messaging to
 // storyteller. Combine into a communication menu where notifications from players about bad
@@ -33,7 +33,7 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await openPlayerSettings(phone);
+	await openProfile(phone);
 	await setPlayerName(phone, 'Alex');
 	await phone.keyboard.press('Escape');
 
@@ -70,7 +70,8 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await cover.getByRole('button', { name: 'Close' }).tap();
 	await expect(cover).toBeHidden();
 
-	// Messages shows who and what; once read, the count goes.
+	// Messages shows who and what, each in its own box (Trevor, 2026-10-28); a message is read
+	// only once it is opened on its own, and can be marked unread again.
 	const inbox = await openInbox(page);
 	const item = inbox.getByTestId('inbox-item');
 	await expect(item).toHaveCount(1);
@@ -78,6 +79,23 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await expect(item).toContainText('Can I swap seats with Sam?');
 	await expect(item.getByTestId('inbox-consult')).toHaveText('Consult requested');
 	await expect(item).toContainText('New');
+	await page.keyboard.press('Escape');
+	await expect(inbox).toBeHidden();
+	await expect(page.getByRole('button', { name: /1 new message/ }).first()).toBeVisible();
+	await openInbox(page);
+	await item.tap();
+	const opened = page.getByRole('dialog', { name: 'Message', exact: true });
+	await expect(opened.getByTestId('inbox-opened')).toContainText('Can I swap seats with Sam?');
+	await expect(opened.getByTestId('inbox-consult')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(opened).toBeHidden();
+	await expect(item).not.toContainText('New');
+	await item.tap();
+	await opened.getByRole('button', { name: 'Mark as unread' }).tap();
+	await expect(opened).toBeHidden();
+	await expect(item).toContainText('New');
+	await item.tap();
+	await page.keyboard.press('Escape');
 	await page.keyboard.press('Escape');
 	await expect(inbox).toBeHidden();
 	await expect(page.getByRole('button', { name: /new message/ })).toHaveCount(0);

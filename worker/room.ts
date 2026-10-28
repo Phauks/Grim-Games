@@ -477,8 +477,9 @@ export class Room extends DurableObject<RoomEnv> {
 				if (owner) await this.dropAvatarPicture(message.hash, owner.memberId);
 				break;
 			}
-			case 'read-messages': {
-				const next = readMessages(room, message.ids);
+			case 'read-messages':
+			case 'unread-messages': {
+				const next = readMessages(room, message.ids, message.type === 'read-messages');
 				if (next === room) return;
 				room = next;
 				break;

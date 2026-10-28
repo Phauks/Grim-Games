@@ -112,6 +112,7 @@ export type ClientMessage =
 	/** Lets a reported picture stand, or takes that player's picture away for this game. */
 	| { type: 'judge-picture'; hash: string; allow: boolean }
 	| { type: 'read-messages'; ids: string[] } // The Storyteller opened these messages.
+	| { type: 'unread-messages'; ids: string[] } // The Storyteller marked them unread again.
 	| { type: 'close' };
 
 /** What the Storyteller's device sees. */

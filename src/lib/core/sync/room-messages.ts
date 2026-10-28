@@ -9,8 +9,17 @@
 import { parsePlayersPhase, type PlayersPhase } from '#lib/core/rules/game-phase.ts';
 import type { RoomState } from './room.ts';
 
-/** The longest message a phone can send. */
-export const MAX_MESSAGE_LENGTH = 280;
+/**
+ * A safety cap only, never shown (Trevor, 2026-10-28: "There is no need for character limit
+ * on messages"): long enough for any message, short enough that one can't swell the room.
+ */
+export const MAX_MESSAGE_LENGTH = 2000;
+/**
+ * All of a game's messages together stay under this, so the room's saved state and its
+ * update to the Storyteller stay well inside the Worker's limits (Durable Object values and
+ * WebSocket messages); a message past it is dropped.
+ */
+export const MAX_ROOM_MESSAGE_CHARS = 200_000;
 /** A phone sends at most this many messages a game, so one phone can't flood the inbox. */
 export const MAX_MESSAGES_PER_MEMBER = 30;
 /** A second message from one phone sooner than this after its last is dropped. */
@@ -60,6 +69,8 @@ export function sendMessage(
 	const all = room.messages ?? [];
 	const mine = all.filter((m) => m.memberId === memberId);
 	if (mine.length >= MAX_MESSAGES_PER_MEMBER) return room;
+	const used = all.reduce((sum, m) => sum + m.text.length, 0);
+	if (used + text.length > MAX_ROOM_MESSAGE_CHARS) return room;
 	const last = mine.at(-1);
 	if (last && at - last.at < MESSAGE_GAP_MS) return room;
 	const message: PlayerMessage = { id, memberId, text, at };
@@ -69,14 +80,25 @@ export function sendMessage(
 	return { ...room, messages: [...all, message] };
 }
 
-/** The Storyteller opened these messages; unknown ids are ignored. */
-export function readMessages(room: RoomState, ids: unknown): RoomState {
+/**
+ * The Storyteller opened these messages, or with `read` false marked them unread again
+ * (Trevor, 2026-10-28: "mark as unread, and only marked as read when entered"). Unknown ids
+ * are ignored.
+ */
+export function readMessages(room: RoomState, ids: unknown, read = true): RoomState {
 	if (!Array.isArray(ids) || !room.messages) return room;
-	const opened = new Set(ids.filter((i): i is string => typeof i === 'string'));
-	if (!room.messages.some((m) => !m.read && opened.has(m.id))) return room;
+	const chosen = new Set(ids.filter((i): i is string => typeof i === 'string'));
+	const change = (m: PlayerMessage) => chosen.has(m.id) && !!m.read !== read;
+	if (!room.messages.some(change)) return room;
 	return {
 		...room,
-		messages: room.messages.map((m) => (!m.read && opened.has(m.id) ? { ...m, read: true } : m))
+		messages: room.messages.map((m) => {
+			if (!change(m)) return m;
+			if (read) return { ...m, read: true };
+			const { read: _read, ...unread } = m;
+			void _read;
+			return unread;
+		})
 	};
 }
 
