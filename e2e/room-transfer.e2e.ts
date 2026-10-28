@@ -47,8 +47,13 @@ async function claim(other: Page, code: string) {
 }
 
 async function typeTransferCode(other: Page, code: string) {
-	// Filled whole, as a pasted or autofilled code is, replacing the one before.
-	await other.getByRole('textbox', { name: 'Transfer code' }).fill(code);
+	// A code already there is cleared with the X first, as on any code field (typing carries
+	// on from the last box), then the new one goes in whole, as a pasted code does.
+	const form = other.getByTestId('transfer-claim');
+	const field = form.getByRole('textbox', { name: 'Transfer code' });
+	if (await field.inputValue()) await form.getByRole('button', { name: 'Clear' }).tap();
+	await expect(field).toHaveValue('');
+	await field.fill(code);
 }
 
 test('a Storyteller hands the room and the game to another device, and the players stay', async ({

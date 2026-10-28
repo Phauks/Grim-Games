@@ -13,6 +13,7 @@ import type { GameId } from '#lib/core/model/index.ts';
 import {
 	makeTransferCode,
 	ROOM_PROTOCOL,
+	TRANSFER_CODE_LENGTH,
 	type ServerMessage,
 	type SharedGrimoire,
 	type TransferDetails
@@ -124,7 +125,9 @@ export class RoomClaim {
 				protocol: ROOM_PROTOCOL,
 				builtAt: buildInfo.builtAt
 			},
-			(m) => void this.#heard(m)
+			(m) => void this.#heard(m),
+			// A code typed before the socket opened (or while it reconnected) is checked now.
+			() => this.#send()
 		);
 	}
 
@@ -133,7 +136,13 @@ export class RoomClaim {
 		this.#code = code;
 		this.details = undefined;
 		this.problem = undefined;
-		if (code.length === 6) this.#socket.send({ type: 'check-transfer', code });
+		this.#send();
+	}
+
+	#send(): void {
+		if (this.#code.length === TRANSFER_CODE_LENGTH) {
+			this.#socket.send({ type: 'check-transfer', code: this.#code });
+		}
 	}
 
 	/**
