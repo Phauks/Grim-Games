@@ -42,6 +42,7 @@ import ph_caret_right_fill from '~icons/ph/caret-right-fill';
 import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_cat_fill from '~icons/ph/cat-fill';
 import ph_chat_centered_text_fill from '~icons/ph/chat-centered-text-fill';
+import ph_chat_text_fill from '~icons/ph/chat-text-fill';
 import ph_check_fill from '~icons/ph/check-fill';
 import ph_check_square_fill from '~icons/ph/check-square-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
@@ -69,6 +70,7 @@ import ph_dots_three_fill from '~icons/ph/dots-three-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
 import ph_download_simple_fill from '~icons/ph/download-simple-fill';
 import ph_drop_fill from '~icons/ph/drop-fill';
+import ph_envelope_simple_fill from '~icons/ph/envelope-simple-fill';
 import ph_eraser_fill from '~icons/ph/eraser-fill';
 import ph_eye_fill from '~icons/ph/eye-fill';
 import ph_eye_closed_fill from '~icons/ph/eye-closed-fill';
@@ -260,6 +262,7 @@ const icons: IconMap = {
 	'ph:caret-up-fill': ph_caret_up_fill,
 	'ph:cat-fill': ph_cat_fill,
 	'ph:chat-centered-text-fill': ph_chat_centered_text_fill,
+	'ph:chat-text-fill': ph_chat_text_fill,
 	'ph:check-fill': ph_check_fill,
 	'ph:check-square-fill': ph_check_square_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
@@ -287,6 +290,7 @@ const icons: IconMap = {
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
 	'ph:download-simple-fill': ph_download_simple_fill,
 	'ph:drop-fill': ph_drop_fill,
+	'ph:envelope-simple-fill': ph_envelope_simple_fill,
 	'ph:eraser-fill': ph_eraser_fill,
 	'ph:eye-fill': ph_eye_fill,
 	'ph:eye-closed-fill': ph_eye_closed_fill,

@@ -17,6 +17,9 @@ import {
 	markHere,
 	judgePicture,
 	reportPicture,
+	readMessages,
+	sendMessage,
+	setInbox,
 	MAX_GRIMOIRE_BYTES,
 	MAX_SCRIPT_BYTES,
 	openScriptVote,
@@ -296,7 +299,8 @@ export class Room extends DurableObject<RoomEnv> {
 				}
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
 				// Phones built before the Storyteller's app hear of it, and look for the update.
-				const built = setStorytellerBuild(room, message.builtAt);
+				// Its app says whether it shows players' messages; phones offer to send one only then.
+				const built = setInbox(setStorytellerBuild(room, message.builtAt), message.inbox);
 				if (built !== room) await this.save((room = built));
 				send(ws, hostView(room, this.present()));
 				send(ws, { type: 'watchers', count: this.watchers() });
@@ -368,6 +372,17 @@ export class Room extends DurableObject<RoomEnv> {
 				room = next;
 			} else if (message.type === 'report-picture') {
 				const next = reportPicture(room, id, message.seatId, Date.now());
+				if (next === room) return;
+				room = next;
+			} else if (message.type === 'message') {
+				const next = sendMessage(
+					room,
+					id,
+					message.text,
+					Date.now(),
+					crypto.randomUUID(),
+					message.consult
+				);
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'vote') {
@@ -460,6 +475,12 @@ export class Room extends DurableObject<RoomEnv> {
 				const owner = room.members.find((m) => m.picture === message.hash && !message.allow);
 				room = next;
 				if (owner) await this.dropAvatarPicture(message.hash, owner.memberId);
+				break;
+			}
+			case 'read-messages': {
+				const next = readMessages(room, message.ids);
+				if (next === room) return;
+				room = next;
 				break;
 			}
 			case 'seat':

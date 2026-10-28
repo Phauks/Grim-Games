@@ -167,6 +167,8 @@ export const ICON_SLOTS = {
 	watchers: { label: 'Watching', choices: ['ph:eye', 'ph:binoculars'] },
 	/** Players' feedback on a finished game (Trevor, 2026-10-25). */
 	feedback: { label: 'Player feedback', choices: ['ph:star-half', 'ph:chat-centered-text'] },
+	/** Players' messages to the Storyteller, and the Storyteller's Messages (Trevor, 2026-10-27). */
+	messages: { label: 'Messages', choices: ['ph:chat-text', 'ph:envelope-simple'] },
 	/** What an info token asks for when shown, on its tile (Trevor, 2026-10-18). */
 	asksText: { label: 'Asks for words', choices: ['ph:text-t', 'ph:textbox'] },
 	asksNumber: { label: 'Asks for a number', choices: ['ph:hash', 'ph:calculator'] },

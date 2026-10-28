@@ -224,13 +224,27 @@ export const room = {
 	'room.liveGames.active': 'Last active',
 	'room.liveGames.loadFailed': 'Could not load live games',
 	'room.liveGames.adminsOnly': 'Only admin accounts see live games.',
-	'room.pictureReport.title': 'Reported picture',
-	'room.pictureReport.body': {
-		one: "{name}'s picture was reported by {count} player.",
-		other: "{name}'s picture was reported by {count} players."
-	},
 	'room.pictureReport.allow': 'Let it stand',
-	'room.pictureReport.remove': 'Remove for this game',
+	'room.pictureReport.removeNamed': "Remove {name}'s picture for this game",
 	'room.pictureReport.picture': "{name}'s picture",
-	'room.pictureReport.someone': 'A player'
+	'room.pictureReport.someone': 'A player',
+	// Players' messages to the Storyteller (Trevor, 2026-10-27), and the Storyteller's inbox.
+	'room.inbox.title': 'Messages',
+	'room.inbox.none': 'None',
+	'room.inbox.new': 'New',
+	'room.inbox.unread': {
+		one: '{count} new message',
+		other: '{count} new messages'
+	},
+	'room.inbox.reported': {
+		one: 'Picture reported by {count} player',
+		other: 'Picture reported by {count} players'
+	},
+	'room.inbox.when': '{seat} · {phase}',
+	'room.message.title': 'Message the Storyteller',
+	'room.message.field': 'Message',
+	'room.message.send': 'Send',
+	'room.message.consult': 'Request a Storyteller consult',
+	'room.inbox.consult': 'Consult requested',
+	'room.message.failed': 'Couldn’t send. Check the connection and try again.'
 } as const;

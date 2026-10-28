@@ -2,6 +2,7 @@
  * The grimoire a Storyteller's device sends whole: to the view-only link while the game runs,
  * and to the room's phones once it is over (Share grim, R5). Split from room.ts.
  */
+import type { RoomState } from './room.ts';
 
 /**
  * The Storyteller's whole grimoire, for the view-only link (Trevor, 2026-10-18: Specters
@@ -32,4 +33,21 @@ export function isSharedGrimoire(value: unknown): value is SharedGrimoire {
 	if (typeof value !== 'object' || value === null) return false;
 	const { saved } = value as { saved?: unknown };
 	return typeof saved === 'object' && saved !== null && !Array.isArray(saved);
+}
+
+/**
+ * Turns the view-only link on (a SHA-256 hex hash) or off (`null`); anything else is ignored.
+ * `password` says the key was made from a Grim view password.
+ */
+export function setViewers(room: RoomState, keyHash: unknown, password?: unknown): RoomState {
+	const { viewerKeyHash: _off, viewerPassword: _password, ...rest } = room;
+	void _off;
+	void _password;
+	if (keyHash === null) return rest;
+	if (typeof keyHash !== 'string' || !/^[0-9a-f]{64}$/.test(keyHash)) return room;
+	return {
+		...rest,
+		viewerKeyHash: keyHash,
+		...(password === true ? { viewerPassword: true } : {})
+	};
 }

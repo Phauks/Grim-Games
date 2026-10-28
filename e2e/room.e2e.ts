@@ -5,6 +5,7 @@ import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
+import { openInbox } from './inbox.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
 // name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
@@ -2494,12 +2495,14 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await expect(sam.getByRole('menuitem', { name: 'Picture reported' })).toBeDisabled();
 	await sam.keyboard.press('Escape');
 
-	// The Storyteller sees the picture over the board, and removes it for this game.
-	const report = page.getByRole('dialog', { name: 'Reported picture' });
-	await expect(report).toContainText("Alex Kim's picture was reported by 1 player.");
+	// The report waits in the Storyteller's Messages (Trevor, 2026-10-27: "Combine into a
+	// communication menu"), where the picture is removed for this game.
+	const report = (await openInbox(page)).getByTestId('inbox-item');
+	await expect(report).toContainText('Picture reported by 1 player');
 	await expect(report.getByRole('img', { name: "Alex Kim's picture" })).toBeVisible();
-	await report.getByRole('button', { name: 'Remove for this game' }).tap();
-	await expect(report).toBeHidden();
+	await report.getByRole('button', { name: "Remove Alex Kim's picture for this game" }).tap();
+	await expect(report).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 	await expect(seat.getByTestId('avatar-face')).not.toHaveAttribute('data-picture');
 	await expect(alexSeat.getByTestId('avatar-face')).toHaveText('AK');

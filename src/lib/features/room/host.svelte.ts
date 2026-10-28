@@ -46,7 +46,7 @@ import { sha256Hex } from '#lib/core/codes/hash.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 import { uploadRoomImage } from './room-images.ts';
 import { roomImagePath } from '#lib/core/sync/room-images.ts';
-import type { PictureReportView } from '#lib/core/sync/room-pictures.ts';
+import { RoomInbox } from './inbox.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
 import { tableState } from './table-state.svelte.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
@@ -109,8 +109,8 @@ export class RoomHost {
 	rolesShown = $state<string>();
 	/** Seats whose player has held their character to see it (Trevor, 2026-10-26). */
 	rolesSeen = $state.raw<readonly SeatId[]>([]);
-	/** Players' pictures other phones reported, waiting for a verdict (2026-10-27). */
-	pictureReports = $state.raw<readonly PictureReportView[]>([]);
+	/** Players' messages and reported pictures, for the Storyteller's Messages. */
+	readonly inbox = new RoomInbox((m) => this.#socket?.send(m) ?? false);
 	#roles: { gameId: string; show: boolean; roles: Record<SeatId, SeatRole> } | undefined;
 	/**
 	 * An admin is watching from Live games (plan J31): the whole grimoire goes to the room as
@@ -611,7 +611,8 @@ export class RoomHost {
 				role: 'host',
 				key: room.key,
 				protocol: ROOM_PROTOCOL,
-				builtAt: buildInfo.builtAt
+				builtAt: buildInfo.builtAt,
+				inbox: true
 			},
 			(m) => this.#receive(m),
 			() => this.#resend()
@@ -627,12 +628,6 @@ export class RoomHost {
 	pictureOf(seatId: SeatId): string | undefined {
 		const hash = this.members.find((m) => m.seatId === seatId)?.picture;
 		return hash && this.code ? roomImagePath(this.code, hash) : undefined;
-	}
-
-	/** Lets a reported picture stand, or takes the player's picture away for this game. */
-	judgePicture(hash: string, allow: boolean): void {
-		this.#socket?.send({ type: 'judge-picture', hash, allow });
-		this.pictureReports = this.pictureReports.filter((r) => r.hash !== hash);
 	}
 
 	/** Members with no seat whose phone is connected now: spectators, or players yet to sit. */
@@ -659,7 +654,7 @@ export class RoomHost {
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
 			this.rolesSeen = message.rolesSeen ?? [];
-			this.pictureReports = message.pictureReports ?? [];
+			this.inbox.receive(message);
 			// Saved with the ended game, as the room forgets it once a game runs again.
 			if (message.feedback && message.feedbackGameId) {
 				gameFeedback.save(message.feedbackGameId, message.feedback);
@@ -768,6 +763,7 @@ export class RoomHost {
 		this.revealedGame = undefined;
 		this.rolesShown = undefined;
 		this.rolesSeen = [];
+		this.inbox.clear();
 		this.#roles = undefined;
 		this.#viewerKeyHash = undefined;
 		this.#grimoire = undefined;
