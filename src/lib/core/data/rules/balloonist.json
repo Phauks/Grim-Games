@@ -1,4 +1,11 @@
 {
+	"learns": {
+		"measure": "type-differs-from-token",
+		"token": "Know",
+		"reminders": {
+			"each": "Know"
+		}
+	},
 	"reminderTargets": {
 		"Know": {
 			"seat": "any",

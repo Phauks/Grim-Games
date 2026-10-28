@@ -30,7 +30,12 @@ import { checkKeys, describe, isObject, readBoolean, readEnum, type Issues } fro
  *   other players unless `self`, only `alive` ones, of `types` and `alignment` when given;
  * - `not-demon-pair`: two players, neither the Demon (Knight);
  * - `evil-player`: one evil player (Bounty Hunter);
- * - `demon-player`: the Demon's player (Choirboy).
+ * - `demon-player`: the Demon's player (Choirboy);
+ * - `closest-evil-direction`: whether the closest evil player sits clockwise or anticlockwise
+ *   (Shugenja);
+ * - `chosen-alignment`: the alignment of a player the waking player chose (Village Idiot);
+ * - `type-differs-from-token`: one player whose character type differs from that of the
+ *   player carrying `token`, the last one shown (Balloonist).
  * `reminders` are the tokens to place: `target` on the shown character's player, `other` on the
  * second player, `each` on every player tapped.
  */
@@ -47,7 +52,10 @@ const LEARNS_MEASURES = [
 	'character-of',
 	'not-demon-pair',
 	'evil-player',
-	'demon-player'
+	'demon-player',
+	'closest-evil-direction',
+	'chosen-alignment',
+	'type-differs-from-token'
 ] as const;
 export interface Learns {
 	measure: (typeof LEARNS_MEASURES)[number];
@@ -128,7 +136,9 @@ export function readLearns(
 	const alive = readBoolean(raw, 'alive', path, issues);
 	if (!measure) return undefined;
 	if (measure === 'pair-of-type' && !type) issues.add(`${path}.type`, 'missing');
-	if (measure === 'demon-or-token' && !token) issues.add(`${path}.token`, 'missing');
+	if ((measure === 'demon-or-token' || measure === 'type-differs-from-token') && !token) {
+		issues.add(`${path}.token`, 'missing');
+	}
 	const out: Learns = { measure };
 	if (type) out.type = type;
 	if (token) out.token = token;
