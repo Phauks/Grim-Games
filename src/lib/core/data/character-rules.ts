@@ -30,9 +30,10 @@ import {
 } from './reminder-placeholder-rules.ts';
 import { readSetupPrep, type SetupPrepRules } from './setup-prep-rules.ts';
 import { readGameEnd, type GameEndRules } from './game-end-rules.ts';
-import { readReminderTargets, type TargetRule } from './target-rules.ts';
+import { readReminderTargets, readTypes, type TargetRule } from './target-rules.ts';
 import { readTurnsPlayersInto, type TurnsPlayersInto } from './turns-players-rules.ts';
 import {
+	ALIGNMENTS,
 	CHARACTER_TYPES,
 	type Alignment,
 	SEATED_TYPES,
@@ -257,7 +258,12 @@ export type TokenRegisters = Registers & {
  * - `good-player`: one good player (Steward);
  * - `one-evil-of-three`: three players, exactly one evil (Noble);
  * - `same-alignment`: yes if two chosen players are the same alignment (Seamstress);
- * - `demon-in-pair`: two players, one of them the Demon (Sage).
+ * - `demon-in-pair`: two players, one of them the Demon (Sage);
+ * - `character-of`: one player's character (Ravenkeeper, King, Pixie, Grandmother), from the
+ *   other players unless `self`, only `alive` ones, of `types` and `alignment` when given;
+ * - `not-demon-pair`: two players, neither the Demon (Knight);
+ * - `evil-player`: one evil player (Bounty Hunter);
+ * - `demon-player`: the Demon's player (Choirboy).
  * `reminders` are the tokens to place: `target` on the shown character's player, `other` on the
  * second player, `each` on every player tapped.
  */
@@ -270,13 +276,24 @@ const LEARNS_MEASURES = [
 	'good-player',
 	'one-evil-of-three',
 	'same-alignment',
-	'demon-in-pair'
+	'demon-in-pair',
+	'character-of',
+	'not-demon-pair',
+	'evil-player',
+	'demon-player'
 ] as const;
 export interface Learns {
 	measure: (typeof LEARNS_MEASURES)[number];
 	type?: CharacterType;
 	token?: ReminderLabel;
 	noneWhenAbsent?: boolean;
+	/** For `character-of`: the waking player may be the one (the Ravenkeeper "any player"). */
+	self?: true;
+	/** For `character-of`: only alive players (the King's "alive character"). */
+	alive?: true;
+	/** For `character-of`: only players of these types, or of this alignment. */
+	types?: readonly CharacterType[];
+	alignment?: Alignment;
 	reminders?: { target?: ReminderLabel; other?: ReminderLabel; each?: ReminderLabel };
 }
 
@@ -692,11 +709,30 @@ function readLearns(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['measure', 'type', 'token', 'noneWhenAbsent', 'reminders'], path, issues);
+	checkKeys(
+		raw,
+		[
+			'measure',
+			'type',
+			'token',
+			'noneWhenAbsent',
+			'self',
+			'alive',
+			'types',
+			'alignment',
+			'reminders'
+		],
+		path,
+		issues
+	);
 	const measure = readEnum(raw, 'measure', LEARNS_MEASURES, path, issues, true);
 	const type = readEnum(raw, 'type', CHARACTER_TYPES, path, issues, false);
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const noneWhenAbsent = readBoolean(raw, 'noneWhenAbsent', path, issues);
+	const types = readTypes(raw, 'types', path, issues);
+	const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, false);
+	const self = readBoolean(raw, 'self', path, issues);
+	const alive = readBoolean(raw, 'alive', path, issues);
 	if (!measure) return undefined;
 	if (measure === 'pair-of-type' && !type) issues.add(`${path}.type`, 'missing');
 	if (measure === 'demon-or-token' && !token) issues.add(`${path}.token`, 'missing');
@@ -704,6 +740,13 @@ function readLearns(
 	if (type) out.type = type;
 	if (token) out.token = token;
 	if (noneWhenAbsent !== undefined) out.noneWhenAbsent = noneWhenAbsent;
+	if (types || alignment || self || alive) {
+		if (measure !== 'character-of') issues.add(path, 'only `character-of` takes who it is about');
+		if (self) out.self = true;
+		if (alive) out.alive = true;
+		if (types) out.types = types;
+		if (alignment) out.alignment = alignment;
+	}
 	if (raw.reminders !== undefined) {
 		const at = `${path}.reminders`;
 		if (!isObject(raw.reminders)) {
