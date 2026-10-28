@@ -1596,6 +1596,27 @@ test('the ∞ caption sits over the generic token, wherever the stretches before
 		.toBe(true);
 });
 
+// Trevor (2026-10-27): the ∞ caption's pill was taller than Setup's and Reminders'; every
+// caption pill is now the ∞ one's height.
+test('every reminder bank caption pill is the same height', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Washerwoman', exact: true })
+		.tap();
+	await closeSheet(page);
+	const tray = page.getByRole('list', { name: 'Reminder bank' });
+	await tray.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+	const generic = page.getByTestId('bank-generic');
+	await expect(generic).toBeVisible();
+	const height = (await generic.boundingBox())!.height;
+	for (const caption of await page.locator('.caption[data-group]').all()) {
+		expect(Math.abs((await caption.boundingBox())!.height - height)).toBeLessThan(0.5);
+	}
+});
+
 test('a dead player whose ability has ended moves their reminders to the end of the bank', async ({
 	page
 }) => {
