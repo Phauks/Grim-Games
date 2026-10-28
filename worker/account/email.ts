@@ -90,7 +90,7 @@ export function emailChangedNotice(to: string, newEmail: string): Email {
 	};
 }
 
-export class CloudflareSender implements EmailSender {
+class CloudflareSender implements EmailSender {
 	readonly delivery = 'email';
 	constructor(
 		private readonly binding: EmailBinding,
@@ -108,7 +108,7 @@ export class CloudflareSender implements EmailSender {
 }
 
 /** Previews and local runs: no email; what would be sent is logged (and the code shown on screen). */
-export class PreviewSender implements EmailSender {
+class PreviewSender implements EmailSender {
 	readonly delivery = 'preview';
 	async send(message: Email): Promise<void> {
 		console.log(`[preview email] ${message.to}: ${message.subject}\n${message.text}`);
@@ -116,7 +116,7 @@ export class PreviewSender implements EmailSender {
 }
 
 /** Sign-in is off: there's no way to deliver a code. */
-export class NoSender implements EmailSender {
+class NoSender implements EmailSender {
 	readonly delivery = 'unavailable';
 	async send(): Promise<void> {
 		throw new Error('Email sign-in is not set up yet.');

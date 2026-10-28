@@ -1,3 +1,4 @@
+import { noStore } from './http.ts';
 import { DurableObject } from 'cloudflare:workers';
 import {
 	LIVE_GAMES_API,
@@ -38,8 +39,6 @@ export class LiveGameIndex extends DurableObject {
 		return [...rooms.keys()].map((key) => key.slice('room:'.length));
 	}
 }
-
-const noStore = { 'Cache-Control': 'no-store' };
 
 /**
  * `GET /api/admin/games` lists the open rooms; `GET /api/admin/games/<code>` upgrades to a

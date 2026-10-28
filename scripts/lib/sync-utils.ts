@@ -114,7 +114,7 @@ function sortKeys(value: unknown): unknown {
 }
 
 /** JSON with sorted keys, tab indentation and a trailing newline, so output is stable. */
-export function stableJson(value: unknown): string {
+function stableJson(value: unknown): string {
 	return `${JSON.stringify(sortKeys(value), null, '\t')}\n`;
 }
 

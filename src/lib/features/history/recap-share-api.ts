@@ -15,7 +15,7 @@
 import type { GameRecap, RecapLine, RecapNote, RecapParts, RecapSeat } from './recap-html.ts';
 
 export const RECAP_API = '/api/recap';
-export const RECAP_PAGE = '/recap';
+const RECAP_PAGE = '/recap';
 export const RECAP_DELETE_KEY_HEADER = 'X-Delete-Key';
 /** A shared recap is deleted this long after it was last opened. */
 export const RECAP_TTL_MS = 30 * 24 * 60 * 60 * 1000;

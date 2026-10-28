@@ -178,7 +178,7 @@ export type QrModules = (typeof QR_MODULES)[number];
 export const QR_FINDERS = ['square', 'rounded', 'circle'] as const;
 export type QrFinders = (typeof QR_FINDERS)[number];
 
-export const TIMER_MODES = ['down', 'up'] as const;
+const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
 
 /** How players' phones show the day timer: a sun, the clock, or not at all. */

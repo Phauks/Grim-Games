@@ -27,7 +27,7 @@ export type NightStepInfo =
  * `night` picks a first-night answer where the character has one (the Godfather's).
  * Undefined when nothing is worked out for the character.
  */
-export function nightStepInfo(
+function nightStepInfo(
 	game: Game,
 	character: Pick<Character, 'id'>,
 	characters: CharacterLookup,

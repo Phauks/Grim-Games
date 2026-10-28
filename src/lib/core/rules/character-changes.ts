@@ -16,7 +16,7 @@ import type { SeatId } from '#lib/core/model/types.ts';
 import type { NightStep } from './night-order.ts';
 
 /** The id prefix of a wake step: `changed@<seat>`. */
-export const CHANGED_STEP = 'changed';
+const CHANGED_STEP = 'changed';
 
 /** The night steps with a wake step before Dawn for each seat in `changes`. */
 export function withCharacterChangeSteps<T extends NightStep>(

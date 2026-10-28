@@ -14,7 +14,7 @@ import type {
 import type { DayGame } from './day-game.svelte.ts';
 
 /** "Ben (Poisoner)", or "Poisoner" with no seat. */
-export function sourceName(game: DayGame, source: AbilitySource | 'override'): string {
+function sourceName(game: DayGame, source: AbilitySource | 'override'): string {
 	if (source === 'override') return '';
 	const character = game.characterName(source.characterId);
 	return source.seatId ? `${game.seatName(source.seatId)} (${character})` : character;
@@ -31,7 +31,7 @@ export function impairmentValues(game: DayGame, impairments: readonly Impairment
 		.join('; ');
 }
 
-export function valueText(game: DayGame, v: AnswerValue): string {
+function valueText(game: DayGame, v: AnswerValue): string {
 	switch (v.kind) {
 		case 'yes-no':
 			return v.value ? 'Yes' : 'No';
