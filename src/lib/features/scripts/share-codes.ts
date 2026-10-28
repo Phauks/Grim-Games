@@ -4,8 +4,10 @@
  * If a code can't be made (offline, or the Worker refuses), the long `#s=` link still
  * works. Design: 08-script-loading.md §5.5 and §5.7.
  */
+import { toHex } from '#lib/core/codes/hash.ts';
 import { scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
+import { fetchJson, fetchWithTimeout } from '#lib/ui/fetch.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import {
 	readCreatedShare,
@@ -61,10 +63,11 @@ const SHARED_LINK_ERRORS = {
 	damaged: 'scripts.error.shareDamaged'
 } as const;
 
-export async function fetchSharedCode(code: string): Promise<FetchedScript> {
+async function fetchSharedCode(code: string): Promise<FetchedScript> {
 	let response: Response;
+	let body: unknown;
 	try {
-		response = await fetch(shareCodePath(code), { credentials: 'omit' });
+		({ response, body } = await fetchJson(shareCodePath(code), { credentials: 'omit' }));
 	} catch {
 		throw new ScriptFetchError(t('scripts.error.serverUnreachable'));
 	}
@@ -74,7 +77,6 @@ export async function fetchSharedCode(code: string): Promise<FetchedScript> {
 	if (response.status === 429) {
 		throw new ScriptFetchError(t('scripts.error.tooManyCodes'));
 	}
-	const body: unknown = await response.json().catch(() => undefined);
 	const json = typeof body === 'object' && body !== null ? (body as { json?: unknown }).json : null;
 	if (!response.ok || !Array.isArray(json)) {
 		throw new ScriptFetchError(t('scripts.error.codeHttp', { status: response.status }));
@@ -84,20 +86,20 @@ export async function fetchSharedCode(code: string): Promise<FetchedScript> {
 
 /** Whether a code still exists; opening it also pushes back its expiry. */
 async function codeExists(code: string): Promise<boolean> {
-	const response = await fetch(shareCodePath(code), { credentials: 'omit' });
+	const response = await fetchWithTimeout(shareCodePath(code), { credentials: 'omit' });
 	if (response.status === 404) return false;
 	if (!response.ok) throw new Error(`HTTP ${response.status}`);
 	return true;
 }
 
 async function createShareCode(json: unknown[]): Promise<CreatedShare> {
-	const response = await fetch(SHARE_API, {
+	const { response, body } = await fetchJson(SHARE_API, {
 		method: 'POST',
 		credentials: 'omit',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(json)
 	});
-	const created = response.ok ? readCreatedShare(await response.json()) : undefined;
+	const created = response.ok ? readCreatedShare(body) : undefined;
 	if (!created) throw new Error(`Share code not made (HTTP ${response.status})`);
 	return created;
 }
@@ -133,7 +135,7 @@ function writeStore(store: CodeStore): void {
 async function scriptKey(json: unknown[]): Promise<string> {
 	const bytes = new TextEncoder().encode(JSON.stringify(json));
 	const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
-	return Array.from(digest.slice(0, 12), (b) => b.toString(16).padStart(2, '0')).join('');
+	return toHex(digest.slice(0, 12));
 }
 
 /** A code for this script: the one it was opened with, one made earlier, or a new one. */

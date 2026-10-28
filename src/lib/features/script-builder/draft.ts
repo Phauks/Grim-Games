@@ -14,7 +14,7 @@ import type { ScriptSource, VariationOf } from '#lib/features/scripts/saved-scri
 import { TEENSYVILLE_MAX_CHARACTERS } from '#lib/features/scripts/picker-rows.ts';
 
 /** 2: homebrew characters and their credits; 3: the script it is a variation of (2026-10-17). */
-export const DRAFT_VERSION = 3;
+const DRAFT_VERSION = 3;
 
 /** Who made a homebrew character, and its page on the site it came from. */
 export interface DraftCredit {

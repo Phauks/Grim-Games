@@ -4,6 +4,7 @@
  * Storyteller. Design: 08-script-loading.md §5.2.
  */
 import { t } from '#lib/i18n/locale.svelte.ts';
+import { fetchJson, fetchWithTimeout } from '#lib/ui/fetch.ts';
 import {
 	proxyPath,
 	readProxiedSearchPage,
@@ -21,7 +22,7 @@ import type { LinkTarget } from './script-links.ts';
 import { decodeScriptToolPayload, ScriptToolLinkError } from './script-tool-link.ts';
 
 /** Scripts are a few KB; a 201-character homebrew script is still far below this. */
-export const MAX_SCRIPT_BYTES = 1_000_000;
+const MAX_SCRIPT_BYTES = 1_000_000;
 
 export class ScriptFetchError extends Error {
 	constructor(
@@ -57,7 +58,7 @@ export async function readScriptFile(file: File): Promise<FetchedScript> {
 async function fetchLink(url: string, shownUrl: string): Promise<FetchedScript> {
 	let response: Response;
 	try {
-		response = await fetch(url, { credentials: 'omit', redirect: 'follow' });
+		response = await fetchWithTimeout(url, { credentials: 'omit', redirect: 'follow' });
 	} catch {
 		// A CORS refusal and being offline look the same to a page.
 		throw new ScriptFetchError(
@@ -75,12 +76,12 @@ async function fetchLink(url: string, shownUrl: string): Promise<FetchedScript> 
 
 async function fetchBotcScripts(ref: BotcScriptsRef): Promise<FetchedScript> {
 	let response: Response;
+	let body: unknown;
 	try {
-		response = await fetch(proxyPath(ref));
+		({ response, body } = await fetchJson(proxyPath(ref)));
 	} catch {
 		throw new ScriptFetchError(t('scripts.error.botcUnreachable'));
 	}
-	const body: unknown = await response.json().catch(() => undefined);
 	if (!response.ok) {
 		const message =
 			typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string'
@@ -102,7 +103,7 @@ export async function fetchHomebrewScript(slug: string): Promise<FetchedScript> 
 	const page = homebrewScriptPage(slug);
 	let response: Response;
 	try {
-		response = await fetch(homebrewScriptPath(slug), { signal: withTimeout() });
+		response = await fetchWithTimeout(homebrewScriptPath(slug));
 	} catch {
 		throw new ScriptFetchError(
 			navigator.onLine === false ? t('scripts.error.offline') : t('scripts.error.blocked'),
@@ -125,7 +126,7 @@ export async function fetchBloodstarScript(script: BloodstarScript): Promise<Fet
 	const page = bloodstarPage(script);
 	let response: Response;
 	try {
-		response = await fetch(bloodstarScriptPath(script), { signal: withTimeout() });
+		response = await fetchWithTimeout(bloodstarScriptPath(script));
 	} catch {
 		throw new ScriptFetchError(
 			navigator.onLine === false ? t('scripts.error.offline') : t('scripts.error.blocked'),
@@ -170,28 +171,19 @@ export function fetchLinkTarget(target: LinkTarget, typed: string): Promise<Fetc
 }
 
 /** One page of BotC Scripts search results, through our Worker. */
-/** A remote source that hasn't answered by then is treated as unreachable. */
-export const REMOTE_TIMEOUT_MS = 10_000;
-
-/** `signal`, and a timeout, so a site that never answers can't keep a search waiting. */
-export function withTimeout(signal?: AbortSignal): AbortSignal {
-	const timeout = AbortSignal.timeout(REMOTE_TIMEOUT_MS);
-	return signal ? AbortSignal.any([signal, timeout]) : timeout;
-}
-
 export async function searchBotcScripts(
 	query: BotcScriptsQuery,
 	page: number,
 	signal?: AbortSignal
 ): Promise<BotcScriptsSearchPage> {
 	let response: Response;
+	let body: unknown;
 	try {
-		response = await fetch(searchPath(query, page), { signal: withTimeout(signal) });
+		({ response, body } = await fetchJson(searchPath(query, page), { signal }));
 	} catch (e) {
 		if (e instanceof DOMException && e.name === 'AbortError') throw e;
 		throw new ScriptFetchError(t('scripts.error.botcUnreachable'));
 	}
-	const body: unknown = await response.json().catch(() => undefined);
 	const found = response.ok ? readProxiedSearchPage(body) : undefined;
 	if (!found) throw new ScriptFetchError(t('scripts.error.botcSearch'));
 	return found;

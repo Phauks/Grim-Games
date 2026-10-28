@@ -4,11 +4,7 @@
  * as the Script builder puts it on a script.
  */
 import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
-import {
-	characterEntry,
-	fieldsFromEntry,
-	type CharacterFields
-} from '#lib/core/rules/character-builder.ts';
+import { characterEntry, fieldsFromEntry } from '#lib/core/rules/character-builder.ts';
 
 export const SAVED_CHARACTERS_VERSION = 1;
 
@@ -25,7 +21,7 @@ export interface SavedCharacters {
 	characters: SavedCharacter[];
 }
 
-export function emptySavedCharacters(): SavedCharacters {
+function emptySavedCharacters(): SavedCharacters {
 	return { version: SAVED_CHARACTERS_VERSION, characters: [] };
 }
 
@@ -47,8 +43,4 @@ export function parseSavedCharacters(raw: unknown): SavedCharacters {
 		return [{ savedId: c.savedId, entry, updatedAt: Number(c.updatedAt) || 0 }];
 	});
 	return { version: SAVED_CHARACTERS_VERSION, characters };
-}
-
-export function fieldsOf(saved: SavedCharacter): CharacterFields {
-	return fieldsFromEntry(saved.entry);
 }

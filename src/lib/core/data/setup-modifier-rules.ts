@@ -27,7 +27,7 @@ export type CountOp =
 	| { kind: 'set'; type: SeatedType; values: readonly number[] | 'most' }
 	| { kind: 'any'; type: SeatedType };
 
-export const COUNT_OP_KINDS = ['delta', 'set', 'any'] as const;
+const COUNT_OP_KINDS = ['delta', 'set', 'any'] as const;
 
 export interface SetupModifierRules {
 	/** Short summary in our words: "+2 Outsiders". Shown as "Baron: +2 Outsiders". */

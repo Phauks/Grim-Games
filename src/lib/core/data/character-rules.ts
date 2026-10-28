@@ -17,6 +17,7 @@ import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readDayMark, type DayMarkRule } from './day-mark-rules.ts';
 import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
 import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
+import { CHOICE_RULE_KEYS, readChoiceRules, type ChoiceRules } from './choice-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
 import { readBecomes, readMakesDemon, type Becomes, type MakesDemon } from './becomes-rules.ts';
@@ -52,15 +53,15 @@ import {
 } from './validate.ts';
 
 /** The question placing a reminder asks: mark the living seat dead, or revive a dead one. */
-export const REMINDER_PROMPTS = ['markDead', 'revive'] as const;
+const REMINDER_PROMPTS = ['markDead', 'revive'] as const;
 export type ReminderPrompt = (typeof REMINDER_PROMPTS)[number];
 
 /** Who did the killing: the Demon's kill, another ability's, or either. */
-export const KILLED_BY = ['demon', 'other', 'any'] as const;
+const KILLED_BY = ['demon', 'other', 'any'] as const;
 export type KilledBy = (typeof KILLED_BY)[number];
 
 /** What being nominated sets off: the nominator is executed straight away. */
-export const NOMINATED_EFFECTS = ['execute-nominator'] as const;
+const NOMINATED_EFFECTS = ['execute-nominator'] as const;
 export type NominatedEffect = (typeof NOMINATED_EFFECTS)[number];
 
 /**
@@ -68,7 +69,7 @@ export type NominatedEffect = (typeof NOMINATED_EFFECTS)[number];
  * L56, "these all relate to specific announcements in town by players"): seat and character
  * guesses, one statement that is true or false, or two statements.
  */
-export const DAY_CLAIMS = ['guesses', 'statement', 'statements'] as const;
+const DAY_CLAIMS = ['guesses', 'statement', 'statements'] as const;
 export type DayClaim = (typeof DAY_CLAIMS)[number];
 
 /**
@@ -79,7 +80,7 @@ export type DayClaim = (typeof DAY_CLAIMS)[number];
  * - `marked-killed-by-demon`: the player dies when the Demon kills whoever carries `token`
  *   (the Grandmother's Grandchild).
  */
-export const DEATH_CHECK_KINDS = [
+const DEATH_CHECK_KINDS = [
 	'wrong-guess',
 	'chose-impaired',
 	'chosen-good-dies',
@@ -91,7 +92,7 @@ export interface DeathCheckRule {
 	token?: ReminderLabel;
 }
 
-export interface CharacterRules {
+export interface CharacterRules extends ChoiceRules {
 	/** Reminders whose placing is the moment to change the seat's state, by label. */
 	reminderPrompts?: Readonly<Record<ReminderLabel, ReminderPrompt>>;
 	/**
@@ -258,7 +259,7 @@ export type TokenRegisters = Registers & {
  * `reminders` are the tokens to place: `target` on the shown character's player, `other` on the
  * second player, `each` on every player tapped.
  */
-export const LEARNS_MEASURES = [
+const LEARNS_MEASURES = [
 	'pair-of-type',
 	'evil-pairs',
 	'evil-alive-neighbours',
@@ -283,7 +284,7 @@ export interface Learns {
  * statement logged by day, L58). `token` is the character's reminder that
  * marks the answer on the board ("Died Today", "Abnormal").
  */
-export const ANSWER_QUESTIONS = [
+const ANSWER_QUESTIONS = [
 	'minion-nominated',
 	'demon-voted',
 	'executed-character',
@@ -298,15 +299,15 @@ export interface Answers {
 	token?: ReminderLabel;
 }
 
-export const KILLS_BY = ['demon', 'other'] as const;
-export const KILLS_TARGETS = ['any', 'self'] as const;
+const KILLS_BY = ['demon', 'other'] as const;
+const KILLS_TARGETS = ['any', 'self'] as const;
 export interface Kills {
 	by: (typeof KILLS_BY)[number];
 	targets?: (typeof KILLS_TARGETS)[number];
 	ignoresProtection?: boolean;
 }
 
-export const PROTECTS_WHO = ['self', 'marked', 'good'] as const;
+const PROTECTS_WHO = ['self', 'marked', 'good'] as const;
 /**
  * What a protection stops: the Demon's kill, any death, only an execution (the Devil's
  * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate), any death but an
@@ -329,16 +330,10 @@ export type Protects = (
 	| { who: 'marked'; token: ReminderLabel; from: (typeof PROTECTS_FROM)[number] }
 ) & { night?: true; storytellerDecides?: true; whileNeighboursGood?: true };
 
-export {
-	IMPAIRMENT_REASONS,
-	IMPAIRS_ON,
-	type ImpairmentReason,
-	type Impairs,
-	type TokenImpairment
-} from './impairs-rules.ts';
+export { type ImpairmentReason, type Impairs, type TokenImpairment } from './impairs-rules.ts';
 
 /** Every key a rules block may have; one more per migrated table. */
-export const RULE_KEYS = [
+const RULE_KEYS = [
 	'reminderPrompts',
 	'actsWhenDead',
 	'onDeath',
@@ -375,7 +370,8 @@ export const RULE_KEYS = [
 	'makesExtraEvil',
 	'orHiddenAs',
 	'gainsAbilityOf',
-	'turnsPlayersInto'
+	'turnsPlayersInto',
+	...CHOICE_RULE_KEYS
 ] as const satisfies readonly (keyof CharacterRules)[];
 
 /**
@@ -603,6 +599,7 @@ export function parseCharacterRules(
 	if (gains !== undefined) rules.gainsAbilityOf = gains;
 	const turns = readTurnsPlayersInto(raw.turnsPlayersInto, path, issues);
 	if (turns) rules.turnsPlayersInto = turns;
+	Object.assign(rules, readChoiceRules(raw, path, issues, reminders));
 	return issues.list.length > before ? undefined : rules;
 }
 

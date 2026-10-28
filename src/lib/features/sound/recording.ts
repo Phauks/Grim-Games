@@ -3,13 +3,14 @@
  * shared by day and night sound and the soundboard. Undefined when a recording can't be
  * fetched or decoded, as offline before it was ever stored, so it is left out.
  */
+import { fetchWithTimeout, SLOW_FETCH_TIMEOUT_MS } from '#lib/ui/fetch.ts';
 
 const decoded = new Map<string, Promise<AudioBuffer | undefined>>();
 
 export function recording(ctx: AudioContext, url: string): Promise<AudioBuffer | undefined> {
 	let buffer = decoded.get(url);
 	if (!buffer) {
-		buffer = fetch(url)
+		buffer = fetchWithTimeout(url, { timeoutMs: SLOW_FETCH_TIMEOUT_MS })
 			.then((response) => (response.ok ? response.arrayBuffer() : Promise.reject()))
 			.then((data) => ctx.decodeAudioData(data))
 			.catch(() => {

@@ -9,16 +9,14 @@
  * files have no version history we can read; pasted and file scripts have none.
  *
  * For other screens (the Library, the Script builder): `botcVersions.load(n)` then
- * `botcVersions.get(n)` for the list, and `newerVersion(source)` for a saved script's badge.
+ * `botcVersions.get(n)` for the list.
  */
+import { fetchJson } from '#lib/ui/fetch.ts';
 import {
-	compareVersions,
 	readProxiedVersionList,
 	versionsPath,
 	type BotcScriptsVersionList
 } from './botcscripts-api.ts';
-import { withTimeout } from './fetch-script.ts';
-import type { ScriptSource } from './saved-scripts.ts';
 
 export type VersionsStatus = 'loading' | 'ready' | 'error';
 
@@ -38,10 +36,8 @@ export const botcVersions = {
 		if (statuses[scriptId] === 'loading' || statuses[scriptId] === 'ready') return;
 		statuses[scriptId] = 'loading';
 		try {
-			const response = await fetch(versionsPath(scriptId), { signal: withTimeout() });
-			const list = response.ok
-				? readProxiedVersionList(await response.json().catch(() => undefined))
-				: undefined;
+			const { response, body } = await fetchJson(versionsPath(scriptId));
+			const list = response.ok ? readProxiedVersionList(body) : undefined;
 			if (!list) throw new Error('no version list');
 			lists[scriptId] = list;
 			statuses[scriptId] = 'ready';
@@ -51,10 +47,3 @@ export const botcVersions = {
 		}
 	}
 };
-
-/** The newer version BotC Scripts has for a saved script, once its list has loaded. */
-export function newerVersion(source: ScriptSource): string | undefined {
-	if (source.kind !== 'botcscripts' || !source.version) return undefined;
-	const latest = botcVersions.get(source.scriptId)?.latest;
-	return latest && compareVersions(latest, source.version) > 0 ? latest : undefined;
-}

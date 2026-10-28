@@ -2,6 +2,8 @@
  * What the Savant's statement templates read (`savant-templates.ts`): the game's facts, the
  * template shapes, and the helpers the templates share. `savant.ts` works them out.
  */
+import type { CharacterRules } from '#lib/core/data/character-rules.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
@@ -71,7 +73,7 @@ export interface Template {
 }
 
 /** Numbers to offer for a count: the truth and up to two either side, within the range. */
-export function near(truth: number, min: number, max: number): number[] {
+function near(truth: number, min: number, max: number): number[] {
 	const out: number[] = [];
 	for (let v = truth - 2; v <= truth + 2; v++) if (v >= min && v <= max) out.push(v);
 	return out;
@@ -151,18 +153,25 @@ export const nominations = (log: DayLog | undefined) =>
 		(e): e is Extract<DayEntry, { kind: 'nomination' }> => e.kind === 'nomination'
 	);
 
-/** A Minion's reminders that mark whom it chose (TPI's reminder names). */
-export const MINION_CHOICES: Readonly<Record<CharacterId, readonly string[]>> = {
-	poisoner: ['Poisoned'],
-	widow: ['Poisoned'],
-	witch: ['Cursed'],
-	cerenovus: ['Mad'],
-	harpy: ['Mad'],
-	fearmonger: ['Fear'],
-	devilsadvocate: ['Survives Execution'],
-	assassin: ['Dead'],
-	godfather: ['Dead']
-};
+/** Characters in play rules for whom say something, with that rule. */
+export function inPlayWith<T>(
+	f: Facts,
+	rule: (r: CharacterRules) => T | undefined
+): [CharacterId, T][] {
+	return [...f.inPlay].flatMap((id) => {
+		const r = rulesOf(id, f.characters);
+		const value = r && rule(r);
+		return value === undefined || value === false ? [] : [[id, value] as [CharacterId, T]];
+	});
+}
+
+/** In-play characters of a type with the reminders that mark whom they chose (`marksChoice`). */
+export const choiceMarkers = (f: Facts, type: CharacterType) =>
+	inPlayWith(f, (r) => r.marksChoice).filter(([id]) => f.characters.get(id)?.type === type);
+
+/** Whether a character's night information is a number, or works once per game (`infoKind`). */
+export const infoIs = (f: Facts, id: CharacterId, kind: 'number' | 'oncePerGame') =>
+	rulesOf(id, f.characters)?.infoKind?.[kind] === true;
 
 export function triples<T>(list: readonly T[]): [T, T, T][] {
 	const out: [T, T, T][] = [];
@@ -188,39 +197,11 @@ export function manual(id: string, parts: (f: Facts) => SavantPart[] | undefined
 	};
 }
 
-/** A Townsfolk's reminders that mark whom it chose last night (TPI's reminder names). */
-export const TOWNSFOLK_CHOICES: Readonly<Record<CharacterId, readonly string[]>> = {
-	monk: ['Safe'],
-	innkeeper: ['Safe'],
-	exorcist: ['Chosen']
-};
-
-/** Characters whose night information is a number. */
-export const NUMBER_INFO: ReadonlySet<CharacterId> = new Set([
-	'chef',
-	'empath',
-	'clockmaker',
-	'mathematician',
-	'oracle',
-	'juggler',
-	'chambermaid'
-]);
-
-/** Information characters whose ability works once per game. */
-export const ONCE_INFO: ReadonlySet<CharacterId> = new Set(['seamstress', 'fisherman', 'artist']);
-
 /**
- * Why a Minion might not learn the Demon at the start: fewer than 7 players (wiki Glossary,
- * "Minion Info"), the Magician,
- * the Marionette (never learns), the Poppy Grower, Lil' Monsta.
- * https://wiki.bloodontheclocktower.com/Magician, /Marionette, /Poppy_Grower, /Lil%27_Monsta
+ * Whether a character in play may keep a Minion from learning the Demon at the start
+ * (`evilInfo.hidesDemon`); fewer than 7 players does too (wiki Glossary, "Minion Info").
  */
-export const HIDES_DEMON: readonly CharacterId[] = [
-	'magician',
-	'marionette',
-	'poppygrower',
-	'lilmonsta'
-];
+export const demonHidden = (f: Facts) => inPlayWith(f, (r) => r.evilInfo?.hidesDemon).length > 0;
 
 export const infoEntries = (log: DayLog | undefined) =>
 	(log?.entries ?? []).filter((e): e is Extract<DayEntry, { kind: 'info' }> => e.kind === 'info');

@@ -25,6 +25,7 @@ import {
 	type NightMarker,
 	type NightSheet
 } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { AbilityState } from './ability.ts';
 import type { GainedAbility } from './gained-abilities.ts';
 import type { NightStepInfo } from './night-info.ts';
@@ -373,7 +374,7 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 				reminder: MARKER_TEXT[marker][night],
 				afterDawn,
 				placement: custom && customIds.has(marker) ? 'custom-order' : 'marker',
-				notes: [...candidate.notes, ...markerNotes(marker, inPlayIds)]
+				notes: [...candidate.notes, ...markerNotes(marker, input.inPlay)]
 			};
 		}
 		const character = candidate.character;
@@ -406,7 +407,7 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 }
 
 /** Applies the Storyteller's overrides for this night. Unknown ids are ignored. */
-export function applyNightOverrides(
+function applyNightOverrides(
 	steps: readonly NightStep[],
 	overrides: readonly NightStepOverride[],
 	night: Night,
@@ -466,30 +467,18 @@ export function applyNightOverrides(
 	return out;
 }
 
-/** Rules to remember at the evil info steps, from characters in play. */
-function markerNotes(marker: NightMarker, inPlay: ReadonlySet<CharacterId>): string[] {
-	const notes: string[] = [];
-	if (marker === 'minioninfo' || marker === 'demoninfo') {
-		// https://wiki.bloodontheclocktower.com/Poppy_Grower
-		if (inPlay.has('poppygrower'))
-			notes.push('Poppy Grower: while it lives, Minions and Demon do not learn each other.');
-		// https://wiki.bloodontheclocktower.com/Magician
-		if (inPlay.has('magician'))
-			notes.push('Magician: also shown as a Minion to the Demon and as the Demon to Minions.');
-		// https://wiki.bloodontheclocktower.com/Lunatic and Storyteller_Advice (separate wakes)
-		if (inPlay.has('lunatic'))
-			notes.push('Lunatic: wake Minions and Demon separately; the Lunatic gets Demon info too.');
-		// https://wiki.bloodontheclocktower.com/Toymaker
-		if (inPlay.has('toymaker')) notes.push('Toymaker: evil gets this info at any player count.');
-	}
-	if (marker === 'demoninfo') {
-		// https://wiki.bloodontheclocktower.com/Summoner
-		if (inPlay.has('summoner'))
-			notes.push('Summoner: there is no Demon yet; the Summoner gets the bluffs.');
-		// https://wiki.bloodontheclocktower.com/Snitch
-		if (inPlay.has('snitch')) notes.push('Snitch: each Minion also gets 3 bluffs.');
-	}
-	return notes;
+/**
+ * Rules to remember at the evil info steps, from characters in play: each one's `evilInfo`
+ * note for this step, after its name (the Poppy Grower, Magician, Lunatic, Toymaker,
+ * Summoner, Snitch).
+ */
+function markerNotes(marker: NightMarker, inPlay: readonly Character[]): string[] {
+	if (marker !== 'minioninfo' && marker !== 'demoninfo') return [];
+	const characters = new Map(inPlay.map((c) => [c.id, c]));
+	return [...characters.values()].flatMap((c) => {
+		const note = rulesOf(c.id, characters)?.evilInfo?.notes?.[marker];
+		return note ? [`${c.name}: ${note}`] : [];
+	});
 }
 
 /**

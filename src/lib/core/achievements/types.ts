@@ -5,14 +5,16 @@
  * crest, accent, motion), and points buy parts too, so a repeat game still counts.
  *
  * No achievement may need a player to do something in a game (Trevor, 2026-10-27): criteria
- * read only the character a player was given and facts about the whole game, never what
- * their seat did (nominations, votes, claims, their own death). That is kept by the shape of
- * `Criteria` itself: there is no way to write such a rule.
+ * read only the characters and alignments a player was given (every one they held, not just
+ * the first), whether their team won, and facts about the whole game; never what their seat
+ * did (nominations, votes, claims, ability uses, their own death). That is kept by the shape
+ * of `Criteria` itself: there is no way to write such a rule. A win may earn an achievement
+ * (Trevor: "won a game as a character type" for motion items), never points.
  *
  * Achievements are data, like character rules: the real list comes later, as each reward is
  * agreed. Design: https://claude.ai/artifact/3xwEgmAXm32oPVN6EMWUdL
  */
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { CharacterId, CharacterType } from '#lib/core/data/index.ts';
 import type { EndReason } from '#lib/core/rules/end-reason.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { GameRecord } from '#lib/core/stats/index.ts';
@@ -43,8 +45,12 @@ export interface GameFacts {
 }
 
 export type Criteria =
-	/** The player's own seat had this character at the first Dawn or at the end. */
+	/** The player's own seat had this character at any point from the first Dawn. */
 	| { kind: 'playedAs'; character: CharacterId }
+	/** The seat had a character of this type at any point; with `won`, and its team won. */
+	| { kind: 'playedType'; type: CharacterType; won?: true }
+	/** Something changed the seat's character, or its alignment, during the game. */
+	| { kind: 'changed'; what: 'character' | 'alignment' }
 	/** The player took part in a game where these facts held. */
 	| { kind: 'inGame'; where: GameFacts }
 	/** This many games, optionally only those where the facts held. */

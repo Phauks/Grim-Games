@@ -4,6 +4,7 @@
  * then the day log's notes). The words are History's own (`historyItems`).
  */
 /* eslint-disable grim/names-as-badges -- a saved text file, where names can only be words */
+import { t } from '#lib/i18n/locale.svelte.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 import { applyEvent, type LogEntry } from '#lib/core/engine/index.ts';
 import {
@@ -36,11 +37,11 @@ const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 function seatName(game: Game, seatId: SeatId | undefined): string {
 	if (!seatId) return 'A seat';
 	const n = game.seating.indexOf(seatId) + 1;
-	return game.seats[seatId]?.playerName ?? (n > 0 ? `Seat ${n}` : 'A seat');
+	return game.seats[seatId]?.playerName ?? (n > 0 ? t('common.seat', { number: n }) : 'A seat');
 }
 
 /** One History line as plain words: a seat as "Ana (Imp)", a reminder in quotes. */
-export function partsText(parts: readonly HistoryPart[], characters: CharacterLookup): string {
+function partsText(parts: readonly HistoryPart[], characters: CharacterLookup): string {
 	const name = (id: CharacterId) => characters.get(id)?.name ?? id;
 	return parts
 		.map((p) => {

@@ -15,7 +15,7 @@ import { t } from '#lib/i18n/locale.svelte.ts';
 import type { SavedScript, ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 import { sameScript } from '#lib/features/scripts/saved-scripts.ts';
 
-export const PROFILE_SCRIPT_VERSION = 1;
+const PROFILE_SCRIPT_VERSION = 1;
 
 export interface ProfileScript {
 	schemaVersion: typeof PROFILE_SCRIPT_VERSION;

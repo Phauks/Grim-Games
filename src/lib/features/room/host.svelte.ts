@@ -39,9 +39,11 @@ import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { seatLayouts } from '#lib/features/grimoire/device-notes.ts';
 import { storedNotes, type BoardNotes } from './board-notes.ts';
 import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
+import { fetchWithTimeout } from '#lib/ui/fetch.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { gameFeedback } from './game-feedback.svelte.ts';
-import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
+import { sha256Hex } from '#lib/core/codes/hash.ts';
+import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 import { uploadRoomImage } from './room-images.ts';
 import { roomImagePath } from '#lib/core/sync/room-images.ts';
 import type { PictureReportView } from '#lib/core/sync/room-pictures.ts';
@@ -186,7 +188,7 @@ export class RoomHost {
 		this.problem = false;
 		const key = randomKey();
 		try {
-			const response = await fetch('/api/rooms', {
+			const response = await fetchWithTimeout('/api/rooms', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ hostKeyHash: await sha256Hex(key) })
