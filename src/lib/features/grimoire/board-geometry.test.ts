@@ -103,6 +103,22 @@ describe('avoidBoxes', () => {
 		expect(boxes[1].x).toBeLessThan(100);
 		expect(boxes[2].x).toBeGreaterThan(100);
 	});
+
+	it('avoids the top marks: nominations top left, orphan top middle, avatar top right', () => {
+		const boxes = avoidBoxes({
+			...base,
+			hasFace: true,
+			name: undefined,
+			nominations: true,
+			orphan: true,
+			avatar: true
+		});
+		expect(boxes).toHaveLength(4);
+		const [, marks, orphan, avatar] = boxes;
+		for (const box of [marks, orphan, avatar]) expect(box.y).toBeLessThan(100);
+		expect(marks.x).toBeLessThan(orphan.x);
+		expect(orphan.x).toBeLessThan(avatar.x);
+	});
 });
 
 describe('keepClear', () => {

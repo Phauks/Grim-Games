@@ -19,5 +19,6 @@
 	},
 	"deathCause": {
 		"none": "jinx rules"
-	}
+	},
+	"jinxesOnly": true
 }

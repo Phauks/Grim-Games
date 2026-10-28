@@ -21,7 +21,6 @@ export const MAX_LINES = 800;
 export const LARGE_FILE_TODO = [
 	'src/lib/features/grimoire/GrimoireBoard.svelte',
 	'src/lib/features/grimoire/ReminderBank.svelte',
-	'src/lib/features/grimoire/SeatSheet.svelte',
 	'src/lib/features/info-tokens/InfoTokenList.svelte',
 	'src/lib/features/library/LibraryBrowser.svelte',
 	'src/lib/features/script-builder/ScriptBuilderPage.svelte',

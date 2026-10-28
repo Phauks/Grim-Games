@@ -21,6 +21,7 @@ import type { PictureReportView } from './room-pictures.ts';
 import type { PlayerMessage } from './room-messages.ts';
 import type { GameOver, RoomMember, RoomRequest } from './room.ts';
 import type { TransferDetails, TransferStatus } from './room-transfer.ts';
+import type { PushAddress } from './web-push.ts';
 
 export type ClientMessage =
 	/**
@@ -60,6 +61,13 @@ export type ClientMessage =
 	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
 	| { type: 'role-seen' } // The player held their character to see it (2026-10-26).
+	/**
+	 * Back to town reaches this phone while it is locked or the app is closed (plan U12), at this
+	 * push address; none turns that off.
+	 */
+	| { type: 'push'; address?: PushAddress }
+	/** The app is (or no longer is) on this phone's screen, so a call isn't pushed too. */
+	| { type: 'showing'; on: boolean }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**

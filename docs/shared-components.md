@@ -95,6 +95,8 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A generic ∞ token's look editor (preview beside text, symbol, colour, fill; red Delete): `features/grimoire/GenericLookDialog.svelte`: the board's ∞ token (`grimoire/GenericTokenDialog`) and a player's generic tokens (`player/PlayerReminderPicker`) (enforced by review)
 - A player's profile (their avatar large, laurel, colour, motion; game stats later), opened from their avatar: `features/player/PlayerProfileDialog.svelte` (rows from `seat-profile.ts`): the board's avatar mark (`grimoire/SeatProfileDialog`) and a seat sheet's avatar on /play (`player/SeatAvatarButton`) (enforced by `e2e/room.e2e.ts`)
 - A player name (sheets, dialogs, History, sentences): `ui/seating/PlayerBadge.svelte`: the pill under a seat's token, inline; `seatName` (`features/game/seat-label.ts`) gives its text, the name or "Seat 3". CharacterBadge, CharacterRow and CharacterEntry draw it for `playerName` (enforced by `grim/names-as-badges` (PLAYER_BADGE_TODO))
+- A seat by who sits there (their character's badge with the player's name, or the name alone): `features/grimoire/SeatBadge.svelte` (the seat sheet's dialogs; AlignmentDraw, TravellerAlignment and ReminderBank still draw it by hand) (enforced by review)
+- What a change does before it is confirmed (Now and Becomes, label and value pairs): `ui/primitives/ChangeList.svelte` (the seat sheet's dialogs; SeatStatusDialog, ReminderMoveConfirm, EndGameDialogs and LeaveGuard still carry their own `.change` list) (enforced by review)
 - An entry headed by a character: `features/characters/CharacterEntry.svelte` (jinxes, announcements; a character with an ability uses CharacterRow) (enforced by review)
 - Opening a saved game for a screen (loading, none, too new): `features/game/WithSavedGame.svelte` (`prepare`, `fallback` snippet) (enforced by review)
 - A character picker: `features/characters/CharacterPicker.svelte` (enforced by review)
@@ -186,6 +188,8 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Players turned into another type (`modes/draft-seats.ts`: Kazali, Lord of Typhon, Lil' Monsta): `turnsPlayersInto`, new
 - Evil info step notes (`night-order.ts` `markerNotes`: Poppy Grower, Magician, Lunatic, Toymaker, Summoner, Snitch) and who may hide the Demon from Minions (Savant): `evilInfo`, moved
 - Shown another type of character (`bag-plan.ts` `standInKind`, `bluffs-bag.ts`, `features/bluffs/bluffs.ts`, was the Lunatic by id: its bag tile asks which Demon, and bluff set 2 is theirs): `believesType`, moved
+- Evil info below 7 players (`teensyville.ts` `hasEvilTeamInfo`, was the Toymaker by id): `evilInfo.anyPlayerCount`, moved
+- Rule characters a game never starts with (`script-rules.ts`, was the Djinn by id; jinxes show on their own): `jinxesOnly`, moved. The Bootlegger stays named there: TPI's script format ties `_meta.bootlegger` to it.
 - Savant statements (`savant-facts.ts`, `savant-templates.ts`, `savant-log-templates.ts`): reminders marking whom it chose (was `MINION_CHOICES`, `TOWNSFOLK_CHOICES`) `marksChoice`; number or once-per-game info (was `NUMBER_INFO`, `ONCE_INFO`) `infoKind`; the Witch's curse `curses`; the Lunatic's `choosesLikeDemon` and `believesOtherCharacter`; the Snake Charmer's `choosesUnmarked`; all moved (`choice-rules.ts`)
 
 ## Lists that only shrink

@@ -20,9 +20,10 @@ const KEPT = {
 		REPORTS: 'ReportBox',
 		SCRIPT_MIRROR: 'ScriptMirror',
 		RECAPS: 'SharedRecap',
-		LIVE_GAMES: 'LiveGameIndex'
+		LIVE_GAMES: 'LiveGameIndex',
+		PUSH_KEYS: 'PushKeyStore'
 	} as Record<string, string>,
-	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8']
+	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9']
 };
 
 type Binding = { name: string; class_name: string };
