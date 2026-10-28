@@ -94,11 +94,11 @@ export const player = {
 	'player.sheetBackground.charcoal': 'Charcoal',
 	'player.profile': 'Profile',
 	'player.frame': 'Your laurel',
-	'player.frameColour': 'Colour',
+	'player.frameColour': 'Color',
 	'player.flavour': 'Flavour text',
 	'player.editFlavour': 'Edit flavour text',
 	'player.frameMotion': 'Motion',
-	'player.bigPreview': 'Your seat, larger',
+	'player.bigPreview': 'Preview',
 	'player.picture': 'Your picture',
 	'player.pictureDetail':
 		'On your seat in place of your initials, in rooms you join. The Storyteller can take it away for a game.',
