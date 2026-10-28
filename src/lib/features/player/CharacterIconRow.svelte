@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { avatarCharacter, characterAvatar } from '#lib/core/avatars/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 
@@ -15,7 +15,6 @@
 	 * initials. Full colour here; seats show it engraved (2026-10-28). A picture of their own
 	 * still comes first.
 	 */
-	let { name }: { name: string } = $props();
 	let open = $state(false);
 	let query = $state('');
 
@@ -41,9 +40,9 @@
 	{#snippet control(labelId)}
 		<span class="value">
 			<span class="current" data-testid="character-icon">
-				{#if chosen}<span class="token"
-						><AvatarFace avatar={playerSettings.current.avatar} {name} fullColour /></span
-					>{character?.name ?? ''}{:else}{t('common.none')}{/if}
+				{#if chosen && character}<CharacterBadge characterId={chosen} {character} />{:else}{t(
+						'common.none'
+					)}{/if}
 			</span>
 			<IconButton
 				icon="edit"
@@ -89,11 +88,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.token {
-		flex: none;
-		width: 2em;
-		height: 2em;
 	}
 	.list {
 		display: flex;

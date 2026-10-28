@@ -66,7 +66,7 @@
 <FlavourTextRow />
 
 <!-- A character's icon as their avatar (Trevor, 2026-10-27), engraved on seats. -->
-<CharacterIconRow {name} />
+<CharacterIconRow />
 
 <!-- The player's own picture on their seat (2026-10-27). -->
 <AvatarPictureRow {name} />
