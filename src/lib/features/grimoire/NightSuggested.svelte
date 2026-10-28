@@ -7,6 +7,7 @@
 		AnswerValue,
 		ChosenPlayers,
 		ChosenPlayersRow,
+		InfoChoice,
 		InfoPicker,
 		LearnedRole,
 		LearnedRoles,
@@ -52,9 +53,19 @@
 		onShowCharacters?: (set: Extract<AnswerValue, { kind: 'characters' }>) => void;
 		/** Show the "Your number is" info token with a suggested number (a number step). */
 		onShowNumber?: (n: number) => void;
+		/** A picker's row was shown to the player: record it (`record-shown.ts`). */
+		onRecord?: (picker: InfoPicker, choice: InfoChoice) => void;
 	}
 
-	let { grimoire, step, compact = false, onShow, onShowCharacters, onShowNumber }: Props = $props();
+	let {
+		grimoire,
+		step,
+		compact = false,
+		onShow,
+		onShowCharacters,
+		onShowNumber,
+		onRecord
+	}: Props = $props();
 	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
@@ -192,6 +203,13 @@
 	function showOrPick(key: string, id: CharacterId | undefined) {
 		if (id) onShow?.(id);
 		else listOpen = { ...listOpen, [key]: true };
+	}
+	/** Shows a role and records it: whole once the second player of a pair is known. */
+	function showRole(p: InfoPicker, row: LearnedRole, key: string, id: CharacterId | undefined) {
+		showOrPick(key, id);
+		if (id) {
+			onRecord?.(p, { seats: row.other ? [row.target, row.other] : [row.target], characterId: id });
+		}
 	}
 	const shownRole = (p: InfoPicker, row: LearnedRole): CharacterId | undefined =>
 		row.characterIds.length === 1 ? row.characterIds[0] : shownAs[rowKey(p, row)];
@@ -502,7 +520,13 @@
 									<NightReasonTag {grimoire} reason={v.reason} registered={v.registered} />
 									{#if v.number !== undefined && onShowNumber}
 										{@const n = v.number}
-										<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+										<Button
+											variant="quiet"
+											onclick={() => {
+												onShowNumber(n);
+												onRecord?.(p, { seats: [], number: n });
+											}}>Show to player</Button
+										>
 									{/if}
 								</li>
 							{/each}
@@ -678,7 +702,7 @@
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
 		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
 		{#if onShow}
-			<Button variant="quiet" onclick={() => showOrPick(key, id)}>Show to player</Button>
+			<Button variant="quiet" onclick={() => showRole(p, row, key, id)}>Show to player</Button>
 		{/if}
 	</li>
 {/snippet}
