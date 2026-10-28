@@ -21,6 +21,7 @@ import { readWakesWhen, type WakesWhen } from './wakes-when-rules.ts';
 import { CHOICE_RULE_KEYS, readChoiceRules, type ChoiceRules } from './choice-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
+import { readFalseInfo, type FalseInfo } from './false-info-rules.ts';
 import { readBecomes, readMakesDemon, type Becomes, type MakesDemon } from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readImpairs, type Impairs } from './impairs-rules.ts';
@@ -201,10 +202,14 @@ export interface CharacterRules extends ChoiceRules {
 	 */
 	makesExtraEvil?: boolean;
 	/**
-	 * While its ability works, the information of these types' abilities must be false (the
-	 * Vortox's Townsfolk, https://wiki.bloodontheclocktower.com/Vortox; `night-info/reliability.ts`).
+	 * Its information rule (`false-info-rules.ts`): these types' information must be false.
 	 */
-	falseInfo?: { types: readonly CharacterType[] };
+	falseInfo?: FalseInfo;
+	/**
+	 * Its night ability can turn a player into a new Demon (the Pit-Hag,
+	 * https://wiki.bloodontheclocktower.com/Pit-Hag), so the Demon may change hands.
+	 */
+	createsDemon?: boolean;
 	/**
 	 * A hidden character (one with no token of its own, such as the Drunk) the Storyteller may
 	 * make this character's player instead, who then thinks they are this character. Sushi
@@ -404,6 +409,7 @@ const RULE_KEYS = [
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'falseInfo',
+	'createsDemon',
 	'orHiddenAs',
 	'gainsAbilityOf',
 	'turnsPlayersInto',
@@ -641,16 +647,11 @@ export function parseCharacterRules(
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
 	if (raw.falseInfo !== undefined) {
-		const at = `${path}.falseInfo`;
-		if (!isObject(raw.falseInfo)) {
-			issues.add(at, `expected object, got ${describe(raw.falseInfo)}`);
-		} else {
-			checkKeys(raw.falseInfo, ['types'], at, issues);
-			if (raw.falseInfo.types === undefined) issues.add(`${at}.types`, 'required');
-			const types = readTypes(raw.falseInfo, 'types', at, issues);
-			if (types) rules.falseInfo = { types };
-		}
+		const falseInfo = readFalseInfo(raw.falseInfo, `${path}.falseInfo`, issues);
+		if (falseInfo) rules.falseInfo = falseInfo;
 	}
+	const createsDemon = readBoolean(raw, 'createsDemon', path, issues);
+	if (createsDemon !== undefined) rules.createsDemon = createsDemon;
 	const hiddenAs = readString(raw, 'orHiddenAs', path, issues, false);
 	if (hiddenAs !== undefined) rules.orHiddenAs = hiddenAs;
 	const gains = readEnum(raw, 'gainsAbilityOf', SEATED_TYPES, path, issues, false);

@@ -39,9 +39,10 @@
 		nightNumbers?: { first?: number; other?: number };
 		/**
 		 * `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat),
-		 * `nominate` on the nomination marks (it asks who this player nominated).
+		 * `nominate` on the nomination marks (it asks who this player nominated), `avatar` on the
+		 * player's avatar mark (it opens their profile, Trevor 2026-10-28).
 		 */
-		onTap: (part?: 'note' | 'nominate') => void;
+		onTap: (part?: 'note' | 'nominate' | 'avatar') => void;
 		/** A tap on a dead player's badge: marks their ghost vote used, or gives it back. */
 		onGhostVote?: () => void;
 		/**
@@ -181,7 +182,9 @@
 						? 'note'
 						: target?.closest('.rim-pill')
 							? 'nominate'
-							: undefined
+							: target?.closest('.mark.avatar')
+								? 'avatar'
+								: undefined
 				);
 		}
 		down = null;
@@ -204,7 +207,8 @@
 	<!-- Corner marks sit in fixed places, so one appearing never moves anything. -->
 	{#if orphan}<span class="mark orphan" title="Not on the script"><Icon name="warning" /></span
 		>{/if}
-	<!-- The player's own avatar (plan R6), upper left, while a character covers the face. -->
+	<!-- The player's own avatar (plan R6), upper left, while a character covers the face. A tap
+	     opens the player's profile (Trevor, 2026-10-28). -->
 	{#if character && seat.avatar}<span
 			class="mark avatar"
 			data-testid="avatar-mark"
@@ -339,7 +343,9 @@
 		box-shadow: var(--shadow);
 		--icon-size: calc(max(1.125 * var(--u), calc(var(--size) * 0.3)) * 0.65);
 	}
-	/* The skull badge takes a full-size tap of its own, for the ghost vote. */
+	/* The skull badge takes a full-size tap of its own, for the ghost vote; the avatar mark
+	   one for the player's profile. */
+	.avatar::after,
 	.seat :global([data-testid='dead-mark'])::after {
 		content: '';
 		position: absolute;
