@@ -201,6 +201,11 @@ export interface CharacterRules extends ChoiceRules {
 	 */
 	makesExtraEvil?: boolean;
 	/**
+	 * Its ability is only the jinxes, which show on their own, so a game never starts with it in
+	 * play (the Djinn, https://wiki.bloodontheclocktower.com/Djinn; Trevor, 2026-10-17).
+	 */
+	jinxesOnly?: boolean;
+	/**
 	 * A hidden character (one with no token of its own, such as the Drunk) the Storyteller may
 	 * make this character's player instead, who then thinks they are this character. Sushi
 	 * Buffet asks when it is drafted, as Grimbits' draft tool does for the Atheist
@@ -398,6 +403,7 @@ const RULE_KEYS = [
 	'makesDemon',
 	'infoTokenCharacters',
 	'makesExtraEvil',
+	'jinxesOnly',
 	'orHiddenAs',
 	'gainsAbilityOf',
 	'turnsPlayersInto',
@@ -634,6 +640,8 @@ export function parseCharacterRules(
 	}
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
+	const jinxesOnly = readBoolean(raw, 'jinxesOnly', path, issues);
+	if (jinxesOnly !== undefined) rules.jinxesOnly = jinxesOnly;
 	const hiddenAs = readString(raw, 'orHiddenAs', path, issues, false);
 	if (hiddenAs !== undefined) rules.orHiddenAs = hiddenAs;
 	const gains = readEnum(raw, 'gainsAbilityOf', SEATED_TYPES, path, issues, false);
