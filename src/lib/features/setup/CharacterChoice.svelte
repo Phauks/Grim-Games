@@ -69,7 +69,6 @@
 -->
 <CharacterRow
 	{character}
-	look="ring"
 	info
 	pressed={selected}
 	dashed={offScript}
