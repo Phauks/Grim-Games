@@ -116,7 +116,8 @@
 		width: 40%;
 	}
 	/* A table inside a cell sizes its labels to their words. */
-	td .facts th {
+	/* The inner table is another instance of this component, so its class is global here. */
+	td :global(.facts th) {
 		width: auto;
 	}
 	ol {

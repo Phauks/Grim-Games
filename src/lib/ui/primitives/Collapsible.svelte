@@ -21,7 +21,7 @@
 </script>
 
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CountBadge from './CountBadge.svelte';
 
@@ -93,7 +93,7 @@
 	);
 	let openWhileEmpty = $state(false);
 	// Something appeared: open it, even if it was closed before.
-	let wasEmpty = empty;
+	let wasEmpty = untrack(() => empty);
 	$effect.pre(() => {
 		if (wasEmpty && !empty) {
 			open = true;
