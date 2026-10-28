@@ -13,6 +13,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
+	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
@@ -299,6 +300,21 @@
 					// suggestion opened from the walk-through).
 					shownCard = undefined;
 					shownId = id;
+					showOpen = true;
+				}}
+				onShowCharacters={(set) => {
+					// Every token on one card, as the Godfather is shown its Outsiders; with none,
+					// the card says so ("No Outsiders", Trevor 2026-10-28).
+					shownId = undefined;
+					shownCard =
+						set.value.length === 0
+							? { title: `No ${TYPE_PLURALS[set.type]}` }
+							: {
+									characters: set.value.flatMap((id) => {
+										const character = characters.get(id);
+										return character ? [{ character }] : [];
+									})
+								};
 					showOpen = true;
 				}}
 			/>
