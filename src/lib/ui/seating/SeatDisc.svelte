@@ -39,6 +39,8 @@
 		avatar?: AvatarId;
 		/** The player's own picture (a link), in place of their initials (2026-10-27). */
 		picture?: string;
+		/** A character-icon avatar in full colour: the player's own Profile only. */
+		fullColour?: boolean;
 	}
 
 	let {
@@ -52,7 +54,8 @@
 		usedVote = 'hollow',
 		frame,
 		avatar,
-		picture
+		picture,
+		fullColour = false
 	}: Props = $props();
 
 	const framed = $derived(frame !== undefined && frame.drawing.length > 0);
@@ -87,6 +90,7 @@
 					{avatar}
 					{name}
 					{picture}
+					{fullColour}
 				/>{:else}<span class="empty">{number}</span>{/if}</span
 		>
 		{#if frame && framed}<span

@@ -42,7 +42,7 @@ describe('frames', () => {
 		// Each form in its own colour until one is picked, then all in that one.
 		expect(all.map((frame) => frame.id)).toContain('vines-green');
 		expect(unlockedFrames(undefined, 'demon').at(-1)?.id).toBe('laurel-briar-demon');
-		expect(unlockedFrames(undefined, 'gold', 'sway')[1].id).toBe('ring-gold~sway');
+		expect(unlockedFrames(undefined, 'gold', 'rotate-cw')[1].id).toBe('ring-gold~rotate-cw');
 		expect(FRAME_FORMS.every((form) => form.unlock === undefined)).toBe(true);
 	});
 
@@ -87,8 +87,10 @@ describe('frames', () => {
 		expect(parseFrameId('laurel-ivy-minion')).toBe('laurel-ivy-minion');
 		// The single Laurel frame from before laurels had forms is the gold Laurel.
 		expect(parseFrameId('laurel')).toBe('laurel-laurel-gold');
-		expect(parseFrameId('laurel-olive-gold~sway-shimmer')).toBe('laurel-olive-gold~sway-shimmer');
-		expect(parseFrameId('laurel-olive-gold~spin')).toBeUndefined();
+		expect(parseFrameId('laurel-olive-gold~shimmer-ccw')).toBe('laurel-olive-gold~shimmer-ccw');
+		// Sway is gone (Trevor, 2026-10-28): a laurel saved swaying is kept, still.
+		expect(parseFrameId('laurel-olive-gold~sway')).toBe('laurel-olive-gold');
+		expect(parseFrameId('laurel-olive-gold~a~b')).toBeUndefined();
 		expect(parseFrameId('laurel-ivy-pink')).toBeUndefined();
 		expect(parseFrameId('laurel-rose-gold')).toBeUndefined();
 		expect(parseFrameId('laurel-ivy-gold-x')).toBeUndefined();
@@ -101,10 +103,10 @@ describe('frames', () => {
 		expect(FRAME_MOTIONS[0]).toBe('none');
 		const still = frameById('laurel-myrtle-silver') as Frame;
 		expect(still.motion).toBeUndefined();
-		const swaying = restyleFrame(still, { motion: 'sway' });
-		expect(swaying).toMatchObject({ id: 'laurel-myrtle-silver~sway', motion: 'sway' });
-		expect(restyleFrame(swaying, { colour: 'demon' }).id).toBe('laurel-myrtle-demon~sway');
-		expect(restyleFrame(swaying, { motion: 'none' })).toBe(still);
+		const turning = restyleFrame(still, { motion: 'rotate-ccw' });
+		expect(turning).toMatchObject({ id: 'laurel-myrtle-silver~rotate-ccw', motion: 'rotate-ccw' });
+		expect(restyleFrame(turning, { colour: 'demon' }).id).toBe('laurel-myrtle-demon~rotate-ccw');
+		expect(restyleFrame(turning, { motion: 'none' })).toBe(still);
 		expect(restyleFrame(seatFrame('none'), { colour: 'gold' }).id).toBe('none');
 		expect(frameId('vines', 'gold', 'shimmer')).toBe('vines-gold~shimmer');
 	});
