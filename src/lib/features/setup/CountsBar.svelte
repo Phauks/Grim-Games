@@ -39,11 +39,16 @@
 	/**
 	 * Tapping a type's count shows where it comes from (Trevor, 2026-10-20): the setup sheet's
 	 * count, each change to it, and what is expected and chosen. One popover for all four.
+	 * Tapping the open one's cell again closes it (Trevor, 2026-10-28).
 	 */
 	let infoOpen = $state(false);
 	let infoType = $state<SeatedType>('townsfolk');
 	let infoAnchor = $state<HTMLElement>();
 	function showInfo(type: SeatedType, anchor: HTMLElement) {
+		if (infoOpen && infoAnchor === anchor) {
+			infoOpen = false;
+			return;
+		}
 		infoType = type;
 		infoAnchor = anchor;
 		infoOpen = true;
