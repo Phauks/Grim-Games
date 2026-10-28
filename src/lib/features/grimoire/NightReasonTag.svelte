@@ -42,7 +42,10 @@
 	>{:else if reason === 'unreliable'}<span class="tag warn"
 		><Icon name="warning" />Not reliable</span
 	>{:else if reason === 'vortox'}<span class="tag warn"
-		>{falseBy ? (characters.get(falseBy)?.name ?? falseBy) : ''}</span
+		>{#if falseBy}<CharacterBadge
+				characterId={falseBy}
+				character={characters.get(falseBy)}
+			/>{/if}</span
 	>{:else if reason === 'invalid'}<span class="tag warn"><Icon name="warning" />Not valid</span
 	>{/if}
 
