@@ -8,19 +8,21 @@ import type { InboxItem } from './inbox.svelte.ts';
 export interface InboxFilter {
 	/** One player's messages and pictures, by member id; `all` for everyone's. */
 	player: string;
-	read: 'all' | 'unread' | 'read';
+	/** Show unread messages and pictures still to judge. */
+	unread: boolean;
+	/** Show messages already read. */
+	read: boolean;
 	/** Only messages that ask for a Storyteller consult. */
 	consult: boolean;
 }
 
-export const ALL_INBOX: InboxFilter = { player: 'all', read: 'all', consult: false };
+export const ALL_INBOX: InboxFilter = { player: 'all', unread: true, read: true, consult: false };
 
 export function filterInbox(items: readonly InboxItem[], filter: InboxFilter): InboxItem[] {
 	return items.filter((item) => {
 		if (filter.player !== 'all' && item.memberId !== filter.player) return false;
 		const unread = item.kind === 'picture' || !item.read;
-		if (filter.read === 'unread' && !unread) return false;
-		if (filter.read === 'read' && unread) return false;
+		if (!(unread ? filter.unread : filter.read)) return false;
 		return !filter.consult || (item.kind === 'message' && !!item.consult);
 	});
 }

@@ -11,7 +11,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import { inboxDialog } from './inbox-dialog.svelte.ts';
 	import type { InboxItem } from './inbox.svelte.ts';
@@ -44,11 +44,6 @@
 		{ value: 'all', label: t('room.inbox.allPlayers') },
 		...inboxSenders(inbox.items).map((id) => ({ value: id, label: nameOf(id) }))
 	]);
-	const readOptions: { value: InboxFilter['read']; label: string }[] = [
-		{ value: 'all', label: t('room.inbox.readAll') },
-		{ value: 'unread', label: t('room.inbox.readUnread') },
-		{ value: 'read', label: t('room.inbox.readRead') }
-	];
 
 	/** The box opened on its own, by kind and id. */
 	let openKey = $state<string>();
@@ -108,7 +103,9 @@
 	>
 {/snippet}
 
-<Dialog bind:open={inboxDialog.open} title={t('room.inbox.title')}>
+<!-- `full`, so the header stays in place and the filters pinned under it while the boxes
+     scroll (Trevor, 2026-10-28: "Pin top of message area with controls"). -->
+<Dialog bind:open={inboxDialog.open} title={t('room.inbox.title')} size="full">
 	<!-- Always in place, so nothing moves as messages come in or filters empty the list. -->
 	<div class="filters" data-testid="inbox-filters">
 		<Select
@@ -117,17 +114,19 @@
 			value={filter.player}
 			onChange={(player) => (filter.player = player)}
 		/>
-		<Select
-			label={t('room.inbox.read')}
-			options={readOptions}
-			value={filter.read}
-			onChange={(read) => (filter.read = read)}
-		/>
-		<Toggle
-			label={t('room.inbox.consultOnly')}
-			checked={filter.consult}
-			onChange={(on) => (filter.consult = on)}
-		/>
+		<!-- On/off chips, not a drop-down (Trevor, 2026-10-28: "buttons or something better than
+		     a dropdown"); each shows its kind of box while on. -->
+		<div class="chips" role="group" aria-label={t('room.inbox.show')}>
+			<Chip pressed={filter.unread} onclick={() => (filter.unread = !filter.unread)}
+				>{t('room.inbox.readUnread')}</Chip
+			>
+			<Chip pressed={filter.read} onclick={() => (filter.read = !filter.read)}
+				>{t('room.inbox.readRead')}</Chip
+			>
+			<Chip pressed={filter.consult} onclick={() => (filter.consult = !filter.consult)}
+				>{t('room.inbox.consultOnly')}</Chip
+			>
+		</div>
 	</div>
 	{#if shown.length === 0}
 		<p class="none">{t('room.inbox.none')}</p>
@@ -219,6 +218,11 @@
 
 <style>
 	.filters {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		padding-bottom: var(--space-2);
+		background: var(--dialog-background);
 		display: flex;
 		flex-wrap: wrap;
 		align-items: flex-end;
@@ -228,6 +232,11 @@
 	.filters > :global(*) {
 		flex: 1 1 calc(10 * var(--u));
 		min-width: 0;
+	}
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 	}
 	.none {
 		margin: 0;
