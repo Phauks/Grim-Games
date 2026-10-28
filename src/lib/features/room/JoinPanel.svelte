@@ -34,6 +34,7 @@
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
+	import { parseSeatPresence } from '#lib/core/sync/seat-presence.ts';
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
@@ -455,7 +456,12 @@
 {:else if inRoom}
 	<!-- The row the Storyteller's player view shows too (PlayerStatusRow): anything drawn from
 	     the table's public state goes in it, never here. -->
-	<PlayerStatusRow table={view?.public} ended={!!view?.endedGameId}>
+	<PlayerStatusRow
+		table={view?.public}
+		ended={!!view?.endedGameId}
+		presence={parseSeatPresence(view?.presence)}
+		mySeat={mine}
+	>
 		{#snippet before()}
 			<!-- Where this phone sits; the name is set from You on the title line (plan E2, Trevor
 			     2026-10-26: "move name into an edit button in the top"). -->

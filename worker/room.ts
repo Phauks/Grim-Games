@@ -588,7 +588,7 @@ export class Room extends DurableObject<RoomEnv> {
 
 	/**
 	 * A viewer leaving changes the Storyteller's count of who is watching; a phone leaving
-	 * changes who is here now.
+	 * changes who is here now, which the other phones show as their seats' candles.
 	 */
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const who = ws.deserializeAttachment() as Attachment | null;
@@ -596,7 +596,10 @@ export class Room extends DurableObject<RoomEnv> {
 		if (who?.role === 'admin') this.tellGrimoireWanted(ws);
 		if (who?.role === 'player') {
 			const room = await this.load();
-			if (room) this.tellHost(room, ws);
+			if (room) {
+				this.tellHost(room, ws);
+				this.tellPlayers(room, ws);
+			}
 		}
 	}
 
@@ -617,6 +620,16 @@ export class Room extends DurableObject<RoomEnv> {
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
 			if (who?.role === 'host') sendText(socket, text);
+		}
+	}
+
+	/** Sends each phone its view again, without storing anything: who is here has changed. */
+	private tellPlayers(room: RoomState, going: WebSocket): void {
+		const present = this.present(going);
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'player' && socket !== going)
+				sendText(socket, JSON.stringify(playerView(room, who.memberId, present)));
 		}
 	}
 

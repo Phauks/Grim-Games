@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { TIMER_FOR_PLAYERS, TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
@@ -78,6 +79,14 @@
 			label: t(`day.timerForPlayers.${value}`)
 		}))}
 		onChange={(timerForPlayers) => preferences.update({ timerForPlayers })}
+	/>
+	<!-- What phones show beside Setup, before the first night (Trevor, 2026-10-28); also in
+	     Settings > Storyteller > Day. -->
+	<Select
+		label={t('day.setupForPlayers')}
+		value={preferences.current.setupForPlayers}
+		options={SETUP_LOOKS.map((value) => ({ value, label: t(`day.setupForPlayers.${value}`) }))}
+		onChange={(setupForPlayers) => preferences.update({ setupForPlayers })}
 	/>
 {/snippet}
 
