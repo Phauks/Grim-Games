@@ -68,6 +68,8 @@ import { MAX_AVATAR_PICTURE_BYTES } from '../src/lib/core/sync/room-pictures.ts'
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
 import { closeSocket, send, sendText, type Attachment } from './room-sockets.ts';
 import {
+	answerTransfer,
+	claimGone,
 	claimMessage,
 	closeTransferGame,
 	keepsTransferGame,
@@ -485,6 +487,9 @@ export class Room extends DurableObject<RoomEnv> {
 				room = closeTransfer(room);
 				await closeTransferGame(room, this.ctx.storage);
 				break;
+			case 'answer-transfer':
+				await answerTransfer(this.transferRoom(), room, message.allow);
+				return;
 			case 'unseat':
 				room = unseat(room, message.memberId);
 				break;
@@ -594,9 +599,10 @@ export class Room extends DurableObject<RoomEnv> {
 		const who = ws.deserializeAttachment() as Attachment | null;
 		if (who?.role === 'viewer') this.tellWatchers(ws);
 		if (who?.role === 'admin') this.tellGrimoireWanted(ws);
-		if (who?.role === 'player') {
+		if (who?.role === 'player' || who?.role === 'claim') {
 			const room = await this.load();
-			if (room) this.tellHost(room, ws);
+			if (room && who.role === 'claim') await claimGone(this.transferRoom(), room, who.keyHash);
+			else if (room) this.tellHost(room, ws);
 		}
 	}
 

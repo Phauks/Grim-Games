@@ -16,8 +16,9 @@
 	/**
 	 * Room transfer, the side taking over (Trevor, 2026-10-28): on Join game, with the room code
 	 * typed, ⋯ > Room transfer asks for the transfer code the Storyteller's device shows. Once
-	 * it is right, it says who hands over what; Take over makes this device the Storyteller and
-	 * opens the game that came along, or New game.
+	 * it is right, it says who hands over what; Take over asks the Storyteller's device, and
+	 * once it allows it, this device is the Storyteller and opens the game that came along, or
+	 * New game.
 	 */
 	interface Props {
 		open: boolean;
@@ -53,7 +54,8 @@
 			open = false;
 			await goto(gameId ? resolve('/grimoire/[gameId]', { gameId }) : resolve('/new'));
 		} catch {
-			toast(t('room.transfer.takeFailed'));
+			// A turned-down or refused ask says so on the status line.
+			if (!claim.problem) toast(t('room.transfer.takeFailed'));
 		}
 	}
 
@@ -75,12 +77,16 @@
 			id="transfer-code"
 			bind:value={code}
 			length={TRANSFER_CODE_LENGTH}
-			group={3}
+			group={TRANSFER_CODE_LENGTH / 2}
 			centred
 		/>
 		<!-- One line, always in its place: who hands over what, or why the code was turned down. -->
 		<p class="status" role="status" data-testid="transfer-status">
-			{#if details}
+			{#if claim?.taking}
+				{t('room.transfer.waiting')}
+			{:else if problem?.kind === 'denied'}
+				{t('room.transfer.denied')}
+			{:else if details}
 				{#if details.storyteller}{t('room.transfer.from')}
 					<PlayerBadge name={details.storyteller as PlayerName} />:
 				{/if}{what(details)}
