@@ -188,6 +188,10 @@ small surface and take it off the list (a stale entry is reported, not a failure
 parallel splits never break each other). The plan for each is in the project's
 `refactor/large-files.md`.
 
+`npm run lint:knip` (`knip.jsonc`) fails on a file, an exported value or a dependency nothing
+uses. Delete it, or drop the `export` when only its own file uses it; an export kept on
+purpose for later says why with `@public` in its doc comment.
+
 ## Still to share
 
 The open items, with owners, are in the project's component review

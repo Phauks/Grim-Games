@@ -170,7 +170,7 @@
 		height: 1em;
 	}
 	.warning {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	.reset:disabled {
 		opacity: 0.35;

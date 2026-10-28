@@ -81,8 +81,12 @@ test('the board ⋯ menu offers Character selection only until the bag is dealt'
 		.tap();
 	await expect(page.getByRole('button', { name: 'Deal' })).toBeDisabled();
 
-	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await expect(menu.getByRole('button', { name: 'History' })).toBeVisible();
-	await expect(selection).toHaveCount(0);
+	// A full reload skips the flush that in-app navigation does, so the deal may still be
+	// saving on a slow runner: reload until it has landed.
+	await expect(async () => {
+		await page.goto(board);
+		await page.getByRole('button', { name: 'More', exact: true }).tap();
+		await expect(menu.getByRole('button', { name: 'History' })).toBeVisible();
+		await expect(selection).toHaveCount(0, { timeout: 1000 });
+	}).toPass();
 });

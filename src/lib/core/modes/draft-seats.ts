@@ -181,7 +181,7 @@ export function turnOffer(
 }
 
 /** The seats either side of `seat` (by pick index) once every seat has drafted. */
-export function neighbours(state: DraftState, seat: number): number[] {
+function neighbours(state: DraftState, seat: number): number[] {
 	const left = Object.values(state.slots).reduce((n, open) => n + Math.max(0, open), 0);
 	const n = state.picks.length + left;
 	if (n < 2) return [];
@@ -189,7 +189,7 @@ export function neighbours(state: DraftState, seat: number): number[] {
 	return [...either].filter((i) => i !== seat).sort((a, b) => a - b);
 }
 
-export const isEvil = (state: DraftState, id: CharacterId) =>
+const isEvil = (state: DraftState, id: CharacterId) =>
 	state.types[id] === 'minion' || state.types[id] === 'demon';
 
 /**

@@ -9,7 +9,7 @@ import type { LoadedScript } from './script.ts';
  */
 
 /** URL path of the synced edition logos, as served from `static/`. */
-export const LOGOS_PATH = '/data/logos';
+const LOGOS_PATH = '/data/logos';
 
 /**
  * The editions with a synced logo: `OFFICIAL_EDITIONS`, listed here so the Worker can read

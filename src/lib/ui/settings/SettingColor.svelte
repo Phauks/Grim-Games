@@ -88,7 +88,7 @@
 		visibility: hidden;
 	}
 	.warning {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	input {
 		width: calc(2 * var(--tap-target));

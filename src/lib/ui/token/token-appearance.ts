@@ -70,7 +70,7 @@ export type TokenColour = (typeof TOKEN_COLOURS)[number]['key'];
 export const TOKEN_SCALE = { min: 0.5, max: 2, step: 0.05 } as const;
 
 /** A saved size, kept on the range and on a step; anything else is 100%. */
-export function parseScale(raw: unknown): number {
+function parseScale(raw: unknown): number {
 	if (typeof raw !== 'number' || !Number.isFinite(raw)) return 1;
 	const clamped = Math.min(TOKEN_SCALE.max, Math.max(TOKEN_SCALE.min, raw));
 	return (Math.round(clamped / TOKEN_SCALE.step) * 5) / 100;

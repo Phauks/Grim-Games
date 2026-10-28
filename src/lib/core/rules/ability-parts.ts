@@ -89,7 +89,7 @@ export function setupPartText(part: SetupPart, self: string): string {
 const signedNumber = (raw: string) => Number(raw.replace(/\s/g, ''));
 
 /** Reads one bracket clause back into a part; anything else stays as text. */
-export function readSetupPart(
+function readSetupPart(
 	clause: string,
 	self: string,
 	findByName?: (name: string) => { id: CharacterId; name: CharacterName } | undefined

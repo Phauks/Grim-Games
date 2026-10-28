@@ -44,8 +44,8 @@ import {
 export const DEATH_KINDS = ['kills', 'own-death', 'execution', 'gained-ability'] as const;
 export type DeathKind = (typeof DEATH_KINDS)[number];
 
-export const VICTIMS = ['self', 'not-self', 'alive-neighbour', 'registers'] as const;
-export const REGISTERS_AS = ['demon', 'not-demon', 'good', 'townsfolk'] as const;
+const VICTIMS = ['self', 'not-self', 'alive-neighbour', 'registers'] as const;
+const REGISTERS_AS = ['demon', 'not-demon', 'good', 'townsfolk'] as const;
 
 export type VictimRule =
 	| { who: 'self' }

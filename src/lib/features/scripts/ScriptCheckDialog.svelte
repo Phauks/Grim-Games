@@ -72,7 +72,7 @@
 		font-size: 1rem;
 	}
 	[data-severity='error'] h3 {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	ul {
 		margin: 0;

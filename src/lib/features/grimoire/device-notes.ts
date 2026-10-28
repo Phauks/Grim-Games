@@ -284,7 +284,7 @@ export function nightUnderway(
 
 const isNight = (v: unknown): v is 'first' | 'other' => v === 'first' || v === 'other';
 
-export function parseNightView(raw: unknown): NightView {
+function parseNightView(raw: unknown): NightView {
 	const view: NightView = { done: [] };
 	if (typeof raw !== 'object' || raw === null) return view;
 	const r = raw as Record<string, unknown>;

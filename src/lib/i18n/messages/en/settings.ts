@@ -11,7 +11,6 @@ export const settings = {
 	'settings.groupNight': 'Night',
 	'settings.groupSetup': 'Bag draw',
 	'settings.groupDay': 'Day',
-	'settings.groupBoard': 'Board',
 	'settings.icons': 'Icons',
 	'settings.storyteller': 'Storyteller',
 	'settings.reset': 'Reset settings',
@@ -82,7 +81,6 @@ export const settings = {
 	'settings.profileDelete': 'Delete {name}',
 	'settings.profileDeleteTitle': 'Delete {name}?',
 	'settings.profileDeleteText': 'Games that used it switch to the default profile.',
-	'settings.profileInUse': 'In use',
 	'settings.profileBackgroundNone': 'No background',
 	'settings.profileBackgroundScript': "Script's background",
 	'settings.profileBackgroundImage': 'Own picture',
@@ -223,7 +221,6 @@ export const settings = {
 	'settings.resetSectionTitle': 'Reset {section}?',
 	'settings.resetSectionText':
 		'Every setting in this section goes back to its default. Games, scripts and other settings stay as they are.',
-	'settings.resetConfirm': 'Reset',
 	'settings.confirm': 'Confirm',
 	'settings.installApp': 'Install app',
 	'settings.homeScreen': 'Add to Home Screen',
