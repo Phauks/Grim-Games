@@ -9,5 +9,8 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"wakesWhen": {
+		"deadAtLeastLiving": true
 	}
 }

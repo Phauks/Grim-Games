@@ -24,6 +24,7 @@ import {
 	onDeathApplies,
 	onDeathTrigger,
 	TRAVELLER_ALIGNMENT_STEP,
+	wakeConditionMet,
 	withCharacterChangeSteps,
 	withNightInfo,
 	type Night,
@@ -164,7 +165,9 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
  * Vigormortis's Has Ability on a Minion it killed, https://wiki.bloodontheclocktower.com/Vigormortis),
  * a dead player who still lives by their own ability (`livesWhileDead`: the Zombuul after its
  * first death), or one dead since the day began whose ability that death sets off (`onDeath`:
- * the Ravenkeeper killed at night, not executed; the Sage killed by the Demon).
+ * the Ravenkeeper killed at night, not executed; the Sage killed by the Demon). A character's
+ * own condition must hold too (`wakesWhen`: the King once the dead equal or outnumber the
+ * living, the Choirboy when the Demon killed the King, the Seamstress until it is used).
  */
 export function stepWakes(
 	game: Game,
@@ -178,10 +181,13 @@ export function stepWakes(
 		holders.length === 0 ||
 		holders.some(
 			(s) =>
-				seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
-				keepsAbilityWhenDead(game, s, characters) ||
-				livesWhileDead(game, s, characters) ||
-				(id !== undefined && tonight.diedTonight.has(s) && setOffByDeath(game, s, id, characters))
+				(seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
+					keepsAbilityWhenDead(game, s, characters) ||
+					livesWhileDead(game, s, characters) ||
+					(id !== undefined &&
+						tonight.diedTonight.has(s) &&
+						setOffByDeath(game, s, id, characters))) &&
+				(id === undefined || wakeConditionMet(game, id, s, characters, tonight.diedTonight))
 		)
 	);
 }
