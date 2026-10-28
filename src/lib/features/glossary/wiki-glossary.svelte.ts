@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from '#lib/ui/fetch.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { GLOSSARY, glossaryEntryUrl, type GlossaryTerm } from '#lib/core/rules/glossary.ts';
 import { parseGlossaryHtml, glossaryKey, type WikiEntry } from './wiki-glossary.ts';
@@ -45,7 +46,7 @@ class WikiGlossary {
 	}
 
 	/** Loads the cached copy, then fetches a fresh one when it is missing or old. */
-	load(fetcher: typeof fetch = fetch): Promise<void> {
+	load(fetcher: typeof fetch = fetchWithTimeout): Promise<void> {
 		if (this.#loading) return this.#loading;
 		const cached = readCache();
 		if (cached) {

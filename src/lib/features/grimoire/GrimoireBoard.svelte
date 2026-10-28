@@ -17,6 +17,7 @@
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import GameBackdrop from './GameBackdrop.svelte';
@@ -85,6 +86,7 @@
 	import { ReminderDragging } from './reminder-drag.svelte.ts';
 	import {
 		avoidBoxes,
+		cornerFit,
 		cornerObstacles,
 		keepClear,
 		nameBoxes as boardNameBoxes,
@@ -92,7 +94,6 @@
 		toPercent as boardToPercent,
 		toPx as boardToPx
 	} from './board-geometry.ts';
-	import { cornerRoom } from './corner-room.ts';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
@@ -291,17 +292,14 @@
 	// reminders then line up in front of it, towards the middle, clear of the name, and
 	// every one is shown so each can be dragged (reminder-fan.ts).
 	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5)) * reminderScale));
-	let rootFont = $state(16);
-	$effect(() => {
-		void preferences.current;
-		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-	});
+	const root = watchRootFont();
+	const rootFont = $derived(root.current);
 	const boardSize = $derived({ width, height });
 	const toPx = (p: SeatPoint) => boardToPx(p, boardSize);
 	const toPercent = (p: { x: number; y: number }): SeatPoint => boardToPercent(p, boardSize);
 	const nameBoxes = $derived.by(() =>
 		boardNameBoxes({
-			names: seats.map((seat, i) => seat.playerName ?? `Seat ${i + 1}`),
+			names: seats.map((seat, i) => seat.playerName ?? t('common.seat', { number: i + 1 })),
 			seats: shown,
 			size,
 			unit,
@@ -313,7 +311,7 @@
 	const cornerBoxes = $derived.by(() =>
 		cornerObstacles(shown, nameBoxes, size, boardLooks.current.nameOffset, boardSize)
 	);
-	const fitCorner = (h: number) => cornerRoom(cornerBoxes, { width, height }, h + 4, 4 + 8);
+	const fitCorner = $derived(cornerFit(cornerBoxes, boardSize));
 	/** How wide the corner may be now (BoardCorner). */
 	let corner = $state(0);
 	/**
@@ -527,7 +525,8 @@
 		placing
 			? shown.map((p, i) => {
 					const next = shown[(i + 1) % shown.length];
-					const name = (k: number) => game.seats[game.seating[k]].playerName ?? `Seat ${k + 1}`;
+					const name = (k: number) =>
+						game.seats[game.seating[k]].playerName ?? t('common.seat', { number: k + 1 });
 					return {
 						position: i + 1,
 						at: { x: (p.x + next.x) / 2, y: (p.y + next.y) / 2 },

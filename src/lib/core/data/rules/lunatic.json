@@ -31,5 +31,13 @@
 		"this-player-is": {
 			"characters": ["self"]
 		}
-	}
+	},
+	"evilInfo": {
+		"notes": {
+			"minioninfo": "wake Minions and Demon separately; the Lunatic gets Demon info too.",
+			"demoninfo": "wake Minions and Demon separately; the Lunatic gets Demon info too."
+		}
+	},
+	"choosesLikeDemon": "Chosen",
+	"believesOtherCharacter": true
 }

@@ -14,7 +14,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
-	newGame,
+	castGame,
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
@@ -45,22 +45,6 @@ function answerOf(...args: Parameters<typeof nightAnswer>) {
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
-/** Seats 0-7 hold these characters; extra commands run after. */
-function game(cast: string[], ...extra: ((seats: string[]) => Command)[]) {
-	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
-	const s = run(
-		session,
-		ctx,
-		...cast.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...extra.map((f) => f(seats))
-	);
-	return { game: s.game, seats, session: s, ctx };
-}
-
 const snv = [
 	'towncrier',
 	'flowergirl',
@@ -74,7 +58,7 @@ const snv = [
 
 describe('Town Crier', () => {
 	it('hears yes when a Minion nominated today, and who', () => {
-		const { game: g, seats } = game(snv, (s) => ({
+		const { game: g, seats } = castGame(snv, (s) => ({
 			type: 'Nominate',
 			nominator: s[4],
 			nominee: s[0]
@@ -87,7 +71,7 @@ describe('Town Crier', () => {
 	});
 
 	it('hears no when only good players and the Demon nominated', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			snv,
 			(s) => ({ type: 'Nominate', nominator: s[3], nominee: s[4] }),
 			(s) => ({ type: 'Nominate', nominator: s[5], nominee: s[3] })
@@ -99,7 +83,7 @@ describe('Town Crier', () => {
 	});
 
 	it('reads the current day log only: after New day nothing is recorded again', () => {
-		const { session, ctx, seats } = game(snv, (s) => ({
+		const { session, ctx, seats } = castGame(snv, (s) => ({
 			type: 'Nominate',
 			nominator: s[4],
 			nominee: s[0]
@@ -113,7 +97,7 @@ describe('Town Crier', () => {
 	// Trevor (2026-10-23): "town crier is giving valid info no when we haven't implemented
 	// nomination tracking". With no nominations recorded the answer is unknown, never no.
 	it('gives no answer until a nomination is recorded today', () => {
-		const { game: g, seats } = game(snv);
+		const { game: g, seats } = castGame(snv);
 		expect(answerOf(g, seats[0], 'towncrier', characters)).toMatchObject({
 			kind: 'none',
 			reason: 'No nominations recorded today',
@@ -122,7 +106,7 @@ describe('Town Crier', () => {
 	});
 
 	it('is unreliable while the Town Crier is poisoned', () => {
-		const { game: g, seats } = game(snv, (s) => ({
+		const { game: g, seats } = castGame(snv, (s) => ({
 			type: 'AddReminder',
 			seatId: s[0],
 			reminder: { characterId: 'nodashii', label: 'Poisoned' }
@@ -132,16 +116,16 @@ describe('Town Crier', () => {
 
 	it('must be false with a Vortox in play', () => {
 		const cast = snv.map((id) => (id === 'nodashii' ? 'vortox' : id));
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		expect(answerOf(g, seats[0], 'towncrier', characters).mustBeFalse).toBe(true);
 	});
 
 	// Trevor, 2026-10-17: only players whose registration could change the answer.
 	it('flags a Spy or Recluse who nominated, who might register as something else', () => {
 		const cast = ['towncrier', 'spy', 'recluse', 'imp', 'chef'];
-		const quiet = game(cast);
+		const quiet = castGame(cast);
 		expect(answerOf(quiet.game, quiet.seats[0], 'towncrier', characters).misregister).toEqual([]);
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			cast,
 			(s) => ({ type: 'Nominate', nominator: s[1], nominee: s[4] }),
 			(s) => ({ type: 'Nominate', nominator: s[2], nominee: s[3] })
@@ -162,7 +146,7 @@ describe('Town Crier', () => {
 
 	// Trevor, 2026-10-24: "town crier lacks day button to track nomination".
 	it("hears the Storyteller's Minion nominated mark over the nominations recorded", () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			snv,
 			(s) => ({ type: 'Nominate', nominator: s[0], nominee: s[1] }),
 			() => ({ type: 'SetDayMark', mark: 'minion-nominated', value: true })
@@ -171,7 +155,11 @@ describe('Town Crier', () => {
 			kind: 'yes-no',
 			value: true
 		});
-		const none = game(snv, () => ({ type: 'SetDayMark', mark: 'minion-nominated', value: false }));
+		const none = castGame(snv, () => ({
+			type: 'SetDayMark',
+			mark: 'minion-nominated',
+			value: false
+		}));
 		expect(answerOf(none.game, none.seats[0], 'towncrier', characters)).toMatchObject({
 			kind: 'yes-no',
 			value: false
@@ -179,7 +167,7 @@ describe('Town Crier', () => {
 	});
 
 	it('shows what the Storyteller recorded, as their override', () => {
-		const { game: g, seats } = game(snv, (s) => ({
+		const { game: g, seats } = castGame(snv, (s) => ({
 			type: 'RecordNightInfo',
 			seatId: s[0],
 			characterId: 'towncrier',
@@ -193,18 +181,18 @@ describe('Town Crier', () => {
 
 describe('Flowergirl', () => {
 	it('has no answer until the Storyteller marks whether the Demon voted', () => {
-		const { game: g, seats } = game(snv);
+		const { game: g, seats } = castGame(snv);
 		expect(answerOf(g, seats[1], 'flowergirl', characters).kind).toBe('none');
 	});
 
 	it('hears yes when the Demon voted, and no when it did not', () => {
-		const voted = game(snv, () => ({ type: 'SetDayMark', mark: 'demon-voted', value: true }));
+		const voted = castGame(snv, () => ({ type: 'SetDayMark', mark: 'demon-voted', value: true }));
 		expect(answerOf(voted.game, voted.seats[1], 'flowergirl', characters)).toMatchObject({
 			kind: 'yes-no',
 			value: true,
 			because: [voted.seats[5]]
 		});
-		const not = game(snv, () => ({ type: 'SetDayMark', mark: 'demon-voted', value: false }));
+		const not = castGame(snv, () => ({ type: 'SetDayMark', mark: 'demon-voted', value: false }));
 		expect(answerOf(not.game, not.seats[1], 'flowergirl', characters)).toMatchObject({
 			value: false
 		});
@@ -215,7 +203,7 @@ describe('Undertaker', () => {
 	const tb = ['undertaker', 'washerwoman', 'slayer', 'virgin', 'poisoner', 'imp', 'butler'];
 
 	it('learns the character of the player executed today', () => {
-		const { game: g, seats } = game(tb, (s) => ({ type: 'Execute', seatId: s[4] }));
+		const { game: g, seats } = castGame(tb, (s) => ({ type: 'Execute', seatId: s[4] }));
 		expect(answerOf(g, seats[0], 'undertaker', characters)).toMatchObject({
 			kind: 'character',
 			value: 'poisoner',
@@ -224,7 +212,7 @@ describe('Undertaker', () => {
 	});
 
 	it('learns the Drunk, not the Townsfolk the Drunk thinks they are', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			tb,
 			(s) => ({
 				type: 'AddReminder',
@@ -237,7 +225,7 @@ describe('Undertaker', () => {
 	});
 
 	it('learns nothing when the executed player did not die by it', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			tb,
 			(s) => ({ type: 'SetDead', seatId: s[2], dead: true }),
 			(s) => ({ type: 'Execute', seatId: s[2] })
@@ -246,7 +234,7 @@ describe('Undertaker', () => {
 	});
 
 	it('learns nothing once the execution is removed from the log', () => {
-		const { session, ctx, seats } = game(tb, (s) => ({ type: 'Execute', seatId: s[4] }));
+		const { session, ctx, seats } = castGame(tb, (s) => ({ type: 'Execute', seatId: s[4] }));
 		const removed = run(session, ctx, {
 			type: 'RemoveDayEntry',
 			entryId: session.game.today.entries[0].entryId
@@ -255,7 +243,7 @@ describe('Undertaker', () => {
 	});
 
 	it('without a day log, reads the dead player carrying the Died Today reminder', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			tb,
 			(s) => ({ type: 'SetDead', seatId: s[5], dead: true, cause: 'execution' }),
 			(s) => ({
@@ -272,7 +260,7 @@ describe('Undertaker', () => {
 	});
 
 	it('marks the answer unreliable when the Undertaker is poisoned', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			tb,
 			(s) => ({ type: 'Execute', seatId: s[2] }),
 			(s) => ({
@@ -289,7 +277,7 @@ describe('Undertaker', () => {
 
 	// https://wiki.bloodontheclocktower.com/Abilities: a dead Poisoner's poison ends at once.
 	it('is reliable again once the Poisoner who poisoned them is executed', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			tb,
 			(s) => ({
 				type: 'AddReminder',
@@ -305,7 +293,7 @@ describe('Undertaker', () => {
 
 	// https://wiki.bloodontheclocktower.com/Exile: exile is not an execution.
 	it('learns nothing from an exiled Traveller', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			[...tb, 'beggar'],
 			(s) => ({ type: 'SetAlignment', seatId: s[7], alignment: 'good' }),
 			(s) => ({ type: 'Exile', seatId: s[7] })
@@ -316,7 +304,7 @@ describe('Undertaker', () => {
 
 describe('Juggler', () => {
 	it('counts guesses that match true characters (a guess of the Drunk’s token is wrong)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['juggler', 'washerwoman', 'witch', 'nodashii', 'savant'],
 			(s) => ({
 				type: 'AddReminder',
@@ -345,7 +333,7 @@ describe('Juggler', () => {
 
 	// Wiki Juggler example 2, paraphrased: one player guessed as two characters is two guesses.
 	it('counts each guess of a player guessed as several characters, the same guess once', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['juggler', 'witch', 'nodashii'],
 			(s) => ({
 				type: 'DayNote',
@@ -370,7 +358,7 @@ describe('Juggler', () => {
 	});
 
 	it('has no answer with no guesses logged', () => {
-		const { game: g, seats } = game(['juggler', 'witch', 'nodashii']);
+		const { game: g, seats } = castGame(['juggler', 'witch', 'nodashii']);
 		expect(answerOf(g, seats[0], 'juggler', characters).kind).toBe('none');
 	});
 });
@@ -387,7 +375,7 @@ describe('Gossip', () => {
 		});
 
 	it('says a player dies when today’s statement was marked true', () => {
-		const { game: g, seats } = game(['gossip', 'nodashii', 'witch'], statement(true));
+		const { game: g, seats } = castGame(['gossip', 'nodashii', 'witch'], statement(true));
 		expect(answerOf(g, seats[0], 'gossip', characters)).toMatchObject({
 			kind: 'yes-no',
 			value: true
@@ -395,7 +383,7 @@ describe('Gossip', () => {
 	});
 
 	it('says nobody dies when it was marked false', () => {
-		const { game: g, seats } = game(['gossip', 'nodashii', 'witch'], statement(false));
+		const { game: g, seats } = castGame(['gossip', 'nodashii', 'witch'], statement(false));
 		expect(answerOf(g, seats[0], 'gossip', characters)).toMatchObject({
 			kind: 'yes-no',
 			value: false
@@ -403,17 +391,17 @@ describe('Gossip', () => {
 	});
 
 	it('asks for the truth, or for a statement, when either is missing', () => {
-		const unmarked = game(['gossip', 'nodashii', 'witch'], statement());
+		const unmarked = castGame(['gossip', 'nodashii', 'witch'], statement());
 		expect(answerOf(unmarked.game, unmarked.seats[0], 'gossip', characters)).toMatchObject({
 			kind: 'none',
 			reason: 'Mark whether the statement was true'
 		});
-		const silent = game(['gossip', 'nodashii', 'witch']);
+		const silent = castGame(['gossip', 'nodashii', 'witch']);
 		expect(answerOf(silent.game, silent.seats[0], 'gossip', characters).kind).toBe('none');
 	});
 
 	it('is not reliable while the Gossip is poisoned (no death)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['gossip', 'nodashii', 'witch', 'poisoner'],
 			statement(true),
 			(s) => ({
@@ -428,7 +416,7 @@ describe('Gossip', () => {
 
 describe('Oracle', () => {
 	it('counts dead evil players, including a Zombuul that registers as dead', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['oracle', 'witch', 'cerenovus', 'zombuul', 'savant'],
 			(s) => ({ type: 'SetDead', seatId: s[1], dead: true }),
 			(s) => ({ type: 'SetDead', seatId: s[4], dead: true }),
@@ -449,7 +437,7 @@ describe('info picker', () => {
 	const tb = ['washerwoman', 'slayer', 'virgin', 'butler', 'poisoner', 'imp', 'chef'];
 
 	it('Washerwoman: pairs of a Townsfolk and any other player, never herself', () => {
-		const { game: g, seats } = game(tb);
+		const { game: g, seats } = castGame(tb);
 		const picker = infoPicker(g, seats[0], 'washerwoman', characters)!;
 		expect(picker).toMatchObject({ kind: 'pair-character', seatCount: 2, anyAllowed: false });
 		const slayer = picker.options.filter((o) => o.characterId === 'slayer');
@@ -465,7 +453,7 @@ describe('info picker', () => {
 	});
 
 	it('Washerwoman: the Drunk is not a Townsfolk to learn about', () => {
-		const { game: g, seats } = game(tb, (s) => ({
+		const { game: g, seats } = castGame(tb, (s) => ({
 			type: 'AddReminder',
 			seatId: s[1],
 			reminder: { characterId: 'drunk', label: 'Is The Drunk' }
@@ -475,7 +463,7 @@ describe('info picker', () => {
 	});
 
 	it('allows every option, marked, when the Washerwoman is poisoned', () => {
-		const { game: g, seats } = game(tb, (s) => ({
+		const { game: g, seats } = castGame(tb, (s) => ({
 			type: 'AddReminder',
 			seatId: s[0],
 			reminder: { characterId: 'poisoner', label: 'Poisoned' }
@@ -488,7 +476,7 @@ describe('info picker', () => {
 	});
 
 	it('records the Townsfolk token on the real one and Wrong on the other', () => {
-		const { game: g, seats } = game(tb);
+		const { game: g, seats } = castGame(tb);
 		const picker = infoPicker(g, seats[0], 'washerwoman', characters)!;
 		const record = infoRecord(
 			picker,
@@ -507,35 +495,35 @@ describe('info picker', () => {
 	});
 
 	it('Librarian: learns the Drunk as an Outsider, or 0 with no Outsiders', () => {
-		const drunk = game(['librarian', 'washerwoman', 'imp', 'poisoner', 'chef'], (s) => ({
+		const drunk = castGame(['librarian', 'washerwoman', 'imp', 'poisoner', 'chef'], (s) => ({
 			type: 'AddReminder',
 			seatId: s[1],
 			reminder: { characterId: 'drunk', label: 'Is The Drunk' }
 		}));
 		const picker = infoPicker(drunk.game, drunk.seats[0], 'librarian', characters)!;
 		expect(new Set(picker.options.map((o) => o.characterId))).toEqual(new Set(['drunk']));
-		const none = game(['librarian', 'washerwoman', 'imp', 'poisoner', 'chef']);
+		const none = castGame(['librarian', 'washerwoman', 'imp', 'poisoner', 'chef']);
 		const empty = infoPicker(none.game, none.seats[0], 'librarian', characters)!;
 		expect(empty.options).toEqual([{ seats: [], none: true, number: 0 }]);
 		expect(isTruthful(empty, { seats: [], none: true })).toBe(true);
 	});
 
 	it('Investigator: pairs with a Minion', () => {
-		const { game: g, seats } = game(['investigator', 'slayer', 'baron', 'imp', 'chef']);
+		const { game: g, seats } = castGame(['investigator', 'slayer', 'baron', 'imp', 'chef']);
 		const picker = infoPicker(g, seats[0], 'investigator', characters)!;
 		expect(new Set(picker.options.map((o) => o.characterId))).toEqual(new Set(['baron']));
 	});
 
 	it('Chef: pairs of evil neighbours, around the circle', () => {
 		// Seats 0 and 4 are neighbours round the circle; 2 and 3 sit together.
-		const { game: g, seats } = game(['poisoner', 'chef', 'baron', 'imp', 'scarletwoman']);
+		const { game: g, seats } = castGame(['poisoner', 'chef', 'baron', 'imp', 'scarletwoman']);
 		const picker = infoPicker(g, seats[1], 'chef', characters)!;
 		expect(picker.options).toEqual([{ seats: [], number: 3 }]);
 		expect(isTruthful(picker, { seats: [], number: 3 })).toBe(true);
 	});
 
 	it('Empath: evil among the nearest alive neighbours', () => {
-		const { game: g, seats } = game(['imp', 'chef', 'empath', 'slayer', 'poisoner'], (s) => ({
+		const { game: g, seats } = castGame(['imp', 'chef', 'empath', 'slayer', 'poisoner'], (s) => ({
 			type: 'SetDead',
 			seatId: s[3],
 			dead: true
@@ -545,7 +533,7 @@ describe('info picker', () => {
 	});
 
 	it('Fortune Teller: yes for the Demon or the red herring', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['fortuneteller', 'chef', 'imp', 'slayer', 'poisoner'],
 			(s) => ({
 				type: 'AddReminder',
@@ -561,7 +549,7 @@ describe('info picker', () => {
 	});
 
 	it('Steward: one good player; Noble: three players with exactly one evil', () => {
-		const { game: g, seats } = game(['steward', 'noble', 'imp', 'slayer', 'poisoner', 'chef']);
+		const { game: g, seats } = castGame(['steward', 'noble', 'imp', 'slayer', 'poisoner', 'chef']);
 		const steward = infoPicker(g, seats[0], 'steward', characters)!;
 		expect(steward.options.map((o) => o.seats[0])).toEqual([seats[1], seats[3], seats[5]]);
 		const noble = infoPicker(g, seats[1], 'noble', characters)!;
@@ -578,7 +566,7 @@ describe('info picker', () => {
 	});
 
 	it('with a Vortox, only false information is allowed', () => {
-		const { game: g, seats } = game(['washerwoman', 'slayer', 'vortox', 'witch', 'savant']);
+		const { game: g, seats } = castGame(['washerwoman', 'slayer', 'vortox', 'witch', 'savant']);
 		const picker = infoPicker(g, seats[0], 'washerwoman', characters)!;
 		expect(picker.mustBeFalse).toBe(true);
 		const truth = { seats: [seats[1], seats[2]], characterId: 'slayer' };
@@ -587,7 +575,7 @@ describe('info picker', () => {
 	});
 
 	it('covers only the first-night information characters', () => {
-		const { game: g, seats } = game(['gossip', 'imp', 'chef']);
+		const { game: g, seats } = castGame(['gossip', 'imp', 'chef']);
 		expect(infoPicker(g, seats[0], 'gossip', characters)).toBeUndefined();
 	});
 });
@@ -595,7 +583,7 @@ describe('info picker', () => {
 describe('withNightInfo', () => {
 	it('adds answers and pickers to the matching night-order steps only', () => {
 		const data = committedGameData();
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['towncrier', 'washerwoman', 'undertaker', 'witch', 'imp', 'chef', 'monk'],
 			(s) => ({ type: 'Nominate', nominator: s[3], nominee: s[0] })
 		);
@@ -642,7 +630,7 @@ describe('registration ranges', () => {
 	// evil, so the Chef may be told either number.
 	it('Chef: the true number and every number a Recluse or Spy allows', () => {
 		// Poisoner, Imp, Recluse in a row: 1 true pair, 2 if the Recluse registers evil.
-		const { game: g, seats } = game(['chef', 'poisoner', 'imp', 'recluse', 'slayer']);
+		const { game: g, seats } = castGame(['chef', 'poisoner', 'imp', 'recluse', 'slayer']);
 		const picker = infoPicker(g, seats[0], 'chef', characters)!;
 		expect(picker.range).toEqual({ truth: 1, possible: [1, 2] });
 		expect(isTruthful(picker, { seats: [], number: 1 })).toBe(true);
@@ -650,7 +638,7 @@ describe('registration ranges', () => {
 		expect(isAllowed(picker, { seats: [], number: 2 })).toBe(true);
 		expect(isAllowed(picker, { seats: [], number: 0 })).toBe(false);
 		// https://wiki.bloodontheclocktower.com/Spy: might register as good, breaking a pair.
-		const spy = game(['chef', 'spy', 'imp', 'slayer', 'monk']);
+		const spy = castGame(['chef', 'spy', 'imp', 'slayer', 'monk']);
 		expect(infoPicker(spy.game, spy.seats[0], 'chef', characters)!.range).toEqual({
 			truth: 1,
 			possible: [0, 1]
@@ -658,7 +646,7 @@ describe('registration ranges', () => {
 	});
 
 	it('Chef: no range when nobody may misregister, or when the Recluse is poisoned', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['chef', 'poisoner', 'imp', 'recluse', 'slayer'],
 			add(3, 'poisoner', 'Poisoned')
 		);
@@ -671,7 +659,7 @@ describe('registration ranges', () => {
 	// https://wiki.bloodontheclocktower.com/Lycanthrope: the Faux Paw player registers as
 	// evil, so the true answer counts them as evil.
 	it('Chef: the Faux Paw player counts as evil in the true answer', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['chef', 'lycanthrope', 'slayer', 'imp', 'monk'],
 			add(2, 'lycanthrope', 'Faux Paw')
 		);
@@ -683,7 +671,7 @@ describe('registration ranges', () => {
 
 	// https://wiki.bloodontheclocktower.com/Empath
 	it('Empath: a Recluse neighbour may count as evil', () => {
-		const { game: g, seats } = game(['recluse', 'empath', 'slayer', 'imp', 'monk']);
+		const { game: g, seats } = castGame(['recluse', 'empath', 'slayer', 'imp', 'monk']);
 		expect(infoPicker(g, seats[1], 'empath', characters)!.range).toEqual({
 			truth: 0,
 			possible: [0, 1]
@@ -692,7 +680,7 @@ describe('registration ranges', () => {
 
 	// https://wiki.bloodontheclocktower.com/Clockmaker
 	it('Clockmaker: steps from the Demon to the nearest Minion, and what a Recluse allows', () => {
-		const { game: g, seats } = game(['clockmaker', 'imp', 'recluse', 'slayer', 'poisoner']);
+		const { game: g, seats } = castGame(['clockmaker', 'imp', 'recluse', 'slayer', 'poisoner']);
 		// Imp at 1, Poisoner at 4: 2 steps round the circle; the Recluse at 2 as a Minion: 1;
 		// the Recluse as the Demon: 2 steps to the Poisoner.
 		expect(infoPicker(g, seats[0], 'clockmaker', characters)!.range).toEqual({
@@ -703,7 +691,7 @@ describe('registration ranges', () => {
 
 	// https://wiki.bloodontheclocktower.com/Investigator and /Recluse
 	it('Investigator: the Recluse may be shown as any Minion on the script', () => {
-		const { game: g, seats } = game(['investigator', 'recluse', 'imp', 'poisoner', 'chef']);
+		const { game: g, seats } = castGame(['investigator', 'recluse', 'imp', 'poisoner', 'chef']);
 		const picker = infoPicker(g, seats[0], 'investigator', characters)!;
 		const choice = { seats: [seats[1], seats[4]], characterId: 'baron' };
 		expect(isTruthful(picker, choice)).toBe(false);
@@ -717,7 +705,7 @@ describe('registration ranges', () => {
 
 	// https://wiki.bloodontheclocktower.com/Washerwoman and /Spy
 	it('Washerwoman: the Spy may be shown as a Townsfolk', () => {
-		const { game: g, seats } = game(['washerwoman', 'spy', 'imp', 'chef', 'monk']);
+		const { game: g, seats } = castGame(['washerwoman', 'spy', 'imp', 'chef', 'monk']);
 		const picker = infoPicker(g, seats[0], 'washerwoman', characters)!;
 		expect(isAllowed(picker, { seats: [seats[1], seats[2]], characterId: 'slayer' })).toBe(true);
 		expect(isTruthful(picker, { seats: [seats[3], seats[2]], characterId: 'chef' })).toBe(true);
@@ -725,7 +713,7 @@ describe('registration ranges', () => {
 
 	// https://wiki.bloodontheclocktower.com/Noble and /Steward
 	it('Noble and Steward: a Spy may register as good', () => {
-		const { game: g, seats } = game(['noble', 'spy', 'imp', 'chef', 'monk', 'steward']);
+		const { game: g, seats } = castGame(['noble', 'spy', 'imp', 'chef', 'monk', 'steward']);
 		const noble = infoPicker(g, seats[0], 'noble', characters)!;
 		// Spy, Imp and Chef: two evil, unless the Spy registers as good.
 		const trio = { seats: [seats[1], seats[2], seats[3]] };
@@ -738,7 +726,7 @@ describe('registration ranges', () => {
 
 	// https://wiki.bloodontheclocktower.com/Fortune_Teller and /Recluse
 	it('Fortune Teller: a Recluse may register as the Demon', () => {
-		const { game: g, seats } = game(['fortuneteller', 'recluse', 'imp', 'chef', 'monk']);
+		const { game: g, seats } = castGame(['fortuneteller', 'recluse', 'imp', 'chef', 'monk']);
 		const picker = infoPicker(g, seats[0], 'fortuneteller', characters)!;
 		expect(isTruthful(picker, { seats: [seats[1], seats[3]], yes: false })).toBe(true);
 		expect(isAllowed(picker, { seats: [seats[1], seats[3]], yes: true })).toBe(true);
@@ -747,7 +735,7 @@ describe('registration ranges', () => {
 
 	// https://wiki.bloodontheclocktower.com/Oracle and /Town_Crier
 	it('Oracle and Town Crier answers list what registration allows', () => {
-		const oracle = game(['oracle', 'recluse', 'imp', 'chef', 'witch'], (s) => ({
+		const oracle = castGame(['oracle', 'recluse', 'imp', 'chef', 'witch'], (s) => ({
 			type: 'SetDead',
 			seatId: s[1],
 			dead: true
@@ -759,7 +747,7 @@ describe('registration ranges', () => {
 				{ kind: 'number', value: 1 }
 			]
 		});
-		const crier = game(['towncrier', 'recluse', 'imp', 'chef', 'witch'], (s) => ({
+		const crier = castGame(['towncrier', 'recluse', 'imp', 'chef', 'witch'], (s) => ({
 			type: 'Nominate',
 			nominator: s[1],
 			nominee: s[3]
@@ -779,7 +767,7 @@ describe('registration ranges', () => {
 describe('relevant misregistration and why', () => {
 	// https://wiki.bloodontheclocktower.com/Empath: only the alive neighbours count.
 	it('Empath: a Recluse who is not a neighbour is not offered', () => {
-		const far = game(['empath', 'slayer', 'recluse', 'imp', 'monk']);
+		const far = castGame(['empath', 'slayer', 'recluse', 'imp', 'monk']);
 		const p = infoPicker(far.game, far.seats[0], 'empath', characters)!;
 		expect(p.misregister).toEqual([]);
 		expect(p.why.alternatives).toEqual([]);
@@ -787,7 +775,7 @@ describe('relevant misregistration and why', () => {
 			[far.seats[4], 'monk', 'good'],
 			[far.seats[1], 'slayer', 'good']
 		]);
-		const near = game(['empath', 'recluse', 'slayer', 'imp', 'monk']);
+		const near = castGame(['empath', 'recluse', 'slayer', 'imp', 'monk']);
 		const q = infoPicker(near.game, near.seats[0], 'empath', characters)!;
 		expect(q.misregister).toEqual([near.seats[1]]);
 		// The Empath counts evil players, so only the Recluse's alignment is offered: good as
@@ -804,7 +792,7 @@ describe('relevant misregistration and why', () => {
 	// https://wiki.bloodontheclocktower.com/Clockmaker: steps from the Demon to its nearest
 	// Minion, so a Recluse matters only by character type, never by alignment.
 	it('Clockmaker: a Recluse is offered by character type only', () => {
-		const { game: g, seats } = game(['clockmaker', 'imp', 'recluse', 'slayer', 'poisoner']);
+		const { game: g, seats } = castGame(['clockmaker', 'imp', 'recluse', 'slayer', 'poisoner']);
 		const p = infoPicker(g, seats[0], 'clockmaker', characters)!;
 		const [alt] = p.why.alternatives;
 		expect(alt.seatId).toBe(seats[2]);
@@ -818,7 +806,7 @@ describe('relevant misregistration and why', () => {
 	// https://wiki.bloodontheclocktower.com/Empath: a dead player in between is skipped, so
 	// a dead Recluse is not a neighbour.
 	it('Empath: a dead Recluse between neighbours is not offered', () => {
-		const { game: g, seats } = game(['empath', 'recluse', 'slayer', 'imp', 'monk'], (s) => ({
+		const { game: g, seats } = castGame(['empath', 'recluse', 'slayer', 'imp', 'monk'], (s) => ({
 			type: 'SetDead',
 			seatId: s[1],
 			dead: true
@@ -829,9 +817,9 @@ describe('relevant misregistration and why', () => {
 	// https://wiki.bloodontheclocktower.com/Chef: only pairs of neighbours count, so a
 	// Recluse with no evil neighbour changes nothing.
 	it('Chef: a Recluse matters only beside an evil player', () => {
-		const lone = game(['chef', 'recluse', 'slayer', 'imp', 'poisoner']);
+		const lone = castGame(['chef', 'recluse', 'slayer', 'imp', 'poisoner']);
 		expect(infoPicker(lone.game, lone.seats[0], 'chef', characters)!.misregister).toEqual([]);
-		const beside = game(['chef', 'slayer', 'recluse', 'imp', 'poisoner']);
+		const beside = castGame(['chef', 'slayer', 'recluse', 'imp', 'poisoner']);
 		const p = infoPicker(beside.game, beside.seats[0], 'chef', characters)!;
 		expect(p.misregister).toEqual([beside.seats[2]]);
 		expect(p.why.facts.map((f) => f.seatId)).toEqual([beside.seats[3], beside.seats[4]]);
@@ -839,7 +827,7 @@ describe('relevant misregistration and why', () => {
 
 	// https://wiki.bloodontheclocktower.com/Undertaker: only the executed player matters.
 	it('Undertaker: only the executed player is relevant', () => {
-		const { game: g, seats } = game(['undertaker', 'spy', 'recluse', 'imp', 'chef'], (s) => ({
+		const { game: g, seats } = castGame(['undertaker', 'spy', 'recluse', 'imp', 'chef'], (s) => ({
 			type: 'Execute',
 			seatId: s[2]
 		}));
@@ -852,7 +840,7 @@ describe('relevant misregistration and why', () => {
 
 	// https://wiki.bloodontheclocktower.com/Oracle: only dead players count.
 	it('Oracle: only dead players who may misregister are relevant', () => {
-		const { game: g, seats } = game(['oracle', 'spy', 'recluse', 'imp', 'chef'], (s) => ({
+		const { game: g, seats } = castGame(['oracle', 'spy', 'recluse', 'imp', 'chef'], (s) => ({
 			type: 'SetDead',
 			seatId: s[2],
 			dead: true
@@ -868,7 +856,7 @@ describe('relevant misregistration and why', () => {
 
 	// https://wiki.bloodontheclocktower.com/Fortune_Teller: the Demon and the red herring.
 	it('Fortune Teller: the logic names the Demon and the red herring', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['fortuneteller', 'imp', 'slayer', 'monk', 'poisoner'],
 			add(3, 'fortuneteller', 'Red Herring')
 		);
@@ -881,7 +869,7 @@ describe('relevant misregistration and why', () => {
 
 	// https://wiki.bloodontheclocktower.com/Mathematician: registration isn't its input.
 	it('Mathematician: nobody is offered as misregistering', () => {
-		const { game: g, seats } = game(['mathematician', 'spy', 'recluse', 'imp', 'chef']);
+		const { game: g, seats } = castGame(['mathematician', 'spy', 'recluse', 'imp', 'chef']);
 		expect(answerOf(g, seats[0], 'mathematician', characters).misregister).toEqual([]);
 	});
 });
@@ -890,7 +878,7 @@ describe('relevant misregistration and why', () => {
 // ability worked abnormally; the Storyteller marks each with an Abnormal reminder.
 describe('Mathematician Abnormal reminders', () => {
 	it('counts the players carrying Abnormal once any are placed', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['mathematician', 'chef', 'empath', 'imp', 'monk'],
 			add(1, 'mathematician', 'Abnormal'),
 			add(2, 'mathematician', 'Abnormal')
@@ -904,7 +892,7 @@ describe('Mathematician Abnormal reminders', () => {
 	});
 
 	it('counts recorded abnormal info while no Abnormal reminder is placed', () => {
-		const { game: g, seats } = game(['mathematician', 'chef', 'imp']);
+		const { game: g, seats } = castGame(['mathematician', 'chef', 'imp']);
 		expect(answerOf(g, seats[0], 'mathematician', characters)).toMatchObject({
 			value: 0,
 			because: []
@@ -916,7 +904,7 @@ describe('impaired info', () => {
 	// https://wiki.bloodontheclocktower.com/Undertaker and /Glossary: a poisoned Undertaker
 	// may be shown anything, but the true answer is still worked out.
 	it('Undertaker: the true answer, and any answer allowed, naming the poisoner', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['undertaker', 'chef', 'poisoner', 'imp'],
 			add(0, 'poisoner', 'Poisoned'),
 			(s) => ({ type: 'Execute', seatId: s[1] })
@@ -932,7 +920,7 @@ describe('impaired info', () => {
 	// https://wiki.bloodontheclocktower.com/Preacher: the chosen Minion has no ability.
 	it('a Minion the Preacher chose: impaired info, and the step says so', () => {
 		const data = committedGameData();
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['preacher', 'widow', 'imp', 'chef', 'monk'],
 			add(1, 'preacher', 'No Ability')
 		);
@@ -953,7 +941,7 @@ describe('Mathematician', () => {
 	// https://wiki.bloodontheclocktower.com/Mathematician: info that is false because of
 	// another character's ability counts; true info from a poisoned player does not.
 	it('counts recorded abnormal info since dawn, and lists who and why', () => {
-		const { session, ctx, seats } = game(
+		const { session, ctx, seats } = castGame(
 			['mathematician', 'chef', 'poisoner', 'imp', 'recluse', 'empath'],
 			add(5, 'poisoner', 'Poisoned')
 		);
@@ -1000,7 +988,7 @@ describe('Mathematician', () => {
 
 	// https://wiki.bloodontheclocktower.com/Vortox: false info because of the Vortox counts.
 	it('a Vortox makes false Townsfolk info abnormal', () => {
-		const { game: g, seats } = game(['washerwoman', 'slayer', 'vortox', 'witch', 'savant']);
+		const { game: g, seats } = castGame(['washerwoman', 'slayer', 'vortox', 'witch', 'savant']);
 		const picker = infoPicker(g, seats[0], 'washerwoman', characters)!;
 		expect(abnormalCauses(picker, { seats: [seats[1], seats[2]], characterId: 'savant' })).toEqual([
 			{ reason: 'vortox', characterId: 'vortox', seatId: seats[2] }
@@ -1011,7 +999,7 @@ describe('Mathematician', () => {
 	});
 
 	it('does not count the Mathematician’s own ability', () => {
-		const { game: g, seats } = game(['mathematician', 'chef', 'poisoner', 'imp'], (s) => ({
+		const { game: g, seats } = castGame(['mathematician', 'chef', 'poisoner', 'imp'], (s) => ({
 			type: 'RecordNightInfo',
 			seatId: s[0],
 			characterId: 'mathematician',
@@ -1023,7 +1011,7 @@ describe('Mathematician', () => {
 	});
 
 	it('free-text answers take their causes from the waking player', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['undertaker', 'chef', 'poisoner', 'imp'],
 			add(0, 'poisoner', 'Poisoned')
 		);
@@ -1038,7 +1026,7 @@ describe('every valid piece of information', () => {
 	const tb = ['washerwoman', 'slayer', 'virgin', 'butler', 'poisoner', 'imp', 'chef'];
 
 	it('Washerwoman: each Townsfolk with every player who may be shown beside them', () => {
-		const { game: g, seats } = game(tb);
+		const { game: g, seats } = castGame(tb);
 		const valid = validInformation(g, infoPicker(g, seats[0], 'washerwoman', characters)!);
 		expect(valid.map((v) => v.characterIds)).toEqual([['slayer'], ['virgin'], ['chef']]);
 		const slayer = valid[0];
@@ -1049,11 +1037,14 @@ describe('every valid piece of information', () => {
 	});
 
 	it('a poisoned Chef: the true number, then every other number, marked', () => {
-		const { game: g, seats } = game(['poisoner', 'chef', 'baron', 'imp', 'scarletwoman'], (s) => ({
-			type: 'AddReminder',
-			seatId: s[1],
-			reminder: { characterId: 'poisoner', label: 'Poisoned' }
-		}));
+		const { game: g, seats } = castGame(
+			['poisoner', 'chef', 'baron', 'imp', 'scarletwoman'],
+			(s) => ({
+				type: 'AddReminder',
+				seatId: s[1],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			})
+		);
 		const valid = validInformation(g, infoPicker(g, seats[1], 'chef', characters)!);
 		expect(valid[0]).toEqual({ reason: 'true', number: 3, seats: [] });
 		expect(valid.slice(1).map((v) => [v.reason, v.number])).toEqual([
@@ -1066,7 +1057,7 @@ describe('every valid piece of information', () => {
 	});
 
 	it('a poisoned Washerwoman: the true pairs, and any other choice', () => {
-		const { game: g, seats } = game(tb, (s) => ({
+		const { game: g, seats } = castGame(tb, (s) => ({
 			type: 'AddReminder',
 			seatId: s[0],
 			reminder: { characterId: 'poisoner', label: 'Poisoned' }
@@ -1096,7 +1087,7 @@ describe('custom characters', () => {
 			ability: 'You start knowing how many of your 2 alive neighbours are evil.',
 			rules: { learns: { measure: 'evil-alive-neighbours' } }
 		});
-		const { game: g, seats } = game(['chef', 'imp', 'poisoner']);
+		const { game: g, seats } = castGame(['chef', 'imp', 'poisoner']);
 		const picker = infoPicker(g, seats[0], 'heartreader', all);
 		expect(picker).toMatchObject({ kind: 'number', measure: 'evil-alive-neighbours' });
 		expect(picker?.range?.truth).toBe(2);
@@ -1111,7 +1102,7 @@ describe('custom characters', () => {
 			ability: 'Each night*, you learn how many dead players are evil.',
 			rules: { answers: { question: 'evil-dead' } }
 		});
-		const { game: g, seats } = game(['chef', 'imp', 'poisoner'], (s) => ({
+		const { game: g, seats } = castGame(['chef', 'imp', 'poisoner'], (s) => ({
 			type: 'SetDead',
 			seatId: s[1],
 			dead: true

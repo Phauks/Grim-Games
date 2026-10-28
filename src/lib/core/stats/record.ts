@@ -39,6 +39,11 @@ export interface RecordSeat {
 	start?: RecordCharacter;
 	/** When the game ended. */
 	end?: RecordCharacter;
+	/**
+	 * Every character and alignment the seat had from the first Dawn to the end, in order,
+	 * when it had more than one (a Pit-Hag's change, a turned alignment); absent otherwise.
+	 */
+	held?: RecordCharacter[];
 	dead: boolean;
 	deathCause?: DeathCause;
 	/** The day the player last died on, by the grimoire's count (0 is the first night). */
