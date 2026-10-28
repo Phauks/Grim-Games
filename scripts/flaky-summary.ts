@@ -6,6 +6,10 @@
  *
  * `node scripts/flaky-summary.ts --run [report.json]`; writes to $GITHUB_STEP_SUMMARY when set, and
  * sets the step output `flaky` to the count, so CI keeps the report of a run that only flaked.
+ *
+ * Each flaky or failed test also gets a notice with the page as it was when its first attempt
+ * failed (Playwright's error context: the page's accessibility snapshot). Annotations are the
+ * one part of a run that sessions can read through the API; traces and logs are not.
  */
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 
@@ -13,21 +17,51 @@ type Spec = {
 	title: string;
 	file: string;
 	line: number;
-	tests: { projectName: string; status: string }[];
+	tests: {
+		projectName: string;
+		status: string;
+		results?: { status: string; attachments?: { name: string; path?: string }[] }[];
+	}[];
 };
 type Suite = { title?: string; specs?: Spec[]; suites?: Suite[] };
 
-export type FlakyTest = { project: string; file: string; line: number; title: string };
+export type FlakyTest = {
+	project: string;
+	file: string;
+	line: number;
+	title: string;
+	/** The error context file of its first failed attempt, when Playwright wrote one. */
+	errorContext?: string;
+};
 
-/** The flaky tests in a Playwright JSON report, with the titles of their describe blocks. */
-export function flakyTests(report: { suites?: Suite[] }): FlakyTest[] {
+/** The first failed attempt's error context file. */
+function errorContext(test: Spec['tests'][number]): string | undefined {
+	const failed = test.results?.find((r) => r.status !== 'passed' && r.status !== 'skipped');
+	return failed?.attachments?.find((a) => a.name === 'error-context' && a.path)?.path;
+}
+
+/**
+ * The tests in a Playwright JSON report with one of the given statuses (`flaky` by default),
+ * with the titles of their describe blocks.
+ */
+export function flakyTests(
+	report: { suites?: Suite[] },
+	statuses: readonly string[] = ['flaky']
+): FlakyTest[] {
 	const found: FlakyTest[] = [];
 	const walk = (suite: Suite, titles: string[]) => {
 		for (const spec of suite.specs ?? []) {
 			for (const test of spec.tests) {
-				if (test.status === 'flaky') {
+				if (statuses.includes(test.status)) {
 					const title = [...titles, spec.title].join(' › ');
-					found.push({ project: test.projectName, file: spec.file, line: spec.line, title });
+					const context = errorContext(test);
+					found.push({
+						project: test.projectName,
+						file: spec.file,
+						line: spec.line,
+						title,
+						...(context ? { errorContext: context } : {})
+					});
 				}
 			}
 		}
@@ -36,6 +70,18 @@ export function flakyTests(report: { suites?: Suite[] }): FlakyTest[] {
 	// Top-level suites are files; their titles are the file name, which `file` already carries.
 	for (const file of report.suites ?? []) walk(file, []);
 	return found;
+}
+
+/** The page snapshot of an error context file, without the error its other annotation shows. */
+export function pageSnapshot(errorContext: string): string {
+	const start = errorContext.indexOf('```yaml');
+	return start < 0 ? errorContext : errorContext.slice(start);
+}
+
+/** Fits text into one workflow-command annotation: newlines encoded, cut to `max` characters. */
+export function annotationText(text: string, max = 6000): string {
+	const cut = text.length > max ? `${text.slice(0, max)}\n…` : text;
+	return cut.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
 }
 
 export function summaryMarkdown(flaky: FlakyTest[]): string {
@@ -58,10 +104,18 @@ if (process.argv.includes('--run')) {
 	if (!existsSync(path)) {
 		console.log(`No Playwright report at ${path}.`);
 	} else {
-		const flaky = flakyTests(JSON.parse(readFileSync(path, 'utf8')));
+		const report = JSON.parse(readFileSync(path, 'utf8'));
+		const flaky = flakyTests(report);
 		for (const t of flaky) {
 			console.log(
 				`::warning file=e2e/${t.file},line=${t.line},title=Flaky test::[${t.project}] ${t.title}`
+			);
+		}
+		for (const t of flakyTests(report, ['flaky', 'unexpected'])) {
+			if (!t.errorContext || !existsSync(t.errorContext)) continue;
+			const page = annotationText(pageSnapshot(readFileSync(t.errorContext, 'utf8')));
+			console.log(
+				`::notice file=e2e/${t.file},line=${t.line},title=Page at failure::[${t.project}] ${t.title}%0A${page}`
 			);
 		}
 		const markdown = summaryMarkdown(flaky);
