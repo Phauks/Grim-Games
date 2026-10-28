@@ -10,7 +10,6 @@ export interface NavItem {
 	path:
 		| '/'
 		| '/new'
-		| '/games'
 		| '/join'
 		| '/history'
 		| '/scripts'
@@ -48,8 +47,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 		label: 'shell.navSectionGames',
 		items: [
 			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
-			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'resume' },
-			// Typing a room code: the other way in besides scanning the QR (Trevor, 2026-10-18).
+			// Typing a room code, and the games this device is in: rooms joined as a player above games
+			// it is storytelling (Trevor, 2026-10-18 and 2026-10-28).
 			{ id: 'join', path: '/join', label: 'shell.navJoinGame', icon: 'join' },
 			{
 				id: 'history',

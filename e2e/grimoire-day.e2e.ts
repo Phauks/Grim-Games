@@ -981,7 +981,7 @@ test('the corner, the day view and Resume agree on the night or day, without a s
 		if (await daySheet(page).isVisible()) await closeDay(page);
 	};
 	const resumed = async (text: string) => {
-		await page.goto('/games');
+		await page.goto('/join');
 		await expect(
 			page.getByRole('link', { name: new RegExp(`Trouble Brewing.*${text} ·`) })
 		).toBeVisible();

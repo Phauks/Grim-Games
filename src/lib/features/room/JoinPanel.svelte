@@ -27,6 +27,7 @@
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
+	import SavedGamesSection from '#lib/features/grimoire/SavedGamesSection.svelte';
 	import YourCharacter from './YourCharacter.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -433,9 +434,13 @@
 			/>
 		</form>
 	</Dialog>
-	{#if code === undefined}<YourGames
-			onOpen={(c, town) => (town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c))}
-		/>{/if}
+	<!-- Joining and resuming on one page: games played above games hosted (Trevor, 2026-10-28). -->
+	{#if code === undefined}<div class="your-games">
+			<YourGames
+				onOpen={(c, town) => (town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c))}
+			/>
+			<SavedGamesSection />
+		</div>{/if}
 {:else if inRoom}
 	<!-- The row the Storyteller's player view shows too (PlayerStatusRow): anything drawn from
 	     the table's public state goes in it, never here. -->
@@ -554,6 +559,10 @@
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: var(--space-2);
+	}
+	.your-games {
+		display: grid;
+		gap: var(--space-5);
 	}
 	.grim-view {
 		display: grid;

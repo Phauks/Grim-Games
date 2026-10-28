@@ -75,7 +75,7 @@ test("the board's Script sheet has the players' tabs, and its Share matches /pla
 
 test("the players' Grim is drawn as the board: its seats where the board has them, and its corner", async ({
 	page
-}) => {
+}, testInfo) => {
 	// Trevor (2026-10-23): the player's grim should look exactly like the Storyteller's board.
 	await startGame(page);
 	const seat = page.getByRole('button', { name: /^Seat 1:/ });
@@ -107,7 +107,11 @@ test("the players' Grim is drawn as the board: its seats where the board has the
 	expect(placed.y + placed.height / 2 - box.y).toBeLessThan(box.height * 0.45);
 	// The board's corner line for line (Trevor, 2026-10-24), and its vignette under the seats.
 	await expect(town.getByTestId('script-title')).toContainText('Trouble Brewing');
-	await expect(town.getByTestId('board-room-code')).toBeVisible();
+	// On a phone, the top right's buttons (Full screen among them, as on /play) leave the
+	// corner too narrow for the code's line, so the corner's fit drops it there.
+	if (testInfo.project.name === 'phone') {
+		await expect(town.getByTestId('board-room-code')).toBeAttached();
+	} else await expect(town.getByTestId('board-room-code')).toBeVisible();
 	await expect(town.getByTestId('board-game-clock')).toContainText('0:00');
 	await expect(town.getByTestId('preview-vignette')).toBeAttached();
 });

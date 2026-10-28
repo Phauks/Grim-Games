@@ -11,6 +11,7 @@ import {
 	counts,
 	townCounts,
 	neededToExile,
+	exileThreshold,
 	ghostVotesLeft,
 	votesWithoutToken,
 	livingByTeam,
@@ -139,6 +140,17 @@ describe('townCounts', () => {
 		expect(townCounts(publicProjection(session.game, () => false).seats)).not.toHaveProperty(
 			'exile'
 		);
+	});
+
+	it("gives the Storyteller the same exile count, from the Traveller's character type", () => {
+		const { session, ctx, seats } = castGame(
+			['beggar', 'chef', 'empath', 'monk', 'imp', 'poisoner', 'saint'],
+			(s) => ({ type: 'SetDead', seatId: s[1], dead: true })
+		);
+		expect(exileThreshold(session.game, ctx.characters)).toBe(4);
+		const gone = run(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true }).game;
+		expect(exileThreshold(gone, ctx.characters)).toBeUndefined();
+		expect(exileThreshold(newGame(7).session.game, ctx.characters)).toBeUndefined();
 	});
 
 	it('needs half of every player, rounded up, to exile', () => {

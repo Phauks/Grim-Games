@@ -8,9 +8,9 @@
 	import { recentRooms } from './recent-rooms.ts';
 
 	/**
-	 * Join game's "Your games": the rooms this phone joined, newest first, each with its script,
-	 * Storyteller and when this phone last opened it (Trevor, 2026-10-19 and 2026-10-23). A room
-	 * found closed leaves the list.
+	 * Join game's "As player": the rooms this phone joined, newest first, each with its script,
+	 * Storyteller and when this phone last opened it (Trevor, 2026-10-19 and 2026-10-23), above
+	 * the games it is storytelling (Trevor, 2026-10-28). A room found closed leaves the list.
 	 */
 	interface Props {
 		/** A room was tapped: `town` when this device last opened it as a Public Town display. */
@@ -42,8 +42,10 @@
 	});
 </script>
 
-{#if recent.length > 0}
-	<PageSection title={t('room.yourGames')}>
+<PageSection title={t('room.asPlayer')}>
+	{#if recent.length === 0}
+		<p class="none">{t('common.none')}</p>
+	{:else}
 		<ul class="recent" data-testid="recent-rooms">
 			{#each recent as room (room.code)}
 				{@const game = recentGames[room.code]}
@@ -77,10 +79,14 @@
 				</li>
 			{/each}
 		</ul>
-	</PageSection>
-{/if}
+	{/if}
+</PageSection>
 
 <style>
+	.none {
+		margin: 0;
+		color: var(--on-surface-muted);
+	}
 	.recent {
 		display: grid;
 		gap: var(--space-2);

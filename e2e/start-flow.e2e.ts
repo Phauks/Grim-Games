@@ -23,7 +23,7 @@ test('a plain game starts on Character selection, and Back returns to New game a
 	).toBeChecked();
 	await expect(page.getByTestId('player-count').first()).toHaveText('9');
 	// The game Start made was dropped, so starting again leaves one game, not two.
-	await page.goto('/games');
+	await page.goto('/join');
 	await expect(page.getByText('Bad Moon Rising')).toHaveCount(0);
 });
 

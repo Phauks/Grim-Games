@@ -192,13 +192,13 @@ test('a game in progress hides the sidebar, so a stray tap cannot leave it', asy
 // Join game and the player view are app pages, not game screens (Trevor, 2026-10-24: "join
 // game page appears to use different left sidebar", then the same of the player's Grim): the
 // same sidebar where it shows, the same hamburger otherwise.
-test('Join game and the player view have the same sidebar and menu as the other pages', async ({
+test('Join or resume and the player view have the same sidebar and menu as the other pages', async ({
 	page
 }) => {
 	const sidebar = page.getByRole('navigation', { name: 'Menu', exact: true });
 	for (const [path, current] of [
-		['/join', 'Join game'],
-		['/join/123456', 'Join game'],
+		['/join', 'Join or resume'],
+		['/join/123456', 'Join or resume'],
 		['/play', undefined]
 	] as const) {
 		await page.setViewportSize({ width: 1280, height: 800 });
