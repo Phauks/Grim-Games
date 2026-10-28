@@ -1,8 +1,9 @@
 /**
  * Room transfer (Trevor, 2026-10-28), the devices' side of core/sync/room-transfer.ts. The
  * Storyteller's device opens a transfer and shows its code (`roomTransfer`); another device
- * types the room code on Join game, then the transfer code (`RoomClaim`), and becomes the
- * room's Storyteller. The players stay in the room, and the game comes too when it is brought.
+ * types the room code on Join game, then the transfer code (`RoomClaim`), and asks to take
+ * over; once the Storyteller's device allows it (`answer`), it is the room's Storyteller and the
+ * old device is put out of the room. The players stay, and the game comes too when brought.
  */
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
@@ -26,13 +27,16 @@ import {
 	reminderSpots,
 	seatLayouts
 } from '#lib/features/grimoire/device-notes.ts';
+import { t } from '#lib/i18n/locale.svelte.ts';
+import { toast } from '#lib/ui/primitives/toaster.ts';
 import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { roomHost } from './host.svelte.ts';
+import { playerName } from './player.svelte.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 
 /** The Storyteller's side: the open transfer's code and its switches, on this device only. */
 class RoomTransferHost {
-	/** The code shown while a transfer is open ("730 518"). */
+	/** The code shown while a transfer is open ("7305 1842"). */
 	code = $state<string>();
 	bringGame = $state(false);
 	/** This device joins the room as a player once it is handed over. */
@@ -48,7 +52,8 @@ class RoomTransferHost {
 		const code = makeTransferCode(() => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32);
 		this.#codeHash = await sha256Hex(code);
 		if (!this.#send()) return false;
-		this.code = `${code.slice(0, 3)} ${code.slice(3)}`;
+		const half = TRANSFER_CODE_LENGTH / 2;
+		this.code = `${code.slice(0, half)} ${code.slice(half)}`;
 		return true;
 	}
 
@@ -61,6 +66,11 @@ class RoomTransferHost {
 	stop(): void {
 		roomHost().send({ type: 'close-transfer' });
 		this.#reset();
+	}
+
+	/** Allows, or turns down, the device asking to take over; false when it can't be sent. */
+	answer(allow: boolean): boolean {
+		return roomHost().send({ type: 'answer-transfer', allow });
 	}
 
 	#send(): boolean {
@@ -86,8 +96,10 @@ class RoomTransferHost {
 		if (message.type !== 'handed-over') return;
 		const room = roomHost().code;
 		this.#reset();
-		// The board stays; this device carries on as a player in the same room if asked.
-		if (this.joinAsPlayer && room) void goto(resolve('/join/[code]', { code: room }));
+		// Put out of the room (Trevor, 2026-10-28: "when room transfer has occurred, force the
+		// user out"): off the Storyteller's screens, into the room as a player if asked.
+		toast(t('room.transfer.handedOver'));
+		void goto(this.joinAsPlayer && room ? resolve('/join/[code]', { code: room }) : resolve('/'));
 	}
 }
 
@@ -99,8 +111,12 @@ export function roomTransfer(): RoomTransferHost {
 	return transferHost;
 }
 
-/** Why a typed transfer code was turned down: wrong (with tries left), or none is open. */
-export type ClaimProblem = { kind: 'wrong'; triesLeft: number } | { kind: 'none' };
+/**
+ * Why a typed transfer code was turned down: wrong (with tries left), none is open, or the
+ * Storyteller's device said no.
+ */
+export type ClaimProblem =
+	{ kind: 'wrong'; triesLeft: number } | { kind: 'none' } | { kind: 'denied' };
 
 /** The other side: a device typing the transfer code for room `roomCode`. */
 export class RoomClaim {
@@ -113,6 +129,7 @@ export class RoomClaim {
 	readonly #socket: RoomSocket;
 	#code = '';
 	#taken: ((gameId: GameId | undefined) => void) | undefined;
+	#denied: ((error: Error) => void) | undefined;
 
 	constructor(roomCode: string) {
 		this.#roomCode = roomCode;
@@ -146,17 +163,22 @@ export class RoomClaim {
 	}
 
 	/**
-	 * Takes the room: this device becomes its Storyteller, with the game when it comes along.
-	 * Resolves with that game's id (undefined for a new game), or rejects when it can't.
+	 * Asks to take the room; once the Storyteller's device allows it, this device becomes its
+	 * Storyteller, with the game when it comes along. Resolves with that game's id (undefined
+	 * for a new game), or rejects when it can't or was turned down (`problem` says which).
 	 */
 	take(): Promise<GameId | undefined> {
 		return new Promise((done, fail) => {
-			if (!this.details || !this.#socket.send({ type: 'take-room', code: this.#code })) {
+			const name = playerName.current.trim();
+			const message = { type: 'take-room' as const, code: this.#code, ...(name ? { name } : {}) };
+			if (!this.details || !this.#socket.send(message)) {
 				fail(new Error('Not connected'));
 				return;
 			}
 			this.taking = true;
+			this.problem = undefined;
 			this.#taken = done;
+			this.#denied = fail;
 		});
 	}
 
@@ -171,6 +193,11 @@ export class RoomClaim {
 			this.details = undefined;
 			this.problem =
 				message.triesLeft > 0 ? { kind: 'wrong', triesLeft: message.triesLeft } : { kind: 'none' };
+		} else if (message.type === 'transfer-denied') {
+			// The code still works, so the details stay and Take over can ask again.
+			this.taking = false;
+			this.problem = { kind: 'denied' };
+			this.#denied?.(new Error('Turned down'));
 		} else if (message.type === 'transferred') {
 			this.#socket.stop();
 			const gameId = message.grimoire ? await keepGame(message.grimoire) : undefined;

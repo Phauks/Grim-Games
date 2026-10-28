@@ -39,7 +39,7 @@ export const room = {
 	'room.refreshText':
 		"Everyone's phone leaves the room and the old code stops working. The grimoire is not changed.",
 	// Players' join pages
-	'room.joinTitle': 'Join or resume',
+	'room.joinTitle': 'Continue game',
 	'room.pageTitle': 'Room',
 	'room.notACode': 'That is not a room code. Codes are six digits.',
 	'room.closedOrWrong': 'This room is closed, or the code is wrong.',
@@ -94,6 +94,11 @@ export const room = {
 	},
 	'room.transfer.none': 'This room has no transfer open.',
 	'room.transfer.takeFailed': 'The room could not be taken over. Try again.',
+	'room.transfer.waiting': 'Waiting for the Storyteller to allow it.',
+	'room.transfer.denied': 'The Storyteller turned it down.',
+	'room.transfer.asking': 'wants to take over this room as its Storyteller.',
+	'room.transfer.askingDevice': 'Another device wants to take over this room as its Storyteller.',
+	'room.transfer.handedOver': 'This room has a new Storyteller.',
 	'room.choosing': 'The Storyteller is choosing a script.',
 	'room.scriptVote.title': 'Vote on the next script',
 	'room.scriptVote.button': 'Room vote',

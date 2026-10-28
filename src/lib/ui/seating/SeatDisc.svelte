@@ -3,6 +3,7 @@
 	import { FACE_RADIUS, type Frame } from '#lib/core/frames/index.ts';
 	import DeadBadge from './DeadBadge.svelte';
 	import FrameDrawing from './FrameDrawing.svelte';
+	import CharacterEmblem from './CharacterEmblem.svelte';
 	import AvatarFace from './AvatarFace.svelte';
 	import type { AvatarId } from '#lib/core/avatars/index.ts';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
@@ -39,7 +40,7 @@
 		avatar?: AvatarId;
 		/** The player's own picture (a link), in place of their initials (2026-10-27). */
 		picture?: string;
-		/** A character-icon avatar in full colour: the player's own Profile only. */
+		/** The player's representative character in full colour: their own Profile only. */
 		fullColour?: boolean;
 	}
 
@@ -90,7 +91,6 @@
 					{avatar}
 					{name}
 					{picture}
-					{fullColour}
 				/>{:else}<span class="empty">{number}</span>{/if}</span
 		>
 		{#if frame && framed}<span
@@ -100,6 +100,8 @@
 			>{/if}
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
 		<!-- One name badge for every seat, named or empty (Trevor, 2026-10-19). -->
+		<!-- Outside the frame layer, so it stays put while the laurel moves (Trevor, 2026-10-28). -->
+		<CharacterEmblem {avatar} {fullColour} />
 		<PlayerNameMark {name} />
 		{#if dead}<DeadBadge {vote} usedLook={usedVote} testid="dead-mark" />{/if}
 		{#if marks}{@render marks()}{/if}
@@ -172,6 +174,7 @@
 		}
 	}
 	/* Dead (Trevor, 2026-10-16): the token dimmed, colour kept, plus a skull badge. */
+	.seat-disc[data-dead] :global(.emblem),
 	.seat-disc[data-dead] .frame-layer,
 	.seat-disc[data-dead] .face {
 		filter: brightness(0.55);
