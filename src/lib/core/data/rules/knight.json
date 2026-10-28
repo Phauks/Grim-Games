@@ -7,6 +7,12 @@
 			"note": "Two non-Demon players shown to the Knight at setup; with the Vortox in play one of them may be the Demon."
 		}
 	},
+	"learns": {
+		"measure": "not-demon-pair",
+		"reminders": {
+			"each": "Know"
+		}
+	},
 	"setupPrep": {
 		"reminders": [
 			{

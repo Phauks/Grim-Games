@@ -4,6 +4,10 @@
 		"by": "any",
 		"night": true
 	},
+	"learns": {
+		"measure": "character-of",
+		"self": true
+	},
 	"dayReminders": {
 		"none": "triggers on night death"
 	},

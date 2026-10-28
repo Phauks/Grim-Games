@@ -1,4 +1,9 @@
 {
+	"learns": {
+		"measure": "character-of",
+		"self": true,
+		"alive": true
+	},
 	"dayReminders": {
 		"none": "night info"
 	},
