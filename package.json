@@ -6,7 +6,6 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"build:ci": "case \"${WORKERS_CI_BRANCH:-}\" in ''|main|beta) vite build ;; *) echo \"Skipped: only main and beta build (branch: $WORKERS_CI_BRANCH)\" ;; esac",
 		"preview": "npm run build && wrangler dev -c wrangler.jsonc -c wrangler.data.jsonc",
 		"prepare": "svelte-kit sync || echo \"\" && git config core.hooksPath .githooks || echo \"\"",
 		"cf-typegen": "wrangler types worker/worker-configuration.d.ts --include-env=false",
@@ -27,7 +26,6 @@
 		"test:e2e": "playwright test",
 		"deploy": "npm run build && wrangler deploy",
 		"deploy:staging": "npm run build && wrangler deploy --env staging",
-		"deploy:preview": "if [ \"$WORKERS_CI_BRANCH\" = beta ]; then wrangler preview; else echo \"Skipped: only beta gets a Worker Preview (branch: $WORKERS_CI_BRANCH)\"; fi",
 		"sync:data": "node scripts/sync-data.ts",
 		"snapshot:night-order": "node scripts/snapshot-night-order.ts",
 		"scaffold:rules-tests": "node scripts/scaffold-rules-tests.ts",
