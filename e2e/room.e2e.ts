@@ -2521,8 +2521,11 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	// communication menu"), where the picture is removed for this game.
 	const report = (await openInbox(page)).getByTestId('inbox-item');
 	await expect(report).toContainText('Picture reported by 1 player');
-	await expect(report.getByRole('img', { name: "Alex Kim's picture" })).toBeVisible();
-	await report.getByRole('button', { name: "Remove Alex Kim's picture for this game" }).tap();
+	await report.tap();
+	const opened = page.getByRole('dialog', { name: 'Reported picture' });
+	await expect(opened.getByRole('img', { name: "Alex Kim's picture" })).toBeVisible();
+	await opened.getByRole('button', { name: "Remove Alex Kim's picture for this game" }).tap();
+	await expect(opened).toBeHidden();
 	await expect(report).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
