@@ -112,6 +112,8 @@
 	// The ring and band's colour, as the character's badge has it.
 	const team = $derived(tokenAlignment ?? character.type);
 	const icon = $derived(iconUrl(character, tokenAlignment));
+	/** The ring look's end controls' width: the ability leaves them room under the band. */
+	let endWidth = $state(0);
 	// The character's page, made on first use.
 	let infoUsed = $state(false);
 	let infoOpen = $state(false);
@@ -180,6 +182,7 @@
 		data-dashed={dashed ? '' : undefined}
 		data-disabled={disabled ? '' : undefined}
 		data-interactive={onclick ? '' : undefined}
+		style:--ring-end={end ? `${endWidth}px` : undefined}
 	>
 		{#if info}
 			<button
@@ -208,7 +211,7 @@
 		{:else}
 			<div class="ring-main">{@render ringText()}</div>
 		{/if}
-		{#if end}<span class="end">{@render end()}</span>{/if}
+		{#if end}<span class="end" bind:offsetWidth={endWidth}>{@render end()}</span>{/if}
 	</div>
 {:else}
 	<div
@@ -466,11 +469,14 @@
 		width: 88%;
 		height: 88%;
 	}
-	/* Runs under the ring, so the band can start at the ring's middle. */
+	/*
+	 * Runs under the ring, so the band can start at the ring's middle, and over the end
+	 * controls, so the band runs the row's full width (Trevor, 2026-10-28).
+	 */
 	.ring-main {
 		display: grid;
 		grid-row: 1;
-		grid-column: 1 / 3;
+		grid-column: 1 / -1;
 		grid-template-columns: minmax(0, 1fr);
 		grid-template-rows: auto 1fr;
 		gap: 0;
@@ -520,14 +526,14 @@
 	.ring-ability {
 		display: block;
 		min-height: calc(2 * 1.35em);
-		padding: var(--space-1) 0 0 calc(var(--ring) + var(--space-2));
+		padding: var(--space-1) var(--ring-end, 0) 0 calc(var(--ring) + var(--space-2));
 		font-family: var(--font-ability);
 		line-height: 1.35;
 	}
 	.ring-below {
 		display: block;
 		min-width: 0;
-		padding-left: calc(var(--ring) + var(--space-2));
+		padding-inline: calc(var(--ring) + var(--space-2)) var(--ring-end, 0);
 	}
 	/*
 	 * Chosen, as the box look draws it: a tint and a ring of the focus colour, drawn above the
@@ -561,9 +567,24 @@
 	.ring-row[data-disabled] {
 		opacity: 0.55;
 	}
+	/*
+	 * Under the band, beside the ability, one above the other so they take one control's
+	 * width from the ability: the band runs over them (Trevor, 2026-10-28).
+	 */
 	.ring-row > .end {
+		z-index: 1;
+		flex-direction: column;
 		grid-row: 1;
 		grid-column: 3;
+		margin-top: 1.7em;
+	}
+	/* They share the ability's height rather than making the row taller. */
+	.ring-row > .end > :global(*) {
+		flex: 1 1 0;
+		min-height: 0;
+	}
+	.ring-row > .end > :global(:last-child) {
+		border-radius: 0 0 var(--radius-md) 0;
 	}
 	.ring-row[data-team='good'] {
 		--team: var(--good);
