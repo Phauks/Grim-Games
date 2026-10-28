@@ -378,10 +378,13 @@ test('First night and Other nights each close from their header, remembered', as
 test("the night order shows who wakes, with TPI's night text", async ({ page }) => {
 	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
 	const first = page.locator('section[data-night="first"]');
-	// Dusk, Minion info, Demon info and Dawn show their own icons (Trevor, 2026-10-16).
+	// Dusk, Minion info, Demon info and Dawn show their own icons (Trevor, 2026-10-16); Minion
+	// info and Demon info are a red M and D (Trevor, 2026-10-28).
 	const minionInfo = first.locator('li[data-step="minioninfo"]');
 	await expect(minionInfo).toContainText('Minion info');
 	await expect(minionInfo.locator('.token[data-marker="minioninfo"]')).toBeVisible();
+	await expect(minionInfo.locator('.token[data-marker="minioninfo"] text')).toHaveText('M');
+	await expect(first.locator('.token[data-marker="demoninfo"] text')).toHaveText('D');
 	const poisoner = first.locator('li[data-step="poisoner"]');
 	// Every step's number sits level with the middle of its icon, however long the text, and
 	// a line runs between steps (Trevor, 2026-10-19).
