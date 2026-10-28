@@ -16,6 +16,7 @@
  * takes the same PIN when the Storyteller asks for one (Trevor, 2026-10-26), without locking
  * the draw: `setPin` and `checkPin`.
  */
+import { toHex } from '#lib/core/codes/hash.ts';
 import { waitAfter } from '#lib/core/rules/draw-lock.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
@@ -52,10 +53,6 @@ function readLock(gameId: string): StoredLock | undefined {
 		waitUntil: typeof raw.waitUntil === 'number' ? raw.waitUntil : 0,
 		locked: raw.locked !== false
 	};
-}
-
-function toHex(bytes: ArrayBuffer | Uint8Array): string {
-	return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 async function hashPin(salt: string, pin: string): Promise<string> {

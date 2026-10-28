@@ -5,7 +5,6 @@
  * once.
  */
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-import type { BotcScriptsRef } from './botcscripts-api.ts';
 import {
 	fetchBloodstarScript,
 	fetchHomebrewScript,
@@ -54,10 +53,6 @@ export function fetchRemote(target: RemoteTarget): Promise<FetchedScript> {
 		);
 	}
 	return fetching;
-}
-
-export function fetchBotc(ref: BotcScriptsRef): Promise<FetchedScript> {
-	return fetchRemote({ kind: 'botcscripts', ref });
 }
 
 export function isRemote(target: LoadTarget | undefined): target is RemoteTarget {

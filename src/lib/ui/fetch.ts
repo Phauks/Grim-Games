@@ -18,7 +18,7 @@ export interface FetchOptions extends RequestInit {
 }
 
 /** `signal`, and a timeout, whichever comes first. */
-export function withTimeout(signal?: AbortSignal | null, ms = FETCH_TIMEOUT_MS): AbortSignal {
+function withTimeout(signal?: AbortSignal | null, ms = FETCH_TIMEOUT_MS): AbortSignal {
 	const timeout = AbortSignal.timeout(ms);
 	return signal ? AbortSignal.any([signal, timeout]) : timeout;
 }

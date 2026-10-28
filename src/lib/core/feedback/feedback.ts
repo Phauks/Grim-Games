@@ -38,7 +38,7 @@ export interface GameFeedback {
 
 const ACCOLADE_IDS: readonly string[] = ACCOLADES.map((a) => a.id);
 
-export function isAccoladeId(value: unknown): value is AccoladeId {
+function isAccoladeId(value: unknown): value is AccoladeId {
 	return typeof value === 'string' && ACCOLADE_IDS.includes(value);
 }
 

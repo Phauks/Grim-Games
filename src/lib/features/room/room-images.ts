@@ -1,3 +1,4 @@
+import { sha256Hex } from '#lib/core/codes/hash.ts';
 import {
 	isRoomImageType,
 	MAX_ROOM_IMAGE_BYTES,
@@ -40,8 +41,7 @@ async function send(code: string, key: string, original: Blob): Promise<string> 
  */
 export async function putRoomImage(code: string, key: string, image: Blob): Promise<string> {
 	const bytes = new Uint8Array(await image.arrayBuffer());
-	const digest = await crypto.subtle.digest('SHA-256', bytes);
-	const hash = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+	const hash = await sha256Hex(bytes);
 	// The key goes ahead of the picture in the body, never in the address or a header.
 	const response = await fetchWithTimeout(roomImagePath(code, hash), {
 		method: 'PUT',

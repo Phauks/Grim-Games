@@ -22,7 +22,7 @@ import type { LinkTarget } from './script-links.ts';
 import { decodeScriptToolPayload, ScriptToolLinkError } from './script-tool-link.ts';
 
 /** Scripts are a few KB; a 201-character homebrew script is still far below this. */
-export const MAX_SCRIPT_BYTES = 1_000_000;
+const MAX_SCRIPT_BYTES = 1_000_000;
 
 export class ScriptFetchError extends Error {
 	constructor(

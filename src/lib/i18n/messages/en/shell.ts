@@ -38,13 +38,9 @@ export const shell = {
 	'shell.switchToProduction': 'Switch to production',
 	'shell.switchBuildTitle':
 		'Opens this page on the other build. Each build keeps its own saved games, Library and settings on this device.',
-	'shell.aboutTitle': `About ${APP_NAME}`,
 	'shell.aboutIntro': 'A touch-first grimoire for Blood on the Clocktower Storytellers.',
 	'shell.aboutVersion': 'Version',
 	'shell.aboutCommit': 'Commit',
-	'shell.aboutBranch': 'Branch',
-	'shell.aboutChannel': 'Channel',
-	'shell.aboutBuilt': 'Built',
 	'shell.officialNotice':
 		"Not affiliated with The Pandemonium Institute. {game} is a trademark of Steven Medway and The Pandemonium Institute. Character data and icons from TPI's toolmaker resources under the Community Created Content policy.",
 	'shell.officialGame': 'Blood on the Clocktower',

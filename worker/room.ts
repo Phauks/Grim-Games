@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
+import { sha256Hex as sha256 } from '../src/lib/core/codes/hash.ts';
 import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import {
 	canCallTown,
@@ -18,7 +19,6 @@ import {
 	reportPicture,
 	MAX_GRIMOIRE_BYTES,
 	MAX_SCRIPT_BYTES,
-	newRoom,
 	openScriptVote,
 	showScriptVoteTally,
 	openVote,
@@ -41,7 +41,6 @@ import {
 	parseTownSound,
 	unseat,
 	viewerFailed,
-	withoutRequests,
 	viewersLocked,
 	type ViewerFails,
 	type GrimoireView,
@@ -51,6 +50,7 @@ import {
 	type ServerMessage
 } from '../src/lib/core/sync/room.ts';
 import { liveGame, type LiveGame } from '../src/lib/core/sync/live-games.ts';
+import { loadRoomState, newStoredRoom } from '../src/lib/core/sync/room-state.ts';
 import {
 	addRoomImage,
 	isRoomImageType,
@@ -96,12 +96,6 @@ type Attachment =
 	| { role: 'town' }
 	| { role: 'admin' };
 
-async function sha256(data: string | Uint8Array): Promise<string> {
-	const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
-	const digest = await crypto.subtle.digest('SHA-256', bytes);
-	return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
 /** A room's picture as stored: its bytes and type (core/sync/room-images.ts). */
 interface ImageView {
 	type: string;
@@ -120,7 +114,7 @@ export class Room extends DurableObject<RoomEnv> {
 
 	private async load(): Promise<RoomState | undefined> {
 		const room = await this.ctx.storage.get<RoomState>('room');
-		return room && withoutRequests(room);
+		return loadRoomState(room);
 	}
 
 	/** Pushes the expiry back; called on every connection and message. */
@@ -146,7 +140,7 @@ export class Room extends DurableObject<RoomEnv> {
 	 */
 	async open(hostKeyHash: string, code?: string): Promise<boolean> {
 		if (await this.load()) return false;
-		await this.ctx.storage.put('room', newRoom(hostKeyHash));
+		await this.ctx.storage.put('room', newStoredRoom(hostKeyHash));
 		if (code) {
 			await this.ctx.storage.put('code', code);
 			await liveGameIndex(this.env).add(code);
