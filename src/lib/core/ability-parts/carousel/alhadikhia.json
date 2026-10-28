@@ -1,0 +1,49 @@
+{
+	"clauses": [
+		{
+			"id": "choose",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 3,
+				"what": "player"
+			},
+			"optional": true,
+			"publicly": true,
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"if": [
+						{
+							"choice": "chose-death"
+						}
+					],
+					"effects": [
+						{
+							"do": "kill",
+							"who": "chosen"
+						}
+					]
+				},
+				{
+					"do": "later",
+					"at": "tonight",
+					"if": [
+						{
+							"choice": "all-chose-life"
+						}
+					],
+					"effects": [
+						{
+							"do": "kill",
+							"who": "chosen"
+						}
+					]
+				}
+			]
+		}
+	]
+}

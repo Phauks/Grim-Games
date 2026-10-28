@@ -1,0 +1,22 @@
+{
+	"clauses": [
+		{
+			"id": "riot",
+			"when": {
+				"at": "day",
+				"days": 3
+			},
+			"effects": [
+				{
+					"do": "become",
+					"who": "each-minion",
+					"into": "this-character"
+				},
+				{
+					"do": "game-rule",
+					"rule": "nominees-die-and-nominate"
+				}
+			]
+		}
+	]
+}

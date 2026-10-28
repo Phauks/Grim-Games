@@ -1,0 +1,72 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "minions",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"choose": {
+				"count": 1,
+				"countOf": "minions",
+				"what": "player-and-character",
+				"type": "minion"
+			},
+			"effects": [
+				{
+					"do": "become",
+					"who": "chosen",
+					"into": "chosen-character",
+					"evil": true
+				}
+			]
+		},
+		{
+			"id": "setup",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "Chooses the Minions; −? to +? Outsiders",
+						"ops": [
+							{
+								"kind": "set",
+								"type": "minion",
+								"values": [0]
+							},
+							{
+								"kind": "any",
+								"type": "outsider"
+							}
+						],
+						"notes": [
+							"Deal no Minions: good characters take their place.",
+							"On the first night the Kazali turns players into the usual number of Minions."
+						]
+					}
+				}
+			]
+		}
+	]
+}

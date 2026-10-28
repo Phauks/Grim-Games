@@ -156,6 +156,23 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 	atheist: {
 		gameEnd:
 			'automatable: parts say good wins when the Atheist is executed; today the Storyteller decides'
+	},
+	// Carousel Demons.
+	lleech: {
+		impairs:
+			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too',
+		marksChoice:
+			"uneven marksChoice: parts list every night choice a reminder marks; a Demon's host choice isn't one the Savant reads",
+		protects:
+			'one-offs: parts say it survives any death while its host lives; today only an execution is offered as a save (night kills of a Demon are rare), the Storyteller deciding'
+	},
+	leviathan: {
+		deathCause:
+			"jinxes: today's death cause comes from its Banshee jinx; parts keep it in the jinx, not the character"
+	},
+	riot: {
+		setupModifier:
+			'one-offs: today an empty setup change carries a note about older printings; the ability has no setup bracket'
 	}
 };
 

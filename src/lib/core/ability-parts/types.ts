@@ -34,11 +34,13 @@ export type When =
 	| {
 			at: 'day';
 			after?: 'first-vote-tallied' | 'first-execution';
-			days?: 'first';
+			/** Carousel Demons: a day's number ("On day 3"), counted with Day N tokens. */
+			days?: 'first' | number;
 			/** Carousel Minions: "before nominations" (the Psychopath). */
 			before?: 'nominations';
 	  }
-	| { at: 'dusk' }
+	/** Carousel Demons: `day` is "After day 5", the dusk that ends that day. */
+	| { at: 'dusk'; day?: number }
 	| { at: 'always' }
 	| {
 			at: 'death';
@@ -70,7 +72,7 @@ export const EVENTS = [
 	'killed-outsider',
 	'grandchild-killed-by-demon',
 	'marked-executed',
-	// Carousel Townsfolk: the player its reminder marks dies (Pixie, Bounty Hunter).
+	// Carousel Townsfolk: the player its reminder marks dies (Pixie, Bounty Hunter, the Lleech's host).
 	'marked-dies',
 	// Carousel Townsfolk (batch 2): a player dies by execution (Cannibal); the Demon kills
 	// someone (Choirboy, with `characterIs` for the King).
@@ -79,7 +81,9 @@ export const EVENTS = [
 	// Rule characters (Fabled and Loric): any player dies (Hindu).
 	'player-dies',
 	// Carousel Minions: a player says its secret word (the Mezepheles).
-	'said-word'
+	'said-word',
+	// Carousel Demons: any execution.
+	'player-executed'
 ] as const;
 export type GameEvent = (typeof EVENTS)[number];
 
@@ -136,7 +140,11 @@ export const SUBJECTS = [
 	'an-ally',
 	// Carousel Minions: who said the secret word (Mezepheles); every Townsfolk (Xaan).
 	'speaker',
-	'each-townsfolk'
+	'each-townsfolk',
+	// Carousel Demons: "a player might die", any player the Storyteller picks, maybe its own
+	// (Legion, Lil' Monsta, Yaggababble); every Minion (the Riot).
+	'a-player',
+	'each-minion'
 ] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
@@ -158,6 +166,12 @@ export interface Choice {
 	from?: 'voted-today';
 	/** Different to previous nights. */
 	notRepeated?: true;
+	// Carousel Demons:
+	/** Someone else makes the choice: "Minions choose" (Lil' Monsta). */
+	by?: 'minions';
+	/** As many as the usual number of Minions, in place of `count` (the Kazali). */
+	countOf?: 'minions';
+	/** Only characters of this type: "which players are which Minions" (the Kazali). */
 	/** Carousel Minions: only characters of this type (the Summoner's Demon). */
 	type?: CharacterType;
 }
@@ -175,7 +189,10 @@ export type Condition =
 	| { partnerIs: Subject }
 	/** Something about today or this choice that only this ability's moment knows. */
 	/** `token` marks the player it is about (the Godfather's Died Today). */
-	| { today: 'no-death' | 'outsider-died' | 'statement-true' | 'good-voted'; token?: ReminderLabel }
+	| {
+			today: 'no-death' | 'outsider-died' | 'statement-true' | 'good-voted' | 'said-phrase';
+			token?: ReminderLabel;
+	  }
 	| {
 			choice:
 				| 'guess-wrong'
@@ -183,8 +200,17 @@ export type Condition =
 				| 'they-agree'
 				| 'impaired'
 				| 'won-roshambo'
-				| 'claimed-character';
+				| 'claimed-character'
+				// Carousel Demons: the chosen character isn't in play (Ojo); a chosen player chose
+				// to die, or all chose to live (Al-Hadikhia).
+				| 'not-in-play'
+				| 'chose-death'
+				| 'all-chose-life';
 	  }
+	// Carousel Demons: while the player its token marks lives (the Lleech's host); once this
+	// many players of an alignment have been executed (the Leviathan).
+	| { carrierAlive: ReminderLabel }
+	| { executions: { alignment: Alignment; atLeast: number } }
 	| CarouselTownsfolkCondition
 	| { neighboursGood: true }
 	/** Only the first time this happens (the Fang Gu's first Outsider). */
@@ -290,7 +316,9 @@ export type Info =
 				| 'watches-night'
 				| 'bluffs'
 				| 'which-ability'
-				| 'chose-new-player';
+				| 'chose-new-player'
+				// Carousel Demons: a secret phrase (Yaggababble); `in-play` is also told to everyone (Leviathan).
+				| 'secret-phrase';
 	  };
 
 /**
@@ -410,7 +438,11 @@ type EffectBody =
 				| 'only-chosen-speaks'
 
 				// Carousel: eyes closed while voting, tally secret (the Organ Grinder).
-				| 'secret-votes';
+				| 'secret-votes'
+
+				// Carousel Demons: Legion's failed execution; the Riot's day 3.
+				| 'execution-fails-if-only-evil-voted'
+				| 'nominees-die-and-nominate';
 	  }
 	| { do: 'immune'; who: Subject; to: ('poisoned' | 'drunk')[] }
 	| {
@@ -440,7 +472,9 @@ type EffectBody =
 				/** A Traveller of the same alignment (Hindu). */
 				| 'traveller'
 				/** Only the alignment changes (the Mezepheles). */
-				| 'evil';
+				| 'evil'
+				/** A Minion the Storyteller picks (the Lord of Typhon's neighbours). */
+				| 'minion';
 			evil?: true;
 	  }
 	| { do: 'execute'; who: Subject; instead?: true }
