@@ -149,14 +149,16 @@ test('the Profile keeps a flavour text, edited in its own modal (Trevor, 2026-10
 	await expect(again.getByTestId('flavour-text')).toHaveText('Always the Drunk.');
 });
 
-test("a character's icon is the avatar, full colour in the Profile (Trevor, 2026-10-28)", async ({
+test('a representative character sits on top of the laurel, still while it moves (Trevor, 2026-10-28)', async ({
 	page
 }) => {
 	await page.goto('/');
 	const dialog = await openProfile(page);
+	await pick(page, 'Your laurel', 'Olive');
+	await pick(page, 'Motion', 'Rotate clockwise');
 	await expect(dialog.getByTestId('character-icon')).toHaveText('None');
-	await dialog.getByRole('button', { name: 'Change character icon' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Character icon' });
+	await dialog.getByRole('button', { name: 'Change character token' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Character token' });
 	await picker.getByRole('searchbox').fill('Fortune Teller');
 	await picker
 		.getByRole('button', { name: /Fortune Teller/ })
@@ -164,18 +166,28 @@ test("a character's icon is the avatar, full colour in the Profile (Trevor, 2026
 		.tap();
 	await expect(picker).toBeHidden();
 	await expect(dialog.getByTestId('character-icon')).toContainText('Fortune Teller');
+
+	const preview = dialog.getByTestId('profile-preview');
+	const emblem = preview.getByTestId('character-emblem');
+	await expect(emblem).toHaveAttribute('data-character', 'fortuneteller');
 	// Full colour in the Profile; seats engrave it.
-	const face = dialog.getByTestId('profile-preview').getByTestId('avatar-face');
-	await expect(face).toHaveAttribute('data-avatar', 'character:fortuneteller');
-	await expect(face.locator('img')).not.toHaveAttribute('data-engraved');
+	await expect(emblem).not.toHaveAttribute('data-engraved');
+	// The face keeps the initials, and the token is outside the turning laurel.
+	await expect(preview.getByTestId('avatar-face').locator('svg')).toBeAttached();
+	await expect(preview.locator('.frame-layer').getByTestId('character-emblem')).toHaveCount(0);
+	// Above the laurel's middle: on its top.
+	const disc = await preview.locator('.disc').boundingBox();
+	const box = await emblem.boundingBox();
+	expect(box!.y + box!.height / 2).toBeLessThan(disc!.y + disc!.height * 0.2);
 
 	await page.reload();
 	const again = await openProfile(page);
 	await expect(again.getByTestId('character-icon')).toContainText('Fortune Teller');
-	await again.getByRole('button', { name: 'Change character icon' }).tap();
+	await again.getByRole('button', { name: 'Change character token' }).tap();
 	await page
-		.getByRole('dialog', { name: 'Character icon' })
+		.getByRole('dialog', { name: 'Character token' })
 		.getByRole('button', { name: 'None' })
 		.tap();
 	await expect(again.getByTestId('character-icon')).toHaveText('None');
+	await expect(again.getByTestId('profile-preview').getByTestId('character-emblem')).toHaveCount(0);
 });

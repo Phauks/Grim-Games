@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
+	askTransfer,
 	checkTransfer,
 	closeTransfer,
 	completeTransfer,
+	dropAsk,
 	hostView,
 	join,
 	makeTransferCode,
@@ -39,10 +41,10 @@ function room(): RoomState {
 }
 
 describe('room transfer', () => {
-	it('makes six-digit codes, keeping leading zeros', () => {
-		expect(makeTransferCode(() => 0)).toBe('000000');
-		expect(makeTransferCode(() => 0.0123456)).toBe('012345');
-		expect(makeTransferCode(() => 0.9999999)).toBe('999999');
+	it('makes eight-digit codes, unlike a six-digit room code, keeping leading zeros', () => {
+		expect(makeTransferCode(() => 0)).toBe('00000000');
+		expect(makeTransferCode(() => 0.0123456789)).toBe('01234567');
+		expect(makeTransferCode(() => 0.999999999)).toBe('99999999');
 	});
 
 	it('opens for five minutes, and a switch change keeps the time and tries', () => {
@@ -101,6 +103,29 @@ describe('room transfer', () => {
 		const opened = openTransfer(room(), CODE_HASH, false, 0);
 		const check = checkTransfer(opened, CODE_HASH, TRANSFER_MS);
 		expect(check).toEqual({ ok: false, room: closeTransfer(opened), triesLeft: 0 });
+	});
+
+	it('asks the Storyteller before anyone takes over, with the asker’s name', () => {
+		const opened = openTransfer(room(), CODE_HASH, false, 0);
+		const asked = askTransfer(opened, 'new-host', '  Pat  ');
+		expect(asked.transfer?.asking).toEqual({ keyHash: 'new-host', name: 'Pat' });
+		// The Storyteller's device sees the name, never the key.
+		expect(hostView(asked).transfer).toEqual({
+			endsAt: TRANSFER_MS,
+			tries: 0,
+			asking: { name: 'Pat' }
+		});
+		expect(hostView(askTransfer(opened, 'new-host', 7)).transfer?.asking).toEqual({});
+		// A later ask replaces it; a switch change keeps it.
+		expect(askTransfer(asked, 'other', '').transfer?.asking).toEqual({ keyHash: 'other' });
+		expect(openTransfer(asked, CODE_HASH, true, 9).transfer?.asking).toEqual(
+			asked.transfer?.asking
+		);
+		// Denied: the transfer stays open, unasked.
+		expect(dropAsk(asked).transfer).toEqual(opened.transfer);
+		// No transfer, no ask.
+		const closed = room();
+		expect(askTransfer(closed, 'new-host', 'Pat')).toBe(closed);
 	});
 
 	it('tells the device taking over who runs it and how many play', () => {
