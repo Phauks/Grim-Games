@@ -184,8 +184,11 @@ export type QrFinders = (typeof QR_FINDERS)[number];
 const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
 
-/** How players' phones show the day timer: a sun, the clock, or not at all. */
-export const TIMER_FOR_PLAYERS = ['sun', 'timer', 'off'] as const;
+/**
+ * How players' phones show the day timer: a sun or the clock. Always shown; the Storyteller
+ * picks only its style (Trevor, 2026-10-28), so Hidden, saved by older builds, reads as Sun.
+ */
+export const TIMER_FOR_PLAYERS = ['sun', 'timer'] as const;
 export type TimerForPlayers = (typeof TIMER_FOR_PLAYERS)[number];
 
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */

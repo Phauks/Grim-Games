@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
-import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
+import { nameStoryteller, openGameInfo, toBoard, pastGameSettings } from './new-game.ts';
 import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
 import { openInbox } from './inbox.ts';
@@ -55,6 +55,7 @@ async function startGame(page: Page, storyteller?: string, players = 8) {
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const count = page.getByTestId('setup-table').locator('thead th[data-current]');
 	for (let n = 8; n < players; n++) {

@@ -2,6 +2,7 @@
 	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { TIMER_FOR_PLAYERS, TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -73,12 +74,12 @@
 	     Settings > Storyteller > Day. -->
 	<Select
 		label={t('day.timerForPlayers')}
-		value={preferences.current.timerForPlayers}
+		value={gameSettings.current.timerForPlayers}
 		options={TIMER_FOR_PLAYERS.map((value) => ({
 			value,
 			label: t(`day.timerForPlayers.${value}`)
 		}))}
-		onChange={(timerForPlayers) => preferences.update({ timerForPlayers })}
+		onChange={(timerForPlayers) => gameSettings.set(gameSettings.gameId, { timerForPlayers })}
 	/>
 	<!-- What phones show beside Setup, before the first night (Trevor, 2026-10-28); also in
 	     Settings > Storyteller > Day. -->
@@ -175,7 +176,7 @@
 			/>
 			<VibrateToggle />
 			{@render keepAwake()}
-			<TimerPerPlayerRow />
+			<TimerPerPlayerRow game />
 			{@render forPlayers()}
 		</div>
 	</BottomSheet>
@@ -193,7 +194,7 @@
 			/>
 			<VibrateToggle />
 			{@render keepAwake()}
-			<TimerPerPlayerRow />
+			<TimerPerPlayerRow game />
 			{@render forPlayers()}
 		</div>
 	</BottomSheet>

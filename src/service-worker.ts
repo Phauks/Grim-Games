@@ -41,6 +41,8 @@ import {
 	totalBytes,
 	type PrecacheProgress
 } from '#lib/features/about/update-progress.ts';
+import type { PushMessage } from '#lib/core/sync/room-push.ts';
+import { room } from '#lib/i18n/messages/en/room.ts';
 
 const CACHE = `${BUILD_CACHE_PREFIX}${version}`;
 const SHELL = '/';
@@ -305,6 +307,43 @@ sw.addEventListener('message', (event) => {
 	if (event.data?.type === 'KEEP_OFFLINE') {
 		event.waitUntil(keepOffline((event.data as KeepOfflineMessage).urls));
 	}
+});
+
+/**
+ * Back to town on a phone that is locked or has the app closed (plan U12): the room pushes it
+ * only to phones not showing the app (worker/push.ts), and every push must show a notification
+ * (Chrome and Safari stop pushes to a site that shows none). The service worker can't read the
+ * app's language, so the title is the English toast's own words.
+ */
+sw.addEventListener('push', (event) => {
+	let message: PushMessage | undefined;
+	try {
+		message = event.data?.json() as PushMessage;
+	} catch {
+		// Unreadable: the call still shows, without its room.
+	}
+	const options: NotificationOptions & { renotify: boolean } = {
+		tag: 'call-town',
+		// A second call rings again rather than only replacing the first.
+		renotify: true,
+		icon: '/icons/icon-192.png',
+		data: { code: message?.code }
+	};
+	event.waitUntil(sw.registration.showNotification(room['room.callTownHeard'], options));
+});
+
+/** Tapping the notification brings the app forward, or opens the player screen. */
+sw.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	event.waitUntil(
+		(async () => {
+			const open = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
+			const tab =
+				open.find((client) => new URL(client.url).pathname.startsWith('/play')) ?? open[0];
+			if (tab) await tab.focus();
+			else await sw.clients.openWindow('/play');
+		})()
+	);
 });
 
 sw.addEventListener('fetch', (event) => {

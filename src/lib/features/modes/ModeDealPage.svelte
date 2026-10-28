@@ -1,6 +1,5 @@
 <script lang="ts">
 	import SetupNav from '#lib/features/setup/SetupNav.svelte';
-	import { backToNewGame } from './new-game-draft.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { fromScript, type Character, type CharacterId } from '#lib/core/data/index.ts';
@@ -47,6 +46,7 @@
 	import { tileMarks } from '#lib/features/setup/tile-face.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -102,7 +102,7 @@
 	 * can get: Sushi Buffet's offers spin in 3, 2, 1, and Whale Buffet's choice is revealed as
 	 * any draw is (Trevor, 2026-10-23).
 	 */
-	const slotMachine = $derived(preferences.current.slotMachine);
+	const slotMachine = $derived(gameSettings.current.slotMachine);
 	const reel = $derived(
 		characters.filter((c) =>
 			(['townsfolk', 'outsider', 'minion', 'demon'] as const).some((type) => type === c.type)
@@ -196,7 +196,7 @@
 			slots.length,
 			preferences.current.tileFace,
 			`deal:${gameId}`,
-			preferences.current.tileOrderRandom
+			gameSettings.current.tileOrderRandom
 		)
 	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
@@ -465,9 +465,9 @@
 	<!-- The start flow's bar (Trevor, 2026-10-23): Back to New game as it was, until a tile is
 	     drawn; Restart starts the deal over after that. -->
 	<SetupNav
-		onBack={() => void backToNewGame(gameId)}
+		backHref={resolve('/grimoire/[gameId]/game-settings', { gameId })}
 		backDisabled={picks.length > 0 || held !== undefined}
-		backLabel={t('setup.newGame')}
+		backLabel={t('setup.gameSettings')}
 	>
 		{#snippet next()}
 			<span class="footer">

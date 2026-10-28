@@ -66,6 +66,7 @@ import {
 } from '../src/lib/core/sync/room-images.ts';
 import { MAX_AVATAR_PICTURE_BYTES } from '../src/lib/core/sync/room-pictures.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
+import { pushCallTown, setRoomPushAddress, type PushEnv } from './push.ts';
 import { closeSocket, send, sendText, type Attachment } from './room-sockets.ts';
 import {
 	answerTransfer,
@@ -76,7 +77,7 @@ import {
 	type TransferRoom
 } from './room-transfer.ts';
 
-export interface RoomEnv {
+export interface RoomEnv extends PushEnv {
 	ROOMS: DurableObjectNamespace<Room>;
 	ROOM_JOINS: RateLimit;
 	ROOM_CREATES: RateLimit;
@@ -407,6 +408,12 @@ export class Room extends DurableObject<RoomEnv> {
 				const next = roleSeen(room, id);
 				if (next === room) return;
 				room = next;
+			} else if (message.type === 'push') {
+				return setRoomPushAddress(this.ctx.storage, id, message.address);
+			} else if (message.type === 'showing') {
+				const showing = message.on === true;
+				ws.serializeAttachment({ role: 'player', memberId: id, showing } satisfies Attachment);
+				return;
 			} else return;
 			await this.save(room);
 			return;
@@ -558,10 +565,15 @@ export class Room extends DurableObject<RoomEnv> {
 				if (!canCallTown(this.lastCallTown, now)) return;
 				this.lastCallTown = now;
 				const text = JSON.stringify({ type: 'call-town' } satisfies ServerMessage);
+				const showing = new Set<string>();
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'player') sendText(socket, text);
+					if (to?.role !== 'player') continue;
+					sendText(socket, text);
+					if (to.showing && socket.readyState === WebSocket.OPEN) showing.add(to.memberId);
 				}
+				// Phones locked or with the app closed get it as a notification (plan U12).
+				this.ctx.waitUntil(pushCallTown(this.env, this.ctx.storage, showing));
 				return;
 			}
 			case 'town-sound': {

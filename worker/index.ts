@@ -6,6 +6,7 @@ import { curatedSource } from './curated.ts';
 import { handleHomebrewScripts } from './homebrew-scripts.ts';
 import { handleHomebrewWiki } from './homebrew-wiki.ts';
 import { handleRoom, Room, type RoomEnv } from './room.ts';
+import { handlePushKey, PushKeyStore } from './push.ts';
 import { handleLiveGames, LiveGameIndex, type LiveGamesEnv } from './live-games.ts';
 import { handleReports, ReportBox, type ReportsEnv } from './reports.ts';
 import { handleRecap, SharedRecap, type RecapEnv } from './recap.ts';
@@ -21,7 +22,7 @@ import {
 import { isWorldCupYear, worldCupSource } from './world-cups.ts';
 import { COLLECTIONS } from '../src/lib/features/scripts/collection-api.ts';
 
-export { LiveGameIndex, ReportBox, Room, ScriptMirror, SharedRecap, SharedScript };
+export { LiveGameIndex, PushKeyStore, ReportBox, Room, ScriptMirror, SharedRecap, SharedScript };
 export { AccountEmail, AccountName, AccountUser } from './account/objects.ts';
 
 export interface Env
@@ -54,6 +55,8 @@ export default {
 		if (room) return room;
 		const liveGames = await handleLiveGames(request, env, url);
 		if (liveGames) return liveGames;
+		const pushKey = await handlePushKey(request, env, url);
+		if (pushKey) return pushKey;
 		// Tests fake these answers; the sites themselves refuse CI machines (BotC Scripts: 403).
 		if (env.OTHER_SITES === 'off' && OTHER_SITE_ROUTES.test(url.pathname)) {
 			return new Response('Other sites are off', { status: 503 });

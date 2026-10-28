@@ -179,7 +179,7 @@
 				setupSelection.setCopies(id, 0);
 		}
 		for (const id of ids) setupSelection.setCopies(id, 1);
-		await goto(resolve('/grimoire/[gameId]/setup', { gameId }));
+		await goto(resolve('/grimoire/[gameId]/game-settings', { gameId }));
 	}
 </script>
 
@@ -269,7 +269,7 @@
 					disabled={official.length === 0 || extras.length < total.min || extras.length > total.max}
 					onclick={goNext}
 				>
-					{t('modes.extras.next')}
+					{t('setup.gameSettings')}
 				</Button>
 			{/snippet}
 		</SetupNav>{/if}

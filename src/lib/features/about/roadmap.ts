@@ -181,11 +181,16 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S18', 'S21']
 	},
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
+	{
+		title:
+			'Game settings: nomination tracking, the day timer on phones and the bag draw chosen for each game',
+		parts: ['S26']
+	},
 	{ title: 'Search Settings for any setting by name', parts: ['S24'] },
 	{
 		title:
-			'Sound: every sound in one place, Back to town, day and night ambience, a soundboard with a mixer and hot spots, sounds for your actions, playing on Town Square or another speaker, your own sounds',
-		parts: ['U1', 'U2', 'U3', 'U4', 'U6', 'U7', 'U8', 'U9', 'U10', 'U11']
+			'Sound: every sound in one place, Back to town (also on locked phones), day and night ambience, a soundboard with a mixer and hot spots, sounds for your actions, playing on Town Square or another speaker, your own sounds',
+		parts: ['U1', 'U2', 'U3', 'U4', 'U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12']
 	},
 	{
 		title:
