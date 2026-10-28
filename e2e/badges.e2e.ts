@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 test('tapping a character badge shows its ability and a wiki link', async ({ page }) => {
 	await page.goto('/spikes/badges');
@@ -298,10 +299,12 @@ test("a character's type and source open every character of that group", async (
 
 test('a badge on its own line keeps the in-line height, with a 44px tap area', async ({ page }) => {
 	// One design everywhere (Trevor, 2026-10-20): the script sheet's normal density once drew a
-	// tall pill. The base button rule's 44px minimum must not stretch the badge either.
-	await page.goto('/play');
-	await page.getByRole('button', { name: 'Trouble Brewing' }).tap({ timeout: 15_000 });
-	const badge = page.locator('[data-character="chef"] .badge');
+	// tall pill. The base button rule's 44px minimum must not stretch the badge either. A jinx's
+	// pair is the sheet's badges on their own line (its characters are rings, 2026-10-28).
+	const shared = [{ id: '_meta', name: 'Jinx Night' }, 'alchemist', 'marionette', 'imp'];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	// TPI jinx: Alchemist and Marionette (wiki: Djinn's Jinxes list).
+	const badge = page.locator('.jinx .badge[data-character-id="alchemist"]').first();
 	await expect(badge).toBeVisible();
 	const sizes = await badge.evaluate((el) => {
 		const fontSize = parseFloat(getComputedStyle(el).fontSize);

@@ -210,12 +210,12 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 
 	// Join game is still the player view, so it doesn't ask.
 	await menu.tap();
-	await drawer.getByRole('link', { name: 'Join game' }).tap();
+	await drawer.getByRole('link', { name: 'Join or resume' }).tap();
 	await expect(page).toHaveURL(/\/join$/);
 	await expect(ask).toHaveCount(0);
 
 	// Join game shows none of the phone's script (plan J1), so leaving it has nothing to ask.
-	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
 	await menu.tap();
 	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
 	await expect(page).toHaveURL(/\/library$/);
@@ -646,6 +646,33 @@ test('Enter in a note title closes the keyboard', async ({ page }) => {
 	await text.press('Enter');
 	await text.pressSequentially('two');
 	await expect(text).toHaveValue('one\ntwo');
+});
+
+test('a script character is its icon in a ring, with its name on a band out of the ring’s top', async ({
+	page
+}) => {
+	// Trevor, 2026-10-28: the icons were "kind of hidden"; a ring of the alignment's colour, a
+	// band of it across the row with the name, the ability under the band.
+	const chef = page.locator('[data-character="chef"]');
+	const ring = chef.locator('.ring');
+	const band = chef.locator('.band');
+	await expect(band).toContainText('Chef');
+	await expect(ring.locator('img')).toBeVisible();
+	const [r, b] = [(await ring.boundingBox())!, (await band.boundingBox())!];
+	expect(r.height).toBeGreaterThanOrEqual(44);
+	expect(Math.abs(b.y - r.y)).toBeLessThan(1);
+	expect(b.x + b.width).toBeGreaterThan(r.x + r.width * 2);
+	const colours = async (row: typeof chef) => ({
+		ring: await row.locator('.ring').evaluate((el) => getComputedStyle(el).borderTopColor),
+		band: await row.locator('.band').evaluate((el) => getComputedStyle(el).backgroundColor)
+	});
+	const good = await colours(chef);
+	expect(good.ring).toBe(good.band);
+	const evil = await colours(page.locator('[data-character="imp"]'));
+	expect(evil.ring).toBe(evil.band);
+	expect(evil.ring).not.toBe(good.ring);
+	await ring.tap();
+	await expect(page.getByRole('dialog', { name: 'Chef' })).toBeVisible();
 });
 
 test('a jinxed character shows its partners beside its name, and tapping shows the jinx', async ({
