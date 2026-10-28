@@ -58,8 +58,8 @@ To write a scenario, read the example on the wiki page and replace its `it.todo`
 
 Cloudflare [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) builds and deploys straight from this repository, so there is no deploy workflow or API token in GitHub:
 
-- build command `npm run build`, deploy command `npx wrangler deploy`: pushes to `main` deploy the `grim-games` Worker (production releases, merged from `beta`);
-- all day-to-day work goes on the `beta` branch. Workers Builds runs `npx wrangler preview` for it (and any other non-production branch), which creates a [Worker Preview](https://developers.cloudflare.com/workers/previews/) named after the branch on the same Worker, with its own URL and its own Durable Object storage. The `previews` block in `wrangler.jsonc` repeats the bindings and vars previews need.
+- build command `if [ "$WORKERS_CI_BRANCH" = main ] || [ "$WORKERS_CI_BRANCH" = beta ]; then npm run build; else echo "Skipped: only main and beta build"; fi`, deploy command `npx wrangler deploy`: pushes to `main` deploy the `grim-games` Worker (production releases, merged from `beta`);
+- all day-to-day work goes on the `beta` branch. The non-production deploy command is `if [ "$WORKERS_CI_BRANCH" = beta ]; then npx wrangler preview; else echo "Skipped: only beta gets a preview"; fi`, so only `beta` gets a Preview and other branches skip both build and deploy, since each Preview holds its own Durable Object namespaces and the account allows 500. `wrangler preview` creates a [Worker Preview](https://developers.cloudflare.com/workers/previews/) named after the branch on the same Worker, with its own URL and its own Durable Object storage. The `previews` block in `wrangler.jsonc` repeats the bindings and vars previews need.
 
 GitHub Actions (`.github/workflows/ci.yml`) only runs checks and tests.
 
