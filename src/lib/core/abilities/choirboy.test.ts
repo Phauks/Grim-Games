@@ -12,6 +12,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Choirboy', () => {
@@ -44,7 +46,32 @@ describe('Choirboy', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Choirboy#Examples)', () => {
-		it.todo('Example 1: Unprotected King dies; Choirboy learns the Imp');
-		it.todo('Example 2: Drunk Choirboy wrongly names the General');
+		it('Example 1: Unprotected King dies; Choirboy learns the Imp', () => {
+			// The Demon killed the King: the Choirboy is shown the Demon's player.
+			const { game: g, seats } = castGame(['choirboy', 'king', 'imp', 'monk', 'poisoner'], (s) => ({
+				type: 'SetDead',
+				seatId: s[1],
+				dead: true
+			}));
+			const picker = infoPicker(g, seats[0], 'choirboy', characters)!;
+			expect(isTruthful(picker, { seats: [seats[2]] })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[4]] })).toBe(false);
+		});
+
+		it('Example 2: Drunk Choirboy wrongly names the General', () => {
+			// A Drunk who thinks they are the Choirboy may be shown anyone as the Demon.
+			const { game: g, seats } = castGame(
+				['choirboy', 'king', 'shabaloth', 'general', 'poisoner'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'drunk', label: 'Is The Drunk' }
+				}),
+				(s) => ({ type: 'SetDead', seatId: s[1], dead: true })
+			);
+			const picker = infoPicker(g, seats[0], 'choirboy', characters)!;
+			expect(picker.anyAllowed).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[3]] })).toBe(true);
+		});
 	});
 });

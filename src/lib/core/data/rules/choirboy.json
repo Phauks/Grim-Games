@@ -1,4 +1,7 @@
 {
+	"learns": {
+		"measure": "demon-player"
+	},
 	"setupModifier": {
 		"summary": "+the King",
 		"ops": [],
