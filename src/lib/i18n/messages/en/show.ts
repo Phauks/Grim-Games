@@ -23,9 +23,14 @@ export const show = {
 	'show.evil.showNamed': 'Show {card}',
 	'show.evil.chooseBluffs': 'Choose bluffs',
 	'show.evil.inPlay': 'In play: replace',
-	'show.fairPlay.label': 'Fair play:',
+	// Fair-play warnings (FairPlayNotice), in Trevor's own words (2026-10-27).
 	'show.fairPlay.secret':
-		"this is for your eyes only. Don't screenshot, photograph or share it in a way that could spoil the game.",
+		'This is for your eyes only. Please do not screenshot, photograph, or otherwise share this screen in any way that could compromise the integrity of this game.',
 	'show.fairPlay.message':
-		'only send what the Storyteller needs to know. Never use this to get around the rules or pass on secret information.'
+		'Only send what the Storyteller needs to know. Never use this to get around the rules or pass on secret information.',
+	'show.fairPlay.watchLead':
+		'You will see everything the Storyteller sees: every character, reminder and note. You promise that:',
+	'show.fairPlay.watchCheat': 'You won’t use it to cheat, or to help anyone playing.',
+	'show.fairPlay.watchShare': 'You won’t tell or show any player what you see.',
+	'show.fairPlay.watchIntegrity': 'You won’t do anything that spoils the game for its players.'
 } as const;
