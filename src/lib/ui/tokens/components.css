@@ -105,6 +105,17 @@
 	--scratch-white-good: var(--good);
 	--scratch-white-evil: var(--evil);
 	--scratch-white-highlight: var(--token-flower);
+
+	/*
+	 * The day timer's sky (Trevor, 2026-10-28): gold in the morning, amber through the
+	 * afternoon and red as the time runs out; deep blue at night under the moon and stars.
+	 */
+	--sky-morning: var(--heading);
+	--sky-afternoon: color-mix(in srgb, var(--heading), var(--evil) 35%);
+	--sky-late: color-mix(in srgb, var(--evil), var(--evil-text) 30%);
+	--sky-sun: var(--heading);
+	--sky-night: var(--good);
+	--sky-moon: var(--on-surface);
 }
 
 /* The paper a scratch pad (or a paper swatch) shows; render.ts reads the inks. */
