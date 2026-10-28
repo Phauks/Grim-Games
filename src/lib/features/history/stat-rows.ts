@@ -1,3 +1,4 @@
+import { foldForSearch } from '#lib/core/text/fold.ts';
 import type { DataSort } from '#lib/ui/table/DataTable.svelte';
 
 type Value = number | string | undefined;
@@ -42,6 +43,6 @@ export function nextSort<K extends string>(
 
 /** Whether a name contains the filter text, ignoring case; an empty filter matches all. */
 export function matchesText(name: string | undefined, filter: string): boolean {
-	const wanted = filter.trim().toLocaleLowerCase();
-	return wanted === '' || (name ?? '').toLocaleLowerCase().includes(wanted);
+	const wanted = foldForSearch(filter.trim());
+	return wanted === '' || foldForSearch(name ?? '').includes(wanted);
 }
