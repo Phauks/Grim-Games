@@ -47,5 +47,6 @@
 				"reason": "Says last night’s Poisoned token comes off."
 			}
 		}
-	}
+	},
+	"marksChoice": ["Poisoned"]
 }

@@ -106,6 +106,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A script's logo: `features/scripts/ScriptLogo.svelte` with `scriptLogo` (`core/data/script-logo.ts`) (enforced by review)
 - Reading and writing localStorage: `ui/stored.ts` (`readStored`, `writeStored`, `readParsed`, `readStoredText`, `writeStoredText`) (enforced by `no-restricted-globals` (localStorage))
 - Copying text, with its toast: `ui/clipboard.ts` (`copyText`) (enforced by review)
+- Every request to a server: `ui/fetch.ts` (`fetchJson`, `fetchWithTimeout`), which gives up after a timeout (10 s, or `SLOW_FETCH_TIMEOUT_MS` for uploads and large files) (enforced by `no-restricted-syntax` (fetch))
 - Every Share button (code, QR, link, Copy, refresh, Share, send a file): `ui/share/SharePanel.svelte`; a script's Share is `features/scripts/ShareControl.svelte`, which shows the room's link and join code when the device is in a room, and its link comes from `scriptShareable` (`features/scripts/share-codes.ts`) (enforced by `grim/share-panel` (`SHARE_TODO`), `e2e/share.e2e.ts`)
 - A copy icon that shows a check for a moment (the share screen's code and link, Grim view's password): `ui/share/CopyButton.svelte` over `copyText` (`ui/clipboard.ts`) (enforced by review)
 - A script's tabs (Characters, Night order, Grim, Notes, Room): `features/player/PlayerScriptTabs.svelte`, with `PlayerGrim` and `PlayerNotes`: /play and the board's Script sheet show the same screens, and a Public Town display (/town) shows `PlayerGrim` with `display` (enforced by review)
@@ -169,6 +170,8 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Hidden character it may really be (`modes/draft.ts`, the Atheist's Drunk; new): `orHiddenAs`, new
 - Gained not-in-play ability (`modes/draft.ts`, the Alchemist's Minion; new): `gainsAbilityOf`, new
 - Players turned into another type (`modes/draft-seats.ts`: Kazali, Lord of Typhon, Lil' Monsta): `turnsPlayersInto`, new
+- Evil info step notes (`night-order.ts` `markerNotes`: Poppy Grower, Magician, Lunatic, Toymaker, Summoner, Snitch) and who may hide the Demon from Minions (Savant): `evilInfo`, moved
+- Savant statements (`savant-facts.ts`, `savant-templates.ts`, `savant-log-templates.ts`): reminders marking whom it chose (was `MINION_CHOICES`, `TOWNSFOLK_CHOICES`) `marksChoice`; number or once-per-game info (was `NUMBER_INFO`, `ONCE_INFO`) `infoKind`; the Witch's curse `curses`; the Lunatic's `choosesLikeDemon` and `believesOtherCharacter`; the Snake Charmer's `choosesUnmarked`; all moved (`choice-rules.ts`)
 
 ## Lists that only shrink
 
