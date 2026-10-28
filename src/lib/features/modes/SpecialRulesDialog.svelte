@@ -237,7 +237,7 @@
 	}
 	.why {
 		margin: 0;
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	.side {
 		display: grid;

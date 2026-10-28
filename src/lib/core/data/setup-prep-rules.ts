@@ -25,7 +25,7 @@ import {
 	type Issues
 } from './validate.ts';
 
-export const SETUP_TIMINGS = ['setup', 'first-day'] as const;
+const SETUP_TIMINGS = ['setup', 'first-day'] as const;
 export type SetupTiming = (typeof SETUP_TIMINGS)[number];
 
 /**
@@ -39,7 +39,7 @@ export type SetupTiming = (typeof SETUP_TIMINGS)[number];
  * - `nearest-townsfolk-anticlockwise` / `-clockwise`: the nearest Townsfolk that way round
  *   from this character, alive or dead (No Dashii, `nearestOfType`).
  */
-export const SEAT_FILTERS = [
+const SEAT_FILTERS = [
 	'any',
 	'good',
 	'evil',

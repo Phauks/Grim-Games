@@ -64,7 +64,7 @@ export function unlockSound(): void {
 let playing: { output: GainNode; voices: OscillatorNode[] } | undefined;
 
 /** Stops the sound now playing, so two never overlap (Trevor, 2026-10-17). */
-export function stopSound(): void {
+function stopSound(): void {
 	if (!playing) return;
 	const { output, voices } = playing;
 	playing = undefined;

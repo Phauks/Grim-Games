@@ -18,7 +18,7 @@
 import type { ReminderLabel } from './types.ts';
 import { checkKeys, describe, isObject, readEnum, readString, type Issues } from './validate.ts';
 
-export const PLACEHOLDER_ACTIONS = ['place', 'remove'] as const;
+const PLACEHOLDER_ACTIONS = ['place', 'remove'] as const;
 export type PlaceholderAction = (typeof PLACEHOLDER_ACTIONS)[number];
 
 export interface PlaceholderToken {
@@ -31,7 +31,7 @@ export interface ReminderPlaceholder {
 	either?: boolean;
 }
 
-export const PLACEHOLDER_NIGHTS = ['first', 'other'] as const;
+const PLACEHOLDER_NIGHTS = ['first', 'other'] as const;
 
 export interface ReminderPlaceholderRules {
 	first?: readonly ReminderPlaceholder[];

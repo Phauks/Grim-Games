@@ -3,13 +3,7 @@
  * list. Other features read `currentScript.current`; core's `toScript` turns it into the
  * engine's `Script` for CreateGame.
  */
-import { t } from '#lib/i18n/locale.svelte.ts';
-import {
-	loadScriptText,
-	scriptToJson,
-	type GameData,
-	type LoadedScript
-} from '#lib/core/data/index.ts';
+import { scriptToJson, type GameData, type LoadedScript } from '#lib/core/data/index.ts';
 import { timestampName } from '#lib/core/timestamp-name.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { saveScriptToProfile } from '#lib/features/account/profile-scripts.svelte.ts';
@@ -22,8 +16,6 @@ import {
 	type ScriptSource
 } from './saved-scripts.ts';
 import { IdbScriptLibrary } from './script-library.ts';
-import { fetchSharedRef } from './share-codes.ts';
-import { sharedRefFromHash } from './share.ts';
 
 let library: IdbScriptLibrary | undefined;
 let current = $state.raw<{ saved: SavedScript; script: LoadedScript } | undefined>(undefined);
@@ -200,33 +192,4 @@ export async function forgetScript(scriptId: string): Promise<void> {
 	if (!lib) return;
 	await lib.delete(scriptId);
 	await refresh(await loadOfficialData(), lib);
-}
-
-/**
- * For a page a share link opens (`/play#c=…`, `#e=`, `#bs=` or `#s=`): makes the shared
- * script the current script and clears the hash. Undefined when the address has no shared
- * script. Throws an Error with a message to show when the link is damaged, the code has
- * expired, or the script has no usable characters. Unlike the Storyteller's Scripts page,
- * there is no Script check: what loads, loads.
- */
-export async function openSharedScript(): Promise<LoadedScript | undefined> {
-	const ref = sharedRefFromHash(location.hash);
-	if (!ref) return undefined;
-	history.replaceState(history.state, '', location.pathname + location.search);
-	return openScriptCode(fetchSharedRef(ref));
-}
-
-/**
- * Loads a script fetched for a share link or a typed code (`fetchSharedCode`) and makes
- * it the current script. Throws an Error with a message to show.
- */
-export async function openScriptCode(
-	fetching: Promise<{ text: string; source: ScriptSource }>
-): Promise<LoadedScript> {
-	const [fetched, data] = await Promise.all([fetching, loadOfficialData()]);
-	await restoreScripts();
-	const { script } = loadScriptText(fetched.text, data);
-	if (!script) throw new Error(t('scripts.error.noKnownCharacters'));
-	await chooseScript(script, fetched.source);
-	return script;
 }

@@ -16,7 +16,7 @@ import { parseStepFocus, type StepFocus } from '#lib/features/grimoire/step-focu
 import { parsePreferences, type Preferences } from '#lib/ui/preferences.ts';
 
 /** Preferences that stay with the device whichever profile is in use. */
-export const DEVICE_PREFERENCES = [
+const DEVICE_PREFERENCES = [
 	'allowZoom',
 	'soundVolume',
 	'speaker'
@@ -97,7 +97,7 @@ export function cleanName(name: unknown): string {
 }
 
 /** A profile, or undefined when it can't be read (no id or name). */
-export function parseProfile(raw: unknown): SettingsProfile | undefined {
+function parseProfile(raw: unknown): SettingsProfile | undefined {
 	const value = record(raw);
 	const name = cleanName(value.name);
 	if (typeof value.id !== 'string' || !value.id || !name) return undefined;

@@ -18,7 +18,7 @@ export function gameModeName(gameId: GameId): string | undefined {
  * The same names one by one: the mode first, if it isn't Standard, then each special rule.
  * The board's corner gives each its own line (Trevor, 2026-10-19).
  */
-export function gameModeNames(gameId: GameId): string[] {
+function gameModeNames(gameId: GameId): string[] {
 	const { mode, rules } = gameModeParts(gameId);
 	return [...(mode ? [mode] : []), ...rules];
 }

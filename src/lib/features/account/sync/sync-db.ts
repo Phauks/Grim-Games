@@ -7,7 +7,7 @@ import type { DocKind, ProfileDoc } from '../account-protocol.ts';
 import type { OutboxEntry } from './outbox.ts';
 
 /** Settings > Data clears it by this name. */
-export const SYNC_DB = 'grim-games-sync';
+const SYNC_DB = 'grim-games-sync';
 const DB_VERSION = 1;
 const OUTBOX = 'outbox';
 const DOCS = 'docs';
@@ -71,15 +71,6 @@ function forUser(userId: string): IDBKeyRange {
 export async function readOutbox(userId: string): Promise<OutboxEntry[]> {
 	const tx = (await open()).transaction(OUTBOX);
 	return result(tx.objectStore(OUTBOX).getAll(forUser(userId)) as IDBRequest<OutboxEntry[]>);
-}
-
-export async function readOutboxEntry(
-	userId: string,
-	kind: DocKind,
-	id: string
-): Promise<OutboxEntry | undefined> {
-	const tx = (await open()).transaction(OUTBOX);
-	return result(tx.objectStore(OUTBOX).get([userId, kind, id]) as IDBRequest<OutboxEntry>);
 }
 
 export async function readDocs(userId: string): Promise<StoredDoc[]> {

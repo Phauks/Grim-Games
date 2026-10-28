@@ -9,7 +9,7 @@ import { trueCharacter, type CharacterLookup, type Game } from '#lib/core/model/
  * the Lunatic's while a Lunatic is in play. Only the Demon's set is checked against play.
  */
 export const DEMON_SET = 0;
-export const LUNATIC_SET = 1;
+const LUNATIC_SET = 1;
 
 /**
  * The Demon's bluffs with `id` added or taken out, for the bluff button on each of setup's

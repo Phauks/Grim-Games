@@ -5,7 +5,7 @@
  * also run. The long-press menu a phone would show is suppressed. Use as an attachment:
  * `<button {@attach hold(() => …)}>`.
  */
-export const HOLD_MS = 500;
+const HOLD_MS = 500;
 /** How far the pointer may wander before the press counts as a scroll. */
 const SLOP_PX = 10; // px-ok: pointer distance, not layout
 
