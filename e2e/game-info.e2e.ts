@@ -10,7 +10,7 @@ test('Game info shows the join code, the day or night, Game time and watchers; t
 	await page.clock.install();
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	let info = await openGameInfo(page);
@@ -66,7 +66,7 @@ test('an eye on each Game info line chooses what the board corner shows, as Sett
 	// decided what will populate in the bottom left".
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	const corner = page.getByTestId('script-title');
 	await expect(corner).toContainText('by The Pandemonium Institute');

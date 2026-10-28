@@ -21,8 +21,10 @@
 	/**
 	 * A player's laurel (L4, A1): its form picked from a drop-down, each drawn beside its name,
 	 * then its colour and its motion. Every fixed frame is a form too (Trevor, 2026-10-27: frames
-	 * and laurels combined), and any form takes any colour (2026-10-28). The colour and motion
-	 * rows are always there, disabled for None, so picking a form never moves the rows below.
+	 * and laurels combined), and any form takes any colour (2026-10-28). Each colour shows as a
+	 * plain dot of that colour, not the laurel drawn in it, which was hard to see (Trevor,
+	 * 2026-10-28). The colour and motion rows are always there, disabled for None, so picking a
+	 * form never moves the rows below.
 	 * Offers only unlocked forms (all of them while the app is in beta).
 	 */
 	interface Props {
@@ -85,7 +87,12 @@
 {/snippet}
 
 {#snippet tint(option: { value: LaurelColour; label: string })}
-	{@render drawn(restyled({ colour: option.value }), option.label)}
+	<span class="option">
+		<span class="swatch">
+			<span class="dot" style:background={LAUREL_COLOURS[option.value][0]}></span>
+		</span>
+		{option.label}
+	</span>
 {/snippet}
 
 {#snippet moving(option: { value: FrameMotion; label: string })}
@@ -150,5 +157,12 @@
 	.drawn {
 		position: absolute;
 		inset: 0;
+	}
+	/* A colour on its own, in the same box as a drawn laurel so the rows line up. */
+	.dot {
+		position: absolute;
+		inset: 12%;
+		border: 0.0625rem solid var(--border);
+		border-radius: 50%;
 	}
 </style>

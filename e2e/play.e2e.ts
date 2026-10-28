@@ -936,7 +936,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await st.getByRole('button', { name: 'Start game' }).tap();
+	await st.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(st);
 	await st.goto(`${new URL(st.url()).pathname}/room`);
 	await expect(st.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();

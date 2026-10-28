@@ -28,10 +28,10 @@ async function startWithStowedAway(page: Page) {
 	const jinxes = (await preview.getByRole('button', { name: 'Jinxes' }).boundingBox())!;
 	expect((await section(preview).boundingBox())!.y).toBeGreaterThan(jinxes.y);
 
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await toBoard(page);
 }

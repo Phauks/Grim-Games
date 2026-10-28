@@ -1,3 +1,4 @@
+import { TEAM_COLORS, TEAM_TEXT } from '../team-colors.ts';
 import type { Theme } from '../types.ts';
 
 /**
@@ -29,9 +30,6 @@ export const grimoire: Theme = {
 		'--palette-blood-400': '#c4523d',
 		'--palette-gold-400': '#e7c873',
 		'--palette-arcane-600': '#5c3d8a',
-		'--palette-lapis-700': '#1f4a7a',
-		'--palette-lapis-300': '#86b4ea',
-		'--palette-blood-300': '#ec8b79',
 		'--palette-plum-700': '#563463',
 		'--palette-ochre-800': '#6b4a10',
 		'--palette-grass-700': '#2e6b34',
@@ -55,14 +53,9 @@ export const grimoire: Theme = {
 		'--accent': 'var(--palette-blood-700)',
 		'--on-accent': 'var(--palette-parchment-100)',
 		'--focus': 'var(--palette-gold-400)',
-		'--good': 'var(--palette-lapis-700)',
-		'--on-good': 'var(--palette-parchment-100)',
-		'--evil': 'var(--palette-blood-700)',
-		'--on-evil': 'var(--palette-parchment-100)',
-		// Team colours as text on the page (headings, labels, errors): the fills above are too
-		// dark to read on the leather (about 2:1), so text takes a lighter blue and red.
-		'--good-text': 'var(--palette-lapis-300)',
-		'--evil-text': 'var(--palette-blood-300)',
+		// The team colours are the same in every theme (team-colors.ts).
+		...TEAM_COLORS,
+		...TEAM_TEXT.dark,
 		'--traveller': 'var(--palette-plum-700)',
 		'--on-traveller': 'var(--palette-parchment-100)',
 		// Traveller headings and labels: purple, as split blue and red reads badly on text

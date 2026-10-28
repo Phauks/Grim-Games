@@ -482,8 +482,8 @@ test('Traveller reminders are split blue and red', async ({ page }) => {
 		.getByTestId('reminder-token')
 		.first();
 	const background = await chip.evaluate((e) => getComputedStyle(e).backgroundImage);
-	expect(background).toContain(rgb(await token('--palette-lapis-700')));
-	expect(background).toContain(rgb(await token('--palette-blood-700')));
+	expect(background).toContain(rgb(await token('--good')));
+	expect(background).toContain(rgb(await token('--evil')));
 	await chip.screenshot({ path: 'test-results/traveller-reminder.png' });
 });
 

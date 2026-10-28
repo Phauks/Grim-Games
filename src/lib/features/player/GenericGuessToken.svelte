@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fitWords } from '#lib/ui/fit-words.ts';
 	import TokenFace from '#lib/ui/token/TokenFace.svelte';
 	import type { GenericGuess } from './grim-guesses.ts';
 
@@ -18,7 +19,9 @@
 
 <span class="generic" data-team={guess.team} style:--token-size="{size}px">
 	<TokenFace {label} leaves={{ firstNight: false, otherNight: false, reminders: 0 }} {size} />
-	<span class="word" aria-hidden="true">{label}</span>
+	<span class="room"
+		><span class="word" aria-hidden="true" {@attach fitWords(label)}>{label}</span></span
+	>
 </span>
 
 <style>
@@ -32,19 +35,23 @@
 	.generic > :global(*) {
 		grid-area: 1 / 1;
 	}
-	/* The word fits the token: about a fifth of its width per line. */
-	.word {
+	/* The word fits the token whole, shrunk as a long one needs (fitWords: "Outsider" was cut
+	   to "Outsi…", 2026-10-28). Safe centring lets an overlong word run off to the right only,
+	   so it is measured against the whole room. */
+	.room {
 		position: relative;
 		z-index: 1;
-		max-width: 80%;
+		display: flex;
+		justify-content: safe center;
+		width: 84%;
+	}
+	.word {
 		padding: 0 0.3em;
 		border-radius: var(--radius-full);
 		font-family: var(--font-control);
-		font-size: calc(var(--token-size) * 0.16);
+		font-size: calc(var(--token-size) * 0.16 * var(--fit, 1));
 		font-weight: 700;
 		line-height: 1.3;
-		overflow: hidden;
-		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.generic[data-team='good'] .word {
