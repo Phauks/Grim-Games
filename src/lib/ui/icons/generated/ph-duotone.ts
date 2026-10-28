@@ -41,6 +41,7 @@ import ph_caret_left_duotone from '~icons/ph/caret-left-duotone';
 import ph_caret_right_duotone from '~icons/ph/caret-right-duotone';
 import ph_caret_up_duotone from '~icons/ph/caret-up-duotone';
 import ph_cat_duotone from '~icons/ph/cat-duotone';
+import ph_certificate_duotone from '~icons/ph/certificate-duotone';
 import ph_chat_centered_text_duotone from '~icons/ph/chat-centered-text-duotone';
 import ph_chat_text_duotone from '~icons/ph/chat-text-duotone';
 import ph_check_duotone from '~icons/ph/check-duotone';
@@ -263,6 +264,7 @@ const icons: IconMap = {
 	'ph:caret-right-duotone': ph_caret_right_duotone,
 	'ph:caret-up-duotone': ph_caret_up_duotone,
 	'ph:cat-duotone': ph_cat_duotone,
+	'ph:certificate-duotone': ph_certificate_duotone,
 	'ph:chat-centered-text-duotone': ph_chat_centered_text_duotone,
 	'ph:chat-text-duotone': ph_chat_text_duotone,
 	'ph:check-duotone': ph_check_duotone,

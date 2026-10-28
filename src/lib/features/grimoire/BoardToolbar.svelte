@@ -3,8 +3,7 @@
 	import { inboxDialog } from '#lib/features/room/inbox-dialog.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
-	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
-	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
+	import GameLead from '#lib/features/shell/GameLead.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Snippet } from 'svelte';
@@ -80,12 +79,8 @@
 		<span class="title">Add a seat</span>
 		<Button variant="quiet" icon="close" onclick={onCancelPlacing}>Cancel</Button>
 	{:else}
-		<!-- The app's navigation; on the narrowest phones it is in More instead. A spectator's
-		     page has the app's sidebar (Trevor, 2026-10-25), whose own hamburger heads it. -->
-		{#if !(navDrawer.sidebarMounted && !navDrawer.pageButton)}<span class="nav-menu" class:watching
-				><NavMenuButton /></span
-			>{/if}
-		{@render lead?.()}
+		<!-- ☰ and the cover, in the same spot as on the day's sheet (GameLead). -->
+		<GameLead {watching}>{@render lead?.()}</GameLead>
 		<!-- Icons on phones; with their words on wider screens, where there is room. A
 		     spectator's board says what it is in that room (Trevor, 2026-10-19). -->
 		<span class="spacer"
@@ -160,7 +155,7 @@
 	   top and sides as the board's margin, and between buttons, narrowing only on the
 	   smallest phones so six buttons still fit at 320px. No dividing line: the dashed
 	   outline shows the board's edge while arranging. */
-		gap: min(var(--space-2), 1.5vw);
+		gap: var(--menu-gap);
 		padding: var(--menu-inset) var(--menu-inset) 0;
 	}
 	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
@@ -192,12 +187,6 @@
 		color: var(--evil-text);
 		font-family: var(--font-heading);
 		font-weight: 700;
-	}
-	@media (max-width: 359.98px) {
-		/* Without More, a viewer's navigation stays on the toolbar; the others find it in More. */
-		.nav-menu:not(.watching) {
-			display: none;
-		}
 	}
 	.messages {
 		display: contents;

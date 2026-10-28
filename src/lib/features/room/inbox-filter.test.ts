@@ -23,8 +23,9 @@ describe('Messages filters', () => {
 	});
 
 	it('split unread from read, a picture waiting for a verdict counting as unread', () => {
-		expect(ids({ read: 'unread' })).toEqual(['m1', 'h1']);
-		expect(ids({ read: 'read' })).toEqual(['m2']);
+		expect(ids({ read: false })).toEqual(['m1', 'h1']);
+		expect(ids({ unread: false })).toEqual(['m2']);
+		expect(ids({ unread: false, read: false })).toEqual([]);
 	});
 
 	it('keep only requests for a consult', () => {

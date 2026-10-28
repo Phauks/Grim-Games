@@ -36,6 +36,7 @@ test('the menu ends with App, the build line and the CCC logo; there is no foote
 	const menu = await theMenu(page);
 	await expect(menu.getByRole('list', { name: 'App', exact: true }).getByRole('link')).toHaveText([
 		'About',
+		'Credits',
 		'Support',
 		'Changelog',
 		'Roadmap',
@@ -123,7 +124,7 @@ test('the menu links the privacy policy page', async ({ page }) => {
 });
 
 // Trevor (2026-10-20): every notice that the app is not official links the official site.
-test("the 'not official' notice links the official site, in About and the privacy policy", async ({
+test("the 'not official' notice links the official site, in Credits and the privacy policy", async ({
 	page
 }) => {
 	const official = 'https://bloodontheclocktower.com';
@@ -132,7 +133,7 @@ test("the 'not official' notice links the official site, in About and the privac
 		page.getByRole('main').getByRole('link', { name: 'Blood on the Clocktower', exact: true })
 	).toHaveAttribute('href', official);
 
-	await page.goto('/about');
+	await page.goto('/credits');
 	const notice = page.getByRole('main').locator('.official-notice');
 	await expect(notice).toContainText('Not affiliated with The Pandemonium Institute.');
 	await expect(
