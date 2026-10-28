@@ -60,6 +60,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A pill button or on/off chip: `ui/primitives/Chip.svelte` (`pressed`, `marked`) (enforced by review)
 - A number with − and +: `ui/primitives/Stepper.svelte` (`typeable` lets the number be typed; `oncommit` on Enter) (enforced by review)
 - An icon-only link to an outside page (the wiki): `ui/primitives/IconButton.svelte` with `href` (new tab, `rel="noopener"`), so it looks and hovers like the X (enforced by `e2e/badges.e2e.ts`)
+- A fair-play warning (don't screenshot, share or misuse what's shown; a spectator's promise): `features/show/FairPlayNotice.svelte` with `kind` (`secret`: a player's own character; `message`: Message the Storyteller; `watch`: Grim view's promise); every such warning's wording lives there (enforced by review)
 - The notice that the app is not official: `features/about/OfficialNotice.svelte` (links bloodontheclocktower.com; About, privacy policy) (enforced by review)
 - A bar pinned to the screen's bottom edge: the `pinned-bottom` class (base.css keeps its room below the page), as `features/setup/SetupNav.svelte` does (enforced by `e2e/setup.e2e.ts`)
 - A random pick button: `ui/primitives/IconButton.svelte` with `icon="random"` and `Math.random` (setup, Demon bluffs) (enforced by review)
@@ -103,15 +104,17 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - The time left on the room's script vote: `features/room/VoteTimeLeft.svelte` (Storyteller's vote sheet and each phone's ballot) (enforced by review)
 - A script's details: `features/scripts/ScriptView.svelte` (enforced by review)
 - A script's logo: `features/scripts/ScriptLogo.svelte` with `scriptLogo` (`core/data/script-logo.ts`) (enforced by review)
+- A script's logo faint in the middle of a board, or its name when it has no logo: `features/scripts/BoardLogo.svelte`, on the Storyteller's board, every player's grim and the Board settings preview (enforced by review)
 - Reading and writing localStorage: `ui/stored.ts` (`readStored`, `writeStored`, `readParsed`, `readStoredText`, `writeStoredText`) (enforced by `no-restricted-globals` (localStorage))
 - Copying text, with its toast: `ui/clipboard.ts` (`copyText`) (enforced by review)
+- Every request to a server: `ui/fetch.ts` (`fetchJson`, `fetchWithTimeout`), which gives up after a timeout (10 s, or `SLOW_FETCH_TIMEOUT_MS` for uploads and large files) (enforced by `no-restricted-syntax` (fetch))
 - Every Share button (code, QR, link, Copy, refresh, Share, send a file): `ui/share/SharePanel.svelte`; a script's Share is `features/scripts/ShareControl.svelte`, which shows the room's link and join code when the device is in a room, and its link comes from `scriptShareable` (`features/scripts/share-codes.ts`) (enforced by `grim/share-panel` (`SHARE_TODO`), `e2e/share.e2e.ts`)
 - A copy icon that shows a check for a moment (the share screen's code and link, Grim view's password): `ui/share/CopyButton.svelte` over `copyText` (`ui/clipboard.ts`) (enforced by review)
 - A script's tabs (Characters, Night order, Grim, Notes, Room): `features/player/PlayerScriptTabs.svelte`, with `PlayerGrim` and `PlayerNotes`: /play and the board's Script sheet show the same screens, and a Public Town display (/town) shows `PlayerGrim` with `display` (enforced by review)
 - The script's title-line buttons (sheet background, Print, Share, the player's settings cog): `features/player/PlayerScriptActions.svelte`, with `features/room/YouButton.svelte` as an `IconButton`: /play's title line and the board's Script sheet header, so the Storyteller sees the players' exact buttons (Trevor, 2026-10-26) (enforced by `e2e/play.e2e.ts`, `e2e/game-modes.e2e.ts`)
 - A player's avatar (their initials) on a token face: `ui/seating/AvatarFace.svelte`; ids and `initialsOf` in `core/avatars` (enforced by review)
 - A setting in Settings (or where it is used): a row, a switch, a colour, a heading over a run, a closing group: `ui/settings/` `SettingRow` (and `SettingToggle`, `SettingSelect`, `SettingSlider`, `SettingChoice`, `SettingColor`), `SettingHeading`, `SettingCollapsible`, `SettingGroup` (with a preview); each carries `data-setting`, and `ui/base.css` draws the line between any two (enforced by `e2e/settings-framework.e2e.ts`)
-- Text size and Pinch to zoom outside Settings (the player screen's settings cog): `features/settings/sections/TextSizeRows.svelte` (Settings > Text uses it too) (enforced by `e2e/play.e2e.ts`)
+- Text size outside Settings (the player screen's settings cog): `features/settings/sections/TextSizeRows.svelte` (Settings > Text uses it too) (enforced by `e2e/play.e2e.ts`)
 - A token size or switch (character, reminder, names and reminders in text) as a setting row: `features/characters/TokenAppearanceRow.svelte` (keys in `token-appearance-rows.ts`), and the player name size: `features/grimoire/NameSizeSlider.svelte`; Settings > Tokens draws them, never their own slider. Players reach them there too: the player screen's and Public Town's cogs open the one Settings at its list of sections (Trevor, 2026-10-27: one Settings everywhere)
 - Reading a QR code with the camera: `ui/share/QrScanner.svelte` (`ui/share/qr-reader.ts`: BarcodeDetector, else jsQR) (enforced by review)
 - Text too long for one QR code (an animated code): `core/codes/qr-frames.ts` (`qrFrames`, `QrFrameCollector`); shown by `frames` on `ui/share/SharePanel`, read through `ui/share/QrScanner.svelte` (`progress`) (enforced by `e2e/offline-share.e2e.ts`)
@@ -168,6 +171,8 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Hidden character it may really be (`modes/draft.ts`, the Atheist's Drunk; new): `orHiddenAs`, new
 - Gained not-in-play ability (`modes/draft.ts`, the Alchemist's Minion; new): `gainsAbilityOf`, new
 - Players turned into another type (`modes/draft-seats.ts`: Kazali, Lord of Typhon, Lil' Monsta): `turnsPlayersInto`, new
+- Evil info step notes (`night-order.ts` `markerNotes`: Poppy Grower, Magician, Lunatic, Toymaker, Summoner, Snitch) and who may hide the Demon from Minions (Savant): `evilInfo`, moved
+- Savant statements (`savant-facts.ts`, `savant-templates.ts`, `savant-log-templates.ts`): reminders marking whom it chose (was `MINION_CHOICES`, `TOWNSFOLK_CHOICES`) `marksChoice`; number or once-per-game info (was `NUMBER_INFO`, `ONCE_INFO`) `infoKind`; the Witch's curse `curses`; the Lunatic's `choosesLikeDemon` and `believesOtherCharacter`; the Snake Charmer's `choosesUnmarked`; all moved (`choice-rules.ts`)
 
 ## Lists that only shrink
 

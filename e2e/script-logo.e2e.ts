@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { toBoard } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 
 // Script logos (Trevor, 2026-10-18): TPI's edition logo for the base three, the author's
 // `_meta.logo` link for other scripts, faint behind the board and beside the name in Search.
@@ -121,4 +121,61 @@ test("Resume game shows each game's script logo beside its name", async ({ page 
 	const box = (await logo.boundingBox())!;
 	const name = (await row.getByText('Trouble Brewing').boundingBox())!;
 	expect(name.x).toBeGreaterThan(box.x + box.width);
+});
+
+test("without a logo, the board shows the script's name in its place", async ({ page }) => {
+	// Trevor (2026-10-27): "If there is no script logo, I want to default writing the name of
+	// the script in the background with appropriate font".
+	const name = 'The Exceptionally Long Night Of The Whispering Lanterns';
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
+	await dialog
+		.getByLabel('Script JSON')
+		.fill(JSON.stringify([{ id: '_meta', name }, 'chef', 'saint', 'imp']));
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText(name);
+	await page.goto('/new');
+	await pickScript(page, name);
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+
+	const shown = page.locator('.board [data-testid="board-name"]');
+	await expect(page.locator('.board [data-testid="script-logo"]')).toHaveCount(0);
+	await expect(shown).toHaveText(name);
+	await expect(shown).toHaveCSS('opacity', '0.3');
+	await expect(shown).toHaveCSS('pointer-events', 'none');
+	// Centred where the logo goes, every word whole and inside its box.
+	const board = (await page.locator('.board').boundingBox())!;
+	const box = (await shown.boundingBox())!;
+	expect(Math.abs(box.x + box.width / 2 - (board.x + board.width / 2))).toBeLessThan(2);
+	expect(Math.abs(box.y + box.height / 2 - (board.y + board.height / 2))).toBeLessThan(2);
+	const text = shown.locator('.text');
+	await expect
+		.poll(() =>
+			text.evaluate(
+				(el: HTMLElement) =>
+					el.scrollWidth <= el.parentElement!.clientWidth &&
+					el.offsetHeight <= el.parentElement!.clientHeight
+			)
+		)
+		.toBe(true);
+	// In the headings font, as a page's own title is.
+	const headings = await page.evaluate(() => {
+		const heading = document.body.appendChild(document.createElement('h2'));
+		const font = getComputedStyle(heading).fontFamily;
+		heading.remove();
+		return font;
+	});
+	expect(await text.evaluate((el) => getComputedStyle(el).fontFamily)).toBe(headings);
+
+	// The players' grim shows it the same way.
+	await page.getByTestId('cover-button').tap();
+	await page
+		.getByRole('dialog', { name: 'Screen covered' })
+		.getByRole('button', { name: 'Player view' })
+		.tap();
+	const view = page.getByTestId('cover-player-view');
+	await view.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(view.getByTestId('board-name')).toHaveText(name);
 });

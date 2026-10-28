@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { GLOSSARY, glossaryEntryUrl, GLOSSARY_URL } from '#lib/core/rules/glossary.ts';
 	import ContentsLayout, { type ContentsItem } from '#lib/ui/layout/ContentsLayout.svelte';
@@ -37,8 +38,8 @@
 		).sort((a, b) => a.label.localeCompare(b.label))
 	);
 	const items = $derived.by(() => {
-		const query = search.trim().toLowerCase();
-		return query ? all.filter((item) => item.label.toLowerCase().includes(query)) : all;
+		const query = foldForSearch(search.trim());
+		return query ? all.filter((item) => foldForSearch(item.label).includes(query)) : all;
 	});
 	const key = $derived(glossaryDialog.key);
 	const entry = $derived(key ? wikiGlossary.entries.get(key) : undefined);

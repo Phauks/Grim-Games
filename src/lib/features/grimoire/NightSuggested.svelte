@@ -25,9 +25,11 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import NightWhy from './NightWhy.svelte';
 	import { seatName } from './night-steps.ts';
 
 	/**
@@ -137,16 +139,6 @@
 	 */
 	const hasWhy = (why: Why | undefined): why is Why =>
 		!!why && (why.facts.length > 0 || why.alternatives.length > 0);
-	const TYPE: Record<string, string> = {
-		townsfolk: 'Townsfolk',
-		outsider: 'Outsider',
-		minion: 'Minion',
-		demon: 'Demon',
-		traveller: 'Traveller',
-		fabled: 'Fabled',
-		loric: 'Loric'
-	};
-	const ALIGNMENT: Record<string, string> = { good: 'Good', evil: 'Evil' };
 
 	/**
 	 * The roles a "learn a role" step could show (Trevor, 2026-10-25: the Investigator's
@@ -157,12 +149,26 @@
 		info?.kind === 'picker'
 			? info.pickers.flatMap((picker) => {
 					const roles = learnedRoles(game, picker, characters);
-					return roles && (roles.rows.length > 0 || roles.none || roles.anyOther)
-						? [{ picker, roles }]
-						: [];
+					if (!roles || !(roles.rows.length > 0 || roles.none || roles.anyOther)) return [];
+					const extras = (roles.none ? 1 : 0) + (roles.anyOther ? 1 : 0);
+					return [{ picker, roles, ...fold(roles.rows, extras) }];
 				})
 			: []
 	);
+	/**
+	 * Once the board's reminders mark a row, the other valid rows fold under a caret, one tap
+	 * away (Trevor, 2026-10-27: "When other valid info exists, but one has been marked, allow
+	 * carrot menu collapsing the other valid info"). `others` counts them, with "None" and "Any
+	 * other"; nothing marked leaves every row in the list.
+	 */
+	function fold<R extends { marked?: true }>(rows: readonly R[], extras: number) {
+		const marked = rows.filter((r) => r.marked);
+		const rest = marked.length > 0 ? rows.filter((r) => !r.marked) : [...rows];
+		return { marked, rest, others: marked.length > 0 ? rest.length + extras : 0 };
+	}
+	/** A marked choice that isn't valid keeps the valid ones open beneath it. */
+	const markedValid = (rows: readonly { reason: string }[]) =>
+		rows.some((r) => r.reason !== 'invalid');
 	const rowKey = (p: InfoPicker, row: LearnedRole) =>
 		JSON.stringify([p.seatId, row.target, row.reason, row.marked ?? false]);
 	/** The character picked for a row that offers several (a Recluse shown as a Minion). */
@@ -194,9 +200,8 @@
 		info?.kind === 'picker'
 			? info.pickers.flatMap((picker) => {
 					const players = chosenPlayers(game, picker);
-					return players && (players.rows.length > 0 || players.anyOther)
-						? [{ picker, players }]
-						: [];
+					if (!players || !(players.rows.length > 0 || players.anyOther)) return [];
+					return [{ picker, players, ...fold(players.rows, players.anyOther ? 1 : 0) }];
 				})
 			: []
 	);
@@ -310,7 +315,7 @@
 				{#each listed as o, i (i)}{@render answerRow(a, o, i)}{/each}
 			</ul>
 			{@render flagLines(flags(a, true))}
-			{#if hasWhy(a.why)}{@render whyBlock(a.why)}{/if}
+			{#if hasWhy(a.why)}<NightWhy {grimoire} why={a.why} />{/if}
 		{:else}
 			{@render answerOnly(a)}
 		{/if}
@@ -385,7 +390,7 @@
 		{#if a.because.length > 0}<span class="because">({@render players(a.because)})</span>{/if}
 	</span>
 	{@render flagLines(flags(a))}
-	{#if hasWhy(a.why)}{@render whyBlock(a.why)}{/if}
+	{#if hasWhy(a.why)}<NightWhy {grimoire} why={a.why} />{/if}
 	{#if a.kind === 'character' && onShow}
 		{@const id = a.value}
 		<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
@@ -462,64 +467,62 @@
 							{/each}
 						</ul>
 						{@render flagLines(flags(p))}
-						{#if hasWhy(p.why)}{@render whyBlock(p.why)}{/if}
+						{#if hasWhy(p.why)}<NightWhy {grimoire} why={p.why} />{/if}
 					</li>
 				{/each}
-				{#each rolePickers as { picker: p, roles } (p.seatId)}
+				{#each rolePickers as { picker: p, roles, marked, rest, others } (p.seatId)}
 					<li data-unreliable={p.unreliable ? '' : undefined}>
 						{#if rolePickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span>{/if}
-						<ul class="valid" aria-label="Valid information" data-testid="learned-roles">
-							{#each roles.rows as row (rowKey(p, row))}
-								{@render roleRow(p, row)}
-							{/each}
-							{#if roles.none}
-								<li data-reason={roles.none}>
-									<span class="main option"><strong>None</strong></span>
-									{@render reasonTag(roles.none)}
-									{#if onShowNumber}
-										<Button variant="quiet" onclick={() => onShowNumber(0)}>Show to player</Button>
-									{/if}
-								</li>
+						<div class="options" data-testid="learned-roles">
+							<ul class="valid" aria-label="Valid information">
+								{#each marked.length > 0 ? marked : rest as row (rowKey(p, row))}
+									{@render roleRow(p, row)}
+								{/each}
+								{#if marked.length === 0}{@render roleExtras(roles)}{/if}
+							</ul>
+							{#if marked.length > 0 && others > 0}
+								<Collapsible
+									title="Other valid information"
+									level={4}
+									defaultOpen={!markedValid(marked)}
+									count={others}
+								>
+									<ul class="valid" aria-label="Other valid information">
+										{#each rest as row (rowKey(p, row))}{@render roleRow(p, row)}{/each}
+										{@render roleExtras(roles)}
+									</ul>
+								</Collapsible>
 							{/if}
-							{#if roles.anyOther}
-								<li data-reason={roles.anyOther}>
-									<span class="main option"><strong>Any other</strong></span>
-									{@render reasonTag(roles.anyOther)}
-								</li>
-							{/if}
-						</ul>
+						</div>
 						<!-- Who may register otherwise is in the rows; only why any info is allowed here. -->
 						{@render flagLines(flags(p).filter((f) => !f.seats))}
 					</li>
 				{/each}
-				{#each playerPickers as { picker: p, players: choices } (p.seatId)}
+				{#each playerPickers as { picker: p, players: choices, marked, rest, others } (p.seatId)}
 					<li data-unreliable={p.unreliable ? '' : undefined}>
 						{#if playerPickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span
 							>{/if}
-						<ul class="valid" aria-label="Valid information" data-testid="chosen-players">
-							{#each choices.rows as row (playerRowKey(p, row))}
-								<li data-reason={row.reason} data-marked={row.marked ? '' : undefined}>
-									<span class="main option">
-										{#if row.exact}{@render players([
-												row.target,
-												...row.seats
-											])}{:else}{@render player(row.target)}{#if row.seats.length > 0}<span
-													class="with">and two of</span
-												>
-												{@render players(row.seats)}{/if}{/if}
-									</span>
-									{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span
-										>{/if}
-									{@render reasonTag(row.reason, row.registered)}
-								</li>
-							{/each}
-							{#if choices.anyOther}
-								<li data-reason={choices.anyOther}>
-									<span class="main option"><strong>Any other</strong></span>
-									{@render reasonTag(choices.anyOther)}
-								</li>
+						<div class="options" data-testid="chosen-players">
+							<ul class="valid" aria-label="Valid information">
+								{#each marked.length > 0 ? marked : rest as row (playerRowKey(p, row))}
+									{@render playerRow(row)}
+								{/each}
+								{#if marked.length === 0}{@render playerExtras(choices)}{/if}
+							</ul>
+							{#if marked.length > 0 && others > 0}
+								<Collapsible
+									title="Other valid information"
+									level={4}
+									defaultOpen={!markedValid(marked)}
+									count={others}
+								>
+									<ul class="valid" aria-label="Other valid information">
+										{#each rest as row (playerRowKey(p, row))}{@render playerRow(row)}{/each}
+										{@render playerExtras(choices)}
+									</ul>
+								</Collapsible>
 							{/if}
-						</ul>
+						</div>
 						{@render flagLines(flags(p).filter((f) => !f.seats))}
 					</li>
 				{/each}
@@ -540,6 +543,47 @@
 		</ul>
 	</section>
 {/if}
+
+<!-- The rows after the roles: "None" (no Outsiders) and "Any other", never marked. -->
+{#snippet roleExtras(roles: LearnedRoles)}
+	{#if roles.none}
+		<li data-reason={roles.none}>
+			<span class="main option"><strong>None</strong></span>
+			{@render reasonTag(roles.none)}
+			{#if onShowNumber}
+				<Button variant="quiet" onclick={() => onShowNumber(0)}>Show to player</Button>
+			{/if}
+		</li>
+	{/if}
+	{#if roles.anyOther}
+		<li data-reason={roles.anyOther}>
+			<span class="main option"><strong>Any other</strong></span>
+			{@render reasonTag(roles.anyOther)}
+		</li>
+	{/if}
+{/snippet}
+
+{#snippet playerRow(row: ChosenPlayersRow)}
+	<li data-reason={row.reason} data-marked={row.marked ? '' : undefined}>
+		<span class="main option">
+			{#if row.exact}{@render players([row.target, ...row.seats])}{:else}{@render player(
+					row.target
+				)}{#if row.seats.length > 0}<span class="with">and two of</span>
+					{@render players(row.seats)}{/if}{/if}
+		</span>
+		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
+		{@render reasonTag(row.reason, row.registered)}
+	</li>
+{/snippet}
+
+{#snippet playerExtras(choices: ChosenPlayers)}
+	{#if choices.anyOther}
+		<li data-reason={choices.anyOther}>
+			<span class="main option"><strong>Any other</strong></span>
+			{@render reasonTag(choices.anyOther)}
+		</li>
+	{/if}
+{/snippet}
 
 {#snippet reasonTag(
 	reason: LearnedRole['reason'] | AnswerOption['reason'],
@@ -608,78 +652,12 @@
 	</li>
 {/snippet}
 
-<!-- Why, beside the information; its reliability is already in the flags above it. -->
-{#snippet whyBlock(why: Why)}
-	<div class="why-block" data-testid="why">
-		{#if why.facts.length > 0}
-			<span class="why-head">From</span>
-			<ul class="why" data-testid="why-facts">
-				<!-- By position: the Juggler's facts name a player once per guess. -->
-				{#each why.facts as f, i (i)}
-					<li>
-						{@render player(f.seatId, f.characterId)}
-						{#if f.type}<span class="fact">{TYPE[f.type] ?? f.type}</span>{/if}
-						{#if f.alignment}<span class="fact">{ALIGNMENT[f.alignment]}</span>{/if}
-						{#if f.dead}<span class="fact">Dead</span>{/if}
-						{#if f.redHerring}<span class="fact">Red herring</span>{/if}
-						{#if f.guess}<span class="fact"
-								>Guess: <CharacterBadge
-									characterId={f.guess.characterId}
-									character={characters.get(f.guess.characterId)}
-								/>
-								{f.guess.correct ? 'Right' : 'Wrong'}</span
-							>{/if}
-					</li>
-				{/each}
-			</ul>
-		{/if}
-		{#if why.alternatives.length > 0}
-			<span class="why-head">If someone registers otherwise</span>
-			<ul class="why" data-testid="why-alternatives">
-				{#each why.alternatives as alt (alt.seatId)}
-					{#each alt.as as way, n (n)}
-						<li>
-							{@render player(alt.seatId, alt.source)}
-							<span class="fact"
-								>as {[way.alignment && ALIGNMENT[way.alignment], way.type && TYPE[way.type]]
-									.filter(Boolean)
-									.join(' ')}</span
-							>
-							{#if way.value}<span aria-hidden="true">→</span>
-								<strong>{@render value(way.value)}</strong>{/if}
-						</li>
-					{/each}
-				{/each}
-			</ul>
-		{/if}
-	</div>
-{/snippet}
-
 <style>
-	.why-block {
-		display: grid;
-		gap: var(--space-1);
-		width: 100%;
-		font-size: 0.85rem;
-	}
-	.why {
-		gap: var(--space-1);
-	}
-	.why-head {
-		color: var(--on-surface-muted);
-		font-weight: 600;
-	}
 	.player {
 		display: inline-flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1);
-	}
-	.fact {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		color: var(--on-surface-muted);
 	}
 	/* The same heading as the step's Info token and Reminders (GuidedStep). */
 	h3 {
@@ -771,6 +749,11 @@
 		align-items: center;
 		gap: var(--space-1);
 		--icon-size: 1em;
+	}
+	/* The rows a step shows, the other valid ones folded beneath once one is marked. */
+	.options {
+		width: 100%;
+		--section-title-size: 0.85rem;
 	}
 	.compact {
 		display: block;

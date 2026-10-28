@@ -77,5 +77,10 @@
 	},
 	"makesDemon": {
 		"token": "Night 3"
+	},
+	"evilInfo": {
+		"notes": {
+			"demoninfo": "there is no Demon yet; the Summoner gets the bluffs."
+		}
 	}
 }

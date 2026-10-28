@@ -18,7 +18,7 @@ const VIEWPORT = 'width=device-width, initial-scale=1, viewport-fit=cover';
 let gesturesBlocked = false;
 
 /**
- * Pinch to zoom (Settings > Text, off by default). Android honours the viewport's
+ * Pinch to zoom (Settings > Board, off by default). Android honours the viewport's
  * user-scalable=no; iOS ignores it, so base.css limits touches to panning
  * (`html:not([data-zoom='on'])`) and Safari's own gesture events are cancelled here.
  */

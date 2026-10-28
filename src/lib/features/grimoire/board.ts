@@ -335,6 +335,21 @@ export function seatMisses(
 }
 
 /**
+ * The seats a reminder doesn't fit, faded on the board while it is dragged and in the "Put …
+ * on" lists (Trevor, 2026-10-16 and 2026-10-27: "only show valid picks"). Still choosable.
+ */
+export function seatMisfits(
+	game: Game,
+	reminder: Reminder,
+	characters: CharacterLookup,
+	atDawn?: Game
+): Set<SeatId> {
+	return new Set(
+		game.seating.filter((id) => seatMisses(game, reminder, id, characters, atDawn).length > 0)
+	);
+}
+
+/**
  * What the board says when a reminder goes on a seat that doesn't fit it (Trevor,
  * 2026-10-16): the reasons, then the token's own one-line summary. Undefined when it fits or
  * has no curated rule (homebrew). Warns only; the reminder is still placed.

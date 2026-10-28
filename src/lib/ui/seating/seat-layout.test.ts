@@ -10,6 +10,7 @@ import {
 	seatPoints,
 	seatTokenSize,
 	withGap,
+	swapPlaces,
 	withoutPlaced,
 	withPlaced,
 	towardsMiddle,
@@ -354,5 +355,16 @@ describe('the Storyteller board shape (Trevor, 2026-10-27)', () => {
 		expect(sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, true, prefs)).toEqual(
 			sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, false, prefs)
 		);
+	});
+});
+
+describe('swapPlaces', () => {
+	it('gives each of two swapped players the other one’s spot and gap', () => {
+		const layout = { shape: 'oval' as const, gaps: { a: 2 }, placed: { b: { x: 10, y: 20 } } };
+		expect(swapPlaces(layout, 'a', 'b')).toEqual({
+			shape: 'oval',
+			gaps: { b: 2 },
+			placed: { a: { x: 10, y: 20 } }
+		});
 	});
 });

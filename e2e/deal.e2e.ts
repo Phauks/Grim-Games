@@ -70,8 +70,12 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	const card = phone.getByRole('dialog', { name: 'Your character' });
 	const hold = card.getByTestId('role-hold');
 	await expect(card.getByTestId('role-name')).toBeEmpty();
+	// The fair-play notice shows before and while it is held (Trevor, 2026-10-27).
+	const fairPlay = card.getByTestId('fair-play');
+	await expect(fairPlay).toContainText('This is for your eyes only');
 	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
 	await expect(card.getByTestId('role-name')).toHaveText(/Washerwoman|Empath|Monk|Poisoner|Imp/);
+	await expect(fairPlay).toBeVisible();
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(card.getByTestId('role-name')).toBeEmpty();
 

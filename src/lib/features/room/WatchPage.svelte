@@ -7,6 +7,7 @@
 	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import { RoomViewer, viewerKeyFrom } from './viewer.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
 
@@ -87,12 +88,7 @@
 	onConfirm={watch}
 	onCancel={() => void goto(resolve('/'))}
 >
-	<p class="pledge-lead">{t('room.watch.pledgeLead')}</p>
-	<ul class="pledge" data-testid="watch-pledge">
-		<li>{t('room.watch.pledgeCheat')}</li>
-		<li>{t('room.watch.pledgeShare')}</li>
-		<li>{t('room.watch.pledgeIntegrity')}</li>
-	</ul>
+	<FairPlayNotice kind="watch" />
 </ConfirmDialog>
 
 <style>
@@ -107,12 +103,5 @@
 	.message h1,
 	.message p {
 		margin: 0;
-	}
-	.pledge-lead {
-		margin: 0;
-	}
-	.pledge {
-		margin: var(--space-2) 0 0;
-		padding-left: 1.25em;
 	}
 </style>

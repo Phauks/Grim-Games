@@ -58,6 +58,16 @@
 	<RulesLooksRows />
 </SettingGroup>
 
+<!-- Pinch to zoom: a touch gesture, not text (Trevor, 2026-10-27: moved from Text). It zooms
+     every screen, but the board is where two hands rest on the screen. Outside the preview,
+     which it doesn't change; per device, never in a profile. -->
+<SettingToggle
+	label={t('settings.allowZoom')}
+	description={t('settings.allowZoomHelp')}
+	checked={preferences.current.allowZoom}
+	onChange={(allowZoom) => preferences.update({ allowZoom })}
+/>
+
 <!-- Where reminders sit, apart and closed, marked with a warning before it is touched, since
      leaving them where dropped turns a lot off (Trevor, 2026-10-23). Its Confirm still lists
      what changes (Trevor, 2026-10-17). The board's ⋯ > Board opens this section too. -->
