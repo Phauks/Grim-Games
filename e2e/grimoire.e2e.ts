@@ -4157,12 +4157,20 @@ test('the Librarian step puts the Outsider its reminder marks first, emphasised'
 
 	const step = await openStep(page, 'Librarian');
 	const rows = step.getByTestId('learned-roles').getByRole('listitem');
-	await expect(rows).toHaveCount(2);
+	// Trevor (2026-10-27): with one marked, the other valid info folds under a caret.
+	await expect(rows).toHaveCount(1);
 	await expect(rows.first()).toHaveAttribute('data-marked', '');
 	await expect(rows.first()).toContainText('Recluse');
 	await expect(rows.first()).toContainText('Marked');
+	const others = step.getByRole('button', { name: 'Other valid information' });
+	await expect(others).toHaveAttribute('aria-expanded', 'false');
+	await expect(others.getByTestId('section-count')).toHaveText('1');
+	await others.tap();
+	await expect(rows).toHaveCount(2);
 	await expect(rows.nth(1)).toContainText('Butler');
 	await expect(rows.nth(1)).not.toHaveAttribute('data-marked');
+	await others.tap();
+	await expect(rows).toHaveCount(1);
 });
 
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({
