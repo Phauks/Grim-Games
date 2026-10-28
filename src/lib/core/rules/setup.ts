@@ -210,7 +210,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		if (isDealt(character.type) && isReplacedAfterDraw(character)) extraFor.push(character);
 	}
 	for (const character of extraFor) {
-		if (character.id !== 'drunk' && character.type !== 'outsider') {
+		if (character.type !== 'outsider') {
 			applyOp({ kind: 'delta', type: 'outsider', values: [0, 1] });
 		}
 	}
@@ -270,7 +270,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 							.filter((c, i) => extraFor.findIndex((o) => o.id === c.id) === i)
 							.map(
 								(c) =>
-									`${c.name}: +1 ${c.id === 'drunk' || c.type === 'outsider' ? 'Townsfolk' : 'good character'} in the bag`
+									`${c.name}: +1 ${c.type === 'outsider' ? 'Townsfolk' : 'good character'} in the bag`
 							)
 					: [])
 			]

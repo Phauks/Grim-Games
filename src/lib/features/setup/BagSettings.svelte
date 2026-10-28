@@ -3,11 +3,12 @@
 	import { tileFaceOptions } from '#lib/features/setup/tile-face.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
+	import BagDrawRows from '#lib/features/game-settings/BagDrawRows.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { SetupGamePort } from './game-port.ts';
 	import ScriptCharactersRow from './ScriptCharactersRow.svelte';
 
@@ -35,31 +36,9 @@
 			defaultValue="numbers"
 			onChange={(tileFace) => preferences.update({ tileFace })}
 		/>
-		<SettingToggle
-			label={t('settings.tileOrderRandom')}
-			description={t('settings.tileOrderRandomHelp')}
-			checked={preferences.current.tileOrderRandom}
-			disabled={preferences.current.tileFace === 'random' ||
-				preferences.current.tileFace === 'none'}
-			onChange={(tileOrderRandom) => preferences.update({ tileOrderRandom })}
-		/>
-		<SettingToggle
-			label={t('settings.requireName')}
-			description={t('settings.requireNameHelp')}
-			checked={preferences.current.requireName}
-			onChange={(requireName) => preferences.update({ requireName })}
-		/>
-		<SettingToggle
-			label={t('settings.holdToReveal')}
-			description={t('settings.holdToRevealHelp')}
-			checked={preferences.current.holdToReveal}
-			onChange={(holdToReveal) => preferences.update({ holdToReveal })}
-		/>
-		<SettingToggle
-			label={t('settings.slotMachine')}
-			description={t('settings.slotMachineHelp')}
-			checked={preferences.current.slotMachine}
-			onChange={(slotMachine) => preferences.update({ slotMachine })}
+		<BagDrawRows
+			values={gameSettings.current}
+			onChange={(change) => gameSettings.set(gameSettings.gameId, change)}
 		/>
 		{#if port}<ScriptCharactersRow {port} />{/if}
 		<div class="all">

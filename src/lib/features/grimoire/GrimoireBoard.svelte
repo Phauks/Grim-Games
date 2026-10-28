@@ -17,6 +17,7 @@
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
@@ -241,7 +242,7 @@
 		return { made: nominates ? made : undefined, received };
 	}
 	const nominatedToday = $derived.by(() => {
-		if (!preferences.current.assistance.trackNominations) return undefined;
+		if (!gameSettings.of(game.gameId).trackNominations) return undefined;
 		const today = todaysNominations(game);
 		return {
 			made: new Set(today.map((n) => n.nominator)),

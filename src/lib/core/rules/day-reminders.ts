@@ -234,13 +234,21 @@ export function dayStateFromGame(
 	};
 }
 
+/** A character's rules block, a homebrew one's own included. */
+function ruleBlock(state: DayState, id: CharacterId) {
+	const character = state.character(id);
+	return rulesOf(id, character ? new Map([[id, character]]) : undefined);
+}
+
 /** Why a living seat's ability does not work: from `state.ability`, or its own tokens. */
 function seatImpairments(state: DayState, seat: DaySeat): Impairment[] {
 	if (seat.dead) return [];
 	if (state.ability) return state.ability(seat.seatId).impairments;
 	return seat.reminders.flatMap((r): Impairment[] => {
 		const reason = impairmentOfLabel(r.label);
-		if (!reason || (r.characterId === 'minstrel' && reason === 'drunk')) return [];
+		// A token that impairs the other players, not its carrier (the Minstrel's Everyone Is Drunk).
+		if (!reason || ruleBlock(state, r.characterId)?.impairs?.tokens?.[r.label]?.on === 'others')
+			return [];
 		return [
 			{
 				reason,
@@ -277,10 +285,13 @@ function impairedLine(
 		if (seen.has(key)) continue;
 		seen.add(key);
 		const first = seen.size === 1;
-		// The Drunk's own drunkenness: "[Slayer · Ana] is really the [Drunk]".
-		if (i.source.characterId === 'drunk' && (i.source.seatId ?? seat.seatId) === seat.seatId) {
+		// Impaired by their own hidden character (its `impairs.self`), as the Drunk is:
+		// "[Slayer · Ana] is really the [Drunk]".
+		const source = i.source.characterId;
+		const hidden = source !== characterId && ruleBlock(state, source)?.impairs?.self !== undefined;
+		if (hidden && (i.source.seatId ?? seat.seatId) === seat.seatId) {
 			segments.push({ kind: 'text', text: first ? 'is really the' : 'and really the' });
-			segments.push({ kind: 'character', ref: refFor(seat, 'drunk') });
+			segments.push({ kind: 'character', ref: refFor(seat, source) });
 			continue;
 		}
 		segments.push({ kind: 'text', text: IMPAIRED_TEXT[i.reason][first ? 0 : 1] });

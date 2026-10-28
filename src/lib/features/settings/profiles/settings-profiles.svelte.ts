@@ -27,6 +27,7 @@ import { stepFocus } from '#lib/features/grimoire/step-focus.svelte.ts';
 import { linkedTo, markLinked } from '#lib/features/library/library-sync.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
+import type { Preferences } from '#lib/ui/preferences.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import {
 	backgroundRef,
@@ -343,6 +344,12 @@ class SettingsProfiles {
 	/** New game's choice for the game it is about to start. */
 	chooseForNextGame(id: string): void {
 		this.#nextGame = id;
+	}
+
+	/** The Storyteller settings the game about to start begins with: New game's profile's. */
+	nextGamePreferences(): Preferences {
+		const chosen = this.#nextGame ? this.get(this.#nextGame) : undefined;
+		return chosen ? { ...preferences.current, ...chosen.values.preferences } : preferences.current;
 	}
 
 	/**

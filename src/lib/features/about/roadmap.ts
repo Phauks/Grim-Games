@@ -181,6 +181,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S18', 'S21']
 	},
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
+	{
+		title:
+			'Game settings: nomination tracking, the day timer on phones and the bag draw chosen for each game',
+		parts: ['S26']
+	},
 	{ title: 'Search Settings for any setting by name', parts: ['S24'] },
 	{
 		title:
