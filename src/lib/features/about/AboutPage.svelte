@@ -23,7 +23,10 @@
 		failed: 'shell.updateCheckFailed',
 		unsupported: 'shell.updateUnsupported'
 	} as const;
-	const result = $derived(RESULT[updateCheck.result]);
+	// A waiting build that is no update (update-check.svelte.ts `offered`) reads as up to date.
+	const result = $derived(
+		RESULT[updateCheck.result === 'ready' && !updateCheck.offered ? 'current' : updateCheck.result]
+	);
 
 	// What the waiting build changed, here as on the update card, so About need not be left to
 	// see it (Trevor, 2026-10-19). In a dialog, so the version line never grows.
@@ -84,7 +87,7 @@
 			<span class="result" role="status" data-testid="update-check-result">{status}</span>
 			<!-- Once a build is ready, Update moves onto it here too (Trevor, 2026-10-19). It takes the
 		     end of the same line, as tall as the check button, so only the status text gets shorter. -->
-			{#if updateCheck.ready}
+			{#if updateCheck.offered}
 				<IconButton
 					icon="history"
 					label={t('shell.whatChanged')}

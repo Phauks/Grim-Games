@@ -24,8 +24,8 @@ describe('changesSince', () => {
 		});
 	});
 
-	it('lists nothing when the running build is the newest', () => {
-		expect(changesSince(notes, 'c3')).toEqual({ commits: [], complete: true });
+	it('marks the build as no update when it is the running one built again', () => {
+		expect(changesSince(notes, 'c3')).toEqual({ commits: [], complete: true, notNewer: true });
 	});
 
 	it('lists everything, marked incomplete, when the running build is older than the notes', () => {
@@ -125,6 +125,23 @@ describe('parseCompare', () => {
 		expect(parseCompare({ total_commits: 300, commits: [commit('c1', 'First')] })?.complete).toBe(
 			false
 		);
+	});
+
+	// An older build deployed after a newer one: GitHub's compare (docs.github.com/rest/commits/
+	// commits#compare-two-commits) says `behind`, with no commits.
+	it('marks an older or identical build as no update', () => {
+		for (const status of ['behind', 'identical'])
+			expect(parseCompare({ status, total_commits: 0, commits: [] })).toEqual({
+				commits: [],
+				complete: true,
+				notNewer: true
+			});
+	});
+
+	it('lists a newer build as usual', () => {
+		expect(
+			parseCompare({ status: 'ahead', total_commits: 1, commits: [commit('c1', 'First')] })
+		).toEqual({ commits: [{ sha: 'c1', subject: 'First' }], complete: true });
 	});
 
 	it('rejects anything else', () => {
