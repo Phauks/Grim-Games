@@ -12,6 +12,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Knight', () => {
@@ -44,7 +46,26 @@ describe('Knight', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Knight#Examples)', () => {
-		it.todo('Example 1: Knight learns Undertaker and Fortune Teller players');
-		it.todo("Example 2: Vortox forces the Knight's info to include the Demon");
+		it('Example 1: Knight learns Undertaker and Fortune Teller players', () => {
+			// Two players who are not the Demon; a pair with the Demon is not allowed.
+			const { game: g, seats } = castGame([
+				'knight',
+				'undertaker',
+				'imp',
+				'fortuneteller',
+				'poisoner'
+			]);
+			const picker = infoPicker(g, seats[0], 'knight', characters)!;
+			expect(isTruthful(picker, { seats: [seats[1], seats[3]] })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[1], seats[2]] })).toBe(false);
+		});
+
+		it("Example 2: Vortox forces the Knight's info to include the Demon", () => {
+			// With the Vortox in play the Knight's info must be false, so it includes the Demon.
+			const { game: g, seats } = castGame(['knight', 'alchemist', 'vortox', 'chef', 'witch']);
+			const picker = infoPicker(g, seats[0], 'knight', characters)!;
+			expect(isAllowed(picker, { seats: [seats[2], seats[1]] })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[1], seats[3]] })).toBe(false);
+		});
 	});
 });

@@ -99,9 +99,7 @@
 		{#if reminders.length}
 			<p class="reminders" data-testid="character-reminders">
 				{#each reminders as reminder, i (i)}<ReminderToken
-						label={reminder.global
-							? t('reference.globalReminder', { label: reminder.label })
-							: reminder.label}
+						label={reminder.label}
 						type={character.type}
 					/>{/each}
 			</p>

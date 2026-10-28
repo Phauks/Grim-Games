@@ -221,7 +221,7 @@ async function keepPlaying(page: Page) {
 	await expect(prompt).toBeHidden();
 }
 
-test('New game and Join or resume are screens of their own', async ({ page }) => {
+test('New game and Continue game are screens of their own', async ({ page }) => {
 	// Home is blank for now (Trevor, 2026-10-16); the sidebar leads to each screen.
 	await page.goto('/new');
 	// The shared page frame: one title per page (Shared page structure).
@@ -238,10 +238,10 @@ test('New game and Join or resume are screens of their own', async ({ page }) =>
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
 
-	// Join or resume lists every saved game with where it is up to, under As Storyteller,
+	// Continue game lists every saved game with where it is up to, under As Storyteller,
 	// below the rooms joined as a player (Trevor, 2026-10-28).
 	await page.goto('/join');
-	await expect(page.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
 	await expect(page.getByRole('heading', { level: 2 })).toHaveText(['As player', 'As Storyteller']);
 	const saved = page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ });
 	await expect(saved).toBeVisible();
@@ -260,7 +260,7 @@ test('a new game offers no "Is The Drunk" before anyone has a token', async ({ p
 	await expect(picker.getByRole('group', { name: 'Drunk' })).toHaveCount(0);
 });
 
-test('Join or resume deletes every saved game at once, and leaves History alone', async ({
+test('Continue game deletes every saved game at once, and leaves History alone', async ({
 	page
 }) => {
 	// One ended game, in History.
@@ -1929,7 +1929,7 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 	await expect(page).toHaveURL(board);
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await drawer.getByRole('link', { name: 'Join or resume' }).tap();
+	await drawer.getByRole('link', { name: 'Continue game' }).tap();
 	await leave.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page).toHaveURL(/\/join$/);
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*8 seats/ }).first()).toBeVisible();
@@ -2584,14 +2584,14 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await expect(end).toContainText(/Now\s*In Join or resume\s*Becomes\s*Ended, in History/);
+	await expect(end).toContainText(/Now\s*In Continue game\s*Becomes\s*Ended, in History/);
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// Still on the board (Trevor, 2026-10-17), which says the game is over.
 	expect(page.url()).toBe(board);
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
-	// Ended games are listed apart from Join or resume (Trevor, 2026-10-16), and open to look
+	// Ended games are listed apart from Continue game (Trevor, 2026-10-16), and open to look
 	// around in without being reopened (Trevor, 2026-10-17).
 	await page.goto('/history');
 	const listed = page
@@ -2636,7 +2636,7 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 
-	// Reopening from the board puts it back in Join or resume.
+	// Reopening from the board puts it back in Continue game.
 	await page.getByTestId('game-over').tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
@@ -2914,6 +2914,15 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	await expect(counts.getByTestId('count-players')).toHaveText('9');
 	await expect(counts.getByTestId('count-traveller')).toHaveText('1');
 	await expect(counts.getByTestId('count-outsider')).toHaveText('1');
+	// Tapping everyone's count pops up the whole setup sheet, this table's column marked
+	// (Trevor, 2026-10-28; https://wiki.bloodontheclocktower.com/Setup).
+	await counts.getByTestId('count-info-players').tap();
+	const setupSheet = page.getByTestId('count-sheet');
+	await expect(setupSheet.getByTestId('setup-table')).toBeVisible();
+	await expect(setupSheet.locator('th[data-current]')).toHaveText('8');
+	// As the type counts' popups do, a second tap closes it.
+	await counts.getByTestId('count-info-players').tap();
+	await expect(setupSheet).toBeHidden();
 	await page.keyboard.press('Escape');
 	await expect(script).toBeHidden();
 	await menu(page, 'Add Fabled or Loric');
@@ -4227,6 +4236,78 @@ test('the Investigator step lists each Minion, and the Recluse as a Minion you p
 	await expect(shown).toContainText('Baron');
 });
 
+// Trevor (2026-10-28): characters with no info generator get one, starting with one player's
+// character. The Grandmother learns a good Townsfolk or Outsider on the first night
+// (https://wiki.bloodontheclocktower.com/Grandmother), one player, so no "any other player".
+test("the Grandmother's first night step lists each good player's character", async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	for (const [seat, name] of [
+		[1, 'Grandmother'],
+		[2, 'Professor'],
+		[3, 'Godfather'],
+		[4, 'Po']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const step = await openStep(page, 'Grandmother');
+	const rows = step.getByTestId('learned-roles').getByRole('listitem');
+	await expect(rows).toHaveCount(1);
+	await expect(rows.first()).toContainText('Professor');
+	await expect(rows.first()).toContainText('Seat 2');
+	await expect(rows.first()).not.toContainText('any other player');
+});
+
+// Trevor (2026-10-28): the yes or no characters' answers, once the two players chosen are
+// picked. Yes when either is the Demon (https://wiki.bloodontheclocktower.com/Fortune_Teller).
+test("the Fortune Teller's step answers for the two players picked", async ({ page }) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Fortune Teller'],
+		[2, 'Chef'],
+		[3, 'Imp'],
+		[4, 'Monk']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	// The step's text names the Fortune Teller as a badge that opens its sheet, under the
+	// middle of the step on a phone: tap the step's name instead.
+	const strip = await walkTo(page, 'Fortune Teller');
+	await strip.locator('.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Fortune Teller' });
+	const section = step.getByTestId('night-yes-no');
+	const answers = section.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
+	await expect(answers).toHaveCount(0);
+	// Tapping first scrolls the control into view, and a scroll closes an open list (Select).
+	async function pick(label: string, seat: string) {
+		const select = section.getByRole('combobox', { name: label });
+		await select.scrollIntoViewIfNeeded();
+		const option = page.getByRole('option', { name: seat, exact: true });
+		await expect(async () => {
+			if (!(await option.isVisible())) await select.tap();
+			await expect(option).toBeVisible({ timeout: 1000 });
+		}).toPass();
+		await option.tap();
+	}
+	await pick('First player chosen', 'Seat 2');
+	await pick('Second player chosen', 'Seat 3');
+	await expect(answers).toHaveCount(1);
+	await expect(answers.first()).toHaveText('Yes');
+	await pick('Second player chosen', 'Seat 4');
+	await expect(answers.first()).toHaveText('No');
+});
+
 // Trevor (2026-10-27): on the first night the Godfather's step names every Outsider in
 // play, ready to show on one card (https://wiki.bloodontheclocktower.com/Godfather).
 test("the Godfather's first night step shows every Outsider in play", async ({ page }) => {
@@ -4803,7 +4884,7 @@ test("the Investigator's own seat fits its Wrong; its Minion is marked and warns
 	await expect(page.getByText(/the character type is not one it goes on/)).toBeVisible();
 });
 
-test('Join or resume names a game’s alternative mode beside its script', async ({ page }) => {
+test('Continue game names a game’s alternative mode beside its script', async ({ page }) => {
 	await startGame(page);
 	const plain = new URL(page.url()).pathname;
 	await startGame(page, 'Sects & Violets');

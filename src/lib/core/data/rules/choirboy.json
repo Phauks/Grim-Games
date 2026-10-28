@@ -1,4 +1,7 @@
 {
+	"learns": {
+		"measure": "demon-player"
+	},
 	"setupModifier": {
 		"summary": "+the King",
 		"ops": [],
@@ -10,5 +13,11 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"wakesWhen": {
+		"diedTonight": {
+			"characters": ["king"],
+			"by": "demon"
+		}
 	}
 }

@@ -229,9 +229,7 @@
 		<span class="tokens"
 			>{#each entry.tokens as token, i (i)}{@const note = tokenNote(token)}<span class="token-row"
 					><ReminderToken
-						label={token.global
-							? t('reference.globalReminder', { label: token.label })
-							: token.label}
+						label={token.label}
 						type={character.type}
 						{character}
 						count={token.copies}

@@ -13,7 +13,7 @@
 
 	/**
 	 * Ending and reopening the game (Trevor, 2026-10-16): End game moves it to History, Reopen
-	 * puts it back in Join or resume, and the rules checked at dusk can offer End game themselves.
+	 * puts it back in Continue game, and the rules checked at dusk can offer End game themselves.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -76,14 +76,14 @@
 		<dt>Now</dt>
 		<dd>Ended, in History: {endedText}</dd>
 		<dt>Becomes</dt>
-		<dd>In Join or resume</dd>
+		<dd>In Continue game</dd>
 	</dl>
 </ConfirmDialog>
 
 <ConfirmDialog bind:open={endOpen} title="End game?" danger onConfirm={endGame}>
 	<dl class="change">
 		<dt>Now</dt>
-		<dd>In Join or resume</dd>
+		<dd>In Continue game</dd>
 		<dt>Becomes</dt>
 		<dd>Ended, in History</dd>
 	</dl>

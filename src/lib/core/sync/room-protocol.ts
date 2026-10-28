@@ -119,11 +119,16 @@ export type ClientMessage =
 	/** Opens a room transfer with this code's hash, or changes whether it brings the game. */
 	| { type: 'open-transfer'; codeHash: string; bringGame: boolean }
 	| { type: 'close-transfer' }
+	/** Allows, or turns down, the device asking to take over (`HostView.transfer.asking`). */
+	| { type: 'answer-transfer'; allow: boolean }
 	// From a device taking the room over (hello role `claim`).
 	/** Is this the transfer code? Answered with `transfer` or `transfer-refused`. */
 	| { type: 'check-transfer'; code: string }
-	/** Takes the room with this transfer code: answered with `transferred`. */
-	| { type: 'take-room'; code: string }
+	/**
+	 * Asks to take the room with this transfer code, under this Profile name: the Storyteller's
+	 * device allows it (`transferred`) or turns it down (`transfer-denied`).
+	 */
+	| { type: 'take-room'; code: string; name?: string }
 	| { type: 'unread-messages'; ids: string[] } // The Storyteller marked them unread again.
 	| { type: 'close' };
 
@@ -278,6 +283,8 @@ export type ServerMessage =
 	| { type: 'transfer'; details: TransferDetails }
 	/** To a device taking over: wrong code, or no transfer open (`triesLeft` 0). */
 	| { type: 'transfer-refused'; triesLeft: number }
+	/** To a device taking over: the Storyteller's device turned it down. */
+	| { type: 'transfer-denied' }
 	/** To the device that took over: the room is its now, with the game when it came along. */
 	| { type: 'transferred'; grimoire?: SharedGrimoire }
 	/** To the Storyteller's old device: another device took the room over. */

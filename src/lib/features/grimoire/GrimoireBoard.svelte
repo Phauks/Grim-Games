@@ -863,7 +863,7 @@
 			reason: ended?.reason
 		};
 	};
-	// Reopening puts it back in Join or resume.
+	// Reopening puts it back in Continue game.
 	let reopenOpen = $state(false);
 	const endedText = $derived(
 		ended?.winner === 'good'
