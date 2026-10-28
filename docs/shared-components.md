@@ -44,6 +44,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - The rules behind a screen a mode or rule opens: `features/modes/RuleHeader.svelte` with `spawnedBy(gameId, has)` (`spawned-by.ts`): name, description, Inspect (enforced by review)
 - Cancel and Confirm in a modal: `ui/primitives/ModalActions.svelte` (enforced by `grim/modal-actions`)
 - A file's contents (a mode file, a script's JSON): `ui/primitives/FileView.svelte`: name, Copy and Download in its header, line numbers; to start it closed, put it in a Collapsible (enforced by review)
+- A JSON value as readable labelled rows (objects as rows, lists numbered, nothing as "None"): `features/reference/DataTree.svelte`, used by the Character reference's All data view; pair it with a FileView for the raw file (enforced by review)
 - Report an issue from a script's own actions: `features/reports/ReportButton.svelte` (the form takes the script on screen: `offerScriptToReports`) (enforced by review)
 - Sending a report to the Worker: `reportOutbox.send` (`features/reports/outbox.svelte.ts`), which saves it on the device first and sends it once the connection is back; never `sendReport` directly (enforced by `e2e/report-offline.e2e.ts`)
 - A modal or full-screen panel: `ui/primitives/Dialog.svelte`; `full` and `max` scroll their content under the header (`scroll={false}` for content that pans itself); over the grimoire board its backdrop (and BottomSheet's) blurs the board (`ui/board-cover.ts`) (enforced by `e2e/dialog-scroll.e2e.ts`)
