@@ -15,7 +15,7 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	});
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	// On the board beside the day timer, not in the ⋯ menu (Trevor, 2026-10-27: "Sound can be
@@ -151,7 +151,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	});
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
@@ -190,7 +190,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	// Kept on the device, for the next game too.
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
 	await expect(pads.getByRole('button', { name: 'Doom' })).toBeVisible();

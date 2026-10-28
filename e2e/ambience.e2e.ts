@@ -15,7 +15,7 @@ test('day and night sound plays recordings on the board once the night begins', 
 	});
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	// From the board's ⋯ > Settings, which opens all of Settings (Trevor, 2026-10-27).
