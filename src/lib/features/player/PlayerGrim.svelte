@@ -84,6 +84,7 @@
 	import PlayerGrimTools from './PlayerGrimTools.svelte';
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
+	import SeatAvatarButton from './SeatAvatarButton.svelte';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
 
@@ -535,14 +536,14 @@
 {/snippet}
 
 {#snippet pictureMenu()}<SeatPictureMenu room={player!} seat={chosen!} />{/snippet}
-<!-- The player's avatar, left of the seat's name and guesses (Trevor, 2026-10-27). -->
-{#snippet seatAvatar()}<span class="sheet-avatar" data-testid="sheet-avatar"
-		><AvatarFace
-			avatar={chosen!.avatar!}
-			name={nameOf(chosen!)}
-			picture={pictureOf(chosen!)}
-		/></span
-	>{/snippet}
+<!-- The player's avatar, left of the seat's name and guesses (Trevor, 2026-10-27); a tap
+     opens their profile (2026-10-28). -->
+{#snippet seatAvatar()}<SeatAvatarButton
+		avatar={chosen!.avatar!}
+		name={nameOf(chosen!)}
+		picture={pictureOf(chosen!)}
+		frame={chosen!.frame}
+	/>{/snippet}
 <BottomSheet
 	bind:open
 	title={chosen ? `${t('common.seat', { number: chosen.seatNumber })} · ${nameOf(chosen)}` : ''}
@@ -704,15 +705,11 @@
 	.row-none {
 		color: var(--on-surface-muted);
 	}
-	/* The seat's avatar in its cycle, the size of a badge's icon; larger in the header. */
-	.avatar-chip,
-	.sheet-avatar {
+	/* The seat's avatar in its cycle, the size of a badge's icon. */
+	.avatar-chip {
 		display: block;
-		width: var(--avatar, 2em);
-		height: var(--avatar, 2em);
-	}
-	.sheet-avatar {
-		--avatar: calc(2.5 * var(--u));
+		width: 2em;
+		height: 2em;
 	}
 	.seat-note-text {
 		overflow: hidden;
