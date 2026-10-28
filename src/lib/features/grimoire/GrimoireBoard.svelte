@@ -1477,6 +1477,8 @@
 				{/if}
 			{/snippet}
 		</BoardCorner>
+		<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
+		{#if watching}<div class="fair-play"><FairPlayNotice kind="secret" /></div>{/if}
 		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The
 		     soundboard beside it (Trevor, 2026-10-27: "Sound can be next to timer for now"), the
 		     Storyteller's only. -->
@@ -1510,9 +1512,6 @@
 			{/if}
 		</div>
 	</div>
-	<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28): its own row
-	     under the board, there from the start, so it covers and moves nothing. -->
-	{#if watching}<div class="fair-play"><FairPlayNotice kind="secret" /></div>{/if}
 </div>
 
 <!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
@@ -1863,10 +1862,21 @@
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}
+	/* Mirrors the corner's script name, bottom right above the reminder bank, with the same
+	   halo and no band (Trevor, 2026-10-28). */
 	.fair-play {
-		display: grid;
-		justify-items: center;
-		padding: 0 var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom));
+		position: absolute;
+		right: var(--edge-right, var(--space-1));
+		bottom: var(--edge-bottom, var(--space-1));
+		z-index: 1;
+		/* Wider than the corner and in smaller type, so on a phone it stays below the seats. */
+		max-width: 40%;
+		text-shadow: 0 0 0.3em var(--surface);
+		pointer-events: none;
+	}
+	.fair-play :global(.line) {
+		font-size: 0.7rem;
+		text-align: right;
 	}
 	.strip-measure {
 		position: absolute;
