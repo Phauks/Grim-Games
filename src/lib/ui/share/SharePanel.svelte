@@ -11,6 +11,7 @@
 	import QrCentreSetting from './QrCentreSetting.svelte';
 	import QrPicture from './QrPicture.svelte';
 	import CopyButton from './CopyButton.svelte';
+	import ShareCode from './ShareCode.svelte';
 
 	/**
 	 * The one share screen (Trevor, 2026-10-18): an optional code in large type, the QR code,
@@ -111,7 +112,6 @@
 	let centreOpen = $state(false);
 	const id = $props.id();
 	const urlId = `${id}-url`;
-	const codeId = `${id}-code`;
 
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 	const canShareFile = $derived(!!file && canShare && !!navigator.canShare?.({ files: [file] }));
@@ -141,21 +141,7 @@
 
 <div class="share">
 	{#if code}
-		<div class="code-block">
-			<!-- The code and the link each under a header (Trevor, 2026-10-20). -->
-			<h2 class="header" id={codeId}>{code.label}</h2>
-			<div class="code-row">
-				<p class="code" aria-labelledby={codeId} data-testid="share-code">
-					{code.value ?? '··· ···'}
-				</p>
-				<!-- The code alone, without the spaces that group it for reading (Trevor, 2026-10-19). -->
-				<CopyButton
-					label={t('share.copyCode')}
-					text={code.value?.replace(/\s/g, '')}
-					failed={t('share.copyCodeFailed')}
-				/>
-			</div>
-		</div>
+		<ShareCode label={code.label} value={code.value} />
 	{/if}
 	<div class="qr" class:hidden={url && hidden}>
 		{#if frames?.length}
@@ -253,6 +239,10 @@
 </Dialog>
 
 <style>
+	.header {
+		margin: 0;
+		font-size: 1.1rem;
+	}
 	/* The dialog's aside: small on top of a phone's settings, the pane's width beside them. */
 	.preview {
 		display: grid;
@@ -275,27 +265,6 @@
 		gap: var(--space-3);
 		align-content: start;
 		min-width: 0;
-	}
-	.code-block {
-		display: grid;
-		gap: var(--space-1);
-	}
-	.header {
-		margin: 0;
-		font-size: 1.1rem;
-	}
-	/* The copy icon sits right after the code. */
-	.code-row {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.code {
-		margin: 0;
-		font-family: var(--font-heading);
-		font-size: 2.6rem;
-		letter-spacing: 0.08em;
-		font-variant-numeric: tabular-nums;
 	}
 	.qr {
 		position: relative;

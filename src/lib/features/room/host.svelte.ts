@@ -22,8 +22,10 @@ import { seatChanges } from '#lib/core/sync/room-seating.ts';
 import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
+	type ClientMessage,
 	type RoomMember,
 	type ServerMessage,
+	type TransferStatus,
 	type SharedGrimoire,
 	type TownSoundCommand,
 	type VoteTally
@@ -52,20 +54,7 @@ import { tableState } from './table-state.svelte.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
 import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 
-const STORAGE_KEY = 'grim-games-room-host';
-
-interface StoredRoom {
-	code: string;
-	key: string;
-	/** The key Grim view's password makes, while Grim view is on. */
-	viewerKey?: string;
-	/** The Grim view password that key was made from. */
-	viewerPassword?: string;
-	/** The game that password was made for: the next game gets a new one (2026-10-26). */
-	viewerGame?: string;
-	/** The game whose players may see their own characters now (Trevor, 2026-10-26). */
-	rolesShown?: string;
-}
+import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
 
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
@@ -109,6 +98,9 @@ export class RoomHost {
 	rolesShown = $state<string>();
 	/** Seats whose player has held their character to see it (Trevor, 2026-10-26). */
 	rolesSeen = $state.raw<readonly SeatId[]>([]);
+	transfer = $state.raw<TransferStatus>(); // The open Room transfer (room-transfer.svelte.ts).
+	sendingGame = $state(false); // The grimoire goes to the room: a Room transfer brings it.
+	onMessage: ((message: ServerMessage) => void) | undefined; // Hears the room first (transfer).
 	/** Players' messages and reported pictures, for the Storyteller's Messages. */
 	readonly inbox = new RoomInbox((m) => this.#socket?.send(m) ?? false);
 	#roles: { gameId: string; show: boolean; roles: Record<SeatId, SeatRole> } | undefined;
@@ -306,7 +298,7 @@ export class RoomHost {
 		this.#stopWatching = $effect.root(() => {
 			// The whole grimoire, for Grim view while it is on.
 			$effect(() => {
-				if (!this.viewerKey && !this.#grimoireWanted) return;
+				if (!this.viewerKey && !this.#grimoireWanted && !this.sendingGame) return;
 				const saved = toSavedGame(game.session, Date.now());
 				this.#queueGrimoire({
 					saved: saved as unknown as Record<string, unknown>,
@@ -645,8 +637,21 @@ export class RoomHost {
 		);
 	}
 
+	/** Sends to the room now; false when offline. */
+	send(message: ClientMessage): boolean {
+		return this.#socket?.send(message) ?? false;
+	}
+
+	/** Makes the room `code` this device's, with its new host key (Room transfer). */
+	adopt(code: string, key: string): void {
+		writeStored(STORAGE_KEY, { code, key });
+		this.#connect({ code, key });
+	}
+
 	#receive(message: ServerMessage): void {
+		this.onMessage?.(message);
 		if (message.type === 'host-view') {
+			this.transfer = message.transfer;
 			this.#applySeats(this.members, message.members);
 			this.members = message.members;
 			this.present = message.present;
@@ -667,8 +672,8 @@ export class RoomHost {
 			if (message.on) this.#sendGrimoire();
 		} else if (message.type === 'refused' && message.reason === 'too-old') {
 			// The room is still this device's: keep it for after the update.
-		} else if (message.type === 'refused' || message.type === 'closed') {
-			// The room expired or this device no longer owns it.
+		} else if (['refused', 'closed', 'handed-over'].includes(message.type)) {
+			// The room expired, or this device no longer owns it (another took it over).
 			this.#forget();
 		}
 	}
@@ -709,7 +714,8 @@ export class RoomHost {
 	}
 
 	#sendGrimoire(): void {
-		if (!this.#grimoire || (!this.#viewerKeyHash && !this.#grimoireWanted)) return;
+		const wanted = this.#viewerKeyHash || this.#grimoireWanted || this.sendingGame;
+		if (!this.#grimoire || !wanted) return;
 		const message = { type: 'grimoire', grimoire: this.#grimoire } as const;
 		const tooLarge = JSON.stringify(message).length > MAX_GRIMOIRE_BYTES;
 		// Said only for the view-only link: an admin's watching shows nowhere here.
@@ -763,6 +769,8 @@ export class RoomHost {
 		this.revealedGame = undefined;
 		this.rolesShown = undefined;
 		this.rolesSeen = [];
+		this.transfer = undefined;
+		this.sendingGame = false;
 		this.inbox.clear();
 		this.#roles = undefined;
 		this.#viewerKeyHash = undefined;
