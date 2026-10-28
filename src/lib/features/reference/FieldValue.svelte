@@ -30,6 +30,7 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import CharacterDataDialog from './CharacterDataDialog.svelte';
 	import type { FieldId } from './fields.ts';
 	import { EDITION_LABELS, TYPE_LABELS } from './labels.ts';
 	import NightText from './NightText.svelte';
@@ -51,6 +52,8 @@
 	// dialog is only created on first tap: the page shows hundreds of tokens.
 	let detailsOpen = $state(false);
 	let detailsUsed = $state(false);
+	let dataOpen = $state(false);
+	let dataUsed = $state(false);
 	// Jinxes start folded: they vary most in size (Trevor, 2026-10-16). Built only when opened.
 
 	const character = $derived(entry.character);
@@ -150,7 +153,20 @@
 			title={t('reference.report')}
 			onclick={reportCharacter}><Icon name="report" /></button
 		>
+		<!-- Everything the app reads about the character, by file (built only on first tap). -->
+		<button
+			type="button"
+			aria-label={t('reference.data.open')}
+			title={t('reference.data.open')}
+			aria-haspopup="dialog"
+			data-testid="character-data-open"
+			onclick={() => {
+				dataUsed = true;
+				dataOpen = true;
+			}}><Icon name="data" /></button
+		>
 	</span>
+	{#if dataUsed}<CharacterDataDialog bind:open={dataOpen} {character} />{/if}
 {/snippet}
 <!-- eslint-enable svelte/no-navigation-without-resolve -->
 

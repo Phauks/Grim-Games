@@ -26,7 +26,9 @@
 	 *
 	 * Given the seats, a tap opens the day's counts (Trevor, 2026-10-27): who is alive, the
 	 * votes to put a nominee on the block and the ghost votes left, worked out as the
-	 * Storyteller's are (`townCounts`), in a sheet so the line itself never grows.
+	 * Storyteller's are (`townCounts`), in a sheet so the line itself never grows. While a
+	 * living Traveller is in play it also shows the players needed to exile one (Trevor,
+	 * 2026-10-28).
 	 *
 	 * `wide`, on the player screen's own row (Trevor, 2026-10-27: "a sun that takes up 80% of the
 	 * width", "flat arc ... more circular"): the sun crosses a shallow slice of a circle across
@@ -60,6 +62,11 @@
 	);
 	const votesLabel = $derived(
 		counts && t('day.votesBadgeLabel', { count: counts.needed, alive: counts.alive })
+	);
+	const exileLabel = $derived(
+		counts?.exile !== undefined
+			? t('day.exileLabel', { count: counts.exile, total: counts.total })
+			: undefined
 	);
 	const ghostLabel = $derived(counts && t('day.ghostVotesLabel', { count: counts.ghostVotes }));
 
@@ -202,6 +209,14 @@
 					><Icon name="vote" />{counts.needed}</CountBadge
 				><span>{votesLabel}</span>
 			</li>
+			{#if counts.exile !== undefined}
+				<!-- Only while a living Traveller is in play: nobody else can be exiled. -->
+				<li>
+					<CountBadge kind="votes" label={exileLabel!} testid="players-exile-needed"
+						><Icon name="vote" />{counts.exile}</CountBadge
+					><span>{exileLabel}</span>
+				</li>
+			{/if}
 			<li>
 				<CountBadge kind="ghost" label={ghostLabel!} testid="players-ghost-votes"
 					><Icon name="ghostVote" weight="fill" />{counts.ghostVotes}</CountBadge
