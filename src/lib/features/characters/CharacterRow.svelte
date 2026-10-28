@@ -30,8 +30,10 @@
 		/**
 		 * `ring`: the character's icon in a ring of its alignment's colour, a band of that colour
 		 * carrying the name out of the ring's top, the ability under the band (Trevor,
-		 * 2026-10-28, for every script sheet). Read-only: `onclick`, `end` and the box's
-		 * chosen states are the box look's.
+		 * 2026-10-28, for every script sheet; the day's characters and character selection
+		 * too, so they look like the script). With `onclick` the band and ability are the
+		 * button and chosen rows are drawn as the box look draws them; `end` controls follow
+		 * the band's end.
 		 */
 		look?: 'box' | 'ring';
 		/** The ability as the host draws it (rules terms underlined); defaults to plain text. */
@@ -149,8 +151,36 @@
 	{#if children}<span class="below">{@render children()}</span>{/if}
 {/snippet}
 
+{#snippet ringText()}
+	{#if hidden}{@render hidden()}{/if}
+	<span class="band">
+		<!-- eslint-disable-next-line grim/names-as-badges -- the band is the character's badge; its icon is in the ring -->
+		<span class="band-name">{character.name}</span>
+		{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
+		{#if afterName}{@render afterName()}{/if}
+		{#if marks || withCheck}<span class="marks" aria-hidden="true"
+				>{#if marks}{@render marks()}{/if}{#if withCheck}<span class="check"
+						>{#if checked}<Icon name="check" />{/if}</span
+					>{/if}</span
+			>{/if}
+	</span>
+	<span class="ring-ability">
+		{#if ability}{@render ability()}{:else}{character.ability}{/if}
+	</span>
+	{#if children}<span class="ring-below">{@render children()}</span>{/if}
+{/snippet}
+
 {#if look === 'ring'}
-	<div class="ring-row" data-team={team} data-character-id={character.id}>
+	<div
+		class="ring-row"
+		data-team={team}
+		data-type={character.type}
+		data-character-id={onclick ? undefined : character.id}
+		data-chosen={chosen ? '' : undefined}
+		data-dashed={dashed ? '' : undefined}
+		data-disabled={disabled ? '' : undefined}
+		data-interactive={onclick ? '' : undefined}
+	>
 		{#if info}
 			<button
 				type="button"
@@ -163,17 +193,22 @@
 		{:else}
 			<span class="ring">{@render ringIcon()}</span>
 		{/if}
-		<span class="band">
-			<!-- eslint-disable-next-line grim/names-as-badges -- the band is the character's badge; its icon is in the ring -->
-			<span class="band-name">{character.name}</span>
-			{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
-			{#if afterName}{@render afterName()}{/if}
-			{#if marks}<span class="marks" aria-hidden="true">{@render marks()}</span>{/if}
-		</span>
-		<p class="ring-ability">
-			{#if ability}{@render ability()}{:else}{character.ability}{/if}
-		</p>
-		{#if children}<span class="ring-below">{@render children()}</span>{/if}
+		{#if onclick}
+			<button
+				type="button"
+				class="main ring-main"
+				data-character-id={character.id}
+				aria-label={label ?? (note ? `${character.name}, ${note}` : character.name)}
+				aria-pressed={pressed}
+				aria-current={current ? 'true' : undefined}
+				aria-describedby={describedby}
+				{disabled}
+				{onclick}>{@render ringText()}</button
+			>
+		{:else}
+			<div class="ring-main">{@render ringText()}</div>
+		{/if}
+		{#if end}<span class="end">{@render end()}</span>{/if}
 	</div>
 {:else}
 	<div
@@ -392,24 +427,26 @@
 		border-radius: 0 var(--radius-md) var(--radius-md) 0;
 	}
 	/*
-	 * The ring look: ring and band in one grid, the ability beside the ring under the band. The
-	 * ring is as tall as the name and two lines of ability; a host may set --character-ring
-	 * smaller (a printed compact sheet).
+	 * The ring look: the ring over the start of its text, which holds the band and the
+	 * ability beside the ring under the band. The ring is as tall as the name and two lines of
+	 * ability; a host may set --character-ring smaller (a printed compact sheet).
 	 */
 	.ring-row {
 		--ring: var(--character-ring, 4.4em);
+		position: relative;
+		/* The ring's z-index stays inside the row, under a sticky header scrolling over it. */
+		isolation: isolate;
 		display: grid;
-		grid-template-columns: var(--ring) minmax(0, 1fr);
-		grid-template-rows: auto 1fr;
-		gap: 0 var(--space-2);
+		grid-template-columns: var(--ring) minmax(0, 1fr) auto;
 		width: 100%;
 		min-height: var(--ring);
 	}
 	.ring {
 		z-index: 1;
 		display: grid;
-		grid-row: 1 / 4;
+		grid-row: 1;
 		grid-column: 1;
+		align-self: start;
 		place-items: center;
 		width: var(--ring);
 		height: var(--ring);
@@ -429,11 +466,33 @@
 		width: 88%;
 		height: 88%;
 	}
-	/* From the ring's middle to the row's end, so it leaves the ring's top. */
-	.band {
-		display: flex;
+	/* Runs under the ring, so the band can start at the ring's middle. */
+	.ring-main {
+		display: grid;
 		grid-row: 1;
 		grid-column: 1 / 3;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: auto 1fr;
+		gap: 0;
+		align-content: start;
+		min-width: 0;
+	}
+	button.ring-main {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	button.ring-main:disabled {
+		cursor: default;
+	}
+	/* From the ring's middle to the text's end, so it leaves the ring's top. */
+	.band {
+		display: flex;
 		align-items: center;
 		gap: var(--space-2);
 		min-width: 0;
@@ -459,18 +518,52 @@
 	/* Always two lines' room, even for a short ability, so every row is the same height
 	   (Trevor, 2026-10-28), on screen and in print. */
 	.ring-ability {
-		grid-row: 2;
-		grid-column: 2;
+		display: block;
 		min-height: calc(2 * 1.35em);
-		margin: 0;
-		padding-top: var(--space-1);
+		padding: var(--space-1) 0 0 calc(var(--ring) + var(--space-2));
 		font-family: var(--font-ability);
 		line-height: 1.35;
 	}
 	.ring-below {
-		grid-row: 3;
-		grid-column: 2;
+		display: block;
 		min-width: 0;
+		padding-left: calc(var(--ring) + var(--space-2));
+	}
+	/*
+	 * Chosen, as the box look draws it: a tint and a ring of the focus colour, drawn above the
+	 * row so no hover paints over it. Every choosable row keeps the same inset, so choosing
+	 * moves nothing.
+	 */
+	.ring-row[data-interactive] {
+		padding: var(--space-1);
+		border-radius: var(--radius-md);
+	}
+	@media (hover: hover) {
+		.ring-row[data-interactive]:not([data-disabled]):not([data-chosen]):hover {
+			background: var(--surface-selected);
+		}
+	}
+	.ring-row[data-chosen] {
+		background: var(--choice-selected-background);
+	}
+	.ring-row[data-chosen]::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		box-shadow: inset 0 0 0 2px var(--focus);
+		pointer-events: none;
+	}
+	.ring-row[data-dashed] {
+		outline: 2px dashed var(--border);
+		outline-offset: -2px;
+	}
+	.ring-row[data-disabled] {
+		opacity: 0.55;
+	}
+	.ring-row > .end {
+		grid-row: 1;
+		grid-column: 3;
 	}
 	.ring-row[data-team='good'] {
 		--team: var(--good);
