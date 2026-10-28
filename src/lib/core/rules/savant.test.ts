@@ -188,6 +188,48 @@ describe('Savant pairs', () => {
 	});
 });
 
+// Whether the Demon could pass to another player, from the rules data of the Demon and the
+// living players: https://wiki.bloodontheclocktower.com/Imp (to a Minion),
+// /Fang_Gu (to an Outsider), /Scarlet_Woman (with 5 or more alive), /Pit-Hag (makes a Demon).
+describe('The Demon cannot pass to another player', () => {
+	const truth = (castIds: string[], ...steps: ((seats: string[]) => Command)[]) => {
+		const { session, ctx, seats } = newGame(names.slice(0, castIds.length));
+		const s = run(
+			session,
+			ctx,
+			...castIds.map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			})),
+			...steps.map((f) => f(seats))
+		);
+		return byKey(savantStatements(s.game, seats[0], characters), 'demon-cannot-pass:')?.truth;
+	};
+	const dead =
+		(i: number) =>
+		(s: string[]): Command => ({ type: 'SetDead', seatId: s[i], dead: true });
+
+	it('is false while the Imp has a living Minion', () => {
+		expect(truth(['savant', 'chef', 'empath', 'poisoner', 'imp'])).toBe('false');
+	});
+	it('is true once the Imp has none', () => {
+		expect(truth(['savant', 'chef', 'empath', 'poisoner', 'imp'], dead(3))).toBe('true');
+	});
+	it('is false while the Fang Gu has a living Outsider', () => {
+		expect(truth(['savant', 'chef', 'empath', 'butler', 'fanggu'])).toBe('false');
+	});
+	it('is false while a Scarlet Woman lives with 4 others besides the Demon', () => {
+		expect(truth(['savant', 'chef', 'empath', 'scarletwoman', 'vigormortis'])).toBe('false');
+		expect(truth(['savant', 'chef', 'empath', 'scarletwoman', 'vigormortis'], dead(1))).toBe(
+			'true'
+		);
+	});
+	it('is false while a Pit-Hag lives', () => {
+		expect(truth(['savant', 'chef', 'empath', 'pithag', 'vigormortis'])).toBe('false');
+	});
+});
+
 describe('Savant statements from the game so far', () => {
 	/** Seats, then nights: each night's commands run, then New day. */
 	function played(castIds: string[], nights: ((seats: string[]) => Command)[][]) {
