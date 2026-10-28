@@ -1768,7 +1768,7 @@ test("a seat's character can be searched by name or ability", async ({ page }) =
 	await expect(sheet).toContainText(/Poisoner\s*Minion · Evil · Seat 1/);
 });
 
-test('players rotate one seat, or are dragged to a new place in the order', async ({ page }) => {
+test('players rotate one seat, or swap places when one is dropped on another', async ({ page }) => {
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
 	await nameSeat(sheet, 'Ana');
@@ -1784,7 +1784,7 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await toolbar.getByRole('button', { name: 'Rotate players anticlockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
 
-	// Arranging: dropping a seat onto another seat changes the seating order.
+	// Arranging: dropping a seat onto another seat swaps the two players (the Matron).
 	const centre = async (n: number) => {
 		const box = (await page
 			.getByRole('button', { name: new RegExp(`^Seat ${n}:`) })
@@ -1799,11 +1799,14 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await page.mouse.move(to.x, to.y, { steps: 4 });
 	await page.mouse.up();
 	await expect(seatLabelled(page, 'Seat 4: Ana')).toBeAttached();
+	// Only the two swap: seat 4's player takes seat 1, and seats 2 and 3 stay put.
+	await expect(seatLabelled(page, 'Seat 1: Seat 4')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 2: Seat 2')).toBeAttached();
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
-	await expect(history).toContainText('Ana moved to seat 4');
+	await expect(history).toContainText('Swapped Ana and Seat 4');
 	await expect(history).toContainText('Rotated the seats clockwise');
 	await page.keyboard.press('Escape');
 	await openSeat(page, 4);
@@ -2095,6 +2098,33 @@ test('info tokens open from the toolbar and show player cards at once', async ({
 	// No bluffs yet: "not in play" opens the bluffs sheet.
 	await page.getByRole('button', { name: 'These characters are not in play', exact: true }).tap();
 	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
+});
+
+test("a night step's seat list greys out seats its token doesn't fit, still choosable", async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Butler : the Butler chooses a player other than
+	// themself as their Master (Trevor, 2026-10-27: only valid picks, greyed out, not removed).
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Butler', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	const guide = await openStep(page, 'Butler');
+	await guide.getByRole('button', { name: 'Place' }).tap();
+	const put = page.getByRole('dialog', { name: 'Put Master on' });
+	const own = put.getByRole('button', { name: /Butler Seat 1/ });
+	await expect(own).toHaveAttribute('data-misfit');
+	await expect(own).toContainText('Not a usual place');
+	await expect(put.getByRole('button', { name: /Seat 2/ })).not.toHaveAttribute('data-misfit');
+	// Every seat is still listed and can be chosen: the Storyteller overrides.
+	await expect(put.getByRole('listitem')).toHaveCount(8);
+	await own.tap();
+	await expect(guide).toContainText('On Seat 1');
 });
 
 test('a night step is filled in with help, and the night can be walked through', async ({
@@ -4157,12 +4187,20 @@ test('the Librarian step puts the Outsider its reminder marks first, emphasised'
 
 	const step = await openStep(page, 'Librarian');
 	const rows = step.getByTestId('learned-roles').getByRole('listitem');
-	await expect(rows).toHaveCount(2);
+	// Trevor (2026-10-27): with one marked, the other valid info folds under a caret.
+	await expect(rows).toHaveCount(1);
 	await expect(rows.first()).toHaveAttribute('data-marked', '');
 	await expect(rows.first()).toContainText('Recluse');
 	await expect(rows.first()).toContainText('Marked');
+	const others = step.getByRole('button', { name: 'Other valid information' });
+	await expect(others).toHaveAttribute('aria-expanded', 'false');
+	await expect(others.getByTestId('section-count')).toHaveText('1');
+	await others.tap();
+	await expect(rows).toHaveCount(2);
 	await expect(rows.nth(1)).toContainText('Butler');
 	await expect(rows.nth(1)).not.toHaveAttribute('data-marked');
+	await others.tap();
+	await expect(rows).toHaveCount(1);
 });
 
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({

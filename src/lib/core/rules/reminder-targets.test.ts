@@ -219,6 +219,29 @@ describe('reminder targets', () => {
 		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([0, 1, 3]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Preacher: the chosen player loses their ability if
+	// they are a Minion. https://wiki.bloodontheclocktower.com/Recluse: an ability that affects
+	// only Minions may work on a Recluse; a drunk Recluse has no ability, so registers truly.
+	it('Preacher: No Ability fits Minions, and a Recluse unless the Recluse is drunk', () => {
+		const { session, seats, ctx } = grimoire(['preacher', 'chef', 'recluse', 'spy', 'imp']);
+		const preached = { characterId: 'preacher', label: 'No Ability' };
+		expect(fitting(session, preached)).toEqual([2, 3]);
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[2],
+			reminder: { characterId: 'sweetheart', label: 'Drunk' }
+		});
+		expect(fitting(s, preached)).toEqual([3]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Moonchild: the chosen player dies if good.
+	// https://wiki.bloodontheclocktower.com/Spy: an ability that affects only good players may
+	// work on the Spy.
+	it('Moonchild: Dead fits good players and a Spy', () => {
+		const { session } = grimoire(['moonchild', 'chef', 'spy', 'imp']);
+		expect(fitting(session, { characterId: 'moonchild', label: 'Dead' })).toEqual([1, 2]);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Knight: a sober Knight's Know tokens are never on
 	// the Demon; a drunk one's may be.
 	it('Knight: Know never on the Demon unless the Knight is drunk', () => {
