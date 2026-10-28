@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { rootFontPx } from '#lib/ui/root-font.svelte.ts';
 	import { onMount } from 'svelte';
 	import { createAttachmentKey } from 'svelte/attachments';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -77,9 +78,7 @@
 	let removing = $state(false);
 	let width = $state(0);
 	/** Below 56rem the two panes don't fit side by side (matches the container query below). */
-	const narrow = $derived(
-		width > 0 && width < 56 * parseFloat(getComputedStyle(document.documentElement).fontSize)
-	);
+	const narrow = $derived(width > 0 && width < 56 * rootFontPx());
 
 	/**
 	 * The list and details reach the bottom of the screen (Trevor, 2026-10-26): the table

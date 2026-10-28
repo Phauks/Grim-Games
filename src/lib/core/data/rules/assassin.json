@@ -54,5 +54,6 @@
 				"reason": "Says which token goes on whom."
 			}
 		}
-	}
+	},
+	"marksChoice": ["Dead"]
 }

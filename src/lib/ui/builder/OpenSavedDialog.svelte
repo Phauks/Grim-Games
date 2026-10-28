@@ -1,4 +1,5 @@
 <script lang="ts" generics="T">
+	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -33,7 +34,7 @@
 		testid
 	}: Props = $props();
 	let query = $state('');
-	const words = $derived(query.toLowerCase().split(/\s+/).filter(Boolean));
+	const words = $derived(foldForSearch(query).split(/\s+/).filter(Boolean));
 	const shown = $derived(
 		search && words.length ? items.filter((item) => search.matches(item, words)) : items
 	);
