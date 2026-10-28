@@ -70,7 +70,7 @@ export type TemplateSegment =
 /** How a death is matched: a cause the app records, or a character id. */
 export type DeathCauseMatch = 'execution' | 'exile' | 'demon' | 'other' | CharacterId;
 
-export const SELF_STATES = ['alive', 'dead', 'any'] as const;
+const SELF_STATES = ['alive', 'dead', 'any'] as const;
 
 export interface DayCondition {
 	self?: (typeof SELF_STATES)[number];

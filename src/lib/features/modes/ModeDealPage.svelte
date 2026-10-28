@@ -56,6 +56,7 @@
 	import { readGameMode } from './game-mode-store.ts';
 	import { gameModeOf } from './game-mode.ts';
 	import OfferReels from './OfferReels.svelte';
+	import DraftAskDialog from './DraftAskDialog.svelte';
 	import DraftConversion from './DraftConversion.svelte';
 	import DraftSeatList from './DraftSeatList.svelte';
 
@@ -308,6 +309,12 @@
 			held: last
 		});
 	}
+	/** Drafting again from a question before the next tile, while the draft allows it. */
+	const redraftNow = $derived(
+		progress?.kind === 'draft' && canRedraft(progress.state)
+			? () => draftAgain(undefined)
+			: undefined
+	);
 
 	/** The Storyteller asks the last player to choose again (Whale Buffet's reconsider). */
 	function chooseAgain() {
@@ -549,112 +556,73 @@
 
 <!-- Answered before the next tile, so it can't be closed without a choice. -->
 {#if ask}
-	{@const asked = byId.get(ask.characterId)}
-	<Dialog
+	<DraftAskDialog
 		bind:open={askOpen}
-		title={t('modes.deal.askTitle')}
-		closeButton={false}
-		beforeClose={() => false}
+		character={byId.get(ask.characterId)}
+		testid="draft-ask"
+		onRedraft={redraftNow}
 	>
-		{#snippet subtitle()}{#if asked}<CharacterBadge
-					characterId={asked.id}
-					character={asked}
-				/>{/if}{/snippet}
-		<div class="ask" data-testid="draft-ask">
-			<p class="prompt">{t('modes.deal.askCount', { type: TYPE_PLURALS[ask.type] })}</p>
-			<div class="options">
-				{#each ask.options as total (total)}
-					<Button onclick={() => answer(total)}>{String(total)}</Button>
-				{/each}
-				{#if !ask.options.includes(ask.current)}
-					<Button onclick={() => answer(ask.current)}>
-						{t('modes.deal.askKeep', { count: ask.current })}
-					</Button>
-				{/if}
-				<!-- Or the player drafts again, as Grimbits does for a rejected Legion. -->
-				{#if progress?.kind === 'draft' && canRedraft(progress.state)}
-					<Button icon="undo" onclick={() => draftAgain(undefined)}>
-						{t('modes.deal.redraft')}
-					</Button>
-				{/if}
-			</div>
+		<p class="prompt">{t('modes.deal.askCount', { type: TYPE_PLURALS[ask.type] })}</p>
+		<div class="options">
+			{#each ask.options as total (total)}
+				<Button onclick={() => answer(total)}>{String(total)}</Button>
+			{/each}
+			{#if !ask.options.includes(ask.current)}
+				<Button onclick={() => answer(ask.current)}>
+					{t('modes.deal.askKeep', { count: ask.current })}
+				</Button>
+			{/if}
 		</div>
-	</Dialog>
+	</DraftAskDialog>
 {/if}
 
 <!-- Answered before the next tile, as a setup change is. -->
 {#if choice}
-	{@const drafted = byId.get(choice.characterId)}
 	{@const really = byId.get(choice.hidden)}
-	<Dialog
+	<DraftAskDialog
 		bind:open={choiceOpen}
-		title={t('modes.deal.askTitle')}
-		closeButton={false}
-		beforeClose={() => false}
+		character={byId.get(choice.characterId)}
+		testid="draft-hidden-choice"
+		onRedraft={redraftNow}
 	>
-		{#snippet subtitle()}{#if drafted}<CharacterBadge
-					characterId={drafted.id}
-					character={drafted}
-				/>{/if}{/snippet}
-		<div class="ask" data-testid="draft-hidden-choice">
-			<p class="prompt">
-				{t('modes.deal.hiddenChoice')}{#if really}<CharacterBadge
-						characterId={really.id}
-						character={really}
-					/>{/if}
-			</p>
-			<div class="options">
-				<Button onclick={() => answerChoice(false)}>{t('modes.deal.asDrafted')}</Button>
-				<Button onclick={() => answerChoice(true)}>{t('modes.deal.reallyHidden')}</Button>
-				{#if progress?.kind === 'draft' && canRedraft(progress.state)}
-					<Button icon="undo" onclick={() => draftAgain(undefined)}>
-						{t('modes.deal.redraft')}
-					</Button>
-				{/if}
-			</div>
+		<p class="prompt">
+			{t('modes.deal.hiddenChoice')}{#if really}<CharacterBadge
+					characterId={really.id}
+					character={really}
+				/>{/if}
+		</p>
+		<div class="options">
+			<Button onclick={() => answerChoice(false)}>{t('modes.deal.asDrafted')}</Button>
+			<Button onclick={() => answerChoice(true)}>{t('modes.deal.reallyHidden')}</Button>
 		</div>
-	</Dialog>
+	</DraftAskDialog>
 {/if}
 
 <!-- Answered before the next tile, as a setup change is. -->
 {#if ability}
-	{@const drafted = byId.get(ability.characterId)}
-	<Dialog
+	<DraftAskDialog
 		bind:open={abilityOpen}
-		title={t('modes.deal.askTitle')}
-		closeButton={false}
-		beforeClose={() => false}
+		character={byId.get(ability.characterId)}
+		testid="draft-ability"
+		onRedraft={redraftNow}
 	>
-		{#snippet subtitle()}{#if drafted}<CharacterBadge
-					characterId={drafted.id}
-					character={drafted}
-				/>{/if}{/snippet}
-		<div class="ask" data-testid="draft-ability">
-			<p class="prompt">{t('modes.deal.abilityPrompt')}</p>
-			<!-- Each ability that changes setup now, then Later. -->
-			<ul class="seats" data-testid="ability-options">
-				{#each ability.options as id (id)}
-					{@const option = byId.get(id)}
-					{#if option}
-						<li>
-							<Button onclick={() => answerGained(id)}>{t('modes.deal.abilityTake')}</Button>
-							<CharacterBadge characterId={option.id} character={option} />
-						</li>
-					{/if}
-				{/each}
-				<li>
-					<Button onclick={() => answerGained(undefined)}>{t('modes.deal.abilityLater')}</Button>
-				</li>
-			</ul>
-			{#if progress?.kind === 'draft' && canRedraft(progress.state)}
-				<div class="options">
-					<Button icon="undo" onclick={() => draftAgain(undefined)}>
-						{t('modes.deal.redraft')}
-					</Button>
-				</div>
-			{/if}
-		</div>
-	</Dialog>
+		<p class="prompt">{t('modes.deal.abilityPrompt')}</p>
+		<!-- Each ability that changes setup now, then Later. -->
+		<ul class="seats" data-testid="ability-options">
+			{#each ability.options as id (id)}
+				{@const option = byId.get(id)}
+				{#if option}
+					<li>
+						<Button onclick={() => answerGained(id)}>{t('modes.deal.abilityTake')}</Button>
+						<CharacterBadge characterId={option.id} character={option} />
+					</li>
+				{/if}
+			{/each}
+			<li>
+				<Button onclick={() => answerGained(undefined)}>{t('modes.deal.abilityLater')}</Button>
+			</li>
+		</ul>
+	</DraftAskDialog>
 {/if}
 
 <Dialog bind:open={redrafting} title={t('modes.deal.redraft')}>

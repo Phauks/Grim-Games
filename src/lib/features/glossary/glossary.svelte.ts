@@ -3,7 +3,7 @@ import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 
 /** Whether the Storyteller wants rules terms explained (Settings › Rules terms). */
-export function explainTerms(): boolean {
+function explainTerms(): boolean {
 	return preferences.current.assistance.explainTerms;
 }
 

@@ -40,7 +40,7 @@ function seatName(game: Game, seatId: SeatId | undefined): string {
 }
 
 /** One History line as plain words: a seat as "Ana (Imp)", a reminder in quotes. */
-export function partsText(parts: readonly HistoryPart[], characters: CharacterLookup): string {
+function partsText(parts: readonly HistoryPart[], characters: CharacterLookup): string {
 	const name = (id: CharacterId) => characters.get(id)?.name ?? id;
 	return parts
 		.map((p) => {

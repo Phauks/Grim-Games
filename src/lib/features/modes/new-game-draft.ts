@@ -28,7 +28,7 @@ export interface NewGameDraft {
 
 const KEY = 'grim-games:new-game-draft:v1';
 /** The hash New game reads to put the draft back. */
-export const BACK_HASH = '#back';
+const BACK_HASH = '#back';
 
 const strings = (v: unknown) =>
 	Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : undefined;
