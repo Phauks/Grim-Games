@@ -1,8 +1,11 @@
 <script lang="ts">
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import type { SeatId } from '#lib/core/model/index.ts';
+	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import type { InfoPicker, NightStep } from '#lib/core/rules/index.ts';
 	import { yesNoAnswers, yesNoSeats } from '#lib/core/rules/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -17,12 +20,15 @@
 	interface Props {
 		grimoire: Grimoire;
 		step: NightStep;
+		/** Show the Yes/No info token with this answer (Trevor, 2026-10-28). */
+		onShowAnswer?: (yes: boolean) => void;
 	}
 
-	let { grimoire, step }: Props = $props();
+	let { grimoire, step, onShowAnswer }: Props = $props();
 	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
+	const characters = $derived(grimoire.open.characters);
 	const name = (seatId: SeatId) => seatName(game, seatId);
 	const pickers = $derived(
 		preferences.current.assistance.infoSuggestions && step.info?.kind === 'picker'
@@ -44,6 +50,21 @@
 	};
 </script>
 
+<!-- A seat in the list as the seat chooser gives it (Trevor, 2026-10-28: names were cut to
+     "Se…"): its number, its character, the player. -->
+{#snippet seatOption(seatId: SeatId)}
+	{@const seat = game.seats[seatId]}
+	{@const character = seat?.characterId ? characters.get(seat.characterId) : undefined}
+	<span class="seat"
+		><span class="number">{seatNumber(game, seatId)}</span>{#if character}<CharacterBadge
+				characterId={character.id}
+				{character}
+				alignment={seat?.alignment}
+				interactive={false}
+			/>{/if}<PlayerBadge name={name(seatId)} /></span
+	>
+{/snippet}
+
 {#if pickers.length > 0}
 	<section aria-labelledby={headingId} data-testid="night-yes-no">
 		<h3 id={headingId}>Valid Information</h3>
@@ -51,7 +72,8 @@
 			{#each pickers as p (p.seatId)}
 				{@const options = yesNoSeats(game, p).map((s) => ({
 					value: s,
-					label: name(s)
+					// The typeahead text; each option shows as the seat (the option snippet).
+					label: seatLabel(game, s)
 				}))}
 				<li>
 					{#if pickers.length > 1}<span class="whose"><PlayerBadge name={name(p.seatId)} />:</span
@@ -62,12 +84,14 @@
 								label={n === 0 ? 'First player chosen' : 'Second player chosen'}
 								hideLabel
 								placeholder="Chosen"
+								attention={picked(p)[n] === undefined}
 								value={picked(p)[n]}
 								{options}
+								listFitsTrigger={false}
 								onChange={(s) => choose(p, n, s)}
 							>
-								{#snippet item(option)}<PlayerBadge name={option.label} />{/snippet}
-								{#snippet selected(option)}<PlayerBadge name={option.label} />{/snippet}
+								{#snippet item(option)}{@render seatOption(option.value)}{/snippet}
+								{#snippet selected(option)}<PlayerBadge name={name(option.value)} />{/snippet}
 							</Select>
 						{/each}
 					</span>
@@ -76,6 +100,10 @@
 							<li data-reason={a.reason}>
 								<strong>{a.yes ? 'Yes' : 'No'}</strong>
 								<NightReasonTag {grimoire} reason={a.reason} registered={a.registered} />
+								{#if onShowAnswer}
+									<Button variant="quiet" onclick={() => onShowAnswer(a.yes)}>Show to player</Button
+									>
+								{/if}
 							</li>
 						{/each}
 					</ul>
@@ -106,6 +134,17 @@
 	}
 	.whose {
 		color: var(--on-surface-muted);
+	}
+	.seat {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		white-space: nowrap;
+	}
+	.number {
+		min-width: 1.5em;
+		color: var(--on-surface-muted);
+		font-variant-numeric: tabular-nums;
 	}
 	.chosen {
 		display: inline-flex;

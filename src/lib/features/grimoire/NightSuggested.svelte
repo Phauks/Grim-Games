@@ -182,6 +182,17 @@
 		JSON.stringify([p.seatId, row.target, row.reason, row.marked ?? false]);
 	/** The character picked for a row that offers several (a Recluse shown as a Minion). */
 	let shownAs = $state<Record<string, CharacterId>>({});
+	/**
+	 * Which rows' "Shown as" lists are open: Show to player with nothing picked opens the list
+	 * instead of doing nothing (Trevor, 2026-10-28: with the Investigator drunk it wasn't clear
+	 * a character had to be picked first).
+	 */
+	let listOpen = $state<Record<string, boolean>>({});
+	/** Show the picked character, or open the row's list to pick one. */
+	function showOrPick(key: string, id: CharacterId | undefined) {
+		if (id) onShow?.(id);
+		else listOpen = { ...listOpen, [key]: true };
+	}
 	const shownRole = (p: InfoPicker, row: LearnedRole): CharacterId | undefined =>
 		row.characterIds.length === 1 ? row.characterIds[0] : shownAs[rowKey(p, row)];
 	/**
@@ -356,6 +367,8 @@
 					label="Shown as"
 					hideLabel
 					placeholder="Shown as"
+					attention={!id}
+					bind:open={() => listOpen[key] ?? false, (v) => (listOpen = { ...listOpen, [key]: v })}
 					value={id}
 					options={o.otherCharacters.map((c) => ({
 						value: c,
@@ -393,8 +406,7 @@
 			{@const n = o.value.value}
 			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
 		{:else if o.value.kind === 'character' && onShow}
-			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
-			>
+			<Button variant="quiet" onclick={() => showOrPick(key, id)}>Show to player</Button>
 		{:else if o.value.kind === 'characters' && !o.anyOther && onShowCharacters}
 			{@const v = o.value}
 			<Button variant="quiet" onclick={() => onShowCharacters(v)}>Show to player</Button>
@@ -633,6 +645,8 @@
 					label="Shown as"
 					hideLabel
 					placeholder="Shown as"
+					attention={!id}
+					bind:open={() => listOpen[key] ?? false, (v) => (listOpen = { ...listOpen, [key]: v })}
 					value={id}
 					options={row.characterIds.map((c) => ({
 						value: c,
@@ -664,8 +678,7 @@
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
 		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
 		{#if onShow}
-			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
-			>
+			<Button variant="quiet" onclick={() => showOrPick(key, id)}>Show to player</Button>
 		{/if}
 	</li>
 {/snippet}
