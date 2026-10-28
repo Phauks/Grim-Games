@@ -9,7 +9,9 @@
  *   options;
  * - for the "learn a role" characters (Washerwoman, Librarian, Investigator), those options
  *   as rows to show, marked by the board's reminders first (`learnedRoles`), and the same
- *   for the "learn players" characters (Steward, Noble: `chosenPlayers`);
+ *   for the "learn players" characters (Steward, Noble: `chosenPlayers`), and the valid
+ *   answers for the two players a "yes or no" character chose (Fortune Teller, Seamstress:
+ *   `yesNoAnswers`);
  * - death checks for characters whose own ability kills (`night-deaths.ts`).
  *
  * Everything here is a suggestion (04-architecture.md §4: assist, never rule):
@@ -79,4 +81,5 @@ export {
 	type ChosenPlayers,
 	chosenPlayers
 } from './night-info/chosen-players.ts';
+export { type YesNoAnswer, yesNoAnswers, yesNoSeats } from './night-info/yes-no.ts';
 export { type NightStepInfo, withNightInfo } from './night-info/steps.ts';
