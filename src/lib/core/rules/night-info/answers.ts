@@ -505,8 +505,10 @@ export function nightAnswer(
  */
 export function answerCauses(a: Reliability & { because?: SeatId[] }): AbnormalCause[] {
 	if (a.impairments.length > 0) return causesOf(a.impairments);
-	if (a.mustBeFalse) {
-		return [{ reason: 'vortox', characterId: 'vortox', ...(a.vortox ? { seatId: a.vortox } : {}) }];
+	if (a.mustBeFalse && a.falseBy) {
+		return [
+			{ reason: 'vortox', characterId: a.falseBy, ...(a.vortox ? { seatId: a.vortox } : {}) }
+		];
 	}
 	return a.registrations.map((r) => ({
 		reason: 'registration',
