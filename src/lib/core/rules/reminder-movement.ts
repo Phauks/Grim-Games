@@ -9,6 +9,7 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, Reminder, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { charactersInPlay } from '#lib/core/model/selectors.ts';
+import { neighbourSeats } from './reminder-targets.ts';
 
 export type { ReminderMovementRules };
 
@@ -78,4 +79,61 @@ export function fixedReminderMove(
 		};
 	}
 	return undefined;
+}
+
+/** A neighbour token carried to a new neighbour after players changed seats. */
+export interface FollowedReminder {
+	reminderId: ReminderId;
+	reminder: Reminder;
+	fromSeatId: SeatId;
+	toSeatId: SeatId;
+}
+
+/**
+ * Where tokens that follow their character's neighbours (`followsNeighbours`: the Tea Lady's
+ * Cannot Die, the No Dashii's Poisoned) go when the seating changes from `before` to `after`.
+ * Swapped players take their own tokens with them
+ * (https://wiki.bloodontheclocktower.com/Matron), but these abilities act on whoever sits
+ * next to the character now (https://wiki.bloodontheclocktower.com/Tea_Lady,
+ * https://wiki.bloodontheclocktower.com/No_Dashii), so a token on a player who was a
+ * neighbour and no longer is goes to a new neighbour without one. A token the Storyteller put
+ * on someone who was not a neighbour stays put, and none is added or removed.
+ */
+export function neighbourFollows(
+	before: Game,
+	after: Game,
+	characters: CharacterLookup
+): FollowedReminder[] {
+	const moves: FollowedReminder[] = [];
+	const groups = new Map<string, { reminder: Reminder; held: [SeatId, ReminderId][] }>();
+	for (const seatId of before.seating) {
+		for (const r of before.seats[seatId].reminders) {
+			if (!reminderMovementOf(r.characterId, characters)?.followsNeighbours?.includes(r.label))
+				continue;
+			const key = JSON.stringify([r.characterId, r.label, r.ownerSeatId ?? null]);
+			const group = groups.get(key) ?? {
+				reminder: {
+					characterId: r.characterId,
+					label: r.label,
+					...(r.ownerSeatId ? { ownerSeatId: r.ownerSeatId } : {})
+				},
+				held: []
+			};
+			group.held.push([seatId, r.reminderId]);
+			groups.set(key, group);
+		}
+	}
+	for (const { reminder, held } of groups.values()) {
+		const centres = reminder.ownerSeatId ? [reminder.ownerSeatId] : undefined;
+		const was = neighbourSeats(before, reminder, characters, centres) ?? [];
+		const now = neighbourSeats(after, reminder, characters, centres) ?? [];
+		const free = now.filter((id) => !held.some(([seatId]) => seatId === id));
+		for (const [seatId, reminderId] of held) {
+			if (!was.includes(seatId) || now.includes(seatId)) continue;
+			const toSeatId = free.shift();
+			if (toSeatId === undefined) break;
+			moves.push({ reminderId, reminder, fromSeatId: seatId, toSeatId });
+		}
+	}
+	return moves;
 }

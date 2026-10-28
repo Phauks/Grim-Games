@@ -349,6 +349,6 @@
 		border-color: var(--evil);
 	}
 	.players-timer[data-done] .clock {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 </style>

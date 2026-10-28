@@ -132,7 +132,7 @@ function sectionLabel(heading: string): string {
 }
 
 /** At most this many links are read from the page. */
-export const MAX_CURATED = 40;
+const MAX_CURATED = 40;
 
 /**
  * Every Script Tool link on the official Scripts page, with the `<h2>` section it sits

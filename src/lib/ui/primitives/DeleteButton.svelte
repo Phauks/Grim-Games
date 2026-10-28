@@ -31,7 +31,7 @@
 		border: 0;
 		border-radius: var(--radius-full);
 		background: none;
-		color: var(--evil);
+		color: var(--evil-text);
 		cursor: pointer;
 	}
 	.delete:active,

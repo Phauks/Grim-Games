@@ -1,3 +1,4 @@
+import { noStore, text } from './http.ts';
 import { DurableObject } from 'cloudflare:workers';
 import { makeDigitCode } from '../src/lib/core/codes/digit-code.ts';
 import {
@@ -82,12 +83,6 @@ export async function hashKey(key: string): Promise<string> {
 	return base64url(new Uint8Array(digest));
 }
 
-const noStore = { 'Cache-Control': 'no-store' };
-
-function text(message: string, status: number): Response {
-	return new Response(message, { status, headers: noStore });
-}
-
 /** The script JSON as compact text, or an error message. Only shape is checked here. */
 async function readScriptBody(request: Request): Promise<string | { error: string }> {
 	const raw = await request.text();
@@ -111,7 +106,7 @@ export async function allowed(env: ShareEnv, limiter: RateLimit, caller: string)
 
 /** Handles `/api/share` and `/api/share/<code>`. */
 /** The shared script stored under `code`: the shared data Worker's when bound, else this one's. */
-export function shareStub(env: ShareEnv, code: string): DurableObjectStub<SharedScript> {
+function shareStub(env: ShareEnv, code: string): DurableObjectStub<SharedScript> {
 	return env.DATA ? remote(env.DATA, 'share', code) : localShare(env, code);
 }
 

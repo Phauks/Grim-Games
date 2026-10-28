@@ -5,7 +5,8 @@
  */
 import { normaliseGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 import { ROOM_PROTOCOL, type SharedGrimoire } from '#lib/core/sync/room.ts';
-import { RoomSocket, sha256Hex } from './room-socket.svelte.ts';
+import { sha256Hex } from '#lib/core/codes/hash.ts';
+import { RoomSocket } from './room-socket.svelte.ts';
 
 /** The link's key, as the Storyteller's device makes it (`randomKey`). */
 export function viewerKeyFrom(hash: string): string | undefined {

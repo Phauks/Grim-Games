@@ -17,7 +17,7 @@ import type { Reminder } from '#lib/core/model/index.ts';
 
 export type Variant = 'snv' | 'tb' | 'mixed';
 
-export const SAMPLE_NAMES = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
+const SAMPLE_NAMES = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
 interface Sample {
 	cast: string[];
@@ -25,7 +25,7 @@ interface Sample {
 	reminders: [number, Reminder][];
 }
 
-export const SAMPLES: Record<Variant, Sample> = {
+const SAMPLES: Record<Variant, Sample> = {
 	snv: {
 		cast: ['towncrier', 'flowergirl', 'juggler', 'gossip', 'witch', 'fanggu', 'artist', 'mutant'],
 		reminders: [[6, { characterId: 'witch', label: 'Cursed' }]]
@@ -61,7 +61,7 @@ const MIXED_SCRIPT: Script = {
 	}))
 };
 
-export function editionAsScript(edition: Exclude<Variant, 'mixed'>, data: GameData): Script {
+function editionAsScript(edition: Exclude<Variant, 'mixed'>, data: GameData): Script {
 	const loaded = editionScript(edition, data);
 	if (!loaded) throw new Error(`no edition ${edition}`);
 	return {

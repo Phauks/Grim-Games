@@ -23,17 +23,12 @@ const SHARE_TODO = [];
 const PLAYER_BADGE_TODO = [];
 
 const LOCAL_STORAGE_TODO = [
-	'src/lib/features/account/profile-scripts.svelte.ts',
 	'src/lib/features/grimoire/board-looks.svelte.ts',
 	'src/lib/features/grimoire/device-notes.ts',
 	'src/lib/features/info-tokens/custom-tokens.svelte.ts',
 	'src/lib/features/library/library-labels.svelte.ts',
 	'src/lib/features/player/player-settings.svelte.ts',
-	'src/lib/features/script-builder/draft.svelte.ts',
-	'src/lib/features/scripts/collection.svelte.ts',
-	'src/lib/features/scripts/curated.svelte.ts',
 	'src/lib/features/scripts/current-script.svelte.ts',
-	'src/lib/features/scripts/homebrew-scripts.svelte.ts',
 	'src/lib/features/setup/selection.svelte.ts'
 ];
 
