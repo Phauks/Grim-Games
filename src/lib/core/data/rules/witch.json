@@ -71,5 +71,7 @@
 				"reason": "Says last night’s Cursed token comes off."
 			}
 		}
-	}
+	},
+	"marksChoice": ["Cursed"],
+	"curses": "Cursed"
 }
