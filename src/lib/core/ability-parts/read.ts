@@ -19,6 +19,7 @@ const CLAUSE_KEYS = [
 	'storytellerMay',
 	'evenIfDead',
 	'actor',
+	'evenIfImpaired',
 	'effects',
 	'marks',
 	'spent'
@@ -61,7 +62,10 @@ const EFFECT_FIELDS: Record<string, readonly string[]> = {
 	// Carousel Townsfolk.
 	'stop-kills': ['who', 'until'],
 	'vote-rights': ['who', 'nominations', 'votes'],
-	'evil-info': ['change']
+	'evil-info': ['change'],
+	// Carousel Outsiders & Travellers.
+	'must-vote': ['who'],
+	'invert-winner': []
 };
 
 const oneOf = (value: unknown, allowed: readonly string[]) =>

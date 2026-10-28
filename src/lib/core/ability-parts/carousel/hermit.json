@@ -1,0 +1,39 @@
+{
+	"clauses": [
+		{
+			"id": "outsiders",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "gain-ability",
+					"who": "self",
+					"of": "every-outsider"
+				}
+			]
+		},
+		{
+			"id": "bag",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "−0 or −1 Outsider",
+						"ops": [
+							{
+								"kind": "delta",
+								"type": "outsider",
+								"values": [0, -1]
+							}
+						],
+						"notes": ["The Hermit counts as one of the Outsiders and may be the one removed."]
+					}
+				}
+			]
+		}
+	]
+}

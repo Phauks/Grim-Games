@@ -1,0 +1,28 @@
+{
+	"clauses": [
+		{
+			"id": "shuffle",
+			"when": {
+				"at": "day"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Not Me",
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"effects": [
+						{
+							"do": "become",
+							"who": "another-player",
+							"into": "chosen-character"
+						}
+					]
+				}
+			]
+		}
+	]
+}

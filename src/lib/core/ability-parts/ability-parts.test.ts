@@ -97,9 +97,9 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 		fixedReminders:
 			"movement judgement: a lasting drunkenness never moves; parts can't tell it from the No Dashii's, which moves with its neighbours"
 	},
-	klutz: {
-		gameEnd:
-			'automatable: parts say evil chosen means its team loses; today the Storyteller decides'
+	ogre: {
+		marksChoice:
+			'uneven marksChoice: parts mark every night choice; the Savant reads only Townsfolk and Minion choices, so an Outsider needs none'
 	},
 	angel: {
 		fixedReminders:
@@ -140,22 +140,10 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 		marksChoice:
 			'uneven marksChoice: Chosen always marks its night choice; today it is not listed (the Savant reads it)'
 	},
-	cultleader: {
-		gameEnd:
-			'voting: the cult vote is a vote nothing reads, so parts compile no game end; today the Storyteller decides'
-	},
-	pixie: {
-		fixedReminders:
-			'movement judgement: Has Ability goes on once, when the Mad Townsfolk dies; parts only fix a setup, first-night or once-per-game token'
-	},
 	// Carousel Townsfolk (batch 2)
 	amnesiac: {
 		deathCause:
 			'one-offs: its ability is whatever the Storyteller makes up, so parts say gained-ability; today kills, since that ability may kill'
-	},
-	atheist: {
-		gameEnd:
-			'automatable: parts say good wins when the Atheist is executed; today the Storyteller decides'
 	},
 	// Carousel Demons.
 	lleech: {
@@ -208,8 +196,9 @@ const EDITIONS: Record<string, ReadonlyMap<string, unknown>> = {
 	fabled: FABLED_PARTS,
 	loric: LORIC_PARTS
 };
-/** Editions written in several batches: their coverage check waits until all are merged. */
-const PARTIAL = new Set(['carousel', 'fabled', 'loric']);
+/** Fabled and Loric are grouped by character type, whatever edition TPI's data gives them. */
+const folderOf = (c: { edition?: string; type: string }) =>
+	c.type === 'fabled' || c.type === 'loric' ? c.type : c.edition;
 const ALL = new Map(Object.values(EDITIONS).flatMap((parts) => [...parts]));
 
 function readAll(): Map<string, AbilityParts> {
@@ -250,11 +239,14 @@ describe('official characters as ability parts', () => {
 	const parts = readAll();
 
 	for (const [edition, editionParts] of Object.entries(EDITIONS))
-		if (!PARTIAL.has(edition))
-			it(`covers every ${edition} character and Traveller`, () => {
-				const ids = [...data.byId.values()].filter((c) => c.edition === edition).map((c) => c.id);
-				expect([...editionParts.keys()].sort()).toEqual(ids.sort());
-			});
+		it(`covers every ${edition} character`, () => {
+			const ids = [...data.byId.values()].filter((c) => folderOf(c) === edition).map((c) => c.id);
+			expect([...editionParts.keys()].sort()).toEqual(ids.sort());
+		});
+
+	it('covers every official character', () => {
+		expect([...ALL.keys()].sort()).toEqual([...data.byId.keys()].sort());
+	});
 
 	for (const id of ALL.keys()) {
 		describe(id, () => {

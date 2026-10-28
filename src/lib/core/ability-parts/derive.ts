@@ -117,6 +117,10 @@ function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 	// Evil's first-night info changes (the Magician, the Poppy Grower).
 	if (effects.some((e) => e.do === 'evil-info' && e.change !== 'restored'))
 		return { first: true, other: false };
+	// Carousel Outsiders & Travellers batch: told something when it happens mid-game (a new
+	// Minion learns the Damsel).
+	if (when.at === 'event' && when.event === 'new-minion' && effects.some((e) => e.do === 'learn'))
+		return { first, other: true };
 	// A death the Storyteller may cause at any time (the Tinker) has a step on other nights.
 	if (when.at === 'always' && clause.storytellerMay && effects.some((e) => e.do === 'kill'))
 		return { first, other: true };
@@ -138,6 +142,8 @@ function clauseOpening(clause: Clause): string | undefined {
 	if (when.at === 'day') {
 		if (when.days === 'first') return 'On your 1st day';
 		if (typeof when.days === 'number') return undefined;
+		// "Once per day" (the Gangster) is no Sort Order phrase.
+		if (limit === 'once-per-day') return undefined;
 		return limit === 'once-per-game' ? 'Once per game, during the day' : 'Each day';
 	}
 	if (when.at === 'nominated' && limit === 'first-time') return 'The 1st time';
@@ -214,6 +220,8 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 				...(['who', 'with'] as const).flatMap((k) =>
 					k in e ? [(e as Record<string, unknown>)[k]] : []
 				),
+				// Carousel Outsiders & Travellers: taking the chosen player's alignment (the Ogre).
+				...(e.do === 'become' && e.into === 'alignment-of-chosen' ? ['chosen'] : []),
 				// Carousel Minions: who learns of a choice (the Fearmonger's announcement).
 				...(e.do === 'learn' && e.to && clause.choose ? [e.to] : [])
 			]);
@@ -256,9 +264,12 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 	if (acc.fixed.size) rules.fixedReminders = [...acc.fixed].sort();
 	// A rule character's text states a rule, not its player's timing, so it has no Sort Order phrase.
 	const ruleCharacter = type === 'fabled' || type === 'loric';
+	// A setup clause that only changes the bag ("[+2 Outsiders]") ends the text; any other
+	// setup clause is a state the text opens with ("1 player is drunk": the Puzzlemaster).
+	const bagOnly = (c: Clause) => c.when.at === 'setup' && c.effects.every((e) => e.do === 'setup');
 	const opening = ruleCharacter
 		? undefined
-		: parts.clauses.filter((c) => c.when.at !== 'setup').map(clauseOpening)[0];
+		: parts.clauses.filter((c) => !bagOnly(c)).map(clauseOpening)[0];
 	return { rules, wakes, ...(opening ? { opening } : {}) };
 }
 
@@ -332,6 +343,12 @@ function applyEffect(
 			const reg = registers(conds, effect.who);
 			const as = reg?.types?.[0] ?? reg?.alignments?.[0];
 			if (effect.who === 'self') cause(rules, { kind: 'own-death' });
+			// Carousel Outsiders & Travellers batch: "if the nominee is not the Demon" (the Golem),
+			// "an alive neighbour" (the Gangster).
+			else if (reg?.not && as === 'demon')
+				cause(rules, { kind: 'kills', victim: { who: 'registers', as: 'not-demon' } });
+			else if (effect.who === 'chosen' && clause.choose?.neighbour)
+				cause(rules, { kind: 'kills', victim: { who: 'alive-neighbour' } });
 			else if (as === 'demon' || as === 'good')
 				cause(rules, {
 					kind: 'kills',
@@ -423,10 +440,17 @@ function applyEffect(
 			// Carousel Townsfolk: a good player the Storyteller marks registers falsely to every
 			// ability (the Lycanthrope's Faux Paw); only to its own, it is that ability's token.
 			else if (effect.who === 'a-good-player' && !effect.toSelfOnly && marks) {
-				const { anything: _, ...as } = effect.as;
+				const { anything, ...as } = effect.as;
 				rules.registersAs = {
 					...rules.registersAs,
-					tokens: { ...rules.registersAs?.tokens, [marks]: { ...as, carrierAlignment: 'good' } }
+					tokens: {
+						...rules.registersAs?.tokens,
+						[marks]: {
+							...as,
+							...(anything ? { asAnything: true as const } : {}),
+							carrierAlignment: 'good'
+						}
+					}
 				};
 			}
 			// Rule characters: a token's carrier registers falsely (the Revolutionary's Aligned).
@@ -457,6 +481,9 @@ function applyEffect(
 			return;
 		case 'gain-ability':
 			cause(rules, { kind: 'gained-ability' });
+			// A gained ability is kept, so its token stays put (the Plague Doctor's Minion), unless
+			// it is only until the next one (the Cannibal's Lunch moves to each executee).
+			if (marks && effect.of !== 'executed') acc.fixed.add(marks);
 			return;
 		case 'madness':
 			cause(
@@ -562,6 +589,9 @@ function applyEffect(
 				});
 				if (marks) acc.fixed.add(marks);
 			}
+			// Carousel Outsiders & Travellers batch: an end nothing above checks (a public guess or
+			// claim, the Storyteller's judgement) is offered at End game for the Storyteller to decide.
+			else rules.gameEnd = { ...rules.gameEnd, decidedByStoryteller: true };
 			return;
 		}
 		case 'hold-game':
@@ -602,6 +632,10 @@ function applyEffect(
 		}
 		case 'setup':
 			rules.setupModifier = effect.modifier;
+			return;
+		// Carousel Outsiders & Travellers batch.
+		case 'invert-winner':
+			rules.gameEnd = { ...rules.gameEnd, invertWinner: true };
 			return;
 		case 'believe':
 			if (effect.choicesAsDemon) rules.choosesLikeDemon = effect.choicesAsDemon;
