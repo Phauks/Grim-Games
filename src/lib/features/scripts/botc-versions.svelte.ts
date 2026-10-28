@@ -11,12 +11,12 @@
  * For other screens (the Library, the Script builder): `botcVersions.load(n)` then
  * `botcVersions.get(n)` for the list.
  */
+import { fetchJson } from '#lib/ui/fetch.ts';
 import {
 	readProxiedVersionList,
 	versionsPath,
 	type BotcScriptsVersionList
 } from './botcscripts-api.ts';
-import { withTimeout } from './fetch-script.ts';
 
 export type VersionsStatus = 'loading' | 'ready' | 'error';
 
@@ -36,10 +36,8 @@ export const botcVersions = {
 		if (statuses[scriptId] === 'loading' || statuses[scriptId] === 'ready') return;
 		statuses[scriptId] = 'loading';
 		try {
-			const response = await fetch(versionsPath(scriptId), { signal: withTimeout() });
-			const list = response.ok
-				? readProxiedVersionList(await response.json().catch(() => undefined))
-				: undefined;
+			const { response, body } = await fetchJson(versionsPath(scriptId));
+			const list = response.ok ? readProxiedVersionList(body) : undefined;
 			if (!list) throw new Error('no version list');
 			lists[scriptId] = list;
 			statuses[scriptId] = 'ready';

@@ -128,9 +128,28 @@ describe('notes at the evil info steps', () => {
 		}).steps;
 		const minion = steps.find((s) => s.id === 'minioninfo')!.notes.join(' ');
 		const demon = steps.find((s) => s.id === 'demoninfo')!.notes.join(' ');
-		expect(minion).toMatch(/Poppy Grower.*Magician.*Lunatic/);
+		// In the order the characters are in play, each from its rules file's `evilInfo`.
+		expect(minion).toMatch(/Poppy Grower.*Lunatic.*Magician/);
+		expect(minion).not.toMatch(/Summoner|Snitch/);
 		expect(demon).toMatch(/Summoner/);
 		expect(demon).toMatch(/Snitch/);
+	});
+
+	it('reads a homebrew character’s own evilInfo note', () => {
+		const [chef] = get('chef');
+		const homebrew = {
+			...chef,
+			id: 'lantern',
+			name: 'Lantern',
+			rules: { evilInfo: { notes: { demoninfo: 'show the Demon one more bluff.' } } }
+		};
+		const steps = order({ inPlay: [...get('imp'), homebrew] }).steps;
+		expect(steps.find((s) => s.id === 'demoninfo')!.notes).toContain(
+			'Lantern: show the Demon one more bluff.'
+		);
+		expect(steps.find((s) => s.id === 'minioninfo')!.notes).not.toContain(
+			'Lantern: show the Demon one more bluff.'
+		);
 	});
 });
 

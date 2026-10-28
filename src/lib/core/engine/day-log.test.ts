@@ -7,10 +7,9 @@
  *   execution)
  */
 import { describe, expect, it } from 'vitest';
-import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
+import { newGame, refused, run, warned } from '#lib/core/model/fixtures.test-support.ts';
 import type { Command } from './commands.ts';
-import type { EngineContext } from './context.ts';
-import { dispatch, undo, type GameSession } from './log.ts';
+import { undo, type GameSession } from './log.ts';
 import { applyEvent } from './reducer.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -27,18 +26,6 @@ function setup() {
 		{ type: 'AssignCharacter', seatId: seats[4], characterId: 'washerwoman' }
 	);
 	return { session: s, ctx, seats };
-}
-
-function warned(session: GameSession, ctx: EngineContext, command: Command): string[] {
-	const result = dispatch(session, command, ctx);
-	if (!result.ok) throw new Error(`${command.type} refused: ${result.error.message}`);
-	return result.warnings.map((w) => w.code);
-}
-
-function refused(session: GameSession, ctx: EngineContext, command: Command): string {
-	const result = dispatch(session, command, ctx);
-	if (result.ok) throw new Error(`${command.type} was accepted`);
-	return result.error.code;
 }
 
 describe('a new game', () => {
