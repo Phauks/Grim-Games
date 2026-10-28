@@ -111,10 +111,10 @@
 />
 <SettingSelect
 	label={t('day.setupForPlayers')}
-	value={preferences.current.setupForPlayers}
+	value={gameSettings.current.setupForPlayers}
 	options={SETUP_LOOKS.map((value) => ({ value, label: t(`day.setupForPlayers.${value}`) }))}
 	defaultValue="candles"
-	onChange={(setupForPlayers) => preferences.update({ setupForPlayers })}
+	onChange={(setupForPlayers) => gameSettings.setDefault({ setupForPlayers })}
 />
 
 <!-- Every PIN and lock in one place (Trevor, 2026-10-27: "do we need better centralized PIN
