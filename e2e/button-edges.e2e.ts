@@ -122,7 +122,7 @@ test('no filled button blends into the surface behind it', async ({ page }) => {
 	// The board, its More menu and a seat's sheet.
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	seen.push(...(await check(page, 'board')));
 	await page.getByRole('button', { name: 'More', exact: true }).tap();

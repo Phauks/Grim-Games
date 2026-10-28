@@ -42,8 +42,6 @@ import {
 	type Impairment
 } from './ability.ts';
 
-const W = 'https://wiki.bloodontheclocktower.com/';
-
 /** Who a killing step's ability is: the Demon's kill, or another ability's. */
 export type KillBy = 'demon' | 'other';
 
@@ -265,21 +263,25 @@ function deathAlerts(
 		const character = characters.get(own);
 		alert('on-death', { characterId: own, seatId }, character && wikiUrl(character));
 	}
-	// The Grandmother dies if the Demon kills her grandchild.
-	const grandchild = seat.reminders.find(
-		(r) => r.characterId === 'grandmother' && r.label === 'Grandchild'
-	);
-	if (grandchild && killer.by === 'demon') {
-		const from = holder('grandmother');
-		alert(
-			'on-death',
-			{
-				characterId: 'grandmother',
-				...(from ? { seatId: from } : {}),
-				reminderId: grandchild.reminderId
-			},
-			W + 'Grandmother'
-		);
+	// A player dies with the one their token marks when the Demon kills them (`deathCheck`
+	// `marked-killed-by-demon`: the Grandmother's Grandchild,
+	// https://wiki.bloodontheclocktower.com/Grandmother).
+	if (killer.by === 'demon') {
+		for (const r of seat.reminders) {
+			const check = rulesOf(r.characterId, characters)?.deathCheck;
+			if (check?.kind !== 'marked-killed-by-demon' || check.token !== r.label) continue;
+			const from = holder(r.characterId);
+			const character = characters.get(r.characterId);
+			alert(
+				'on-death',
+				{
+					characterId: r.characterId,
+					...(from ? { seatId: from } : {}),
+					reminderId: r.reminderId
+				},
+				character && wikiUrl(character)
+			);
+		}
 	}
 	return out;
 }

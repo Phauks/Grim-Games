@@ -29,9 +29,9 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await page.clock.install();
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])
 		await choice(page, name).tap();
@@ -120,9 +120,9 @@ test('a phone that joins is named on a seat and gets its character from Deal', a
 }, testInfo) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])
 		await choice(page, name).tap();
@@ -163,7 +163,7 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 }, testInfo) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	const board = new URL(page.url()).pathname;
 

@@ -75,7 +75,7 @@ export const modes = {
 	'modes.morePlayers': 'More players',
 	'modes.townSheet': 'Town {number} setup sheet',
 	'modes.townsUneven': 'The towns’ player counts differ by more than {count}.',
-	'modes.start': 'Start game',
+	'modes.start': 'Create game',
 	'modes.towns.pageTitle': `Towns · ${APP_NAME}`,
 	'modes.towns.missing': 'Some of these towns are no longer saved on this device.',
 	'modes.towns.town': 'Town {number}',

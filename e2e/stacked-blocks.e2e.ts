@@ -140,7 +140,7 @@ test('no list of information runs together without a divider, a gap or a heading
 	// The board's ⋯ menu and a seat's sheet.
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeVisible();

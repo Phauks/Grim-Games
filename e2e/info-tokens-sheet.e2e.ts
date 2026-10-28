@@ -144,7 +144,7 @@ test('a card to show with long character names keeps the sheet its width', async
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
