@@ -113,3 +113,21 @@ test('the Profile sets the player name with no room, kept for the next one', asy
 	const again = await openProfile(page);
 	await expect(again.getByTestId('profile-preview')).toContainText('Robin');
 });
+
+test('the Profile keeps a flavour text, edited in its own modal (Trevor, 2026-10-28)', async ({
+	page
+}) => {
+	await page.goto('/');
+	const dialog = await openProfile(page);
+	await expect(dialog.getByTestId('flavour-text')).toHaveText('None');
+	await dialog.getByRole('button', { name: 'Edit flavour text' }).tap();
+	const modal = page.getByRole('dialog', { name: 'Flavour text' });
+	await modal.getByRole('textbox', { name: 'Flavour text' }).fill('Always the Drunk.');
+	await modal.getByRole('button', { name: 'Save' }).tap();
+	await expect(modal).toBeHidden();
+	await expect(dialog.getByTestId('flavour-text')).toHaveText('Always the Drunk.');
+
+	await page.reload();
+	const again = await openProfile(page);
+	await expect(again.getByTestId('flavour-text')).toHaveText('Always the Drunk.');
+});

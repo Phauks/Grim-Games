@@ -9,6 +9,7 @@
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
 	import AvatarPictureRow from './AvatarPictureRow.svelte';
+	import FlavourTextRow from './FlavourTextRow.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 
 	/**
@@ -58,6 +59,9 @@
 <!-- This phone's name: in its room while it is in one, else kept for the next (Trevor,
      2026-10-28: the Profile is where the player name is set). -->
 <PlayerNameRow player={joinedRoom.player} />
+
+<!-- A line about themselves, kept for later uses (Trevor, 2026-10-28). -->
+<FlavourTextRow />
 
 <!-- The player's own picture on their seat (2026-10-27). -->
 <AvatarPictureRow {name} />
