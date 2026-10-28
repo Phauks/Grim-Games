@@ -1,0 +1,16 @@
+{
+	"clauses": [
+		{
+			"id": "confuse",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "evil-info",
+					"change": "shown-as-both"
+				}
+			]
+		}
+	]
+}

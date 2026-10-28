@@ -58,7 +58,9 @@ const EFFECT_FIELDS: Record<string, readonly string[]> = {
 	setup: ['modifier'],
 	storyteller: ['note'],
 	// Carousel Townsfolk.
-	'stop-kills': ['who', 'until']
+	'stop-kills': ['who', 'until'],
+	'vote-rights': ['who', 'nominations', 'votes'],
+	'evil-info': ['change']
 };
 
 const oneOf = (value: unknown, allowed: readonly string[]) =>

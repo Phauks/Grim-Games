@@ -65,7 +65,11 @@ export const EVENTS = [
 	'grandchild-killed-by-demon',
 	'marked-executed',
 	// Carousel Townsfolk: the player its reminder marks dies (Pixie, Bounty Hunter).
-	'marked-dies'
+	'marked-dies',
+	// Carousel Townsfolk (batch 2): a player dies by execution (Cannibal); the Demon kills
+	// someone (Choirboy, with `characterIs` for the King).
+	'executee-dies',
+	'demon-kills'
 ] as const;
 export type GameEvent = (typeof EVENTS)[number];
 
@@ -146,6 +150,7 @@ export type Condition =
 	/** `token` marks the player it is about (the Godfather's Died Today). */
 	| { today: 'no-death' | 'outsider-died' | 'statement-true'; token?: ReminderLabel }
 	| { choice: 'guess-wrong' | 'last-was-none' | 'they-agree' | 'impaired' }
+	| CarouselTownsfolkCondition
 	| { neighboursGood: true }
 	/** Only the first time this happens (the Fang Gu's first Outsider). */
 	| { firstTime: true }
@@ -223,7 +228,8 @@ export type Info =
 				| 'in-play-townsfolk'
 				| 'evil-player'
 				| 'different-type-player'
-				| 'alive-character';
+				| 'alive-character'
+				| CarouselTownsfolkInfoKind;
 	  };
 
 /**
@@ -254,7 +260,14 @@ type EffectBody =
 			do: 'impair';
 			who: Subject;
 			as: 'poisoned' | 'drunk';
-			until?: 'tonight-and-tomorrow' | 'dusk' | 'dusk-tomorrow' | '3-nights-and-days' | 'always';
+			until?:
+				| 'tonight-and-tomorrow'
+				| 'dusk'
+				| 'dusk-tomorrow'
+				| '3-nights-and-days'
+				| 'always'
+				/** Until a good player dies by execution (the Cannibal's poison). */
+				| 'good-executed';
 			/** Ends when its own ability stops working (the Pukka's poison). */
 			whileWorks?: true;
 	  }
@@ -265,7 +278,11 @@ type EffectBody =
 	/** The subject keeps or regains their ability though dead (Vigormortis, Bone Collector). */
 	| { do: 'keep-ability'; who: Subject; until?: 'dusk' }
 	/** Gains a character's ability (Philosopher, Apprentice). */
-	| { do: 'gain-ability'; who: Subject; of: 'chosen' | 'a-townsfolk-or-minion' | 'marked' }
+	| {
+			do: 'gain-ability';
+			who: Subject;
+			of: 'chosen' | 'a-townsfolk-or-minion' | GainedAbilityOf | 'marked';
+	  }
 	/** This type's information is false (the Vortox). */
 	| { do: 'falsify-info'; of: CharacterType }
 	/** The subject doesn't wake tonight (the Exorcist's Demon). */
@@ -321,7 +338,10 @@ type EffectBody =
 				| 'chosen-character'
 				| 'alignment-of-chooser'
 				// Carousel Townsfolk: an alive neighbour's alignment (Cult Leader).
-				| 'alignment-of-neighbour';
+				| 'alignment-of-neighbour'
+
+				/** A Townsfolk not in play (the Huntsman's Damsel). */
+				| 'not-in-play-townsfolk';
 			evil?: true;
 	  }
 	| { do: 'execute'; who: Subject; instead?: true }
@@ -336,8 +356,9 @@ type EffectBody =
 	| { do: 'vote-needs-token'; who: Subject }
 	| { do: 'setup'; modifier: SetupModifierRules }
 	| { do: 'storyteller'; note: string }
-	/** Carousel Townsfolk: the subject kills no one tonight (the Lycanthrope's Demon). */
-	| { do: 'stop-kills'; who: Subject; until: 'tonight' };
+	/** Carousel Townsfolk: the subject kills no one tonight (the Lycanthrope's and the Princess's Demon). */
+	| { do: 'stop-kills'; who: Subject; until?: 'tonight' }
+	| CarouselTownsfolkEffect;
 
 export type EffectVerb = EffectBody['do'];
 
@@ -390,3 +411,32 @@ export interface JinxParts {
 	characters: [string, string];
 	patches: JinxPatch[];
 }
+
+// --- Carousel Townsfolk (batch 2) -------------------------------------------------------
+
+/**
+ * - `choice: guess-right`: a public guess the Storyteller judges right (the Alsaahir);
+ * - `characterIs`: the subject is a given character, by id (the Huntsman's Damsel, the
+ *   Choirboy's King). Data may name a character; rules code never does;
+ * - `today: own-nominee-executed`: its player nominated today's executee (the Princess).
+ */
+export type CarouselTownsfolkCondition =
+	| { choice: 'guess-right' }
+	| { characterIs: { who: Subject; id: string } }
+	| { today: 'own-nominee-executed' };
+
+/** Info with no generator: which player is the Demon (Choirboy), how close a guess was (Amnesiac). */
+export type CarouselTownsfolkInfoKind = 'demon-player' | 'guess-accuracy';
+
+/** Whose ability is gained: a Minion's (Alchemist), the executee's (Cannibal), one the Storyteller makes up (Amnesiac). */
+export type GainedAbilityOf = 'a-minion' | 'executed' | 'storyteller-choice';
+
+export type CarouselTownsfolkEffect =
+	/** Nominations a day and votes per nomination, from now on (the Banshee). */
+	| { do: 'vote-rights'; who: Subject; nominations?: number; votes?: number }
+	/**
+	 * Changes what evil learns on the first night: they don't learn each other (`hidden`, the
+	 * Poppy Grower), they do now (`restored`), or this player shows as both (`shown-as-both`,
+	 * the Magician: a Minion to the Demon, the Demon to Minions).
+	 */
+	| { do: 'evil-info'; change: 'hidden' | 'restored' | 'shown-as-both' };

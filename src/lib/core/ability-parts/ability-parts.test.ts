@@ -18,8 +18,8 @@ import { DERIVED_KEYS, deriveRules, type DerivedKey } from './derive.ts';
 import { applyJinx } from './jinx.ts';
 import { readAbilityParts } from './read.ts';
 import { BAD_MOON_RISING_PARTS } from './bad-moon-rising/index.ts';
-import { SECTS_AND_VIOLETS_PARTS } from './sects-and-violets/index.ts';
 import { CAROUSEL_PARTS } from './carousel/index.ts';
+import { SECTS_AND_VIOLETS_PARTS } from './sects-and-violets/index.ts';
 import { TROUBLE_BREWING_JINXES, TROUBLE_BREWING_PARTS } from './trouble-brewing/index.ts';
 import type { AbilityParts } from './types.ts';
 
@@ -117,11 +117,26 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 	pixie: {
 		fixedReminders:
 			'movement judgement: Has Ability goes on once, when the Mad Townsfolk dies; parts only fix a setup, first-night or once-per-game token'
+	},
+	// Carousel Townsfolk (batch 2)
+	amnesiac: {
+		deathCause:
+			'one-offs: its ability is whatever the Storyteller makes up, so parts say gained-ability; today kills, since that ability may kill'
+	},
+	atheist: {
+		gameEnd:
+			'automatable: parts say good wins when the Atheist is executed; today the Storyteller decides'
 	}
 };
 
 /** Characters whose derived night wakes differ from TPI's night sheet, and why. Only shrinks. */
 const WAKE_DIFFERENCES: Record<string, string> = {};
+
+/** Characters whose ability opens with another phrase than its timing gives, and why. Only shrinks. */
+const OPENING_DIFFERENCES: Record<string, string> = {
+	farmer:
+		'wording: "When you die" and "If you die" (the Ravenkeeper) are the same timing, so parts can\'t tell them apart'
+};
 
 const data = committedGameData();
 
@@ -214,7 +229,9 @@ describe('the base three editions as ability parts', () => {
 			// Abilities that open with a state ("You are", "If", "You might") leave it to their text.
 			if (derived.opening)
 				it('opens with the Sort Order phrase its timing gives', () => {
-					expect(SORT_ORDER_PHRASES[sortOrderRank(character.ability)]).toBe(derived.opening);
+					const phrase = SORT_ORDER_PHRASES[sortOrderRank(character.ability)];
+					if (OPENING_DIFFERENCES[id]) expect(phrase).not.toBe(derived.opening);
+					else expect(phrase).toBe(derived.opening);
 				});
 		});
 	}
