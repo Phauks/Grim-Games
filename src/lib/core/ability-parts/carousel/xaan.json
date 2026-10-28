@@ -1,0 +1,47 @@
+{
+	"clauses": [
+		{
+			"id": "outsiders",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "X Outsiders",
+						"ops": [
+							{
+								"kind": "any",
+								"type": "outsider"
+							}
+						],
+						"notes": ["Choose any number of Outsiders; that number is X, the night the Xaan acts."]
+					}
+				}
+			]
+		},
+		{
+			"id": "poison",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"if": [
+				{
+					"onNight": "outsiders-in-play"
+				}
+			],
+			"marks": "X",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "each-townsfolk",
+					"as": "poisoned",
+					"until": "dusk",
+					"whileWorks": true
+				}
+			]
+		}
+	]
+}

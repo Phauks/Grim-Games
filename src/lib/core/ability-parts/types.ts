@@ -31,7 +31,13 @@ export type Nights = (typeof NIGHTS)[number];
 export type When =
 	| { at: 'setup' }
 	| { at: 'night'; nights: Nights }
-	| { at: 'day'; after?: 'first-vote-tallied' | 'first-execution'; days?: 'first' }
+	| {
+			at: 'day';
+			after?: 'first-vote-tallied' | 'first-execution';
+			days?: 'first';
+			/** Carousel Minions: "before nominations" (the Psychopath). */
+			before?: 'nominations';
+	  }
 	| { at: 'dusk' }
 	| { at: 'always' }
 	| {
@@ -63,7 +69,9 @@ export const EVENTS = [
 	'nomination',
 	'killed-outsider',
 	'grandchild-killed-by-demon',
-	'marked-executed'
+	'marked-executed',
+	// Carousel Minions: a player says its secret word (the Mezepheles).
+	'said-word'
 ] as const;
 export type GameEvent = (typeof EVENTS)[number];
 
@@ -102,7 +110,12 @@ export const SUBJECTS = [
 	'the-demon',
 	'each-player',
 	'opposing-player',
-	'killed'
+	'killed',
+	// Carousel Minions: who said the secret word (Mezepheles); today's nominee (Vizier); every
+	// Townsfolk (Xaan).
+	'speaker',
+	'nominee',
+	'each-townsfolk'
 ] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
@@ -124,6 +137,8 @@ export interface Choice {
 	from?: 'voted-today';
 	/** Different to previous nights. */
 	notRepeated?: true;
+	/** Carousel Minions: only characters of this type (the Summoner's Demon). */
+	type?: CharacterType;
 }
 
 /**
@@ -139,11 +154,28 @@ export type Condition =
 	| { partnerIs: Subject }
 	/** Something about today or this choice that only this ability's moment knows. */
 	/** `token` marks the player it is about (the Godfather's Died Today). */
-	| { today: 'no-death' | 'outsider-died' | 'statement-true'; token?: ReminderLabel }
-	| { choice: 'guess-wrong' | 'last-was-none' | 'they-agree' | 'impaired' }
+	| {
+			/** `good-voted`: a good player voted on today's nomination (Carousel: the Vizier). */
+			today: 'no-death' | 'outsider-died' | 'statement-true' | 'good-voted';
+			token?: ReminderLabel;
+	  }
+	/** Carousel Minions: `won-roshambo` (Psychopath), `claimed-character` (Goblin). */
+	| {
+			choice:
+				| 'guess-wrong'
+				| 'last-was-none'
+				| 'they-agree'
+				| 'impaired'
+				| 'won-roshambo'
+				| 'claimed-character';
+	  }
 	| { neighboursGood: true }
 	/** Only the first time this happens (the Fang Gu's first Outsider). */
-	| { firstTime: true };
+	| { firstTime: true }
+	// Carousel Minions: only on night N, or night X where X is the Outsiders in play (Summoner,
+	// Xaan); its own player nominated the subject (Fearmonger).
+	| { onNight: number | 'outsiders-in-play' }
+	| { nominatedBy: Subject };
 
 /**
  * What the player learns. `measure` and `question` are the night info generators the app
@@ -202,7 +234,16 @@ export type Info =
 				| 'yes-no-answer'
 				| 'who-chose'
 				| 'each-other'
-				| 'which-effect';
+				| 'which-effect'
+				// Carousel Minions: a secret word (Mezepheles), that this character is in play
+				// (Widow), the night with eyes open (Wraith), 3 bluffs (Summoner), which ability
+				// the Demon has (Boffin), that it chose a new player (Fearmonger).
+				| 'secret-word'
+				| 'in-play'
+				| 'watches-night'
+				| 'bluffs'
+				| 'which-ability'
+				| 'chose-new-player';
 	  };
 
 /**
@@ -222,12 +263,14 @@ type EffectBody =
 	| {
 			do: 'protect';
 			who: Subject;
-			from: 'demon' | 'any' | 'execution';
+			/** `day`: any death by day (Carousel: the Vizier). */
+			from: 'demon' | 'any' | 'execution' | 'day';
 			until?: 'tonight' | 'tomorrow';
 			/** Only the first death doesn't happen (the Fool, the Zombuul). */
 			once?: true;
 	  }
-	| { do: 'kill'; who: Subject; ignoresProtection?: true }
+	/** `allBut`: all but this many players die (Carousel: the Boomdandy). */
+	| { do: 'kill'; who: Subject; ignoresProtection?: true; allBut?: number }
 	| { do: 'resurrect'; who: Subject }
 	| {
 			do: 'impair';
@@ -244,7 +287,13 @@ type EffectBody =
 	/** The subject keeps or regains their ability though dead (Vigormortis, Bone Collector). */
 	| { do: 'keep-ability'; who: Subject; until?: 'dusk' }
 	/** Gains a character's ability (Philosopher, Apprentice). */
-	| { do: 'gain-ability'; who: Subject; of: 'chosen' | 'a-townsfolk-or-minion' }
+	| {
+			do: 'gain-ability';
+			who: Subject;
+			/** Carousel: a not-in-play good character's, even while impaired (the Boffin's Demon). */
+			of: 'chosen' | 'a-townsfolk-or-minion' | 'a-not-in-play-good';
+			evenIfImpaired?: true;
+	  }
 	/** This type's information is false (the Vortox). */
 	| { do: 'falsify-info'; of: CharacterType }
 	/** The subject doesn't wake tonight (the Exorcist's Demon). */
@@ -255,13 +304,22 @@ type EffectBody =
 			do: 'arm';
 			who: Subject;
 			on: 'nominates' | 'executed';
-			until: 'dusk-tomorrow';
+			/** `dusk`: today only (Carousel: the Goblin). */
+			until: 'dusk-tomorrow' | 'dusk';
 			effects: Effect[];
 	  }
 	/** Later tonight, if `if` holds, `effects` happen (Gossip, Moonchild). */
 	| { do: 'later'; at: 'tonight'; if?: Condition[]; effects: Effect[] }
 	/** "mad" about being `as`, or the Storyteller may execute them (Cerenovus, Mutant). */
-	| { do: 'madness'; who: Subject; as: 'chosen-character' | 'outsider'; until?: 'dusk-tomorrow' }
+	| {
+			do: 'madness';
+			who: Subject;
+			/** Carousel: that the 2nd chosen player is evil (the Harpy). */
+			as: 'chosen-character' | 'outsider' | 'second-chosen-evil';
+			until?: 'dusk-tomorrow';
+			/** Carousel: breaking it may kill instead of execute (the Harpy). */
+			penalty?: 'die';
+	  }
 	/** Swap characters (and alignments) between two subjects, or players' seats (Matron). */
 	| {
 			do: 'swap';
@@ -279,7 +337,9 @@ type EffectBody =
 				| 'no-majority-needed'
 				| 'force-execution'
 				| 'nominate-again'
-				| 'no-private-chats';
+				| 'no-private-chats'
+				// Carousel: eyes closed while voting, tally secret (the Organ Grinder).
+				| 'secret-votes';
 	  }
 	| { do: 'immune'; who: Subject; to: ('poisoned' | 'drunk')[] }
 	| {
@@ -294,11 +354,13 @@ type EffectBody =
 	| {
 			do: 'become';
 			who: Subject;
-			into: 'demon' | 'this-character' | 'chosen-character' | 'alignment-of-chooser';
+			/** `evil`: only the alignment changes (Carousel: the Mezepheles). */
+			into: 'demon' | 'this-character' | 'chosen-character' | 'alignment-of-chooser' | 'evil';
 			evil?: true;
 	  }
 	| { do: 'execute'; who: Subject; instead?: true }
-	| { do: 'end-game'; winner: 'own-team' | 'other-team' | Alignment }
+	/** `of`: whose team, when not its own player's (Carousel: the Fearmonger's executed). */
+	| { do: 'end-game'; winner: 'own-team' | 'other-team' | Alignment; of?: Subject }
 	/** Good can't win while both live (the Evil Twin); one more day (the Mastermind). */
 	| { do: 'hold-game'; while?: 'both-alive'; extraDay?: true }
 	/** The subject registers as dead while alive (the Zombuul). */

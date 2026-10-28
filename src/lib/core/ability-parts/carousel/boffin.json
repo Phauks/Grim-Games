@@ -1,0 +1,31 @@
+{
+	"clauses": [
+		{
+			"id": "gift",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "gain-ability",
+					"who": "the-demon",
+					"of": "a-not-in-play-good",
+					"evenIfImpaired": true
+				},
+				{
+					"do": "learn",
+					"info": {
+						"kind": "which-ability"
+					}
+				},
+				{
+					"do": "learn",
+					"info": {
+						"kind": "which-ability"
+					},
+					"to": "the-demon"
+				}
+			]
+		}
+	]
+}

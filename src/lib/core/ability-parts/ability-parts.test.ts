@@ -19,6 +19,7 @@ import { applyJinx } from './jinx.ts';
 import { readAbilityParts } from './read.ts';
 import { BAD_MOON_RISING_PARTS } from './bad-moon-rising/index.ts';
 import { SECTS_AND_VIOLETS_PARTS } from './sects-and-violets/index.ts';
+import { CAROUSEL_PARTS } from './carousel/index.ts';
 import { TROUBLE_BREWING_JINXES, TROUBLE_BREWING_PARTS } from './trouble-brewing/index.ts';
 import type { AbilityParts } from './types.ts';
 
@@ -98,6 +99,26 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 		gameEnd:
 			'automatable: parts say evil chosen means its team loses; today the Storyteller decides'
 	},
+	widow: {
+		impairs:
+			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too'
+	},
+	organgrinder: {
+		impairs:
+			'label-only: today its own Drunk token impairs it by its label (impairmentOfLabel, rules/ability.ts); parts say it'
+	},
+	boomdandy: {
+		actsWhenDead:
+			"uneven actsWhenDead: it acts on its own execution, as the Saint does, but only the Saint's rules say so"
+	},
+	summoner: {
+		gameEnd:
+			'one-offs: good wins once no Demon was made and every evil player is dead (dead-without-demon); the text implies it, parts have no word for it'
+	},
+	wizard: {
+		deathCause:
+			'storyteller judgement: a granted wish may kill, but what a wish does is the Storyteller’s (a hatch)'
+	},
 	vigormortis: {
 		keepsAbility:
 			'per-effect condition: only killed Minions keep their ability; parts have no condition on one effect',
@@ -108,6 +129,18 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 
 /** Characters whose derived night wakes differ from TPI's night sheet, and why. Only shrinks. */
 const WAKE_DIFFERENCES: Record<string, string> = {};
+
+/**
+ * Characters whose ability text doesn't open with the Sort Order phrase its timing gives, and
+ * why. Only shrinks.
+ */
+const OPENING_DIFFERENCES: Record<string, string> = {
+	boomdandy:
+		'text order: "If you are executed" is not "If you die", though it is a death by execution',
+	wraith: 'text order: "You may choose to open your eyes at night" puts the timing after "You"',
+	wizard:
+		'text order: "Once per game, choose to make a wish" leaves out "at night", though it wakes'
+};
 
 const data = committedGameData();
 
@@ -121,8 +154,11 @@ const canonical = (value: unknown): string =>
 const EDITIONS: Record<string, ReadonlyMap<string, unknown>> = {
 	tb: TROUBLE_BREWING_PARTS,
 	bmr: BAD_MOON_RISING_PARTS,
-	snv: SECTS_AND_VIOLETS_PARTS
+	snv: SECTS_AND_VIOLETS_PARTS,
+	carousel: CAROUSEL_PARTS
 };
+/** TEMPORARY while the Carousel, Fabled and Loric are written in separate batches. */
+const PARTIAL_EDITIONS = new Set(['carousel', 'fabled', 'loric']);
 const ALL = new Map(Object.values(EDITIONS).flatMap((parts) => [...parts]));
 
 function readAll(): Map<string, AbilityParts> {
@@ -159,14 +195,15 @@ const today = (parts: Map<string, AbilityParts>, id: string, key: DerivedKey): u
 	return rules[key];
 };
 
-describe('the base three editions as ability parts', () => {
+describe('official characters as ability parts', () => {
 	const parts = readAll();
 
 	for (const [edition, editionParts] of Object.entries(EDITIONS))
-		it(`covers every ${edition} character and Traveller`, () => {
-			const ids = [...data.byId.values()].filter((c) => c.edition === edition).map((c) => c.id);
-			expect([...editionParts.keys()].sort()).toEqual(ids.sort());
-		});
+		if (!PARTIAL_EDITIONS.has(edition))
+			it(`covers every ${edition} character and Traveller`, () => {
+				const ids = [...data.byId.values()].filter((c) => c.edition === edition).map((c) => c.id);
+				expect([...editionParts.keys()].sort()).toEqual(ids.sort());
+			});
 
 	for (const id of ALL.keys()) {
 		describe(id, () => {
@@ -196,7 +233,9 @@ describe('the base three editions as ability parts', () => {
 			// Abilities that open with a state ("You are", "If", "You might") leave it to their text.
 			if (derived.opening)
 				it('opens with the Sort Order phrase its timing gives', () => {
-					expect(SORT_ORDER_PHRASES[sortOrderRank(character.ability)]).toBe(derived.opening);
+					const phrase = SORT_ORDER_PHRASES[sortOrderRank(character.ability)];
+					if (OPENING_DIFFERENCES[id]) expect(phrase).not.toBe(derived.opening);
+					else expect(phrase).toBe(derived.opening);
 				});
 		});
 	}
