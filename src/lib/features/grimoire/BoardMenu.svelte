@@ -89,19 +89,18 @@
 	<div class="menu">
 		<section class="group" aria-labelledby="board-menu-game">
 			<h3 id="board-menu-game" class="group-title">Game</h3>
-			<!-- Players' messages: on a phone's toolbar there is no room for it (Trevor, 2026-10-27). -->
+			<!-- Players' messages, here on every screen (Trevor, 2026-10-28: "we should not have
+			     discrepancy, keep in ..."). -->
 			{#if host.code && !watching}
-				<span class="menu-messages">
-					<Button
-						variant="quiet"
-						icon="messages"
-						data-testid="menu-messages"
-						onclick={() => fromMenu(() => inboxDialog.show())}
-					>
-						{t('room.inbox.title')}
-						{#if host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
-					</Button>
-				</span>
+				<Button
+					variant="quiet"
+					icon="messages"
+					data-testid="menu-messages"
+					onclick={() => fromMenu(() => inboxDialog.show())}
+				>
+					{t('room.inbox.title')}
+					{#if host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
+				</Button>
 			{/if}
 			<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
 			<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
@@ -296,15 +295,6 @@
 	}
 	.menu-nav {
 		display: none;
-	}
-	.menu-messages {
-		display: contents;
-	}
-	/* Wider screens have Messages on the toolbar. */
-	@media (min-width: 480px) {
-		.menu-messages {
-			display: none;
-		}
 	}
 	/* The narrowest phones keep the app's navigation here instead of on the toolbar. */
 	@media (max-width: 359.98px) {

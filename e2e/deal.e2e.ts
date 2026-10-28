@@ -25,6 +25,8 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	page,
 	browser
 }, testInfo) => {
+	// The Storyteller's clock, so the minute players may look can be skipped.
+	await page.clock.install();
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
@@ -50,8 +52,8 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await nameSeat(page, board, 2, 'Alex');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '2');
 	await expect(phone.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
-	// Nothing to see before the deal.
-	await expect(phone.getByTestId('your-character')).toHaveCount(0);
+	// Nothing to see before the deal: the button keeps its row, disabled (Trevor, 2026-10-28).
+	await expect(phone.getByTestId('your-character')).toBeDisabled();
 
 	// Deal, with the players' switch left on.
 	await page.goto(`${board}/draw`);
@@ -69,15 +71,19 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await phone.getByTestId('your-character').tap();
 	const card = phone.getByRole('dialog', { name: 'Your character' });
 	const hold = card.getByTestId('role-hold');
-	await expect(card.getByTestId('role-name')).toBeEmpty();
+	await expect(card.getByTestId('role-name')).toBeHidden();
+	// Seeing it moves nothing in the card (Trevor, 2026-10-28: "there is reflow").
+	const before = await card.boundingBox();
 	// The fair-play notice shows before and while it is held (Trevor, 2026-10-27).
 	const fairPlay = card.getByTestId('fair-play');
 	await expect(fairPlay).toContainText('This is for your eyes only');
 	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
+	await expect(card.getByTestId('role-name')).toBeVisible();
 	await expect(card.getByTestId('role-name')).toHaveText(/Washerwoman|Empath|Monk|Poisoner|Imp/);
 	await expect(fairPlay).toBeVisible();
+	expect(await card.boundingBox()).toEqual(before);
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
-	await expect(card.getByTestId('role-name')).toBeEmpty();
+	await expect(card.getByTestId('role-name')).toBeHidden();
 
 	// Share lists every seat: seat 2 has seen theirs, the others have no phone.
 	await page.goto(`${board}/room`);
@@ -86,12 +92,22 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(rows.nth(1)).toContainText('Seen');
 	await expect(rows.nth(0)).toContainText('No phone');
 
-	// Turned off, the phone can no longer open it.
-	await page.getByText('Players can see their character', { exact: true }).tap();
+	// A minute after it was turned on, it turns itself off and the phone can no longer open it
+	// (Trevor, 2026-10-28: "only be available for 1 minute, then turn off").
+	const toggle = page.getByRole('checkbox', { name: 'Players can see their character' });
+	await expect(toggle).toBeChecked();
+	await page.clock.fastForward('01:01');
+	await expect(toggle).not.toBeChecked();
 	await expect(card).toBeHidden();
-	await expect(phone.getByTestId('your-character')).toHaveCount(0);
+	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	// Who has looked stays.
 	await expect(rows.nth(1)).toContainText('Seen');
+
+	// Turned on again, and off by hand.
+	await page.getByText('Players can see their character', { exact: true }).tap();
+	await expect(phone.getByTestId('your-character')).toBeEnabled();
+	await page.getByText('Players can see their character', { exact: true }).tap();
+	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	await phoneContext.close();
 });
 
@@ -187,7 +203,7 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	await expect(card).not.toContainText('You are Evil');
 	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
 	await expect(hold).toHaveText('You are Evil');
-	await expect(card.getByTestId('role-name')).toBeEmpty();
+	await expect(card.getByTestId('role-name')).toHaveText('');
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(card).not.toContainText('You are Evil');
 	await phoneContext.close();

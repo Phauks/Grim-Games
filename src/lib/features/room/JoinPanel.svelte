@@ -478,8 +478,6 @@
 			<p class="you" class:quiet={!summary} data-testid="you-row" data-seat={mySeat}>
 				<span class="summary" role="status" data-testid="join-status">{summary}</span>
 			</p>
-			<!-- Only while the Storyteller lets players see their character (Trevor, 2026-10-26). -->
-			{#if player}<YourCharacter {player} />{/if}
 		{/snippet}
 		{#snippet after()}
 			<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
@@ -490,6 +488,8 @@
 			{/if}
 		{/snippet}
 	</PlayerStatusRow>
+	<!-- Its own row under the status line (Trevor, 2026-10-28). -->
+	{#if player}<YourCharacter {player} />{/if}
 	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 

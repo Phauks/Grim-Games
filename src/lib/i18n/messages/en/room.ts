@@ -94,6 +94,11 @@ export const room = {
 	},
 	'room.transfer.none': 'This room has no transfer open.',
 	'room.transfer.takeFailed': 'The room could not be taken over. Try again.',
+	'room.transfer.waiting': 'Waiting for the Storyteller to allow it.',
+	'room.transfer.denied': 'The Storyteller turned it down.',
+	'room.transfer.asking': 'wants to take over this room as its Storyteller.',
+	'room.transfer.askingDevice': 'Another device wants to take over this room as its Storyteller.',
+	'room.transfer.handedOver': 'This room has a new Storyteller.',
 	'room.choosing': 'The Storyteller is choosing a script.',
 	'room.scriptVote.title': 'Vote on the next script',
 	'room.scriptVote.button': 'Room vote',
@@ -196,7 +201,8 @@ export const room = {
 	// Players' own characters on their phones (Trevor, 2026-10-26)
 	'room.roles.heading': 'Characters on phones',
 	'room.roles.toggle': 'Players can see their character',
-	'room.roles.hint': 'Each seated player holds to see their own character on their phone.',
+	'room.roles.hint':
+		'Each seated player holds to see their own character on their phone. It turns itself off after a minute.',
 	'room.roles.seats': 'Who has seen theirs',
 	'room.roles.seen': 'Seen',
 	'room.roles.notSeen': 'Not seen',

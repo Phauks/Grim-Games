@@ -15,4 +15,6 @@ export interface StoredRoom {
 	viewerGame?: string;
 	/** The game whose players may see their own characters now (Trevor, 2026-10-26). */
 	rolesShown?: string;
+	/** When rolesShown turns itself off, in Date.now() ms (roles-shown.svelte.ts). */
+	rolesShownUntil?: number;
 }

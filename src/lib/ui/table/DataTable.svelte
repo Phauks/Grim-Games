@@ -67,27 +67,17 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { near } from '#lib/ui/near.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
-	import SearchField from '#lib/ui/primitives/SearchField.svelte';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import {
-		EMPTY,
 		applyFilters,
-		filterKindOf,
 		isActive,
-		pickOptions,
-		readBound,
 		type ColumnFilter,
 		type FilterValue as Value
 	} from '#lib/ui/table/column-filter.ts';
 	import { HiddenColumns, TableWidths } from '#lib/ui/table/column-widths.svelte.ts';
+	import BuiltFilter from '#lib/ui/table/BuiltFilter.svelte';
 	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
-	import {
-		KEY_STEP,
-		MAX_WIDTH,
-		MIN_WIDTH,
-		clampWidth,
-		columnTrack
-	} from '#lib/ui/table/column-widths.ts';
+	import { MAX_WIDTH, columnTrack } from '#lib/ui/table/column-widths.ts';
+	import { ColumnResize, minWidthOf } from '#lib/ui/table/column-resize.svelte.ts';
 
 	interface Props {
 		/** The table's accessible name. */
@@ -366,111 +356,10 @@
 		filterOpen = true;
 	}
 
-	/** A CSS width in pixels here (--u follows the app's text size). */
-	function px(width: string, inside: HTMLElement): number {
-		const probe = document.createElement('div');
-		// Out of flow, so a flex parent can't shrink it.
-		probe.style.cssText = `position: absolute; visibility: hidden; width: ${width}`;
-		inside.append(probe);
-		const result = probe.getBoundingClientRect().width;
-		probe.remove();
-		return result;
-	}
-
-	const minOf = (column: DataColumn<K, T>) => column.minWidth ?? MIN_WIDTH;
-
-	/** The column's width now, in --u: its dragged width, else what its header measures. */
-	function widthNow(
-		column: DataColumn<K, T>,
-		handle: HTMLElement
-	): { width: number; unit: number } {
-		const th = handle.closest('th') as HTMLElement;
-		const unit = px('var(--u)', th) || 16;
-		// The handle's room is added on top of the stored width (columnTrack).
-		const index = columns.indexOf(column);
-		const handles = px(`calc(${room(index) ?? '0px'})`, th);
-		const measured = (th.getBoundingClientRect().width - handles) / unit;
-		return { width: widths?.current[column.id] ?? measured, unit };
-	}
-
-	const rtl = (el: HTMLElement) => getComputedStyle(el).direction === 'rtl';
-
-	let resizing = $state<K>();
-	let drag:
-		| { pointer: number; startX: number; start: number; unit: number; sign: number; moved: boolean }
-		| undefined;
-	let pending: number | undefined;
-	let frame = 0;
-	let lastTap: { column: K; time: number } | undefined;
-
-	function startResize(column: DataColumn<K, T>, event: PointerEvent) {
-		if (!widths || event.button !== 0) return;
-		const handle = event.currentTarget as HTMLElement;
-		const { width, unit } = widthNow(column, handle);
-		drag = {
-			pointer: event.pointerId,
-			startX: event.clientX,
-			start: width,
-			unit,
-			sign: rtl(handle) ? -1 : 1,
-			moved: false
-		};
-		resizing = column.id;
-		handle.setPointerCapture(event.pointerId);
-		event.preventDefault();
-	}
-
-	function moveResize(column: DataColumn<K, T>, event: PointerEvent) {
-		if (!drag || drag.pointer !== event.pointerId) return;
-		const dx = (event.clientX - drag.startX) * drag.sign;
-		// A few pixels of wobble is still a tap (a double tap resets).
-		if (!drag.moved && Math.abs(dx) < drag.unit / 4) return;
-		drag.moved = true;
-		pending = clampWidth(drag.start + dx / drag.unit, minOf(column));
-		// One relayout per frame however fast the pointer moves.
-		frame ||= requestAnimationFrame(() => {
-			frame = 0;
-			if (pending !== undefined) widths?.set(column.id, pending, false);
-		});
-	}
-
-	function endResize(column: DataColumn<K, T>, event: PointerEvent) {
-		if (!drag || drag.pointer !== event.pointerId) return;
-		const moved = drag.moved;
-		drag = undefined;
-		resizing = undefined;
-		if (moved) {
-			cancelAnimationFrame(frame);
-			frame = 0;
-			if (pending !== undefined) widths?.set(column.id, pending);
-			pending = undefined;
-			lastTap = undefined;
-			return;
-		}
-		if (event.type !== 'pointerup') return;
-		// Double tap or double click: back to the column's own width.
-		if (lastTap?.column === column.id && event.timeStamp - lastTap.time < 400) {
-			widths?.reset(column.id);
-			lastTap = undefined;
-		} else {
-			lastTap = { column: column.id, time: event.timeStamp };
-		}
-	}
-
-	function keyResize(column: DataColumn<K, T>, event: KeyboardEvent) {
-		const handle = event.currentTarget as HTMLElement;
-		if (event.key === 'Enter') {
-			widths?.reset(column.id);
-			event.preventDefault();
-			return;
-		}
-		const direction = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
-		if (!direction) return;
-		event.preventDefault();
-		const { width } = widthNow(column, handle);
-		const step = direction * (rtl(handle) ? -1 : 1) * KEY_STEP * (event.shiftKey ? 4 : 1);
-		widths?.set(column.id, clampWidth(width + step, minOf(column)));
-	}
+	const resize = new ColumnResize<K>({
+		widths: () => widths,
+		handleRoom: (id) => room(columns.findIndex((c) => c.id === id))
+	});
 
 	function ariaSort(column: DataColumn<K, T>) {
 		if (!column.sortable) return undefined;
@@ -510,59 +399,6 @@
 	>
 		<Icon name="columns" />
 	</button>
-{/snippet}
-
-<!-- The filter the table builds from a column's values (column-filter.ts). -->
-{#snippet builtFilter(column: DataColumn<K, T>, close: () => void)}
-	{@const values = column.value ? allRows.map(column.value) : []}
-	{@const current = columnFilters[column.id]}
-	{@const kind = current?.kind ?? column.filterKind ?? filterKindOf(values)}
-	{#if kind === 'pick'}
-		{@const ticked = current?.kind === 'pick' ? current.values : []}
-		<FilterOptions
-			legend={column.label}
-			hideLegend
-			options={pickOptions(values, ticked).map((v) => ({
-				value: v,
-				label: v === EMPTY ? empty : v
-			}))}
-			values={ticked}
-			ontoggle={(v, on) =>
-				setFilter(column.id, {
-					kind: 'pick',
-					values: on ? [...ticked, v] : ticked.filter((x) => x !== v)
-				})}
-			{empty}
-		/>
-	{:else if kind === 'text'}
-		<SearchField
-			label="Search {column.label}"
-			value={current?.kind === 'text' ? current.text : ''}
-			oninput={(text) => setFilter(column.id, { kind: 'text', text })}
-			oncommit={() => {
-				close();
-			}}
-		/>
-	{:else}
-		{@const range: Extract<ColumnFilter, { kind: 'range' }> =
-			current?.kind === 'range' ? current : { kind: 'range' }}
-		<div class="range">
-			<TextField
-				label="Lowest"
-				inputmode="decimal"
-				value={range.min === undefined ? '' : String(range.min)}
-				oninput={(text) => setFilter(column.id, { ...range, min: readBound(text) })}
-				oncommit={close}
-			/>
-			<TextField
-				label="Highest"
-				inputmode="decimal"
-				value={range.max === undefined ? '' : String(range.max)}
-				oninput={(text) => setFilter(column.id, { ...range, max: readBound(text) })}
-				oncommit={close}
-			/>
-		</div>
-	{/if}
 {/snippet}
 
 <!--
@@ -639,20 +475,20 @@
 								<span
 									class="resize"
 									class:last={i === columns.length - 1}
-									class:active={resizing === column.id}
+									class:active={resize.resizing === column.id}
 									role="separator"
 									aria-orientation="vertical"
 									aria-label="Resize {column.label}"
-									aria-valuemin={minOf(column)}
+									aria-valuemin={minWidthOf(column)}
 									aria-valuemax={MAX_WIDTH}
 									aria-valuenow={widths?.current[column.id]}
 									tabindex="0"
 									data-resize={column.id}
-									onpointerdown={(e) => startResize(column, e)}
-									onpointermove={(e) => moveResize(column, e)}
-									onpointerup={(e) => endResize(column, e)}
-									onpointercancel={(e) => endResize(column, e)}
-									onkeydown={(e) => keyResize(column, e)}
+									onpointerdown={(e) => resize.start(column, e)}
+									onpointermove={(e) => resize.move(column, e)}
+									onpointerup={(e) => resize.end(column, e)}
+									onpointercancel={(e) => resize.end(column, e)}
+									onkeydown={(e) => resize.key(column, e)}
 								></span>
 							{/if}
 						</th>
@@ -745,7 +581,15 @@
 	{#if filterColumn?.filterable && filter}
 		{@render filter(filterColumn, () => (filterOpen = false))}
 	{:else if filterColumn}
-		{@render builtFilter(filterColumn, () => (filterOpen = false))}
+		<BuiltFilter
+			label={filterColumn.label}
+			values={filterColumn.value ? allRows.map(filterColumn.value) : []}
+			current={columnFilters[filterColumn.id]}
+			kind={filterColumn.filterKind}
+			{empty}
+			onchange={(value) => filterColumn && setFilter(filterColumn.id, value)}
+			close={() => (filterOpen = false)}
+		/>
 	{/if}
 </Popover>
 
@@ -1071,10 +915,6 @@
 	/* The column picker sits at the end of the header of the column that can't be hidden. */
 	.columns-button {
 		margin-inline-start: auto;
-	}
-	.range {
-		display: grid;
-		gap: var(--space-2);
 	}
 	tbody th {
 		font-weight: 600;
