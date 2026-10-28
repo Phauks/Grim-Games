@@ -9,7 +9,7 @@ const marks = (page: Page) => page.getByTestId('seat').first().getByTestId('nomi
 async function startToGameSettings(page: Page) {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/game-settings$/);
 	return page.getByTestId('game-settings');
 }
@@ -63,7 +63,7 @@ test('Back from Game settings returns to New game, and Character selection comes
 	await startToGameSettings(page);
 	await pastGameSettings(page);
 	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
-	await bar.getByRole('link', { name: 'Game settings' }).tap();
+	await bar.getByRole('button', { name: 'Game settings' }).tap();
 	await expect(page).toHaveURL(/\/game-settings$/);
 	await bar.getByRole('button', { name: 'New game' }).tap();
 	await expect(page).toHaveURL(/\/new#back$/);

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { NEW_GAME_MAX_PLAYERS } from '#lib/features/setup/selection.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -9,13 +8,12 @@
 		quickPlayScript,
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
-	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import PlayerCountSheet from '#lib/features/setup/PlayerCountSheet.svelte';
 	import GameModesPanel from '#lib/features/modes/GameModesPanel.svelte';
 	import { startHref, startInMode } from '#lib/features/modes/start.ts';
 	import { NO_RESTRICTIONS, STANDARD, type SpecialRule } from '#lib/core/modes/index.ts';
@@ -40,7 +38,10 @@
 	}
 	let { compact = false }: Props = $props();
 
-	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
+	/**
+	 * New game (its own screen, Trevor 2026-10-16): the script. The player count is Character
+	 * selection's, beside the bag (Trevor, 2026-10-28: on both it was duplicative).
+	 */
 	onMount(() => {
 		void restoreScripts();
 		void loadOfficialData();
@@ -72,21 +73,12 @@
 	// ── New game ──
 	/** An official edition, `recent:<scriptId>` or `profile:<id>` (script-choices.svelte.ts). */
 	let edition = $state<ScriptChoice>('tb');
-	let players = $state(8);
+	/** The seats the game starts with: the game it replaces, or 8 until Character selection. */
+	let players = $state<number | undefined>();
 	let starting = $state(false);
 	/** The settings profile the game starts with (plan S18): the default one first. */
 	let profile = $state(settingsProfiles.defaultId);
 	$effect(() => settingsProfiles.chooseForNextGame(profile));
-	/** Teensyville scripts grey out counts above 6 (Trevor, 2026-10-19). */
-	const maxPlayers = $derived.by(() => {
-		const data = officialData.current;
-		if (!data) return undefined;
-		try {
-			return scriptMaxPlayers(loadScriptChoice(edition, data).characters);
-		} catch {
-			return undefined;
-		}
-	});
 
 	async function start(rules: readonly SpecialRule[]) {
 		starting = true;
@@ -94,6 +86,8 @@
 		try {
 			const data = await loadOfficialData();
 			const loaded = loadScriptChoice(edition, data);
+			// The default 8, or fewer for a script made for fewer (Teensyville: 6).
+			const count = players ?? Math.min(8, scriptMaxPlayers(loaded.characters) ?? 8);
 			const storyteller = storytellerName.current;
 			if (rules.length) {
 				// Special rules on a Standard game: kept beside the game, as a mode's are.
@@ -103,7 +97,7 @@
 					restrictions: NO_RESTRICTIONS,
 					data,
 					loaded,
-					create: (s) => OpenGame.create(data, s, players, undefined, undefined, storyteller)
+					create: (s) => OpenGame.create(data, s, count, undefined, undefined, storyteller)
 				});
 				saveDraft({ gameId: open.game.gameId });
 				await goto(startHref(STANDARD.id, rules, open.game.gameId));
@@ -112,7 +106,7 @@
 			const open = await OpenGame.create(
 				data,
 				toScript(loaded),
-				players,
+				count,
 				undefined,
 				undefined,
 				storyteller
@@ -133,7 +127,7 @@
 	<!-- Above the modes so every kind of game starts with it; always shown (plan S18). -->
 	<ProfileSelect showLabel value={profile} onChange={(id) => (profile = id)} />
 	<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
-	<GameModesPanel standardScript={edition} standardPlayers={players} bind:modeId bind:ruleIds>
+	<GameModesPanel standardScript={edition} standardPlayers={players ?? 8} bind:modeId bind:ruleIds>
 		{#snippet standard(rules, begin)}
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
 			<PageSection title="Script">
@@ -147,18 +141,11 @@
 				{/snippet}
 				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
 			</PageSection>
-			<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
-			<PlayerCountSheet
-				{players}
-				onChange={(n) => (players = n)}
-				max={NEW_GAME_MAX_PLAYERS}
-				{maxPlayers}
-			/>
 			<Button
 				variant="accent"
 				icon="grimoire"
 				disabled={starting}
-				onclick={() => begin(() => start(rules))}>Start game</Button
+				onclick={() => begin(() => start(rules))}>{t('modes.start')}</Button
 			>
 		{/snippet}
 	</GameModesPanel>

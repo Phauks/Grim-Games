@@ -27,7 +27,7 @@ async function addCannotDie(page: Page, seat: number) {
 test("the Tea Lady's Cannot Die moves to her new neighbour when players move", async ({ page }) => {
 	await page.goto('/new');
 	await pickScript(page, 'Bad Moon Rising');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');

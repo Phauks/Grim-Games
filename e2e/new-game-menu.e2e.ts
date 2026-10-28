@@ -7,7 +7,7 @@ import { pickScript, toBoard, pastGameSettings } from './new-game.ts';
 test("New game takes End game's place in the board ⋯ menu once the game ends", async ({ page }) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	// While the game is in play the menu ends it, and has no New game.
@@ -31,7 +31,7 @@ test("New game takes End game's place in the board ⋯ menu once the game ends",
 	await menu.getByRole('button', { name: 'New game' }).tap();
 	await expect(page.getByRole('alertdialog', { name: 'Start a new game?' })).toHaveCount(0);
 	await expect(
-		page.getByRole('dialog', { name: 'New game' }).getByRole('button', { name: 'Start game' })
+		page.getByRole('dialog', { name: 'New game' }).getByRole('button', { name: 'Create game' })
 	).toBeVisible();
 });
 
@@ -57,10 +57,10 @@ test('the board ⋯ menu offers Character selection only until the bag is dealt'
 }) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	const selection = menu.getByRole('button', { name: 'Character selection' });

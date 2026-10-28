@@ -113,7 +113,7 @@ test('a scanned script stays, though the phone was last in a room playing anothe
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/room`);
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
@@ -176,7 +176,7 @@ test('an offline code names the live room, and the phone joins it once it has in
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/room`);
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);

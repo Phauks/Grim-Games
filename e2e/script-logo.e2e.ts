@@ -16,7 +16,7 @@ async function startGame(page: Page) {
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 }
 
@@ -137,7 +137,7 @@ test("without a logo, the board shows the script's name in its place", async ({ 
 	await expect(page.getByTestId('script-details-name')).toHaveText(name);
 	await page.goto('/new');
 	await pickScript(page, name);
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	const shown = page.locator('.board [data-testid="board-name"]');

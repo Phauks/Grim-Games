@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
-import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
+import { nameStoryteller, openGameInfo, toBoard, pastGameSettings } from './new-game.ts';
 import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
 import { openInbox } from './inbox.ts';
@@ -50,16 +50,18 @@ async function nameSeat(page: Page, number: number, name: string) {
 
 async function startGame(page: Page, storyteller?: string, players = 8) {
 	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await pastGameSettings(page);
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const count = page.getByTestId('setup-table').locator('thead th[data-current]');
 	for (let n = 8; n < players; n++) {
 		await page.getByRole('button', { name: 'More players' }).tap();
 		await expect(count).toHaveText(String(n + 1));
 	}
-	await page
-		.getByRole('radiogroup', { name: 'Script' })
-		.getByText('Trouble Brewing', { exact: true })
-		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	if (storyteller !== undefined) await nameStoryteller(page, storyteller);
 	return new URL(page.url()).pathname;
@@ -686,7 +688,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	// Playing the winner closes the vote and chooses it on New game.
 	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
 	await expect(ballot).toHaveCount(0);
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	// The same room carries the next game: its script, and seats to ask for again.
 	await expect(status).toHaveText('');
@@ -1771,10 +1773,25 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Or only a type, or only good or evil (Trevor, 2026-10-24).
 	await seats.nth(2).tap();
 	const guessSheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
-	await guessSheet.getByRole('button', { name: 'Minion', exact: true }).tap();
+	await guessSheet.locator('[data-guess-key="type:townsfolk"]').tap();
 	await phone.keyboard.press('Escape');
-	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
-	await expect(seats.nth(2).getByRole('img', { name: 'Minion' })).toBeVisible();
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Townsfolk');
+	const generic = seats.nth(2).getByRole('img', { name: 'Townsfolk' });
+	await expect(generic).toBeVisible();
+	// The longest type's word fits the token whole, not cut to "Towns…" (2026-10-28), and the
+	// guess's dashed ring is the seat's round one only, not square edges round the token's own
+	// drawing (Trevor, 2026-10-28: "dash line error").
+	const fit = await seats.nth(2).evaluate((seat) => {
+		const word = seat.querySelector('.word')!;
+		const token = seat.querySelector('.generic')!.getBoundingClientRect();
+		const box = word.getBoundingClientRect();
+		return {
+			inside: box.left >= token.left && box.right <= token.right,
+			clipped: word.scrollWidth > word.clientWidth,
+			drawn: getComputedStyle(seat.querySelector('svg .face')!).outlineStyle
+		};
+	});
+	expect(fit).toEqual({ inside: true, clipped: false, drawn: 'none' });
 	await seats.nth(3).tap();
 	await phone
 		.getByRole('dialog', { name: 'Seat 4 · Seat 4' })
@@ -1785,7 +1802,7 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
-	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Townsfolk');
 	await phoneContext.close();
 });
 
@@ -2407,6 +2424,81 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await expect(mine).toHaveAttribute('aria-label', /your guess: Empath/);
 	await pill.tap();
 	await expect(mine).toHaveAttribute('data-guess', 'true');
+	await phoneContext.close();
+});
+
+test("a player's avatar opens their profile, never their character, on the board and on phones", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-28: "allow clicking avatar on player board to see the avatar larger, and
+	// other information about that PLAYER, not the character".
+	test.slow();
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await seatSheet(phone);
+	await setPlayerName(phone, 'Alex Kim');
+	await phone.keyboard.press('Escape');
+	await phone.evaluate(() => {
+		const key = 'grim-games:player-settings:v1';
+		const settings = JSON.parse(localStorage.getItem(key) ?? '{}');
+		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'ring-gold~pulse' }));
+	});
+	await phone.reload();
+	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
+	await nameSeat(page, 3, 'Alex Kim');
+	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex Kim"]');
+	await expect(seat.locator('svg[data-frame="ring-gold~pulse"]')).toBeAttached();
+
+	// The Storyteller gives the seat a character, so the avatar moves to its corner mark.
+	await seat.tap();
+	const seatDrawer = page.locator('[data-scope="drawer"][data-part="content"]');
+	await seatDrawer.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Alex Kim' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(seatDrawer).toBeHidden();
+
+	/** The profile shows the player: their avatar large, their laurel, its colour and motion. */
+	async function expectProfile(on: Page) {
+		const profile = on.getByRole('dialog', { name: 'Alex Kim', exact: true });
+		await expect(profile.getByTestId('player-profile')).toBeVisible();
+		await expect(profile.getByTestId('avatar-face')).toHaveText('AK');
+		const big = (await profile.getByTestId('avatar-face').boundingBox())!;
+		expect(big.width).toBeGreaterThan(100);
+		await expect(profile.getByTestId('player-profile-laurel')).toContainText('Simple ring');
+		await expect(profile.getByTestId('player-profile-colour')).toContainText('Gold');
+		await expect(profile.getByTestId('player-profile-motion')).toContainText('Pulse');
+		await expect(profile).not.toContainText('Empath');
+		await on.keyboard.press('Escape');
+		await expect(profile).toBeHidden();
+	}
+
+	// On the board, a tap on the avatar mark opens the profile, not the seat sheet.
+	const mark = seat.getByTestId('avatar-mark');
+	await expect(mark).toBeVisible();
+	await mark.tap();
+	await expectProfile(page);
+	await expect(seatDrawer).toBeHidden();
+
+	// On the phone, the avatar in the seat's sheet opens the same profile.
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await phone.getByTestId('grim-seat').nth(2).tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Alex Kim' });
+	const avatar = sheet.getByRole('button', { name: 'Profile: Alex Kim' });
+	const box = (await avatar.boundingBox())!;
+	expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(43.5);
+	await avatar.tap();
+	await expectProfile(phone);
+	await expect(sheet).toBeVisible();
 	await phoneContext.close();
 });
 

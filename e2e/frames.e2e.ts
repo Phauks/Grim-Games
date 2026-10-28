@@ -65,6 +65,9 @@ test('a player picks a laurel form, its colour and its motion, and keeps them', 
 	await pick(page, 'Your laurel', 'Olive');
 	await expect(form.locator('svg[data-frame="laurel-olive-minion"]')).toBeAttached();
 	await pick(page, 'Color', 'Red');
+	// The colour shows as itself, not drawn as a laurel (Trevor, 2026-10-28).
+	await expect(colour.locator('.dot')).toBeAttached();
+	await expect(colour.locator('svg[data-frame]')).toHaveCount(0);
 	await pick(page, 'Motion', 'Clockwise shimmer');
 	const preview = dialog.getByTestId('profile-preview');
 	await expect(preview.locator('svg[data-frame="laurel-olive-demon~shimmer-cw"]')).toBeAttached();

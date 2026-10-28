@@ -23,7 +23,7 @@ async function choose(page: Page, number: number, name: string) {
 async function start(page: Page, script: string) {
 	await page.goto('/new');
 	await pickScript(page, script);
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 }

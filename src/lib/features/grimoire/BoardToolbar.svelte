@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
-	import { inboxDialog } from '#lib/features/room/inbox-dialog.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import GameLead from '#lib/features/shell/GameLead.svelte';
@@ -12,7 +11,7 @@
 
 	/**
 	 * The bar over the board: the app's navigation and the grim cover, then Day, Info tokens,
-	 * Script, Share and More. Arranging seats or placing one swaps in their own controls, at the same
+	 * Script, Share and More (with Messages inside). Arranging seats or placing one swaps in their own controls, at the same
 	 * height, so the board never moves.
 	 */
 	interface Props {
@@ -115,28 +114,15 @@
 			onpointerdown={prepareRoom}
 			onclick={onShare}><span class="tool-label">Share</span></Button
 		>
-		<!-- Players' messages and reported pictures (Trevor, 2026-10-27), while the room is open;
-		     always in place, so opening the room moves nothing. Phones find it in More. -->
-		<span class="messages">
-			<Button
-				variant="quiet"
-				icon="messages"
-				aria-label={unread ? t('room.inbox.unread', { count: unread }) : t('room.inbox.title')}
-				disabled={watching || !host.code}
-				data-testid="toolbar-messages"
-				onclick={() => inboxDialog.show()}
-				><span class="tool-label">{t('room.inbox.title')}</span>{#if unread}<span class="count"
-						><CountBadge count={unread} warn /></span
-					>{/if}</Button
-			>
-		</span>
+		<!-- Players' messages and reported pictures are in More on every screen, which carries
+		     their count (Trevor, 2026-10-28: "we should not have discrepancy, keep in ..."). -->
 		<Button
 			variant="quiet"
 			icon="more"
 			aria-label={unread ? `More, ${t('room.inbox.unread', { count: unread })}` : 'More'}
 			disabled={!menu}
 			onclick={onMore}
-			><span class="tool-label">More</span>{#if unread}<span class="count more-count"
+			><span class="tool-label">More</span>{#if unread}<span class="count"
 					><CountBadge count={unread} warn /></span
 				>{/if}</Button
 		>
@@ -188,21 +174,9 @@
 		font-family: var(--font-heading);
 		font-weight: 700;
 	}
-	.messages {
-		display: contents;
-	}
 	@media (max-width: 479.98px) {
 		/* On a phone the arranging controls need the whole bar. */
 		.arranging-title {
-			display: none;
-		}
-		/* Eight buttons don't fit a phone: Messages is in More, which carries its count. */
-		.messages {
-			display: none;
-		}
-	}
-	@media (min-width: 480px) {
-		.more-count {
 			display: none;
 		}
 	}

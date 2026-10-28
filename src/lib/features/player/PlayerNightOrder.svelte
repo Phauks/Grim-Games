@@ -40,8 +40,11 @@
 					<li data-step={entry.kind === 'marker' ? entry.id : entry.character.id}>
 						<span class="num">{i + 1}</span>
 						{#if entry.kind === 'marker'}
+							{@const said = MARKER_TEXT[entry.id][n.night]}
 							<span class="icon"><MarkerToken marker={entry.id} size={48} label="" /></span>
 							<span class="name marker" data-marker={entry.id}>{MARKER_TEXT[entry.id].name}</span>
+							<!-- What happens at the step, as the Storyteller's night step says it (Trevor, 2026-10-28). -->
+							{#if said}<p class="text">{said}</p>{/if}
 						{:else}
 							{@const c = entry.character}
 							<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -177,6 +180,11 @@
 		grid-row: 1 / span 2;
 		font-family: var(--font-control);
 		color: var(--on-surface-muted);
+	}
+	/* With text beneath, the name takes the first line, as a character's does. */
+	.marker:has(+ .text) {
+		grid-row: auto;
+		min-height: calc(2 * var(--u));
 	}
 	.text {
 		grid-column: 3;

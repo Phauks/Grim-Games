@@ -73,7 +73,7 @@ for (const [route, path] of Object.entries(ANY_ID)) {
 async function startGame(page: Page): Promise<string> {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	return new URL(page.url()).pathname.replace(/\/setup$/, '');
