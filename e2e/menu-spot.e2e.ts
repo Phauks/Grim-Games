@@ -17,7 +17,7 @@ async function spot(page: Page, name = 'Menu') {
 async function startGame(page: Page) {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
-	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: 'Create game' }).click();
 	await toBoard(page);
 	await expect(page.getByTestId('seat').first()).toBeVisible();
 }

@@ -14,7 +14,7 @@ async function startGame(page: Page): Promise<{ board: string; code: string }> {
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await nameStoryteller(page, 'Trevor');
 	const board = new URL(page.url()).pathname;

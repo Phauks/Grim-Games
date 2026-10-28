@@ -8,7 +8,7 @@
 
 	/**
 	 * The player count with its stepper and the setup sheet under it, where tapping a column
-	 * picks that count. Shared by character selection and New game (Trevor, 2026-10-17).
+	 * picks that count. Shared by character selection and a mode's New game (Trevor, 2026-10-17).
 	 */
 	interface Props {
 		players: number;

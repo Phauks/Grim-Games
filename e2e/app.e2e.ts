@@ -178,7 +178,7 @@ test('About is a page in the menu with Diagnostics closed under it; /diagnostics
 test('a game in progress hides the sidebar, so a stray tap cannot leave it', async ({ page }) => {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.locator('.app-body.bare')).toHaveCount(1);
 
@@ -310,7 +310,7 @@ test("every screen's backdrop fades into the phone's bars", async ({ page }) => 
 
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.locator('.app-body.bare')).toBeVisible();
 	const image = await layer();

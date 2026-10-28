@@ -17,7 +17,7 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	const board = new URL(page.url()).pathname;
 	// No room yet: Messages stays in its place on a tablet's toolbar, disabled.

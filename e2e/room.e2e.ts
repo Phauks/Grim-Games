@@ -50,16 +50,17 @@ async function nameSeat(page: Page, number: number, name: string) {
 
 async function startGame(page: Page, storyteller?: string, players = 8) {
 	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const count = page.getByTestId('setup-table').locator('thead th[data-current]');
 	for (let n = 8; n < players; n++) {
 		await page.getByRole('button', { name: 'More players' }).tap();
 		await expect(count).toHaveText(String(n + 1));
 	}
-	await page
-		.getByRole('radiogroup', { name: 'Script' })
-		.getByText('Trouble Brewing', { exact: true })
-		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	if (storyteller !== undefined) await nameStoryteller(page, storyteller);
 	return new URL(page.url()).pathname;
@@ -686,7 +687,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	// Playing the winner closes the vote and chooses it on New game.
 	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
 	await expect(ballot).toHaveCount(0);
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	// The same room carries the next game: its script, and seats to ask for again.
 	await expect(status).toHaveText('');

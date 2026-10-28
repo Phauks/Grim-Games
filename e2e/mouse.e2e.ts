@@ -13,7 +13,7 @@ test('hovering a drop-down keeps its fill', async ({ page }) => {
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
-	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: 'Create game' }).click();
 	await toBoard(page);
 	await page.getByRole('button', { name: /^Day timer, .*open its controls$/ }).click();
 
@@ -95,7 +95,7 @@ test('hovered buttons keep their labels readable', async ({ page }) => {
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
-	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: 'Create game' }).click();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'More', exact: true }).click();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
@@ -120,7 +120,7 @@ test('the day timer sheet and Info tokens read on their panel', async ({ page })
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
-	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: 'Create game' }).click();
 	await toBoard(page);
 	await page.getByRole('button', { name: /^Day timer, .*open its controls$/ }).click();
 	const sheet = page.getByTestId('timer-sheet');
@@ -154,7 +154,7 @@ test('the board timer shows one ring round the whole pill', async ({ page }) => 
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
-	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: 'Create game' }).click();
 	await toBoard(page);
 	const timer = page.getByTestId('day-timer').first();
 	const open = timer.getByRole('button', { name: /open its controls$/ });
@@ -200,7 +200,7 @@ test('close buttons are round and tint the same on hover', async ({ page }) => {
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
-	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: 'Create game' }).click();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'More', exact: true }).click();
 	const sheet = page.getByRole('dialog', { name: 'Grimoire' });
