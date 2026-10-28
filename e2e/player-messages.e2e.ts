@@ -52,6 +52,8 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await sheet.getByText('Request a Storyteller consult', { exact: true }).tap();
 	await sheet.getByRole('button', { name: 'Send' }).tap();
 	await expect(sheet).toBeHidden();
+	// The phone is told it arrived, and nothing more (Trevor, 2026-10-28).
+	await expect(phone.getByText('Message delivered to the Storyteller')).toBeVisible();
 	await button.tap();
 	sheet = phone.getByRole('dialog', { name: 'Message the Storyteller' });
 	await expect(sheet.getByRole('textbox', { name: 'Message' })).toHaveValue('');

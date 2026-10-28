@@ -383,8 +383,12 @@ export class Room extends DurableObject<RoomEnv> {
 					crypto.randomUUID(),
 					message.consult
 				);
-				if (next === room) return;
-				room = next;
+				// The phone hears only whether it arrived, never what it said (Trevor, 2026-10-28:
+				// "no message log", but "a confirmation message that a message has been sent").
+				if (next === room) return send(ws, { type: 'message-delivered', delivered: false });
+				await this.save(next);
+				send(ws, { type: 'message-delivered', delivered: true });
+				return;
 			} else if (message.type === 'vote') {
 				room = castVote(room, id, message.voteId, message.choice);
 			} else if (message.type === 'feedback') {

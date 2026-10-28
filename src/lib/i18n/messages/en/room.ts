@@ -249,5 +249,7 @@ export const room = {
 	'room.inbox.message': 'Message',
 	'room.inbox.picture': 'Reported picture',
 	'room.inbox.markUnread': 'Mark as unread',
-	'room.message.failed': 'Couldn’t send. Check the connection and try again.'
+	'room.message.failed': 'Couldn’t send. Check the connection and try again.',
+	'room.message.delivered': 'Message delivered to the Storyteller',
+	'room.message.notDelivered': 'Message not delivered. Wait a moment and try again.'
 } as const;
