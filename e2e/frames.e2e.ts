@@ -81,6 +81,25 @@ test('a player picks a laurel form, its colour and its motion, and keeps them', 
 	await expect(again.getByRole('combobox', { name: 'Motion' })).toContainText('Clockwise shimmer');
 });
 
+test('every motion can be picked and keeps the laurel (Trevor, 2026-10-28)', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openProfile(page);
+	await pick(page, 'Your laurel', 'Olive');
+	const preview = dialog.getByTestId('profile-preview');
+	for (const [name, id] of [
+		['Pulse', 'pulse'],
+		['Breathe', 'breathe'],
+		['Twinkle', 'twinkle'],
+		['Regrow', 'regrow'],
+		['Flicker', 'flicker']
+	]) {
+		await pick(page, 'Motion', name);
+		await expect(preview.locator(`svg[data-frame="laurel-olive-gold~${id}"]`)).toBeAttached();
+	}
+	await pick(page, 'Motion', 'Twinkle');
+	await expect(preview.locator('.sparkle')).toHaveCount(6);
+});
+
 test('tapping the seat in the Profile shows it large, over the Profile', async ({ page }) => {
 	await page.goto('/');
 	const dialog = await openProfile(page);

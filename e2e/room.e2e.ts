@@ -1460,6 +1460,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(fairPlay).toBeVisible();
 	await fairPlay.tap();
 	await expect(viewer.getByTestId('fair-play-full')).toContainText('Please do not screenshot');
+	await expect(viewer.getByRole('dialog', { name: 'Do Not Share With Players' })).toBeVisible();
 	await viewer.keyboard.press('Escape');
 	await expect(viewer.getByTestId('fair-play-full')).toBeHidden();
 	// Every control that changes the game is there but disabled (Trevor, 2026-10-19), so

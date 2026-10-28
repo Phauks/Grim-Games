@@ -101,6 +101,11 @@ describe('frames', () => {
 
 	it('moves only when asked, and keeps its look when the motion changes', () => {
 		expect(FRAME_MOTIONS[0]).toBe('none');
+		// Trevor (2026-10-28): "add the additional motion settings".
+		for (const motion of ['pulse', 'breathe', 'twinkle', 'regrow', 'flicker'] as const) {
+			expect(FRAME_MOTIONS).toContain(motion);
+			expect(parseFrameId(`laurel-olive-gold~${motion}`)).toBe(`laurel-olive-gold~${motion}`);
+		}
 		const still = frameById('laurel-myrtle-silver') as Frame;
 		expect(still.motion).toBeUndefined();
 		const turning = restyleFrame(still, { motion: 'rotate-ccw' });
