@@ -278,7 +278,9 @@ export type Info =
 				| 'demon-minion-steps'
 				| 'demon-or-token'
 				| 'good-player'
-				| 'one-evil-of-three';
+				| 'one-evil-of-three'
+				| 'same-alignment'
+				| 'demon-in-pair';
 			type?: CharacterType;
 			token?: ReminderLabel;
 			noneWhenAbsent?: true;
@@ -319,7 +321,6 @@ export type Info =
 				| 'woke-tonight'
 				| 'good-and-evil-character'
 				| 'same-alignment'
-				| 'demon-one-of-two'
 				| 'good-player-and-character'
 				| 'outsiders-in-play'
 				| 'true-and-false-statements'
