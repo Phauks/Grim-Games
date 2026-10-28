@@ -54,7 +54,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title:
 			'Grimoire board with a guided night: night steps, reminders, frames, the character sheet',
-		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L67']
+		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L66', 'L67']
 	},
 	{
 		title: 'Day view: executions, announcements, Savant reminders, player claims',

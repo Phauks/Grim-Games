@@ -5,6 +5,7 @@ import {
 	cleanMessage,
 	MAX_MESSAGE_LENGTH,
 	MAX_MESSAGES_PER_MEMBER,
+	MAX_ROOM_MESSAGE_CHARS,
 	MESSAGE_GAP_MS
 } from './room-messages.ts';
 import {
@@ -77,6 +78,19 @@ describe('player messages', () => {
 		expect(sendMessage(r, 'alex', 'More', 10 ** 9, 'z')).toBe(r);
 	});
 
+	it("stop once a game's messages would grow too large for the room", () => {
+		let r = room();
+		for (const m of ['cam', 'dee', 'eli']) r = join(r, m)!;
+		const long = 'a'.repeat(MAX_MESSAGE_LENGTH);
+		const fit = MAX_ROOM_MESSAGE_CHARS / MAX_MESSAGE_LENGTH;
+		const members = ['alex', 'sam', 'cam', 'dee', 'eli'];
+		for (let i = 0; i < fit; i++) {
+			r = sendMessage(r, members[i % 5], long, i * MESSAGE_GAP_MS, `m${i}`);
+		}
+		expect(r.messages).toHaveLength(fit);
+		expect(sendMessage(r, 'alex', 'Hi', 10 ** 9, 'x')).toBe(r);
+	});
+
 	it('may ask for a Storyteller consult, with or without words', () => {
 		// Trevor, 2026-10-27: "add a checkmark to request a storyteller consult".
 		const r = sendMessage(room(), 'alex', '', 1000, 'm1', true);
@@ -102,6 +116,14 @@ describe('player messages', () => {
 		expect(read.messages?.map((m) => m.read)).toEqual([true, undefined]);
 		expect(readMessages(read, ['m1'])).toBe(read);
 		expect(readMessages(read, 'm2')).toBe(read);
+	});
+
+	it('can be marked unread again (Trevor, 2026-10-28)', () => {
+		const r = readMessages(sendMessage(room(), 'alex', 'One', 1000, 'm1'), ['m1']);
+		const unread = readMessages(r, ['m1'], false);
+		expect(unread.messages?.[0]).not.toHaveProperty('read');
+		expect(hostView(unread).messages?.[0].read).toBeUndefined();
+		expect(readMessages(unread, ['m1'], false)).toBe(unread);
 	});
 
 	it('belong to their game: a new game empties the inbox', () => {

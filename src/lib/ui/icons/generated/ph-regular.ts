@@ -35,6 +35,7 @@ import ph_copy from '~icons/ph/copy';
 import ph_crop from '~icons/ph/crop';
 import ph_database from '~icons/ph/database';
 import ph_device_mobile from '~icons/ph/device-mobile';
+import ph_door from '~icons/ph/door';
 import ph_dots_three from '~icons/ph/dots-three';
 import ph_download_simple from '~icons/ph/download-simple';
 import ph_eraser from '~icons/ph/eraser';
@@ -149,6 +150,7 @@ const icons: IconMap = {
 	'ph:crop': ph_crop,
 	'ph:database': ph_database,
 	'ph:device-mobile': ph_device_mobile,
+	'ph:door': ph_door,
 	'ph:dots-three': ph_dots_three,
 	'ph:download-simple': ph_download_simple,
 	'ph:eraser': ph_eraser,

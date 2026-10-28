@@ -65,6 +65,7 @@ import ph_database_bold from '~icons/ph/database-bold';
 import ph_device_mobile_bold from '~icons/ph/device-mobile-bold';
 import ph_diamond_bold from '~icons/ph/diamond-bold';
 import ph_dice_five_bold from '~icons/ph/dice-five-bold';
+import ph_door_bold from '~icons/ph/door-bold';
 import ph_door_open_bold from '~icons/ph/door-open-bold';
 import ph_dots_three_bold from '~icons/ph/dots-three-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
@@ -171,6 +172,7 @@ import ph_shield_star_bold from '~icons/ph/shield-star-bold';
 import ph_shuffle_bold from '~icons/ph/shuffle-bold';
 import ph_sidebar_simple_bold from '~icons/ph/sidebar-simple-bold';
 import ph_sign_in_bold from '~icons/ph/sign-in-bold';
+import ph_sign_out_bold from '~icons/ph/sign-out-bold';
 import ph_skull_bold from '~icons/ph/skull-bold';
 import ph_sliders_bold from '~icons/ph/sliders-bold';
 import ph_sliders_horizontal_bold from '~icons/ph/sliders-horizontal-bold';
@@ -286,6 +288,7 @@ const icons: IconMap = {
 	'ph:device-mobile-bold': ph_device_mobile_bold,
 	'ph:diamond-bold': ph_diamond_bold,
 	'ph:dice-five-bold': ph_dice_five_bold,
+	'ph:door-bold': ph_door_bold,
 	'ph:door-open-bold': ph_door_open_bold,
 	'ph:dots-three-bold': ph_dots_three_bold,
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
@@ -392,6 +395,7 @@ const icons: IconMap = {
 	'ph:shuffle-bold': ph_shuffle_bold,
 	'ph:sidebar-simple-bold': ph_sidebar_simple_bold,
 	'ph:sign-in-bold': ph_sign_in_bold,
+	'ph:sign-out-bold': ph_sign_out_bold,
 	'ph:skull-bold': ph_skull_bold,
 	'ph:sliders-bold': ph_sliders_bold,
 	'ph:sliders-horizontal-bold': ph_sliders_horizontal_bold,

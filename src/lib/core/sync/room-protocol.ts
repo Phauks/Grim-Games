@@ -124,6 +124,7 @@ export type ClientMessage =
 	| { type: 'check-transfer'; code: string }
 	/** Takes the room with this transfer code: answered with `transferred`. */
 	| { type: 'take-room'; code: string }
+	| { type: 'unread-messages'; ids: string[] } // The Storyteller marked them unread again.
 	| { type: 'close' };
 
 /** What the Storyteller's device sees. */
@@ -281,6 +282,11 @@ export type ServerMessage =
 	| { type: 'transferred'; grimoire?: SharedGrimoire }
 	/** To the Storyteller's old device: another device took the room over. */
 	| { type: 'handed-over' }
+	/**
+	 * To the phone that sent a message to the Storyteller: whether the room took it (Trevor,
+	 * 2026-10-28). Says nothing of what was sent; older apps ignore it.
+	 */
+	| { type: 'message-delivered'; delivered: boolean }
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 
