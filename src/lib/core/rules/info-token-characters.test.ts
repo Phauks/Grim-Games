@@ -14,6 +14,7 @@ import type { Character } from '#lib/core/data/types.ts';
 import {
 	filledInfoToken,
 	infoTokenCharacterRulesOf,
+	shownOrder,
 	shuffled,
 	stepInfoTokens,
 	withChosen
@@ -108,21 +109,43 @@ describe('info tokens filled in with the step’s own character', () => {
 				upTo: 2,
 				chosenAt: 0,
 				othersOpposite: true,
-				shuffle: true
+				goodFirst: true
 			});
 			expect(withChosen(filled, character('clockmaker'))).toEqual({
 				characterIds: ['clockmaker'],
 				upTo: 2,
-				shuffle: true,
+				goodFirst: true,
 				othersAlignment: 'evil'
 			});
 			expect(withChosen(filled, character('nodashii')).othersAlignment).toBe('good');
 		});
 
-		it('shows the two in random order', () => {
-			expect(shuffled(['a', 'b'], () => 0)).toEqual(['b', 'a']);
-			expect(shuffled(['a', 'b'], () => 0.99)).toEqual(['a', 'b']);
+		// The player sees the good character on top and the evil one below, whichever is true
+		// (Trevor, 2026-10-27).
+		it('shows the good character above the evil one, whichever was chosen', () => {
+			const typeOf = (id: string) => data.byId.get(id)?.type;
+			const filled = filledInfoToken(dreamer, 'this-player-is', 3)!;
+			const good = withChosen(filled, character('clockmaker'));
+			const evil = withChosen(filled, character('nodashii'));
+			expect(shownOrder(good, ['clockmaker', 'nodashii'], typeOf)).toEqual([
+				'clockmaker',
+				'nodashii'
+			]);
+			expect(shownOrder(evil, ['nodashii', 'clockmaker'], typeOf)).toEqual([
+				'clockmaker',
+				'nodashii'
+			]);
+			expect(shownOrder(evil, ['witch', 'mutant'], typeOf)).toEqual(['mutant', 'witch']);
 		});
+	});
+
+	it('shuffles a card that shuffles, and keeps a plain card as picked', () => {
+		expect(shuffled(['a', 'b'], () => 0)).toEqual(['b', 'a']);
+		expect(shuffled(['a', 'b'], () => 0.99)).toEqual(['a', 'b']);
+		const typeOf = () => undefined;
+		const card = { characterIds: [], upTo: 2 };
+		expect(shownOrder({ ...card, shuffle: true }, ['a', 'b'], typeOf, () => 0)).toEqual(['b', 'a']);
+		expect(shownOrder(card, ['b', 'a'], typeOf)).toEqual(['b', 'a']);
 	});
 
 	it('a step with no rule offers only what its text names', () => {
@@ -169,13 +192,13 @@ describe('reading infoTokenCharacters', () => {
 		expect(parse({ 'selected-you': { characters: ['self'], more: 1 } }).issues).toHaveLength(1);
 	});
 
-	it('reads a chosen player’s character, opposite-alignment others, shuffle and offer', () => {
+	it('reads a chosen player’s character, opposite-alignment others, order and offer', () => {
 		const rule = {
 			'this-player-is': {
 				characters: ['chosen'],
 				upTo: 2,
 				others: 'opposite-alignment',
-				shuffle: true,
+				order: 'good-first',
 				offer: true
 			}
 		};
@@ -185,7 +208,11 @@ describe('reading infoTokenCharacters', () => {
 		expect(
 			parse({ 'this-player-is': { ...card, characters: ['chosen', 'chosen'] } }).issues
 		).toHaveLength(1);
-		expect(parse({ 'this-player-is': { ...card, shuffle: false } }).issues).toHaveLength(1);
+		expect(parse({ 'this-player-is': { ...card, order: 'evil-first' } }).issues).toHaveLength(1);
+		expect(parse({ 'this-player-is': { ...card, shuffle: true } }).issues).toHaveLength(1);
+		const shuffles = { ...card, order: undefined };
+		expect(parse({ 'this-player-is': { ...shuffles, shuffle: true } }).issues).toEqual([]);
+		expect(parse({ 'this-player-is': { ...shuffles, shuffle: false } }).issues).toHaveLength(1);
 		expect(parse({ 'this-player-is': { ...card, others: 'any' } }).issues).toHaveLength(1);
 	});
 });

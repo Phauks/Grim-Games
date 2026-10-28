@@ -3,10 +3,8 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
-	import PrintSettingsFields from './PrintSettingsFields.svelte';
 	import PlayerNameRow from '#lib/features/room/PlayerNameRow.svelte';
 	import { joinedRoom } from '#lib/features/room/joined-room.svelte.ts';
-	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import AvatarPictureRow from './AvatarPictureRow.svelte';
@@ -63,8 +61,3 @@
 	defaultValue="theme"
 	onChange={(sheetBackground) => playerSettings.update({ sheetBackground })}
 />
-
-<!-- Also in Print's own screen (Trevor: every setting in Settings and where it is used). -->
-<SettingCollapsible title={t('player.printSettings')} storageKey="settings-player-print">
-	<PrintSettingsFields />
-</SettingCollapsible>

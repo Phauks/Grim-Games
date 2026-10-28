@@ -42,6 +42,7 @@ import ph_caret_right_bold from '~icons/ph/caret-right-bold';
 import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_cat_bold from '~icons/ph/cat-bold';
 import ph_chat_centered_text_bold from '~icons/ph/chat-centered-text-bold';
+import ph_chat_text_bold from '~icons/ph/chat-text-bold';
 import ph_check_bold from '~icons/ph/check-bold';
 import ph_check_square_bold from '~icons/ph/check-square-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
@@ -69,6 +70,7 @@ import ph_dots_three_bold from '~icons/ph/dots-three-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
 import ph_download_simple_bold from '~icons/ph/download-simple-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
+import ph_envelope_simple_bold from '~icons/ph/envelope-simple-bold';
 import ph_eraser_bold from '~icons/ph/eraser-bold';
 import ph_eye_bold from '~icons/ph/eye-bold';
 import ph_eye_closed_bold from '~icons/ph/eye-closed-bold';
@@ -260,6 +262,7 @@ const icons: IconMap = {
 	'ph:caret-up-bold': ph_caret_up_bold,
 	'ph:cat-bold': ph_cat_bold,
 	'ph:chat-centered-text-bold': ph_chat_centered_text_bold,
+	'ph:chat-text-bold': ph_chat_text_bold,
 	'ph:check-bold': ph_check_bold,
 	'ph:check-square-bold': ph_check_square_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
@@ -287,6 +290,7 @@ const icons: IconMap = {
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
 	'ph:download-simple-bold': ph_download_simple_bold,
 	'ph:drop-bold': ph_drop_bold,
+	'ph:envelope-simple-bold': ph_envelope_simple_bold,
 	'ph:eraser-bold': ph_eraser_bold,
 	'ph:eye-bold': ph_eye_bold,
 	'ph:eye-closed-bold': ph_eye_closed_bold,

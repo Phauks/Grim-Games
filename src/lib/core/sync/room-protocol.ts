@@ -17,6 +17,7 @@ import type {
 } from './script-vote.ts';
 import type { SeatRole } from './room-roles.ts';
 import type { PictureReportView } from './room-pictures.ts';
+import type { PlayerMessage } from './room-messages.ts';
 import type { GameOver, RoomMember, RoomRequest } from './room.ts';
 
 export type ClientMessage =
@@ -32,6 +33,8 @@ export type ClientMessage =
 			protocol?: number;
 			/** When this app's build was made (ISO); the Storyteller's is passed on to phones. */
 			builtAt?: string;
+			/** From the Storyteller: its app shows players' messages (room-messages.ts). */
+			inbox?: boolean;
 	  }
 	// From a player.
 	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
@@ -41,6 +44,7 @@ export type ClientMessage =
 	| { type: 'look'; avatar?: string; frame?: string; picture?: string }
 	/** Reports the picture on another player's seat to the Storyteller (2026-10-27). */
 	| { type: 'report-picture'; seatId: SeatId }
+	| { type: 'message'; text: string; consult?: boolean } // To the Storyteller (2026-10-27).
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
 	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
@@ -107,6 +111,7 @@ export type ClientMessage =
 	| ({ type: 'town-sound' } & TownSoundCommand)
 	/** Lets a reported picture stand, or takes that player's picture away for this game. */
 	| { type: 'judge-picture'; hash: string; allow: boolean }
+	| { type: 'read-messages'; ids: string[] } // The Storyteller opened these messages.
 	| { type: 'close' };
 
 /** What the Storyteller's device sees. */
@@ -136,6 +141,7 @@ export interface HostView {
 	away?: string[];
 	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
 	pictureReports?: PictureReportView[]; // Pictures other phones reported, for a verdict.
+	messages?: PlayerMessage[]; // Players' messages this game, oldest first.
 }
 
 export interface VoteTally {
@@ -197,6 +203,7 @@ export interface PlayerView {
 	};
 	role?: SeatRole; // This player's own character, while players may see theirs.
 	pictures?: Partial<Record<SeatId, string>>; // Each seat's player's picture (room-pictures.ts).
+	inbox?: true; // The Storyteller's app takes messages, so this phone may send one.
 }
 
 /**

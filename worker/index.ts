@@ -27,7 +27,13 @@ export { AccountEmail, AccountName, AccountUser } from './account/objects.ts';
 export interface Env
 	extends ShareEnv, RecapEnv, AccountRoutesEnv, RoomEnv, LiveGamesEnv, ReportsEnv, MirrorEnv {
 	ASSETS: Fetcher;
+	/** "off" only in the local e2e server, like SHARE_LIMITS: no route here asks another site. */
+	OTHER_SITES?: string;
 }
+
+/** The routes that answer from another site (or our copy of one), for OTHER_SITES. */
+const OTHER_SITE_ROUTES =
+	/^\/api\/(botcscripts|homebrew-wiki|homebrew-scripts|bloodstar|curated|collections|world-cups)(\/|$)/;
 
 /** The sources we keep our own copy of (`mirror.ts`), refreshed nightly. */
 const MIRRORED_SOURCES: readonly MirroredSource[] = [
@@ -48,6 +54,10 @@ export default {
 		if (room) return room;
 		const liveGames = await handleLiveGames(request, env, url);
 		if (liveGames) return liveGames;
+		// Tests fake these answers; the sites themselves refuse CI machines (BotC Scripts: 403).
+		if (env.OTHER_SITES === 'off' && OTHER_SITE_ROUTES.test(url.pathname)) {
+			return new Response('Other sites are off', { status: 503 });
+		}
 		if (url.pathname.startsWith('/api/botcscripts/')) {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
 			return handleBotcScripts(url);

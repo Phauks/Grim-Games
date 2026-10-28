@@ -3,6 +3,9 @@
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import { inboxDialog } from '#lib/features/room/inbox-dialog.svelte.ts';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { appFullScreen } from '#lib/ui/full-screen.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -71,6 +74,7 @@
 		onEnd
 	}: Props = $props();
 	let closeRoomOpen = $state(false);
+	const host = roomHost();
 
 	function fromMenu(action: () => void) {
 		open = false;
@@ -85,6 +89,20 @@
 	<div class="menu">
 		<section class="group" aria-labelledby="board-menu-game">
 			<h3 id="board-menu-game" class="group-title">Game</h3>
+			<!-- Players' messages: on a phone's toolbar there is no room for it (Trevor, 2026-10-27). -->
+			{#if host.code && !watching}
+				<span class="menu-messages">
+					<Button
+						variant="quiet"
+						icon="messages"
+						data-testid="menu-messages"
+						onclick={() => fromMenu(() => inboxDialog.show())}
+					>
+						{t('room.inbox.title')}
+						{#if host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
+					</Button>
+				</span>
+			{/if}
 			<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
 			<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
 				>Demon bluffs</Button
@@ -278,6 +296,15 @@
 	}
 	.menu-nav {
 		display: none;
+	}
+	.menu-messages {
+		display: contents;
+	}
+	/* Wider screens have Messages on the toolbar. */
+	@media (min-width: 480px) {
+		.menu-messages {
+			display: none;
+		}
 	}
 	/* The narrowest phones keep the app's navigation here instead of on the toolbar. */
 	@media (max-width: 359.98px) {

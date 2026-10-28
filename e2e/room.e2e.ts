@@ -5,6 +5,7 @@ import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
+import { openInbox } from './inbox.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
 // name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
@@ -1648,14 +1649,20 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await expect(page.getByTestId('board-game-clock')).toContainText('Game time');
 	await expect(corner.getByTestId('board-game-clock')).toContainText('Game time');
 	// No count of its own over the town (Trevor, 2026-10-27: "remove character count"), and
-	// the Grim tab's controls sit on the town's bottom right corner, so no strip goes on them.
+	// every control on the town sits in its top right, in one row with Full screen (Trevor,
+	// 2026-10-27: "All controls on a player grim should be in the top right, next to the full
+	// screen button"), Full screen last.
 	await expect(phone.getByTestId('grim-counts')).toHaveCount(0);
 	const town = (await phone.getByTestId('player-grim').boundingBox())!;
+	const full = (await phone
+		.getByRole('button', { name: 'Full screen', exact: true })
+		.boundingBox())!;
 	for (const control of ['hide-guesses', 'match-shape']) {
 		const box = (await phone.getByTestId(control).boundingBox())!;
-		expect(box.y, control).toBeGreaterThan(town.y + town.height * 0.8);
-		expect(box.y + box.height, control).toBeLessThanOrEqual(town.y + town.height);
-		expect(box.x, control).toBeGreaterThan(town.x + town.width * 0.5);
+		expect(box.y, control).toBeGreaterThanOrEqual(town.y);
+		expect(box.y + box.height, control).toBeLessThan(town.y + town.height * 0.2);
+		expect(Math.abs(box.y + box.height / 2 - (full.y + full.height / 2)), control).toBeLessThan(2);
+		expect(box.x + box.width, control).toBeLessThan(full.x);
 	}
 	// Each corner line follows the Storyteller's eyes in Game info (Trevor, 2026-10-24).
 	const info = await openGameInfo(page);
@@ -2488,12 +2495,14 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await expect(sam.getByRole('menuitem', { name: 'Picture reported' })).toBeDisabled();
 	await sam.keyboard.press('Escape');
 
-	// The Storyteller sees the picture over the board, and removes it for this game.
-	const report = page.getByRole('dialog', { name: 'Reported picture' });
-	await expect(report).toContainText("Alex Kim's picture was reported by 1 player.");
+	// The report waits in the Storyteller's Messages (Trevor, 2026-10-27: "Combine into a
+	// communication menu"), where the picture is removed for this game.
+	const report = (await openInbox(page)).getByTestId('inbox-item');
+	await expect(report).toContainText('Picture reported by 1 player');
 	await expect(report.getByRole('img', { name: "Alex Kim's picture" })).toBeVisible();
-	await report.getByRole('button', { name: 'Remove for this game' }).tap();
-	await expect(report).toBeHidden();
+	await report.getByRole('button', { name: "Remove Alex Kim's picture for this game" }).tap();
+	await expect(report).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 	await expect(seat.getByTestId('avatar-face')).not.toHaveAttribute('data-picture');
 	await expect(alexSeat.getByTestId('avatar-face')).toHaveText('AK');

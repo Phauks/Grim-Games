@@ -191,6 +191,8 @@
 		options={choices}
 		onChange={choose}
 	/>
+	<!-- A tap or focus on the search or Browse picks Custom; the controls inside take the keys. -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="search" onpointerdown={toCustom} onfocusin={raise}>
 		<Combobox
 			label={t('modes.scriptSearch.label')}

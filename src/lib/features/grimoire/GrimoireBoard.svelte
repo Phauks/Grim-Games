@@ -96,6 +96,7 @@
 		toPx as boardToPx
 	} from './board-geometry.ts';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
+	import InboxNotice from '#lib/features/room/InboxNotice.svelte';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisfits } from './board.ts';
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
@@ -1711,6 +1712,7 @@
      seeing player view (script, night order, public grim, not notes)"). The dialog is drawn in
      the cover, over it. -->
 {#snippet coverActions()}
+	<InboxNotice />
 	{#if !ended && roomHost().code}
 		<!-- Lit once the day's time is up; it never calls by itself (Trevor, 2026-10-27). -->
 		<Button

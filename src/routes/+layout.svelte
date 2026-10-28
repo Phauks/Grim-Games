@@ -6,11 +6,21 @@
 	import favicon from '#lib/assets/favicon.svg';
 	import '#lib/ui/base.css';
 	import UpdateBanner from '#lib/features/about/UpdateBanner.svelte';
+	import {
+		recoverMissingFile,
+		recoverPreloadError,
+		updateOnNavigate,
+		watchAway
+	} from '#lib/features/about/auto-update.svelte.ts';
 	import GlossaryPopover from '#lib/features/glossary/GlossaryPopover.svelte';
 	import { startAccount } from '#lib/features/account/start.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
-	import { loadAfresh, staleBuild } from '#lib/features/offline/stale-build.svelte.ts';
+	import {
+		isMissingBuildFile,
+		loadAfresh,
+		staleBuild
+	} from '#lib/features/offline/stale-build.svelte.ts';
 	import { keepData } from '#lib/features/settings/data/keep-data.ts';
 	import { installApp } from '#lib/features/settings/install-app.svelte.ts';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
@@ -82,6 +92,8 @@
 		if (!settingsDialog.open) return;
 		loadSettings().catch((error) => {
 			settingsDialog.open = false;
+			// This build's Settings file is gone: the page moves onto the newest build.
+			if (isMissingBuildFile(error) && recoverMissingFile()) return;
 			reportError(error, { area: 'settings' });
 		});
 	});
@@ -93,6 +105,18 @@
 		}
 		const id = setTimeout(warm, 3000);
 		return () => clearTimeout(id);
+	});
+
+	// A downloaded build takes over by itself where that interrupts nothing (auto-update.svelte.ts).
+	$effect(() => watchAway(() => !showsAppShell(page.data)));
+	// A code file loaded later (a dialog, an icon set) is gone from this build: Vite reports it
+	// here, and the page moves onto the newest build instead of failing (auto-update.svelte.ts).
+	$effect(() => {
+		const onPreloadError = (event: Event) => {
+			if (recoverPreloadError(!showsAppShell(page.data))) event.preventDefault();
+		};
+		window.addEventListener('vite:preloadError', onPreloadError);
+		return () => window.removeEventListener('vite:preloadError', onPreloadError);
 	});
 
 	// A game in progress or a bag draw asks before any navigation leaves it (shell.ts).
@@ -108,6 +132,11 @@
 		// This build's files are gone (a newer build replaced them): the page loads afresh, on the
 		// build the service worker holds, instead of failing (stale-build.svelte.ts).
 		if (staleBuild.current && navigation.type !== 'leave' && loadAfresh(to.href)) {
+			navigation.cancel();
+			return;
+		}
+		// Outside a game, a downloaded build takes over on the way to the next page.
+		if (navigation.type !== 'leave' && updateOnNavigate(to.href, !showsAppShell(page.data))) {
 			navigation.cancel();
 		}
 	});

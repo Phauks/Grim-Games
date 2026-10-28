@@ -85,6 +85,7 @@
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
+	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -191,8 +192,12 @@
 	// The Storyteller's places round the ring, in the board's shape if switched on (2026-10-27).
 	const aspect = $derived(parseAspect(table?.layout?.aspect));
 	const unit = 16;
+	// The ring keeps clear of the top right's controls, as the board's of its timer row.
+	let toolsW = $state(0);
+	let toolsH = $state(0);
+	const tools = $derived(display ? undefined : { w: toolsW + 12, h: toolsH + 12 });
 	const { size, points } = $derived(
-		sharedSeats(seats, layout, board, aspect, matchesShape(display), preferences.current)
+		sharedSeats(seats, layout, board, aspect, matchesShape(display), preferences.current, tools)
 	);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
@@ -381,6 +386,7 @@
 			style={boardColours}
 			data-board-colours={boardColours ? '' : undefined}
 			data-testid="player-grim"
+			{@attach fitInDialog}
 		>
 			<BoardBackdrop
 				contained
@@ -486,15 +492,9 @@
 					remindersOpen = true;
 				}}
 			/>
-			<!-- The Grim tab's controls on the town itself, in its bottom right corner, where the
-			     ring of seats leaves room (Trevor, 2026-10-27: "move any controls onto the grim so
-			     we remove wasted space"). A Public Town display shows only public things. -->
-			{#if !display}<PlayerGrimTools
-					shaped={!!aspect}
-					final={!town && !!final}
-					{showFinal}
-					onFinal={(on) => (showFinal = on)}
-				/>{/if}
+			<!-- The Grim tab's controls, top right; with Full screen, in its corner. A Public
+			     Town display shows only public things. -->
+			{#if !display && !fullScreen}{@render grimTools(true)}{/if}
 			<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
 			     2026-10-24); nothing to open or share here. -->
 			<BoardCorner
@@ -512,9 +512,27 @@
 	{/snippet}
 	<!-- Full screen in the town's top right corner (Trevor, 2026-10-27: players too, "same thing
 	     as town square"); the board's Script draws it in a dialog, where it has none. -->
-	{#if fullScreen}<FullScreenStage {corner}>{@render townBoard()}</FullScreenStage
+	{#if fullScreen}<FullScreenStage
+			corner={stageCorner}
+			bind:cornerWidth={toolsW}
+			bind:cornerHeight={toolsH}>{@render townBoard()}</FullScreenStage
 		>{:else}{@render townBoard()}{/if}
 {/if}
+
+{#snippet grimTools(placed: boolean)}<PlayerGrimTools
+		{placed}
+		bind:width={toolsW}
+		bind:height={toolsH}
+		shaped={!!aspect}
+		final={!town && !!final}
+		{showFinal}
+		onFinal={(on) => (showFinal = on)}
+	/>{/snippet}
+<!-- Full screen's corner: this grim's controls, the page's own, then Full screen. -->
+{#snippet stageCorner(filled: boolean)}
+	{#if !display}{@render grimTools(false)}{/if}
+	{@render corner?.(filled)}
+{/snippet}
 
 {#snippet pictureMenu()}<SeatPictureMenu room={player!} seat={chosen!} />{/snippet}
 <!-- The player's avatar, left of the seat's name and guesses (Trevor, 2026-10-27). -->
@@ -727,7 +745,10 @@
 		overflow: hidden;
 		border-radius: var(--radius-md);
 		width: 100%;
-		height: 75dvh;
+		/* In a dialog (the Storyteller's player view), no taller than the room left under the
+		   tabs, so the whole ring shows on a wide, short window (fitInDialog); never so short
+		   that the seats crowd together. */
+		height: max(40dvh, min(75dvh, var(--fit-height, 75dvh)));
 	}
 	/* On a themed screen the town keeps the board's own surface, as on the Storyteller's. */
 	.town[data-board-colours] {

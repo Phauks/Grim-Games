@@ -297,6 +297,15 @@ export class RoomPlayer {
 		return gameId ? this.#socket.send({ type: 'feedback', gameId, feedback }) : false;
 	}
 
+	/**
+	 * A message to the Storyteller (Trevor, 2026-10-27), only while their app takes them. It
+	 * is not kept anywhere on this phone: once sent, the player can't see it again.
+	 */
+	sendMessage(text: string, consult = false): boolean {
+		if (!this.view?.inbox || (!text.trim() && !consult)) return false;
+		return this.#socket.send({ type: 'message', text, ...(consult ? { consult } : {}) });
+	}
+
 	stop(): void {
 		this.#socket.stop();
 	}

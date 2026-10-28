@@ -837,7 +837,7 @@ test('Print our sheet opens its settings beside a live preview', async ({ page }
 			timeout: 15_000
 		})
 		.toBe(3);
-	// Remembered on the device, and also in Settings → Player.
+	// Remembered on the device, and also in Settings → Print.
 	await page.reload();
 	await page.getByRole('button', { name: 'Print script' }).tap();
 	await page
