@@ -249,6 +249,13 @@ export const room = {
 	'room.inbox.message': 'Message',
 	'room.inbox.picture': 'Reported picture',
 	'room.inbox.markUnread': 'Mark as unread',
+	'room.inbox.player': 'Player',
+	'room.inbox.allPlayers': 'All players',
+	'room.inbox.read': 'Read',
+	'room.inbox.readAll': 'Read and unread',
+	'room.inbox.readUnread': 'Unread',
+	'room.inbox.readRead': 'Read',
+	'room.inbox.consultOnly': 'Consult requested',
 	'room.message.failed': 'Couldn’t send. Check the connection and try again.',
 	'room.message.delivered': 'Message delivered to the Storyteller',
 	'room.message.notDelivered': 'Message not delivered. Wait a moment and try again.'
