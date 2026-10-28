@@ -73,6 +73,17 @@ export function deriveGameRecord(
 	let game: Game | undefined;
 	let start: Map<SeatId, RecordCharacter> | undefined;
 	const diedOnDay = new Map<SeatId, number>();
+	// Every character and alignment each seat had from the first Dawn, in order.
+	const held = new Map<SeatId, RecordCharacter[]>();
+	const hold = (now: Map<SeatId, RecordCharacter>) => {
+		for (const [seatId, c] of now) {
+			const list = held.get(seatId) ?? [];
+			const last = list.at(-1);
+			if (last?.characterId !== c.characterId || last?.alignment !== c.alignment) {
+				held.set(seatId, [...list, c]);
+			}
+		}
+	};
 	let finalThree = false;
 	let lookup: { script: Game['script']; characters: CharacterLookup } | undefined;
 	const charactersOf = (g: Game) => {
@@ -84,6 +95,7 @@ export function deriveGameRecord(
 		for (const event of entry.events) {
 			if (event.type === 'DayStarted' && game && !start) {
 				start = snapshot(game, characterLookup(data, game.script));
+				hold(start);
 			}
 			game = applyEvent(game, event);
 			if (event.type === 'DeathSet') {
@@ -91,6 +103,7 @@ export function deriveGameRecord(
 				else diedOnDay.delete(event.seatId);
 			}
 		}
+		if (game && start) hold(snapshot(game, charactersOf(game)));
 		// After each step, so deaths in one step (a night's kills) count together.
 		if (game && start && !finalThree) {
 			finalThree = aliveCount(game, charactersOf(game)) === 3;
@@ -101,9 +114,12 @@ export function deriveGameRecord(
 	const characters = characterLookup(data, game.script);
 	const end = snapshot(game, characters);
 	start ??= end;
+	hold(end);
 
 	const mentioned = new Set<CharacterId>(game.ruleCharacters);
-	for (const c of [...start.values(), ...end.values()]) mentioned.add(c.characterId);
+	for (const c of [...start.values(), ...end.values(), ...[...held.values()].flat()]) {
+		mentioned.add(c.characterId);
+	}
 	const named: GameRecord['characters'] = {};
 	for (const id of mentioned) {
 		const character = characters.get(id);
@@ -127,6 +143,7 @@ export function deriveGameRecord(
 				...(seat.playerName ? { playerName: seat.playerName } : {}),
 				...(start.has(seatId) ? { start: start.get(seatId) } : {}),
 				...(end.has(seatId) ? { end: end.get(seatId) } : {}),
+				...((held.get(seatId)?.length ?? 0) > 1 ? { held: held.get(seatId) } : {}),
 				dead: seat.dead,
 				...(seat.dead && seat.deathCause ? { deathCause: seat.deathCause } : {}),
 				...(seat.dead && diedOnDay.has(seatId) ? { diedOnDay: diedOnDay.get(seatId) } : {})
