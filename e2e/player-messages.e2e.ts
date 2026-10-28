@@ -20,10 +20,8 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	const board = new URL(page.url()).pathname;
-	// No room yet: Messages stays in its place on a tablet's toolbar, disabled.
-	if (await page.getByTestId('toolbar-messages').isVisible()) {
-		await expect(page.getByTestId('toolbar-messages')).toBeDisabled();
-	}
+	// Messages is only ever in ⋯, never on the toolbar (Trevor, 2026-10-28).
+	await expect(page.getByTestId('toolbar-messages')).toHaveCount(0);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
