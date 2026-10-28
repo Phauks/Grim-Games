@@ -198,7 +198,9 @@
 	let savantOpen = $state(false);
 	/** The Savant's information generator (L2), for a Savant seat while its switch is on. */
 	const savant = $derived(
-		seat?.characterId === 'savant' && preferences.current.assistance.savantInfo
+		seat?.characterId !== undefined &&
+			dayClaim(seat.characterId, characters) === 'statements' &&
+			preferences.current.assistance.savantInfo
 	);
 	let remindersOpen = $state(false);
 	/** A player's claim in town (L56): Guesses or Statement, as on their day row. */
