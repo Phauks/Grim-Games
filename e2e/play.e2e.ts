@@ -210,12 +210,12 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 
 	// Join game is still the player view, so it doesn't ask.
 	await menu.tap();
-	await drawer.getByRole('link', { name: 'Join game' }).tap();
+	await drawer.getByRole('link', { name: 'Join or resume' }).tap();
 	await expect(page).toHaveURL(/\/join$/);
 	await expect(ask).toHaveCount(0);
 
 	// Join game shows none of the phone's script (plan J1), so leaving it has nothing to ask.
-	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
 	await menu.tap();
 	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
 	await expect(page).toHaveURL(/\/library$/);

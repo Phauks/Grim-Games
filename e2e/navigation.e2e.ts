@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { menuButton } from './shell.ts';
 
-// Trevor (2026-10-16): New game, Resume game, Scripts and the other destinations in a left
+// Trevor (2026-10-16): New game, Join or resume, Scripts and the other destinations in a left
 // sidebar reachable from every part of the app; a drawer on phones.
 
 test('on a phone, the header menu opens a drawer with every destination', async ({ page }) => {
@@ -20,8 +20,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	for (const name of [
 		'Home',
 		'New game',
-		'Resume game',
-		'Join game',
+		'Join or resume',
 		'History',
 		'Search',
 		'Library',
@@ -41,7 +40,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	await expect(drawer.getByRole('link').first()).toHaveText('Home');
 	await expect(
 		drawer.getByRole('list', { name: 'Play', exact: true }).getByRole('link')
-	).toHaveText(['New game', 'Resume game', 'Join game', 'History']);
+	).toHaveText(['New game', 'Join or resume', 'History']);
 	await expect(drawer.getByRole('list', { name: 'Prepare' }).getByRole('link')).toHaveText([
 		'Search',
 		'Library',

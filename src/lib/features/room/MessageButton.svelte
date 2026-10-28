@@ -20,13 +20,18 @@
 	interface Props {
 		/** The room this phone is in; without one there is no Storyteller to write to. */
 		room?: string;
+		/**
+		 * The Storyteller's own player view of that room: the same button and sheet, but with no
+		 * player of the room behind it, so nothing can be sent.
+		 */
+		preview?: boolean;
 	}
 
-	let { room }: Props = $props();
+	let { room, preview = false }: Props = $props();
 
 	let player = $state.raw<RoomPlayer>();
 	$effect(() => {
-		if (!room) return;
+		if (!room || preview) return;
 		const p = useRoom(room);
 		player = p;
 		return () => {
@@ -61,7 +66,7 @@
 		icon="messages"
 		aria-haspopup="dialog"
 		label={t('room.message.title')}
-		disabled={!canSend}
+		disabled={!canSend && !preview}
 		data-testid="message-button"
 		onclick={() => (open = true)}
 	/>

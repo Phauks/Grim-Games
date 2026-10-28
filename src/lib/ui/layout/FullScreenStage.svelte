@@ -41,7 +41,12 @@
 
 <div class="stage" bind:this={stage} data-filled={filled ? '' : undefined} data-testid={testid}>
 	{@render children()}
-	{#if stage}<div class="corner" bind:clientWidth={cornerWidth} bind:clientHeight={cornerHeight}>
+	{#if stage}<div
+			class="corner"
+			data-testid="full-screen-corner"
+			bind:clientWidth={cornerWidth}
+			bind:clientHeight={cornerHeight}
+		>
 			{@render corner?.(filled)}
 			<span class="corner-button"><FullScreenButton target={stage} /></span>
 		</div>{/if}

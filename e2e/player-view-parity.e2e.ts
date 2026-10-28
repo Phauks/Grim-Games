@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 
 // The Storyteller's player view shows what phones show (Trevor, 2026-10-27: "storyteller view
@@ -103,6 +103,20 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	await page.keyboard.press('Escape');
 	await expect(script).toBeHidden();
 
+	// The Storyteller's gold votes badge holds both numbers, so the row keeps five cells
+	// (Trevor, 2026-10-28, option A).
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await expect(day).toBeVisible();
+	const votes = day.getByTestId('votes-needed');
+	await expect(votes.getByTestId('exile-needed')).toHaveText('4|4');
+	await expect(votes).toHaveAccessibleName(/4 players must support an exile/);
+	const row = (await votes.locator('..').boundingBox())!;
+	const badge = (await votes.boundingBox())!;
+	expect(badge.x + badge.width).toBeLessThanOrEqual(row.x + row.width + 1);
+	expect(await votes.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+
 	// The grim cover's Player view is the same view.
 	await page.getByTestId('cover-button').tap();
 	const cover = page.getByRole('dialog', { name: 'Screen covered' });
@@ -110,4 +124,79 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	const view = page.getByTestId('cover-player-view');
 	await expect(view.getByTestId('players-status')).toContainText('Day 1');
 	await expect(view.getByTestId('players-timer')).toHaveAttribute('data-look', 'sun');
+});
+
+/** Every button on the player screen's title line and in its Grim tab's corner, by name. */
+async function playerScreenButtons(screen: Locator, titleLine: Locator) {
+	const names = (buttons: Locator) =>
+		buttons.evaluateAll((all) =>
+			all
+				.map((b) => b.getAttribute('data-testid') ?? b.getAttribute('aria-label') ?? b.textContent)
+				.map((n) => (n ?? '').trim())
+				.sort()
+		);
+	const title = await names(titleLine.getByRole('button'));
+	await screen.getByRole('tab', { name: 'Grim' }).tap();
+	const corner = screen.getByTestId('full-screen-corner');
+	await expect(corner.getByRole('button', { name: 'Full screen' })).toBeVisible();
+	const grim = await names(corner.getByRole('button'));
+	const tabs = await names(screen.getByRole('tab'));
+	await screen.getByRole('tab', { name: 'Script' }).tap();
+	return { title, grim, tabs };
+}
+
+// The two sides are one screen (Trevor, 2026-10-28: "It should be the same feature!!!!"): a
+// button a phone in the room has on its title line or its Grim tab, the Storyteller's view has
+// too (Messages and Full screen were missing).
+test("the Storyteller's player view has every button a phone in the room has", async ({
+	page,
+	browser
+}, testInfo) => {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await toBoard(page);
+	const board = new URL(page.url()).pathname;
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await expect(page.getByTestId('cover-button')).toBeVisible();
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('message-button')).toBeEnabled();
+	await expect(phone.getByRole('tab', { name: 'Grim' })).toBeVisible();
+	const phoneButtons = await playerScreenButtons(
+		phone.locator('main'),
+		phone.getByTestId('page-actions')
+	);
+
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const script = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	const boardButtons = await playerScreenButtons(script, script.getByTestId('dialog-head-actions'));
+	expect(boardButtons).toEqual(phoneButtons);
+
+	// The Storyteller's copy of the message sheet sends nothing: no player of the room is behind it.
+	await script.getByTestId('message-button').tap();
+	const sheet = page.getByRole('dialog', { name: 'Message the Storyteller' });
+	await sheet.getByRole('textbox', { name: 'Message' }).fill('Hello');
+	await expect(sheet.getByRole('button', { name: 'Send' })).toBeDisabled();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	// Full screen fills the screen from the Storyteller's view as it does on the phone.
+	await script.getByRole('tab', { name: 'Grim' }).tap();
+	await script.getByRole('button', { name: 'Full screen' }).tap();
+	const stage = script.locator('[data-filled]');
+	await expect(stage).toBeVisible();
+	const filled = (await stage.boundingBox())!;
+	const viewport = page.viewportSize()!;
+	expect(filled.width).toBeGreaterThanOrEqual(viewport.width - 1);
+	expect(filled.height).toBeGreaterThanOrEqual(viewport.height - 1);
+	await phoneContext.close();
 });
