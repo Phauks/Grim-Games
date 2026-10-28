@@ -11,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
@@ -170,7 +171,7 @@
 			const renamed = libraryLabels.for(key).name;
 			const shown = renamed ? { ...listing, row: { ...listing.row, name: renamed } } : listing;
 			const haystack = renamed
-				? `${listing.row.haystack} ${renamed.toLocaleLowerCase()}`
+				? `${listing.row.haystack} ${foldForSearch(renamed)}`
 				: listing.row.haystack;
 			return [{ key, haystack, listing: shown, ownName: listing.row.name, shareable }];
 		});
@@ -202,7 +203,7 @@
 			key: characterKey(saved.savedId),
 			kind: 'character' as const,
 			name: fields.name,
-			haystack: `${fields.name} ${fields.ability}`.toLocaleLowerCase(),
+			haystack: foldForSearch(`${fields.name} ${fields.ability}`),
 			// The character type, as the character's own details name it.
 			sub: fields.team[0].toUpperCase() + fields.team.slice(1),
 			character
@@ -211,7 +212,7 @@
 			key: collectionKey(c.id),
 			kind: 'collection' as const,
 			name: c.name,
-			haystack: c.name.toLocaleLowerCase(),
+			haystack: foldForSearch(c.name),
 			sub: t('library.characterCount', { count: c.characters.length })
 		}))
 	]);

@@ -4,6 +4,7 @@ import {
 	type GameData,
 	type NumericNightOrder
 } from '#lib/core/data/index.ts';
+import { fetchWithTimeout, SLOW_FETCH_TIMEOUT_MS } from '#lib/ui/fetch.ts';
 
 /**
  * Official character data, fetched once from the synced files in `static/data/` (the
@@ -13,7 +14,8 @@ let data = $state<GameData | undefined>(undefined);
 let loading: Promise<GameData> | undefined;
 
 async function fetchJson(path: string): Promise<unknown> {
-	const response = await fetch(path);
+	// The character data is the largest file the app reads.
+	const response = await fetchWithTimeout(path, { timeoutMs: SLOW_FETCH_TIMEOUT_MS });
 	if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
 	return response.json();
 }

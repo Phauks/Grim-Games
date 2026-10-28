@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import { resolve } from '$app/paths';
 	import { fromScript, scriptToJson, type GameData, type Script } from '#lib/core/data/index.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -53,8 +54,8 @@
 		}
 	]);
 	const list = $derived.by(() => {
-		const needle = term.trim().toLowerCase();
-		const found = all.filter((c) => !needle || title(c).toLowerCase().includes(needle));
+		const needle = foldForSearch(term.trim());
+		const found = all.filter((c) => !needle || foldForSearch(title(c)).includes(needle));
 		if (!sort) return found;
 		const sign = sort.direction === 'ascending' ? 1 : -1;
 		return [...found].sort((a, b) =>

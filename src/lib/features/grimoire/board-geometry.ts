@@ -4,6 +4,7 @@
  * reminders and the corner's script name keep clear of. Pixels unless a name says %.
  */
 import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
+import { cornerRoom } from './corner-room.ts';
 import { nameBox, placeNames, type Box, type NamePlace } from './name-placement.ts';
 
 export interface BoardSize {
@@ -96,6 +97,14 @@ export function cornerObstacles(
 		};
 		return name ? [token, name] : [token];
 	});
+}
+
+/**
+ * How wide the corner's script name may be for a given height (corner-room.ts), clear of
+ * `obstacles` (cornerObstacles); the name sits 4px in. The board and a player's grim share it.
+ */
+export function cornerFit(obstacles: Box[], board: BoardSize): (height: number) => number {
+	return (height) => cornerRoom(obstacles, board, height + 4, 4 + 8);
 }
 
 export interface AvoidInput {
