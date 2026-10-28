@@ -14,12 +14,11 @@ import {
 	typed,
 	isEvil,
 	hasReminder,
-	MINION_CHOICES,
+	choiceMarkers,
 	manual,
-	TOWNSFOLK_CHOICES,
-	NUMBER_INFO,
-	ONCE_INFO,
-	HIDES_DEMON,
+	infoIs,
+	demonHidden,
+	inPlayWith,
 	infoEntries,
 	wakes,
 	castOf,
@@ -31,14 +30,12 @@ export const LOG_TEMPLATES: readonly Template[] = [
 	count(
 		'townsfolk-chose-evil',
 		'today',
-		// Only choices that leave a reminder: the Monk's and Innkeeper's Safe, the Exorcist's Chosen.
+		// Only choices that leave a reminder (`marksChoice`): the Monk's Safe, the Exorcist's Chosen.
 		(f, w) => {
-			const choosers = Object.keys(TOWNSFOLK_CHOICES).filter((id) => f.inPlay.has(id));
+			const choosers = choiceMarkers(f, 'townsfolk');
 			if (choosers.length === 0) return undefined;
-			return choosers.filter((id) =>
-				f.seats.some(
-					(s) => isEvil(w, s) && TOWNSFOLK_CHOICES[id].some((l) => hasReminder(f, s, id, l))
-				)
+			return choosers.filter(([id, labels]) =>
+				f.seats.some((s) => isEvil(w, s) && labels.some((l) => hasReminder(f, s, id, l)))
 			).length;
 		},
 		(n) => [
@@ -47,7 +44,7 @@ export const LOG_TEMPLATES: readonly Template[] = [
 			{ type: 'townsfolk' },
 			text(n === 1 ? ' chose an evil player last night.' : ' chose evil players last night.')
 		],
-		(f) => Object.keys(TOWNSFOLK_CHOICES).filter((id) => f.inPlay.has(id)).length
+		(f) => choiceMarkers(f, 'townsfolk').length
 	),
 	{
 		id: 'townsfolk-true-info',
@@ -104,7 +101,7 @@ export const LOG_TEMPLATES: readonly Template[] = [
 		'given-number',
 		'today',
 		(f) => {
-			const told = infoEntries(f.yesterday).filter((e) => NUMBER_INFO.has(e.characterId));
+			const told = infoEntries(f.yesterday).filter((e) => infoIs(f, e.characterId, 'number'));
 			return told.length === 0 ? undefined : new Set(told.map((e) => e.seatId)).size;
 		},
 		(n) => [
@@ -123,26 +120,22 @@ export const LOG_TEMPLATES: readonly Template[] = [
 		// Where the Minion's choice reminder sat at each dawn, over at least two nights.
 		instances(f) {
 			if (f.dawns.length < 2) return [];
-			return Object.entries(MINION_CHOICES)
-				.filter(([minion]) => f.inPlay.has(minion))
-				.map(([minion, labels]) => ({
-					blanks: minion,
-					parts: [
-						text('The '),
-						{ character: minion },
-						text(' has chosen the same player every night.')
-					],
-					holds: () => {
-						const chosen = f.dawns.map((g) =>
-							g.seating.find((s) =>
-								g.seats[s].reminders.some(
-									(r) => r.characterId === minion && labels.includes(r.label)
-								)
-							)
-						);
-						return chosen[0] !== undefined && chosen.every((s) => s === chosen[0]);
-					}
-				}));
+			return choiceMarkers(f, 'minion').map(([minion, labels]) => ({
+				blanks: minion,
+				parts: [
+					text('The '),
+					{ character: minion },
+					text(' has chosen the same player every night.')
+				],
+				holds: () => {
+					const chosen = f.dawns.map((g) =>
+						g.seating.find((s) =>
+							g.seats[s].reminders.some((r) => r.characterId === minion && labels.includes(r.label))
+						)
+					);
+					return chosen[0] !== undefined && chosen.every((s) => s === chosen[0]);
+				}
+			}));
 		}
 	},
 	{
@@ -172,7 +165,7 @@ export const LOG_TEMPLATES: readonly Template[] = [
 			const told = f.game.pastDays
 				.concat(f.game.today)
 				.flatMap((log) => infoEntries(log))
-				.filter((e) => ONCE_INFO.has(e.characterId));
+				.filter((e) => infoIs(f, e.characterId, 'oncePerGame'));
 			if (told.length === 0) return [];
 			return [
 				{
@@ -254,7 +247,7 @@ export const LOG_TEMPLATES: readonly Template[] = [
 								{ type: 'minion' },
 								text(' did not learn who the Demon was at the start.')
 							],
-							holds: () => f.n < 7 || HIDES_DEMON.some((id) => f.inPlay.has(id))
+							holds: () => f.n < 7 || demonHidden(f)
 						}
 					]
 	},
@@ -278,11 +271,12 @@ export const LOG_TEMPLATES: readonly Template[] = [
 		}
 	},
 	{
-		id: 'lunatic-demon',
+		id: 'chose-like-demon',
 		group: 'today',
-		// The Lunatic's Chosen reminders against whom the Demon killed last night.
+		// The Lunatic's Chosen reminders (`choosesLikeDemon`) against whom the Demon killed last night.
 		instances(f) {
-			if (!f.inPlay.has('lunatic') || !f.dawns.at(-1)) return [];
+			const mimics = inPlayWith(f, (r) => r.choosesLikeDemon);
+			if (mimics.length === 0 || !f.dawns.at(-1)) return [];
 			const before = f.dawns.at(-2);
 			const victims = f.seats.filter((s) => {
 				const seat = f.dawns.at(-1)!.seats[s];
@@ -292,18 +286,18 @@ export const LOG_TEMPLATES: readonly Template[] = [
 				return seat?.dead && byDemon && !(before?.seats[s]?.dead ?? false);
 			});
 			if (victims.length === 0) return [];
-			const chosen = f.seats.filter((s) => hasReminder(f, s, 'lunatic', 'Chosen'));
-			return [
-				{
-					blanks: '',
+			return mimics.map(([id, token]) => {
+				const chosen = f.seats.filter((s) => hasReminder(f, s, id, token));
+				return {
+					blanks: id,
 					parts: [
 						text('The '),
-						{ character: 'lunatic' },
+						{ character: id },
 						text(' and the Demon chose different players last night.')
 					],
 					holds: () => !victims.some((v) => chosen.includes(v))
-				}
-			];
+				};
+			});
 		}
 	},
 	{
@@ -349,16 +343,18 @@ export const LOG_TEMPLATES: readonly Template[] = [
 					]
 				: []
 	},
-	manual('snake-charmer-chose', (f) =>
-		f.inPlay.has('snakecharmer')
-			? [
+	// A choice no reminder records (`choosesUnmarked`: the Snake Charmer's, unless it hits the Demon).
+	manual('unmarked-chose', (f) => {
+		const [id] = inPlayWith(f, (r) => r.choosesUnmarked)[0] ?? [];
+		return id === undefined
+			? undefined
+			: [
 					text('The '),
-					{ character: 'snakecharmer' },
+					{ character: id },
 					text(' chose a '),
 					{ type: 'minion' },
 					text(' last night.')
-				]
-			: undefined
-	),
+				];
+	}),
 	manual('declined', () => [text('Someone chose not to use their ability last night.')])
 ];
