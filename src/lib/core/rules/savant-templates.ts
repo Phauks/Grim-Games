@@ -3,6 +3,7 @@
  * approved by Trevor; none is copied from another generator or the wiki.
  */
 import { aliveNeighbours, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { BASE_DISTRIBUTION } from './distribution.ts';
 import type { DayEntry } from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from './ability.ts';
@@ -25,7 +26,8 @@ import {
 	ownNoAbility,
 	seatOf,
 	nominations,
-	MINION_CHOICES,
+	choiceMarkers,
+	inPlayWith,
 	triples,
 	type Template
 } from './savant-facts.ts';
@@ -538,23 +540,22 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 			}))
 	},
 	{
-		id: 'witch-cursed',
+		id: 'cursed',
 		group: 'today',
+		// The Witch's Cursed (`curses`) on the Savant.
 		instances: (f) =>
-			f.inPlay.has('witch')
-				? [
-						{
-							blanks: 'yes',
-							parts: [text('You are cursed by the '), { character: 'witch' }, text('.')],
-							holds: () => hasReminder(f, f.savant, 'witch', 'Cursed')
-						},
-						{
-							blanks: 'no',
-							parts: [text('You are not cursed by the '), { character: 'witch' }, text('.')],
-							holds: () => !hasReminder(f, f.savant, 'witch', 'Cursed')
-						}
-					]
-				: []
+			inPlayWith(f, (r) => r.curses).flatMap(([id, token]) => [
+				{
+					blanks: `${id}|yes`,
+					parts: [text('You are cursed by the '), { character: id }, text('.')],
+					holds: () => hasReminder(f, f.savant, id, token)
+				},
+				{
+					blanks: `${id}|no`,
+					parts: [text('You are not cursed by the '), { character: id }, text('.')],
+					holds: () => !hasReminder(f, f.savant, id, token)
+				}
+			])
 	},
 	{
 		id: 'neighbours-alignment',
@@ -620,26 +621,24 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 		group: 'today',
 		// Where a Minion's choice reminder sits says whom it chose.
 		instances: (f) =>
-			Object.entries(MINION_CHOICES)
-				.filter(([minion]) => f.inPlay.has(minion))
-				.flatMap(([minion, labels]) =>
-					[...f.inPlay]
-						.filter((id) => id !== minion && f.characters.get(id)?.type !== 'demon')
-						.map((id) => ({
-							blanks: `${minion}|${id}`,
-							parts: [
-								text('The '),
-								{ character: minion },
-								text(' chose the '),
-								{ character: id },
-								text(' last night.')
-							],
-							holds: () => {
-								const s = seatOf(f, id);
-								return s !== undefined && labels.some((l) => hasReminder(f, s, minion, l));
-							}
-						}))
-				)
+			choiceMarkers(f, 'minion').flatMap(([minion, labels]) =>
+				[...f.inPlay]
+					.filter((id) => id !== minion && f.characters.get(id)?.type !== 'demon')
+					.map((id) => ({
+						blanks: `${minion}|${id}`,
+						parts: [
+							text('The '),
+							{ character: minion },
+							text(' chose the '),
+							{ character: id },
+							text(' last night.')
+						],
+						holds: () => {
+							const s = seatOf(f, id);
+							return s !== undefined && labels.some((l) => hasReminder(f, s, minion, l));
+						}
+					}))
+			)
 	},
 	count(
 		'neighbours-reminded',
@@ -739,11 +738,13 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 	count(
 		'unaware',
 		'counts',
-		// The Drunk, Marionette and others shown another token, and the Lunatic.
+		// The Drunk, Marionette and others shown another token, and the Lunatic
+		// (`believesOtherCharacter`).
 		(f) =>
 			f.seats.filter((s) => {
 				const id = trueCharacter(f.game, s, f.characters);
-				return id === 'lunatic' || id !== f.game.seats[s].characterId;
+				const believes = id !== undefined && rulesOf(id, f.characters)?.believesOtherCharacter;
+				return believes || id !== f.game.seats[s].characterId;
 			}).length,
 		(n) => [
 			{ number: n },
