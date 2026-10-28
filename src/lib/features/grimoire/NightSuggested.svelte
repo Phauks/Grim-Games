@@ -650,7 +650,7 @@
 		--icon-size: 1em;
 	}
 	.flag.warn {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	/* An answer that may not be the truth is greyed, its warning in red. */
 	li[data-unreliable] .main {
@@ -678,7 +678,7 @@
 		--icon-size: 1em;
 	}
 	.tag.warn {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	/*
 	 * A row the character's reminders on the board mark: the one the Storyteller already

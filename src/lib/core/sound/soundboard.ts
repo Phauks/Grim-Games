@@ -21,7 +21,7 @@ export interface BoardSound {
 	licence: 'Public domain' | 'CC0';
 }
 
-export const BOARD_SOUND_PATH = '/sounds/board';
+const BOARD_SOUND_PATH = '/sounds/board';
 
 const ARCHIVE = 'https://archive.org/details/';
 

@@ -57,6 +57,6 @@
 		margin: 0;
 		min-height: 1.2em;
 		font-size: 0.85rem;
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 </style>

@@ -47,6 +47,7 @@
 		"none": "protects"
 	},
 	"reminderMovement": {
-		"why": "Follows the Tea Lady’s alive neighbours."
+		"why": "Follows the Tea Lady’s alive neighbours.",
+		"followsNeighbours": ["Cannot Die"]
 	}
 }

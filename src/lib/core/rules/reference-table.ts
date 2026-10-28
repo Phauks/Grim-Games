@@ -20,19 +20,6 @@ export const TABLE_COLUMNS = [
 ] as const;
 export type TableColumn = (typeof TABLE_COLUMNS)[number];
 
-export const TABLE_COLUMN_LABELS: Record<TableColumn, string> = {
-	name: 'Name',
-	type: 'Type',
-	edition: 'Edition',
-	alignment: 'Starting alignment',
-	firstNight: 'First night',
-	otherNight: 'Other nights',
-	tokens: 'Tokens',
-	setup: 'Setup',
-	jinxes: 'Jinxes',
-	preDay: 'Pre-day'
-};
-
 export type SortDirection = 'ascending' | 'descending';
 export interface TableSort {
 	column: TableColumn;
@@ -46,7 +33,7 @@ export type Presence = 'yes' | 'no';
  * setup and those with none (Trevor, 2026-10-17).
  */
 export type TokensFilter = Presence | 'setup' | 'not-setup';
-export const TOKENS_FILTERS: readonly TokensFilter[] = ['yes', 'no', 'setup', 'not-setup'];
+const TOKENS_FILTERS: readonly TokensFilter[] = ['yes', 'no', 'setup', 'not-setup'];
 
 export interface TableFilters {
 	name?: string;
@@ -121,7 +108,7 @@ export function activeFilterCount(filters: TableFilters): number {
 	return n;
 }
 
-export function matchesFilters(entry: ReferenceEntry, filters: TableFilters): boolean {
+function matchesFilters(entry: ReferenceEntry, filters: TableFilters): boolean {
 	const name = filters.name?.trim().toLowerCase();
 	if (name && !entry.character.name.toLowerCase().includes(name)) return false;
 	if (filters.types?.length && !filters.types.includes(entry.character.type)) return false;

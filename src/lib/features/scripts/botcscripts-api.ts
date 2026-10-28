@@ -256,7 +256,7 @@ export interface BotcScriptsSearchPage {
  * AdmiralGT/botc-scripts `scripts/viewsets.py`): votes, upload order, or, with a search
  * term, how closely the name matches. Sorting by name is not offered by the site.
  */
-export const BOTC_SORTS = ['votes', 'newest', 'oldest', 'match'] as const;
+const BOTC_SORTS = ['votes', 'newest', 'oldest', 'match'] as const;
 export type BotcScriptsSort = (typeof BOTC_SORTS)[number];
 
 /**
@@ -333,7 +333,7 @@ export const EMPTY_QUERY: BotcScriptsQuery = {
 };
 
 /** The site's own limit on search terms is generous; Pocket Grimoire sent at most 100. */
-export const MAX_SEARCH_LENGTH = 100;
+const MAX_SEARCH_LENGTH = 100;
 const MAX_PAGE = 100;
 /** Characters per include or exclude list. */
 export const MAX_FILTER_CHARACTERS = 10;

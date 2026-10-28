@@ -8,8 +8,8 @@
 /** Largest picture a room takes: a background shrunk to 1920 px as a JPEG fits well under it. */
 export const MAX_ROOM_IMAGE_BYTES = 1536 * 1024;
 /** At most this many pictures per room; adding one more drops the oldest. */
-export const MAX_ROOM_IMAGES = 8;
-export const ROOM_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+const MAX_ROOM_IMAGES = 8;
+const ROOM_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export type RoomImageType = (typeof ROOM_IMAGE_TYPES)[number];
 
 export const isRoomImageType = (value: unknown): value is RoomImageType =>
