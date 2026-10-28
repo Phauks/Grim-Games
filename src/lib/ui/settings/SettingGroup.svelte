@@ -21,7 +21,7 @@
 	sits left of its settings and stays in view while they scroll past. Narrow: the box sits
 	above them and stays under the section's name row until the group has scrolled away.
 -->
-<section class="setting-group" data-setting aria-labelledby="{id}-title">
+<section class="setting-group" data-setting data-search-label={title} aria-labelledby="{id}-title">
 	<div class="layout">
 		<div class="box" data-testid={testid}>
 			<h3 id="{id}-title">{title}</h3>
