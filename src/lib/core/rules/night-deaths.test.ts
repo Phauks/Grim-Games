@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
+	castGame,
 	newGame,
 	run,
 	testCharacters as characters,
@@ -21,23 +22,6 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { deathCheck, deathVerdict } from './night-deaths.ts';
 import { withNightInfo } from './night-info.ts';
 import { nightOrder } from './night-order.ts';
-
-const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
-
-function game(cast: string[], ...extra: ((seats: string[]) => Command)[]) {
-	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
-	const s = run(
-		session,
-		ctx,
-		...cast.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...extra.map((f) => f(seats))
-	);
-	return { game: s.game, seats };
-}
 
 const add =
 	(i: number, characterId: string, label: string) =>
@@ -59,7 +43,7 @@ describe('Gambler', () => {
 	const cast = ['gambler', 'chef', 'imp', 'poisoner', 'recluse'];
 
 	it('a right guess kills nobody; a wrong guess kills the Gambler', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		expect(
 			deathVerdict(g, seats[0], 'gambler', { seatId: seats[2], characterId: 'imp' }, characters)
 		).toMatchObject({ kind: 'no-death' });
@@ -69,14 +53,14 @@ describe('Gambler', () => {
 	});
 
 	it('guessing the Townsfolk a Drunk thinks they are is wrong', () => {
-		const { game: g, seats } = game(cast, add(1, 'drunk', 'Is The Drunk'));
+		const { game: g, seats } = castGame(cast, add(1, 'drunk', 'Is The Drunk'));
 		expect(
 			deathVerdict(g, seats[0], 'gambler', { seatId: seats[1], characterId: 'chef' }, characters)
 		).toMatchObject({ kind: 'dies' });
 	});
 
 	it('a poisoned Gambler does not die, and that counts as abnormal', () => {
-		const { game: g, seats } = game(cast, add(0, 'poisoner', 'Poisoned'));
+		const { game: g, seats } = castGame(cast, add(0, 'poisoner', 'Poisoned'));
 		expect(
 			deathVerdict(g, seats[0], 'gambler', { seatId: seats[2], characterId: 'pukka' }, characters)
 		).toMatchObject({
@@ -86,7 +70,7 @@ describe('Gambler', () => {
 	});
 
 	it('asks when the target might register as the guessed character’s type', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		expect(
 			deathVerdict(g, seats[0], 'gambler', { seatId: seats[4], characterId: 'imp' }, characters)
 		).toMatchObject({ kind: 'ask', ifYes: [seats[0]] });
@@ -97,7 +81,7 @@ describe('Gambler', () => {
 	});
 
 	it('needs a player and a character', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		expect(deathVerdict(g, seats[0], 'gambler', { seatId: seats[1] }, characters)).toMatchObject({
 			kind: 'choose'
 		});
@@ -108,7 +92,7 @@ describe('Acrobat', () => {
 	const cast = ['acrobat', 'chef', 'imp', 'poisoner', 'sailor'];
 
 	it('dies when the chosen player is drunk or poisoned', () => {
-		const { game: g, seats } = game(cast, add(1, 'poisoner', 'Poisoned'));
+		const { game: g, seats } = castGame(cast, add(1, 'poisoner', 'Poisoned'));
 		expect(deathVerdict(g, seats[0], 'acrobat', { seatId: seats[1] }, characters)).toMatchObject({
 			kind: 'dies',
 			seatIds: [seats[0]]
@@ -116,20 +100,20 @@ describe('Acrobat', () => {
 	});
 
 	it('choosing the Drunk kills the Acrobat', () => {
-		const { game: g, seats } = game(cast, add(1, 'drunk', 'Is The Drunk'));
+		const { game: g, seats } = castGame(cast, add(1, 'drunk', 'Is The Drunk'));
 		expect(deathVerdict(g, seats[0], 'acrobat', { seatId: seats[1] }, characters)).toMatchObject({
 			kind: 'dies'
 		});
 	});
 
 	it('a sober, healthy choice kills nobody now (it may still become drunk tonight)', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		const verdict = deathVerdict(g, seats[0], 'acrobat', { seatId: seats[1] }, characters);
 		expect(verdict).toMatchObject({ kind: 'no-death', because: 'chosen-healthy' });
 	});
 
 	it('a drunk Acrobat does not die', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			cast,
 			add(0, 'sailor', 'Drunk'),
 			add(1, 'poisoner', 'Poisoned')
@@ -145,14 +129,14 @@ describe('Lycanthrope', () => {
 	const cast = ['lycanthrope', 'chef', 'imp', 'poisoner', 'recluse', 'monk'];
 
 	it('a good player dies and the Demon does not kill tonight', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		expect(
 			deathVerdict(g, seats[0], 'lycanthrope', { seatId: seats[1] }, characters)
 		).toMatchObject({ kind: 'dies', seatIds: [seats[1]], demonKills: false });
 	});
 
 	it('an evil player, or the Faux Paw player, is not killed', () => {
-		const { game: g, seats } = game(cast, add(5, 'lycanthrope', 'Faux Paw'));
+		const { game: g, seats } = castGame(cast, add(5, 'lycanthrope', 'Faux Paw'));
 		expect(
 			deathVerdict(g, seats[0], 'lycanthrope', { seatId: seats[3] }, characters)
 		).toMatchObject({ kind: 'no-death' });
@@ -162,14 +146,14 @@ describe('Lycanthrope', () => {
 	});
 
 	it('asks for a Recluse, who might register as evil', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		expect(
 			deathVerdict(g, seats[0], 'lycanthrope', { seatId: seats[4] }, characters)
 		).toMatchObject({ kind: 'ask', ifYes: [seats[4]], demonKills: false });
 	});
 
 	it('must choose an alive player', () => {
-		const { game: g, seats } = game(cast, dead(1));
+		const { game: g, seats } = castGame(cast, dead(1));
 		expect(
 			deathVerdict(g, seats[0], 'lycanthrope', { seatId: seats[1] }, characters)
 		).toMatchObject({ kind: 'choose' });
@@ -180,7 +164,7 @@ describe('Grandmother', () => {
 	const cast = ['grandmother', 'chef', 'imp', 'poisoner'];
 
 	it('dies when the Demon killed the grandchild', () => {
-		const { game: g, seats } = game(cast, add(1, 'grandmother', 'Grandchild'), dead(1, 'imp'));
+		const { game: g, seats } = castGame(cast, add(1, 'grandmother', 'Grandchild'), dead(1, 'imp'));
 		expect(deathCheck(g, seats[0], 'grandmother', characters)).toMatchObject({
 			needs: 'none',
 			verdict: { kind: 'dies', seatIds: [seats[0]] }
@@ -188,18 +172,18 @@ describe('Grandmother', () => {
 	});
 
 	it('lives when the grandchild was executed, and asks when the cause is unknown', () => {
-		const executed = game(cast, add(1, 'grandmother', 'Grandchild'), dead(1, 'execution'));
+		const executed = castGame(cast, add(1, 'grandmother', 'Grandchild'), dead(1, 'execution'));
 		expect(
 			deathCheck(executed.game, executed.seats[0], 'grandmother', characters)?.verdict
 		).toMatchObject({ kind: 'no-death' });
-		const unknown = game(cast, add(1, 'grandmother', 'Grandchild'), dead(1));
+		const unknown = castGame(cast, add(1, 'grandmother', 'Grandchild'), dead(1));
 		expect(
 			deathCheck(unknown.game, unknown.seats[0], 'grandmother', characters)?.verdict
 		).toMatchObject({ kind: 'ask', ifYes: [unknown.seats[0]] });
 	});
 
 	it('a drunk Grandmother lives (the wiki’s Sailor example)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			[...cast, 'sailor'],
 			add(1, 'grandmother', 'Grandchild'),
 			add(0, 'sailor', 'Drunk'),
@@ -280,7 +264,7 @@ describe('custom characters', () => {
 describe('night steps', () => {
 	it('the Gambler’s step asks for a choice; the Grandmother’s is worked out', () => {
 		const data = committedGameData();
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['gambler', 'grandmother', 'chef', 'imp', 'poisoner'],
 			add(2, 'grandmother', 'Grandchild'),
 			dead(2, 'demon')

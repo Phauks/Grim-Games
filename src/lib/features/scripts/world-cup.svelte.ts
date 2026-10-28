@@ -2,7 +2,7 @@
  * The World Cup scripts, from our own copy (`worker/world-cups.ts`, refreshed nightly from
  * BotC Scripts) when that source is chosen. Kept for the page visit.
  */
-import { withTimeout } from './fetch-script.ts';
+import { fetchJson } from '#lib/ui/fetch.ts';
 import {
 	readWorldCupAnswer,
 	WORLD_CUPS,
@@ -40,10 +40,8 @@ export const worldCupScripts = {
 		statuses[year] = 'loading';
 		let stored: StoredWorldCupScript[] | undefined;
 		try {
-			const response = await fetch(`${WORLD_CUPS_API}/${year}`, { signal: withTimeout() });
-			stored = response.ok
-				? readWorldCupAnswer(await response.json().catch(() => undefined))
-				: undefined;
+			const { response, body } = await fetchJson(`${WORLD_CUPS_API}/${year}`);
+			stored = response.ok ? readWorldCupAnswer(body) : undefined;
 		} catch {
 			// Offline, or our copy isn't there yet: expected.
 		}

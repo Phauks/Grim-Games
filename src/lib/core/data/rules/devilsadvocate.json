@@ -73,5 +73,6 @@
 				"reason": "Says the token moves and the same player can’t be chosen twice in a row."
 			}
 		}
-	}
+	},
+	"marksChoice": ["Survives Execution"]
 }
