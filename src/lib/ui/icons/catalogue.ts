@@ -82,6 +82,8 @@ export const ICON_SLOTS = {
 	menu: { label: 'Menu', choices: ['ph:list', 'ph:dots-three-vertical'] },
 	info: { label: 'Info', choices: ['ph:info', 'ph:question'] },
 	about: { label: 'About', choices: ['ph:identification-card', 'ph:info'] },
+	/** The Credits page: who made what the app uses (Trevor, 2026-10-28). */
+	credits: { label: 'Credits', choices: ['ph:scroll', 'ph:certificate'] },
 	/** The Support page and its Ko-fi button (Trevor, 2026-10-26). */
 	support: { label: 'Support', choices: ['ph:coffee', 'ph:hand-coins'] },
 	back: { label: 'Back', choices: ['ph:caret-left', 'ph:arrow-left'] },

@@ -41,6 +41,7 @@ import ph_caret_left_fill from '~icons/ph/caret-left-fill';
 import ph_caret_right_fill from '~icons/ph/caret-right-fill';
 import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_cat_fill from '~icons/ph/cat-fill';
+import ph_certificate_fill from '~icons/ph/certificate-fill';
 import ph_chat_centered_text_fill from '~icons/ph/chat-centered-text-fill';
 import ph_chat_text_fill from '~icons/ph/chat-text-fill';
 import ph_check_fill from '~icons/ph/check-fill';
@@ -263,6 +264,7 @@ const icons: IconMap = {
 	'ph:caret-right-fill': ph_caret_right_fill,
 	'ph:caret-up-fill': ph_caret_up_fill,
 	'ph:cat-fill': ph_cat_fill,
+	'ph:certificate-fill': ph_certificate_fill,
 	'ph:chat-centered-text-fill': ph_chat_centered_text_fill,
 	'ph:chat-text-fill': ph_chat_text_fill,
 	'ph:check-fill': ph_check_fill,
