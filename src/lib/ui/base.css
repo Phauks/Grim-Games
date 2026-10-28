@@ -125,7 +125,7 @@ a {
 	touch-action: manipulation;
 }
 
-/* Pinch to zoom off (the default; Settings > Text): touches only pan, everywhere, since an
+/* Pinch to zoom off (the default; Settings > Board): touches only pan, everywhere, since an
    element's touch-action can't allow more than its ancestors'. It also ends double-tap zoom.
    applyZoom (ui/themes/apply.ts) sets data-zoom and covers what iOS ignores here. */
 html:not([data-zoom='on']) {

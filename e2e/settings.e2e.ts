@@ -569,7 +569,7 @@ test('every theme colour is its own setting, warns on low contrast, and Reset Th
 });
 
 // Trevor (2026-10-19): two thumbs on the screen zoomed the whole app by accident. Pinch to zoom
-// is off by default and a switch in Settings > Text turns it back on.
+// is off by default and a switch in Settings > Board turns it back on (moved from Text, 2026-10-27).
 test('a pinch never zooms the app unless Pinch to zoom is on', async ({ page }) => {
 	await page.goto('/');
 	await expect(menuButton(page)).toBeVisible();
@@ -591,7 +591,7 @@ test('a pinch never zooms the app unless Pinch to zoom is on', async ({ page }) 
 		'pan-x pan-y'
 	);
 
-	const dialog = await openSettings(page, 'Text');
+	const dialog = await openSettings(page, 'Board');
 	const zoom = dialog.getByRole('checkbox', { name: 'Pinch to zoom', includeHidden: true });
 	await expect(zoom).not.toBeChecked();
 	await dialog.getByText('Pinch to zoom', { exact: true }).tap();

@@ -15,7 +15,7 @@
 	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
 	import ReminderCount from '#lib/features/grimoire/ReminderCount.svelte';
 	import { stepFocus } from '#lib/features/grimoire/step-focus.svelte.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
@@ -60,7 +60,8 @@
 		}
 		url = choice.kind === 'script' ? boardBackground.context?.scriptImage : undefined;
 	});
-	const logo = $derived(boardBackground.context?.scriptLogo ?? exampleLogo);
+	// From a board, its own logo, or its name where it has none, as the board shows them.
+	const logo = $derived(boardBackground.context ? boardBackground.context.scriptLogo : exampleLogo);
 	const scriptName = $derived(boardBackground.context?.scriptName ?? t('settings.previewScript'));
 
 	interface BankItem {
@@ -186,7 +187,7 @@
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
 	/>
 	{#if boardLooks.current.logo}
-		<ScriptLogo src={logo} class="preview-logo" --logo-opacity={boardLooks.current.logoOpacity} />
+		<BoardLogo src={logo} name={scriptName} opacity={boardLooks.current.logoOpacity} />
 	{/if}
 	{#if boardLooks.current.rulesAt === 'edge'}<div class="preview-rules-edge">
 			{@render rules()}
@@ -274,17 +275,6 @@
 		padding-top: calc(0.15 * var(--size));
 		overflow: hidden;
 		border-radius: var(--card-radius);
-	}
-	/* As on the board: centred, at most 42% of the box, under everything else. */
-	.board-preview :global(.preview-logo) {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 42%;
-		height: 42%;
-		translate: -50% -50%;
-		opacity: var(--logo-opacity);
-		pointer-events: none;
 	}
 	.seats {
 		display: flex;

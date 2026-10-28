@@ -19,3 +19,17 @@ export function clearTermHandler(): void {
 export function getTermHandler(): ((term: GlossaryTerm) => void) | undefined {
 	return getContext(KEY);
 }
+
+const PLAIN = Symbol('glossary-terms-plain');
+
+/**
+ * Inside a control that is one button as a whole (the night strip's step), terms are plain
+ * words: a tap opens that control only, never a popover as well (Trevor, 2026-10-27).
+ */
+export function setTermsPlain(): void {
+	setContext(PLAIN, true);
+}
+
+export function termsArePlain(): boolean {
+	return getContext(PLAIN) === true;
+}

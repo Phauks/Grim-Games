@@ -12,7 +12,7 @@
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderCount from './ReminderCount.svelte';
-	import { placingAlignment } from './board.ts';
+	import { placingAlignment, seatMisfits } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
@@ -495,6 +495,10 @@
 	let shownOpen = $state(false);
 	let choosing = $state<Item | undefined>();
 	let chooserOpen = $state(false);
+	/** The seats the token being put doesn't fit, faded in the list (Trevor, 2026-10-27). */
+	const misfits = $derived(
+		choosing ? seatMisfits(game, choosing, characters, grimoire.atDawn) : undefined
+	);
 	function tap(item: Item) {
 		if (item.makesToken) return makeToken();
 		if (item.setup) {
@@ -654,6 +658,7 @@
 	title="Put on"
 	{game}
 	{characters}
+	{misfits}
 	onChoose={(seatId) => {
 		chooserOpen = false;
 		if (choosing) place(choosing, seatId);
