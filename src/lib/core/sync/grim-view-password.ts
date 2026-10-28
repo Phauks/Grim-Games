@@ -15,7 +15,7 @@
 import { CODE_WORDS, isCodeWord, type RandomBytes } from '#lib/core/codes/word-code.ts';
 
 /** Words in a made password, before its number. */
-export const GRIM_VIEW_PASSWORD_WORDS = 2;
+const GRIM_VIEW_PASSWORD_WORDS = 2;
 
 const NUMBER_MIN = 10;
 const NUMBER_COUNT = 90;

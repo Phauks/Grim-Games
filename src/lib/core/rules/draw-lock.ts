@@ -5,9 +5,9 @@
  */
 
 /** Wrong PINs allowed before entry has to wait. */
-export const FREE_TRIES = 3;
+const FREE_TRIES = 3;
 /** The first wait, after the third wrong PIN in a row. */
-export const FIRST_WAIT_MS = 30_000;
+const FIRST_WAIT_MS = 30_000;
 /** Each further wrong PIN doubles the wait, up to this. */
 export const MAX_WAIT_MS = 5 * 60_000;
 /** "Forgot PIN" unlocks after this long, counting down where everyone can see it. */

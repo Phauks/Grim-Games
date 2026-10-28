@@ -71,7 +71,7 @@ export interface Template {
 }
 
 /** Numbers to offer for a count: the truth and up to two either side, within the range. */
-export function near(truth: number, min: number, max: number): number[] {
+function near(truth: number, min: number, max: number): number[] {
 	const out: number[] = [];
 	for (let v = truth - 2; v <= truth + 2; v++) if (v >= min && v <= max) out.push(v);
 	return out;

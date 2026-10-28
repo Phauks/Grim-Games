@@ -11,10 +11,10 @@
  * v2 (2026-10-16): each stroke carries its own size. v3 (2026-10-17): a player keeps several
  * pads, each with a title, a paper colour, a lock and a hide switch.
  */
-export const SCRATCH_SCHEMA_VERSION = 3;
+const SCRATCH_SCHEMA_VERSION = 3;
 
 /** How far a point can sit from the pad's corner, in pad units (a guard on saved data). */
-export const MAX_EXTENT = 8;
+const MAX_EXTENT = 8;
 
 export const SCRATCH_COLOURS = ['ink', 'good', 'evil', 'highlight'] as const;
 export type ScratchColour = (typeof SCRATCH_COLOURS)[number];
@@ -31,10 +31,10 @@ export type ScratchPaper = (typeof SCRATCH_PAPERS)[number];
  */
 export const SIZE_STEPS = 20;
 const SIZE_UNIT: Record<ScratchTool, number> = { pen: 0.002, eraser: 0.0075 };
-export const DEFAULT_SIZE: Record<ScratchTool, number> = { pen: 4, eraser: 7 };
+const DEFAULT_SIZE: Record<ScratchTool, number> = { pen: 4, eraser: 7 };
 
 /** A whole slider step from 1 to SIZE_STEPS. */
-export function clampStep(step: number): number {
+function clampStep(step: number): number {
 	return Math.min(SIZE_STEPS, Math.max(1, Math.round(step)));
 }
 
@@ -58,7 +58,7 @@ export function parseSizes(raw: unknown): Record<ScratchTool, number> {
 const V1_WIDTH: Record<ScratchTool, number> = { pen: 0.008, eraser: 0.05 };
 
 /** Points closer than this to the last one (a fraction of the width) are dropped. */
-export const MIN_POINT_DISTANCE = 0.0015;
+const MIN_POINT_DISTANCE = 0.0015;
 
 export interface ScratchStroke {
 	tool: ScratchTool;

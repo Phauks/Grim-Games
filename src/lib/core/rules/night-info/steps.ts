@@ -26,7 +26,7 @@ export type NightStepInfo =
  * answer is marked unreliable), or for `seats` when given (a Pixie with that ability).
  * Undefined when nothing is worked out for the character.
  */
-export function nightStepInfo(
+function nightStepInfo(
 	game: Game,
 	character: Pick<Character, 'id'>,
 	characters: CharacterLookup,
