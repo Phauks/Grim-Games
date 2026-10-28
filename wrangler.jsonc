@@ -1,6 +1,6 @@
 // One Worker serves the static SvelteKit build and the /api routes, and hosts the
 // Room Durable Object for live sync (04-architecture.md §1, 05-spike-results.md S2).
-// Cloudflare Workers Builds deploys it from GitHub: `main` -> production, other branches -> Previews.
+// Cloudflare Workers Builds deploys it from GitHub: `main` -> production, `beta` -> a Preview.
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "grim-games",
@@ -96,9 +96,9 @@
 	// worker/shared-data.ts), so production and every preview see the same ones. A preview's
 	// binding reaches that Worker's production deployment.
 	"services": [{ "binding": "DATA", "service": "grim-games-data" }],
-	// Worker Previews: Workers Builds runs `npx wrangler preview` for non-production branches,
-	// giving each branch/PR its own URL on this same Worker, with its own Durable Object
-	// namespace and storage. Previews don't inherit vars or bindings, so they're repeated here.
+	// Worker Previews: Workers Builds runs `npm run deploy:preview` for non-production branches,
+	// which deploys only beta (each Preview owns its own Durable Object namespaces, and the
+	// account allows 500). The Preview gets its own URL on this same Worker and its own storage. Previews don't inherit vars or bindings, so they're repeated here.
 	"previews": {
 		// The beta preview sends real sign-in email from the same address (account/email.ts);
 		// other previews show the code on screen.
