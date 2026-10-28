@@ -6,6 +6,7 @@
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import HoldToSee from '#lib/ui/primitives/HoldToSee.svelte';
 	import { noLongPress } from '#lib/ui/no-long-press.ts';
 	import type { RoomPlayer } from './player.svelte.ts';
@@ -87,6 +88,8 @@
 					: t('room.role.good')
 				: ''}
 		</p>
+		<!-- Before and while the character shows (Trevor, 2026-10-27). -->
+		<FairPlayNotice kind="secret" />
 	</div>
 </Dialog>
 
