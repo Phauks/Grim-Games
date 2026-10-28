@@ -3,6 +3,18 @@ import { openSettingsDialog, theMenu } from './shell.ts';
 
 // Trevor (2026-10-16): the update prompt opens a list of what changed since the running build.
 
+/** A commit the faked waiting build adds on top of the running one. */
+const NEWER = { sha: 'd'.repeat(40), subject: 'A newer change' };
+
+// The faked waiting build is newer than the running one, so the card offers it. A test that
+// fakes other notes routes them itself, which Playwright tries first.
+test.beforeEach(async ({ page, request }) => {
+	const running = await (await request.get('/build-notes.json')).json();
+	await page.route('**/build-notes.json', (route) =>
+		route.fulfill({ json: { commit: NEWER.sha, commits: [NEWER, ...running.commits] } })
+	);
+});
+
 /** Pretends a newer build is installed and waiting, as the service worker would report it. */
 async function fakeWaitingUpdate(page: Page) {
 	await page.addInitScript(() => {
@@ -62,6 +74,37 @@ test('the update prompt lists the commits since the running build', async ({ pag
 
 	await toggle.tap();
 	await expect(prompt.getByText('First new change')).toBeHidden();
+});
+
+// Trevor (2026-10-28): an update "had 0 changes". It was the running build deployed again, or an
+// older one deployed after it; that is no update, so nothing offers it.
+test('a waiting build that is the running one again is not offered', async ({ page, request }) => {
+	const running = await (await request.get('/build-notes.json')).json();
+	await page.route('**/build-notes.json', (route) => route.fulfill({ json: running }));
+	await fakeServiceWorker(page, true);
+	await page.goto('/about');
+	const main = page.getByRole('main');
+	await main.getByRole('button', { name: 'Check for updates' }).tap();
+	await expect(main.getByTestId('update-check-result')).toHaveText(/ · Up to date$/);
+	await expect(main.getByTestId('update-refresh')).toHaveCount(0);
+	await expect(page.getByTestId('update-banner')).toHaveCount(0);
+});
+
+test('a waiting build older than the running one is not offered', async ({ page }) => {
+	// GitHub's compare answers "behind" when the waiting build is older than the running one.
+	await page.route('**/build-notes.json', (route) =>
+		route.fulfill({ json: { commit: 'e'.repeat(40), commits: [] } })
+	);
+	await page.route('https://api.github.com/**', (route) =>
+		route.fulfill({ json: { status: 'behind', total_commits: 0, commits: [] } })
+	);
+	await fakeServiceWorker(page, true);
+	await page.goto('/about');
+	const main = page.getByRole('main');
+	await main.getByRole('button', { name: 'Check for updates' }).tap();
+	await expect(main.getByTestId('update-check-result')).toHaveText(/ · Up to date$/);
+	await expect(main.getByTestId('update-refresh')).toHaveCount(0);
+	await expect(page.getByTestId('update-banner')).toHaveCount(0);
 });
 
 test('with no notes to fetch, What changed stays disabled', async ({ page }) => {

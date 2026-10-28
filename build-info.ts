@@ -5,9 +5,9 @@ import { noteFor, type BuildCommit } from './src/lib/features/about/update-notes
 import type { Change, ChangeHistory } from './src/lib/features/about/changelog.ts';
 import { groupDirectCommits } from './src/lib/features/about/direct-commits.ts';
 
-function git(args: string, timeout?: number): string {
+function git(args: string, timeout?: number, cwd?: string): string {
 	try {
-		return execSync(`git ${args}`, { stdio: ['ignore', 'pipe', 'ignore'], timeout })
+		return execSync(`git ${args}`, { stdio: ['ignore', 'pipe', 'ignore'], timeout, cwd })
 			.toString()
 			.trim();
 	} catch {
@@ -55,18 +55,39 @@ export function readCommits(limit = NOTE_COMMITS): BuildCommit[] {
 		});
 }
 
-const isShallow = () => git('rev-parse --is-shallow-repository') === 'true';
+const isShallow = (cwd?: string) =>
+	git('rev-parse --is-shallow-repository', undefined, cwd) === 'true';
 
 /**
  * Fetches the rest of the history and the tags when the build's clone has only its newest
  * commit, as Workers Builds' does, so the Changelog can list every change. Only on Workers
  * Builds: CI and local builds don't need the full list. Leaves the clone as it was if GitHub
  * can't be reached.
+ *
+ * Commits only (`--filter=tree:0`, git-scm.com/docs/partial-clone): the history needs messages
+ * and dates, not files, and that is a fraction of the download. A build whose fetch failed
+ * listed one change and deployed minutes late, after newer builds (Trevor, 2026-10-28), so each
+ * source is tried twice, then once more for everything should the server refuse the filter.
  */
-function fetchFullHistory(env: NodeJS.ProcessEnv, branch: string): void {
-	if (!env.WORKERS_CI || !isShallow()) return;
-	git('fetch --quiet --unshallow --tags origin', 120_000);
-	if (isShallow()) git(`fetch --quiet --unshallow --tags ${REPOSITORY_GIT} ${branch}`, 120_000);
+export function fetchFullHistory(
+	env: NodeJS.ProcessEnv,
+	branch: string,
+	{ remote = REPOSITORY_GIT, cwd }: { remote?: string; cwd?: string } = {}
+): boolean {
+	if (!env.WORKERS_CI || !isShallow(cwd)) return true;
+	const tries = [
+		'--filter=tree:0 origin',
+		'--filter=tree:0 origin',
+		`--filter=tree:0 ${remote} ${branch}`,
+		`--filter=tree:0 ${remote} ${branch}`,
+		`${remote} ${branch}`
+	];
+	for (const from of tries) {
+		git(`fetch --quiet --unshallow --tags ${from}`, 60_000, cwd);
+		if (!isShallow(cwd)) return true;
+	}
+	console.warn('build-info: could not fetch the history, so the Changelog lists only this build');
+	return false;
 }
 
 /** A release tag: `v` and a version, such as `v0.5.0`. */
@@ -78,13 +99,21 @@ const RELEASE_TAG = /^v\d/;
  * day it merged; commits made straight on the branch count as one line a day. A change belongs to the oldest release tag (`v0.5.0`) that contains it;
  * changes in no tag are unreleased. `complete` is false when the clone's history stops short.
  */
-export function readHistory(env: NodeJS.ProcessEnv = process.env, branch = 'HEAD'): ChangeHistory {
-	fetchFullHistory(env, branch);
-	const tags = git(`tag --list 'v*' --sort=creatordate`)
+export function readHistory(
+	env: NodeJS.ProcessEnv = process.env,
+	branch = 'HEAD',
+	options: { remote?: string; cwd?: string } = {}
+): ChangeHistory {
+	const { cwd } = options;
+	fetchFullHistory(env, branch, options);
+	const tags = git(`tag --list 'v*' --sort=creatordate`, undefined, cwd)
 		.split('\n')
 		.filter((tag) => RELEASE_TAG.test(tag))
-		.map((tag) => ({ tag, commits: new Set(git(`rev-list ${tag}`).split('\n')) }));
-	const changes = git('log --first-parent --format=%H%x1f%ct%x1f%B%x1e')
+		.map((tag) => ({
+			tag,
+			commits: new Set(git(`rev-list ${tag}`, undefined, cwd).split('\n'))
+		}));
+	const changes = git('log --first-parent --format=%H%x1f%ct%x1f%B%x1e', undefined, cwd)
 		.split('\x1e')
 		.map((record) => record.trim())
 		.filter(Boolean)
@@ -101,5 +130,26 @@ export function readHistory(env: NodeJS.ProcessEnv = process.env, branch = 'HEAD
 				}
 			];
 		});
-	return { complete: !isShallow(), changes: groupDirectCommits(changes) };
+	return { complete: !isShallow(cwd), changes: groupDirectCommits(changes) };
+}
+
+/** The branches Workers Builds deploys (README): `main` to production, `beta` to its Preview. */
+const DEPLOYED_BRANCHES = ['main', 'beta'];
+
+/**
+ * The commit a deployed branch has moved on to since this build started, or null. Workers
+ * Builds can run builds side by side and deploys each as it finishes, so a slow build of an older
+ * commit could replace a newer one: phones were then offered an "update" with no changes, onto
+ * an older build (Trevor, 2026-10-28). Such a build stops before its deploy; the newer
+ * commit's own build deploys. Null too when GitHub can't be reached, so a deploy is never lost
+ * to a network fault.
+ */
+export function supersedingCommit(
+	env: NodeJS.ProcessEnv,
+	info: Pick<BuildInfo, 'branch' | 'commit'>,
+	{ remote = REPOSITORY_GIT, cwd }: { remote?: string; cwd?: string } = {}
+): string | null {
+	if (!env.WORKERS_CI || !DEPLOYED_BRANCHES.includes(info.branch)) return null;
+	const tip = git(`ls-remote ${remote} refs/heads/${info.branch}`, 30_000, cwd).split(/\s/)[0];
+	return /^[0-9a-f]{40}$/.test(tip) && tip !== info.commit ? tip : null;
 }

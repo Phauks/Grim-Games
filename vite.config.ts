@@ -7,7 +7,7 @@ import type { Plugin } from 'vite';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { readBuildInfo, readCommits, readHistory } from './build-info.ts';
+import { readBuildInfo, readCommits, readHistory, supersedingCommit } from './build-info.ts';
 import {
 	describeChunks,
 	PRECACHE_CHUNKS_PATH,
@@ -45,6 +45,25 @@ function buildNotes(): Plugin {
 				fileName: 'build-notes.json',
 				source: JSON.stringify({ commit: buildInfo.commit, commits: readCommits() })
 			});
+		}
+	};
+}
+
+/**
+ * Fails a Workers Build whose branch has moved on since it started, so Workers Builds never
+ * deploys it over the newer commit's build (build-info.ts). Asked at the end of each of the
+ * build's passes, so the last answer comes as late as the build can give it.
+ */
+function skipSuperseded(): Plugin {
+	return {
+		name: 'grim-games-skip-superseded',
+		apply: 'build',
+		closeBundle() {
+			const tip = supersedingCommit(process.env, buildInfo);
+			if (tip)
+				throw new Error(
+					`Not deployed: ${buildInfo.branch} has moved on to ${tip.slice(0, 7)}, whose build deploys instead of ${buildInfo.commit.slice(0, 7)}.`
+				);
 		}
 	};
 }
@@ -136,7 +155,8 @@ export default defineConfig({
 		// are bundled and work offline (src/lib/ui/icons, scripts/generate-icons.ts).
 		Icons({ compiler: 'svelte' }),
 		buildNotes(),
-		precacheSizes()
+		precacheSizes(),
+		skipSuperseded()
 	],
 	test: {
 		expect: { requireAssertions: true },

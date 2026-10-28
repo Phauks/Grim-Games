@@ -89,7 +89,8 @@
 	}
 </script>
 
-{#if (waiting || activated) && !dismissed}
+<!-- Shown once the notes are in (or failed), so a build that is no update never flashes up. -->
+{#if (waiting || activated) && !dismissed && updateCheck.changesSettled && !changes?.notNewer}
 	<div class="update" role="status" data-testid="update-banner">
 		<SectionStack>
 			<div class="main">

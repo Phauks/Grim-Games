@@ -53,6 +53,12 @@ export interface Changes {
 	commits: BuildCommit[];
 	/** False when the running build is older than the notes reach, so the list is cut short. */
 	complete: boolean;
+	/**
+	 * True when the waiting build is the running one built again, or an older one: a deploy that
+	 * finished after a newer one's (Trevor, 2026-10-28: an update "had 0 changes"). It is no
+	 * update, so the update card is not shown for it.
+	 */
+	notNewer?: boolean;
 }
 
 /** Reads `/build-notes.json`, dropping anything malformed. */
@@ -88,8 +94,12 @@ export function compareUrl(running: string, next: string): string {
  */
 export function parseCompare(input: unknown): Changes | null {
 	if (!input || typeof input !== 'object') return null;
-	const { commits, total_commits: total } = input as Record<string, unknown>;
+	const { commits, total_commits: total, status } = input as Record<string, unknown>;
 	if (!Array.isArray(commits) || typeof total !== 'number') return null;
+	// `status` says where the new build stands against the running one: behind or identical
+	// means it holds nothing the running build lacks.
+	if (status === 'behind' || status === 'identical')
+		return { commits: [], complete: true, notNewer: true };
 	const bySha = new Map<string, { message: string; parent?: string }>();
 	for (const entry of commits) {
 		const sha = (entry as { sha?: unknown })?.sha;
@@ -114,5 +124,6 @@ export function parseCompare(input: unknown): Changes | null {
 export function changesSince(notes: BuildNotes, running: string): Changes {
 	const at = notes.commits.findIndex((c) => c.sha === running);
 	if (at === -1) return { commits: notes.commits, complete: false };
+	if (at === 0) return { commits: [], complete: true, notNewer: true };
 	return { commits: notes.commits.slice(0, at), complete: true };
 }
