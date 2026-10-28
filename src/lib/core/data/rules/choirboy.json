@@ -13,5 +13,11 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"wakesWhen": {
+		"diedTonight": {
+			"characters": ["king"],
+			"by": "demon"
+		}
 	}
 }
