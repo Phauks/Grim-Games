@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
+	castGame,
 	newGame,
 	run,
 	testCharacters as characters
@@ -25,22 +26,6 @@ import { dawnGames } from '#lib/core/engine/index.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
-/** Seats 0-7 hold these characters; extra commands run after. */
-function game(cast: string[], ...extra: ((seats: string[]) => Command)[]) {
-	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
-	const s = run(
-		session,
-		ctx,
-		...cast.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...extra.map((f) => f(seats))
-	);
-	return { game: s.game, seats };
-}
-
 /** A seeded generator, so picks are repeatable. */
 function seeded(seed = 7) {
 	let x = seed;
@@ -55,12 +40,12 @@ const byKey = (all: SavantStatement[], key: string) => all.find((s) => s.key ===
 
 describe('Savant statements', () => {
 	it('waits until every seat has a character', () => {
-		const { game: g, seats } = game(['savant', 'chef', 'empath', 'butler']);
+		const { game: g, seats } = castGame(['savant', 'chef', 'empath', 'butler']);
 		expect(savantStatements(g, seats[0], characters)).toEqual([]);
 	});
 
 	it('works out which characters are in play', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		const all = savantStatements(g, seats[0], characters);
 		expect(byKey(all, 'in-play:chef')?.truth).toBe('true');
 		expect(byKey(all, 'not-in-play:chef')?.truth).toBe('false');
@@ -71,7 +56,7 @@ describe('Savant statements', () => {
 
 	it('counts like the Empath from the Savant’s living neighbours', () => {
 		// Seat 0's neighbours are the Monk (seat 6) and the Chef (seat 1): none evil.
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		const all = savantStatements(g, seats[0], characters);
 		expect(byKey(all, 'evil-neighbours:0')?.truth).toBe('true');
 		expect(byKey(all, 'evil-neighbours:1')?.truth).toBe('false');
@@ -79,7 +64,7 @@ describe('Savant statements', () => {
 
 	it('counts adjacent evil pairs like the Chef', () => {
 		// The Poisoner (4) sits beside the Imp (5): one pair.
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		const all = savantStatements(g, seats[0], characters);
 		expect(byKey(all, 'evil-pairs:1')?.truth).toBe('true');
 		expect(byKey(all, 'evil-pairs:0')?.truth).toBe('false');
@@ -88,13 +73,13 @@ describe('Savant statements', () => {
 	});
 
 	it('never makes the Savant’s own seat a blank', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		const all = savantStatements(g, seats[0], characters);
 		expect(all.some((s) => s.parts.some((p) => 'seat' in p && p.seat === seats[0]))).toBe(false);
 	});
 
 	it('leaves out what everyone knows: one Demon on the script names no Demon', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		const all = savantStatements(g, seats[0], characters);
 		// The test script has the Imp, Zombuul and Legion, so the Demon line is offered.
 		expect(byKey(all, 'demon-is:imp')?.truth).toBe('true');
@@ -102,7 +87,7 @@ describe('Savant statements', () => {
 	});
 
 	it('says why each line holds or not (L49)', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		const all = savantStatements(g, seats[0], characters);
 		// A wrong count names the true one.
 		expect(byKey(all, 'evil-pairs:0')?.why).toEqual([byKey(all, 'evil-pairs:1')?.parts]);
@@ -134,7 +119,7 @@ describe('Savant statements', () => {
 	});
 
 	it('marks a line that depends on how the Recluse registers', () => {
-		const { game: g, seats } = game(['savant', 'recluse', 'empath', 'chef', 'poisoner', 'imp']);
+		const { game: g, seats } = castGame(['savant', 'recluse', 'empath', 'chef', 'poisoner', 'imp']);
 		const all = savantStatements(g, seats[0], characters);
 		const line = byKey(all, `alignment:${seats[1]}|evil`);
 		expect(line?.truth).toBe('either');
@@ -145,12 +130,12 @@ describe('Savant statements', () => {
 
 describe('Savant situation', () => {
 	it('is one true and one false for a sober Savant', () => {
-		const { game: g, seats } = game(cast);
+		const { game: g, seats } = castGame(cast);
 		expect(savantSituation(g, seats[0], characters)).toEqual({ mode: 'one-each' });
 	});
 
 	it('allows any mix while the Savant is poisoned', () => {
-		const { game: g, seats } = game(cast, (s) => ({
+		const { game: g, seats } = castGame(cast, (s) => ({
 			type: 'AddReminder',
 			seatId: s[0],
 			reminder: { characterId: 'poisoner', label: 'Poisoned' }
@@ -159,7 +144,14 @@ describe('Savant situation', () => {
 	});
 
 	it('is both false with a working Vortox', () => {
-		const { game: g, seats } = game(['savant', 'chef', 'empath', 'butler', 'poisoner', 'vortox']);
+		const { game: g, seats } = castGame([
+			'savant',
+			'chef',
+			'empath',
+			'butler',
+			'poisoner',
+			'vortox'
+		]);
 		expect(savantSituation(g, seats[0], characters)).toMatchObject({
 			vortox: seats[5],
 			mode: 'both-false'
@@ -168,7 +160,7 @@ describe('Savant situation', () => {
 });
 
 describe('Savant pairs', () => {
-	const { game: g, seats } = game(cast);
+	const { game: g, seats } = castGame(cast);
 	const pool = savantStatements(g, seats[0], characters);
 
 	it('gives one true and one false from different groups', () => {

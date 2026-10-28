@@ -23,7 +23,8 @@
 	import { drawnLook } from '#lib/features/grimoire/shared-look.ts';
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import { screenTheme, themeColours } from '#lib/ui/themes/screen-theme.svelte.ts';
-	import { cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
+	import { cornerFit, cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
+	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
 	import PlayerSeatReminders from './PlayerSeatReminders.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import {
@@ -38,7 +39,6 @@
 		type PlayerReminders
 	} from './player-reminders.ts';
 	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
-	import { cornerRoom } from '#lib/features/grimoire/corner-room.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -196,18 +196,15 @@
 	);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
-	let rootFont = $state(16);
-	$effect(() => {
-		void preferences.current;
-		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-	});
+	const root = watchRootFont();
+	const rootFont = $derived(root.current);
 	const names = $derived(
 		nameBoxes({ names: seats.map(nameOf), seats: points, size, unit, rootFont, board })
 	);
 	const cornerBoxes = $derived(
 		cornerObstacles(points, names, size, boardLooks.current.nameOffset, board)
 	);
-	const fitCorner = (h: number) => cornerRoom(cornerBoxes, board, h + 4, 4 + 8);
+	const fitCorner = $derived(cornerFit(cornerBoxes, board));
 
 	/** The characters this player guessed on any seat, and the Travellers the town knows. */
 	const firstReminders = $derived([

@@ -5,6 +5,7 @@
  */
 import { authorLogo, editionLogo, OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
 import type { RoomPreview } from '#lib/core/sync/room.ts';
+import { fetchWithTimeout } from '#lib/ui/fetch.ts';
 
 export interface GamePreview {
 	name: string;
@@ -22,7 +23,7 @@ export async function fetchRoomPreview(
 	code: string,
 	signal?: AbortSignal
 ): Promise<GamePreview | undefined> {
-	const response = await fetch(`/api/room/${code}`, { signal });
+	const response = await fetchWithTimeout(`/api/room/${code}`, { signal });
 	if (!response.ok) throw new Error(`Room lookup failed: ${response.status}`);
 	return toGamePreview((await response.json()) as RoomPreview);
 }

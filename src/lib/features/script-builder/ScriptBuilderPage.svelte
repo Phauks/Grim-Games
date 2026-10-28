@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -728,7 +729,7 @@
 	key={(c) => c.id}
 	search={{
 		label: t('script-builder.collectionSearch'),
-		matches: (c, words) => words.every((w) => c.name.toLowerCase().includes(w))
+		matches: (c, words) => words.every((w) => foldForSearch(c.name).includes(w))
 	}}
 	onChoose={(c) => {
 		collectionOpen = false;
