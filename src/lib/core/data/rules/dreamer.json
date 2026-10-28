@@ -10,7 +10,7 @@
 			"characters": ["chosen"],
 			"upTo": 2,
 			"others": "opposite-alignment",
-			"shuffle": true,
+			"order": "good-first",
 			"offer": true
 		}
 	}
