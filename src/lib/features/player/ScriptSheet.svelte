@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { typeTone, type TypeTone } from '#lib/core/data/character-type.ts';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { ScriptJinx } from '#lib/core/rules/jinxes.ts';
@@ -91,41 +92,48 @@
 	const nameOf = (id: string) => byId.get(id)?.name ?? id;
 </script>
 
-{#snippet row(c: Character)}
+<!-- On screen a character is its icon in a ring of its alignment's colour, with a band of
+     that colour carrying its name out of the ring's top and the ability under the band (Trevor,
+     2026-10-28: the icons were "kind of hidden"; he picked the ring over a solid disc), on screen
+     and on paper. It is the shared CharacterRow's ring look. -->
+{#snippet ringRow(c: Character)}
 	{@const own = jinxesOf[c.id]}
 	{@const who = playersOf(c.id)}
 	<li class="character" data-character={c.id}>
-		<span class="name">
-			<CharacterBadge characterId={c.id} character={c} />
-			{#if own}
-				{@const partners = own.map((j) => byId.get(partner(j, c.id))).filter((x) => !!x)}
-				<button
-					type="button"
-					class="jinx-mark"
-					data-testid="jinx-mark"
-					aria-label={t('player.jinxedWith', { names: partners.map((p) => p.name).join(', ') })}
-					onclick={() => {
-						jinxFor = c;
-						jinxOpen = true;
-					}}
-				>
-					{#each partners as p (p.id)}
-						{@const src = iconUrl(p)}
-						{#if src}<img
-								{src}
-								alt=""
-								referrerpolicy="no-referrer"
-								{@attach iconFallback(fallbackIconUrl(p))}
-							/>{:else}<span class="dot"></span>{/if}
-					{/each}
-				</button>
-			{/if}
-			{#if who.length}<span class="in-play" data-testid="traveller-in-play"
-					>{t('player.travellerInPlay', { names: who.join(', ') })}</span
-				>{/if}
-		</span>
-		<p class="ability"><GlossaryText text={c.ability} {names} /></p>
+		<CharacterRow character={c} look="ring" info>
+			{#snippet afterName()}
+				{#if own}{@render jinxMark(c, own)}{/if}
+				{#if who.length}<span class="in-play" data-testid="traveller-in-play"
+						>{t('player.travellerInPlay', { names: who.join(', ') })}</span
+					>{/if}
+			{/snippet}
+			{#snippet ability()}<GlossaryText text={c.ability} {names} />{/snippet}
+		</CharacterRow>
 	</li>
+{/snippet}
+
+{#snippet jinxMark(c: Character, own: ScriptJinx[])}
+	{@const partners = own.map((j) => byId.get(partner(j, c.id))).filter((x) => !!x)}
+	<button
+		type="button"
+		class="jinx-mark"
+		data-testid="jinx-mark"
+		aria-label={t('player.jinxedWith', { names: partners.map((p) => p.name).join(', ') })}
+		onclick={() => {
+			jinxFor = c;
+			jinxOpen = true;
+		}}
+	>
+		{#each partners as p (p.id)}
+			{@const src = iconUrl(p)}
+			{#if src}<img
+					{src}
+					alt=""
+					referrerpolicy="no-referrer"
+					{@attach iconFallback(fallbackIconUrl(p))}
+				/>{:else}<span class="dot"></span>{/if}
+		{/each}
+	</button>
 {/snippet}
 
 {#snippet jinxItem(jinx: ScriptJinx)}
@@ -166,7 +174,7 @@
 	{#each groups as group (group.type)}
 		{#snippet list()}
 			<ul>
-				{#each group.characters as c (c.id)}{@render row(c)}{/each}
+				{#each group.characters as c (c.id)}{@render ringRow(c)}{/each}
 			</ul>
 		{/snippet}
 		{@render section(
@@ -281,8 +289,7 @@
 	 * A badge above its ability keeps the row it had as a tall pill: its 44px tap area then
 	 * stays clear of the rules terms' tap areas on the line below, and nothing moves.
 	 */
-	.pair,
-	[data-density='normal'] .name {
+	.pair {
 		min-height: var(--tap-target);
 		align-items: center;
 	}
@@ -303,12 +310,6 @@
 		min-height: var(--tap-target);
 		font-family: var(--font-control);
 		font-weight: 600;
-	}
-	.name {
-		display: inline-flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: var(--space-1);
 	}
 	/* One tap target holding the icons of the characters this one is jinxed with. */
 	.jinx-mark {
@@ -374,12 +375,6 @@
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(24 * var(--u))), 1fr));
 		gap: var(--space-1) var(--space-3);
 	}
-	[data-density='compact'] .character,
-	[data-density='super'] .character {
-		grid-template-columns: auto minmax(0, 1fr);
-		align-items: baseline;
-		column-gap: var(--space-1);
-	}
 	[data-density='compact'] .ability {
 		font-size: 0.9rem;
 		line-height: 1.25;
@@ -402,5 +397,32 @@
 	[data-density='super'] .jinx-mark .dot {
 		width: 1.3em;
 		height: 1.3em;
+	}
+	/* In the band the jinx icons keep a 44px tap area without making the band taller. */
+	.character .jinx-mark {
+		position: relative;
+		flex: 0 4 auto;
+		min-width: 0;
+		min-height: 0;
+		padding: 0;
+		/* Many partners (a script with every character) end at the band's end, never past it. */
+		overflow-x: clip;
+	}
+	.character .jinx-mark::before {
+		content: '';
+		position: absolute;
+		inset: calc((1.6em - var(--tap-target)) / 2) 0;
+	}
+	.character .jinx-mark img,
+	.character .jinx-mark .dot {
+		width: 1.3em;
+		height: 1.3em;
+	}
+	/* Printed compact sheets: smaller rings, so more fits a page. */
+	[data-density='compact'] .character {
+		--character-ring: 3.4em;
+	}
+	[data-density='super'] .character {
+		--character-ring: 2.8em;
 	}
 </style>
