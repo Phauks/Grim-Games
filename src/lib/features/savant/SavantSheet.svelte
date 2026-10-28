@@ -212,7 +212,7 @@
 
 	/** Why the mode may differ, on one line kept for it so nothing moves. */
 	const why = $derived(
-		situation?.impaired
+		situation?.impaired && holder !== undefined
 			? {
 					text: t(
 						situation.impaired === 'drunk'
