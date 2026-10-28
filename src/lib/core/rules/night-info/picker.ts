@@ -35,9 +35,17 @@ import {
  * - `number`: a number (Chef, Empath, Clockmaker);
  * - `players`: players to point at (Steward: 1 good player; Noble: 3, exactly 1 evil; Sage:
  *   2, one of them the Demon);
- * - `yes-no`: the player chose 2 players; yes or no (Fortune Teller, Seamstress).
+ * - `yes-no`: the player chose 2 players; yes or no (Fortune Teller, Seamstress), or one of
+ *   two other answers (`PickerAnswer`).
  */
 export type PickerKind = 'pair-character' | 'number' | 'players' | 'yes-no';
+
+/**
+ * What a `yes-no` picker's two answers mean, when not yes and no: `alignment`, yes for evil
+ * and no for good (Village Idiot); `direction`, yes for clockwise and no for anticlockwise
+ * (Shugenja).
+ */
+export type PickerAnswer = 'alignment' | 'direction';
 
 /** One option the Storyteller could show. */
 export interface InfoOption {
@@ -82,6 +90,8 @@ export interface InfoPicker extends Reliability {
 	seatCount: number;
 	/** For `pair-character`: the character type shown. */
 	characterType?: CharacterType;
+	/** For `yes-no`: what the answers mean, when not yes and no. */
+	answer?: PickerAnswer;
 	/** The truthful options, from the grimoire, including ones that rely on registration. */
 	options: InfoOption[];
 	/** For `number`: the true number and the range registration allows. */
@@ -109,25 +119,30 @@ export interface InfoChoice {
 interface PickerSpec extends Learns {
 	kind: PickerKind;
 	seatCount: number;
+	answer?: PickerAnswer;
 }
 
 /** The picker each `learns` measure shows: its kind and how many players are tapped. */
-const MEASURE_PICKERS: Readonly<Record<Learns['measure'], Pick<PickerSpec, 'kind' | 'seatCount'>>> =
-	{
-		'pair-of-type': { kind: 'pair-character', seatCount: 2 },
-		'evil-pairs': { kind: 'number', seatCount: 0 },
-		'evil-alive-neighbours': { kind: 'number', seatCount: 0 },
-		'demon-minion-steps': { kind: 'number', seatCount: 0 },
-		'demon-or-token': { kind: 'yes-no', seatCount: 2 },
-		'good-player': { kind: 'players', seatCount: 1 },
-		'one-evil-of-three': { kind: 'players', seatCount: 3 },
-		'same-alignment': { kind: 'yes-no', seatCount: 2 },
-		'demon-in-pair': { kind: 'players', seatCount: 2 },
-		'character-of': { kind: 'pair-character', seatCount: 1 },
-		'not-demon-pair': { kind: 'players', seatCount: 2 },
-		'evil-player': { kind: 'players', seatCount: 1 },
-		'demon-player': { kind: 'players', seatCount: 1 }
-	};
+const MEASURE_PICKERS: Readonly<
+	Record<Learns['measure'], Pick<PickerSpec, 'kind' | 'seatCount' | 'answer'>>
+> = {
+	'pair-of-type': { kind: 'pair-character', seatCount: 2 },
+	'evil-pairs': { kind: 'number', seatCount: 0 },
+	'evil-alive-neighbours': { kind: 'number', seatCount: 0 },
+	'demon-minion-steps': { kind: 'number', seatCount: 0 },
+	'demon-or-token': { kind: 'yes-no', seatCount: 2 },
+	'good-player': { kind: 'players', seatCount: 1 },
+	'one-evil-of-three': { kind: 'players', seatCount: 3 },
+	'same-alignment': { kind: 'yes-no', seatCount: 2 },
+	'demon-in-pair': { kind: 'players', seatCount: 2 },
+	'character-of': { kind: 'pair-character', seatCount: 1 },
+	'not-demon-pair': { kind: 'players', seatCount: 2 },
+	'evil-player': { kind: 'players', seatCount: 1 },
+	'demon-player': { kind: 'players', seatCount: 1 },
+	'closest-evil-direction': { kind: 'yes-no', seatCount: 0, answer: 'direction' },
+	'chosen-alignment': { kind: 'yes-no', seatCount: 1, answer: 'alignment' },
+	'type-differs-from-token': { kind: 'players', seatCount: 1 }
+};
 
 /**
  * The picker for a character that `learns` first-night information (its rules block: our
@@ -268,7 +283,61 @@ function optionsIn(
 		case 'demon-player':
 			// https://wiki.bloodontheclocktower.com/Choirboy: which player is the Demon.
 			return others.filter((s) => world.type(s) === 'demon').map((s) => ({ seats: [s], pivot: s }));
+		case 'closest-evil-direction': {
+			// https://wiki.bloodontheclocktower.com/Shugenja: the direction of the evil player
+			// fewest steps away; when the nearest each way are as close, either. The wiki counts
+			// steps round the circle, so dead players count.
+			const n = game.seating.length;
+			const at = game.seating.indexOf(seatId);
+			const steps = (dir: 1 | -1) => {
+				for (let i = 1; i < n; i++) {
+					if (evil(game.seating[(((at + dir * i) % n) + n) % n])) return i;
+				}
+				return undefined;
+			};
+			const clockwise = steps(1);
+			const anticlockwise = steps(-1);
+			if (clockwise === undefined || anticlockwise === undefined) return [];
+			return [
+				...(clockwise <= anticlockwise ? [{ seats: [], yes: true }] : []),
+				...(anticlockwise <= clockwise ? [{ seats: [], yes: false }] : [])
+			];
+		}
+		case 'chosen-alignment':
+			// https://wiki.bloodontheclocktower.com/Village_Idiot: the alignment of the player
+			// chosen. Like the Fortune Teller, any player, themselves included.
+			return game.seating.map((s) => ({ seats: [s], yes: evil(s) }));
+		case 'type-differs-from-token': {
+			// https://wiki.bloodontheclocktower.com/Balloonist: a player of a different character
+			// type than the one shown last time (any player the first time). Alive or dead.
+			const before = lastShown(game, seatId, characterId, spec.token).map((s) => world.type(s));
+			return others
+				.filter((s) => !before.includes(world.type(s)))
+				.map((s) => ({ seats: [s], pivot: s }));
+		}
 	}
+}
+
+/**
+ * The players last shown to a waking player, by the `token` placed on them: the carriers of
+ * the token its latest recorded info placed, or else every carrier of the token.
+ */
+function lastShown(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	token: string | undefined
+): SeatId[] {
+	const carriers = game.seating.filter((s) => carries(game, s, characterId, token));
+	const entries = [...game.pastDays.flatMap((d) => d.entries), ...game.today.entries];
+	for (const e of entries.reverse()) {
+		if (e.kind !== 'info' || e.seatId !== seatId || e.characterId !== characterId) continue;
+		const placed = carriers.filter((s) =>
+			game.seats[s].reminders.some((r) => e.reminderIds.includes(r.reminderId))
+		);
+		if (placed.length > 0) return placed;
+	}
+	return carriers;
 }
 
 /** The players a `character-of` picker may show the character of. */
@@ -383,7 +452,11 @@ function pickerFacts(
 		case 'demon-player':
 			return others.filter((s) => world.type(s) === 'demon').map(f);
 		case 'evil-player':
+		case 'closest-evil-direction':
 			return others.filter(evil).map(f);
+		case 'type-differs-from-token':
+			return lastShown(game, seatId, characterId, spec.token).map(f);
+		case 'chosen-alignment':
 		case 'good-player':
 		case 'character-of':
 			return [];
@@ -428,6 +501,7 @@ export function infoPicker(
 		seatId,
 		seatCount: spec.seatCount,
 		...(spec.type ? { characterType: spec.type } : {}),
+		...(spec.answer ? { answer: spec.answer } : {}),
 		options,
 		...(range ? { range } : {}),
 		anyAllowed: r.unreliable !== undefined,
@@ -694,7 +768,19 @@ export function infoRecord(
 				`Shown ${players.join(', ')}`,
 				picker.reminders.each ? choice.seats.map((s) => token(s, picker.reminders.each!)) : []
 			);
-		case 'yes-no':
-			return out(`Chose ${players.join(' and ')}: shown ${choice.yes ? 'yes' : 'no'}`, []);
+		case 'yes-no': {
+			const shown = answerText(picker.answer, choice.yes === true).toLowerCase();
+			return out(
+				players.length > 0 ? `Chose ${players.join(' and ')}: shown ${shown}` : `Shown ${shown}`,
+				[]
+			);
+		}
 	}
+}
+
+/** A `yes-no` answer in words: Yes or No, Evil or Good, Clockwise or Anticlockwise. */
+export function answerText(answer: PickerAnswer | undefined, yes: boolean): string {
+	if (answer === 'alignment') return yes ? 'Evil' : 'Good';
+	if (answer === 'direction') return yes ? 'Clockwise' : 'Anticlockwise';
+	return yes ? 'Yes' : 'No';
 }

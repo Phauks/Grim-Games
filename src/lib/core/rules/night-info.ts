@@ -57,6 +57,8 @@ export {
 } from './night-info/answers.ts';
 export {
 	type PickerKind,
+	type PickerAnswer,
+	answerText,
 	type InfoOption,
 	type NumberRange,
 	type InfoPicker,

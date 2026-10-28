@@ -1,4 +1,7 @@
 {
+	"learns": {
+		"measure": "chosen-alignment"
+	},
 	"reminderTargets": {
 		"Drunk": {
 			"seat": "any",
