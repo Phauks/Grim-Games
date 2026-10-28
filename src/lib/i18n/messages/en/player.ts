@@ -95,6 +95,8 @@ export const player = {
 	'player.profile': 'Profile',
 	'player.frame': 'Your laurel',
 	'player.frameColour': 'Colour',
+	'player.flavour': 'Flavour text',
+	'player.editFlavour': 'Edit flavour text',
 	'player.frameMotion': 'Motion',
 	'player.bigPreview': 'Your seat, larger',
 	'player.picture': 'Your picture',
