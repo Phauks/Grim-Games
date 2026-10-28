@@ -28,7 +28,7 @@ import {
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 
-export { DAY_GROUP_TITLES, DAY_GROUPS };
+export { DAY_GROUPS };
 export type { DayCondition, DayGroup, DayInteraction, DayReminderSpec, DeathCauseMatch };
 
 /** Defined with the model's `Seat`; re-exported here for existing imports. */
@@ -98,7 +98,7 @@ export type ReminderSegment =
 	| { kind: 'value'; characterId: CharacterId; key: string; placeholder: string; value?: string };
 
 /** Where a prep value is stored in `Game.prepValues`: "yaggababble.phrase". */
-export const prepValueKey = (characterId: CharacterId, key: string) => `${characterId}.${key}`;
+const prepValueKey = (characterId: CharacterId, key: string) => `${characterId}.${key}`;
 
 export interface DayReminder {
 	/** Stable id for overrides: the same state gives the same key. */
@@ -475,7 +475,7 @@ export function detectDayReminders(
 }
 
 /** Applies the Storyteller's overrides: hide, edit, add. Unknown keys are ignored. */
-export function applyDayOverrides(
+function applyDayOverrides(
 	reminders: readonly DayReminder[],
 	overrides: readonly DayReminderOverride[],
 	state: Pick<DayState, 'seats'>

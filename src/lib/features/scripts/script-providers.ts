@@ -109,7 +109,7 @@ export interface RemoteProvider<Query> {
 	search(query: Query, page: number, data: GameData, signal?: AbortSignal): Promise<RemotePage>;
 }
 
-export const officialProvider: LocalProvider = {
+const officialProvider: LocalProvider = {
 	kind: 'local',
 	id: 'official',
 	listings: ({ data }) =>
@@ -161,20 +161,20 @@ function curatedListings(id: 'curated' | 'month'): LocalProvider['listings'] {
 		});
 }
 
-export const curatedProvider: LocalProvider = {
+const curatedProvider: LocalProvider = {
 	kind: 'local',
 	id: 'curated',
 	listings: curatedListings('curated')
 };
 
 /** Every Script of the Month our copy has seen, this month's first (`mergeCurated`). */
-export const monthProvider: LocalProvider = {
+const monthProvider: LocalProvider = {
 	kind: 'local',
 	id: 'month',
 	listings: curatedListings('month')
 };
 
-export const collectionProvider: LocalProvider = {
+const collectionProvider: LocalProvider = {
 	kind: 'local',
 	id: 'collection',
 	listings: ({ data, collection = [] }) =>
@@ -238,11 +238,11 @@ function worldCupProvider(year: WorldCupYear): LocalProvider {
 			})
 	};
 }
-export const worldCup2023Provider = worldCupProvider('2023');
-export const worldCup2025Provider = worldCupProvider('2025');
+const worldCup2023Provider = worldCupProvider('2023');
+const worldCup2025Provider = worldCupProvider('2025');
 
 /** The BOTC HomeBrew Wiki: listed from its summaries, each script fetched when shown. */
-export const homebrewProvider: LocalProvider = {
+const homebrewProvider: LocalProvider = {
 	kind: 'local',
 	id: 'homebrew',
 	listings: ({ data, homebrew = [] }) =>
@@ -253,7 +253,7 @@ export const homebrewProvider: LocalProvider = {
 };
 
 /** Bloodstar Clocktica: listed from its folder names, each script fetched when shown. */
-export const bloodstarProvider: LocalProvider = {
+const bloodstarProvider: LocalProvider = {
 	kind: 'local',
 	id: 'bloodstar',
 	listings: ({ bloodstar = [] }) =>
@@ -313,7 +313,7 @@ export const profileProvider: LocalProvider = {
 };
 
 /** Local sources in the order the table lists them. */
-export const LOCAL_PROVIDERS: readonly LocalProvider[] = [
+const LOCAL_PROVIDERS: readonly LocalProvider[] = [
 	officialProvider,
 	curatedProvider,
 	recentProvider,

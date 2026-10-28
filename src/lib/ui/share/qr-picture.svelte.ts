@@ -36,8 +36,3 @@ export async function chooseQrPicture(file: File): Promise<boolean> {
 		return false;
 	}
 }
-
-export function forgetQrPicture(): void {
-	writeStoredText(KEY, undefined);
-	qrPicture.current = undefined;
-}

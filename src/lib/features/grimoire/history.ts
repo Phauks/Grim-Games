@@ -377,7 +377,7 @@ function describeEvent(
 }
 
 /** One log entry's line: its first event, or a count when it placed several reminders. */
-export function describeEntry(
+function describeEntry(
 	entry: LogEntry,
 	before: Game | undefined,
 	after: Game,

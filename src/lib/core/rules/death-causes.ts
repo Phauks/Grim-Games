@@ -32,14 +32,12 @@ import {
 } from './ability.ts';
 import { gainedAbilities } from './gained-abilities.ts';
 import {
-	DEATH_KINDS,
 	type DeathCauseRule,
 	type DeathKind,
 	type VictimRule
 } from '#lib/core/data/death-cause-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 
-export { DEATH_KINDS };
 export type { DeathCauseRule, DeathKind, VictimRule };
 
 /** A `deathCause` rule for a character whose ability can cause a death. */
@@ -55,10 +53,7 @@ export interface DeathCauseOption {
 }
 
 /** A character's `deathCause` rule: its own (a custom character's) or our overlay file's. */
-export function deathCauseRule(
-	id: CharacterId,
-	characters?: CharacterLookup
-): DeathCauseRule | undefined {
+function deathCauseRule(id: CharacterId, characters?: CharacterLookup): DeathCauseRule | undefined {
 	return rulesOf(id, characters)?.deathCause;
 }
 

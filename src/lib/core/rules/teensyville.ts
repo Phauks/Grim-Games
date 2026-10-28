@@ -18,7 +18,7 @@ export const TEENSYVILLE_SHEET: Readonly<TypeCounts> = {
 	minion: 2,
 	demon: 2
 };
-export const TEENSYVILLE_MAX_PLAYERS = 6;
+const TEENSYVILLE_MAX_PLAYERS = 6;
 /** Minion info and Demon info need at least this many players. */
 export const EVIL_INFO_MIN_PLAYERS = 7;
 

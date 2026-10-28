@@ -34,7 +34,7 @@ export interface BoardSize {
 export const DEFAULT_SEAT_LAYOUT: SeatLayout = { shape: 'oval', gaps: {}, placed: {} };
 
 /** The most empty places allowed after one seat. */
-export const MAX_GAP = 3;
+const MAX_GAP = 3;
 
 /** The ring's radius, as a share of the board's width and height (or its shorter side). */
 const RING = 0.41;

@@ -188,10 +188,10 @@
 		touch-action: manipulation;
 	}
 	.head[data-tone='good'] .toggle {
-		color: var(--good);
+		color: var(--good-text);
 	}
 	.head[data-tone='evil'] .toggle {
-		color: var(--evil);
+		color: var(--evil-text);
 	}
 	.head[data-tone='traveller'] .toggle {
 		color: var(--traveller-text);
