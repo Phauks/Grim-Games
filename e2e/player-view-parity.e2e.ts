@@ -103,6 +103,20 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	await page.keyboard.press('Escape');
 	await expect(script).toBeHidden();
 
+	// The Storyteller's gold votes badge holds both numbers, so the row keeps five cells
+	// (Trevor, 2026-10-28, option A).
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await expect(day).toBeVisible();
+	const votes = day.getByTestId('votes-needed');
+	await expect(votes.getByTestId('exile-needed')).toHaveText('4|4');
+	await expect(votes).toHaveAccessibleName(/4 players must support an exile/);
+	const row = (await votes.locator('..').boundingBox())!;
+	const badge = (await votes.boundingBox())!;
+	expect(badge.x + badge.width).toBeLessThanOrEqual(row.x + row.width + 1);
+	expect(await votes.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+
 	// The grim cover's Player view is the same view.
 	await page.getByTestId('cover-button').tap();
 	const cover = page.getByRole('dialog', { name: 'Screen covered' });
