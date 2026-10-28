@@ -18,6 +18,7 @@ const CLAUSE_KEYS = [
 	'optional',
 	'storytellerMay',
 	'evenIfDead',
+	'evenIfImpaired',
 	'effects',
 	'marks',
 	'spent'
@@ -36,7 +37,7 @@ const EFFECT_FIELDS: Record<string, readonly string[]> = {
 	boost: ['who', 'how', 'until'],
 	'keep-ability': ['who', 'until'],
 	'gain-ability': ['who', 'of'],
-	'falsify-info': ['of'],
+	'falsify-info': ['of', 'who'],
 	'skip-waking': ['who'],
 	arm: ['who', 'on', 'until', 'effects'],
 	later: ['at', 'if', 'effects'],
@@ -56,7 +57,10 @@ const EFFECT_FIELDS: Record<string, readonly string[]> = {
 	'vote-only-with': ['who', 'with', 'until'],
 	'vote-needs-token': ['who'],
 	setup: ['modifier'],
-	storyteller: ['note']
+	storyteller: ['note'],
+	// Carousel Outsiders & Travellers batch.
+	'must-vote': ['who'],
+	'invert-winner': []
 };
 
 const oneOf = (value: unknown, allowed: readonly string[]) =>

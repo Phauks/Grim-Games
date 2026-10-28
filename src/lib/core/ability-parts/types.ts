@@ -63,12 +63,22 @@ export const EVENTS = [
 	'nomination',
 	'killed-outsider',
 	'grandchild-killed-by-demon',
-	'marked-executed'
+	'marked-executed',
+	// Carousel Outsiders & Travellers batch: its own player nominates (Golem), a Minion
+	// publicly guesses it (Damsel), a player becomes a Minion mid-game (Damsel).
+	'nominates',
+	'minion-guess',
+	'new-minion'
 ] as const;
 export type GameEvent = (typeof EVENTS)[number];
 
 /** How often: "Once per game", or only "The 1st time". */
-export const LIMITS = ['once-per-game', 'first-time'] as const;
+export const LIMITS = [
+	'once-per-game',
+	'first-time',
+	// Carousel Outsiders & Travellers batch: "Once per day" (Gangster).
+	'once-per-day'
+] as const;
 export type Limit = (typeof LIMITS)[number];
 
 /**
@@ -102,7 +112,15 @@ export const SUBJECTS = [
 	'the-demon',
 	'each-player',
 	'opposing-player',
-	'killed'
+	'killed',
+	// Carousel Outsiders & Travellers batch: whom its own player nominated (Golem, Gnome's
+	// Amigo), the Storyteller (Plague Doctor), every Minion (Damsel, Snitch), the Minion and
+	// Demon players (Hatter), a player of its own alignment (Gnome's Amigo).
+	'nominee',
+	'storyteller',
+	'each-minion',
+	'minions-and-demon',
+	'allied-player'
 ] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
@@ -124,6 +142,8 @@ export interface Choice {
 	from?: 'voted-today';
 	/** Different to previous nights. */
 	notRepeated?: true;
+	/** Carousel Outsiders & Travellers batch: only its alive neighbours (Gangster). */
+	neighbour?: true;
 }
 
 /**
@@ -134,16 +154,29 @@ export interface Choice {
 export type Condition =
 	| { alive: { atLeast?: number; exactly?: number; travellers?: false } }
 	| { noExecutionToday: true }
-	| { registers: { who: Subject; types?: CharacterType[]; alignments?: Alignment[] } }
+	| {
+			registers: {
+				who: Subject;
+				types?: CharacterType[];
+				alignments?: Alignment[];
+				/** Carousel Outsiders & Travellers batch: does NOT register so (Golem's "not the Demon"). */
+				not?: true;
+			};
+	  }
 	/** In a jinx's clause: the subject is the jinxed partner's player. */
 	| { partnerIs: Subject }
 	/** Something about today or this choice that only this ability's moment knows. */
 	/** `token` marks the player it is about (the Godfather's Died Today). */
 	| { today: 'no-death' | 'outsider-died' | 'statement-true'; token?: ReminderLabel }
-	| { choice: 'guess-wrong' | 'last-was-none' | 'they-agree' | 'impaired' }
+	| { choice: 'guess-wrong' | 'last-was-none' | 'they-agree' | 'impaired' | 'guess-right' }
 	| { neighboursGood: true }
 	/** Only the first time this happens (the Fang Gu's first Outsider). */
-	| { firstTime: true };
+	| { firstTime: true }
+	// Carousel Outsiders & Travellers batch:
+	/** The subject has this reminder (the Gnome's Amigo). */
+	| { hasToken: { who: Subject; token: ReminderLabel } }
+	/** Only the Storyteller can judge it (the Politician's "most responsible"). */
+	| { judged: 'most-responsible-for-loss' };
 
 /**
  * What the player learns. `measure` and `question` are the night info generators the app
@@ -182,6 +215,12 @@ export type Info =
 	| { kind: 'character-of'; who: Subject }
 	| { kind: 'alignment-of'; who: Subject }
 	| { kind: 'grimoire' }
+	// Carousel Outsiders & Travellers batch: which player `who` is (the Puzzlemaster learns the
+	// Demon player, everyone learns the Gnome's Amigo); that this character is in play (the
+	// Damsel, to Minions); `count` bluffs (the Snitch, to Minions).
+	| { kind: 'player-of'; who: Subject }
+	| { kind: 'in-play' }
+	| { kind: 'bluffs'; count: number }
 	/**
 	 * Info with no generator in the app yet (the gaps list in the design doc): how many chosen
 	 * woke tonight (Chambermaid), a good and an evil character one of which is right (Dreamer),
@@ -244,9 +283,14 @@ type EffectBody =
 	/** The subject keeps or regains their ability though dead (Vigormortis, Bone Collector). */
 	| { do: 'keep-ability'; who: Subject; until?: 'dusk' }
 	/** Gains a character's ability (Philosopher, Apprentice). */
-	| { do: 'gain-ability'; who: Subject; of: 'chosen' | 'a-townsfolk-or-minion' }
-	/** This type's information is false (the Vortox). */
-	| { do: 'falsify-info'; of: CharacterType }
+	| {
+			do: 'gain-ability';
+			who: Subject;
+			/** Carousel Outsiders & Travellers batch: `a-minion` (Plague Doctor), `every-outsider` (Hermit). */
+			of: 'chosen' | 'a-townsfolk-or-minion' | 'a-minion' | 'every-outsider';
+	  }
+	/** This type's information is false (the Vortox), or one player's (the Puzzlemaster's wrong guess). */
+	| { do: 'falsify-info'; of?: CharacterType; who?: Subject }
 	/** The subject doesn't wake tonight (the Exorcist's Demon). */
 	| { do: 'skip-waking'; who: Subject }
 	/** If `who` does `on` before `until`, `effects` happen: the Witch's curse, the Devil's
@@ -294,7 +338,15 @@ type EffectBody =
 	| {
 			do: 'become';
 			who: Subject;
-			into: 'demon' | 'this-character' | 'chosen-character' | 'alignment-of-chooser';
+			into:
+				| 'demon'
+				| 'this-character'
+				| 'chosen-character'
+				| 'alignment-of-chooser'
+				// Carousel Outsiders & Travellers batch: the chosen player's alignment (Ogre), the
+				// other alignment (Politician).
+				| 'alignment-of-chosen'
+				| 'other-alignment';
 			evil?: true;
 	  }
 	| { do: 'execute'; who: Subject; instead?: true }
@@ -307,6 +359,10 @@ type EffectBody =
 	| { do: 'vote-weight'; who: Subject; counts: number; until: 'tomorrow' }
 	| { do: 'vote-only-with'; who: Subject; with: Subject; until: 'tomorrow' }
 	| { do: 'vote-needs-token'; who: Subject }
+	// Carousel Outsiders & Travellers batch: must vote on every nomination (Zealot); whoever
+	// wins loses and whoever loses wins (Heretic).
+	| { do: 'must-vote'; who: Subject }
+	| { do: 'invert-winner' }
 	| { do: 'setup'; modifier: SetupModifierRules }
 	| { do: 'storyteller'; note: string };
 
@@ -328,6 +384,8 @@ export interface Clause {
 	storytellerMay?: true;
 	/** "even if dead". */
 	evenIfDead?: true;
+	/** Carousel Outsiders & Travellers batch: "even if drunk or poisoned" (Ogre). */
+	evenIfImpaired?: true;
 	effects: Effect[];
 	/** The reminder that marks this clause's effect on its subject (Safe, Poisoned, Red Herring). */
 	marks?: ReminderLabel;

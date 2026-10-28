@@ -85,8 +85,9 @@ function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 	const effects = allEffects(clause.effects);
 	if (when.at === 'night')
 		return { first: when.nights !== 'each*', other: when.nights !== 'first' };
-	// Told something before the game starts (the Evil Twin, the Lunatic's Demon): night 1.
-	const first = when.at === 'setup' && effects.some((e) => e.do === 'learn');
+	// Told something before the game starts (the Evil Twin, the Lunatic's Demon): night 1,
+	// unless told publicly (the Gnome's Amigo).
+	const first = when.at === 'setup' && !clause.publicly && effects.some((e) => e.do === 'learn');
 	// Woken as the Demon they think they are (the Lunatic).
 	if (effects.some((e) => e.do === 'believe' && e.isA === 'demon')) return { first, other: true };
 	// Something happens tonight because of a day's event (Gossip, Moonchild, Juggler).
@@ -97,6 +98,10 @@ function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 		return { first, other: true };
 	// Told they became the Demon (Scarlet Woman), or die with their Grandchild.
 	if (when.at === 'event' && ['demon-dies', 'grandchild-killed-by-demon'].includes(when.event))
+		return { first, other: true };
+	// Carousel Outsiders & Travellers batch: told something when it happens mid-game (a new
+	// Minion learns the Damsel).
+	if (when.at === 'event' && when.event === 'new-minion' && effects.some((e) => e.do === 'learn'))
 		return { first, other: true };
 	// A death the Storyteller may cause at any time (the Tinker) has a step on other nights.
 	if (when.at === 'always' && clause.storytellerMay && effects.some((e) => e.do === 'kill'))
@@ -116,6 +121,8 @@ function clauseOpening(clause: Clause): string | undefined {
 	}
 	if (when.at === 'day') {
 		if (when.days === 'first') return 'On your 1st day';
+		// "Once per day" (the Gangster) is no Sort Order phrase.
+		if (limit === 'once-per-day') return undefined;
 		return limit === 'once-per-game' ? 'Once per game, during the day' : 'Each day';
 	}
 	if (when.at === 'nominated' && limit === 'first-time') return 'The 1st time';
@@ -182,9 +189,13 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 		// Where the clause's token goes: on its own player when every effect is theirs (the
 		// Gambler's Dead), else on a chosen player, never its own when it can't choose itself:
 		// "not yourself", a dead player while it lives, an alive one once it has died.
-		const subjects = effects.flatMap((e) =>
-			(['who', 'with'] as const).flatMap((k) => (k in e ? [(e as Record<string, unknown>)[k]] : []))
-		);
+		const subjects = effects.flatMap((e) => [
+			...(['who', 'with'] as const).flatMap((k) =>
+				k in e ? [(e as Record<string, unknown>)[k]] : []
+			),
+			// Carousel Outsiders & Travellers batch: taking the chosen player's alignment (the Ogre).
+			...(e.do === 'become' && e.into === 'alignment-of-chosen' ? ['chosen'] : [])
+		]);
 		const onSelf = subjects.every((who) => who === 'self');
 		const choice = clause.choose;
 		const neverSelf =
@@ -213,7 +224,10 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 			...(acc.holds.length ? { holds: acc.holds } : {})
 		};
 	if (acc.fixed.size) rules.fixedReminders = [...acc.fixed].sort();
-	const opening = parts.clauses.filter((c) => c.when.at !== 'setup').map(clauseOpening)[0];
+	// A setup clause that only changes the bag ("[+2 Outsiders]") ends the text; any other
+	// setup clause is a state the text opens with ("1 player is drunk": the Puzzlemaster).
+	const bagOnly = (c: Clause) => c.when.at === 'setup' && c.effects.every((e) => e.do === 'setup');
+	const opening = parts.clauses.filter((c) => !bagOnly(c)).map(clauseOpening)[0];
 	return { rules, wakes, ...(opening ? { opening } : {}) };
 }
 
@@ -274,6 +288,12 @@ function applyEffect(
 			const reg = registers(conds, effect.who);
 			const as = reg?.types?.[0] ?? reg?.alignments?.[0];
 			if (effect.who === 'self') cause(rules, { kind: 'own-death' });
+			// Carousel Outsiders & Travellers batch: "if the nominee is not the Demon" (the Golem),
+			// "an alive neighbour" (the Gangster).
+			else if (reg?.not && as === 'demon')
+				cause(rules, { kind: 'kills', victim: { who: 'registers', as: 'not-demon' } });
+			else if (effect.who === 'chosen' && clause.choose?.neighbour)
+				cause(rules, { kind: 'kills', victim: { who: 'alive-neighbour' } });
 			else if (as === 'demon' || as === 'good')
 				cause(rules, {
 					kind: 'kills',
@@ -335,6 +355,8 @@ function applyEffect(
 			return;
 		case 'gain-ability':
 			cause(rules, { kind: 'gained-ability' });
+			// A gained ability is kept, so its token stays put (the Plague Doctor's Minion).
+			if (marks) acc.fixed.add(marks);
 			return;
 		case 'madness':
 			cause(
@@ -397,6 +419,9 @@ function applyEffect(
 				(effect.winner === 'evil' || effect.winner === 'good')
 			)
 				acc.ends.push({ kind: 'marked-executed', token: acc.firstMark, winner: effect.winner });
+			// Carousel Outsiders & Travellers batch: an end nothing above checks (a public guess or
+			// claim, the Storyteller's judgement) is offered at End game for the Storyteller to decide.
+			else rules.gameEnd = { ...rules.gameEnd, decidedByStoryteller: true };
 			return;
 		}
 		case 'hold-game':
@@ -433,6 +458,10 @@ function applyEffect(
 		}
 		case 'setup':
 			rules.setupModifier = effect.modifier;
+			return;
+		// Carousel Outsiders & Travellers batch.
+		case 'invert-winner':
+			rules.gameEnd = { ...rules.gameEnd, invertWinner: true };
 			return;
 		case 'believe':
 			if (effect.choicesAsDemon) rules.choosesLikeDemon = effect.choicesAsDemon;

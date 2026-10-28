@@ -1,23 +1,6 @@
 {
 	"clauses": [
 		{
-			"id": "red-herring",
-			"when": {
-				"at": "setup"
-			},
-			"marks": "Red Herring",
-			"effects": [
-				{
-					"do": "register",
-					"who": "a-good-player",
-					"as": {
-						"types": ["demon"]
-					},
-					"toSelfOnly": true
-				}
-			]
-		},
-		{
 			"id": "learn",
 			"when": {
 				"at": "night",
@@ -34,6 +17,23 @@
 						"measure": "demon-or-token",
 						"token": "Red Herring"
 					}
+				}
+			]
+		},
+		{
+			"id": "red-herring",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Red Herring",
+			"effects": [
+				{
+					"do": "register",
+					"who": "a-good-player",
+					"as": {
+						"types": ["demon"]
+					},
+					"toSelfOnly": true
 				}
 			]
 		}

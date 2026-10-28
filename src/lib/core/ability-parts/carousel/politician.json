@@ -1,0 +1,27 @@
+{
+	"clauses": [
+		{
+			"id": "turncoat",
+			"when": {
+				"at": "always"
+			},
+			"evenIfDead": true,
+			"if": [
+				{
+					"judged": "most-responsible-for-loss"
+				}
+			],
+			"effects": [
+				{
+					"do": "become",
+					"who": "self",
+					"into": "other-alignment"
+				},
+				{
+					"do": "end-game",
+					"winner": "own-team"
+				}
+			]
+		}
+	]
+}
