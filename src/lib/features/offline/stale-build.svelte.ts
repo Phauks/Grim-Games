@@ -21,6 +21,16 @@ export function isMissingBuildFile(error: unknown): boolean {
 	return MISSING_MODULE.some((pattern) => pattern.test(message));
 }
 
+/**
+ * True for a missing file that is a page's own code (SvelteKit's route nodes). Its navigation
+ * loads that page afresh itself, so nothing else should reload the page the tap started from
+ * (2026-10-28: a link's code, preloaded on touch, failed and the reload kept the old page).
+ */
+export function isMissingPageFile(error: unknown): boolean {
+	const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+	return isMissingBuildFile(error) && message.includes('/_app/immutable/nodes/');
+}
+
 let stale = $state(false);
 
 /** Whether this tab has found its build's files gone. */
