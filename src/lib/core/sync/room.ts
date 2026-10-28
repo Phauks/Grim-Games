@@ -156,6 +156,7 @@ export * from './room-preview.ts';
 export { roleSeen, setRoles, type RoomRoles } from './room-roles.ts';
 export * from './room-version.ts';
 export * from './room-sound.ts';
+export * from './room-push.ts';
 export { setLook } from './room-look.ts';
 export { judgePicture, reportPicture } from './room-pictures.ts';
 export { readMessages, sendMessage, setInbox, type PlayerMessage } from './room-messages.ts';

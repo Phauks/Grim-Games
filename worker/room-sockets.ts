@@ -8,7 +8,8 @@ import type { ServerMessage } from '../src/lib/core/sync/room.ts';
  */
 export type Attachment =
 	| { role: 'host' }
-	| { role: 'player'; memberId: string }
+	/** `showing`: the app is on the phone's screen, so Back to town isn't pushed to it too. */
+	| { role: 'player'; memberId: string; showing?: boolean }
 	| { role: 'viewer' }
 	| { role: 'town' }
 	| { role: 'admin' }
