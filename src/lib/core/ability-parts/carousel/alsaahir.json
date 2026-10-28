@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "guess",
+			"when": {
+				"at": "day"
+			},
+			"publicly": true,
+			"optional": true,
+			"if": [
+				{
+					"choice": "guess-right"
+				}
+			],
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "good"
+				}
+			]
+		}
+	]
+}

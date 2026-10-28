@@ -56,7 +56,11 @@ const EFFECT_FIELDS: Record<string, readonly string[]> = {
 	'vote-only-with': ['who', 'with', 'until'],
 	'vote-needs-token': ['who'],
 	setup: ['modifier'],
-	storyteller: ['note']
+	storyteller: ['note'],
+	// Carousel Townsfolk (batch 2)
+	'stop-kills': ['who'],
+	'vote-rights': ['who', 'nominations', 'votes'],
+	'evil-info': ['change']
 };
 
 const oneOf = (value: unknown, allowed: readonly string[]) =>

@@ -1,0 +1,27 @@
+{
+	"clauses": [
+		{
+			"id": "reveal",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"limit": "once-per-game",
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "learn",
+					"to": "chosen",
+					"info": {
+						"kind": "character-of",
+						"who": "self"
+					}
+				}
+			]
+		}
+	]
+}

@@ -39,7 +39,10 @@ export const DERIVED_KEYS = [
 	'nominationsAfterExecution',
 	'deathCause',
 	'fixedReminders',
-	'targetSeats'
+	'targetSeats',
+	// Carousel Townsfolk (batch 2)
+	'stopsKilling',
+	'afterDeath'
 ] as const;
 export type DerivedKey = (typeof DERIVED_KEYS)[number];
 
@@ -98,6 +101,14 @@ function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 	// Told they became the Demon (Scarlet Woman), or die with their Grandchild.
 	if (when.at === 'event' && ['demon-dies', 'grandchild-killed-by-demon'].includes(when.event))
 		return { first, other: true };
+	// Carousel Townsfolk (batch 2): learns when the Demon kills someone (the Choirboy).
+	if (when.at === 'event' && when.event === 'demon-kills') return { first, other: true };
+	// An ability the Storyteller makes up may wake on any night (the Amnesiac).
+	if (effects.some((e) => e.do === 'gain-ability' && e.of === 'storyteller-choice'))
+		return { first: true, other: true };
+	// Evil's first-night info changes (the Magician, the Poppy Grower).
+	if (effects.some((e) => e.do === 'evil-info' && e.change !== 'restored'))
+		return { first: true, other: false };
 	// A death the Storyteller may cause at any time (the Tinker) has a step on other nights.
 	if (when.at === 'always' && clause.storytellerMay && effects.some((e) => e.do === 'kill'))
 		return { first, other: true };
@@ -176,7 +187,9 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 		const permanent =
 			when.at === 'setup' ||
 			(when.at === 'night' && when.nights === 'first') ||
-			(clause.limit === 'once-per-game' && effects.every((e) => e.do !== 'kill'));
+			(clause.limit === 'once-per-game' && effects.every((e) => e.do !== 'kill')) ||
+			// Carousel Townsfolk (batch 2): "On your 1st day" happens once (the Princess).
+			(when.at === 'day' && when.days === 'first');
 		if (clause.marks && permanent) acc.fixed.add(clause.marks);
 
 		// Where the clause's token goes: on its own player when every effect is theirs (the
@@ -186,6 +199,9 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 			(['who', 'with'] as const).flatMap((k) => (k in e ? [(e as Record<string, unknown>)[k]] : []))
 		);
 		const onSelf = subjects.every((who) => who === 'self');
+		// Carousel Townsfolk (batch 2): a token marking its own player's state after their death
+		// stays on their seat (the Banshee's Has Ability, the Poppy Grower's Evil Wakes).
+		if (clause.marks && when.at === 'death' && onSelf) acc.fixed.add(clause.marks);
 		const choice = clause.choose;
 		const neverSelf =
 			choice?.notSelf ||
@@ -298,6 +314,9 @@ function applyEffect(
 		}
 		case 'impair': {
 			const whileWorks = effect.whileWorks ? { whileWorks: true } : {};
+			// Carousel Townsfolk (batch 2): impaired only if something holds (the Cannibal's evil
+			// lunch); its token's label does it, as the label fallback does today.
+			if (effect.who === 'self' && conds?.length) return;
 			if (effect.who === 'self') rules.impairs = { ...rules.impairs, self: { reason: effect.as } };
 			else if (marks && ['chosen', 'another-player', 'each-player'].includes(effect.who))
 				rules.impairs = {
@@ -378,6 +397,9 @@ function applyEffect(
 			return;
 		}
 		case 'end-game': {
+			// Carousel Townsfolk (batch 2): a guess only the Storyteller can judge (the Alsaahir).
+			if (has(conds, (c) => 'choice' in c && c.choice === 'guess-right'))
+				rules.gameEnd = { ...rules.gameEnd, decidedByStoryteller: true };
 			const count = alive(clause.if);
 			const noExecution = has(clause.if, (c) => 'noExecutionToday' in c);
 			if (when.at === 'dusk' && count?.exactly !== undefined)
@@ -440,6 +462,18 @@ function applyEffect(
 		case 'boost':
 			if (effect.how === 'sober-and-true' && marks)
 				rules.impairs = { ...rules.impairs, clears: [marks] };
+			return;
+		// Carousel Townsfolk (batch 2)
+		case 'stop-kills':
+			if (marks && effect.who === 'the-demon') rules.stopsKilling = { token: marks, type: 'demon' };
+			return;
+		case 'vote-rights':
+			if (when.at === 'death' && when.by && when.by !== 'any')
+				rules.afterDeath = {
+					cause: [when.by],
+					...(effect.nominations ? { nominations: effect.nominations } : {}),
+					...(effect.votes ? { votes: effect.votes } : {})
+				};
 			return;
 		default:
 			// believe, immune, resurrect, boost, falsify-info, vote changes, storyteller notes:
