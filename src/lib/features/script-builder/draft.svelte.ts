@@ -1,5 +1,5 @@
 import type { CharacterId, SeatedType } from '#lib/core/data/types.ts';
-import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { readParsed, writeStored } from '#lib/ui/stored.ts';
 import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
 import type { VariationOf } from '#lib/features/scripts/saved-scripts.ts';
 import { emptyDraft, parseDraft, type DraftCredit, type ScriptDraft } from './draft.ts';
@@ -10,20 +10,10 @@ function without<T>(record: Record<string, T>, key: string): Record<string, T> {
 	return Object.fromEntries(Object.entries(record).filter(([k]) => k !== key));
 }
 
-function read(): ScriptDraft {
-	try {
-		const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-		return parseDraft(raw ? JSON.parse(raw) : null);
-	} catch (error) {
-		// Blocked storage or damaged JSON: start empty; the builder still works this visit.
-		reportError(error, { area: 'script-builder', notify: false });
-		return emptyDraft();
-	}
-}
-
 /** The script on the builder, saved on this device on every change. */
 class ScriptBuilderDraft {
-	#draft = $state<ScriptDraft>(read());
+	// Blocked storage or damaged JSON starts empty; the builder still works this visit.
+	#draft = $state<ScriptDraft>(readParsed(STORAGE_KEY, parseDraft));
 
 	get current(): ScriptDraft {
 		return this.#draft;
@@ -31,11 +21,8 @@ class ScriptBuilderDraft {
 
 	#set(next: ScriptDraft): void {
 		this.#draft = next;
-		try {
-			globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
-		} catch (error) {
-			reportError(error, { area: 'script-builder', notify: false });
-		}
+		// No storage: the draft lasts this visit only.
+		writeStored(STORAGE_KEY, next);
 	}
 
 	setName(name: string): void {

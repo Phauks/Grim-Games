@@ -82,7 +82,7 @@ export const TEENSYVILLE_MAX_CHARACTERS = 13;
  * The script's own name, or '' when it has none: the app shows "None" rather than a made-up
  * name (Trevor, 2026-10-16: "do not show custom script").
  */
-export function scriptTitle(script: LoadedScript): string {
+function scriptTitle(script: LoadedScript): string {
 	return script.meta.name?.trim() || (script.edition ? script.name : '');
 }
 

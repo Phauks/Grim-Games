@@ -15,7 +15,7 @@ import { readStored, writeStored } from '#lib/ui/stored.ts';
 export type Guesses = Record<string, CharacterId[]>;
 
 /** A seat holds at most this many guesses: the main one on its face, the rest in a pill. */
-export const MAX_SEAT_GUESSES = 3;
+const MAX_SEAT_GUESSES = 3;
 
 /**
  * A guess of a seat by its character type alone, or only its alignment (Trevor, 2026-10-24).

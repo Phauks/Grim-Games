@@ -222,7 +222,7 @@ function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLookup): b
 }
 
 /** The Demons: by true character, or an "Is The Demon" reminder. */
-export function demonSeats(game: Game, characters: CharacterLookup): SeatId[] {
+function demonSeats(game: Game, characters: CharacterLookup): SeatId[] {
 	return game.seating.filter(
 		(id) =>
 			typeOf(game, id, characters) === 'demon' ||

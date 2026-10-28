@@ -42,7 +42,7 @@ function applyZoom(allow: boolean, root: HTMLElement) {
 }
 
 /** `--font-<role>` for every role, plus `--font-<role>-weight` for the short-text roles. */
-export function fontVariables(theme: Theme, prefs: Preferences): Record<CssVariable, string> {
+function fontVariables(theme: Theme, prefs: Preferences): Record<CssVariable, string> {
 	const fonts = resolveFonts(prefs, theme);
 	const variables: Record<CssVariable, string> = {};
 	for (const role of FONT_ROLES) {

@@ -25,7 +25,7 @@ export const gameData = loadGameData({
 });
 
 /** A test script: Trouble Brewing plus characters the model tests need. */
-export const TEST_SCRIPT_IDS: CharacterId[] = [
+const TEST_SCRIPT_IDS: CharacterId[] = [
 	// Trouble Brewing
 	'washerwoman',
 	'librarian',
