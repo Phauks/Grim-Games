@@ -5,6 +5,7 @@
  * sharing later; losing that only means the recap lasts until it expires.
  */
 import { readParsed, writeStored } from '#lib/ui/stored.ts';
+import { fetchJson, fetchWithTimeout, SLOW_FETCH_TIMEOUT_MS } from '#lib/ui/fetch.ts';
 import type { GameId } from '#lib/core/model/types.ts';
 import {
 	RECAP_API,
@@ -22,33 +23,35 @@ export type RecapFetchError = 'gone' | 'busy' | 'offline' | 'damaged';
 
 export async function fetchSharedRecap(id: string): Promise<SharedRecap | RecapFetchError> {
 	let response: Response;
+	let body: unknown;
 	try {
-		response = await fetch(recapApiPath(id), { credentials: 'omit' });
+		({ response, body } = await fetchJson(recapApiPath(id), { credentials: 'omit' }));
 	} catch {
 		return 'offline';
 	}
 	if (response.status === 404) return 'gone';
 	if (response.status === 429) return 'busy';
 	if (!response.ok) return 'damaged';
-	return readSharedRecap(await response.json().catch(() => undefined)) ?? 'damaged';
+	return readSharedRecap(body) ?? 'damaged';
 }
 
 /** Uploads a recap; throws if the server didn't store it. */
 export async function uploadRecap(shared: SharedRecap): Promise<CreatedRecap> {
-	const response = await fetch(RECAP_API, {
+	const { response, body } = await fetchJson(RECAP_API, {
 		method: 'POST',
+		timeoutMs: SLOW_FETCH_TIMEOUT_MS,
 		credentials: 'omit',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(shared)
 	});
-	const created = response.ok ? readCreatedRecap(await response.json()) : undefined;
+	const created = response.ok ? readCreatedRecap(body) : undefined;
 	if (!created) throw new Error(`Recap not shared (HTTP ${response.status})`);
 	return created;
 }
 
 /** Deletes a shared recap. Already gone counts as done. */
 export async function deleteRecap(share: CreatedRecap): Promise<void> {
-	const response = await fetch(recapApiPath(share.id), {
+	const response = await fetchWithTimeout(recapApiPath(share.id), {
 		method: 'DELETE',
 		credentials: 'omit',
 		headers: { [RECAP_DELETE_KEY_HEADER]: share.deleteKey }

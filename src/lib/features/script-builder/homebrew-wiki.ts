@@ -3,6 +3,7 @@
  * (`worker/homebrew-wiki.ts`) on demand and kept in memory for the visit.
  */
 import { loadScript, type Character, type GameData } from '#lib/core/data/index.ts';
+import { fetchJson } from '#lib/ui/fetch.ts';
 import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
 import type { DraftCredit } from './draft.ts';
 import {
@@ -19,8 +20,7 @@ export interface HomebrewSet {
 }
 
 async function getJson<T>(path: string): Promise<T> {
-	const response = await fetch(path, { headers: { Accept: 'application/json' } });
-	const body: unknown = await response.json().catch(() => undefined);
+	const { response, body } = await fetchJson(path, { headers: { Accept: 'application/json' } });
 	if (!response.ok) {
 		const error = (body as { error?: unknown } | undefined)?.error;
 		throw new Error(typeof error === 'string' ? error : `HTTP ${response.status}`);
