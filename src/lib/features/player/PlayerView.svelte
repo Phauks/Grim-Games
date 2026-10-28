@@ -34,7 +34,6 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { scriptKey } from './notebook.ts';
-	import PlayerNotes from './PlayerNotes.svelte';
 	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
 	import { roomScript } from '#lib/features/room/room-script.svelte.ts';
 	import PlayerScriptActions from './PlayerScriptActions.svelte';
@@ -42,11 +41,10 @@
 	import ScriptByline from './ScriptByline.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
-	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
+	import PlayerScreen from './PlayerScreen.svelte';
 	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
 	import PlayerRoom from './PlayerRoom.svelte';
 	import { gameKey, lastRoom, leaveLastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
-	import PlayerGrim from './PlayerGrim.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
@@ -291,20 +289,18 @@
 	{:else if !script}
 		<p class="muted">{t('player.loading')}</p>
 	{:else}
-		<!-- The same tabs the board's Script button shows, plus the player's own Notes. -->
+		<!-- The same screen the Storyteller's player view shows (PlayerScreen). -->
 		<!-- In a room, the table's own column of the Players breakdown is picked for the player
 		     (Trevor, 2026-10-26: "so players don't have to think"). -->
-		<PlayerScriptTabs
+		<PlayerScreen
 			{script}
 			players={inRoom === lastRoom() ? roomTable.players : undefined}
 			travellers={roomTable.travellers}
 			rules={roomTable.rules}
 			ruleCharacters={roomTable.ruleCharacters}
+			notesKey={key}
 			bind:tab
-		>
-			{#snippet grim()}<PlayerGrim {script} fullScreen />{/snippet}
-			{#snippet notes()}<PlayerNotes notesKey={key} />{/snippet}
-		</PlayerScriptTabs>
+		/>
 	{/if}
 </Page>
 
