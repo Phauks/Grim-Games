@@ -12,6 +12,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Seamstress', () => {
@@ -44,8 +46,21 @@ describe('Seamstress', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Seamstress#Examples)', () => {
-		it.todo('Example 1: Two good players checked night one: yes');
-		it.todo('Example 2: Mixed pair on night four reads no');
+		it('Example 1: Two good players checked night one: yes', () => {
+			// The Seamstress picks two good players on the first night: the true answer is yes.
+			const { game: g, seats } = castGame(['seamstress', 'chef', 'monk', 'imp', 'poisoner']);
+			const picker = infoPicker(g, seats[0], 'seamstress', characters)!;
+			expect(isTruthful(picker, { seats: [seats[1], seats[2]], yes: true })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[1], seats[2]], yes: false })).toBe(false);
+		});
+
+		it('Example 2: Mixed pair on night four reads no', () => {
+			// A good player and an evil player differ, whichever night the Seamstress asks.
+			const { game: g, seats } = castGame(['seamstress', 'chef', 'monk', 'imp', 'poisoner']);
+			const picker = infoPicker(g, seats[0], 'seamstress', characters)!;
+			expect(isTruthful(picker, { seats: [seats[2], seats[3]], yes: false })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[2], seats[3]], yes: true })).toBe(false);
+		});
 		it.todo("Example 3: Pit-Hag's changed Witch still reads same alignment");
 	});
 });

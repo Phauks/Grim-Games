@@ -8,7 +8,7 @@
  * - https://wiki.bloodontheclocktower.com/Gossip
  * - https://wiki.bloodontheclocktower.com/Oracle
  * - https://wiki.bloodontheclocktower.com/Washerwoman, /Librarian, /Investigator, /Chef,
- *   /Empath, /Fortune_Teller, /Steward, /Noble
+ *   /Empath, /Fortune_Teller, /Steward, /Noble, /Seamstress, /Sage
  * - https://wiki.bloodontheclocktower.com/Drunk, /Poisoner, /Vortox, /Spy, /Recluse
  */
 import { describe, expect, it } from 'vitest';
@@ -709,6 +709,41 @@ describe('registration ranges', () => {
 		const picker = infoPicker(g, seats[0], 'washerwoman', characters)!;
 		expect(isAllowed(picker, { seats: [seats[1], seats[2]], characterId: 'slayer' })).toBe(true);
 		expect(isTruthful(picker, { seats: [seats[3], seats[2]], characterId: 'chef' })).toBe(true);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Seamstress: yes when the 2 chosen players share
+	// an alignment; a Spy may register as good.
+	it('Seamstress: yes for 2 players of the same alignment', () => {
+		const { game: g, seats } = castGame(['seamstress', 'chef', 'monk', 'imp', 'spy']);
+		const picker = infoPicker(g, seats[0], 'seamstress', characters)!;
+		expect(picker.kind).toBe('yes-no');
+		expect(isTruthful(picker, { seats: [seats[1], seats[2]], yes: true })).toBe(true);
+		expect(isTruthful(picker, { seats: [seats[3], seats[4]], yes: true })).toBe(true);
+		expect(isTruthful(picker, { seats: [seats[1], seats[3]], yes: false })).toBe(true);
+		expect(isTruthful(picker, { seats: [seats[1], seats[3]], yes: true })).toBe(false);
+		// Chef and Spy: different, unless the Spy registers as good.
+		expect(isTruthful(picker, { seats: [seats[1], seats[4]], yes: true })).toBe(false);
+		expect(isAllowed(picker, { seats: [seats[1], seats[4]], yes: true })).toBe(true);
+		// The Seamstress chooses 2 other players.
+		expect(picker.options.some((o) => o.seats.includes(seats[0]))).toBe(false);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Sage: 2 players, one of them the Demon; a Recluse
+	// may register as the Demon.
+	it('Sage: 2 players, one of them the Demon', () => {
+		const { game: g, seats } = castGame(['sage', 'chef', 'imp', 'recluse', 'poisoner'], (s) => ({
+			type: 'SetDead',
+			seatId: s[0],
+			dead: true
+		}));
+		const picker = infoPicker(g, seats[0], 'sage', characters)!;
+		expect(picker.kind).toBe('players');
+		expect(picker.seatCount).toBe(2);
+		expect(isTruthful(picker, { seats: [seats[2], seats[1]] })).toBe(true);
+		expect(isTruthful(picker, { seats: [seats[1], seats[4]] })).toBe(false);
+		expect(isTruthful(picker, { seats: [seats[3], seats[1]] })).toBe(false);
+		expect(isAllowed(picker, { seats: [seats[3], seats[1]] })).toBe(true);
+		expect(picker.why.facts.map((f) => f.seatId)).toEqual([seats[2]]);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Noble and /Steward

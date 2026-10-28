@@ -41,6 +41,7 @@ import ph_caret_left_thin from '~icons/ph/caret-left-thin';
 import ph_caret_right_thin from '~icons/ph/caret-right-thin';
 import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_cat_thin from '~icons/ph/cat-thin';
+import ph_certificate_thin from '~icons/ph/certificate-thin';
 import ph_chat_centered_text_thin from '~icons/ph/chat-centered-text-thin';
 import ph_chat_text_thin from '~icons/ph/chat-text-thin';
 import ph_check_thin from '~icons/ph/check-thin';
@@ -264,6 +265,7 @@ const icons: IconMap = {
 	'ph:caret-right-thin': ph_caret_right_thin,
 	'ph:caret-up-thin': ph_caret_up_thin,
 	'ph:cat-thin': ph_cat_thin,
+	'ph:certificate-thin': ph_certificate_thin,
 	'ph:chat-centered-text-thin': ph_chat_centered_text_thin,
 	'ph:chat-text-thin': ph_chat_text_thin,
 	'ph:check-thin': ph_check_thin,
