@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { openPlayerSettings, setPlayerName } from './player-name.ts';
+import { openPlayerSettings, openProfile, setPlayerName } from './player-name.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
@@ -837,7 +837,7 @@ test('Print our sheet opens its settings beside a live preview', async ({ page }
 			timeout: 15_000
 		})
 		.toBe(3);
-	// Remembered on the device, and also in Settings → Player.
+	// Remembered on the device, and also in Settings → Print.
 	await page.reload();
 	await page.getByRole('button', { name: 'Print script' }).tap();
 	await page
@@ -919,7 +919,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// want that whole thing gone").
 	await expect(row).toBeHidden();
 	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
-	const sheet = await openPlayerSettings(page);
+	const sheet = await openProfile(page);
 	// The name has its own modal with Save; Settings' other rows change at once (Trevor,
 	// 2026-10-27).
 	await expect(sheet.getByRole('button', { name: 'Save' })).toHaveCount(0);

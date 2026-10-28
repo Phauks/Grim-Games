@@ -18,9 +18,18 @@
 		 */
 		corner?: Snippet<[boolean]>;
 		testid?: string;
+		/** The corner's size, measured, for a board that keeps its seats clear of it. */
+		cornerWidth?: number;
+		cornerHeight?: number;
 	}
 
-	let { children, corner, testid }: Props = $props();
+	let {
+		children,
+		corner,
+		testid,
+		cornerWidth = $bindable(0),
+		cornerHeight = $bindable(0)
+	}: Props = $props();
 
 	let stage = $state<HTMLDivElement>();
 	const filled = $derived(!!stage && fullScreenPart.current === stage);
@@ -32,7 +41,7 @@
 
 <div class="stage" bind:this={stage} data-filled={filled ? '' : undefined} data-testid={testid}>
 	{@render children()}
-	{#if stage}<div class="corner">
+	{#if stage}<div class="corner" bind:clientWidth={cornerWidth} bind:clientHeight={cornerHeight}>
 			{@render corner?.(filled)}
 			<span class="corner-button"><FullScreenButton target={stage} /></span>
 		</div>{/if}

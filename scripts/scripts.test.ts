@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { findColourFunctions, findHexColours, findNamedColours } from './check-colors.ts';
 import { counted, lineCount, lineProblems, MAX_LINES } from './check-lines.ts';
 import { findPxSizes, svelteStyles } from './check-px.ts';
-import { flakyTests, summaryMarkdown } from './flaky-summary.ts';
+import { annotationText, flakyTests, pageSnapshot, summaryMarkdown } from './flaky-summary.ts';
 import { generatedFiles, missingIcons } from './generate-icons.ts';
 
 describe('generate-icons', () => {
@@ -159,6 +159,60 @@ describe('flaky-summary', () => {
 			{ project: 'phone', file: 'room.e2e.ts', line: 17, title: 'a phone joins' },
 			{ project: 'tablet', file: 'room.e2e.ts', line: 80, title: 'no sideways scrolling › 320px' }
 		]);
+	});
+
+	it('finds the first failed attempt’s page snapshot, also for failed tests', () => {
+		const withResults = {
+			suites: [
+				{
+					title: 'board.e2e.ts',
+					specs: [
+						{
+							title: 'opens the picker',
+							file: 'board.e2e.ts',
+							line: 5,
+							tests: [
+								{
+									projectName: 'phone',
+									status: 'unexpected',
+									results: [
+										{
+											status: 'timedOut',
+											attachments: [
+												{ name: 'trace', path: 'a/trace.zip' },
+												{ name: 'error-context', path: 'a/error-context.md' }
+											]
+										},
+										{ status: 'failed', attachments: [] }
+									]
+								}
+							]
+						}
+					]
+				}
+			]
+		};
+		expect(flakyTests(withResults)).toEqual([]);
+		expect(flakyTests(withResults, ['flaky', 'unexpected'])).toEqual([
+			{
+				project: 'phone',
+				file: 'board.e2e.ts',
+				line: 5,
+				title: 'opens the picker',
+				errorContext: 'a/error-context.md'
+			}
+		]);
+	});
+
+	it('keeps only the page snapshot of an error context', () => {
+		const context = '# Error details\n\nError: boom\n\n```yaml\n- main:\n  - button "Menu"\n```\n';
+		expect(pageSnapshot(context)).toBe('```yaml\n- main:\n  - button "Menu"\n```\n');
+		expect(pageSnapshot('no snapshot')).toBe('no snapshot');
+	});
+
+	it('fits a page snapshot into one annotation line', () => {
+		expect(annotationText('a\n100%\r\nb')).toBe('a%0A100%25%0D%0Ab');
+		expect(annotationText('abcdef', 3)).toBe('abc%0A…');
 	});
 
 	it('says None when nothing was flaky', () => {

@@ -80,5 +80,8 @@
 	"turnsPlayersInto": {
 		"type": "minion",
 		"players": "drafter"
+	},
+	"evilInfo": {
+		"hidesDemon": true
 	}
 }

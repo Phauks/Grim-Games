@@ -14,7 +14,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { nightAnswer } from './night-info.ts';
+import { answerOptions, nightAnswer } from './night-info.ts';
 import { nightStepInfo } from './night-info/steps.ts';
 
 type Step = (seats: string[]) => Command;
@@ -91,14 +91,19 @@ describe('Godfather first night: the Outsiders in play', () => {
 		expect(a.misregister).toEqual([seats[1]]);
 	});
 
-	it('marks the answer not reliable when the Godfather is poisoned', () => {
-		const { a } = firstNight(
+	it('offers the true Outsiders, then any other, when the Godfather is poisoned', () => {
+		const { a, game } = firstNight(
 			['butler', 'poisoner', 'godfather', 'imp', 'chef'],
 			2,
 			remind(2, 'poisoner', 'Poisoned')
 		);
 		expect(a.unreliable).toBe('poisoned');
 		expect(a.value).toEqual(['butler']);
+		const truth = { kind: 'characters', type: 'outsider', value: ['butler'] };
+		expect(answerOptions(game, a, characters)).toEqual([
+			{ reason: 'true', value: truth },
+			{ reason: 'unreliable', value: truth, anyOther: true }
+		]);
 	});
 
 	it('asks whether an Outsider died today on other nights', () => {

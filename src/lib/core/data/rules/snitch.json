@@ -4,5 +4,10 @@
 	},
 	"deathCause": {
 		"none": "bluffs"
+	},
+	"evilInfo": {
+		"notes": {
+			"demoninfo": "each Minion also gets 3 bluffs."
+		}
 	}
 }

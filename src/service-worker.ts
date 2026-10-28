@@ -4,7 +4,8 @@
 
 // Offline-first service worker (04-architecture.md §1 "Offline"). Every build is precached
 // under its own cache name, so a game can run with no signal. A new build waits until the
-// user chooses to refresh (UpdateBanner), so an open game is never reloaded by an update. A
+// user chooses to refresh (UpdateBanner), or until the app takes it where that interrupts
+// nothing (auto-update.svelte.ts), so an open game is never reloaded in front of anyone. A
 // new build still starts by itself when the app is next launched with no tab open (web.dev/
 // articles/service-worker-lifecycle); the game then reopens from its save (persistence.ts).
 import { version } from '$app/env';

@@ -6,6 +6,7 @@
 	import SheetBackgroundSelect from './SheetBackgroundSelect.svelte';
 	import PrintScriptButton from './PrintScriptButton.svelte';
 	import YouButton from '#lib/features/room/YouButton.svelte';
+	import MessageButton from '#lib/features/room/MessageButton.svelte';
 
 	/**
 	 * The light background switch, Print, Share and the player's settings cog: /play's title
@@ -34,6 +35,8 @@
 	});
 </script>
 
+<!-- A message to the Storyteller, first, while this phone is in a room (Trevor, 2026-10-27). -->
+<MessageButton room={joined} />
 <!-- One switch for the Script and Night tabs, beside Print and Share (Trevor, 2026-10-23). -->
 {#if script}
 	<SheetBackgroundSelect compact />

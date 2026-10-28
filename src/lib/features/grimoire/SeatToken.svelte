@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import RimPill from '#lib/ui/seating/RimPill.svelte';
 	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
@@ -89,7 +90,7 @@
 		startsAs !== undefined && seat.alignment !== undefined && seat.alignment !== startsAs
 	);
 
-	const name = $derived(seat.playerName ?? `Seat ${number}`);
+	const name = $derived(seat.playerName ?? t('common.seat', { number }));
 	/** The seated player's own picture in the room (2026-10-27), in place of their initials. */
 	const picture = $derived(seat.avatar ? roomHost().pictureOf(seat.seatId) : undefined);
 	// The seat's accessible name, plain text; the board shows the name as its pill.
@@ -267,7 +268,7 @@
 				: 'unused'
 			: undefined}
 		usedVote={boardLooks.current.usedGhostVote}
-		frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
+		frame={seatFrame(seat.frame)}
 		avatar={seat.avatar}
 		{picture}
 	/>

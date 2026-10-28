@@ -3,6 +3,7 @@
  * badges, newest first, worked out from the events it recorded and the game just before
  * and after it. UI wording only; the log itself is the engine's.
  */
+import { t } from '#lib/i18n/locale.svelte.ts';
 import type { Alignment, CharacterId, PlayerName, ReminderLabel } from '#lib/core/data/index.ts';
 import { applyEvents, type GameEvent, type LogEntry } from '#lib/core/engine/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
@@ -40,7 +41,7 @@ const text = (t: string): HistoryPart => ({ kind: 'text', text: t });
 function seatPart(game: Game | undefined, seatId: SeatId): HistoryPart {
 	const seat = game?.seats[seatId];
 	const number = (game?.seating.indexOf(seatId) ?? -1) + 1;
-	const name = seat?.playerName ?? (number > 0 ? `Seat ${number}` : 'A seat');
+	const name = seat?.playerName ?? (number > 0 ? t('common.seat', { number }) : 'A seat');
 	return seat?.characterId
 		? { kind: 'seat', seatId, name, characterId: seat.characterId, alignment: seat.alignment }
 		: { kind: 'seat', seatId, name };
@@ -386,6 +387,14 @@ function describeEntry(
 	const [first] = entry.events;
 	if (!first) return [text('No change')];
 	// Moving players names the unnamed seats first (their seat numbers), so look past them.
+	const swap = entry.events.find((e) => e.type === 'SeatsSwapped');
+	if (swap?.type === 'SeatsSwapped')
+		return [
+			text('Swapped '),
+			seatPart(before, swap.seatA),
+			text(' and '),
+			seatPart(before, swap.seatB)
+		];
 	const reorder = entry.events.find((e) => e.type === 'SeatingReordered');
 	if (reorder?.type === 'SeatingReordered' && before) {
 		const was = before.seating;

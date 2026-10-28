@@ -178,14 +178,21 @@ export function sharedSeats(
 	aspect: number | undefined,
 	fit: boolean,
 	preferences: { tokenAppearance: { tokenScale: number } },
+	/** The controls in the board's top right, which the ring keeps clear of (clearOfCorner). */
+	corner?: { w: number; h: number },
 	unit = 16
 ): { size: number; points: SeatPoint[] } {
 	const seatIds = seats.map((s) => s.seatId);
 	const scale = preferences.tokenAppearance.tokenScale;
 	const box = aspect && fit ? fitAspect(board, aspect) : board;
 	const size = seatTokenSize(seatIds, layout, box, scale);
-	const placed = keepInside(seatPoints(seatIds, layout, box, aspect), box, size / 2 + unit);
-	return { size, points: centredIn(placed, box, board) };
+	const onBoard = (l: SeatLayout) =>
+		centredIn(keepInside(seatPoints(seatIds, l, box, aspect), box, size / 2 + unit), box, board);
+	const points = onBoard(layout);
+	if (!corner) return { size, points };
+	const onRing = seatIds.map((id) => !layout.placed[id]);
+	const ring = onBoard({ ...layout, placed: {} });
+	return { size, points: clearOfCorner(points, onRing, ring, board, corner, size / 2) };
 }
 
 /**
@@ -312,6 +319,22 @@ export function withPlaced(layout: SeatLayout, seatId: string, point: SeatPoint)
 			}
 		}
 	};
+}
+
+/**
+ * Two players swap places (the Matron): each takes the other's hand-placed spot and gap, as
+ * the places stay where they are and only who sits in them changes.
+ */
+export function swapPlaces(layout: SeatLayout, a: string, b: string): SeatLayout {
+	const swap = <T>(entries: Readonly<Record<string, T>>) => {
+		const out = { ...entries };
+		delete out[a];
+		delete out[b];
+		if (entries[b] !== undefined) out[a] = entries[b];
+		if (entries[a] !== undefined) out[b] = entries[a];
+		return out;
+	};
+	return { ...layout, placed: swap(layout.placed), gaps: swap(layout.gaps) };
 }
 
 /** Puts a hand-placed seat back on the ring. */

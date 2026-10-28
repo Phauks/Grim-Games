@@ -64,5 +64,6 @@
 				"reason": "Says which token goes where and that last night’s come off."
 			}
 		}
-	}
+	},
+	"marksChoice": ["Safe"]
 }

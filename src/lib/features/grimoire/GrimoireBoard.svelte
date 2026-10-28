@@ -17,12 +17,14 @@
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import GameBackdrop from './GameBackdrop.svelte';
 	import { settingsProfiles } from '#lib/features/settings/profiles/settings-profiles.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
@@ -85,6 +87,7 @@
 	import { ReminderDragging } from './reminder-drag.svelte.ts';
 	import {
 		avoidBoxes,
+		cornerFit,
 		cornerObstacles,
 		keepClear,
 		nameBoxes as boardNameBoxes,
@@ -92,10 +95,10 @@
 		toPercent as boardToPercent,
 		toPx as boardToPx
 	} from './board-geometry.ts';
-	import { cornerRoom } from './corner-room.ts';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
+	import InboxNotice from '#lib/features/room/InboxNotice.svelte';
 	import { fitReminders } from './reminder-fan.ts';
-	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
+	import { isOrphan, placingAlignment, seatMisfits } from './board.ts';
 	import { pendingSetup, type TrayItem } from './setup-tray.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -291,17 +294,14 @@
 	// reminders then line up in front of it, towards the middle, clear of the name, and
 	// every one is shown so each can be dragged (reminder-fan.ts).
 	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5)) * reminderScale));
-	let rootFont = $state(16);
-	$effect(() => {
-		void preferences.current;
-		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-	});
+	const root = watchRootFont();
+	const rootFont = $derived(root.current);
 	const boardSize = $derived({ width, height });
 	const toPx = (p: SeatPoint) => boardToPx(p, boardSize);
 	const toPercent = (p: { x: number; y: number }): SeatPoint => boardToPercent(p, boardSize);
 	const nameBoxes = $derived.by(() =>
 		boardNameBoxes({
-			names: seats.map((seat, i) => seat.playerName ?? `Seat ${i + 1}`),
+			names: seats.map((seat, i) => seat.playerName ?? t('common.seat', { number: i + 1 })),
 			seats: shown,
 			size,
 			unit,
@@ -313,7 +313,7 @@
 	const cornerBoxes = $derived.by(() =>
 		cornerObstacles(shown, nameBoxes, size, boardLooks.current.nameOffset, boardSize)
 	);
-	const fitCorner = (h: number) => cornerRoom(cornerBoxes, { width, height }, h + 4, 4 + 8);
+	const fitCorner = $derived(cornerFit(cornerBoxes, boardSize));
 	/** How wide the corner may be now (BoardCorner). */
 	let corner = $state(0);
 	/**
@@ -527,7 +527,8 @@
 		placing
 			? shown.map((p, i) => {
 					const next = shown[(i + 1) % shown.length];
-					const name = (k: number) => game.seats[game.seating[k]].playerName ?? `Seat ${k + 1}`;
+					const name = (k: number) =>
+						game.seats[game.seating[k]].playerName ?? t('common.seat', { number: k + 1 });
 					return {
 						position: i + 1,
 						at: { x: (p.x + next.x) / 2, y: (p.y + next.y) / 2 },
@@ -557,11 +558,7 @@
 		// Loose mode marks no seats: nothing is given to one (Trevor, 2026-10-18).
 		const reminder = looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder);
 		if (!reminder) return new Set<SeatId>();
-		return new Set(
-			game.seating.filter(
-				(id) => seatMisses(game, reminder, id, characters, grimoire.atDawn).length > 0
-			)
-		);
+		return seatMisfits(game, reminder, characters, grimoire.atDawn);
 	});
 	/**
 	 * Marks for the reminder in hand (Trevor, 2026-10-18): the seats whose character it is
@@ -1184,13 +1181,14 @@
 		style:--name-offset={boardLooks.current.nameOffset}
 		bind:this={board}
 	>
-		<!-- The script's logo, faint behind the seats (Trevor, 2026-10-18: his switch and opacity). -->
-		{#if logoOpacity !== undefined && boardLogo}
-			<ScriptLogo
-				src={boardLogo}
-				class="board-logo"
-				--logo-opacity={logoOpacity}
-				--logo-h={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
+		<!-- The script's logo, or its name, faint behind the seats (Trevor, 2026-10-18: his
+			switch and opacity; 2026-10-27: the name when there is no logo). -->
+		{#if logoOpacity !== undefined}
+			<BoardLogo
+				src={boardLogo || undefined}
+				name={showTitle ? game.script.meta?.name : undefined}
+				opacity={logoOpacity}
+				height={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
 		<!--
@@ -1714,6 +1712,7 @@
      seeing player view (script, night order, public grim, not notes)"). The dialog is drawn in
      the cover, over it. -->
 {#snippet coverActions()}
+	<InboxNotice />
 	{#if !ended && roomHost().code}
 		<!-- Lit once the day's time is up; it never calls by itself (Trevor, 2026-10-27). -->
 		<Button
@@ -1994,9 +1993,14 @@
 		gap: var(--space-2);
 		max-width: 50%;
 	}
+	/* Out into the dialog's padding, with that room given back inside, so the players' sheets
+	   can reach into it as they do into /play's gutter (PlayerScriptTabs) without being
+	   clipped by this scroll box. */
 	.script-scroll {
 		flex: 1;
 		min-height: 0;
+		margin-inline: calc(-1 * var(--space-3));
+		padding-inline: var(--space-3);
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
@@ -2024,20 +2028,6 @@
 	.game-over[data-team='evil'] {
 		background: var(--evil);
 		color: var(--on-evil);
-	}
-	/* Centred on the board's playable area (Trevor, 2026-10-18), inside the seat ring: at most
-	   42% of the board's width and height, the logo keeping its shape within; under the seats. */
-	.board :global(.board-logo) {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 42%;
-		/* The board's height without the walk-through strip (sizingHeight), so the logo keeps
-		   its size when the night starts (Trevor, 2026-10-23: "flexes for a second"). */
-		height: var(--logo-h, 42%);
-		translate: -50% -50%;
-		opacity: var(--logo-opacity);
-		pointer-events: none;
 	}
 	.rules {
 		display: flex;

@@ -50,6 +50,8 @@
 	--surface-hover: color-mix(in srgb, currentColor 9%, transparent);
 
 	--seat-face: var(--token-face);
+	/* The light that sweeps across a shimmering seat frame (a picture, so the same in every theme). */
+	--frame-shine: color-mix(in oklch, white 70%, transparent);
 	--seat-rim: var(--token-rim);
 	--seat-color: var(--on-token);
 	--seat-font: var(--font-player-weight) 0.8rem / 1.1 var(--font-player);

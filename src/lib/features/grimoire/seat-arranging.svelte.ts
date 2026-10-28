@@ -8,7 +8,7 @@ import {
 	orderAround,
 	seatPoints,
 	spreadEvenly,
-	withoutPlaced,
+	swapPlaces,
 	withPlaced,
 	type SeatLayout,
 	type SeatPoint
@@ -70,7 +70,7 @@ export class SeatArranging {
 		return drag ? points.map((p, i) => (seating[i] === drag.seatId ? drag.at : p)) : points;
 	});
 
-	/** The other seat a dragged seat is over, if any: dropping there changes the order. */
+	/** The other seat a dragged seat is over, if any: dropping there swaps the two players. */
 	reorderTarget = $derived.by(() => {
 		const drag = this.drag;
 		if (!drag?.moved) return undefined;
@@ -95,7 +95,7 @@ export class SeatArranging {
 		this.arranging = true;
 		toast(
 			'Arrange seats',
-			'Drag a seat anywhere to space the table, or onto another seat to change the seating order.'
+			'Drag a seat anywhere to space the table, or onto another seat to swap the two players.'
 		);
 	}
 
@@ -187,14 +187,12 @@ export class SeatArranging {
 		this.#pressed = undefined;
 		const drag = this.drag;
 		if (!drag || event.pointerId !== drag.pointerId) return;
-		const { grimoire, seating, layout } = this.#context();
+		const { grimoire, layout } = this.#context();
 		const target = this.reorderTarget;
 		if (target) {
-			// Onto another seat: the player takes that place in the seating order (one History
-			// entry), and follows the ring rather than a hand-placed spot.
-			const position = seating.indexOf(target);
-			if (grimoire.run({ type: 'MoveSeat', seatId: drag.seatId, position }))
-				grimoire.setLayout(withoutPlaced(layout, drag.seatId));
+			// Onto another seat: the two players swap places (the Matron), one History entry.
+			if (grimoire.run({ type: 'SwapSeats', seatA: drag.seatId, seatB: target }))
+				grimoire.setLayout(swapPlaces(layout, drag.seatId, target));
 		} else if (drag.moved) grimoire.setLayout(withPlaced(layout, drag.seatId, drag.at));
 		this.drag = undefined;
 	}

@@ -63,7 +63,7 @@ describe("players' pictures in a room", () => {
 		r = reportPicture(r, 'sam', 'a', 1);
 		expect(reportPicture(r, 'sam', 'a', 2)).toBe(r);
 		r = reportPicture(r, 'jo', 'a', 2);
-		expect(hostView(r).pictureReports).toEqual([{ hash: A, memberId: 'alex', count: 2 }]);
+		expect(hostView(r).pictureReports).toEqual([{ hash: A, memberId: 'alex', count: 2, at: 1 }]);
 		// Phones are never told who reported what.
 		expect(playerView(r, 'alex')).not.toHaveProperty('pictureReports');
 	});

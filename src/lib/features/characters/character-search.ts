@@ -1,9 +1,7 @@
+import { foldForSearch } from '#lib/core/text/fold.ts';
 import type { Character, CharacterType } from '#lib/core/data/index.ts';
 
-/** Lower case with accents removed, so "fée" finds "Fee" and "LIL" finds "Lil' Monsta". */
-export function foldForSearch(text: string): string {
-	return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-}
+export { foldForSearch };
 
 /**
  * Whether the character's name or ability text contains every word of the query, ignoring

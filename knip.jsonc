@@ -5,9 +5,7 @@
 	"project": ["src/**/*.{ts,svelte}", "worker/**/*.ts", "scripts/**/*.{ts,js}", "e2e/**/*.ts"],
 	"ignore": [
 		// Waits for the Demon info step to read it (core/modes/pool.ts, demonBluffs).
-		"src/lib/features/modes/bluffs.ts",
-		// Achievements (A1) are being built; nothing imports the module yet.
-		"src/lib/core/achievements/index.ts"
+		"src/lib/features/modes/bluffs.ts"
 	],
 	// Written by `npm run cf-typegen` when the Worker is checked.
 	"ignoreUnresolved": ["./worker-configuration.d.ts"],

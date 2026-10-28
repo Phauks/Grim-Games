@@ -13,7 +13,12 @@
 </script>
 
 <!-- An on/off setting; the switch carries its own label so the row is one tap target. -->
-<div class="row" data-setting>
+<div
+	class="row"
+	data-setting
+	data-search-label={toggle.label}
+	data-search-description={description}
+>
 	<Toggle {...toggle} />
 	{#if description}<p class="description">{description}</p>{/if}
 </div>

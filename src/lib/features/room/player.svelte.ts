@@ -40,9 +40,25 @@ function deviceKey(): string {
 /** The last name this phone asked for, to fill the field next time. */
 const NAME_KEY = 'grim-games-room-name';
 
+/**
+ * This phone's player name, set in the Profile (Trevor, 2026-10-28: "Profile should also be
+ * where you set your player name") or in a room. A room this phone joins without a name there
+ * is given it at once.
+ */
+class PlayerName {
+	current = $state(readStored<string>(NAME_KEY) ?? '');
+
+	set(name: string): void {
+		this.current = name;
+		writeStored(NAME_KEY, name);
+	}
+}
+
+export const playerName = new PlayerName();
+
 /** The name this phone last gave a room, for its initials where no room says it. */
 export function savedPlayerName(): string {
-	return readStored<string>(NAME_KEY) ?? '';
+	return playerName.current;
 }
 
 /** The room this phone last joined, so /play's Room tab opens it again (Trevor, 2026-10-19). */
@@ -152,6 +168,8 @@ export class RoomPlayer {
 	/** The look last sent, and the picture uploaded for which game, so neither repeats. */
 	#lastLook: string | undefined;
 	#uploaded: { game: string; image: Blob; hash: Promise<string> } | undefined;
+	/** The Profile's name was offered to this room, so it is not sent again. */
+	#offeredName = false;
 
 	constructor(code: string) {
 		this.code = code;
@@ -171,6 +189,11 @@ export class RoomPlayer {
 						);
 					}
 					this.view = m;
+					// No name in this room yet: the Profile's name goes, once.
+					if (!m.me?.name && playerName.current && !this.#offeredName) {
+						this.#offeredName = true;
+						this.setName(playerName.current);
+					}
 					// The Storyteller's app is newer: offer its build (Trevor, 2026-10-26: nudge, never block).
 					if (isNewerBuild(m.storytellerBuiltAt, buildInfo.builtAt)) lookForNewerBuild();
 					// The game runs again, or a new one began: the finished grimoire goes.
@@ -266,7 +289,7 @@ export class RoomPlayer {
 
 	/** Sets this phone's name in the room; the Storyteller seats it (no approval, 2026-10-26). */
 	setName(name: string): boolean {
-		writeStored(NAME_KEY, name);
+		playerName.set(name);
 		return this.#socket.send({ type: 'request', name });
 	}
 
@@ -295,6 +318,15 @@ export class RoomPlayer {
 	sendFeedback(feedback: GameFeedback): boolean {
 		const gameId = this.view?.endedGameId;
 		return gameId ? this.#socket.send({ type: 'feedback', gameId, feedback }) : false;
+	}
+
+	/**
+	 * A message to the Storyteller (Trevor, 2026-10-27), only while their app takes them. It
+	 * is not kept anywhere on this phone: once sent, the player can't see it again.
+	 */
+	sendMessage(text: string, consult = false): boolean {
+		if (!this.view?.inbox || (!text.trim() && !consult)) return false;
+		return this.#socket.send({ type: 'message', text, ...(consult ? { consult } : {}) });
 	}
 
 	stop(): void {

@@ -173,8 +173,7 @@
 	}
 	p,
 	h3,
-	h4,
-	h5 {
+	h4 {
 		margin: 0;
 	}
 	h3 {
@@ -183,9 +182,6 @@
 	}
 	h4 {
 		font-size: 1rem;
-	}
-	h5 {
-		font-size: 0.95rem;
 	}
 	.part {
 		display: grid;

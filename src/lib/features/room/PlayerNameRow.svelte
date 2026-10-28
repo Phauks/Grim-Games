@@ -7,37 +7,46 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
-	import type { RoomPlayer } from './player.svelte.ts';
+	import { playerName, type RoomPlayer } from './player.svelte.ts';
 
 	/**
-	 * This phone's name in its room, as one setting row: the name and an Edit pencil that opens
+	 * This phone's name, in its room or (with no room) the one it takes into the next, as one
+	 * setting row in the Profile: the name and an Edit pencil that opens
 	 * a small modal to change it (Trevor, 2026-10-27: "Name is only item in player setting that
 	 * uses save. It should be a modal instead to match behaviour of other stuff"). Every other
 	 * row in the settings sheet changes at once; only this modal has Save.
 	 */
 	interface Props {
-		player: RoomPlayer;
+		/** The room this phone is in; without one, the name is only kept for the next room. */
+		player?: RoomPlayer;
 	}
 
 	let { player }: Props = $props();
 	let open = $state(false);
 
 	/** The name this phone shows in the room, once it has one; numbered while another has it. */
-	const me = $derived(player.view?.shownAs ?? player.view?.me.name);
+	const me = $derived(
+		player ? (player.view?.shownAs ?? player.view?.me.name) : playerName.current || undefined
+	);
 	let name = $state('');
 	// Filled each time the modal opens; a view arriving later must not wipe a name being typed.
 	$effect(() => {
-		if (open) name = untrack(() => player.view?.me.name ?? player.savedName ?? '');
+		if (open) name = untrack(() => player?.view?.me.name ?? playerName.current);
 	});
 	/** Saving the same name again changes nothing. */
-	const unchanged = $derived(!!player.view && name.trim() === player.view.me.name);
+	const unchanged = $derived(
+		player?.view
+			? name.trim() === player.view.me.name
+			: !player && name.trim() === playerName.current
+	);
 
 	/** Sends the name; a seated player keeps their seat, and a new one waits to be seated. */
 	function save(event: SubmitEvent) {
 		event.preventDefault();
 		const n = name.trim();
 		if (!n) return;
-		player.setName(n);
+		if (player) player.setName(n);
+		else playerName.set(n);
 		open = false;
 	}
 </script>
@@ -73,7 +82,7 @@
 		<ModalActions
 			onCancel={() => (open = false)}
 			submit
-			disabled={!name.trim() || unchanged || player.status !== 'open'}
+			disabled={!name.trim() || unchanged || (!!player && player.status !== 'open')}
 			confirmLabel={t('common.save')}
 		/>
 	</form>

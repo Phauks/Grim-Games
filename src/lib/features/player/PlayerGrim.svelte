@@ -23,7 +23,8 @@
 	import { drawnLook } from '#lib/features/grimoire/shared-look.ts';
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import { screenTheme, themeColours } from '#lib/ui/themes/screen-theme.svelte.ts';
-	import { cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
+	import { cornerFit, cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
+	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
 	import PlayerSeatReminders from './PlayerSeatReminders.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import {
@@ -38,8 +39,7 @@
 		type PlayerReminders
 	} from './player-reminders.ts';
 	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
-	import { cornerRoom } from '#lib/features/grimoire/corner-room.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -85,6 +85,7 @@
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
+	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -191,23 +192,24 @@
 	// The Storyteller's places round the ring, in the board's shape if switched on (2026-10-27).
 	const aspect = $derived(parseAspect(table?.layout?.aspect));
 	const unit = 16;
+	// The ring keeps clear of the top right's controls, as the board's of its timer row.
+	let toolsW = $state(0);
+	let toolsH = $state(0);
+	const tools = $derived(display ? undefined : { w: toolsW + 12, h: toolsH + 12 });
 	const { size, points } = $derived(
-		sharedSeats(seats, layout, board, aspect, matchesShape(display), preferences.current)
+		sharedSeats(seats, layout, board, aspect, matchesShape(display), preferences.current, tools)
 	);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
-	let rootFont = $state(16);
-	$effect(() => {
-		void preferences.current;
-		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-	});
+	const root = watchRootFont();
+	const rootFont = $derived(root.current);
 	const names = $derived(
 		nameBoxes({ names: seats.map(nameOf), seats: points, size, unit, rootFont, board })
 	);
 	const cornerBoxes = $derived(
 		cornerObstacles(points, names, size, boardLooks.current.nameOffset, board)
 	);
-	const fitCorner = (h: number) => cornerRoom(cornerBoxes, board, h + 4, 4 + 8);
+	const fitCorner = $derived(cornerFit(cornerBoxes, board));
 
 	/** The characters this player guessed on any seat, and the Travellers the town knows. */
 	const firstReminders = $derived([
@@ -384,6 +386,7 @@
 			style={boardColours}
 			data-board-colours={boardColours ? '' : undefined}
 			data-testid="player-grim"
+			{@attach fitInDialog}
 		>
 			<BoardBackdrop
 				contained
@@ -396,11 +399,11 @@
 				preset={look.preset}
 				vignette={look.vignette}
 			/>
-			{#if look.logo !== undefined && logo && !logoFailed}
-				<ScriptLogo
+			{#if look.logo !== undefined}
+				<BoardLogo
 					src={logo}
-					class="town-logo"
-					--logo-opacity={look.logo}
+					name={script.meta?.hideTitle ? undefined : script.meta?.name}
+					opacity={look.logo}
 					onfail={() => (logoFailed = true)}
 				/>
 			{/if}
@@ -449,7 +452,7 @@
 						avatar={seat.avatar}
 						picture={pictureOf(seat)}
 						usedVote={boardLooks.current.usedGhostVote}
-						frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
+						frame={seatFrame(seat.frame)}
 						marks={notes[seat.seatId] || others.length ? marks : undefined}
 					/>
 					{#snippet marks()}
@@ -489,15 +492,9 @@
 					remindersOpen = true;
 				}}
 			/>
-			<!-- The Grim tab's controls on the town itself, in its bottom right corner, where the
-			     ring of seats leaves room (Trevor, 2026-10-27: "move any controls onto the grim so
-			     we remove wasted space"). A Public Town display shows only public things. -->
-			{#if !display}<PlayerGrimTools
-					shaped={!!aspect}
-					final={!town && !!final}
-					{showFinal}
-					onFinal={(on) => (showFinal = on)}
-				/>{/if}
+			<!-- The Grim tab's controls, top right; with Full screen, in its corner. A Public
+			     Town display shows only public things. -->
+			{#if !display && !fullScreen}{@render grimTools(true)}{/if}
 			<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
 			     2026-10-24); nothing to open or share here. -->
 			<BoardCorner
@@ -515,9 +512,27 @@
 	{/snippet}
 	<!-- Full screen in the town's top right corner (Trevor, 2026-10-27: players too, "same thing
 	     as town square"); the board's Script draws it in a dialog, where it has none. -->
-	{#if fullScreen}<FullScreenStage {corner}>{@render townBoard()}</FullScreenStage
+	{#if fullScreen}<FullScreenStage
+			corner={stageCorner}
+			bind:cornerWidth={toolsW}
+			bind:cornerHeight={toolsH}>{@render townBoard()}</FullScreenStage
 		>{:else}{@render townBoard()}{/if}
 {/if}
+
+{#snippet grimTools(placed: boolean)}<PlayerGrimTools
+		{placed}
+		bind:width={toolsW}
+		bind:height={toolsH}
+		shaped={!!aspect}
+		final={!town && !!final}
+		{showFinal}
+		onFinal={(on) => (showFinal = on)}
+	/>{/snippet}
+<!-- Full screen's corner: this grim's controls, the page's own, then Full screen. -->
+{#snippet stageCorner(filled: boolean)}
+	{#if !display}{@render grimTools(false)}{/if}
+	{@render corner?.(filled)}
+{/snippet}
 
 {#snippet pictureMenu()}<SeatPictureMenu room={player!} seat={chosen!} />{/snippet}
 <!-- The player's avatar, left of the seat's name and guesses (Trevor, 2026-10-27). -->
@@ -730,7 +745,10 @@
 		overflow: hidden;
 		border-radius: var(--radius-md);
 		width: 100%;
-		height: 75dvh;
+		/* In a dialog (the Storyteller's player view), no taller than the room left under the
+		   tabs, so the whole ring shows on a wide, short window (fitInDialog); never so short
+		   that the seats crowd together. */
+		height: max(40dvh, min(75dvh, var(--fit-height, 75dvh)));
 	}
 	/* On a themed screen the town keeps the board's own surface, as on the Storyteller's. */
 	.town[data-board-colours] {
@@ -739,17 +757,6 @@
 	}
 	.display .seat {
 		cursor: default;
-	}
-	/* Faint behind the seats, as on the board. */
-	.town :global(.town-logo) {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 42%;
-		height: 42%;
-		translate: -50% -50%;
-		opacity: var(--logo-opacity);
-		pointer-events: none;
 	}
 	.seat {
 		position: absolute;

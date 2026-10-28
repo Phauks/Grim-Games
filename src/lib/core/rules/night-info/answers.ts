@@ -5,7 +5,7 @@
 import type { Answers } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
-import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { type CharacterLookup, scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { getSeat, registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type {
 	AbnormalCause,
@@ -18,6 +18,7 @@ import type { RegistrationWorld } from '../ability.ts';
 import type { Night } from '../night-order.ts';
 import { distinctGuesses } from '../day-claims.ts';
 import { causesOf } from '../night-deaths.ts';
+import type { ValidReason } from './picker.ts';
 import {
 	type AbnormalUse,
 	type AnswerValue,
@@ -512,4 +513,107 @@ export function answerCauses(a: Reliability & { because?: SeatId[] }): AbnormalC
 		characterId: r.source.characterId,
 		seatId: r.seatId
 	}));
+}
+
+/** One answer the Storyteller may give, for listing every valid one. */
+export interface AnswerOption {
+	/** `invalid`: the true answer under the Vortox, which must not be given. */
+	reason: ValidReason | 'invalid';
+	value: AnswerValue;
+	/** Any other character (`value` is the true one): the script's, to pick from. */
+	otherCharacters?: CharacterId[];
+	/** Any other set of characters (`value` is the true one): the Storyteller picks them. */
+	anyOther?: true;
+}
+
+/**
+ * Every answer the Storyteller may give while the waking player's ability doesn't work
+ * (drunk, poisoned, no ability: any information,
+ * https://wiki.bloodontheclocktower.com/Poisoner) or must be false (the Vortox,
+ * https://wiki.bloodontheclocktower.com/Vortox): the true answers first, then each false
+ * one. Empty when only the truth may be given, or there is nothing to give.
+ */
+export function answerOptions(
+	game: Game,
+	a: NightAnswer,
+	characters: CharacterLookup
+): AnswerOption[] {
+	if (a.kind === 'none') return [];
+	const loose: ValidReason | undefined = a.unreliable
+		? 'unreliable'
+		: a.mustBeFalse
+			? 'vortox'
+			: undefined;
+	if (!loose) return [];
+	const truthful: AnswerValue[] = a.possible ?? [answerValue(a)];
+	const key = (v: AnswerValue) => JSON.stringify(v);
+	const taken = new Set(truthful.map(key));
+	const out: AnswerOption[] = truthful.map((value, i) => ({
+		reason: loose === 'vortox' ? 'invalid' : i === 0 ? 'true' : 'registers',
+		value
+	}));
+	const add = (value: AnswerValue) => {
+		if (!taken.has(key(value))) out.push({ reason: loose, value });
+	};
+	switch (a.kind) {
+		case 'yes-no':
+			add({ kind: 'yes-no', value: !a.value });
+			break;
+		case 'number':
+			for (let n = 0; n <= highestAnswer(game, a.characterId, characters); n++) {
+				add({ kind: 'number', value: n });
+			}
+			break;
+		case 'character': {
+			const shown = new Set(truthful.flatMap((v) => (v.kind === 'character' ? [v.value] : [])));
+			const others = scriptCharacterIds(game.script).filter((id) => {
+				const type = characters.get(id)?.type;
+				return !shown.has(id) && type !== 'fabled' && type !== 'loric';
+			});
+			if (others.length > 0) {
+				out.push({ reason: loose, value: answerValue(a), otherCharacters: others });
+			}
+			break;
+		}
+		case 'characters':
+			out.push({ reason: loose, value: answerValue(a), anyOther: true });
+			break;
+	}
+	return out;
+}
+
+function answerValue(a: NightAnswer): AnswerValue {
+	switch (a.kind) {
+		case 'yes-no':
+			return { kind: 'yes-no', value: a.value };
+		case 'character':
+			return { kind: 'character', value: a.value };
+		case 'number':
+			return { kind: 'number', value: a.value };
+		case 'characters':
+			return {
+				kind: 'characters',
+				type: a.type,
+				value: a.value,
+				...(a.more ? { more: a.more } : {})
+			};
+		case 'none':
+			return { kind: 'none', reason: a.reason };
+	}
+}
+
+/**
+ * The highest number a number answer could be, for listing the false ones: every dead
+ * player for a count of the dead, the Juggler's five guesses
+ * (https://wiki.bloodontheclocktower.com/Juggler), else every player.
+ */
+function highestAnswer(game: Game, characterId: CharacterId, characters: CharacterLookup) {
+	switch (rulesOf(characterId, characters)?.answers?.question) {
+		case 'evil-dead':
+			return game.seating.filter((s) => registersAsDead(game, s)).length;
+		case 'correct-guesses':
+			return 5;
+		default:
+			return game.seating.length;
+	}
 }

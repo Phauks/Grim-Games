@@ -10,6 +10,7 @@ import {
 	seatPoints,
 	seatTokenSize,
 	withGap,
+	swapPlaces,
 	withoutPlaced,
 	withPlaced,
 	towardsMiddle,
@@ -354,5 +355,33 @@ describe('the Storyteller board shape (Trevor, 2026-10-27)', () => {
 		expect(sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, true, prefs)).toEqual(
 			sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, false, prefs)
 		);
+	});
+
+	it("keeps a shared grim's ring clear of the controls in its top right", () => {
+		// Trevor, 2026-10-27: every control on a player's grim sits top right, beside Full screen.
+		const shared = eight.map((seatId) => ({ seatId }));
+		const prefs = { tokenAppearance: { tokenScale: 1 } };
+		const plain = sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, false, prefs);
+		const corner = { w: 160, h: 60 };
+		const clear = sharedSeats(shared, DEFAULT_SEAT_LAYOUT, phone, undefined, false, prefs, corner);
+		expect(clear.size).toBe(plain.size);
+		const r = clear.size / 2;
+		for (const p of clear.points) {
+			const x = (p.x / 100) * phone.width;
+			const y = (p.y / 100) * phone.height;
+			expect(x + r <= phone.width - corner.w || y - r >= corner.h).toBe(true);
+		}
+		expect(clear.points).not.toEqual(plain.points);
+	});
+});
+
+describe('swapPlaces', () => {
+	it('gives each of two swapped players the other one’s spot and gap', () => {
+		const layout = { shape: 'oval' as const, gaps: { a: 2 }, placed: { b: { x: 10, y: 20 } } };
+		expect(swapPlaces(layout, 'a', 'b')).toEqual({
+			shape: 'oval',
+			gaps: { b: 2 },
+			placed: { a: { x: 10, y: 20 } }
+		});
 	});
 });
