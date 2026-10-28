@@ -31,7 +31,13 @@ export type Nights = (typeof NIGHTS)[number];
 export type When =
 	| { at: 'setup' }
 	| { at: 'night'; nights: Nights }
-	| { at: 'day'; after?: 'first-vote-tallied' | 'first-execution'; days?: 'first' }
+	| {
+			at: 'day';
+			after?: 'first-vote-tallied' | 'first-execution';
+			days?: 'first';
+			/** Carousel Minions: "before nominations" (the Psychopath). */
+			before?: 'nominations';
+	  }
 	| { at: 'dusk' }
 	| { at: 'always' }
 	| {
@@ -71,7 +77,9 @@ export const EVENTS = [
 	'executee-dies',
 	'demon-kills',
 	// Rule characters (Fabled and Loric): any player dies (Hindu).
-	'player-dies'
+	'player-dies',
+	// Carousel Minions: a player says its secret word (the Mezepheles).
+	'said-word'
 ] as const;
 export type GameEvent = (typeof EVENTS)[number];
 
@@ -125,7 +133,10 @@ export const SUBJECTS = [
 	'marked',
 	'one-of-marked',
 	'died',
-	'an-ally'
+	'an-ally',
+	// Carousel Minions: who said the secret word (Mezepheles); every Townsfolk (Xaan).
+	'speaker',
+	'each-townsfolk'
 ] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
@@ -147,6 +158,8 @@ export interface Choice {
 	from?: 'voted-today';
 	/** Different to previous nights. */
 	notRepeated?: true;
+	/** Carousel Minions: only characters of this type (the Summoner's Demon). */
+	type?: CharacterType;
 }
 
 /**
@@ -162,8 +175,16 @@ export type Condition =
 	| { partnerIs: Subject }
 	/** Something about today or this choice that only this ability's moment knows. */
 	/** `token` marks the player it is about (the Godfather's Died Today). */
-	| { today: 'no-death' | 'outsider-died' | 'statement-true'; token?: ReminderLabel }
-	| { choice: 'guess-wrong' | 'last-was-none' | 'they-agree' | 'impaired' }
+	| { today: 'no-death' | 'outsider-died' | 'statement-true' | 'good-voted'; token?: ReminderLabel }
+	| {
+			choice:
+				| 'guess-wrong'
+				| 'last-was-none'
+				| 'they-agree'
+				| 'impaired'
+				| 'won-roshambo'
+				| 'claimed-character';
+	  }
 	| CarouselTownsfolkCondition
 	| { neighboursGood: true }
 	/** Only the first time this happens (the Fang Gu's first Outsider). */
@@ -177,7 +198,13 @@ export type Condition =
 	// Rule characters: only the first N times (the Hindu's first 4 deaths); the final day
 	// (Ferryman); a nominee mad as a character other than one they claimed before (Ventriloquist).
 	| { firstTimes: number }
-	| { today: 'final-day' | 'mad-as-new-character' };
+	| { today: 'final-day' | 'mad-as-new-character' }
+
+	// Carousel Minions: `good-voted` (Vizier), `won-roshambo` (Psychopath), `claimed-character`
+	// (Goblin); only on night N, or night X where X is the Outsiders in play (Summoner,
+	// Xaan); its own player nominated the subject (Fearmonger).
+	| { onNight: number | 'outsiders-in-play' }
+	| { nominatedBy: Subject };
 
 /**
  * What the player learns. `measure` and `question` are the night info generators the app
@@ -253,7 +280,17 @@ export type Info =
 				// many of the marked players are evil (Duchess); any true info (Zenomancer).
 				| 'affected-players'
 				| 'evil-among-marked'
-				| 'true-info';
+				| 'true-info'
+
+				// Carousel Minions: a secret word (Mezepheles), that this character is in play
+				// (Widow), the night with eyes open (Wraith), 3 bluffs (Summoner), which ability
+				// the Demon has (Boffin), that it chose a new player (Fearmonger).
+				| 'secret-word'
+				| 'in-play'
+				| 'watches-night'
+				| 'bluffs'
+				| 'which-ability'
+				| 'chose-new-player';
 	  };
 
 /**
@@ -273,13 +310,14 @@ type EffectBody =
 	| {
 			do: 'protect';
 			who: Subject;
-			/** `not-execution`: can only die by execution (Storm Catcher). */
-			from: 'demon' | 'any' | 'execution' | 'not-execution';
+			/** `not-execution`: can only die by execution (Storm Catcher); `day`: any death by day (the Vizier). */
+			from: 'demon' | 'any' | 'execution' | 'not-execution' | 'day';
 			until?: 'tonight' | 'tomorrow';
 			/** Only the first death doesn't happen (the Fool, the Zombuul). */
 			once?: true;
 	  }
-	| { do: 'kill'; who: Subject; ignoresProtection?: true }
+	/** `allBut`: all but this many players die (Carousel: the Boomdandy). */
+	| { do: 'kill'; who: Subject; ignoresProtection?: true; allBut?: number }
 	| { do: 'resurrect'; who: Subject }
 	| {
 			do: 'impair';
@@ -306,7 +344,9 @@ type EffectBody =
 	| {
 			do: 'gain-ability';
 			who: Subject;
-			of: 'chosen' | 'a-townsfolk-or-minion' | GainedAbilityOf | 'marked';
+			/** Carousel: `a-not-in-play-good`, even while impaired (the Boffin's Demon). */
+			of: 'chosen' | 'a-townsfolk-or-minion' | GainedAbilityOf | 'marked' | 'a-not-in-play-good';
+			evenIfImpaired?: true;
 	  }
 	/** This type's information is false (the Vortox). */
 	| { do: 'falsify-info'; of: CharacterType }
@@ -320,7 +360,8 @@ type EffectBody =
 			do: 'arm';
 			who: Subject;
 			on: 'nominates' | 'executed';
-			until: 'dusk-tomorrow';
+			/** `dusk`: today only (Carousel: the Goblin). */
+			until: 'dusk-tomorrow' | 'dusk';
 			effects: Effect[];
 	  }
 	/** Later tonight, if `if` holds, `effects` happen (Gossip, Moonchild). */
@@ -329,10 +370,10 @@ type EffectBody =
 	| {
 			do: 'madness';
 			who: Subject;
-			/** `nominee-good`: mad that the nominee is good (Bigwig). */
-			as: 'chosen-character' | 'outsider' | 'nominee-good';
+			/** `nominee-good`: mad that the nominee is good (Bigwig); `second-chosen-evil` (Harpy). */
+			as: 'chosen-character' | 'outsider' | 'nominee-good' | 'second-chosen-evil';
 			until?: 'dusk-tomorrow';
-			/** They might die instead of being executed (Bigwig). */
+			/** They might die instead of being executed (Bigwig, Harpy). */
 			penalty?: 'death';
 	  }
 	/** Swap characters (and alignments) between two subjects, or players' seats (Matron). */
@@ -366,7 +407,10 @@ type EffectBody =
 				| 'evil-info-any-count'
 				| 'skip-evil-info'
 				| 'max-one-extra-evil'
-				| 'only-chosen-speaks';
+				| 'only-chosen-speaks'
+
+				// Carousel: eyes closed while voting, tally secret (the Organ Grinder).
+				| 'secret-votes';
 	  }
 	| { do: 'immune'; who: Subject; to: ('poisoned' | 'drunk')[] }
 	| {
@@ -394,13 +438,19 @@ type EffectBody =
 				/** A Townsfolk not in play (the Huntsman's Damsel). */
 				| 'not-in-play-townsfolk'
 				/** A Traveller of the same alignment (Hindu). */
-				| 'traveller';
-
+				| 'traveller'
+				/** Only the alignment changes (the Mezepheles). */
+				| 'evil';
 			evil?: true;
 	  }
 	| { do: 'execute'; who: Subject; instead?: true }
 	/** `chosen-publicly`: all players choose the winner (Fiddler). */
-	| { do: 'end-game'; winner: 'own-team' | 'other-team' | Alignment | 'chosen-publicly' }
+	| {
+			do: 'end-game';
+			winner: 'own-team' | 'other-team' | Alignment | 'chosen-publicly';
+			/** Whose team, when not its own player's (the Fearmonger's executed). */
+			of?: Subject;
+	  }
 	/** Good can't win while both live (the Evil Twin); one more day (the Mastermind). */
 	| { do: 'hold-game'; while?: 'both-alive'; extraDay?: true }
 	/** The subject registers as dead while alive (the Zombuul). */

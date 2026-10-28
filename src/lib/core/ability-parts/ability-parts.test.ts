@@ -109,6 +109,26 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 		fixedReminders:
 			"movement judgement: Something Bad stays on the player it lands on; parts can't tell it from a token that moves"
 	},
+	widow: {
+		impairs:
+			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too'
+	},
+	organgrinder: {
+		impairs:
+			'label-only: today its own Drunk token impairs it by its label (impairmentOfLabel, rules/ability.ts); parts say it'
+	},
+	boomdandy: {
+		actsWhenDead:
+			"uneven actsWhenDead: it acts on its own execution, as the Saint does, but only the Saint's rules say so"
+	},
+	summoner: {
+		gameEnd:
+			'one-offs: good wins once no Demon was made and every evil player is dead (dead-without-demon); the text implies it, parts have no word for it'
+	},
+	wizard: {
+		deathCause:
+			'storyteller judgement: a granted wish may kill, but what a wish does is the Storyteller’s (a hatch)'
+	},
 	vigormortis: {
 		keepsAbility:
 			'per-effect condition: only killed Minions keep their ability; parts have no condition on one effect',
@@ -145,7 +165,12 @@ const WAKE_DIFFERENCES: Record<string, string> = {};
 /** Characters whose ability opens with another phrase than its timing gives, and why. Only shrinks. */
 const OPENING_DIFFERENCES: Record<string, string> = {
 	farmer:
-		'wording: "When you die" and "If you die" (the Ravenkeeper) are the same timing, so parts can\'t tell them apart'
+		'wording: "When you die" and "If you die" (the Ravenkeeper) are the same timing, so parts can\'t tell them apart',
+	boomdandy:
+		'text order: "If you are executed" is not "If you die", though it is a death by execution',
+	wraith: 'text order: "You may choose to open your eyes at night" puts the timing after "You"',
+	wizard:
+		'text order: "Once per game, choose to make a wish" leaves out "at night", though it wakes'
 };
 
 const data = committedGameData();
@@ -204,7 +229,7 @@ const today = (parts: Map<string, AbilityParts>, id: string, key: DerivedKey): u
 	return rules[key];
 };
 
-describe('the base three editions as ability parts', () => {
+describe('official characters as ability parts', () => {
 	const parts = readAll();
 
 	for (const [edition, editionParts] of Object.entries(EDITIONS))

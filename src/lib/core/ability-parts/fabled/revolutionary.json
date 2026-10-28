@@ -5,6 +5,7 @@
 			"when": {
 				"at": "setup"
 			},
+			"publicly": true,
 			"marks": "Aligned",
 			"effects": [
 				{

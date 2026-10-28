@@ -89,9 +89,8 @@ function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 	if (when.at === 'night')
 		return { first: when.nights !== 'each*', other: when.nights !== 'first' };
 	// Told something before the game starts (the Evil Twin, the Lunatic's Demon): night 1.
-	// Something everyone knows from the start (the Revolutionary's pair) is told at setup, not woken for.
-	const first =
-		when.at === 'setup' && effects.some((e) => e.do === 'learn' && e.to !== 'each-player');
+	// Something told publicly (the Revolutionary's pair) is told at setup, not woken for.
+	const first = when.at === 'setup' && !clause.publicly && effects.some((e) => e.do === 'learn');
 	// Woken as the Demon they think they are (the Lunatic).
 	if (effects.some((e) => e.do === 'believe' && e.isA === 'demon')) return { first, other: true };
 	// Something happens tonight because of a day's event (Gossip, Moonchild, Juggler).
@@ -121,6 +120,8 @@ function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 function clauseOpening(clause: Clause): string | undefined {
 	const { when, limit } = clause;
 	const onlyLearns = clause.effects.every((e) => e.do === 'learn');
+	// Carousel Minions: a clause for one night ("On night X", "On the 3rd night") has no phrase.
+	if (has(clause.if, (c) => 'onNight' in c)) return undefined;
 	if (when.at === 'night') {
 		const star = when.nights === 'each*' ? '*' : '';
 		if (limit === 'once-per-game') return `Once per game, at night${star}`;
@@ -201,11 +202,13 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 		const ownToken = (e: Effect) => e.marks !== undefined && e.marks !== clause.marks;
 		const subjects = effects
 			.filter((e) => !ownToken(e))
-			.flatMap((e) =>
-				(['who', 'with'] as const).flatMap((k) =>
+			.flatMap((e) => [
+				...(['who', 'with'] as const).flatMap((k) =>
 					k in e ? [(e as Record<string, unknown>)[k]] : []
-				)
-			);
+				),
+				// Carousel Minions: who learns of a choice (the Fearmonger's announcement).
+				...(e.do === 'learn' && e.to && clause.choose ? [e.to] : [])
+			]);
 		const onSelf =
 			subjects.every((who) => who === 'self') && !(subjects.length === 0 && effects.some(ownToken));
 		// Carousel Townsfolk (batch 2): a token marking its own player's state after their death
@@ -287,7 +290,11 @@ function applyEffect(
 			const neighbours = has(clause.if, (c) => 'neighboursGood' in c)
 				? { whileNeighboursGood: true as const }
 				: {};
-			if (effect.who === 'self') rules.protects = { who: 'self', from: effect.from, ...night };
+			// Carousel Minions: a protection that turns on a game outside the app (the Psychopath's
+			// roshambo) is the Storyteller's to apply.
+			const decides = has(conds, (c) => 'choice' in c) ? { storytellerDecides: true as const } : {};
+			if (effect.who === 'self')
+				rules.protects = { who: 'self', from: effect.from, ...night, ...decides };
 			else if (effect.who === 'executed' && clause.storytellerMay)
 				rules.protects = { who: 'good', from: effect.from, storytellerDecides: true };
 			else if (marks)
@@ -314,6 +321,8 @@ function applyEffect(
 					kind: 'kills',
 					victim: { who: 'registers', as, ...(when.at === 'death' ? { notSelf: true } : {}) }
 				});
+			// Carousel Minions: killing others when it dies (the Boomdandy's execution).
+			else if (when.at === 'death') cause(rules, { kind: 'kills', victim: { who: 'not-self' } });
 			else cause(rules, { kind: 'kills' });
 			if (has(clause.if, (c) => 'choice' in c && c.choice === 'guess-wrong'))
 				rules.deathCheck = { kind: 'wrong-guess' };
@@ -343,6 +352,15 @@ function applyEffect(
 			// lunch); its token's label does it, as the label fallback does today.
 			if (effect.who === 'self' && conds?.length) return;
 			if (effect.who === 'self') rules.impairs = { ...rules.impairs, self: { reason: effect.as } };
+			// Carousel Minions: every Townsfolk, while its token is out (the Xaan's X).
+			else if (marks && effect.who === 'each-townsfolk')
+				rules.impairs = {
+					...rules.impairs,
+					tokens: {
+						...rules.impairs?.tokens,
+						[marks]: { reason: effect.as, on: 'others', type: 'townsfolk', ...whileWorks }
+					}
+				};
 			else if (marks && ['chosen', 'another-player', 'each-player'].includes(effect.who))
 				rules.impairs = {
 					...rules.impairs,
@@ -463,6 +481,9 @@ function applyEffect(
 			if (effect.who === 'self') cause(rules, { kind: 'execution', victim: { who: 'self' } });
 			else if (by === 'townsfolk')
 				cause(rules, { kind: 'execution', victim: { who: 'registers', as: by } });
+			// Carousel Minions: executes today's nominee (the Vizier).
+			else if (effect.who === 'nominee')
+				cause(rules, { kind: 'execution', victim: { who: 'not-self' } });
 			if (when.at === 'nominated' && effect.who === 'nominator' && by)
 				rules.onNominated = { by, effect: 'execute-nominator' };
 			return;
@@ -477,7 +498,18 @@ function applyEffect(
 				rules.gameEnd = { ...rules.gameEnd, decidedByStoryteller: true };
 			const count = alive(clause.if);
 			const noExecution = has(clause.if, (c) => 'noExecutionToday' in c);
-			if (when.at === 'dusk' && count?.exactly !== undefined)
+			// Carousel Minions: a win on a claim only the Storyteller hears (the Goblin).
+			if (has(conds, (c) => 'choice' in c))
+				rules.gameEnd = { ...rules.gameEnd, decidedByStoryteller: true };
+			// Carousel Minions: the player it nominated with its token is executed (the Fearmonger).
+			if (
+				when.at === 'event' &&
+				when.event === 'marked-executed' &&
+				has(conds, (c) => 'nominatedBy' in c && c.nominatedBy === 'self') &&
+				acc.firstMark
+			)
+				acc.ends.push({ kind: 'nominated-marked-executed', token: acc.firstMark });
+			else if (when.at === 'dusk' && count?.exactly !== undefined)
 				acc.ends.push({ kind: 'alive-at-dusk', alive: count.exactly });
 			else if (
 				when.at === 'dusk' &&
@@ -515,6 +547,10 @@ function applyEffect(
 					rules.becomes = { token: marks, into: 'demon' };
 					acc.fixed.add(marks);
 				}
+			} else if (effect.into === 'evil' && marks) {
+				// Carousel Minions: turns evil when its token comes off tonight (the Mezepheles).
+				rules.becomes = { token: marks, into: 'evil', ...(tonight ? { when: 'removed' } : {}) };
+				acc.fixed.add(marks);
 			} else if (effect.into === 'this-character' && when.at === 'event') {
 				// The Demon's death passes on: to a Minion when it kills itself (the Imp), to the
 				// first Outsider it kills, once (the Fang Gu).
