@@ -56,7 +56,7 @@
 <!-- In a game, the setup check's boxes; otherwise the same setup sheet table as setup and New
      game (Trevor, 2026-10-17). -->
 {#if game}
-	<CountsBar analysis={game} travellers={game.travellers} game />
+	<CountsBar analysis={game} travellers={game.travellers} game {maxPlayers} />
 {:else}
 	<SetupTable players={highlighted} onPick={choose} {maxPlayers} />
 {/if}
