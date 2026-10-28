@@ -28,7 +28,7 @@ export type FilledCharacter = 'self' | 'chosen' | CharacterId;
 
 const INFO_TOKEN_OTHERS = ['opposite-alignment'] as const;
 
-export const INFO_TOKEN_ORDERS = ['good-first'] as const;
+const INFO_TOKEN_ORDERS = ['good-first'] as const;
 
 export interface InfoTokenCharacters {
 	characters: readonly FilledCharacter[];
