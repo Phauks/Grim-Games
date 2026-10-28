@@ -70,7 +70,7 @@ test('a phone with alerts on gives the room its push address', async ({
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/room`);
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
