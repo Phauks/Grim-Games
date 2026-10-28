@@ -16,10 +16,12 @@
 	import { searchSettings, type SettingEntry } from './settings-search.ts';
 	import { readSettings, revealSetting } from './settings-search-dom.ts';
 
-	const sections = settingsSections();
+	const all = settingsSections();
+	const sections = all.filter((section) => section.listed !== false);
+	const buttons = all.filter((section) => section.headerButton);
 	// Wide screens always show a section (the first by default); narrow screens show the list
 	// until a section is picked, then drill in with a Back button.
-	const active = $derived(sections.find((s) => s.id === settingsDialog.section) ?? sections[0]);
+	const active = $derived(all.find((s) => s.id === settingsDialog.section) ?? sections[0]);
 
 	// Each section opens at its top, not at the last section's scroll position (Trevor,
 	// 2026-10-16); the section list keeps its own scroll.
@@ -62,6 +64,17 @@
 </script>
 
 <Dialog bind:open={settingsDialog.open} title={t('settings.title')} size="full">
+	{#snippet headActions()}
+		{#each buttons as section (section.id)}
+			{@const HeaderButton = section.headerButton!}
+			<HeaderButton
+				onclick={() => {
+					settingsDialog.only = false;
+					settingsDialog.section = section.id;
+				}}
+			/>
+		{/each}
+	{/snippet}
 	<div
 		class="layout"
 		data-view={settingsDialog.only ? 'only' : settingsDialog.section ? 'section' : 'list'}

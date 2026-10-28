@@ -1,5 +1,3 @@
-import { DEFAULT_FRAME, parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
-
 /**
  * How the board looks on this device, for every game (Trevor, 2026-10-17), shown beside the
  * background where it takes effect and in Settings:
@@ -43,11 +41,6 @@ export interface BoardLooks {
 	 * ('struck') (Trevor, 2026-10-19: both looks, picked in Settings).
 	 */
 	usedGhostVote: 'hollow' | 'struck';
-	/**
-	 * The frame round every seat token whose player has not picked one (Trevor, 2026-10-22:
-	 * players pick with their avatar, the Storyteller sets the board's default).
-	 */
-	defaultFrame: FrameId;
 }
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
@@ -68,8 +61,7 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	nameSize: 1,
 	nameOffset: 0,
 	reminders: 'seat',
-	usedGhostVote: 'hollow',
-	defaultFrame: DEFAULT_FRAME
+	usedGhostVote: 'hollow'
 };
 const KEY = 'grim.boardLooks';
 
@@ -99,12 +91,12 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 			? Math.min(NAME_OFFSET.max, Math.max(NAME_OFFSET.min, nameOffset))
 			: DEFAULT_BOARD_LOOKS.nameOffset,
 		reminders: value.reminders === 'free' ? 'free' : 'seat',
-		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
+		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow'
 		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the
 		// board (Trevor, 2026-10-23). So is `dragSource`: a dragged reminder no longer names
 		// where it came from (Trevor, 2026-10-24). `holdLights` and `holdMoves` too: holding a
-		// seat's token only moves it now (Trevor, 2026-10-26).
-		defaultFrame: parseFrameId(value.defaultFrame) ?? DEFAULT_FRAME
+		// seat's token only moves it now (Trevor, 2026-10-26). `defaultFrame` too: frames are
+		// laurel forms each player picks, with no board default (Trevor, 2026-10-27).
 	};
 }
 

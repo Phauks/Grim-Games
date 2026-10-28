@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
-import { openPlayerSettings, setPlayerName } from './player-name.ts';
+import { openProfile, setPlayerName } from './player-name.ts';
 import { toBoard } from './new-game.ts';
 
 // Two players may give the same name (Trevor, 2026-10-27: "shouldn't refuse"): the Storyteller
@@ -23,7 +23,7 @@ async function openRoom(page: Page) {
 async function joinAs(browser: Browser, testInfo: TestInfo, code: string, name: string) {
 	const phone = await (await browser.newContext({ ...testInfo.project.use })).newPage();
 	await phone.goto(`/join/${code}`);
-	await openPlayerSettings(phone);
+	await openProfile(phone);
 	await setPlayerName(phone, name);
 	return phone;
 }

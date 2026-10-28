@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openPlayerSettings, setPlayerName } from './player-name.ts';
+import { openProfile, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
@@ -34,7 +34,7 @@ async function watchWithPassword(phone: Page, code: string, password: string) {
  * Opens Settings > Player from the title line's cog, where the phone's name is (plan E2;
  * Trevor 2026-10-27: one Settings everywhere).
  */
-const seatSheet = openPlayerSettings;
+const seatSheet = openProfile;
 
 /** Names a seat on the board, which seats the phone with that name (no seat picking). */
 async function nameSeat(page: Page, number: number, name: string) {
@@ -2339,15 +2339,28 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex Kim"]');
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 
-	// The frame (picked in Settings > Player, e2e/frames.e2e.ts) goes when the phone connects.
+	// The frame (picked in Settings > Player, e2e/frames.e2e.ts) goes when the phone connects,
+	// and grows in on the seat as it arrives (Trevor, 2026-10-27).
+	await page.evaluate(() => {
+		(window as unknown as { grew: boolean }).grew = false;
+		new MutationObserver(() => {
+			if (document.querySelector('[data-testid="seat"] [data-growing]')) {
+				(window as unknown as { grew: boolean }).grew = true;
+			}
+		}).observe(document.body, { subtree: true, childList: true, attributes: true });
+	});
 	await phone.evaluate(() => {
 		const key = 'grim-games:player-settings:v1';
 		const settings = JSON.parse(localStorage.getItem(key) ?? '{}');
-		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'clock' }));
+		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'laurel-olive-demon' }));
 	});
 	await phone.reload();
-	await expect(seat.locator('svg[data-frame="clock"]')).toBeAttached();
+	await expect(seat.locator('svg[data-frame="laurel-olive-demon"]')).toBeAttached();
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
+	await expect
+		.poll(() => page.evaluate(() => (window as unknown as { grew: boolean }).grew))
+		.toBe(true);
+	await expect(seat.locator('[data-growing]')).toHaveCount(0);
 
 	// Every phone at the table sees it. A guess goes on the token, and the avatar joins the
 	// guesses' cycle, so the pill brings it back (Trevor, 2026-10-26).

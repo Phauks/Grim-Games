@@ -452,7 +452,7 @@
 						avatar={seat.avatar}
 						picture={pictureOf(seat)}
 						usedVote={boardLooks.current.usedGhostVote}
-						frame={seatFrame(seat.frame, boardLooks.current.defaultFrame)}
+						frame={seatFrame(seat.frame)}
 						marks={notes[seat.seatId] || others.length ? marks : undefined}
 					/>
 					{#snippet marks()}
