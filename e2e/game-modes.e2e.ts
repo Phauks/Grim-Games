@@ -2024,7 +2024,6 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	await chooseRules(page, '+1');
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
 	await panel.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
@@ -2043,6 +2042,7 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
 	await page.getByRole('button', { name: 'Choose characters' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
+	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	for (const name of ['Washerwoman', 'Empath', 'Poisoner', 'Imp'])
 		await page
 			.getByTestId('character-picker')
