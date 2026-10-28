@@ -1,5 +1,5 @@
 /**
- * SPIKE: Trouble Brewing, Bad Moon Rising and Sects & Violets in ability parts, checked
+ * SPIKE: every official character (181) in ability parts, checked
  * against what the app does today.
  *
  * Each character's parts are compiled (`derive.ts`) and compared with its hand-written rules
