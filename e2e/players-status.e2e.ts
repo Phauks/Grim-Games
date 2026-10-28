@@ -57,6 +57,9 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	const night = (await status.boundingBox())!;
 	const nightWidth = night.width;
 	await expect(shown).toHaveCount(0);
+	// The night fills the sun's space with its own sky, a moon and stars (Trevor, 2026-10-28:
+	// "at night, we should show some moons and stars, not just blank space").
+	await expect(phone.getByTestId('players-night-sky')).toBeVisible();
 
 	// The day: a sun by default, rising on the left while the day's time is all to come.
 	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
@@ -72,6 +75,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 		'aria-label',
 		'Day timer: 100% of the day left'
 	);
+	await expect(phone.getByTestId('players-night-sky')).toHaveCount(0);
 	// The same box as at night, so neither the row nor anything below it moves as the phase
 	// changes.
 	const sun = (await status.boundingBox())!;
