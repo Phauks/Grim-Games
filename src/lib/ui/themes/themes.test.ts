@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ICON_SETS, ICON_SLOTS, isIconChoice, type IconSlot } from '#lib/ui/icons/catalogue.ts';
 import { contrastRatio, resolveToken } from './contrast.ts';
 import { THEMES } from './registry.ts';
+import { TEAM_COLORS } from './team-colors.ts';
 import { EDGE_PAIRS, SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
 
 describe('contrast helpers', () => {
@@ -16,6 +17,16 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('theme %s', (_,
 
 	it('defines every semantic token', () => {
 		for (const token of SEMANTIC_TOKENS) expect(theme.tokens[token], token).toBeTruthy();
+	});
+
+	// The good blue and evil red are the same in every theme (Trevor, 2026-10-28).
+	it('uses the fixed team colours', () => {
+		for (const [token, color] of Object.entries(TEAM_COLORS)) {
+			expect(resolveToken(token, table), token).toBe(color);
+		}
+		for (const token of Object.keys(TEAM_COLORS)) {
+			expect(theme.components ?? {}, token).not.toHaveProperty(token);
+		}
 	});
 
 	it.each(TEXT_PAIRS)('%s on %s reaches WCAG AA (4.5:1)', (text, background) => {

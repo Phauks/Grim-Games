@@ -783,7 +783,7 @@ test('Play starts a new game with a found script, without saving it', async ({ p
 	const script = page.getByRole('radiogroup', { name: 'Script' });
 	const search = page.getByRole('combobox', { name: 'Find a script' });
 	await expect(search).toHaveValue('Big Town');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	// Still offered after a reload, and never saved.

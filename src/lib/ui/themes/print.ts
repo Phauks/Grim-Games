@@ -1,3 +1,5 @@
+import { TEAM_COLORS, TEAM_TEXT } from './team-colors.ts';
+
 /**
  * Colours for files the app saves to read or print outside it (a game recap): dark ink on
  * white paper, whatever theme the app is in.
@@ -7,15 +9,15 @@ export const PRINT_PALETTE = {
 	muted: '#666666',
 	rule: '#cccccc',
 	faint: '#eeeeee',
-	good: '#1f5fa8',
-	evil: '#a8231f',
+	good: TEAM_COLORS['--good'],
+	evil: TEAM_COLORS['--evil'],
 	paper: '#ffffff'
 } as const;
 
 /**
  * A script sheet's Light background (Trevor, 2026-10-23: the preview is hard to read on the
- * dark theme): dark ink on light paper whatever the theme, the team colours darkened to stay
- * readable on it. Set as custom properties on the sheet, so everything inside follows.
+ * dark theme): dark ink on light paper whatever the theme, with the team colours' text for a
+ * light surface. Set as custom properties on the sheet, so everything inside follows.
  */
 export const LIGHT_SHEET: Readonly<Record<`--${string}`, string>> = {
 	'--surface': '#fbf8f1',
@@ -26,10 +28,7 @@ export const LIGHT_SHEET: Readonly<Record<`--${string}`, string>> = {
 	'--heading': PRINT_PALETTE.ink,
 	'--border': '#0000002e',
 	'--button-edge': '#76674b',
-	'--good': PRINT_PALETTE.good,
-	'--evil': PRINT_PALETTE.evil,
-	'--good-text': PRINT_PALETTE.good,
-	'--evil-text': PRINT_PALETTE.evil,
+	...TEAM_TEXT.light,
 	'--traveller-text': '#5c2f6e',
 	'--loric-text': '#2e6b34'
 };

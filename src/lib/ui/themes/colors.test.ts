@@ -13,6 +13,13 @@ describe('custom theme colours', () => {
 		).toEqual({ '--surface': '#abcdef' });
 	});
 
+	// The good blue and evil red never change (Trevor, 2026-10-28), so a saved one is dropped.
+	it('never lets a team colour be changed', () => {
+		expect(
+			parseColors({ '--good': '#00ff00', '--evil': '#00ff00', '--on-good': '#000000' })
+		).toEqual({});
+	});
+
 	it('warns about a custom pair under 4.5:1, and only for custom colours', () => {
 		expect(contrastWarnings(grimoire, {}, '--surface')).toEqual([]);
 		const warnings = contrastWarnings(grimoire, { '--surface': '#efe2c4' }, '--surface');

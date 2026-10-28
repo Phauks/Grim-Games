@@ -55,6 +55,7 @@ import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
 import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 
 import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
+import { RolesShown } from './roles-shown.svelte.ts';
 
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
@@ -91,11 +92,8 @@ export class RoomHost {
 	grimoireTooLarge = $state(false);
 	/** How many are watching through the view-only link now (Trevor, 2026-10-20). */
 	watchers = $state(0);
-	/**
-	 * The game whose players may see their own character on their phone (Trevor, 2026-10-26:
-	 * "can turn on and off when ppl can see it"). Off until turned on, and per game.
-	 */
-	rolesShown = $state<string>();
+	/** The game whose players may see their own character now, for a minute (RolesShown). */
+	readonly rolesShown = new RolesShown();
 	/** Seats whose player has held their character to see it (Trevor, 2026-10-26). */
 	rolesSeen = $state.raw<readonly SeatId[]>([]);
 	transfer = $state.raw<TransferStatus>(); // The open Room transfer (room-transfer.svelte.ts).
@@ -139,7 +137,7 @@ export class RoomHost {
 	constructor() {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
 		if (stored?.code && stored.key) {
-			this.rolesShown = stored.rolesShown;
+			this.rolesShown.restore(stored);
 			this.viewerPassword = stored.viewerKey ? stored.viewerPassword : undefined;
 			if (stored.viewerKey) void this.#useViewerKey(stored.viewerKey);
 			this.#connect(stored);
@@ -324,7 +322,7 @@ export class RoomHost {
 			// Each seat's own character, for its own phone, while players may see theirs.
 			$effect(() => {
 				const gameId = game.game.gameId;
-				const show = this.rolesShown === gameId;
+				const show = this.rolesShown.gameId === gameId;
 				const roles = show ? seatRoles(game.game, game.characters) : {};
 				const next = { gameId, show, roles };
 				if (JSON.stringify(next) === JSON.stringify(this.#roles)) return;
@@ -416,12 +414,7 @@ export class RoomHost {
 
 	/** Lets the players of game `gameId` see their own characters, or hides them again. */
 	showRoles(gameId: GameId, on: boolean): void {
-		this.rolesShown = on ? gameId : undefined;
-		const stored = readStored<StoredRoom>(STORAGE_KEY);
-		if (!stored) return;
-		const { rolesShown: _old, ...rest } = stored;
-		void _old;
-		writeStored(STORAGE_KEY, on ? { ...rest, rolesShown: gameId } : rest);
+		this.rolesShown.set(on ? gameId : undefined);
 	}
 
 	#sendRoles(): void {
@@ -767,7 +760,7 @@ export class RoomHost {
 		this.viewerKey = undefined;
 		this.viewerPassword = undefined;
 		this.revealedGame = undefined;
-		this.rolesShown = undefined;
+		this.rolesShown.stop();
 		this.rolesSeen = [];
 		this.transfer = undefined;
 		this.sendingGame = false;

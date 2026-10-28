@@ -1,12 +1,14 @@
 import { LIGHT_SHEET } from './print.ts';
 import { parseHex, relativeLuminance } from './contrast.ts';
+import { TEAM_TEXT } from './team-colors.ts';
 import type { Theme } from './types.ts';
 
 /**
  * The script and night order sheets' background (Trevor, 2026-10-24: "a color selector with
  * several color options like grey, tan, and other neutral colors", in place of light and
  * dark). `theme` is the app's own surface; each other is a set of custom properties set on
- * the sheet, so its text, rules and team colours stay readable on it.
+ * the sheet, so its text and rules stay readable on it. The team colours never change
+ * (team-colors.ts): only their text picks the light or dark surface version.
  */
 export const SHEET_BACKGROUNDS = [
 	'theme',
@@ -32,21 +34,17 @@ function paper(surface: string, raised: string, selected: string, edge: string):
 	};
 }
 
-/** A mid-tone paper (tan, grey): the ink and team colours deepened to keep their contrast. */
+/** A mid-tone paper (tan, grey): the ink deepened to keep its contrast. */
 function midPaper(surface: string, raised: string, selected: string, edge: string): Tokens {
 	return {
 		...paper(surface, raised, selected, edge),
 		'--on-surface-muted': '#3f3f3f',
-		'--good': '#174a85',
-		'--evil': '#8a1b18',
-		'--good-text': '#174a85',
-		'--evil-text': '#8a1b18',
 		'--traveller-text': '#4a2459',
 		'--loric-text': '#21522a'
 	};
 }
 
-/** A dark paper: light ink, the team colours lightened to stay readable on it. */
+/** A dark paper: light ink, and the team colours' text for a dark surface. */
 function dark(surface: string, raised: string, selected: string): Tokens {
 	return {
 		'--surface': surface,
@@ -57,13 +55,7 @@ function dark(surface: string, raised: string, selected: string): Tokens {
 		'--heading': '#f2efe8',
 		'--border': '#ffffff33',
 		'--button-edge': '#a8a49c',
-		'--good': '#86b8f0',
-		'--evil': '#f29a94',
-		'--good-text': '#a6cbf5',
-		'--evil-text': '#f6b5b0',
-		// The light team colours are fills too (character badges, alignment pills): dark text.
-		'--on-good': '#1b1b1b',
-		'--on-evil': '#1b1b1b',
+		...TEAM_TEXT.dark,
 		'--traveller-text': '#d2aee3',
 		'--loric-text': '#97d39e'
 	};

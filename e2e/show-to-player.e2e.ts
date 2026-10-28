@@ -338,7 +338,7 @@ test("Share blurs what is behind it, on setup's Characters screen as on the boar
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	const blurred = () =>
 		page

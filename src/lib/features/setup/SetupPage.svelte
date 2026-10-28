@@ -392,20 +392,22 @@
 		else void buildBag();
 	}
 
-	/**
-	 * Seats the player count (adding seats, or taking away empty ones New game made for a
-	 * larger count), builds the bag and opens the draw.
-	 */
-	async function buildBag() {
-		replaceOpen = false;
-		if (!game) return;
+	/** Seats the player count, adding seats or taking away empty ones; false if refused. */
+	function seatPlayers(): boolean {
 		// A seat for each player, selected Travellers included.
 		for (let n = port.game?.seating.length ?? 0; n < analysis.players; n++) {
-			if (!send({ type: 'AddSeat' })) return;
+			if (!send({ type: 'AddSeat' })) return false;
 		}
 		for (const seatId of port.game ? surplusSeats(port.game, analysis.players) : []) {
-			if (!send({ type: 'RemoveSeat', seatId })) return;
+			if (!send({ type: 'RemoveSeat', seatId })) return false;
 		}
+		return true;
+	}
+
+	/** Seats the player count, builds the bag and opens the draw. */
+	async function buildBag() {
+		replaceOpen = false;
+		if (!game || !seatPlayers()) return;
 		const built = send({
 			type: 'BuildBag',
 			tiles: plan.tiles,
@@ -415,6 +417,13 @@
 		if (!built) return;
 		await port.flush();
 		await openDraw(game.gameId);
+	}
+
+	/** The board without a bag, seated for this screen's count (Trevor, 2026-10-28). */
+	async function toBoard(gameId: string) {
+		if (!seatPlayers()) return;
+		await port.flush();
+		await goto(resolve('/grimoire/[gameId]', { gameId }));
 	}
 
 	/** The draw, or for a town of a mode game the next town's setup (Alternative game modes). */
@@ -626,7 +635,7 @@
 				: backStep === 'extras'
 					? resolve('/grimoire/[gameId]/extras', { gameId: game.gameId })
 					: undefined}
-			onBack={backStep === 'new' ? () => void backToNewGame(game.gameId) : undefined}
+			onBack={backStep === 'new' ? () => void backToNewGame(game.gameId, s.players) : undefined}
 			backLabel={backStep === 'board'
 				? t('setup.grimoire')
 				: backStep === 'extras'
@@ -640,7 +649,7 @@
 					{#if backStep !== 'board'}<IconButton
 							icon="grimoire"
 							label={t('setup.grimoire')}
-							onclick={() => void goto(resolve('/grimoire/[gameId]', { gameId: game.gameId }))}
+							onclick={() => void toBoard(game.gameId)}
 							data-testid="setup-to-board"
 						/>{/if}
 					<Button
