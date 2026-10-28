@@ -270,6 +270,17 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 	const opening = ruleCharacter
 		? undefined
 		: parts.clauses.filter((c) => !bagOnly(c)).map(clauseOpening)[0];
+	// Something else learnt on the first night only, as an answer (the Godfather's Outsiders in play).
+	const first = parts.clauses.find(
+		(c) =>
+			c.when.at === 'night' &&
+			c.when.nights === 'first' &&
+			c.effects.some(
+				(e) => e.do === 'learn' && 'kind' in e.info && e.info.kind === 'outsiders-in-play'
+			)
+	);
+	if (first && rules.answers?.question !== 'outsiders-in-play')
+		rules.answers = rules.answers && { ...rules.answers, firstNight: 'outsiders-in-play' };
 	return { rules, wakes, ...(opening ? { opening } : {}) };
 }
 
