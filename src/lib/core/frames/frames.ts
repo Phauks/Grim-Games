@@ -55,18 +55,28 @@ export interface FrameProgress {
 }
 
 /**
- * How a frame moves (Trevor, 2026-10-28: motion in the laurel settings): rocking on its foot,
- * a light sweeping across it, or both. Plain CSS on the whole frame, so a full town stays
+ * How a frame moves (Trevor, 2026-10-28: motion in the laurel settings): a light sweeping
+ * across it or round it either way, or the whole frame turning either way (sway dropped,
+ * Trevor 2026-10-28: "I don't like it"). Plain CSS on the whole frame, so a full town stays
  * smooth; reduced motion keeps every frame still.
  */
-export const FRAME_MOTIONS = ['none', 'sway', 'shimmer', 'sway-shimmer'] as const;
+export const FRAME_MOTIONS = [
+	'none',
+	'shimmer',
+	'shimmer-cw',
+	'shimmer-ccw',
+	'rotate-cw',
+	'rotate-ccw'
+] as const;
 export type FrameMotion = (typeof FRAME_MOTIONS)[number];
 
 export const FRAME_MOTION_NAMES: Record<FrameMotion, string> = {
 	none: 'None',
-	sway: 'Sway',
 	shimmer: 'Shimmer',
-	'sway-shimmer': 'Sway and shimmer'
+	'shimmer-cw': 'Clockwise shimmer',
+	'shimmer-ccw': 'Counter-clockwise shimmer',
+	'rotate-cw': 'Rotate clockwise',
+	'rotate-ccw': 'Rotate counter-clockwise'
 };
 
 /** A frame's shape, which any colour can be drawn in. */
@@ -211,7 +221,7 @@ const isColour = (raw: string): raw is LaurelColour => Object.hasOwn(LAUREL_COLO
 const isMotion = (raw: string): raw is FrameMotion =>
 	(FRAME_MOTIONS as readonly string[]).includes(raw);
 
-/** A frame's id: its form and colour, then its motion when it moves, as `vines-gold~sway`. */
+/** A frame's id: its form and colour, then its motion when it moves, as `vines-gold~shimmer`. */
 export function frameId(form: string, colour: LaurelColour, motion: FrameMotion = 'none'): FrameId {
 	return `${form}-${colour}${motion === 'none' ? '' : `~${motion}`}`;
 }
@@ -249,8 +259,10 @@ export function frameOf(
 export function frameById(id: FrameId | undefined): Frame | undefined {
 	if (id === undefined) return undefined;
 	if (id === DEFAULT_FRAME) return NONE;
-	const [look, motion = 'none', ...more] = id.split('~');
-	if (more.length || !isMotion(motion)) return undefined;
+	const [look, raw = 'none', ...more] = id.split('~');
+	if (more.length) return undefined;
+	// A motion no longer offered (sway, before 2026-10-28) leaves the frame still.
+	const motion = isMotion(raw) ? raw : 'none';
 	const bare = formById(look === 'laurel' ? 'laurel-laurel' : look);
 	if (bare) return frameOf(bare, bare.colour, motion);
 	const cut = look.lastIndexOf('-');
