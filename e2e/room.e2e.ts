@@ -2426,6 +2426,81 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await phoneContext.close();
 });
 
+test("a player's avatar opens their profile, never their character, on the board and on phones", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-28: "allow clicking avatar on player board to see the avatar larger, and
+	// other information about that PLAYER, not the character".
+	test.slow();
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await seatSheet(phone);
+	await setPlayerName(phone, 'Alex Kim');
+	await phone.keyboard.press('Escape');
+	await phone.evaluate(() => {
+		const key = 'grim-games:player-settings:v1';
+		const settings = JSON.parse(localStorage.getItem(key) ?? '{}');
+		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'ring-gold~pulse' }));
+	});
+	await phone.reload();
+	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
+	await nameSeat(page, 3, 'Alex Kim');
+	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex Kim"]');
+	await expect(seat.locator('svg[data-frame="ring-gold~pulse"]')).toBeAttached();
+
+	// The Storyteller gives the seat a character, so the avatar moves to its corner mark.
+	await seat.tap();
+	const seatDrawer = page.locator('[data-scope="drawer"][data-part="content"]');
+	await seatDrawer.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Alex Kim' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(seatDrawer).toBeHidden();
+
+	/** The profile shows the player: their avatar large, their laurel, its colour and motion. */
+	async function expectProfile(on: Page) {
+		const profile = on.getByRole('dialog', { name: 'Alex Kim', exact: true });
+		await expect(profile.getByTestId('player-profile')).toBeVisible();
+		await expect(profile.getByTestId('avatar-face')).toHaveText('AK');
+		const big = (await profile.getByTestId('avatar-face').boundingBox())!;
+		expect(big.width).toBeGreaterThan(100);
+		await expect(profile.getByTestId('player-profile-laurel')).toContainText('Simple ring');
+		await expect(profile.getByTestId('player-profile-colour')).toContainText('Gold');
+		await expect(profile.getByTestId('player-profile-motion')).toContainText('Pulse');
+		await expect(profile).not.toContainText('Empath');
+		await on.keyboard.press('Escape');
+		await expect(profile).toBeHidden();
+	}
+
+	// On the board, a tap on the avatar mark opens the profile, not the seat sheet.
+	const mark = seat.getByTestId('avatar-mark');
+	await expect(mark).toBeVisible();
+	await mark.tap();
+	await expectProfile(page);
+	await expect(seatDrawer).toBeHidden();
+
+	// On the phone, the avatar in the seat's sheet opens the same profile.
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await phone.getByTestId('grim-seat').nth(2).tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Alex Kim' });
+	const avatar = sheet.getByRole('button', { name: 'Profile: Alex Kim' });
+	const box = (await avatar.boundingBox())!;
+	expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(43.5);
+	await avatar.tap();
+	await expectProfile(phone);
+	await expect(sheet).toBeVisible();
+	await phoneContext.close();
+});
+
 /** A small wide PNG, red on the left and blue on the right, as a picture from a phone. */
 const PICTURE = Buffer.from(
 	'iVBORw0KGgoAAAANSUhEUgAAABAAAAAICAIAAAB/FOjAAAAAF0lEQVR4nGP4z8CAFeEQ/o9LeFQDRRoApTd/gRs1jBkAAAAASUVORK5CYII=',
