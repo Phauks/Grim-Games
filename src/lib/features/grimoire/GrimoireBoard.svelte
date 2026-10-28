@@ -2012,6 +2012,8 @@
 	   can reach into it as they do into /play's gutter (PlayerScriptTabs) without being
 	   clipped by this scroll box. */
 	.script-scroll {
+		/* The status row sits the dialog's side padding under the byline (PlayerStatusRow). */
+		--player-status-gap: var(--space-4);
 		flex: 1;
 		min-height: 0;
 		/* The dialog's side margin, for the space under the tabs (PlayerScriptTabs). */
