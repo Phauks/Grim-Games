@@ -23,11 +23,7 @@ export function statementText(s: SavantStatement, game: Game, characters: Charac
 }
 
 /** Any statement parts as plain words (a statement, or one of its reasons). */
-export function partsText(
-	parts: readonly SavantPart[],
-	game: Game,
-	characters: CharacterLookup
-): string {
+function partsText(parts: readonly SavantPart[], game: Game, characters: CharacterLookup): string {
 	return parts
 		.map((p) =>
 			'text' in p
