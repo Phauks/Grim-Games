@@ -71,6 +71,35 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	await expect(status).toContainText('Day 1');
 	await expect(script.getByTestId('players-timer')).toHaveAttribute('data-look', 'sun');
+	// No Traveller yet, so the day's counts say nothing about exiles.
+	await status.tap();
+	const counts = page.getByTestId('players-counts');
+	await expect(counts.getByTestId('players-votes-needed')).toBeVisible();
+	await expect(counts.getByTestId('players-exile-needed')).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(counts).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(script).toBeHidden();
+
+	// A Traveller sits down: the counts add the players needed to exile one (Trevor,
+	// 2026-10-28), half of all 8 players, alive or dead (wiki Glossary, "Exile" and "Player").
+	await page.getByRole('button', { name: /^Seat 2:/ }).tap();
+	await seat.getByRole('button', { name: 'Choose character' }).first().tap();
+	const pick = page.getByRole('dialog', { name: 'Character for Seat 2' });
+	await pick.getByRole('searchbox').fill('Scapegoat');
+	await pick.getByRole('button', { name: /^Scapegoat/ }).tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: 'Decide later' })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(seat).toBeHidden();
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	await status.tap();
+	await expect(counts.getByTestId('players-exile-needed')).toHaveText('4');
+	await expect(counts).toContainText('4 players must support an exile (8 players, alive or dead)');
+	await page.keyboard.press('Escape');
+	await expect(counts).toBeHidden();
 	await page.keyboard.press('Escape');
 	await expect(script).toBeHidden();
 
