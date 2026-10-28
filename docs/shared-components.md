@@ -25,7 +25,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - The menu (You, App, build line, CCC logo): `features/shell/NavList.svelte`, in the sidebar (`AppNav`) and the drawer (`NavDrawer`) alike; there is no app header or footer (enforced by `e2e/navigation.e2e.ts`)
 - A bottom sheet (a centred panel on a computer): `ui/primitives/BottomSheet.svelte`; `wide` for two columns, laid out by the sheet's own width (enforced by review)
 - A short menu of actions behind ⋯: `ui/primitives/Menu.svelte` (icon trigger, one row per action, disabled rows kept in place; Join game's ⋯) (enforced by `e2e/public-town.e2e.ts`)
-- The rooms this device joined as a player: `features/room/YourGames.svelte` (Join game's Your games; Resume game links to it) (enforced by review)
+- The rooms this device joined as a player: `features/room/YourGames.svelte` (Join or resume's As player, above the saved games of `features/grimoire/SavedGamesSection.svelte`) (enforced by review)
 - The build line (version, commit, other build): `features/about/BuildLine.svelte`, at the end of the menu above the CCC logo (enforced by `e2e/app.e2e.ts`)
 - Where a sticky piece stops at the top: the `--app-top` token (the status bar's inset) (enforced by review)
 - A section of a page: `ui/layout/PageSection.svelte` (enforced by review)
