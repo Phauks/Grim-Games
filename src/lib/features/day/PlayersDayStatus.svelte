@@ -33,6 +33,11 @@
 	 * `wide`, on the player screen's own row (Trevor, 2026-10-27: "a sun that takes up 80% of the
 	 * width", "flat arc ... more circular"): the sun crosses a shallow slice of a circle across
 	 * 80% of the row. That slot is kept in every phase, so the row is as tall at night as by day.
+	 *
+	 * The sun's look (Trevor, 2026-10-28): it rides the arc from horizon to horizon and pulses
+	 * slowly, with no rays. The path it has crossed is a solid line, and the sky beneath it turns
+	 * from gold in the morning through amber to red as the time runs out. At night the slot shows
+	 * a night sky instead, a crescent moon and stars with no arc, so it is never empty.
 	 */
 	interface Props {
 		phase: PlayersPhase;
@@ -91,6 +96,16 @@
 	 * path (Trevor, 2026-10-27), wherever the timer stopped.
 	 */
 	const left = $derived(phase.kind === 'town' ? 0 : watched.left);
+	/**
+	 * The sky's colour by the share of the day used: gold to amber over the first 60%, then
+	 * amber to red, as `--sky-from`, `--sky-to` and how far between them.
+	 */
+	const skyStyle = $derived.by(() => {
+		const used = 1 - left;
+		const [from, to, share] =
+			used < 0.6 ? ['morning', 'afternoon', used / 0.6] : ['afternoon', 'late', (used - 0.6) / 0.4];
+		return `--sky-from: var(--sky-${from}); --sky-to: var(--sky-${to}); --sky-mix: ${Math.round(share * 100)}%`;
+	});
 	/** Where the sun is along its path: the share of the day's time used. */
 	const angle = $derived(Math.PI * left);
 	const sunX = $derived(CX + R * Math.cos(angle));
@@ -104,10 +119,12 @@
 	 */
 	const SKY_W = 270;
 	const SKY_H = 60;
-	const GROUND = SKY_H - 4;
-	const CHORD = SKY_W - 16;
-	/** How high the arc rises over the horizon. */
-	const RISE = GROUND - 11;
+	/** Room under the horizon for the sun's lower half as it rises and sets. */
+	const GROUND = SKY_H - 10;
+	/** Room at either end for the sun's glow. */
+	const CHORD = SKY_W - 34;
+	/** How high the arc rises over the horizon, leaving room above for the sun's glow. */
+	const RISE = GROUND - 16;
 	const SKY_R = CHORD ** 2 / (8 * RISE) + RISE / 2;
 	/** Half the angle the arc spans, seen from the circle's centre. */
 	const SPAN = Math.asin(CHORD / 2 / SKY_R);
@@ -115,6 +132,28 @@
 	const wideX = $derived(SKY_W / 2 + SKY_R * Math.sin(along));
 	const wideY = $derived(GROUND - RISE + SKY_R - SKY_R * Math.cos(along));
 	const wideArc = `M${(SKY_W - CHORD) / 2} ${GROUND} A${SKY_R} ${SKY_R} 0 0 1 ${(SKY_W + CHORD) / 2} ${GROUND}`;
+	/** The night's stars, in the wide sky's units: scattered, a few brighter. */
+	const STARS = [
+		[18, 30],
+		[34, 12],
+		[52, 40],
+		[70, 22],
+		[88, 8],
+		[104, 34],
+		[122, 16],
+		[140, 44],
+		[158, 26],
+		[176, 8],
+		[214, 18],
+		[232, 42],
+		[250, 26],
+		[262, 10],
+		[44, 26],
+		[134, 4],
+		[226, 6]
+	] as const;
+	/** The moon, up and to the right of the middle. */
+	const MOON = { x: 196, y: 20, r: 9 };
 </script>
 
 <svelte:element
@@ -138,10 +177,64 @@
 	{#if wide}
 		<!-- Kept in every phase, so the row never changes height. -->
 		<span class="sky-slot">
-			{#if showTimer}{@render shownTimer()}{/if}
+			{#if showTimer}{@render shownTimer()}{:else if phase.kind === 'night'}{@render nightSky()}{/if}
 		</span>
 	{:else if showTimer}{@render shownTimer()}{/if}
 </svelte:element>
+
+{#snippet nightSky()}
+	<!-- Only a picture: the words beside it say which night it is. -->
+	<svg
+		class="wide-sun night-sky"
+		data-testid="players-night-sky"
+		viewBox="0 0 {SKY_W} {SKY_H}"
+		aria-hidden="true"
+	>
+		<linearGradient id="{id}-night" x1="0" y1="0" x2="0" y2="1">
+			<stop class="night-top" offset="0" />
+			<stop class="night-low" offset="1" />
+		</linearGradient>
+		<!-- The sky fades out at either end rather than stopping at an edge. -->
+		<linearGradient id="{id}-ends" x1="0" y1="0" x2="1" y2="0">
+			<stop class="hidden" offset="0" />
+			<stop class="shown" offset="0.12" />
+			<stop class="shown" offset="0.88" />
+			<stop class="hidden" offset="1" />
+		</linearGradient>
+		<mask id="{id}-fade"
+			><rect x="0" y="0" width={SKY_W} height={GROUND} fill="url(#{id}-ends)" /></mask
+		>
+		<mask id="{id}-crescent">
+			<rect class="shown" x="0" y="0" width={SKY_W} height={SKY_H} />
+			<circle
+				class="hidden"
+				cx={MOON.x + MOON.r * 0.45}
+				cy={MOON.y - MOON.r * 0.3}
+				r={MOON.r * 0.85}
+			/>
+		</mask>
+		<rect
+			x="0"
+			y="0"
+			width={SKY_W}
+			height={GROUND}
+			fill="url(#{id}-night)"
+			mask="url(#{id}-fade)"
+		/>
+		{#each STARS as [x, y], i (i)}
+			<circle
+				class="star"
+				data-bright={i % 3 ? undefined : ''}
+				cx={x}
+				cy={y}
+				r={i % 4 ? 0.9 : 1.5}
+			/>
+		{/each}
+		<circle class="moon-glow" cx={MOON.x} cy={MOON.y} r={MOON.r * 1.6} />
+		<circle class="moon" cx={MOON.x} cy={MOON.y} r={MOON.r} mask="url(#{id}-crescent)" />
+		<line class="horizon" x1="6" y1={GROUND} x2={SKY_W - 6} y2={GROUND} />
+	</svg>
+{/snippet}
 
 {#snippet shownTimer()}
 	{#if timer}
@@ -150,6 +243,7 @@
 			data-testid="players-timer"
 			data-look={timer.look}
 			data-done={watched.done || phase.kind === 'town' ? '' : undefined}
+			style={skyStyle}
 		>
 			{#if timer.look === 'sun' && wide}
 				<svg
@@ -158,15 +252,17 @@
 					role="img"
 					aria-label={t('day.sunLabel', { percent: Math.round(left * 100) })}
 				>
+					{@render skyGradient()}
 					<clipPath id="{id}-wide"><rect x="0" y="0" width={wideX} height={GROUND} /></clipPath>
-					<path class="sky" d="{wideArc} Z" clip-path="url(#{id}-wide)" />
+					<path d="{wideArc} Z" fill="url(#{id}-sky)" clip-path="url(#{id}-wide)" />
 					<path class="path" d={wideArc} />
+					<path class="crossed" d={wideArc} clip-path="url(#{id}-wide)" />
+					<line class="horizon" x1="6" y1={GROUND} x2={SKY_W - 6} y2={GROUND} />
+					<!-- Over the horizon, so it rises and sets on the arc's ends. -->
 					<g class="sun">
-						<circle class="glow" cx={wideX} cy={wideY} r="10" />
-						<circle cx={wideX} cy={wideY} r="6.5" />
+						<circle class="glow" cx={wideX} cy={wideY} r="12" />
+						<circle class="disc" cx={wideX} cy={wideY} r="7.5" />
 					</g>
-					<rect class="ground" x="0" y={GROUND} width={SKY_W} height={SKY_H - GROUND} />
-					<line class="horizon" x1="4" y1={GROUND} x2={SKY_W - 4} y2={GROUND} />
 				</svg>
 			{:else if timer.look === 'sun'}
 				<svg
@@ -175,21 +271,30 @@
 					aria-label={t('day.sunLabel', { percent: Math.round(left * 100) })}
 				>
 					<!-- The sky beneath the sun's path so far, filled from the left up to the sun. -->
+					{@render skyGradient()}
 					<clipPath id="{id}-passed"><rect x="0" y="0" width={sunX} height={HORIZON} /></clipPath>
-					<path class="sky" d={sky} clip-path="url(#{id}-passed)" />
+					<path d={sky} fill="url(#{id}-sky)" clip-path="url(#{id}-passed)" />
 					<path class="path" d={path} />
+					<path class="crossed" d={path} clip-path="url(#{id}-passed)" />
+					<line class="horizon" x1="3" y1={HORIZON} x2="45" y2={HORIZON} />
 					<g class="sun">
 						<circle class="glow" cx={sunX} cy={sunY} r="5.5" />
-						<circle cx={sunX} cy={sunY} r="3.5" />
+						<circle class="disc" cx={sunX} cy={sunY} r="3.5" />
 					</g>
-					<rect class="ground" x="0" y={HORIZON} width="48" height="10" />
-					<line class="horizon" x1="3" y1={HORIZON} x2="45" y2={HORIZON} />
 				</svg>
 			{:else}
 				<span class="clock" role="timer" aria-label={t('day.timer')}>{watched.clock}</span>
 			{/if}
 		</span>
 	{/if}
+{/snippet}
+
+{#snippet skyGradient()}
+	<!-- The sky under the sun's crossed path, strongest at the top. -->
+	<linearGradient id="{id}-sky" x1="0" y1="0" x2="0" y2="1">
+		<stop class="sky-top" offset="0" />
+		<stop class="sky-low" offset="1" />
+	</linearGradient>
 {/snippet}
 
 {#if counts}
@@ -268,16 +373,22 @@
 		height: 100%;
 		justify-content: center;
 	}
+	/* The sun's glow may spill into the row's padding as it pulses on the horizon. */
 	svg.wide-sun {
 		width: 100%;
 		height: 100%;
+		overflow: visible;
 	}
 	.wide-sun .path {
 		stroke-width: 1.2;
-		stroke-dasharray: 3 3;
+		stroke-dasharray: 1.5 4;
+	}
+	.wide-sun .crossed {
+		stroke-width: 1.8;
+		stroke-dasharray: none;
 	}
 	.wide-sun .horizon {
-		stroke-width: 2.5;
+		stroke-width: 2;
 	}
 	.sky-slot .clock {
 		font-size: 1.75rem;
@@ -328,26 +439,101 @@
 		height: 2.35rem;
 		overflow: hidden;
 	}
-	/* The heading's gold, so it reads as a sun on every theme. */
-	.sun {
-		fill: var(--heading);
+	/* The sky's colour for the time of day (skyStyle), between two of the theme's sky colours. */
+	.players-timer {
+		--sky: color-mix(in srgb, var(--sky-from), var(--sky-to) var(--sky-mix));
+		/* colour-ok: the share moves with the day's time */
 	}
-	.glow {
+	.sun {
+		fill: var(--sky-sun);
+	}
+	.sun .glow {
+		fill: var(--sky);
 		opacity: 0.3;
 	}
-	.sky {
-		fill: var(--heading);
-		opacity: 0.45;
+	/* The sun breathes slowly (Trevor, 2026-10-28): its glow swells and fades, the disc with it. */
+	.sun .glow,
+	.sun .disc {
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.sun .glow {
+			animation: sun-glow 4s ease-in-out infinite;
+		}
+		.sun .disc {
+			animation: sun-swell 4s ease-in-out infinite;
+		}
+	}
+	@keyframes sun-glow {
+		0%,
+		100% {
+			transform: scale(0.9);
+			opacity: 0.35;
+		}
+		50% {
+			transform: scale(1.25);
+			opacity: 0.12;
+		}
+	}
+	@keyframes sun-swell {
+		0%,
+		100% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.04);
+		}
+	}
+	.sky-top {
+		stop-color: var(--sky);
+		stop-opacity: 0.6;
+	}
+	.sky-low {
+		stop-color: var(--sky);
+		stop-opacity: 0.1;
+	}
+	.crossed {
+		fill: none;
+		stroke: var(--sky);
+		stroke-width: 1.2;
+	}
+	.night-top {
+		stop-color: var(--sky-night);
+		stop-opacity: 0;
+	}
+	.night-low {
+		stop-color: var(--sky-night);
+		stop-opacity: 0.75;
+	}
+	/* Mask paint: white shows, black hides. */
+	.shown {
+		stop-color: white; /* colour-ok: a mask's paint, never seen */
+		fill: white; /* colour-ok: a mask's paint, never seen */
+	}
+	.hidden {
+		stop-color: black; /* colour-ok: a mask's paint, never seen */
+		fill: black; /* colour-ok: a mask's paint, never seen */
+	}
+	.star {
+		fill: var(--sky-moon);
+		opacity: 0.55;
+	}
+	.star[data-bright] {
+		opacity: 0.9;
+	}
+	.moon,
+	.moon-glow {
+		fill: var(--sky-moon);
+	}
+	.moon-glow {
+		opacity: 0.08;
 	}
 	.path {
 		fill: none;
 		stroke: var(--on-surface-muted);
 		stroke-width: 0.75;
 		stroke-dasharray: 1.5 1.5;
-	}
-	/* Below the horizon the sun is hidden by the ground, the row's own fill. */
-	.ground {
-		fill: var(--surface-raised);
 	}
 	.horizon {
 		stroke: var(--on-surface-muted);
