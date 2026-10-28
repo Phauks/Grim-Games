@@ -2,7 +2,7 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import type { InfoPicker, NightStep } from '#lib/core/rules/index.ts';
-	import { yesNoAnswers, yesNoSeats } from '#lib/core/rules/index.ts';
+	import { answerText, yesNoAnswers, yesNoSeats } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -14,8 +14,10 @@
 
 	/**
 	 * The answer a "yes or no" step gives (Fortune Teller, Seamstress; Trevor, 2026-10-28:
-	 * info characters with no options yet): the Storyteller picks the two players chosen and
-	 * the valid answers follow, from core's `yesNoAnswers`. Too many pairs to list them all.
+	 * info characters with no options yet): the Storyteller picks the players chosen and the
+	 * valid answers follow, from core's `yesNoAnswers`. Too many pairs to list them all. The
+	 * same two-answer step gives a chosen player's alignment (Village Idiot) and, with no one
+	 * to choose, a direction (Shugenja).
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -98,9 +100,9 @@
 					<ul class="valid" aria-label="Valid information">
 						{#each answers(p) as a (a.yes)}
 							<li data-reason={a.reason}>
-								<strong>{a.yes ? 'Yes' : 'No'}</strong>
+								<strong>{answerText(p.answer, a.yes)}</strong>
 								<NightReasonTag {grimoire} reason={a.reason} registered={a.registered} />
-								{#if onShowAnswer}
+								{#if onShowAnswer && !p.answer}
 									<Button variant="quiet" onclick={() => onShowAnswer(a.yes)}>Show to player</Button
 									>
 								{/if}

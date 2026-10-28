@@ -1,4 +1,7 @@
 {
+	"learns": {
+		"measure": "closest-evil-direction"
+	},
 	"dayReminders": {
 		"none": "first-night info"
 	},
