@@ -39,5 +39,6 @@
 		}
 	},
 	"choosesLikeDemon": "Chosen",
-	"believesOtherCharacter": true
+	"believesOtherCharacter": true,
+	"believesType": "demon"
 }

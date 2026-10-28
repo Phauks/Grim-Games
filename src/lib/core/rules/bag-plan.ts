@@ -15,6 +15,7 @@
  *   (https://wiki.bloodontheclocktower.com/Lunatic).
  * - Fabled and Loric are rule characters and never go in the bag.
  */
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
@@ -92,8 +93,8 @@ export interface BagPlanInput {
 
 /** Whether the character's tile shows something else, and what kind. */
 export function standInKind(character: Character): StandInKind | undefined {
-	if (character.id === 'lunatic' && character.edition !== undefined) return 'demon';
-	return undefined;
+	const believes = rulesOf(character.id, new Map([[character.id, character]]))?.believesType;
+	return believes === 'demon' ? 'demon' : undefined;
 }
 
 export function isRuleCharacter(type: CharacterType): boolean {
