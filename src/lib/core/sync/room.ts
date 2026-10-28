@@ -218,7 +218,11 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	const reports = pictureReports(room);
 	if (reports.length) view.pictureReports = reports;
 	if (room.messages?.length) view.messages = room.messages;
-	if (room.transfer) view.transfer = { endsAt: room.transfer.endsAt, tries: room.transfer.tries };
+	if (room.transfer) {
+		const { endsAt, tries, asking } = room.transfer;
+		view.transfer = { endsAt, tries };
+		if (asking) view.transfer.asking = asking.name ? { name: asking.name } : {};
+	}
 	return view;
 }
 
