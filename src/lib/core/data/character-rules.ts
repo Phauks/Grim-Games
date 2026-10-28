@@ -20,6 +20,7 @@ import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
 import { CHOICE_RULE_KEYS, readChoiceRules, type ChoiceRules } from './choice-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
+import { readGainedFrom, type GainedFrom } from './gained-from-rules.ts';
 import { readBecomes, readMakesDemon, type Becomes, type MakesDemon } from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readImpairs, type Impairs } from './impairs-rules.ts';
@@ -185,6 +186,8 @@ export interface CharacterRules extends ChoiceRules {
 	stopsKilling?: StopsWaking;
 	/** Its token on a dead player keeps that player's ability (`keeps-ability-rules.ts`). */
 	keepsAbility?: KeepsAbility;
+	/** The ability it has is another player's, found by its token (`gained-from-rules.ts`). */
+	gainedFrom?: GainedFrom;
 	/** Its token says a player changed character or alignment (`becomes-rules.ts`). */
 	becomes?: Becomes;
 	/** On a night its token marks, it makes a chosen player a Demon (`becomes-rules.ts`). */
@@ -390,6 +393,7 @@ const RULE_KEYS = [
 	'stopsWaking',
 	'stopsKilling',
 	'keepsAbility',
+	'gainedFrom',
 	'becomes',
 	'makesDemon',
 	'infoTokenCharacters',
@@ -610,6 +614,10 @@ export function parseCharacterRules(
 		const at = `${path}.keepsAbility`;
 		const keeps = readKeepsAbility(raw.keepsAbility, at, issues, reminders);
 		if (keeps) rules.keepsAbility = keeps;
+	}
+	if (raw.gainedFrom !== undefined) {
+		const gained = readGainedFrom(raw.gainedFrom, `${path}.gainedFrom`, issues, reminders);
+		if (gained) rules.gainedFrom = gained;
 	}
 	if (raw.becomes !== undefined) {
 		const becomes = readBecomes(raw.becomes, `${path}.becomes`, issues, reminders);
