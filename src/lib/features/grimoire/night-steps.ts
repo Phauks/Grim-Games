@@ -27,6 +27,7 @@ import {
 	wakeConditionMet,
 	withCharacterChangeSteps,
 	withNightInfo,
+	type AnswerValue,
 	type Night,
 	type NightStep
 } from '#lib/core/rules/index.ts';
@@ -217,3 +218,21 @@ export const doneKey = (day: number, night: Night, step: { id: string }): string
  * and Duchess in TPI's data).
  */
 export const givesNumber = (step: NightStep): boolean => /finger signal/i.test(step.reminder ?? '');
+
+/** A suggested answer in words, for one that is not drawn as badges. */
+export function answerValueText(v: AnswerValue): string {
+	switch (v.kind) {
+		case 'yes-no':
+			return v.value ? 'Yes' : 'No';
+		case 'character':
+			// Drawn as a badge (the value snippet); only its id here.
+			return v.value;
+		case 'characters':
+			// Drawn as badges (the characters snippet); only the ids here.
+			return v.value.join(', ');
+		case 'number':
+			return String(v.value);
+		case 'none':
+			return v.reason;
+	}
+}

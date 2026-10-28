@@ -10,7 +10,7 @@
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import { TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import type { Night, NightStep } from '#lib/core/rules/index.ts';
+	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -35,6 +35,7 @@
 	import { reminderCopies, reminderKey } from './reminders.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
+	import { shownCommands } from './record-shown.ts';
 
 	/**
 	 * One night step, filled in with help (Trevor, 2026-10-16): TPI's text, who has the
@@ -209,6 +210,11 @@
 		const answer = step?.info?.kind === 'answer' ? step.info.answers[0] : undefined;
 		number = answer?.kind === 'number' ? answer.value : 0;
 	});
+	/** A row of Valid Information shown to the player is recorded (`record-shown.ts`). */
+	function record(picker: InfoPicker, choice: InfoChoice) {
+		if (grimoire.open.viewOnly) return;
+		for (const command of shownCommands(game, characters, picker, choice)) grimoire.run(command);
+	}
 	function showNumber(n: number) {
 		// Over the open step, as with a suggestion's Show to player.
 		shownId = undefined;
@@ -295,6 +301,7 @@
 				{grimoire}
 				{step}
 				onShowNumber={numberStep ? showNumber : undefined}
+				onRecord={record}
 				onShow={(id) => {
 					// Over the open step: closing the step in the same update threw inside the
 					// dialog library (an effect scheduled outside a batch, from the Undertaker's
@@ -322,12 +329,13 @@
 			<NightYesNo
 				{grimoire}
 				{step}
-				onShowAnswer={(yes) => {
+				onShowAnswer={(answer) => {
 					// The Yes/No info token, only its answer, as the Info tokens sheet shows it.
 					shownId = undefined;
-					shownCard = { detail: yes ? 'Yes' : 'No' };
+					shownCard = { detail: answer };
 					showOpen = true;
 				}}
+				onRecord={record}
 			/>
 			{#if step.character}
 				<!-- Over the open step, as with a suggestion's Show to player. -->

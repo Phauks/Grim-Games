@@ -7,6 +7,7 @@
 		AnswerValue,
 		ChosenPlayers,
 		ChosenPlayersRow,
+		InfoChoice,
 		InfoPicker,
 		LearnedRole,
 		LearnedRoles,
@@ -32,7 +33,7 @@
 	import NightReasonTag from './NightReasonTag.svelte';
 	import NightWhy from './NightWhy.svelte';
 	import CharacterSet from './CharacterSet.svelte';
-	import { seatName } from './night-steps.ts';
+	import { answerValueText, seatName } from './night-steps.ts';
 
 	/**
 	 * What the game says for a night step (Trevor, 2026-10-16), from core's `withNightInfo`:
@@ -52,9 +53,19 @@
 		onShowCharacters?: (set: Extract<AnswerValue, { kind: 'characters' }>) => void;
 		/** Show the "Your number is" info token with a suggested number (a number step). */
 		onShowNumber?: (n: number) => void;
+		/** A picker's row was shown to the player: record it (`record-shown.ts`). */
+		onRecord?: (picker: InfoPicker, choice: InfoChoice) => void;
 	}
 
-	let { grimoire, step, compact = false, onShow, onShowCharacters, onShowNumber }: Props = $props();
+	let {
+		grimoire,
+		step,
+		compact = false,
+		onShow,
+		onShowCharacters,
+		onShowNumber,
+		onRecord
+	}: Props = $props();
 	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
@@ -62,23 +73,6 @@
 	const assistance = $derived(preferences.current.assistance);
 	const info = $derived(step.info);
 	const name = (seatId: SeatId) => seatName(game, seatId);
-
-	function valueText(v: AnswerValue): string {
-		switch (v.kind) {
-			case 'yes-no':
-				return v.value ? 'Yes' : 'No';
-			case 'character':
-				// Drawn as a badge (the value snippet); only its id here.
-				return v.value;
-			case 'characters':
-				// Drawn as badges (the characters snippet); only the ids here.
-				return v.value.join(', ');
-			case 'number':
-				return String(v.value);
-			case 'none':
-				return v.reason;
-		}
-	}
 
 	/**
 	 * Why an answer may not be the truth: the Vortox, registration. Allowed values are drawn
@@ -193,6 +187,12 @@
 		if (id) onShow?.(id);
 		else listOpen = { ...listOpen, [key]: true };
 	}
+	/** Shows a role and records it: whole once the second player of a pair is known. */
+	function showRole(p: InfoPicker, row: LearnedRole, key: string, id: CharacterId | undefined) {
+		showOrPick(key, id);
+		const seats = row.other ? [row.target, row.other] : [row.target];
+		if (id) onRecord?.(p, { seats, characterId: id });
+	}
 	const shownRole = (p: InfoPicker, row: LearnedRole): CharacterId | undefined =>
 		row.characterIds.length === 1 ? row.characterIds[0] : shownAs[rowKey(p, row)];
 	/**
@@ -277,7 +277,7 @@
 				if (a.kind === 'characters') return { set: a, text: note };
 				return a.kind === 'character'
 					? { characterId: a.value, text: note }
-					: { text: `${valueText(a)}${note}` };
+					: { text: `${answerValueText(a)}${note}` };
 			}
 			if (info.kind === 'picker') {
 				return {
@@ -313,9 +313,10 @@
 {#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
 			characterId={v.value}
 			character={characters.get(v.value)}
-		/>{:else if v.kind === 'characters'}<CharacterSet value={v} {characters} />{:else}{valueText(
-			v
-		)}{/if}{/snippet}
+		/>{:else if v.kind === 'characters'}<CharacterSet
+			value={v}
+			{characters}
+		/>{:else}{answerValueText(v)}{/if}{/snippet}
 
 {#snippet flagBody(flag: Flag)}{#if flag.character}<CharacterBadge
 			characterId={flag.character}
@@ -395,7 +396,7 @@
 			{:else if o.value.kind === 'characters'}
 				<CharacterSet value={o.value} {characters} />
 			{:else}
-				<strong>{valueText(o.value)}</strong>
+				<strong>{answerValueText(o.value)}</strong>
 			{/if}
 			{#if i === 0 && a.because.length > 0}<span class="because"
 					>({@render players(a.because)})</span
@@ -424,7 +425,7 @@
 		{:else if a.kind === 'characters'}
 			<CharacterSet value={a} {characters} />
 		{:else}
-			<strong>{valueText(a)}</strong>
+			<strong>{answerValueText(a)}</strong>
 		{/if}
 		{#if a.because.length > 0}<span class="because">({@render players(a.because)})</span>{/if}
 	</span>
@@ -502,7 +503,13 @@
 									<NightReasonTag {grimoire} reason={v.reason} registered={v.registered} />
 									{#if v.number !== undefined && onShowNumber}
 										{@const n = v.number}
-										<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+										<Button
+											variant="quiet"
+											onclick={() => {
+												onShowNumber(n);
+												onRecord?.(p, { seats: [], number: n });
+											}}>Show to player</Button
+										>
 									{/if}
 								</li>
 							{/each}
@@ -678,7 +685,7 @@
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
 		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
 		{#if onShow}
-			<Button variant="quiet" onclick={() => showOrPick(key, id)}>Show to player</Button>
+			<Button variant="quiet" onclick={() => showRole(p, row, key, id)}>Show to player</Button>
 		{/if}
 	</li>
 {/snippet}
