@@ -17,7 +17,7 @@
 
 	const host = roomHost();
 	const gameId = $derived(game.game.gameId);
-	const shown = $derived(host.rolesShown === gameId);
+	const shown = $derived(host.rolesShown.gameId === gameId);
 	const roles = $derived(seatRoles(game.game, game.characters));
 	const seats = $derived(seatsInOrder(game.game));
 	const phones = $derived(new Set(host.members.flatMap((m) => (m.seatId ? [m.seatId] : []))));
