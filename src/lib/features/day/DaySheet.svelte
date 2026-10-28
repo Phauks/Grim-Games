@@ -7,7 +7,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
-	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
+	import GameLead from '#lib/features/shell/GameLead.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import type { Snippet } from 'svelte';
@@ -16,8 +16,8 @@
 
 	/**
 	 * The Storyteller's day as a sheet over the board, like the rest (Trevor, 2026-10-16:
-	 * "day should be a modal ... it can be a very big modal"): full screen on phones, nearly
-	 * all of a wider screen. Deaths, executions and exiles, ability uses and notes; every
+	 * "day should be a modal ... it can be a very big modal"): the whole screen, so ☰ and the
+	 * grim cover sit exactly where the board's do (Trevor, 2026-10-28). Deaths, executions and exiles, ability uses and notes; every
 	 * command runs on the open game, so the board behind it updates and History has it.
 	 */
 	interface Props {
@@ -60,17 +60,17 @@
 	const title = $derived(number > 0 ? t('day.titleNumber', { number }) : t('day.title'));
 </script>
 
-<Dialog bind:open {title} size="max" scroll={false}>
+<Dialog bind:open {title} size="screen" scroll={false}>
 	<!-- ☰ and the grim cover first, where they are on the board, so the cover doesn't move
 	     (Trevor, 2026-10-27); the day's name is at the bottom instead (his pick, G3), and named
 	     here only for screen readers. -->
-	{#snippet lead()}<span class="lead"
-			><NavMenuButton /><CoverButton
+	{#snippet lead()}<GameLead
+			><CoverButton
 				gameId={game.game.gameId}
 				details={cover}
 				timer={coverTimer}
 				actions={coverActions}
-			/></span
+			/></GameLead
 		>{/snippet}
 	{#snippet heading()}<span class="visually-hidden">{title}</span>{/snippet}
 	<!-- The Soundboard beside ✕, from the day as from the board (Trevor, 2026-10-27). -->
@@ -93,10 +93,6 @@
 </Dialog>
 
 <style>
-	.lead {
-		display: flex;
-		align-items: center;
-	}
 	/* The day's name across from Execution, as the header's title looks. */
 	.day-name {
 		margin-right: auto;

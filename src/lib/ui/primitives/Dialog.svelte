@@ -14,12 +14,14 @@
 		role?: 'dialog' | 'alertdialog';
 		/**
 		 * `full` fills a phone screen and becomes a large panel on wider screens; `max` fills
-		 * a phone screen and nearly all of a wider one (the day sheet, Trevor 2026-10-16);
+		 * a phone screen and nearly all of a wider one; `screen` fills the screen at every
+		 * width, its lead in the game toolbar's spot, so ☰ and the grim cover don't move
+		 * between the board and the day sheet (GameLead, Trevor 2026-10-28);
 		 * `side` is a full-height panel sliding in from the left edge (the navigation drawer);
 		 * `wide` is a plain dialog with room for two columns on a tablet or computer (the
 		 * board's ⋯ menu, Trevor 2026-10-27).
 		 */
-		size?: 'normal' | 'wide' | 'full' | 'max' | 'side';
+		size?: 'normal' | 'wide' | 'full' | 'max' | 'screen' | 'side';
 		children: Snippet;
 		actions?: Snippet;
 		/** Shown before the title, e.g. a character badge for the seat a menu acts on. */
@@ -158,7 +160,7 @@
 						<div class="aside" data-testid="dialog-aside">{@render aside()}</div>
 						<div class="pane" data-testid="dialog-pane">{@render children()}</div>
 					</div>
-				{:else if size === 'full' || size === 'max'}
+				{:else if size === 'full' || size === 'max' || size === 'screen'}
 					<div class="body" data-scroll={scroll || undefined}>{@render children()}</div>
 				{:else}
 					{@render children()}
@@ -248,6 +250,27 @@
 			padding-top: calc(var(--space-4) + env(safe-area-inset-top));
 			padding-bottom: env(safe-area-inset-bottom);
 		}
+	}
+	/* The whole screen at every width, clear of the status bar and notch as the board is. */
+	:global([data-scope='dialog'][data-part='positioner']:has([data-size='screen'])) {
+		padding: 0;
+	}
+	:global([data-scope='dialog'][data-part='content'][data-size='screen']) {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		height: 100%;
+		max-height: none;
+		overflow: hidden;
+		border: 0;
+		border-radius: 0;
+		padding: calc(var(--app-top) + var(--menu-inset))
+			calc(env(safe-area-inset-right) + var(--space-4)) env(safe-area-inset-bottom)
+			calc(env(safe-area-inset-left) + var(--space-4));
+	}
+	/* The header's buttons --menu-inset from the edges, where the game toolbar's are. */
+	:global([data-size='screen']) > .head {
+		margin-inline: calc(var(--menu-inset) - var(--space-4));
 	}
 	:global([data-scope='dialog'][data-part='positioner']:has([data-size='side'])) {
 		place-items: stretch start;
