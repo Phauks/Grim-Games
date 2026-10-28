@@ -16,7 +16,7 @@
 
 	/**
 	 * Our printed sheet's settings (Trevor, 2026-10-19), ideas from Ravenswood Studio's script
-	 * generator: in the Print screen beside its preview, and in Settings → Player.
+	 * generator: in the Print screen beside its preview, and in Settings → Print.
 	 */
 	const print = $derived(playerSettings.current.print);
 	const set = (patch: Partial<PrintSettings>) =>
