@@ -3,36 +3,50 @@
 
 	interface Props {
 		/**
-		 * What the player is asked to keep fair: `secret` for something only they may see
-		 * (their character, info sent to their phone), `message` for what they send the
-		 * Storyteller.
+		 * What the reader is asked to keep fair: `secret` for something only they may see
+		 * (their character, info sent to their phone), `message` for what a player sends the
+		 * Storyteller, `watch` for a spectator's promise before Grim view.
 		 */
-		kind: 'secret' | 'message';
+		kind: 'secret' | 'message' | 'watch';
 	}
 
 	let { kind }: Props = $props();
 </script>
 
 <!--
-	The one fair-play notice (Trevor, 2026-10-27): wherever information on a player's phone
-	could be misused, the player is told it's a no-no. It never blocks anything: a web page
-	can't stop a screenshot, so this asks rather than enforces. Always rendered, so showing
-	or hiding what it sits beside moves nothing.
+	The one fair-play warning (Trevor, 2026-10-27: "all such warnings should be part of a
+	central component"): wherever information could be misused to spoil the game, this says
+	it's a no-no, in Trevor's own words. It never blocks anything: a web page can't stop a
+	screenshot, so it asks rather than enforces. Always rendered beside what it guards, so
+	showing or hiding that moves nothing.
 -->
-<p class="fair-play" data-testid="fair-play">
-	<strong>{t('show.fairPlay.label')}</strong>
-	{kind === 'secret' ? t('show.fairPlay.secret') : t('show.fairPlay.message')}
-</p>
+{#if kind === 'watch'}
+	<div class="watch" data-testid="fair-play">
+		<p>{t('show.fairPlay.watchLead')}</p>
+		<ul data-testid="watch-pledge">
+			<li>{t('show.fairPlay.watchCheat')}</li>
+			<li>{t('show.fairPlay.watchShare')}</li>
+			<li>{t('show.fairPlay.watchIntegrity')}</li>
+		</ul>
+	</div>
+{:else}
+	<p class="line" data-testid="fair-play">
+		{kind === 'secret' ? t('show.fairPlay.secret') : t('show.fairPlay.message')}
+	</p>
+{/if}
 
 <style>
 	p {
-		max-width: 28rem;
 		margin: 0;
+	}
+	.line {
+		max-width: 28rem;
 		font-size: 0.85rem;
 		color: var(--on-surface-muted);
 		text-align: center;
 	}
-	strong {
-		color: var(--on-surface);
+	ul {
+		margin: var(--space-2) 0 0;
+		padding-left: 1.25em;
 	}
 </style>

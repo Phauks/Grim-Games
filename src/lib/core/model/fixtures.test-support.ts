@@ -106,6 +106,25 @@ export function run(
 	return { ...current, warnings };
 }
 
+/** The codes of a decision's warnings. */
+export function codes(decision: { warnings: { code: string }[] }): string[] {
+	return decision.warnings.map((w) => w.code);
+}
+
+/** The code a refused command gives; throws if it was accepted. */
+export function refused(session: GameSession, ctx: EngineContext, command: Command): string {
+	const result = dispatch(session, command, ctx);
+	if (result.ok) throw new Error(`${command.type} was accepted`);
+	return result.error.code;
+}
+
+/** The warning codes an accepted command gives; throws if it was refused. */
+export function warned(session: GameSession, ctx: EngineContext, command: Command): string[] {
+	const result = dispatch(session, command, ctx);
+	if (!result.ok) throw new Error(`${command.type} refused: ${result.error.message}`);
+	return codes(result);
+}
+
 /** A new game with named seats, in seating order. */
 export function newGame(
 	names: string[] | number,
@@ -134,25 +153,59 @@ export function newGame(
 	return { session, ctx, seats };
 }
 
+/** A step of {@link castGame}: a command, or a function of the seat ids that returns one. */
+export type CastStep = Command | ((seats: string[]) => Command);
+
+/** What {@link castGame} returns: the session, its game, the context and the seat ids. */
+export type CastGame = {
+	session: GameSession;
+	game: GameSession['game'];
+	ctx: EngineContext;
+	seats: string[];
+};
+
 /**
- * A game with one seat per character, in seating order, then the steps run in order. A step
- * is a command, or a function of the seat ids that returns one.
+ * {@link castGame} on another script. Its characters come from that script unless
+ * `characters` is given.
  */
-export function castGame(
-	cast: CharacterId[],
-	...steps: (Command | ((seats: string[]) => Command))[]
-): { session: GameSession; ctx: EngineContext; seats: string[] } {
-	const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal', 'Ivy', 'Jo', 'Kit', 'Lu'];
-	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
-	const done = run(
-		session,
-		ctx,
-		...cast.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...steps.map((step) => (typeof step === 'function' ? step(seats) : step))
-	);
-	return { session: done, ctx, seats };
+export function castWith(options: { script?: Script; characters?: CharacterLookup } = {}) {
+	const characters =
+		options.characters ?? (options.script ? characterLookup(gameData, options.script) : undefined);
+	return (cast: CharacterId[], ...steps: CastStep[]): CastGame => {
+		const names = [
+			'Ana',
+			'Ben',
+			'Cat',
+			'Dev',
+			'Eve',
+			'Fay',
+			'Gus',
+			'Hal',
+			'Ivy',
+			'Jo',
+			'Kit',
+			'Lu'
+		];
+		const { session, ctx, seats } = newGame(names.slice(0, cast.length), {
+			script: options.script,
+			ctx: testContext({ characters })
+		});
+		const done = run(
+			session,
+			ctx,
+			...cast.map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			})),
+			...steps.map((step) => (typeof step === 'function' ? step(seats) : step))
+		);
+		return { session: done, game: done.game, ctx, seats };
+	};
 }
+
+/**
+ * A game on the test script with one named seat per character, in seating order, then the
+ * steps run in order.
+ */
+export const castGame = castWith();
