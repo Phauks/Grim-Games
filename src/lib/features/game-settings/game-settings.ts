@@ -10,6 +10,7 @@
  * from before a setting was added, or from before this record existed) is read from Settings,
  * which is how such a game always played.
  */
+import { SETUP_LOOKS, type SetupLook } from '#lib/core/rules/game-phase.ts';
 import { DAY_SECONDS_PER_ALIVE_MAX, DAY_SECONDS_PER_ALIVE_MIN } from '#lib/core/rules/day-timer.ts';
 import { TIMER_FOR_PLAYERS, type Preferences, type TimerForPlayers } from '#lib/ui/preferences.ts';
 
@@ -18,6 +19,8 @@ export interface GameSettings {
 	trackNominations: boolean;
 	/** How players' phones show the day timer. */
 	timerForPlayers: TimerForPlayers;
+	/** What players' phones show beside Setup, before the first night. */
+	setupForPlayers: SetupLook;
 	/** The day timer's starting seconds per living player. */
 	timerPerPlayer: number;
 	/** The bag draw's choices. */
@@ -37,6 +40,7 @@ export function settingsFrom(prefs: Preferences): GameSettings {
 	return {
 		trackNominations: prefs.assistance.trackNominations,
 		timerForPlayers: prefs.timerForPlayers,
+		setupForPlayers: prefs.setupForPlayers,
 		timerPerPlayer: prefs.timerPerPlayer,
 		requireName: prefs.requireName,
 		holdToReveal: prefs.holdToReveal,
@@ -70,6 +74,9 @@ export function parseGameSettings(raw: unknown, fallback: GameSettings): GameSet
 		timerForPlayers: (TIMER_FOR_PLAYERS as readonly unknown[]).includes(r.timerForPlayers)
 			? (r.timerForPlayers as TimerForPlayers)
 			: fallback.timerForPlayers,
+		setupForPlayers: (SETUP_LOOKS as readonly unknown[]).includes(r.setupForPlayers)
+			? (r.setupForPlayers as SetupLook)
+			: fallback.setupForPlayers,
 		timerPerPlayer:
 			Number.isInteger(seconds) &&
 			(seconds as number) >= DAY_SECONDS_PER_ALIVE_MIN &&

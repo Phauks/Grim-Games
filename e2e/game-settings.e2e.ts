@@ -33,6 +33,11 @@ test('Game settings is its own start step, and a choice there is kept for that g
 	await page.keyboard.press('Escape');
 	await settings.getByText('Track nominations', { exact: true }).tap();
 	await expect(track).toBeChecked();
+	// What phones show beside Setup is chosen here too (Trevor, 2026-10-28).
+	const look = settings.getByRole('combobox', { name: 'Setup on players’ phones' });
+	await look.tap();
+	await page.getByRole('option', { name: 'Town at dusk', exact: true }).tap();
+	await expect(look).toHaveText(/Town at dusk/);
 	await onToBoard(page);
 	await expect(marks(page)).toBeVisible();
 
@@ -46,6 +51,9 @@ test('Game settings is its own start step, and a choice there is kept for that g
 	await expect(
 		dialog.getByRole('checkbox', { name: 'Track nominations', includeHidden: true })
 	).toBeChecked();
+	await expect(dialog.getByRole('combobox', { name: 'Setup on players’ phones' })).toHaveText(
+		/Town at dusk/
+	);
 	await dialog.getByText('Track nominations', { exact: true }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(marks(page)).toHaveCount(0);

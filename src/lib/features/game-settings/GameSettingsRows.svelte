@@ -1,5 +1,6 @@
 <script lang="ts">
 	import TimerPerPlayerRow from '#lib/features/day/TimerPerPlayerRow.svelte';
+	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import { TIMER_FOR_PLAYERS } from '#lib/ui/preferences.ts';
@@ -37,6 +38,13 @@
 	onChange={(timerForPlayers) => gameSettings.set(gameId, { timerForPlayers })}
 />
 <TimerPerPlayerRow game />
+<SettingSelect
+	label={t('day.setupForPlayers')}
+	value={values.setupForPlayers}
+	options={SETUP_LOOKS.map((value) => ({ value, label: t(`day.setupForPlayers.${value}`) }))}
+	defaultValue="candles"
+	onChange={(setupForPlayers) => gameSettings.set(gameId, { setupForPlayers })}
+/>
 
 <SettingHeading title={t('settings.groupSetup')} />
 <BagDrawRows {values} onChange={(change) => gameSettings.set(gameId, change)} />
