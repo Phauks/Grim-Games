@@ -57,8 +57,9 @@ export interface FrameProgress {
 /**
  * How a frame moves (Trevor, 2026-10-28: motion in the laurel settings): a light sweeping
  * across it or round it either way, or the whole frame turning either way (sway dropped,
- * Trevor 2026-10-28: "I don't like it"). Plain CSS on the whole frame, so a full town stays
- * smooth; reduced motion keeps every frame still.
+ * Trevor 2026-10-28: "I don't like it"), then Pulse, Breathe, Twinkle, Regrow and Flicker
+ * (Trevor, 2026-10-28: "add the additional motion settings"). Plain CSS on the whole frame,
+ * so a full town stays smooth; reduced motion keeps every frame still.
  */
 export const FRAME_MOTIONS = [
 	'none',
@@ -66,7 +67,12 @@ export const FRAME_MOTIONS = [
 	'shimmer-cw',
 	'shimmer-ccw',
 	'rotate-cw',
-	'rotate-ccw'
+	'rotate-ccw',
+	'pulse',
+	'breathe',
+	'twinkle',
+	'regrow',
+	'flicker'
 ] as const;
 export type FrameMotion = (typeof FRAME_MOTIONS)[number];
 
@@ -76,7 +82,12 @@ export const FRAME_MOTION_NAMES: Record<FrameMotion, string> = {
 	'shimmer-cw': 'Clockwise shimmer',
 	'shimmer-ccw': 'Counter-clockwise shimmer',
 	'rotate-cw': 'Rotate clockwise',
-	'rotate-ccw': 'Rotate counter-clockwise'
+	'rotate-ccw': 'Rotate counter-clockwise',
+	pulse: 'Pulse',
+	breathe: 'Breathe',
+	twinkle: 'Twinkle',
+	regrow: 'Regrow',
+	flicker: 'Flicker'
 };
 
 /** A frame's shape, which any colour can be drawn in. */
