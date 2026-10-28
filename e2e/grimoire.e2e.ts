@@ -2914,14 +2914,15 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	await expect(counts.getByTestId('count-players')).toHaveText('9');
 	await expect(counts.getByTestId('count-traveller')).toHaveText('1');
 	await expect(counts.getByTestId('count-outsider')).toHaveText('1');
-	// Tapping everyone's count shows the whole setup sheet, this table's column marked
+	// Tapping everyone's count pops up the whole setup sheet, this table's column marked
 	// (Trevor, 2026-10-28; https://wiki.bloodontheclocktower.com/Setup).
 	await counts.getByTestId('count-info-players').tap();
-	const sheetDialog = page.getByRole('dialog', { name: 'Setup sheet' });
-	await expect(sheetDialog.getByTestId('setup-table')).toBeVisible();
-	await expect(sheetDialog.locator('th[data-current]')).toHaveText('8');
-	await sheetDialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(sheetDialog).toBeHidden();
+	const setupSheet = page.getByTestId('count-sheet');
+	await expect(setupSheet.getByTestId('setup-table')).toBeVisible();
+	await expect(setupSheet.locator('th[data-current]')).toHaveText('8');
+	// As the type counts' popups do, a second tap closes it.
+	await counts.getByTestId('count-info-players').tap();
+	await expect(setupSheet).toBeHidden();
 	await page.keyboard.press('Escape');
 	await expect(script).toBeHidden();
 	await menu(page, 'Add Fabled or Loric');
