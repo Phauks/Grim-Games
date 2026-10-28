@@ -213,7 +213,7 @@
 				<!-- Only while a living Traveller is in play: nobody else can be exiled. -->
 				<li>
 					<CountBadge kind="votes" label={exileLabel!} testid="players-exile-needed"
-						><Icon name="vote" />{counts.exile}</CountBadge
+						><Icon name="exile" />{counts.exile}</CountBadge
 					><span>{exileLabel}</span>
 				</li>
 			{/if}

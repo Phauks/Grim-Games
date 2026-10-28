@@ -80,6 +80,7 @@ import ph_scan from '~icons/ph/scan';
 import ph_selection from '~icons/ph/selection';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
+import ph_sign_out from '~icons/ph/sign-out';
 import ph_sliders from '~icons/ph/sliders';
 import ph_smiley from '~icons/ph/smiley';
 import ph_smiley_angry from '~icons/ph/smiley-angry';
@@ -189,6 +190,7 @@ const icons: IconMap = {
 	'ph:selection': ph_selection,
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,
+	'ph:sign-out': ph_sign_out,
 	'ph:sliders': ph_sliders,
 	'ph:smiley': ph_smiley,
 	'ph:smiley-angry': ph_smiley_angry,
