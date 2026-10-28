@@ -1767,6 +1767,7 @@
 		version={scriptVersion(undefined, loadedScript?.meta)}
 		share={scriptShare}
 		room={watching ? undefined : roomHost().code}
+		storyteller
 	/>
 {/snippet}
 {#snippet scriptSubtitle()}

@@ -25,9 +25,14 @@
 		room?: string;
 		/** The room this phone has joined, whose name the cog sets; none on the board. */
 		joined?: string;
+		/**
+		 * The Storyteller's copy of this line (the board's Script, the grim cover's Player view):
+		 * every button a phone in `room` has shows here too, without acting as a player of it.
+		 */
+		storyteller?: boolean;
 	}
 
-	let { script, version, share, room, joined }: Props = $props();
+	let { script, version, share, room, joined, storyteller = false }: Props = $props();
 	const target = $derived.by(() => {
 		if (!share) return undefined;
 		const from = share;
@@ -36,7 +41,7 @@
 </script>
 
 <!-- A message to the Storyteller, first, while this phone is in a room (Trevor, 2026-10-27). -->
-<MessageButton room={joined} />
+<MessageButton room={storyteller ? room : joined} preview={storyteller} />
 <!-- One switch for the Script and Night tabs, beside Print and Share (Trevor, 2026-10-23). -->
 {#if script}
 	<SheetBackgroundSelect compact />
