@@ -1,4 +1,5 @@
 /** Random tokens, codes and hashes for sign-in, from Web Crypto. */
+import { sha256Hex, toHex } from '../../src/lib/core/codes/hash.ts';
 import { CODE_LENGTH } from '../../src/lib/features/account/account-protocol.ts';
 
 function base64Url(bytes: Uint8Array): string {
@@ -24,8 +25,7 @@ export function randomCode(): string {
 
 /** SHA-256 as hex. Secrets are stored only as hashes, so a storage leak can't sign anyone in. */
 export async function sha256(text: string): Promise<string> {
-	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-	return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+	return sha256Hex(text);
 }
 
 /** Compares two equal-length hex hashes without stopping at the first difference. */
@@ -60,5 +60,5 @@ export async function passwordHash(
 		key,
 		256
 	);
-	return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, '0')).join('');
+	return toHex(bits);
 }

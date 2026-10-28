@@ -16,7 +16,7 @@ import {
 } from './validate.ts';
 
 /** Why an ability does not work. `no-ability`: an effect such as the Preacher's. */
-export const IMPAIRMENT_REASONS = ['drunk', 'poisoned', 'no-ability'] as const;
+const IMPAIRMENT_REASONS = ['drunk', 'poisoned', 'no-ability'] as const;
 export type ImpairmentReason = (typeof IMPAIRMENT_REASONS)[number];
 
 /**
@@ -26,7 +26,7 @@ export type ImpairmentReason = (typeof IMPAIRMENT_REASONS)[number];
  * board (the Minstrel's "Everyone Is Drunk"), only `type` players when given (the Xaan's "X"
  * poisons every Townsfolk).
  */
-export const IMPAIRS_ON = ['carrier', 'others'] as const;
+const IMPAIRS_ON = ['carrier', 'others'] as const;
 export interface TokenImpairment {
 	reason: ImpairmentReason;
 	on: (typeof IMPAIRS_ON)[number];

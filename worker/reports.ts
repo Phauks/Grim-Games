@@ -1,3 +1,4 @@
+import { noStore, text } from './http.ts';
 import {
 	isReportStatus,
 	parseReportDraft,
@@ -21,12 +22,6 @@ export interface ReportsEnv extends AccountEnv, AdminsEnv {
 	REPORT_CREATES: RateLimit;
 	/** "off" only in the local e2e server, like SHARE_LIMITS. */
 	SHARE_LIMITS?: string;
-}
-
-const noStore = { 'Cache-Control': 'no-store' };
-
-function text(message: string, status: number): Response {
-	return new Response(message, { status, headers: noStore });
 }
 
 /**

@@ -24,7 +24,7 @@ export function blockThreshold(game: Game): BlockThreshold {
 }
 
 /** Votes needed to put the first nominee on the block: half the living, rounded up. */
-export function neededToBlock(alive: number): number {
+function neededToBlock(alive: number): number {
 	return Math.ceil(alive / 2);
 }
 

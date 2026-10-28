@@ -6,14 +6,7 @@ import { parse } from 'svelte/compiler';
  * (`{t('…')}`, `{name}`) are not text and are skipped, as are <script>, <style>, <code>
  * and <pre>, and text with no letters (punctuation, numbers, "×").
  */
-export const TEXT_ATTRIBUTES = [
-	'aria-label',
-	'aria-description',
-	'title',
-	'placeholder',
-	'alt',
-	'label'
-];
+const TEXT_ATTRIBUTES = ['aria-label', 'aria-description', 'title', 'placeholder', 'alt', 'label'];
 const SKIPPED_ELEMENTS = new Set(['code', 'pre', 'svg']);
 const WORD = /\p{L}{2,}/u;
 
