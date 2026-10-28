@@ -26,7 +26,7 @@ import { checkKeys, describe, isObject, readEnum, readNumber, type Issues } from
 /** `self`: the character whose step it is; `chosen`: the player the Storyteller taps. */
 export type FilledCharacter = 'self' | 'chosen' | CharacterId;
 
-export const INFO_TOKEN_OTHERS = ['opposite-alignment'] as const;
+const INFO_TOKEN_OTHERS = ['opposite-alignment'] as const;
 
 export const INFO_TOKEN_ORDERS = ['good-first'] as const;
 

@@ -16,8 +16,8 @@ import type { ReminderLabel } from './types.ts';
 import { checkKeys, describe, isObject, readEnum, type Issues } from './validate.ts';
 import { readToken } from './reminder-fields.ts';
 
-export const BECOMES_INTO = ['demon', 'evil', 'swap'] as const;
-export const BECOMES_WHEN = ['placed', 'removed'] as const;
+const BECOMES_INTO = ['demon', 'evil', 'swap'] as const;
+const BECOMES_WHEN = ['placed', 'removed'] as const;
 
 export interface Becomes {
 	token: ReminderLabel;

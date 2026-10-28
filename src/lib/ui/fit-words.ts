@@ -1,7 +1,7 @@
 import type { Attachment } from 'svelte/attachments';
 
 /** The smallest share of its size the text shrinks to; below it, a word breaks after all. */
-export const FIT_WORDS_MIN = 0.6;
+const FIT_WORDS_MIN = 0.6;
 
 /**
  * Shrinks a title's text until its longest word fits the room left for it, so a narrow

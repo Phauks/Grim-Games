@@ -25,7 +25,7 @@ export function wikiUrl(pageName: string): string {
 }
 
 /** Spellings of a page's URL that a test file may use to cite it (encoded or not). */
-export function wikiUrlVariants(pageName: string): string[] {
+function wikiUrlVariants(pageName: string): string[] {
 	const encoded = wikiUrl(pageName);
 	const literal = WIKI_BASE + pageName.replace(/ /g, '_');
 	return encoded === literal ? [encoded] : [encoded, literal];

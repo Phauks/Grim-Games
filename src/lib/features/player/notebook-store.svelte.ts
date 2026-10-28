@@ -18,7 +18,7 @@ import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { playerSettings } from './player-settings.svelte.ts';
 
 /** The player view's own database; Settings > Data clears it by this name. */
-export const DB_NAME = 'grim-games-player';
+const DB_NAME = 'grim-games-player';
 const DB_VERSION = 1;
 const NOTEBOOKS = 'notebooks';
 const SAVE_DELAY_MS = 300;

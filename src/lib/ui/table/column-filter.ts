@@ -19,7 +19,7 @@ export type ColumnFilter =
 export type FilterKind = ColumnFilter['kind'];
 
 /** Up to this many different values, a column is a tick list. */
-export const PICK_LIMIT = 12;
+const PICK_LIMIT = 12;
 
 /** The key an empty value is picked by ("None"). */
 export const EMPTY = '';

@@ -94,16 +94,6 @@ export const REFERENCE_FILTERS = [
 ] as const;
 export type ReferenceFilter = (typeof REFERENCE_FILTERS)[number];
 
-export const REFERENCE_FILTER_LABELS: Record<ReferenceFilter, string> = {
-	day: 'Day reminder',
-	firstNight: 'Wakes first night',
-	otherNight: 'Wakes other nights',
-	jinxes: 'Has jinxes',
-	setup: 'Changes setup',
-	differs: 'Differs from source',
-	problems: 'Possible problems'
-};
-
 /**
  * One of a character's reminder tokens, as TPI lists them (`copies` of the same label are
  * one entry), and how many the setup reminders (`setupPrep` rules, the list the board's
@@ -124,7 +114,7 @@ const setupSpecs = (character: Character) =>
 	setupPrepOf(character.id, new Map([[character.id, character]]))?.reminders ?? [];
 
 /** A character's reminder tokens with their setup counts, in TPI's order. */
-export function referenceTokens(character: Character): ReferenceToken[] {
+function referenceTokens(character: Character): ReferenceToken[] {
 	const out: ReferenceToken[] = [];
 	for (const [labels, global] of [
 		[character.reminders, false],
@@ -171,7 +161,7 @@ export interface ReferenceEntry {
 }
 
 /** Starting alignment in plain words, from the type (`defaultAlignment`). */
-export function alignmentNote(type: CharacterType): string {
+function alignmentNote(type: CharacterType): string {
 	const alignment = defaultAlignment(type);
 	if (alignment) return alignment === 'good' ? 'Good' : 'Evil';
 	if (type === 'traveller') return 'Storyteller chooses';

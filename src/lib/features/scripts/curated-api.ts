@@ -30,7 +30,7 @@ export interface CuratedScript {
  * BotC Scripts' "Script of the Month" tag (botcscripts.com/?tags=27): earlier months than our
  * copy has seen, tagged by that site. It says which scripts, not which month.
  */
-export const BOTC_MONTH_TAG = 27;
+const BOTC_MONTH_TAG = 27;
 /** The site's list of the tag's scripts, latest version of each. */
 export const BOTC_MONTH_URL = `${BOTC_SCRIPTS_ORIGIN}/api/scripts/?tags=${BOTC_MONTH_TAG}&latest=true`;
 

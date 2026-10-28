@@ -21,7 +21,7 @@ export interface PictureSize {
 }
 
 /** The square's side, in the picture's pixels. */
-export function cropSide(crop: AvatarCrop, size: PictureSize): number {
+function cropSide(crop: AvatarCrop, size: PictureSize): number {
 	return Math.min(size.width, size.height) / crop.zoom;
 }
 
