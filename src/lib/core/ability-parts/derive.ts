@@ -87,6 +87,13 @@ function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 		return { first: when.nights !== 'each*', other: when.nights !== 'first' };
 	// Told something before the game starts (the Evil Twin, the Lunatic's Demon): night 1.
 	const first = when.at === 'setup' && effects.some((e) => e.do === 'learn');
+	// Carousel Demons: a numbered day ("On day 3", "After day 5") is counted with Day N tokens
+	// the Storyteller moves each night (the Riot, the Leviathan).
+	if (
+		(when.at === 'day' && typeof when.days === 'number') ||
+		(when.at === 'dusk' && when.day !== undefined)
+	)
+		return { first, other: true };
 	// Woken as the Demon they think they are (the Lunatic).
 	if (effects.some((e) => e.do === 'believe' && e.isA === 'demon')) return { first, other: true };
 	// Something happens tonight because of a day's event (Gossip, Moonchild, Juggler).
@@ -116,6 +123,7 @@ function clauseOpening(clause: Clause): string | undefined {
 	}
 	if (when.at === 'day') {
 		if (when.days === 'first') return 'On your 1st day';
+		if (typeof when.days === 'number') return undefined;
 		return limit === 'once-per-game' ? 'Once per game, during the day' : 'Each day';
 	}
 	if (when.at === 'nominated' && limit === 'first-time') return 'The 1st time';
@@ -194,7 +202,8 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 
 		const choosesPlayer = choice && choice.what !== 'character';
 		const demonKill = type === 'demon' && effects.some((e) => e.do === 'kill');
-		if (when.at === 'night' && choosesPlayer && clause.marks && !demonKill && !onSelf)
+		// Carousel Demons: a choice someone else makes (Lil' Monsta's Minions) isn't its player's.
+		if (when.at === 'night' && choosesPlayer && clause.marks && !demonKill && !onSelf && !choice.by)
 			marksChoice.push(clause.marks);
 		if (choice && clause.marks)
 			rules.targetSeats = {
@@ -254,7 +263,15 @@ function applyEffect(
 			const neighbours = has(clause.if, (c) => 'neighboursGood' in c)
 				? { whileNeighboursGood: true as const }
 				: {};
-			if (effect.who === 'self') rules.protects = { who: 'self', from: effect.from, ...night };
+			// Carousel Demons: safe only while its token's carrier lives (the Lleech). The grimoire
+			// can't tell, so the Storyteller decides, and the player counts as alive for the game's
+			// end while the carrier lives.
+			const carrier = clause.if?.flatMap((c) => ('carrierAlive' in c ? [c.carrierAlive] : []))[0];
+			if (effect.who === 'self' && carrier) {
+				rules.protects = { who: 'self', from: effect.from, storytellerDecides: true };
+				rules.gameEnd = { ...rules.gameEnd, aliveWhileDead: { whileCarrierAlive: carrier } };
+			} else if (effect.who === 'self')
+				rules.protects = { who: 'self', from: effect.from, ...night };
 			else if (effect.who === 'executed' && clause.storytellerMay)
 				rules.protects = { who: 'good', from: effect.from, storytellerDecides: true };
 			else if (marks)
@@ -348,6 +365,8 @@ function applyEffect(
 			if (effect.rule === 'nominate-again') rules.nominationsAfterExecution = 1;
 			if (effect.rule === 'nominate-again' || effect.rule === 'force-execution')
 				cause(rules, { kind: 'execution' });
+			// Carousel Demons: the Riot's nominees die.
+			if (effect.rule === 'nominees-die-and-nominate') cause(rules, { kind: 'kills' });
 			return;
 		case 'arm':
 			if (effect.on === 'nominates' && marks) rules.curses = marks;
@@ -380,6 +399,7 @@ function applyEffect(
 		case 'end-game': {
 			const count = alive(clause.if);
 			const noExecution = has(clause.if, (c) => 'noExecutionToday' in c);
+			const executions = clause.if?.flatMap((c) => ('executions' in c ? [c.executions] : []))[0];
 			if (when.at === 'dusk' && count?.exactly !== undefined)
 				acc.ends.push({ kind: 'alive-at-dusk', alive: count.exactly });
 			else if (
@@ -397,6 +417,24 @@ function applyEffect(
 				(effect.winner === 'evil' || effect.winner === 'good')
 			)
 				acc.ends.push({ kind: 'marked-executed', token: acc.firstMark, winner: effect.winner });
+			// Carousel Demons: after a numbered day (the Leviathan's day 5); after enough executions
+			// of one alignment, its token marking the first of them for good.
+			else if (
+				when.at === 'dusk' &&
+				when.day !== undefined &&
+				effect.winner !== 'own-team' &&
+				effect.winner !== 'other-team'
+			)
+				acc.ends.push({ kind: 'survives-day', day: when.day, winner: effect.winner });
+			else if (executions && effect.winner !== 'own-team' && effect.winner !== 'other-team') {
+				acc.ends.push({
+					kind: 'executions-of-alignment',
+					alignment: executions.alignment,
+					count: executions.atLeast,
+					winner: effect.winner
+				});
+				if (marks) acc.fixed.add(marks);
+			}
 			return;
 		}
 		case 'hold-game':

@@ -1,0 +1,39 @@
+{
+	"clauses": [
+		{
+			"id": "phrase",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "secret-phrase"
+					}
+				}
+			]
+		},
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"if": [
+				{
+					"today": "said-phrase"
+				}
+			],
+			"storytellerMay": true,
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "a-player"
+				}
+			]
+		}
+	]
+}

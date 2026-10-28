@@ -1,0 +1,73 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "host",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Poisoned",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "chosen",
+					"as": "poisoned",
+					"until": "always"
+				}
+			]
+		},
+		{
+			"id": "bound",
+			"when": {
+				"at": "always"
+			},
+			"if": [
+				{
+					"carrierAlive": "Poisoned"
+				}
+			],
+			"effects": [
+				{
+					"do": "protect",
+					"who": "self",
+					"from": "any"
+				}
+			]
+		},
+		{
+			"id": "dies-with-host",
+			"when": {
+				"at": "event",
+				"event": "marked-dies"
+			},
+			"effects": [
+				{
+					"do": "kill",
+					"who": "self"
+				}
+			]
+		}
+	]
+}

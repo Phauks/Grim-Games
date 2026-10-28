@@ -1,0 +1,77 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"storytellerMay": true,
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "a-player"
+				}
+			]
+		},
+		{
+			"id": "votes",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "execution-fails-if-only-evil-voted"
+				}
+			]
+		},
+		{
+			"id": "minion",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "register",
+					"who": "self",
+					"as": {
+						"types": ["minion"]
+					}
+				}
+			]
+		},
+		{
+			"id": "setup",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "Most players are Legion",
+						"ops": [
+							{
+								"kind": "set",
+								"type": "demon",
+								"values": "most"
+							},
+							{
+								"kind": "set",
+								"type": "minion",
+								"values": [0]
+							},
+							{
+								"kind": "any",
+								"type": "outsider"
+							}
+						],
+						"notes": ["More than half the players are Legion; the rest are good."]
+					}
+				}
+			]
+		}
+	]
+}

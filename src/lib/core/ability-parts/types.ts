@@ -31,8 +31,14 @@ export type Nights = (typeof NIGHTS)[number];
 export type When =
 	| { at: 'setup' }
 	| { at: 'night'; nights: Nights }
-	| { at: 'day'; after?: 'first-vote-tallied' | 'first-execution'; days?: 'first' }
-	| { at: 'dusk' }
+	| {
+			at: 'day';
+			after?: 'first-vote-tallied' | 'first-execution';
+			/** Carousel Demons: a day's number ("On day 3"), counted with Day N tokens. */
+			days?: 'first' | number;
+	  }
+	/** Carousel Demons: `day` is "After day 5", the dusk that ends that day. */
+	| { at: 'dusk'; day?: number }
 	| { at: 'always' }
 	| {
 			at: 'death';
@@ -63,7 +69,10 @@ export const EVENTS = [
 	'nomination',
 	'killed-outsider',
 	'grandchild-killed-by-demon',
-	'marked-executed'
+	'marked-executed',
+	// Carousel Demons: the player its token marks dies (the Lleech's host); any execution.
+	'marked-dies',
+	'player-executed'
 ] as const;
 export type GameEvent = (typeof EVENTS)[number];
 
@@ -102,7 +111,11 @@ export const SUBJECTS = [
 	'the-demon',
 	'each-player',
 	'opposing-player',
-	'killed'
+	'killed',
+	// Carousel Demons: "a player might die", any player the Storyteller picks, maybe its own
+	// (Legion, Lil' Monsta, Yaggababble); every Minion (the Riot).
+	'a-player',
+	'each-minion'
 ] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
@@ -124,6 +137,13 @@ export interface Choice {
 	from?: 'voted-today';
 	/** Different to previous nights. */
 	notRepeated?: true;
+	// Carousel Demons:
+	/** Someone else makes the choice: "Minions choose" (Lil' Monsta). */
+	by?: 'minions';
+	/** As many as the usual number of Minions, in place of `count` (the Kazali). */
+	countOf?: 'minions';
+	/** Only characters of this type: "which players are which Minions" (the Kazali). */
+	type?: CharacterType;
 }
 
 /**
@@ -139,8 +159,26 @@ export type Condition =
 	| { partnerIs: Subject }
 	/** Something about today or this choice that only this ability's moment knows. */
 	/** `token` marks the player it is about (the Godfather's Died Today). */
-	| { today: 'no-death' | 'outsider-died' | 'statement-true'; token?: ReminderLabel }
-	| { choice: 'guess-wrong' | 'last-was-none' | 'they-agree' | 'impaired' }
+	| {
+			today: 'no-death' | 'outsider-died' | 'statement-true' | 'said-phrase';
+			token?: ReminderLabel;
+	  }
+	| {
+			choice:
+				| 'guess-wrong'
+				| 'last-was-none'
+				| 'they-agree'
+				| 'impaired'
+				// Carousel Demons: the chosen character isn't in play (Ojo); a chosen player chose
+				// to die, or all chose to live (Al-Hadikhia).
+				| 'not-in-play'
+				| 'chose-death'
+				| 'all-chose-life';
+	  }
+	// Carousel Demons: while the player its token marks lives (the Lleech's host); once this
+	// many players of an alignment have been executed (the Leviathan).
+	| { carrierAlive: ReminderLabel }
+	| { executions: { alignment: Alignment; atLeast: number } }
 	| { neighboursGood: true }
 	/** Only the first time this happens (the Fang Gu's first Outsider). */
 	| { firstTime: true };
@@ -202,7 +240,11 @@ export type Info =
 				| 'yes-no-answer'
 				| 'who-chose'
 				| 'each-other'
-				| 'which-effect';
+				| 'which-effect'
+				// Carousel Demons: a secret phrase (Yaggababble); that the character is in play,
+				// told to everyone (Leviathan).
+				| 'secret-phrase'
+				| 'in-play';
 	  };
 
 /**
@@ -279,7 +321,10 @@ type EffectBody =
 				| 'no-majority-needed'
 				| 'force-execution'
 				| 'nominate-again'
-				| 'no-private-chats';
+				| 'no-private-chats'
+				// Carousel Demons: Legion's failed execution; the Riot's day 3.
+				| 'execution-fails-if-only-evil-voted'
+				| 'nominees-die-and-nominate';
 	  }
 	| { do: 'immune'; who: Subject; to: ('poisoned' | 'drunk')[] }
 	| {
@@ -294,7 +339,8 @@ type EffectBody =
 	| {
 			do: 'become';
 			who: Subject;
-			into: 'demon' | 'this-character' | 'chosen-character' | 'alignment-of-chooser';
+			/** `minion`: a Minion the Storyteller picks (the Lord of Typhon's neighbours). */
+			into: 'demon' | 'this-character' | 'chosen-character' | 'alignment-of-chooser' | 'minion';
 			evil?: true;
 	  }
 	| { do: 'execute'; who: Subject; instead?: true }
