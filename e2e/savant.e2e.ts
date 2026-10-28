@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript, toBoard, pastGameSettings } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 
 // The Savant information sheet (L2): one true and one false statement from the grimoire,
 // from the Savant seat's ⋯ menu (https://wiki.bloodontheclocktower.com/Savant).

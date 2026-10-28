@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript, nameStoryteller, toBoard, pastGameSettings } from './new-game.ts';
+import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
 import { savesSettled, trackSaves } from './saves.ts';
