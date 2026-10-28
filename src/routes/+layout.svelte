@@ -18,6 +18,7 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import {
 		isMissingBuildFile,
+		isMissingPageFile,
 		loadAfresh,
 		staleBuild
 	} from '#lib/features/offline/stale-build.svelte.ts';
@@ -113,6 +114,10 @@
 	// here, and the page moves onto the newest build instead of failing (auto-update.svelte.ts).
 	$effect(() => {
 		const onPreloadError = (event: Event) => {
+			// A page's own code: the navigation that wants it loads that page afresh.
+			if (isMissingPageFile((event as Event & { payload?: unknown }).payload)) {
+				return staleBuild.mark();
+			}
 			if (recoverPreloadError(!showsAppShell(page.data))) event.preventDefault();
 		};
 		window.addEventListener('vite:preloadError', onPreloadError);

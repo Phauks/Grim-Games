@@ -12,7 +12,7 @@ export const shell = {
 	'shell.navSectionApp': 'App',
 	'shell.navHome': 'Home',
 	'shell.navNewGame': 'New game',
-	'shell.navJoinGame': 'Join or resume',
+	'shell.navJoinGame': 'Continue game',
 	'shell.navHistory': 'History',
 	'shell.homeBlank': 'This page is intentionally blank',
 	'shell.navScripts': 'Search',
