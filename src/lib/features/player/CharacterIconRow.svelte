@@ -10,10 +10,9 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 
 	/**
-	 * A character's icon as the player's avatar (Trevor, 2026-10-27: one avatar, the account's
-	 * character icon among its choices), picked from the official characters, or None for
-	 * initials. Full colour here; seats show it engraved (2026-10-28). A picture of their own
-	 * still comes first.
+	 * The character that represents the player (Trevor, 2026-10-28: "representative character
+	 * token"), picked from the official characters, or None. It sits on top of their laurel,
+	 * full colour here and engraved on seats; the face keeps their initials or picture.
 	 */
 	let open = $state(false);
 	let query = $state('');
