@@ -4227,6 +4227,33 @@ test('the Investigator step lists each Minion, and the Recluse as a Minion you p
 	await expect(shown).toContainText('Baron');
 });
 
+// Trevor (2026-10-28): characters with no info generator get one, starting with one player's
+// character. The Grandmother learns a good Townsfolk or Outsider on the first night
+// (https://wiki.bloodontheclocktower.com/Grandmother), one player, so no "any other player".
+test("the Grandmother's first night step lists each good player's character", async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	for (const [seat, name] of [
+		[1, 'Grandmother'],
+		[2, 'Professor'],
+		[3, 'Godfather'],
+		[4, 'Po']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const step = await openStep(page, 'Grandmother');
+	const rows = step.getByTestId('learned-roles').getByRole('listitem');
+	await expect(rows).toHaveCount(1);
+	await expect(rows.first()).toContainText('Professor');
+	await expect(rows.first()).toContainText('Seat 2');
+	await expect(rows.first()).not.toContainText('any other player');
+});
+
 // Trevor (2026-10-27): on the first night the Godfather's step names every Outsider in
 // play, ready to show on one card (https://wiki.bloodontheclocktower.com/Godfather).
 test("the Godfather's first night step shows every Outsider in play", async ({ page }) => {
