@@ -87,7 +87,9 @@ export function notBegun(game: Game): boolean {
 }
 
 /** Back to New game as it was: the unstarted game Start made is dropped, so none piles up. */
-export async function backToNewGame(gameId: GameId): Promise<void> {
+export async function backToNewGame(gameId: GameId, players?: number): Promise<void> {
+	// Character selection's count, for the next game New game starts (Trevor, 2026-10-28).
+	if (players) saveDraft({ players });
 	if (readDraft().gameId === gameId) await forgetGame(gameId);
 	await goto(`${resolve('/new')}${BACK_HASH}` as ResolvedPathname);
 }

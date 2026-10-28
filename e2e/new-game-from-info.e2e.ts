@@ -45,7 +45,7 @@ async function newGameFromMenu(page: Page) {
 async function startTroubleBrewing(page: Page) {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 }
 
@@ -90,7 +90,7 @@ test('New game in the board menu, once the game ends, starts the next game with 
 		.getByText('Bad Moon Rising', { exact: true })
 		.tap();
 	await expect(preview).toContainText('Grandmother');
-	await newGame.getByRole('button', { name: 'Start game' }).tap();
+	await newGame.getByRole('button', { name: 'Create game' }).tap();
 
 	// Character selection of the next game, then its board: the same seats and names.
 	await toBoard(page);

@@ -7,5 +7,6 @@
 	},
 	"reminderMovement": {
 		"relocates": "changes a player’s character"
-	}
+	},
+	"createsDemon": true
 }

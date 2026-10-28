@@ -31,7 +31,7 @@ test("a script's rules show on the Bootlegger, and its Fabled and Loric start in
 
 	await page.goto('/new');
 	await pickScript(page, 'Empty Chair');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	const rules = page.getByRole('list', { name: 'Fabled and Loric' });

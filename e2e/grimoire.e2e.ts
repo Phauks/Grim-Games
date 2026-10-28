@@ -10,7 +10,7 @@ import { savesSettled, trackSaves } from './saves.ts';
 async function startGame(page: Page, script = 'Trouble Brewing') {
 	await page.goto('/new');
 	await pickScript(page, script);
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 }
@@ -226,12 +226,8 @@ test('New game and Continue game are screens of their own', async ({ page }) => 
 	await page.goto('/new');
 	// The shared page frame: one title per page (Shared page structure).
 	await expect(page.getByRole('heading', { name: 'New game', level: 1 })).toBeVisible();
-	// The setup table under the player count follows it.
-	const current = page.getByTestId('setup-table').locator('thead th[data-current]');
-	await expect(current).toHaveText('8');
-	await page.getByRole('button', { name: 'More players' }).tap();
-	await expect(current).toHaveText('9');
-	await page.getByRole('button', { name: 'Fewer players' }).tap();
+	// The player count is Character selection's, not New game's too (Trevor, 2026-10-28).
+	await expect(page.getByTestId('setup-table')).toHaveCount(0);
 	// No Back button (Trevor, 2026-10-16): Home in the menu goes home.
 	await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0);
 	await (await openMenu(page)).getByRole('link', { name: 'Home' }).tap();
@@ -3160,8 +3156,9 @@ test("on a crowded table one seat's reminders never cover another's", async ({ p
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	for (let i = 0; i < 7; i++) await page.getByRole('button', { name: 'More players' }).tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(15);
 	for (const [seat, name] of [
@@ -4651,13 +4648,14 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		}, trouble);
 		await page.reload();
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+		await page.getByRole('button', { name: 'Create game' }).tap();
+		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 		const count = page.getByTestId('player-count');
 		for (let n = 8; n < players; n++)
 			await page.getByRole('button', { name: 'More players' }).tap();
 		for (let n = 8; n > players; n--)
 			await page.getByRole('button', { name: 'Fewer players' }).tap();
 		await expect(count).toContainText(String(players));
-		await page.getByRole('button', { name: 'Start game' }).tap();
 		await toBoard(page);
 		await expect(page.getByTestId('seat')).toHaveCount(players);
 		const gameId = page.url().split('/').pop()!;
@@ -4723,8 +4721,9 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await trackSaves(page);
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	const board = page.url();
 	// Always in place, so the bank never moves: Set up until the tokens are handed out
@@ -5643,10 +5642,10 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 	await rules.getByText('I See Dead People', { exact: true }).tap();
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await toBoard(page);
 	for (const [number, name] of [
@@ -5687,10 +5686,10 @@ test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', as
 	await rules.getByText('The Ballad of Seat 7', { exact: true }).tap();
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await toBoard(page);
 	for (const [number, name] of [
@@ -6213,10 +6212,10 @@ async function startWithRule(
 	await rules.getByText(rule, { exact: true }).tap();
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await toBoard(page);
 	for (const [number, name] of cast) {

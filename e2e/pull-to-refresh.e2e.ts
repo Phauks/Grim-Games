@@ -19,7 +19,7 @@ test('pulling down refreshes ordinary pages but not a game in progress', async (
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect.poll(() => pullDown(page)).toBe('none');
 });

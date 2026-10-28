@@ -84,6 +84,7 @@
 	import PlayerGrimTools from './PlayerGrimTools.svelte';
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
+	import SeatAvatarButton from './SeatAvatarButton.svelte';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
 
@@ -535,14 +536,14 @@
 {/snippet}
 
 {#snippet pictureMenu()}<SeatPictureMenu room={player!} seat={chosen!} />{/snippet}
-<!-- The player's avatar, left of the seat's name and guesses (Trevor, 2026-10-27). -->
-{#snippet seatAvatar()}<span class="sheet-avatar" data-testid="sheet-avatar"
-		><AvatarFace
-			avatar={chosen!.avatar!}
-			name={nameOf(chosen!)}
-			picture={pictureOf(chosen!)}
-		/></span
-	>{/snippet}
+<!-- The player's avatar, left of the seat's name and guesses (Trevor, 2026-10-27); a tap
+     opens their profile (2026-10-28). -->
+{#snippet seatAvatar()}<SeatAvatarButton
+		avatar={chosen!.avatar!}
+		name={nameOf(chosen!)}
+		picture={pictureOf(chosen!)}
+		frame={chosen!.frame}
+	/>{/snippet}
 <BottomSheet
 	bind:open
 	title={chosen ? `${t('common.seat', { number: chosen.seatNumber })} · ${nameOf(chosen)}` : ''}
@@ -704,15 +705,11 @@
 	.row-none {
 		color: var(--on-surface-muted);
 	}
-	/* The seat's avatar in its cycle, the size of a badge's icon; larger in the header. */
-	.avatar-chip,
-	.sheet-avatar {
+	/* The seat's avatar in its cycle, the size of a badge's icon. */
+	.avatar-chip {
 		display: block;
-		width: var(--avatar, 2em);
-		height: var(--avatar, 2em);
-	}
-	.sheet-avatar {
-		--avatar: calc(2.5 * var(--u));
+		width: 2em;
+		height: 2em;
 	}
 	.seat-note-text {
 		overflow: hidden;
@@ -778,8 +775,10 @@
 		outline-offset: calc(0.2 * var(--u));
 		border-radius: 50%;
 	}
-	/* A guess is the player's own, so it never looks like something the town was told. */
-	.seat[data-guess] :global(.face) {
+	/* A guess is the player's own, so it never looks like something the town was told. Only
+	   the seat's round face: a token's own SVG circle is a .face too, and an outline there
+	   drew dashed square edges round the token (2026-10-28). */
+	.seat[data-guess] :global(.disc > .face) {
 		opacity: 0.75;
 		outline: calc(0.15 * var(--u)) dashed var(--on-surface-muted);
 		outline-offset: calc(0.1 * var(--u));

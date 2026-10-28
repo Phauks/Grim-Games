@@ -1,4 +1,4 @@
-/** Whether the Storyteller's Messages is open: from the board's toolbar, or ⋯ on a phone. */
+/** Whether the Storyteller's Messages is open: from the board's ⋯ on every screen. */
 class InboxDialog {
 	open = $state(false);
 
