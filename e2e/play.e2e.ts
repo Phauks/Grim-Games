@@ -210,12 +210,12 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 
 	// Join game is still the player view, so it doesn't ask.
 	await menu.tap();
-	await drawer.getByRole('link', { name: 'Join or resume' }).tap();
+	await drawer.getByRole('link', { name: 'Continue game' }).tap();
 	await expect(page).toHaveURL(/\/join$/);
 	await expect(ask).toHaveCount(0);
 
 	// Join game shows none of the phone's script (plan J1), so leaving it has nothing to ask.
-	await expect(page.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
 	await menu.tap();
 	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
 	await expect(page).toHaveURL(/\/library$/);
@@ -755,6 +755,10 @@ test('the sheet background colours the whole player screen, its dialogs included
 	await expect(page_).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 	// Other screens keep the app theme.
 	await page.goto('/about');
+	await expect(page_).toHaveCSS('background-color', 'rgb(20, 11, 11)');
+	// Continue game too, until a game is open (Trevor, 2026-10-28).
+	await page.goto('/join');
+	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
 	await expect(page_).toHaveCSS('background-color', 'rgb(20, 11, 11)');
 });
 
