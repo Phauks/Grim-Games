@@ -191,6 +191,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Hidden characters (`day-reminders.ts`, `setup-reminders.ts`, `setup.ts`, were the Drunk, Minstrel and Marionette by id): "is really the …" reads `impairs.self`; a token that impairs others (`impairs.tokens` `on: others`) never impairs its carrier; who may secretly be an unseated hidden character reads its token's `reminderTargets` (`shown`, `alignment`, `neighbour`), moved
 - Evil info below 7 players (`teensyville.ts` `hasEvilTeamInfo`, was the Toymaker by id): `evilInfo.anyPlayerCount`, moved
 - Rule characters a game never starts with (`script-rules.ts`, was the Djinn by id; jinxes show on their own): `jinxesOnly`, moved. The Bootlegger stays named there: TPI's script format ties `_meta.bootlegger` to it.
+- Character info cards (`features/info-tokens/character-cards.ts`, was a list naming the Mezepheles and Yaggababble): `infoCard` (`secret-word`, `secret-phrase`), moved
 - Savant statements (`savant-facts.ts`, `savant-templates.ts`, `savant-log-templates.ts`): reminders marking whom it chose (was `MINION_CHOICES`, `TOWNSFOLK_CHOICES`) `marksChoice`; number or once-per-game info (was `NUMBER_INFO`, `ONCE_INFO`) `infoKind`; the Witch's curse `curses`; the Lunatic's `choosesLikeDemon` and `believesOtherCharacter`; the Snake Charmer's `choosesUnmarked`; all moved (`choice-rules.ts`)
 
 ## Lists that only shrink

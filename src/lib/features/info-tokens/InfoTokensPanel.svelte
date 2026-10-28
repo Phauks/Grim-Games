@@ -50,7 +50,10 @@
 
 	// With no game open, every character's cards are listed (Trevor, 2026-10-16).
 	const characterCards = $derived(
-		characterCardsFor(characters.map((c) => c.id)).flatMap((card) => {
+		characterCardsFor(
+			characters.map((c) => c.id),
+			byId
+		).flatMap((card) => {
 			const character = byId.get(card.characterId);
 			return character ? [{ card, character }] : [];
 		})

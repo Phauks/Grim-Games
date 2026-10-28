@@ -1,9 +1,12 @@
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { InfoCard } from '#lib/core/data/choice-rules.ts';
+import type { Character, CharacterId } from '#lib/core/data/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import type { CharacterLookup } from '#lib/core/model/index.ts';
 
 /**
  * Info cards that belong to one character and only load when it is on the script (Trevor,
- * 2026-10-16), e.g. the Mezepheles's secret word. The Reference page reads this list for its
- * card column.
+ * 2026-10-16), e.g. the Mezepheles's secret word, from the character's `infoCard` rule.
+ * The Reference page reads them for its card column.
  *
  * TPI's night sheet says "Show the secret word" for the Mezepheles and "secret phrase" for
  * the Yaggababble (botc-release resources/data/roles.json); the card text is Trevor's
@@ -23,24 +26,29 @@ export interface CharacterCard {
 	source: 'own' | 'own';
 }
 
-export const CHARACTER_CARDS: readonly CharacterCard[] = [
-	{
-		id: 'character:mezepheles:secret-word',
-		characterId: 'mezepheles',
-		titleKey: 'info-tokens.card.secretWord',
-		fills: 'word',
-		source: 'own'
-	},
-	{
-		id: 'character:yaggababble:secret-phrase',
-		characterId: 'yaggababble',
-		titleKey: 'info-tokens.card.secretPhrase',
-		fills: 'phrase',
-		source: 'own'
-	}
-];
+const CARDS: Readonly<Record<InfoCard, Pick<CharacterCard, 'titleKey' | 'fills'>>> = {
+	'secret-word': { titleKey: 'info-tokens.card.secretWord', fills: 'word' },
+	'secret-phrase': { titleKey: 'info-tokens.card.secretPhrase', fills: 'phrase' }
+};
 
-/** The cards for these characters, in the order given. */
-export function characterCardsFor(characterIds: readonly CharacterId[]): CharacterCard[] {
-	return characterIds.flatMap((id) => CHARACTER_CARDS.filter((card) => card.characterId === id));
+/** A character's card, from its `infoCard` rule. */
+function cardOf(id: CharacterId, characters?: CharacterLookup): CharacterCard | undefined {
+	const card = rulesOf(id, characters)?.infoCard;
+	return card && { id: `character:${id}:${card}`, characterId: id, ...CARDS[card], source: 'own' };
+}
+
+/**
+ * The cards for these characters, in the order given. `characters` holds custom ones, whose
+ * own rules block may give them a card.
+ */
+export function characterCardsFor(
+	characterIds: readonly CharacterId[],
+	characters?: CharacterLookup
+): CharacterCard[] {
+	return characterIds.flatMap((id) => cardOf(id, characters) ?? []);
+}
+
+/** One character's cards, its own rules block included. */
+export function cardsOfCharacter(character: Character): CharacterCard[] {
+	return characterCardsFor([character.id], new Map([[character.id, character]]));
 }
