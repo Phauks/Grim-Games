@@ -5,10 +5,11 @@
  *
  * The related 7+ player rule: Minion info and Demon info are only first-night steps with 7
  * or more players (https://wiki.bloodontheclocktower.com/Glossary, "Minion Info" and
- * "Demon Info"), unless the Toymaker restores them
+ * "Demon Info"), unless a character such as the Toymaker restores them
  * (https://wiki.bloodontheclocktower.com/Toymaker).
  */
-import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import type { Character } from '#lib/core/data/types.ts';
 import type { TypeCounts } from './distribution.ts';
 import { SEATED_TYPES } from './distribution.ts';
 
@@ -57,11 +58,12 @@ export function teensyvilleWarnings(characters: readonly Character[], players: n
 }
 
 /**
- * Whether the first night has the Minion info and Demon info steps: 7 or more players, or
- * the Toymaker in play ("evil players get normal starting info").
+ * Whether the first night has the Minion info and Demon info steps: 7 or more players, or a
+ * character in play whose `evilInfo` has `anyPlayerCount` (the Toymaker: "evil players get
+ * normal starting info").
  */
-export function hasEvilTeamInfo(players: number, inPlay: Iterable<CharacterId>): boolean {
+export function hasEvilTeamInfo(players: number, inPlay: readonly Character[]): boolean {
 	if (players >= EVIL_INFO_MIN_PLAYERS) return true;
-	for (const id of inPlay) if (id === 'toymaker') return true;
-	return false;
+	const characters = new Map(inPlay.map((c) => [c.id, c]));
+	return inPlay.some((c) => rulesOf(c.id, characters)?.evilInfo?.anyPlayerCount === true);
 }
