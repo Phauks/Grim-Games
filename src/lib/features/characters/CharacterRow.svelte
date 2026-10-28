@@ -456,9 +456,12 @@
 		height: auto;
 		margin-left: auto;
 	}
+	/* Always two lines' room, even for a short ability, so every row is the same height
+	   (Trevor, 2026-10-28), on screen and in print. */
 	.ring-ability {
 		grid-row: 2;
 		grid-column: 2;
+		min-height: calc(2 * 1.35em);
 		margin: 0;
 		padding-top: var(--space-1);
 		font-family: var(--font-ability);
