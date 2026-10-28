@@ -45,5 +45,8 @@
 		"this-player-is": {
 			"characters": ["self"]
 		}
+	},
+	"evilInfo": {
+		"hidesDemon": true
 	}
 }

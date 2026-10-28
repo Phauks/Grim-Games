@@ -20,5 +20,8 @@
 	},
 	"reminderMovement": {
 		"why": "Marks this night’s malfunctioning players."
+	},
+	"infoKind": {
+		"number": true
 	}
 }

@@ -3,6 +3,7 @@
  * Local sources are searched, filtered and sorted here; BotC Scripts does that on the site,
  * so its rows arrive ready (`botcRow`). Design: 08-script-loading.md §5.6.
  */
+import { foldForSearch } from '#lib/core/text/fold.ts';
 import {
 	scriptLogo,
 	type CharacterType,
@@ -105,9 +106,9 @@ export function pickerRow(
 		kind: characters <= TEENSYVILLE_MAX_CHARACTERS ? 'Teensyville' : 'Full',
 		characters,
 		entries: script.characters.map((c) => ({ id: c.id, name: c.name, team: c.type })),
-		haystack: [script.name, author, ...script.characters.map((c) => c.name)]
-			.join('\n')
-			.toLowerCase()
+		haystack: foldForSearch(
+			[script.name, author, ...script.characters.map((c) => c.name)].join('\n')
+		)
 	};
 }
 
@@ -133,7 +134,7 @@ export function botcRow(summary: BotcScriptsSummary, data: GameData): PickerRow 
 		number: summary.scriptId,
 		version: summary.version,
 		page: scriptPageUrl(summary.scriptId, summary.version),
-		haystack: summary.name.toLowerCase()
+		haystack: foldForSearch(summary.name)
 	};
 }
 
@@ -152,13 +153,13 @@ export function homebrewRow(script: HomebrewScript, data: GameData): PickerRow {
 		characters,
 		entries: script.characters,
 		page: homebrewScriptPage(script.slug),
-		haystack: [
-			script.name,
-			script.author,
-			...card.groups.flatMap((g) => g.characters.map((c) => c.name))
-		]
-			.join('\n')
-			.toLowerCase()
+		haystack: foldForSearch(
+			[
+				script.name,
+				script.author,
+				...card.groups.flatMap((g) => g.characters.map((c) => c.name))
+			].join('\n')
+		)
 	};
 }
 
@@ -179,7 +180,7 @@ export function bloodstarRow(script: BloodstarScript): PickerRow {
 		unsized: true,
 		entries: [],
 		page: bloodstarPage(script),
-		haystack: `${name}\n${script.user}`.toLowerCase()
+		haystack: foldForSearch(`${name}\n${script.user}`)
 	};
 }
 
@@ -202,15 +203,15 @@ export function filterRows(
 	filter: RowFilter,
 	data?: GameData
 ): PickerRow[] {
-	const words = filter.term.toLowerCase().split(/\s+/).filter(Boolean);
-	const author = filter.author?.trim().toLowerCase() ?? '';
+	const words = foldForSearch(filter.term).split(/\s+/).filter(Boolean);
+	const author = foldForSearch(filter.author?.trim() ?? '');
 	const include = (filter.include ?? []).map(looseId);
 	const exclude = (filter.exclude ?? []).map(looseId);
 	return rows.filter((row) => {
 		if (!filter.sources.includes(row.source)) return false;
 		if (filter.kind !== '' && (row.unsized || row.kind !== filter.kind)) return false;
 		if (!words.every((word) => row.haystack.includes(word))) return false;
-		if (author && !row.author.toLowerCase().includes(author)) return false;
+		if (author && !foldForSearch(row.author).includes(author)) return false;
 		if (include.length > 0 || exclude.length > 0) {
 			const ids = new Set(row.entries.map((e) => looseId(e.id)));
 			if (!include.every((id) => ids.has(id)) || exclude.some((id) => ids.has(id))) return false;

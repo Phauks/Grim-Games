@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
 	import { demonMaker, type NightStep } from '#lib/core/rules/index.ts';
@@ -52,8 +53,7 @@
 		if (grimoire.run({ type: 'AssignCharacter', seatId, characterId, alignment: 'evil' }))
 			made = { seatId, characterId };
 	}
-	const playerName = (seatId: SeatId) =>
-		game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
+	const playerName = (seatId: SeatId) => seatName(game, seatId);
 </script>
 
 {#if maker || made}

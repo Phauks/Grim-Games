@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { rootFontPx } from '#lib/ui/root-font.svelte.ts';
 	export interface ContentsItem {
 		id: string;
 		label: string;
@@ -52,9 +53,7 @@
 
 	let width = $state(0);
 	/** Two panes from 40rem of width (the container query below), so nothing slides there. */
-	const slides = $derived(
-		width > 0 && width < 40 * parseFloat(getComputedStyle(document.documentElement).fontSize)
-	);
+	const slides = $derived(width > 0 && width < 40 * rootFontPx());
 	let direction = $state(1);
 	// Another item's text always starts at its top; the list keeps its own scroll (Trevor,
 	// 2026-10-16). On a phone the whole layout scrolls, so it goes back to the top too.

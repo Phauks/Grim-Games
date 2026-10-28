@@ -73,5 +73,6 @@
 				"reason": "Says the Fear token moves to tonight’s choice."
 			}
 		}
-	}
+	},
+	"marksChoice": ["Fear"]
 }
