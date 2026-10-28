@@ -96,6 +96,8 @@ export const player = {
 	'player.frame': 'Your laurel',
 	'player.frameColour': 'Color',
 	'player.flavour': 'Flavour text',
+	'player.characterIcon': 'Character icon',
+	'player.editCharacterIcon': 'Change character icon',
 	'player.editFlavour': 'Edit flavour text',
 	'player.frameMotion': 'Motion',
 	'player.bigPreview': 'Preview',

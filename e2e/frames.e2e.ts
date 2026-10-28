@@ -129,3 +129,34 @@ test('the Profile keeps a flavour text, edited in its own modal (Trevor, 2026-10
 	const again = await openProfile(page);
 	await expect(again.getByTestId('flavour-text')).toHaveText('Always the Drunk.');
 });
+
+test("a character's icon is the avatar, full colour in the Profile (Trevor, 2026-10-28)", async ({
+	page
+}) => {
+	await page.goto('/');
+	const dialog = await openProfile(page);
+	await expect(dialog.getByTestId('character-icon')).toHaveText('None');
+	await dialog.getByRole('button', { name: 'Change character icon' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Character icon' });
+	await picker.getByRole('searchbox').fill('Fortune Teller');
+	await picker
+		.getByRole('button', { name: /Fortune Teller/ })
+		.first()
+		.tap();
+	await expect(picker).toBeHidden();
+	await expect(dialog.getByTestId('character-icon')).toContainText('Fortune Teller');
+	// Full colour in the Profile; seats engrave it.
+	const face = dialog.getByTestId('profile-preview').getByTestId('avatar-face');
+	await expect(face).toHaveAttribute('data-avatar', 'character:fortuneteller');
+	await expect(face.locator('img')).not.toHaveAttribute('data-engraved');
+
+	await page.reload();
+	const again = await openProfile(page);
+	await expect(again.getByTestId('character-icon')).toContainText('Fortune Teller');
+	await again.getByRole('button', { name: 'Change character icon' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character icon' })
+		.getByRole('button', { name: 'None' })
+		.tap();
+	await expect(again.getByTestId('character-icon')).toHaveText('None');
+});

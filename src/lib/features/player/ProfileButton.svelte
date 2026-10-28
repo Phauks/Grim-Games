@@ -25,6 +25,7 @@
 				avatar={playerSettings.current.avatar}
 				{name}
 				picture={avatarPicture.url}
+				fullColour
 			/></span
 		>
 		{#if frame.drawing.length}<span class="drawn"><FrameDrawing {frame} /></span>{/if}</span
