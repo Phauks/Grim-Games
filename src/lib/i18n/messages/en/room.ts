@@ -39,7 +39,7 @@ export const room = {
 	'room.refreshText':
 		"Everyone's phone leaves the room and the old code stops working. The grimoire is not changed.",
 	// Players' join pages
-	'room.joinTitle': 'Join or resume',
+	'room.joinTitle': 'Continue game',
 	'room.pageTitle': 'Room',
 	'room.notACode': 'That is not a room code. Codes are six digits.',
 	'room.closedOrWrong': 'This room is closed, or the code is wrong.',

@@ -15,21 +15,11 @@
 	const name = $derived(label ?? MARKER_TEXT[marker].name);
 	// Our own art (Trevor, 2026-10-16): the same parchment face as a character token, with a
 	// simple glyph. Dusk: the sun sinking under the horizon below the first stars. Dawn: the sun
-	// rising with its rays. Minion info: two evil figures. Demon info: one horned evil figure.
+	// rising with its rays. Minion info and Demon info: a red M and a red D (Trevor, 2026-10-28).
 	const RAYS = [-150, -120, -90, -60, -30].map((a) => (a * Math.PI) / 180);
 	// The face (r 47) above and below the horizon at y 62: half-width √(47² − 12²) ≈ 45.4.
 	const SKY = 'M4.6 62 A47 47 0 1 1 95.4 62 Z';
 	const GROUND = 'M4.6 62 A47 47 0 0 0 95.4 62 Z';
-
-	/** Head and shoulders of a figure centred on x, standing on y. */
-	function figure(x: number, y: number, s: number) {
-		return {
-			head: { cx: x, cy: y - 26 * s, r: 9 * s },
-			body: `M${x - 16 * s} ${y} Q${x - 16 * s} ${y - 16 * s} ${x} ${y - 16 * s} Q${x + 16 * s} ${y - 16 * s} ${x + 16 * s} ${y} Z`
-		};
-	}
-	const pair = [figure(34, 76, 1), figure(66, 76, 1)];
-	const demon = figure(50, 80, 1.3);
 </script>
 
 <span
@@ -61,17 +51,15 @@
 				/>
 			{/each}
 			<circle class="sun" cx="50" cy="62" r="17" />
-		{:else if marker === 'minioninfo'}
-			{#each pair as f, i (i)}
-				<circle class="figure" cx={f.head.cx} cy={f.head.cy} r={f.head.r} />
-				<path class="figure" d={f.body} />
-			{/each}
 		{:else}
-			<!-- Horns curving up and out from the head. -->
-			<path class="figure" d="M43 38 Q33 30 34 14 Q40 27 48 33 Z" />
-			<path class="figure" d="M57 38 Q67 30 66 14 Q60 27 52 33 Z" />
-			<circle class="figure" cx={demon.head.cx} cy={demon.head.cy} r={demon.head.r} />
-			<path class="figure" d={demon.body} />
+			<text
+				class="letter"
+				x="50"
+				y="52"
+				font-size="60"
+				text-anchor="middle"
+				dominant-baseline="central">{marker === 'minioninfo' ? 'M' : 'D'}</text
+			>
 		{/if}
 		{#if marker === 'dusk' || marker === 'dawn'}
 			<path class="ground" d={GROUND} />
@@ -122,7 +110,9 @@
 		stroke-width: 2.5;
 		stroke-linecap: round;
 	}
-	.figure {
+	.letter {
+		font-family: var(--font-character);
+		font-weight: 700;
 		fill: var(--evil);
 	}
 </style>
