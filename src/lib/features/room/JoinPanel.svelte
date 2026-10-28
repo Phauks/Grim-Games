@@ -342,83 +342,97 @@
 						: t('room.closedOrWrong')}
 		</p>
 	{/if}
-	<form class="code-form" onsubmit={enterCode}>
-		<label for="room-code">{t('room.codeLabel')}</label>
-		<CodeField
-			id="room-code"
-			bind:value={typed}
-			length={ROOM_CODE_LENGTH}
-			group={3}
-			centred
-			large
-		/>
-		<!-- Always this size, so the game arriving moves nothing. -->
-		<section
-			class="game"
-			class:found={!!found}
-			aria-label={t('room.gameToJoin')}
-			aria-live="polite"
-			data-testid="room-preview"
-		>
-			<ScriptLogo src={found?.logo} name={found?.name} class="game-logo" />
-			<div class="game-text">
-				{#if found}
-					<p class="game-name">{found.name || t('room.noScriptYet')}</p>
-					<ScriptByline author={found.author} inline />
-					{#if found.storyteller}
-						<span class="game-table" data-testid="game-storyteller"
-							>{t('room.storytellerLine', { name: found.storyteller })}</span
-						>
-					{/if}
-					{#if found.seats !== undefined}
-						<span class="game-table"
-							>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
-						>
-					{/if}
-				{:else}
-					<p class="game-status" role="status">{lookupText}</p>
-				{/if}
-			</div>
-		</section>
-		<div class="entry">
-			<Button type="submit" variant="accent" disabled={!canJoin}>
-				{t('room.join')}
-			</Button>
-			<!-- A camera icon, not words (Trevor, 2026-10-23). -->
-			<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
-			<!-- Grim view and Public Town are for fewer people, so they wait behind ⋯ and Join as
+	<!-- Continue game: once there is room, the code on the left and the games to resume on the
+	     right (Trevor, 2026-10-28). -->
+	<div class="continue">
+		<div class="columns" class:split={code === undefined}>
+			<form class="code-form" onsubmit={enterCode}>
+				<label for="room-code">{t('room.codeLabel')}</label>
+				<CodeField
+					id="room-code"
+					bind:value={typed}
+					length={ROOM_CODE_LENGTH}
+					group={3}
+					centred
+					large
+				/>
+				<!-- Always this size, so the game arriving moves nothing. -->
+				<section
+					class="game"
+					class:found={!!found}
+					aria-label={t('room.gameToJoin')}
+					aria-live="polite"
+					data-testid="room-preview"
+				>
+					<ScriptLogo src={found?.logo} name={found?.name} class="game-logo" />
+					<div class="game-text">
+						{#if found}
+							<p class="game-name">{found.name || t('room.noScriptYet')}</p>
+							<ScriptByline author={found.author} inline />
+							{#if found.storyteller}
+								<span class="game-table" data-testid="game-storyteller"
+									>{t('room.storytellerLine', { name: found.storyteller })}</span
+								>
+							{/if}
+							{#if found.seats !== undefined}
+								<span class="game-table"
+									>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
+								>
+							{/if}
+						{:else}
+							<p class="game-status" role="status">{lookupText}</p>
+						{/if}
+					</div>
+				</section>
+				<div class="entry">
+					<Button type="submit" variant="accent" disabled={!canJoin}>
+						{t('room.join')}
+					</Button>
+					<!-- A camera icon, not words (Trevor, 2026-10-23). -->
+					<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
+					<!-- Grim view and Public Town are for fewer people, so they wait behind ⋯ and Join as
 			     player stays the one big button (Trevor, 2026-10-26). -->
-			<Menu
-				label={t('room.moreWays')}
-				items={[
-					// Disabled until the room has a Grim view password.
-					{
-						value: 'grim-view',
-						label: t('room.grimView'),
-						disabled: !found?.grimView,
-						onSelect: () => (grimViewOpen = true)
-					},
-					// A tablet for the middle of the table shows the players' grim (Public Town,
-					// Trevor 2026-10-26).
-					{
-						value: 'town',
-						label: t('room.town.title'),
-						disabled: !canJoin,
-						onSelect: () => {
-							if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
-						}
-					},
-					// Another Storyteller's device hands this one the room (Trevor, 2026-10-28).
-					{
-						value: 'transfer',
-						label: t('room.transfer.title'),
-						disabled: lookup?.state !== 'found',
-						onSelect: () => (transferOpen = true)
-					}
-				]}
-			/>
+					<Menu
+						label={t('room.moreWays')}
+						items={[
+							// Disabled until the room has a Grim view password.
+							{
+								value: 'grim-view',
+								label: t('room.grimView'),
+								disabled: !found?.grimView,
+								onSelect: () => (grimViewOpen = true)
+							},
+							// A tablet for the middle of the table shows the players' grim (Public Town,
+							// Trevor 2026-10-26).
+							{
+								value: 'town',
+								label: t('room.town.title'),
+								disabled: !canJoin,
+								onSelect: () => {
+									if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
+								}
+							},
+							// Another Storyteller's device hands this one the room (Trevor, 2026-10-28).
+							{
+								value: 'transfer',
+								label: t('room.transfer.title'),
+								disabled: lookup?.state !== 'found',
+								onSelect: () => (transferOpen = true)
+							}
+						]}
+					/>
+				</div>
+			</form>
+			<!-- Joining and resuming on one page: games played above games hosted (Trevor, 2026-10-28). -->
+			{#if code === undefined}<div class="your-games">
+					<YourGames
+						onOpen={(c, town) =>
+							town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c)}
+					/>
+					<SavedGamesSection />
+				</div>{/if}
 		</div>
-	</form>
+	</div>
 	<Dialog bind:open={scanning} title={t('share.scan')}>
 		{#if scanning}<QrScanner
 				onRead={scanned}
@@ -445,13 +459,6 @@
 			/>
 		</form>
 	</Dialog>
-	<!-- Joining and resuming on one page: games played above games hosted (Trevor, 2026-10-28). -->
-	{#if code === undefined}<div class="your-games">
-			<YourGames
-				onOpen={(c, town) => (town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c))}
-			/>
-			<SavedGamesSection />
-		</div>{/if}
 {:else if inRoom}
 	<!-- The row the Storyteller's player view shows too (PlayerStatusRow): anything drawn from
 	     the table's public state goes in it, never here. -->
@@ -465,8 +472,6 @@
 			<p class="you" class:quiet={!summary} data-testid="you-row" data-seat={mySeat}>
 				<span class="summary" role="status" data-testid="join-status">{summary}</span>
 			</p>
-			<!-- Only while the Storyteller lets players see their character (Trevor, 2026-10-26). -->
-			{#if player}<YourCharacter {player} />{/if}
 		{/snippet}
 		{#snippet after()}
 			<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
@@ -477,6 +482,8 @@
 			{/if}
 		{/snippet}
 	</PlayerStatusRow>
+	<!-- Its own row under the status line (Trevor, 2026-10-28). -->
+	{#if player}<YourCharacter {player} />{/if}
 	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 
@@ -574,6 +581,19 @@
 	.your-games {
 		display: grid;
 		gap: var(--space-5);
+	}
+	.continue {
+		container: continue / inline-size;
+	}
+	.columns {
+		display: grid;
+		gap: var(--space-5);
+		align-items: start;
+	}
+	@container continue (min-width: 48rem) {
+		.columns.split {
+			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+		}
 	}
 	.grim-view {
 		display: grid;

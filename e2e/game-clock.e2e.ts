@@ -8,7 +8,7 @@ test('the board shows how long the game has run since the first night began', as
 	await page.clock.install();
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	const clock = page.getByTestId('board-game-clock');
 	// In place before the first night, so nothing moves when it starts: Game time says 0:00,

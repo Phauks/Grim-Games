@@ -12,18 +12,8 @@ export const COLOR_GROUPS = {
 	surfaces: ['--surface', '--surface-glow', '--surface-raised', '--surface-selected'],
 	text: ['--on-surface', '--on-surface-muted', '--heading'],
 	accents: ['--accent', '--on-accent', '--focus', '--button', '--on-button'],
-	types: [
-		'--good',
-		'--on-good',
-		'--evil',
-		'--on-evil',
-		'--traveller',
-		'--on-traveller',
-		'--fabled',
-		'--on-fabled',
-		'--loric',
-		'--on-loric'
-	],
+	// No team colours: the good blue and evil red never change (team-colors.ts).
+	types: ['--traveller', '--on-traveller', '--fabled', '--on-fabled', '--loric', '--on-loric'],
 	// The token face, reminder face and their ink are in Settings › Tokens already.
 	tokens: ['--token-rim', '--token-flower', '--token-flower-centre', '--leaf'],
 	sheets: ['--sheet', '--on-sheet', '--on-sheet-muted']

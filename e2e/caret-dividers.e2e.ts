@@ -117,7 +117,7 @@ test('every caret has a line between it and what is above it', async ({ page }) 
 	// The board: the day's sections and the board's Script sheet.
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	seen.push(...(await unlined(page, 'board')));
 

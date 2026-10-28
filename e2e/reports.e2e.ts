@@ -176,7 +176,7 @@ test('a report sent from the board carries its script, for its sender and the ad
 	await signIn(page, `scripted-${Date.now()}@example.com`);
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();

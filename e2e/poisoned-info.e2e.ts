@@ -11,7 +11,7 @@ import { pickScript, toBoard } from './new-game.ts';
 async function startGame(page: Page) {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 }
@@ -149,11 +149,14 @@ test('a poisoned Undertaker may be shown any other character', async ({ page }) 
 	const other = rows.nth(1);
 	await expect(other).toContainText('Any other');
 	const show = other.getByRole('button', { name: 'Show to player' });
-	await expect(show).toBeDisabled();
+	// Nothing picked yet: the list is ringed, and Show to player opens it (Trevor, 2026-10-28).
+	const shownAs = other.getByRole('combobox', { name: 'Shown as' });
+	await expect(shownAs).toHaveAttribute('data-attention');
 	await expect(async () => {
-		await other.getByRole('combobox', { name: 'Shown as' }).tap();
+		await show.tap();
 		await page.getByRole('option', { name: 'Washerwoman' }).tap({ timeout: 2000 });
 	}).toPass();
+	await expect(shownAs).not.toHaveAttribute('data-attention');
 	await page.screenshot({
 		path: `test-results/poisoned-undertaker-${test.info().project.name}.png`
 	});

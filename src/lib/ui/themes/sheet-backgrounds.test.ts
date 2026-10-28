@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { contrastRatio, resolveToken } from './contrast.ts';
 import { grimoire } from './grimoire/theme.ts';
 import { SHEET_BACKGROUNDS, SHEET_TOKENS, sheetStyle, sheetTheme } from './sheet-backgrounds.ts';
+import { TEAM_COLORS } from './team-colors.ts';
 import { EDGE_PAIRS, SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
 
 // Every sheet background keeps its text readable (WCAG AA, 4.5:1 for body text).
@@ -9,14 +10,12 @@ describe('sheet backgrounds', () => {
 	for (const background of SHEET_BACKGROUNDS) {
 		const tokens = SHEET_TOKENS[background];
 		if (!tokens) continue;
-		it(`${background}: text, muted text and team colours read on its surface`, () => {
+		it(`${background}: text, muted text and team colour text read on its surface`, () => {
 			for (const surface of ['--surface', '--surface-raised'] as const) {
 				for (const ink of [
 					'--on-surface',
 					'--on-surface-muted',
 					'--heading',
-					'--good',
-					'--evil',
 					'--good-text',
 					'--evil-text',
 					'--traveller-text',
@@ -28,12 +27,11 @@ describe('sheet backgrounds', () => {
 					).toBeGreaterThanOrEqual(4.5);
 				}
 			}
-			// Character badges are team-coloured fills with their own text.
-			for (const fill of ['--good', '--evil'] as const) {
-				const on = `--on-${fill.slice(2)}` as const;
-				const ink = tokens[on] ?? resolveToken(on, { ...grimoire.palette, ...grimoire.tokens });
-				expect(contrastRatio(ink, tokens[fill]!), `text on ${fill}`).toBeGreaterThanOrEqual(4.5);
-			}
+		});
+
+		// The good blue and evil red never change (Trevor, 2026-10-28).
+		it(`${background}: keeps the team colours`, () => {
+			for (const token of Object.keys(TEAM_COLORS)) expect(tokens, token).not.toHaveProperty(token);
 		});
 	}
 
@@ -78,6 +76,12 @@ describe.each(SHEET_BACKGROUNDS.filter((b) => b !== 'theme'))(
 				}
 			}
 		);
+
+		it('keeps the team colours', () => {
+			for (const [token, color] of Object.entries(TEAM_COLORS)) {
+				expect(resolveToken(token, table), token).toBe(color);
+			}
+		});
 
 		it('alignment pills keep their text, whatever the paper', () => {
 			expect(ratio('--on-good', '--good')).toBeGreaterThanOrEqual(4.5);

@@ -50,7 +50,7 @@ export function reminderGroups(game: Game, characters: CharacterLookup): Reminde
 			...charactersInPlay(game),
 			...game.seating.flatMap((seatId) => trueCharacter(game, seatId, characters) ?? []),
 			...game.ruleCharacters,
-			...gainedAbilities(game).map((gained) => gained.characterId)
+			...gainedAbilities(game, characters).map((gained) => gained.characterId)
 		])
 	];
 	const script = scriptCharacterIds(game.script);

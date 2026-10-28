@@ -14,9 +14,9 @@
 
 	/**
 	 * The player's own character on their phone (Trevor, 2026-10-26: "Storyteller tells people
-	 * they can see it on their screen. It becomes a hold to see."). The button shows only while
-	 * the Storyteller lets players see theirs; it shares the "You" row's height, so nothing
-	 * below moves. The first hold tells the Storyteller it was seen.
+	 * they can see it on their screen. It becomes a hold to see."). The button has its own row,
+	 * always there and disabled until the Storyteller lets players see theirs, so turning it on
+	 * or off moves nothing (Trevor, 2026-10-28). The first hold tells the Storyteller it was seen.
 	 */
 	let { player }: { player: RoomPlayer } = $props();
 
@@ -53,11 +53,14 @@
 	}
 </script>
 
-{#if role}
-	<Button aria-haspopup="dialog" data-testid="your-character" onclick={() => (open = true)}
-		>{t('room.role.open')}</Button
+<div class="open">
+	<Button
+		aria-haspopup="dialog"
+		data-testid="your-character"
+		disabled={!role}
+		onclick={() => (open = true)}>{t('room.role.open')}</Button
 	>
-{/if}
+</div>
 
 <Dialog bind:open title={t('room.role.open')}>
 	<div class="role" data-testid="role-card" {@attach noLongPress}>
@@ -70,19 +73,22 @@
 				>
 			{/if}
 		</HoldToSee>
-		<!-- The name and ability keep their space while hidden, so seeing them moves nothing. -->
-		<p class="name" data-testid="role-name">
-			{#if held && character}<CharacterBadge
+		<!-- The name, ability and alignment are laid out while hidden, so seeing them moves
+		     nothing (Trevor, 2026-10-28: "there is reflow when revealing character"). -->
+		<p class="name" class:secret={!held} aria-hidden={!held} data-testid="role-name">
+			{#if character}<CharacterBadge
 					characterId={character.id}
 					{character}
 					{alignment}
 					interactive={false}
 				/>{/if}
 		</p>
-		<p class="ability">{held && character ? character.ability : ''}</p>
+		<p class="ability" class:secret={!held} aria-hidden={!held} data-testid="role-ability">
+			{character?.ability ?? ''}
+		</p>
 		<!-- An alignment the player is told (a Traveller's, or one the Storyteller chose). -->
-		<p class="told" data-testid="role-alignment">
-			{held && role?.alignment && !alignmentOnly
+		<p class="told" class:secret={!held} aria-hidden={!held} data-testid="role-alignment">
+			{role?.alignment && !alignmentOnly
 				? role.alignment === 'evil'
 					? t('room.role.evil')
 					: t('room.role.good')
@@ -94,6 +100,13 @@
 </Dialog>
 
 <style>
+	.open {
+		display: grid;
+		margin-bottom: var(--space-2);
+	}
+	.secret {
+		visibility: hidden;
+	}
 	.role {
 		display: grid;
 		justify-items: center;

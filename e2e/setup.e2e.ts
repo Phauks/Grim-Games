@@ -9,12 +9,12 @@ import { menuButton } from './shell.ts';
 async function selectionFor(page: Page, players: number, script = 'Trouble Brewing') {
 	await page.goto('/new');
 	await pickScript(page, script);
-	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
-	for (let n = 8; n < players; n++) await page.getByRole('button', { name: 'More players' }).tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
-	// A new game opens on character selection (G7).
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	// A new game opens on character selection (G7), where the count is set (Trevor, 2026-10-28).
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
+	for (let n = 8; n < players; n++) await page.getByRole('button', { name: 'More players' }).tap();
 	await expect(page.getByTestId('player-count')).toHaveText(String(players));
 }
 
@@ -255,10 +255,10 @@ test('Stowed Away: up to 2 Travellers count in the bag, the rest for fewer playe
 	await rules.getByText('Stowed Away', { exact: true }).tap();
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -361,15 +361,15 @@ test('Fabled and Loric are added from their own closed sections, not to the bag'
 	await noSidewaysScroll(page);
 });
 
-// Trevor, 2026-10-18: New game's count stopped at 15; stress tests need more players.
-// Trevor, 2026-10-26: New game stops at 20 for one game; character selection goes on to 40.
-test('New game takes up to 20 players, and character selection more', async ({ page }) => {
+// Trevor, 2026-10-18: stress tests need more players; character selection goes on to 40.
+// Trevor, 2026-10-28: the count is character selection's only, not New game's as well.
+test('character selection takes more than 20 players, and New game has no count', async ({
+	page
+}) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	const more = page.getByRole('button', { name: 'More players' });
-	for (let n = 8; n < 20; n++) await more.tap();
-	await expect(page.getByTestId('player-count')).toHaveText('20');
-	await expect(more).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Create game' })).toBeVisible();
+	await expect(page.getByTestId('player-count')).toHaveCount(0);
 
 	await selectionFor(page, 20);
 	// Beyond 15 the sheet's 15+ column applies (https://wiki.bloodontheclocktower.com/Setup).
@@ -808,9 +808,9 @@ test.describe('in a computer window', () => {
 	}) => {
 		await page.goto('/new');
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
-		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
-		await page.getByRole('button', { name: 'Start game' }).click();
+		await page.getByRole('button', { name: 'Create game' }).click();
 		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
 
 		// The setup sheet is beside the characters; Build bag is in the bar at the bottom right.
 		const sheet = await page.getByTestId('setup-table').boundingBox();
@@ -939,8 +939,9 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 
 	await page.goto('/new');
 	await pickScript(page, 'Jinx Check');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
 	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 
@@ -1001,7 +1002,7 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 
 	await page.goto('/new');
 	await pickScript(page, 'Custom Check');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 
@@ -1283,14 +1284,15 @@ test('a Teensyville script greys out player counts above 6 but still allows them
 
 	await page.goto('/new');
 	await pickScript(page, 'Tiny Town');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const table = page.getByTestId('setup-table');
 	await expect(table.locator('thead th[data-too-many]')).toHaveCount(9);
 	await expect(table.locator('thead th[scope="col"]').nth(1)).not.toHaveAttribute('data-too-many');
-	// Still pickable: 8 players stays chosen.
-	await expect(page.getByTestId('player-count')).toHaveText('8');
-	for (let n = 8; n > 6; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	// A script made for 6 starts at 6, not the usual 8 (Trevor, 2026-10-28).
+	await expect(page.getByTestId('player-count')).toHaveText('6');
 	await toBoard(page);
+	await expect(page.getByTestId('seat')).toHaveCount(6);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 	await expect(table.locator('thead th[data-too-many]')).toHaveCount(9);
 	await page.getByRole('button', { name: 'More players' }).tap();
