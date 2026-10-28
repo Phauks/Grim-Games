@@ -44,6 +44,9 @@ import {
 	supportsProtocol,
 	townView,
 	parseTownSound,
+	pushTargets,
+	setPushAddress,
+	type PushAddresses,
 	unseat,
 	viewerFailed,
 	viewersLocked,
@@ -65,7 +68,9 @@ import {
 	type StoredImage
 } from '../src/lib/core/sync/room-images.ts';
 import { MAX_AVATAR_PICTURE_BYTES } from '../src/lib/core/sync/room-pictures.ts';
+import { parsePushAddress, type PushAddress } from '../src/lib/core/sync/web-push.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
+import { pushToPhones, type PushEnv } from './push.ts';
 import { closeSocket, send, sendText, type Attachment } from './room-sockets.ts';
 import {
 	claimMessage,
@@ -74,7 +79,7 @@ import {
 	type TransferRoom
 } from './room-transfer.ts';
 
-export interface RoomEnv {
+export interface RoomEnv extends PushEnv {
 	ROOMS: DurableObjectNamespace<Room>;
 	ROOM_JOINS: RateLimit;
 	ROOM_CREATES: RateLimit;
@@ -232,6 +237,23 @@ export class Room extends DurableObject<RoomEnv> {
 		if (dropped.length) await this.ctx.storage.delete(dropped.map((h) => `image:${h}`));
 		await this.touch();
 		return new Response(null, { status: 204 });
+	}
+
+	/** Sets or forgets the push address Back to town reaches member `id` at (plan U12). */
+	private async setPushAddress(id: string, address: PushAddress | undefined): Promise<void> {
+		const addresses = (await this.ctx.storage.get<PushAddresses>('push')) ?? {};
+		const next = setPushAddress(addresses, id, address);
+		if (next !== addresses) await this.ctx.storage.put('push', next);
+	}
+
+	private async pushCallTown(showing: ReadonlySet<string>): Promise<void> {
+		const addresses = (await this.ctx.storage.get<PushAddresses>('push')) ?? {};
+		const code = await this.ctx.storage.get<string>('code');
+		const gone = await pushToPhones(this.env, pushTargets(addresses, showing), {
+			type: 'call-town',
+			...(code ? { code } : {})
+		});
+		for (const id of gone) await this.setPushAddress(id, undefined);
 	}
 
 	/** Deletes an avatar picture no other phone or background uses (one replaced or taken away). */
@@ -405,6 +427,14 @@ export class Room extends DurableObject<RoomEnv> {
 				const next = roleSeen(room, id);
 				if (next === room) return;
 				room = next;
+			} else if (message.type === 'push') {
+				const address = message.address && parsePushAddress(message.address);
+				if (message.address && !address) return;
+				return this.setPushAddress(id, address);
+			} else if (message.type === 'showing') {
+				const showing = message.on === true;
+				ws.serializeAttachment({ role: 'player', memberId: id, showing } satisfies Attachment);
+				return;
 			} else return;
 			await this.save(room);
 			return;
@@ -553,10 +583,15 @@ export class Room extends DurableObject<RoomEnv> {
 				if (!canCallTown(this.lastCallTown, now)) return;
 				this.lastCallTown = now;
 				const text = JSON.stringify({ type: 'call-town' } satisfies ServerMessage);
+				const showing = new Set<string>();
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'player') sendText(socket, text);
+					if (to?.role !== 'player') continue;
+					sendText(socket, text);
+					if (to.showing && socket.readyState === WebSocket.OPEN) showing.add(to.memberId);
 				}
+				// Phones locked or with the app closed get it as a notification (plan U12).
+				this.ctx.waitUntil(this.pushCallTown(showing));
 				return;
 			}
 			case 'town-sound': {

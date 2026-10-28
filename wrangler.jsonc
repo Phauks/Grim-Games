@@ -50,7 +50,9 @@
 			// Game recaps the Storyteller shares with the players (worker/recap.ts).
 			{ "name": "RECAPS", "class_name": "SharedRecap" },
 			// The open rooms' codes, for the admins' Live games (worker/live-games.ts).
-			{ "name": "LIVE_GAMES", "class_name": "LiveGameIndex" }
+			{ "name": "LIVE_GAMES", "class_name": "LiveGameIndex" },
+			// The push signing keys, made by the Worker itself (worker/push.ts).
+			{ "name": "PUSH_KEYS", "class_name": "PushKeyStore" }
 		]
 	},
 	"migrations": [
@@ -61,7 +63,8 @@
 		{ "tag": "v5", "new_sqlite_classes": ["ScriptMirror"] },
 		{ "tag": "v6", "new_sqlite_classes": ["AccountName"] },
 		{ "tag": "v7", "new_sqlite_classes": ["SharedRecap"] },
-		{ "tag": "v8", "new_sqlite_classes": ["LiveGameIndex"] }
+		{ "tag": "v8", "new_sqlite_classes": ["LiveGameIndex"] },
+		{ "tag": "v9", "new_sqlite_classes": ["PushKeyStore"] }
 	],
 	// Nightly refresh of the stored script copies (worker/mirror.ts). Previews run no
 	// schedule; there a copy is refreshed when it is asked for and over a day old.
@@ -116,7 +119,8 @@
 				{ "name": "REPORTS", "class_name": "ReportBox" },
 				{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" },
 				{ "name": "RECAPS", "class_name": "SharedRecap" },
-				{ "name": "LIVE_GAMES", "class_name": "LiveGameIndex" }
+				{ "name": "LIVE_GAMES", "class_name": "LiveGameIndex" },
+				{ "name": "PUSH_KEYS", "class_name": "PushKeyStore" }
 			]
 		},
 		"ratelimits": [

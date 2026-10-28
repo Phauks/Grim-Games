@@ -22,6 +22,7 @@ import { travellersInPlay, type TravellerInPlay } from '#lib/features/player/tra
 import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 import { avatarPicture } from '#lib/features/player/avatar-picture.svelte.ts';
 import { putRoomImage } from './room-images.ts';
+import { callTownPush } from './call-town-push.svelte.ts';
 import { dealtSeats } from '#lib/features/modes/players-line.ts';
 import { hearCallTown, unlockOnFirstTap } from '#lib/features/sound/sound.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
@@ -170,6 +171,8 @@ export class RoomPlayer {
 	#uploaded: { game: string; image: Blob; hash: Promise<string> } | undefined;
 	/** The Profile's name was offered to this room, so it is not sent again. */
 	#offeredName = false;
+	/** Stops telling the room about Back to town alerts and the app being on screen (plan U12). */
+	readonly #stopPush: () => void;
 
 	constructor(code: string) {
 		this.code = code;
@@ -225,8 +228,27 @@ export class RoomPlayer {
 			() => {
 				this.#lastLook = undefined;
 				void this.sendLook();
+				this.#sendShowing();
+				// Only a phone with alerts on says so; one that turned them off unsubscribed, so
+				// the room forgets its address the next time it calls.
+				if (callTownPush.address)
+					this.#socket.send({ type: 'push', address: callTownPush.address });
 			}
 		);
+		const showing = () => this.#sendShowing();
+		document.addEventListener('visibilitychange', showing);
+		const stopListening = callTownPush.listen((address) =>
+			this.#socket.send({ type: 'push', ...(address ? { address } : {}) })
+		);
+		this.#stopPush = () => {
+			document.removeEventListener('visibilitychange', showing);
+			stopListening();
+		};
+	}
+
+	/** A phone showing the app hears Back to town on its socket, so it isn't pushed it too. */
+	#sendShowing(): void {
+		this.#socket.send({ type: 'showing', on: document.visibilityState === 'visible' });
 	}
 
 	/**
@@ -333,6 +355,7 @@ export class RoomPlayer {
 	}
 
 	stop(): void {
+		this.#stopPush();
 		this.#socket.stop();
 	}
 }

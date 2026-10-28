@@ -20,6 +20,13 @@ export const settings = {
 	'settings.sectionPrint': 'Print',
 	'settings.soundVolume': 'Volume',
 	'settings.callSound': 'Back to town sound',
+	// Back to town on a locked phone (plan U12): the switch, and why it is off where it can't be on.
+	'settings.callTownPush': 'Alert while locked or closed',
+	'settings.callTownPush.home-screen': 'Add the app to your Home Screen to turn this on.',
+	'settings.callTownPush.unsupported': 'This browser can’t alert you while the app is closed.',
+	'settings.callTownPush.denied':
+		'Notifications are blocked for this app in the browser’s settings.',
+	'settings.callTownPushFailed': 'Couldn’t turn on alerts. Check the connection and try again.',
 	'settings.ambience': 'Day and night sound',
 	'settings.ambienceOn': 'Play on the board',
 	'settings.ambienceLevel': 'Level',
