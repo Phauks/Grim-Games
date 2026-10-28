@@ -1,0 +1,39 @@
+{
+	"clauses": [
+		{
+			"id": "pair",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Aligned",
+			"effects": [
+				{
+					"do": "learn",
+					"to": "each-player",
+					"info": {
+						"kind": "same-alignment"
+					}
+				}
+			]
+		},
+		{
+			"id": "register",
+			"when": {
+				"at": "always"
+			},
+			"limit": "once-per-game",
+			"marks": "Register Falsely?",
+			"effects": [
+				{
+					"do": "register",
+					"who": "marked",
+					"marks": "Aligned",
+					"as": {
+						"anything": true
+					},
+					"whileToken": "Register Falsely?"
+				}
+			]
+		}
+	]
+}

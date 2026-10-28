@@ -1,0 +1,28 @@
+{
+	"clauses": [
+		{
+			"id": "speak",
+			"when": {
+				"at": "event",
+				"event": "nomination"
+			},
+			"actor": "nominee",
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "only-chosen-speaks"
+				},
+				{
+					"do": "madness",
+					"who": "chosen",
+					"as": "nominee-good",
+					"penalty": "death"
+				}
+			]
+		}
+	]
+}

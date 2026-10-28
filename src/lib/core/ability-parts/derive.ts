@@ -86,7 +86,9 @@ function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 	if (when.at === 'night')
 		return { first: when.nights !== 'each*', other: when.nights !== 'first' };
 	// Told something before the game starts (the Evil Twin, the Lunatic's Demon): night 1.
-	const first = when.at === 'setup' && effects.some((e) => e.do === 'learn');
+	// Something everyone knows from the start (the Revolutionary's pair) is told at setup, not woken for.
+	const first =
+		when.at === 'setup' && effects.some((e) => e.do === 'learn' && e.to !== 'each-player');
 	// Woken as the Demon they think they are (the Lunatic).
 	if (effects.some((e) => e.do === 'believe' && e.isA === 'demon')) return { first, other: true };
 	// Something happens tonight because of a day's event (Gossip, Moonchild, Juggler).
@@ -186,6 +188,9 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 			(['who', 'with'] as const).flatMap((k) => (k in e ? [(e as Record<string, unknown>)[k]] : []))
 		);
 		const onSelf = subjects.every((who) => who === 'self');
+		// Rule characters: a token that marks no player (Whoopsie, Goal handed out by the
+		// Storyteller) only says where the character is up to, so it never moves.
+		if (clause.marks && subjects.length === 0) acc.fixed.add(clause.marks);
 		const choice = clause.choose;
 		const neverSelf =
 			choice?.notSelf ||
@@ -213,7 +218,11 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 			...(acc.holds.length ? { holds: acc.holds } : {})
 		};
 	if (acc.fixed.size) rules.fixedReminders = [...acc.fixed].sort();
-	const opening = parts.clauses.filter((c) => c.when.at !== 'setup').map(clauseOpening)[0];
+	// A rule character's text states a rule, not its player's timing, so it has no Sort Order phrase.
+	const ruleCharacter = type === 'fabled' || type === 'loric';
+	const opening = ruleCharacter
+		? undefined
+		: parts.clauses.filter((c) => c.when.at !== 'setup').map(clauseOpening)[0];
 	return { rules, wakes, ...(opening ? { opening } : {}) };
 }
 
@@ -263,7 +272,9 @@ function applyEffect(
 					token: marks,
 					from: effect.from,
 					...night,
-					...neighbours
+					...neighbours,
+					// Rule characters: "might not die" (the Ventriloquist's Mad nominee).
+					...(clause.storytellerMay ? { storytellerDecides: true as const } : {})
 				};
 			return;
 		}
@@ -321,9 +332,25 @@ function applyEffect(
 			};
 			return;
 		}
-		case 'register':
+		case 'register': {
 			if (effect.who === 'self') rules.registersAs = { self: { ...effect.as } };
+			// Rule characters: a token's carrier registers falsely (the Revolutionary's Aligned).
+			else if (marks && effect.who === 'marked') {
+				const { anything, ...as } = effect.as;
+				rules.registersAs = {
+					...rules.registersAs,
+					tokens: {
+						...rules.registersAs?.tokens,
+						[marks]: {
+							...as,
+							...(anything ? { asAnything: true as const } : {}),
+							...(effect.whileToken ? { whileToken: effect.whileToken } : {})
+						}
+					}
+				};
+			}
 			return;
+		}
 		case 'register-dead':
 			if (clause.spent) rules.gameEnd = { aliveWhileDead: { untilToken: clause.spent } };
 			return;
@@ -339,9 +366,11 @@ function applyEffect(
 		case 'madness':
 			cause(
 				rules,
-				effect.who === 'self'
-					? { kind: 'execution', victim: { who: 'self' } }
-					: { kind: 'execution' }
+				effect.penalty === 'death'
+					? { kind: 'kills' }
+					: effect.who === 'self'
+						? { kind: 'execution', victim: { who: 'self' } }
+						: { kind: 'execution' }
 			);
 			return;
 		case 'game-rule':
@@ -378,6 +407,9 @@ function applyEffect(
 			return;
 		}
 		case 'end-game': {
+			// Rule characters: all players choose the winner (the Fiddler).
+			if (effect.winner === 'chosen-publicly')
+				rules.gameEnd = { ...rules.gameEnd, decidedByStoryteller: true };
 			const count = alive(clause.if);
 			const noExecution = has(clause.if, (c) => 'noExecutionToday' in c);
 			if (when.at === 'dusk' && count?.exactly !== undefined)

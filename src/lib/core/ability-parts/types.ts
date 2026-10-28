@@ -63,7 +63,10 @@ export const EVENTS = [
 	'nomination',
 	'killed-outsider',
 	'grandchild-killed-by-demon',
-	'marked-executed'
+	'marked-executed',
+	// Rule characters (Fabled and Loric): a player this marks dies (Angel), any player dies (Hindu).
+	'marked-dies',
+	'player-dies'
 ] as const;
 export type GameEvent = (typeof EVENTS)[number];
 
@@ -102,7 +105,19 @@ export const SUBJECTS = [
 	'the-demon',
 	'each-player',
 	'opposing-player',
-	'killed'
+	'killed',
+	// Rule characters (Fabled and Loric), who have no player of their own:
+	// `evil-players`: every evil player (Storm Catcher); `nominee`: today's nominee (Bigwig);
+	// `marked`: the players carrying this clause's reminder (Duchess's visitors, the Ug hat);
+	// `one-of-marked`: one of them, the Storyteller's pick; `died`: the player whose death set
+	// this off, or who died tonight in a night clause (Hindu, Tor); `an-ally`: a player of the
+	// acting player's alignment, the Storyteller's pick (Doomsayer).
+	'evil-players',
+	'nominee',
+	'marked',
+	'one-of-marked',
+	'died',
+	'an-ally'
 ] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
@@ -143,7 +158,11 @@ export type Condition =
 	| { choice: 'guess-wrong' | 'last-was-none' | 'they-agree' | 'impaired' }
 	| { neighboursGood: true }
 	/** Only the first time this happens (the Fang Gu's first Outsider). */
-	| { firstTime: true };
+	| { firstTime: true }
+	// Rule characters: only the first N times (the Hindu's first 4 deaths); the final day
+	// (Ferryman); a nominee mad as a character other than one they claimed before (Ventriloquist).
+	| { firstTimes: number }
+	| { today: 'final-day' | 'mad-as-new-character' };
 
 /**
  * What the player learns. `measure` and `question` are the night info generators the app
@@ -202,7 +221,12 @@ export type Info =
 				| 'yes-no-answer'
 				| 'who-chose'
 				| 'each-other'
-				| 'which-effect';
+				| 'which-effect'
+				// Rule characters: the players a rule applies to, announced (Angel, Buddhist); how
+				// many of the marked players are evil (Duchess); any true info (Zenomancer).
+				| 'affected-players'
+				| 'evil-among-marked'
+				| 'true-info';
 	  };
 
 /**
@@ -222,7 +246,8 @@ type EffectBody =
 	| {
 			do: 'protect';
 			who: Subject;
-			from: 'demon' | 'any' | 'execution';
+			/** `not-execution`: can only die by execution (Storm Catcher). */
+			from: 'demon' | 'any' | 'execution' | 'not-execution';
 			until?: 'tonight' | 'tomorrow';
 			/** Only the first death doesn't happen (the Fool, the Zombuul). */
 			once?: true;
@@ -247,6 +272,8 @@ type EffectBody =
 	| { do: 'gain-ability'; who: Subject; of: 'chosen' | 'a-townsfolk-or-minion' }
 	/** This type's information is false (the Vortox). */
 	| { do: 'falsify-info'; of: CharacterType }
+	/** Rule characters: this player's information might be false (Fibbin, Duchess). */
+	| { do: 'falsify-info'; who: Subject }
 	/** The subject doesn't wake tonight (the Exorcist's Demon). */
 	| { do: 'skip-waking'; who: Subject }
 	/** If `who` does `on` before `until`, `effects` happen: the Witch's curse, the Devil's
@@ -261,7 +288,15 @@ type EffectBody =
 	/** Later tonight, if `if` holds, `effects` happen (Gossip, Moonchild). */
 	| { do: 'later'; at: 'tonight'; if?: Condition[]; effects: Effect[] }
 	/** "mad" about being `as`, or the Storyteller may execute them (Cerenovus, Mutant). */
-	| { do: 'madness'; who: Subject; as: 'chosen-character' | 'outsider'; until?: 'dusk-tomorrow' }
+	| {
+			do: 'madness';
+			who: Subject;
+			/** `nominee-good`: mad that the nominee is good (Bigwig). */
+			as: 'chosen-character' | 'outsider' | 'nominee-good';
+			until?: 'dusk-tomorrow';
+			/** They might die instead of being executed (Bigwig). */
+			penalty?: 'death';
+	  }
 	/** Swap characters (and alignments) between two subjects, or players' seats (Matron). */
 	| {
 			do: 'swap';
@@ -279,32 +314,51 @@ type EffectBody =
 				| 'no-majority-needed'
 				| 'force-execution'
 				| 'nominate-again'
-				| 'no-private-chats';
+				| 'no-private-chats'
+				// Rule characters (Fabled and Loric): the Djinn's jinxes are public; veterans keep
+				// quiet early each day (Buddhist); dead players vote again (Ferryman); the Demon may
+				// skip an attack, and must once (Toymaker); evil's first-night info always or never
+				// (Toymaker, Tor); at most one extra evil player (Spirit of Ivory); only the
+				// nominee's chosen player speaks until voting (Bigwig).
+				| 'jinxes-public'
+				| 'veterans-silent'
+				| 'dead-regain-vote'
+				| 'demon-may-skip-attack'
+				| 'demon-must-skip-attack-once'
+				| 'evil-info-any-count'
+				| 'skip-evil-info'
+				| 'max-one-extra-evil'
+				| 'only-chosen-speaks';
 	  }
 	| { do: 'immune'; who: Subject; to: ('poisoned' | 'drunk')[] }
 	| {
 			do: 'register';
 			who: Subject;
-			as: { alignments?: Alignment[]; types?: CharacterType[] };
+			/** `anything`: either alignment and any seated type (the Revolutionary's pair). */
+			as: { alignments?: Alignment[]; types?: CharacterType[]; anything?: true };
 			/** Only to this ability's own answers (the Fortune Teller's Red Herring). */
 			toSelfOnly?: true;
+			/** Only while this reminder is still in play (the Revolutionary's Register Falsely?). */
+			whileToken?: ReminderLabel;
 	  }
 	/** Thinks they are another type (Drunk, Lunatic); `choicesAsDemon` marks their picks for the Demon. */
 	| { do: 'believe'; who: Subject; isA: SeatedType; choicesAsDemon?: ReminderLabel }
 	| {
 			do: 'become';
 			who: Subject;
-			into: 'demon' | 'this-character' | 'chosen-character' | 'alignment-of-chooser';
+			/** `traveller`: a Traveller of the same alignment (Hindu). */
+			into: 'demon' | 'this-character' | 'chosen-character' | 'alignment-of-chooser' | 'traveller';
 			evil?: true;
 	  }
 	| { do: 'execute'; who: Subject; instead?: true }
-	| { do: 'end-game'; winner: 'own-team' | 'other-team' | Alignment }
+	/** `chosen-publicly`: all players choose the winner (Fiddler). */
+	| { do: 'end-game'; winner: 'own-team' | 'other-team' | Alignment | 'chosen-publicly' }
 	/** Good can't win while both live (the Evil Twin); one more day (the Mastermind). */
 	| { do: 'hold-game'; while?: 'both-alive'; extraDay?: true }
 	/** The subject registers as dead while alive (the Zombuul). */
 	| { do: 'register-dead'; who: Subject }
 	| { do: 'redirect-death'; to: Subject }
-	| { do: 'vote-weight'; who: Subject; counts: number; until: 'tomorrow' }
+	| { do: 'vote-weight'; who: Subject; counts: number; until?: 'tomorrow' }
 	| { do: 'vote-only-with'; who: Subject; with: Subject; until: 'tomorrow' }
 	| { do: 'vote-needs-token'; who: Subject }
 	| { do: 'setup'; modifier: SetupModifierRules }
@@ -328,6 +382,12 @@ export interface Clause {
 	storytellerMay?: true;
 	/** "even if dead". */
 	evenIfDead?: true;
+	/**
+	 * Rule characters (Fabled and Loric) have no player: who acts on this clause, when not the
+	 * Storyteller (each living player for the Doomsayer, the Demon for the Fiddler, the nominee
+	 * for the Bigwig).
+	 */
+	actor?: Subject;
 	effects: Effect[];
 	/** The reminder that marks this clause's effect on its subject (Safe, Poisoned, Red Herring). */
 	marks?: ReminderLabel;
