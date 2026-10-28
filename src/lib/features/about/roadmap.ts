@@ -164,6 +164,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S18', 'S21']
 	},
 	{ title: 'Choose the app language (English for now)', parts: ['S22'] },
+	{ title: 'Search Settings for any setting by name', parts: ['S24'] },
 	{
 		title:
 			'Sound: every sound in one place, Back to town, day and night ambience, a soundboard with a mixer and hot spots, sounds for your actions, playing on Town Square or another speaker, your own sounds',
@@ -199,7 +200,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		later: true
 	},
 	{ title: 'Co-Storytelling: two Storytellers on one game', parts: ['Y2'], later: true },
-	{ title: 'Achievements and laurels, and History stats', parts: ['A1a', 'A1'], later: true },
+	{
+		title: 'Achievements and laurels, and History stats',
+		parts: ['A1a', 'A1d', 'A1'],
+		later: true
+	},
 	{
 		title: 'Game replay: step through a saved game with a filterable history beside the grim',
 		parts: ['R9'],

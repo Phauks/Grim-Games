@@ -41,7 +41,13 @@
 
 <!-- One setting: a visible label, an optional hint and its control. Rows are divided by a
      thin line (Trevor, 2026-10-18), drawn for every `data-setting` in ui/base.css. -->
-<div class="row" data-setting data-layout={layout}>
+<div
+	class="row"
+	data-setting
+	data-layout={layout}
+	data-search-label={label}
+	data-search-description={description}
+>
 	<div class="grid">
 		<div class="head">
 			<span class="label" id={labelId}>{label}</span>

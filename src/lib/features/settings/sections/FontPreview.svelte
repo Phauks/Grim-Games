@@ -55,7 +55,12 @@
 <div class="fonts" data-setting data-testid={testid}>
 	<dl>
 		{#each roles as role (role)}
-			<div class="line" data-setting data-role={role}>
+			<div
+				class="line"
+				data-setting
+				data-role={role}
+				data-search-label={FONT_ROLE_INFO[role].label}
+			>
 				<dt id="{id}-{role}">{FONT_ROLE_INFO[role].label}</dt>
 				<dd
 					class="sample"

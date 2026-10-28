@@ -9,6 +9,16 @@
  * carry no game meaning, so none can be mistaken for a dead, drunk or poisoned mark.
  */
 
+import {
+	drawLaurel,
+	LAUREL_COLOURS,
+	LAUREL_FACE_RADIUS,
+	LAUREL_FORM_NAMES,
+	LAUREL_FORMS,
+	type LaurelColour,
+	type LaurelForm
+} from '#lib/core/achievements/laurel.ts';
+
 /** The face's radius, in the frame's 100 by 100 box, while a frame is drawn around it. */
 export const FACE_RADIUS = 42;
 
@@ -47,6 +57,10 @@ export interface Frame {
 	/** Empty for the frame that draws nothing. */
 	drawing: readonly FrameShape[];
 	unlock?: FrameUnlock;
+	/** The face's radius inside this frame, when it is not `FACE_RADIUS`. */
+	faceRadius?: number;
+	/** A laurel's form and colour (A1); the colour can be changed, the form is the frame. */
+	laurel?: { form: LaurelForm; colour: LaurelColour };
 }
 
 // Frames are pictures, so their colours are their own (like the board backgrounds), except
@@ -124,31 +138,10 @@ function candleGlow(): FrameShape[] {
 	}));
 }
 
-/** Two branches of leaves up the sides, open at the top and the bottom. */
-function laurel(): FrameShape[] {
-	const leaves: FrameShape[] = [];
-	for (const side of [1, -1]) {
-		for (let i = 0; i < 9; i++) {
-			// From near the bottom (165°) up to near the top (25°), on each side.
-			const degrees = side * (165 - i * 17.5);
-			const r = i % 2 ? 45.2 : 46.6;
-			const [cx, cy] = at(r, degrees);
-			leaves.push({
-				shape: 'ellipse',
-				cx,
-				cy,
-				rx: 3.6,
-				ry: 1.5,
-				// Along the branch, tipped outwards like a leaf on its stem.
-				rotate: round(degrees - side * 30),
-				fill: GOLD
-			});
-		}
-	}
-	return leaves;
-}
-
-/** Every frame, in the order they are offered (research/frames.md, all eight kept). */
+/**
+ * Every fixed frame, in the order they are offered (research/frames.md). The laurels follow
+ * them, one per form, each in any of the laurel colours.
+ */
 export const FRAMES: readonly Frame[] = [
 	{ id: 'none', name: 'None', drawing: [] },
 	{
@@ -168,9 +161,47 @@ export const FRAMES: readonly Frame[] = [
 	{ id: 'clock', name: 'Clock face', drawing: clockFace() },
 	{ id: 'scalloped', name: 'Scalloped', drawing: scalloped() },
 	{ id: 'vines', name: 'Vines', drawing: vines() },
-	{ id: 'candle', name: 'Candle glow', drawing: candleGlow() },
-	{ id: 'laurel', name: 'Laurel', drawing: laurel() }
+	{ id: 'candle', name: 'Candle glow', drawing: candleGlow() }
 ];
+
+/** The colour a laurel takes until its player picks another. */
+export const DEFAULT_LAUREL_COLOUR: LaurelColour = 'gold';
+
+/** A laurel's frame id, such as `laurel-olive-gold`. */
+export function laurelFrameId(form: LaurelForm, colour: LaurelColour): FrameId {
+	return `laurel-${form}-${colour}`;
+}
+
+const laurels = new Map<FrameId, Frame>();
+
+/** The laurel frame of this form and colour, drawn once and kept. */
+export function laurelFrame(form: LaurelForm, colour: LaurelColour): Frame {
+	const id = laurelFrameId(form, colour);
+	let frame = laurels.get(id);
+	if (!frame) {
+		frame = {
+			id,
+			name: LAUREL_FORM_NAMES[form],
+			drawing: drawLaurel({ form, colour }),
+			faceRadius: LAUREL_FACE_RADIUS,
+			laurel: { form, colour }
+		};
+		laurels.set(id, frame);
+	}
+	return frame;
+}
+
+const isForm = (raw: string): raw is LaurelForm =>
+	(LAUREL_FORMS as readonly string[]).includes(raw);
+const isColour = (raw: string): raw is LaurelColour => Object.hasOwn(LAUREL_COLOURS, raw);
+
+/** The laurel an id names. The old single `laurel` frame (before A1) is now the gold Laurel. */
+function laurelById(id: FrameId): Frame | undefined {
+	if (id === 'laurel') return laurelFrame('laurel', DEFAULT_LAUREL_COLOUR);
+	const [kind, form, colour, ...rest] = id.split('-');
+	if (kind !== 'laurel' || rest.length || !isForm(form) || !isColour(colour)) return undefined;
+	return laurelFrame(form, colour);
+}
 
 export type FrameId = string;
 
@@ -179,12 +210,13 @@ export const DEFAULT_FRAME: FrameId = 'none';
 
 /** The frame with this id, if there is one. */
 export function frameById(id: FrameId | undefined): Frame | undefined {
-	return id === undefined ? undefined : FRAMES.find((frame) => frame.id === id);
+	if (id === undefined) return undefined;
+	return FRAMES.find((frame) => frame.id === id) ?? laurelById(id);
 }
 
 /** A saved frame id, kept only when it names a frame; otherwise undefined. */
 export function parseFrameId(raw: unknown): FrameId | undefined {
-	return typeof raw === 'string' && frameById(raw) ? raw : undefined;
+	return typeof raw === 'string' ? frameById(raw)?.id : undefined;
 }
 
 /** True when the frame has no unlock rule, or the progress meets it. */
@@ -195,15 +227,20 @@ export function isFrameUnlocked(frame: Frame, progress?: FrameProgress): boolean
 	return (rule.kind === 'gamesPlayed' ? progress.gamesPlayed : progress.accolades) >= rule.count;
 }
 
-/** The frames a player may pick. */
-export function unlockedFrames(progress?: FrameProgress): Frame[] {
-	return FRAMES.filter((frame) => isFrameUnlocked(frame, progress));
+/** The frames a player may pick, with the laurels in `colour`. */
+export function unlockedFrames(
+	progress?: FrameProgress,
+	colour: LaurelColour = DEFAULT_LAUREL_COLOUR
+): Frame[] {
+	const all = [...FRAMES, ...LAUREL_FORMS.map((form) => laurelFrame(form, colour))];
+	return all.filter((frame) => isFrameUnlocked(frame, progress));
 }
 
 /**
- * The frame a seat shows: the player's own pick when it names a frame (their phone only
- * offers the ones they have unlocked), otherwise the board's default, otherwise none.
+ * The frame a seat shows: the player's own laurel when it names one (their phone only offers
+ * the ones they have unlocked), otherwise none. There is no board default: a laurel is the
+ * player's own (Trevor, 2026-10-27).
  */
-export function seatFrame(playerFrame: FrameId | undefined, boardDefault: FrameId): Frame {
-	return frameById(playerFrame) ?? frameById(boardDefault) ?? (frameById(DEFAULT_FRAME) as Frame);
+export function seatFrame(playerFrame: FrameId | undefined): Frame {
+	return frameById(playerFrame) ?? (frameById(DEFAULT_FRAME) as Frame);
 }

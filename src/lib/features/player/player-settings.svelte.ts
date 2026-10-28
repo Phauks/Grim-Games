@@ -17,8 +17,8 @@ export interface PlayerSettings {
 	/** How our own printed sheet is laid out (Trevor, 2026-10-19: a print settings screen). */
 	print: PrintSettings;
 	/**
-	 * The frame round this player's seat token (L4, Trevor 2026-10-22: players pick it with
-	 * their avatar). Undefined leaves it to the Storyteller's board default.
+	 * The laurel round this player's seat token (L4, A1), picked in their Profile. Undefined
+	 * is none: there is no board default (Trevor, 2026-10-27).
 	 */
 	frame?: FrameId;
 	/**

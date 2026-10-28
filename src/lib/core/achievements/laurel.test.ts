@@ -10,7 +10,9 @@ function points(d: string): [number, number][] {
 describe('drawLaurel', () => {
 	it.each(LAUREL_FORMS)('draws %s inside the token, clear of the face', (form) => {
 		const shapes = drawLaurel({ form, colour: 'gold', closed: true });
-		expect(shapes.length).toBeGreaterThan(10);
+		// One path per layer of each branch, however many leaves: light for a full town.
+		expect(shapes.length).toBeGreaterThanOrEqual(8);
+		expect(shapes.length).toBeLessThanOrEqual(10);
 		for (const shape of shapes) {
 			if (shape.shape !== 'path') continue;
 			for (const [x, y] of points(shape.d)) {
@@ -37,6 +39,8 @@ describe('drawLaurel', () => {
 	it('grows with more leaves', () => {
 		const few = drawLaurel({ form: 'olive', colour: 'green', leaves: 4 });
 		const many = drawLaurel({ form: 'olive', colour: 'green', leaves: 10 });
-		expect(many.length).toBeGreaterThan(few.length);
+		const size = (shapes: typeof few) =>
+			shapes.reduce((sum, s) => sum + (s.shape === 'path' ? s.d.length : 0), 0);
+		expect(size(many)).toBeGreaterThan(size(few));
 	});
 });

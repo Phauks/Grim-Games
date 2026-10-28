@@ -18,7 +18,7 @@
 <!-- A closing group of settings inside a section (Theme's colours, Board's Advanced). It is a
      setting row itself, so a line sits above it, and a line runs under its header while open:
      the same lines as every other setting (Trevor, 2026-10-24). -->
-<div class="setting-collapsible" data-setting>
+<div class="setting-collapsible" data-setting data-search-label={title}>
 	<Collapsible {title} level={3} {storageKey} {defaultOpen} {count}>
 		{@render children()}
 	</Collapsible>

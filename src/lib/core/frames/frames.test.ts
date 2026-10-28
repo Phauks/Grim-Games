@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
 	DEFAULT_FRAME,
+	DEFAULT_LAUREL_COLOUR,
 	FACE_RADIUS,
 	FRAMES,
 	frameById,
 	isFrameUnlocked,
+	laurelFrame,
+	laurelFrameId,
 	parseFrameId,
 	seatFrame,
 	unlockedFrames,
@@ -12,7 +15,7 @@ import {
 } from './frames.ts';
 
 describe('frames', () => {
-	it('keeps all eight styles, with unique ids, none first', () => {
+	it('keeps the seven fixed styles, with unique ids, none first', () => {
 		expect(FRAMES.map((frame) => frame.id)).toEqual([
 			'none',
 			'ring',
@@ -20,15 +23,21 @@ describe('frames', () => {
 			'clock',
 			'scalloped',
 			'vines',
-			'candle',
-			'laurel'
+			'candle'
 		]);
 		expect(FRAMES[0].drawing).toEqual([]);
 		expect(DEFAULT_FRAME).toBe('none');
 	});
 
 	it('unlocks every frame for now (Trevor, 2026-10-22)', () => {
-		expect(unlockedFrames()).toHaveLength(FRAMES.length);
+		// The fixed frames, then one laurel per form (Trevor, 2026-10-27: all of them in beta).
+		expect(unlockedFrames()).toHaveLength(FRAMES.length + 6);
+		expect(
+			unlockedFrames()
+				.slice(FRAMES.length)
+				.map((frame) => frame.id)
+		).toContain('laurel-olive-gold');
+		expect(unlockedFrames(undefined, 'demon').at(-1)?.id).toBe('laurel-briar-demon');
 		expect(FRAMES.every((frame) => frame.unlock === undefined)).toBe(true);
 	});
 
@@ -52,17 +61,31 @@ describe('frames', () => {
 	});
 
 	it('reads back only ids that name a frame', () => {
-		expect(parseFrameId('laurel')).toBe('laurel');
+		expect(parseFrameId('vines')).toBe('vines');
+		expect(parseFrameId('laurel-ivy-minion')).toBe('laurel-ivy-minion');
+		// The single Laurel frame from before laurels had forms is the gold Laurel now.
+		expect(parseFrameId('laurel')).toBe(laurelFrameId('laurel', DEFAULT_LAUREL_COLOUR));
+		expect(parseFrameId('laurel-ivy-pink')).toBeUndefined();
+		expect(parseFrameId('laurel-rose-gold')).toBeUndefined();
+		expect(parseFrameId('laurel-ivy-gold-x')).toBeUndefined();
 		expect(parseFrameId('gilded')).toBeUndefined();
 		expect(parseFrameId(3)).toBeUndefined();
 		expect(frameById(undefined)).toBeUndefined();
 	});
 
-	it("shows the player's own frame, else the board's default", () => {
-		expect(seatFrame('vines', 'clock').id).toBe('vines');
-		expect(seatFrame(undefined, 'clock').id).toBe('clock');
-		expect(seatFrame('gone', 'clock').id).toBe('clock');
-		expect(seatFrame(undefined, 'gone').id).toBe('none');
+	it("shows the player's own laurel, else none: there is no board default", () => {
+		expect(seatFrame('vines').id).toBe('vines');
+		expect(seatFrame('laurel-myrtle-silver').id).toBe('laurel-myrtle-silver');
+		expect(seatFrame(undefined).id).toBe('none');
+		expect(seatFrame('gone').id).toBe('none');
+	});
+
+	it('draws each laurel once, with its own smaller face', () => {
+		const olive = laurelFrame('olive', 'green');
+		expect(laurelFrame('olive', 'green')).toBe(olive);
+		expect(olive.laurel).toEqual({ form: 'olive', colour: 'green' });
+		expect(olive.faceRadius).toBeLessThan(FACE_RADIUS);
+		expect(olive.drawing.length).toBeGreaterThan(0);
 	});
 
 	it('has room for an unlock rule (achievements, A1)', () => {

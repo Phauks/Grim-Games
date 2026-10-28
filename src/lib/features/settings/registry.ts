@@ -30,6 +30,13 @@ export interface SettingsSection {
 	 * 2026-10-18); gives the section a reset icon in its heading row, confirmed first.
 	 */
 	reset?: () => void;
+	/**
+	 * False keeps it out of the section list: it opens from its own button in the dialog's
+	 * header instead (the player's Profile, Trevor 2026-10-27: "next to x button").
+	 */
+	listed?: boolean;
+	/** The header button that opens it, given what to do when tapped. */
+	headerButton?: Component<{ onclick: () => void }>;
 	/** Position in the sidebar, low first. Built-ins use 10, 20, 30 ... and 90 for Reset settings. */
 	order: number;
 }
