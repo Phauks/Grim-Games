@@ -1,4 +1,5 @@
 import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { isKnownReminder, isOnScript, type Tile } from '#lib/core/model/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
@@ -38,9 +39,11 @@ export const BLUFFS_BAG_DECIDERS: Deciders<
 		}
 		// In play means a true character (a Drunk shown the Chef leaves the Chef free to
 		// bluff: https://wiki.bloodontheclocktower.com/Drunk). Set 1 is the Lunatic's bluffs
-		// while a Lunatic is in play, and may hold characters in play (Trevor, 2026-10-16).
+		// while a player who believes they are the Demon (`believesType`) is in play, and may hold
+		// characters in play (Trevor, 2026-10-16).
 		const playing = trulyInPlay(game, ctx);
-		const lunaticSet = set === 1 && playing.has('lunatic');
+		const lunaticSet =
+			set === 1 && [...playing].some((id) => rulesOf(id, ctx.characters)?.believesType === 'demon');
 		const seen = new Set<CharacterId>();
 		for (const character of characters) {
 			if (seen.has(character.id)) warn('bluff-duplicate', `${character.name} is listed twice`);

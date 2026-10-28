@@ -4,13 +4,14 @@
  * info notes (`rules/night-order.ts`) and the Savant's statements (`rules/savant-*.ts`) read
  * them, so neither names a character.
  */
-import type { ReminderLabel } from './types.ts';
+import { SEATED_TYPES, type ReminderLabel, type SeatedType } from './types.ts';
 import { readToken } from './reminder-fields.ts';
 import {
 	checkKeys,
 	describe,
 	isObject,
 	readBoolean,
+	readEnum,
 	readString,
 	readStringArray,
 	type Issues
@@ -48,6 +49,12 @@ export interface ChoiceRules {
 	choosesUnmarked?: boolean;
 	/** Its player is told they are another character (the Lunatic thinks they are the Demon). */
 	believesOtherCharacter?: boolean;
+	/**
+	 * The type of character its player is shown instead of its own (the Lunatic thinks they are
+	 * the Demon, https://wiki.bloodontheclocktower.com/Lunatic): its bag tile asks which, and a
+	 * second bluff set is theirs.
+	 */
+	believesType?: SeatedType;
 	infoKind?: InfoKind;
 	evilInfo?: EvilInfo;
 }
@@ -58,6 +65,7 @@ export const CHOICE_RULE_KEYS = [
 	'choosesLikeDemon',
 	'choosesUnmarked',
 	'believesOtherCharacter',
+	'believesType',
 	'infoKind',
 	'evilInfo'
 ] as const satisfies readonly (keyof ChoiceRules)[];
@@ -86,6 +94,8 @@ export function readChoiceRules(
 	if (unmarked !== undefined) out.choosesUnmarked = unmarked;
 	const believes = readBoolean(raw, 'believesOtherCharacter', path, issues);
 	if (believes !== undefined) out.believesOtherCharacter = believes;
+	const believesType = readEnum(raw, 'believesType', SEATED_TYPES, path, issues, false);
+	if (believesType) out.believesType = believesType;
 	if (raw.infoKind !== undefined) {
 		const infoKind = readFlags(raw.infoKind, `${path}.infoKind`, issues, ['number', 'oncePerGame']);
 		if (infoKind) out.infoKind = infoKind;

@@ -185,6 +185,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Gained not-in-play ability (`modes/draft.ts`, the Alchemist's Minion; new): `gainsAbilityOf`, new
 - Players turned into another type (`modes/draft-seats.ts`: Kazali, Lord of Typhon, Lil' Monsta): `turnsPlayersInto`, new
 - Evil info step notes (`night-order.ts` `markerNotes`: Poppy Grower, Magician, Lunatic, Toymaker, Summoner, Snitch) and who may hide the Demon from Minions (Savant): `evilInfo`, moved
+- Shown another type of character (`bag-plan.ts` `standInKind`, `bluffs-bag.ts`, `features/bluffs/bluffs.ts`, was the Lunatic by id: its bag tile asks which Demon, and bluff set 2 is theirs): `believesType`, moved
 - Savant statements (`savant-facts.ts`, `savant-templates.ts`, `savant-log-templates.ts`): reminders marking whom it chose (was `MINION_CHOICES`, `TOWNSFOLK_CHOICES`) `marksChoice`; number or once-per-game info (was `NUMBER_INFO`, `ONCE_INFO`) `infoKind`; the Witch's curse `curses`; the Lunatic's `choosesLikeDemon` and `believesOtherCharacter`; the Snake Charmer's `choosesUnmarked`; all moved (`choice-rules.ts`)
 
 ## Lists that only shrink
