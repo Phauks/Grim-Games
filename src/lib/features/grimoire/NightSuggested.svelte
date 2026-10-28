@@ -26,11 +26,11 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import NightWhy from './NightWhy.svelte';
+	import CharacterSet from './CharacterSet.svelte';
 	import { seatName } from './night-steps.ts';
 
 	/**
@@ -47,11 +47,8 @@
 		compact?: boolean;
 		/** Show a character to the player. */
 		onShow?: (characterId: CharacterId) => void;
-		/**
-		 * Show several characters to the player at once (the Godfather's Outsiders), or `empty`
-		 * when there are none ("No Outsiders", Trevor 2026-10-28).
-		 */
-		onShowCharacters?: (characterIds: readonly CharacterId[], empty: string) => void;
+		/** Show a set of characters to the player at once (the Godfather's Outsiders). */
+		onShowCharacters?: (set: Extract<AnswerValue, { kind: 'characters' }>) => void;
 		/** Show the "Your number is" info token with a suggested number (a number step). */
 		onShowNumber?: (n: number) => void;
 	}
@@ -148,25 +145,6 @@
 	 */
 	const hasWhy = (why: Why | undefined): why is Why =>
 		!!why && (why.facts.length > 0 || why.alternatives.length > 0);
-	/** Plural type names, for "No Outsiders" (Trevor, 2026-10-28). */
-	const TYPES: Record<string, string> = {
-		townsfolk: 'Townsfolk',
-		outsider: 'Outsiders',
-		minion: 'Minions',
-		demon: 'Demons',
-		traveller: 'Travellers',
-		fabled: 'Fabled',
-		loric: 'Loric'
-	};
-	const TYPE: Record<string, string> = {
-		townsfolk: 'Townsfolk',
-		outsider: 'Outsider',
-		minion: 'Minion',
-		demon: 'Demon',
-		traveller: 'Traveller',
-		fabled: 'Fabled',
-		loric: 'Loric'
-	};
 
 	/**
 	 * The roles a "learn a role" step could show (Trevor, 2026-10-25: the Investigator's
@@ -318,21 +296,10 @@
 			? ', '
 			: ''}{@render player(seatId)}{/each}{/snippet}
 
-<!-- A set of characters as badges, then any more of a type the Storyteller picks; "None" when empty. -->
-{#snippet characterSet(
-	v: Extract<AnswerValue, { kind: 'characters' }>,
-	interactive = true
-)}{#each v.value as id, n (id)}{n ? ', ' : ''}<CharacterBadge
-			characterId={id}
-			character={characters.get(id)}
-			{interactive}
-		/>{/each}{#if v.more}{v.value.length > 0 ? ', ' : ''}+<CountBadge count={v.more.count} />
-		{TYPE[v.more.type]}{:else if v.value.length === 0}None{/if}{/snippet}
-
 {#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
 			characterId={v.value}
 			character={characters.get(v.value)}
-		/>{:else if v.kind === 'characters'}{@render characterSet(v)}{:else}{valueText(
+		/>{:else if v.kind === 'characters'}<CharacterSet value={v} {characters} />{:else}{valueText(
 			v
 		)}{/if}{/snippet}
 
@@ -406,7 +373,7 @@
 			{:else if o.value.kind === 'character'}
 				<CharacterBadge characterId={o.value.value} character={characters.get(o.value.value)} />
 			{:else if o.value.kind === 'characters'}
-				{@render characterSet(o.value)}
+				<CharacterSet value={o.value} {characters} />
 			{:else}
 				<strong>{valueText(o.value)}</strong>
 			{/if}
@@ -421,19 +388,11 @@
 		{:else if o.value.kind === 'character' && onShow}
 			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
 			>
-		{:else if o.value.kind === 'characters' && !o.anyOther}
-			{@render showSet(o.value)}
+		{:else if o.value.kind === 'characters' && !o.anyOther && onShowCharacters}
+			{@const v = o.value}
+			<Button variant="quiet" onclick={() => onShowCharacters(v)}>Show to player</Button>
 		{/if}
 	</li>
-{/snippet}
-
-<!-- Show to player for a set of characters; with none, the card says "No Outsiders" (Trevor, 2026-10-28). -->
-{#snippet showSet(v: Extract<AnswerValue, { kind: 'characters' }>)}
-	{#if onShowCharacters}
-		{@const ids = v.value}
-		{@const empty = `No ${TYPES[v.type]}`}
-		<Button variant="quiet" onclick={() => onShowCharacters(ids, empty)}>Show to player</Button>
-	{/if}
 {/snippet}
 
 {#snippet answerOnly(a: NightAnswer)}
@@ -444,7 +403,7 @@
 		{#if a.kind === 'character'}
 			<CharacterBadge characterId={a.value} character={characters.get(a.value)} />
 		{:else if a.kind === 'characters'}
-			{@render characterSet(a)}
+			<CharacterSet value={a} {characters} />
 		{:else}
 			<strong>{valueText(a)}</strong>
 		{/if}
@@ -455,8 +414,8 @@
 	{#if a.kind === 'character' && onShow}
 		{@const id = a.value}
 		<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
-	{:else if a.kind === 'characters'}
-		{@render showSet(a)}
+	{:else if a.kind === 'characters' && onShowCharacters}
+		<Button variant="quiet" onclick={() => onShowCharacters(a)}>Show to player</Button>
 	{:else if a.kind === 'number' && onShowNumber}
 		{@const n = a.value}
 		<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
@@ -469,10 +428,11 @@
 					characterId={line.characterId}
 					character={characters.get(line.characterId)}
 					interactive={false}
-				/>{/if}{#if line.set}{@render characterSet(
-					line.set,
-					false
-				)}{/if}{line.text}{#each line.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
+				/>{/if}{#if line.set}<CharacterSet
+					value={line.set}
+					{characters}
+					interactive={false}
+				/>{/if}{line.text}{#each line.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
 					name={name(seatId)}
 				/>{/each}{#each line.valid ?? [] as v, n (n)}{n ? ', ' : ''}{#if v.seatId}<PlayerBadge
 						name={name(v.seatId)}

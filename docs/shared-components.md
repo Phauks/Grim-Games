@@ -80,6 +80,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A table (paging, column picker, a filter on every column): `ui/table/DataTable.svelte`: each column gives `value`, `filterable` or a `noFilter` reason (`column-filter.ts`) (enforced by review)
 - A character name: `features/characters/CharacterBadge.svelte` (enforced by `grim/names-as-badges`)
 - An alignment in its colour (Good, Evil, Not set): `features/grimoire/AlignmentPill.svelte` (`text` for words such as "Good wins") (enforced by review)
+- A night answer's set of characters (the Godfather's Outsiders in play, "+1 Outsider", "None"): `features/grimoire/CharacterSet.svelte`, in Valid Information and its Why (enforced by review)
 - The board's lower left corner (script name, mode and rules, join code, night/day, Game time, watchers): `features/grimoire/BoardCorner.svelte`, its lines from `cornerLines` in `features/grimoire/corner-lines.ts`; a player's grim gets the same lines through the room (`PublicCorner`) (enforced by review)
 - One player's notes: their dialog, and their entry in a list of notes: `ui/notes/SeatNotesDialog.svelte` (cards, each saved as it closes) and `features/grimoire/SeatNoteEntry.svelte`: the Storyteller's Notes sheet and a player's own seat notes (enforced by review)
 - A seat's note mark (the disc on the token's lower right rim; tapping it opens the note): `ui/seating/SeatNoteMark.svelte`: the board's seats and a player's grim (enforced by review)

@@ -6,7 +6,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
+	import CharacterSet from './CharacterSet.svelte';
 
 	/**
 	 * The logic behind a night suggestion (Trevor, 2026-10-17: "show the logic"): the players
@@ -51,14 +51,10 @@
 			character={characters.get(v.value)}
 		/>{:else if v.kind === 'yes-no'}{v.value
 			? 'Yes'
-			: 'No'}{:else if v.kind === 'number'}{v.value}{:else if v.kind === 'characters'}{#each v.value as id, n (id)}{n
-				? ', '
-				: ''}<CharacterBadge characterId={id} character={characters.get(id)} />{/each}{#if v.more}{v
-				.value.length > 0
-				? ', '
-				: ''}+<CountBadge count={v.more.count} />
-			{TYPE[v.more.type] ??
-				v.more.type}{:else if v.value.length === 0}None{/if}{:else}{v.reason}{/if}{/snippet}
+			: 'No'}{:else if v.kind === 'number'}{v.value}{:else if v.kind === 'characters'}<CharacterSet
+			value={v}
+			{characters}
+		/>{:else}{v.reason}{/if}{/snippet}
 
 <div class="why-block" data-testid="why">
 	{#if why.facts.length > 0}
