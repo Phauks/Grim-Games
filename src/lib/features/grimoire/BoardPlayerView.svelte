@@ -8,9 +8,7 @@
 	} from '#lib/core/sync/public-projection.ts';
 	import { dealtSeats } from '#lib/features/modes/players-line.ts';
 	import { scriptKey } from '#lib/features/player/notebook.ts';
-	import PlayerGrim from '#lib/features/player/PlayerGrim.svelte';
-	import PlayerNotes from '#lib/features/player/PlayerNotes.svelte';
-	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
+	import PlayerScreen from '#lib/features/player/PlayerScreen.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 	import { travellersInPlay } from '#lib/features/player/travellers-in-play.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
@@ -51,31 +49,22 @@
 
 <!-- The row over the tabs, as on /play: where the game is up to and the day timer. -->
 <PlayerStatusRow table={town} />
-<PlayerScriptTabs
+<PlayerScreen
 	{script}
 	players={dealtSeats(town.seats).dealt}
 	inPlay={charactersInPlay(game)}
 	travellers={travellersInPlay(town.seats)}
 	rules={town.rules}
 	ruleCharacters={town.ruleCharacters}
-	{notes}
->
-	{#snippet grim()}<PlayerGrim
-			{script}
-			town={{
-				seats: town.seats,
-				layout: town.layout,
-				storytellerName: town.storytellerName,
-				corner: town.corner,
-				look,
-				picture,
-				pictureRoom,
-				guessKey
-			}}
-		/>{/snippet}
-</PlayerScriptTabs>
-
-{#snippet notes()}<PlayerNotes
-		notesKey={notebook ?? scriptKey(script)}
-		town={{ seats: town.seats, guessKey }}
-	/>{/snippet}
+	town={{
+		seats: town.seats,
+		layout: town.layout,
+		storytellerName: town.storytellerName,
+		corner: town.corner,
+		look,
+		picture,
+		pictureRoom,
+		guessKey
+	}}
+	notesKey={notebook ?? scriptKey(script)}
+/>

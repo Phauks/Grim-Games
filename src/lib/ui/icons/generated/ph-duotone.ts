@@ -65,6 +65,7 @@ import ph_database_duotone from '~icons/ph/database-duotone';
 import ph_device_mobile_duotone from '~icons/ph/device-mobile-duotone';
 import ph_diamond_duotone from '~icons/ph/diamond-duotone';
 import ph_dice_five_duotone from '~icons/ph/dice-five-duotone';
+import ph_door_duotone from '~icons/ph/door-duotone';
 import ph_door_open_duotone from '~icons/ph/door-open-duotone';
 import ph_dots_three_duotone from '~icons/ph/dots-three-duotone';
 import ph_dots_three_vertical_duotone from '~icons/ph/dots-three-vertical-duotone';
@@ -170,6 +171,7 @@ import ph_shield_star_duotone from '~icons/ph/shield-star-duotone';
 import ph_shuffle_duotone from '~icons/ph/shuffle-duotone';
 import ph_sidebar_simple_duotone from '~icons/ph/sidebar-simple-duotone';
 import ph_sign_in_duotone from '~icons/ph/sign-in-duotone';
+import ph_sign_out_duotone from '~icons/ph/sign-out-duotone';
 import ph_skull_duotone from '~icons/ph/skull-duotone';
 import ph_sliders_duotone from '~icons/ph/sliders-duotone';
 import ph_sliders_horizontal_duotone from '~icons/ph/sliders-horizontal-duotone';
@@ -285,6 +287,7 @@ const icons: IconMap = {
 	'ph:device-mobile-duotone': ph_device_mobile_duotone,
 	'ph:diamond-duotone': ph_diamond_duotone,
 	'ph:dice-five-duotone': ph_dice_five_duotone,
+	'ph:door-duotone': ph_door_duotone,
 	'ph:door-open-duotone': ph_door_open_duotone,
 	'ph:dots-three-duotone': ph_dots_three_duotone,
 	'ph:dots-three-vertical-duotone': ph_dots_three_vertical_duotone,
@@ -390,6 +393,7 @@ const icons: IconMap = {
 	'ph:shuffle-duotone': ph_shuffle_duotone,
 	'ph:sidebar-simple-duotone': ph_sidebar_simple_duotone,
 	'ph:sign-in-duotone': ph_sign_in_duotone,
+	'ph:sign-out-duotone': ph_sign_out_duotone,
 	'ph:skull-duotone': ph_skull_duotone,
 	'ph:sliders-duotone': ph_sliders_duotone,
 	'ph:sliders-horizontal-duotone': ph_sliders_horizontal_duotone,

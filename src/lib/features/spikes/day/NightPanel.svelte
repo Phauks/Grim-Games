@@ -24,7 +24,13 @@
 	import type { DayGame } from './day-game.svelte.ts';
 	import DeathCheckSheet from './DeathCheckSheet.svelte';
 	import InfoPickerSheet from './InfoPickerSheet.svelte';
-	import { abnormalText, impairmentValues, possibleText, verdictText } from './night-values.ts';
+	import {
+		abnormalText,
+		impairmentValues,
+		possibleText,
+		valueText,
+		verdictText
+	} from './night-values.ts';
 
 	interface Props {
 		game: DayGame;
@@ -92,6 +98,8 @@
 				return a.value ? 'Yes' : 'No';
 			case 'character':
 				return `Show the ${game.characterName(a.value)}: ${who.join(', ')} died by execution`;
+			case 'characters':
+				return valueText(game, a);
 			case 'number':
 				if (a.abnormal) {
 					const list = a.abnormal.map(

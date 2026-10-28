@@ -39,7 +39,7 @@ export const room = {
 	'room.refreshText':
 		"Everyone's phone leaves the room and the old code stops working. The grimoire is not changed.",
 	// Players' join pages
-	'room.joinTitle': 'Join game',
+	'room.joinTitle': 'Join or resume',
 	'room.pageTitle': 'Room',
 	'room.notACode': 'That is not a room code. Codes are six digits.',
 	'room.closedOrWrong': 'This room is closed, or the code is wrong.',
@@ -55,7 +55,8 @@ export const room = {
 	'room.noScriptYet': 'No script yet',
 	'room.tableSize': '{seats} seats, {seated} taken',
 	'room.storytellerLine': 'Storyteller: {name}',
-	'room.yourGames': 'Your games',
+	'room.asPlayer': 'As player',
+	'room.asStoryteller': 'As Storyteller',
 	'room.recentLine': '{code} · Storyteller: {name}',
 	'room.recentClosed': '{code} · Closed',
 	'room.settingsNamed': 'Settings: {name}',
@@ -246,5 +247,17 @@ export const room = {
 	'room.message.send': 'Send',
 	'room.message.consult': 'Request a Storyteller consult',
 	'room.inbox.consult': 'Consult requested',
-	'room.message.failed': 'Couldn’t send. Check the connection and try again.'
+	'room.inbox.message': 'Message',
+	'room.inbox.picture': 'Reported picture',
+	'room.inbox.markUnread': 'Mark as unread',
+	'room.inbox.player': 'Player',
+	'room.inbox.allPlayers': 'All players',
+	'room.inbox.read': 'Read',
+	'room.inbox.readAll': 'Read and unread',
+	'room.inbox.readUnread': 'Unread',
+	'room.inbox.readRead': 'Read',
+	'room.inbox.consultOnly': 'Consult requested',
+	'room.message.failed': 'Couldn’t send. Check the connection and try again.',
+	'room.message.delivered': 'Message delivered to the Storyteller',
+	'room.message.notDelivered': 'Message not delivered. Wait a moment and try again.'
 } as const;

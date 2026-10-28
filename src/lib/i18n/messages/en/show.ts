@@ -26,6 +26,8 @@ export const show = {
 	// Fair-play warnings (FairPlayNotice), in Trevor's own words (2026-10-27).
 	'show.fairPlay.secret':
 		'This is for your eyes only. Please do not screenshot, photograph, or otherwise share this screen in any way that could compromise the integrity of this game.',
+	'show.fairPlay.short': 'This is for your eyes only.',
+	'show.fairPlay.title': 'Fair play',
 	'show.fairPlay.message':
 		'Only send what the Storyteller needs to know. Never use this to get around the rules or pass on secret information.',
 	'show.fairPlay.watchLead':

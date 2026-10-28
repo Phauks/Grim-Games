@@ -158,11 +158,10 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(alex).toHaveText(/^Alex K\s*Seat 3$/);
 
 	// Coming back (Trevor, 2026-10-19: "it booted me out like I had not joined it yet"): Join
-	// game lists the room, and opening it shows the seat this phone already has. Resume game
-	// neither lists it (Trevor, 2026-10-23) nor links to Join game (Trevor, 2026-10-24).
-	await phone.goto('/games');
-	await expect(phone.getByRole('main').getByRole('link', { name: 'Join game' })).toHaveCount(0);
+	// game lists the room, and opening it shows the seat this phone already has. It is listed
+	// as played, not with the games this phone is storytelling (Trevor, 2026-10-28).
 	await phone.goto('/join');
+	await expect(phone.getByRole('region', { name: 'Saved games' }).getByRole('link')).toHaveCount(0);
 	const recent = phone.getByTestId('recent-rooms').getByRole('button');
 	await expect(recent).toHaveCount(1);
 	await expect(recent).toContainText('Trouble Brewing');
@@ -1034,7 +1033,7 @@ test('a join screen shows nothing from the phone until the room sends its script
 	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
 	// A code no room has: only the join form, none of the phone's own script.
 	await phone.goto('/join/000000');
-	await expect(phone.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+	await expect(phone.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
 	await expect(phone.getByRole('tab')).toHaveCount(0);
 	await expect(phone.getByText('Bad Moon Rising')).toHaveCount(0);
 
@@ -1166,9 +1165,9 @@ test('Join game in the menu takes a typed code, with spaces, and says when no ga
 }) => {
 	await page.goto('/');
 	await menuButton(page).tap();
-	await page.getByRole('link', { name: 'Join game' }).tap();
+	await page.getByRole('link', { name: 'Join or resume' }).tap();
 	await expect(page).toHaveURL(/\/join$/);
-	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
 	// Nothing to print or share before a game is joined, so neither shows (Trevor, 2026-10-23).
 	for (const name of ['Print script', 'Share script'])
 		await expect(page.getByRole('button', { name })).toHaveCount(0);
@@ -1454,6 +1453,15 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(pledge.getByTestId('watch-pledge').getByRole('listitem')).toHaveCount(3);
 	await pledge.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
+	// The fair-play line stays at the bottom while watching (Trevor, 2026-10-28).
+	// The fair-play line stays bottom right while watching, short; tapping it shows the whole
+	// warning (Trevor, 2026-10-28). The pledge's own notice may still be closing, so by name.
+	const fairPlay = viewer.getByRole('button', { name: 'This is for your eyes only.' });
+	await expect(fairPlay).toBeVisible();
+	await fairPlay.tap();
+	await expect(viewer.getByTestId('fair-play-full')).toContainText('Please do not screenshot');
+	await viewer.keyboard.press('Escape');
+	await expect(viewer.getByTestId('fair-play-full')).toBeHidden();
 	// Every control that changes the game is there but disabled (Trevor, 2026-10-19), so
 	// nothing invites a try; what only reads still opens. The board says it is view-only.
 	const toolbar = viewer.getByRole('toolbar', { name: 'Grimoire' });
@@ -2512,8 +2520,11 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	// communication menu"), where the picture is removed for this game.
 	const report = (await openInbox(page)).getByTestId('inbox-item');
 	await expect(report).toContainText('Picture reported by 1 player');
-	await expect(report.getByRole('img', { name: "Alex Kim's picture" })).toBeVisible();
-	await report.getByRole('button', { name: "Remove Alex Kim's picture for this game" }).tap();
+	await report.tap();
+	const opened = page.getByRole('dialog', { name: 'Reported picture' });
+	await expect(opened.getByRole('img', { name: "Alex Kim's picture" })).toBeVisible();
+	await opened.getByRole('button', { name: "Remove Alex Kim's picture for this game" }).tap();
+	await expect(opened).toBeHidden();
 	await expect(report).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');

@@ -95,7 +95,7 @@
 					>
 				</h1>
 			{/if}
-			{#if actions}<div class="actions">{@render actions()}</div>{/if}
+			{#if actions}<div class="actions" data-testid="page-actions">{@render actions()}</div>{/if}
 		</div>
 		{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
 	</header>

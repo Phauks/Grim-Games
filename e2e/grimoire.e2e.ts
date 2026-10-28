@@ -221,7 +221,7 @@ async function keepPlaying(page: Page) {
 	await expect(prompt).toBeHidden();
 }
 
-test('New game and Resume game are screens of their own', async ({ page }) => {
+test('New game and Join or resume are screens of their own', async ({ page }) => {
 	// Home is blank for now (Trevor, 2026-10-16); the sidebar leads to each screen.
 	await page.goto('/new');
 	// The shared page frame: one title per page (Shared page structure).
@@ -238,9 +238,11 @@ test('New game and Resume game are screens of their own', async ({ page }) => {
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
 
-	// Resume game lists every saved game with where it is up to.
-	await page.goto('/games');
-	await expect(page.getByRole('heading', { name: 'Resume game', level: 1 })).toBeVisible();
+	// Join or resume lists every saved game with where it is up to, under As Storyteller,
+	// below the rooms joined as a player (Trevor, 2026-10-28).
+	await page.goto('/join');
+	await expect(page.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 2 })).toHaveText(['As player', 'As Storyteller']);
 	const saved = page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ });
 	await expect(saved).toBeVisible();
 	await saved.tap();
@@ -258,7 +260,9 @@ test('a new game offers no "Is The Drunk" before anyone has a token', async ({ p
 	await expect(picker.getByRole('group', { name: 'Drunk' })).toHaveCount(0);
 });
 
-test('Resume game deletes every saved game at once, and leaves History alone', async ({ page }) => {
+test('Join or resume deletes every saved game at once, and leaves History alone', async ({
+	page
+}) => {
 	// One ended game, in History.
 	await startGame(page);
 	await menu(page, 'End game');
@@ -269,13 +273,13 @@ test('Resume game deletes every saved game at once, and leaves History alone', a
 	await startGame(page);
 	await startGame(page, 'Sects & Violets');
 
-	await page.goto('/games');
+	await page.goto('/join');
 	const games = page.getByRole('region', { name: 'Saved games' }).getByRole('link');
 	await expect(games).toHaveCount(2);
 	// Trevor (2026-10-18): one button clears the whole list, after asking.
 	const clear = page.getByRole('button', { name: 'Delete all saved games' });
-	// On the title's line, phones too (Trevor, 2026-10-19).
-	const title = (await page.getByRole('heading', { name: 'Resume game', level: 1 }).boundingBox())!;
+	// On the As Storyteller heading's line, phones too (Trevor, 2026-10-19 and 2026-10-28).
+	const title = (await page.getByRole('heading', { name: 'As Storyteller' }).boundingBox())!;
 	const button = (await clear.boundingBox())!;
 	expect(Math.abs(button.y + button.height / 2 - (title.y + title.height / 2))).toBeLessThan(
 		title.height / 2
@@ -288,7 +292,9 @@ test('Resume game deletes every saved game at once, and leaves History alone', a
 	await clear.tap();
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(games).toHaveCount(0);
-	await expect(page.getByText('None', { exact: true })).toBeVisible();
+	await expect(
+		page.getByRole('region', { name: 'Saved games' }).getByText('None', { exact: true })
+	).toBeVisible();
 	await expect(clear).toBeDisabled();
 	await page.reload();
 	await expect(games).toHaveCount(0);
@@ -1923,9 +1929,9 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 	await expect(page).toHaveURL(board);
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await drawer.getByRole('link', { name: 'Resume game' }).tap();
+	await drawer.getByRole('link', { name: 'Join or resume' }).tap();
 	await leave.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page).toHaveURL(/\/games$/);
+	await expect(page).toHaveURL(/\/join$/);
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*8 seats/ }).first()).toBeVisible();
 });
 
@@ -2578,14 +2584,14 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await expect(end).toContainText(/Now\s*In Resume game\s*Becomes\s*Ended, in History/);
+	await expect(end).toContainText(/Now\s*In Join or resume\s*Becomes\s*Ended, in History/);
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// Still on the board (Trevor, 2026-10-17), which says the game is over.
 	expect(page.url()).toBe(board);
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
-	// Ended games are listed apart from Resume game (Trevor, 2026-10-16), and open to look
+	// Ended games are listed apart from Join or resume (Trevor, 2026-10-16), and open to look
 	// around in without being reopened (Trevor, 2026-10-17).
 	await page.goto('/history');
 	const listed = page
@@ -2600,7 +2606,7 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await history.getByRole('button', { name: 'Show' }).last().tap();
 	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
-	await page.goto('/games');
+	await page.goto('/join');
 	await expect(page.getByRole('link', { name: /Trouble Brewing/ })).toHaveCount(0);
 	await page.goto(board);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
@@ -2630,14 +2636,14 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 
-	// Reopening from the board puts it back in Resume game.
+	// Reopening from the board puts it back in Join or resume.
 	await page.getByTestId('game-over').tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(page.getByTestId('game-over')).toHaveCount(0);
-	await page.goto('/games');
+	await page.goto('/join');
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*Setting up/ })).toBeVisible();
 });
 
@@ -4221,6 +4227,65 @@ test('the Investigator step lists each Minion, and the Recluse as a Minion you p
 	await expect(shown).toContainText('Baron');
 });
 
+// Trevor (2026-10-27): on the first night the Godfather's step names every Outsider in
+// play, ready to show on one card (https://wiki.bloodontheclocktower.com/Godfather).
+test("the Godfather's first night step shows every Outsider in play", async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	for (const [seat, name] of [
+		[1, 'Godfather'],
+		[2, 'Tinker'],
+		[3, 'Moonchild'],
+		[4, 'Zombuul']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Godfather');
+	await expect(strip.getByTestId('night-suggested')).toHaveText(
+		/^Valid Information:\s*Tinker\s*,\s*Moonchild\s*$/
+	);
+	// Tapping the strip's text could open a glossary word's popover on phones.
+	await strip.locator('button.step .count').tap();
+	const step = page.getByRole('dialog', { name: 'Godfather' });
+	const suggested = step.getByTestId('night-suggested');
+	await expect(suggested.locator('.main > [data-character-id="tinker"]')).toBeVisible();
+	await expect(suggested.locator('.main > [data-character-id="moonchild"]')).toBeVisible();
+	await page.screenshot({ path: `test-results/godfather-${test.info().project.name}.png` });
+	await suggested.getByRole('button', { name: 'Show to player' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown).toContainText('Tinker');
+	await expect(shown).toContainText('Moonchild');
+});
+
+// Trevor (2026-10-28): with no Outsiders in play, Show to player says "No Outsiders".
+test('the Godfather with no Outsiders in play is shown No Outsiders', async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	for (const [seat, name] of [
+		[1, 'Godfather'],
+		[2, 'Gambler'],
+		[3, 'Zombuul']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Godfather');
+	await expect(strip.getByTestId('night-suggested')).toHaveText(/^Valid Information:\s*None\s*$/);
+	await strip.locator('button.step .count').tap();
+	const suggested = page.getByRole('dialog', { name: 'Godfather' }).getByTestId('night-suggested');
+	await suggested.getByRole('button', { name: 'Show to player' }).tap();
+	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('No Outsiders');
+});
+
 // Trevor (2026-10-26): with a Recluse and a Butler in play and the Librarian's Outsider
 // reminder on the Recluse, the Recluse row comes first and stands out; the Butler stays as an
 // alternative (https://wiki.bloodontheclocktower.com/Librarian).
@@ -4738,7 +4803,7 @@ test("the Investigator's own seat fits its Wrong; its Minion is marked and warns
 	await expect(page.getByText(/the character type is not one it goes on/)).toBeVisible();
 });
 
-test('Resume game names a game’s alternative mode beside its script', async ({ page }) => {
+test('Join or resume names a game’s alternative mode beside its script', async ({ page }) => {
 	await startGame(page);
 	const plain = new URL(page.url()).pathname;
 	await startGame(page, 'Sects & Violets');
@@ -4752,7 +4817,7 @@ test('Resume game names a game’s alternative mode beside its script', async ({
 			),
 		gameId
 	);
-	await page.goto('/games');
+	await page.goto('/join');
 	const saved = page.getByRole('region', { name: 'Saved games' });
 	await expect(saved.getByRole('link', { name: /Sects & Violets · Sushi Buffet/ })).toBeVisible();
 	// A standard game shows nothing extra.
