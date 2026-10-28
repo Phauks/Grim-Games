@@ -1,6 +1,7 @@
 /**
  * Night information: the roles a "learn a role" character could be shown (Washerwoman,
- * Librarian, Investigator: two players, one of them a character of a type), as rows the
+ * Librarian, Investigator: two players, one of them a character of a type; Ravenkeeper, King,
+ * Pixie, Grandmother: one player's character), as rows the
  * Storyteller shows with one tap (Trevor, 2026-10-25). Part of `night-info.ts`.
  *
  * Built on the picker's valid information, with two additions:

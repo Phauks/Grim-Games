@@ -3,7 +3,9 @@
 	import { SEATED_TYPES, type SeatedType, type SetupAnalysis } from '#lib/core/rules/index.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import SetupTable from './SetupTable.svelte';
 
 	interface Props {
 		analysis: SetupAnalysis;
@@ -17,9 +19,13 @@
 		 * knows of (Trevor, 2026-10-27). Nothing chosen is shown.
 		 */
 		game?: boolean;
+		/** The most players the script is made for (Teensyville: 6), for the setup sheet. */
+		maxPlayers?: number;
 	}
 
-	let { analysis, travellers, travellerLimits, game = false }: Props = $props();
+	let { analysis, travellers, travellerLimits, game = false, maxPlayers }: Props = $props();
+	// In a game, tapping everyone's count shows the whole setup sheet (Trevor, 2026-10-28).
+	let sheetOpen = $state(false);
 	const travellersOk = $derived(
 		travellerLimits
 			? travellers >= travellerLimits.min && travellers <= travellerLimits.max
@@ -67,12 +73,20 @@
 -->
 <div class="counts" class:game data-testid={game ? 'game-counts' : 'setup-counts'}>
 	{#if game}
-		<div class="cell everyone" data-ok="">
+		<button
+			type="button"
+			class="cell everyone"
+			data-ok=""
+			aria-haspopup="dialog"
+			title={t('setup.sheet')}
+			data-testid="count-info-players"
+			onclick={() => (sheetOpen = true)}
+		>
 			<span class="label">{t('setup.players')}</span>
 			<span class="value"
 				><span class="chosen" data-testid="count-players">{analysis.players}</span></span
 			>
-		</div>
+		</button>
 	{/if}
 	{#each SEATED_TYPES as type (type)}
 		{@const ok = game || analysis.expected[type].includes(analysis.chosen[type])}
@@ -135,6 +149,13 @@
 			</p>{/if}
 	</div>
 </Popover>
+
+{#if game}
+	<Dialog bind:open={sheetOpen} title={t('setup.sheet')}>
+		<!-- The dealt players' column: Travellers aren't on the sheet. -->
+		<SetupTable players={analysis.dealt} {maxPlayers} />
+	</Dialog>
+{/if}
 
 <style>
 	.counts {
