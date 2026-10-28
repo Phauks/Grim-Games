@@ -7,7 +7,6 @@
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
@@ -43,8 +42,9 @@
 	import SeatMenu from './SeatMenu.svelte';
 	import SeatReminderMenu from './SeatReminderMenu.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
-	import { suggestNames } from './device-notes.ts';
-	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import SeatNameField from './SeatNameField.svelte';
+	import SeatNameSuggestions from './SeatNameSuggestions.svelte';
+	import { SeatNameEdit } from './seat-name-edit.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ReminderPicker from './ReminderPicker.svelte';
 	import SeatChooser from './SeatChooser.svelte';
@@ -104,55 +104,12 @@
 		seat?.alignment === 'evil' ? 'Evil' : seat?.alignment === 'good' ? 'Good' : 'None'
 	);
 
-	// ── Name, with suggestions from the room's phones (Trevor, 2026-10-26) ──
-	// A different seat (or the same seat renamed elsewhere) resets the field.
-	let typed = $derived(seat?.playerName ?? '');
-	const taken = $derived(
-		game.seating.flatMap((id) =>
-			id !== seatId && game.seats[id].playerName ? [game.seats[id].playerName!] : []
-		)
-	);
-	// The room's phones without a seat in this game, asleep too, never names from earlier games.
-	const inRoom = $derived(roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : [])));
-	const suggestions = $derived(suggestNames(inRoom, typed, taken));
-
-	// The name is edited in place in the sheet's header: the input takes the name's spot.
-	let editingName = $state(false);
-	let nameInput = $state<HTMLInputElement>();
-	function editName() {
-		typed = seat?.playerName ?? '';
-		editingName = true;
-	}
-	$effect(() => {
-		if (editingName) nameInput?.focus();
+	// ── Name, edited in the header ──
+	const nameEdit = new SeatNameEdit({
+		grimoire: () => grimoire,
+		seatId: () => seatId,
+		open: () => open
 	});
-	$effect(() => {
-		if (!open) editingName = false;
-	});
-	function submitName(event: SubmitEvent) {
-		event.preventDefault();
-		finishName();
-	}
-	/** Saves the name and closes the keyboard (focus leaving the field closes it). */
-	function finishName(name = typed) {
-		if (!editingName) return;
-		commitName(name);
-		editingName = false;
-	}
-	function cancelName(event: KeyboardEvent) {
-		if (event.key !== 'Escape') return;
-		// Escape leaves the name as it was, and does not also close the sheet.
-		event.preventDefault();
-		event.stopPropagation();
-		typed = seat?.playerName ?? '';
-		editingName = false;
-	}
-
-	function commitName(name = typed) {
-		if (!seatId || (seat?.playerName ?? '') === name.trim()) return;
-		grimoire.rename(seatId, name);
-		typed = name.trim();
-	}
 
 	// ── What the rules say about this seat, in one line ──
 	const ability = $derived(seatId ? abilityState(game, seatId, characters) : undefined);
@@ -384,38 +341,15 @@
 		</button>
 	{/snippet}
 	{#snippet heading()}
-		{#if editingName}
-			<!-- A form, so a phone keyboard's Done or Enter key submits it even when the key
-				 press arrives without key events (Android keyboards). -->
-			<form class="name-form" onsubmit={submitName}>
-				<ClearableField bind:value={typed}>
-					<input
-						bind:this={nameInput}
-						class="name-input"
-						type="text"
-						aria-label="Player name"
-						autocomplete="off"
-						enterkeyhint="done"
-						placeholder={t('common.seat', { number })}
-						bind:value={typed}
-						onkeydown={cancelName}
-						onblur={() => finishName()}
-					/>
-				</ClearableField>
-			</form>
-		{:else}
-			<span class="player-name" class:no-name={!seat?.playerName}
-				>{#if seat?.playerName}<PlayerBadge name={seat.playerName} />{:else}No name{/if}</span
-			>
-		{/if}
+		<SeatNameField edit={nameEdit} placeholder={t('common.seat', { number })} />
 	{/snippet}
 	{#snippet titleEnd()}
 		<span class="ink"
 			><IconButton
 				icon="edit"
 				label="Edit player name"
-				disabled={editingName}
-				onclick={editName}
+				disabled={nameEdit.editing}
+				onclick={() => nameEdit.edit()}
 			/></span
 		>
 	{/snippet}
@@ -447,20 +381,7 @@
 	/>
 	{#if seat && seatId}
 		<div class="sheet">
-			<!-- The room's phones' names, laid over the sheet so nothing moves. -->
-			{#if editingName && suggestions.length > 0}
-				<div class="suggestions" aria-label="Name suggestions" role="group">
-					{#each suggestions as name (name)}
-						<!-- Pressing a name keeps focus in the field, so it is not saved half-typed. -->
-						<button
-							type="button"
-							class="chip"
-							onpointerdown={(event) => event.preventDefault()}
-							onclick={() => finishName(name)}>{name}</button
-						>
-					{/each}
-				</div>
-			{/if}
+			<SeatNameSuggestions edit={nameEdit} />
 			<!-- The character's ability (TPI's text), always shown under the header. -->
 			<div class="ability">
 				{#if character}
@@ -917,9 +838,6 @@
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
 	}
-	.name-form {
-		display: contents;
-	}
 	.lead-token {
 		padding: 0;
 		border: 0;
@@ -941,12 +859,6 @@
 		font: 600 1.1rem / 1 var(--font-control);
 		color: var(--on-surface-muted);
 	}
-	.no-name {
-		color: var(--on-surface-muted);
-	}
-	.player-name {
-		font-size: 1.05rem;
-	}
 	.role {
 		font-family: var(--font-heading);
 		font-weight: var(--font-heading-weight);
@@ -964,21 +876,6 @@
 		align-items: center;
 		gap: var(--space-1);
 	}
-	/* The same box as the name it replaces. */
-	.name-input {
-		box-sizing: border-box;
-		width: 100%;
-		height: 1.6em;
-		margin: 0;
-		padding: 0 var(--space-1);
-		border: 0;
-		border-bottom: 2px solid var(--accent);
-		border-radius: 0;
-		background: var(--surface-raised);
-		color: inherit;
-		font: inherit;
-		letter-spacing: inherit;
-	}
 	.sheet {
 		position: relative;
 		display: grid;
@@ -990,29 +887,6 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.04em;
 		color: var(--on-surface-muted);
-	}
-	.suggestions {
-		position: absolute;
-		inset: 0 0 auto;
-		z-index: 2;
-		display: flex;
-		gap: var(--space-1);
-		padding: var(--space-1) 0;
-		overflow-x: auto;
-		scrollbar-width: none;
-		background: var(--surface);
-		box-shadow: 0 6px 8px -6px rgb(0 0 0 / 0.4); /* colour-ok: a shadow is darkness, not a theme colour */
-	}
-	.chip {
-		flex: none;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: transparent;
-		color: inherit;
-		font-family: var(--font-player);
-		cursor: pointer;
 	}
 	/* Lines between the ability, the controls and the reminders (Trevor, 2026-10-17). */
 	.ability {
