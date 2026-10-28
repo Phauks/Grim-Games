@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { seatName } from '#lib/features/game/seat-label.ts';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import { untrack } from 'svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
@@ -113,7 +114,7 @@
 			characterId={shownAs}
 			character={characters.get(shownAs)}
 			alignment={s.alignment}
-			playerName={s.playerName ?? `Seat ${game.seating.indexOf(id) + 1}`}
+			playerName={seatName(game, id)}
 		/>
 	{/if}
 {/snippet}
