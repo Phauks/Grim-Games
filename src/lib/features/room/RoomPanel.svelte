@@ -19,6 +19,8 @@
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
 	import RolesPanel from './RolesPanel.svelte';
+	import RoomTransferDialog from './RoomTransferDialog.svelte';
+	import { roomTransfer } from './room-transfer.svelte.ts';
 
 	interface Props {
 		game: OpenGame;
@@ -28,6 +30,14 @@
 
 	const host = roomHost();
 	$effect(() => host.attach(game));
+
+	/** Opens the transfer's code, starting a transfer when none is open. */
+	let transferOpen = $state(false);
+	async function openTransfer() {
+		const transfer = roomTransfer();
+		if (!transfer.code && !(await transfer.start())) toast(t('room.transfer.failed'));
+		else transferOpen = true;
+	}
 
 	/**
 	 * Grim view by password alone (Trevor, 2026-10-26: "access password locked by storyteller
@@ -236,6 +246,10 @@
 				<Button icon="share" disabled={!canShareGrim} onclick={() => (shareGrimOpen = true)}
 					>{t('room.shareGrim.button')}</Button
 				>
+				<!-- Room transfer (Trevor, 2026-10-28): beside Share grim, in Share. -->
+				<Button icon="transfer" disabled={!connected} onclick={openTransfer}
+					>{t('room.transfer.button')}</Button
+				>
 			</div>
 			<h2 id="players-label">{t('room.playersInRoom')}</h2>
 			{#if seated.length === 0}
@@ -265,6 +279,8 @@
 		{refreshKind === 'room' ? t('room.refreshText') : t('room.watch.refreshText')}
 	</p>
 </ConfirmDialog>
+
+<RoomTransferDialog bind:open={transferOpen} />
 
 <ConfirmDialog bind:open={shareGrimOpen} title={t('room.shareGrim.title')} onConfirm={shareGrim}>
 	<p class="dialog-text">{t('room.shareGrim.body')}</p>
@@ -313,6 +329,9 @@
 		border-radius: 50%;
 	}
 	.share-grim {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 		margin-bottom: var(--space-4);
 	}
 	.dot.live {

@@ -41,6 +41,7 @@ import ph_caret_left_bold from '~icons/ph/caret-left-bold';
 import ph_caret_right_bold from '~icons/ph/caret-right-bold';
 import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_cat_bold from '~icons/ph/cat-bold';
+import ph_certificate_bold from '~icons/ph/certificate-bold';
 import ph_chat_centered_text_bold from '~icons/ph/chat-centered-text-bold';
 import ph_chat_text_bold from '~icons/ph/chat-text-bold';
 import ph_check_bold from '~icons/ph/check-bold';
@@ -96,6 +97,7 @@ import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
 import ph_globe_bold from '~icons/ph/globe-bold';
 import ph_hammer_bold from '~icons/ph/hammer-bold';
+import ph_hand_arrow_up_bold from '~icons/ph/hand-arrow-up-bold';
 import ph_hand_coins_bold from '~icons/ph/hand-coins-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
 import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
@@ -263,6 +265,7 @@ const icons: IconMap = {
 	'ph:caret-right-bold': ph_caret_right_bold,
 	'ph:caret-up-bold': ph_caret_up_bold,
 	'ph:cat-bold': ph_cat_bold,
+	'ph:certificate-bold': ph_certificate_bold,
 	'ph:chat-centered-text-bold': ph_chat_centered_text_bold,
 	'ph:chat-text-bold': ph_chat_text_bold,
 	'ph:check-bold': ph_check_bold,
@@ -318,6 +321,7 @@ const icons: IconMap = {
 	'ph:ghost-bold': ph_ghost_bold,
 	'ph:globe-bold': ph_globe_bold,
 	'ph:hammer-bold': ph_hammer_bold,
+	'ph:hand-arrow-up-bold': ph_hand_arrow_up_bold,
 	'ph:hand-coins-bold': ph_hand_coins_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
 	'ph:hand-grabbing-bold': ph_hand_grabbing_bold,

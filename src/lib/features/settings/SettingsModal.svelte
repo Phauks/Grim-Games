@@ -142,7 +142,14 @@
 							hideLabel
 							onclick={() => (settingsDialog.section = null)}
 						/>{/if}
-					<h2 id="settings-section-title">{activeLabel}</h2>
+					<!-- A section opened from the top line (the Profile) has its name there, beside its
+					     button (Trevor, 2026-10-28), so here it is for screen readers only. -->
+					<h2
+						id="settings-section-title"
+						class:visually-hidden={active.listed === false && !!active.headerButton}
+					>
+						{activeLabel}
+					</h2>
 					{#if active.profile}<span class="profile"><ProfileSelect /></span>{/if}
 					{#if active.headingAction}<active.headingAction />{/if}
 					<!-- Resets this section only (Trevor, 2026-10-18), in the header like other item

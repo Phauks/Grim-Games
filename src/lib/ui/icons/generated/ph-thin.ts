@@ -41,6 +41,7 @@ import ph_caret_left_thin from '~icons/ph/caret-left-thin';
 import ph_caret_right_thin from '~icons/ph/caret-right-thin';
 import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_cat_thin from '~icons/ph/cat-thin';
+import ph_certificate_thin from '~icons/ph/certificate-thin';
 import ph_chat_centered_text_thin from '~icons/ph/chat-centered-text-thin';
 import ph_chat_text_thin from '~icons/ph/chat-text-thin';
 import ph_check_thin from '~icons/ph/check-thin';
@@ -96,6 +97,7 @@ import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
 import ph_globe_thin from '~icons/ph/globe-thin';
 import ph_hammer_thin from '~icons/ph/hammer-thin';
+import ph_hand_arrow_up_thin from '~icons/ph/hand-arrow-up-thin';
 import ph_hand_coins_thin from '~icons/ph/hand-coins-thin';
 import ph_hand_fist_thin from '~icons/ph/hand-fist-thin';
 import ph_hand_grabbing_thin from '~icons/ph/hand-grabbing-thin';
@@ -263,6 +265,7 @@ const icons: IconMap = {
 	'ph:caret-right-thin': ph_caret_right_thin,
 	'ph:caret-up-thin': ph_caret_up_thin,
 	'ph:cat-thin': ph_cat_thin,
+	'ph:certificate-thin': ph_certificate_thin,
 	'ph:chat-centered-text-thin': ph_chat_centered_text_thin,
 	'ph:chat-text-thin': ph_chat_text_thin,
 	'ph:check-thin': ph_check_thin,
@@ -318,6 +321,7 @@ const icons: IconMap = {
 	'ph:ghost-thin': ph_ghost_thin,
 	'ph:globe-thin': ph_globe_thin,
 	'ph:hammer-thin': ph_hammer_thin,
+	'ph:hand-arrow-up-thin': ph_hand_arrow_up_thin,
 	'ph:hand-coins-thin': ph_hand_coins_thin,
 	'ph:hand-fist-thin': ph_hand_fist_thin,
 	'ph:hand-grabbing-thin': ph_hand_grabbing_thin,

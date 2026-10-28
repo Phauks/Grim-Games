@@ -13,11 +13,11 @@ const SIZES = [
 const STATIC_ROUTES = [
 	'/',
 	'/new',
-	'/games',
 	'/changelog',
 	'/roadmap',
 	'/privacy',
 	'/support',
+	'/credits',
 	'/reference',
 	'/scripts',
 	'/settings',

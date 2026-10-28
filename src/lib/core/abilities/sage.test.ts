@@ -12,6 +12,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Sage', () => {
@@ -44,8 +46,33 @@ describe('Sage', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Sage#Examples)', () => {
-		it.todo('Example 1: Demon kills Sage early; two suspects shown');
-		it.todo('Example 2: Drunk Sage gets misleading info');
+		it('Example 1: Demon kills Sage early; two suspects shown', () => {
+			// The Demon kills the Sage: the Storyteller points to the Demon and one other player.
+			const { game: g, seats } = castGame(['sage', 'chef', 'imp', 'monk', 'poisoner'], (s) => ({
+				type: 'SetDead',
+				seatId: s[0],
+				dead: true
+			}));
+			const picker = infoPicker(g, seats[0], 'sage', characters)!;
+			expect(isTruthful(picker, { seats: [seats[2], seats[3]] })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[1], seats[3]] })).toBe(false);
+		});
+
+		it('Example 2: Drunk Sage gets misleading info', () => {
+			// A Drunk who thinks they are the Sage may be shown any two players.
+			const { game: g, seats } = castGame(
+				['sage', 'chef', 'imp', 'monk', 'poisoner'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'drunk', label: 'Is The Drunk' }
+				}),
+				(s) => ({ type: 'SetDead', seatId: s[0], dead: true })
+			);
+			const picker = infoPicker(g, seats[0], 'sage', characters)!;
+			expect(picker.anyAllowed).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[1], seats[3]] })).toBe(true);
+		});
 		it.todo("Example 3: Pit-Hag's arbitrary death leaves Sage uninformed");
 	});
 });

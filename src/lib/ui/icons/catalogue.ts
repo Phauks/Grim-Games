@@ -82,6 +82,8 @@ export const ICON_SLOTS = {
 	menu: { label: 'Menu', choices: ['ph:list', 'ph:dots-three-vertical'] },
 	info: { label: 'Info', choices: ['ph:info', 'ph:question'] },
 	about: { label: 'About', choices: ['ph:identification-card', 'ph:info'] },
+	/** The Credits page: who made what the app uses (Trevor, 2026-10-28). */
+	credits: { label: 'Credits', choices: ['ph:scroll', 'ph:certificate'] },
 	/** The Support page and its Ko-fi button (Trevor, 2026-10-26). */
 	support: { label: 'Support', choices: ['ph:coffee', 'ph:hand-coins'] },
 	back: { label: 'Back', choices: ['ph:caret-left', 'ph:arrow-left'] },
@@ -171,6 +173,10 @@ export const ICON_SLOTS = {
 	feedback: { label: 'Player feedback', choices: ['ph:star-half', 'ph:chat-centered-text'] },
 	/** Players' messages to the Storyteller, and the Storyteller's Messages (Trevor, 2026-10-27). */
 	messages: { label: 'Messages', choices: ['ph:chat-text', 'ph:envelope-simple'] },
+	/** Room transfer: the room goes to another Storyteller's device (Trevor, 2026-10-28). */
+	transfer: { label: 'Room transfer', choices: ['ph:hand-arrow-up', 'ph:arrow-square-out'] },
+	/** Marks an opened message unread again (Trevor, 2026-10-28: "an eyeball next to the x"). */
+	markUnread: { label: 'Mark as unread', choices: ['ph:eye', 'ph:eye-closed'] },
 	/** What an info token asks for when shown, on its tile (Trevor, 2026-10-18). */
 	asksText: { label: 'Asks for words', choices: ['ph:text-t', 'ph:textbox'] },
 	asksNumber: { label: 'Asks for a number', choices: ['ph:hash', 'ph:calculator'] },

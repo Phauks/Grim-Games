@@ -9,9 +9,13 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
+	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import { inboxDialog } from './inbox-dialog.svelte.ts';
 	import type { InboxItem } from './inbox.svelte.ts';
+	import { ALL_INBOX, filterInbox, inboxSenders, type InboxFilter } from './inbox-filter.ts';
 
 	/**
 	 * The Storyteller's Messages (Trevor, 2026-10-27: "Combine into a communication menu where
@@ -29,6 +33,17 @@
 	let { game }: Props = $props();
 	const host = roomHost();
 	const inbox = host.inbox;
+
+	/**
+	 * Which boxes show (Trevor, 2026-10-28: "filters to message menu to sort by player and if
+	 * requesting consultation and unread or read"); kept while the board is open.
+	 */
+	let filter = $state<InboxFilter>({ ...ALL_INBOX });
+	const shown = $derived(filterInbox(inbox.items, filter));
+	const playerOptions = $derived([
+		{ value: 'all', label: t('room.inbox.allPlayers') },
+		...inboxSenders(inbox.items).map((id) => ({ value: id, label: nameOf(id) }))
+	]);
 
 	/** The box opened on its own, by kind and id. */
 	let openKey = $state<string>();
@@ -88,12 +103,36 @@
 	>
 {/snippet}
 
-<Dialog bind:open={inboxDialog.open} title={t('room.inbox.title')}>
-	{#if inbox.items.length === 0}
+<!-- `full`, so the header stays in place and the filters pinned under it while the boxes
+     scroll (Trevor, 2026-10-28: "Pin top of message area with controls"). -->
+<Dialog bind:open={inboxDialog.open} title={t('room.inbox.title')} size="full">
+	<!-- Always in place, so nothing moves as messages come in or filters empty the list. -->
+	<div class="filters" data-testid="inbox-filters">
+		<Select
+			label={t('room.inbox.player')}
+			options={playerOptions}
+			value={filter.player}
+			onChange={(player) => (filter.player = player)}
+		/>
+		<!-- On/off chips, not a drop-down (Trevor, 2026-10-28: "buttons or something better than
+		     a dropdown"); each shows its kind of box while on. -->
+		<div class="chips" role="group" aria-label={t('room.inbox.show')}>
+			<Chip pressed={filter.unread} onclick={() => (filter.unread = !filter.unread)}
+				>{t('room.inbox.readUnread')}</Chip
+			>
+			<Chip pressed={filter.read} onclick={() => (filter.read = !filter.read)}
+				>{t('room.inbox.readRead')}</Chip
+			>
+			<Chip pressed={filter.consult} onclick={() => (filter.consult = !filter.consult)}
+				>{t('room.inbox.consultOnly')}</Chip
+			>
+		</div>
+	</div>
+	{#if shown.length === 0}
 		<p class="none">{t('room.inbox.none')}</p>
 	{:else}
 		<ul class="items" data-testid="inbox">
-			{#each inbox.items as item (key(item))}
+			{#each shown as item (key(item))}
 				<li>
 					<button
 						type="button"
@@ -147,17 +186,22 @@
 			{/if}
 		</div>
 	{/if}
-	{#snippet actions()}
+	{#snippet headActions()}
+		<!-- Beside ✕ (Trevor, 2026-10-28: "make it an eyeball next to the x"). -->
 		{#if opened?.kind === 'message'}
-			<div class="actions">
-				<Button
-					onclick={() => {
-						inbox.markRead(opened.id, false);
-						itemOpen = false;
-					}}>{t('room.inbox.markUnread')}</Button
-				>
-			</div>
-		{:else if opened?.kind === 'picture'}
+			{@const message = opened}
+			<IconButton
+				icon="markUnread"
+				label={t('room.inbox.markUnread')}
+				onclick={() => {
+					inbox.markRead(message.id, false);
+					itemOpen = false;
+				}}
+			/>
+		{/if}
+	{/snippet}
+	{#snippet actions()}
+		{#if opened?.kind === 'picture'}
 			{@const picture = opened}
 			<div class="actions">
 				<Button onclick={() => inbox.judgePicture(picture.hash, true)}
@@ -173,6 +217,27 @@
 </Dialog>
 
 <style>
+	.filters {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		padding-bottom: var(--space-2);
+		background: var(--dialog-background);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: var(--space-2) var(--space-3);
+		margin-bottom: var(--space-3);
+	}
+	.filters > :global(*) {
+		flex: 1 1 calc(10 * var(--u));
+		min-width: 0;
+	}
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
 	.none {
 		margin: 0;
 		color: var(--on-surface-muted);

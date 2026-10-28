@@ -117,6 +117,7 @@
 	import BoardPlayerView from './BoardPlayerView.svelte';
 	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
@@ -861,7 +862,7 @@
 			reason: ended?.reason
 		};
 	};
-	// Reopening puts it back in Resume game.
+	// Reopening puts it back in Join or resume.
 	let reopenOpen = $state(false);
 	const endedText = $derived(
 		ended?.winner === 'good'
@@ -1476,6 +1477,8 @@
 				{/if}
 			{/snippet}
 		</BoardCorner>
+		<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
+		{#if watching}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
 		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The
 		     soundboard beside it (Trevor, 2026-10-27: "Sound can be next to timer for now"), the
 		     Storyteller's only. -->
@@ -1860,6 +1863,17 @@
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}
+	/* Mirrors the corner's script name, bottom right above the reminder bank, with the same
+	   halo and no band (Trevor, 2026-10-28). */
+	.fair-play {
+		position: absolute;
+		right: var(--edge-right, var(--space-1));
+		bottom: var(--edge-bottom, var(--space-1));
+		z-index: 1;
+		max-width: 40%;
+		text-shadow: 0 0 0.3em var(--surface);
+		pointer-events: none;
+	}
 	.strip-measure {
 		position: absolute;
 		visibility: hidden;
@@ -2002,6 +2016,8 @@
 		--player-status-gap: var(--space-4);
 		flex: 1;
 		min-height: 0;
+		/* The dialog's side margin, for the space under the tabs (PlayerScriptTabs). */
+		--player-side: var(--space-4);
 		margin-inline: calc(-1 * var(--space-3));
 		padding-inline: var(--space-3);
 		overflow-y: auto;

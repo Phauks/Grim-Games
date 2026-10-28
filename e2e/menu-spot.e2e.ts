@@ -62,3 +62,30 @@ test.describe('on a computer', () => {
 		expect(await spot(page)).toEqual(open);
 	});
 });
+
+// Trevor (2026-10-28): ☰ and the grim cover were in slightly different places on the board and
+// in the day. The day's header now takes the board toolbar's spot for both.
+test('☰ and the grim cover are in the same spot on the board and in the day', async ({ page }) => {
+	await startGame(page);
+	const board = page.getByRole('toolbar', { name: 'Grimoire' });
+	const where = async (scope: ReturnType<Page['getByRole']>) => {
+		const boxes = await Promise.all(
+			[
+				scope.getByRole('button', { name: 'Menu', exact: true }),
+				scope.getByTestId('cover-button')
+			].map((button) => button.boundingBox())
+		);
+		return boxes.map((box) => ({
+			x: Math.round(box!.x),
+			y: Math.round(box!.y),
+			width: Math.round(box!.width),
+			height: Math.round(box!.height)
+		}));
+	};
+	const onBoard = await where(board);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: /^Day/ });
+	await expect(day).toBeVisible();
+	// Once the sheet has faded in.
+	await expect.poll(() => where(day)).toEqual(onBoard);
+});

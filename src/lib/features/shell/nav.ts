@@ -10,7 +10,6 @@ export interface NavItem {
 	path:
 		| '/'
 		| '/new'
-		| '/games'
 		| '/join'
 		| '/history'
 		| '/scripts'
@@ -23,6 +22,7 @@ export interface NavItem {
 		| '/reports'
 		| '/live-games'
 		| '/about'
+		| '/credits'
 		| '/support'
 		| '/changelog'
 		| '/roadmap'
@@ -47,8 +47,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 		label: 'shell.navSectionGames',
 		items: [
 			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
-			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'resume' },
-			// Typing a room code: the other way in besides scanning the QR (Trevor, 2026-10-18).
+			// Typing a room code, and the games this device is in: rooms joined as a player above games
+			// it is storytelling (Trevor, 2026-10-18 and 2026-10-28).
 			{ id: 'join', path: '/join', label: 'shell.navJoinGame', icon: 'join' },
 			{
 				id: 'history',
@@ -123,6 +123,8 @@ export const LIVE_GAMES_ITEM: NavItem = {
  */
 export const APP_ITEMS: readonly NavItem[] = [
 	{ id: 'about', path: '/about', label: 'shell.about', icon: 'about' },
+	// Its own page, out of About (Trevor, 2026-10-28).
+	{ id: 'credits', path: '/credits', label: 'shell.credits', icon: 'credits' },
 	// Beneath About (Trevor, 2026-10-26).
 	{ id: 'support', path: '/support', label: 'shell.support', icon: 'support' },
 	{ id: 'changelog', path: '/changelog', label: 'shell.changelog', icon: 'notes' },

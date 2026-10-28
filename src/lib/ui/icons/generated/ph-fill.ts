@@ -41,6 +41,7 @@ import ph_caret_left_fill from '~icons/ph/caret-left-fill';
 import ph_caret_right_fill from '~icons/ph/caret-right-fill';
 import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_cat_fill from '~icons/ph/cat-fill';
+import ph_certificate_fill from '~icons/ph/certificate-fill';
 import ph_chat_centered_text_fill from '~icons/ph/chat-centered-text-fill';
 import ph_chat_text_fill from '~icons/ph/chat-text-fill';
 import ph_check_fill from '~icons/ph/check-fill';
@@ -96,6 +97,7 @@ import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
 import ph_globe_fill from '~icons/ph/globe-fill';
 import ph_hammer_fill from '~icons/ph/hammer-fill';
+import ph_hand_arrow_up_fill from '~icons/ph/hand-arrow-up-fill';
 import ph_hand_coins_fill from '~icons/ph/hand-coins-fill';
 import ph_hand_fist_fill from '~icons/ph/hand-fist-fill';
 import ph_hand_grabbing_fill from '~icons/ph/hand-grabbing-fill';
@@ -263,6 +265,7 @@ const icons: IconMap = {
 	'ph:caret-right-fill': ph_caret_right_fill,
 	'ph:caret-up-fill': ph_caret_up_fill,
 	'ph:cat-fill': ph_cat_fill,
+	'ph:certificate-fill': ph_certificate_fill,
 	'ph:chat-centered-text-fill': ph_chat_centered_text_fill,
 	'ph:chat-text-fill': ph_chat_text_fill,
 	'ph:check-fill': ph_check_fill,
@@ -318,6 +321,7 @@ const icons: IconMap = {
 	'ph:ghost-fill': ph_ghost_fill,
 	'ph:globe-fill': ph_globe_fill,
 	'ph:hammer-fill': ph_hammer_fill,
+	'ph:hand-arrow-up-fill': ph_hand_arrow_up_fill,
 	'ph:hand-coins-fill': ph_hand_coins_fill,
 	'ph:hand-fist-fill': ph_hand_fist_fill,
 	'ph:hand-grabbing-fill': ph_hand_grabbing_fill,

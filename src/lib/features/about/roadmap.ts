@@ -54,7 +54,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title:
 			'Grimoire board with a guided night: night steps, reminders, frames, the character sheet',
-		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L66', 'L67']
+		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L66', 'L67', 'L70']
 	},
 	{
 		title: 'Day view: executions, announcements, Savant reminders, player claims',
@@ -82,7 +82,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J29',
 			'J30',
 			'J31',
-			'J33'
+			'J33',
+			'J35'
 		]
 	},
 	{
@@ -159,6 +160,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: 'Install as an app', parts: ['S1'] },
 	{ title: 'A Support page with a Ko-fi link', parts: ['S23'] },
+	{ title: 'A Credits page in the menu', parts: ['S25'] },
 	{
 		title: 'Settings profiles: save your board and settings, and pick one for each game',
 		parts: ['S18', 'S21']

@@ -49,6 +49,7 @@ import ph_gavel from '~icons/ph/gavel';
 import ph_gear from '~icons/ph/gear';
 import ph_ghost from '~icons/ph/ghost';
 import ph_hammer from '~icons/ph/hammer';
+import ph_hand_arrow_up from '~icons/ph/hand-arrow-up';
 import ph_hand_palm from '~icons/ph/hand-palm';
 import ph_hand_pointing from '~icons/ph/hand-pointing';
 import ph_handbag from '~icons/ph/handbag';
@@ -163,6 +164,7 @@ const icons: IconMap = {
 	'ph:gear': ph_gear,
 	'ph:ghost': ph_ghost,
 	'ph:hammer': ph_hammer,
+	'ph:hand-arrow-up': ph_hand_arrow_up,
 	'ph:hand-palm': ph_hand_palm,
 	'ph:hand-pointing': ph_hand_pointing,
 	'ph:handbag': ph_handbag,

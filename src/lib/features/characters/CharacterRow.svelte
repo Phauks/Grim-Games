@@ -11,7 +11,8 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterDialog from './CharacterDialog.svelte';
 	import CharacterToken from './CharacterToken.svelte';
-	import { iconUrl } from './icon-url.ts';
+	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
+	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import { prefetchWikiPage } from './wiki-page.svelte.ts';
 
 	/**
@@ -26,6 +27,15 @@
 	 */
 	interface Props {
 		character: Character;
+		/**
+		 * `ring`: the character's icon in a ring of its alignment's colour, a band of that colour
+		 * carrying the name out of the ring's top, the ability under the band (Trevor,
+		 * 2026-10-28, for every script sheet). Read-only: `onclick`, `end` and the box's
+		 * chosen states are the box look's.
+		 */
+		look?: 'box' | 'ring';
+		/** The ability as the host draws it (rules terms underlined); defaults to plain text. */
+		ability?: Snippet;
 		/** False draws no token. */
 		token?: boolean;
 		tokenSize?: number;
@@ -70,6 +80,8 @@
 
 	let {
 		character,
+		look = 'box',
+		ability,
 		token = true,
 		tokenSize = 36,
 		alignment,
@@ -95,6 +107,9 @@
 
 	const tokenAlignment = $derived(alignment ?? defaultAlignment(character.type));
 	const chosen = $derived(pressed === true || current === true);
+	// The ring and band's colour, as the character's badge has it.
+	const team = $derived(tokenAlignment ?? character.type);
+	const icon = $derived(iconUrl(character, tokenAlignment));
 	// The character's page, made on first use.
 	let infoUsed = $state(false);
 	let infoOpen = $state(false);
@@ -104,6 +119,15 @@
 		infoOpen = true;
 	}
 </script>
+
+{#snippet ringIcon()}
+	{#if icon}<img
+			src={icon}
+			alt=""
+			referrerpolicy="no-referrer"
+			{@attach iconFallback(fallbackIconUrl(character, tokenAlignment))}
+		/>{/if}
+{/snippet}
 
 {#snippet content()}
 	{#if hidden}{@render hidden()}{/if}
@@ -125,49 +149,77 @@
 	{#if children}<span class="below">{@render children()}</span>{/if}
 {/snippet}
 
-<div
-	class="row"
-	data-chosen={chosen ? '' : undefined}
-	data-dashed={dashed ? '' : undefined}
-	data-disabled={disabled ? '' : undefined}
-	data-interactive={onclick ? '' : undefined}
-	data-type={character.type}
->
-	{#if token}
+{#if look === 'ring'}
+	<div class="ring-row" data-team={team} data-character-id={character.id}>
 		{#if info}
 			<button
 				type="button"
-				class="token info"
+				class="ring info"
 				aria-haspopup="dialog"
 				aria-label={t('picker.characterInfo', { name: character.name })}
 				onpointerdown={() => prefetchWikiPage(character)}
-				onclick={openInfo}
+				onclick={openInfo}>{@render ringIcon()}</button
 			>
-				<CharacterToken {character} alignment={tokenAlignment} size={tokenSize} />
-			</button>
 		{:else}
-			<span class="token">
-				<CharacterToken {character} alignment={tokenAlignment} size={tokenSize} />
-			</span>
+			<span class="ring">{@render ringIcon()}</span>
 		{/if}
-	{/if}
-	{#if onclick}
-		<button
-			type="button"
-			class="main"
-			data-character-id={character.id}
-			aria-label={label ?? (note ? `${character.name}, ${note}` : character.name)}
-			aria-pressed={pressed}
-			aria-current={current ? 'true' : undefined}
-			aria-describedby={describedby}
-			{disabled}
-			{onclick}>{@render content()}</button
-		>
-	{:else}
-		<div class="main" data-character-id={character.id}>{@render content()}</div>
-	{/if}
-	{#if end}<span class="end">{@render end()}</span>{/if}
-</div>
+		<span class="band">
+			<!-- eslint-disable-next-line grim/names-as-badges -- the band is the character's badge; its icon is in the ring -->
+			<span class="band-name">{character.name}</span>
+			{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
+			{#if afterName}{@render afterName()}{/if}
+			{#if marks}<span class="marks" aria-hidden="true">{@render marks()}</span>{/if}
+		</span>
+		<p class="ring-ability">
+			{#if ability}{@render ability()}{:else}{character.ability}{/if}
+		</p>
+		{#if children}<span class="ring-below">{@render children()}</span>{/if}
+	</div>
+{:else}
+	<div
+		class="row"
+		data-chosen={chosen ? '' : undefined}
+		data-dashed={dashed ? '' : undefined}
+		data-disabled={disabled ? '' : undefined}
+		data-interactive={onclick ? '' : undefined}
+		data-type={character.type}
+	>
+		{#if token}
+			{#if info}
+				<button
+					type="button"
+					class="token info"
+					aria-haspopup="dialog"
+					aria-label={t('picker.characterInfo', { name: character.name })}
+					onpointerdown={() => prefetchWikiPage(character)}
+					onclick={openInfo}
+				>
+					<CharacterToken {character} alignment={tokenAlignment} size={tokenSize} />
+				</button>
+			{:else}
+				<span class="token">
+					<CharacterToken {character} alignment={tokenAlignment} size={tokenSize} />
+				</span>
+			{/if}
+		{/if}
+		{#if onclick}
+			<button
+				type="button"
+				class="main"
+				data-character-id={character.id}
+				aria-label={label ?? (note ? `${character.name}, ${note}` : character.name)}
+				aria-pressed={pressed}
+				aria-current={current ? 'true' : undefined}
+				aria-describedby={describedby}
+				{disabled}
+				{onclick}>{@render content()}</button
+			>
+		{:else}
+			<div class="main" data-character-id={character.id}>{@render content()}</div>
+		{/if}
+		{#if end}<span class="end">{@render end()}</span>{/if}
+	</div>
+{/if}
 {#if infoUsed}<CharacterDialog
 		bind:open={infoOpen}
 		{character}
@@ -338,5 +390,117 @@
 	/* The last control follows the row's rounded end (Trevor, 2026-10-20). */
 	.end > :global(:last-child) {
 		border-radius: 0 var(--radius-md) var(--radius-md) 0;
+	}
+	/*
+	 * The ring look: ring and band in one grid, the ability beside the ring under the band. The
+	 * ring is as tall as the name and two lines of ability; a host may set --character-ring
+	 * smaller (a printed compact sheet).
+	 */
+	.ring-row {
+		--ring: var(--character-ring, 4.4em);
+		display: grid;
+		grid-template-columns: var(--ring) minmax(0, 1fr);
+		grid-template-rows: auto 1fr;
+		gap: 0 var(--space-2);
+		width: 100%;
+		min-height: var(--ring);
+	}
+	.ring {
+		z-index: 1;
+		display: grid;
+		grid-row: 1 / 4;
+		grid-column: 1;
+		place-items: center;
+		width: var(--ring);
+		height: var(--ring);
+		box-sizing: border-box;
+		padding: 0;
+		border: calc(var(--ring) * 0.07) solid var(--team);
+		border-radius: 50%;
+		background: var(--token-face);
+		color: inherit;
+		font: inherit;
+		touch-action: manipulation;
+	}
+	button.ring {
+		cursor: pointer;
+	}
+	.ring img {
+		width: 88%;
+		height: 88%;
+	}
+	/* From the ring's middle to the row's end, so it leaves the ring's top. */
+	.band {
+		display: flex;
+		grid-row: 1;
+		grid-column: 1 / 3;
+		align-items: center;
+		gap: var(--space-2);
+		min-width: 0;
+		height: 1.7em;
+		margin-left: calc(var(--ring) / 2);
+		padding: 0 var(--space-3) 0 calc(var(--ring) / 2 + var(--space-2));
+		border-radius: 0 var(--radius-full) var(--radius-full) 0;
+		background: var(--team);
+		color: var(--on-team);
+	}
+	.band-name {
+		min-width: 0;
+		overflow: hidden;
+		font-family: var(--font-character);
+		font-weight: var(--font-character-weight);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.band .marks {
+		height: auto;
+		margin-left: auto;
+	}
+	/* Always two lines' room, even for a short ability, so every row is the same height
+	   (Trevor, 2026-10-28), on screen and in print. */
+	.ring-ability {
+		grid-row: 2;
+		grid-column: 2;
+		min-height: calc(2 * 1.35em);
+		margin: 0;
+		padding-top: var(--space-1);
+		font-family: var(--font-ability);
+		line-height: 1.35;
+	}
+	.ring-below {
+		grid-row: 3;
+		grid-column: 2;
+		min-width: 0;
+	}
+	.ring-row[data-team='good'] {
+		--team: var(--good);
+		--on-team: var(--on-good);
+	}
+	.ring-row[data-team='evil'] {
+		--team: var(--evil);
+		--on-team: var(--on-evil);
+	}
+	/* Half good, half evil, as its badge and token are. */
+	.ring-row[data-team='traveller'] {
+		--team: var(--good);
+		--on-team: var(--on-good);
+	}
+	.ring-row[data-team='traveller'] .band {
+		background: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
+	}
+	.ring-row[data-team='traveller'] .ring {
+		border-color: var(--good) var(--evil) var(--evil) var(--good);
+	}
+	.ring-row[data-team='fabled'] {
+		--team: var(--fabled);
+		--on-team: var(--on-fabled);
+	}
+	.ring-row[data-team='loric'] {
+		--team: var(--loric);
+		--on-team: var(--on-loric);
+	}
+	.ring-row[data-team='neutral'] {
+		--team: var(--surface-raised);
+		--on-team: var(--on-surface);
 	}
 </style>

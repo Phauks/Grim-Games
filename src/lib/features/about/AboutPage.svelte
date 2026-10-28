@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import { REPOSITORY_URL, shortCommit } from '#lib/features/about/report-issue.ts';
-	import OfficialNotice from '#lib/features/about/OfficialNotice.svelte';
 	import UpdateChanges from '#lib/features/about/UpdateChanges.svelte';
 	import { updateCheck } from '#lib/features/about/update-check.svelte.ts';
 	import DiagnosticsPanel from '#lib/features/errors/DiagnosticsPanel.svelte';
 	import DiagnosticsActions from '#lib/features/errors/DiagnosticsActions.svelte';
-	import SoundCredits from '#lib/features/sound/SoundCredits.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { ADVANCED_KEY } from './about-advanced.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
@@ -25,7 +23,10 @@
 		failed: 'shell.updateCheckFailed',
 		unsupported: 'shell.updateUnsupported'
 	} as const;
-	const result = $derived(RESULT[updateCheck.result]);
+	// A waiting build that is no update (update-check.svelte.ts `offered`) reads as up to date.
+	const result = $derived(
+		RESULT[updateCheck.result === 'ready' && !updateCheck.offered ? 'current' : updateCheck.result]
+	);
 
 	// What the waiting build changed, here as on the update card, so About need not be left to
 	// see it (Trevor, 2026-10-19). In a dialog, so the version line never grows.
@@ -86,7 +87,7 @@
 			<span class="result" role="status" data-testid="update-check-result">{status}</span>
 			<!-- Once a build is ready, Update moves onto it here too (Trevor, 2026-10-19). It takes the
 		     end of the same line, as tall as the check button, so only the status text gets shorter. -->
-			{#if updateCheck.ready}
+			{#if updateCheck.offered}
 				<IconButton
 					icon="history"
 					label={t('shell.whatChanged')}
@@ -113,16 +114,6 @@
 			<UpdateChanges changes={updateCheck.changes} />
 		</Dialog>
 	{/if}
-	<OfficialNotice />
-	<!-- The day and night recordings' sources (plan U3), closed so About stays short. -->
-	<PageSection
-		title={t('shell.soundCredits')}
-		collapsible
-		storageKey="about.soundCredits"
-		defaultOpen={false}
-	>
-		<SoundCredits />
-	</PageSection>
 	<!-- Diagnostics, closed beneath About (Trevor, 2026-10-18); the version and commit show once,
      above, though the copied diagnostics still carry them. /diagnostics opens it. -->
 	<PageSection

@@ -9,6 +9,7 @@
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
+	import TransferClaimDialog from './TransferClaimDialog.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
@@ -27,6 +28,7 @@
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
+	import SavedGamesSection from '#lib/features/grimoire/SavedGamesSection.svelte';
 	import YourCharacter from './YourCharacter.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -193,6 +195,8 @@
 					? t('room.lookupFailed')
 					: ''
 	);
+
+	let transferOpen = $state(false);
 
 	function openRoom(roomCode: string) {
 		if (onCode) onCode(roomCode);
@@ -403,6 +407,13 @@
 						onSelect: () => {
 							if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
 						}
+					},
+					// Another Storyteller's device hands this one the room (Trevor, 2026-10-28).
+					{
+						value: 'transfer',
+						label: t('room.transfer.title'),
+						disabled: lookup?.state !== 'found',
+						onSelect: () => (transferOpen = true)
 					}
 				]}
 			/>
@@ -416,6 +427,7 @@
 				pieces={scanPieces}
 			/>{/if}
 	</Dialog>
+	{#if lookup}<TransferClaimDialog bind:open={transferOpen} roomCode={lookup.code} />{/if}
 	<Dialog bind:open={grimViewOpen} title={t('room.grimView')}>
 		<form class="grim-view" onsubmit={grimView}>
 			<TextField
@@ -433,9 +445,13 @@
 			/>
 		</form>
 	</Dialog>
-	{#if code === undefined}<YourGames
-			onOpen={(c, town) => (town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c))}
-		/>{/if}
+	<!-- Joining and resuming on one page: games played above games hosted (Trevor, 2026-10-28). -->
+	{#if code === undefined}<div class="your-games">
+			<YourGames
+				onOpen={(c, town) => (town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c))}
+			/>
+			<SavedGamesSection />
+		</div>{/if}
 {:else if inRoom}
 	<!-- The row the Storyteller's player view shows too (PlayerStatusRow): anything drawn from
 	     the table's public state goes in it, never here. -->
@@ -554,6 +570,10 @@
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: var(--space-2);
+	}
+	.your-games {
+		display: grid;
+		gap: var(--space-5);
 	}
 	.grim-view {
 		display: grid;

@@ -1793,7 +1793,7 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	// The game is named for its mode and rules wherever it is listed.
-	await page.goto('/games');
+	await page.goto('/join');
 	await expect(page.getByTestId('game-mode').first()).toContainText(
 		'Whale Buffet + Stowed Away + A Script of Infinite Possibilities'
 	);
