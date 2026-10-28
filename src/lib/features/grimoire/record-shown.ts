@@ -57,7 +57,7 @@ export function shownCommands(
 	const last = game.today.entries.findLast(
 		(e) => e.kind === 'info' && e.seatId === picker.seatId && e.characterId === picker.characterId
 	);
-	if (last?.text === text) return [];
+	if (last?.kind === 'info' && last.text === text) return [];
 	const missing = missingReminders(game, reminders);
 	return [
 		{
