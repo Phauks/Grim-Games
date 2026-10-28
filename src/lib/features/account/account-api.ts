@@ -3,6 +3,7 @@
  * which the Worker requires together with our own `Origin`.
  */
 import { t } from '#lib/i18n/locale.svelte.ts';
+import { fetchJson, SLOW_FETCH_TIMEOUT_MS } from '#lib/ui/fetch.ts';
 import type {
 	ApiError,
 	DeviceSession,
@@ -34,20 +35,22 @@ export class AccountApiError extends Error {
 
 async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
 	let response: Response;
+	let data: unknown;
 	try {
-		response = await fetch(path, {
+		({ response, body: data } = await fetchJson(path, {
 			method,
+			// "Download my data" can be large.
+			timeoutMs: path === EXPORT_PATH ? SLOW_FETCH_TIMEOUT_MS : undefined,
 			credentials: 'same-origin',
 			headers: method === 'GET' ? {} : { 'Content-Type': 'application/json' },
 			body: method === 'GET' ? undefined : JSON.stringify(body ?? {})
-		});
+		}));
 	} catch {
 		throw new AccountApiError(
 			navigator.onLine === false ? t('account.api.offline') : t('account.api.unreachable'),
 			0
 		);
 	}
-	const data: unknown = await response.json().catch(() => undefined);
 	if (!response.ok) {
 		const message =
 			typeof data === 'object' && data !== null && typeof (data as ApiError).error === 'string'

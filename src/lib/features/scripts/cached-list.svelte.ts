@@ -4,8 +4,8 @@
  * next visit shows it straight away.
  */
 import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { fetchJson } from '#lib/ui/fetch.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
-import { withTimeout } from './fetch-script.ts';
 
 export type CachedListStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -19,7 +19,7 @@ export interface CachedListSource<T> {
 	name: string;
 	/** An empty answer is a broken source, so the last list stays (all but Curated). */
 	emptyIsBroken?: boolean;
-	/** How long to wait for an answer; the remote-script timeout when absent. */
+	/** How long to wait for an answer; `FETCH_TIMEOUT_MS` when absent. */
 	timeoutMs?: number;
 }
 
@@ -56,16 +56,16 @@ export class CachedList<T> {
 		const { url, read, name, emptyIsBroken, timeoutMs } = this.source;
 		this.#status = 'loading';
 		let response: Response;
+		let body: unknown;
 		try {
-			const signal = timeoutMs ? AbortSignal.timeout(timeoutMs) : withTimeout();
-			response = await fetch(url, { signal });
+			({ response, body } = await fetchJson(url, { timeoutMs }));
 		} catch {
 			// Offline: expected, and the kept list still shows.
 			this.#status = 'error';
 			return;
 		}
 		// The source being down is expected too; an answer we can't read is a bug.
-		const found = response.ok ? read(await response.json().catch(() => undefined)) : undefined;
+		const found = response.ok ? read(body) : undefined;
 		if (!found || (emptyIsBroken && found.length === 0)) {
 			this.#status = 'error';
 			if (response.ok && !found)

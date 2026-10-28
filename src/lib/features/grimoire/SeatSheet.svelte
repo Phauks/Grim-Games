@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
@@ -94,7 +95,7 @@
 	const number = $derived(seatId === undefined ? 0 : game.seating.indexOf(seatId) + 1);
 	const character = $derived(seat?.characterId ? characters.get(seat.characterId) : undefined);
 	const traveller = $derived(character?.type === 'traveller');
-	const title = $derived(seat ? (seat.playerName ?? `Seat ${number}`) : '');
+	const title = $derived(seat ? (seat.playerName ?? t('common.seat', { number })) : '');
 	/** Custom tokens can look alike, so the type shows too (Trevor, 2026-10-22, plan L26). */
 	const typeText = $derived(
 		character ? character.type[0].toUpperCase() + character.type.slice(1) : ''
@@ -358,7 +359,7 @@
 	const day = $derived(new LiveDay(grimoire.open));
 </script>
 
-<BottomSheet bind:open {title} description={`Seat ${number}`}>
+<BottomSheet bind:open {title} description={t('common.seat', { number })}>
 	<!-- The character's name is the biggest thing here; alignment and seat are easy to see
 	     on the token already (Trevor, 2026-10-16). -->
 	{#snippet subtitle()}
@@ -395,7 +396,7 @@
 						aria-label="Player name"
 						autocomplete="off"
 						enterkeyhint="done"
-						placeholder={`Seat ${number}`}
+						placeholder={t('common.seat', { number })}
 						bind:value={typed}
 						onkeydown={cancelName}
 						onblur={() => finishName()}

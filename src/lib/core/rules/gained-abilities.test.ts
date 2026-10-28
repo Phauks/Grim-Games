@@ -6,31 +6,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
-	newGame,
-	run,
+	castGame,
+	type CastGame,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { gainedAbilities } from './gained-abilities.ts';
 import { withNightInfo } from './night-info.ts';
 import { nightOrder } from './night-order.ts';
-
-const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay'];
-
-function game(cast: string[], ...extra: ((seats: string[]) => Command)[]) {
-	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
-	const s = run(
-		session,
-		ctx,
-		...cast.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...extra.map((f) => f(seats))
-	);
-	return { game: s.game, seats };
-}
 
 const add =
 	(i: number, label: string) =>
@@ -45,7 +28,7 @@ const kill =
 
 const cast = ['pixie', 'undertaker', 'imp', 'poisoner', 'chef', 'monk'];
 
-function otherNight(g: ReturnType<typeof game>['game']) {
+function otherNight(g: CastGame['game']) {
 	const data = committedGameData();
 	const inPlay = g.seating.map((s) => data.byId.get(g.seats[s].characterId!)!);
 	return withNightInfo(
@@ -58,13 +41,13 @@ function otherNight(g: ReturnType<typeof game>['game']) {
 
 describe('Pixie', () => {
 	it('gains nothing while the Mad player is alive', () => {
-		const { game: g } = game(cast, add(1, 'Mad'));
+		const { game: g } = castGame(cast, add(1, 'Mad'));
 		expect(gainedAbilities(g)).toEqual([]);
 		expect(otherNight(g).some((s) => s.gained)).toBe(false);
 	});
 
 	it('once the Mad player dies, the Storyteller decides at that character’s step', () => {
-		const { game: g, seats } = game(cast, add(1, 'Mad'), kill(1));
+		const { game: g, seats } = castGame(cast, add(1, 'Mad'), kill(1));
 		expect(gainedAbilities(g)).toMatchObject([
 			{ seatId: seats[0], characterId: 'undertaker', status: 'if-mad', fromSeat: seats[1] }
 		]);
@@ -79,7 +62,7 @@ describe('Pixie', () => {
 	});
 
 	it('with Has Ability, the Pixie wakes as that character, with its worked-out answer', () => {
-		const { game: g, seats } = game(cast, add(1, 'Has Ability'), kill(1), (s) => ({
+		const { game: g, seats } = castGame(cast, add(1, 'Has Ability'), kill(1), (s) => ({
 			type: 'Execute',
 			seatId: s[3]
 		}));
@@ -94,7 +77,7 @@ describe('Pixie', () => {
 	});
 
 	it('a start-of-game ability gives its first-night info the night it is gained', () => {
-		const { game: g } = game(cast, add(4, 'Has Ability'), kill(4));
+		const { game: g } = castGame(cast, add(4, 'Has Ability'), kill(4));
 		const step = otherNight(g).find((s) => s.gained)!;
 		expect(step.reminder).toBe(characters.get('chef')!.firstNightReminder);
 		expect(step.gained).toMatchObject({ characterId: 'chef', firstNightText: true });
@@ -102,7 +85,7 @@ describe('Pixie', () => {
 	});
 
 	it('a dead Pixie gains nothing', () => {
-		const { game: g } = game(cast, add(1, 'Has Ability'), kill(1), kill(0));
+		const { game: g } = castGame(cast, add(1, 'Has Ability'), kill(1), kill(0));
 		expect(gainedAbilities(g)).toEqual([]);
 	});
 });

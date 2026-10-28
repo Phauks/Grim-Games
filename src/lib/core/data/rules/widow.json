@@ -61,5 +61,6 @@
 				"reason": "Says which token goes on whom, in the order they are placed."
 			}
 		}
-	}
+	},
+	"marksChoice": ["Poisoned"]
 }
