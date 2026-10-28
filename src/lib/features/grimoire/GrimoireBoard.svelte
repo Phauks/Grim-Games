@@ -1991,9 +1991,14 @@
 		gap: var(--space-2);
 		max-width: 50%;
 	}
+	/* Out into the dialog's padding, with that room given back inside, so the players' sheets
+	   can reach into it as they do into /play's gutter (PlayerScriptTabs) without being
+	   clipped by this scroll box. */
 	.script-scroll {
 		flex: 1;
 		min-height: 0;
+		margin-inline: calc(-1 * var(--space-3));
+		padding-inline: var(--space-3);
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
