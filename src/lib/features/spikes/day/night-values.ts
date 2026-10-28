@@ -31,7 +31,7 @@ export function impairmentValues(game: DayGame, impairments: readonly Impairment
 		.join('; ');
 }
 
-function valueText(game: DayGame, v: AnswerValue): string {
+export function valueText(game: DayGame, v: AnswerValue): string {
 	switch (v.kind) {
 		case 'yes-no':
 			return v.value ? 'Yes' : 'No';
