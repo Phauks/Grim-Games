@@ -5,6 +5,7 @@
 	import StepAfflictions from './StepAfflictions.svelte';
 	import MakeDemonStep from './MakeDemonStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
+	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import { TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
@@ -318,6 +319,7 @@
 					showOpen = true;
 				}}
 			/>
+			<NightYesNo {grimoire} {step} />
 			{#if step.character}
 				<!-- Over the open step, as with a suggestion's Show to player. -->
 				<MakeDemonStep

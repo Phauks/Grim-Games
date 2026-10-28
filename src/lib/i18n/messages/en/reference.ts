@@ -48,7 +48,6 @@ export const reference = {
 	'reference.allEditions': 'All editions',
 	'reference.nightStep': 'Step {position}',
 	'reference.nightSortNumber': 'Sort {number}',
-	'reference.globalReminder': '{label} (global)',
 	'reference.setup': 'Placed at setup',
 	'reference.firstDay': 'Placed at the start of the first day',
 	'reference.setupSome': '{label}: {placed} of {copies}',

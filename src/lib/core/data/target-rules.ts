@@ -120,7 +120,7 @@ const TARGET_KEYS = [
 	'ambiguous'
 ] as const satisfies readonly (keyof TargetRule)[];
 
-function readTypes(
+export function readTypes(
 	raw: Record<string, unknown>,
 	key: string,
 	path: string,

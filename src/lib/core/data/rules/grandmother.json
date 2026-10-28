@@ -10,6 +10,14 @@
 			"note": "On the Grandmother when the Demon kills her Grandchild."
 		}
 	},
+	"learns": {
+		"measure": "character-of",
+		"types": ["townsfolk", "outsider"],
+		"alignment": "good",
+		"reminders": {
+			"target": "Grandchild"
+		}
+	},
 	"deathCheck": {
 		"kind": "marked-killed-by-demon",
 		"token": "Grandchild"

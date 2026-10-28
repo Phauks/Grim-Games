@@ -12,6 +12,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('King', () => {
@@ -44,7 +46,20 @@ describe('King', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/King#Examples)', () => {
-		it.todo('Example 1: King learns nothing early, then two alive');
+		it('Example 1: King learns an alive Snitch, then an alive Witch', () => {
+			// Once enough players are dead the King is shown alive characters, good or evil; a
+			// dead player's character is not one of them. When the dead first equal the living is
+			// the Storyteller's call: the step shows the options every night the King wakes.
+			const { game: g, seats } = castGame(
+				['king', 'snitch', 'witch', 'monk', 'imp'],
+				(s) => ({ type: 'SetDead', seatId: s[3], dead: true }),
+				(s) => ({ type: 'SetDead', seatId: s[4], dead: true })
+			);
+			const picker = infoPicker(g, seats[0], 'king', characters)!;
+			expect(isTruthful(picker, { seats: [seats[1]], characterId: 'snitch' })).toBe(true);
+			expect(isTruthful(picker, { seats: [seats[2]], characterId: 'witch' })).toBe(true);
+			expect(isAllowed(picker, { seats: [seats[3]], characterId: 'monk' })).toBe(false);
+		});
 		it.todo('Example 2: Demon kills King, risking a fake Choirboy');
 	});
 });
