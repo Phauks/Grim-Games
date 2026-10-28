@@ -38,10 +38,15 @@
 {/if}
 
 <style>
+	/* As far under the title's byline as the screen's side margin (Trevor, 2026-10-28:
+	   "Increase space after author name to status bar"). On /play that is the page gutter,
+	   less the --space-4 the Page already leaves under its header; the Storyteller's dialog
+	   gives its own (--player-status-gap). */
 	.status-row {
 		display: flex;
 		align-items: stretch;
 		gap: var(--space-2);
+		margin-top: var(--player-status-gap, calc(var(--page-gutter) - var(--space-4)));
 		margin-bottom: var(--space-2);
 	}
 	/* The game's status takes the rest of the row (Trevor, 2026-10-27: "the game status bar
