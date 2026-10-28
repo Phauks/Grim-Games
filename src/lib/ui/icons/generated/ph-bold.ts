@@ -41,6 +41,7 @@ import ph_caret_left_bold from '~icons/ph/caret-left-bold';
 import ph_caret_right_bold from '~icons/ph/caret-right-bold';
 import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_cat_bold from '~icons/ph/cat-bold';
+import ph_certificate_bold from '~icons/ph/certificate-bold';
 import ph_chat_centered_text_bold from '~icons/ph/chat-centered-text-bold';
 import ph_chat_text_bold from '~icons/ph/chat-text-bold';
 import ph_check_bold from '~icons/ph/check-bold';
@@ -261,6 +262,7 @@ const icons: IconMap = {
 	'ph:caret-right-bold': ph_caret_right_bold,
 	'ph:caret-up-bold': ph_caret_up_bold,
 	'ph:cat-bold': ph_cat_bold,
+	'ph:certificate-bold': ph_certificate_bold,
 	'ph:chat-centered-text-bold': ph_chat_centered_text_bold,
 	'ph:chat-text-bold': ph_chat_text_bold,
 	'ph:check-bold': ph_check_bold,

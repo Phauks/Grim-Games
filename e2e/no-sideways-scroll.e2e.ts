@@ -18,6 +18,7 @@ const STATIC_ROUTES = [
 	'/roadmap',
 	'/privacy',
 	'/support',
+	'/credits',
 	'/reference',
 	'/scripts',
 	'/settings',

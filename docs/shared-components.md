@@ -65,7 +65,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - An icon-only link to an outside page (the wiki): `ui/primitives/IconButton.svelte` with `href` (new tab, `rel="noopener"`), so it looks and hovers like the X (enforced by `e2e/badges.e2e.ts`)
 - A fair-play warning (don't screenshot, share or misuse what's shown; a spectator's promise): `features/show/FairPlayNotice.svelte` with `kind` (`secret`: a player's own character; `message`: Message the Storyteller; `watch`: Grim view's promise); every such warning's wording lives there (enforced by review)
 - The Support on Ko-fi link: `features/about/KofiButton.svelte`, Ko-fi's own button image from its brand assets, never a restyled `Button` (enforced by `e2e/support.e2e.ts`)
-- The notice that the app is not official: `features/about/OfficialNotice.svelte` (links bloodontheclocktower.com; About, privacy policy) (enforced by review)
+- The notice that the app is not official: `features/about/OfficialNotice.svelte` (links bloodontheclocktower.com; Credits, privacy policy) (enforced by review)
 - A bar pinned to the screen's bottom edge: the `pinned-bottom` class (base.css keeps its room below the page), as `features/setup/SetupNav.svelte` does (enforced by `e2e/setup.e2e.ts`)
 - A random pick button: `ui/primitives/IconButton.svelte` with `icon="random"` and `Math.random` (setup, Demon bluffs) (enforced by review)
 - A table filter's radio or checkbox list: `ui/table/FilterOptions.svelte` (`value`/`onpick` or `values`/`ontoggle`) (enforced by review)

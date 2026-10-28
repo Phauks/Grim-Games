@@ -23,6 +23,7 @@ export interface NavItem {
 		| '/reports'
 		| '/live-games'
 		| '/about'
+		| '/credits'
 		| '/support'
 		| '/changelog'
 		| '/roadmap'
@@ -123,6 +124,8 @@ export const LIVE_GAMES_ITEM: NavItem = {
  */
 export const APP_ITEMS: readonly NavItem[] = [
 	{ id: 'about', path: '/about', label: 'shell.about', icon: 'about' },
+	// Its own page, out of About (Trevor, 2026-10-28).
+	{ id: 'credits', path: '/credits', label: 'shell.credits', icon: 'credits' },
 	// Beneath About (Trevor, 2026-10-26).
 	{ id: 'support', path: '/support', label: 'shell.support', icon: 'support' },
 	{ id: 'changelog', path: '/changelog', label: 'shell.changelog', icon: 'notes' },

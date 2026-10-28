@@ -41,6 +41,7 @@ import ph_caret_left_light from '~icons/ph/caret-left-light';
 import ph_caret_right_light from '~icons/ph/caret-right-light';
 import ph_caret_up_light from '~icons/ph/caret-up-light';
 import ph_cat_light from '~icons/ph/cat-light';
+import ph_certificate_light from '~icons/ph/certificate-light';
 import ph_chat_centered_text_light from '~icons/ph/chat-centered-text-light';
 import ph_chat_text_light from '~icons/ph/chat-text-light';
 import ph_check_light from '~icons/ph/check-light';
@@ -261,6 +262,7 @@ const icons: IconMap = {
 	'ph:caret-right-light': ph_caret_right_light,
 	'ph:caret-up-light': ph_caret_up_light,
 	'ph:cat-light': ph_cat_light,
+	'ph:certificate-light': ph_certificate_light,
 	'ph:chat-centered-text-light': ph_chat_centered_text_light,
 	'ph:chat-text-light': ph_chat_text_light,
 	'ph:check-light': ph_check_light,

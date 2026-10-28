@@ -30,6 +30,7 @@ export const shell = {
 	'shell.changelog': 'Changelog',
 	'shell.privacy': 'Privacy',
 	'shell.about': 'About',
+	'shell.credits': 'Credits',
 	'shell.support': 'Support',
 	'shell.supportIntro': `${APP_NAME} is free, with no ads. If it helps your games, you can support it on Ko-fi.`,
 	'shell.supportKofi': 'Support me on Ko-fi',
