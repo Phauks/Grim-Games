@@ -182,10 +182,17 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 		// Where the clause's token goes: on its own player when every effect is theirs (the
 		// Gambler's Dead), else on a chosen player, never its own when it can't choose itself:
 		// "not yourself", a dead player while it lives, an alive one once it has died.
-		const subjects = effects.flatMap((e) =>
-			(['who', 'with'] as const).flatMap((k) => (k in e ? [(e as Record<string, unknown>)[k]] : []))
-		);
-		const onSelf = subjects.every((who) => who === 'self');
+		// Effects with a token of their own (the Acrobat's Dead) don't say where the clause's goes.
+		const ownToken = (e: Effect) => e.marks !== undefined && e.marks !== clause.marks;
+		const subjects = effects
+			.filter((e) => !ownToken(e))
+			.flatMap((e) =>
+				(['who', 'with'] as const).flatMap((k) =>
+					k in e ? [(e as Record<string, unknown>)[k]] : []
+				)
+			);
+		const onSelf =
+			subjects.every((who) => who === 'self') && !(subjects.length === 0 && effects.some(ownToken));
 		const choice = clause.choose;
 		const neverSelf =
 			choice?.notSelf ||
@@ -282,6 +289,12 @@ function applyEffect(
 			else cause(rules, { kind: 'kills' });
 			if (has(clause.if, (c) => 'choice' in c && c.choice === 'guess-wrong'))
 				rules.deathCheck = { kind: 'wrong-guess' };
+			// Carousel Townsfolk: dies if the chosen player is impaired tonight (the Acrobat); a
+			// chosen player dies if good (the Lycanthrope).
+			if (effect.who === 'self' && has(conds, (c) => 'choice' in c && c.choice === 'impaired'))
+				rules.deathCheck = { kind: 'chose-impaired' };
+			if (effect.who === 'chosen' && when.at === 'night' && as === 'good')
+				rules.deathCheck = { kind: 'chosen-good-dies' };
 			if (when.at === 'event' && when.event === 'grandchild-killed-by-demon' && acc.firstMark)
 				rules.deathCheck = { kind: 'marked-killed-by-demon', token: acc.firstMark };
 			// `kills` is the night step's kill; a day kill (the Slayer's shot) is a death cause.
@@ -314,6 +327,25 @@ function applyEffect(
 			return;
 		}
 		case 'lose-ability': {
+			// Carousel Townsfolk: a marked player loses theirs for the rest of the game (the
+			// Preacher's Minions), only those of the type the clause's condition names.
+			if (effect.who !== 'self' && marks) {
+				const type = registers(conds, effect.who)?.types?.[0];
+				rules.impairs = {
+					...rules.impairs,
+					tokens: {
+						...rules.impairs?.tokens,
+						[marks]: {
+							reason: 'no-ability',
+							on: 'carrier',
+							...(type ? { type } : {}),
+							...(effect.whileWorks ? { whileWorks: true } : {})
+						}
+					}
+				};
+				acc.fixed.add(marks);
+				return;
+			}
 			const count = alive(clause.if);
 			rules.impairs = {
 				...rules.impairs,
@@ -323,6 +355,16 @@ function applyEffect(
 		}
 		case 'register':
 			if (effect.who === 'self') rules.registersAs = { self: { ...effect.as } };
+			// Carousel Townsfolk: a good player the Storyteller marks registers falsely to every
+			// ability (the Lycanthrope's Faux Paw); only to its own, it is that ability's token.
+			else if (effect.who === 'a-good-player' && !effect.toSelfOnly && marks)
+				rules.registersAs = {
+					...rules.registersAs,
+					tokens: {
+						...rules.registersAs?.tokens,
+						[marks]: { ...effect.as, carrierAlignment: 'good' }
+					}
+				};
 			return;
 		case 'register-dead':
 			if (clause.spent) rules.gameEnd = { aliveWhileDead: { untilToken: clause.spent } };

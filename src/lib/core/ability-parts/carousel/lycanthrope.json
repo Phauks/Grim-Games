@@ -1,0 +1,52 @@
+{
+	"clauses": [
+		{
+			"id": "faux-paw",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Faux Paw",
+			"effects": [
+				{
+					"do": "register",
+					"who": "a-good-player",
+					"as": {
+						"alignments": ["evil"]
+					}
+				}
+			]
+		},
+		{
+			"id": "hunt",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true
+			},
+			"if": [
+				{
+					"registers": {
+						"who": "chosen",
+						"alignments": ["good"]
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen",
+					"marks": "Dead"
+				},
+				{
+					"do": "stop-kills",
+					"who": "the-demon",
+					"until": "tonight"
+				}
+			]
+		}
+	]
+}

@@ -63,7 +63,9 @@ export const EVENTS = [
 	'nomination',
 	'killed-outsider',
 	'grandchild-killed-by-demon',
-	'marked-executed'
+	'marked-executed',
+	// Carousel Townsfolk: the player its reminder marks dies (Pixie, Bounty Hunter).
+	'marked-dies'
 ] as const;
 export type GameEvent = (typeof EVENTS)[number];
 
@@ -102,7 +104,10 @@ export const SUBJECTS = [
 	'the-demon',
 	'each-player',
 	'opposing-player',
-	'killed'
+	'killed',
+	// Carousel Townsfolk: one of the copies of this character, the Storyteller's pick, maybe
+	// its own (the Village Idiot's drunk extra).
+	'a-copy'
 ] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
@@ -143,7 +148,13 @@ export type Condition =
 	| { choice: 'guess-wrong' | 'last-was-none' | 'they-agree' | 'impaired' }
 	| { neighboursGood: true }
 	/** Only the first time this happens (the Fang Gu's first Outsider). */
-	| { firstTime: true };
+	| { firstTime: true }
+	// Carousel Townsfolk: its player was mad as the marked character (Pixie); the dead equal
+	// or outnumber the living (King).
+	| { wasMad: true }
+	| { deadAtLeastLiving: true }
+	/** Carousel Townsfolk: every good player joined the cult today (Cult Leader). */
+	| { today: 'all-good-join' };
 
 /**
  * What the player learns. `measure` and `question` are the night info generators the app
@@ -202,7 +213,17 @@ export type Info =
 				| 'yes-no-answer'
 				| 'who-chose'
 				| 'each-other'
-				| 'which-effect';
+				| 'which-effect'
+				// Carousel Townsfolk: 2 players who aren't the Demon (Knight), which way the nearest
+				// evil player sits (Shugenja), an in-play Townsfolk (Pixie), an evil player (Bounty
+				// Hunter), a player of another character type than last night's (Balloonist), an
+				// alive character (King).
+				| 'not-the-demon'
+				| 'evil-direction'
+				| 'in-play-townsfolk'
+				| 'evil-player'
+				| 'different-type-player'
+				| 'alive-character';
 	  };
 
 /**
@@ -238,13 +259,13 @@ type EffectBody =
 			whileWorks?: true;
 	  }
 	/** Its own player loses the ability (the Witch with 3 alive). */
-	| { do: 'lose-ability'; who: Subject }
+	| { do: 'lose-ability'; who: Subject; whileWorks?: true }
 	/** Sober, healthy and true info until dusk, or the ability works twice (the Barista). */
 	| { do: 'boost'; who: Subject; how: 'sober-and-true' | 'acts-twice'; until: 'dusk' }
 	/** The subject keeps or regains their ability though dead (Vigormortis, Bone Collector). */
 	| { do: 'keep-ability'; who: Subject; until?: 'dusk' }
 	/** Gains a character's ability (Philosopher, Apprentice). */
-	| { do: 'gain-ability'; who: Subject; of: 'chosen' | 'a-townsfolk-or-minion' }
+	| { do: 'gain-ability'; who: Subject; of: 'chosen' | 'a-townsfolk-or-minion' | 'marked' }
 	/** This type's information is false (the Vortox). */
 	| { do: 'falsify-info'; of: CharacterType }
 	/** The subject doesn't wake tonight (the Exorcist's Demon). */
@@ -294,7 +315,13 @@ type EffectBody =
 	| {
 			do: 'become';
 			who: Subject;
-			into: 'demon' | 'this-character' | 'chosen-character' | 'alignment-of-chooser';
+			into:
+				| 'demon'
+				| 'this-character'
+				| 'chosen-character'
+				| 'alignment-of-chooser'
+				// Carousel Townsfolk: an alive neighbour's alignment (Cult Leader).
+				| 'alignment-of-neighbour';
 			evil?: true;
 	  }
 	| { do: 'execute'; who: Subject; instead?: true }
@@ -308,7 +335,9 @@ type EffectBody =
 	| { do: 'vote-only-with'; who: Subject; with: Subject; until: 'tomorrow' }
 	| { do: 'vote-needs-token'; who: Subject }
 	| { do: 'setup'; modifier: SetupModifierRules }
-	| { do: 'storyteller'; note: string };
+	| { do: 'storyteller'; note: string }
+	/** Carousel Townsfolk: the subject kills no one tonight (the Lycanthrope's Demon). */
+	| { do: 'stop-kills'; who: Subject; until: 'tonight' };
 
 export type EffectVerb = EffectBody['do'];
 

@@ -1,0 +1,50 @@
+{
+	"clauses": [
+		{
+			"id": "extras",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Drunk",
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "+0 to +2 Village Idiots",
+						"ops": [],
+						"notes": [
+							"Up to 2 more Village Idiots replace Townsfolk.",
+							"If there are extras, choose one Village Idiot to be drunk."
+						]
+					}
+				},
+				{
+					"do": "impair",
+					"who": "a-copy",
+					"as": "drunk",
+					"until": "always"
+				}
+			]
+		},
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "alignment-of",
+						"who": "chosen"
+					}
+				}
+			]
+		}
+	]
+}

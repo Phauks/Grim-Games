@@ -32,7 +32,7 @@ const EFFECT_FIELDS: Record<string, readonly string[]> = {
 	kill: ['who', 'ignoresProtection'],
 	resurrect: ['who'],
 	impair: ['who', 'as', 'until', 'whileWorks'],
-	'lose-ability': ['who'],
+	'lose-ability': ['who', 'whileWorks'],
 	boost: ['who', 'how', 'until'],
 	'keep-ability': ['who', 'until'],
 	'gain-ability': ['who', 'of'],
@@ -56,7 +56,9 @@ const EFFECT_FIELDS: Record<string, readonly string[]> = {
 	'vote-only-with': ['who', 'with', 'until'],
 	'vote-needs-token': ['who'],
 	setup: ['modifier'],
-	storyteller: ['note']
+	storyteller: ['note'],
+	// Carousel Townsfolk.
+	'stop-kills': ['who', 'until']
 };
 
 const oneOf = (value: unknown, allowed: readonly string[]) =>

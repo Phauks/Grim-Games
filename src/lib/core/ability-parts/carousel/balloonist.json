@@ -1,0 +1,41 @@
+{
+	"clauses": [
+		{
+			"id": "outsiders",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "+0 or +1 Outsider",
+						"ops": [
+							{
+								"kind": "delta",
+								"type": "outsider",
+								"values": [0, 1]
+							}
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"marks": "Know",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "different-type-player"
+					}
+				}
+			]
+		}
+	]
+}

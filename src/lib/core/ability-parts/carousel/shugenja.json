@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "evil-direction"
+					}
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,40 @@
+{
+	"clauses": [
+		{
+			"id": "known",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "character-of",
+						"who": "self"
+					},
+					"to": "the-demon"
+				}
+			]
+		},
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"if": [
+				{
+					"deadAtLeastLiving": true
+				}
+			],
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "alive-character"
+					}
+				}
+			]
+		}
+	]
+}
