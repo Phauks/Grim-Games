@@ -246,6 +246,7 @@ function outsidersInPlay(
 		}
 		return {
 			kind: 'characters',
+			type: 'outsider',
 			value: ids,
 			...(more > 0 ? { more: { count: more, type: 'outsider' as const } } : {})
 		};

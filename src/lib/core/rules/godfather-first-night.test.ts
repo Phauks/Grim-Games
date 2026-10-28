@@ -70,8 +70,8 @@ describe('Godfather first night: the Outsiders in play', () => {
 		const { a, seats } = firstNight(['recluse', 'saint', 'godfather', 'imp', 'chef'], 2);
 		expect(a.value).toEqual(['recluse', 'saint']);
 		expect(a.possible).toEqual([
-			{ kind: 'characters', value: ['recluse', 'saint'] },
-			{ kind: 'characters', value: ['saint'] }
+			{ kind: 'characters', type: 'outsider', value: ['recluse', 'saint'] },
+			{ kind: 'characters', type: 'outsider', value: ['saint'] }
 		]);
 		expect(a.misregister).toEqual([seats[0]]);
 	});
@@ -80,8 +80,13 @@ describe('Godfather first night: the Outsiders in play', () => {
 		const { a, seats } = firstNight(['butler', 'spy', 'godfather', 'imp', 'chef'], 2);
 		expect(a.value).toEqual(['butler']);
 		expect(a.possible).toEqual([
-			{ kind: 'characters', value: ['butler'] },
-			{ kind: 'characters', value: ['butler'], more: { count: 1, type: 'outsider' } }
+			{ kind: 'characters', type: 'outsider', value: ['butler'] },
+			{
+				kind: 'characters',
+				type: 'outsider',
+				value: ['butler'],
+				more: { count: 1, type: 'outsider' }
+			}
 		]);
 		expect(a.misregister).toEqual([seats[1]]);
 	});

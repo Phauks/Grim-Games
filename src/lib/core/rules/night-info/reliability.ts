@@ -75,12 +75,13 @@ export type AnswerValue =
 	| { kind: 'character'; value: CharacterId }
 	| { kind: 'number'; value: number }
 	/**
-	 * Characters, possibly none (the Godfather's Outsiders in play). `more`: `count` players
-	 * register as `type` without being one (a Spy as an Outsider), so that many more
-	 * characters of the type, the Storyteller's pick, are shown too.
+	 * Characters of one `type`, possibly none (the Godfather's Outsiders in play). `more`:
+	 * `count` players register as `type` without being one (a Spy as an Outsider), so that
+	 * many more characters of the type, the Storyteller's pick, are shown too.
 	 */
 	| {
 			kind: 'characters';
+			type: CharacterType;
 			value: CharacterId[];
 			more?: { count: number; type: CharacterType };
 	  }

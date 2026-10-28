@@ -286,15 +286,19 @@
 					shownId = id;
 					showOpen = true;
 				}}
-				onShowCharacters={(ids) => {
-					// Every token on one card, as the Godfather is shown its Outsiders.
+				onShowCharacters={(ids, empty) => {
+					// Every token on one card, as the Godfather is shown its Outsiders; with none,
+					// the card says so ("No Outsiders", Trevor 2026-10-28).
 					shownId = undefined;
-					shownCard = {
-						characters: ids.flatMap((id) => {
-							const character = characters.get(id);
-							return character ? [{ character }] : [];
-						})
-					};
+					shownCard =
+						ids.length === 0
+							? { title: empty }
+							: {
+									characters: ids.flatMap((id) => {
+										const character = characters.get(id);
+										return character ? [{ character }] : [];
+									})
+								};
 					showOpen = true;
 				}}
 			/>

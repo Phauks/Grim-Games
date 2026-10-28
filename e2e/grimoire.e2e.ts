@@ -4154,6 +4154,30 @@ test("the Godfather's first night step shows every Outsider in play", async ({ p
 	await expect(shown).toContainText('Moonchild');
 });
 
+// Trevor (2026-10-28): with no Outsiders in play, Show to player says "No Outsiders".
+test('the Godfather with no Outsiders in play is shown No Outsiders', async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	for (const [seat, name] of [
+		[1, 'Godfather'],
+		[2, 'Gambler'],
+		[3, 'Zombuul']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Godfather');
+	await expect(strip.getByTestId('night-suggested')).toHaveText(/^Valid Information:\s*None\s*$/);
+	await strip.locator('button.step .count').tap();
+	const suggested = page.getByRole('dialog', { name: 'Godfather' }).getByTestId('night-suggested');
+	await suggested.getByRole('button', { name: 'Show to player' }).tap();
+	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('No Outsiders');
+});
+
 // Trevor (2026-10-26): with a Recluse and a Butler in play and the Librarian's Outsider
 // reminder on the Recluse, the Recluse row comes first and stands out; the Butler stays as an
 // alternative (https://wiki.bloodontheclocktower.com/Librarian).

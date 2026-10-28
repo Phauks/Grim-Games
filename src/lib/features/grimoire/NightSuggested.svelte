@@ -40,8 +40,11 @@
 		compact?: boolean;
 		/** Show a character to the player. */
 		onShow?: (characterId: CharacterId) => void;
-		/** Show several characters to the player at once (the Godfather's Outsiders). */
-		onShowCharacters?: (characterIds: readonly CharacterId[]) => void;
+		/**
+		 * Show several characters to the player at once (the Godfather's Outsiders), or `empty`
+		 * when there are none ("No Outsiders", Trevor 2026-10-28).
+		 */
+		onShowCharacters?: (characterIds: readonly CharacterId[], empty: string) => void;
 		/** Show the "Your number is" info token with a suggested number (a number step). */
 		onShowNumber?: (n: number) => void;
 	}
@@ -131,6 +134,16 @@
 	 */
 	const hasWhy = (why: Why | undefined): why is Why =>
 		!!why && (why.facts.length > 0 || why.alternatives.length > 0);
+	/** Plural type names, for "No Outsiders" (Trevor, 2026-10-28). */
+	const TYPES: Record<string, string> = {
+		townsfolk: 'Townsfolk',
+		outsider: 'Outsiders',
+		minion: 'Minions',
+		demon: 'Demons',
+		traveller: 'Travellers',
+		fabled: 'Fabled',
+		loric: 'Loric'
+	};
 	const TYPE: Record<string, string> = {
 		townsfolk: 'Townsfolk',
 		outsider: 'Outsider',
@@ -337,9 +350,8 @@
 			<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
 		{:else if a.kind === 'characters' && onShowCharacters}
 			{@const ids = a.value}
-			<Button variant="quiet" disabled={ids.length === 0} onclick={() => onShowCharacters(ids)}
-				>Show to player</Button
-			>
+			{@const empty = `No ${TYPES[a.type]}`}
+			<Button variant="quiet" onclick={() => onShowCharacters(ids, empty)}>Show to player</Button>
 		{:else if a.kind === 'number' && onShowNumber}
 			{@const n = a.value}
 			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
