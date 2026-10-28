@@ -10,6 +10,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
+	castGame,
+	type CastGame,
 	newGame,
 	run,
 	testCharacters as characters,
@@ -30,23 +32,6 @@ import {
 	registrationWorlds
 } from './ability.ts';
 
-const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
-
-function game(cast: string[], ...extra: ((seats: string[]) => Command)[]) {
-	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
-	const s = run(
-		session,
-		ctx,
-		...cast.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...extra.map((f) => f(seats))
-	);
-	return { game: s.game, seats };
-}
-
 const add =
 	(i: number, characterId: string, label: string) =>
 	(s: string[]): Command => ({
@@ -57,7 +42,7 @@ const add =
 
 describe('abilityState', () => {
 	it('works for a sober, healthy, living player', () => {
-		const { game: g, seats } = game(['chef', 'imp', 'poisoner']);
+		const { game: g, seats } = castGame(['chef', 'imp', 'poisoner']);
 		expect(abilityState(g, seats[0], characters)).toMatchObject({
 			works: true,
 			dead: false,
@@ -66,7 +51,10 @@ describe('abilityState', () => {
 	});
 
 	it('names the poisoner as the source of a Poisoned token', () => {
-		const { game: g, seats } = game(['chef', 'imp', 'poisoner'], add(0, 'poisoner', 'Poisoned'));
+		const { game: g, seats } = castGame(
+			['chef', 'imp', 'poisoner'],
+			add(0, 'poisoner', 'Poisoned')
+		);
 		expect(abilityState(g, seats[0], characters)).toMatchObject({
 			works: false,
 			impairments: [{ reason: 'poisoned', source: { characterId: 'poisoner', seatId: seats[2] } }]
@@ -74,7 +62,7 @@ describe('abilityState', () => {
 	});
 
 	it('treats the Drunk as drunk, with or without the token', () => {
-		const { game: g, seats } = game(['chef', 'imp'], add(0, 'drunk', 'Is The Drunk'));
+		const { game: g, seats } = castGame(['chef', 'imp'], add(0, 'drunk', 'Is The Drunk'));
 		expect(abilityState(g, seats[0], characters)).toMatchObject({
 			characterId: 'drunk',
 			works: false,
@@ -83,7 +71,7 @@ describe('abilityState', () => {
 	});
 
 	it('lists every reason, no ability first, then poisoned, then drunk', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['chef', 'imp', 'poisoner', 'sailor'],
 			add(0, 'sailor', 'Drunk'),
 			add(0, 'poisoner', 'Poisoned')
@@ -95,7 +83,7 @@ describe('abilityState', () => {
 	});
 
 	it('dead players have no ability, unless it works even if dead (the Recluse)', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['chef', 'recluse', 'imp'],
 			(s) => ({ type: 'SetDead', seatId: s[0], dead: true }),
 			(s) => ({ type: 'SetDead', seatId: s[1], dead: true })
@@ -105,7 +93,7 @@ describe('abilityState', () => {
 	});
 
 	it('the Minstrel makes every other non-Traveller drunk, not the Minstrel', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['minstrel', 'chef', 'imp', 'monk'],
 			add(0, 'minstrel', 'Everyone Is Drunk'),
 			(s) => ({ type: 'AssignCharacter', seatId: s[3], characterId: 'beggar', alignment: 'good' })
@@ -118,7 +106,7 @@ describe('abilityState', () => {
 	});
 
 	it('the Witch has no ability once just 3 players live', () => {
-		const { game: g, seats } = game(['witch', 'chef', 'imp', 'monk'], (s) => ({
+		const { game: g, seats } = castGame(['witch', 'chef', 'imp', 'monk'], (s) => ({
 			type: 'SetDead',
 			seatId: s[3],
 			dead: true
@@ -133,7 +121,7 @@ describe('Preacher', () => {
 	const cast = ['preacher', 'cerenovus', 'nodashii', 'engineer', 'poisoner'];
 
 	it('a chosen Minion has no ability while the Preacher lives', () => {
-		const { game: g, seats } = game(cast, add(1, 'preacher', 'No Ability'));
+		const { game: g, seats } = castGame(cast, add(1, 'preacher', 'No Ability'));
 		expect(abilityState(g, seats[1], characters)).toMatchObject({
 			works: false,
 			impairments: [{ reason: 'no-ability', source: { characterId: 'preacher', seatId: seats[0] } }]
@@ -141,14 +129,18 @@ describe('Preacher', () => {
 	});
 
 	it('choosing a non-Minion (the Engineer) does nothing', () => {
-		const { game: g, seats } = game(cast, add(3, 'preacher', 'No Ability'));
+		const { game: g, seats } = castGame(cast, add(3, 'preacher', 'No Ability'));
 		expect(abilityState(g, seats[3], characters).works).toBe(true);
 	});
 
 	it('the Minion gets its ability back while the Preacher is poisoned, or once dead', () => {
-		const poisoned = game(cast, add(1, 'preacher', 'No Ability'), add(0, 'poisoner', 'Poisoned'));
+		const poisoned = castGame(
+			cast,
+			add(1, 'preacher', 'No Ability'),
+			add(0, 'poisoner', 'Poisoned')
+		);
 		expect(abilityState(poisoned.game, poisoned.seats[1], characters).works).toBe(true);
-		const dead = game(cast, add(1, 'preacher', 'No Ability'), (s) => ({
+		const dead = castGame(cast, add(1, 'preacher', 'No Ability'), (s) => ({
 			type: 'SetDead',
 			seatId: s[0],
 			dead: true
@@ -160,7 +152,7 @@ describe('Preacher', () => {
 describe('registrations', () => {
 	// https://wiki.bloodontheclocktower.com/Legion: "you might register as a Minion too".
 	it('Legion may register as a Minion as well as a Demon', () => {
-		const { game: g, seats } = game(['chef', 'legion', 'legion']);
+		const { game: g, seats } = castGame(['chef', 'legion', 'legion']);
 		expect(registrations(g, characters)).toEqual([
 			expect.objectContaining({ seatId: seats[1], types: ['demon', 'minion'] }),
 			expect.objectContaining({ seatId: seats[2], types: ['demon', 'minion'] })
@@ -168,7 +160,7 @@ describe('registrations', () => {
 	});
 
 	it('the Recluse may register as evil and as a Minion or Demon', () => {
-		const { game: g, seats } = game(['chef', 'recluse', 'imp', 'spy']);
+		const { game: g, seats } = castGame(['chef', 'recluse', 'imp', 'spy']);
 		expect(registrations(g, characters)).toEqual([
 			expect.objectContaining({
 				seatId: seats[1],
@@ -189,7 +181,7 @@ describe('registrations', () => {
 	});
 
 	it('a poisoned Recluse registers truly: no ability', () => {
-		const { game: g } = game(
+		const { game: g } = castGame(
 			['chef', 'recluse', 'imp', 'poisoner'],
 			add(1, 'poisoner', 'Poisoned')
 		);
@@ -197,7 +189,7 @@ describe('registrations', () => {
 	});
 
 	it('the Faux Paw player always registers as evil while the Lycanthrope lives', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['lycanthrope', 'chef', 'imp', 'poisoner'],
 			add(1, 'lycanthrope', 'Faux Paw')
 		);
@@ -210,7 +202,7 @@ describe('registrations', () => {
 	// https://wiki.bloodontheclocktower.com/Revolutionary: once per game, one of the two
 	// neighbours registers falsely.
 	it("the Revolutionary's pair may register as anything until Register Falsely? comes off", () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['chef', 'empath', 'imp', 'poisoner'],
 			() => ({ type: 'AddRuleCharacter', characterId: 'revolutionary' }),
 			add(0, 'revolutionary', 'Aligned'),
@@ -245,23 +237,23 @@ describe('registrations', () => {
 
 describe('protection', () => {
 	it('the Sailor cannot die, unless drunk or poisoned', () => {
-		const sober = game(['sailor', 'imp']);
+		const sober = castGame(['sailor', 'imp']);
 		expect(protection(sober.game, sober.seats[0], characters, 'other')).toMatchObject({
 			characterId: 'sailor'
 		});
-		const drunk = game(['sailor', 'imp'], add(0, 'sailor', 'Drunk'));
+		const drunk = castGame(['sailor', 'imp'], add(0, 'sailor', 'Drunk'));
 		expect(protection(drunk.game, drunk.seats[0], characters, 'other')).toBeUndefined();
 	});
 
 	it('the Monk and Soldier only protect from the Demon; the Tea Lady from anything', () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['monk', 'chef', 'soldier', 'tealady', 'imp'],
 			add(1, 'monk', 'Safe')
 		);
 		expect(protection(g, seats[1], characters, 'demon')).toMatchObject({ characterId: 'monk' });
 		expect(protection(g, seats[1], characters, 'other')).toBeUndefined();
 		expect(protection(g, seats[2], characters, 'other')).toBeUndefined();
-		const tea = game(['chef', 'tealady', 'monk', 'imp'], add(0, 'tealady', 'Cannot Die'));
+		const tea = castGame(['chef', 'tealady', 'monk', 'imp'], add(0, 'tealady', 'Cannot Die'));
 		expect(protection(tea.game, tea.seats[0], characters, 'other')).toMatchObject({
 			characterId: 'tealady'
 		});
@@ -269,10 +261,10 @@ describe('protection', () => {
 
 	// https://wiki.bloodontheclocktower.com/Tea_Lady: only while both alive neighbours are good.
 	it('the Tea Lady protects only while both her alive neighbours are good', () => {
-		const evil = game(['chef', 'tealady', 'imp', 'monk'], add(0, 'tealady', 'Cannot Die'));
+		const evil = castGame(['chef', 'tealady', 'imp', 'monk'], add(0, 'tealady', 'Cannot Die'));
 		expect(protection(evil.game, evil.seats[0], characters, 'other')).toBeUndefined();
 		// The evil neighbour dies: the next alive player round is her neighbour now.
-		const past = game(
+		const past = castGame(
 			['chef', 'tealady', 'imp', 'monk', 'baron'],
 			add(0, 'tealady', 'Cannot Die'),
 			(s) => ({ type: 'SetDead', seatId: s[2], dead: true, cause: 'execution' })
@@ -284,7 +276,7 @@ describe('protection', () => {
 
 	// https://wiki.bloodontheclocktower.com/Storm_Catcher: they can only die by execution.
 	it("the Storm Catcher's good character dies only by execution", () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['chef', 'imp'],
 			() => ({ type: 'AddRuleCharacter', characterId: 'stormcatcher' }),
 			add(0, 'stormcatcher', 'Stormcaught')
@@ -299,7 +291,7 @@ describe('protection', () => {
 	});
 
 	it('a Storyteller override wins', () => {
-		const { game: g, seats } = game(['sailor', 'imp'], (s) => ({
+		const { game: g, seats } = castGame(['sailor', 'imp'], (s) => ({
 			type: 'SetOverride',
 			seatId: s[0],
 			override: { field: 'canDie', value: true }
@@ -344,27 +336,27 @@ describe('protection', () => {
 });
 
 describe('executionSavers', () => {
-	const ids = (g: ReturnType<typeof game>, i: number) =>
+	const ids = (g: CastGame, i: number) =>
 		executionSavers(g.game, g.seats[i], characters)
 			.filter((s) => s.source.characterId !== 'sailor' && s.source.characterId !== 'tealady')
 			.map((s) => [s.source.characterId, s.problem ?? 'ok']);
 
 	it('offers the Pacifist for a good player, warns for an evil one, never applies it unasked', () => {
 		// https://wiki.bloodontheclocktower.com/Pacifist: "might not die"; the Storyteller chooses.
-		const g = game(['pacifist', 'chef', 'poisoner', 'imp']);
+		const g = castGame(['pacifist', 'chef', 'poisoner', 'imp']);
 		expect(ids(g, 1)).toContainEqual(['pacifist', 'ok']);
 		expect(ids(g, 2)).toContainEqual(['pacifist', 'not-this-player']);
 		expect(protection(g.game, g.seats[1], characters, 'execution')).toBeUndefined();
 	});
 
 	it("says when the save's character is drunk or poisoned", () => {
-		const g = game(['pacifist', 'chef', 'poisoner', 'imp'], add(0, 'poisoner', 'Poisoned'));
+		const g = castGame(['pacifist', 'chef', 'poisoner', 'imp'], add(0, 'poisoner', 'Poisoned'));
 		expect(ids(g, 1)).toContainEqual(['pacifist', 'impaired']);
 	});
 
 	it("offers the Devil's Advocate only for the player it marked", () => {
 		// https://wiki.bloodontheclocktower.com/Devil%27s_Advocate
-		const g = game(
+		const g = castGame(
 			['devilsadvocate', 'chef', 'clockmaker', 'imp'],
 			add(1, 'devilsadvocate', 'Survives Execution')
 		);
@@ -378,7 +370,7 @@ describe('executionSavers', () => {
 	it('offers the Psychopath and Lleech for themselves only; the Vizier applies unasked', () => {
 		// https://wiki.bloodontheclocktower.com/Psychopath (roshambo), /Lleech (lives while the
 		// host does), /Vizier (cannot die during the day).
-		const g = game(['psychopath', 'lleech', 'vizier', 'chef']);
+		const g = castGame(['psychopath', 'lleech', 'vizier', 'chef']);
 		expect(ids(g, 0)).toContainEqual(['psychopath', 'ok']);
 		expect(ids(g, 1)).toContainEqual(['lleech', 'ok']);
 		expect(ids(g, 3)).toEqual(
@@ -403,7 +395,7 @@ describe('executionSavers', () => {
 
 	it('a protection that lasts only the night stops no death by day', () => {
 		// https://wiki.bloodontheclocktower.com/Innkeeper: "can't die tonight".
-		const g = game(['innkeeper', 'chef', 'imp'], add(1, 'innkeeper', 'Safe'));
+		const g = castGame(['innkeeper', 'chef', 'imp'], add(1, 'innkeeper', 'Safe'));
 		expect(protection(g.game, g.seats[1], characters, 'other')).toMatchObject({
 			characterId: 'innkeeper'
 		});
@@ -412,7 +404,7 @@ describe('executionSavers', () => {
 
 	it('never offers a protection that lasts only the night', () => {
 		// https://wiki.bloodontheclocktower.com/Innkeeper: "can't die tonight".
-		const g = game(['innkeeper', 'monk', 'soldier', 'imp']);
+		const g = castGame(['innkeeper', 'monk', 'soldier', 'imp']);
 		expect(ids(g, 0)).toEqual([]);
 	});
 });
@@ -558,12 +550,12 @@ describe('impairing tokens end with their character unless they last', () => {
 	for (const { id, label, rule } of tokens) {
 		const lasts = rule !== undefined && !rule.whileWorks;
 		it(`${id} "${label}": impairs while ${id} lives`, () => {
-			const { game: g, seats } = game([id, 'empath', 'imp'], add(1, id, label));
+			const { game: g, seats } = castGame([id, 'empath', 'imp'], add(1, id, label));
 			const typed = rule?.type === undefined || rule.type === 'townsfolk';
 			expect(abilityState(g, seats[1], characters).works).toBe(!typed);
 		});
 		it(`${id} "${label}": ${lasts ? 'still impairs' : 'ends'} once ${id} is dead`, () => {
-			const { game: g, seats } = game([id, 'empath', 'imp'], add(1, id, label), dead(0));
+			const { game: g, seats } = castGame([id, 'empath', 'imp'], add(1, id, label), dead(0));
 			const typed = rule?.type === undefined || rule.type === 'townsfolk';
 			expect(abilityState(g, seats[1], characters).works).toBe(!(typed && lasts));
 		});
@@ -573,7 +565,7 @@ describe('impairing tokens end with their character unless they last', () => {
 describe('Barista and Xaan', () => {
 	// https://wiki.bloodontheclocktower.com/Barista: the chosen player is sober and healthy.
 	it("clears drunkenness and poisoning under the Barista's Sober & Healthy", () => {
-		const { game: g, seats } = game(
+		const { game: g, seats } = castGame(
 			['empath', 'poisoner', 'imp', 'barista'],
 			add(0, 'poisoner', 'Poisoned'),
 			add(0, 'barista', 'Sober & Healthy')
@@ -584,14 +576,18 @@ describe('Barista and Xaan', () => {
 	// https://wiki.bloodontheclocktower.com/Xaan: on night X all Townsfolk are poisoned until
 	// dusk, while the Xaan lives.
 	it("poisons every Townsfolk while the Xaan's X is out, and only while it lives", () => {
-		const { game: g, seats } = game(['empath', 'butler', 'xaan', 'imp'], add(2, 'xaan', 'X'));
+		const { game: g, seats } = castGame(['empath', 'butler', 'xaan', 'imp'], add(2, 'xaan', 'X'));
 		expect(abilityState(g, seats[0], characters).impairments[0]?.reason).toBe('poisoned');
 		expect(abilityState(g, seats[1], characters).works).toBe(true);
-		const { game: after } = game(['empath', 'butler', 'xaan', 'imp'], add(2, 'xaan', 'X'), (s) => ({
-			type: 'SetDead',
-			seatId: s[2],
-			dead: true
-		}));
+		const { game: after } = castGame(
+			['empath', 'butler', 'xaan', 'imp'],
+			add(2, 'xaan', 'X'),
+			(s) => ({
+				type: 'SetDead',
+				seatId: s[2],
+				dead: true
+			})
+		);
 		expect(abilityState(after, seats[0], characters).works).toBe(true);
 	});
 });

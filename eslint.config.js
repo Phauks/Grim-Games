@@ -39,6 +39,37 @@ const SEAT_NAME_TODO = [
 	'src/lib/features/player/notebook.ts'
 ];
 
+// Requests go through #lib/ui/fetch.ts, which adds a timeout (code cleanup, 2026-10-27).
+// The service worker and the update check make their own requests, with their own caching.
+const FETCH_OWN = [
+	'src/lib/ui/fetch.ts',
+	'src/service-worker.ts',
+	'src/lib/features/about/update-check.svelte.ts'
+];
+const FETCH_IGNORES = [
+	...FETCH_OWN,
+	'src/**/*.test.ts',
+	'src/lib/features/spikes/**',
+	'src/routes/spikes/**'
+];
+const NO_RAW_FETCH = {
+	selector: "CallExpression[callee.name='fetch']",
+	message: 'Use fetchJson or fetchWithTimeout from #lib/ui/fetch.ts.'
+};
+// A seat is named by seatName (features/game/seat-label.ts) or t('common.seat'), never a
+// hand-built "Seat ${n}" (Trevor, 2026-10-19: one name for every seat). Core writes the
+// default player names itself, in English. SEAT_NAME_TODO only shrinks.
+const SEAT_NAME_IGNORES = [
+	'src/lib/core/**',
+	'src/**/*.test.ts',
+	'src/lib/features/spikes/**',
+	...SEAT_NAME_TODO
+];
+const NO_HAND_BUILT_SEAT_NAME = {
+	selector: 'TemplateLiteral[quasis.0.value.raw=/^Seat $/]',
+	message: "Name a seat with seatName (features/game/seat-label.ts) or t('common.seat')."
+};
+
 const LOCAL_STORAGE_TODO = [
 	'src/lib/features/grimoire/board-looks.svelte.ts',
 	'src/lib/features/grimoire/device-notes.ts',
@@ -224,26 +255,22 @@ export default defineConfig(
 			]
 		}
 	},
+	// Two no-restricted-syntax lints share one rule, and a later config block replaces an earlier
+	// one's options for the files both match, so files under both lints get both selectors.
 	{
-		// A seat is named by seatName (features/game/seat-label.ts) or t('common.seat'), never a
-		// hand-built "Seat ${n}" (Trevor, 2026-10-19: one name for every seat). Core writes the
-		// default player names itself, in English. SEAT_NAME_TODO only shrinks.
 		files: ['src/**/*.ts', 'src/**/*.svelte'],
-		ignores: [
-			'src/lib/core/**',
-			'src/**/*.test.ts',
-			'src/lib/features/spikes/**',
-			...SEAT_NAME_TODO
-		],
-		rules: {
-			'no-restricted-syntax': [
-				'error',
-				{
-					selector: 'TemplateLiteral[quasis.0.value.raw=/^Seat $/]',
-					message: "Name a seat with seatName (features/game/seat-label.ts) or t('common.seat')."
-				}
-			]
-		}
+		ignores: FETCH_IGNORES,
+		rules: { 'no-restricted-syntax': ['error', NO_RAW_FETCH] }
+	},
+	{
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
+		ignores: [...SEAT_NAME_IGNORES, ...FETCH_IGNORES],
+		rules: { 'no-restricted-syntax': ['error', NO_RAW_FETCH, NO_HAND_BUILT_SEAT_NAME] }
+	},
+	{
+		files: FETCH_OWN,
+		ignores: SEAT_NAME_IGNORES,
+		rules: { 'no-restricted-syntax': ['error', NO_HAND_BUILT_SEAT_NAME] }
 	},
 	{
 		// Every Share opens the one share screen (Trevor, 2026-10-23); only it calls
