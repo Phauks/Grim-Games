@@ -8,6 +8,9 @@
 	"setupPrep": {
 		"none": "its tokens mark what a player chooses at night, placed when they choose"
 	},
+	"learns": {
+		"measure": "same-alignment"
+	},
 	"dayReminders": {
 		"none": "night info"
 	},

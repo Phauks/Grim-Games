@@ -3,6 +3,9 @@
 	"onDeath": {
 		"by": "demon"
 	},
+	"learns": {
+		"measure": "demon-in-pair"
+	},
 	"dayReminders": {
 		"none": "triggers on Demon kill"
 	},

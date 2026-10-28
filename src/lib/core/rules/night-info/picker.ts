@@ -27,8 +27,9 @@ import {
  * - `pair-character`: two players and a character, one of whom is that character
  *   (Washerwoman, Librarian, Investigator);
  * - `number`: a number (Chef, Empath, Clockmaker);
- * - `players`: players to point at (Steward: 1 good player; Noble: 3, exactly 1 evil);
- * - `yes-no`: the player chose 2 players; yes or no (Fortune Teller).
+ * - `players`: players to point at (Steward: 1 good player; Noble: 3, exactly 1 evil; Sage:
+ *   2, one of them the Demon);
+ * - `yes-no`: the player chose 2 players; yes or no (Fortune Teller, Seamstress).
  */
 export type PickerKind = 'pair-character' | 'number' | 'players' | 'yes-no';
 
@@ -113,7 +114,9 @@ const MEASURE_PICKERS: Readonly<Record<Learns['measure'], Pick<PickerSpec, 'kind
 		'demon-minion-steps': { kind: 'number', seatCount: 0 },
 		'demon-or-token': { kind: 'yes-no', seatCount: 2 },
 		'good-player': { kind: 'players', seatCount: 1 },
-		'one-evil-of-three': { kind: 'players', seatCount: 3 }
+		'one-evil-of-three': { kind: 'players', seatCount: 3 },
+		'same-alignment': { kind: 'yes-no', seatCount: 2 },
+		'demon-in-pair': { kind: 'players', seatCount: 2 }
 	};
 
 /**
@@ -217,6 +220,23 @@ function optionsIn(
 				const bad = trio.filter(evil);
 				return bad.length === 1 ? [{ seats: trio, pivot: bad[0] }] : [];
 			});
+		case 'same-alignment':
+			// https://wiki.bloodontheclocktower.com/Seamstress: the player chose 2 other players;
+			// yes when both are good or both are evil.
+			return choose(others, 2).map((pair) => ({
+				seats: pair,
+				yes: evil(pair[0]) === evil(pair[1])
+			}));
+		case 'demon-in-pair':
+			// https://wiki.bloodontheclocktower.com/Sage: two players, one of them the Demon; the
+			// other is anyone else.
+			return others
+				.filter((s) => world.type(s) === 'demon')
+				.flatMap((demon) =>
+					others
+						.filter((s) => s !== demon)
+						.map((other): InfoOption => ({ seats: [demon, other], pivot: demon }))
+				);
 	}
 }
 
@@ -291,7 +311,10 @@ function pickerFacts(
 				return [{ ...f(s), ...(redHerring ? { redHerring: true } : {}) }];
 			});
 		case 'one-evil-of-three':
+		case 'same-alignment':
 			return others.filter(evil).map(f);
+		case 'demon-in-pair':
+			return others.filter((s) => world.type(s) === 'demon').map(f);
 		case 'good-player':
 			return [];
 	}

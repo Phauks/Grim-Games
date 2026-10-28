@@ -255,7 +255,9 @@ export type TokenRegisters = Registers & {
  * - `demon-or-token`: yes if either of two chosen players is the Demon or carries `token`
  *   (Fortune Teller's Red Herring);
  * - `good-player`: one good player (Steward);
- * - `one-evil-of-three`: three players, exactly one evil (Noble).
+ * - `one-evil-of-three`: three players, exactly one evil (Noble);
+ * - `same-alignment`: yes if two chosen players are the same alignment (Seamstress);
+ * - `demon-in-pair`: two players, one of them the Demon (Sage).
  * `reminders` are the tokens to place: `target` on the shown character's player, `other` on the
  * second player, `each` on every player tapped.
  */
@@ -266,7 +268,9 @@ const LEARNS_MEASURES = [
 	'demon-minion-steps',
 	'demon-or-token',
 	'good-player',
-	'one-evil-of-three'
+	'one-evil-of-three',
+	'same-alignment',
+	'demon-in-pair'
 ] as const;
 export interface Learns {
 	measure: (typeof LEARNS_MEASURES)[number];
