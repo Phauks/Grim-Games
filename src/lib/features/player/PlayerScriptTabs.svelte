@@ -136,6 +136,11 @@
 	.inset,
 	.bleed {
 		margin-inline: calc(-1 * var(--space-3));
+		/* From the tabs' line to the first heading is the same as the side margin (Trevor,
+		   2026-10-28: "probably just match side distance"): the tab panel's own top padding
+		   and the sheet's give way to it. A host whose side margin isn't the page gutter
+		   (the board's Script dialog) sets --player-side. */
+		margin-top: calc(var(--player-side, var(--page-gutter)) - var(--space-4) - var(--space-3));
 	}
 	/* The colours themselves are the chosen background's (themes/sheet-backgrounds.ts), set on the element. */
 	.painted {

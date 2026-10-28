@@ -1999,6 +1999,8 @@
 	.script-scroll {
 		flex: 1;
 		min-height: 0;
+		/* The dialog's side margin, for the space under the tabs (PlayerScriptTabs). */
+		--player-side: var(--space-4);
 		margin-inline: calc(-1 * var(--space-3));
 		padding-inline: var(--space-3);
 		overflow-y: auto;
