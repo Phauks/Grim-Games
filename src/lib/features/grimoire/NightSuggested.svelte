@@ -20,6 +20,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -145,12 +146,26 @@
 		info?.kind === 'picker'
 			? info.pickers.flatMap((picker) => {
 					const roles = learnedRoles(game, picker, characters);
-					return roles && (roles.rows.length > 0 || roles.none || roles.anyOther)
-						? [{ picker, roles }]
-						: [];
+					if (!roles || !(roles.rows.length > 0 || roles.none || roles.anyOther)) return [];
+					const extras = (roles.none ? 1 : 0) + (roles.anyOther ? 1 : 0);
+					return [{ picker, roles, ...fold(roles.rows, extras) }];
 				})
 			: []
 	);
+	/**
+	 * Once the board's reminders mark a row, the other valid rows fold under a caret, one tap
+	 * away (Trevor, 2026-10-27: "When other valid info exists, but one has been marked, allow
+	 * carrot menu collapsing the other valid info"). `others` counts them, with "None" and "Any
+	 * other"; nothing marked leaves every row in the list.
+	 */
+	function fold<R extends { marked?: true }>(rows: readonly R[], extras: number) {
+		const marked = rows.filter((r) => r.marked);
+		const rest = marked.length > 0 ? rows.filter((r) => !r.marked) : [...rows];
+		return { marked, rest, others: marked.length > 0 ? rest.length + extras : 0 };
+	}
+	/** A marked choice that isn't valid keeps the valid ones open beneath it. */
+	const markedValid = (rows: readonly { reason: string }[]) =>
+		rows.some((r) => r.reason !== 'invalid');
 	const rowKey = (p: InfoPicker, row: LearnedRole) =>
 		JSON.stringify([p.seatId, row.target, row.reason, row.marked ?? false]);
 	/** The character picked for a row that offers several (a Recluse shown as a Minion). */
@@ -182,9 +197,8 @@
 		info?.kind === 'picker'
 			? info.pickers.flatMap((picker) => {
 					const players = chosenPlayers(game, picker);
-					return players && (players.rows.length > 0 || players.anyOther)
-						? [{ picker, players }]
-						: [];
+					if (!players || !(players.rows.length > 0 || players.anyOther)) return [];
+					return [{ picker, players, ...fold(players.rows, players.anyOther ? 1 : 0) }];
 				})
 			: []
 	);
@@ -392,29 +406,30 @@
 						{#if hasWhy(p.why)}{@render whyBlock(p.why)}{/if}
 					</li>
 				{/each}
-				{#each rolePickers as { picker: p, roles } (p.seatId)}
+				{#each rolePickers as { picker: p, roles, marked, rest, others } (p.seatId)}
 					<li data-unreliable={p.unreliable ? '' : undefined}>
 						{#if rolePickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span>{/if}
-						<ul class="valid" aria-label="Valid information" data-testid="learned-roles">
-							{#each roles.rows as row (rowKey(p, row))}
-								{@render roleRow(p, row)}
-							{/each}
-							{#if roles.none}
-								<li data-reason={roles.none}>
-									<span class="main option"><strong>None</strong></span>
-									{@render reasonTag(roles.none)}
-									{#if onShowNumber}
-										<Button variant="quiet" onclick={() => onShowNumber(0)}>Show to player</Button>
-									{/if}
-								</li>
+						<div class="options" data-testid="learned-roles">
+							<ul class="valid" aria-label="Valid information">
+								{#each marked.length > 0 ? marked : rest as row (rowKey(p, row))}
+									{@render roleRow(p, row)}
+								{/each}
+								{#if marked.length === 0}{@render roleExtras(roles)}{/if}
+							</ul>
+							{#if marked.length > 0 && others > 0}
+								<Collapsible
+									title="Other valid information"
+									level={4}
+									defaultOpen={!markedValid(marked)}
+									count={others}
+								>
+									<ul class="valid" aria-label="Other valid information">
+										{#each rest as row (rowKey(p, row))}{@render roleRow(p, row)}{/each}
+										{@render roleExtras(roles)}
+									</ul>
+								</Collapsible>
 							{/if}
-							{#if roles.anyOther}
-								<li data-reason={roles.anyOther}>
-									<span class="main option"><strong>Any other</strong></span>
-									{@render reasonTag(roles.anyOther)}
-								</li>
-							{/if}
-						</ul>
+						</div>
 						<!-- Who may register otherwise is in the rows; only why any info is allowed here. -->
 						{#each flags(p).filter((f) => !f.seats) as flag (flag.text)}
 							<span class="flag" class:warn={p.unreliable || p.mustBeFalse}>
@@ -423,34 +438,31 @@
 						{/each}
 					</li>
 				{/each}
-				{#each playerPickers as { picker: p, players: choices } (p.seatId)}
+				{#each playerPickers as { picker: p, players: choices, marked, rest, others } (p.seatId)}
 					<li data-unreliable={p.unreliable ? '' : undefined}>
 						{#if playerPickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span
 							>{/if}
-						<ul class="valid" aria-label="Valid information" data-testid="chosen-players">
-							{#each choices.rows as row (playerRowKey(p, row))}
-								<li data-reason={row.reason} data-marked={row.marked ? '' : undefined}>
-									<span class="main option">
-										{#if row.exact}{@render players([
-												row.target,
-												...row.seats
-											])}{:else}{@render player(row.target)}{#if row.seats.length > 0}<span
-													class="with">and two of</span
-												>
-												{@render players(row.seats)}{/if}{/if}
-									</span>
-									{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span
-										>{/if}
-									{@render reasonTag(row.reason, row.registered)}
-								</li>
-							{/each}
-							{#if choices.anyOther}
-								<li data-reason={choices.anyOther}>
-									<span class="main option"><strong>Any other</strong></span>
-									{@render reasonTag(choices.anyOther)}
-								</li>
+						<div class="options" data-testid="chosen-players">
+							<ul class="valid" aria-label="Valid information">
+								{#each marked.length > 0 ? marked : rest as row (playerRowKey(p, row))}
+									{@render playerRow(row)}
+								{/each}
+								{#if marked.length === 0}{@render playerExtras(choices)}{/if}
+							</ul>
+							{#if marked.length > 0 && others > 0}
+								<Collapsible
+									title="Other valid information"
+									level={4}
+									defaultOpen={!markedValid(marked)}
+									count={others}
+								>
+									<ul class="valid" aria-label="Other valid information">
+										{#each rest as row (playerRowKey(p, row))}{@render playerRow(row)}{/each}
+										{@render playerExtras(choices)}
+									</ul>
+								</Collapsible>
 							{/if}
-						</ul>
+						</div>
 						{#each flags(p).filter((f) => !f.seats) as flag (flag.text)}
 							<span class="flag" class:warn={p.unreliable || p.mustBeFalse}>
 								{#if p.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
@@ -475,6 +487,47 @@
 		</ul>
 	</section>
 {/if}
+
+<!-- The rows after the roles: "None" (no Outsiders) and "Any other", never marked. -->
+{#snippet roleExtras(roles: LearnedRoles)}
+	{#if roles.none}
+		<li data-reason={roles.none}>
+			<span class="main option"><strong>None</strong></span>
+			{@render reasonTag(roles.none)}
+			{#if onShowNumber}
+				<Button variant="quiet" onclick={() => onShowNumber(0)}>Show to player</Button>
+			{/if}
+		</li>
+	{/if}
+	{#if roles.anyOther}
+		<li data-reason={roles.anyOther}>
+			<span class="main option"><strong>Any other</strong></span>
+			{@render reasonTag(roles.anyOther)}
+		</li>
+	{/if}
+{/snippet}
+
+{#snippet playerRow(row: ChosenPlayersRow)}
+	<li data-reason={row.reason} data-marked={row.marked ? '' : undefined}>
+		<span class="main option">
+			{#if row.exact}{@render players([row.target, ...row.seats])}{:else}{@render player(
+					row.target
+				)}{#if row.seats.length > 0}<span class="with">and two of</span>
+					{@render players(row.seats)}{/if}{/if}
+		</span>
+		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
+		{@render reasonTag(row.reason, row.registered)}
+	</li>
+{/snippet}
+
+{#snippet playerExtras(choices: ChosenPlayers)}
+	{#if choices.anyOther}
+		<li data-reason={choices.anyOther}>
+			<span class="main option"><strong>Any other</strong></span>
+			{@render reasonTag(choices.anyOther)}
+		</li>
+	{/if}
+{/snippet}
 
 {#snippet reasonTag(reason: LearnedRole['reason'], registered: readonly SeatId[] = [])}
 	{#if reason === 'registers'}<span class="tag">Registers: {@render players(registered)}</span
@@ -702,6 +755,11 @@
 		align-items: center;
 		gap: var(--space-1);
 		--icon-size: 1em;
+	}
+	/* The rows a step shows, the other valid ones folded beneath once one is marked. */
+	.options {
+		width: 100%;
+		--section-title-size: 0.85rem;
 	}
 	.compact {
 		display: block;

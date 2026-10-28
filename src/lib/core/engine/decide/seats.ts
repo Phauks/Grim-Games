@@ -208,7 +208,7 @@ export const SEATS_DECIDERS: Deciders<
 			id === a.seatId ? b.seatId : id === b.seatId ? a.seatId : id
 		);
 		const swap: GameEvent = { type: 'SeatsSwapped', seatA: a.seatId, seatB: b.seatId };
-		return reseated(game, seating, swap, ctx, warn);
+		return [...seatNumberNames(game), ...reseated(game, seating, swap, ctx, warn)];
 	},
 
 	RotateSeats(game, command, ctx, warn) {

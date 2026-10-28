@@ -314,6 +314,22 @@ export function withPlaced(layout: SeatLayout, seatId: string, point: SeatPoint)
 	};
 }
 
+/**
+ * Two players swap places (the Matron): each takes the other's hand-placed spot and gap, as
+ * the places stay where they are and only who sits in them changes.
+ */
+export function swapPlaces(layout: SeatLayout, a: string, b: string): SeatLayout {
+	const swap = <T>(entries: Readonly<Record<string, T>>) => {
+		const out = { ...entries };
+		delete out[a];
+		delete out[b];
+		if (entries[b] !== undefined) out[a] = entries[b];
+		if (entries[a] !== undefined) out[b] = entries[a];
+		return out;
+	};
+	return { ...layout, placed: swap(layout.placed), gaps: swap(layout.gaps) };
+}
+
 /** Puts a hand-placed seat back on the ring. */
 export function withoutPlaced(layout: SeatLayout, seatId: string): SeatLayout {
 	const placed = { ...layout.placed };

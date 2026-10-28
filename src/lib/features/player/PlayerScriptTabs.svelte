@@ -80,16 +80,18 @@
 			<!-- A crash in one tab replaces only that tab. -->
 			<ErrorBoundary area="play">
 				{#if value === 'script'}
-					<ScriptCopy
-						{script}
-						{players}
-						{inPlay}
-						{travellers}
-						{rules}
-						{ruleCharacters}
-						byline={false}
-						backgroundChoice={false}
-					/>
+					<div class="bleed">
+						<ScriptCopy
+							{script}
+							{players}
+							{inPlay}
+							{travellers}
+							{rules}
+							{ruleCharacters}
+							byline={false}
+							backgroundChoice={false}
+						/>
+					</div>
 				{:else if value === 'night'}
 					<!-- The night order takes the same light background as the script (Trevor,
 					     2026-10-23: "Sun and Moon should affect night order as well"). -->
@@ -116,14 +118,24 @@
 </Tabs>
 
 <style>
+	/* The sheet's own padding gives the room under the tabs. */
 	.panel {
-		padding-top: var(--space-3);
+		padding-top: 0;
 	}
 	/* Padded either way, as ScriptCopy is, so the light background moves nothing. */
 	.sheet,
 	.inset {
 		padding: var(--space-3);
 		border-radius: var(--radius-md);
+	}
+	/* The sheets' padding reaches out into the page's gutter, so their words line up with the
+	   tabs' edge rather than sitting inset from it (Trevor, 2026-10-27: "Player view feels
+	   slightly constrained"). Every page gutter is at least --space-4, so nothing scrolls
+	   sideways. */
+	.sheet,
+	.inset,
+	.bleed {
+		margin-inline: calc(-1 * var(--space-3));
 	}
 	/* The colours themselves are the chosen background's (themes/sheet-backgrounds.ts), set on the element. */
 	.painted {

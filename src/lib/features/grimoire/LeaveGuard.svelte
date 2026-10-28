@@ -64,18 +64,42 @@
 			const overlay = document.querySelector(
 				'[data-part="content"][data-state="open"]:is([data-scope="dialog"], [data-scope="drawer"])'
 			);
-			pushState('', { inGame: true });
-			trapped = true;
 			if (overlay) {
-				// Escape closes the newest overlay (Ark's layer stack), as Back should.
+				// Escape closes the newest overlay (Ark's layer stack), as Back should. The entry
+				// goes back on only once it has gone: Android's back swipe previews the entry under
+				// as it looked when the next one went on, and showed the overlay again (the Glossary,
+				// Trevor 2026-10-27). A second Back meanwhile still asks, as it leaves the page.
 				overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+				void afterClosing(overlay).then(() => {
+					if (page.state.inGame) return;
+					pushState('', { inGame: true });
+					trapped = true;
+				});
 				return;
 			}
+			pushState('', { inGame: true });
+			trapped = true;
 			// Past the board's own entry and the page under it, to wherever the game was opened from.
 			pendingLeave = () => history.go(-2);
 			exitOpen = true;
 		});
 	});
+	/**
+	 * Resolves once `overlay` has closed and a frame without it is on screen; at most a second,
+	 * for one that stays open (a form that asks before closing).
+	 */
+	function afterClosing(overlay: Element): Promise<void> {
+		const until = performance.now() + 1000;
+		return new Promise((resolve) => {
+			const check = () => {
+				// Overlays unmount once their closing animation ends.
+				if (!overlay.isConnected || performance.now() > until)
+					requestAnimationFrame(() => resolve());
+				else requestAnimationFrame(check);
+			};
+			requestAnimationFrame(check);
+		});
+	}
 	function confirmLeave() {
 		exitOpen = false;
 		const leave = pendingLeave;
