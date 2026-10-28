@@ -57,7 +57,7 @@ export type BackgroundScope = { gameId: string } | { profileId: string } | 'defa
 const DB_NAME = 'grim-games-backgrounds';
 const STORE = 'choices';
 /** Longest side of a stored image: sharp on a tablet, small enough to keep many. */
-export const MAX_SIDE = 1920;
+const MAX_SIDE = 1920;
 
 const keyOf = (scope: BackgroundScope) =>
 	scope === 'default'

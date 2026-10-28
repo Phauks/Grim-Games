@@ -18,8 +18,7 @@ import {
 } from '#lib/core/engine/index.ts';
 import { DB_NAME } from './db-name.ts';
 
-export { DB_NAME };
-export const DB_VERSION = 1;
+const DB_VERSION = 1;
 const GAMES = 'games';
 
 function done<T>(request: IDBRequest<T>): Promise<T> {

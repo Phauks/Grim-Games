@@ -14,11 +14,11 @@ export const DAY_SECONDS_PER_ALIVE_MAX = 300;
  * Counting down shows the time left and stops at 0:00; counting up shows the time used
  * from 0:00 and keeps going past the target (Trevor, 2026-10-17: "count up or down").
  */
-export const DAY_TIMER_MODES = ['down', 'up'] as const;
+const DAY_TIMER_MODES = ['down', 'up'] as const;
 export type DayTimerMode = (typeof DAY_TIMER_MODES)[number];
 
 /** What one tap on "more" or "less" changes, and the shortest timer. */
-export const DAY_TIMER_STEP_MS = 30_000;
+const DAY_TIMER_STEP_MS = 30_000;
 
 export interface DayTimer {
 	/** The full length, which Reset returns to. */
@@ -140,7 +140,7 @@ export function parseSharedTimer(value: unknown): SharedDayTimer | undefined {
  * for players", the Storyteller decides): a sun that sinks as the day's time runs out, or
  * the clock itself.
  */
-export const PLAYER_TIMER_LOOKS = ['sun', 'timer'] as const;
+const PLAYER_TIMER_LOOKS = ['sun', 'timer'] as const;
 export type PlayerTimerLook = (typeof PLAYER_TIMER_LOOKS)[number];
 
 /** The Storyteller's timer as players' phones get it, with how to show it. */

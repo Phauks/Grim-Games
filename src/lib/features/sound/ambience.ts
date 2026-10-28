@@ -160,7 +160,7 @@ export async function previewAmbience(id: string): Promise<void> {
 }
 
 /** Stops a preview still playing. */
-export function stopPreview(): void {
+function stopPreview(): void {
 	if (!preview) return;
 	try {
 		preview.source.stop();
