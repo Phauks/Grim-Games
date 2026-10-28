@@ -94,7 +94,9 @@ export const player = {
 	'player.sheetBackground.charcoal': 'Charcoal',
 	'player.profile': 'Profile',
 	'player.frame': 'Your laurel',
-	'player.laurelColour': 'Laurel colour',
+	'player.frameColour': 'Colour',
+	'player.frameMotion': 'Motion',
+	'player.bigPreview': 'Your seat, larger',
 	'player.picture': 'Your picture',
 	'player.pictureDetail':
 		'On your seat in place of your initials, in rooms you join. The Storyteller can take it away for a game.',
