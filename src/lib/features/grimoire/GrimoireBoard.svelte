@@ -357,8 +357,9 @@
 			)
 		};
 	});
-	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
+	/** What a seat's reminders keep off: its name, skull, note mark and top-rim marks. */
 	function avoidFor(i: number): Box[] {
+		const seat = seats[i];
 		return avoidBoxes({
 			centre: toPx(shown[i]),
 			size,
@@ -366,7 +367,10 @@
 			name: nameBoxes[i]?.box,
 			dead: !!seats[i]?.dead,
 			note: !!seats[i]?.notes?.length,
-			nameOffset: boardLooks.current.nameOffset
+			nameOffset: boardLooks.current.nameOffset,
+			nominations: nominatedToday !== undefined,
+			orphan: !!seat && isOrphan(seat, game.script, characters, offScriptOk),
+			avatar: !!seat?.characterId && !!seat.avatar
 		});
 	}
 	/**
