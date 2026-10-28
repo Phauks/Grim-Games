@@ -258,14 +258,14 @@ export class Room extends DurableObject<RoomEnv> {
 		let room = await this.load();
 		if (!room) {
 			send(ws, { type: 'refused', reason: 'no-room' });
-			ws.close(4404, 'No such room');
+			closeSocket(ws, 4404, 'No such room');
 			return;
 		}
 		if (who?.role === 'admin') {
 			if (message.type !== 'hello') return;
 			if (!supportsProtocol(message.protocol)) {
 				send(ws, { type: 'refused', reason: 'too-old' });
-				ws.close(4426, 'Update the app');
+				closeSocket(ws, 4426, 'Update the app');
 				return;
 			}
 			// What the room holds now; later changes follow as they come (save, script, grimoire).
@@ -284,14 +284,14 @@ export class Room extends DurableObject<RoomEnv> {
 			if (typeof message.key !== 'string' || !KEY_PATTERN.test(message.key)) return;
 			if (!supportsProtocol(message.protocol)) {
 				send(ws, { type: 'refused', reason: 'too-old' });
-				ws.close(4426, 'Update the app');
+				closeSocket(ws, 4426, 'Update the app');
 				return;
 			}
 			const hash = await sha256(message.key);
 			if (message.role === 'host') {
 				if (hash !== room.hostKeyHash) {
 					send(ws, { type: 'refused', reason: 'not-host' });
-					ws.close(4403, 'Not the Storyteller');
+					closeSocket(ws, 4403, 'Not the Storyteller');
 					return;
 				}
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
@@ -309,13 +309,13 @@ export class Room extends DurableObject<RoomEnv> {
 				const fails = await this.ctx.storage.get<ViewerFails>('viewer-fails');
 				if (viewersLocked(fails, Date.now())) {
 					send(ws, { type: 'refused', reason: 'too-many-tries' });
-					ws.close(4429, 'Too many tries');
+					closeSocket(ws, 4429, 'Too many tries');
 					return;
 				}
 				if (hash !== room.viewerKeyHash) {
 					await this.ctx.storage.put('viewer-fails', viewerFailed(fails, Date.now()));
 					send(ws, { type: 'refused', reason: 'not-viewer' });
-					ws.close(4403, 'Link turned off');
+					closeSocket(ws, 4403, 'Link turned off');
 					return;
 				}
 				ws.serializeAttachment({ role: 'viewer' } satisfies Attachment);
@@ -340,7 +340,7 @@ export class Room extends DurableObject<RoomEnv> {
 			const joined = join(room, memberId, this.present());
 			if (!joined) {
 				send(ws, { type: 'refused', reason: 'room-full' });
-				ws.close(4429, 'Room full');
+				closeSocket(ws, 4429, 'Room full');
 				return;
 			}
 			ws.serializeAttachment({ role: 'player', memberId } satisfies Attachment);
@@ -402,7 +402,7 @@ export class Room extends DurableObject<RoomEnv> {
 				const text = JSON.stringify(view);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'player' || to?.role === 'town') socket.send(text);
+					if (to?.role === 'player' || to?.role === 'town') sendText(socket, text);
 				}
 				return;
 			}
@@ -415,7 +415,7 @@ export class Room extends DurableObject<RoomEnv> {
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
 					if (to?.role === 'player' || to?.role === 'town' || to?.role === 'admin')
-						socket.send(text);
+						sendText(socket, text);
 				}
 				return;
 			}
@@ -431,7 +431,7 @@ export class Room extends DurableObject<RoomEnv> {
 					const to = socket.deserializeAttachment() as Attachment | null;
 					if (to?.role !== 'viewer') continue;
 					send(socket, { type: 'refused', reason: 'not-viewer' });
-					socket.close(4403, 'Link turned off');
+					closeSocket(socket, 4403, 'Link turned off');
 				}
 				this.tellWatchers();
 				room = next;
@@ -446,7 +446,7 @@ export class Room extends DurableObject<RoomEnv> {
 				const text = JSON.stringify(view);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'viewer' || to?.role === 'admin') socket.send(text);
+					if (to?.role === 'viewer' || to?.role === 'admin') sendText(socket, text);
 				}
 				return;
 			}
@@ -513,7 +513,7 @@ export class Room extends DurableObject<RoomEnv> {
 				const text = JSON.stringify({ type: 'call-town' } satisfies ServerMessage);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'player') socket.send(text);
+					if (to?.role === 'player') sendText(socket, text);
 				}
 				return;
 			}
@@ -524,7 +524,7 @@ export class Room extends DurableObject<RoomEnv> {
 				const text = JSON.stringify({ type: 'town-sound', ...command } satisfies ServerMessage);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'town') socket.send(text);
+					if (to?.role === 'town') sendText(socket, text);
 				}
 				return;
 			}
@@ -574,7 +574,7 @@ export class Room extends DurableObject<RoomEnv> {
 		const text = JSON.stringify(hostView(room, this.present(going)));
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
-			if (who?.role === 'host') socket.send(text);
+			if (who?.role === 'host') sendText(socket, text);
 		}
 	}
 
@@ -605,7 +605,7 @@ export class Room extends DurableObject<RoomEnv> {
 		const text = JSON.stringify({ type: 'grimoire-wanted', on: this.admins(going) > 0 });
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
-			if (who?.role === 'host') socket.send(text);
+			if (who?.role === 'host') sendText(socket, text);
 		}
 	}
 
@@ -614,7 +614,7 @@ export class Room extends DurableObject<RoomEnv> {
 		const text = JSON.stringify({ type: 'watchers', count: this.watchers(going) });
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
-			if (who?.role === 'host') socket.send(text);
+			if (who?.role === 'host') sendText(socket, text);
 		}
 	}
 
@@ -627,7 +627,8 @@ export class Room extends DurableObject<RoomEnv> {
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
 			if (!who || who.role === 'viewer') continue;
-			socket.send(
+			sendText(
+				socket,
 				who.role === 'host'
 					? host
 					: who.role === 'town' || who.role === 'admin'
@@ -640,13 +641,35 @@ export class Room extends DurableObject<RoomEnv> {
 	private broadcastClosed(reason: string): void {
 		for (const socket of this.ctx.getWebSockets()) {
 			send(socket, { type: 'closed' });
-			socket.close(1000, reason);
+			closeSocket(socket, 1000, reason);
 		}
 	}
 }
 
 function send(ws: WebSocket, message: ServerMessage): void {
-	ws.send(JSON.stringify(message));
+	sendText(ws, JSON.stringify(message));
+}
+
+/**
+ * A socket that is closing is still listed by `getWebSockets()`, and sending to it throws,
+ * which cut a broadcast short: the devices after it missed the update.
+ */
+function sendText(ws: WebSocket, text: string): void {
+	if (ws.readyState !== WebSocket.OPEN) return;
+	try {
+		ws.send(text);
+	} catch {
+		// It closed between the check and the send; its close handler tidies up.
+	}
+}
+
+/** Closing a socket that has closed already throws too. */
+function closeSocket(ws: WebSocket, code: number, reason: string): void {
+	try {
+		ws.close(code, reason);
+	} catch {
+		// Already closed.
+	}
 }
 
 const clientAddress = (request: Request) => request.headers.get('CF-Connecting-IP') ?? 'local';

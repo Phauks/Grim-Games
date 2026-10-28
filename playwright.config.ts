@@ -35,10 +35,13 @@ export default defineConfig({
 	webServer: {
 		// SHARE_LIMITS:off: every test shares one address, so a full run would trip the
 		// share-code rate limits (worker/share.ts) and make share tests flaky.
+		// OTHER_SITES:off: the Worker never asks BotC Scripts and the other script sites, which
+		// refuse CI machines; tests that need their answers fake them with page.route.
 		// ADMIN_EMAILS: admins from the start, as Trevor is in Cloudflare (e2e/reports.e2e.ts).
 		// ADMINS_TRUST_PREVIEW_SIGN_IN: admin accounts count although local sign-in shows its code.
+		// quiet-server-log: leaves out workerd's report of each browser that hung up mid-reply.
 		// Both configs: the app's DATA binding needs the shared data Worker running beside it.
-		command: `npm run build && npx wrangler dev -c wrangler.jsonc -c wrangler.data.jsonc --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off --var ADMIN_EMAILS:phone-admin-1@example.com,phone-admin-2@example.com,phone-admin-3@example.com,tablet-admin-1@example.com,tablet-admin-2@example.com,tablet-admin-3@example.com --var ADMINS_TRUST_PREVIEW_SIGN_IN:on`,
+		command: `npm run build && npx wrangler dev -c wrangler.jsonc -c wrangler.data.jsonc --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off --var OTHER_SITES:off --var ADMIN_EMAILS:phone-admin-1@example.com,phone-admin-2@example.com,phone-admin-3@example.com,tablet-admin-1@example.com,tablet-admin-2@example.com,tablet-admin-3@example.com --var ADMINS_TRUST_PREVIEW_SIGN_IN:on 2>&1 | node scripts/quiet-server-log.ts --run`,
 		url: `http://localhost:${PORT}/api/health`,
 		reuseExistingServer: !process.env.CI,
 		timeout: 180_000
