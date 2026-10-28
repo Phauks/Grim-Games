@@ -21,6 +21,9 @@
 	/* The hamburger's one spot on every screen (Trevor, 2026-10-23): this far in from the top
 	   left, below the status bar. The sidebar, the drawer, the game toolbar and Page use it. */
 	--menu-inset: var(--space-2);
+	/* Between ☰ and the button beside it, and between a game toolbar's buttons, narrowing only
+	   on the smallest phones so the toolbar still fits at 320px (GameLead). */
+	--menu-gap: min(var(--space-2), 1.5vw);
 	--measure: calc(36 * var(--u));
 	/* One title size for every page and one for its sections (ui/layout/Page.svelte). */
 	--page-title-size: 1.6rem;
