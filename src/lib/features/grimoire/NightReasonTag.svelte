@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
-	import type { AnswerOption, LearnedRole } from '#lib/core/rules/index.ts';
+	import { falseInfoSource, type AnswerOption, type LearnedRole } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -23,6 +23,8 @@
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
+	/** The character that makes the information false (the Vortox). */
+	const falseBy = $derived(falseInfoSource(game, characters)?.characterId);
 </script>
 
 {#if reason === 'registers'}<span class="tag"
@@ -39,7 +41,8 @@
 				>{/each}{/if}</span
 	>{:else if reason === 'unreliable'}<span class="tag warn"
 		><Icon name="warning" />Not reliable</span
-	>{:else if reason === 'vortox'}<span class="tag warn">Vortox</span
+	>{:else if reason === 'vortox'}<span class="tag warn"
+		>{falseBy ? (characters.get(falseBy)?.name ?? falseBy) : ''}</span
 	>{:else if reason === 'invalid'}<span class="tag warn"><Icon name="warning" />Not valid</span
 	>{/if}
 

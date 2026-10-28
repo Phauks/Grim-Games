@@ -96,7 +96,8 @@
 	function flags(r: Reliability & { possible?: AnswerValue[] }, listed = false): Flag[] {
 		const out: Flag[] = [];
 		// A listed answer's rows already say which values the Vortox allows.
-		if (r.mustBeFalse && !listed) out.push({ text: 'Vortox: must be false', warn: true });
+		const by = r.falseBy && characters.get(r.falseBy)?.name;
+		if (by && !listed) out.push({ text: `${by}: must be false`, warn: true });
 		if (r.misregister.length > 0)
 			out.push({ text: 'Might register falsely:', seats: r.misregister });
 		if (r.possible && r.possible.length > 1 && !listed)

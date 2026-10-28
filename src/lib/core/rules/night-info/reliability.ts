@@ -4,6 +4,7 @@
  * Part of `night-info.ts`, which documents the whole and re-exports this file.
  */
 import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -25,10 +26,15 @@ export interface Reliability {
 	unreliable?: ImpairmentReason;
 	/** Every reason the waking player's ability does not work, with its source. */
 	impairments: Impairment[];
-	/** A Vortox is in play and the waking character is a Townsfolk: the answer must be false. */
+	/**
+	 * A character whose `falseInfo` covers the waking character's type is in play with a
+	 * working ability (the Vortox and a Townsfolk): the answer must be false.
+	 */
 	mustBeFalse?: boolean;
-	/** The Vortox's seat, when `mustBeFalse`. */
+	/** That character's seat, when `mustBeFalse`. */
 	vortox?: SeatId;
+	/** That character, when `mustBeFalse`. */
+	falseBy?: CharacterId;
 	/**
 	 * Players who might register falsely (Spy, Recluse, the Faux Paw player) where that could
 	 * change this information.
@@ -115,8 +121,23 @@ export type NightAnswer = AnswerValue &
 		wiki: string;
 	};
 
-function seatsWith(game: Game, characters: CharacterLookup, id: CharacterId): SeatId[] {
-	return game.seating.filter((s) => trueCharacter(game, s, characters) === id);
+/**
+ * The first player whose working ability makes the information of a `type` ability false (its
+ * `falseInfo` rule: the Vortox's Townsfolk, https://wiki.bloodontheclocktower.com/Vortox),
+ * with their character. Any type when `type` is not given.
+ */
+export function falseInfoSource(
+	game: Game,
+	characters: CharacterLookup,
+	type?: CharacterType
+): { seatId: SeatId; characterId: CharacterId } | undefined {
+	for (const seatId of game.seating) {
+		const characterId = trueCharacter(game, seatId, characters);
+		const types = characterId && rulesOf(characterId, characters)?.falseInfo?.types;
+		if (!characterId || !types || (type !== undefined && !types.includes(type))) continue;
+		if (abilityState(game, seatId, characters).works) return { seatId, characterId };
+	}
+	return undefined;
 }
 
 /**
@@ -134,12 +155,12 @@ export function reliability(
 	if (!seat) return out;
 	out.impairments = abilityState(game, seatId, characters).impairments;
 	if (out.impairments.length > 0) out.unreliable = out.impairments[0].reason;
-	const vortox = seatsWith(game, characters, 'vortox').find(
-		(s) => abilityState(game, s, characters).works
-	);
-	if (characters.get(characterId)?.type === 'townsfolk' && vortox !== undefined) {
+	const type = characters.get(characterId)?.type;
+	const falseBy = type === undefined ? undefined : falseInfoSource(game, characters, type);
+	if (falseBy) {
 		out.mustBeFalse = true;
-		out.vortox = vortox;
+		out.vortox = falseBy.seatId;
+		out.falseBy = falseBy.characterId;
 	}
 	out.registrations = otherRegistrations(game, seatId, characters);
 	out.misregister = out.registrations.map((r) => r.seatId);

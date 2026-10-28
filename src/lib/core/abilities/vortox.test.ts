@@ -11,7 +11,10 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { Issues } from '#lib/core/data/validate.ts';
+import { castGame, castWith, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { reliability } from '#lib/core/rules/night-info.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
@@ -57,6 +60,60 @@ describe('Vortox', () => {
 			expect(gameEnds(session.game, testCharacters, { dayEnded: true })).toMatchObject([
 				{ rule: 'day-without-execution', winner: 'evil' }
 			]);
+		});
+	});
+
+	describe('Townsfolk information is false (its falseInfo rule)', () => {
+		it('a Townsfolk must be given false information; an Outsider need not', () => {
+			const { game: g, seats } = castGame(['chef', 'recluse', 'vortox', 'poisoner', 'monk']);
+			expect(reliability(g, seats[0], 'chef', testCharacters)).toMatchObject({
+				mustBeFalse: true,
+				vortox: seats[2],
+				falseBy: 'vortox'
+			});
+			expect(reliability(g, seats[1], 'recluse', testCharacters).mustBeFalse).toBeUndefined();
+		});
+
+		it('a poisoned Vortox makes nothing false', () => {
+			const { game: g, seats } = castGame(
+				['chef', 'empath', 'vortox', 'poisoner', 'monk'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[2],
+					reminder: { characterId: 'poisoner', label: 'Poisoned' }
+				})
+			);
+			expect(reliability(g, seats[0], 'chef', testCharacters).mustBeFalse).toBeUndefined();
+		});
+
+		it('a custom character with the same rule makes its types false', () => {
+			const issues = new Issues();
+			const fog = parseCharacter(
+				{
+					id: 'fogbank',
+					name: 'Fogbank',
+					team: 'minion',
+					ability: 'Outsider abilities yield false info.',
+					rules: { falseInfo: { types: ['outsider'] } }
+				},
+				'[0]',
+				issues,
+				{ strict: false, scriptFields: true }
+			);
+			expect(issues.list).toEqual([]);
+			const all = new Map([...testCharacters, [fog!.id, fog!]]);
+			const { game: g, seats } = castWith({ characters: all })([
+				'chef',
+				'recluse',
+				'imp',
+				'fogbank',
+				'monk'
+			]);
+			expect(reliability(g, seats[1], 'recluse', all)).toMatchObject({
+				mustBeFalse: true,
+				falseBy: 'fogbank'
+			});
+			expect(reliability(g, seats[0], 'chef', all).mustBeFalse).toBeUndefined();
 		});
 	});
 });
