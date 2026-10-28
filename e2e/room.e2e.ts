@@ -1771,10 +1771,25 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// Or only a type, or only good or evil (Trevor, 2026-10-24).
 	await seats.nth(2).tap();
 	const guessSheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
-	await guessSheet.getByRole('button', { name: 'Minion', exact: true }).tap();
+	await guessSheet.locator('[data-guess-key="type:townsfolk"]').tap();
 	await phone.keyboard.press('Escape');
-	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
-	await expect(seats.nth(2).getByRole('img', { name: 'Minion' })).toBeVisible();
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Townsfolk');
+	const generic = seats.nth(2).getByRole('img', { name: 'Townsfolk' });
+	await expect(generic).toBeVisible();
+	// The longest type's word fits the token whole, not cut to "Towns…" (2026-10-28), and the
+	// guess's dashed ring is the seat's round one only, not square edges round the token's own
+	// drawing (Trevor, 2026-10-28: "dash line error").
+	const fit = await seats.nth(2).evaluate((seat) => {
+		const word = seat.querySelector('.word')!;
+		const token = seat.querySelector('.generic')!.getBoundingClientRect();
+		const box = word.getBoundingClientRect();
+		return {
+			inside: box.left >= token.left && box.right <= token.right,
+			clipped: word.scrollWidth > word.clientWidth,
+			drawn: getComputedStyle(seat.querySelector('svg .face')!).outlineStyle
+		};
+	});
+	expect(fit).toEqual({ inside: true, clipped: false, drawn: 'none' });
 	await seats.nth(3).tap();
 	await phone
 		.getByRole('dialog', { name: 'Seat 4 · Seat 4' })
@@ -1785,7 +1800,7 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
-	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Minion');
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', 'Seat 3: Seat 3, your guess: Townsfolk');
 	await phoneContext.close();
 });
 
