@@ -583,4 +583,28 @@ describe('custom characters', () => {
 			}
 		]);
 	});
+
+	// A homebrew Demon whose token makes its carrier the Demon, as Lil' Monsta's babysitter is
+	// (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
+	it('count a player carrying their Demon token as the Demon', () => {
+		const cradle = {
+			id: 'cradle',
+			name: 'Cradle',
+			team: 'demon',
+			ability: 'Each night, a Minion holds the Cradle and is the Demon.',
+			reminders: ['Holds The Cradle'],
+			rules: { carrierIsDemon: 'Holds The Cradle' }
+		};
+		const cast = ['chef', 'empath', 'monk', 'poisoner', 'goblin'];
+		const held = custom(cradle, cast, remind(4, 'cradle', 'Holds The Cradle'), execute(4));
+		expect(gameEnds(held.game, held.all)).toMatchObject([{ rule: 'demon-dead', winner: 'good' }]);
+		// Without the rules block's key, the token is just a reminder.
+		const plain = custom(
+			{ ...cradle, id: 'crib', rules: {} },
+			cast,
+			remind(4, 'crib', 'Holds The Cradle'),
+			execute(4)
+		);
+		expect(gameEnds(plain.game, plain.all).map((e) => e.rule)).not.toContain('demon-dead');
+	});
 });

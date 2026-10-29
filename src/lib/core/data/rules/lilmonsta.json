@@ -83,5 +83,6 @@
 	},
 	"evilInfo": {
 		"hidesDemon": true
-	}
+	},
+	"carrierIsDemon": "Is The Demon"
 }

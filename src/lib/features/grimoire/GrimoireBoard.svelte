@@ -1,5 +1,4 @@
 <script lang="ts">
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
@@ -31,7 +30,6 @@
 	import {
 		charactersInPlay,
 		looseReminders,
-		ruleReminders,
 		scriptCharacterIds,
 		trueCharacter,
 		type Reminder,
@@ -63,7 +61,6 @@
 	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -98,7 +95,6 @@
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisfits } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import BoardReminder from './BoardReminder.svelte';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
@@ -110,6 +106,7 @@
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import BoardScriptDialog from './BoardScriptDialog.svelte';
 	import BoardReminderChip from './BoardReminderChip.svelte';
+	import BoardRules from './BoardRules.svelte';
 	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
@@ -136,7 +133,7 @@
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import NewGameSheet from '#lib/features/modes/NewGameSheet.svelte';
-	import { extraReminders, isGeneric, reminderWords } from './reminders.ts';
+	import { extraReminders } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
@@ -433,7 +430,6 @@
 	// ── Dragging reminders (reminder-drag.svelte.ts) ──
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
-	const heldLabel = (name: string) => `${name}'s reminders`;
 	const remDrag = new ReminderDragging(() => ({
 		grimoire,
 		game,
@@ -907,99 +903,21 @@
 	let rules = $state<ReturnType<typeof RuleCharacters>>();
 </script>
 
-<!-- Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
-	(Trevor, 2026-10-17). -->
-{#snippet rulesStack(stack: number)}
-	<!-- One stack for them all; a tap lists every one (Trevor, 2026-10-17). -->
-	<span class="stack-wrap">
-		<button
-			type="button"
-			class="rules-stack"
-			data-rule-stack
-			aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
-			onclick={() => rules?.showAll()}
-		>
-			{#each game.ruleCharacters.slice(0, 3) as id (id)}
-				{@const character = characters.get(id)}
-				{#if character}<CharacterToken {character} size={stack} />{/if}
-			{/each}
-			{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
-					><CountBadge count={game.ruleCharacters.length} warn /></span
-				>{/if}
-		</button>
-		{@render heldCluster(
-			Object.values(game.ruleReminders ?? {}).flat(),
-			'Fabled and Loric reminders',
-			() => rules?.showAll()
-		)}
-	</span>
-{/snippet}
-
-<!--
-	A Fabled or Loric's reminders, packed at its token's top right (Trevor, 2026-10-18): the
-	latest one, which can be tapped or dragged off, and how many more, which opens the list.
--->
-{#snippet heldCluster(held: ReminderInstance[], label: string, onMore: () => void)}
-	{@const last = held.at(-1)}
-	{#if last}
-		<span class="held" role="group" aria-label={label}>
-			<span class:lifted={remDrag.drag?.reminderId === last.reminderId}>
-				<BoardReminder
-					label={reminderWords(last)}
-					infinite={isGeneric(last)}
-					symbol={last.symbol}
-					symbolColour={last.symbolColour}
-					symbolFill={last.symbolFill}
-					art={artOf(last)}
-					character={characters.get(last.characterId)}
-					alignment={placingAlignment(game, last, characters)}
-					size={Math.round(chip * 0.7)}
-					disabled={seatArr.arranging || watching}
-					onTap={() => heldDialog?.show(last.reminderId)}
-					onDrag={(x, y, end) => remDrag.move(last.reminderId, undefined, x, y, end)}
-					onCancel={() => remDrag.cancel()}
-				/>
-			</span>
-			{#if held.length > 1}
-				<span class="held-more">
-					<BoardReminder
-						label=""
-						character={undefined}
-						more={held.length - 1}
-						size={Math.round(chip * 0.7)}
-						disabled={seatArr.arranging || watching}
-						onTap={onMore}
-					/>
-				</span>
-			{/if}
-		</span>
-	{/if}
-{/snippet}
-
-{#snippet rulesList(tokenSize: number)}
-	<ul class="rules" class:edge={tokenSize < size * 0.8} aria-label="Fabled and Loric">
-		{#each game.ruleCharacters as id (id)}
-			{@const character = characters.get(id)}
-			{#if character}
-				<li>
-					<button
-						type="button"
-						class="rule"
-						data-rule={id}
-						aria-label={character.name}
-						onclick={() => rules?.show(id)}
-					>
-						<CharacterToken {character} size={tokenSize} />
-					</button>
-					<!-- Its reminders, tight to its top right: parked there, out of play (Trevor,
-					     2026-10-18). -->
-					{@render heldCluster(ruleReminders(game, id), heldLabel(character.name), () =>
-						rules?.show(id)
-					)}
-				</li>
-			{/if}
-		{/each}
-	</ul>
+{#snippet ruleTokens(tokenSize: number)}
+	<BoardRules
+		{game}
+		{characters}
+		grouped={boardLooks.current.rulesGrouped && game.ruleCharacters.length > 0}
+		edge={tokenSize < size * 0.8}
+		{tokenSize}
+		{chip}
+		disabled={seatArr.arranging || watching}
+		lifted={remDrag.drag?.reminderId}
+		onShow={(id) => (id ? rules?.show(id) : rules?.showAll())}
+		onHeldTap={(id) => heldDialog?.show(id)}
+		onHeldDrag={(id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
+		onCancel={() => remDrag.cancel()}
+	/>
 {/snippet}
 
 <div class="grimoire" bind:this={grimoireEl}>
@@ -1279,11 +1197,7 @@
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>
 		{#if boardLooks.current.rulesAt !== 'middle' && game.ruleCharacters.length > 0}
 			<div class="rules-edge" bind:clientWidth={edgeW} bind:clientHeight={edgeH}>
-				{#if boardLooks.current.rulesGrouped}
-					{@render rulesStack(Math.max(tapPx, Math.round(size * 0.5)))}
-				{:else}
-					{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
-				{/if}
+				{@render ruleTokens(Math.max(tapPx, Math.round(size * 0.5)))}
 			</div>
 		{/if}
 		<BoardCorner
@@ -1349,11 +1263,7 @@
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if boardLooks.current.rulesAt === 'middle'}
-				{#if boardLooks.current.rulesGrouped && game.ruleCharacters.length > 0}
-					{@render rulesStack(Math.round(size * 0.8))}
-				{:else}
-					{@render rulesList(Math.round(size * 0.8))}
-				{/if}
+				{@render ruleTokens(Math.round(size * 0.8))}
 			{/if}
 		</div>
 	</div>
@@ -1763,15 +1673,6 @@
 		background: var(--evil);
 		color: var(--on-evil);
 	}
-	.rules {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
 	/* The day timer in the board's top right corner, clear of the seats' ring. */
 	.board-timer {
 		position: absolute;
@@ -1799,59 +1700,5 @@
 		left: var(--space-1);
 		max-width: 30%;
 		z-index: 2;
-	}
-	.rules.edge {
-		justify-content: flex-start;
-	}
-	.rules li,
-	.stack-wrap {
-		position: relative;
-	}
-	/* Packed on the token's top right corner, taking no room of its own. */
-	.held {
-		position: absolute;
-		top: 0;
-		right: 0;
-		z-index: 1;
-		display: flex;
-		align-items: flex-start;
-		transform: translate(35%, -25%);
-	}
-	/* The "+n" tucks behind the latest reminder, which stays whole to tap. */
-	.held-more {
-		position: relative;
-		z-index: -1;
-		margin-inline-start: -30%;
-	}
-	/* Its stand-in follows the finger; the place stays, so nothing moves. */
-	.held .lifted {
-		opacity: 0.3;
-	}
-	.rule {
-		/* Sized from the seats, which already follow the token size setting. */
-		padding: 0;
-		border: 0;
-		border-radius: 50%;
-		background: none;
-		cursor: pointer;
-	}
-	/* The corner stack: tokens overlapping, with how many there are. */
-	.rules-stack {
-		position: relative;
-		display: flex;
-		padding: 0;
-		border: 0;
-		background: none;
-		cursor: pointer;
-	}
-	.rules-stack > :global(*:not(:first-child):not(.stack-count)) {
-		margin-inline-start: -60%;
-	}
-	.stack-count {
-		position: absolute;
-		right: 0;
-		bottom: 0;
-		display: flex;
-		font-size: 0.75rem;
 	}
 </style>

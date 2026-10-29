@@ -6,9 +6,9 @@
  *
  * - Good wins when every Demon is dead; evil wins when just 2 players live, Travellers not
  *   counted (https://wiki.bloodontheclocktower.com/Glossary, "Demon", "Evil").
- * - A Demon is a seat whose true character is one, or a player with an "Is The Demon"
- *   reminder (Lil' Monsta's babysitter, https://wiki.bloodontheclocktower.com/Lil%27_Monsta;
- *   a Scarlet Woman who took over). Alive means the `dead` flag (`isAliveForWin`), except a
+ * - A Demon is a seat whose true character is one, or a player with a reminder that makes them
+ *   the Demon (`carriesDemonToken`: Lil' Monsta's babysitter,
+ *   https://wiki.bloodontheclocktower.com/Lil%27_Monsta; a Scarlet Woman who took over). Alive means the `dead` flag (`isAliveForWin`), except a
  *   Zombuul's first death and a Lleech whose host lives (`aliveForEnd`).
  * - Characters that end it themselves, keep it going once the Demon is dead (`holds`), or
  *   flip every result say so in their rules block's `gameEnd` (`data/game-end-rules.ts`): the
@@ -34,7 +34,7 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, type AbilitySource } from './ability.ts';
-import { isExecution } from './death-causes.ts';
+import { carriesDemonToken, isExecution } from './death-causes.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -221,12 +221,10 @@ function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLookup): b
 	return true;
 }
 
-/** The Demons: by true character, or an "Is The Demon" reminder. */
+/** The Demons: by true character, or a reminder that makes them the Demon. */
 function demonSeats(game: Game, characters: CharacterLookup): SeatId[] {
 	return game.seating.filter(
-		(id) =>
-			typeOf(game, id, characters) === 'demon' ||
-			game.seats[id].reminders.some((r) => r.label === 'Is The Demon')
+		(id) => typeOf(game, id, characters) === 'demon' || carriesDemonToken(game, id, characters)
 	);
 }
 

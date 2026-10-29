@@ -16,7 +16,13 @@
 	let clearOpen = $state(false);
 </script>
 
-<PageSection title={t('room.asStoryteller')}>
+<!-- Opens and closes from its heading (Trevor, 2026-10-28). -->
+<PageSection
+	title={t('room.asStoryteller')}
+	collapsible
+	storageKey="continue.as-storyteller"
+	{count}
+>
 	{#snippet aside()}
 		<DeleteButton
 			label="Delete all saved games"

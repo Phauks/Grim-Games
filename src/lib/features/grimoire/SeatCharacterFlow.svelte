@@ -1,12 +1,13 @@
 <!--
 	Choosing who a seat is, for the seat sheet: the character picker and the confirmations a
-	change asks for, a Traveller's alignment, an alignment change from ⋯, and the ability the
-	Apprentice gains.
+	change asks for, a Traveller's alignment, an alignment change from ⋯, and an ability gained
+	by a swap (the Apprentice's).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import type { SeatId } from '#lib/core/model/index.ts';
+	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
+	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
@@ -57,7 +58,7 @@
 	export function choose() {
 		pickerOpen = true;
 	}
-	/** Opens the picker for the ability the Apprentice gains. */
+	/** Opens the picker for the ability gained by a swap (the Apprentice's). */
 	export function chooseGain() {
 		gainOpen = true;
 	}
@@ -132,30 +133,33 @@
 		if (id) onDraw?.(id);
 	}
 
-	// ── The Apprentice ──
-	// The Apprentice's token is swapped for the Townsfolk (if good) or Minion (if evil) whose
-	// ability they gain, with "Is The Apprentice" on it
-	// (https://wiki.bloodontheclocktower.com/Apprentice; Trevor, 2026-10-16).
-	const gainTypes = $derived(
-		seat?.alignment === 'good'
-			? (['townsfolk'] as const)
-			: seat?.alignment === 'evil'
-				? (['minion'] as const)
-				: (['townsfolk', 'minion'] as const)
-	);
+	// ── An ability gained by a swap ──
+	// The player's token is swapped for a character of the types its rules block's
+	// `swapsForAbility` gives for their alignment, with its token on them (the Apprentice: a
+	// Townsfolk if good, a Minion if evil, with Is The Apprentice,
+	// https://wiki.bloodontheclocktower.com/Apprentice; Trevor, 2026-10-16).
+	const swapper = $derived.by(() => {
+		const id = seatId === undefined ? undefined : trueCharacter(game, seatId, characters);
+		const rule = id ? rulesOf(id, characters)?.swapsForAbility : undefined;
+		return id && rule ? { id, rule } : undefined;
+	});
+	const gainTypes = $derived.by(() => {
+		const rule = swapper?.rule;
+		if (!rule) return [];
+		if (seat?.alignment === 'good') return rule.good;
+		if (seat?.alignment === 'evil') return rule.evil;
+		return [...new Set([...rule.good, ...rule.evil])];
+	});
 	function gain(id: CharacterId) {
 		gainOpen = false;
-		if (!seatId || !seat) return;
+		const from = swapper;
+		if (!seatId || !seat || !from) return;
+		const reminder = { characterId: from.id, label: from.rule.token };
 		const marked = seat.reminders.some(
-			(r) => r.characterId === 'apprentice' && r.label === 'Is The Apprentice'
+			(r) => r.characterId === reminder.characterId && r.label === reminder.label
 		);
 		grimoire.run({ type: 'AssignCharacter', seatId, characterId: id, alignment: seat.alignment });
-		if (!marked)
-			grimoire.run({
-				type: 'AddReminder',
-				seatId,
-				reminder: { characterId: 'apprentice', label: 'Is The Apprentice' }
-			});
+		if (!marked) grimoire.run({ type: 'AddReminder', seatId, reminder });
 	}
 </script>
 

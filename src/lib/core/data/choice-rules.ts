@@ -66,6 +66,24 @@ export interface ChoiceRules {
 	 * https://wiki.bloodontheclocktower.com/Yaggababble). `features/info-tokens/character-cards.ts`.
 	 */
 	infoCard?: InfoCard;
+	/**
+	 * Its reminder makes whoever carries it the Demon while they do (Lil' Monsta's Is The
+	 * Demon on the babysitter, https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
+	 */
+	carrierIsDemon?: ReminderLabel;
+	/**
+	 * Its player's token is swapped for a character whose ability they gain, of `good` types
+	 * when good and `evil` types when evil, with `token` on them to say who they really are
+	 * (the Apprentice: a Townsfolk or a Minion, https://wiki.bloodontheclocktower.com/Apprentice).
+	 * The seat's ⋯ menu offers the swap (`features/grimoire/SeatCharacterFlow.svelte`).
+	 */
+	swapsForAbility?: SwapsForAbility;
+}
+
+interface SwapsForAbility {
+	token: ReminderLabel;
+	good: readonly SeatedType[];
+	evil: readonly SeatedType[];
 }
 
 export const INFO_CARDS = ['secret-word', 'secret-phrase'] as const;
@@ -80,7 +98,9 @@ export const CHOICE_RULE_KEYS = [
 	'believesType',
 	'infoKind',
 	'evilInfo',
-	'infoCard'
+	'infoCard',
+	'carrierIsDemon',
+	'swapsForAbility'
 ] as const satisfies readonly (keyof ChoiceRules)[];
 
 /** Reads this file's keys from a rules block; labels must be the character's own reminders. */
@@ -121,7 +141,37 @@ export function readChoiceRules(
 	if (card !== undefined && !(INFO_CARDS as readonly string[]).includes(card)) {
 		issues.add(`${path}.infoCard`, `expected one of ${INFO_CARDS.join(', ')}`);
 	} else if (card !== undefined) out.infoCard = card as InfoCard;
+	const demon = readToken(raw, 'carrierIsDemon', path, issues, reminders);
+	if (demon) out.carrierIsDemon = demon;
+	if (raw.swapsForAbility !== undefined) {
+		const swaps = readSwaps(raw.swapsForAbility, `${path}.swapsForAbility`, issues, reminders);
+		if (swaps) out.swapsForAbility = swaps;
+	}
 	return out;
+}
+
+function readSwaps(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): SwapsForAbility | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['token', 'good', 'evil'], path, issues);
+	if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
+	const token = readToken(raw, 'token', path, issues, reminders);
+	const types = (key: 'good' | 'evil') => {
+		const list = readStringArray(raw, key, path, issues) ?? [];
+		const bad = list.filter((t) => !(SEATED_TYPES as readonly string[]).includes(t));
+		if (bad.length > 0) issues.add(`${path}.${key}`, `expected types, got ${bad.join(', ')}`);
+		return list.filter((t): t is SeatedType => !bad.includes(t));
+	};
+	const good = types('good');
+	const evil = types('evil');
+	return token ? { token, good, evil } : undefined;
 }
 
 /** An object of `true` flags. */

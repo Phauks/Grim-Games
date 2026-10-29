@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
@@ -154,9 +155,11 @@
 	);
 	let changesOpen = $state(false);
 
-	// The Apprentice gains an ability from ⋯ (SeatCharacterFlow).
-	const apprentice = $derived(
-		seatId !== undefined && trueCharacter(game, seatId, characters) === 'apprentice'
+	// A character that gains an ability by a swap (the Apprentice) does so from ⋯
+	// (SeatCharacterFlow), by its rules block's `swapsForAbility`.
+	const gainsAbility = $derived(
+		seatId !== undefined &&
+			!!rulesOf(trueCharacter(game, seatId, characters) ?? '', characters)?.swapsForAbility
 	);
 
 	// ── Status: Alive, or dead with its cause, in one list (Trevor, 2026-10-16) ──
@@ -471,7 +474,7 @@
 	{number}
 	{seat}
 	{character}
-	{apprentice}
+	{gainsAbility}
 	{savant}
 	{claim}
 	hasChanges={changes.length > 0}

@@ -42,7 +42,13 @@
 	});
 </script>
 
-<PageSection title={t('room.asPlayer')}>
+<!-- Opens and closes from its heading (Trevor, 2026-10-28). -->
+<PageSection
+	title={t('room.asPlayer')}
+	collapsible
+	storageKey="continue.as-player"
+	count={recent.length}
+>
 	{#if recent.length === 0}
 		<p class="none">{t('common.none')}</p>
 	{:else}
