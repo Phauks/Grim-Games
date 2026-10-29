@@ -4,6 +4,7 @@ import {
 	NEIGHBOUR_GAP,
 	parseSeatPresence,
 	seatCandles,
+	seatConnections,
 	seatPresence
 } from './seat-presence.ts';
 
@@ -53,6 +54,19 @@ describe('seatCandles', () => {
 
 	it('lights the seats with a player name when no room says who is connected', () => {
 		expect(seatCandles(seats, undefined).map((c) => c.state)).toEqual(['lit', 'lit', 'empty']);
+	});
+});
+
+describe('seatConnections', () => {
+	// A tap on the candles lists who is connected (Trevor, 2026-10-29: "clicking the candle
+	// modal should show you which players have connected").
+	it('lists every seat in order with its number, name and connection', () => {
+		const seats = [{ seatId: 's1', playerName: 'Ann' }, { seatId: 's2' }, { seatId: 's3' }];
+		expect(seatConnections(seats, { here: ['s1'], away: ['s3'], unseated: 1 })).toEqual([
+			{ seatId: 's1', seatNumber: 1, playerName: 'Ann', state: 'lit' },
+			{ seatId: 's2', seatNumber: 2, playerName: undefined, state: 'empty' },
+			{ seatId: 's3', seatNumber: 3, playerName: undefined, state: 'away' }
+		]);
 	});
 });
 

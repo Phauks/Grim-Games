@@ -53,9 +53,19 @@ export interface Candle {
 }
 
 /**
- * One candle per seat, in seat order. Without a room to say who is connected (the
- * Storyteller's own player view with no room open), a seat with a player's name burns.
+ * How a seat's player is connected. Without a room to say who is connected (the Storyteller's
+ * own player view with no room open), a seat with a player's name counts as here.
  */
+export function seatState(
+	seat: { seatId: SeatId; playerName?: string },
+	presence: SeatPresence | undefined
+): CandleState {
+	if (!presence) return seat.playerName ? 'lit' : 'empty';
+	if (presence.here.includes(seat.seatId)) return 'lit';
+	return presence.away.includes(seat.seatId) ? 'away' : 'empty';
+}
+
+/** One candle per seat, in seat order. */
 export function seatCandles(
 	seats: readonly { seatId: SeatId; playerName?: string }[],
 	presence: SeatPresence | undefined,
@@ -63,17 +73,31 @@ export function seatCandles(
 ): Candle[] {
 	const heights = candleHeights(seats.map((s) => s.seatId).join(' '), seats.length);
 	return seats.map((seat, i) => ({
-		state: !presence
-			? seat.playerName
-				? 'lit'
-				: 'empty'
-			: presence.here.includes(seat.seatId)
-				? 'lit'
-				: presence.away.includes(seat.seatId)
-					? 'away'
-					: 'empty',
+		state: seatState(seat, presence),
 		mine: seat.seatId === mySeat,
 		height: heights[i]
+	}));
+}
+
+/** A seat in the list of who is connected that a tap on the candles opens. */
+export interface SeatConnection {
+	seatId: SeatId;
+	/** 1-based, in seat order. */
+	seatNumber: number;
+	playerName?: string;
+	state: CandleState;
+}
+
+/** Each seat, in seat order, with how its player is connected (Trevor, 2026-10-29). */
+export function seatConnections(
+	seats: readonly { seatId: SeatId; playerName?: string }[],
+	presence: SeatPresence | undefined
+): SeatConnection[] {
+	return seats.map((seat, i) => ({
+		seatId: seat.seatId,
+		seatNumber: i + 1,
+		playerName: seat.playerName,
+		state: seatState(seat, presence)
 	}));
 }
 

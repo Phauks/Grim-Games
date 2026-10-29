@@ -10,7 +10,8 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import type { Candle } from '#lib/core/sync/seat-presence.ts';
+	import type { Candle, SeatConnection } from '#lib/core/sync/seat-presence.ts';
+	import ConnectedDialog from './ConnectedDialog.svelte';
 	import CountBadge from './CountBadge.svelte';
 	import SetupSky from './SetupSky.svelte';
 	import { WatchedTimer } from './watched-timer.svelte.ts';
@@ -42,7 +43,8 @@
 	 * from gold in the morning through amber to red as the time runs out. At night the slot shows
 	 * a night sky instead, a crescent moon and stars with no arc, so it is never empty. In Setup
 	 * it shows what the Storyteller chose (`SetupSky`): the seats' candles, the town at dusk or
-	 * the dusk sky.
+	 * the dusk sky. Given the seats' connections, a tap on the candles opens who is connected
+	 * instead of the counts, which mean nothing before the game (Trevor, 2026-10-29).
 	 */
 	interface Props {
 		phase: PlayersPhase;
@@ -58,9 +60,23 @@
 		candles?: readonly Candle[];
 		/** Connected phones with no seat, a count beside the candles. */
 		unseated?: number;
+		/** Each seat's connection, for the list a tap on the candles opens. */
+		connections?: readonly SeatConnection[];
+		/** The names of the phones with no seat, where they are known. */
+		unseatedNames?: readonly string[];
 	}
 
-	let { phase, timer, seats, wide = false, setupLook, candles, unseated = 0 }: Props = $props();
+	let {
+		phase,
+		timer,
+		seats,
+		wide = false,
+		setupLook,
+		candles,
+		unseated = 0,
+		connections,
+		unseatedNames
+	}: Props = $props();
 	const title = $derived(
 		phase.kind === 'setup'
 			? t('day.setup')
@@ -72,7 +88,13 @@
 	);
 
 	let countsOpen = $state(false);
-	const counts = $derived(seats && townCounts(seats));
+	let connectedOpen = $state(false);
+	/** The candles beside Setup, with who is connected behind them. */
+	const showsConnected = $derived(
+		wide && phase.kind === 'setup' && setupLook === 'candles' && !!connections
+	);
+	const counts = $derived(!showsConnected && seats ? townCounts(seats) : undefined);
+	const taps = $derived(showsConnected || !!counts);
 	const aliveLabel = $derived(
 		counts && t('day.aliveLabel', { count: counts.alive, total: counts.total })
 	);
@@ -168,15 +190,20 @@
 </script>
 
 <svelte:element
-	this={counts ? 'button' : 'div'}
-	type={counts ? 'button' : undefined}
+	this={taps ? 'button' : 'div'}
+	type={taps ? 'button' : undefined}
 	class="players-status"
 	data-testid="players-status"
 	data-phase={phase.kind}
 	data-wide={wide ? '' : undefined}
-	aria-haspopup={counts ? 'dialog' : undefined}
-	onclick={counts ? () => (countsOpen = true) : undefined}
-	role={counts ? undefined : 'group'}
+	aria-haspopup={taps ? 'dialog' : undefined}
+	aria-label={showsConnected ? t('day.connected.open') : undefined}
+	onclick={showsConnected
+		? () => (connectedOpen = true)
+		: counts
+			? () => (countsOpen = true)
+			: undefined}
+	role={taps ? undefined : 'group'}
 >
 	<span class="words">
 		<span class="title">{title}</span>
@@ -311,6 +338,10 @@
 		<stop class="sky-low" offset="1" />
 	</linearGradient>
 {/snippet}
+
+{#if showsConnected && connections}
+	<ConnectedDialog bind:open={connectedOpen} {connections} {unseated} {unseatedNames} />
+{/if}
 
 {#if counts}
 	<!-- Read only: the Storyteller's badges, each with its words beside it. -->

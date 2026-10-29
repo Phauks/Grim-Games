@@ -54,7 +54,11 @@
 </script>
 
 <!-- The row over the tabs, as on /play: where the game is up to and the day timer. -->
-<PlayerStatusRow table={town} {presence} />
+<PlayerStatusRow
+	table={town}
+	{presence}
+	unseatedNames={roomHost().connectedUnseated.flatMap((m) => (m.name ? [m.name] : []))}
+/>
 <PlayerScreen
 	{script}
 	players={dealtSeats(town.seats).dealt}

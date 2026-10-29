@@ -3,7 +3,7 @@
 	import type { PublicGameState } from '#lib/core/sync/public-projection.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { dayTimers, parsePlayersPhase, parseSetupLook } from '#lib/core/rules/index.ts';
-	import { seatCandles, type SeatPresence } from '#lib/core/sync/seat-presence.ts';
+	import { seatCandles, seatConnections, type SeatPresence } from '#lib/core/sync/seat-presence.ts';
 	import PlayersDayStatus from '#lib/features/day/PlayersDayStatus.svelte';
 
 	/**
@@ -23,17 +23,22 @@
 		presence?: SeatPresence;
 		/** This phone's own seat, whose candle burns red. */
 		mySeat?: SeatId;
+		/** The names of connected phones with no seat, where the room tells them (the Storyteller). */
+		unseatedNames?: readonly string[];
 		before?: Snippet;
 		after?: Snippet;
 	}
 
-	let { table, ended = false, presence, mySeat, before, after }: Props = $props();
+	let { table, ended = false, presence, mySeat, unseatedNames, before, after }: Props = $props();
 
 	const phase = $derived(ended ? undefined : parsePlayersPhase(table?.now));
 	const timer = $derived(ended ? undefined : dayTimers.parsePublicTimer(table?.timer));
 	const setupLook = $derived(parseSetupLook(table?.setupLook));
 	const candles = $derived(
 		setupLook === 'candles' ? seatCandles(table?.seats ?? [], presence, mySeat) : undefined
+	);
+	const connections = $derived(
+		setupLook === 'candles' ? seatConnections(table?.seats ?? [], presence) : undefined
 	);
 </script>
 
@@ -50,6 +55,8 @@
 				{setupLook}
 				{candles}
 				unseated={presence?.unseated ?? 0}
+				{connections}
+				{unseatedNames}
 			/>{/if}
 		{@render after?.()}
 	</div>
