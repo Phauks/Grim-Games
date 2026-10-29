@@ -74,16 +74,20 @@ export const CHARACTERS_DECIDERS: Deciders<
 		if (a.characterId === undefined || b.characterId === undefined) {
 			refuse('unknown-character', 'both players need a character to swap');
 		}
-		if (a.characterId === b.characterId && a.alignment === b.alignment) {
+		const keep = command.keepAlignments === true;
+		if (a.characterId === b.characterId && (keep || a.alignment === b.alignment)) {
 			warn('no-change', 'they have the same character and alignment');
 			return [];
 		}
-		const to = (seat: typeof a, from: typeof b): GameEvent => ({
-			type: 'CharacterAssigned',
-			seatId: seat.seatId,
-			characterId: from.characterId!,
-			...(from.alignment !== undefined ? { alignment: from.alignment } : {})
-		});
+		const to = (seat: typeof a, from: typeof b): GameEvent => {
+			const alignment = keep ? seat.alignment : from.alignment;
+			return {
+				type: 'CharacterAssigned',
+				seatId: seat.seatId,
+				characterId: from.characterId!,
+				...(alignment !== undefined ? { alignment } : {})
+			};
+		};
 		return [to(a, b), to(b, a)];
 	},
 

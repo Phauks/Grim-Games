@@ -3,7 +3,12 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { alignmentOf, trueCharacter, type SeatId } from '#lib/core/model/index.ts';
-	import { changeableSeats, characterChanger, type NightStep } from '#lib/core/rules/index.ts';
+	import {
+		changeableSeats,
+		characterChanger,
+		swappableSeats,
+		type NightStep
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
@@ -17,6 +22,10 @@
 	 * character list shows nothing of the grimoire, so the device can be handed to the player
 	 * to point at one (https://wiki.bloodontheclocktower.com/Summoner: "a Demon icon on the
 	 * character sheet"). Show to player follows.
+	 *
+	 * A step that swaps two players' characters (`swapsCharacters`: the Barber's haircuts,
+	 * https://wiki.bloodontheclocktower.com/Barber) picks the two players instead; each keeps
+	 * their alignment, and each is shown their new character.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -44,6 +53,41 @@
 		rule?.notInPlay ? game.seating.flatMap((id) => trueCharacter(game, id, characters) ?? []) : []
 	);
 
+	const swaps = $derived(
+		step.character ? rulesOf(step.character.id, characters)?.swapsCharacters : undefined
+	);
+	// Any player with a character may be picked; the rule's left-out types are faded, as the
+	// Storyteller may still override.
+	const swappable = $derived(
+		step.character ? new Set(swappableSeats(game, step.character.id, characters)) : new Set()
+	);
+	const swapMisfits = $derived(
+		new Set(game.seating.filter((id) => game.seats[id].characterId && !swappable.has(id)))
+	);
+	let firstOpen = $state(false);
+	let secondOpen = $state(false);
+	let first = $state<SeatId>();
+	let swapped = $state<readonly SeatId[]>();
+
+	function chooseFirst(seatId: SeatId) {
+		firstOpen = false;
+		first = seatId;
+		secondOpen = true;
+	}
+	function chooseSecond(seatId: SeatId) {
+		secondOpen = false;
+		const seatA = first;
+		first = undefined;
+		if (!seatA) return;
+		const command = {
+			type: 'SwapCharacters' as const,
+			seatId: seatA,
+			withSeatId: seatId,
+			keepAlignments: true as const
+		};
+		if (grimoire.run(command)) swapped = [seatA, seatId];
+	}
+
 	let seatOpen = $state(false);
 	let characterOpen = $state(false);
 	let chosen = $state<SeatId>();
@@ -51,6 +95,7 @@
 	$effect.pre(() => {
 		void step.id;
 		made = undefined;
+		swapped = undefined;
 	});
 
 	function chooseSeat(seatId: SeatId) {
@@ -74,19 +119,56 @@
 	const playerName = (seatId: SeatId) => seatName(game, seatId);
 </script>
 
+{#snippet newCharacter(seatId: SeatId, characterId: CharacterId | undefined)}
+	{#if characterId}
+		<CharacterBadge
+			{characterId}
+			character={characters.get(characterId)}
+			alignment={alignmentOf(game, seatId)}
+			playerName={playerName(seatId)}
+		/>
+		<Button variant="quiet" onclick={() => onShow(characterId)}>Show to player</Button>
+	{/if}
+{/snippet}
+
+{#if swaps && (swappable.size >= 2 || swapped)}
+	<h3>Swapped characters</h3>
+	<div class="row" data-testid="swap-characters">
+		{#if swapped}
+			{#each swapped as seatId (seatId)}
+				{@render newCharacter(seatId, game.seats[seatId]?.characterId)}
+			{/each}
+		{:else}
+			<span class="none">None</span>
+			<Button variant="quiet" onclick={() => (firstOpen = true)}>Choose</Button>
+		{/if}
+	</div>
+	<SeatChooser
+		bind:open={firstOpen}
+		title="Swaps character"
+		{game}
+		{characters}
+		offer={(id) => !!game.seats[id].characterId}
+		misfits={swapMisfits}
+		onChoose={chooseFirst}
+	/>
+	<SeatChooser
+		bind:open={secondOpen}
+		title="Swaps with"
+		{game}
+		{characters}
+		exclude={first}
+		offer={(id) => !!game.seats[id].characterId}
+		misfits={swapMisfits}
+		onChoose={chooseSecond}
+	/>
+{/if}
+
 {#if rule && (changer || made)}
 	<h3>{onlyDemons ? 'New Demon' : 'New character'}</h3>
 	<div class="row" data-testid="change-character">
 		{#if made}
-			<CharacterBadge
-				characterId={made.characterId}
-				character={characters.get(made.characterId)}
-				alignment={alignmentOf(game, made.seatId)}
-				playerName={playerName(made.seatId)}
-			/>
-			<Button variant="quiet" onclick={() => made && onShow(made.characterId)}
-				>Show to player</Button
-			>
+			{@render newCharacter(made.seatId, made.characterId)}
 		{:else}
 			<span class="none">None</span>
 			<Button variant="quiet" onclick={() => (seatOpen = true)}>Choose</Button>

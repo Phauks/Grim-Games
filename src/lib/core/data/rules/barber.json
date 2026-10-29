@@ -39,5 +39,8 @@
 		"selected-you": {
 			"characters": ["self"]
 		}
+	},
+	"swapsCharacters": {
+		"notTypes": ["demon"]
 	}
 }
