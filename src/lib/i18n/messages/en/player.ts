@@ -101,6 +101,7 @@ export const player = {
 	'player.editFlavour': 'Edit flavour text',
 	'player.frameMotion': 'Motion',
 	'player.bigPreview': 'Preview',
+	'player.lookLocked': 'Locked until this game ends',
 	'player.seatProfile.open': 'Profile: {name}',
 	'player.seatProfile.laurel': 'Laurel',
 	'player.seatProfile.colour': 'Color',
