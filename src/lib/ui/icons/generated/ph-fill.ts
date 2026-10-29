@@ -19,6 +19,7 @@ import ph_arrows_in_fill from '~icons/ph/arrows-in-fill';
 import ph_arrows_left_right_fill from '~icons/ph/arrows-left-right-fill';
 import ph_arrows_out_fill from '~icons/ph/arrows-out-fill';
 import ph_arrows_out_cardinal_fill from '~icons/ph/arrows-out-cardinal-fill';
+import ph_arrows_split_fill from '~icons/ph/arrows-split-fill';
 import ph_bag_simple_fill from '~icons/ph/bag-simple-fill';
 import ph_beer_bottle_fill from '~icons/ph/beer-bottle-fill';
 import ph_beer_stein_fill from '~icons/ph/beer-stein-fill';
@@ -35,6 +36,7 @@ import ph_books_fill from '~icons/ph/books-fill';
 import ph_bug_fill from '~icons/ph/bug-fill';
 import ph_calculator_fill from '~icons/ph/calculator-fill';
 import ph_camera_fill from '~icons/ph/camera-fill';
+import ph_cards_fill from '~icons/ph/cards-fill';
 import ph_caret_circle_down_fill from '~icons/ph/caret-circle-down-fill';
 import ph_caret_down_fill from '~icons/ph/caret-down-fill';
 import ph_caret_left_fill from '~icons/ph/caret-left-fill';
@@ -243,6 +245,7 @@ const icons: IconMap = {
 	'ph:arrows-left-right-fill': ph_arrows_left_right_fill,
 	'ph:arrows-out-fill': ph_arrows_out_fill,
 	'ph:arrows-out-cardinal-fill': ph_arrows_out_cardinal_fill,
+	'ph:arrows-split-fill': ph_arrows_split_fill,
 	'ph:bag-simple-fill': ph_bag_simple_fill,
 	'ph:beer-bottle-fill': ph_beer_bottle_fill,
 	'ph:beer-stein-fill': ph_beer_stein_fill,
@@ -259,6 +262,7 @@ const icons: IconMap = {
 	'ph:bug-fill': ph_bug_fill,
 	'ph:calculator-fill': ph_calculator_fill,
 	'ph:camera-fill': ph_camera_fill,
+	'ph:cards-fill': ph_cards_fill,
 	'ph:caret-circle-down-fill': ph_caret_circle_down_fill,
 	'ph:caret-down-fill': ph_caret_down_fill,
 	'ph:caret-left-fill': ph_caret_left_fill,

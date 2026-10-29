@@ -15,6 +15,7 @@ import ph_bird from '~icons/ph/bird';
 import ph_book_bookmark from '~icons/ph/book-bookmark';
 import ph_book_open from '~icons/ph/book-open';
 import ph_calculator from '~icons/ph/calculator';
+import ph_cards from '~icons/ph/cards';
 import ph_caret_circle_down from '~icons/ph/caret-circle-down';
 import ph_cat from '~icons/ph/cat';
 import ph_certificate from '~icons/ph/certificate';
@@ -126,6 +127,7 @@ const icons: IconMap = {
 	'ph:book-bookmark': ph_book_bookmark,
 	'ph:book-open': ph_book_open,
 	'ph:calculator': ph_calculator,
+	'ph:cards': ph_cards,
 	'ph:caret-circle-down': ph_caret_circle_down,
 	'ph:cat': ph_cat,
 	'ph:certificate': ph_certificate,

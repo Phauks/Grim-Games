@@ -259,7 +259,7 @@
 		{#if !locked}<SetupActions {port} />{/if}
 		<!-- Deal (Trevor, 2026-10-26): disabled once the bag is empty, so nothing moves. -->
 		{#if !locked && game}<IconButton
-				icon="random"
+				icon="deal"
 				label={t('setup.deal')}
 				disabled={inBag === 0}
 				onclick={() => (dealOpen = true)}
