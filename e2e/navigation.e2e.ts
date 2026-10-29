@@ -92,4 +92,35 @@ test.describe('on a computer', () => {
 		await expect(nav).toBeVisible();
 		await expect(page.getByRole('dialog', { name: APP_NAME })).toHaveCount(0);
 	});
+
+	// Trevor (2026-10-29): "items in the left sidebar should be collapsible". Each section closes
+	// from its heading, says how many items it holds while closed, and stays closed after a reload.
+	test('each sidebar section opens and closes from its heading, remembered', async ({ page }) => {
+		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
+		await page.goto('/privacy');
+		const nav = page.getByRole('navigation', { name: 'Menu' });
+		const prepare = nav.getByRole('button', { name: 'Prepare' });
+		await expect(prepare).toHaveAttribute('aria-expanded', 'true');
+		await prepare.click();
+		await expect(prepare).toHaveAttribute('aria-expanded', 'false');
+		await expect(nav.getByRole('link', { name: 'Library' })).toBeHidden();
+		await expect(prepare.getByTestId('section-count')).toHaveText('6');
+		// The other sections stay as they were.
+		await expect(nav.getByRole('link', { name: 'New game' })).toBeVisible();
+		await page.reload();
+		await expect(prepare).toHaveAttribute('aria-expanded', 'false');
+		await prepare.click();
+		await expect(nav.getByRole('link', { name: 'Library' })).toBeVisible();
+	});
+
+	// Report an issue is a menu row like Settings, not small text (Trevor, 2026-10-29).
+	test('Report an issue is a row in App', async ({ page }) => {
+		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
+		await page.goto('/');
+		const app = page
+			.getByRole('navigation', { name: 'Menu' })
+			.getByRole('list', { name: 'App', exact: true });
+		await app.getByRole('button', { name: 'Report an issue' }).click();
+		await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
+	});
 });
