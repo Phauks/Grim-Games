@@ -4,35 +4,25 @@
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { onMount, tick } from 'svelte';
-	import type { GameData, NumericNightOrder } from '#lib/core/data/index.ts';
+	import type { GameData } from '#lib/core/data/index.ts';
 	import { characterReference } from '#lib/core/rules/reference.ts';
-	import {
-		loadNumericNightOrder,
-		loadOfficialData
-	} from '#lib/features/characters/game-data.svelte.ts';
+	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import CharacterReference from './CharacterReference.svelte';
 	import { ReferenceQuery } from './query.svelte.ts';
 	import ReferenceControls from './ReferenceControls.svelte';
 
 	let data = $state<GameData>();
-	let numeric = $state<NumericNightOrder>();
 	let error = $state<string>();
 	// One search and filter set per visit, shared by the title row's controls and the list.
 	const query = new ReferenceQuery();
 
 	// Built at runtime from the same data and rules code the app uses.
-	const entries = $derived(data ? characterReference(data, numeric) : []);
+	const entries = $derived(data ? characterReference(data) : []);
 
 	onMount(async () => {
 		try {
-			// The numeric snapshot is optional: without it the page still shows TPI's order.
-			const [game, numbers] = await Promise.all([
-				loadOfficialData(),
-				loadNumericNightOrder().catch(() => undefined)
-			]);
-			numeric = numbers;
-			data = game;
+			data = await loadOfficialData();
 		} catch (e) {
 			// Shown in place below, so no corner card as well.
 			error = describeThrown(e).message;

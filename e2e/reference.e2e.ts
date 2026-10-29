@@ -507,7 +507,7 @@ test('All data shows everything the app reads about a character, by file', async
 	const dialog = page.getByRole('dialog').filter({ hasText: ': all data' });
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(/Washerwoman\s*: all data/);
 	const data = dialog.getByTestId('character-data');
-	await expect(data.locator('section[data-part]')).toHaveCount(7);
+	await expect(data.locator('section[data-part]')).toHaveCount(6);
 	const rules = data.locator('section[data-part="rules"]');
 	await expect(rules).toContainText('src/lib/core/data/rules/washerwoman.json');
 	await expect(rules.locator('[data-key="setupPrep"] dt').first()).toHaveText('Setup prep');

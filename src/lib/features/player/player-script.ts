@@ -9,8 +9,7 @@ import {
 	type CharacterType,
 	type GameData,
 	type LoadedScript,
-	type NightMarker,
-	type NumericNightOrder
+	type NightMarker
 } from '#lib/core/data/index.ts';
 import { MAX_DEALT_PLAYERS } from '#lib/core/rules/distribution.ts';
 import { scriptJinxes, type ScriptJinx } from '#lib/core/rules/jinxes.ts';
@@ -73,20 +72,14 @@ export interface PlayerNight {
  * order, with Dusk, Minion info, Demon info and Dawn. Uses the script's own `_meta` order
  * when it has one.
  */
-export function playerNight(
-	script: LoadedScript,
-	data: GameData,
-	night: Night,
-	numeric?: NumericNightOrder
-): PlayerNight {
+export function playerNight(script: LoadedScript, data: GameData, night: Night): PlayerNight {
 	const order = nightOrder({
 		night,
 		sheet: data.nightSheet,
 		inPlay: script.characters,
 		// Always lay out Minion and Demon info: the player view doesn't know the player count.
 		players: MAX_DEALT_PLAYERS,
-		customOrder: night === 'first' ? script.meta.firstNight : script.meta.otherNight,
-		numeric
+		customOrder: night === 'first' ? script.meta.firstNight : script.meta.otherNight
 	});
 	const entries: PlayerNightEntry[] = [];
 	for (const step of order.steps) {
