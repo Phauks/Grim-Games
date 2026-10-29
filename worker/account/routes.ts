@@ -47,6 +47,7 @@ import {
 import { isLegacyAccountId, isWordAccountId } from '../../src/lib/features/account/account-id.ts';
 import { isAdmin, type AdminsEnv } from '../admins.ts';
 import { passwordHash } from './crypto.ts';
+import { forgetFriends, type FriendsEnv } from '../friends/routes.ts';
 import {
 	hashPassword,
 	emailStub,
@@ -61,7 +62,8 @@ import {
 
 export type Env = AccountEnv &
 	EmailEnv &
-	AdminsEnv & { AUTH_STARTS?: RateLimit; AUTH_PASSWORDS?: RateLimit };
+	AdminsEnv &
+	Pick<FriendsEnv, 'FRIEND_BOOKS'> & { AUTH_STARTS?: RateLimit; AUTH_PASSWORDS?: RateLimit };
 
 /** The same answer for an unknown address, an account with no password and a wrong one. */
 const WRONG_PASSWORD = 'That email and password do not match. Check them, or sign in with a code.';
@@ -165,12 +167,12 @@ export async function getUser(
 }
 
 /** Changes must come from our own pages, with a JSON body. */
-function sameOriginJson(request: Request, url: URL): boolean {
+export function sameOriginJson(request: Request, url: URL): boolean {
 	if (request.headers.get('Origin') !== url.origin) return false;
 	return (request.headers.get('Content-Type') ?? '').startsWith('application/json');
 }
 
-async function readBody(
+export async function readBody(
 	request: Request,
 	maxLength = 1_100_000
 ): Promise<Record<string, unknown> | undefined> {
@@ -492,6 +494,8 @@ export async function handleAccount(
 		});
 	}
 	if (path === '/api/account' && method === 'DELETE') {
+		// Everyone this account was friends with, asked or blocked forgets it first.
+		await forgetFriends(env, auth.userId);
 		const { email, username } = await user.deleteAccount();
 		if (email) {
 			await emailStub(env, email).forget(auth.userId);

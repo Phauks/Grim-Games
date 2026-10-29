@@ -12,8 +12,23 @@
  *
  * `when` is the moment the token says so: `placed` (the default) or `removed`.
  */
-import type { ReminderLabel } from './types.ts';
-import { checkKeys, describe, isObject, readEnum, type Issues } from './validate.ts';
+import {
+	ALIGNMENTS,
+	SEATED_TYPES,
+	type Alignment,
+	type CharacterId,
+	type ReminderLabel,
+	type SeatedType
+} from './types.ts';
+import {
+	checkKeys,
+	describe,
+	isObject,
+	readBoolean,
+	readEnum,
+	readStringArray,
+	type Issues
+} from './validate.ts';
 import { readToken } from './reminder-fields.ts';
 
 const BECOMES_INTO = ['demon', 'evil', 'swap'] as const;
@@ -46,27 +61,58 @@ export function readBecomes(
 }
 
 /**
- * The `makesDemon` part: on a night when this character's player carries its own `token`, it
- * chooses a player, who becomes an evil Demon of its choice (the Summoner's Night 3,
- * https://wiki.bloodontheclocktower.com/Summoner). Its night step offers the choice.
+ * The `changesCharacter` part: on its night step, this character's living player chooses a
+ * player who becomes a character the step then picks. It names a behaviour, never a
+ * character's rules:
+ * - `types`: the character types that may be picked;
+ * - `notInPlay`: only characters no one is playing (the Pit-Hag,
+ *   https://wiki.bloodontheclocktower.com/Pit-Hag);
+ * - `alignment`: the player's new alignment; left out, they keep theirs (the Summoner's
+ *   "evil Demon", https://wiki.bloodontheclocktower.com/Summoner);
+ * - `token`: only on a night its own token marks (the Summoner's Night 3);
+ * - `spent`: not once its own token says it was used (the Huntsman's No Ability);
+ * - `onlyFrom`: only a player of one of these characters changes (the Huntsman's Damsel,
+ *   https://wiki.bloodontheclocktower.com/Huntsman).
  */
-export interface MakesDemon {
-	token: ReminderLabel;
+export interface ChangesCharacter {
+	types: readonly SeatedType[];
+	notInPlay?: true;
+	alignment?: Alignment;
+	token?: ReminderLabel;
+	spent?: ReminderLabel;
+	onlyFrom?: readonly CharacterId[];
 }
 
-/** Reads a `makesDemon` block; `token` must be one of the character's `reminders`. */
-export function readMakesDemon(
+/** Reads a `changesCharacter` block; its tokens must be among the character's `reminders`. */
+export function readChangesCharacter(
 	raw: unknown,
 	path: string,
 	issues: Issues,
 	reminders: readonly ReminderLabel[] | undefined
-): MakesDemon | undefined {
+): ChangesCharacter | undefined {
 	if (!isObject(raw)) {
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['token'], path, issues);
-	if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
+	checkKeys(raw, ['types', 'notInPlay', 'alignment', 'token', 'spent', 'onlyFrom'], path, issues);
+	const types = (readStringArray(raw, 'types', path, issues) ?? []).filter((t, i) => {
+		const ok = (SEATED_TYPES as readonly string[]).includes(t);
+		if (!ok) issues.add(`${path}.types[${i}]`, `unknown value ${JSON.stringify(t)}`);
+		return ok;
+	}) as SeatedType[];
+	if (types.length === 0) issues.add(`${path}.types`, 'expected at least one character type');
+	const notInPlay = readBoolean(raw, 'notInPlay', path, issues);
+	const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, false);
 	const token = readToken(raw, 'token', path, issues, reminders);
-	return token === undefined ? undefined : { token };
+	const spent = readToken(raw, 'spent', path, issues, reminders);
+	const onlyFrom = readStringArray(raw, 'onlyFrom', path, issues);
+	if (types.length === 0) return undefined;
+	return {
+		types,
+		...(notInPlay ? { notInPlay: true as const } : {}),
+		...(alignment ? { alignment } : {}),
+		...(token ? { token } : {}),
+		...(spent ? { spent } : {}),
+		...(onlyFrom?.length ? { onlyFrom } : {})
+	};
 }
