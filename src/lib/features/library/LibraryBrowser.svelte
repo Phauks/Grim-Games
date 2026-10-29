@@ -25,7 +25,6 @@
 	import CampaignScripts from '#lib/features/modes/CampaignScripts.svelte';
 	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/index.ts';
 	import type { Character, GameData } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { recentScripts, restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
 	import { describeSource } from '#lib/features/scripts/saved-scripts.ts';
 	import {
@@ -34,8 +33,6 @@
 		recentProvider
 	} from '#lib/features/scripts/script-providers.ts';
 	import type { Shareable } from '#lib/features/scripts/share-codes.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
-	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import { readStored, writeStored } from '#lib/ui/stored.ts';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
@@ -48,7 +45,8 @@
 	import NameDialog from './NameDialog.svelte';
 	import { timestampName } from '#lib/core/timestamp-name.ts';
 	import ScriptPane, { type ScriptRow } from './ScriptPane.svelte';
-	import { dragToFolder, type DragSource } from './drag-to-folder.ts';
+	import type { DragSource } from './drag-to-folder.ts';
+	import LibraryCell, { type ColumnId, type Row, type RowKind } from './LibraryCell.svelte';
 	import { characterCollections } from './library-collections.svelte.ts';
 	import { emptyCollections } from './library-collections.ts';
 	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
@@ -251,25 +249,8 @@
 
 	// ---- The table ----
 
-	type RowKind = 'folder' | ItemKind;
-	interface Row {
-		key: string;
-		kind: RowKind;
-		name: string;
-		sub: string;
-		/** Folders: the folder's id. */
-		folderId?: string;
-		character?: Character;
-	}
-	type ColumnId = 'name' | 'kind' | 'folder' | 'tags';
 	let sort = $state<DataSort<ColumnId> | undefined>();
 
-	const KIND_ICONS: Record<RowKind, IconSlot> = {
-		folder: 'folder',
-		script: 'script',
-		character: 'buildCharacter',
-		collection: 'players'
-	};
 	const kindName = (k: RowKind) => t(`library.kindName.${k}`);
 	const folderOf = (row: Row) =>
 		row.kind === 'folder'
@@ -680,56 +661,17 @@
 {/snippet}
 
 {#snippet cell(row: Row, column: DataColumn<ColumnId, Row>)}
-	{#if column.id === 'name'}
-		{@const where = folderOf(row)}
-		<button
-			type="button"
-			class="pick"
-			data-drop-folder={row.folderId}
-			data-kind={row.kind}
-			onclick={(e) => tapRow(row, e)}
-			onkeydown={(e) => rowKey(row, e)}
-			use:dragToFolder={{
-				source: {
-					id: row.folderId ?? row.key,
-					folder: row.kind === 'folder',
-					label: row.name || t('common.none')
-				},
-				onmove: move
-			}}
-		>
-			<span class="icon" class:accent={row.kind === 'folder'}
-				><Icon name={KIND_ICONS[row.kind]} /></span
-			>
-			<span class="text-block">
-				<span class="title">
-					{#if row.character}
-						<CharacterBadge
-							characterId={row.character.id}
-							character={row.character}
-							interactive={false}
-						/>
-					{:else}
-						{row.name || t('common.none')}
-					{/if}
-				</span>
-				<span class="sub"
-					>{[row.sub, browsing ? '' : where].filter(Boolean).join(' · ') || ' '}</span
-				>
-			</span>
-		</button>
-	{:else if column.id === 'kind'}
-		<span class="text">{kindName(row.kind)}</span>
-	{:else if column.id === 'folder'}
-		<span class="text">{folderOf(row) || t('library.heading')}</span>
-	{:else}
-		{@const names = tagNames(libraryLabels.for(row.key).tags)}
-		<span class="chips">
-			{#each names as name (name)}<span class="chip">{name}</span>{:else}<span class="muted"
-					>{t('common.none')}</span
-				>{/each}
-		</span>
-	{/if}
+	<LibraryCell
+		{row}
+		column={column.id}
+		{browsing}
+		where={folderOf(row)}
+		kindName={kindName(row.kind)}
+		tags={tagNames(libraryLabels.for(row.key).tags)}
+		onTap={(e) => tapRow(row, e)}
+		onKey={(e) => rowKey(row, e)}
+		onMove={move}
+	/>
 {/snippet}
 
 <!-- The new folder isn't opened (Trevor, 2026-10-18); it is listed in the folder made in. -->
@@ -790,9 +732,6 @@
 	.sided .pane {
 		border-inline-start: var(--card-border);
 	}
-	:global(.sided tr.selected) .pick {
-		box-shadow: inset 0.25rem 0 0 var(--accent);
-	}
 	/* The sidebar and pane stay in view beside the list, at the top of the screen (not in a
 	   picker's dialog, which scrolls itself). */
 	.manager:not(.picking) .side,
@@ -813,82 +752,6 @@
 		display: grid;
 		gap: var(--space-3);
 		min-width: 0;
-	}
-	.pick {
-		width: 100%;
-		height: 100%;
-		min-height: var(--tap-target);
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-1) var(--space-2);
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-		/* A held touch drags the row rather than selecting its text. */
-		user-select: none;
-		-webkit-user-select: none;
-		-webkit-touch-callout: none;
-	}
-	.pick:hover {
-		background: var(--surface-selected);
-	}
-	.icon {
-		display: flex;
-		font-size: 1.3rem;
-		color: var(--on-surface-muted);
-	}
-	.icon.accent {
-		color: var(--accent);
-	}
-	.text-block {
-		display: grid;
-		min-width: 0;
-	}
-	.title {
-		font-weight: 600;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.sub {
-		min-height: 1.2em;
-		font-size: 0.8rem;
-		color: var(--on-surface-muted);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.text {
-		display: flex;
-		align-items: center;
-		min-height: var(--tap-target);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
-	}
-	/* A tag looks the same everywhere, in the font its name was typed in (Trevor, 2026-10-18). */
-	.chip {
-		padding: 0 var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-full);
-		font-family: var(--font-control);
-		font-size: 0.85rem;
-		white-space: nowrap;
-	}
-	.muted {
-		color: var(--on-surface-muted);
 	}
 	/* Dragging: the row's name follows the finger, and the folder under it is outlined. */
 	:global(.library-drag-ghost) {
