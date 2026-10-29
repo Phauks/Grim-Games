@@ -353,11 +353,13 @@
 		font-size: 1.1rem;
 		color: var(--heading);
 	}
+	/* Townsfolk, Outsiders, Minions and Demons take their tokens' blue and red in every theme
+	   (Trevor, 2026-10-29). */
 	section[data-tone='good'] h2 {
-		color: var(--good-text);
+		color: var(--good);
 	}
 	section[data-tone='evil'] h2 {
-		color: var(--evil-text);
+		color: var(--evil);
 	}
 	section[data-tone='traveller'] h2 {
 		color: var(--traveller-text);
