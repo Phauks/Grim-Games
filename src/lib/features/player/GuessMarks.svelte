@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import RimPill from '#lib/ui/seating/RimPill.svelte';
 	import type { GuessMark } from './grim-guesses.ts';
 
 	/**
-	 * A seat's other guesses on the players' grim (Trevor, 2026-10-25: "a guess on the token,
-	 * an arrow to cycle, and above it to the top right, you see the different icons for the
-	 * characters"): one small icon each, or the player's avatar once it is in the cycle, in a pill over the token's top-right rim, then the
-	 * arrow. The same RimPill as the board's nominations on the top-left rim; the note keeps the
-	 * lower right and the skull the lower left. The whole pill is one tap target: tapping it
-	 * makes the next guess the main one (PlayerGrim). Placed inside SeatDisc's `marks`.
+	 * A seat's other guesses on the players' grim, in a pill over the token's top-right rim:
+	 * the next guess in the cycle (a character icon, a generic guess, or the player's avatar),
+	 * and a "+N" count when more wait behind it (Trevor, 2026-10-29: no cycle arrow, "just tap
+	 * on the alternatives"). At most two slots, so it never reaches the next seat or grows as
+	 * guesses are added. A tap on the guess makes it the main one; a tap on the count opens
+	 * the seat's sheet, which lists every guess (PlayerGrim). The same RimPill as the board's
+	 * nominations on the top-left rim. Placed inside SeatDisc's `marks`.
 	 */
 	interface Props {
 		/** The cycle's entries after the front one, in order. */
@@ -27,24 +27,32 @@
 	let { others, side = 'right' }: Props = $props();
 </script>
 
+{#snippet mark(other: GuessMark)}{#if 'character' in other}<img
+			class="slot"
+			src={iconUrl(other.character)}
+			alt={other.character.name}
+			data-testid="guess-mark"
+		/>{:else if 'avatar' in other}<span
+			class="slot"
+			data-testid="guess-mark"
+			role="img"
+			aria-label={other.label}
+			><AvatarFace avatar={other.avatar} name={other.name} picture={other.picture} /></span
+		>{:else}<span
+			class="slot generic"
+			data-team={other.generic.team}
+			data-testid="guess-mark"
+			aria-label={other.label}>{other.label.charAt(0)}</span
+		>{/if}{/snippet}
+
 <RimPill {side} testid="guess-marks" title={t('player.grim.nextGuess')}
-	>{#each others as other, i (i)}{#if 'character' in other}<img
-				class="slot"
-				src={iconUrl(other.character)}
-				alt={other.character.name}
-				data-testid="guess-mark"
-			/>{:else if 'avatar' in other}<span
-				class="slot"
-				data-testid="guess-mark"
-				role="img"
-				aria-label={other.label}
-				><AvatarFace avatar={other.avatar} name={other.name} picture={other.picture} /></span
-			>{:else}<span
-				class="slot generic"
-				data-team={other.generic.team}
-				data-testid="guess-mark"
-				aria-label={other.label}>{other.label.charAt(0)}</span
-			>{/if}{/each}<span class="slot next"><Icon name="nextGuess" /></span></RimPill
+	>{#if others[0]}{@render mark(others[0])}{/if}{#if others.length > 1}<span
+			class="slot more"
+			data-testid="more-guesses"
+			role="img"
+			aria-label={t('player.grim.moreGuesses', { count: others.length - 1 })}
+			>+{others.length - 1}</span
+		>{/if}</RimPill
 >
 
 <style>
@@ -70,8 +78,19 @@
 		background: var(--evil);
 		color: var(--on-evil);
 	}
-	.next {
+	/* Over the pill's own tap target (RimPill), with one of its own: it opens the seat's sheet. */
+	.more {
+		position: relative;
+		z-index: 1;
 		color: var(--on-surface);
-		--icon-size: calc(var(--slot) * 0.7);
+		font-family: var(--font-control);
+		font-size: calc(var(--slot) * 0.5);
+		font-weight: 700;
+		line-height: 1;
+	}
+	.more::after {
+		content: '';
+		position: absolute;
+		inset: calc(-0.5 * var(--u));
 	}
 </style>

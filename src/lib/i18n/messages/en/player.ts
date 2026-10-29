@@ -34,6 +34,10 @@ export const player = {
 	'player.grim.guess': 'your guess: {name}',
 	'player.grim.guesses': 'Guesses',
 	'player.grim.nextGuess': 'Next guess',
+	'player.grim.moreGuesses': {
+		one: '{count} more guess',
+		other: '{count} more guesses'
+	},
 	'player.grim.generic': 'Guess a type or alignment',
 	'player.grim.hasNote': 'your note',
 	'player.grim.notesTitle': 'Notes: {name}',

@@ -268,9 +268,11 @@
 		if (hiding) return;
 		chosen = seat;
 		// The note mark opens the note itself, as the board's does (Trevor, 2026-10-25), and
-		// the guess pill makes the next guess the main one.
+		// the guess pill makes the next guess the main one; its "+N" opens the sheet, where
+		// every guess is listed (Trevor, 2026-10-29).
 		const target = event?.target instanceof Element ? event.target : null;
 		if (target?.closest('.mark.note')) noteOpen = true;
+		else if (target?.closest('[data-testid="more-guesses"]')) open = true;
 		else if (target?.closest('[data-testid="guess-marks"]'))
 			save(cycleGuess(guesses, seat.seatId, withAvatar(seat)));
 		else open = true;
