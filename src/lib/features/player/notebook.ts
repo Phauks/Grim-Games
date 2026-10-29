@@ -41,13 +41,14 @@ export function scriptKey(script: { edition?: string; name: string }): string {
 		: `script:${script.name.trim().toLowerCase()}`;
 }
 
+/** A script's notebook before any note is written: no notes, only the "+ New note" card. */
 export function emptyNotebook(key: string, now = Date.now()): PlayerNotebook {
-	return {
-		schemaVersion: NOTEBOOK_VERSION,
-		scriptKey: key,
-		notes: [{ noteId: 'n1', title: '', text: '', hidden: false }],
-		updatedAt: now
-	};
+	return { schemaVersion: NOTEBOOK_VERSION, scriptKey: key, notes: [], updatedAt: now };
+}
+
+/** A note with nothing in it, which is not kept (as the Storyteller's game notes). */
+export function isBlankNote(note: { title: string; text: string }): boolean {
+	return !note.title.trim() && !note.text.trim();
 }
 
 /** Adds an empty note at the end and returns the notebook and the new note's id. */
@@ -123,7 +124,8 @@ function seatNotes(raw: unknown, after: readonly PlayerNote[], hidden: boolean):
 /**
  * Reads a stored notebook of any known version. Returns undefined for data it cannot
  * understand (a newer schema, or not a notebook), so the caller starts a fresh one rather
- * than losing the player's notes by overwriting them silently.
+ * than losing the player's notes by overwriting them silently. Blank notes are dropped:
+ * older builds started every notebook with one, so a new game showed an empty note.
  *
  * `hideAll` is the old "Hide note contents" setting: notes saved before v6 start hidden
  * when it was on, so nothing that was hidden shows after the update.
@@ -142,7 +144,9 @@ export function migrateNotebook(raw: unknown, hideAll = false): PlayerNotebook |
 		schemaVersion: NOTEBOOK_VERSION,
 		scriptKey: o.scriptKey,
 		// v1 to v4's seat circle, claims, layout and `me` were dropped in v5 (Trevor).
-		notes: version < 5 ? [...notes, ...seatNotes(o.seats, notes, legacyHide)] : notes,
+		notes: (version < 5 ? [...notes, ...seatNotes(o.seats, notes, legacyHide)] : notes).filter(
+			(n) => !isBlankNote(n)
+		),
 		updatedAt: typeof o.updatedAt === 'number' ? o.updatedAt : 0
 	};
 }
