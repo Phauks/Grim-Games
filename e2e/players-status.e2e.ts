@@ -196,6 +196,8 @@ test('the candles beside Setup open who is connected, on phones and in character
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	// count() doesn't wait, so the board's seats must be drawn first.
+	await expect(page.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
 	const seatCount = await page.getByRole('button', { name: /^Seat \d+:/ }).count();
 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
