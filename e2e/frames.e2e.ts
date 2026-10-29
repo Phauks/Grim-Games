@@ -51,15 +51,13 @@ test('a player picks a laurel form, its colour and its motion, and keeps them', 
 	// disables them.
 	await expect(colour).toBeDisabled();
 	await expect(motion).toBeDisabled();
-	// Measured from the laurel's row: the pick may scroll the Profile on a short screen.
-	const gap = async () => (await motion.boundingBox())!.y - (await form.boundingBox())!.y;
-	const below = await gap();
+	const below = await motion.boundingBox();
 
 	// Any form takes any colour, the simple ring too (Trevor, 2026-10-28).
 	await pick(page, 'Your laurel', 'Simple ring');
 	await expect(form.locator('svg[data-frame="ring-accent"]')).toBeAttached();
 	await expect(colour).toBeEnabled();
-	expect(await gap()).toBe(below);
+	expect(await motion.boundingBox()).toEqual(below);
 	await pick(page, 'Color', 'Orange');
 	await expect(form.locator('svg[data-frame="ring-minion"]')).toBeAttached();
 

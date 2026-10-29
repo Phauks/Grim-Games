@@ -17,7 +17,7 @@ import type { ScriptVote } from './script-vote.ts';
 import type { ClientMessage, HostView, PlayerView, TownView, VoteTally } from './room-protocol.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
 import { memberRole, seatsSeen, type RoomRoles } from './room-roles.ts';
-import { lookLocked, lookOf } from './room-look.ts';
+import { lookOf } from './room-look.ts';
 import {
 	pictureReports,
 	seatPictures,
@@ -96,11 +96,6 @@ export interface RoomState {
 	 * phone with only the room code can watch by typing it.
 	 */
 	viewerPassword?: true;
-	/**
-	 * The current game's first night has begun (`PublicGameState.now`), so players' looks are
-	 * locked (room-look.ts). It stays while the board shows no phase; a new game clears it.
-	 */
-	begun?: true;
 	/** The current game is over, as the Storyteller ended it; a new game clears it. */
 	ended?: GameOver;
 	/** The Storyteller is choosing the next script (plan R1); a new game clears it. */
@@ -162,7 +157,7 @@ export { roleSeen, setRoles, type RoomRoles } from './room-roles.ts';
 export * from './room-version.ts';
 export * from './room-sound.ts';
 export * from './room-push.ts';
-export { lookLocked, setLook } from './room-look.ts';
+export { setLook } from './room-look.ts';
 export { judgePicture, reportPicture } from './room-pictures.ts';
 export { readMessages, sendMessage, setInbox, type PlayerMessage } from './room-messages.ts';
 export {
@@ -276,7 +271,6 @@ export function playerView(
 	};
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;
-	if (lookLocked(room, me)) view.lookLocked = true;
 	const shownAs = numberedNames(room, present)[memberId];
 	if (shownAs) view.shownAs = shownAs;
 	if (room.storytellerBuiltAt) view.storytellerBuiltAt = room.storytellerBuiltAt;
@@ -431,17 +425,13 @@ export function publish(
 	const seats = new Set(state.seats.map((s) => s.seatId));
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
-	const cleared = newGame
+	const base = newGame
 		? withoutMessages(
 				withoutPictureVerdicts(closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)))
 			)
 		: room;
-	const { begun: wasBegun, ...base } = cleared;
-	const now = state.now?.kind;
-	const begun = now === undefined ? room.gameId === gameId && wasBegun : now !== 'setup';
 	return {
 		...base,
-		...(begun ? { begun: true } : {}),
 		gameId,
 		public: state,
 		members: room.members.map((m) => {
