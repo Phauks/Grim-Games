@@ -578,10 +578,11 @@
 		grid-column: 3;
 		margin-top: 1.7em;
 	}
-	/* They share the ability's height rather than making the row taller. */
+	/* They share the ability's height; a third (Duplicate Characters' add) makes the row a
+	   little taller rather than letting them overlap. */
 	.ring-row > .end > :global(*) {
 		flex: 1 1 0;
-		min-height: 0;
+		min-height: 1.25em;
 	}
 	.ring-row > .end > :global(:last-child) {
 		border-radius: 0 0 var(--radius-md) 0;
