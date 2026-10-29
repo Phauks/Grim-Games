@@ -33,11 +33,16 @@ interface Scenario {
 	cast: CharacterId[];
 	steps?: ((s: string[]) => Command)[];
 	carrier: number;
+	/** The seat that changes, when not the carrier. */
+	changes?: number;
 	expected: object;
 }
 
 /** For each kind of change, a game where the token has something to change. */
-const SCENARIOS: Record<'demon' | 'evil' | 'swap', (id: CharacterId) => Scenario> = {
+const SCENARIOS: Record<
+	'demon' | 'evil' | 'swap' | 'carrier-alignment',
+	(id: CharacterId) => Scenario
+> = {
 	// The Demon dies and the character's player becomes it.
 	demon: (id) => ({
 		cast: ['chef', 'empath', 'monk', id, 'imp'],
@@ -52,24 +57,37 @@ const SCENARIOS: Record<'demon' | 'evil' | 'swap', (id: CharacterId) => Scenario
 		expected: { into: 'evil', characterId: 'chef' }
 	}),
 	// The Demon swaps with the character's player.
-	swap: (id) => ({ cast: [id, 'chef', 'imp'], carrier: 2, expected: { into: 'swap' } })
+	swap: (id) => ({ cast: [id, 'chef', 'imp'], carrier: 2, expected: { into: 'swap' } }),
+	// The character's good player takes an evil carrier's alignment.
+	'carrier-alignment': (id) => ({
+		cast: [id, 'chef', 'imp'],
+		carrier: 2,
+		changes: 0,
+		expected: { into: 'alignment', characterId: id, alignment: 'evil' }
+	})
 };
 
 const BECOMES = [...OFFICIAL_RULES].flatMap(([id, r]) => (r.becomes ? [{ id, ...r.becomes }] : []));
 
 describe('every becomes rule offers its change, at its moment only', () => {
 	it('covers the characters the wiki says change a player', () => {
-		expect(BECOMES.map((b) => b.id).sort()).toEqual(['mezepheles', 'scarletwoman', 'snakecharmer']);
+		expect(BECOMES.map((b) => b.id).sort()).toEqual([
+			'goon',
+			'mezepheles',
+			'ogre',
+			'scarletwoman',
+			'snakecharmer'
+		]);
 	});
 
 	it.each(BECOMES)('$id: $token', ({ id, token, into, when: removed }) => {
 		const when = removed ?? ('placed' as const);
-		const { cast, steps = [], carrier, expected } = SCENARIOS[into](id);
+		const { cast, steps = [], carrier, changes = carrier, expected } = SCENARIOS[into](id);
 		const { session, seats } = castGame(cast, ...steps);
 		const reminder = { characterId: id, label: token };
 		const other = when === 'placed' ? ('removed' as const) : ('placed' as const);
 		const offer = becomesOffer(session.game, seats[carrier], reminder, characters, when);
-		expect(offer).toMatchObject({ ...expected, seatId: seats[carrier] });
+		expect(offer).toMatchObject({ ...expected, seatId: seats[changes] });
 		expect(becomesOffer(session.game, seats[carrier], reminder, characters, other)).toBeUndefined();
 	});
 });
@@ -308,5 +326,26 @@ describe('a character whose step swaps two players (swapsCharacters)', () => {
 		});
 		expect(game.seats[seats[1]]).toMatchObject({ characterId: 'poisoner', alignment: 'good' });
 		expect(game.seats[seats[2]]).toMatchObject({ characterId: 'chef', alignment: 'evil' });
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Goon and https://wiki.bloodontheclocktower.com/Ogre: the
+// Goon becomes the alignment of the first player to choose it; the Ogre, of the friend it chose.
+describe("becomesOffer: the Goon and the Ogre take the carrier's alignment", () => {
+	it('offers nothing when the alignments already match', () => {
+		const { session, seats } = castGame(['goon', 'chef', 'imp']);
+		const drunk = { characterId: 'goon', label: 'Drunk' };
+		expect(becomesOffer(session.game, seats[1], drunk, characters)).toBeUndefined();
+	});
+
+	it('turns an evil Ogre good when its friend is good', () => {
+		const { session, seats, ctx } = castGame(['ogre', 'chef', 'imp']);
+		const evil = run(session, ctx, { type: 'SetAlignment', seatId: seats[0], alignment: 'evil' });
+		const friend = { characterId: 'ogre', label: 'Friend' };
+		expect(becomesOffer(evil.game, seats[1], friend, characters)).toMatchObject({
+			into: 'alignment',
+			seatId: seats[0],
+			alignment: 'good'
+		});
 	});
 });

@@ -126,3 +126,19 @@ test('taking off the Mezepheles\'s "Turns Evil" offers to make that player evil'
 	await expect(ask).toBeHidden();
 	await expect(sheet).toContainText(/Clockmaker\s*Townsfolk · Evil · Seat 2/);
 });
+
+// https://wiki.bloodontheclocktower.com/Goon: the first player each night to choose the Goon is
+// drunk, and the Goon becomes their alignment. Its Drunk on an evil player offers that change.
+test("the Goon's Drunk on an evil player offers to make the Goon evil", async ({ page }) => {
+	await startGame(page);
+	await choose(page, 1, 'Goon', true);
+	await choose(page, 2, 'Vigormortis');
+	const { picker } = await addReminder(page, 2, 'Goon', 'Drunk');
+	const ask = page.getByRole('alertdialog', { name: 'Make this player evil?' });
+	await expect(ask).toContainText(/Seat 1\s*Character\s*Goon/);
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+	await expect(await openSeat(page, 1)).toContainText(/Goon\s*Outsider · Evil · Seat 1/);
+});
