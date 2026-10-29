@@ -61,6 +61,8 @@ Cloudflare [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/buil
 - build command `if [ "$WORKERS_CI_BRANCH" = main ] || [ "$WORKERS_CI_BRANCH" = beta ]; then npm run build; else echo "Skipped: only main and beta build"; fi`, deploy command `npx wrangler deploy`: pushes to `main` deploy the `grim-games` Worker (production releases, merged from `beta`);
 - all day-to-day work goes on the `beta` branch. The non-production deploy command is `if [ "$WORKERS_CI_BRANCH" = beta ]; then npx wrangler preview; else echo "Skipped: only beta gets a preview"; fi`, so only `beta` gets a Preview and other branches skip both build and deploy, since each Preview holds its own Durable Object namespaces and the account allows 500. `wrangler preview` creates a [Worker Preview](https://developers.cloudflare.com/workers/previews/) named after the branch on the same Worker, with its own URL and its own Durable Object storage. The `previews` block in `wrangler.jsonc` repeats the bindings and vars previews need.
 
+Nothing deletes a Preview when its branch merges, so a branch Preview that slips through keeps its ten Durable Object namespaces for good. The `Preview cleanup` workflow (`scripts/delete-old-previews.ts`) deletes every Preview except beta's when a PR closes and every six hours. It needs the repository secret `CLOUDFLARE_API_TOKEN`, a Cloudflare API token with Workers Scripts: Edit; without it the workflow does nothing. Run it by hand from the Actions tab, with "dry run" to only list what it would delete.
+
 GitHub Actions (`.github/workflows/ci.yml`) only runs checks and tests.
 
 ## Build info and issue reports
