@@ -40,8 +40,7 @@
 				{
 					"do": "learn",
 					"info": {
-						"kind": "alignment-of",
-						"who": "chosen"
+						"measure": "chosen-alignment"
 					}
 				}
 			]

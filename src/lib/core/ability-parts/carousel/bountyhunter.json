@@ -26,9 +26,11 @@
 				{
 					"do": "learn",
 					"info": {
-						"kind": "evil-player"
-					},
-					"marks": "Know"
+						"measure": "evil-player",
+						"reminders": {
+							"each": "Know"
+						}
+					}
 				}
 			]
 		},
@@ -46,9 +48,11 @@
 						{
 							"do": "learn",
 							"info": {
-								"kind": "evil-player"
-							},
-							"marks": "Know"
+								"measure": "evil-player",
+								"reminders": {
+									"each": "Know"
+								}
+							}
 						}
 					]
 				}

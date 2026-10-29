@@ -167,6 +167,8 @@ interface Acc {
 	/** The character's first reminder its clauses mark, for a rule naming "its" token. */
 	firstMark?: ReminderLabel;
 	killsOthers: boolean;
+	/** Reminders a later learn places again (the Bounty Hunter's Know), so they move. */
+	relearned: Set<ReminderLabel>;
 }
 
 export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
@@ -177,7 +179,8 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 		ends: [],
 		holds: [],
 		firstMark: parts.clauses.find((c) => c.marks)?.marks,
-		killsOthers: false
+		killsOthers: false,
+		relearned: new Set()
 	};
 	const wakes = { firstNight: false, otherNight: false };
 
@@ -261,6 +264,7 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 			...(acc.ends.length ? { ends: acc.ends } : {}),
 			...(acc.holds.length ? { holds: acc.holds } : {})
 		};
+	for (const label of acc.relearned) acc.fixed.delete(label);
 	if (acc.fixed.size) rules.fixedReminders = [...acc.fixed].sort();
 	// A rule character's text states a rule, not its player's timing, so it has no Sort Order phrase.
 	const ruleCharacter = type === 'fabled' || type === 'loric';
@@ -304,8 +308,10 @@ function applyEffect(
 			const { info } = effect;
 			if ('measure' in info) rules.learns = { ...info };
 			else if ('question' in info) rules.answers = { ...info };
-			if ('measure' in info && when.at === 'night' && when.nights === 'first')
-				for (const label of Object.values(info.reminders ?? {})) acc.fixed.add(label);
+			const firstNight = when.at === 'night' && when.nights === 'first';
+			if ('measure' in info)
+				for (const label of Object.values(info.reminders ?? {}))
+					(firstNight ? acc.fixed : acc.relearned).add(label);
 			return;
 		}
 		case 'protect': {

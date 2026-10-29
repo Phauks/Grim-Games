@@ -9,6 +9,7 @@
  * TPI's ability phrasing ("Each night*", "Once per game, during the day", "choose a player")
  * and the wiki's Glossary; `derive.ts` turns clauses into the rules keys the app reads today.
  */
+import type { Learns } from '#lib/core/data/night-info-rules.ts';
 import type { SetupModifierRules } from '#lib/core/data/setup-modifier-rules.ts';
 import type { Alignment, CharacterType, ReminderLabel, SeatedType } from '#lib/core/data/types.ts';
 
@@ -270,23 +271,7 @@ export type Condition =
  * a subject's character or alignment; `grimoire` is seeing the whole Grimoire.
  */
 export type Info =
-	| {
-			measure:
-				| 'pair-of-type'
-				| 'evil-pairs'
-				| 'evil-alive-neighbours'
-				| 'demon-minion-steps'
-				| 'demon-or-token'
-				| 'good-player'
-				| 'one-evil-of-three'
-				| 'same-alignment'
-				| 'demon-in-pair';
-			type?: CharacterType;
-			token?: ReminderLabel;
-			noneWhenAbsent?: true;
-			/** Tokens to place: on the shown player, the second player, every player tapped. */
-			reminders?: { target?: ReminderLabel; other?: ReminderLabel; each?: ReminderLabel };
-	  }
+	| Learns
 	| {
 			question:
 				| 'executed-character'
@@ -311,8 +296,7 @@ export type Info =
 	/**
 	 * Info with no generator in the app yet (the gaps list in the design doc): how many chosen
 	 * woke tonight (Chambermaid), a good and an evil character one of which is right (Dreamer),
-	 * whether two players share an alignment (Seamstress), the Demon among two (Sage), a good
-	 * player and their character (Grandmother), which Outsiders are in play (Godfather), two
+	 * which Outsiders are in play (Godfather), two
 	 * statements one true (Savant), a yes or no answer (Artist), who chose them (the Demon
 	 * learns the Exorcist), each other (Evil Twin), and which of the Barista's effects it got.
 	 */
@@ -321,25 +305,13 @@ export type Info =
 				| 'woke-tonight'
 				| 'good-and-evil-character'
 				| 'same-alignment'
-				| 'good-player-and-character'
 				| 'outsiders-in-play'
 				| 'true-and-false-statements'
 				| 'yes-no-answer'
 				| 'who-chose'
 				| 'each-other'
 				| 'which-effect'
-				// Carousel Townsfolk: 2 players who aren't the Demon (Knight), which way the nearest
-				// evil player sits (Shugenja), an in-play Townsfolk (Pixie), an evil player (Bounty
-				// Hunter), a player of another character type than last night's (Balloonist), an
-				// alive character (King).
-				| 'not-the-demon'
-				| 'evil-direction'
-				| 'in-play-townsfolk'
-				| 'evil-player'
-				| 'different-type-player'
-				| 'alive-character'
 				| CarouselTownsfolkInfoKind
-
 				// Rule characters: the players a rule applies to, announced (Angel, Buddhist); how
 				// many of the marked players are evil (Duchess); any true info (Zenomancer).
 				| 'affected-players'
@@ -623,8 +595,8 @@ export type CarouselTownsfolkCondition =
 	| { characterIs: { who: Subject; id: string } }
 	| { today: 'own-nominee-executed' };
 
-/** Info with no generator: which player is the Demon (Choirboy), how close a guess was (Amnesiac). */
-export type CarouselTownsfolkInfoKind = 'demon-player' | 'guess-accuracy';
+/** Info with no generator: how close a guess was (Amnesiac). */
+export type CarouselTownsfolkInfoKind = 'guess-accuracy';
 
 /** Whose ability is gained: a Minion's (Alchemist), the executee's (Cannibal), one the Storyteller makes up (Amnesiac). */
 export type GainedAbilityOf = 'a-minion' | 'executed' | 'storyteller-choice';

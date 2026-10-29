@@ -11,7 +11,10 @@
 				{
 					"do": "learn",
 					"info": {
-						"kind": "not-the-demon"
+						"measure": "not-demon-pair",
+						"reminders": {
+							"each": "Know"
+						}
 					}
 				}
 			]

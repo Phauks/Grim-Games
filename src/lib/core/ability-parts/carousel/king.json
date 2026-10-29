@@ -31,7 +31,9 @@
 				{
 					"do": "learn",
 					"info": {
-						"kind": "alive-character"
+						"measure": "character-of",
+						"self": true,
+						"alive": true
 					}
 				}
 			]

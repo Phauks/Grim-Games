@@ -15,8 +15,8 @@
 				{
 					"do": "learn",
 					"info": {
-						"kind": "character-of",
-						"who": "chosen"
+						"measure": "character-of",
+						"self": true
 					}
 				}
 			]

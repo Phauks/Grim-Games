@@ -32,7 +32,11 @@
 				{
 					"do": "learn",
 					"info": {
-						"kind": "different-type-player"
+						"measure": "type-differs-from-token",
+						"token": "Know",
+						"reminders": {
+							"each": "Know"
+						}
 					}
 				}
 			]

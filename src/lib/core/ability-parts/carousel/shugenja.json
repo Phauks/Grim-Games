@@ -10,7 +10,7 @@
 				{
 					"do": "learn",
 					"info": {
-						"kind": "evil-direction"
+						"measure": "closest-evil-direction"
 					}
 				}
 			]

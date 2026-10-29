@@ -11,7 +11,11 @@
 				{
 					"do": "learn",
 					"info": {
-						"kind": "in-play-townsfolk"
+						"measure": "character-of",
+						"types": ["townsfolk"],
+						"reminders": {
+							"target": "Mad"
+						}
 					}
 				}
 			]
