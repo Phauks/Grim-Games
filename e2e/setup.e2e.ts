@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
-import { pickScript, toBoard, pastGameSettings } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
@@ -10,7 +10,6 @@ async function selectionFor(page: Page, players: number, script = 'Trouble Brewi
 	await page.goto('/new');
 	await pickScript(page, script);
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await pastGameSettings(page);
 	// A new game opens on character selection (G7), where the count is set (Trevor, 2026-10-28).
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
@@ -55,8 +54,8 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 		expect(back!.x).toBeLessThan(next!.x);
 		return { back, next };
 	};
-	// Before any character is dealt, Back goes to Game settings; the board is one tap away.
-	await expect(bar.getByRole('button', { name: 'Game settings' })).toBeVisible();
+	// Before any character is dealt, Back goes to New game; the board is one tap away.
+	await expect(bar.getByRole('button', { name: 'New game' })).toBeVisible();
 	await expect(bar.getByTestId('setup-to-board')).toBeVisible();
 	await expect(bar.getByRole('button', { name: 'Build bag' })).toBeVisible();
 	const onCharacters = await barButtons();
@@ -261,7 +260,6 @@ test('Stowed Away: up to 2 Travellers count in the bag, the rest for fewer playe
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Create game' })
 		.tap();
-	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);
@@ -813,7 +811,6 @@ test.describe('in a computer window', () => {
 		await page.goto('/new');
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
 		await page.getByRole('button', { name: 'Create game' }).click();
-		await pastGameSettings(page);
 		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
 
@@ -945,7 +942,6 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	await page.goto('/new');
 	await pickScript(page, 'Jinx Check');
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await toBoard(page);
@@ -1295,7 +1291,6 @@ test('a Teensyville script greys out player counts above 6 but still allows them
 	await page.goto('/new');
 	await pickScript(page, 'Tiny Town');
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const table = page.getByTestId('setup-table');
 	await expect(table.locator('thead th[data-too-many]')).toHaveCount(9);

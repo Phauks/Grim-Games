@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import SetupNav from '#lib/features/setup/SetupNav.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -51,6 +52,8 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
+	import { seedStartSettings } from '#lib/features/game-settings/start-settings.ts';
+	import { backFromSetup, backFromSetupLabel } from './back-step.ts';
 	import { dealTitle } from './deal-title.ts';
 	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
 	import { readGameMode } from './game-mode-store.ts';
@@ -145,6 +148,11 @@
 	let choosing = $state(false);
 	let revealing = $state<{ seatId: SeatId; character: Character; tile: number } | undefined>();
 	let revealOpen = $state(false);
+	// The start flow's game settings, as Character selection seeds them (Trevor, 2026-10-29).
+	$effect(() => {
+		const id = gameId;
+		untrack(() => seedStartSettings(id));
+	});
 	$effect.pre(() => {
 		if (progress) return;
 		progress = readDeal(gameId) ?? fresh();
@@ -465,9 +473,9 @@
 	<!-- The start flow's bar (Trevor, 2026-10-23): Back to New game as it was, until a tile is
 	     drawn; Restart starts the deal over after that. -->
 	<SetupNav
-		backHref={resolve('/grimoire/[gameId]/game-settings', { gameId })}
+		onBack={() => void backFromSetup(gameId)}
 		backDisabled={picks.length > 0 || held !== undefined}
-		backLabel={t('setup.gameSettings')}
+		backLabel={backFromSetupLabel(gameId)}
 	>
 		{#snippet next()}
 			<span class="footer">

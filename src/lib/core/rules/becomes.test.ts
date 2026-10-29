@@ -175,7 +175,7 @@ describe('a character that changes a chosen player (changesCharacter)', () => {
 
 	it('is the Summoner, the Pit-Hag and the Huntsman', () => {
 		const changers = [...OFFICIAL_RULES].filter(([, r]) => r.changesCharacter).map(([id]) => id);
-		expect(changers.sort()).toEqual(['huntsman', 'pithag', 'summoner']);
+		expect(changers.sort()).toEqual(['engineer', 'hatter', 'huntsman', 'pithag', 'summoner']);
 	});
 
 	it('asks on the night its token is on its own living player', () => {
@@ -226,6 +226,29 @@ describe('a character that changes a chosen player (changesCharacter)', () => {
 		expect(changeableSeats(session.game, 'huntsman', characters)).toEqual([seats[1]]);
 		const used = castGame(['huntsman', 'damsel', 'empath'], remind(0, 'huntsman', 'No Ability'));
 		expect(characterChanger(used.session.game, 'huntsman', characters)).toBeUndefined();
+	});
+
+	// https://wiki.bloodontheclocktower.com/Hatter: if it died today or tonight, each Minion and
+	// Demon player may become another character of their own type.
+	it('asks for the dead Hatter, and changes only the Minions and Demon', () => {
+		const { session, seats } = castGame(['hatter', 'chef', 'poisoner', 'imp'], dead(0));
+		expect(characterChanger(session.game, 'hatter', characters)).toBe(seats[0]);
+		expect(changeableSeats(session.game, 'hatter', characters)).toEqual(seats.slice(2));
+		const none = castGame(['hatter', 'chef', 'empath'], dead(0));
+		expect(characterChanger(none.session.game, 'hatter', characters)).toBeUndefined();
+	});
+
+	// https://wiki.bloodontheclocktower.com/Engineer: once per game it chooses which Minions or
+	// which Demon are in play; the evil players keep their type, and No Ability marks it used.
+	it('asks the living Engineer to change the Minions or Demon, until No Ability', () => {
+		const { session, seats } = castGame(['engineer', 'chef', 'poisoner', 'imp']);
+		expect(characterChanger(session.game, 'engineer', characters)).toBe(seats[0]);
+		expect(changeableSeats(session.game, 'engineer', characters)).toEqual(seats.slice(2));
+		const used = castGame(
+			['engineer', 'chef', 'poisoner', 'imp'],
+			remind(0, 'engineer', 'No Ability')
+		);
+		expect(characterChanger(used.session.game, 'engineer', characters)).toBeUndefined();
 	});
 
 	// A homebrew Minion that turns a chosen player into an Outsider each night: its rules block
