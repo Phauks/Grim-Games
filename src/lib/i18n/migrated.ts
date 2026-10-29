@@ -27,6 +27,8 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/savant/',
 	'src/lib/features/account/',
 	'src/routes/account/',
+	'src/lib/features/friends/',
+	'src/routes/friends/',
 	'src/lib/features/scripts/',
 	'src/routes/scripts/',
 	'src/lib/features/script-builder/',

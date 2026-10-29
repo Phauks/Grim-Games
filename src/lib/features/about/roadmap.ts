@@ -162,6 +162,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title:
 			'Custom characters that follow their own rules: kill, protect, drunk and poison, win conditions, night information',
+		parts: ['L74'],
 		prs: [410, 420, 429, 445, 459, 460, 462, 463, 465, 472, 482, 485, 488, 491]
 	},
 	{
@@ -230,6 +231,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		later: true
 	},
 	{ title: 'Co-Storytelling: two Storytellers on one game', parts: ['Y2'], later: true },
+	{
+		// Trevor approved the plan 2026-10-29 (https://claude.ai/artifact/8ahBpAozQZ3UUpxVQ5QVoT).
+		title: 'Friends: add friends, see who you played with, invite them to games',
+		parts: ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8']
+	},
 	{
 		title: 'Achievements and laurels, and History stats',
 		parts: ['A1a', 'A1d', 'A1'],
