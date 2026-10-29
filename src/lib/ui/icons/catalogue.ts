@@ -108,6 +108,7 @@ export const ICON_SLOTS = {
 	unlink: { label: 'Unlink', choices: ['ph:link-break', 'ph:link-simple-break'] },
 	quickPlay: { label: 'Play script', choices: ['ph:play', 'ph:play-circle'] },
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
+	switchBuild: { label: 'Switch build', choices: ['ph:arrows-left-right', 'ph:swap'] },
 	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },
 	glossary: { label: 'Glossary', choices: ['ph:book-open-text', 'ph:list-magnifying-glass'] },
 	warning: { label: 'Warning', choices: ['ph:warning', 'ph:warning-circle'] },
