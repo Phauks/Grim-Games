@@ -209,6 +209,22 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await phoneContext.close();
 });
 
+test('a room closed while the phone was away is not listed under As player', async ({ page }) => {
+	// Trevor, 2026-10-29: a closed game is removed; what happened in it is in History.
+	await page.addInitScript(() =>
+		localStorage.setItem(
+			'grim-games:room-recent',
+			JSON.stringify([{ code: '000001', script: 'Trouble Brewing', at: Date.now() }])
+		)
+	);
+	await page.goto('/join');
+	// Looked up and found closed, it is forgotten and leaves the list.
+	await expect
+		.poll(() => page.evaluate(() => localStorage.getItem('grim-games:room-recent')))
+		.toBe('[]');
+	await expect(page.getByTestId('recent-rooms')).toHaveCount(0);
+});
+
 test('End game keeps the room open and tells its phones the game is over', async ({
 	page,
 	browser
