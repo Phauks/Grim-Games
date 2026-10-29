@@ -5,19 +5,18 @@
  * - https://wiki.bloodontheclocktower.com/Glossary (Dusk, Dawn)
  */
 import { describe, expect, it } from 'vitest';
-import { committedGameData, committedNumericNightOrder } from '#lib/core/testing/committed-data.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	characterReference,
-	compareNightOrders,
 	fullNightOrder,
+	nightPositions,
 	matchesReference,
 	referenceText,
 	sheetPosition
 } from './reference.ts';
 
 const data = committedGameData();
-const numeric = committedNumericNightOrder();
-const entries = characterReference(data, numeric);
+const entries = characterReference(data);
 const entry = (id: string) => entries.find((e) => e.character.id === id)!;
 const name = (id: string) => data.byId.get(id)?.name ?? id;
 
@@ -53,7 +52,6 @@ describe('characterReference', () => {
 		expect(witch.jinxes).toEqual([]);
 		expect(witch.firstNight.position).toBe(data.nightSheet.firstNight.indexOf('witch') + 1);
 		expect(witch.otherNight.position).toBe(data.nightSheet.otherNight.indexOf('witch') + 1);
-		expect(witch.firstNight.number).toBe(numeric.firstNight.get('witch'));
 		expect(witch.firstNight.text).toBe(data.byId.get('witch')!.firstNightReminder);
 		const texts = witch.dayReminders.map((r) => referenceText(r.segments, name));
 		expect(texts).toContain('[Witch] has chosen [player with “Cursed”]');
@@ -80,24 +78,12 @@ describe('characterReference', () => {
 	});
 });
 
-describe('compareNightOrders', () => {
-	it('flags missing numbers, numbers off the sheet and out-of-order numbers', () => {
-		const numbers = new Map([
-			['a', 10],
-			['c', 5],
-			['d', 30],
-			['z', 99]
-		]);
-		const out = compareNightOrders(['dusk', 'a', 'b', 'c', 'd', 'dawn'], numbers);
-		expect(out.get('dusk')).toEqual({ position: 1, issues: [] });
-		expect(out.get('b')!.issues).toEqual(['On TPI’s night sheet but has no provisional number.']);
-		expect(out.get('a')!.issues[0]).toMatch(/different place/);
-		expect(out.get('c')!.issues[0]).toMatch(/different place/);
-		expect(out.get('d')).toEqual({ position: 5, number: 30, issues: [] });
-		expect(out.get('z')).toEqual({
-			number: 99,
-			issues: ['Has a provisional number but is not on TPI’s night sheet.']
-		});
+describe('nightPositions', () => {
+	it('numbers each step from 1, counting Dusk', () => {
+		const out = nightPositions(['dusk', 'a', 'b', 'dawn']);
+		expect(out.get('dusk')).toBe(1);
+		expect(out.get('b')).toBe(3);
+		expect(out.get('z')).toBeUndefined();
 	});
 });
 
@@ -118,14 +104,14 @@ describe('matchesReference', () => {
 describe('fullNightOrder', () => {
 	it('starts at Dusk and keeps TPI order, with announcements after Dawn', () => {
 		for (const night of ['first', 'other'] as const) {
-			const steps = fullNightOrder(data, night, numeric).steps;
+			const steps = fullNightOrder(data, night).steps;
 			expect(steps[0].id).toBe('dusk');
 			const dawn = steps.findIndex((s) => s.id === 'dawn');
 			expect(steps.slice(dawn + 1).every((s) => s.afterDawn)).toBe(true);
 			const positions = steps.map((s) => sheetPosition(data.nightSheet, night, s.id)!);
 			expect(positions).toEqual([...positions].sort((a, b) => a - b));
 		}
-		const first = fullNightOrder(data, 'first', numeric).steps.map((s) => s.id);
+		const first = fullNightOrder(data, 'first').steps.map((s) => s.id);
 		expect(first).toContain('minioninfo');
 		expect(first).toContain('demoninfo');
 	});

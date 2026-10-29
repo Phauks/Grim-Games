@@ -1,11 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { LoadedScript, NumericNightOrder } from '#lib/core/data/index.ts';
-	import {
-		loadNumericNightOrder,
-		loadOfficialData,
-		officialData
-	} from '#lib/features/characters/game-data.svelte.ts';
+	import type { LoadedScript } from '#lib/core/data/index.ts';
+	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import { playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
@@ -36,12 +32,8 @@
 
 	let { script, version, settings = PRINT_DEFAULTS }: Props = $props();
 
-	let numeric = $state<NumericNightOrder>();
 	$effect(() => {
 		if (!officialData.current) void loadOfficialData();
-		void loadNumericNightOrder()
-			.then((n) => (numeric = n))
-			.catch(() => undefined);
 	});
 	const data = $derived(officialData.current);
 	const characters = $derived(data ? sheetCharacters(script, data) : []);
@@ -52,7 +44,7 @@
 		settings.back === 'info' ? characters.filter((c) => !ruleCharacter(c)) : characters
 	);
 	const nights = $derived(
-		data ? (['first', 'other'] as const).map((n) => playerNight(script, data, n, numeric)) : []
+		data ? (['first', 'other'] as const).map((n) => playerNight(script, data, n)) : []
 	);
 
 	const LAYOUTS: readonly [1 | 2, SheetDensity][] = [
@@ -93,7 +85,7 @@
 
 	/** Lays both sides out to one page each; call once the sheet and its icons have loaded. */
 	export async function fit() {
-		await loadNumericNightOrder().catch(() => undefined);
+		await loadOfficialData().catch(() => undefined);
 		await tick();
 		if (front) {
 			frontZoom = 1;

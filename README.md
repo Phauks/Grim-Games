@@ -78,8 +78,6 @@ Every page footer shows the version, commit, branch, channel (`production`, `pre
 
 `npm run sync:data` refreshes it from a shallow git checkout of botc-release `main` (`-- --ref <sha>` pins a commit, `-- --source <dir>` uses a local checkout). It validates everything with the parsers in `src/lib/core/data` first and fails without writing if TPI's format has changed. With no upstream change it leaves no diff. The `Data sync` workflow runs it every Monday and opens or updates a pull request when something changed; `src/lib/core/data/tpi-data.test.ts` pins the expected counts, so update it after reviewing the change.
 
-`night-order-provisional.json` is a one-off snapshot of numeric night positions from [Official-Data-Sync](https://github.com/Phauks/Blood-on-the-Clocktower---Official-Data-Sync) (`npm run snapshot:night-order`), marked provisional: TPI's `nightsheet.json` order is the source of truth and this file is to be replaced, not maintained. Its `_meta.disagreements` lists where it differs from TPI.
-
 In code, load the files with `loadGameData` from `#lib/core/data/index.ts`; it maps TPI's `team` field to our character `type`.
 
 ## Data and acknowledgements

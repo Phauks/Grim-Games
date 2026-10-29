@@ -114,31 +114,3 @@ describe('committed TPI data', () => {
 		}
 	});
 });
-
-describe('provisional night order', () => {
-	const file = readJson('night-order-provisional.json') as Record<
-		string,
-		{ firstNight?: number; otherNight?: number; status?: string }
-	> & { _meta: { status: string } };
-	const { _meta, ...positions } = file;
-
-	it('is marked provisional', () => {
-		expect(_meta.status).toBe('provisional');
-	});
-
-	it('only numbers characters on the nights TPI lists them, in TPI order', () => {
-		for (const night of ['firstNight', 'otherNight'] as const) {
-			const listed = new Set(data.nightSheet[night]);
-			for (const [id, entry] of Object.entries(positions)) {
-				expect(data.byId.has(id), id).toBe(true);
-				if (entry[night] !== undefined) expect(listed.has(id), `${id} ${night}`).toBe(true);
-			}
-			const numbers = data.nightSheet[night]
-				.map((id) => positions[id]?.[night])
-				.filter((n): n is number => n !== undefined);
-			expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
-		}
-		// The example from 05-spike-results.md S8.
-		expect(positions.chef).toEqual({ firstNight: 126 });
-	});
-});
