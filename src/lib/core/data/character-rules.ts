@@ -214,6 +214,12 @@ export interface CharacterRules extends ChoiceRules {
 	 */
 	makesExtraEvil?: boolean;
 	/**
+	 * While it is in play there can't be more than 1 extra evil player (the Spirit of Ivory,
+	 * https://wiki.bloodontheclocktower.com/Spirit_of_Ivory): turning a second good-type
+	 * player evil warns, never blocks.
+	 */
+	limitsExtraEvil?: true;
+	/**
 	 * Its information rule (`false-info-rules.ts`): these types' information must be false.
 	 */
 	falseInfo?: FalseInfo;
@@ -349,6 +355,7 @@ const RULE_KEYS = [
 	'swapsCharacters',
 	'infoTokenCharacters',
 	'makesExtraEvil',
+	'limitsExtraEvil',
 	'falseInfo',
 	'jinxesOnly',
 	'createsDemon',
@@ -581,6 +588,7 @@ export function parseCharacterRules(
 		const filled = readInfoTokenCharacters(raw.infoTokenCharacters, at, issues);
 		if (filled) rules.infoTokenCharacters = filled;
 	}
+	if (readBoolean(raw, 'limitsExtraEvil', path, issues)) rules.limitsExtraEvil = true;
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
 	if (raw.falseInfo !== undefined) {

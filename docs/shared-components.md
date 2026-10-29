@@ -184,7 +184,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new): `dayMark`, moved
 - Night information and answers (`night-info.ts`): `learns`, `answers`, moved
 - Game end (`game-end.ts`, `end-reason.ts`): `gameEnd`, moved
-- Extra evil makers (`modes/draft.ts` Ivory draft; the kind the Spirit of Ivory limits; new): `makesExtraEvil`, new
+- Extra evil makers (`modes/draft.ts` Ivory draft; the kind the Spirit of Ivory limits; new): `makesExtraEvil`, new. The limit itself (the Spirit of Ivory: a second good-type player turned evil warns, `SetAlignment` in `engine/decide/characters.ts`): `limitsExtraEvil`, new
 - Hidden character it may really be (`modes/draft.ts`, the Atheist's Drunk; new): `orHiddenAs`, new
 - Gained not-in-play ability (`modes/draft.ts`, the Alchemist's Minion; new): `gainsAbilityOf`, new
 - Players turned into another type (`modes/draft-seats.ts`: Kazali, Lord of Typhon, Lil' Monsta): `turnsPlayersInto`, new
