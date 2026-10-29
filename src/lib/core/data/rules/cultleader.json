@@ -21,5 +21,6 @@
 	"deathCause": {
 		"none": "changes alignment; win condition"
 	},
-	"makesExtraEvil": true
+	"makesExtraEvil": true,
+	"takesNeighbourAlignment": true
 }

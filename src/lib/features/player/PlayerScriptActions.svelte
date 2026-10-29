@@ -30,9 +30,14 @@
 		 * every button a phone in `room` has shows here too, without acting as a player of it.
 		 */
 		storyteller?: boolean;
+		/**
+		 * Continue game's code form, before this phone is in a room, shows no cog: the app's
+		 * sidebar already opens Settings there (Trevor, 2026-10-29).
+		 */
+		cog?: boolean;
 	}
 
-	let { script, version, share, room, joined, storyteller = false }: Props = $props();
+	let { script, version, share, room, joined, storyteller = false, cog = true }: Props = $props();
 	const target = $derived.by(() => {
 		if (!share) return undefined;
 		const from = share;
@@ -56,4 +61,4 @@
 		{room}
 	/>
 {/if}
-<YouButton room={joined} />
+{#if cog}<YouButton room={joined} />{/if}

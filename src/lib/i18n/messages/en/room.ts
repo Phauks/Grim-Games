@@ -58,7 +58,6 @@ export const room = {
 	'room.asPlayer': 'As player',
 	'room.asStoryteller': 'As Storyteller',
 	'room.recentLine': '{code} · Storyteller: {name}',
-	'room.recentClosed': '{code} · Closed',
 	'room.settingsNamed': 'Settings: {name}',
 	'room.joining': 'Joining the room…',
 	'room.playerOffline': 'Offline: reconnecting…',

@@ -5,9 +5,9 @@
  * Storyteller confirms it or leaves the player as they are.
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import type { CharacterId } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { aliveNeighbours, alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 
 /**
@@ -120,4 +120,26 @@ export function swappableSeats(
 		const type = typeOf(game, id, characters);
 		return type !== undefined && !(rule.notTypes as readonly string[] | undefined)?.includes(type);
 	});
+}
+
+/**
+ * The alignments `characterId`'s player may take tonight (`takesNeighbourAlignment`: the Cult
+ * Leader, https://wiki.bloodontheclocktower.com/Cult_Leader): its living player, and the
+ * alignments of their living neighbours, one when both agree, both when they differ (the
+ * Storyteller picks). None without such a player or a neighbour with an alignment.
+ */
+export function neighbourAlignments(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): { seatId: SeatId; alignments: Alignment[] } | undefined {
+	if (!rulesOf(characterId, characters)?.takesNeighbourAlignment) return undefined;
+	const seatId = game.seating.find(
+		(id) => !game.seats[id].dead && trueCharacter(game, id, characters) === characterId
+	);
+	if (seatId === undefined) return undefined;
+	const alignments = [
+		...new Set(aliveNeighbours(game, seatId).flatMap((id) => alignmentOf(game, id) ?? []))
+	].sort();
+	return alignments.length ? { seatId, alignments } : undefined;
 }
