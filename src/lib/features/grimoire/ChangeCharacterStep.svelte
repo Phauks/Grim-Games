@@ -2,7 +2,7 @@
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
-	import { alignmentOf, trueCharacter, type SeatId } from '#lib/core/model/index.ts';
+	import { alignmentOf, trueCharacter, typeOf, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		changeableSeats,
 		characterChanger,
@@ -25,7 +25,9 @@
 	 *
 	 * A step that swaps two players' characters (`swapsCharacters`: the Barber's haircuts,
 	 * https://wiki.bloodontheclocktower.com/Barber) picks the two players instead; each keeps
-	 * their alignment, and each is shown their new character.
+	 * their alignment, and each is shown their new character. The Hatter's tea party
+	 * (`sameType`, https://wiki.bloodontheclocktower.com/Hatter) lets each Minion and Demon
+	 * player change in turn, each into another character of their own type.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -91,10 +93,11 @@
 	let seatOpen = $state(false);
 	let characterOpen = $state(false);
 	let chosen = $state<SeatId>();
-	let made = $state<{ seatId: SeatId; characterId: CharacterId }>();
+	// Each change made tonight; the Hatter's Minions and Demon may each change (`sameType`).
+	let made = $state<{ seatId: SeatId; characterId: CharacterId }[]>([]);
 	$effect.pre(() => {
 		void step.id;
-		made = undefined;
+		made = [];
 		swapped = undefined;
 	});
 
@@ -114,8 +117,14 @@
 			characterId,
 			...(rule?.alignment ? { alignment: rule.alignment } : {})
 		};
-		if (grimoire.run(command)) made = { seatId, characterId };
+		if (grimoire.run(command))
+			made = [...made.filter((m) => m.seatId !== seatId), { seatId, characterId }];
 	}
+	// With `sameType`, the chosen player picks from their own type, not their own character.
+	const chosenType = $derived(chosen ? typeOf(game, chosen, characters) : undefined);
+	const pickTypes = $derived(rule?.sameType && chosenType ? [chosenType] : (rule?.types ?? []));
+	const chosenOwn = $derived(chosen ? trueCharacter(game, chosen, characters) : undefined);
+	const left = $derived(rule?.sameType && chosenOwn ? [...inPlay, chosenOwn] : inPlay);
 	const playerName = (seatId: SeatId) => seatName(game, seatId);
 </script>
 
@@ -164,13 +173,15 @@
 	/>
 {/if}
 
-{#if rule && (changer || made)}
+{#if rule && (changer || made.length)}
 	<h3>{onlyDemons ? 'New Demon' : 'New character'}</h3>
 	<div class="row" data-testid="change-character">
-		{#if made}
-			{@render newCharacter(made.seatId, made.characterId)}
+		{#each made as change (change.seatId)}
+			{@render newCharacter(change.seatId, change.characterId)}
 		{:else}
 			<span class="none">None</span>
+		{/each}
+		{#if !made.length || (rule.sameType && changer)}
 			<Button variant="quiet" onclick={() => (seatOpen = true)}>Choose</Button>
 		{/if}
 	</div>
@@ -187,8 +198,8 @@
 		title={onlyDemons ? 'Choose a Demon' : 'Choose a character'}
 		{characters}
 		script={game.script}
-		types={rule.types}
-		exclude={inPlay}
+		types={pickTypes}
+		exclude={left}
 		onPick={chooseCharacter}
 	/>
 {/if}

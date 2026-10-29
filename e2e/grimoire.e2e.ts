@@ -6720,6 +6720,62 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 	await expect(await openSeat(page, 3)).toContainText(/Chef\s*Townsfolk · Evil · Seat 3/);
 });
 
+// https://wiki.bloodontheclocktower.com/Hatter: if it died today or tonight, each Minion and
+// Demon player may choose another character of their own type to become.
+test("the Hatter's step lets each Minion and Demon become another of their type", async ({
+	page
+}) => {
+	// Two nights and four seats to cast.
+	test.slow();
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Hatter'],
+		[2, 'Chef'],
+		[3, 'Poisoner'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		const button = picker.getByRole('button', { name, exact: true });
+		// The picker keeps its "not on the script" switch between seats.
+		if (!(await button.count()))
+			await picker.getByText('Include characters not on the script').tap();
+		await button.tap();
+		await closeSheet(page);
+	}
+	await walkTo(page, 'Dusk');
+	await nextNight(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await closeSheet(page);
+
+	const strip = await walkTo(page, 'Hatter');
+	await strip.locator('button.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Hatter' });
+	await expect(step).toBeVisible();
+	const change = step.getByTestId('change-character');
+	await expect(change).toContainText('None');
+	await change.getByRole('button', { name: 'Choose' }).tap();
+	const seats = page.getByRole('dialog', { name: 'Changes character' });
+	await expect(seats.getByRole('button', { name: /Seat 2/ })).toHaveCount(0);
+	await expect(seats.getByRole('button', { name: /Seat 4/ })).toBeVisible();
+	await seats.getByRole('button', { name: /Seat 3/ }).tap();
+	const minions = page.getByRole('dialog', { name: 'Choose a character' });
+	await expect(minions.getByRole('button', { name: 'Poisoner', exact: true })).toHaveCount(0);
+	await expect(minions.getByRole('button', { name: 'Chef', exact: true })).toHaveCount(0);
+	await minions.getByRole('button', { name: 'Spy', exact: true }).tap();
+	await expect(change).toContainText('Spy');
+	// The Demon may still change.
+	await expect(change.getByRole('button', { name: 'Choose' })).toBeVisible();
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(await openSeat(page, 3)).toContainText(/Spy\s*Minion · Evil · Seat 3/);
+});
+
 // https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it points at a player and at
 // a Demon on the character sheet; that player becomes the evil Demon.
 test("the Summoner's Night 3 step makes the chosen player the Demon it points at", async ({

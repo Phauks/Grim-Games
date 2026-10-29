@@ -33,5 +33,9 @@
 	"reminderMovement": {
 		"why": "Marks tonight’s tea party.",
 		"relocates": "lets players change characters"
+	},
+	"changesCharacter": {
+		"types": ["minion", "demon"],
+		"sameType": true
 	}
 }

@@ -72,7 +72,10 @@ export function readBecomes(
  * - `token`: only on a night its own token marks (the Summoner's Night 3);
  * - `spent`: not once its own token says it was used (the Huntsman's No Ability);
  * - `onlyFrom`: only a player of one of these characters changes (the Huntsman's Damsel,
- *   https://wiki.bloodontheclocktower.com/Huntsman).
+ *   https://wiki.bloodontheclocktower.com/Huntsman);
+ * - `sameType`: each player of one of `types` may change, into another character of their own
+ *   type (the Hatter's tea party, https://wiki.bloodontheclocktower.com/Hatter). A character
+ *   whose rules say it acts when dead (`actsWhenDead`) offers it from a dead player too.
  */
 export interface ChangesCharacter {
 	types: readonly SeatedType[];
@@ -81,6 +84,7 @@ export interface ChangesCharacter {
 	token?: ReminderLabel;
 	spent?: ReminderLabel;
 	onlyFrom?: readonly CharacterId[];
+	sameType?: true;
 }
 
 /** Reads a `changesCharacter` block; its tokens must be among the character's `reminders`. */
@@ -94,7 +98,12 @@ export function readChangesCharacter(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['types', 'notInPlay', 'alignment', 'token', 'spent', 'onlyFrom'], path, issues);
+	checkKeys(
+		raw,
+		['types', 'notInPlay', 'alignment', 'token', 'spent', 'onlyFrom', 'sameType'],
+		path,
+		issues
+	);
 	const types = (readStringArray(raw, 'types', path, issues) ?? []).filter((t, i) => {
 		const ok = (SEATED_TYPES as readonly string[]).includes(t);
 		if (!ok) issues.add(`${path}.types[${i}]`, `unknown value ${JSON.stringify(t)}`);
@@ -106,6 +115,7 @@ export function readChangesCharacter(
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const spent = readToken(raw, 'spent', path, issues, reminders);
 	const onlyFrom = readStringArray(raw, 'onlyFrom', path, issues);
+	const sameType = readBoolean(raw, 'sameType', path, issues);
 	if (types.length === 0) return undefined;
 	return {
 		types,
@@ -113,7 +123,8 @@ export function readChangesCharacter(
 		...(alignment ? { alignment } : {}),
 		...(token ? { token } : {}),
 		...(spent ? { spent } : {}),
-		...(onlyFrom?.length ? { onlyFrom } : {})
+		...(onlyFrom?.length ? { onlyFrom } : {}),
+		...(sameType ? { sameType: true as const } : {})
 	};
 }
 
