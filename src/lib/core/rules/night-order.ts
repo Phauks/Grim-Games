@@ -12,9 +12,11 @@
  *   Toymaker is in play (https://wiki.bloodontheclocktower.com/Toymaker).
  * - A script's `_meta.firstNight` / `_meta.otherNight` replaces the order (TPI
  *   `script-schema.json`); characters it leaves out keep their standard place.
- * - Homebrew characters with no place on the sheet go just before Dawn, to be checked. A
- *   numeric `firstNight` / `otherNight` only says that they wake: TPI publishes no numbers
- *   for official characters to match it against.
+ * - Homebrew characters with no place on the sheet are placed by their ability text, beside
+ *   the official characters most like them (`core/night-placement`, L74), with the reason as
+ *   a note to check; without the official characters to compare, just before Dawn. A numeric
+ *   `firstNight` / `otherNight` only says that they wake: TPI publishes no numbers for
+ *   official characters to match it against.
  */
 import {
 	NIGHT_MARKERS,
@@ -24,6 +26,12 @@ import {
 	type NightSheet
 } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
+import {
+	placementReason,
+	recommendPlacement,
+	textSignature,
+	type Night as SheetNight
+} from '#lib/core/night-placement/index.ts';
 import type { AbilityState } from './ability.ts';
 import type { GainedAbility } from './gained-abilities.ts';
 import type { NightStepInfo } from './night-info.ts';
@@ -42,6 +50,8 @@ export interface NightOrderInput {
 	customOrder?: readonly string[];
 	/** The Storyteller's changes to this night's steps (see `NightStepOverride`). */
 	overrides?: readonly NightStepOverride[];
+	/** The official characters by id, to place a homebrew one beside those most like it. */
+	official?: ReadonlyMap<CharacterId, Character>;
 }
 
 /**
@@ -177,6 +187,43 @@ interface Candidate {
 	notes: string[];
 }
 
+/** Each official character's signature from its ability text, by night (they never change). */
+const signatures = new Map<string, Set<string>>();
+function signatureOf(character: Character, night: SheetNight): Set<string> {
+	const key = `${night}:${character.id}:${character.ability}`;
+	let signature = signatures.get(key);
+	if (!signature)
+		signatures.set(key, (signature = textSignature(character.ability, character.type, night)));
+	return signature;
+}
+
+/**
+ * Where a homebrew character goes on TPI's sheet, from its ability text: the index of the
+ * sheet step it goes in front of, and why. Undefined without the official characters.
+ */
+function placeByAbility(
+	input: NightOrderInput,
+	character: Character
+): { index: number; reason: string } | undefined {
+	const { official } = input;
+	if (!official) return undefined;
+	const night: SheetNight = input.night === 'first' ? 'firstNight' : 'otherNight';
+	const sheet = input.sheet[night];
+	const known = (id: string) => {
+		const other = official.get(id);
+		return other ? signatureOf(other, night) : undefined;
+	};
+	const placed = recommendPlacement(
+		textSignature(character.ability, character.type, night),
+		night,
+		sheet,
+		known
+	);
+	if (!placed) return undefined;
+	const reason = placementReason(placed, (id) => official.get(id)?.name ?? id);
+	return { index: placed.index, reason };
+}
+
 /** The standard order (no custom `_meta` order) for the given steps. */
 function standardOrder(
 	input: NightOrderInput,
@@ -212,18 +259,25 @@ function standardOrder(
 				notes: []
 			});
 		} else {
+			const placed = placeByAbility(input, character);
+			const where = placed
+				? `${placed.reason}.`
+				: ownNumber === undefined
+					? 'Has no place on the night sheet; placed just before Dawn.'
+					: 'Placed just before Dawn.';
+			const number =
+				ownNumber === undefined
+					? ''
+					: `Has night number ${ownNumber}, which cannot be matched to the official night sheet. `;
 			candidates.push({
 				id: character.id,
 				character,
-				pos: dawnPos,
+				// Between the sheet step before it and the one it goes in front of.
+				pos: placed ? placed.index - 0.5 : dawnPos,
 				rank: 1,
 				seq: seq++,
 				placement: 'unplaced',
-				notes: [
-					ownNumber !== undefined
-						? `Has night number ${ownNumber}, which cannot be matched to the official night sheet; placed just before Dawn. Check the order.`
-						: 'Has no place on the night sheet; placed just before Dawn.'
-				]
+				notes: [`${number}${where} Check the order.`]
 			});
 		}
 	}

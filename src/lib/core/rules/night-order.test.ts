@@ -211,6 +211,35 @@ describe('homebrew characters', () => {
 		expect(r2.steps[4].notes[0]).toContain('Check the order');
 	});
 
+	// L74: with the official characters to compare, a homebrew step goes by its ability text
+	// into its band of the night, beside the official characters most like it; the note says
+	// why. Worded as the Monk is (https://wiki.bloodontheclocktower.com/Monk).
+	it('places homebrew by its ability text beside the official characters most like it', () => {
+		const warden = homebrew({
+			ability: 'Each night*, choose a player (not yourself): they are safe from the Demon tonight.',
+			otherNightReminder: 'The Storm Warden chooses a player.'
+		});
+		const steps = order({
+			night: 'other',
+			official: data.byId,
+			inPlay: [warden, ...get('poisoner', 'monk', 'imp', 'empath')]
+		}).steps;
+		expect(steps.map((s) => s.id)).toEqual([
+			'dusk',
+			'poisoner',
+			'stormwarden',
+			'monk',
+			'imp',
+			'empath',
+			'dawn'
+		]);
+		const step = steps.find((s) => s.id === 'stormwarden')!;
+		expect(step.placement).toBe('unplaced');
+		expect(step.notes[0]).toMatch(
+			/^Before the abilities it can poison, protect or take away, near the .*\. Check the order\.$/
+		);
+	});
+
 	it('wakes on number alone, and notes the missing text', () => {
 		const steps = order({ inPlay: [homebrew({ firstNight: 100 })] }).steps;
 		expect(steps.find((s) => s.id === 'stormwarden')?.notes).toContain(
