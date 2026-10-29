@@ -6584,6 +6584,57 @@ test("with The Djinn's Bargain, a nomination asks whether the nominator chose to
 	await expect(seatLabelled(page, 'Seat 1: no name, Chef, dead')).toBeAttached();
 });
 
+// Trevor (2026-10-29): the bank pulls up into a sheet of every token, to see them all without
+// scrolling; a token dragged out of it drops the sheet out of the way until it is put down.
+test('the reminder bank pulls up into a sheet of every token, and tokens drag out of it', async ({
+	page
+}, testInfo) => {
+	await startGame(page);
+	const pull = page.getByRole('button', { name: 'Show every reminder' });
+	await expect(pull).toHaveAttribute('aria-expanded', 'false');
+	await pull.tap();
+	const bin = page.getByTestId('reminder-bin');
+	await expect(bin).toBeVisible();
+	await expect(pull).toHaveAttribute('aria-expanded', 'true');
+	// Under the bank's own captions, in rows.
+	await expect(bin.getByText('∞', { exact: true })).toBeVisible();
+	await page.screenshot({ path: testInfo.outputPath('bin-open.png') });
+
+	// Dragged out: the sheet drops away, then comes back once it is put down.
+	const token = bin.getByRole('button', { name: 'Generic reminder' });
+	const from = (await token.boundingBox())!;
+	const to = (await seatLabelled(page, 'Seat 1:').boundingBox())!;
+	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + 20, { steps: 6 });
+	await expect(bin).toHaveClass(/lowered/);
+	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
+	await page.mouse.up();
+	await expect(seatLabelled(page, 'Seat 1: no name, no character, 1 reminder')).toBeAttached();
+	await expect(bin).not.toHaveClass(/lowered/);
+	await expect(bin).toBeVisible();
+
+	// A tap asks for a seat, as in the bank, and the sheet stays for the next one.
+	await token.tap();
+	await page
+		.getByRole('dialog', { name: 'Put ∞ on' })
+		.getByRole('button', { name: /None Seat 2/ })
+		.tap();
+	await expect(seatLabelled(page, 'Seat 2: no name, no character, 1 reminder')).toBeAttached();
+	await expect(bin).toBeVisible();
+
+	// Its handle, Escape or a tap outside it closes it.
+	await bin.getByRole('button', { name: 'Close Reminder bin' }).tap();
+	await expect(bin).toBeHidden();
+	await pull.tap();
+	await page.keyboard.press('Escape');
+	await expect(bin).toBeHidden();
+	await pull.tap();
+	const board = (await page.locator('.board').boundingBox())!;
+	await page.mouse.click(board.x + board.width / 2, board.y + board.height * 0.15);
+	await expect(bin).toBeHidden();
+});
+
 // Trevor (2026-10-22, plan D2): a crowded seat's reminders keep a thin line back to it.
 // Trevor (2026-10-23): every reminder is always on the board, so there is no "+N" stack.
 test('reminders keep a line back to their seat, and all of them stay on the board', async ({

@@ -6,6 +6,8 @@
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderCount from './ReminderCount.svelte';
+	import NewTokenButton from './NewTokenButton.svelte';
+	import ReminderBinSheet from './ReminderBinSheet.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
@@ -104,6 +106,16 @@
 			copies: grimoire.copies,
 			bankCopies: grimoire.bankCopies
 		})
+	);
+	/** The bank pulled up into a sheet of every token at once, under the same captions. */
+	let binOpen = $state(false);
+	let pullUp = $state<HTMLElement>();
+	const binGroups = $derived(
+		[...new Set(items.map((i) => i.group))].map((group) => ({
+			key: group,
+			caption: BANK_CAPTIONS[group],
+			items: items.filter((i) => i.group === group)
+		}))
 	);
 	const dimRest = $derived(focusMode === 'highlight' && items.some((i) => i.now));
 	/** A solid line goes before each stretch but the first. */
@@ -361,6 +373,30 @@
 	}
 </script>
 
+{#snippet token(item: BankItem, panX: boolean)}
+	{#if item.makesToken}
+		<NewTokenButton glow={newGlow} {size} {disabled} onclick={makeToken} />
+	{:else}
+		{#if item.count > 1}<ReminderCount count={item.count} />{/if}
+		<BoardReminder
+			label={item.label}
+			character={characters.get(item.characterId)}
+			alignment={placingAlignment(game, item, characters)}
+			infinite={isGeneric(item)}
+			symbol={item.token?.symbol}
+			symbolColour={item.token?.symbolColour}
+			symbolFill={item.token?.symbolFill}
+			art={artOf(item.token)}
+			{size}
+			{disabled}
+			onTap={() => tap(item)}
+			onDrag={(x, y, end) => dragItem(item, x, y, end)}
+			onCancel={cancelDrag}
+			{panX}
+		/>
+	{/if}
+{/snippet}
+
 <div class="bank" data-tray bind:this={bankEl}>
 	<!-- Every caption measured from the start, hidden, so each stretch has its room before its
 	     caption first shows (a caption measured only once shown widened the row as it was
@@ -405,44 +441,22 @@
 					? `${spacers[item.group]}px`
 					: undefined}
 			>
-				{#if item.makesToken}
-					<!-- Hollow, so it reads as a place to make one, not a token (plan B9). -->
-					<button
-						type="button"
-						class="new-token"
-						data-new-token
-						data-glow={newGlow}
-						style:--size="{size}px"
-						aria-label="New token"
-						{disabled}
-						onclick={makeToken}
-					>
-						<Icon name="add" />
-					</button>
-				{:else}
-					{#if item.count > 1}<ReminderCount count={item.count} />{/if}
-					<BoardReminder
-						label={item.label}
-						character={characters.get(item.characterId)}
-						alignment={placingAlignment(game, item, characters)}
-						infinite={isGeneric(item)}
-						symbol={item.token?.symbol}
-						symbolColour={item.token?.symbolColour}
-						symbolFill={item.token?.symbolFill}
-						art={artOf(item.token)}
-						{size}
-						{disabled}
-						onTap={() => tap(item)}
-						onDrag={(x, y, end) => dragItem(item, x, y, end)}
-						onCancel={cancelDrag}
-						panX
-					/>
-				{/if}
+				{@render token(item, true)}
 			</li>
 		{:else}
 			<li class="none">None</li>
 		{/each}
 	</ul>
+	<!-- Pulls the bank up into a sheet of every token (Trevor, 2026-10-29), over the right end so
+	     it never meets a caption. -->
+	<button
+		type="button"
+		class="pull-up"
+		aria-label="Show every reminder"
+		aria-expanded={binOpen}
+		bind:this={pullUp}
+		onclick={() => (binOpen = !binOpen)}><Icon name="expand" /></button
+	>
 	{#if run}
 		<!-- Rounded on the right like the box. -->
 		<button
@@ -458,6 +472,19 @@
 		</button>
 	{/if}
 </div>
+
+<ReminderBinSheet
+	bind:open={binOpen}
+	label="Reminder bin"
+	groups={binGroups}
+	keyOf={(item) => item.key}
+	lowered={!!drag}
+	opener={pullUp}
+	--bin-bottom="calc(-1 * (var(--tray-h) + var(--space-2)))"
+	--bin-height="calc(60% + var(--tray-h))"
+>
+	{#snippet item(item)}{@render token(item, false)}{/snippet}
+</ReminderBinSheet>
 
 {#if drag}
 	<div class="floating" style:left="{drag.at.x}%" style:top="{drag.at.y}%" aria-hidden="true">
@@ -699,61 +726,32 @@
 		padding: 0;
 		border-inline-start: 1px solid var(--on-surface-muted);
 	}
-	/* "+ New token" (plan B9): a hollow token, so it reads as a place to make one. */
-	.new-token {
-		position: relative;
-		display: grid;
-		place-items: center;
-		width: var(--size);
-		height: var(--size);
-		/* A circle at the tokens' own size, as BoardReminder; the ::after keeps the target. */
-		min-width: 0;
-		min-height: 0;
-		padding: 0;
-		border: 0.125rem dashed var(--on-surface-muted);
-		border-radius: 50%;
-		background: none;
-		color: var(--on-surface);
-	}
-	.new-token::after {
-		content: '';
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: max(100%, var(--tap-target));
-		height: max(100%, var(--tap-target));
-		translate: -50% -50%;
-		border-radius: 50%;
-	}
-	.new-token:disabled {
-		opacity: 0.5;
-	}
-	/* While a reminder is dragged it takes one, as a new ∞ token like it (Trevor, 2026-10-27):
-	   it glows, breathing, and brighter with the token over it. In the text colour, as the
-	   player's own seat glows, since red or blue would read as an alignment. */
-	.new-token[data-glow] {
-		border-style: solid;
-		border-color: var(--on-surface);
-		box-shadow: 0 0 calc(0.8 * var(--u)) calc(0.3 * var(--u)) var(--on-surface);
-		animation: new-token-glow 1.6s ease-in-out infinite;
-	}
-	.new-token[data-glow='over'] {
-		scale: 1.15;
-		box-shadow: 0 0 calc(1.25 * var(--u)) calc(0.5 * var(--u)) var(--on-surface);
-		animation: none;
-	}
-	@keyframes new-token-glow {
-		50% {
-			box-shadow: 0 0 calc(0.4 * var(--u)) calc(0.1 * var(--u)) var(--on-surface);
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.new-token[data-glow] {
-			animation: none;
-		}
-	}
 	.none {
 		color: var(--on-surface-muted);
+	}
+	/* On the bank's top edge over the right end, half over the board, as the captions sit. */
+	.pull-up {
+		position: absolute;
+		top: 0;
+		right: calc(2.75rem - var(--tap-target) / 2);
+		z-index: 3;
+		display: grid;
+		place-items: center;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--on-surface);
+		cursor: pointer;
+		transform: translateY(-50%);
+	}
+	.pull-up :global(svg) {
+		padding: var(--space-1);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
+		rotate: 180deg;
 	}
 	.floating {
 		position: absolute;
