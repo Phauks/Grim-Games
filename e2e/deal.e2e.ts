@@ -97,8 +97,12 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	// (Trevor, 2026-10-28: "only be available for 1 minute, then turn off").
 	const toggle = page.getByRole('checkbox', { name: 'Players can see their character' });
 	await expect(toggle).toBeChecked();
+	// The Storyteller sees how much longer (Trevor, 2026-10-29).
+	const timeLeft = page.getByTestId('roles-time-left');
+	await expect(timeLeft).toHaveText(/^Players can see theirs for 0:[0-5]\d more$/);
 	await page.clock.fastForward('01:01');
 	await expect(toggle).not.toBeChecked();
+	await expect(timeLeft).toHaveCount(0);
 	await expect(card).toBeHidden();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	// Who has looked stays.

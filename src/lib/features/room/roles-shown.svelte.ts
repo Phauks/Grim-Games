@@ -12,6 +12,8 @@ export const ROLES_SHOWN_MS = 60_000;
  */
 export class RolesShown {
 	gameId = $state<string>();
+	/** When it turns itself off (epoch ms), for the Storyteller's countdown. */
+	until = $state<number>();
 	#timer: ReturnType<typeof setTimeout> | undefined;
 
 	/** Picks up a minute still running in the stored room. */
@@ -39,11 +41,13 @@ export class RolesShown {
 	stop(): void {
 		clearTimeout(this.#timer);
 		this.gameId = undefined;
+		this.until = undefined;
 	}
 
 	#show(gameId: string, ms: number): void {
 		clearTimeout(this.#timer);
 		this.gameId = gameId;
+		this.until = Date.now() + ms;
 		this.#timer = setTimeout(() => {
 			if (this.gameId === gameId) this.set(undefined);
 		}, ms);

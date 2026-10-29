@@ -203,6 +203,7 @@ export const room = {
 	'room.roles.toggle': 'Players can see their character',
 	'room.roles.hint':
 		'Each seated player holds to see their own character on their phone. It turns itself off after a minute.',
+	'room.roles.timeLeft': 'Players can see theirs for {time} more',
 	'room.roles.seats': 'Who has seen theirs',
 	'room.roles.seen': 'Seen',
 	'room.roles.notSeen': 'Not seen',
