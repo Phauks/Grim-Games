@@ -19,6 +19,7 @@ import ph_arrows_in_bold from '~icons/ph/arrows-in-bold';
 import ph_arrows_left_right_bold from '~icons/ph/arrows-left-right-bold';
 import ph_arrows_out_bold from '~icons/ph/arrows-out-bold';
 import ph_arrows_out_cardinal_bold from '~icons/ph/arrows-out-cardinal-bold';
+import ph_arrows_split_bold from '~icons/ph/arrows-split-bold';
 import ph_bag_simple_bold from '~icons/ph/bag-simple-bold';
 import ph_beer_bottle_bold from '~icons/ph/beer-bottle-bold';
 import ph_beer_stein_bold from '~icons/ph/beer-stein-bold';
@@ -35,6 +36,7 @@ import ph_books_bold from '~icons/ph/books-bold';
 import ph_bug_bold from '~icons/ph/bug-bold';
 import ph_calculator_bold from '~icons/ph/calculator-bold';
 import ph_camera_bold from '~icons/ph/camera-bold';
+import ph_cards_bold from '~icons/ph/cards-bold';
 import ph_caret_circle_down_bold from '~icons/ph/caret-circle-down-bold';
 import ph_caret_down_bold from '~icons/ph/caret-down-bold';
 import ph_caret_left_bold from '~icons/ph/caret-left-bold';
@@ -243,6 +245,7 @@ const icons: IconMap = {
 	'ph:arrows-left-right-bold': ph_arrows_left_right_bold,
 	'ph:arrows-out-bold': ph_arrows_out_bold,
 	'ph:arrows-out-cardinal-bold': ph_arrows_out_cardinal_bold,
+	'ph:arrows-split-bold': ph_arrows_split_bold,
 	'ph:bag-simple-bold': ph_bag_simple_bold,
 	'ph:beer-bottle-bold': ph_beer_bottle_bold,
 	'ph:beer-stein-bold': ph_beer_stein_bold,
@@ -259,6 +262,7 @@ const icons: IconMap = {
 	'ph:bug-bold': ph_bug_bold,
 	'ph:calculator-bold': ph_calculator_bold,
 	'ph:camera-bold': ph_camera_bold,
+	'ph:cards-bold': ph_cards_bold,
 	'ph:caret-circle-down-bold': ph_caret_circle_down_bold,
 	'ph:caret-down-bold': ph_caret_down_bold,
 	'ph:caret-left-bold': ph_caret_left_bold,

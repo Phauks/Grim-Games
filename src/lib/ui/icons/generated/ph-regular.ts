@@ -12,6 +12,7 @@ import ph_arrows_in from '~icons/ph/arrows-in';
 import ph_arrows_left_right from '~icons/ph/arrows-left-right';
 import ph_arrows_out from '~icons/ph/arrows-out';
 import ph_arrows_out_cardinal from '~icons/ph/arrows-out-cardinal';
+import ph_arrows_split from '~icons/ph/arrows-split';
 import ph_beer_stein from '~icons/ph/beer-stein';
 import ph_bell_simple_ringing from '~icons/ph/bell-simple-ringing';
 import ph_book_open_text from '~icons/ph/book-open-text';
@@ -127,6 +128,7 @@ const icons: IconMap = {
 	'ph:arrows-left-right': ph_arrows_left_right,
 	'ph:arrows-out': ph_arrows_out,
 	'ph:arrows-out-cardinal': ph_arrows_out_cardinal,
+	'ph:arrows-split': ph_arrows_split,
 	'ph:beer-stein': ph_beer_stein,
 	'ph:bell-simple-ringing': ph_bell_simple_ringing,
 	'ph:book-open-text': ph_book_open_text,

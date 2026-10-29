@@ -19,6 +19,7 @@ import ph_arrows_in_light from '~icons/ph/arrows-in-light';
 import ph_arrows_left_right_light from '~icons/ph/arrows-left-right-light';
 import ph_arrows_out_light from '~icons/ph/arrows-out-light';
 import ph_arrows_out_cardinal_light from '~icons/ph/arrows-out-cardinal-light';
+import ph_arrows_split_light from '~icons/ph/arrows-split-light';
 import ph_bag_simple_light from '~icons/ph/bag-simple-light';
 import ph_beer_bottle_light from '~icons/ph/beer-bottle-light';
 import ph_beer_stein_light from '~icons/ph/beer-stein-light';
@@ -35,6 +36,7 @@ import ph_books_light from '~icons/ph/books-light';
 import ph_bug_light from '~icons/ph/bug-light';
 import ph_calculator_light from '~icons/ph/calculator-light';
 import ph_camera_light from '~icons/ph/camera-light';
+import ph_cards_light from '~icons/ph/cards-light';
 import ph_caret_circle_down_light from '~icons/ph/caret-circle-down-light';
 import ph_caret_down_light from '~icons/ph/caret-down-light';
 import ph_caret_left_light from '~icons/ph/caret-left-light';
@@ -243,6 +245,7 @@ const icons: IconMap = {
 	'ph:arrows-left-right-light': ph_arrows_left_right_light,
 	'ph:arrows-out-light': ph_arrows_out_light,
 	'ph:arrows-out-cardinal-light': ph_arrows_out_cardinal_light,
+	'ph:arrows-split-light': ph_arrows_split_light,
 	'ph:bag-simple-light': ph_bag_simple_light,
 	'ph:beer-bottle-light': ph_beer_bottle_light,
 	'ph:beer-stein-light': ph_beer_stein_light,
@@ -259,6 +262,7 @@ const icons: IconMap = {
 	'ph:bug-light': ph_bug_light,
 	'ph:calculator-light': ph_calculator_light,
 	'ph:camera-light': ph_camera_light,
+	'ph:cards-light': ph_cards_light,
 	'ph:caret-circle-down-light': ph_caret_circle_down_light,
 	'ph:caret-down-light': ph_caret_down_light,
 	'ph:caret-left-light': ph_caret_left_light,
