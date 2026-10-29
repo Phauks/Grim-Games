@@ -40,7 +40,11 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	await expect(drawer.getByRole('link').first()).toHaveText('Home');
 	await expect(
 		drawer.getByRole('list', { name: 'Play', exact: true }).getByRole('link')
-	).toHaveText(['New game', 'Continue game', 'History']);
+	).toHaveText(['New game', 'Continue game']);
+	// History sits under You with Account and Friends (Trevor, 2026-10-29).
+	await expect(drawer.getByRole('list', { name: 'You', exact: true }).getByRole('link')).toHaveText(
+		['Account', 'Friends', 'History']
+	);
 	await expect(drawer.getByRole('list', { name: 'Prepare' }).getByRole('link')).toHaveText([
 		'Search',
 		'Library',

@@ -60,22 +60,24 @@ export function becomesOffer(
 
 /**
  * The player whose `characterId` changes a chosen player's character tonight
- * (`changesCharacter`): its own living player, with its `token` on them when the rule names
- * one (the Summoner's Night 3) and without its `spent` token (the Huntsman's No Ability), and
- * someone to change when only some characters change (the Huntsman's Damsel).
+ * (`changesCharacter`): its own living player (or dead, when it acts when dead: the Hatter),
+ * with its `token` on them when the rule names one (the Summoner's Night 3) and without its
+ * `spent` token (the Huntsman's No Ability), and someone to change when only some characters
+ * change (the Huntsman's Damsel, the Hatter's Minions and Demon).
  */
 export function characterChanger(
 	game: Game,
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId | undefined {
-	const rule = rulesOf(characterId, characters)?.changesCharacter;
+	const rules = rulesOf(characterId, characters);
+	const rule = rules?.changesCharacter;
 	if (!rule) return undefined;
 	const carries = (id: SeatId, label: string) =>
 		game.seats[id].reminders.some((r) => r.characterId === characterId && r.label === label);
 	const changer = game.seating.find(
 		(id) =>
-			!game.seats[id].dead &&
+			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
 			trueCharacter(game, id, characters) === characterId &&
 			(rule.token === undefined || carries(id, rule.token)) &&
 			(rule.spent === undefined || !carries(id, rule.spent))
@@ -84,16 +86,22 @@ export function characterChanger(
 	return changeableSeats(game, characterId, characters).length > 0 ? changer : undefined;
 }
 
-/** The players `characterId`'s `changesCharacter` may change: all, or its `onlyFrom` ones. */
+/**
+ * The players `characterId`'s `changesCharacter` may change: all, its `onlyFrom` ones, or
+ * with `sameType` the players of its `types` (the Hatter's Minions and Demon).
+ */
 export function changeableSeats(
 	game: Game,
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] {
-	const only = rulesOf(characterId, characters)?.changesCharacter?.onlyFrom;
+	const rule = rulesOf(characterId, characters)?.changesCharacter;
 	return game.seating.filter((id) => {
 		const own = trueCharacter(game, id, characters);
-		return !only || (own !== undefined && only.includes(own));
+		if (rule?.onlyFrom && (own === undefined || !rule.onlyFrom.includes(own))) return false;
+		if (!rule?.sameType) return true;
+		const type = typeOf(game, id, characters);
+		return type !== undefined && (rule.types as readonly string[]).includes(type);
 	});
 }
 

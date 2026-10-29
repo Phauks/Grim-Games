@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript, toBoard, pastGameSettings } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
 
 // The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
@@ -8,7 +8,6 @@ async function startGame(page: Page, players = 8, script = 'Trouble Brewing') {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script, { exact: true }).tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	for (let i = 8; i < players; i++) await page.getByRole('button', { name: 'More players' }).tap();
 	await toBoard(page);

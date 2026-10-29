@@ -55,12 +55,17 @@ class GameSettingsStore {
 		return this.#raw(gameId) !== null;
 	}
 
-	/** A new game's settings, from `prefs` (the profile New game chose); kept if it has some. */
+	/** A new game's settings, from `prefs` (the profile it starts with); kept if it has some. */
 	seed(gameId: string, prefs: Preferences): void {
 		if (!this.has(gameId)) this.#write(gameId, settingsFrom(prefs));
 	}
 
-	/** Changes one game only: the start flow's Game settings and each setting's place of use. */
+	/** Starts a game's settings over from `prefs` (another profile chosen before it begins). */
+	reseed(gameId: string, prefs: Preferences): void {
+		this.#write(gameId, settingsFrom(prefs));
+	}
+
+	/** Changes one game only: its Game settings and each setting's place of use. */
 	set(gameId: string | undefined, change: Partial<GameSettings>): void {
 		if (!gameId) {
 			this.setDefault(change);

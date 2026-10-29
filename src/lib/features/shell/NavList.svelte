@@ -15,6 +15,7 @@
 		ACCOUNT_ITEM,
 		APP_ITEMS,
 		FRIENDS_ITEM,
+		HISTORY_ITEM,
 		HOME_ITEM,
 		isCurrent,
 		NAV_SECTIONS,
@@ -90,10 +91,11 @@
 			{/snippet}
 			{@render section('admin', t('shell.navSectionAdmin'), 2, adminItems)}
 		{/if}
-		<!-- Account, Friends and Settings, last in the sidebar and the drawer alike (2026-10-22). -->
+		<!-- Account, Friends, History and Settings, last in the sidebar and the drawer alike (2026-10-22). -->
 		{#snippet youItems()}
 			{@render link(ACCOUNT_ITEM)}
 			{@render link(FRIENDS_ITEM)}
+			{@render link(HISTORY_ITEM)}
 			<li>
 				<button
 					type="button"
@@ -107,7 +109,7 @@
 				</button>
 			</li>
 		{/snippet}
-		{@render section('you', t('shell.navSectionYou'), 3, youItems)}
+		{@render section('you', t('shell.navSectionYou'), 4, youItems)}
 		<!-- The app's own pages, where the footer had them (2026-10-23). -->
 		{#snippet appItems()}
 			{#each APP_ITEMS as item (item.id)}{@render link(item)}{/each}
