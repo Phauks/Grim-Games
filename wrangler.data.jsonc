@@ -1,4 +1,4 @@
-// The shared data Worker (worker/data-service.ts): accounts, share codes and reports for production
+// The shared data Worker (worker/data-service.ts): accounts, friends, share codes and reports for production
 // and every preview of the app (Trevor, 2026-10-19). The app reaches it only through its
 // `DATA` service binding, so it has no workers.dev or preview address of its own.
 // Workers Builds deploys it as its own Worker, with this file as its config.
@@ -20,7 +20,9 @@
 			{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
 			{ "name": "ACCOUNT_NAMES", "class_name": "AccountName" },
 			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
-			{ "name": "REPORTS", "class_name": "ReportBox" }
+			{ "name": "REPORTS", "class_name": "ReportBox" },
+			// Each account's friends, requests and blocks (worker/friends/book.ts).
+			{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" }
 		]
 	},
 	"migrations": [
@@ -33,6 +35,7 @@
 				"SharedScript",
 				"ReportBox"
 			]
-		}
+		},
+		{ "tag": "v2", "new_sqlite_classes": ["FriendBook"] }
 	]
 }

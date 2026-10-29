@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	ACCOUNT_ITEM,
 	APP_ITEMS,
+	FRIENDS_ITEM,
 	isCurrent,
 	NAV_ITEMS,
 	NAV_SECTIONS,
@@ -28,6 +29,7 @@ describe('navigation', () => {
 		const icons = [
 			...NAV_ITEMS,
 			ACCOUNT_ITEM,
+			FRIENDS_ITEM,
 			REPORTS_ITEM,
 			...APP_ITEMS,
 			{ icon: 'settings' }

@@ -1,4 +1,5 @@
 import { handleAccount, type Env as AccountRoutesEnv } from './account/routes.ts';
+import { handleFriends, type FriendsEnv } from './friends/routes.ts';
 import { bloodstarSource, handleBloodstarScript } from './bloodstar.ts';
 import { handleBotcScripts } from './botcscripts.ts';
 import { collectionSource } from './collections.ts';
@@ -24,9 +25,18 @@ import { COLLECTIONS } from '../src/lib/features/scripts/collection-api.ts';
 
 export { LiveGameIndex, PushKeyStore, ReportBox, Room, ScriptMirror, SharedRecap, SharedScript };
 export { AccountEmail, AccountName, AccountUser } from './account/objects.ts';
+export { FriendBook } from './friends/book.ts';
 
 export interface Env
-	extends ShareEnv, RecapEnv, AccountRoutesEnv, RoomEnv, LiveGamesEnv, ReportsEnv, MirrorEnv {
+	extends
+		ShareEnv,
+		RecapEnv,
+		AccountRoutesEnv,
+		FriendsEnv,
+		RoomEnv,
+		LiveGamesEnv,
+		ReportsEnv,
+		MirrorEnv {
 	ASSETS: Fetcher;
 	/** "off" only in the local e2e server, like SHARE_LIMITS: no route here asks another site. */
 	OTHER_SITES?: string;
@@ -112,6 +122,8 @@ export default {
 		}
 		const reports = await handleReports(request, env, url);
 		if (reports) return reports;
+		const friends = await handleFriends(request, env, url);
+		if (friends) return friends;
 		const account = await handleAccount(request, env, url);
 		if (account) return account;
 		if (url.pathname.startsWith('/api/')) {

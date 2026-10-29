@@ -6,9 +6,12 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
+	import { friends } from '#lib/features/friends/friends.svelte.ts';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import {
 		ACCOUNT_ITEM,
 		APP_ITEMS,
+		FRIENDS_ITEM,
 		HOME_ITEM,
 		isCurrent,
 		NAV_SECTIONS,
@@ -49,6 +52,11 @@
 				<Icon name={item.icon} />
 			{/if}
 			<span>{label(item.label)}</span>
+			<!-- Friend requests waiting for an answer (plan F1). -->
+			{#if item === FRIENDS_ITEM && friends.waiting > 0}<CountBadge
+					count={friends.waiting}
+					testid="friend-requests-count"
+				/>{/if}
 		</a>
 	</li>
 {/snippet}
@@ -72,6 +80,7 @@
 	<h3 id="{listId}-you">{t('shell.navSectionYou')}</h3>
 	<ul aria-labelledby="{listId}-you">
 		{@render link(ACCOUNT_ITEM)}
+		{@render link(FRIENDS_ITEM)}
 		<li>
 			<button
 				type="button"
