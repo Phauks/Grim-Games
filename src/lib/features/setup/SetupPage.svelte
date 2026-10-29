@@ -39,7 +39,9 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
-	import { notBegun, saveDraft } from '#lib/features/modes/new-game-draft.ts';
+	import { notBegun } from '#lib/features/modes/new-game-draft.ts';
+	import { backFromSetup, backFromSetupLabel } from '#lib/features/modes/back-step.ts';
+	import GameOptions from './GameOptions.svelte';
 	import { DEMON_SET, randomBluffs, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
@@ -74,7 +76,7 @@
 
 	const game = $derived(port.game);
 	/** Where this step's Back goes: the start flow's step before until the game begins. */
-	const backStep = $derived(game && notBegun(game) ? ('settings' as const) : ('board' as const));
+	const backStep = $derived(game && notBegun(game) ? ('start' as const) : ('board' as const));
 	const data = $derived(officialData.current);
 	// The game's own script, so a homebrew character is found even if the Scripts page moved on.
 	const script = $derived(game && data ? fromScript(game.script, data).script : undefined);
@@ -417,12 +419,6 @@
 		await openDraw(game.gameId);
 	}
 
-	/** Back to Game settings, keeping this screen's count for New game should Back go on there. */
-	async function backToGameSettings(gameId: string) {
-		saveDraft({ players: s.players });
-		await goto(resolve('/grimoire/[gameId]/game-settings', { gameId }));
-	}
-
 	/** The board without a bag, seated for this screen's count (Trevor, 2026-10-28). */
 	async function toBoard(gameId: string) {
 		if (!seatPlayers()) return;
@@ -494,8 +490,9 @@
 		>{/snippet}
 	{#snippet side()}
 		<ErrorBoundary area="setup">
+			<GameOptions {game} />
 			<!-- Who has connected, as players' phones see it (Trevor, 2026-10-29). -->
-			<SetupCandles {game} />
+			<SetupCandles {game} players={analysis.players} />
 			<div class="storyteller" onfocusout={saveStoryteller}>
 				<TextField
 					label={t('modes.storytellerName')}
@@ -639,8 +636,8 @@
 			backHref={backStep === 'board'
 				? resolve('/grimoire/[gameId]', { gameId: game.gameId })
 				: undefined}
-			onBack={backStep === 'settings' ? () => void backToGameSettings(game.gameId) : undefined}
-			backLabel={backStep === 'board' ? t('setup.grimoire') : t('setup.gameSettings')}
+			onBack={backStep === 'board' ? undefined : () => void backFromSetup(game.gameId, s.players)}
+			backLabel={backStep === 'board' ? t('setup.grimoire') : backFromSetupLabel(game.gameId)}
 		>
 			{#snippet next()}
 				<span class="next">

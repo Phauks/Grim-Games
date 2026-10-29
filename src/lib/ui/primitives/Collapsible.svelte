@@ -187,11 +187,12 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
+	/* A character type's heading takes its tokens' blue or red in every theme (Trevor, 2026-10-29). */
 	.head[data-tone='good'] .toggle {
-		color: var(--good-text);
+		color: var(--good);
 	}
 	.head[data-tone='evil'] .toggle {
-		color: var(--evil-text);
+		color: var(--evil);
 	}
 	.head[data-tone='traveller'] .toggle {
 		color: var(--traveller-text);

@@ -106,8 +106,9 @@ export async function startInMode<
 }
 
 /**
- * Where a new game opens: the hidden characters for a mode that adds them (the rule A Script of
- * Infinite Possibilities, its Special rules step), otherwise Game settings.
+ * Where a new game opens: the hidden characters for a rule that adds them (+1, A Script of
+ * Infinite Possibilities), otherwise Character selection or a mode's deal (Trevor,
+ * 2026-10-29: Game settings is no longer a step of its own; it opens from Characters).
  */
 export function startHref(
 	modeId: string,
@@ -117,15 +118,15 @@ export function startHref(
 	const mode = withRules(findMode(modeId) ?? STANDARD, rules);
 	if (mode.parts.pool?.kind === 'script-plus-hidden')
 		return resolve('/grimoire/[gameId]/extras', { gameId });
-	return resolve('/grimoire/[gameId]/game-settings', { gameId });
+	return setupHref(gameId);
 }
 
 /**
- * Where Game settings goes on to: the draft or choose screen for a mode that doesn't use the
- * bag (Sushi Buffet, Whale Buffet), otherwise Character selection, Standard too (Trevor,
- * 2026-10-23).
+ * Where the start flow goes to choose characters: the draft or choose screen for a mode that
+ * doesn't use the bag (Sushi Buffet, Whale Buffet), otherwise Character selection, Standard too
+ * (Trevor, 2026-10-23).
  */
-export function afterGameSettings(gameId: GameId): ResolvedPathname {
+export function setupHref(gameId: GameId): ResolvedPathname {
 	const record = readGameMode(gameId);
 	const mode = withRules(findMode(record?.modeId ?? '') ?? STANDARD, record?.rules ?? []);
 	const kind = mode.parts.assignment?.kind;
@@ -226,10 +227,10 @@ export async function continueCampaign<
 }
 
 /**
- * The start-flow step before Game settings (Trevor, 2026-10-23: one start flow, Back on every
- * step): a mode's Special rules where it hides characters, else New game.
+ * The start-flow step before choosing characters (Trevor, 2026-10-23: one start flow, Back on
+ * every step): a rule's hidden characters where it adds them, else New game.
  */
-export function stepBeforeGameSettings(gameId: GameId): 'extras' | 'new' {
+export function stepBeforeSetup(gameId: GameId): 'extras' | 'new' {
 	const record = readGameMode(gameId);
 	if (!record) return 'new';
 	const mode = withRules(findMode(record.modeId) ?? STANDARD, record.rules);
