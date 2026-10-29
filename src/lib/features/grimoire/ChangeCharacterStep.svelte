@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { seatName } from '#lib/features/game/seat-label.ts';
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { alignmentOf, trueCharacter, typeOf, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		changeableSeats,
 		characterChanger,
+		neighbourAlignments,
 		swappableSeats,
 		type NightStep
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import AlignmentPill from './AlignmentPill.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -27,7 +29,9 @@
 	 * https://wiki.bloodontheclocktower.com/Barber) picks the two players instead; each keeps
 	 * their alignment, and each is shown their new character. The Hatter's tea party
 	 * (`sameType`, https://wiki.bloodontheclocktower.com/Hatter) lets each Minion and Demon
-	 * player change in turn, each into another character of their own type.
+	 * player change in turn, each into another character of their own type. The Cult Leader
+	 * (`takesNeighbourAlignment`, https://wiki.bloodontheclocktower.com/Cult_Leader) shows its
+	 * alignment and offers each living neighbour's that differs.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -66,6 +70,13 @@
 	const swapMisfits = $derived(
 		new Set(game.seating.filter((id) => game.seats[id].characterId && !swappable.has(id)))
 	);
+	// The Cult Leader's living neighbours' alignments, one of which it takes tonight.
+	const neighbours = $derived(
+		step.character ? neighbourAlignments(game, step.character.id, characters) : undefined
+	);
+	const takeAlignment = (seatId: SeatId, alignment: Alignment) =>
+		grimoire.run({ type: 'SetAlignment', seatId, alignment });
+
 	let firstOpen = $state(false);
 	let secondOpen = $state(false);
 	let first = $state<SeatId>();
@@ -139,6 +150,20 @@
 		<Button variant="quiet" onclick={() => onShow(characterId)}>Show to player</Button>
 	{/if}
 {/snippet}
+
+{#if neighbours}
+	{@const now = alignmentOf(game, neighbours.seatId)}
+	<h3>Alignment</h3>
+	<div class="row" data-testid="neighbour-alignment">
+		{#if now}<AlignmentPill alignment={now} />{/if}
+		<span class="none"></span>
+		{#each neighbours.alignments.filter((a) => a !== now) as alignment (alignment)}
+			<Button variant="quiet" onclick={() => takeAlignment(neighbours.seatId, alignment)}
+				>Make {alignment}</Button
+			>
+		{/each}
+	</div>
+{/if}
 
 {#if swaps && (swappable.size >= 2 || swapped)}
 	<h3>Swapped characters</h3>
