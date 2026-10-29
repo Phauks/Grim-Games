@@ -594,12 +594,9 @@ export function parseCharacterRules(
 		const filled = readInfoTokenCharacters(raw.infoTokenCharacters, at, issues);
 		if (filled) rules.infoTokenCharacters = filled;
 	}
-<<<<<<< HEAD
-	if (readBoolean(raw, 'limitsExtraEvil', path, issues)) rules.limitsExtraEvil = true;
-=======
 	if (readBoolean(raw, 'takesNeighbourAlignment', path, issues))
 		rules.takesNeighbourAlignment = true;
->>>>>>> origin/beta
+	if (readBoolean(raw, 'limitsExtraEvil', path, issues)) rules.limitsExtraEvil = true;
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
 	if (raw.falseInfo !== undefined) {
