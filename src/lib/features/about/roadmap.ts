@@ -71,7 +71,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L75',
 			'L76',
 			'L77',
-			'L78'
+			'L78',
+			'L81'
 		]
 	},
 	{
