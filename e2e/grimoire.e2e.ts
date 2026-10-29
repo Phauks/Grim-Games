@@ -1760,7 +1760,8 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	// Dragged back onto the bank, it waits there again, once confirmed: it normally stays put.
 	const placed = page.getByRole('button', { name: 'Wrong reminder' }).first();
 	const back = (await placed.boundingBox())!;
-	const trayBox = (await page.locator('[data-tray]').boundingBox())!;
+	// Onto the bank's first token: its middle can be "+ New token", which makes an ∞ copy.
+	const trayBox = (await tray.getByRole('listitem').first().boundingBox())!;
 	await page.mouse.move(back.x + back.width / 2, back.y + back.height / 2);
 	await page.mouse.down();
 	await page.mouse.move(trayBox.x + trayBox.width / 2, trayBox.y + trayBox.height / 2, {
