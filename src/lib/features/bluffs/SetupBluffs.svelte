@@ -4,6 +4,7 @@
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
 	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import BluffTag from './BluffTag.svelte';
 	import BluffsSheet, { type BluffDispatch } from './BluffsSheet.svelte';
 	import { DEMON_SET } from './bluffs.ts';
 
@@ -61,7 +62,9 @@
 				{@const playing = inPlay?.includes(character.id) ?? false}
 				<!-- Also chosen to be in play: a warning in its kept place, never a lock (Trevor, 2026-10-23). -->
 				<li data-in-play={playing ? '' : undefined}>
-					<CharacterRow {character} withNote note={playing ? t('bluffs.alsoInPlay') : undefined} />
+					<CharacterRow {character} withNote note={playing ? t('bluffs.alsoInPlay') : undefined}>
+						{#snippet marks()}<BluffTag warn={playing} />{/snippet}
+					</CharacterRow>
 				</li>
 			{:else}
 				<li class="none">{t('common.none')}</li>

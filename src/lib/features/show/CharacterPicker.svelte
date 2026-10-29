@@ -4,6 +4,7 @@
 	import type { Alignment, Character, CharacterId } from '#lib/core/data/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import BluffTag from '#lib/features/bluffs/BluffTag.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -39,6 +40,8 @@
 		 * character is listed: the Storyteller decides.
 		 */
 		onlyAlignment?: Alignment;
+		/** The places hold Demon bluffs, so each shows the Bluff badge (Trevor, 2026-10-29). */
+		bluffs?: boolean;
 	}
 
 	let {
@@ -50,7 +53,8 @@
 		warnInPlay = false,
 		notInPlay = false,
 		hideInPlayFirst = true,
-		onlyAlignment
+		onlyAlignment,
+		bluffs = false
 	}: Props = $props();
 
 	// Read once: the Storyteller's own choice is kept while the picker is open.
@@ -143,7 +147,9 @@
 								note={blocked ? t('show.inPlay') : undefined}
 								label={removeLabel(character, blocked)}
 								onclick={() => toggle(character.id)}
-							/>
+							>
+								{#snippet marks()}{#if bluffs}<BluffTag warn={blocked} />{/if}{/snippet}
+							</CharacterRow>
 						</li>
 					{:else}
 						<li class="empty" aria-hidden="true"></li>
