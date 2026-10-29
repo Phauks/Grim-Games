@@ -1,12 +1,8 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Snippet } from 'svelte';
-	import type { LoadedScript, NumericNightOrder } from '#lib/core/data/index.ts';
-	import {
-		loadNumericNightOrder,
-		loadOfficialData,
-		officialData
-	} from '#lib/features/characters/game-data.svelte.ts';
+	import type { LoadedScript } from '#lib/core/data/index.ts';
+	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
@@ -53,18 +49,12 @@
 		tab = $bindable('script')
 	}: Props = $props();
 
-	let numeric = $state<NumericNightOrder>();
 	$effect(() => {
 		if (!officialData.current) void loadOfficialData();
-		// Without the provisional numbers TPI's own order is used.
-		loadNumericNightOrder().then(
-			(n) => (numeric = n),
-			() => undefined
-		);
 	});
 	const data = $derived(officialData.current);
 	const nights = $derived(
-		data ? (['first', 'other'] as const).map((n) => playerNight(script, data, n, numeric)) : []
+		data ? (['first', 'other'] as const).map((n) => playerNight(script, data, n)) : []
 	);
 	const tabs = $derived([
 		{ value: 'script', label: t('player.tab.script') },

@@ -12,12 +12,10 @@
  *   Toymaker is in play (https://wiki.bloodontheclocktower.com/Toymaker).
  * - A script's `_meta.firstNight` / `_meta.otherNight` replaces the order (TPI
  *   `script-schema.json`); characters it leaves out keep their standard place.
- * - Homebrew characters with a numeric `firstNight` / `otherNight` are slotted between
- *   official characters using the provisional numeric snapshot
- *   (`night-order-provisional.json`, 05-spike-results.md S8). Replace that file and this
- *   keeps working.
+ * - Homebrew characters with no place on the sheet go just before Dawn, to be checked. A
+ *   numeric `firstNight` / `otherNight` only says that they wake: TPI publishes no numbers
+ *   for official characters to match it against.
  */
-import type { NumericNightOrder } from '#lib/core/data/night-order-numeric.ts';
 import {
 	NIGHT_MARKERS,
 	type Character,
@@ -42,8 +40,6 @@ export interface NightOrderInput {
 	players: number;
 	/** The script's own order for this night (`_meta.firstNight` or `_meta.otherNight`). */
 	customOrder?: readonly string[];
-	/** Numeric positions of official characters, to slot in homebrew numbers. */
-	numeric?: NumericNightOrder;
 	/** The Storyteller's changes to this night's steps (see `NightStepOverride`). */
 	overrides?: readonly NightStepOverride[];
 }
@@ -73,7 +69,7 @@ export type NightStepOverride =
 	  };
 
 /** Why a step is where it is. */
-export type Placement = 'night-sheet' | 'custom-order' | 'numeric' | 'unplaced' | 'marker';
+export type Placement = 'night-sheet' | 'custom-order' | 'unplaced' | 'marker';
 
 export interface NightStep {
 	id: CharacterId | NightMarker | string;
@@ -165,45 +161,16 @@ function numberFor(character: Character, night: Night): number | undefined {
 	return night === 'first' ? character.firstNight : character.otherNight;
 }
 
-/**
- * A position for every step on TPI's sheet: the snapshot's number where it has one,
- * otherwise spaced evenly between its numbered neighbours, so TPI's order is always kept.
- * Dusk is always first.
- */
-export function sheetPositions(
-	list: readonly string[],
-	numbers: ReadonlyMap<CharacterId, number> | undefined
-): Map<string, number> {
-	const known = list.map((id) => (id === 'dusk' ? -Infinity : numbers?.get(id)));
-	// Without numbers, use the list index; homebrew numbers then cannot be slotted.
-	if (!numbers) return new Map(list.map((id, i) => [id, id === 'dusk' ? -Infinity : i]));
-	const out = new Map<string, number>();
-	for (let i = 0; i < list.length; i++) {
-		if (known[i] !== undefined) {
-			out.set(list[i], known[i]!);
-			continue;
-		}
-		let lo = i - 1;
-		while (lo >= 0 && known[lo] === undefined) lo--;
-		let hi = i + 1;
-		while (hi < list.length && known[hi] === undefined) hi++;
-		const low = lo >= 0 && Number.isFinite(known[lo]!) ? known[lo]! : undefined;
-		const high = hi < list.length ? known[hi] : undefined;
-		let pos: number;
-		if (low !== undefined && high !== undefined) pos = low + ((high - low) * (i - lo)) / (hi - lo);
-		else if (high !== undefined) pos = high - (hi - i) / (hi - lo);
-		else if (low !== undefined) pos = low + (i - lo);
-		else pos = i;
-		out.set(list[i], pos);
-	}
-	return out;
+/** A position for every step on TPI's sheet: its index, with Dusk always first. */
+function sheetPositions(list: readonly string[]): Map<string, number> {
+	return new Map(list.map((id, i) => [id, id === 'dusk' ? -Infinity : i]));
 }
 
 interface Candidate {
 	id: string;
 	character?: Character;
 	pos: number;
-	/** Tie-break: sheet entries before homebrew numbers before unplaced, then Dawn. */
+	/** Tie-break: sheet entries before unplaced, then Dawn. */
 	rank: number;
 	seq: number;
 	placement: Placement;
@@ -216,14 +183,8 @@ function standardOrder(
 	wanted: readonly Character[],
 	markers: NightMarker[]
 ) {
-	const { night, sheet, numeric } = input;
-	const list = night === 'first' ? sheet.firstNight : sheet.otherNight;
-	const numbers = numeric
-		? night === 'first'
-			? numeric.firstNight
-			: numeric.otherNight
-		: undefined;
-	const positions = sheetPositions(list, numbers);
+	const { night, sheet } = input;
+	const positions = sheetPositions(night === 'first' ? sheet.firstNight : sheet.otherNight);
 	const dawnPos = positions.get('dawn') ?? Infinity;
 	const candidates: Candidate[] = [];
 	let seq = 0;
@@ -231,7 +192,7 @@ function standardOrder(
 		candidates.push({
 			id: marker,
 			pos: positions.get(marker) ?? (marker === 'dusk' ? -Infinity : dawnPos),
-			rank: marker === 'dawn' ? 3 : 0,
+			rank: marker === 'dawn' ? 2 : 0,
 			seq: seq++,
 			placement: 'marker',
 			notes: []
@@ -239,35 +200,8 @@ function standardOrder(
 	}
 	for (const character of wanted) {
 		const ownNumber = numberFor(character, night);
-		const official = character.edition !== undefined || ownNumber === undefined;
 		const sheetPos = positions.get(character.id);
-		if (sheetPos !== undefined && official) {
-			candidates.push({
-				id: character.id,
-				character,
-				pos: sheetPos,
-				rank: 0,
-				seq: seq++,
-				placement: 'night-sheet',
-				notes: []
-			});
-		} else if (ownNumber !== undefined && numbers) {
-			// Only announcements go after Dawn, so a homebrew number past Dawn stays before it.
-			const pastDawn = ownNumber > dawnPos;
-			candidates.push({
-				id: character.id,
-				character,
-				pos: pastDawn ? dawnPos : ownNumber,
-				rank: 1,
-				seq: seq++,
-				placement: 'numeric',
-				notes: [
-					pastDawn
-						? `Night number ${ownNumber} is later than every official step; placed just before Dawn.`
-						: `Placed by its night number ${ownNumber}, matched against provisional numbers for official characters; check the order.`
-				]
-			});
-		} else if (sheetPos !== undefined) {
+		if (sheetPos !== undefined) {
 			candidates.push({
 				id: character.id,
 				character,
@@ -282,12 +216,12 @@ function standardOrder(
 				id: character.id,
 				character,
 				pos: dawnPos,
-				rank: 2,
+				rank: 1,
 				seq: seq++,
 				placement: 'unplaced',
 				notes: [
 					ownNumber !== undefined
-						? `Has night number ${ownNumber}, but no numbers for official characters are loaded; placed just before Dawn.`
+						? `Has night number ${ownNumber}, which cannot be matched to the official night sheet; placed just before Dawn. Check the order.`
 						: 'Has no place on the night sheet; placed just before Dawn.'
 				]
 			});

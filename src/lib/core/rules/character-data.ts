@@ -11,7 +11,6 @@
 import { characterIcons, ICONS_PATH } from '#lib/core/data/icons.ts';
 import type { GameData } from '#lib/core/data/game-data.ts';
 import { jinxesFor } from '#lib/core/data/jinxes.ts';
-import type { NumericNightOrder } from '#lib/core/data/night-order-numeric.ts';
 import { rulesFileOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 
@@ -20,7 +19,6 @@ export const CHARACTER_DATA_PARTS = [
 	'character',
 	'rules',
 	'nightSheet',
-	'nightNumbers',
 	'jinxes',
 	'icons'
 ] as const;
@@ -43,7 +41,6 @@ const FILES: Readonly<Record<CharacterDataPart, string>> = {
 	character: 'static/data/roles.json',
 	rules: 'src/lib/core/data/rules/{id}.json',
 	nightSheet: 'static/data/nightsheet.json',
-	nightNumbers: 'static/data/night-order-provisional.json',
 	jinxes: 'static/data/jinxes.json',
 	icons: `static${ICONS_PATH}`
 };
@@ -54,15 +51,8 @@ function sheetPlace(list: readonly string[], id: CharacterId): number | null {
 	return i < 0 ? null : i + 1;
 }
 
-/**
- * Every piece of data for `id`, or undefined when it is not an official character. Without
- * `numeric` (the provisional numbers did not load) that piece is `null`.
- */
-export function characterData(
-	data: GameData,
-	id: CharacterId,
-	numeric?: NumericNightOrder
-): CharacterData | undefined {
+/** Every piece of data for `id`, or undefined when it is not an official character. */
+export function characterData(data: GameData, id: CharacterId): CharacterData | undefined {
 	const character = data.byId.get(id);
 	if (!character) return undefined;
 	const pieces: Record<CharacterDataPart, unknown> = {
@@ -72,12 +62,6 @@ export function characterData(
 			firstNight: sheetPlace(data.nightSheet.firstNight, id),
 			otherNight: sheetPlace(data.nightSheet.otherNight, id)
 		},
-		nightNumbers: numeric
-			? {
-					firstNight: numeric.firstNight.get(id) ?? null,
-					otherNight: numeric.otherNight.get(id) ?? null
-				}
-			: null,
 		jinxes: jinxesFor(data.jinxes, id),
 		icons: characterIcons(character) ?? null
 	};
