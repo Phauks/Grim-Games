@@ -7,11 +7,9 @@
 import { readFileSync } from 'node:fs';
 import {
 	loadGameData,
-	parseNumericNightOrder,
 	type Character,
 	type CharacterId,
-	type GameData,
-	type NumericNightOrder
+	type GameData
 } from '#lib/core/data/index.ts';
 
 const dataDir = new URL('../../../../static/data/', import.meta.url);
@@ -30,14 +28,6 @@ export function committedGameData(): GameData {
 		nightsheet: readDataFile('nightsheet.json')
 	});
 	return cached;
-}
-
-let cachedNumeric: NumericNightOrder | undefined;
-
-/** The provisional numeric night order (night-order-provisional.json). */
-export function committedNumericNightOrder(): NumericNightOrder {
-	cachedNumeric ??= parseNumericNightOrder(readDataFile('night-order-provisional.json'));
-	return cachedNumeric;
 }
 
 /** An official character by id; throws if roles.json has no such character. */

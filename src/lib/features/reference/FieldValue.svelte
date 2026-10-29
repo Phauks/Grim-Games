@@ -119,10 +119,7 @@
 		<span class="pos" data-testid="{testid}-position" data-position={info.position}
 			>{#if info.position !== undefined}{t('reference.nightStep', {
 					position: info.position
-				})}{:else}–{/if}{#if info.number !== undefined}<small
-					title={t('reference.provisionalNumber')}
-					>{t('reference.nightSortNumber', { number: info.number })}</small
-				>{/if}</span
+				})}{:else}–{/if}</span
 		>
 		<span class="st"
 			>{#if info.text}<NightText text={info.text} {character} {night} />{:else}{t(
@@ -407,11 +404,6 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 		color: var(--heading);
-	}
-	.pos small {
-		margin-left: var(--space-1);
-		font-size: 0.7rem;
-		color: var(--on-surface-muted);
 	}
 	.list {
 		display: grid;

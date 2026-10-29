@@ -4,7 +4,7 @@
  * https://wiki.bloodontheclocktower.com/Character_Types.
  */
 import { describe, expect, it } from 'vitest';
-import { committedGameData, committedNumericNightOrder } from '#lib/core/testing/committed-data.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { characterReference } from './reference.ts';
 import {
 	activeFilterCount,
@@ -15,7 +15,7 @@ import {
 } from './reference-table.ts';
 
 const data = committedGameData();
-const entries = characterReference(data, committedNumericNightOrder());
+const entries = characterReference(data);
 const ids = (state: TableState) => tableRows(entries, state).map((e) => e.character.id);
 
 describe('tableRows', () => {

@@ -2130,7 +2130,14 @@ test("a seat's other guesses stay on the screen, on whichever side of the Grim i
 		const box = (await pill.boundingBox())!;
 		expect(box.x, `Seat ${i + 1}'s pill`).toBeGreaterThanOrEqual(0);
 		expect(box.x + box.width, `Seat ${i + 1}'s pill`).toBeLessThanOrEqual(width);
+		// Two slots at most (Trevor, 2026-10-29): the next guess, then "+1" for the third.
+		await expect(pill.getByTestId('guess-mark')).toHaveCount(1);
+		await expect(pill.getByTestId('more-guesses')).toHaveText('+1');
 	}
+	// The count opens the seat's sheet, where every guess is listed.
+	await seats.nth(0).getByTestId('more-guesses').tap();
+	const first = phone.getByRole('dialog', { name: 'Seat 1 · Seat 1' });
+	await expect(first.getByTestId('seat-guesses').getByRole('button')).toHaveCount(3);
 	await phoneContext.close();
 });
 
