@@ -50,13 +50,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
 			// Typing a room code, and the games this device is in: rooms joined as a player above games
 			// it is storytelling (Trevor, 2026-10-18 and 2026-10-28).
-			{ id: 'join', path: '/join', label: 'shell.navJoinGame', icon: 'join' },
-			{
-				id: 'history',
-				path: '/history',
-				label: 'shell.navHistory',
-				icon: 'history'
-			}
+			{ id: 'join', path: '/join', label: 'shell.navJoinGame', icon: 'join' }
+			// History is under "You", beside Friends (Trevor, 2026-10-29).
 		]
 	},
 	{
@@ -90,6 +85,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
 	HOME_ITEM,
 	...NAV_SECTIONS.flatMap((section) => section.items)
 ];
+
+/** The games played on this device, under "You" after Friends (Trevor, 2026-10-29). */
+export const HISTORY_ITEM: NavItem = {
+	id: 'history',
+	path: '/history',
+	label: 'shell.navHistory',
+	icon: 'history'
+};
 
 /** The Account destination, listed with Settings under "You" at the end of the drawer. */
 export const ACCOUNT_ITEM: NavItem = {
