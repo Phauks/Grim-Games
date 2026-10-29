@@ -1798,3 +1798,30 @@ test('Bag draw sets how a custom script’s own character goes in the bag', asyn
 	// Now it is handled like the Drunk: one more Townsfolk in the bag instead of its own token.
 	await expect(check).toContainText(/Imposter\s*: \+1 Townsfolk in the bag/);
 });
+
+test('tiles side by side are the same height, their bluff and lock buttons too', async ({
+	page
+}) => {
+	await selectionFor(page, 8);
+	// Side by side on the tablet; on a phone the column is one tile wide, so nothing to match.
+	const rows = await page.locator('.ring-row').evaluateAll((els) =>
+		els.map((el) => {
+			const box = el.getBoundingClientRect();
+			const end = el.querySelector('.end')?.getBoundingClientRect();
+			// The tile's content edge: the buttons sit inside its padding.
+			const inner = box.bottom - parseFloat(getComputedStyle(el).paddingBottom);
+			return { top: Math.round(box.top), bottom: box.bottom, inner, endBottom: end?.bottom };
+		})
+	);
+	const byTop = Map.groupBy(rows, (r) => r.top);
+	for (const line of byTop.values()) {
+		const bottoms = line.map((r) => r.bottom);
+		expect(Math.max(...bottoms) - Math.min(...bottoms)).toBeLessThan(1);
+		// The bluff and lock buttons grow to the tile's bottom (Trevor, 2026-10-29).
+		for (const r of line)
+			if (r.endBottom !== undefined) expect(r.inner - r.endBottom).toBeLessThan(1);
+	}
+	expect(
+		[...byTop.values()].some((line) => line.length > 1) || test.info().project.name === 'phone'
+	).toBe(true);
+});
