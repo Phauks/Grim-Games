@@ -255,9 +255,11 @@ export class RoomPlayer {
 	 * Tells the room this phone's avatar, frame and picture (plan R6) when they differ from
 	 * what it has: on every connect, and when the player picks again. The picture is uploaded
 	 * once a game, since the room deletes one the Storyteller took away; a look the room turned
-	 * down is not sent again until something in it changes.
+	 * down is not sent again until something in it changes. Nothing goes while the game locks it
+	 * (room-look.ts); the next view after the game ends sends it.
 	 */
 	async sendLook(): Promise<void> {
+		if (this.view?.lookLocked) return;
 		const { avatar, frame } = playerSettings.current;
 		const picture = await this.#picture();
 		const me = this.view?.me;

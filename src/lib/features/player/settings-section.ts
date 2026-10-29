@@ -3,6 +3,7 @@ import PlayerSettingsSection from './PlayerSettingsSection.svelte';
 import PrintSettingsFields from './PrintSettingsFields.svelte';
 import ProfileButton from './ProfileButton.svelte';
 import ProfileSection from './ProfileSection.svelte';
+import { joinedRoom } from '#lib/features/room/joined-room.svelte.ts';
 import { playerSettings, PRINT_DEFAULTS } from './player-settings.svelte.ts';
 
 // The player view's own settings section (settings registry: features add their own).
@@ -32,7 +33,11 @@ registerSettingsSection({
 	component: ProfileSection,
 	listed: false,
 	headerButton: ProfileButton,
-	reset: () => playerSettings.update({ frame: undefined, avatar: 'initials' }),
+	// The look stays put while a game locks it (room-look.ts).
+	reset: () => {
+		if (!joinedRoom.player?.view?.lookLocked)
+			playerSettings.update({ frame: undefined, avatar: 'initials' });
+	},
 	order: 1
 });
 
