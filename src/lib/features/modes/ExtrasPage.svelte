@@ -35,6 +35,8 @@
 	import { readExtras, writeExtras } from './mode-extras.ts';
 	import RuleHeader from './RuleHeader.svelte';
 	import { spawnedBy } from './spawned-by.ts';
+	import { dealTitle } from './deal-title.ts';
+	import { setupHref } from './start.ts';
 
 	/**
 	 * The hidden extra characters of a mode like A Script of Infinite Possibilities, for the
@@ -179,7 +181,7 @@
 				setupSelection.setCopies(id, 0);
 		}
 		for (const id of ids) setupSelection.setCopies(id, 1);
-		await goto(resolve('/grimoire/[gameId]/game-settings', { gameId }));
+		await goto(setupHref(gameId));
 	}
 </script>
 
@@ -269,7 +271,7 @@
 					disabled={official.length === 0 || extras.length < total.min || extras.length > total.max}
 					onclick={goNext}
 				>
-					{t('setup.gameSettings')}
+					{setupHref(gameId).endsWith('/deal') ? dealTitle(gameId) : t('modes.extras.next')}
 				</Button>
 			{/snippet}
 		</SetupNav>{/if}
