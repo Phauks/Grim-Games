@@ -3,7 +3,7 @@ import { pickScript, toBoard } from './new-game.ts';
 import { openSettingsDialog } from './shell.ts';
 
 // Settings profiles (plan S18, Trevor 2026-10-23): named sets of settings, made in Settings,
-// picked on New game and switched from the board's Board sheet; each game remembers its own.
+// picked in a new game's Game settings and switched from the board's Board sheet; each game remembers its own.
 
 async function openSection(page: Page, section: string) {
 	await openSettingsDialog(page);
@@ -29,14 +29,20 @@ const ghostVote = (page: Page) =>
 async function startGame(page: Page, profile?: string) {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	if (profile) await pickProfile(page, page, profile);
 	await page.getByRole('button', { name: 'Create game' }).tap();
+	// Chosen in Character selection's Game settings (Trevor, 2026-10-29), no longer New game.
+	if (profile) {
+		await page.getByTestId('game-options').getByRole('button', { name: 'Game settings' }).tap();
+		const dialog = page.getByRole('dialog', { name: 'Game settings' });
+		await pickProfile(dialog, page, profile);
+		await dialog.getByRole('button', { name: 'Close' }).tap();
+	}
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	return page.url();
 }
 
-test('profiles are made in Settings, chosen on New game and switched on the board', async ({
+test('profiles are made in Settings, chosen for a new game and switched on the board', async ({
 	page
 }) => {
 	await page.goto('/');

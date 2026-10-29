@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript, nameStoryteller, toBoard, pastGameSettings } from './new-game.ts';
+import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
 import { savesSettled, trackSaves } from './saves.ts';
@@ -3190,7 +3190,6 @@ test("on a crowded table one seat's reminders never cover another's", async ({ p
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	for (let i = 0; i < 7; i++) await page.getByRole('button', { name: 'More players' }).tap();
 	await toBoard(page);
@@ -4697,7 +4696,6 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		await page.reload();
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 		await page.getByRole('button', { name: 'Create game' }).tap();
-		await pastGameSettings(page);
 		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 		const count = page.getByTestId('player-count');
 		for (let n = 8; n < players; n++)
@@ -4771,7 +4769,6 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await toBoard(page);
@@ -6718,6 +6715,99 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 	await expect(await openSeat(page, 2)).toContainText(/Poisoner\s*Minion · Good · Seat 2/);
 	await closeSheet(page);
 	await expect(await openSeat(page, 3)).toContainText(/Chef\s*Townsfolk · Evil · Seat 3/);
+});
+
+// https://wiki.bloodontheclocktower.com/Hatter: if it died today or tonight, each Minion and
+// Demon player may choose another character of their own type to become.
+test("the Hatter's step lets each Minion and Demon become another of their type", async ({
+	page
+}) => {
+	// Two nights and four seats to cast.
+	test.slow();
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Hatter'],
+		[2, 'Chef'],
+		[3, 'Poisoner'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		const button = picker.getByRole('button', { name, exact: true });
+		// The picker keeps its "not on the script" switch between seats.
+		if (!(await button.count()))
+			await picker.getByText('Include characters not on the script').tap();
+		await button.tap();
+		await closeSheet(page);
+	}
+	await walkTo(page, 'Dusk');
+	await nextNight(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await closeSheet(page);
+
+	const strip = await walkTo(page, 'Hatter');
+	await strip.locator('button.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Hatter' });
+	await expect(step).toBeVisible();
+	const change = step.getByTestId('change-character');
+	await expect(change).toContainText('None');
+	await change.getByRole('button', { name: 'Choose' }).tap();
+	const seats = page.getByRole('dialog', { name: 'Changes character' });
+	await expect(seats.getByRole('button', { name: /Seat 2/ })).toHaveCount(0);
+	await expect(seats.getByRole('button', { name: /Seat 4/ })).toBeVisible();
+	await seats.getByRole('button', { name: /Seat 3/ }).tap();
+	const minions = page.getByRole('dialog', { name: 'Choose a character' });
+	await expect(minions.getByRole('button', { name: 'Poisoner', exact: true })).toHaveCount(0);
+	await expect(minions.getByRole('button', { name: 'Chef', exact: true })).toHaveCount(0);
+	await minions.getByRole('button', { name: 'Spy', exact: true }).tap();
+	await expect(change).toContainText('Spy');
+	// The Demon may still change.
+	await expect(change.getByRole('button', { name: 'Choose' })).toBeVisible();
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(await openSeat(page, 3)).toContainText(/Spy\s*Minion · Evil · Seat 3/);
+});
+
+// https://wiki.bloodontheclocktower.com/Engineer: once per game it chooses which Minions or which
+// Demon are in play; the evil players keep their type.
+test("the Engineer's step changes a Minion into another Minion", async ({ page }) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Engineer'],
+		[2, 'Chef'],
+		[3, 'Poisoner'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		const button = picker.getByRole('button', { name, exact: true });
+		// The picker keeps its "not on the script" switch between seats.
+		if (!(await button.count()))
+			await picker.getByText('Include characters not on the script').tap();
+		await button.tap();
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Engineer');
+	await strip.locator('button.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Engineer' });
+	const change = step.getByTestId('change-character');
+	await change.getByRole('button', { name: 'Choose' }).tap();
+	const seats = page.getByRole('dialog', { name: 'Changes character' });
+	await expect(seats.getByRole('button', { name: /Seat 2/ })).toHaveCount(0);
+	await seats.getByRole('button', { name: /Seat 3/ }).tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: 'Scarlet Woman', exact: true })
+		.tap();
+	await expect(change).toContainText('Scarlet Woman');
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(await openSeat(page, 3)).toContainText(/Scarlet Woman\s*Minion · Evil · Seat 3/);
 });
 
 // https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it points at a player and at
