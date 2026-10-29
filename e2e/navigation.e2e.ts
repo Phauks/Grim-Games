@@ -113,14 +113,15 @@ test.describe('on a computer', () => {
 		await expect(nav.getByRole('link', { name: 'Library' })).toBeVisible();
 	});
 
-	// Report an issue is a menu row like Settings, not small text (Trevor, 2026-10-29).
-	test('Report an issue is a row in App', async ({ page }) => {
+	// Report an issue does something rather than go somewhere, so it is a button under the
+	// sections, not a menu row (Trevor, 2026-10-29).
+	test('Report an issue is a button, not a menu row', async ({ page }) => {
 		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
 		await page.goto('/');
-		const app = page
-			.getByRole('navigation', { name: 'Menu' })
-			.getByRole('list', { name: 'App', exact: true });
-		await app.getByRole('button', { name: 'Report an issue' }).click();
+		const nav = page.getByRole('navigation', { name: 'Menu' });
+		const report = nav.getByRole('button', { name: 'Report an issue' });
+		await expect(nav.getByRole('listitem').filter({ has: report })).toHaveCount(0);
+		await report.click();
 		await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
 	});
 });

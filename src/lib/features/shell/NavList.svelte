@@ -5,6 +5,7 @@
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
@@ -107,44 +108,38 @@
 			</li>
 		{/snippet}
 		{@render section('you', t('shell.navSectionYou'), 3, youItems)}
-		<!-- The app's own pages, where the footer had them (2026-10-23), then Report an issue and the
-		     switch to the other build as menu rows, not small text (Trevor, 2026-10-29). -->
+		<!-- The app's own pages, where the footer had them (2026-10-23). -->
 		{#snippet appItems()}
 			{#each APP_ITEMS as item (item.id)}{@render link(item)}{/each}
-			<li>
-				<button
-					type="button"
-					onclick={() => {
-						onChoose?.();
-						void reportWithDiagnostics();
-					}}
-				>
-					<Icon name="report" />
-					<span>{t('shell.reportIssue')}</span>
-				</button>
-			</li>
-			{#if otherBuild}
-				<li>
-					<!-- Each build is its own origin, so its device data is separate (2026-10-19). An
-					     absolute link to the other build's host, so there is no app path to resolve. -->
-					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-					<a href={otherBuild.href} title={t('shell.switchBuildTitle')} data-testid="switch-build">
-						<Icon name="switchBuild" />
-						<span
-							>{otherBuild.to === 'beta'
-								? t('shell.switchToBeta')
-								: t('shell.switchToProduction')}</span
-						>
-					</a>
-				</li>
-			{/if}
 		{/snippet}
-		{@render section(
-			'app',
-			t('shell.navSectionApp'),
-			APP_ITEMS.length + (otherBuild ? 2 : 1),
-			appItems
-		)}
+		{@render section('app', t('shell.navSectionApp'), APP_ITEMS.length, appItems)}
+	</div>
+	<!-- Report an issue and the switch to the other build do something rather than go somewhere,
+	     so they are buttons, not menu rows (Trevor, 2026-10-29). -->
+	<div class="actions">
+		<Button
+			icon="report"
+			onclick={() => {
+				onChoose?.();
+				void reportWithDiagnostics();
+			}}>{t('shell.reportIssue')}</Button
+		>
+		{#if otherBuild}
+			<!-- Each build is its own origin, so its device data is separate (2026-10-19); it opens
+			     in place, on the other build's host. -->
+			<Button
+				icon="switchBuild"
+				title={t('shell.switchBuildTitle')}
+				data-testid="switch-build"
+				onclick={() => {
+					onChoose?.();
+					location.assign(otherBuild.href);
+				}}
+				>{otherBuild.to === 'beta'
+					? t('shell.switchToBeta')
+					: t('shell.switchToProduction')}</Button
+			>
+		{/if}
 	</div>
 	<BuildLine />
 </div>
@@ -169,6 +164,13 @@
 	.sections ul {
 		letter-spacing: normal;
 		text-transform: none;
+	}
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+		padding: 0 var(--space-3);
 	}
 	.profile {
 		display: grid;
