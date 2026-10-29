@@ -26,8 +26,10 @@ import { readGainedFrom, type GainedFrom } from './gained-from-rules.ts';
 import {
 	readBecomes,
 	readChangesCharacter,
+	readSwapsCharacters,
 	type Becomes,
-	type ChangesCharacter
+	type ChangesCharacter,
+	type SwapsCharacters
 } from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readAnswers, readLearns, type Answers, type Learns } from './night-info-rules.ts';
@@ -201,6 +203,8 @@ export interface CharacterRules extends ChoiceRules {
 	becomes?: Becomes;
 	/** Its night step makes a chosen player another character (`becomes-rules.ts`). */
 	changesCharacter?: ChangesCharacter;
+	/** Its night step swaps two chosen players' characters (`becomes-rules.ts`). */
+	swapsCharacters?: SwapsCharacters;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 	/**
@@ -342,6 +346,7 @@ const RULE_KEYS = [
 	'gainedFrom',
 	'becomes',
 	'changesCharacter',
+	'swapsCharacters',
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'falseInfo',
@@ -566,6 +571,10 @@ export function parseCharacterRules(
 		const at = `${path}.changesCharacter`;
 		const changes = readChangesCharacter(raw.changesCharacter, at, issues, reminders);
 		if (changes) rules.changesCharacter = changes;
+	}
+	if (raw.swapsCharacters !== undefined) {
+		const swaps = readSwapsCharacters(raw.swapsCharacters, `${path}.swapsCharacters`, issues);
+		if (swaps) rules.swapsCharacters = swaps;
 	}
 	if (raw.infoTokenCharacters !== undefined) {
 		const at = `${path}.infoTokenCharacters`;
