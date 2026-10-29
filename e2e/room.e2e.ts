@@ -746,8 +746,9 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 	expect(second).not.toBe(board);
 	await expect(phone.getByTestId('grim-seat').nth(1)).not.toHaveAttribute('data-guess', 'true');
 	await phone.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(phone.locator('[data-note]').first()).toBeVisible();
-	await expect(phone.locator('[data-note]').filter({ hasText: 'Game one' })).toHaveCount(0);
+	// The new game's notebook starts with no notes at all, not a blank one (Trevor, 2026-10-29).
+	await expect(myNotes.getByRole('button', { name: 'New note' })).toBeVisible();
+	await expect(phone.locator('[data-note]')).toHaveCount(0);
 	await phoneContext.close();
 });
 

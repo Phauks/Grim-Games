@@ -233,7 +233,9 @@ test('notes written on a seat by an older version are kept as titled notes', asy
 	// A v4 notebook from when /play had a seat circle (notebook.ts migrateNotebook). The
 	// notebook's database opens with the Notes tab, so open it once first.
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(page.locator('[data-note]')).toHaveCount(1);
+	// A new notebook starts with no notes, only "+ New note" (Trevor, 2026-10-29).
+	await expect(page.locator('[data-note]')).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'New note' })).toBeVisible();
 	await page.evaluate(
 		() =>
 			new Promise<void>((resolve, reject) => {
@@ -412,7 +414,13 @@ test("the night order shows who wakes, with TPI's night text", async ({ page }) 
 
 test('titled notes are kept after a reload, and deleting asks first', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await page.getByRole('button', { name: /^Untitled/ }).tap();
+	// A new note closed with nothing in it is not kept.
+	await page.getByRole('button', { name: 'New note' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Note' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog', { name: 'Note' })).toBeHidden();
+	await expect(page.locator('[data-note]')).toHaveCount(0);
+	await page.getByRole('button', { name: 'New note' }).tap();
 	let sheet = page.getByRole('dialog', { name: 'Note' });
 	// Opening a note doesn't focus a field, so the phone keyboard stays closed (Trevor).
 	await expect(sheet.getByRole('textbox', { name: 'Title' })).toBeVisible();
@@ -477,7 +485,7 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 
 test('each script keeps its own notebook', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await page.getByRole('button', { name: /^Untitled/ }).tap();
+	await page.getByRole('button', { name: 'New note' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Note' })
 		.getByRole('textbox', { name: 'Title' })
@@ -489,9 +497,9 @@ test('each script keeps its own notebook', async ({ page }) => {
 	await expect(page.getByRole('link', { name: 'Change script' })).toHaveCount(0);
 	await page.goto(`/play#e=bmr`);
 	await expect(page.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
-	// A new script starts its own notebook; Trouble Brewing's is kept.
-	await expect(page.getByRole('button', { name: /^Untitled/ })).toBeVisible();
-	await expect(page.getByRole('button', { name: /^TB/ })).toHaveCount(0);
+	// A new script starts its own notebook, with no notes; Trouble Brewing's is kept.
+	await expect(page.getByRole('button', { name: 'New note' })).toBeVisible();
+	await expect(page.locator('[data-note]')).toHaveCount(0);
 	await page.goto('/play#e=tb');
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(page.getByRole('button', { name: /^TB/ })).toBeVisible();
@@ -599,7 +607,7 @@ test('a shared link with problems opens the Script check first', async ({ page }
 
 test('each note can hide its contents until it is opened', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await page.getByRole('button', { name: /^Untitled/ }).tap();
+	await page.getByRole('button', { name: 'New note' }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Note' });
 	await sheet.getByRole('textbox', { name: 'Title' }).fill('Evil team');
 	await sheet.getByRole('textbox', { name: 'Text' }).fill('Sam is the Imp');
@@ -640,7 +648,7 @@ test('each note can hide its contents until it is opened', async ({ page }) => {
 
 test('Enter in a note title closes the keyboard', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await page.getByRole('button', { name: /^Untitled/ }).tap();
+	await page.getByRole('button', { name: 'New note' }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Note' });
 	const title = sheet.getByRole('textbox', { name: 'Title' });
 	await title.fill('Bluff');
