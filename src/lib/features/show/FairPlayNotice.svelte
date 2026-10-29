@@ -7,9 +7,10 @@
 		/**
 		 * What the reader is asked to keep fair: `secret` for something only they may see
 		 * (their character, info sent to their phone), `message` for what a player sends the
-		 * Storyteller, `watch` for a spectator's promise before Grim view.
+		 * Storyteller, `watch` for a spectator's promise before Grim view, `profile` for the
+		 * look on a player's seat, which the whole table sees (Trevor, 2026-10-29).
 		 */
-		kind: 'secret' | 'message' | 'watch';
+		kind: 'secret' | 'message' | 'watch' | 'profile';
 		/**
 		 * One short line with a caret that opens the whole warning, as Game info's corner name
 		 * does (Grim view while watching, Trevor 2026-10-28: "Too verbose").
@@ -20,7 +21,13 @@
 	let { kind, short = false }: Props = $props();
 	let open = $state(false);
 	let anchor = $state<HTMLElement>();
-	const text = $derived(kind === 'secret' ? t('show.fairPlay.secret') : t('show.fairPlay.message'));
+	const text = $derived(
+		kind === 'secret'
+			? t('show.fairPlay.secret')
+			: kind === 'profile'
+				? t('show.fairPlay.profile')
+				: t('show.fairPlay.message')
+	);
 </script>
 
 <!--

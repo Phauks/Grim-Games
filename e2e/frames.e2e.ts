@@ -38,6 +38,18 @@ test("the Board has no frame of its own: laurels are each player's", async ({ pa
 	await expect(dialog.getByTestId('board-preview').locator('svg[data-frame]')).toHaveCount(0);
 });
 
+test('the Profile warns that the look on a seat must never hint at a character', async ({
+	page
+}) => {
+	// Plan R14 (Trevor, 2026-10-29): a fair-play warning, not a lock during the game.
+	await page.goto('/');
+	const dialog = await openProfile(page);
+	const notice = dialog.getByTestId('fair-play');
+	await expect(notice).toContainText('Never change it during a game to hint at a character');
+	await expect(notice).toBeVisible();
+	await expect(dialog.getByRole('button', { name: 'Change character token' })).toBeEnabled();
+});
+
 test('a player picks a laurel form, its colour and its motion, and keeps them', async ({
 	page
 }) => {
@@ -51,13 +63,15 @@ test('a player picks a laurel form, its colour and its motion, and keeps them', 
 	// disables them.
 	await expect(colour).toBeDisabled();
 	await expect(motion).toBeDisabled();
-	const below = await motion.boundingBox();
+	// Measured from the laurel's row: the pick may scroll the Profile on a short screen.
+	const gap = async () => (await motion.boundingBox())!.y - (await form.boundingBox())!.y;
+	const below = await gap();
 
 	// Any form takes any colour, the simple ring too (Trevor, 2026-10-28).
 	await pick(page, 'Your laurel', 'Simple ring');
 	await expect(form.locator('svg[data-frame="ring-accent"]')).toBeAttached();
 	await expect(colour).toBeEnabled();
-	expect(await motion.boundingBox()).toEqual(below);
+	expect(await gap()).toBe(below);
 	await pick(page, 'Color', 'Orange');
 	await expect(form.locator('svg[data-frame="ring-minion"]')).toBeAttached();
 

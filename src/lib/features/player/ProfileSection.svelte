@@ -7,6 +7,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
+	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
 	import AvatarPictureRow from './AvatarPictureRow.svelte';
 	import CharacterIconRow from './CharacterIconRow.svelte';
@@ -50,6 +51,9 @@
 		data-testid="profile-preview"
 		onclick={() => (enlarged = true)}>{@render seat(112)}</button
 	>
+	<!-- Everyone at the table sees this look, so it mustn't hint at a character (Trevor,
+	     2026-10-29: a warning, not a lock). -->
+	<FairPlayNotice kind="profile" />
 </div>
 
 <Dialog bind:open={enlarged} title={t('player.bigPreview')} size="wide">
