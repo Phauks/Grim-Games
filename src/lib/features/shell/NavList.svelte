@@ -6,6 +6,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
@@ -38,6 +39,43 @@
 
 	const label = (key: MessageKey): string => (t as (key: MessageKey) => string)(key);
 	const otherBuild = $derived(buildSwitch(buildInfo, page.url));
+
+	/**
+	 * Something the menu does rather than a place it goes: opens a modal or changes the app's
+	 * state. Each is a Button under the sections; only locations are menu rows (Trevor,
+	 * 2026-10-29: "modals get buttons, locations get the current").
+	 */
+	interface NavAction {
+		id: string;
+		label: string;
+		icon: IconSlot;
+		title?: string;
+		run: () => void;
+	}
+
+	const actions = $derived<NavAction[]>([
+		{ id: 'settings', label: t('shell.settings'), icon: 'settings', run: openSettings },
+		{
+			id: 'report',
+			label: t('shell.reportIssue'),
+			icon: 'report',
+			run: () => void reportWithDiagnostics()
+		},
+		// Each build is its own origin, so its device data is separate (2026-10-19); it opens in
+		// place, on the other build's host.
+		...(otherBuild
+			? [
+					{
+						id: 'switch-build',
+						label:
+							otherBuild.to === 'beta' ? t('shell.switchToBeta') : t('shell.switchToProduction'),
+						icon: 'switchBuild' as const,
+						title: t('shell.switchBuildTitle'),
+						run: () => location.assign(otherBuild.href)
+					}
+				]
+			: [])
+	]);
 </script>
 
 {#snippet link(item: NavItem)}
@@ -91,57 +129,33 @@
 			{/snippet}
 			{@render section('admin', t('shell.navSectionAdmin'), 2, adminItems)}
 		{/if}
-		<!-- Account, Friends, History and Settings, last in the sidebar and the drawer alike (2026-10-22). -->
+		<!-- Account, Friends and History, last in the sidebar and the drawer alike (2026-10-22). -->
 		{#snippet youItems()}
 			{@render link(ACCOUNT_ITEM)}
 			{@render link(FRIENDS_ITEM)}
 			{@render link(HISTORY_ITEM)}
-			<li>
-				<button
-					type="button"
-					onclick={() => {
-						onChoose?.();
-						openSettings();
-					}}
-				>
-					<Icon name="settings" />
-					<span>{t('shell.settings')}</span>
-				</button>
-			</li>
 		{/snippet}
-		{@render section('you', t('shell.navSectionYou'), 4, youItems)}
+		{@render section('you', t('shell.navSectionYou'), 3, youItems)}
 		<!-- The app's own pages, where the footer had them (2026-10-23). -->
 		{#snippet appItems()}
 			{#each APP_ITEMS as item (item.id)}{@render link(item)}{/each}
 		{/snippet}
 		{@render section('app', t('shell.navSectionApp'), APP_ITEMS.length, appItems)}
 	</div>
-	<!-- Report an issue and the switch to the other build do something rather than go somewhere,
-	     so they are buttons, not menu rows (Trevor, 2026-10-29). -->
+	<!-- Settings, Report an issue and the switch to the other build do something rather than go
+	     somewhere, so they are buttons, not menu rows (Trevor, 2026-10-29). -->
 	<div class="actions">
-		<Button
-			icon="report"
-			onclick={() => {
-				onChoose?.();
-				void reportWithDiagnostics();
-			}}>{t('shell.reportIssue')}</Button
-		>
-		{#if otherBuild}
-			<!-- Each build is its own origin, so its device data is separate (2026-10-19); it opens
-			     in place, on the other build's host. -->
+		{#each actions as action (action.id)}
 			<Button
-				icon="switchBuild"
-				title={t('shell.switchBuildTitle')}
-				data-testid="switch-build"
+				icon={action.icon}
+				title={action.title}
+				data-testid="nav-action-{action.id}"
 				onclick={() => {
 					onChoose?.();
-					location.assign(otherBuild.href);
-				}}
-				>{otherBuild.to === 'beta'
-					? t('shell.switchToBeta')
-					: t('shell.switchToProduction')}</Button
+					action.run();
+				}}>{action.label}</Button
 			>
-		{/if}
+		{/each}
 	</div>
 	<BuildLine />
 </div>
@@ -167,9 +181,10 @@
 		letter-spacing: normal;
 		text-transform: none;
 	}
+	/* One full-width column, so the buttons line up whatever their labels. */
 	.actions {
 		display: flex;
-		flex-wrap: wrap;
+		flex-direction: column;
 		gap: var(--space-2);
 		margin-top: var(--space-2);
 		padding: 0 var(--space-3);
@@ -180,8 +195,7 @@
 		width: var(--icon-size);
 		height: var(--icon-size);
 	}
-	a,
-	button {
+	a {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
@@ -205,8 +219,7 @@
 		box-shadow: inset 3px 0 0 var(--accent-edge);
 	}
 	@media (hover: hover) and (pointer: fine) {
-		a:not([aria-current='page']):hover,
-		button:hover {
+		a:not([aria-current='page']):hover {
 			background: var(--surface-hover);
 		}
 	}
