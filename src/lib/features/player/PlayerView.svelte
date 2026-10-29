@@ -159,10 +159,7 @@
 	// theme until a game is open (Trevor, 2026-10-28).
 	$effect.pre(() => {
 		if (join && !script) return;
-		screenTheme.current = sheetTheme(playerSettings.current.sheetBackground, preferences.theme);
-		return () => {
-			screenTheme.current = undefined;
-		};
+		return screenTheme.show(sheetTheme(playerSettings.current.sheetBackground, preferences.theme));
 	});
 	const logo = $derived(script && scriptLogo(script));
 	let logoFailed = $state(false);
