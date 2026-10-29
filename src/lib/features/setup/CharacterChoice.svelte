@@ -233,7 +233,13 @@
 		cursor: pointer;
 	}
 	.add {
-		border-inline-start: 1px solid var(--border);
+		border-block-start: 1px solid var(--border);
+	}
+	/* Small, under the band that runs over them (Trevor, 2026-10-28). */
+	.lock,
+	.toggle,
+	.add {
+		--icon-size: 1em;
 	}
 	.lock,
 	.toggle {
