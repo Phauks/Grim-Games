@@ -13,7 +13,6 @@
 	import { travellersInPlay } from '#lib/features/player/travellers-in-play.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { tableState } from '#lib/features/room/table-state.svelte.ts';
-	import { seatPresence } from '#lib/core/sync/seat-presence.ts';
 
 	/**
 	 * What players see on /play, drawn from the Storyteller's game: where the game is up to and
@@ -48,7 +47,7 @@
 	// Who is connected, as the room tells the Storyteller; with no room, nothing to say.
 	const presence = $derived.by(() => {
 		const host = roomHost();
-		return host.code ? seatPresence(host.members, (id) => host.isHere(id)) : undefined;
+		return host.code ? host.seatPresence : undefined;
 	});
 	const guessKey = $derived(notebook ?? `storyteller:${game.gameId}`);
 </script>
@@ -57,7 +56,7 @@
 <PlayerStatusRow
 	table={town}
 	{presence}
-	unseatedNames={roomHost().connectedUnseated.flatMap((m) => (m.name ? [m.name] : []))}
+	unseatedNames={roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : []))}
 />
 <PlayerScreen
 	{script}

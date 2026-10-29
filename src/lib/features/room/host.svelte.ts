@@ -52,6 +52,7 @@ import { RoomInbox } from './inbox.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
 import { tableState } from './table-state.svelte.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
+import { seatPresence, type SeatPresence } from '#lib/core/sync/seat-presence.ts';
 import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 
 import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
@@ -613,6 +614,11 @@ export class RoomHost {
 	pictureOf(seatId: SeatId): string | undefined {
 		const hash = this.members.find((m) => m.seatId === seatId)?.picture;
 		return hash && this.code ? roomImagePath(this.code, hash) : undefined;
+	}
+
+	/** Who is connected, for the candles beside Setup: away phones from this game count too. */
+	get seatPresence(): SeatPresence {
+		return seatPresence(this.members, (id) => this.isHere(id), this.away);
 	}
 
 	/** Members with no seat whose phone is connected now: spectators, or players yet to sit. */
