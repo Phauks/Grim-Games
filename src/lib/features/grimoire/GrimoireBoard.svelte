@@ -13,7 +13,6 @@
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import CallTownConfirm from '#lib/features/room/CallTownConfirm.svelte';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
@@ -28,9 +27,7 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		charactersInPlay,
-		looseReminders,
 		scriptCharacterIds,
-		type ReminderInstance,
 		type ReminderId,
 		type SeatId
 	} from '#lib/core/model/index.ts';
@@ -43,7 +40,6 @@
 		stepNightNumbers,
 		todaysNominations,
 		mayNominate,
-		votesWithoutToken,
 		characterNominationPrompts,
 		dayClaim,
 		type CharacterNominationPrompt
@@ -81,13 +77,12 @@
 		cornerObstacles,
 		keepClear,
 		nameBoxes as boardNameBoxes,
-		rimToward,
 		toPercent as boardToPercent,
 		toPx as boardToPx
 	} from './board-geometry.ts';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import { fitReminders } from './reminder-fan.ts';
-	import { isOrphan, placingAlignment } from './board.ts';
+	import { isOrphan } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -96,7 +91,7 @@
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import BoardScriptDialog from './BoardScriptDialog.svelte';
-	import BoardReminderChip from './BoardReminderChip.svelte';
+	import BoardSeats from './BoardSeats.svelte';
 	import BoardRules from './BoardRules.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
@@ -108,7 +103,6 @@
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatProfileDialog from './SeatProfileDialog.svelte';
 	import NominationChooser from './NominationChooser.svelte';
-	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
@@ -179,9 +173,6 @@
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
 	const setUp = $derived(setupComplete(game));
 	const characters = $derived(grimoire.open.characters);
-	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
-	const artOf = (reminder: ReminderInstance) =>
-		reminder.like ? characters.get(reminder.like.characterId) : undefined;
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
 
 	let board = $state<HTMLElement>();
@@ -217,11 +208,11 @@
 	 * nominate (Trevor, 2026-10-24), so they show only the gavel, unless their character may
 	 * (`mayNominate`) or they nominated before they died.
 	 */
-	function seatNominationMarks(seat: { seatId: SeatId }) {
+	function seatNominationMarks(seatId: SeatId) {
 		if (!nominatedToday) return undefined;
-		const made = nominatedToday.made.has(seat.seatId);
-		const received = nominatedToday.received.has(seat.seatId);
-		const nominates = made || mayNominate(game, seat.seatId, characters);
+		const made = nominatedToday.made.has(seatId);
+		const received = nominatedToday.received.has(seatId);
+		const nominates = made || mayNominate(game, seatId, characters);
 		return { made: nominates ? made : undefined, received };
 	}
 	const nominatedToday = $derived.by(() => {
@@ -501,6 +492,14 @@
 	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
 	 * "they chose to open reminder, not character").
 	 */
+	/** A tap on a seat: its avatar opens the profile, its note and gavel their own asks. */
+	function tapSeat(seatId: SeatId, part?: 'note' | 'nominate' | 'avatar') {
+		if (part === 'avatar') openProfile(seatId);
+		else if (watching) readCharacter(game.seats[seatId]?.characterId);
+		else if (part === 'note') editNote(seatId);
+		else if (part === 'nominate') askNomination(seatId);
+		else openSeat(seatId);
+	}
 	function openReminder(seatId: SeatId, reminderId: ReminderId) {
 		selected = seatId;
 		// After the tap's click, so it doesn't land on what opens under the finger.
@@ -647,7 +646,7 @@
 	 */
 	let nominatingFrom = $state<{ seatId: SeatId; side: 'made' | 'received' }>();
 	function askNomination(seatId: SeatId) {
-		const made = seatNominationMarks({ seatId })?.made;
+		const made = seatNominationMarks(seatId)?.made;
 		nominatingFrom = { seatId, side: made === undefined ? 'received' : 'made' };
 	}
 
@@ -894,172 +893,29 @@
 				height={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
-		<!--
-			A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to
-			their seat's line, with a line back when they have to sit further out), so whose a
-			reminder is reads at a glance on a crowded board. First on the board, so every token,
-			name, ghost vote and mark draws over them (Trevor, 2026-10-24); only the logo and the
-			background are under them.
-		-->
-		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-			{#each seats as seat, i (seat.seatId)}
-				{#if !looseMode && remDrag.drag === undefined}
-					{#each fan[i] ?? [] as p, k (k)}
-						{@const from = rimToward(shown[i], p, boardSize, size)}
-						<line
-							x1={from.x}
-							y1={from.y}
-							x2={p.x}
-							y2={p.y}
-							data-tether={i + 1}
-							vector-effect="non-scaling-stroke"
-						/>
-					{/each}
-				{/if}
-			{/each}
-		</svg>
-
-		{#each seats as seat, i (seat.seatId)}
-			{@const at = shown[i]}
-			<div
-				class="slot"
-				class:dragging={seatArr.drag?.seatId === seat.seatId}
-				class:front={seatArr.front === seat.seatId}
-				style:left="{at.x}%"
-				style:top="{at.y}%"
-				onpointerdown={(event) => seatArr.dragStart(event, seat.seatId, at)}
-				onpointermove={(event) => seatArr.dragMove(event)}
-				onpointerup={(event) => seatArr.dragEnd(event)}
-				onpointercancel={() => seatArr.dragCancel()}
-				onkeydown={(event) => seatArr.nudge(event, seat.seatId, at)}
-				role="presentation"
-			>
-				<SeatToken
-					{seat}
-					number={i + 1}
-					character={seat.characterId ? characters.get(seat.characterId) : undefined}
-					{size}
-					nightNumbers={nightNumbers && seat.characterId
-						? {
-								first: nightNumbers.first.get(seat.characterId),
-								other: nightNumbers.other.get(seat.characterId)
-							}
-						: undefined}
-					orphan={isOrphan(seat, game.script, characters, offScriptOk)}
-					nominations={seatNominationMarks(seat)}
-					tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
-					dropTarget={seatArr.reorderTarget === seat.seatId ||
-						(remDrag.drag !== undefined &&
-							remDrag.drag.target === seat.seatId &&
-							remDrag.drag.from !== seat.seatId) ||
-						hints.tray.target === seat.seatId}
-					dragFrom={remDrag.drag !== undefined && remDrag.drag.from === seat.seatId}
-					misfit={hints.misfits.has(seat.seatId)}
-					role={hints.role(seat.seatId)}
-					onTap={(part) =>
-						!seatArr.arranging &&
-						(part === 'avatar'
-							? openProfile(seat.seatId)
-							: watching
-								? readCharacter(seat.characterId)
-								: part === 'note'
-									? editNote(seat.seatId)
-									: part === 'nominate'
-										? askNomination(seat.seatId)
-										: openSeat(seat.seatId))}
-					onHold={seatArr.arranging || watching
-						? undefined
-						: (on) => on && seatArr.held(seat.seatId)}
-					onGhostVote={() =>
-						!seatArr.arranging &&
-						!watching &&
-						grimoire.run({
-							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
-							seatId: seat.seatId
-						})}
-				/>
-			</div>
-		{/each}
-
-		{#each seats as seat, i (seat.seatId)}
-			{@const count = seat.reminders.length}
-			{#if count > 0}
-				{@const at = fan[i]}
-				{#each seat.reminders as reminder, k (reminder.reminderId)}
-					{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
-					{@const spot =
-						boardLooks.current.reminders === 'free'
-							? grimoire.reminderSpots[reminder.reminderId]
-							: undefined}
-					<BoardReminderChip
-						{reminder}
-						at={dragged ? remDrag.drag!.at : (spot ?? at[k])}
-						character={characters.get(reminder.characterId)}
-						alignment={placingAlignment(game, reminder, characters)}
-						art={artOf(reminder)}
-						size={chip}
-						disabled={seatArr.arranging || watching}
-						seatNumber={i + 1}
-						onHeldSeat={heldSeat === seat.seatId}
-						dragging={dragged}
-						extra={hints.extras.has(reminder.reminderId)}
-						now={nw.isStepReminder(reminder)}
-						onTap={() => openReminder(seat.seatId, reminder.reminderId)}
-						onDrag={(x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
-						onCancel={() => remDrag.cancel()}
-					/>
-				{/each}
-			{/if}
-		{/each}
-
-		<!-- Reminders that belong to no one, where they were put down (Trevor, 2026-10-17). -->
-		{#each looseReminders(game) as reminder, k (reminder.reminderId)}
-			{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
-			<BoardReminderChip
-				{reminder}
-				at={dragged
-					? remDrag.drag!.at
-					: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
-				character={characters.get(reminder.characterId)}
-				alignment={placingAlignment(game, reminder, characters)}
-				art={artOf(reminder)}
-				size={chip}
-				disabled={seatArr.arranging || watching}
-				loose
-				dragging={dragged}
-				extra={hints.extras.has(reminder.reminderId)}
-				unassigned={!looseMode}
-				now={nw.isStepReminder(reminder)}
-				onTap={() => heldDialog?.show(reminder.reminderId)}
-				onDrag={(x, y, end) => remDrag.move(reminder.reminderId, undefined, x, y, end)}
-				onCancel={() => remDrag.cancel()}
-			/>
-		{/each}
-		<!-- A Fabled or Loric's reminder follows the finger while it is dragged. -->
-		{#if heldDrag}
-			<BoardReminderChip
-				reminder={heldDrag}
-				at={remDrag.drag!.at}
-				character={characters.get(heldDrag.characterId)}
-				art={artOf(heldDrag)}
-				size={chip}
-				disabled
-				dragging
-				ghost
-				onTap={() => {}}
-			/>
-		{/if}
-
-		{#each placeSpots as spot (spot.position)}
-			<button
-				type="button"
-				class="place-spot"
-				style:left="{spot.at.x}%"
-				style:top="{spot.at.y}%"
-				aria-label={spot.label}
-				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
-			>
-		{/each}
+		<BoardSeats
+			{grimoire}
+			{shown}
+			{fan}
+			{size}
+			{chip}
+			{boardSize}
+			{seatArr}
+			{remDrag}
+			{hints}
+			{nw}
+			{watching}
+			{offScriptOk}
+			{nightNumbers}
+			nominations={seatNominationMarks}
+			{heldSeat}
+			{heldDrag}
+			{placeSpots}
+			onPlace={placeAt}
+			onSeat={tapSeat}
+			onReminder={openReminder}
+			onLooseReminder={(id) => heldDialog?.show(id)}
+		/>
 		{#if nw.walk && !ended}
 			<NightStrip
 				{grimoire}
@@ -1452,14 +1308,6 @@
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
 	/* A point on the board with its seat centred on it. */
-	.slot {
-		position: absolute;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 0;
-		height: 0;
-	}
 	/* While arranging, a press drags a seat instead of scrolling or zooming. */
 	.arranging {
 		touch-action: none;
@@ -1467,56 +1315,10 @@
 		outline-offset: var(--space-1);
 		border-radius: var(--radius-md);
 	}
-	.arranging .slot {
-		cursor: grab;
-	}
-	/* Above the other seats, still under the reminders (later in the page). */
-	.slot.front {
-		z-index: 1;
-	}
-	.slot.dragging {
-		z-index: 2;
-		cursor: grabbing;
-	}
-	/* A held seat lifts and everything else on the board darkens (Trevor, 2026-10-26). */
-	.holding .slot.dragging {
-		scale: 1.12;
-	}
-	.holding .slot:not(.dragging),
-	.holding :global(.chip-slot:not(.on-held-seat)),
-	.holding .tethers {
+	/* Everything but a held seat and its reminders darkens (Trevor, 2026-10-26; BoardSeats). */
+	.holding :global(.chip-slot:not(.on-held-seat)) {
 		opacity: 0.35;
 		transition: opacity 0.15s;
-	}
-	.place-spot {
-		position: absolute;
-		z-index: 3;
-		display: grid;
-		place-items: center;
-		width: var(--tap-target);
-		height: var(--tap-target);
-		translate: -50% -50%;
-		border: 2px dashed var(--accent);
-		border-radius: 50%;
-		background: var(--surface-raised);
-		color: var(--accent);
-		cursor: pointer;
-	}
-	.place-spot:hover {
-		background: var(--surface-selected);
-	}
-	.tethers {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		overflow: visible;
-		pointer-events: none;
-	}
-	.tethers line {
-		stroke: var(--on-surface);
-		stroke-opacity: 0.35;
-		stroke-width: 1.5;
 	}
 	.tap-probe {
 		position: absolute;
