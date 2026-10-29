@@ -40,5 +40,10 @@
 				]
 			}
 		]
+	},
+	"changesCharacter": {
+		"types": ["minion", "demon"],
+		"sameType": true,
+		"spent": "No Ability"
 	}
 }

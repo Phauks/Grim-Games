@@ -33,29 +33,11 @@ export async function nameStoryteller(page: Page, name: string): Promise<void> {
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 }
 
-/** A tap on touch screens, a click with a mouse. */
-async function press(page: Page, target: ReturnType<Page['getByTestId']>): Promise<void> {
-	if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await target.tap();
-	else await target.click();
-}
-
 /**
- * After Start game (or a mode's Special rules step): every start goes through Game settings
- * (Trevor, 2026-10-28); this goes on with the game's settings as they are.
- */
-export async function pastGameSettings(page: Page): Promise<void> {
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/game-settings$/);
-	await press(page, page.getByTestId('game-settings-next'));
-	await expect(page).not.toHaveURL(/\/game-settings$/);
-}
-
-/**
- * After Start game: every start goes on through Game settings to Character selection (Trevor,
- * 2026-10-23, 2026-10-28); this goes on from there to the board without building a bag.
+ * After Start game: every start goes on to Character selection (Trevor, 2026-10-23; Game
+ * settings opens there since 2026-10-29); this goes on from there to the board without a bag.
  */
 export async function toBoard(page: Page): Promise<void> {
-	await page.waitForURL(/\/grimoire\/[\w-]+\/(setup|game-settings)$/);
-	if (/\/game-settings$/.test(new URL(page.url()).pathname)) await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	// A tap on touch screens: a click would leave the mouse over the board, pausing its toasts.
 	const shortcut = page.getByTestId('setup-to-board');
