@@ -2035,11 +2035,28 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 	const token = phone.getByTestId('player-grim').getByTestId('board-reminder');
 	await expect(token).toHaveCount(1);
 	await expect(token).toHaveAccessibleName('Poisoned reminder');
+	// With the board's line back to its seat (Trevor, 2026-10-29), by the player's own choice.
+	const lines = phone.getByTestId('player-grim').locator('line[data-tether="2"]');
+	await expect(lines).toHaveCount(1);
+	await phone.evaluate(() => {
+		const key = 'grim-games:player-settings:v1';
+		const saved = JSON.parse(localStorage.getItem(key) ?? '{}');
+		localStorage.setItem(key, JSON.stringify({ ...saved, reminderLines: 'held' }));
+	});
 
 	// Kept on this phone for the game.
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(token).toHaveCount(1);
+	// "While held": only while a finger is on the seat or its reminder.
+	await expect(lines).toHaveCount(0);
+	const box = (await seat.boundingBox())!;
+	await phone.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await phone.mouse.down();
+	await expect(lines).toHaveCount(1);
+	await phone.mouse.up();
+	await expect(lines).toHaveCount(0);
+	await phone.keyboard.press('Escape');
 	// A tap on the token opens the seat's reminders, where it comes off.
 	await token.tap();
 	await phone

@@ -6623,6 +6623,12 @@ test('reminders keep a line back to their seat, and all of them stay on the boar
 	await boardSettings(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await expect(dialog.getByText('Stack crowded reminders')).toHaveCount(0);
+
+	// When the lines show is the Storyteller's choice (Trevor, 2026-10-29): Never takes them off.
+	await dialog.getByRole('combobox', { name: 'Reminder lines' }).tap();
+	await page.getByRole('option', { name: 'Never', exact: true }).tap();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.locator('line[data-tether]')).toHaveCount(0);
 });
 
 // https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it points at a player and at

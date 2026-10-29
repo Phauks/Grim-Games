@@ -4,6 +4,7 @@ import PrintSettingsFields from './PrintSettingsFields.svelte';
 import ProfileButton from './ProfileButton.svelte';
 import ProfileSection from './ProfileSection.svelte';
 import { playerSettings, PRINT_DEFAULTS } from './player-settings.svelte.ts';
+import { DEFAULT_REMINDER_LINES } from '#lib/features/grimoire/reminder-lines.ts';
 
 // The player view's own settings section (settings registry: features add their own).
 registerSettingsSection({
@@ -17,7 +18,8 @@ registerSettingsSection({
 			hideGuesses: false,
 			matchShape: false,
 			townMatchShape: true,
-			sheetBackground: 'theme'
+			sheetBackground: 'theme',
+			reminderLines: DEFAULT_REMINDER_LINES
 		});
 	},
 	order: 37

@@ -131,6 +131,8 @@
 	/** The reminder tokens this player put on seats (Trevor, 2026-10-26), kept as guesses are. */
 	let reminders = $state<PlayerReminders>({});
 	let remindersOpen = $state(false);
+	/** The seat a finger is on, whose reminder lines show under "While held". */
+	let held = $state<string>();
 	/** The seat this player marked as theirs; else the one the room gave them. */
 	let marked = $state<string>();
 	const mine = $derived(selfSeat(marked, player?.view?.me.seatId));
@@ -442,6 +444,7 @@
 					aria-label={label(seat)}
 					data-testid="grim-seat"
 					onclick={display ? undefined : (event: MouseEvent) => choose(seat, event)}
+					onpointerdown={() => (held = seat.seatId)}
 				>
 					<SeatDisc
 						{size}
@@ -488,6 +491,7 @@
 				{names}
 				{notes}
 				{characterOf}
+				bind:held
 				onOpen={(seat) => {
 					chosen = seat;
 					remindersOpen = true;

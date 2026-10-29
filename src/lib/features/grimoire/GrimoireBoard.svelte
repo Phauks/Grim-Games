@@ -81,7 +81,6 @@
 		cornerObstacles,
 		keepClear,
 		nameBoxes as boardNameBoxes,
-		rimToward,
 		toPercent as boardToPercent,
 		toPx as boardToPx
 	} from './board-geometry.ts';
@@ -110,6 +109,7 @@
 	import NominationChooser from './NominationChooser.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
+	import ReminderTethers from './ReminderTethers.svelte';
 	import { stepReminders } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
@@ -894,30 +894,19 @@
 				height={sizingHeight > 0 ? `${Math.round(0.42 * sizingHeight)}px` : undefined}
 			/>
 		{/if}
-		<!--
-			A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to
-			their seat's line, with a line back when they have to sit further out), so whose a
-			reminder is reads at a glance on a crowded board. First on the board, so every token,
-			name, ghost vote and mark draws over them (Trevor, 2026-10-24); only the logo and the
-			background are under them.
-		-->
-		<svg class="tethers" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-			{#each seats as seat, i (seat.seatId)}
-				{#if !looseMode && remDrag.drag === undefined}
-					{#each fan[i] ?? [] as p, k (k)}
-						{@const from = rimToward(shown[i], p, boardSize, size)}
-						<line
-							x1={from.x}
-							y1={from.y}
-							x2={p.x}
-							y2={p.y}
-							data-tether={i + 1}
-							vector-effect="non-scaling-stroke"
-						/>
-					{/each}
-				{/if}
-			{/each}
-		</svg>
+		<!-- Each seat's line to its reminders, by the Storyteller's "Reminder lines" choice (Trevor,
+			 2026-10-29); none for loose reminders, or while one is dragged. -->
+		{#if !looseMode && remDrag.drag === undefined}<ReminderTethers
+				seats={seats.map((seat, i) => ({
+					at: shown[i],
+					spots: fan[i] ?? [],
+					held: heldSeat === seat.seatId
+				}))}
+				board={boardSize}
+				{size}
+				{chip}
+				mode={boardLooks.current.reminderLines}
+			/>{/if}
 
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = shown[i]}
@@ -1484,7 +1473,7 @@
 	}
 	.holding .slot:not(.dragging),
 	.holding :global(.chip-slot:not(.on-held-seat)),
-	.holding .tethers {
+	.holding :global(.tethers line:not(.held)) {
 		opacity: 0.35;
 		transition: opacity 0.15s;
 	}
@@ -1504,19 +1493,6 @@
 	}
 	.place-spot:hover {
 		background: var(--surface-selected);
-	}
-	.tethers {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		overflow: visible;
-		pointer-events: none;
-	}
-	.tethers line {
-		stroke: var(--on-surface);
-		stroke-opacity: 0.35;
-		stroke-width: 1.5;
 	}
 	.tap-probe {
 		position: absolute;
