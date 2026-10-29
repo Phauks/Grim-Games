@@ -3,6 +3,7 @@ import {
 	ACCOUNT_ITEM,
 	APP_ITEMS,
 	FRIENDS_ITEM,
+	HISTORY_ITEM,
 	isCurrent,
 	NAV_ITEMS,
 	NAV_SECTIONS,
@@ -30,6 +31,7 @@ describe('navigation', () => {
 			...NAV_ITEMS,
 			ACCOUNT_ITEM,
 			FRIENDS_ITEM,
+			HISTORY_ITEM,
 			REPORTS_ITEM,
 			...APP_ITEMS,
 			{ icon: 'settings' }
@@ -47,7 +49,7 @@ describe('navigation', () => {
 		// Player view is reached from a join code, not the menu (Trevor, 2026-10-19).
 		expect(NAV_ITEMS.some((item) => item.id === 'play')).toBe(false);
 		// Join game and Resume game are one page (Trevor, 2026-10-28).
-		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual(['new', 'join', 'history']);
+		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual(['new', 'join']);
 	});
 
 	it('puts Home first, outside the groups (Trevor, 2026-10-16)', () => {
