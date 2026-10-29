@@ -58,7 +58,6 @@
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
@@ -87,7 +86,6 @@
 		toPx as boardToPx
 	} from './board-geometry.ts';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
-	import InboxNotice from '#lib/features/room/InboxNotice.svelte';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -100,7 +98,6 @@
 	import BoardScriptDialog from './BoardScriptDialog.svelte';
 	import BoardReminderChip from './BoardReminderChip.svelte';
 	import BoardRules from './BoardRules.svelte';
-	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -139,6 +136,7 @@
 	import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
 	import { PhaseFlow } from './phase-flow.svelte.ts';
 	import { SeatHints } from './seat-hints.svelte.ts';
+	import GrimCoverActions from './GrimCoverActions.svelte';
 	import { BoardStatus } from './board-status.svelte.ts';
 	import PhaseDialogs from './PhaseDialogs.svelte';
 	import NominationAsk from './NominationAsk.svelte';
@@ -735,25 +733,8 @@
 	let phonesOpen = $state(false);
 	/** Back to town's Cancel/Confirm, from ⋯ or from the grim cover. */
 	let callTownOpen = $state(false);
-	let coverCallTownOpen = $state(false);
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
-	/** The players' view, from the grim cover. */
-	let coverViewOpen = $state(false);
-	/** Opens it with the table notebook blank (Trevor, 2026-10-27: "Blank each time"). */
-	async function openCoverView() {
-		await forgetTableNotebook(game.gameId);
-		coverViewOpen = true;
-	}
-	// Closed, the table's notes go too, so nothing waits on the device for the next player.
-	let coverViewWasOpen = false;
-	$effect(() => {
-		if (coverViewOpen) coverViewWasOpen = true;
-		else if (coverViewWasOpen) {
-			coverViewWasOpen = false;
-			void forgetTableNotebook(untrack(() => game.gameId));
-		}
-	});
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
@@ -1348,44 +1329,20 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<!-- On the grim cover, what shows nothing secret (Trevor, 2026-10-27: "calling back to town,
-     seeing player view (script, night order, public grim, not notes)"). The dialog is drawn in
-     the cover, over it. -->
 {#snippet coverActions()}
-	<InboxNotice />
-	{#if !ended && roomHost().code}
-		<!-- Lit once the day's time is up; it never calls by itself (Trevor, 2026-10-27). -->
-		<Button
-			icon="sound"
-			variant={liveDayTimer.done ? 'accent' : 'solid'}
-			data-testid="cover-call-town"
-			onclick={() => (coverCallTownOpen = true)}
-		>
-			{t('room.callTown')}
-		</Button>
-		<CallTownConfirm bind:open={coverCallTownOpen} />
-	{/if}
-	{#if loadedScript}
-		<Button icon="script" onclick={openCoverView}>{t('show.playerView')}</Button>
-		<!-- The players' screen as it is on /play, its title-line buttons and notes too (Trevor,
-		     2026-10-27: "same setting, share, and other buttons ... As if they were within the
-		     app. We shouldn't even block notes"); the notes are the table's, blank each time. -->
-		<BoardScriptDialog
-			bind:open={coverViewOpen}
-			{game}
-			script={loadedScript}
-			logo={boardLogo}
-			room={watching ? undefined : roomHost().code}
-			{characters}
-			{layout}
-			corner={cornerInfo}
-			{look}
-			picture={watching ? undefined : ownPicture}
-			pictureRoom={watching ? grimoire.room : undefined}
-			notebook={tableNotebook(game.gameId)}
-			testid="cover-player-view"
-		/>
-	{/if}
+	<GrimCoverActions
+		{game}
+		callTown={!ended && !!roomHost().code}
+		script={loadedScript}
+		logo={boardLogo}
+		room={watching ? undefined : roomHost().code}
+		{characters}
+		{layout}
+		corner={cornerInfo}
+		{look}
+		picture={watching ? undefined : ownPicture}
+		pictureRoom={watching ? grimoire.room : undefined}
+	/>
 {/snippet}
 
 {#snippet coverTimer()}
