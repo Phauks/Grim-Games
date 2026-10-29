@@ -253,15 +253,24 @@ describe('check-lines', () => {
 		expect(counted('src/lib/core/data/rules/fool.json')).toBe(false);
 	});
 
-	it('flags a long file unless listed, and a listed file once it is short', () => {
+	it('flags a long file unless listed, a listed file over its cap, and one once it is short', () => {
 		const sizes = new Map([
 			['src/new.ts', MAX_LINES + 1],
 			['src/listed.ts', MAX_LINES + 1],
+			['src/grown.ts', MAX_LINES + 60],
 			['src/split.ts', MAX_LINES],
 			['src/fine.ts', 10]
 		]);
-		expect(lineProblems(sizes, ['src/listed.ts', 'src/split.ts'])).toEqual([
+		const listed = { cap: MAX_LINES + 50, why: 'test' };
+		expect(
+			lineProblems(sizes, {
+				'src/listed.ts': listed,
+				'src/grown.ts': listed,
+				'src/split.ts': listed
+			})
+		).toEqual([
 			{ file: 'src/new.ts', lines: MAX_LINES + 1, problem: 'too-long' },
+			{ file: 'src/grown.ts', lines: MAX_LINES + 60, problem: 'over-cap' },
 			{ file: 'src/split.ts', lines: MAX_LINES, problem: 'listed-short' }
 		]);
 	});
