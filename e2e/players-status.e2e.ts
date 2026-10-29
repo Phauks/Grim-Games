@@ -223,5 +223,14 @@ test('the candles beside Setup open who is connected, on phones and in character
 	const stList = page.getByRole('dialog', { name: 'Who is connected' });
 	await expect(stList.getByTestId('connected-seat')).toHaveCount(seatCount);
 	await expect(stList.getByTestId('connected-unseated')).not.toContainText('None');
+	await page.keyboard.press('Escape');
+
+	// The phone's screen locks: it stays in the +1, as it stays in Share's list (Trevor,
+	// 2026-10-29), and the candles don't move.
+	const before = await candles.locator('.candle').first().boundingBox();
 	await phoneContext.close();
+	// Long enough for the room to see the phone go and tell the Storyteller.
+	await page.waitForTimeout(2000);
+	await expect(candles).toContainText('+1');
+	expect(await candles.locator('.candle').first().boundingBox()).toEqual(before);
 });
