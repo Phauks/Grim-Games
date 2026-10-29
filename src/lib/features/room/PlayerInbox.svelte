@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { PlayerName } from '#lib/core/data/index.ts';
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
 	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
@@ -22,13 +23,17 @@
 	interface Props {
 		memberId: string;
 		/** The player's name, for the picture's label. */
-		name: string;
+		name: PlayerName;
 	}
 
 	let { memberId, name }: Props = $props();
 	const host = roomHost();
 	const inbox = host.inbox;
 	const shown = $derived(inbox.items.filter((i) => i.memberId === memberId));
+	const removeLabel = $derived(
+		// eslint-disable-next-line grim/names-as-badges -- an accessible name, never shown
+		t('room.pictureReport.removeNamed', { name })
+	);
 
 	/** The box opened on its own, by kind and id. */
 	let openKey = $state<string>();
@@ -157,10 +162,7 @@
 				<Button onclick={() => inbox.judgePicture(picture.hash, true)}
 					>{t('room.pictureReport.allow')}</Button
 				>
-				<DeleteButton
-					label={t('room.pictureReport.removeNamed', { name })}
-					onclick={() => inbox.judgePicture(picture.hash, false)}
-				/>
+				<DeleteButton label={removeLabel} onclick={() => inbox.judgePicture(picture.hash, false)} />
 			</div>
 		{/if}
 	{/snippet}

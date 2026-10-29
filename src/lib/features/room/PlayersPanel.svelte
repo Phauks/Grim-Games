@@ -3,7 +3,9 @@
 	import { seatsInOrder, type SeatId } from '#lib/core/model/index.ts';
 	import type { RoomMember } from '#lib/core/sync/room.ts';
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
+	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
+	import { seatName } from '#lib/features/game/seat-label.ts';
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -32,17 +34,17 @@
 	interface Entry {
 		key: string;
 		seatId?: SeatId;
-		name: string;
+		name: PlayerName;
 		member?: RoomMember;
 	}
 	// Every seat is a player, phone or not (Trevor, 2026-10-29: "every player has a seat. and it
 	// would still be player management for the non-phone users"), in seat order; then the phones
 	// with no seat from this game, which stay listed while they sleep (earlier games' are left out).
 	const entries = $derived<Entry[]>([
-		...seats.map((seat, i) => ({
+		...seats.map((seat) => ({
 			key: seat.seatId,
 			seatId: seat.seatId,
-			name: seat.playerName || t('common.seat', { number: i + 1 }),
+			name: seatName(game.game, seat.seatId),
 			member: host.members.find((m) => m.seatId === seat.seatId)
 		})),
 		...host.unseatedInGame.flatMap((m) =>
@@ -89,7 +91,9 @@
 			avatar={entry.member.avatar ?? 'initials'}
 			picture={pictureOf(entry.member)}
 			frame={entry.member.frame}
-		/>{:else}<span class="no-phone" aria-hidden="true"><span>{seatIndex(entry.seatId) || ''}</span></span>{/if}
+		/>{:else}<span class="no-phone" aria-hidden="true"
+			><span>{seatIndex(entry.seatId) || ''}</span></span
+		>{/if}
 {/snippet}
 
 <div class="players">

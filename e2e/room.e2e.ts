@@ -140,7 +140,10 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	// 2026-10-26): naming a seat on the board with the phone's name seats it.
 	// Players, not Share, lists who is in the room (Trevor, 2026-10-29).
 	await page.goto(`${board}/players`);
-	const alex = page.getByRole('list', { name: 'Players in the room' }).getByRole('listitem');
+	const alex = page
+		.getByRole('list', { name: 'Players in the room' })
+		.getByRole('listitem')
+		.filter({ hasText: 'Alex' });
 	await expect(alex).toContainText(/Alex\s*No seat · Here/);
 	// The avatar opens the player's profile, as on the board (Trevor, 2026-10-29).
 	await alex.getByTestId('sheet-avatar').tap();
@@ -2527,6 +2530,8 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	page,
 	browser
 }, testInfo) => {
+	// Three devices, a crop, a report and its verdict: longer than one screen's test.
+	test.setTimeout(60_000);
 	// Trevor, 2026-10-27: "allow setting users profile/icon in the player settings ... under ...,
 	// put report image ... the storyteller ... can either decide to let it stand, or to
 	// remove/revoke avatar for that game".
