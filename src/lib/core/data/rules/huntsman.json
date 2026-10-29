@@ -50,5 +50,11 @@
 				]
 			}
 		]
+	},
+	"changesCharacter": {
+		"types": ["townsfolk"],
+		"notInPlay": true,
+		"spent": "No Ability",
+		"onlyFrom": ["damsel"]
 	}
 }

@@ -23,7 +23,12 @@ import { readRegistersAs } from './registers-as-rules.ts';
 import { readKeepsAbility, type KeepsAbility } from './keeps-ability-rules.ts';
 import { readFalseInfo, type FalseInfo } from './false-info-rules.ts';
 import { readGainedFrom, type GainedFrom } from './gained-from-rules.ts';
-import { readBecomes, readMakesDemon, type Becomes, type MakesDemon } from './becomes-rules.ts';
+import {
+	readBecomes,
+	readChangesCharacter,
+	type Becomes,
+	type ChangesCharacter
+} from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readAnswers, readLearns, type Answers, type Learns } from './night-info-rules.ts';
 import { readImpairs, type Impairs } from './impairs-rules.ts';
@@ -194,8 +199,8 @@ export interface CharacterRules extends ChoiceRules {
 	gainedFrom?: GainedFrom;
 	/** Its token says a player changed character or alignment (`becomes-rules.ts`). */
 	becomes?: Becomes;
-	/** On a night its token marks, it makes a chosen player a Demon (`becomes-rules.ts`). */
-	makesDemon?: MakesDemon;
+	/** Its night step makes a chosen player another character (`becomes-rules.ts`). */
+	changesCharacter?: ChangesCharacter;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 	/**
@@ -336,7 +341,7 @@ const RULE_KEYS = [
 	'keepsAbility',
 	'gainedFrom',
 	'becomes',
-	'makesDemon',
+	'changesCharacter',
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'falseInfo',
@@ -557,9 +562,10 @@ export function parseCharacterRules(
 		const becomes = readBecomes(raw.becomes, `${path}.becomes`, issues, reminders);
 		if (becomes) rules.becomes = becomes;
 	}
-	if (raw.makesDemon !== undefined) {
-		const makes = readMakesDemon(raw.makesDemon, `${path}.makesDemon`, issues, reminders);
-		if (makes) rules.makesDemon = makes;
+	if (raw.changesCharacter !== undefined) {
+		const at = `${path}.changesCharacter`;
+		const changes = readChangesCharacter(raw.changesCharacter, at, issues, reminders);
+		if (changes) rules.changesCharacter = changes;
 	}
 	if (raw.infoTokenCharacters !== undefined) {
 		const at = `${path}.infoTokenCharacters`;
