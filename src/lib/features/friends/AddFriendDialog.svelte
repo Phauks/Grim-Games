@@ -1,16 +1,20 @@
 <script lang="ts">
 	import { normaliseUsername, USERNAME_MAX } from '#lib/features/account/account-protocol.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { friends } from './friends.svelte.ts';
+	import { readFriendLink } from './friends-protocol.ts';
 
 	/**
 	 * Asks someone by their exact username (plan F1); Enter sends. A refusal stays in the
 	 * dialog; a request that went out just closes it, and shows under Sent or Friends.
+	 * Scan reads someone's friend code (Trevor, 2026-10-29) into the field.
 	 */
-	let { open = $bindable(false) }: { open?: boolean } = $props();
+	let { open = $bindable(false), initial = '' }: { open?: boolean; initial?: string } = $props();
 
 	let name = $state('');
 	let error = $state('');
@@ -19,10 +23,25 @@
 
 	$effect(() => {
 		if (open) {
-			name = '';
+			name = initial;
 			error = '';
 		}
 	});
+
+	let scanning = $state(false);
+	let scanProblem = $state('');
+
+	function scanned(text: string): boolean {
+		const read = readFriendLink(text);
+		if (!read) {
+			scanProblem = t('friends.addDialog.notFriendCode');
+			return false;
+		}
+		name = read;
+		error = '';
+		scanning = false;
+		return true;
+	}
 
 	async function send(): Promise<void> {
 		if (!valid || busy) return;
@@ -57,11 +76,28 @@
 	{#snippet actions()}
 		<ModalActions
 			onCancel={() => (open = false)}
+			start={scan}
 			onConfirm={() => void send()}
 			confirmLabel={t('friends.addDialog.send')}
 			disabled={!valid || busy}
 		/>
 	{/snippet}
+</Dialog>
+
+{#snippet scan()}
+	<Button
+		variant="quiet"
+		icon="scan"
+		disabled={busy}
+		onclick={() => {
+			scanProblem = '';
+			scanning = true;
+		}}>{t('share.scan')}</Button
+	>
+{/snippet}
+
+<Dialog bind:open={scanning} title={t('share.scan')}>
+	{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} />{/if}
 </Dialog>
 
 <style>
