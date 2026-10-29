@@ -4,6 +4,7 @@ import { pickScript, nameStoryteller, toBoard, pastGameSettings } from './new-ga
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
 import { savesSettled, trackSaves } from './saves.ts';
+import { binToken, closeBin, dragToSeat, openBin, putReminder } from './reminder-bank.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -282,10 +283,9 @@ test('a new game offers no "Is The Drunk" before anyone has a token', async ({ p
 	// https://wiki.bloodontheclocktower.com/Drunk : the Drunk is in play only if chosen.
 	await startGame(page);
 	await expect(page.getByText('Is The Drunk')).toHaveCount(0);
-	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	await expect(picker.getByRole('group', { name: 'Drunk' })).toHaveCount(0);
+	// Not in the bank pulled up either, where every reminder is (Trevor, 2026-10-29).
+	const bin = await openBin(page);
+	await expect(bin.getByText('Is The Drunk')).toHaveCount(0);
 });
 
 test('Continue game deletes every saved game at once, and leaves History alone', async ({
@@ -686,73 +686,32 @@ test('a new game can use a custom script from the Library', async ({ page }) => 
 	await expect(page.locator('.corner-title .script-name')).toHaveText('Pocket Storm');
 });
 
-test("reminders: add several from the picker, this seat's first, then move and remove", async ({
+test('reminders: put on from the bank, then moved and removed from the seat sheet', async ({
 	page
 }) => {
 	await startGame(page);
-	const sheet = await openSeat(page, 1);
+	let sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Poisoner', exact: true })
 		.tap();
+	// Added from the bank only, never from the seat's sheet (Trevor, 2026-10-29).
+	await expect(sheet.getByRole('button', { name: 'Add reminder' })).toHaveCount(0);
+	await closeSheet(page);
 
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	const bin = await openBin(page);
 	// Not in play, but never in the bag: only the Drunk's global reminder, which marks who is
-	// secretly the Drunk.
-	await expect(picker.getByRole('group', { name: 'Drunk' })).toContainText('Is The Drunk');
-	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
-	// The same search as a player's reminders (Trevor, 2026-10-26): a character's name or its
-	// tokens' words; it never takes focus when the picker opens.
-	const search = picker.getByRole('searchbox', { name: 'Search reminders' });
-	await expect(search).not.toBeFocused();
-	await search.fill('drunk');
-	await expect(picker.getByRole('group', { name: 'Poisoner' })).toHaveCount(0);
-	await expect(picker.getByRole('group', { name: 'Drunk' })).toBeVisible();
-	await search.fill('');
-	const poisoner = picker.getByRole('group', { name: 'Poisoner' });
-	await poisoner.getByRole('button', { name: 'Poisoned' }).tap();
-	await picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first().tap();
-	// The top row is what is on this seat now (Trevor, 2026-10-17); no count of them (Trevor,
-	// 2026-10-19).
-	const top = picker.getByRole('group', { name: 'On this seat' }).getByRole('button');
-	await expect(top).toHaveCount(2);
-	await expect(picker).not.toContainText('On this seat:');
-	// Reminders have two looks, the board's token and the in-line badge; the picker uses the
-	// badge as the seat sheet does, and Add reminder is a + alone (Trevor, 2026-10-19).
-	const fontSize = (el: Element) => getComputedStyle(el).fontSize;
-	expect(await top.first().getByTestId('reminder-token').evaluate(fontSize)).toBe(
-		await sheet.getByTestId('reminder-token').first().evaluate(fontSize)
-	);
-	// Under the picker, so out of the accessibility tree: found by its label.
-	await expect(sheet.locator('button[aria-label="Add reminder"]')).toHaveText('');
-	// Each token is placed once: the Poisoner has one "Poisoned", shown as on this seat.
-	await expect(poisoner.getByRole('button', { name: /Poisoned/ })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
-	// Tapping a reminder on this seat takes it off (asking first when it stays put), and
-	// tapping it again puts it back (Trevor, 2026-10-16).
-	const drunk = picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first();
-	await drunk.tap();
-	await page
-		.getByRole('alertdialog', { name: 'Confirm change?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
-	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
-		1
-	);
-	await expect(drunk).toHaveAttribute('aria-pressed', 'false');
-	// Taken off, it leaves the top row.
-	await expect(top).toHaveCount(1);
-	await drunk.tap();
-	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
-		2
-	);
-	// Only characters in play: no way to add the Washerwoman's reminders here.
-	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
-	await picker.getByRole('button', { name: 'Close' }).tap();
+	// secretly the Drunk; none of the Washerwoman's.
+	await expect(bin.getByRole('button', { name: 'Is The Drunk reminder' })).toBeVisible();
+	await expect(bin.getByRole('button', { name: 'Townsfolk reminder' })).toHaveCount(0);
+	await putReminder(page, 'Poisoned', 1);
+	await putReminder(page, 'Is The Drunk', 1);
+	// Each token is placed once: the Poisoner's one "Poisoned" has left the bank.
+	await openBin(page);
+	await expect(bin.getByRole('button', { name: 'Poisoned reminder' })).toHaveCount(0);
+	await closeBin(page);
+	sheet = await openSeat(page, 1);
 
 	await expect(seatLabelled(page, 'Seat 1: no name, Poisoner, 2 reminders')).toBeAttached();
 	// The Poisoner is evil, so its reminder's icon is the red one (not the blue good icon).
@@ -891,11 +850,8 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Sailor', exact: true })
 		.tap();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	await picker.getByRole('group', { name: 'Sailor' }).getByRole('button', { name: 'Drunk' }).tap();
-	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
+	await putReminder(page, 'Drunk', 1);
 
 	// The token is drawn on the board, not as a number.
 	const token = page.getByRole('button', { name: 'Drunk reminder' });
@@ -1011,15 +967,16 @@ test('every reminder on a crowded seat is shown and can be dragged off', async (
 			.tap();
 		await closeSheet(page);
 	}
-	const sheet = await openSeat(page, 4);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 4' });
-	for (const group of ['Washerwoman', 'Librarian', 'Investigator', 'Drunk']) {
-		const buttons = picker.getByRole('group', { name: group }).getByRole('button');
-		for (let i = 0; i < (await buttons.count()); i++) await buttons.nth(i).tap();
-	}
-	await picker.getByRole('button', { name: 'Close' }).tap();
-	await closeSheet(page);
+	for (const label of [
+		'Townsfolk',
+		'Outsider',
+		'Minion',
+		'Wrong',
+		'Wrong',
+		'Wrong',
+		'Is The Drunk'
+	])
+		await putReminder(page, label, 4);
 	await expect(seatLabelled(page, 'Seat 4: no name, no character, 7 reminders')).toBeAttached();
 
 	// Tokens put where they don't usually go say so in toasts; they leave by themselves.
@@ -1197,15 +1154,7 @@ test("the Demon's step says when the Princess stops its kill tonight", async ({ 
 	await page.keyboard.press('Escape');
 	await expect(day).toBeHidden();
 
-	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const reminders = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	await reminders
-		.getByRole('group', { name: 'Princess' })
-		.getByRole('button', { name: "Doesn't Kill" })
-		.tap();
-	await reminders.getByRole('button', { name: 'Close' }).tap();
-	await closeSheet(page);
+	await putReminder(page, "Doesn't Kill", 1);
 
 	await (await walkTo(page, 'Imp')).locator('button.step .count').tap();
 	const alerts = page.getByRole('dialog', { name: 'Imp' }).getByTestId('night-alerts');
@@ -1964,7 +1913,9 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*8 seats/ }).first()).toBeVisible();
 });
 
-test('copies of a reminder are picked one by one, or stacked with a count', async ({ page }) => {
+test('copies of a reminder are in the bank one by one, or stacked with a count', async ({
+	page
+}) => {
 	await startGame(page, 'Bad Moon Rising');
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
@@ -1972,27 +1923,14 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Shabaloth', exact: true })
 		.tap();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	const shabaloth = picker.getByRole('group', { name: 'Shabaloth' });
-	// TPI's data gives the Shabaloth two "Dead" tokens: each is its own chip.
-	await expect(shabaloth.getByRole('button', { name: /^Dead, copy/ })).toHaveCount(2);
-	await shabaloth.getByRole('button', { name: 'Dead, copy 1 of 2' }).tap();
-	// A Dead token on a living player asks whether to mark them dead; not here.
-	await page
-		.getByRole('alertdialog', { name: /^Mark .* dead\?$/ })
-		.getByRole('button', { name: 'Cancel', exact: true })
-		.tap();
-	// The placed copy shows as on this seat: tapping it again would take it off.
-	await expect(shabaloth.getByRole('button', { name: 'Dead, copy 2 of 2' })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
-	await expect(shabaloth.getByRole('button', { name: 'Dead, copy 1 of 2' })).toBeEnabled();
-	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
+	// TPI's data gives the Shabaloth two "Dead" tokens: each is its own token in the bank.
+	const bin = await openBin(page);
+	const dead = bin.getByRole('button', { name: 'Dead reminder', exact: true });
+	await expect(dead).toHaveCount(2);
+	await closeBin(page);
 
-	// With "Stack duplicate reminders" on, they show as one token with what is left.
+	// With "Stack duplicate reminders" on, they show as one token with how many.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await page
 		.getByRole('dialog', { name: APP_NAME })
@@ -2009,10 +1947,19 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	).toBeChecked();
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
-	const again = await openSeat(page, 1);
-	await again.getByRole('button', { name: 'Add reminder' }).tap();
-	await expect(shabaloth.getByRole('button', { name: /^Dead/ })).toHaveCount(1);
-	await expect(shabaloth.getByRole('button', { name: 'Dead, 1 left' })).toBeEnabled();
+	await openBin(page);
+	await expect(dead).toHaveCount(1);
+	await expect(bin.getByLabel('2 copies')).toBeVisible();
+	await dragToSeat(page, dead, 1);
+	// A Dead token on a living player asks whether to mark them dead; not here.
+	await page
+		.getByRole('alertdialog', { name: /^Mark .* dead\?$/ })
+		.getByRole('button', { name: 'Cancel', exact: true })
+		.tap();
+	await expect(seatLabelled(page, 'Seat 1: no name, Shabaloth, 1 reminder')).toBeAttached();
+	// One left, so no count.
+	await expect(dead).toHaveCount(1);
+	await expect(bin.getByLabel('2 copies')).toHaveCount(0);
 });
 
 test('the board background can be an image from the device, kept after a reload', async ({
@@ -2306,11 +2253,8 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 		.getByRole('button', { name: 'Chef', exact: true })
 		.tap();
 	await closeSheet(page);
+	await putReminder(page, 'Is The Drunk', 1);
 	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	await picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first().tap();
-	await picker.getByRole('button', { name: 'Close' }).tap();
 	await sheet.getByRole('button', { name: 'Actions for Is The Drunk' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Is The Drunk' })
@@ -2992,17 +2936,13 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 
 	// The Storyteller puts the Imp's Dead token on the Soldier, who doesn't die (Trevor,
 	// 2026-10-16; https://wiki.bloodontheclocktower.com/Soldier).
-	const sheet = await openSeat(page, 2);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 2' });
-	await picker.getByRole('group', { name: 'Imp' }).getByRole('button', { name: 'Dead' }).tap();
+	await putReminder(page, 'Dead', 2);
 	// The Soldier lives, so the Storyteller says no to marking them dead.
 	await page
 		.getByRole('alertdialog', { name: /^Mark .* dead\?$/ })
 		.getByRole('button', { name: 'Cancel', exact: true })
 		.tap();
-	await picker.getByRole('button', { name: 'Close' }).tap();
-	await closeSheet(page);
+	await closeBin(page);
 
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await day.getByTestId('prevented-button').tap();
@@ -3145,43 +3085,6 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await expect(history).toContainText('Deleted a game note');
 });
 
-test("a seat's reminder list shows who has each reminder and moves it here", async ({ page }) => {
-	await startGame(page);
-	let sheet = await openSeat(page, 1);
-	await nameSeat(sheet, 'Ana');
-	await sheet.getByRole('button', { name: 'Choose' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Character for Ana' })
-		.getByRole('button', { name: 'Poisoner', exact: true })
-		.tap();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	let picker = page.getByRole('dialog', { name: 'Reminders for Ana' });
-	await picker.getByRole('group', { name: 'Poisoner' }).getByRole('button').first().tap();
-	await picker.getByRole('button', { name: 'Close' }).tap();
-	await closeSheet(page);
-
-	// On Seat 3's list the Poisoner's token names Ana, and a tap moves it here.
-	sheet = await openSeat(page, 3);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	picker = page.getByRole('dialog', { name: 'Reminders for Seat 3' });
-	const poisoned = picker.getByRole('button', { name: 'Poisoned, on Ana: move here' });
-	await expect(poisoned.getByTestId('reminder-holder')).toHaveText('Ana');
-	await poisoned.tap();
-	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
-		1
-	);
-	await expect(
-		picker.getByRole('group', { name: 'Poisoner' }).getByRole('button').first()
-	).toHaveAttribute('aria-pressed', 'true');
-	await picker.getByRole('button', { name: 'Close' }).tap();
-	await closeSheet(page);
-	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
-	await expect(seatLabelled(page, 'Seat 1: Ana, Poisoner')).toHaveAttribute(
-		'aria-label',
-		'Seat 1: Ana, Poisoner'
-	);
-});
-
 test("on a crowded table one seat's reminders never cover another's", async ({ page }) => {
 	// Fifteen players (Trevor, 2026-10-16): neighbours sit close together.
 	await page.goto('/new');
@@ -3208,21 +3111,13 @@ test("on a crowded table one seat's reminders never cover another's", async ({ p
 			.tap();
 		await closeSheet(page);
 	}
-	// Neighbours 4 and 5 hold four and three reminders.
-	for (const [seat, groups] of [
-		[4, ['Washerwoman', 'Librarian']],
-		[5, ['Investigator', 'Drunk']]
-	] as const) {
-		const sheet = await openSeat(page, seat);
-		await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-		const picker = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
-		for (const group of groups) {
-			const buttons = picker.getByRole('group', { name: group }).getByRole('button');
-			for (let i = 0; i < (await buttons.count()); i++) await buttons.nth(i).tap();
-		}
-		await picker.getByRole('button', { name: 'Close' }).tap();
-		await closeSheet(page);
-	}
+	// Neighbours 4 and 5 hold four and three reminders: the Washerwoman's and the Librarian's,
+	// then the Investigator's and the Drunk's.
+	for (const [seat, labels] of [
+		[4, ['Townsfolk', 'Wrong', 'Outsider', 'Wrong']],
+		[5, ['Minion', 'Wrong', 'Is The Drunk']]
+	] as const)
+		for (const label of labels) await putReminder(page, label, seat);
 	const boxes = (seat: number) =>
 		page
 			.locator(`.chip-slot[data-seat="${seat}"] [data-testid="board-reminder"]`)
@@ -3341,18 +3236,15 @@ test('marking a player as the Marionette asks to make them evil', async ({ page 
 		.getByRole('button', { name: 'Clockmaker', exact: true })
 		.tap();
 	await expect(sheet.getByText('Good · Seat 2')).toBeVisible();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 2' });
-	await picker
-		.getByRole('group', { name: 'Marionette' })
-		.getByRole('button', { name: 'Is The Marionette' })
-		.tap();
+	await closeSheet(page);
+	await putReminder(page, 'Is The Marionette', 2);
 	const ask = page.getByRole('alertdialog', { name: 'Make this player evil?' });
 	await expect(ask).toContainText('Current alignment');
 	await expect(ask).toContainText('New alignment');
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
-	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeBin(page);
+	await openSeat(page, 2);
 	await expect(sheet.getByText('Evil · Seat 2')).toBeVisible();
 });
 
@@ -3677,11 +3569,8 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Sailor', exact: true })
 		.tap();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	await picker.getByRole('group', { name: 'Sailor' }).getByRole('button', { name: 'Drunk' }).tap();
-	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
+	await putReminder(page, 'Drunk', 1);
 
 	// Turning it on says what it changes first (Trevor, 2026-10-17). The switch sits apart, in
 	// Board's closed Advanced part, marked with a warning before it is touched (Trevor,
@@ -3960,21 +3849,18 @@ test("a script's own character can have another copy of a reminder (Cleopatra)",
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Cleo', exact: true })
 		.tap();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	const cleo = picker.getByRole('group', { name: 'Cleo' });
-	const another = cleo.getByRole('button', { name: 'Add another Chosen' });
-	// There from the start, usable once the listed copy is placed; official characters never.
-	await expect(another).toBeDisabled();
-	await expect(picker.getByRole('button', { name: /^Add another/ })).toHaveCount(1);
-	await cleo.getByRole('button', { name: 'Chosen' }).first().tap();
-	await expect(another).toBeEnabled();
-	await another.tap();
-	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
-		2
-	);
-	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
+	// Its one listed copy, then another from the placed one's ⋯ > Duplicate reminder, which
+	// puts the copy in the bank.
+	await putReminder(page, 'Chosen', 1);
+	await page
+		.locator('.chip-slot[data-seat="1"]')
+		.getByRole('button', { name: 'Chosen reminder' })
+		.tap();
+	await page.getByRole('button', { name: 'More reminder actions' }).tap();
+	await page.getByRole('button', { name: 'Duplicate reminder' }).tap();
+	await page.keyboard.press('Escape');
+	await putReminder(page, 'Chosen', 1);
 	await expect(seatLabelled(page, 'Seat 1: no name, Cleo, 2 reminders')).toBeAttached();
 });
 
@@ -4433,15 +4319,7 @@ test('the Librarian step puts the Outsider its reminder marks first, emphasised'
 			.tap();
 		await closeSheet(page);
 	}
-	const sheet = await openSeat(page, 3);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 3' });
-	await picker
-		.getByRole('group', { name: 'Librarian' })
-		.getByRole('button', { name: 'Outsider' })
-		.tap();
-	await picker.getByRole('button', { name: 'Close' }).tap();
-	await closeSheet(page);
+	await putReminder(page, 'Outsider', 3);
 
 	const strip = await walkTo(page, 'Librarian');
 	const line = strip.getByTestId('night-suggested');
@@ -4867,39 +4745,30 @@ test("the Devil's Advocate's token is not suggested on last night's player", asy
 	await closeSheet(page);
 	await walkTo(page, 'Dusk');
 
-	// Night 1: the Devil's Advocate chooses Seat 2.
-	const picker = async (seat: number) => {
-		const sheet = await openSeat(page, seat);
-		await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-		const dialog = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
-		const token = dialog
-			.getByRole('group', { name: "Devil's Advocate" })
-			.getByRole('button')
-			.filter({ hasText: 'Survives Execution' });
-		return { dialog, token };
-	};
-	const night1 = await picker(2);
-	await expect(night1.token).not.toHaveAttribute('data-misfit');
-	await night1.token.tap();
-	await page.keyboard.press('Escape');
-	await closeSheet(page);
+	// Night 1: the Devil's Advocate chooses Seat 2. A tap on the bank's token lists the seats,
+	// marking those it doesn't usually go on.
+	const put = page.getByRole('dialog', { name: 'Put Survives Execution on' });
+	const row = (seat: number) => put.getByRole('button', { name: new RegExp(`^${seat}`) });
+	const choose = async () => (await binToken(page, 'Survives Execution')).tap();
+	await choose();
+	await expect(row(2)).not.toHaveAttribute('data-misfit');
+	await row(2).tap();
+	await closeBin(page);
 	await endNight(page);
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
 	await page.keyboard.press('Escape');
 
 	// Night 2: the token comes off Seat 2, which is then marked as not a usual place for it.
-	const again = await picker(2);
-	await again.dialog.getByRole('group', { name: 'On this seat' }).getByRole('button').tap();
-	await expect(again.token).toHaveAttribute('data-misfit', '');
-	await page.keyboard.press('Escape');
-	await closeSheet(page);
-	const other = await picker(3);
-	await expect(other.token).not.toHaveAttribute('data-misfit');
+	await page
+		.locator('.chip-slot[data-seat="2"]')
+		.getByRole('button', { name: 'Survives Execution reminder' })
+		.tap();
+	await page.getByRole('button', { name: 'Remove reminder' }).tap();
+	await choose();
+	await expect(row(2)).toHaveAttribute('data-misfit');
+	await expect(row(3)).not.toHaveAttribute('data-misfit');
 	// Warn, never lock: placed on Seat 2 anyway, with a note saying why.
-	await page.keyboard.press('Escape');
-	await closeSheet(page);
-	const back = await picker(2);
-	await back.token.tap();
+	await row(2).tap();
 	await expect(page.getByText(/the ability says different to last night/)).toBeVisible();
 });
 
@@ -4915,19 +4784,26 @@ test("the Investigator's own seat fits its Wrong; its Minion is marked and warns
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Investigator', exact: true })
 		.tap();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	const investigator = picker.getByRole('group', { name: 'Investigator' });
-	await expect(investigator.getByRole('button').filter({ hasText: 'Wrong' })).not.toHaveAttribute(
-		'data-misfit'
-	);
-	const minion = investigator.getByRole('button').filter({ hasText: 'Minion' });
-	await expect(minion).toHaveAttribute('data-misfit', '');
+	await closeSheet(page);
+	// Setup tokens: a tap says what each is for, and Choose seat lists the seats, marking those
+	// it doesn't usually go on.
+	const put = (label: string) => page.getByRole('dialog', { name: `Put ${label} on` });
+	const ownSeat = (label: string) => put(label).getByRole('button', { name: /^1/ });
+	const choose = async (label: string) => {
+		await (await binToken(page, label)).tap();
+		await page
+			.getByRole('dialog', { name: label })
+			.getByRole('button', { name: 'Choose seat' })
+			.tap();
+	};
+	await choose('Wrong');
+	await expect(ownSeat('Wrong')).not.toHaveAttribute('data-misfit');
+	await page.keyboard.press('Escape');
+	await choose('Minion');
+	await expect(ownSeat('Minion')).toHaveAttribute('data-misfit');
 	// Warn, never lock: it is still placed, with a note saying why.
-	await minion.tap();
-	await expect(picker.getByRole('group', { name: 'On this seat' }).getByRole('button')).toHaveCount(
-		1
-	);
+	await ownSeat('Minion').tap();
+	await expect(seatLabelled(page, 'Seat 1: no name, Investigator, 1 reminder')).toBeAttached();
 	// The Investigator is no Minion, so its Minion never fits its own seat (Trevor, 2026-10-23:
 	// no rule about self is needed).
 	await expect(page.getByText(/the character type is not one it goes on/)).toBeVisible();
@@ -5023,14 +4899,8 @@ test("a reminder's ⋯ duplicates it into the bank, from the board or the bank",
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Poisoner', exact: true })
 		.tap();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	await picker
-		.getByRole('group', { name: 'Poisoner' })
-		.getByRole('button', { name: 'Poisoned' })
-		.tap();
-	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
+	await putReminder(page, 'Poisoned', 1);
 	// A second Poisoner: the game gives two Poisoned tokens, one still in the bank.
 	const second = await openSeat(page, 2);
 	await second.getByRole('button', { name: 'Choose' }).first().tap();
@@ -5372,19 +5242,14 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 			.tap();
 		await closeSheet(page);
 	}
-	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	await picker
-		.getByRole('group', { name: 'Scarlet Woman' })
-		.getByRole('button', { name: 'Is The Demon' })
-		.tap();
+	await putReminder(page, 'Is The Demon', 1);
 	const ask = page.getByRole('alertdialog', { name: 'Change into the Demon?' });
 	await expect(ask).toContainText(/Current character\s*Scarlet Woman/);
 	await expect(ask).toContainText(/New character\s*Imp/);
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
-	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeBin(page);
+	const sheet = await openSeat(page, 1);
 	await expect(sheet).toContainText(/Imp\s*Demon · Evil · Seat 1/);
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
@@ -5775,18 +5640,25 @@ test('a Dead reminder put on a living player asks whether to mark them dead', as
 		.tap();
 	await closeSheet(page);
 
-	const addDead = async (seat: number) => {
-		const s = await openSeat(page, seat);
-		await s.getByRole('button', { name: 'Add reminder' }).tap();
-		const picker = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
-		await picker.getByRole('group', { name: 'Imp' }).getByRole('button', { name: 'Dead' }).tap();
+	// The Imp's one Dead token, from the bank; taken off the seat it was on first.
+	const addDead = async (seat: number, from?: number) => {
+		if (from) {
+			await page
+				.locator(`.chip-slot[data-seat="${from}"]`)
+				.getByRole('button', { name: 'Dead reminder' })
+				.tap();
+			await page.getByRole('button', { name: 'Remove reminder' }).tap();
+			await expect(page.getByRole('dialog', { name: 'Dead' })).toBeHidden();
+		}
+		await putReminder(page, 'Dead', seat);
 	};
 	await addDead(2);
 	const ask = page.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' });
 	await expect(ask).toBeVisible();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, no character, dead')).toBeAttached();
-	await page.keyboard.press('Escape');
+	await closeBin(page);
+	await openSeat(page, 2);
 	// The reminder's own character is the cause (Trevor, 2026-10-23: "it should know the token
 	// caused the death").
 	await expect(
@@ -5797,14 +5669,13 @@ test('a Dead reminder put on a living player asks whether to mark them dead', as
 	await closeSheet(page);
 
 	// Cancel leaves them alive; switched off, it never asks.
-	await addDead(3);
+	await addDead(3, 2);
 	const again = page.getByRole('alertdialog', { name: 'Mark Seat 3 dead?' });
 	await again.getByText('Ask to mark dead', { exact: true }).tap();
 	await again.getByRole('button', { name: 'Cancel', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
-	await page.keyboard.press('Escape');
-	await closeSheet(page);
-	await addDead(4);
+	await closeBin(page);
+	await addDead(4, 3);
 	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).toBeAttached();
 	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).not.toHaveAttribute(
 		'aria-label',
@@ -5905,15 +5776,7 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 		.tap();
 	await closeSheet(page);
 
-	const add = async (seat: number, label: 'Dead' | 'Alive') => {
-		const s = await openSeat(page, seat);
-		await s.getByRole('button', { name: 'Add reminder' }).tap();
-		const picker = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
-		await picker
-			.getByRole('group', { name: 'Shabaloth' })
-			.getByRole('button', { name: label === 'Dead' ? 'Dead, copy 1 of 2' : label, exact: true })
-			.tap();
-	};
+	const add = (seat: number, label: 'Dead' | 'Alive') => putReminder(page, label, seat);
 	await add(2, 'Dead');
 	await page
 		.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' })
@@ -6591,11 +6454,11 @@ test('the reminder bank pulls up into a sheet of every token, and tokens drag ou
 }, testInfo) => {
 	await startGame(page);
 	const pull = page.getByRole('button', { name: 'Show every reminder' });
-	await expect(pull).toHaveAttribute('aria-expanded', 'false');
+	await expect(pull).toHaveAttribute('aria-pressed', 'false');
 	await pull.tap();
 	const bin = page.getByTestId('reminder-bin');
 	await expect(bin).toBeVisible();
-	await expect(pull).toHaveAttribute('aria-expanded', 'true');
+	await expect(pull).toHaveAttribute('aria-pressed', 'true');
 	// Under the bank's own captions, in rows.
 	await expect(bin.getByText('∞', { exact: true })).toBeVisible();
 	await page.screenshot({ path: testInfo.outputPath('bin-open.png') });
@@ -6693,14 +6556,8 @@ test("the Summoner's Night 3 step makes the chosen player the Demon it points at
 	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
 	await picker.getByText('Include characters not on the script').tap();
 	await picker.getByRole('button', { name: 'Summoner', exact: true }).tap();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const reminders = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	await reminders
-		.getByRole('group', { name: 'Summoner' })
-		.getByRole('button', { name: 'Night 3' })
-		.tap();
-	await reminders.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
+	await putReminder(page, 'Night 3', 1);
 
 	const step = await openStep(page, 'Summoner');
 	await expect(step.getByTestId('make-demon')).toContainText('None');

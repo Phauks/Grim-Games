@@ -452,7 +452,7 @@
 		type="button"
 		class="pull-up"
 		aria-label="Show every reminder"
-		aria-expanded={binOpen}
+		aria-pressed={binOpen}
 		data-bin-opener
 		onclick={() => (binOpen = !binOpen)}><Icon name="expand" /></button
 	>

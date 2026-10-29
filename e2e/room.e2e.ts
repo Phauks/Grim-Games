@@ -2022,7 +2022,7 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 	await search.fill('');
 	// A tap, then the seat it goes on.
 	await bin.getByRole('button', { name: 'Poisoned reminder' }).tap();
-	await expect(phone.getByTestId('bin-placing')).toContainText('Tap a seat for Poisoned');
+	await expect(phone.getByTestId('bin-placing')).toContainText('Tap a seat for');
 	await seat.tap();
 	await expect(phone.getByTestId('bin-placing')).toBeHidden();
 	await expect(bin).toBeVisible();

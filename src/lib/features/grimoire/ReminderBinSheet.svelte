@@ -57,12 +57,8 @@
 		aria-label={label}
 		data-testid="reminder-bin"
 	>
-		<button
-			type="button"
-			class="handle"
-			aria-label="Close {label}"
-			aria-expanded="true"
-			onclick={() => (open = false)}><Icon name="expand" /></button
+		<button type="button" class="handle" aria-label="Close {label}" onclick={() => (open = false)}
+			><Icon name="expand" /></button
 		>
 		{@render header?.()}
 		<div class="groups">

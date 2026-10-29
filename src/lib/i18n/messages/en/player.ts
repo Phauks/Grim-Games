@@ -43,7 +43,7 @@ export const player = {
 	'player.grim.notesTitle': 'Notes: {name}',
 	'player.grim.reminders': 'Reminders',
 	'player.grim.reminderBin': 'Reminder bin',
-	'player.grim.tapSeatFor': 'Tap a seat for {label}',
+	'player.grim.tapSeatFor': 'Tap a seat for',
 	'player.grim.remindersTitle': 'Reminders for {name}',
 	'player.grim.onThisSeat': 'On this seat',
 	'player.grim.genericTokens': 'Generic',

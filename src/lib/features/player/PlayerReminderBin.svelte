@@ -4,6 +4,7 @@
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 	import { matchesReminderSearch } from '#lib/features/characters/character-search.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ReminderBinSheet from '#lib/features/grimoire/ReminderBinSheet.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -70,6 +71,7 @@
 		const tokens = (list: typeof parts.first) =>
 			list.flatMap((g) =>
 				g.labels.map((label) => ({
+					// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
 					key: `${g.character.id}:${label}`,
 					reminder: { characterId: g.character.id, label },
 					character: g.character
@@ -161,7 +163,8 @@
 <!-- Tapped: which seat it goes on, over the town's foot. -->
 {#if placing}
 	<div class="placing" role="status" data-testid="bin-placing">
-		<span>{t('player.grim.tapSeatFor', { label: reminderWords(placing.reminder) })}</span>
+		<span>{t('player.grim.tapSeatFor')}</span>
+		<ReminderToken label={reminderWords(placing.reminder)} character={placing.character} />
 		<Button onclick={() => (placing = undefined)}>{t('common.cancel')}</Button>
 	</div>
 {/if}
