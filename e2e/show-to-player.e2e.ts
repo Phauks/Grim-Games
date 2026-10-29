@@ -267,6 +267,61 @@ test('the Storyteller adds more bluff sets and deletes one after confirming', as
 	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 2"]')).toContainText('Mayor');
 });
 
+test('clearing the Demon bluffs asks first, and the set buttons are evenly spaced', async ({
+	page
+}) => {
+	// Trevor, 2026-10-29: a confirm before the Demon's bluffs go; even gaps between the buttons.
+	await page.goto('/spikes/bluffs');
+	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
+	await page.getByRole('button', { name: 'Choose' }).tap();
+	await choice(page, 'Monk').tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const set = page.getByTestId('bluff-set');
+	await expect(set).toContainText('Monk');
+
+	const boxes: { x: number; width: number }[] = [];
+	for (const label of [
+		'Choose the Demon bluffs',
+		'Show the Demon bluffs',
+		'Clear the Demon bluffs'
+	])
+		boxes.push((await set.getByRole('button', { name: label }).boundingBox())!);
+	const gap = (a: number) => boxes[a + 1].x - (boxes[a].x + boxes[a].width);
+	expect(gap(0)).toBeGreaterThan(0);
+	expect(gap(0)).toBeCloseTo(gap(1), 0);
+
+	await set.getByRole('button', { name: 'Clear the Demon bluffs' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Clear the Demon bluffs?' });
+	await expect(confirm).toContainText('Monk');
+	await confirm.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(set).toContainText('Monk');
+
+	await set.getByRole('button', { name: 'Clear the Demon bluffs' }).tap();
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(set).not.toContainText('Monk');
+	await expect(set.getByRole('button', { name: 'Clear the Demon bluffs' })).toBeDisabled();
+});
+
+test('a second bluff set can be named Lunatic in one tap', async ({ page }) => {
+	// Trevor, 2026-10-29: a second set is nearly always the Lunatic's.
+	await page.goto('/spikes/bluffs');
+	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add a set' }).tap();
+	const name = page.getByRole('textbox', { name: 'Set name' });
+	const lunatic = page.getByRole('button', { name: 'Lunatic', exact: true });
+	// On the name's own line, so it pushes nothing down.
+	const field = (await name.boundingBox())!;
+	const button = (await lunatic.boundingBox())!;
+	expect(button.y).toBeLessThan(field.y + field.height);
+	expect(button.y + button.height).toBeGreaterThan(field.y);
+	await lunatic.tap();
+	await expect(name).toHaveValue('Lunatic');
+	await expect(lunatic).toBeDisabled();
+	await choice(page, 'Monk').tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.locator('[data-testid="bluff-set"][data-set="Lunatic"]')).toContainText('Monk');
+});
+
 test("a character's own card is filled in and shown, e.g. the Mezepheles's secret word", async ({
 	page
 }) => {
