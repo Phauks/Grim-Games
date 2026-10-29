@@ -166,7 +166,7 @@ test('a friend code, scanned or opened, fills in Add friend', async ({ browser }
 	// Ann's own code: a link with her username in the hash, her profile icon in the middle.
 	await ann.page.goto('/friends');
 	const link = ann.page.getByRole('textbox', { name: 'Link' });
-	await expect(link).toHaveValue(new RegExp(`/friends#add=${ann.username}$`));
+	await expect(link).toHaveValue(new RegExp(`/friends#friend=${ann.username}$`));
 	await expect(ann.page.getByRole('img', { name: 'QR code to add you as a friend' })).toBeVisible();
 
 	// Bob scans it from Add friend: her name is filled in, ready to send.
@@ -180,7 +180,7 @@ test('a friend code, scanned or opened, fills in Add friend', async ({ browser }
 	await expect(bob.page.getByTestId('friend-outgoing')).toContainText(ann.username);
 
 	// Opened as a link (the phone's own camera app), it opens Add friend the same way.
-	await bob.page.goto(`/friends#add=${ann.username}`);
+	await bob.page.goto(`/friends#friend=${ann.username}`);
 	await expect(
 		bob.page.getByRole('dialog', { name: 'Add friend' }).getByLabel('Username', { exact: true })
 	).toHaveValue(ann.username);

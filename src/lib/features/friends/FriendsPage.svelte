@@ -39,7 +39,7 @@
 	/** A username from a scanned friend code's link, filled into Add friend. */
 	let linked = $state('');
 
-	/** A friend link (`/friends#add=…`) opens Add friend with its username in. */
+	/** A friend link (`/friends#friend=…`) opens Add friend with its username in. */
 	function openFriendLink(): void {
 		const username = readFriendLink(location.hash);
 		if (!username) return;

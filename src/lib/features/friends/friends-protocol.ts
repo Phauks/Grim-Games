@@ -81,10 +81,10 @@ export const friendActionApi = (action: FriendAction) => `${FRIENDS_API}/${actio
  * 2026-10-29). The name is in the hash, which never reaches the server's logs.
  */
 export function friendLink(origin: string, username: string): string {
-	return `${origin}/friends#add=${encodeURIComponent(username)}`;
+	return `${origin}/friends#friend=${encodeURIComponent(username)}`;
 }
 
-/** The username in a friend link or its hash (`#add=…`), as typed; undefined for anything else. */
+/** The username in a friend link or its hash (`#friend=…`), as typed; undefined for anything else. */
 export function readFriendLink(text: string): string | undefined {
 	let hash: string;
 	try {
@@ -94,7 +94,7 @@ export function readFriendLink(text: string): string | undefined {
 	} catch {
 		hash = text.trim();
 	}
-	const match = /^#add=([^&]+)$/.exec(hash);
+	const match = /^#friend=([^&]+)$/.exec(hash);
 	if (!match) return undefined;
 	try {
 		return decodeURIComponent(match[1]);
