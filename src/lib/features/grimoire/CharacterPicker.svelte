@@ -21,6 +21,8 @@
 		current?: CharacterId;
 		/** Hide the "not on the script" switch (Fabled and Loric are never on a script sheet). */
 		alwaysAll?: boolean;
+		/** Left out of the list (characters in play, for the Pit-Hag's "if not in play"). */
+		exclude?: readonly CharacterId[];
 		/** Listed first and marked "Recommended" (the script's Travellers). */
 		recommended?: readonly CharacterId[];
 		onPick: (id: CharacterId) => void;
@@ -36,6 +38,7 @@
 		types,
 		current,
 		alwaysAll = false,
+		exclude = [],
 		recommended = [],
 		onPick,
 		onNone
@@ -44,9 +47,9 @@
 	let showAll = $state(false);
 	let query = $state('');
 	const list = $derived.by(() => {
-		const all = pickerGroups(characters, script, types, alwaysAll || showAll).flatMap(
-			(g) => g.characters
-		);
+		const all = pickerGroups(characters, script, types, alwaysAll || showAll)
+			.flatMap((g) => g.characters)
+			.filter((c) => !exclude.includes(c.id));
 		const first = all.filter((c) => recommended.includes(c.id));
 		return [...first, ...all.filter((c) => !recommended.includes(c.id))];
 	});

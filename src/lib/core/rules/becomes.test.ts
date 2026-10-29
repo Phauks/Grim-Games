@@ -9,14 +9,18 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import {
 	castGame,
+	newGame,
 	run,
-	testCharacters as characters
+	testCharacters as characters,
+	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
-import { becomesOffer, demonMaker } from './becomes.ts';
+import { becomesOffer, changeableSeats, characterChanger } from './becomes.ts';
 
 const isTheDemon = { characterId: 'scarletwoman', label: 'Is The Demon' };
 const turnsEvil = { characterId: 'mezepheles', label: 'Turns Evil' };
@@ -155,40 +159,49 @@ describe('becomesOffer: Snake Charmer (https://wiki.bloodontheclocktower.com/Sna
 	});
 });
 
-// https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it chooses a player, who
-// becomes an evil Demon of its choice.
-describe('a character that makes a Demon (makesDemon)', () => {
-	const night3 =
-		(i: number) =>
+// A character whose night step changes a chosen player's character (`changesCharacter`):
+// https://wiki.bloodontheclocktower.com/Summoner (on the 3rd night, a player becomes an evil
+// Demon of its choice), https://wiki.bloodontheclocktower.com/Pit-Hag (each night*, a player
+// becomes a not-in-play character) and https://wiki.bloodontheclocktower.com/Huntsman (once
+// per game, the Damsel, if chosen, becomes a not-in-play Townsfolk).
+describe('a character that changes a chosen player (changesCharacter)', () => {
+	const remind =
+		(i: number, characterId: string, label: string) =>
 		(s: string[]): Command => ({
 			type: 'AddReminder',
 			seatId: s[i],
-			reminder: { characterId: 'summoner', label: 'Night 3' }
+			reminder: { characterId, label }
 		});
 
-	it('is the Summoner alone', () => {
-		const makers = [...OFFICIAL_RULES].filter(([, r]) => r.makesDemon).map(([id]) => id);
-		expect(makers).toEqual(['summoner']);
+	it('is the Summoner, the Pit-Hag and the Huntsman', () => {
+		const changers = [...OFFICIAL_RULES].filter(([, r]) => r.changesCharacter).map(([id]) => id);
+		expect(changers.sort()).toEqual(['huntsman', 'pithag', 'summoner']);
 	});
 
 	it('asks on the night its token is on its own living player', () => {
-		const { session, seats } = castGame(['summoner', 'chef', 'empath'], night3(0));
-		expect(demonMaker(session.game, 'summoner', characters)).toBe(seats[0]);
+		const { session, seats } = castGame(
+			['summoner', 'chef', 'empath'],
+			remind(0, 'summoner', 'Night 3')
+		);
+		expect(characterChanger(session.game, 'summoner', characters)).toBe(seats[0]);
 	});
 
 	it('does not ask before its night, or once its player is dead', () => {
-		const early = castGame(['summoner', 'chef', 'empath'], (s) => ({
-			type: 'AddReminder',
-			seatId: s[0],
-			reminder: { characterId: 'summoner', label: 'Night 2' }
-		}));
-		expect(demonMaker(early.session.game, 'summoner', characters)).toBeUndefined();
-		const gone = castGame(['summoner', 'chef', 'empath'], night3(0), dead(0));
-		expect(demonMaker(gone.session.game, 'summoner', characters)).toBeUndefined();
+		const early = castGame(['summoner', 'chef', 'empath'], remind(0, 'summoner', 'Night 2'));
+		expect(characterChanger(early.session.game, 'summoner', characters)).toBeUndefined();
+		const gone = castGame(
+			['summoner', 'chef', 'empath'],
+			remind(0, 'summoner', 'Night 3'),
+			dead(0)
+		);
+		expect(characterChanger(gone.session.game, 'summoner', characters)).toBeUndefined();
 	});
 
 	it('the chosen player becomes the Demon, evil', () => {
-		const { session, seats, ctx } = castGame(['summoner', 'chef', 'empath'], night3(0));
+		const { session, seats, ctx } = castGame(
+			['summoner', 'chef', 'empath'],
+			remind(0, 'summoner', 'Night 3')
+		);
 		const { game } = run(session, ctx, {
 			type: 'AssignCharacter',
 			seatId: seats[1],
@@ -196,5 +209,54 @@ describe('a character that makes a Demon (makesDemon)', () => {
 			alignment: 'evil'
 		});
 		expect(game.seats[seats[1]]).toMatchObject({ characterId: 'nodashii', alignment: 'evil' });
+	});
+
+	it('asks each night for a living Pit-Hag, who may change anyone', () => {
+		const { session, seats } = castGame(['pithag', 'chef', 'empath', 'imp']);
+		expect(characterChanger(session.game, 'pithag', characters)).toBe(seats[0]);
+		expect(changeableSeats(session.game, 'pithag', characters)).toEqual(seats);
+		expect(OFFICIAL_RULES.get('pithag')?.changesCharacter).toMatchObject({ notInPlay: true });
+	});
+
+	it('asks the Huntsman only while a Damsel is in play and before its No Ability', () => {
+		const none = castGame(['huntsman', 'chef', 'empath']);
+		expect(characterChanger(none.session.game, 'huntsman', characters)).toBeUndefined();
+		const { session, seats } = castGame(['huntsman', 'damsel', 'empath']);
+		expect(characterChanger(session.game, 'huntsman', characters)).toBe(seats[0]);
+		expect(changeableSeats(session.game, 'huntsman', characters)).toEqual([seats[1]]);
+		const used = castGame(['huntsman', 'damsel', 'empath'], remind(0, 'huntsman', 'No Ability'));
+		expect(characterChanger(used.session.game, 'huntsman', characters)).toBeUndefined();
+	});
+
+	// A homebrew Minion that turns a chosen player into an Outsider each night: its rules block
+	// alone gives it the step; without it, there is none.
+	it('works for a custom character through its rules block', () => {
+		const tailor = {
+			id: 'tailor',
+			name: 'Tailor',
+			team: 'minion',
+			ability: 'Each night*, choose a player: they become a not-in-play Outsider.',
+			rules: { changesCharacter: { types: ['outsider'], notInPlay: true } }
+		};
+		const issues = new Issues();
+		const character = parseCharacter(tailor, '[0]', issues, {
+			strict: false,
+			scriptFields: true
+		});
+		expect(issues.list).toEqual([]);
+		const all = new Map([...characters, [character!.id, character!]]);
+		const created = newGame(3, { ctx: testContext({ characters: all }) });
+		const session = run(
+			created.session,
+			created.ctx,
+			...['tailor', 'chef', 'empath'].map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: created.seats[i],
+				characterId
+			}))
+		);
+		expect(characterChanger(session.game, 'tailor', all)).toBe(created.seats[0]);
+		const plain = new Map([...characters, [character!.id, { ...character!, rules: undefined }]]);
+		expect(characterChanger(session.game, 'tailor', plain)).toBeUndefined();
 	});
 });
