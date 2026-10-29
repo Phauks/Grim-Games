@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 19;
+export const SAVED_GAME_VERSION = 20;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -217,6 +217,14 @@ const migrateV17toV18: Migration = (doc) => ({ ...doc, schemaVersion: 18 });
  */
 const migrateV18toV19: Migration = (doc) => ({ ...doc, schemaVersion: 19 });
 
+/**
+ * Version 20 (2026-10-29) added what a player who believes they are the Demon is shown
+ * (`Game.fakeEvilInfo`, the `FakeEvilInfoSet` event). The log needs no change: an older game
+ * has none. The bump makes older builds refuse a version 20 save instead of failing on the
+ * unknown event.
+ */
+const migrateV19toV20: Migration = (doc) => ({ ...doc, schemaVersion: 20 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -236,7 +244,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	15: migrateV15toV16,
 	16: migrateV16toV17,
 	17: migrateV17toV18,
-	18: migrateV18toV19
+	18: migrateV18toV19,
+	19: migrateV19toV20
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
