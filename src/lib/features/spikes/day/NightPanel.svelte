@@ -55,6 +55,7 @@
 		const order = nightOrder({
 			night,
 			sheet: game.data.nightSheet,
+			official: game.data.byId,
 			inPlay,
 			players,
 			overrides: g.nightOrderOverrides

@@ -116,3 +116,32 @@ export function readChangesCharacter(
 		...(onlyFrom?.length ? { onlyFrom } : {})
 	};
 }
+
+/**
+ * The `swapsCharacters` part: on its night step, two chosen players swap characters and keep
+ * their alignments (the Barber's haircuts, the Demon choosing,
+ * https://wiki.bloodontheclocktower.com/Barber). `notTypes` are the character types that may
+ * not be chosen (the Barber's "not another Demon").
+ */
+export interface SwapsCharacters {
+	notTypes?: readonly SeatedType[];
+}
+
+/** Reads a `swapsCharacters` block. */
+export function readSwapsCharacters(
+	raw: unknown,
+	path: string,
+	issues: Issues
+): SwapsCharacters | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['notTypes'], path, issues);
+	const notTypes = (readStringArray(raw, 'notTypes', path, issues) ?? []).filter((t, i) => {
+		const ok = (SEATED_TYPES as readonly string[]).includes(t);
+		if (!ok) issues.add(`${path}.notTypes[${i}]`, `unknown value ${JSON.stringify(t)}`);
+		return ok;
+	}) as SeatedType[];
+	return notTypes.length ? { notTypes } : {};
+}

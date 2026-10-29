@@ -68,7 +68,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L71',
 			'L72',
 			'L73',
-			'L75'
+			'L75',
+			'L76'
 		]
 	},
 	{
@@ -161,6 +162,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title:
 			'Custom characters that follow their own rules: kill, protect, drunk and poison, win conditions, night information',
+		parts: ['L74'],
 		prs: [410, 420, 429, 445, 459, 460, 462, 463, 465, 472, 482, 485, 488, 491]
 	},
 	{

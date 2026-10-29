@@ -179,7 +179,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Own wake conditions (`rules/wakes-when.ts`, read by `night-steps.ts` `stepWakes`: the King once the dead equal or outnumber the living, the Choirboy when the Demon killed the King, the Seamstress until her No Ability): `wakesWhen`, new
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
 - Abilities gained from another player (`gained-abilities.ts`, was the Pixie hard-code and `GAINED_FROM` in `death-causes.ts`: the Cannibal's Lunch, the Pixie's Mad and Has Ability, the Philosopher's swap or Drunk): `gainedFrom`, moved
-- Character and alignment changes (`becomes.ts`, was `BECOMES_DEMON`: the Scarlet Woman's Is The Demon, the Mezepheles's Turns Evil, the Snake Charmer's swap): `becomes`, moved. A Demon's death by its own kill passing it on (the Imp, the Fang Gu) is `gameEnd` `death-passes`, asked by `StarPassPrompt`. Changing a chosen player's character in a night step (the Pit-Hag's not-in-play character, the Summoner's Demon on its Night 3, the Huntsman's Damsel) is `changesCharacter` (`types`, `notInPlay`, `alignment`, `token`, `spent`, `onlyFrom`), asked by `ChangeCharacterStep`.
+- Character and alignment changes (`becomes.ts`, was `BECOMES_DEMON`: the Scarlet Woman's Is The Demon, the Mezepheles's Turns Evil, the Snake Charmer's swap): `becomes`, moved. A Demon's death by its own kill passing it on (the Imp, the Fang Gu) is `gameEnd` `death-passes`, asked by `StarPassPrompt`. Changing a chosen player's character in a night step (the Pit-Hag's not-in-play character, the Summoner's Demon on its Night 3, the Huntsman's Damsel) is `changesCharacter` (`types`, `notInPlay`, `alignment`, `token`, `spent`, `onlyFrom`), asked by `ChangeCharacterStep`. Swapping two chosen players' characters, each keeping their alignment (the Barber's haircuts), is `swapsCharacters` (`notTypes`), asked by the same step.
 - Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56): `dayClaim` (`statements` also opens the Savant sheet and its end-of-night offer), `guessLimit`, moved
 - Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new): `dayMark`, moved
 - Night information and answers (`night-info.ts`): `learns`, `answers`, moved
@@ -210,11 +210,11 @@ encodes, each with why. Give a new character the rule rather than an entry; take
 once its rule exists.
 
 `npm run lint:lines` (`scripts/check-lines.ts`) keeps every source file at 800 lines or fewer
-(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its
-`LARGE_FILE_TODO` holds the files that were longer when it began; split one into modules with a
-small surface and take it off the list (a stale entry is reported, not a failure, so
-parallel splits never break each other). The plan for each is in the project's
-`refactor/large-files.md`.
+(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its `LARGE_FILES`
+names the files kept longer on purpose (Trevor, 2026-10-29: the grimoire board and
+DataTable), each with why and a cap. A change that would take one past its cap splits a piece
+out instead of raising the cap; a file split under 800 comes off the list (a stale entry is
+reported, not a failure, so parallel splits never break each other).
 
 `npm run lint:knip` (`knip.jsonc`) fails on a file, an exported value or a dependency nothing
 uses. Delete it, or drop the `export` when only its own file uses it; an export kept on

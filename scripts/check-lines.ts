@@ -6,10 +6,13 @@
  *
  * Counts every line of the .ts, .js, .svelte and .css files under src and worker. Tests,
  * rules data tables (`*.data.ts`, moving to `src/lib/core/data/rules/`), i18n catalogs and
- * generated files are not counted. LARGE_FILE_TODO lists the files that were over the limit
- * when the lint began; it only shrinks: a new file never goes on it, and a split takes its file
- * off. A listed file that is back under the limit (or gone) is only reported, not a failure, so
- * splits running in parallel never break each other's lint on beta. Run by `npm run lint`.
+ * generated files are not counted. LARGE_FILES lists the files kept over the limit on
+ * purpose (Trevor, 2026-10-29: split until it gets silly, then name the exception), each with
+ * why and a cap it may not grow past. The list only shrinks: a new file never goes on it, a
+ * cap is never raised to fit a change (split the file instead), and a split under the limit
+ * takes its file off. A listed file that is back under the limit (or gone) is only reported,
+ * not a failure, so splits running in parallel never break each other's lint on beta. Run by
+ * `npm run lint`.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -17,11 +20,23 @@ import { fileURLToPath } from 'node:url';
 
 export const MAX_LINES = 800;
 
-/** Over the limit before the lint; only shrinks. Each is split by its owner's thread. */
-export const LARGE_FILE_TODO = [
-	'src/lib/features/grimoire/GrimoireBoard.svelte',
-	'src/lib/ui/table/DataTable.svelte'
-];
+/** A file kept over the limit: why, and the most lines it may have. */
+export interface LargeFile {
+	cap: number;
+	why: string;
+}
+
+/** Kept over the limit on purpose; only shrinks, and no cap goes up. */
+export const LARGE_FILES: Readonly<Record<string, LargeFile>> = {
+	'src/lib/features/grimoire/GrimoireBoard.svelte': {
+		cap: 1300,
+		why: 'The board wires the dialogs and sheets over it; its pieces are already split out.'
+	},
+	'src/lib/ui/table/DataTable.svelte': {
+		cap: 1050,
+		why: 'Its narrow-mode styles are keyed on the root, so the template stays whole.'
+	}
+};
 
 /** Whether the lint counts a file (a path relative to the repository, with `/`). */
 export function counted(file: string): boolean {
@@ -38,17 +53,22 @@ export function lineCount(source: string): number {
 	return source.split('\n').length - (source.endsWith('\n') ? 1 : 0);
 }
 
-export type LineProblem = { file: string; lines: number; problem: 'too-long' | 'listed-short' };
+export type LineProblem = {
+	file: string;
+	lines: number;
+	problem: 'too-long' | 'over-cap' | 'listed-short';
+};
 
-/** Problems with the files' line counts, given the TODO list. */
+/** Problems with the files' line counts, given the files kept over the limit. */
 export function lineProblems(
 	sizes: ReadonlyMap<string, number>,
-	todo: readonly string[] = LARGE_FILE_TODO
+	large: Readonly<Record<string, LargeFile>> = LARGE_FILES
 ): LineProblem[] {
 	const problems: LineProblem[] = [];
 	for (const [file, lines] of sizes) {
-		const listed = todo.includes(file);
+		const listed = large[file];
 		if (lines > MAX_LINES && !listed) problems.push({ file, lines, problem: 'too-long' });
+		if (listed && lines > listed.cap) problems.push({ file, lines, problem: 'over-cap' });
 		if (lines <= MAX_LINES && listed) problems.push({ file, lines, problem: 'listed-short' });
 	}
 	return problems;
@@ -73,14 +93,17 @@ if (process.argv.includes('--run')) {
 		}
 	}
 	const problems = lineProblems(sizes);
-	const missing = LARGE_FILE_TODO.filter((file) => !sizes.has(file));
+	const missing = Object.keys(LARGE_FILES).filter((file) => !sizes.has(file));
 	for (const { file, lines, problem } of problems) {
 		if (problem === 'too-long') {
 			console.error(`${file}: ${lines} lines, over ${MAX_LINES}. Split it into modules.`);
+		} else if (problem === 'over-cap') {
+			const cap = LARGE_FILES[file].cap;
+			console.error(`${file}: ${lines} lines, over its cap of ${cap}. Split a piece out.`);
 		} else {
-			console.log(`${file}: ${lines} lines now; take it off LARGE_FILE_TODO.`);
+			console.log(`${file}: ${lines} lines now; take it off LARGE_FILES.`);
 		}
 	}
-	for (const file of missing) console.log(`${file}: gone; take it off LARGE_FILE_TODO.`);
-	if (problems.some((p) => p.problem === 'too-long')) process.exit(1);
+	for (const file of missing) console.log(`${file}: gone; take it off LARGE_FILES.`);
+	if (problems.some((p) => p.problem !== 'listed-short')) process.exit(1);
 }

@@ -76,6 +76,7 @@ export function playerNight(script: LoadedScript, data: GameData, night: Night):
 	const order = nightOrder({
 		night,
 		sheet: data.nightSheet,
+		official: data.byId,
 		inPlay: script.characters,
 		// Always lay out Minion and Demon info: the player view doesn't know the player count.
 		players: MAX_DEALT_PLAYERS,

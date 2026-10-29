@@ -96,3 +96,20 @@ export function changeableSeats(
 		return !only || (own !== undefined && only.includes(own));
 	});
 }
+
+/**
+ * The players `characterId`'s `swapsCharacters` may choose to swap: those with a character,
+ * except its `notTypes` (the Barber's "not another Demon").
+ */
+export function swappableSeats(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	const rule = rulesOf(characterId, characters)?.swapsCharacters;
+	if (!rule) return [];
+	return game.seating.filter((id) => {
+		const type = typeOf(game, id, characters);
+		return type !== undefined && !(rule.notTypes as readonly string[] | undefined)?.includes(type);
+	});
+}
