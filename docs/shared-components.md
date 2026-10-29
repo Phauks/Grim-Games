@@ -210,11 +210,11 @@ encodes, each with why. Give a new character the rule rather than an entry; take
 once its rule exists.
 
 `npm run lint:lines` (`scripts/check-lines.ts`) keeps every source file at 800 lines or fewer
-(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its
-`LARGE_FILE_TODO` holds the files that were longer when it began; split one into modules with a
-small surface and take it off the list (a stale entry is reported, not a failure, so
-parallel splits never break each other). The plan for each is in the project's
-`refactor/large-files.md`.
+(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its `LARGE_FILES`
+names the files kept longer on purpose (Trevor, 2026-10-29: the grimoire board and
+DataTable), each with why and a cap. A change that would take one past its cap splits a piece
+out instead of raising the cap; a file split under 800 comes off the list (a stale entry is
+reported, not a failure, so parallel splits never break each other).
 
 `npm run lint:knip` (`knip.jsonc`) fails on a file, an exported value or a dependency nothing
 uses. Delete it, or drop the `export` when only its own file uses it; an export kept on
