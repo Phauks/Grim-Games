@@ -86,6 +86,18 @@ describe('the live room', () => {
 		expect(room.members).toEqual([{ memberId: 'alex', name: 'Alex', seatId: 'b' }]);
 	});
 
+	it('counts a phone with no seat in the +1 while its screen is locked, if it was in this game', () => {
+		// Trevor, 2026-10-29: "they show up as player in the room, but not in the +1".
+		let room = roomWith('sam', 'old');
+		room = markHere(room, 'sam');
+		room = {
+			...room,
+			members: room.members.map((m) => (m.memberId === 'old' ? { ...m, game: 'g0' } : m))
+		};
+		expect(playerView(room, 'sam', new Set()).presence?.unseated).toBe(1);
+		expect(playerView(room, 'sam', new Set(['old'])).presence?.unseated).toBe(2);
+	});
+
 	it('ignores empty names, unknown seats, unnamed phones and strangers', () => {
 		const room = roomWith('alex');
 		expect(setName(room, 'alex', { name: '   ' })).toBe(room);

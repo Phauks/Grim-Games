@@ -212,9 +212,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (room.scriptVote) view.scriptVote = scriptVoteCount(room, present);
 	if (present) {
 		view.present = room.members.flatMap((m) => (present.has(m.memberId) ? [m.memberId] : []));
-		view.away = room.members.flatMap((m) =>
-			!present.has(m.memberId) && m.game === room.gameId ? [m.memberId] : []
-		);
+		view.away = awayInGame(room, present);
 	}
 	if (room.roles) view.rolesSeen = seatsSeen(room);
 	const reports = pictureReports(room);
@@ -226,6 +224,13 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 		if (asking) view.transfer.asking = asking.name ? { name: asking.name } : {};
 	}
 	return view;
+}
+
+/** Phones not connected now that were in the game on the table: a screen locked or put away. */
+function awayInGame(room: RoomState, present: ReadonlySet<string>): string[] {
+	return room.members.flatMap((m) =>
+		!present.has(m.memberId) && m.game === room.gameId ? [m.memberId] : []
+	);
 }
 
 const isSpectator = (m: RoomMember) => m.seatId === undefined;
@@ -267,7 +272,11 @@ export function playerView(
 		type: 'player-view',
 		me,
 		takenSeats: room.members.flatMap((m) => (m.seatId ? [m.seatId] : [])),
-		presence: seatPresence(room.members, (id) => !present || present.has(id))
+		presence: seatPresence(
+			room.members,
+			(id) => !present || present.has(id),
+			present ? awayInGame(room, present) : []
+		)
 	};
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;

@@ -22,7 +22,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A page reached from the sidebar: `ui/layout/Page.svelte` (title, actions, subtitle, toolbar, side; puts the hamburger before the title while no sidebar shows) (enforced by review)
 - A title whose words must not break in the middle: `fitWords` from `ui/fit-words.ts` (shrinks the text until its longest word fits; Page's title uses it) (enforced by `e2e/play.e2e.ts`)
 - A board drawn inside a dialog that must fit the room left under what sits above it: `fitInDialog` from `ui/fit-in-dialog.ts` (sets `--fit-height` in a wide box; the player grim uses it in the Storyteller's player view) (enforced by `e2e/player-view-parity.e2e.ts`)
-- The menu (You, App, build line, CCC logo): `features/shell/NavList.svelte`, in the sidebar (`AppNav`) and the drawer (`NavDrawer`) alike; there is no app header or footer (enforced by `e2e/navigation.e2e.ts`)
+- The menu (You, App, build line, CCC logo): `features/shell/NavList.svelte`, its sections each a `Collapsible` (Trevor, 2026-10-29), in the sidebar (`AppNav`) and the drawer (`NavDrawer`) alike; there is no app header or footer (enforced by `e2e/navigation.e2e.ts`)
 - A bottom sheet (a centred panel on a computer): `ui/primitives/BottomSheet.svelte`; `wide` for two columns, laid out by the sheet's own width (enforced by review)
 - A short menu of actions behind ⋯: `ui/primitives/Menu.svelte` (icon trigger, one row per action, disabled rows kept in place; Join game's ⋯) (enforced by `e2e/public-town.e2e.ts`)
 - The rooms this device joined as a player: `features/room/YourGames.svelte` (Join or resume's As player, above the saved games of `features/grimoire/SavedGamesSection.svelte`) (enforced by review)
@@ -210,11 +210,11 @@ encodes, each with why. Give a new character the rule rather than an entry; take
 once its rule exists.
 
 `npm run lint:lines` (`scripts/check-lines.ts`) keeps every source file at 800 lines or fewer
-(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its
-`LARGE_FILE_TODO` holds the files that were longer when it began; split one into modules with a
-small surface and take it off the list (a stale entry is reported, not a failure, so
-parallel splits never break each other). The plan for each is in the project's
-`refactor/large-files.md`.
+(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its `LARGE_FILES`
+names the files kept longer on purpose (Trevor, 2026-10-29: the grimoire board and
+DataTable), each with why and a cap. A change that would take one past its cap splits a piece
+out instead of raising the cap; a file split under 800 comes off the list (a stale entry is
+reported, not a failure, so parallel splits never break each other).
 
 `npm run lint:knip` (`knip.jsonc`) fails on a file, an exported value or a dependency nothing
 uses. Delete it, or drop the `export` when only its own file uses it; an export kept on

@@ -10,18 +10,26 @@ import type { RoomMember } from './room.ts';
 export interface SeatPresence {
 	here: SeatId[];
 	away: SeatId[];
-	/** Connected phones with no seat: more players in the room than seats on the board. */
+	/**
+	 * Phones with no seat at the table: connected, or away during this game (a locked screen,
+	 * Trevor 2026-10-29: "they show up as player in the room, but not in the +1").
+	 */
 	unseated: number;
 }
 
+/**
+ * `away` lists the phones not connected now that were in this game (`HostView.away`), so a
+ * locked phone with no seat still counts, as it still shows in the room's list.
+ */
 export function seatPresence(
 	members: readonly RoomMember[],
-	isHere: (memberId: string) => boolean
+	isHere: (memberId: string) => boolean,
+	away: readonly string[] = []
 ): SeatPresence {
 	const presence: SeatPresence = { here: [], away: [], unseated: 0 };
 	for (const m of members) {
 		const here = isHere(m.memberId);
-		if (m.seatId === undefined) presence.unseated += here ? 1 : 0;
+		if (m.seatId === undefined) presence.unseated += here || away.includes(m.memberId) ? 1 : 0;
 		else (here ? presence.here : presence.away).push(m.seatId);
 	}
 	return presence;
