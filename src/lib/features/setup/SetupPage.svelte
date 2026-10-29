@@ -166,12 +166,12 @@
 	 * undone; a rule's hidden ones leave once taken out of its box (`fromRule`).
 	 */
 	let offScriptSeen = $state.raw<CharacterId[]>([]);
-	const fromRule = new Set<CharacterId>();
+	const fromRule: CharacterId[] = [];
 	$effect(() => {
-		for (const id of ruleAllowed) fromRule.add(id);
+		for (const id of ruleAllowed) if (!fromRule.includes(id)) fromRule.push(id);
 		const onScript = new Set([...scriptOrder, ...editionTravellers.map((c) => c.id)]);
 		const kept = offScriptSeen.filter(
-			(id) => ruleAllowed.has(id) || !fromRule.has(id) || (s.selection[id] ?? 0) > 0
+			(id) => ruleAllowed.has(id) || !fromRule.includes(id) || (s.selection[id] ?? 0) > 0
 		);
 		const added = Object.keys(s.selection).filter(
 			(id) => (s.selection[id] ?? 0) > 0 && !onScript.has(id) && !kept.includes(id)
